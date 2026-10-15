@@ -4,16 +4,17 @@
  */
 import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it } from 'vitest';
+import { FakePaymentProvider } from '../src/fake/fake-payment-provider';
+import { startFakeProviderServer } from '../src/fake-server/fake-provider-server';
 import {
     MercadoPagoPaymentProvider,
     type PaymentCapability,
-    PaymentProviderError,
     type PaymentProviderMethod
 } from '../src/index';
 
 const clock = createAdjustableClock({ start: new Date('2026-10-01T03:00:00.000Z') });
 
-const ARS = { amountMinor: 1_000, currency: 'ARS' } as const;
+const ARS = { amountMinor: 1_500, currency: 'ARS' } as const;
 
 const VALID_CALLS: readonly {
     readonly method: PaymentProviderMethod;
@@ -81,34 +82,6 @@ describe('MercadoPagoPaymentProvider', () => {
         expect(VALID_CALLS).toHaveLength(14);
     });
 
-    it.each(
-        VALID_CALLS.filter(
-            ({ method }) =>
-                ![
-                    'authorize',
-                    'readAuthorization',
-                    'readCharge',
-                    'cancel',
-                    'decodeNotice'
-                ].includes(method)
-        )
-    )('$method refuses with NOT_IMPLEMENTED for $capability', async ({
-        method,
-        capability,
-        input
-    }) => {
-        // Act
-        const outcome = call({
-            provider: new MercadoPagoPaymentProvider({ clock }),
-            method,
-            input
-        });
-
-        // Assert
-        await expect(outcome).rejects.toBeInstanceOf(PaymentProviderError);
-        await expect(outcome).rejects.toMatchObject({ code: 'NOT_IMPLEMENTED', capability });
-    });
-
     it.each(VALID_CALLS)('$method validates its input first', async ({ method, capability }) => {
         const outcome = call({
             provider: new MercadoPagoPaymentProvider({ clock }),
@@ -118,19 +91,85 @@ describe('MercadoPagoPaymentProvider', () => {
         await expect(outcome).rejects.toMatchObject({ code: 'INVALID_INPUT', capability });
     });
 
-    it('leaves the other capabilities unimplemented', () => {
-        expect(
-            VALID_CALLS.filter(
-                ({ method }) =>
-                    ![
-                        'authorize',
-                        'readAuthorization',
-                        'readCharge',
-                        'cancel',
-                        'decodeNotice'
-                    ].includes(method)
-            )
-        ).toHaveLength(9);
+    it('sends every interface operation through the fake without NOT_IMPLEMENTED (AC:1669:1)', async () => {
+        const fake = new FakePaymentProvider({
+            clock,
+            idNamespace: crypto.randomUUID(),
+            honestAbout: [
+                {
+                    lie: 'M4',
+                    why: 'the interface table checks complete authorization search behavior'
+                },
+                { lie: 'M8', why: 'the interface table exercises immediate charge reads' }
+            ],
+            withoutBehaviour: [
+                { behaviour: 'RP12', why: 'the interface table creates a regular charge' }
+            ]
+        });
+        const server = await startFakeProviderServer({ provider: fake, clock });
+        try {
+            const adapter = new MercadoPagoPaymentProvider({
+                clock,
+                baseUrl: server.url,
+                accessToken: 'test-token'
+            });
+            const authorized = await adapter.authorize({
+                reference: 'interface-table-first',
+                amount: ARS,
+                cadence: { everyMonths: 1 },
+                reason: 'Plan',
+                returnUrl: 'https://hospeda.test/return'
+            });
+            await fake.approve({ authorizationId: authorized.authorizationId });
+            await adapter.changeAmount({
+                authorizationId: authorized.authorizationId,
+                amount: ARS
+            });
+            await adapter.pause({ authorizationId: authorized.authorizationId });
+            await adapter.resume({ authorizationId: authorized.authorizationId });
+            await adapter.cancel({ authorizationId: authorized.authorizationId });
+            await adapter.readAuthorization({ authorizationId: authorized.authorizationId });
+            await adapter.searchAuthorizations({});
+            const second = await adapter.authorize({
+                reference: 'table-charge',
+                amount: ARS,
+                cadence: { everyMonths: 1 },
+                reason: 'Plan',
+                returnUrl: 'https://hospeda.test/return'
+            });
+            await fake.approve({ authorizationId: second.authorizationId });
+            const charge = await fake.charge({
+                authorizationId: second.authorizationId,
+                amount: ARS,
+                reference: 'cycle'
+            });
+            await adapter.readCharge({ chargeId: charge.chargeId });
+            await adapter.listCharges({ authorizationId: second.authorizationId });
+            await adapter.refund({ chargeId: charge.chargeId, amount: ARS, reference: 'refund' });
+            const order = fake.placeOrder({ reference: 'table-order', paid: true });
+            await adapter.readOrder({ orderId: order.orderId });
+            await adapter.searchOrders({
+                reference: 'table-order',
+                createdFrom: '2026-10-01T00:00:00.000Z',
+                createdTo: '2026-10-29T00:00:00.000Z'
+            });
+            await expect(
+                adapter.charge({
+                    authorizationId: second.authorizationId,
+                    amount: ARS,
+                    reference: 'on-demand'
+                })
+            ).rejects.toMatchObject({ code: 'REJECTED' });
+            await expect(
+                adapter.decodeNotice({
+                    headers: {},
+                    body: '{"type":"payment","data":{"id":"table-charge"}}'
+                })
+            ).resolves.toMatchObject({ resourceKind: 'charge', resourceId: 'table-charge' });
+            expect(VALID_CALLS).toHaveLength(14);
+        } finally {
+            await server.close();
+        }
     });
 
     it('receives its clock injected and refuses to be built without one', () => {
