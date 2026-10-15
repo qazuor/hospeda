@@ -19,11 +19,13 @@ gateway (DEC-ARCH-004, HOS-1352 unit B1).
   - `FakePaymentProvider`, in memory, all eight capabilities, and it **lies
     like the real one** (see "The fake lies, from a closed list" below). It is
     exported only from `@repo/payments/fake`, for tests.
-  - `MercadoPagoPaymentProvider`: `authorize`, `cancel` and `readAuthorization`
-    call the provider over native `fetch`; `decodeNotice` reads Mercado Pago
-    Webhooks (`subscription_preapproval` and `payment`; other types are
-    `INVALID_NOTICE`). The API route verifies the Webhooks signature. Remaining
-    capabilities still refuse with `NOT_IMPLEMENTED`. No SDK is installed.
+  - `MercadoPagoPaymentProvider`: `authorize`, `cancel`, `changeAmount`,
+    `pause`, `resume`, `refund`, authorization and charge reads, charge listing,
+    authorization search, and order reads/search call Mercado Pago over native
+    `fetch`. `charge` is deliberately rejected because recurring charges run
+    on Mercado Pago's schedule. `decodeNotice` reads Mercado Pago Webhooks
+    (`subscription_preapproval` and `payment`; other types are `INVALID_NOTICE`).
+    The API route verifies the Webhooks signature. No SDK is installed.
 - **Capability support, declared per provider** (`capabilitySupport`): for each
   capability, `full`, `partial` with every gap and whether our side emulates,
   degrades or blocks it, or `none`. Mercado Pago's three half-capabilities
