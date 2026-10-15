@@ -7,6 +7,7 @@ import {
     postDelivery,
     retireSubjects,
     SIGNING_KEY,
+    type SignedDelivery,
     signedNotice,
     signup
 } from './mercadopago-delegates-fixtures';
@@ -23,7 +24,7 @@ beforeAll(async () => {
 afterEach(async () => retireSubjects(subjects, fixture.lifterId));
 afterAll(async () => fixture.stop());
 
-async function deliver(input: {
+async function dueDelivery(input: {
     readonly type: 'subscription_preapproval' | 'payment';
     readonly id: string;
     readonly version?: string;
@@ -35,20 +36,21 @@ async function deliver(input: {
                 candidate.query.includes(`type=${input.type}`) &&
                 candidate.query.includes(`data.id=${input.id}`)
         );
-    let delivery = due;
-    if (!delivery) {
-        const [link] = await getDb()
-            .select({ lastAppliedVersion: providerLinks.lastAppliedVersion })
-            .from(providerLinks)
-            .where(eq(providerLinks.providerId, input.id));
-        if (!link) throw new Error(`Expected provider link for ${input.id}`);
-        delivery = signedNotice({
-            clock: fixture.clock,
-            type: input.type,
-            id: input.id,
-            version: input.version ?? String(BigInt(link.lastAppliedVersion ?? '0') + 1n)
-        });
-    }
+    if (due) return due;
+    const [link] = await getDb()
+        .select({ lastAppliedVersion: providerLinks.lastAppliedVersion })
+        .from(providerLinks)
+        .where(eq(providerLinks.providerId, input.id));
+    if (!link) throw new Error(`Expected provider link for ${input.id}`);
+    return signedNotice({
+        clock: fixture.clock,
+        type: input.type,
+        id: input.id,
+        version: input.version ?? String(BigInt(link.lastAppliedVersion ?? '0') + 1n)
+    });
+}
+
+async function deliver(delivery: SignedDelivery) {
     subjects.deliveries.push(delivery);
     const response = await postDelivery(fixture.app, delivery);
     expect(response.status, await response.clone().text()).toBe(200);
@@ -64,7 +66,9 @@ async function activate() {
     });
     await fixture.fake.approve({ authorizationId: created.authorizationId });
     fixture.clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
-    await deliver({ type: 'subscription_preapproval', id: created.authorizationId });
+    await deliver(
+        await dueDelivery({ type: 'subscription_preapproval', id: created.authorizationId })
+    );
     return created;
 }
 
@@ -75,7 +79,7 @@ async function recordCreditedCycle(created: Awaited<ReturnType<typeof activate>>
         reference: `hos1669-paid-${crypto.randomUUID()}`
     });
     fixture.clock.advance({ ms: 60 * 60 * 1000 });
-    await deliver({ type: 'payment', id: paid.chargeId });
+    await deliver(await dueDelivery({ type: 'payment', id: paid.chargeId }));
     expect(
         await getDb()
             .select({ id: payments.id })
