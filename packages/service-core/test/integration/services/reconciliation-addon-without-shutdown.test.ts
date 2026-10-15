@@ -72,21 +72,24 @@ describe('TEST:B5:15 fourth zero-call sweep check', () => {
             get(target, key, receiver) {
                 const value: unknown = Reflect.get(target, key, receiver);
                 if (typeof value !== 'function') return value;
+                calls++;
                 return (...args: unknown[]) => {
-                    calls++;
                     return value.apply(target, args);
                 };
             }
         });
-        void noProvider;
+        const portsWithTripwire = {
+            addonOrphanhood: ports,
+            markPayments,
+            retainedPayments: { listRetainedPayments: async () => [] },
+            retainedPaymentBranches: {
+                resolveByBranch: async () => ({ kind: 'NO_BRANCH' as const })
+            },
+            provider: noProvider
+        };
         const summary = await runZeroCallChecks(
             { correlationId: crypto.randomUUID() },
-            {
-                addonOrphanhood: ports,
-                markPayments,
-                retainedPayments: { listRetainedPayments: async () => [] },
-                retainedPaymentBranches: { resolveByBranch: async () => ({ kind: 'NO_BRANCH' }) }
-            }
+            portsWithTripwire
         );
         expect(calls).toBe(0);
         const result = summary.results.find(({ check }) => check === 'ADDON_LIVE_ON_DEAD_TARGET');
