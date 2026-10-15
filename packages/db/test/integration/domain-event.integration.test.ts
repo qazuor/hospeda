@@ -169,6 +169,30 @@ describe('TEST:U2:11 domain_event after db:migrate from empty', () => {
             constraint: 'domain_event_person_actor_check'
         });
     });
+
+    it('accepts the three reconciliation event types added in HOS-1607', async () => {
+        const client = await getTestPool().connect();
+        try {
+            await client.query('BEGIN');
+            for (const type of [
+                'reconciliation.mark_escalated',
+                'reconciliation.undercharge_detected',
+                'reconciliation.pause_gift_detected'
+            ]) {
+                await client.query(
+                    `INSERT INTO domain_event (event_type, entity_type, entity_id, actor_type, correlation_id)
+                     VALUES ($1, 'subscription', $2, 'job', $3)`,
+                    [type, randomUUID(), randomUUID()]
+                );
+            }
+            await client.query('ROLLBACK');
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+    });
 });
 
 describe('TEST:U2:12 domain_event is append-only and carries the edge correlation', () => {

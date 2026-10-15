@@ -62,7 +62,13 @@ export const DOMAIN_EVENT_TYPES = [
     'account.closed_on_request',
     'partner_application.email_replaced',
     'subscription.provider_cancellation_decided',
-    'subscription.provider_cancelled_after_rejection'
+    'subscription.provider_cancelled_after_rejection',
+    /** An open reconciliation mark passed deadline 17; written by the sweep. */
+    'reconciliation.mark_escalated',
+    /** An accredited payment was charged below the expected amount (corrida 2). */
+    'reconciliation.undercharge_detected',
+    /** A completed pause gave net days (corrida 2). */
+    'reconciliation.pause_gift_detected'
 ] as const;
 
 /** One type of the closed domain event catalog. */
