@@ -6,9 +6,14 @@ import {
     reconciliationSweepRunModel
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
+import { actStartInstant, type PaymentProvider } from '@repo/payments';
 import type { BeforeCancelNotice } from '../../subscription/start-subscription.service.js';
+import {
+    type CancellationSeenAnnotator,
+    noCancellationSeenAnnotation
+} from '../../subscription/subscription-billing-ports.js';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
+import { observeAuthorizationRead } from './cancellation-observation.js';
 import {
     type CreditedPaymentsCheckPorts,
     type CreditedPaymentsCheckSummary,
@@ -54,6 +59,8 @@ export interface ReconciliationSweepPorts {
      * exactly what it did before. Provider and clock are the sweep's own.
      */
     readonly cancellationRetry?: { readonly beforeCancelNotice: BeforeCancelNotice };
+    /** Optional B4 annotation port; without it, the sweep behaves as before. */
+    readonly cancellationSeen?: CancellationSeenAnnotator;
     /**
      * The credited-payments check (AC:B11:12, AC:B11:27). Optional: without it the sweep
      * does exactly what it did before. Provider, clock and S14 port are the sweep's own.
@@ -140,7 +147,8 @@ export async function runReconciliationSweep(
               provider: ports.provider,
               clock: ports.clock,
               beforeCancelNotice: ports.cancellationRetry.beforeCancelNotice,
-              markPayments: ports.markPayments
+              markPayments: ports.markPayments,
+              cancellationSeen: ports.cancellationSeen
           }
         : undefined;
     const retryTally = createOurCancellationRetryTally();
@@ -157,7 +165,13 @@ export async function runReconciliationSweep(
                 const read = await ports.provider.readAuthorization({
                     authorizationId: providerLink.providerId
                 });
-                assertFreshForAct({ read, act });
+                await observeAuthorizationRead({
+                    read,
+                    act,
+                    subscriptionId: subscription.id,
+                    annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
+                    previouslySeenAt: providerLink.cancelledSeenAt
+                });
                 rowsRead++;
                 await compareRow({ subscription, providerLink, read, act });
                 for (const check of ports.rowChecks ?? []) {

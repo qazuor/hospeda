@@ -16,12 +16,17 @@ import {
 } from '@repo/payments';
 import type { BeforeCancelNotice } from '../../subscription/start-subscription.service.js';
 import {
+    type CancellationSeenAnnotator,
+    noCancellationSeenAnnotation
+} from '../../subscription/subscription-billing-ports.js';
+import {
     type CancelOurAuthorizationNoticeKind,
     cancelOurAuthorization
 } from '../cancel-our-authorization.js';
 import { openReconciliationMark } from '../open-reconciliation-mark.service.js';
 import type { ProviderCancellationTransition } from '../provider-cancellation-decision.js';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
+import { observeAuthorizationRead } from './cancellation-observation.js';
 import type { ReconciliationComparisonInput } from './reconciliation-divergence.js';
 
 const logger = createLogger('our-cancellation-retry');
@@ -116,6 +121,7 @@ export interface RetryOurCancellationPorts {
     readonly clock: Clock;
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly markPayments?: ReconciliationMarkPayments;
+    readonly cancellationSeen?: CancellationSeenAnnotator;
     readonly afterRead?: (input: ReconciliationComparisonInput) => Promise<void>;
 }
 
@@ -171,14 +177,24 @@ export async function retryOurCancellation(
         });
         prior = { read, act };
     }
-    const fresh = assertFreshForAct({ read: prior.read, act: prior.act });
+    const cancelled = input.prior
+        ? assertFreshForAct({ read: prior.read, act: prior.act }).snapshot.status === 'cancelled'
+        : (
+              await observeAuthorizationRead({
+                  read: prior.read,
+                  act: prior.act,
+                  subscriptionId: input.subscription.id,
+                  annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
+                  previouslySeenAt: input.providerLink.cancelledSeenAt
+              })
+          ).cancelled;
     await ports.afterRead?.({
         subscription: input.subscription,
         providerLink: input.providerLink,
         read: prior.read,
         act: prior.act
     });
-    if (fresh.snapshot.status === 'cancelled') return { outcome: 'CONFIRMED', read: true };
+    if (cancelled) return { outcome: 'CONFIRMED', read: true };
 
     const deadline = input.decision.decidedAt.getTime() + OUR_CANCELLATION_RETRY_WINDOW_MS;
     if (ports.clock.now().getTime() >= deadline) {
