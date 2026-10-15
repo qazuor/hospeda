@@ -236,6 +236,12 @@ export interface PurgeAfterCommit extends PublicationAfterCommit {
     }): Promise<void>;
 }
 
+/** The two remote deletions PB9 runs after its commit (AC:V9b:3); billing push belongs to HOS-1503. */
+export type RetentionAfterCommit = Pick<
+    PurgeAfterCommit,
+    'deleteRemoteMedia' | 'revokeCalendarConnection'
+>;
+
 /** Each effect reports failure without changing a committed result. */
 export type PostCommitWarning =
     | 'COVERAGE_NOTICE_FAILED'

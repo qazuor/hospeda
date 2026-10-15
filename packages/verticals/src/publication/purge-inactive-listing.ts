@@ -1,9 +1,11 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import { PublicationStatusEnum as Status } from '@repo/schemas';
-import { withPublicationLock } from './publication-lock';
+import { publicationAfterCommit, withPublicationLock } from './publication-lock';
 import type {
+    PostCommitWarning,
     PublicationUnitOfWork,
     PublicationVertical,
+    RetentionAfterCommit,
     RetentionBilling
 } from './publication-types';
 import { buildPriceAlertClosedPayload, PRICE_ALERT_CLOSED_TEMPLATE } from './purge-notices';
@@ -33,7 +35,12 @@ export type PurgeInactiveListingResult =
               readonly provider: string;
           }[];
           readonly closedAlerts: number;
+          readonly warnings: readonly PostCommitWarning[];
       };
+
+type PurgeInactiveListingLockedResult =
+    | Extract<PurgeInactiveListingResult, { readonly purged: false }>
+    | Omit<Extract<PurgeInactiveListingResult, { readonly purged: true }>, 'warnings'>;
 
 /** Calculates the later of the inactivity deadline and announced deletion date. */
 export function purgeDueAt(args: {
@@ -53,8 +60,8 @@ export function purgeDueAt(args: {
 }
 
 /**
- * TRANS:V:PB9 under the owner's publication lock. Covers AC:V9b:1 and AC:V9b:7, DEC-DATA-005, HOS-1501.
- * Later work: clock reset/two passes (AC:V9b:6, HOS-1503), immediate remote deletion (AC:V9b:3, HOS-1502), billing push (AC:V9b:8, HOS-1503), V9a fact 1 (AC:V9b:9, HOS-1504), and the job (HOS-1503/HOS-1504).
+ * TRANS:V:PB9 under the owner's publication lock. Covers AC:V9b:1, AC:V9b:3, AC:V9b:7, DEC-DATA-005, HOS-1501, HOS-1502.
+ * Later work: clock reset/two passes (AC:V9b:6, HOS-1503), billing push (AC:V9b:8, HOS-1503), V9a fact 1 (AC:V9b:9, HOS-1504), and the job (HOS-1503/HOS-1504).
  */
 export async function purgeInactiveListing(args: {
     readonly unitOfWork: PublicationUnitOfWork;
@@ -64,8 +71,9 @@ export async function purgeInactiveListing(args: {
     readonly listingId: string;
     readonly ownerId: string;
     readonly correlationId: string;
+    readonly afterCommit: RetentionAfterCommit;
 }): Promise<PurgeInactiveListingResult> {
-    return withPublicationLock({
+    const result = await withPublicationLock<PurgeInactiveListingLockedResult>({
         unitOfWork: args.unitOfWork,
         userId: args.ownerId,
         vertical: args.vertical,
@@ -143,4 +151,28 @@ export async function purgeInactiveListing(args: {
             };
         }
     });
+    if (!result.purged) return result;
+    const warnings = await publicationAfterCommit({
+        tasks: [
+            ...result.markedMedia.map((media) => ({
+                warning: 'REMOTE_DELETION_FAILED' as const,
+                run: () =>
+                    args.afterCommit.deleteRemoteMedia({
+                        vertical: args.vertical,
+                        mediaId: media.mediaId,
+                        publicId: media.publicId
+                    })
+            })),
+            ...result.markedCalendar.map((connection) => ({
+                warning: 'REMOTE_DELETION_FAILED' as const,
+                run: () =>
+                    args.afterCommit.revokeCalendarConnection({
+                        connectionId: connection.connectionId,
+                        accommodationId: args.listingId,
+                        provider: connection.provider
+                    })
+            }))
+        ]
+    });
+    return { ...result, warnings };
 }

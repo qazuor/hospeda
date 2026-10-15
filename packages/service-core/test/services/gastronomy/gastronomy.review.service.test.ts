@@ -289,6 +289,40 @@ describe('GastronomyReviewService.listByGastronomy', () => {
             undefined
         );
     });
+
+    it('returns empty without reading reviews for a PURGED listing', async () => {
+        const service = makeService();
+        const listingModel = (service as AnyService)._gastronomyModel;
+        listingModel.findById.mockResolvedValue({
+            publicationStatus: PublicationStatusEnum.PURGED
+        });
+
+        const result = await service.listByGastronomy(GASTRONOMY_ID, staffActor);
+
+        expect(result.data).toEqual({ reviews: [], total: 0 });
+        expect((service as AnyService).model.findAllWithRelations).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        PublicationStatusEnum.PUBLISHED,
+        PublicationStatusEnum.ARCHIVED
+    ])('continues reading reviews for %s listings', async (publicationStatus) => {
+        const review = makeReview({
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            moderationState: ModerationStatusEnum.APPROVED,
+            deletedAt: null
+        });
+        const service = makeService(review);
+        (service as AnyService)._gastronomyModel.findById.mockResolvedValue({
+            publicationStatus
+        });
+
+        const result = await service.listByGastronomy(GASTRONOMY_ID, staffActor);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.reviews).toHaveLength(1);
+        expect((service as AnyService).model.findAllWithRelations).toHaveBeenCalledOnce();
+    });
 });
 
 // ---------------------------------------------------------------------------

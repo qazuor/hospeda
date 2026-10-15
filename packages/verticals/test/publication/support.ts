@@ -46,6 +46,7 @@ export function makeHarness(
             | import('../../src/publication/publication-types').PublicationModerationOrigin
             | null;
         readonly inactiveSince?: Date;
+        readonly retentionListingMissing?: boolean;
         readonly recordBillingCalls?: boolean;
         readonly purgeContent?: Awaited<
             ReturnType<
@@ -151,6 +152,7 @@ export function makeHarness(
         async readRetentionListing() {
             expect(locked).toBe(true);
             calls.push('readRetention');
+            if (args.retentionListingMissing) return null;
             return {
                 ...listing,
                 publicationStatus: statuses.get(listingId) ?? status,
@@ -307,10 +309,19 @@ export function makeHarness(
             calls.push('revalidate');
         })
     };
+    const retentionAfterCommit = {
+        deleteRemoteMedia: vi.fn(async () => {
+            calls.push('deleteRemoteMedia');
+        }),
+        revokeCalendarConnection: vi.fn(async () => {
+            calls.push('revokeCalendarConnection');
+        })
+    };
     return {
         unitOfWork,
         billing,
         afterCommit,
+        retentionAfterCommit,
         calls,
         statusWrites,
         statusEvents,

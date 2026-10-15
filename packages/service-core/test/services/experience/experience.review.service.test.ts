@@ -263,6 +263,39 @@ describe('ExperienceReviewService.listByExperience', () => {
             moderationState: ModerationStatusEnum.APPROVED
         });
     });
+
+    it('returns empty without reading reviews for a PURGED listing', async () => {
+        const service = makeService();
+        const listingModel = (service as AnyService)._experienceModel;
+        listingModel.findById.mockResolvedValue({
+            publicationStatus: PublicationStatusEnum.PURGED
+        });
+
+        const result = await service.listByExperience(EXPERIENCE_ID, reviewerActor);
+
+        expect(result.data).toEqual({ reviews: [], total: 0 });
+        expect((service as AnyService).model.findAll).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        PublicationStatusEnum.PUBLISHED,
+        PublicationStatusEnum.ARCHIVED
+    ])('continues reading reviews for %s listings', async (publicationStatus) => {
+        const review = makeReview({
+            moderationState: ModerationStatusEnum.APPROVED,
+            deletedAt: null
+        });
+        const service = makeService(review);
+        (service as AnyService)._experienceModel.findById.mockResolvedValue({
+            publicationStatus
+        });
+
+        const result = await service.listByExperience(EXPERIENCE_ID, reviewerActor);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.reviews).toHaveLength(1);
+        expect((service as AnyService).model.findAll).toHaveBeenCalledOnce();
+    });
 });
 
 // ---------------------------------------------------------------------------
