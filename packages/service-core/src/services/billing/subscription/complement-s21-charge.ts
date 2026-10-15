@@ -132,11 +132,15 @@ export async function settleComplementLastCharge(
         .limit(1);
     if (!product?.cycle || !(product.cycle in BILLING_CYCLE_MONTHS))
         throw new Error(`Complement product ${input.productId} has no valid billing cycle`);
-    const periodEnd = complementChargePeriodEnd({
-        cycle: product.cycle as keyof typeof BILLING_CYCLE_MONTHS,
-        periodStart
-    });
-    if (periodEnd <= input.now) return { kind: 'NOTHING', why: 'PERIOD_ENDED' };
+    const cycle = product.cycle as keyof typeof BILLING_CYCLE_MONTHS;
+    if (
+        !isComplementChargePeriodOpen({
+            cycle,
+            periodStart,
+            now: input.now
+        })
+    )
+        return { kind: 'NOTHING', why: 'PERIOD_ENDED' };
 
     const reason: ReconciliationMarkReason = MARK_REASON_BY_CAUSE[input.cause];
     const mark = await openReconciliationMark(
