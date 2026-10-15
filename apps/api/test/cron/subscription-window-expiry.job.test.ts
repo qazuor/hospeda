@@ -1,11 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types';
 
-const { mockExpire, mockSweep, mockClock, mockProvider } = vi.hoisted(() => ({
+const { mockExpire, mockSweep, mockClock, mockProvider, mockComplementPorts } = vi.hoisted(() => ({
     mockExpire: vi.fn(),
     mockSweep: vi.fn(),
     mockClock: { now: vi.fn(() => new Date('2026-10-08T20:00:00.000Z')) },
-    mockProvider: { readAuthorization: vi.fn() }
+    mockProvider: { readAuthorization: vi.fn() },
+    mockComplementPorts: {
+        addonPolicy: vi.fn(),
+        listing: vi.fn(),
+        liveAnchors: { hasLiveAnchor: vi.fn() }
+    }
 }));
 
 vi.mock('@repo/service-core', async (importOriginal) => ({
@@ -15,6 +20,9 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
 }));
 vi.mock('../../src/utils/clock.js', () => ({ getClock: () => ({ clock: mockClock }) }));
 vi.mock('../../src/utils/payment-provider.js', () => ({ getPaymentProvider: () => mockProvider }));
+vi.mock('../../src/utils/billing-complement-ports.js', () => ({
+    buildComplementPolicyPorts: () => mockComplementPorts
+}));
 
 import { subscriptionWindowExpiryJob } from '../../src/cron/jobs/subscription-window-expiry.job';
 import { beforeCancelNotice } from '../../src/routes/billing-subscription/before-cancel-notice';
@@ -57,7 +65,8 @@ describe('subscription-window-expiry cron', () => {
             clock: mockClock,
             beforeCancelNotice,
             touristVipInheritance,
-            coverageNotices: getCoverageNotices()
+            coverageNotices: getCoverageNotices(),
+            complements: mockComplementPorts
         });
         expect(mockSweep).toHaveBeenCalledWith(100, {
             provider: mockProvider,

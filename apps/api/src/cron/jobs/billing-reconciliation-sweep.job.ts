@@ -17,6 +17,7 @@ import {
 import { createPlanCatalogInverse } from '@repo/verticals';
 import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
 import { touristVipInheritance } from '../../routes/billing-subscription/tourist-vip-inheritance.js';
+import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports.js';
 import { getClock } from '../../utils/clock.js';
 import { createSentryCronMonitorPing } from '../../utils/cron-monitor-ping.js';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
@@ -49,6 +50,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
             const provider = getPaymentProvider();
             const clock = getClock().clock;
             const { planPolicy } = createPlanCatalogInverse({ reader: planCatalogModel });
+            const complements = buildComplementPolicyPorts();
             const summary = await runReconciliationSweep(
                 { correlationId: ctx.correlationId },
                 {
@@ -68,7 +70,8 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             payments: creditedPaymentsFromLedger,
                             planPolicy,
                             coverageNotices: getCoverageNotices(),
-                            touristVipInheritance
+                            touristVipInheritance,
+                            complements
                         }),
                         createLostFirstRejectionCheck({
                             provider,
@@ -85,7 +88,8 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             clock,
                             beforeCancelNotice,
                             payments: creditedPaymentsFromLedger,
-                            coverageNotices: getCoverageNotices()
+                            coverageNotices: getCoverageNotices(),
+                            complements
                         }),
                         // AC:B7:7/AC:B7:8: S6 when the grace clock ran out, or P1 + S5 when the
                         // period charged. The coverage notice goes to the process-wide registry
@@ -101,7 +105,8 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             coverageNotices: getCoverageNotices(),
                             // AC:B7:31: a charged period settled on a SUSPENDED row runs S7, whose
                             // clause cancels a paid Tourist VIP the restored plan grants again.
-                            touristVipInheritance
+                            touristVipInheritance,
+                            complements
                         }),
                         // HOS-1685, CRIT:1685:2: copy the provider's next payment date onto the ACTIVE card row. Last, so no check above sees a value this run moved (H4).
                         createNextChargeSync()

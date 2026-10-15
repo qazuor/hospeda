@@ -11,22 +11,32 @@ import {
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
-import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
 import { billingPeriodEnd } from './billing-period-end';
-import {
-    type CancelInheritedTouristVipSummary,
-    cancelInheritedTouristVips,
-    type TouristVipInheritancePort
+import type {
+    CancelInheritedTouristVipSummary,
+    TouristVipInheritancePort
 } from './cancel-inherited-tourist-vip.service';
+import type { ComplementPolicyPorts } from './complement-ports.js';
+import { type ResumeComplementsSummary, resumeComplementsS33 } from './complement-resume-s33.js';
+import {
+    cancelComplementsByS11Rule,
+    type DecidedComplementCancellation
+} from './complement-s11-rule.js';
 import {
     checkLatePaymentConditions,
     type LatePaymentFailedCondition
 } from './late-payment-conditions';
 import { openLatePaymentRejectedMark } from './late-payment-rejected-mark';
+import {
+    cancelInheritedTouristVipAfterCommit,
+    cancelScheduledComplementsAfterCommit,
+    emitAddedAfterCommit
+} from './reactivate-suspended-after-commit.js';
 import { applyOverdueScheduledChangeOnReturn } from './scheduled-change-on-return';
 import type { BeforeCancelNotice } from './start-subscription.service';
 import {
@@ -67,6 +77,8 @@ export type ReactivateSuspendedResult =
            * the clause was not wired or threw (the window-expiry sweep retries it).
            */
           readonly touristVip?: CancelInheritedTouristVipSummary;
+          /** S33's result; absent when S7 did not return the principal to ACTIVE. */
+          readonly complements?: ResumeComplementsSummary;
       }
     | { readonly outcome: 'RETAINED_FOR_S19'; readonly subscriptionId: string }
     | {
@@ -100,6 +112,8 @@ export interface ReactivateSuspendedPorts {
     readonly touristVipInheritance?: TouristVipInheritancePort;
     /** S38's interface (AC:B7:28); defaults to `unimplementedScheduledChangeApplier`. */
     readonly scheduledChangeApplier?: ScheduledChangeApplier;
+    /** S33's complement selection and live-anchor policy; unwired skips resumption. */
+    readonly complements?: ComplementPolicyPorts;
 }
 
 /** The verdict reached inside the row's transaction. */
@@ -110,6 +124,7 @@ type InTransactionVerdict =
           readonly serviceEndsAt: Date | null;
           readonly userId: string | null;
           readonly vertical: string | null;
+          readonly decided?: readonly DecidedComplementCancellation[];
       }
     | {
           readonly kind: 'RETAINED';
@@ -120,79 +135,6 @@ type InTransactionVerdict =
     | { readonly kind: 'FAILED'; readonly failedCondition: LatePaymentFailedCondition }
     | { readonly kind: 'NO_ANCHOR' }
     | { readonly kind: 'LOST_RACE' };
-
-/**
- * Emits `ADDED` once the row's transaction committed (AC:B4:2, G5 `via: "notice"`):
- * the row emits a source again. A notice failure is logged and undoes nothing.
- */
-async function emitAddedAfterCommit(input: {
-    readonly subscriptionId: string;
-    readonly userId: string | null;
-    readonly vertical: string | null;
-    readonly coverageNotices: CoverageNotices;
-}): Promise<void> {
-    const vertical = VerticalEnumSchema.safeParse(input.vertical);
-    if (!input.userId || !vertical.success) {
-        logger.error(
-            { subscriptionId: input.subscriptionId, vertical: input.vertical },
-            'Reactivated subscription has no coverage subject to notify'
-        );
-        return;
-    }
-    try {
-        await input.coverageNotices.emitCoverageChanged({
-            userId: input.userId,
-            vertical: vertical.data,
-            sourceType: 'SUBSCRIPTION',
-            change: 'ADDED'
-        });
-    } catch (error) {
-        logger.error(
-            { subscriptionId: input.subscriptionId, error },
-            'Coverage changed notice failed after reactivation commit'
-        );
-    }
-}
-
-/**
- * The mirror of S2's clause (AC:B7:31): once S7 committed, a plan that grants
- * Tourist VIP again cancels the user's paid Tourist VIP, our email first and no
- * refund. The clause rereads inheritance, the VIP rows and their authorizations
- * itself; nothing decided before S7's transaction is passed in. An unwired port
- * or a failure is logged and undoes nothing: `sweepInheritedTouristVips` retries.
- */
-async function cancelInheritedTouristVipAfterCommit(input: {
-    readonly subscriptionId: string;
-    readonly userId: string | null;
-    readonly ports: ReactivateSuspendedPorts;
-}): Promise<CancelInheritedTouristVipSummary | undefined> {
-    const { ports } = input;
-    if (!input.userId || !ports.beforeCancelNotice || !ports.touristVipInheritance) {
-        logger.warn(
-            { subscriptionId: input.subscriptionId, userId: input.userId },
-            'Tourist VIP clause not wired; the window-expiry sweep retries'
-        );
-        return undefined;
-    }
-    try {
-        return await cancelInheritedTouristVips(
-            { userId: input.userId },
-            {
-                provider: ports.provider,
-                clock: ports.clock,
-                beforeCancelNotice: ports.beforeCancelNotice,
-                touristVipInheritance: ports.touristVipInheritance,
-                coverageNotices: ports.coverageNotices
-            }
-        );
-    } catch (error) {
-        logger.error(
-            { subscriptionId: input.subscriptionId, error },
-            'Inherited Tourist VIP cancellation will be retried'
-        );
-        return undefined;
-    }
-}
 
 /**
  * S7 (AC:B7:13): a credited payment returns a `SUSPENDED` card principal to
@@ -389,12 +331,22 @@ export async function reactivateSuspendedOnCreditedPayment(
                     ports.scheduledChangeApplier ?? unimplementedScheduledChangeApplier
             }
         );
+        const decided =
+            destination === 'CANCEL_SCHEDULED' && ports.complements
+                ? (
+                      await cancelComplementsByS11Rule(
+                          { tx, principalSubscriptionId: subscriptionId, now: ports.clock.now() },
+                          ports.complements
+                      )
+                  ).decided
+                : undefined;
         return {
             kind: 'WRITTEN',
             destination,
             serviceEndsAt,
             userId: updated.userId,
-            vertical: updated.vertical
+            vertical: updated.vertical,
+            ...(decided ? { decided } : {})
         };
     });
 
@@ -456,12 +408,44 @@ export async function reactivateSuspendedOnCreditedPayment(
                 userId: verdict.userId,
                 ports
             });
+            if (verdict.destination === 'CANCEL_SCHEDULED')
+                await cancelScheduledComplementsAfterCommit({
+                    subscriptionId,
+                    decided: verdict.decided,
+                    ports
+                });
+            let complements: ResumeComplementsSummary | undefined;
+            if (verdict.destination === 'ACTIVE') {
+                if (ports.complements) {
+                    try {
+                        complements = await resumeComplementsS33(
+                            {
+                                principalSubscriptionId: subscriptionId,
+                                trigger: 'PRINCIPAL_ACTIVE'
+                            },
+                            {
+                                provider: ports.provider,
+                                clock: ports.clock,
+                                policy: ports.complements
+                            }
+                        );
+                    } catch (error) {
+                        logger.error(
+                            { subscriptionId, error },
+                            'S33 failed after S7; principal remains reactivated'
+                        );
+                    }
+                } else {
+                    logger.warn({ subscriptionId }, 'S33 complement ports are not wired');
+                }
+            }
             return {
                 outcome: 'REACTIVATED',
                 subscriptionId,
                 destination: verdict.destination,
                 serviceEndsAt: verdict.serviceEndsAt,
-                ...(touristVip ? { touristVip } : {})
+                ...(touristVip ? { touristVip } : {}),
+                ...(complements ? { complements } : {})
             };
         }
         default: {

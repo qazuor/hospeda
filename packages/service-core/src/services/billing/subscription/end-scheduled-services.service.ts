@@ -29,6 +29,7 @@ import {
 } from '../addon/addon-instance-a5';
 import type { AddonOrphanhoodPorts } from '../addon/addon-orphanhood-ports';
 import type { CoverageNotices } from '../payment/payment-ports';
+import { pauseComplementsS32 } from './complement-pause-s32.js';
 import {
     applyS12ToComplement,
     applyS12ToPrincipal,
@@ -217,6 +218,28 @@ export async function endScheduledServices(
                     coverageNotices: ports.coverageNotices
                 });
                 await afterA5Commit(result.cancelled, ports);
+                try {
+                    await pauseComplementsS32(
+                        {
+                            principalSubscriptionId: subscriptionId,
+                            trigger: 'PRINCIPAL_LEFT_LIVE_ROWS'
+                        },
+                        {
+                            provider: ports.provider,
+                            clock: ports.clock,
+                            policy: {
+                                addonPolicy: ports.addonPolicy,
+                                listing: ports.listing,
+                                liveAnchors: ports.liveAnchors
+                            }
+                        }
+                    );
+                } catch (error) {
+                    logger.error(
+                        { subscriptionId, error },
+                        'S32 failed after S12 ended a principal'
+                    );
+                }
             }
             rows.push({
                 subscriptionId,
