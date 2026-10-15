@@ -34,6 +34,7 @@ import {
     routeFake,
     seedCardRevocable,
     seedManualPayment,
+    seedOneTimeOrphan,
     seedPrincipal,
     seedRevocable,
     seedUser,
@@ -186,6 +187,7 @@ describe('TEST:B5:11 AC:B5:20 AC:B5:21 the revocation by admin action 8', () => 
                     motive: 'REVOCATION',
                     subjectId: seeded.ownerId,
                     origin: 'ACTIVE',
+                    orphanedAddonIds: [],
                     refundId: body.refundId,
                     paymentId: seeded.paymentId,
                     refundAmount: OPTION_AMOUNT,
@@ -298,6 +300,26 @@ describe('TEST:B5:11 AC:B5:20 every outcome of the provider half answers a valid
         expect(response.status).toBe(200);
         return SubscriptionRevocationResponseSchema.parse((await response.json()).data);
     }
+
+    it('TEST:B5:12 AC:B5:24 keeps the response schema and audits orphaned addon ids', async () => {
+        const seeded = await seedRevocable();
+        const addon = await seedOneTimeOrphan({
+            ownerId: seeded.ownerId,
+            principalId: seeded.subscriptionId
+        });
+        const response = await revoke(seeded.subscriptionId, {
+            expectedPaymentId: seeded.paymentId
+        });
+        expect(response.status).toBe(200);
+        const body = SubscriptionRevocationResponseSchema.parse((await response.json()).data);
+        expect(body).toMatchObject({ subscriptionId: seeded.subscriptionId, status: 'CANCELLED' });
+        expect(audit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                auditEvent: AuditEventType.BILLING_MUTATION,
+                metadata: expect.objectContaining({ orphanedAddonIds: [addon.instanceId] })
+            })
+        );
+    });
 
     it('(g) NOT_APPLICABLE: a row without provider link', async () => {
         const seeded = await seedRevocable();
