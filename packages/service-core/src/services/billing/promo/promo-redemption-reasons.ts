@@ -1,3 +1,7 @@
+/**
+ * Discarded-reason constants for promo redemption rejections. Values are stable,
+ * short, UPPER_SNAKE_CASE strings that map 1:1 to HTTP 4xx bodies in the API layer.
+ */
 export const PromoRedemptionReason = {
     PROMO_CODE_NOT_FOUND: 'PROMO_CODE_NOT_FOUND',
     PROMO_CODE_NOT_A_TRIAL_EXTENSION: 'PROMO_CODE_NOT_A_TRIAL_EXTENSION',
@@ -15,5 +19,9 @@ export const PromoRedemptionReason = {
     REDEMPTION_KEY_CONFLICT: 'REDEMPTION_KEY_CONFLICT'
 } as const;
 
+/**
+ * A discriminated union of all promo redemption rejection reason codes.
+ * Derived from `PromoRedemptionReason` to preserve exhaustiveness across the codebase.
+ */
 export type PromoRedemptionReason =
     (typeof PromoRedemptionReason)[keyof typeof PromoRedemptionReason];

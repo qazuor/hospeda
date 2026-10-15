@@ -22,6 +22,24 @@ import {
 
 const logger = createLogger('redeem-discount-code');
 
+/**
+ * Redeems a discount promo code: validates the code and subscription, composes the
+ * applied amount, asserts it meets the provider floor, mutates the MercadoPago
+ * preapproval, and records the redemption.
+ *
+ * Runs inside a single database transaction that locks the promo code, the subscription,
+ * and the redemption uniqueness constraint in order.
+ *
+ * @param input - The user id, promo code string, and vertical.
+ * @param ports - The payment provider and a wall-clock for activity timestamps.
+ * @returns The redemption id, the amount before and after the promo, currency, duration kind,
+ *   and the remaining charges for multi-cycle discounts.
+ * @throws ServiceError NOT_FOUND `PROMO_CODE_NOT_FOUND` when the code does not exist;
+ *   ALREADY_EXISTS `PROMO_NOT_COMBINABLE` | `PROMO_CODE_ALREADY_REDEEMED` when stacking is
+ *   forbidden or the user already redeemed the code; VALIDATION_ERROR `PROMO_UNSUPPORTED_CURRENCY`
+ *   when the subscription is not in ARS; INTERNAL_ERROR `PROMO_MUTATION_NOT_APPLIED` when the
+ *   provider rejects the amount change, or when the billing anchor / billing option is missing.
+ */
 export async function redeemDiscountCode(
     input: { readonly userId: string; readonly code: string; readonly vertical: string },
     ports: { readonly provider: PaymentProvider; readonly clock: Clock }

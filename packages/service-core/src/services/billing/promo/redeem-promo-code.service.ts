@@ -24,7 +24,19 @@ function isPromoEffectKind(value: string): value is PromoEffectKind {
     return PROMO_EFFECT_KINDS.some((kind) => kind === value);
 }
 
-/** Dispatches a promo redemption to the service for its persisted effect kind. */
+/**
+ * Dispatches a promo code redemption to the service matching its persisted `effectKind`.
+ * Resolves the promo row, classifies the effect, and delegates to the correct handler
+ * (discount or trial extension).
+ *
+ * Does not hold a database transaction — each handler opens its own boundary.
+ *
+ * @param input - The user id, promo code string, and vertical.
+ * @param ports - The payment provider, wall-clock, and vertical trial-extension port.
+ * @returns The typed redemption result (discount or trial extension).
+ * @throws ServiceError NOT_FOUND `PROMO_CODE_NOT_FOUND` when the code does not exist;
+ *   INTERNAL_ERROR when the effect kind is unrecognised.
+ */
 export async function redeemPromoCode(
     input: { readonly userId: string; readonly code: string; readonly vertical: Vertical },
     ports: {

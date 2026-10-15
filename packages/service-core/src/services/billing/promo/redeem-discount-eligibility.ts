@@ -16,6 +16,15 @@ function fail(reason: string, code = ServiceErrorCode.VALIDATION_ERROR): never {
     throw new ServiceError(code, reason, undefined, reason);
 }
 
+/**
+ * Reads a promo code by its code string, validates its discount kind, and returns
+ * the code row enriched with typed discount and duration fields.
+ * @param input - The transaction, code, and vertical to look up.
+ * @returns The promo code with resolved `discountKind` and `durationKind`.
+ * @throws ServiceError NOT_FOUND `PROMO_CODE_NOT_FOUND` when the code does not exist;
+ *   INTERNAL_ERROR when the code is not a discount, has an invalid kind, a null value,
+ *   an invalid duration kind, or is not valid for the requested vertical.
+ */
 export async function readPromoCode(input: { tx: DrizzleClient; code: string; vertical: string }) {
     const [promo] = await input.tx
         .select()
@@ -57,6 +66,15 @@ export async function readPromoCode(input: { tx: DrizzleClient; code: string; ve
     };
 }
 
+/**
+ * Reads the active principal subscription for the user and vertical, locks it
+ * `FOR UPDATE`, and rejects manual payers or subscriptions with pending changes.
+ * @param input - The transaction, user id, and vertical.
+ * @returns The subscription row and its provider link id.
+ * @throws ServiceError VALIDATION_ERROR `PROMO_NO_ELIGIBLE_SUBSCRIPTION` when no
+ *   matching subscription exists or it has scheduled changes;
+ *   `PROMO_NOT_OFFERED_TO_MANUAL_PAYER` when the payment method is manual.
+ */
 export async function readEligibleSubscription(input: {
     tx: DrizzleClient;
     userId: string;
@@ -91,6 +109,12 @@ export async function readEligibleSubscription(input: {
     return { ...row.subscription, providerId: row.providerId };
 }
 
+/**
+ * Asserts that the user has not already redeemed the given promo code.
+ * @param input - The transaction, promo code id, and user id.
+ * @throws ServiceError ALREADY_EXISTS `PROMO_CODE_ALREADY_REDEEMED` when a redemption
+ *   row already exists for the pair.
+ */
 export async function assertNotRedeemed(input: {
     tx: DrizzleClient;
     promoCodeId: string;
