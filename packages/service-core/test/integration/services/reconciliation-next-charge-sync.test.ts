@@ -1,3 +1,4 @@
+import type { Clock } from '@repo/billing-verticals-contract';
 import { eq, providerLinks, reconciliationMarkModel, subscriptions } from '@repo/db';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createNextChargeSync } from '../../../src/services/billing/reconciliation/sweep/next-charge-sync.js';
@@ -33,14 +34,15 @@ function track(row: {
 
 async function sweep(
     provider: ReturnType<typeof createReconciliationFake>['provider'],
-    rowCheck: ReconciliationRowCheck = createNextChargeSync()
+    rowCheck: ReconciliationRowCheck = createNextChargeSync(),
+    clock: Clock = reconciliationClock
 ) {
     return withSeededReconciliationInventory(() =>
         runReconciliationSweep(
             {},
             {
                 provider,
-                clock: reconciliationClock,
+                clock,
                 rowChecks: [rowCheck]
             }
         )
@@ -114,15 +116,22 @@ describe('TEST:1685:4 the sweep copies the provider next payment date', () => {
     });
 
     it('updates after a provider move and leaves updated_at untouched on an unchanged third run', async () => {
-        const row = await linkedActive();
-        await sweep(row.provider);
+        let instant = new Date('2026-10-11T12:00:00.000Z');
+        const clock = { now: () => new Date(instant) };
+        const { fake, provider } = createReconciliationFake(clock);
+        const seeded = await seedSubscription({ status: 'ACTIVE', withLink: true, fake });
+        track(seeded);
+        if (!seeded.providerId) throw new Error('Provider fixture has no authorization id');
+        await sweep(provider, createNextChargeSync(), clock);
         const firstMove = new Date('2026-10-18T15:00:00.000Z');
-        row.fake.moveNextCharge({ authorizationId: row.providerId, at: firstMove });
-        await sweep(row.provider);
-        expect(await readNextChargeAt(row.subscription.id)).toEqual(firstMove);
-        const before = await readSubscriptionUpdatedAt(row.subscription.id);
-        await sweep(row.provider);
-        expect(await readSubscriptionUpdatedAt(row.subscription.id)).toEqual(before);
+        fake.moveNextCharge({ authorizationId: seeded.providerId, at: firstMove });
+        instant = new Date(instant.getTime() + 1_000);
+        await sweep(provider, createNextChargeSync(), clock);
+        expect(await readNextChargeAt(seeded.subscription.id)).toEqual(firstMove);
+        const before = await readSubscriptionUpdatedAt(seeded.subscription.id);
+        instant = new Date(instant.getTime() + 1_000);
+        await sweep(provider, createNextChargeSync(), clock);
+        expect(await readSubscriptionUpdatedAt(seeded.subscription.id)).toEqual(before);
     });
 
     it.each([
