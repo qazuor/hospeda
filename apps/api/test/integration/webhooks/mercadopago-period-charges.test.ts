@@ -160,6 +160,9 @@ describe('HOS-1669 TEST:1669:4 AC:1669:4 — S6 decide el grace vencido por HTTP
 
         const charged = await activate();
         await recordCreditedCycle(charged);
+        // Start a new billing period: a second charge in the already credited
+        // period cannot satisfy S5 condition 4.
+        fixture.clock.advance({ ms: 31 * DAY });
         const nextPaid = await fixture.fake.charge({
             authorizationId: charged.authorizationId,
             amount: { amountMinor: 100000, currency: 'ARS' },

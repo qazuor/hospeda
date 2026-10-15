@@ -203,7 +203,7 @@ describe('HOS-1669 TEST:1669:5 AC:B7:9 — S6 distingue el período cobrado del 
         ).toBe('cancelled');
     });
 
-    it('expired grace cancelled is processed without mirroring to CANCELLED', async () => {
+    it('expired grace is suspended when the provider already cancelled it', async () => {
         const created = await activeSignup();
         await getDb()
             .update(subscriptions)
@@ -222,7 +222,7 @@ describe('HOS-1669 TEST:1669:5 AC:B7:9 — S6 distingue el período cobrado del 
             .select({ status: subscriptions.status })
             .from(subscriptions)
             .where(eq(subscriptions.id, created.subscriptionId));
-        expect(row?.status).toBe('GRACE_PERIOD');
+        expect(row?.status).toBe('SUSPENDED');
         const events = await getDb()
             .select({ eventType: domainEvent.eventType })
             .from(domainEvent)
