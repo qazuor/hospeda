@@ -3,7 +3,9 @@ import { ServiceError } from '../../../types/index.js';
 import { PromoRedemptionReason } from './promo-redemption-reasons.js';
 
 /** RP:RP3 / B/14 §1.3 PC-2: Mercado Pago's measured ARS 15 floor. */
-export const PROVIDER_AMOUNT_FLOOR_MINOR = 1_500;
+const RP3_FLOOR = 1_500;
+
+export const PROVIDER_AMOUNT_FLOOR_MINOR = RP3_FLOOR;
 
 export function assertAboveProviderFloor(input: { readonly amountMinor: number }): void {
     if (input.amountMinor < PROVIDER_AMOUNT_FLOOR_MINOR) {
