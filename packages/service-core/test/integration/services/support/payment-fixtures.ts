@@ -41,12 +41,15 @@ export async function paymentFixture({
     honestM8 = true,
     withoutRP12 = true,
     inheritsTouristVip = false,
+    versionGraceDays,
     simulate
 }: {
     readonly honestM8?: boolean;
     readonly withoutRP12?: boolean;
     /** Whether the seeded plan version inherits Tourist VIP (AC:B7:30); `false` by default. */
     readonly inheritsTouristVip?: boolean;
+    /** Optional version value for contract-backed grace clock tests. */
+    readonly versionGraceDays?: number;
     readonly simulate?: readonly {
         readonly simulation: 'noticesOutOfOrder';
         readonly why: string;
@@ -74,12 +77,18 @@ export async function paymentFixture({
         )
     ).rows[0]?.id;
     if (!planId) throw new Error('payment fixture plan missing');
-    const versionId = (
-        await getServiceTestPool().query<{ id: string }>(
-            "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip) VALUES ($1, 'accommodation', $2, true, true, 0, false, $3) RETURNING id",
-            [planId, Math.floor(Math.random() * 1_000_000_000), inheritsTouristVip]
-        )
-    ).rows[0]?.id;
+    const rank = Math.floor(Math.random() * 1_000_000_000);
+    const versionQuery =
+        versionGraceDays === undefined
+            ? await getServiceTestPool().query<{ id: string }>(
+                  "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip) VALUES ($1, 'accommodation', $2, true, true, 0, false, $3) RETURNING id",
+                  [planId, rank, inheritsTouristVip]
+              )
+            : await getServiceTestPool().query<{ id: string }>(
+                  "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip, grace_days) VALUES ($1, 'accommodation', $2, true, true, 0, false, $3, $4) RETURNING id",
+                  [planId, rank, inheritsTouristVip, versionGraceDays]
+              );
+    const versionId = versionQuery.rows[0]?.id;
     if (!versionId) throw new Error('payment fixture version missing');
     const optionId = (
         await getServiceTestPool().query<{ id: string }>(

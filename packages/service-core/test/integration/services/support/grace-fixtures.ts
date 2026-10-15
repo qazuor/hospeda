@@ -1,3 +1,4 @@
+import type { VerticalsForBilling } from '@repo/billing-verticals-contract';
 import { vi } from 'vitest';
 import { creditedPaymentsFromLedger } from '../../../../src/services/billing/payment/payment-ledger.js';
 import { recordChargeFact } from '../../../../src/services/billing/payment/record-charge-fact.service.js';
@@ -10,12 +11,16 @@ const DAY_MS = 86_400_000;
 /** Builds a paid ACTIVE card subscription and moves its clock to the next cycle. */
 export async function graceFixture({
     graceDays = 7,
-    inheritsTouristVip = false
+    inheritsTouristVip = false,
+    versionGraceDays,
+    planPolicy
 }: {
     readonly graceDays?: number;
     readonly inheritsTouristVip?: boolean;
+    readonly versionGraceDays?: number;
+    readonly planPolicy?: VerticalsForBilling['planPolicy'];
 } = {}) {
-    const fixture = await paymentFixture({ inheritsTouristVip });
+    const fixture = await paymentFixture({ inheritsTouristVip, versionGraceDays });
     const initialCharge = await fixture.provider.charge({
         authorizationId: fixture.started.authorizationId,
         amount: { amountMinor: 250000, currency: 'ARS' },
@@ -35,13 +40,17 @@ export async function graceFixture({
         throw new Error(`Expected fixture charge to be credited, got ${credited.outcome}`);
 
     fixture.clock.advance({ ms: 31 * DAY_MS });
-    const planPolicy = vi.fn(async () => ({
+    const defaultPlanPolicy = vi.fn(async () => ({
         graceDays,
         allowsPause: false,
         current: true,
         sellable: true
     }));
-    return { ...fixture, initialChargeId: initialCharge.chargeId, planPolicy };
+    return {
+        ...fixture,
+        initialChargeId: initialCharge.chargeId,
+        planPolicy: planPolicy ?? defaultPlanPolicy
+    };
 }
 
 /**
@@ -52,15 +61,24 @@ export async function graceWithFailedCycle({
     graceDays = 7,
     approveOnAttempt,
     beforeS4,
-    inheritsTouristVip = false
+    inheritsTouristVip = false,
+    versionGraceDays,
+    planPolicy
 }: {
     readonly graceDays?: number;
     /** Whether the seeded plan version inherits Tourist VIP (AC:B7:30); `false` by default. */
     readonly inheritsTouristVip?: boolean;
+    readonly versionGraceDays?: number;
+    readonly planPolicy?: VerticalsForBilling['planPolicy'];
     readonly approveOnAttempt?: 2 | 3 | 4;
     readonly beforeS4?: (fixture: Awaited<ReturnType<typeof graceFixture>>) => Promise<void>;
 } = {}) {
-    const fixture = await graceFixture({ graceDays, inheritsTouristVip });
+    const fixture = await graceFixture({
+        graceDays,
+        inheritsTouristVip,
+        versionGraceDays,
+        planPolicy
+    });
     const { chargeId } = await fixture.provider.failChargeCycle({
         authorizationId: fixture.started.authorizationId,
         declineReason: 'issuer_declined',
