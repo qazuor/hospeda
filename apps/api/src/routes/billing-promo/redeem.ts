@@ -121,6 +121,9 @@ export const protectedRedeemPromoCodeRoute = createProtectedRoute({
                     mapped.status
                 );
             }
+            if (result.kind === 'TRIAL_EXTENSION') {
+                return { kind: result.kind, days: result.days, replay: result.replay };
+            }
             return result;
         } catch (error) {
             if (

@@ -35,7 +35,7 @@ function headers(actorId: string) {
     };
 }
 
-async function seedExpiredTrialExtension() {
+async function seedExpiredTrialExtension(endsAt = new Date(now.getTime() - 86_400_000)) {
     const db = getDb();
     const [user] = await db
         .insert(users)
@@ -103,7 +103,7 @@ async function seedExpiredTrialExtension() {
             floorLimitsVersionId: version.id,
             floorTrialPlanVersionId: version.id,
             startedAt: new Date(now.getTime() - 10 * 86_400_000),
-            endsAt: new Date(now.getTime() - 86_400_000),
+            endsAt,
             emailPseudonym: randomUUID().replaceAll('-', '') + randomUUID().replaceAll('-', ''),
             deadlinesVersion: 1
         })
@@ -147,6 +147,91 @@ beforeAll(async () => {
 afterAll(async () => testDb.teardown());
 
 describe('TEST:B9b:6 AC:B9b:6 the redeem route extends a real trial', () => {
+    it('extends a real trial through T4 and replays without extending or consuming twice', async () => {
+        await testDb.withRollback(async (tx) => {
+            const runtimeDb = getDb();
+            setDb(tx);
+            try {
+                const initialEndsAt = new Date(now.getTime() + 10 * 86_400_000);
+                const { code } = await seedExpiredTrialExtension(initialEndsAt);
+                injectPaymentProvider({
+                    provider: new FakePaymentProvider({
+                        clock: { now: () => now },
+                        idNamespace: randomUUID()
+                    })
+                });
+                const redeem = () =>
+                    app.request(path, {
+                        method: 'POST',
+                        headers: headers(userId!),
+                        body: JSON.stringify({ code, vertical: 'accommodation' })
+                    });
+
+                const first = await redeem();
+                expect(first.status).toBe(200);
+                expect(await first.json()).toMatchObject({
+                    success: true,
+                    data: {
+                        kind: 'TRIAL_EXTENSION',
+                        days: 5,
+                        replay: false
+                    }
+                });
+                const [extendedTrial] = await getDb()
+                    .select({ endsAt: trials.endsAt })
+                    .from(trials)
+                    .where(eq(trials.userId, userId!));
+                expect(extendedTrial?.endsAt?.getTime()).toBe(
+                    initialEndsAt.getTime() + 5 * 86_400_000
+                );
+                expect(
+                    await getDb()
+                        .select()
+                        .from(trialRedemptions)
+                        .where(eq(trialRedemptions.userId, userId!))
+                ).toHaveLength(1);
+                expect(
+                    await getDb()
+                        .select()
+                        .from(promoRedemptions)
+                        .where(eq(promoRedemptions.promoCodeId, promoCodeId!))
+                ).toHaveLength(1);
+
+                const replay = await redeem();
+                expect(replay.status).toBe(200);
+                expect(await replay.json()).toMatchObject({
+                    success: true,
+                    data: {
+                        kind: 'TRIAL_EXTENSION',
+                        days: 5,
+                        replay: true
+                    }
+                });
+                const [replayedTrial] = await getDb()
+                    .select({ endsAt: trials.endsAt })
+                    .from(trials)
+                    .where(eq(trials.userId, userId!));
+                expect(replayedTrial?.endsAt?.getTime()).toBe(
+                    initialEndsAt.getTime() + 5 * 86_400_000
+                );
+                expect(
+                    await getDb()
+                        .select()
+                        .from(trialRedemptions)
+                        .where(eq(trialRedemptions.userId, userId!))
+                ).toHaveLength(1);
+                expect(
+                    await getDb()
+                        .select()
+                        .from(promoRedemptions)
+                        .where(eq(promoRedemptions.promoCodeId, promoCodeId!))
+                ).toHaveLength(1);
+            } finally {
+                setDb(runtimeDb);
+            }
+        });
+    });
+
     it('returns TRIAL_ENDED and leaves the extension code unconsumed', async () => {
         await testDb.withRollback(async (tx) => {
             const runtimeDb = getDb();
