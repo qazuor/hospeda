@@ -4,7 +4,6 @@ import {
     domainEventModel,
     eq,
     payments,
-    promoCodes,
     promoRedemptions,
     providerLinks,
     reconciliationMarkModel,
@@ -34,11 +33,11 @@ import {
     unknownCharge
 } from './reconciliation-tombstone-fixtures.js';
 import { seedDifferentScheduledAmount } from './support/period-comparison-fixtures.js';
+import { retirePromoFixtures, seedPromoRedemption } from './support/promo-fixtures.js';
 
 afterAll(closeServiceTestPool);
 beforeEach(resetSeededReconciliationInventory);
 const owned: Array<{ readonly subscriptionId: string; readonly userId: string }> = [];
-const promoCodeIds: string[] = [];
 
 function track(subscriptionId: string, userId: string | null): void {
     if (!userId) throw new Error('Fixture subscription has no user');
@@ -89,8 +88,7 @@ afterEach(async () => {
                 .where(eq(subscriptions.id, row.subscriptionId));
         }
     }
-    for (const codeId of promoCodeIds.splice(0))
-        await db.delete(promoCodes).where(eq(promoCodes.id, codeId));
+    await retirePromoFixtures();
 });
 
 function adjustableClock() {
@@ -210,57 +208,69 @@ describe('TEST:B11:8 AC:B11:9 the amount comparison: a divergence appears withou
         ).toMatchObject({ marksOpened: 0, rowsFailed: 0 });
     });
 
-    it('(h) fails visibly for a live redemption instead of comparing list price', async () => {
-        const { fake } = {
-            fake: new FakePaymentProvider({
-                idNamespace: crypto.randomUUID(),
-                clock: reconciliationClock
-            })
-        };
-        const seeded = await seedSubscription({ status: 'ACTIVE', withLink: true, fake });
-        track(seeded.subscription.id, seeded.subscription.userId);
-        const [user] = await getServiceTestDb()
-            .select({ userId: subscriptions.userId })
-            .from(subscriptions)
-            .where(eq(subscriptions.id, seeded.subscription.id));
-        const [code] = await getServiceTestDb()
-            .insert(promoCodes)
-            .values({
-                code: `AMOUNT-${crypto.randomUUID()}`,
-                discountKind: 'FIXED',
-                value: 5000,
-                allVerticals: true,
-                verticals: null,
-                totalQuota: 5,
-                validFrom: new Date('2026-01-01T00:00:00.000Z'),
-                validUntil: new Date('2027-01-01T00:00:00.000Z'),
-                stackable: false,
-                usableWithAnotherActive: false,
-                durationKind: 'N_CHARGES',
-                durationCharges: 2
-            })
-            .returning();
-        if (!code || !user?.userId) throw new Error('Promo fixture failed');
-        promoCodeIds.push(code.id);
-        await getServiceTestDb().insert(promoRedemptions).values({
-            promoCodeId: code.id,
-            userId: user.userId,
-            redeemedAt: reconciliationClock.now(),
-            subscriptionId: seeded.subscription.id,
+    it('TEST:B9b:1 AC:B9b:1 (h) composes a live fixed redemption before comparing the authorization amount', async () => {
+        const mismatched = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
+            clock: reconciliationClock
+        });
+        const fullPrice = await seedSubscription({
+            status: 'ACTIVE',
+            withLink: true,
+            fake: mismatched
+        });
+        track(fullPrice.subscription.id, fullPrice.subscription.userId);
+        await seedPromoRedemption({
+            subscriptionId: fullPrice.subscription.id,
+            userId: fullPrice.subscription.userId!,
+            discountKind: 'FIXED',
+            value: 5_000,
             remainingCharges: 2
         });
-        const summary = await sweep({
-            fake,
-            clock: reconciliationClock,
-            subscriptionId: seeded.subscription.id
-        });
-        expect(summary).toMatchObject({ rowsFailed: 1, marksOpened: 0, pinged: false });
-        expect(summary.failures[0]?.message).toContain(
-            'Expected amount needs the promo composition of B9b'
-        );
+        expect(
+            await sweep({
+                fake: mismatched,
+                clock: reconciliationClock,
+                subscriptionId: fullPrice.subscription.id
+            })
+        ).toMatchObject({ marksOpened: 1, rowsFailed: 0 });
         expect(
             await reconciliationMarkModel.listOpen({
-                subject: { kind: 'SUBSCRIPTION', subscriptionId: seeded.subscription.id }
+                subject: { kind: 'SUBSCRIPTION', subscriptionId: fullPrice.subscription.id }
+            })
+        ).toMatchObject([{ reason: 'DIVERGENCIA_DE_MONTO' }]);
+
+        resetSeededReconciliationInventory();
+        const matching = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
+            clock: reconciliationClock
+        });
+        const discounted = await seedSubscription({
+            status: 'ACTIVE',
+            withLink: true,
+            fake: matching
+        });
+        track(discounted.subscription.id, discounted.subscription.userId);
+        await seedPromoRedemption({
+            subscriptionId: discounted.subscription.id,
+            userId: discounted.subscription.userId!,
+            discountKind: 'FIXED',
+            value: 5_000,
+            remainingCharges: 2
+        });
+        await matching.changeAmount({
+            authorizationId: discounted.providerId!,
+            amount: { amountMinor: 245_000, currency: 'ARS' }
+        });
+        expect(
+            await sweep({
+                fake: matching,
+                clock: reconciliationClock,
+                subscriptionId: discounted.subscription.id
+            })
+        ).toMatchObject({ marksOpened: 0, rowsFailed: 0 });
+        expect(
+            await reconciliationMarkModel.listOpen({
+                subject: { kind: 'SUBSCRIPTION', subscriptionId: discounted.subscription.id }
             })
         ).toEqual([]);
     });
