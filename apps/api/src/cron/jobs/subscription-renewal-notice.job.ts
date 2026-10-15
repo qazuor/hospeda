@@ -3,8 +3,8 @@ import { getClock } from '../../utils/clock.js';
 import type { CronJobDefinition } from '../types.js';
 
 /**
- * Runs at 09:00 AR after the 06:00 sweep. Without a writer for `next_charge_at`,
- * the service finds no rows (H-1).
+ * The 06:00 reconciliation sweep copies `next_charge_at` from Mercado Pago (HOS-1685);
+ * this 09:00 cron reads that value to enqueue renewal notices.
  */
 export const subscriptionRenewalNoticeJob: CronJobDefinition = {
     name: 'subscription-renewal-notice',

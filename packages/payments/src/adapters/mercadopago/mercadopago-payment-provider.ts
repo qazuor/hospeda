@@ -96,8 +96,15 @@ const ReadResponseSchema = z.object({
             last_charged_date: z.string().nullable().optional()
         })
         .optional(),
-    last_modified: z.string().nullable().optional()
+    last_modified: z.string().nullable().optional(),
+    next_payment_date: z.string().nullable().optional()
 });
+
+/** Convert a provider date to an ISO UTC instant, tolerating invalid values. */
+function toIsoInstant({ value }: { readonly value: string | null | undefined }): string | null {
+    if (value == null || Number.isNaN(Date.parse(value))) return null;
+    return new Date(value).toISOString();
+}
 const ReadChargeResponseSchema = z.object({
     id: z.union([z.string(), z.number()]).transform(String),
     date_created: z.string().datetime({ offset: true }),
@@ -318,6 +325,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
                 },
                 cadence: { everyMonths: parsed.auto_recurring.frequency },
                 firstChargeAt: parsed.auto_recurring.start_date ?? null,
+                nextChargeAt: toIsoInstant({ value: parsed.next_payment_date }),
                 freePeriodDays: parsed.auto_recurring.free_trial?.frequency ?? null,
                 chargeRecordCount: parsed.summarized?.charged_quantity ?? null,
                 lastChargedAt: parsed.summarized?.last_charged_date ?? null,
