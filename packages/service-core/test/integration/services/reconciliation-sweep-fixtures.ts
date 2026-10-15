@@ -112,7 +112,10 @@ export function createReconciliationFake(clock = reconciliationClock) {
     return { fake, provider: fake as unknown as PaymentProvider };
 }
 
-async function anchors(vertical: 'accommodation' | 'tourist' = 'accommodation') {
+async function anchors(
+    vertical: 'accommodation' | 'tourist' = 'accommodation',
+    amountMinor = 250000
+) {
     const db = getServiceTestDb();
     const userIds: string[] = [];
     await db
@@ -146,8 +149,8 @@ async function anchors(vertical: 'accommodation' | 'tourist' = 'accommodation') 
     if (!versionId) throw new Error('No plan version was seeded');
     const optionId = (
         await getServiceTestPool().query<{ id: string }>(
-            "INSERT INTO billing_option (plan_version_id, cycle, amount, currency) VALUES ($1, 'monthly', 250000, 'ARS') RETURNING id",
-            [versionId]
+            "INSERT INTO billing_option (plan_version_id, cycle, amount, currency) VALUES ($1, 'monthly', $2, 'ARS') RETURNING id",
+            [versionId, amountMinor]
         )
     ).rows[0]?.id;
     if (!optionId) throw new Error('No billing option was seeded');
@@ -162,9 +165,11 @@ export async function seedSubscription(
         withLink?: boolean;
         fake?: FakePaymentProvider;
         vertical?: 'accommodation' | 'tourist';
+        amountMinor?: number;
     } = {}
 ) {
-    const choice = await anchors(options.vertical);
+    const amountMinor = options.amountMinor ?? 250000;
+    const choice = await anchors(options.vertical, amountMinor);
     const pending = await subscriptionModel.createPendingAuthorization({
         userId: choice.userId,
         vertical: options.vertical ?? 'accommodation',
@@ -190,7 +195,7 @@ export async function seedSubscription(
         if (!options.fake) throw new Error('A fake provider is required for linked rows');
         const auth = await options.fake.authorize({
             reference: id,
-            amount: { amountMinor: 250000, currency: 'ARS' },
+            amount: { amountMinor, currency: 'ARS' },
             cadence: { everyMonths: 1 },
             reason: 'reconciliation integration fixture',
             returnUrl: 'https://example.test/return',

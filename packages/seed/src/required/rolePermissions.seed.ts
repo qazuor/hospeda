@@ -361,6 +361,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_SETTLE_EXTERNAL,
         // HOS-1543: action 8 (cancel a subscription; with the revocation motive it runs S36) — SUPER_ADMIN-only.
         PermissionEnum.BILLING_CANCEL_SUBSCRIPTION,
+        // SUPER_ADMIN-only (V5.6).
+        PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE,
+        PermissionEnum.BILLING_GRANT_COMPLIMENTARY,
         PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF,
 

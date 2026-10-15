@@ -79,6 +79,25 @@ are evaluated for that owner. V5.7 adds `UNAUTHENTICATED` as 401 `UNAUTHORIZED`.
 
 ## Five rules
 
+### Promo code redemption
+
+| `error.reason` | Status | `error.code` |
+|---|---:|---|
+| `PROMO_CODE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `PROMO_CODE_NOT_A_TRIAL_EXTENSION` | 422 | `VALIDATION_ERROR` |
+| `PROMO_CODE_NOT_FOR_VERTICAL` | 422 | `VALIDATION_ERROR` |
+| `PROMO_NO_ELIGIBLE_SUBSCRIPTION` | 422 | `VALIDATION_ERROR` |
+| `PROMO_NOT_OFFERED_TO_MANUAL_PAYER` | 422 | `VALIDATION_ERROR` |
+| `PROMO_CODE_ALREADY_REDEEMED` | 409 | `ALREADY_EXISTS` |
+| `PROMO_NOT_COMBINABLE` | 409 | `ALREADY_EXISTS` |
+| `PROMO_UNSUPPORTED_CURRENCY` | 422 | `VALIDATION_ERROR` |
+| `PROMO_BELOW_PROVIDER_MINIMUM` | 422 | `VALIDATION_ERROR` |
+| `PROMO_MUTATION_NOT_APPLIED` | 500 | `INTERNAL_ERROR` |
+| `NO_TRIAL` | 422 | `VALIDATION_ERROR` |
+| `TRIAL_ENDED` | 422 | `VALIDATION_ERROR` |
+| `CEILING_REACHED` | 422 | `VALIDATION_ERROR` |
+| `REDEMPTION_KEY_CONFLICT` | 409 | `ALREADY_EXISTS` |
+
 ### R1 — `INTERNAL_ERROR` belongs to 5xx alone
 
 A 4xx labelled `INTERNAL_ERROR` tells the client the failure is ours and worth a
@@ -454,6 +473,23 @@ permission, so a `POST` without a valid body answers 400 before 403
 
 The code was proposed by this PR under owner letter BS; `GET` returns the three
 preconditions so the panel can say which manual step is missing.
+
+## Action 26 rejections (V5.6, HOS-1460)
+
+Assigning or removing `SUPER_ADMIN` through the role routes requires the
+action's own permission and a non-self subject, checked before reading the
+subject or validating the reason. Rejections follow this order after route
+authentication and its `USER_UPDATE_ROLES` gate:
+
+| Situation | Status | `error.code` |
+|---|---|---|
+| Lacks `user.manageSuperAdminRole`, system actor, or actor = subject | **403** | `FORBIDDEN` |
+| Reason missing, blank, or over 500 characters | **400** | `VALIDATION_ERROR` |
+| Subject account does not exist | **404** | `NOT_FOUND` |
+
+A caller without the route permission receives 403 before input validation. For
+action 26, its own permission and self-action refusal precede reason validation;
+reason validation precedes subject existence.
 
 ### Action 24 over a partner application made without an account (AC:V8a:12)
 

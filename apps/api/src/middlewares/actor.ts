@@ -9,7 +9,7 @@
  * @module actor-middleware
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, withoutSuperAdminExclusivePermissions } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { getUserRoles } from '@repo/service-core';
 import type { MiddlewareHandler } from 'hono';
@@ -175,7 +175,7 @@ function effectivePermissionSources(read: EffectivePermissionsRead): {
  * @param input.userId - The account whose set is resolved.
  * @param input.roles - Every role it holds.
  * @param input.read - `cached` (default, the request path) or `uncached`.
- * @returns `{ permissions }`, the effective set.
+ * @returns `{ permissions }`, the effective set after step 3 denies and step 4 subtracts permissions reserved for SUPER_ADMIN.
  */
 export async function resolveEffectivePermissions(input: {
     readonly userId: string;
@@ -195,7 +195,11 @@ export async function resolveEffectivePermissions(input: {
     for (const deniedPermission of userOverrides.denies) {
         effectivePermissions.delete(deniedPermission);
     }
-    return { permissions: Array.from(effectivePermissions) };
+    return {
+        permissions: withoutSuperAdminExclusivePermissions({
+            permissions: Array.from(effectivePermissions)
+        })
+    };
 }
 
 /**

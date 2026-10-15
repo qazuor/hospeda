@@ -73,11 +73,14 @@ export default defineConfig({
             'test/integration/cutover-v6/**/*.test.ts',
             'test/integration/plan-publication/**/*.test.ts',
             'test/integration/billing-subscription/**/*.test.ts',
+            'test/integration/billing-promo/**/*.test.ts',
             'test/integration/trial/**/*.test.ts',
             'test/integration/listing-publication/**/*.test.ts',
             'test/integration/partners/**/*.test.ts',
             // TEST:V8a:12 and TEST:V8a:13 (HOS-1494): admin action 24.
             'test/integration/account-closure/**/*.test.ts',
+            // TEST:V5:16 / TEST:V5:17 (HOS-1460): the SUPER_ADMIN-exclusive permissions and action 26.
+            'test/integration/super-admin/**/*.test.ts',
             // TEST:B5:6 route half (HOS-1540): admin action 14.
             'test/integration/billing-refund/**/*.test.ts',
             // TEST:V5:13 (HOS-1458): the ban gate is the one job the Better

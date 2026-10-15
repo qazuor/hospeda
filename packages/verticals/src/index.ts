@@ -48,6 +48,10 @@ export {
 } from './authorization/resource-step';
 export { resolveResourceVertical } from './authorization/resource-vertical';
 export {
+    ROLE_ASSIGNMENT_ACTION,
+    resolveRoleAssignmentAction
+} from './authorization/role-assignment-action';
+export {
     type BootstrapBillingForVerticals,
     createBootstrapBillingForVerticals
 } from './coverage/bootstrap-billing-for-verticals';

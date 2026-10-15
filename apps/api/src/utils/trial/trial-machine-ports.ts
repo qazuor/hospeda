@@ -1,6 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import type { DrizzleClient } from '@repo/db';
-import { domainEventModel, getDb, plans, planVersions, trialRedemptions, trials } from '@repo/db';
+import {
+    domainEventModel,
+    getDb,
+    plans,
+    planVersions,
+    trialRedemptions,
+    trials,
+    verticalDeadlineVersions,
+    verticals
+} from '@repo/db';
 import type { TrialStatusEnum, Vertical } from '@repo/schemas';
 import {
     TRIAL_PLAN_ROLE,
@@ -165,11 +174,45 @@ function portOf(tx: DrizzleClient): TrialMachineTransaction {
                 .returning({ id: trialRedemptions.id });
             return { inserted: rows.length > 0 };
         },
-        /** PLAZO:7 awaits the vertical deadlines table (V6.9, HOS-1479); action 11 and T3 never call this. */
-        async findTrialCeilingDays() {
-            throw new Error(
-                'PLAZO:7 (trial ceiling) has no value until the verticals deadlines table lands (V6.9, HOS-1479)'
-            );
+        /** PLAZO:7 is shared by verticals and pinned to each trial's deadlines version. */
+        async findTrialCeilingDays({ vertical, deadlinesVersion }) {
+            const [verticalRow] = await tx
+                .select({ id: verticals.id })
+                .from(verticals)
+                .where(eq(verticals.id, vertical))
+                .limit(1);
+            if (!verticalRow) {
+                throw new TrialCeilingConfigurationError(
+                    'VERTICAL_NOT_FOUND',
+                    vertical,
+                    deadlinesVersion
+                );
+            }
+            const [deadlineVersion] = await tx
+                .select({ values: verticalDeadlineVersions.values })
+                .from(verticalDeadlineVersions)
+                .where(eq(verticalDeadlineVersions.version, deadlinesVersion))
+                .limit(1);
+            if (!deadlineVersion) {
+                throw new TrialCeilingConfigurationError(
+                    'DEADLINE_VERSION_NOT_FOUND',
+                    vertical,
+                    deadlinesVersion
+                );
+            }
+            const ceilingDays = deadlineVersion.values['7']?.days;
+            if (
+                typeof ceilingDays !== 'number' ||
+                !Number.isInteger(ceilingDays) ||
+                ceilingDays <= 0
+            ) {
+                throw new TrialCeilingConfigurationError(
+                    'VALUE_MISSING',
+                    vertical,
+                    deadlinesVersion
+                );
+            }
+            return ceilingDays;
         },
         async recordAdminExtension({
             trialId,
@@ -251,4 +294,16 @@ export function getTrialMachinePorts(): {
         }
     };
     return ports;
+}
+
+/** Missing persisted PLAZO:7 configuration must stop trial extension closed. */
+export class TrialCeilingConfigurationError extends Error {
+    constructor(
+        readonly reason: 'VERTICAL_NOT_FOUND' | 'DEADLINE_VERSION_NOT_FOUND' | 'VALUE_MISSING',
+        readonly vertical: string,
+        readonly deadlinesVersion: number
+    ) {
+        super(`Trial ceiling PLAZO:7 unavailable: ${reason} (${vertical}, v${deadlinesVersion})`);
+        this.name = 'TrialCeilingConfigurationError';
+    }
 }

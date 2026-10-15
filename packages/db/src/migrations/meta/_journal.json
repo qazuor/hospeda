@@ -1191,6 +1191,20 @@
       "when": 1792009511850,
       "tag": "0169_b9a1_permanent_grant",
       "breakpoints": true
+    },
+    {
+      "idx": 170,
+      "version": "7",
+      "when": 1792061202551,
+      "tag": "0170_b9b1_trial_extension_codes",
+      "breakpoints": true
+    },
+    {
+      "idx": 171,
+      "version": "7",
+      "when": 1792076051810,
+      "tag": "0171_v56_super_admin_permissions",
+      "breakpoints": true
     }
   ]
 }

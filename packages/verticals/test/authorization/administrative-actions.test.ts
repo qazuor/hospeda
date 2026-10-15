@@ -1,4 +1,9 @@
-import { PermissionEnum, PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import {
+    PermissionEnum,
+    PublicationStatusEnum,
+    VerticalEnum,
+    withoutSuperAdminExclusivePermissions
+} from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import { resolveAdministrativeActionStep } from '../../src/authorization/administrative-action-step';
 import {
@@ -199,14 +204,15 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(false);
     });
 
-    it('TEST:V8a:10 TEST:V8a:15 keeps the six retiring delete permissions forbidden to a system actor', () => {
+    it('TEST:V8a:10 TEST:V8a:15 keeps the seven retiring administrative permissions forbidden to a system actor', () => {
         const retiring = [
             { permission: PermissionEnum.ACCOMMODATION_DELETE_ANY, formerAction: 'ACC_23' },
             { permission: PermissionEnum.ACCOMMODATION_HARD_DELETE, formerAction: 'ACC_23' },
             { permission: PermissionEnum.GASTRONOMY_DELETE, formerAction: 'ACC_23' },
             { permission: PermissionEnum.EXPERIENCE_DELETE, formerAction: 'ACC_23' },
             { permission: PermissionEnum.USER_DELETE, formerAction: 'ACC_24' },
-            { permission: PermissionEnum.USER_HARD_DELETE, formerAction: 'ACC_24' }
+            { permission: PermissionEnum.USER_HARD_DELETE, formerAction: 'ACC_24' },
+            { permission: PermissionEnum.USER_UPDATE_ROLES, formerAction: 'ACC_26' }
         ];
         expect(RETIRING_ADMINISTRATIVE_PERMISSIONS).toEqual(retiring);
         for (const { permission } of retiring) {
@@ -216,5 +222,118 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         for (const permission of ADMINISTRATIVE_ACTION_PERMISSION_SET) {
             expect(SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(permission)).toBe(true);
         }
+    });
+});
+
+describe('TEST:V5:28 HOS-1460 concession and action 26 permissions', () => {
+    it('uses one concession permission and an independent action 26 permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_1.permissions).toEqual([
+            PermissionEnum.BILLING_GRANT_COMPLIMENTARY
+        ]);
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_2.permissions).toEqual([
+            PermissionEnum.BILLING_GRANT_COMPLIMENTARY
+        ]);
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_26.permissions).toEqual([
+            PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE
+        ]);
+    });
+
+    it.each([
+        'ACC_1',
+        'ACC_2',
+        'ACC_26'
+    ] as const)('denies the non-exclusive permission ceiling at step 3 for %s', (action) => {
+        const permitted = isAdministrativeActionPermitted({
+            action,
+            actorPermissions: withoutSuperAdminExclusivePermissions({
+                permissions: Object.values(PermissionEnum)
+            })
+        });
+        expect(permitted).toBe(false);
+        expect(
+            resolveAdministrativeActionStep({
+                action,
+                actorId: 'admin',
+                subjectId: 'other',
+                permitted,
+                isSystemActor: false
+            })
+        ).toEqual({ allowed: false, reason: 'FORBIDDEN' });
+    });
+
+    it.each([
+        ['ACC_1', PermissionEnum.BILLING_GRANT_COMPLIMENTARY],
+        ['ACC_2', PermissionEnum.BILLING_GRANT_COMPLIMENTARY],
+        ['ACC_26', PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE]
+    ] as const)('allows %s with its own permission for another subject', (action, permission) => {
+        expect(isAdministrativeActionPermitted({ action, actorPermissions: [permission] })).toBe(
+            true
+        );
+        expect(
+            resolveAdministrativeActionStep({
+                action,
+                actorId: 'super-admin',
+                subjectId: 'other',
+                permitted: true,
+                isSystemActor: false
+            })
+        ).toEqual({ allowed: true });
+    });
+
+    it.each([
+        'ACC_1',
+        'ACC_2',
+        'ACC_26'
+    ] as const)('rejects self and system actors for %s', (action) => {
+        expect(
+            resolveAdministrativeActionStep({
+                action,
+                actorId: 'same',
+                subjectId: 'same',
+                permitted: true,
+                isSystemActor: false
+            })
+        ).toEqual({ allowed: false, reason: 'FORBIDDEN' });
+        expect(
+            resolveAdministrativeActionStep({
+                action,
+                actorId: 'admin',
+                subjectId: 'other',
+                permitted: true,
+                isSystemActor: true
+            })
+        ).toEqual({ allowed: false, reason: 'FORBIDDEN' });
+    });
+
+    it('does not let either permission open the other action', () => {
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_26',
+                actorPermissions: [PermissionEnum.BILLING_GRANT_COMPLIMENTARY]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_1',
+                actorPermissions: [PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE]
+            })
+        ).toBe(false);
+    });
+
+    it('keeps new and retiring permissions forbidden to system actors', () => {
+        for (const permission of [
+            PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE,
+            PermissionEnum.BILLING_GRANT_COMPLIMENTARY,
+            PermissionEnum.MAINTENANCE_MODE_WRITE,
+            PermissionEnum.USER_UPDATE_ROLES
+        ])
+            expect(SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(permission)).toBe(true);
+        expect(ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.USER_UPDATE_ROLES)).toBe(
+            false
+        );
+        expect(RETIRING_ADMINISTRATIVE_PERMISSIONS).toContainEqual({
+            permission: PermissionEnum.USER_UPDATE_ROLES,
+            formerAction: 'ACC_26'
+        });
     });
 });
