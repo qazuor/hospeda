@@ -12,6 +12,7 @@ import {
 } from './support/complement-fixtures.js';
 import { seedCoveragePayment } from './support/coverage-fixtures.js';
 import {
+    recordingSuccessionCloser,
     seedServiceEndPrincipal,
     serviceEndHarness,
     serviceEndPorts
