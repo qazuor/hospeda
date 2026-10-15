@@ -115,7 +115,8 @@ function isOldBillingPermission(value: string): boolean {
         value === 'billing.subscription.inspect' ||
         value === 'billing.viewOwn' ||
         value === 'billing.settleExternal' ||
-        value === 'billing.cancelSubscription'
+        value === 'billing.cancelSubscription' ||
+        value === 'billing.grantComplimentary'
     )
         return false;
     return (

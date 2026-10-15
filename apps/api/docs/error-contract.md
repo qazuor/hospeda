@@ -474,6 +474,23 @@ permission, so a `POST` without a valid body answers 400 before 403
 The code was proposed by this PR under owner letter BS; `GET` returns the three
 preconditions so the panel can say which manual step is missing.
 
+## Action 26 rejections (V5.6, HOS-1460)
+
+Assigning or removing `SUPER_ADMIN` through the role routes requires the
+action's own permission and a non-self subject, checked before reading the
+subject or validating the reason. Rejections follow this order after route
+authentication and its `USER_UPDATE_ROLES` gate:
+
+| Situation | Status | `error.code` |
+|---|---|---|
+| Lacks `user.manageSuperAdminRole`, system actor, or actor = subject | **403** | `FORBIDDEN` |
+| Reason missing, blank, or over 500 characters | **400** | `VALIDATION_ERROR` |
+| Subject account does not exist | **404** | `NOT_FOUND` |
+
+A caller without the route permission receives 403 before input validation. For
+action 26, its own permission and self-action refusal precede reason validation;
+reason validation precedes subject existence.
+
 ### Action 24 over a partner application made without an account (AC:V8a:12)
 
 `GET` and `POST /api/v1/admin/partner-applications/{id}/replace-email`: the

@@ -108,6 +108,14 @@ describe('UserService.assignRole', () => {
         expect(grantRoleMock).toHaveBeenCalledTimes(1);
     });
 
+    it('refuses SUPER_ADMIN because it must go through action 26', async () => {
+        const result = await service.assignRole(actor, { ...input, role: RoleEnum.SUPER_ADMIN });
+
+        expectForbiddenError(result);
+        expect(grantRoleMock).not.toHaveBeenCalled();
+        expect(asMock(userModelMock.findById)).not.toHaveBeenCalled();
+    });
+
     it('forwards the caller transaction so the grant and its audit row enlist in it', async () => {
         const user = getUser({ id: userId });
         asMock(userModelMock.findById).mockResolvedValue({ ...user, id: userId });
