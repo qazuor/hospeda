@@ -27,10 +27,14 @@ export interface SweepInventoryRow {
 }
 
 /** The domain event type that records our decision to cancel a preapproval (AC:B11:6). */
-const CANCELLATION_DECIDED_EVENT = 'subscription.provider_cancellation_decided' as const;
+export const CANCELLATION_DECIDED_EVENT = 'subscription.provider_cancellation_decided' as const;
 
 /** Terminal subscription states (B11 §3: `CANCELLED`, `ABANDONED`, `CHARGE_DECLINED`). */
-const TERMINAL_SUBSCRIPTION_STATUSES = ['CANCELLED', 'ABANDONED', 'CHARGE_DECLINED'] as const;
+export const TERMINAL_SUBSCRIPTION_STATUSES = [
+    'CANCELLED',
+    'ABANDONED',
+    'CHARGE_DECLINED'
+] as const;
 
 /** Our recorded decision to cancel one subscription's preapproval. */
 export interface CancellationDecision {
@@ -45,6 +49,7 @@ export interface CancellationDecision {
 export interface ListCancellationRetryPageInput {
     readonly afterSubscriptionId?: string;
     readonly limit: number;
+    readonly unconfirmedOnly?: boolean;
     readonly tx?: DrizzleClient;
 }
 
@@ -165,7 +170,13 @@ export class ReconciliationInventoryModel {
                     inArray(subscriptions.status, TERMINAL_SUBSCRIPTION_STATUSES),
                     input.afterSubscriptionId === undefined
                         ? undefined
-                        : gt(subscriptions.id, input.afterSubscriptionId)
+                        : gt(subscriptions.id, input.afterSubscriptionId),
+                    input.unconfirmedOnly
+                        ? and(
+                              sql`${providerLinks.cancelledSeenAt} IS NULL`,
+                              sql`NOT EXISTS (SELECT 1 FROM reconciliation_mark rm WHERE rm.subscription_id = ${subscriptions.id} AND rm.reason = 'CANCELACION_SIN_CONFIRMAR' AND rm.lifted_at IS NULL)`
+                          )
+                        : undefined
                 )
             )
             .orderBy(asc(subscriptions.id))
