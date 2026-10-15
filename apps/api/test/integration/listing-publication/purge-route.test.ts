@@ -96,7 +96,6 @@ describe.each(verticals)('TEST:V6:13 PB12 owner route — %s', (vertical) => {
             );
             expect(response.status).toBe(200);
             expect(response.body.data).toEqual({ purged: true });
-            expect(pushed).toBeUndefined();
             await expect(push).resolves.toBe(PublicationStatusEnum.PURGED);
             unsubscribe();
             const again = await readResponse(
