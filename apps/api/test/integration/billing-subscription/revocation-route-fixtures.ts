@@ -7,6 +7,10 @@
  * the service tests of S36. Plan versions are immutable and non-sellable. Never TRUNCATE.
  */
 import {
+    addonInstances,
+    addonProducts,
+    addons,
+    addonVersions,
     and,
     billingOptions,
     buildEmailDedupKey,
@@ -57,7 +61,8 @@ const created = {
     users: [] as string[],
     subscriptions: [] as string[],
     payments: [] as string[],
-    manualPayments: [] as string[]
+    manualPayments: [] as string[],
+    addonInstances: [] as string[]
 };
 
 /** The clock the app reads and the fake shares; each read moves it 1 ms (fresh re-reads). */
@@ -405,12 +410,78 @@ export async function refundsOfManualPayment(manualPaymentId: string) {
     return getDb().select().from(refunds).where(eq(refunds.manualPaymentId, manualPaymentId));
 }
 
+/** Seeds one compatible UNA_VEZ instance orphaned by `principalId`, with a credited payment. */
+export async function seedOneTimeOrphan(input: {
+    readonly ownerId: string;
+    readonly principalId: string;
+}): Promise<{ readonly instanceId: string; readonly paymentId: string }> {
+    const db = getDb();
+    const [addon] = await db
+        .insert(addons)
+        .values({ slug: `b56-route-${crypto.randomUUID()}`, name: 'B5.6 route' })
+        .returning({ id: addons.id });
+    if (!addon) throw new Error('Expected addon');
+    const [version] = await db
+        .insert(addonVersions)
+        .values({
+            addonId: addon.id,
+            validity: 'WHILE_SUBSCRIPTION_ALIVE',
+            validityDays: null,
+            scopeType: 'VERTICAL_SUBSCRIPTION'
+        })
+        .returning({ id: addonVersions.id });
+    if (!version) throw new Error('Expected addon version');
+    const [product] = await db
+        .insert(addonProducts)
+        .values({
+            addonId: addon.id,
+            versionId: version.id,
+            price: 5000,
+            currency: 'ARS',
+            chargeKind: 'UNA_VEZ',
+            cycle: null,
+            compatibleVerticals: [VerticalEnum.ACCOMMODATION]
+        })
+        .returning({ id: addonProducts.id });
+    if (!product) throw new Error('Expected addon product');
+    const [instance] = await db
+        .insert(addonInstances)
+        .values({
+            productId: product.id,
+            addonVersionId: version.id,
+            ownerId: input.ownerId,
+            targetId: input.principalId,
+            status: 'ACTIVE',
+            startsAt: NOW,
+            updatedAt: NOW
+        })
+        .returning({ id: addonInstances.id });
+    if (!instance) throw new Error('Expected addon instance');
+    const [payment] = await db
+        .insert(payments)
+        .values({
+            addonInstanceId: instance.id,
+            amount: 5000,
+            currency: 'ARS',
+            status: 'SUCCEEDED',
+            provider: 'FAKE',
+            providerFactId: `b56-route-${crypto.randomUUID()}`,
+            factAt: new Date(CHARGED_AT.getTime() + 2 * DAY_MS)
+        })
+        .returning({ id: payments.id });
+    if (!payment) throw new Error('Expected addon payment');
+    created.addonInstances.push(instance.id);
+    created.payments.push(payment.id);
+    return { instanceId: instance.id, paymentId: payment.id };
+}
+
 /** Delete the money and side rows this file seeded, children first; retire the subscriptions. */
 export async function retireRevocationRouteRows(): Promise<void> {
     const db = getDb();
     const paymentIds = created.payments.splice(0);
     const manualIds = created.manualPayments.splice(0);
     const subscriptionIds = created.subscriptions.splice(0);
+    const addonInstanceIds = created.addonInstances.splice(0);
     const userIds = created.users.splice(0);
     if (paymentIds.length > 0) {
         await db.delete(refunds).where(inArray(refunds.paymentId, paymentIds));
@@ -420,6 +491,11 @@ export async function retireRevocationRouteRows(): Promise<void> {
         await db.delete(refunds).where(inArray(refunds.manualPaymentId, manualIds));
         await db.delete(manualPayments).where(inArray(manualPayments.id, manualIds));
     }
+    if (addonInstanceIds.length > 0)
+        await db
+            .update(addonInstances)
+            .set({ status: 'CANCELLED' })
+            .where(inArray(addonInstances.id, addonInstanceIds));
     if (subscriptionIds.length > 0) {
         await db
             .delete(subscriptionPauses)
