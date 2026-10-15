@@ -413,6 +413,8 @@ export async function retireCommittedOrphanRows(): Promise<void> {
 export async function seedCommittedOrphans(input: {
     readonly fake: FakePaymentProvider;
     readonly count?: number;
+    readonly instanceStatus?: 'PENDING_AUTHORIZATION' | 'ACTIVE';
+    readonly chargeKind?: 'PERIODICO' | 'UNA_VEZ';
 }): Promise<{
     readonly userId: string;
     readonly principalId: string;
@@ -463,9 +465,10 @@ export async function seedCommittedOrphans(input: {
                 ownerId: userId,
                 scopeType: 'VERTICAL_SUBSCRIPTION',
                 compatibleVerticals: [ORPHAN_VERTICAL],
-                status: 'ACTIVE',
+                status: input.instanceStatus ?? 'ACTIVE',
                 targetId: principalId,
-                complementSubscriptionId: complementId
+                complementSubscriptionId: complementId,
+                chargeKind: input.chargeKind
             });
             committedInstances.push(instanceId);
             addons.push({ instanceId, complementId, authorizationId });
