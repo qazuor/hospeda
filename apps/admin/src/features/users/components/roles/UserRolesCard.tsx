@@ -58,6 +58,9 @@ import { buildRoleLabelKey } from '@/features/users/utils/role-label';
 import { useTranslations } from '@/hooks/use-translations';
 import { isApiError } from '@/lib/errors';
 import { formatDateWithTime } from '@/lib/format-helpers';
+import { SuperAdminRoleDialog } from './SuperAdminRoleDialog';
+
+const ROLE_CONFIRMATION: Partial<Record<RoleEnum, true>> = { [RoleEnum.SUPER_ADMIN]: true };
 
 export interface UserRolesCardProps {
     /** User whose hats are being administered. */
@@ -165,6 +168,7 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
     const revoke = useRevokeUserRole(userId);
 
     const [roleToGrant, setRoleToGrant] = useState<RoleEnum | ''>('');
+    const [assignSuperAdminOpen, setAssignSuperAdminOpen] = useState(false);
     /**
      * Justification for the GRANT only.
      *
@@ -231,9 +235,11 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
             : t('admin-pages.access.users.roles.error');
     };
 
-    const handleGrant = async (): Promise<void> => {
+    const handleGrant = async (confirmedReason?: string): Promise<void> => {
         if (!roleToGrant) return;
-        const trimmed = grantReason.trim();
+        if (ROLE_CONFIRMATION[roleToGrant] && confirmedReason === undefined)
+            return setAssignSuperAdminOpen(true);
+        const trimmed = (confirmedReason ?? grantReason).trim();
         try {
             await grant.mutateAsync({
                 role: roleToGrant,
@@ -346,15 +352,39 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
                                         )}
                                     </div>
 
-                                    <RevokeRoleDialog
-                                        role={entry.role}
-                                        disabled={revoke.isPending || isLastRole}
-                                        isLastRole={isLastRole}
-                                        onConfirm={(confirmed) => void handleRevoke(confirmed)}
-                                    />
+                                    {ROLE_CONFIRMATION[entry.role] ? (
+                                        <SuperAdminRoleDialog
+                                            userId={userId}
+                                            change="REMOVE"
+                                            disabled={revoke.isPending || isLastRole}
+                                            pending={revoke.isPending}
+                                            onConfirm={(params) =>
+                                                handleRevoke({ role: entry.role, ...params })
+                                            }
+                                        />
+                                    ) : (
+                                        <RevokeRoleDialog
+                                            role={entry.role}
+                                            disabled={revoke.isPending || isLastRole}
+                                            isLastRole={isLastRole}
+                                            onConfirm={(confirmed) => void handleRevoke(confirmed)}
+                                        />
+                                    )}
                                 </div>
                             ))}
                         </div>
+                        <SuperAdminRoleDialog
+                            userId={userId}
+                            change="ASSIGN"
+                            open={assignSuperAdminOpen}
+                            onOpenChange={setAssignSuperAdminOpen}
+                            pending={grant.isPending}
+                            onConfirm={(params) =>
+                                handleGrant(params.reason).then(() =>
+                                    setAssignSuperAdminOpen(false)
+                                )
+                            }
+                        />
 
                         {isLastRole && (
                             <p className="text-muted-foreground text-xs">
