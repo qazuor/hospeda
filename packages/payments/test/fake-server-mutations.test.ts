@@ -101,7 +101,7 @@ describe('fake-server mutation routes', () => {
         const missingKey = await fetch(path, {
             method: 'POST',
             headers,
-            body: JSON.stringify({ amount: 15 })
+            body: '{'
         });
         expect(missingKey.status).toBe(400);
         expect(await missingKey.json()).toEqual({

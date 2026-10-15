@@ -108,6 +108,28 @@ export async function startFakeProviderServer(
     };
 
     const server: Server = createServer(async (request, response) => {
+        const method = request.method ?? 'GET';
+        const path = request.url ?? '/';
+        const validAuthorization = /^Bearer .+\S$/.test(request.headers.authorization ?? '');
+        const missingRefundKey =
+            method === 'POST' &&
+            /^\/v1\/payments\/[^/?]+\/refunds(?:\?|$)/.test(path) &&
+            (typeof request.headers['x-idempotency-key'] !== 'string' ||
+                request.headers['x-idempotency-key'].length === 0);
+        if (validAuthorization && missingRefundKey) {
+            recordRequest({
+                method,
+                path,
+                body: null,
+                headers: { 'X-Idempotency-Key': undefined }
+            });
+            sendJson(response, 400, {
+                code: 4292,
+                message: "Header X-Idempotency-Key can't be null",
+                status: 400
+            });
+            return;
+        }
         let body: unknown;
         try {
             body = await readJson(request);
@@ -124,8 +146,6 @@ export async function startFakeProviderServer(
             });
             return;
         }
-        const method = request.method ?? 'GET';
-        const path = request.url ?? '/';
         recordRequest({
             method,
             path,
