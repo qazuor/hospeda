@@ -32,6 +32,7 @@ import type {
 import type { CancellationSeenAnnotator } from '../../../../src/services/billing/subscription/subscription-billing-ports.js';
 import type { Actor } from '../../../../src/types/index.js';
 import { getServiceTestDb, getServiceTestPool } from '../helpers.js';
+import { orphanPorts } from './addon-orphan-fixtures.js';
 import { paymentFixture } from './payment-fixtures.js';
 
 export const DAY_MS = 86_400_000;
@@ -101,6 +102,7 @@ export async function seedRevocationActor(
         })
         .returning();
     if (!user) throw new Error('revocation actor missing');
+    userIds.push(user.id);
     return { id: user.id, roles: [...roles], permissions: [...permissions] };
 }
 
@@ -306,6 +308,7 @@ export async function revocationFixture({
         clock: fixture.clock,
         beforeCancelNotice: { beforeCancel },
         coverageNotices,
+        orphanhood: orphanPorts(getServiceTestDb()).ports,
         cancellationSeen
     };
 
