@@ -227,6 +227,7 @@ describe('reconciliation terminal return population', () => {
             await event(tx, rejectedEvent.id, 'subscription.provider_cancelled_after_rejection');
             const common = await add(tx, anchors, { status: 'CANCELLED', seenAt: null });
             ids.set('common', common.id);
+            await mark(tx, common.id);
             const live = await add(tx, anchors, {
                 status: 'ACTIVE',
                 seenAt: new Date(cutoffs.monthly.getTime() + 1)
