@@ -77,12 +77,14 @@ describe('authorize and approve', () => {
             amount: ARS(1_800_000),
             cadence: { everyMonths: 1 },
             firstChargeAt: null,
+            nextChargeAt: null,
             freePeriodDays: null,
             chargeRecordCount: 0,
             lastChargedAt: null,
             lastModifiedAt: '2026-10-01T03:00:00.000Z'
         });
         expect(after.status).toBe('active');
+        expect(after.nextChargeAt).toBe('2026-10-01T03:00:00.000Z');
     });
 
     it('refuses a float amount before doing anything', async () => {
