@@ -144,7 +144,11 @@ describe.each(
             vertical,
             listingId,
             ownerId: owner.id,
-            correlationId: randomUUID()
+            correlationId: randomUUID(),
+            afterCommit: {
+                deleteRemoteMedia: async () => {},
+                revokeCalendarConnection: async () => {}
+            }
         });
         expect(result.purged).toBe(true);
 

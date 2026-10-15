@@ -41,6 +41,10 @@ const afterCommit = {
     invalidateUser: async () => {},
     revalidate: async () => {}
 };
+const retentionAfterCommit = {
+    deleteRemoteMedia: async () => {},
+    revokeCalendarConnection: async () => {}
+};
 
 describe.each([
     VerticalEnum.ACCOMMODATION,
@@ -230,7 +234,8 @@ describe.each([
             vertical,
             listingId: archived.id,
             ownerId: userId,
-            correlationId: corr
+            correlationId: corr,
+            afterCommit: retentionAfterCommit
         });
         expect(result).toMatchObject({ purged: true });
         const after = await db.execute(
@@ -368,7 +373,8 @@ describe('TEST:V9b:7 AC:V9b:7', () => {
                 vertical: VerticalEnum.ACCOMMODATION,
                 listingId: listing.id,
                 ownerId: userId,
-                correlationId: randomUUID()
+                correlationId: randomUUID(),
+                afterCommit: retentionAfterCommit
             });
         expect(await tryPurge(new Date(t0.getTime() + 180 * day))).toEqual({
             purged: false,
@@ -410,7 +416,8 @@ describe('TEST:V9b:7 AC:V9b:7', () => {
                 vertical: VerticalEnum.ACCOMMODATION,
                 listingId: listing.id,
                 ownerId: userId,
-                correlationId: randomUUID()
+                correlationId: randomUUID(),
+                afterCommit: retentionAfterCommit
             });
         expect(await attempt(new Date(t0.getTime() + 180 * day))).toEqual({
             purged: false,
@@ -442,7 +449,8 @@ describe('TEST:V9b:7 AC:V9b:7', () => {
                 vertical: VerticalEnum.ACCOMMODATION,
                 listingId: second.id,
                 ownerId: userId,
-                correlationId: randomUUID()
+                correlationId: randomUUID(),
+                afterCommit: retentionAfterCommit
             });
         expect(await coverageAttempt(new Date(t0.getTime() + 180 * day))).toEqual({
             purged: false,
@@ -472,7 +480,8 @@ describe('TEST:V9b:7 AC:V9b:7', () => {
                 vertical: VerticalEnum.ACCOMMODATION,
                 listingId: listing.id,
                 ownerId: userId,
-                correlationId: randomUUID()
+                correlationId: randomUUID(),
+                afterCommit: retentionAfterCommit
             })
         ).resolves.toEqual({ purged: false, reason: 'NOT_ARCHIVED' });
     });
