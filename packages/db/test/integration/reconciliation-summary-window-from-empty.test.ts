@@ -49,7 +49,7 @@ describe('TEST:1607:3 — reconciliation summary window schema', () => {
                 'ck_reconciliation_summary_window_minutes_positive',
                 'ck_reconciliation_summary_window_closes_after_open',
                 'ck_reconciliation_summary_window_sent_pair',
-                'reconciliation_summary_window_deadlines_version_billing_deadline_version_version_fk'
+                'reconciliation_summary_window_deadlines_version_billing_deadlin'
             ])
         );
     });
