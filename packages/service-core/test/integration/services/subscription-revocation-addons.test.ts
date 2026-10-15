@@ -7,8 +7,10 @@ import {
     getDb,
     inArray,
     payments,
+    reconciliationMarkPayments,
     reconciliationMarks,
-    refunds
+    refunds,
+    subscriptions
 } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { revokeSubscription } from '../../../src/services/billing/subscription/revoke-subscription.service';
@@ -32,10 +34,22 @@ afterAll(closeServiceTestPool);
 afterEach(async () => {
     const db = getDb();
     const subscriptionIds = createdSubscriptions.splice(0);
-    if (subscriptionIds.length > 0)
+    if (subscriptionIds.length > 0) {
+        const marks = await db
+            .select({ id: reconciliationMarks.id })
+            .from(reconciliationMarks)
+            .where(inArray(reconciliationMarks.subscriptionId, subscriptionIds));
+        if (marks.length > 0)
+            await db.delete(reconciliationMarkPayments).where(
+                inArray(
+                    reconciliationMarkPayments.markId,
+                    marks.map(({ id }) => id)
+                )
+            );
         await db
             .delete(reconciliationMarks)
             .where(inArray(reconciliationMarks.subscriptionId, subscriptionIds));
+    }
     for (const row of created.splice(0)) {
         if (row.paymentId) {
             await db.delete(refunds).where(eq(refunds.paymentId, row.paymentId));
@@ -152,7 +166,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:12 AC:B5:24 S36 orphan ref
             expect(chargeRefunds).toHaveLength(0);
             expect(marks).toHaveLength(1);
             expect(marks[0]).toMatchObject({
-                reason: 'COMPLEMENTO_CON_PERÍODO_COBRADO_POR_OTRA_CAUSA'
+                reason: 'COMPLEMENTO_CON_PERIODO_COBRADO_POR_OTRA_CAUSA'
             });
         }
     });
