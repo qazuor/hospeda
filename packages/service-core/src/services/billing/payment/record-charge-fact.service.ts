@@ -12,6 +12,7 @@ import {
 } from '../reconciliation/chargeback/chargeback-detection';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
 import type { TouristVipInheritancePort } from '../subscription/cancel-inherited-tourist-vip.service';
+import type { ComplementPolicyPorts } from '../subscription/complement-ports.js';
 import type {
     DeclineFirstChargePorts,
     DeclineFirstChargeResult
@@ -51,6 +52,7 @@ export interface RecordChargeFactPorts extends DeclineFirstChargePorts {
     readonly chargebacks?: ChargebackDetection;
     /** S38's interface, handed to S7 (AC:B7:28); unwired falls back to S7's failing default. */
     readonly scheduledChangeApplier?: ScheduledChangeApplier;
+    readonly complements?: ComplementPolicyPorts;
 }
 
 /** The payment states a read chargeback is handed to the interface from (AC:B11:27). */
@@ -244,7 +246,8 @@ export async function recordChargeFact(
                     coverageNotices: ports.coverageNotices,
                     beforeCancelNotice: ports.beforeCancelNotice,
                     touristVipInheritance: ports.touristVipInheritance,
-                    scheduledChangeApplier: ports.scheduledChangeApplier
+                    scheduledChangeApplier: ports.scheduledChangeApplier,
+                    ...(ports.complements ? { complements: ports.complements } : {})
                 }
             );
             return { outcome: 'CREDITED', paymentId, credit, reactivation };

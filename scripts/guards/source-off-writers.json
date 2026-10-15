@@ -146,6 +146,14 @@
         "reason": "S21 cancels a COMPLEMENTO row, which emits no coverage source (subscription-sources.ts filters PRINCIPAL)"
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/complement-pause-s32.ts",
+        "symbol": "writeComplementPause",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S32 pauses only a COMPLEMENTO row: subscription-sources.ts filters PRINCIPAL and addon-sources.ts reads addon_instance.status, which remains ACTIVE."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/service-end-s12.ts",
         "symbol": "applyS12ToPrincipal",
         "table": "subscriptions",
@@ -192,6 +200,22 @@
         "effect": "neutral",
         "via": null,
         "reason": "The R18 mirror (AC:B7:15) moves ACTIVE to CANCEL_SCHEDULED; both emit a SUBSCRIPTION source (03-contrato-de-cobertura.md:468, 473), only its end gets a date; the CHANGED notice is emitted after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/complement-resume-s33.ts",
+        "symbol": "writeComplementResume",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S33 reactivates only a COMPLEMENTO row; subscription-sources.ts filters PRINCIPAL and addon-sources.ts reads the unchanged ACTIVE addon instance."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/complement-s11-rule.ts",
+        "symbol": "writeComplementCancelScheduled",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S11 schedules cancellation only for a COMPLEMENTO row; the principal sources and unchanged addon instance determine coverage."
     },
     {
         "file": "packages/service-core/src/services/billing/grant/permanent-grant-s20.ts",

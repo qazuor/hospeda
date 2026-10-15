@@ -1,6 +1,7 @@
 import { expireAuthorizationWindows, sweepInheritedTouristVips } from '@repo/service-core';
 import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
 import { touristVipInheritance } from '../../routes/billing-subscription/tourist-vip-inheritance.js';
+import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports.js';
 import { getClock } from '../../utils/clock.js';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
@@ -34,7 +35,8 @@ export const subscriptionWindowExpiryJob: CronJobDefinition = {
                 clock: getClock().clock,
                 beforeCancelNotice,
                 touristVipInheritance,
-                coverageNotices: getCoverageNotices()
+                coverageNotices: getCoverageNotices(),
+                complements: buildComplementPolicyPorts()
             });
             const vipSummary = await sweepInheritedTouristVips(100, {
                 provider: getPaymentProvider(),

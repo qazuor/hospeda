@@ -11,6 +11,7 @@ import {
     subscriptions
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
+import type { PaymentProvider } from '@repo/payments';
 import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports.js';
@@ -19,6 +20,13 @@ import {
     type BeforeCancelNoticeKind
 } from '../subscription/before-cancel-notice-kinds.js';
 import { billingPeriodEnd } from '../subscription/billing-period-end.js';
+import type { ComplementPolicyPorts } from '../subscription/complement-ports.js';
+import {
+    cancelComplementsByS11Rule,
+    cancelDecidedComplementsAtProvider,
+    type DecidedComplementCancellation
+} from '../subscription/complement-s11-rule.js';
+import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 
 const logger = createLogger('mirror-our-cancellation-on-active');
 export const OUR_CANCELLATION_NOTICE_KINDS = [
@@ -61,7 +69,11 @@ export function ourCancellationServiceEnd(input: {
 }
 
 export type MirrorOurCancellationResult =
-    | { readonly outcome: 'SCHEDULED'; readonly serviceEndsAt: Date }
+    | {
+          readonly outcome: 'SCHEDULED';
+          readonly serviceEndsAt: Date;
+          readonly complements?: readonly DecidedComplementCancellation[];
+      }
     | { readonly outcome: 'NOT_OURS' }
     | { readonly outcome: 'LOST_RACE' };
 
@@ -89,7 +101,13 @@ export type MirrorOurCancellationResult =
  */
 export async function mirrorOurCancellationOnActive(
     input: { readonly subscriptionId: string; readonly readAt: Date; readonly everyMonths: number },
-    ports: { readonly clock: Clock; readonly coverageNotices?: CoverageNotices }
+    ports: {
+        readonly clock: Clock;
+        readonly coverageNotices?: CoverageNotices;
+        readonly complements?: ComplementPolicyPorts;
+        readonly provider?: PaymentProvider;
+        readonly beforeCancelNotice?: BeforeCancelNotice;
+    }
 ): Promise<MirrorOurCancellationResult> {
     const value = serviceInputSchema.parse(input);
     const result = await getDb().transaction(async (tx) => {
@@ -136,11 +154,19 @@ export async function mirrorOurCancellationOnActive(
             .where(and(eq(subscriptions.id, row.id), eq(subscriptions.status, 'ACTIVE')))
             .returning({ userId: subscriptions.userId, vertical: subscriptions.vertical });
         if (!updated) return { outcome: 'LOST_RACE' as const };
+        const complements =
+            row.class === 'PRINCIPAL' && ports.complements
+                ? await cancelComplementsByS11Rule(
+                      { tx, principalSubscriptionId: row.id, now: ports.clock.now() },
+                      ports.complements
+                  )
+                : undefined;
         return {
             outcome: 'SCHEDULED' as const,
             serviceEndsAt,
             userId: updated.userId,
-            vertical: updated.vertical
+            vertical: updated.vertical,
+            ...(complements ? { complements: complements.decided } : {})
         };
     });
     if (result.outcome !== 'SCHEDULED') return result;
@@ -169,5 +195,26 @@ export async function mirrorOurCancellationOnActive(
             'Scheduled subscription has no valid coverage subject to notify'
         );
     }
-    return { outcome: 'SCHEDULED', serviceEndsAt: result.serviceEndsAt };
+    if (result.complements?.length && ports.provider && ports.beforeCancelNotice) {
+        try {
+            await cancelDecidedComplementsAtProvider(
+                { decided: result.complements },
+                {
+                    provider: ports.provider,
+                    clock: ports.clock,
+                    beforeCancelNotice: ports.beforeCancelNotice
+                }
+            );
+        } catch (error) {
+            logger.error(
+                { subscriptionId: value.subscriptionId, error },
+                'R18 complement provider cancellation failed after commit'
+            );
+        }
+    }
+    return {
+        outcome: 'SCHEDULED',
+        serviceEndsAt: result.serviceEndsAt,
+        ...(result.complements ? { complements: result.complements } : {})
+    };
 }
