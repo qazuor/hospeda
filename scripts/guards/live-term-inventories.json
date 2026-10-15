@@ -1,6 +1,34 @@
 {
     "fila_viva": [
         {
+            "file": "packages/service-core/src/services/billing/subscription/complement-selection.ts",
+            "symbol": "selectComplementTargets",
+            "row": null,
+            "why": "HOS-1562 S32/S11 shared selector: reads other vertical principals and applies the rule-specific live-state exclusion for USER/GLOBAL complements.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/complement-selection.ts",
+            "symbol": "pauseEndForUserWide",
+            "row": null,
+            "why": "HOS-1562 S32: reads compatible principal states and their open customer-request pauses to derive the USER/GLOBAL expected end.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/complement-pause-s32.ts",
+            "symbol": "pauseComplementsS32",
+            "row": null,
+            "why": "HOS-1562 S32: validates that the principal is suspended or has left the live rows before selecting complements.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/complement-pause-s32.ts",
+            "symbol": "writeComplementPause",
+            "row": null,
+            "why": "HOS-1562 S32 race check: under row locks confirms the principal still matches the trigger before pausing a complement.",
+            "subject": "subscription"
+        },
+        {
             "file": "packages/db/src/models/subscription/subscription.model.ts",
             "symbol": "findLiveCommitment",
             "row": null,

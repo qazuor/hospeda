@@ -6,6 +6,7 @@ import {
     providerLinkCancellationSeen
 } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
+import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports';
 import { getClock } from '../../utils/clock';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices';
 import { getPaymentProvider } from '../../utils/payment-provider';
@@ -13,7 +14,7 @@ import { beforeCancelNotice } from '../billing-subscription/before-cancel-notice
 import { touristVipInheritance } from '../billing-subscription/tourist-vip-inheritance';
 
 /**
- * Builds the real receiver ports; B4/B5/B7 add their own ports here.
+ * Builds the real receiver ports, including the S32/S33 and S11 complement policy.
  * `coverageNotices` is the process-wide registry (HOS-1533), so the notices the
  * receiver's transitions emit after their commit reach the verticals listeners.
  * `touristVipInheritance` feeds S7's Tourist VIP clause (AC:B7:31).
@@ -45,6 +46,7 @@ export function buildMercadoPagoNoticePorts() {
     const coverageNotices = getCoverageNotices();
     const markPayments = createPaymentReconciliationMarkPayments(clock);
     const planPolicy = createPlanCatalogInverse({ reader: planCatalogModel }).planPolicy;
+    const complements = buildComplementPolicyPorts();
     return {
         provider,
         clock,
@@ -56,6 +58,7 @@ export function buildMercadoPagoNoticePorts() {
         touristVipInheritance,
         cancellationSeen: providerLinkCancellationSeen,
         markPayments,
+        complements,
         delegates: createProviderNoticeMirrorDelegates({
             provider,
             clock,
@@ -63,7 +66,8 @@ export function buildMercadoPagoNoticePorts() {
             planPolicy,
             payments: creditedPaymentsFromLedger,
             coverageNotices,
-            markPayments
+            markPayments,
+            complements
         })
     };
 }
