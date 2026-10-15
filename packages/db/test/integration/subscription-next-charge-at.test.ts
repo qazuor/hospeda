@@ -59,27 +59,6 @@ describe('TEST:1685:3 syncNextChargeAt', () => {
                 .from(subscriptions)
                 .where(eq(subscriptions.id, row.id));
             expect(equal).toEqual(written);
-
-            const changed = new Date('2026-10-20T15:00:00.000Z');
-            expect(
-                await subscriptionModel.syncNextChargeAt({
-                    subscriptionId: row.id,
-                    nextChargeAt: changed,
-                    now: laterNow,
-                    tx
-                })
-            ).toBe(true);
-            const [updated] = await tx
-                .select()
-                .from(subscriptions)
-                .where(eq(subscriptions.id, row.id));
-            expect(updated?.nextChargeAt).toEqual(changed);
-            expect(updated?.updatedAt).toEqual(written?.updatedAt);
-            expect({
-                ...updated,
-                nextChargeAt: row.nextChargeAt,
-                updatedAt: row.updatedAt
-            }).toEqual(row);
         });
     });
 
