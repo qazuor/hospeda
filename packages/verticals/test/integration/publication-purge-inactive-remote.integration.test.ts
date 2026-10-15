@@ -288,6 +288,7 @@ describe('TEST:V9b:3 AC:V9b:3 calendar revocation', () => {
             async revokeCalendarConnection(input: {
                 accommodationId: string;
                 connectionId: string;
+                provider: string;
             }) {
                 revocations.push(input);
                 if (fail) throw new Error('fake provider unavailable');
