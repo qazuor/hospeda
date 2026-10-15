@@ -8,6 +8,10 @@ const files = [
         root,
         'packages/service-core/src/services/billing/reconciliation/sweep/zero-call-checks.service.ts'
     ),
+    join(
+        root,
+        'packages/service-core/src/services/billing/reconciliation/sweep/addon-without-shutdown-check.ts'
+    ),
     join(root, 'packages/service-core/src/services/billing/reconciliation/sweep/zero-call-ports.ts')
 ];
 

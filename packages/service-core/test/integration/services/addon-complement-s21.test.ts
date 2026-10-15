@@ -96,7 +96,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 });
 
                 // Assert
-                expect(result).toEqual({ outcome: 'CANCELLED', from: origin.status });
+                expect(result).toMatchObject({ outcome: 'CANCELLED', from: origin.status });
+                expect(result).toHaveProperty('charge.kind', 'MARK_OPENED');
                 const after = await readSubscription(tx, seeded.complementId);
                 expect(after.status).toBe('CANCELLED');
                 expect(after.serviceEndsAt).toEqual(before.serviceEndsAt);
@@ -104,7 +105,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 expect(after.graceEndsAt).toBeNull();
                 const trail = await readMoneyTrail(tx, seeded.complementId);
                 expect(trail.refunds).toEqual([]);
-                expect(trail.marks).toEqual([]);
+                expect(trail.marks).toHaveLength(1);
                 // S21 has no provider port and records no decision: nothing goes to the provider.
                 expect(await readDecisions(tx, seeded.complementId)).toEqual([]);
             });
@@ -117,6 +118,9 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 await applyS21({ tx, complementSubscriptionId: seeded.complementId, now });
 
                 expect(await readPauses(tx, seeded.complementId)).toEqual([{ actualEndAt: now }]);
+                const trail = await readMoneyTrail(tx, seeded.complementId);
+                expect(trail.marks).toHaveLength(1);
+                expect(trail.refunds).toEqual([]);
             });
         });
 
@@ -152,6 +156,10 @@ describe.skipIf(!isServiceTestDbAvailable())(
 
                 expect(result).toEqual({ outcome: 'NOT_APPLICABLE' });
                 expect(await readSubscription(tx, seeded.complementId)).toEqual(before);
+                expect(await readMoneyTrail(tx, seeded.complementId)).toMatchObject({
+                    marks: [],
+                    refunds: []
+                });
             });
         });
 
@@ -167,7 +175,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     now
                 });
 
-                expect(result).toEqual({ outcome: 'CANCELLED', from: 'SUSPENDED' });
+                expect(result).toMatchObject({ outcome: 'CANCELLED', from: 'SUSPENDED' });
                 expect((await readSubscription(tx, seeded.complementId)).status).toBe('CANCELLED');
             });
         });

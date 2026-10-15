@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { type ReconciliationMarkReason, reconciliationZeroCallModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
+import type { AddonOrphanhoodPorts } from '../../addon/addon-orphanhood-ports.js';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
+import { runAddonWithoutShutdownCheck } from './addon-without-shutdown-check.js';
 import { recordDivergence } from './reconciliation-divergence.js';
 import {
     type RetainedPaymentBranchResolver,
@@ -30,13 +32,15 @@ export interface ZeroCallChecksPorts {
     readonly retainedPayments?: RetainedPaymentsSource;
     /** Resolver for the corresponding B/12 §5.3 branch. */
     readonly retainedPaymentBranches?: RetainedPaymentBranchResolver;
+    /** Orphanhood reader for the fourth zero-call check. */
+    readonly addonOrphanhood?: AddonOrphanhoodPorts;
 }
 
 /** Counts and isolated failures for one run of the three checks. */
 export interface ZeroCallChecksSummary {
     /** Per-check examined and action counts. */
     readonly results: ReadonlyArray<{
-        readonly check: (typeof CHECKS)[keyof typeof CHECKS];
+        readonly check: (typeof CHECKS)[keyof typeof CHECKS] | 'ADDON_LIVE_ON_DEAD_TARGET';
         readonly examined: number;
         readonly marksOpened: number;
         readonly marksAccumulated: number;
@@ -44,7 +48,7 @@ export interface ZeroCallChecksSummary {
     }>;
     /** A check-level or row-level failure; checks never reject the sweep. */
     readonly failures: ReadonlyArray<{
-        readonly check: (typeof CHECKS)[keyof typeof CHECKS];
+        readonly check: (typeof CHECKS)[keyof typeof CHECKS] | 'ADDON_LIVE_ON_DEAD_TARGET';
         readonly subjectId: string | null;
         readonly message: string;
     }>;
@@ -219,6 +223,26 @@ export async function runZeroCallChecks(
         failures.push({ check: CHECKS.courtesy, subjectId: null, message: messageOf(error) });
     }
     results.push(courtesy);
+
+    if (ports.addonOrphanhood) {
+        try {
+            const addonCheck = await runAddonWithoutShutdownCheck(
+                { correlationId, pageSize },
+                {
+                    orphanhood: ports.addonOrphanhood,
+                    ...(ports.markPayments ? { markPayments: ports.markPayments } : {})
+                }
+            );
+            results.push(addonCheck.result);
+            failures.push(...addonCheck.failures);
+        } catch (error) {
+            failures.push({
+                check: 'ADDON_LIVE_ON_DEAD_TARGET',
+                subjectId: null,
+                message: messageOf(error)
+            });
+        }
+    }
 
     if (failures.length) logger.error({ correlationId, failures }, 'Zero-call checks failed');
     return { results, failures };

@@ -59,7 +59,7 @@ vi.mock('@repo/db', async () => {
 });
 vi.mock('@repo/verticals', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/verticals')>()),
-    createPlanCatalogInverse: () => ({ planPolicy: mockPlanPolicy })
+    createPlanCatalogInverse: () => ({ planPolicy: mockPlanPolicy, addonPolicy: mockPlanPolicy })
 }));
 
 import {
@@ -111,6 +111,7 @@ describe('billing reconciliation sweep cron', () => {
             marksOpened: 1,
             marksAccumulated: 0,
             failures: [{ subscriptionId: 'failed-id', message: 'read failed' }],
+            zeroCallChecks: { results: [], failures: [] },
             startedAt: new Date(),
             finishedAt: new Date()
         });
@@ -129,7 +130,11 @@ describe('billing reconciliation sweep cron', () => {
                 ],
                 zeroCallChecks: {
                     retainedPayments: retainedPaymentsFromLedger,
-                    retainedPaymentBranches: noDeterminableRetainedPaymentBranch
+                    retainedPaymentBranches: noDeterminableRetainedPaymentBranch,
+                    addonOrphanhood: {
+                        addonPolicy: expect.any(Function),
+                        listing: expect.any(Function)
+                    }
                 },
                 livenessPing: expect.any(Object)
             })
@@ -187,6 +192,7 @@ describe('billing reconciliation sweep cron', () => {
         expect(result).toMatchObject({ processed: 8, errors: 2, success: false });
         expect(result.details).toHaveProperty('failedSubscriptionIds', ['failed-id']);
         expect(result.details).toMatchObject({ runId: 'run-id', complete: false, pinged: false });
+        expect(result.details).toHaveProperty('zeroCallChecks', { results: [], failedChecks: [] });
         expect(result.details).not.toHaveProperty('failures');
     });
 
