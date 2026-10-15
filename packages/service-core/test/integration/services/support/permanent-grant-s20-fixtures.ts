@@ -22,12 +22,14 @@ export async function seedS20Addon(input: {
     readonly fake: FakePaymentProvider;
     readonly userId: string;
     readonly vertical: string;
-    readonly targetId: string;
+    readonly targetId: string | null;
     readonly complementStatus?: string;
     readonly instanceStatus?: 'PENDING_AUTHORIZATION' | 'ACTIVE';
     readonly scopeType?: 'LISTING' | 'VERTICAL_SUBSCRIPTION' | 'USER' | 'GLOBAL';
     readonly compatibleVerticals?: readonly string[];
     readonly openPause?: boolean;
+    readonly paymentMethod?: 'CARD' | 'MANUAL';
+    readonly withLink?: boolean;
 }): Promise<{
     readonly instanceId: string;
     readonly complementId: string;
@@ -50,13 +52,15 @@ export async function seedS20Addon(input: {
             vertical: input.vertical,
             status: input.complementStatus ?? 'ACTIVE',
             withLink: false,
+            paymentMethod: input.paymentMethod,
             openPause: input.openPause
         });
-        await tx.insert(providerLinks).values({
-            subscriptionId: complementId,
-            provider: 'MERCADO_PAGO',
-            providerId: authorizationId
-        });
+        if (input.withLink !== false)
+            await tx.insert(providerLinks).values({
+                subscriptionId: complementId,
+                provider: 'MERCADO_PAGO',
+                providerId: authorizationId
+            });
         const { productId, versionId } = await seedOrphanProduct(tx, {
             scopeType: input.scopeType ?? 'VERTICAL_SUBSCRIPTION',
             compatibleVerticals: input.compatibleVerticals ?? [input.vertical]
