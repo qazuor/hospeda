@@ -96,6 +96,8 @@ export * from './billing/payment/issue-receipt.js';
 export * from './billing/payment/payment-ledger.js';
 export * from './billing/payment/payment-ports.js';
 export * from './billing/payment/record-charge-fact.service.js';
+export * from './billing/promo/live-promos.js';
+export * from './billing/promo/promo-composition.js';
 export * from './billing/read-anchored-billing-option.js';
 export * from './billing/reconciliation/cancel-our-authorization.js';
 export * from './billing/reconciliation/chargeback/chargeback-detection.js';
