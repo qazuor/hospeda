@@ -78,21 +78,23 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 
 ### S4 — Renewal notice
 
-- **Preconditions:** An active card subscription exists;
-  `subscription.next_charge_at` is populated.
-  **While nothing writes `next_charge_at` yet (HOS-1622 notes, H-1), record this item as
-  `BLOCKED (H-1)` in the sign-off, not `PASS`.**
+- **Preconditions:** An active card subscription exists on `staging` whose Mercado Pago
+  preapproval is `authorized`.
 - **Steps:**
-  1. On a staging test subscription created for this smoke (never a real customer's row), write
-     `next_charge_at` to 5 days ahead of the current AR day. This is an explicit staging-only write;
-     skip this step and the next two while the item is `BLOCKED (H-1)`.
-  2. Run the `subscription-renewal-notice` cron on `staging`.
-  3. Check the outbox for a `billing.renewal-upcoming` row.
-- **Expected:** The outbox contains a `billing.renewal-upcoming` email with the occurrence
+  1. Run the `billing-reconciliation-sweep` cron on `staging` and confirm that
+     `subscription.next_charge_at` equals the preapproval's `next_payment_date` (read-only
+     `GET /preapproval/{id}`).
+  2. On a staging test subscription created for this smoke (never a real customer's row), write
+     `next_charge_at` 5 days ahead of the AR day, after the sweep and before the next one.
+  3. Run the `subscription-renewal-notice` cron on `staging`.
+  4. Check the outbox for a `billing.renewal-upcoming` row.
+- **Expected:** `subscription.next_charge_at` equals the preapproval's `next_payment_date`; the
+  outbox contains a `billing.renewal-upcoming` email with the occurrence
   `sub:<subscriptionId>:renov:-5d:<chargeDay>`.
-- **Evidence:** Read-only query on `email_outbox` filtering by `template_name = 'billing.renewal-upcoming'`.
-- **Covers:** AC:B13a:13 (renewal notices at 5 and 1 day); TEST:B13a:13 (integration).
-  **BLOCKED (H-1)** until `next_charge_at` has a writer.
+- **Evidence:** Read-only `GET /preapproval/{id}` and query on `subscriptions` after the sweep;
+  read-only query on `email_outbox` filtering by `template_name = 'billing.renewal-upcoming'`.
+- **Covers:** HOS-1685 (provider next charge date copy); AC:B13a:13 (renewal notices at 5 and 1 day);
+  TEST:B13a:13 (integration).
 
 ### S5 — Cloudflare edge cache and revalidation
 

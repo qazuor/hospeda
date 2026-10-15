@@ -3,6 +3,7 @@ import {
     createAmountComparison,
     createGraceExpiryCheck,
     createLostFirstRejectionCheck,
+    createNextChargeSync,
     createPaymentReconciliationMarkPayments,
     createPeriodChargesComparison,
     createProviderPauseCheck,
@@ -101,7 +102,9 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             // AC:B7:31: a charged period settled on a SUSPENDED row runs S7, whose
                             // clause cancels a paid Tourist VIP the restored plan grants again.
                             touristVipInheritance
-                        })
+                        }),
+                        // HOS-1685, CRIT:1685:2: copy the provider's next payment date onto the ACTIVE card row. Last, so no check above sees a value this run moved (H4).
+                        createNextChargeSync()
                     ],
                     // B11.8's second zero-call check (Coord-74, HOS-1561 H11): the open S19
                     // retentions and a resolver that never finds a branch, so a retention

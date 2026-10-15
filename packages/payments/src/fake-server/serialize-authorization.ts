@@ -26,6 +26,7 @@ export function serializeAuthorization(args: {
                   })
         },
         last_modified: snapshot.lastModifiedAt,
+        next_payment_date: snapshot.nextChargeAt,
         summarized: {
             ...(snapshot.chargeRecordCount === null
                 ? {}
