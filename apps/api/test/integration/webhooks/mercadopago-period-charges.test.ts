@@ -168,7 +168,9 @@ describe('HOS-1669 TEST:1669:4 AC:1669:4 — S6 decide el grace vencido por HTTP
             amount: { amountMinor: 100000, currency: 'ARS' },
             reference: `hos1669-current-paid-${crypto.randomUUID()}`
         });
-        await fixture.fake.readCharge({ chargeId: nextPaid.chargeId });
+        fixture.clock.advance({ ms: 60 * 60 * 1000 });
+        const approvedCharge = await fixture.fake.readCharge({ chargeId: nextPaid.chargeId });
+        expect(approvedCharge.snapshot.status).toBe('approved');
         expect(
             await getDb()
                 .select({ providerFactId: payments.providerFactId })
