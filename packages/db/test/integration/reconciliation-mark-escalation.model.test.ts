@@ -1,4 +1,4 @@
-import { eq, max } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { reconciliationMarkModel } from '../../src/models/reconciliation-mark/reconciliation-mark.model.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
@@ -15,8 +15,10 @@ describe('TEST:1607:2 — reconciliation mark escalation model', () => {
             const [user] = await tx.insert(users).values(testData.user()).returning();
             if (!user) throw new Error('Expected user');
             const [deadline] = await tx
-                .select({ version: max(billingDeadlineVersions.version) })
-                .from(billingDeadlineVersions);
+                .select()
+                .from(billingDeadlineVersions)
+                .orderBy(desc(billingDeadlineVersions.version))
+                .limit(1);
             const [subject] = await tx
                 .insert(subscriptions)
                 .values({ status: 'CANCELLED', class: 'LAPIDA', userId: user.id })
@@ -29,6 +31,13 @@ describe('TEST:1607:2 — reconciliation mark escalation model', () => {
                 reason: 'DIVERGENCIA_DE_MONTO',
                 placedAt,
                 tx
+            });
+            await tx.insert(billingDeadlineVersions).values({
+                version: deadline.version + 1,
+                values: { ...deadline.values, '17': { days: 3 } },
+                changedKey: 17,
+                previousValue: deadline.values['17'],
+                newValue: { days: 3 }
             });
             const lifted = await reconciliationMarkModel.insertOpen({
                 subject: { kind: 'SUBSCRIPTION', subscriptionId: subject.id },
@@ -57,13 +66,20 @@ describe('TEST:1607:2 — reconciliation mark escalation model', () => {
                 deadline.version
             );
             expect(page.find((item) => item.id === mark.id)?.deadlineDays).toBe(7);
-            expect(page.find((item) => item.id === legacy.id)?.deadlineDays).toBe(7);
+            expect(page.find((item) => item.id === legacy.id)?.deadlineDays).toBe(3);
             const escalatedAt = new Date('2026-01-08T00:00:00Z');
             expect(
                 await reconciliationMarkModel.markEscalated({ markId: mark.id, escalatedAt, tx })
             ).toBe(true);
             expect(
                 await reconciliationMarkModel.markEscalated({ markId: mark.id, escalatedAt, tx })
+            ).toBe(false);
+            expect(
+                await reconciliationMarkModel.markEscalated({
+                    markId: lifted.id,
+                    escalatedAt,
+                    tx
+                })
             ).toBe(false);
             expect(
                 (await reconciliationMarkModel.listOpenUnescalatedPage({ limit: 100, tx })).some(
