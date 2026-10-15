@@ -168,6 +168,7 @@ export class FakePaymentProvider implements PaymentProvider {
                         amount: { ...value.amount },
                         cadence: dropsSentFields ? { everyMonths: 1 } : { ...value.cadence },
                         firstChargeAt: dropsSentFields ? null : (value.firstChargeAt ?? null),
+                        nextChargeAt: null,
                         freePeriodDays: this.addedFreePeriodDays({
                             firstChargeAt: value.firstChargeAt
                         }),
@@ -200,6 +201,11 @@ export class FakePaymentProvider implements PaymentProvider {
      * @returns The acknowledgement of the transition
      */
     async approve(input: AuthorizationRef): Promise<MutationAcknowledgement> {
+        const current = this.ledger.authorizationOrThrow({
+            id: input.authorizationId,
+            capability: 'authorize'
+        });
+        const nextChargeAt = current.snapshot.firstChargeAt ?? this.clock.now().toISOString();
         const result = await this.transition({
             input,
             capability: 'authorize',
@@ -207,6 +213,7 @@ export class FakePaymentProvider implements PaymentProvider {
             to: 'active',
             viaNetwork: false
         });
+        current.snapshot = { ...current.snapshot, nextChargeAt };
         if (this.behaving({ behaviour: 'RP12' })) {
             createFakeCardValidation({ clock: this.clock, ledger: this.ledger, passes: true });
         }
@@ -281,6 +288,7 @@ export class FakePaymentProvider implements PaymentProvider {
             refundsByReference: new Map()
         });
         this.writeLastAttempt({ authorization, approved: false });
+        this.advanceNextCharge({ authorization });
         this.ledger.emit({ resourceKind: 'charge', resourceId: chargeId, version: 1 });
         return { chargeId };
     }
@@ -369,6 +377,7 @@ export class FakePaymentProvider implements PaymentProvider {
                     refundsByReference: new Map()
                 });
                 this.writeLastAttempt({ authorization: stored, approved: !late });
+                this.advanceNextCharge({ authorization: stored });
                 this.ledger.emit({ resourceKind: 'charge', resourceId: chargeId, version: 1 });
                 return { chargeId };
             }
@@ -663,6 +672,34 @@ export class FakePaymentProvider implements PaymentProvider {
         const date = new Date(this.clock.now());
         date.setUTCMonth(date.getUTCMonth() + args.authorization.snapshot.cadence.everyMonths);
         return date.toISOString();
+    }
+
+    /** Advance the provider calendar by one cycle when a charge is created. */
+    private advanceNextCharge(args: {
+        readonly authorization: { snapshot: AuthorizationSnapshot };
+    }): void {
+        const current = args.authorization.snapshot.nextChargeAt;
+        if (current === null) return;
+        const date = new Date(current);
+        date.setUTCMonth(date.getUTCMonth() + args.authorization.snapshot.cadence.everyMonths);
+        args.authorization.snapshot = {
+            ...args.authorization.snapshot,
+            nextChargeAt: date.toISOString()
+        };
+    }
+
+    /** Simulate Mercado Pago moving its own calendar; useful for measured provider behavior. */
+    moveNextCharge(input: { readonly authorizationId: string; readonly at: Date }): void {
+        const stored = this.ledger.authorizationOrThrow({
+            id: input.authorizationId,
+            capability: 'read'
+        });
+        stored.snapshot = { ...stored.snapshot, nextChargeAt: input.at.toISOString() };
+        this.ledger.bump({
+            stored,
+            resourceKind: 'authorization',
+            resourceId: input.authorizationId
+        });
     }
 
     private writeLastAttempt(args: {
