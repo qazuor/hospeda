@@ -165,7 +165,8 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:12 A5 provider half from S
             }
         );
         expect(pendingCancels).toBe(0);
-        expect(pending.cancel).toHaveBeenCalledTimes(1);
+        expect(pending.cancel).not.toHaveBeenCalled();
+        expect(deferred.cancelCall).toBe('NOTICE_PENDING');
         expect(deferred.addonCancelCalls).toHaveLength(1);
         expect(deferred.addonCancelCalls[0]?.cancelCall).toBe('NOTICE_PENDING');
         expect(
