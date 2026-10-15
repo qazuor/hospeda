@@ -6,9 +6,14 @@ import {
     reconciliationSweepRunModel
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
+import { actStartInstant, type PaymentProvider } from '@repo/payments';
 import type { BeforeCancelNotice } from '../../subscription/start-subscription.service.js';
+import {
+    type CancellationSeenAnnotator,
+    noCancellationSeenAnnotation
+} from '../../subscription/subscription-billing-ports.js';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
+import { observeAuthorizationRead } from './cancellation-observation.js';
 import {
     type CreditedPaymentsCheckPorts,
     type CreditedPaymentsCheckSummary,
@@ -28,6 +33,11 @@ import {
 import type { ReconciliationComparisonInput } from './reconciliation-divergence.js';
 import { type ReconciliationComparison, recordDivergence } from './reconciliation-divergence.js';
 import type { SweepLivenessPing } from './sweep-liveness-ping.port.js';
+import {
+    runTerminalReturn,
+    type TerminalReturnPorts,
+    type TerminalReturnSummary
+} from './terminal-return.js';
 import {
     runZeroCallChecks,
     type ZeroCallChecksPorts,
@@ -54,6 +64,10 @@ export interface ReconciliationSweepPorts {
      * exactly what it did before. Provider and clock are the sweep's own.
      */
     readonly cancellationRetry?: { readonly beforeCancelNotice: BeforeCancelNotice };
+    /** Optional B4 annotation port; without it, the sweep behaves as before. */
+    readonly cancellationSeen?: CancellationSeenAnnotator;
+    /** Terminal rows returning to the sweep (AC:B11:15); absent preserves the previous pass. */
+    readonly terminalReturn?: TerminalReturnPorts;
     /**
      * The credited-payments check (AC:B11:12, AC:B11:27). Optional: without it the sweep
      * does exactly what it did before. Provider, clock and S14 port are the sweep's own.
@@ -105,6 +119,8 @@ export interface ReconciliationSweepSummary {
         readonly rowsRead: number;
         readonly rowsFailed: number;
     };
+    /** Outcomes of the terminal return pass, when it ran. */
+    readonly terminalReturn?: TerminalReturnSummary;
     /** Outcomes of the credited-payments check, when it ran. */
     readonly creditedPayments?: CreditedPaymentsCheckSummary;
     /** Outcomes of the paid-orders check, when it ran. */
@@ -154,7 +170,8 @@ export async function runReconciliationSweep(
               provider: ports.provider,
               clock: ports.clock,
               beforeCancelNotice: ports.cancellationRetry.beforeCancelNotice,
-              markPayments: ports.markPayments
+              markPayments: ports.markPayments,
+              cancellationSeen: ports.cancellationSeen
           }
         : undefined;
     const retryTally = createOurCancellationRetryTally();
@@ -171,7 +188,13 @@ export async function runReconciliationSweep(
                 const read = await ports.provider.readAuthorization({
                     authorizationId: providerLink.providerId
                 });
-                assertFreshForAct({ read, act });
+                await observeAuthorizationRead({
+                    read,
+                    act,
+                    subscriptionId: subscription.id,
+                    annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
+                    previouslySeenAt: providerLink.cancelledSeenAt
+                });
                 rowsRead++;
                 await compareRow({ subscription, providerLink, read, act });
                 await runReconciliationRowChecks(
@@ -214,7 +237,7 @@ export async function runReconciliationSweep(
     let cancellationRetry: ReconciliationSweepSummary['cancellationRetry'];
     if (retryPorts) {
         const pass = await runOurCancellationRetry(
-            { correlationId, pageSize },
+            { correlationId, pageSize, ...(ports.terminalReturn ? { unconfirmedOnly: true } : {}) },
             comparisons.length > 0 ? { ...retryPorts, afterRead: compareRow } : retryPorts
         );
         rowsRead += pass.rowsRead;
@@ -231,6 +254,24 @@ export async function runReconciliationSweep(
             rowsRead: pass.rowsRead,
             rowsFailed: pass.rowsFailed
         };
+    }
+
+    let terminalReturn: TerminalReturnSummary | undefined;
+    if (ports.terminalReturn) {
+        terminalReturn = await runTerminalReturn(
+            { correlationId, pageSize },
+            {
+                ...ports.terminalReturn,
+                provider: ports.provider,
+                clock: ports.clock,
+                markPayments: ports.markPayments,
+                cancellationSeen: ports.cancellationSeen,
+                ...(comparisons.length > 0 ? { compareRow } : {})
+            }
+        );
+        rowsRead += terminalReturn.rowsRead;
+        rowsFailed += terminalReturn.rowsFailed;
+        failures.push(...terminalReturn.failures);
     }
 
     let creditedPayments: CreditedPaymentsCheckSummary | undefined;
@@ -298,6 +339,7 @@ export async function runReconciliationSweep(
         finishedAt,
         ...(zeroCallChecks ? { zeroCallChecks } : {}),
         ...(cancellationRetry ? { cancellationRetry } : {}),
+        ...(terminalReturn ? { terminalReturn } : {}),
         ...(creditedPayments ? { creditedPayments } : {}),
         ...(paidOrders ? { paidOrders } : {})
     };
