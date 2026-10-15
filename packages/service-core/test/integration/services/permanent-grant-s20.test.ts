@@ -238,6 +238,26 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     .where(eq(addonInstances.id, instanceId));
                 expect(instance).toEqual({ status: 'CANCELLED', titleAnchorId: null });
             }));
+        it('h — TEST:B9a:4 a null VERTICAL_SUBSCRIPTION target is rejected by the scope trigger', async () => {
+            await expect(
+                withServiceTestTransaction(async (tx) => {
+                    const { userId } = await seedOrphanOwner(tx);
+                    const { subscriptionId } = await seedComplement(tx, {
+                        userId,
+                        vertical: ORPHAN_VERTICAL,
+                        status: 'ACTIVE'
+                    });
+                    await seedOrphanInstance(tx, {
+                        ownerId: userId,
+                        scopeType: 'VERTICAL_SUBSCRIPTION',
+                        compatibleVerticals: [ORPHAN_VERTICAL],
+                        status: 'ACTIVE',
+                        targetId: null,
+                        complementSubscriptionId: subscriptionId
+                    });
+                })
+            ).rejects.toThrow();
+        });
         it('c — TEST:B9a:4 pending instance remains unanchored while S20 cancels its row and records the decision', async () =>
             withServiceTestTransaction(async (tx) => {
                 const { userId } = await seedOrphanOwner(tx);
