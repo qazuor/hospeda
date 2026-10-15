@@ -22,6 +22,7 @@ const logger = createLogger('billing-reconciliation-sweep');
 const CHECK = 'ADDON_LIVE_ON_DEAD_TARGET' as const;
 const REASON: ReconciliationMarkReason = 'ADDON_SIN_APAGAR';
 
+/** The counts and per-instance failures produced by the fourth zero-call check. */
 export interface AddonWithoutShutdownResult {
     readonly result: {
         readonly check: typeof CHECK;
