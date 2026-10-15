@@ -293,5 +293,47 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 ).toEqual(expectedEndAt);
             });
         });
+
+        it('RESUME acepta USER compatible con la vertical ACTIVE que acaba de volver, aunque otra compatible siga ACTIVE', async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { userId } = await seedOrphanOwner(tx);
+                const principal = await seedPrincipal(tx, {
+                    userId,
+                    vertical: OTHER_VERTICAL,
+                    status: 'ACTIVE'
+                });
+                await seedPrincipal(tx, { userId, vertical: ORPHAN_VERTICAL, status: 'ACTIVE' });
+                const complement = await seedComplement(tx, {
+                    userId,
+                    vertical: ORPHAN_VERTICAL,
+                    status: 'PAUSED',
+                    withLink: false
+                });
+                await seedOrphanInstance(tx, {
+                    ownerId: userId,
+                    scopeType: 'USER',
+                    compatibleVerticals: [ORPHAN_VERTICAL, OTHER_VERTICAL],
+                    status: 'ACTIVE',
+                    targetId: null,
+                    complementSubscriptionId: complement.subscriptionId
+                });
+                const result = await selectComplementTargets(
+                    {
+                        tx,
+                        principal: {
+                            id: principal.subscriptionId,
+                            userId,
+                            vertical: OTHER_VERTICAL
+                        },
+                        rule: 'RESUME',
+                        complementStatus: 'PAUSED'
+                    },
+                    orphanPorts(tx).ports
+                );
+                expect(
+                    result.targets.map(({ complementSubscriptionId }) => complementSubscriptionId)
+                ).toEqual([complement.subscriptionId]);
+            });
+        });
     }
 );

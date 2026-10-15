@@ -206,6 +206,9 @@ export async function retireComplementRows(): Promise<void> {
 export function providerHarness(
     options: {
         readonly pauseAcknowledgesOnly?: boolean;
+        readonly resumeAcknowledgesOnly?: boolean;
+        readonly resumeThrows?: boolean;
+        readonly onResume?: () => Promise<void>;
         readonly pauseThrows?: boolean;
         readonly readThrows?: boolean;
         readonly onPause?: () => Promise<void>;
@@ -218,6 +221,15 @@ export function providerHarness(
     const calls: string[] = [];
     const provider = new Proxy(fake as unknown as PaymentProvider, {
         get(target, property, receiver) {
+            if (property === 'resume')
+                return async (input: { readonly authorizationId: string }) => {
+                    calls.push(`resume:${input.authorizationId}`);
+                    if (options.resumeThrows) throw new Error('resume failed');
+                    if (options.resumeAcknowledgesOnly)
+                        return { accepted: true as const, resourceId: input.authorizationId };
+                    await options.onResume?.();
+                    return fake.resume(input);
+                };
             if (property === 'pause')
                 return async (input: { readonly authorizationId: string }) => {
                     calls.push(input.authorizationId);

@@ -14,6 +14,7 @@ import { type AddonScopeType, findOrphanhoodCandidates } from '../addon/addon-or
 import { permanentGrantLiveAnchors } from '../grant/permanent-grant-live-anchors.js';
 import type { ComplementPolicyPorts } from './complement-ports.js';
 
+/** RESUME treats the ACTIVE principal passed by S7 as the title for USER/GLOBAL; it does not require absence of another compatible principal or anchor. */
 /** Rule-specific exclusions for a supporting principal. */
 export type ComplementRule = 'PAUSE' | 'CANCEL' | 'RESUME';
 /** Status of the complement subscription selected by the caller. */
