@@ -107,7 +107,7 @@ describe('TEST:V5:16 SUPER_ADMIN-exclusive permission assignment and resolution'
             read: 'uncached'
         });
         for (const permission of SUPER_ADMIN_EXCLUSIVE_PERMISSIONS) {
-            expect(effective.permissions).not.toContain(permission);
+            expect.soft(effective.permissions).not.toContain(permission);
         }
         expect(effective.permissions).toContain(PermissionEnum.POST_VIEW_ALL);
 
@@ -125,7 +125,7 @@ describe('TEST:V5:16 SUPER_ADMIN-exclusive permission assignment and resolution'
             roles: [RoleEnum.ADMIN],
             read: 'uncached'
         });
-        expect(adminEffective.permissions).not.toContain(plantedAdminRow.permission);
+        expect.soft(adminEffective.permissions).not.toContain(plantedAdminRow.permission);
 
         const superAdmin = await resolveEffectivePermissions({
             userId: target.id,
