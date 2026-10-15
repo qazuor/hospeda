@@ -59,7 +59,9 @@ describe.skipIf(!isServiceTestDbAvailable())(
             );
             extraPrincipalIds.push(support.subscriptionId);
             const h = serviceEndHarness();
-            const base = serviceEndPorts(getServiceTestDb() as unknown as DrizzleClient, h).ports;
+            const base = serviceEndPorts(getServiceTestDb() as unknown as DrizzleClient, h, {
+                successionCloser: recordingSuccessionCloser(h.log).successionCloser
+            }).ports;
             const result = await endScheduledServices(
                 { limit: 100 },
                 {
