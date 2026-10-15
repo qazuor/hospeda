@@ -11,10 +11,22 @@ import {
     seedCommittedComplement
 } from './support/complement-fixtures.js';
 import { seedCoveragePayment } from './support/coverage-fixtures.js';
-import { serviceEndHarness, serviceEndPorts } from './support/service-end-fixtures.js';
+import {
+    seedServiceEndPrincipal,
+    serviceEndHarness,
+    serviceEndPorts
+} from './support/service-end-fixtures.js';
 
+const extraPrincipalIds: string[] = [];
 const endedAt = new Date('2026-10-13T00:00:00.000Z');
-afterEach(retireComplementRows);
+afterEach(async () => {
+    await retireComplementRows();
+    for (const id of extraPrincipalIds.splice(0))
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'CANCELLED' })
+            .where(eq(subscriptions.id, id));
+});
 afterAll(closeServiceTestPool);
 
 describe.skipIf(!isServiceTestDbAvailable())(
@@ -26,7 +38,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 fake: provider.fake,
                 principalStatus: 'CANCEL_SCHEDULED',
                 otherStatus: 'SUSPENDED',
-                scopeType: 'USER'
+                scopeTypes: ['USER', 'LISTING']
             });
             if (!seeded.otherPrincipalId) throw new Error('compatible principal missing');
             await getServiceTestDb()
@@ -37,6 +49,14 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 subscriptionId: seeded.otherPrincipalId,
                 status: 'SUCCEEDED'
             });
+            const support = await getServiceTestDb().transaction(async (tx) =>
+                seedServiceEndPrincipal(tx as unknown as DrizzleClient, {
+                    userId: seeded.userId,
+                    vertical: 'accommodation',
+                    status: 'ACTIVE'
+                })
+            );
+            extraPrincipalIds.push(support.subscriptionId);
             const h = serviceEndHarness();
             const base = serviceEndPorts(getServiceTestDb() as unknown as DrizzleClient, h).ports;
             const result = await endScheduledServices(
@@ -69,6 +89,15 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(principal?.status).toBe('CANCELLED');
             expect(complement?.status).toBe('PAUSED');
             expect(pause?.expectedEndAt).toBeNull();
+            const listingComplementId = seeded.addons.find(
+                ({ instanceId }) => instanceId !== seeded.instanceId
+            )?.complementId;
+            if (!listingComplementId) throw new Error('listing complement missing');
+            const [listingComplement] = await getServiceTestDb()
+                .select({ status: subscriptions.status })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, listingComplementId));
+            expect(listingComplement?.status).toBe('ACTIVE');
         });
 
         it('no pausa el USER si la otra compatible sigue ACTIVE y con pago', async () => {
