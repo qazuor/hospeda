@@ -831,7 +831,9 @@ jobs:
     runs-on: ubuntu-latest
     # 20 was the ceiling until the HOS-1352 wave 18: the job ran 14.6-19.6 min
     # and was cut five times in one night with every test already passed.
-    timeout-minutes: 30
+    # 30 held until wave 23, when green runs took 20-29 min and two runs in a
+    # row were cut at exactly 30 in the last step (cutover DB tests). 45 now.
+    timeout-minutes: 45
     needs: build
 
     services:
