@@ -36,7 +36,8 @@ const service = 'packages/service-core/src/services/foo/foo.service.ts';
 const middleware = 'apps/api/src/middlewares/actor.ts';
 
 describe('TEST:V5:15 GUARD:G19', () => {
-    it('accepts the real production tree with the frozen allowlist', () => {
+    // Walks the real repository tree: 10s is not enough on a loaded CI runner (HOS-1681).
+    it('accepts the real production tree with the frozen allowlist', { timeout: 30_000 }, () => {
         expect(run().exitCode).toBe(0);
     });
 
