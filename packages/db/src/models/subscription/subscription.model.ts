@@ -197,8 +197,9 @@ export class SubscriptionModel {
         const db = input.tx ?? getDb();
         const rows = await db
             .update(subscriptions)
-            // The global updated_at trigger owns the timestamp on real writes.
-            .set({ nextChargeAt: input.nextChargeAt })
+            // Same shape as the other writers here; the global updated_at trigger
+            // (extras/002) replaces the value with NOW() on every real write.
+            .set({ nextChargeAt: input.nextChargeAt, updatedAt: input.now })
             .where(
                 and(
                     eq(subscriptions.id, input.subscriptionId),
