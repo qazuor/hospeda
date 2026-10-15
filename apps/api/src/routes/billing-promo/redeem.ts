@@ -74,7 +74,7 @@ function isPromoRedemptionReason(reason: string): reason is PromoRedemptionReaso
 
 export const protectedRedeemPromoCodeRoute = createProtectedRoute({
     method: 'post',
-    path: '/promo-codes/redeem',
+    path: '/redeem',
     successStatusCode: 200,
     summary: 'Redeem a promo code',
     description: 'Applies a discount or extends the owner’s active trial.',

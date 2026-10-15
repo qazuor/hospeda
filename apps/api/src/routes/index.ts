@@ -515,7 +515,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // sibling spec handlers land; see ai/protected/index.ts for slots).
         app.route('/api/v1/protected/ai', protectedAiRoutes);
         app.route('/api/v1/protected/billing/subscriptions', protectedBillingSubscriptionRoutes);
-        app.route('/api/v1/protected/billing', protectedBillingPromoRoutes);
+        app.route('/api/v1/protected/billing/promo-codes', protectedBillingPromoRoutes);
         app.route('/api/v1/protected/billing-subscription', protectedBillingSubscriptionReadRoutes);
 
         // Newsletter (SPEC-101 — subscribe / status / resend / unsubscribe live
