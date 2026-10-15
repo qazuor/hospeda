@@ -315,14 +315,15 @@ describe('TEST:V6:21 cutover V6 trials', () => {
             expect(scoped.planned).toHaveLength(1);
             expect(scoped.planned[0]?.listingId).toBe(propia.listingId);
             expect(scoped.written).toEqual([]);
-            const full = await writeCutoverTrials({
-                db: tx,
-                dryRun: true,
-                scheduleExpiryCampaign: async (args) => {
-                    campaigns.push(args);
-                }
-            });
-            expect(full).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+            await expect(
+                writeCutoverTrials({
+                    db: tx,
+                    dryRun: true,
+                    scheduleExpiryCampaign: async (args) => {
+                        campaigns.push(args);
+                    }
+                })
+            ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
         });
     });
 
