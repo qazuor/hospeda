@@ -28,6 +28,7 @@ import {
     seedGrantPlan,
     seedPermanentGrant
 } from './support/permanent-grant-fixtures';
+import { grantSignerActor } from './support/permanent-grant-fixtures.js';
 
 afterAll(closeServiceTestPool);
 
@@ -219,7 +220,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 const result = await grantPermanentGrant(
                     {
                         beneficiaryUserId: seeded.userId,
-                        grantedBy: seeded.adminId,
+                        actor: grantSignerActor(seeded.adminId),
                         reason: 'live anchor orphanhood case',
                         includesAddons: false,
                         anchors: [{ vertical: V, ...seeded.plan }]

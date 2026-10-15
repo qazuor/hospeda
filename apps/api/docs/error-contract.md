@@ -409,6 +409,30 @@ The `message` of `REQUESTED_AMOUNT_MISMATCH` carries the requested amount: it is
 
 The permission is the route's scope (`billing.settleExternal`); the subject, the system actor and `actor = subject` are decided inside the settlement transaction, so a 403 can come from either.
 
+## Permanent grant rejections (B9a.2, ACC:2)
+
+`POST /api/v1/admin/billing-permanent-grants` and
+`POST /api/v1/admin/billing-permanent-grants/{permanentGrantId}/anchors` answer
+typed rejections with their `reason`. The mapping lives in
+`src/routes/billing-permanent-grant/admin/rejections.ts` as an exhaustive
+`Record<PermanentGrantRejection, ...>`, so a new service reason without an entry
+breaks the typecheck.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `PERMANENT_GRANT_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `PERMANENT_GRANT_NOT_LIVE` | 422 | `VALIDATION_ERROR` |
+| `PERMANENT_GRANT_VERTICAL_ALREADY_ANCHORED` | 409 | `ALREADY_EXISTS` |
+| `PERMANENT_GRANT_ALREADY_LIVE` | 409 | `ALREADY_EXISTS` |
+| `PERMANENT_GRANT_REFERENCE_NOT_FOUND` | 422 | `VALIDATION_ERROR` |
+| `INVALID_PERMANENT_GRANT_INPUT` | 422 | `VALIDATION_ERROR` |
+
+The permission is the route scope (`billing.grantComplimentary`); the service
+decides the action permission, subject, system actor and `actor = subject`, so a
+403 can come from the route or the service. Revocation does not have a route yet
+(B9a.6, Fase 2).
+
 ## Action 8 revocation rejections (B5, S36)
 
 `GET` and `POST /api/v1/admin/billing-subscription/{subscriptionId}/revocation` (ACC:8 with reason revocation, S36; HOS-1543) answer every typed rejection of `previewSubscriptionRevocation` and `revokeSubscription` with its `reason`. The preview rejects with the same reasons as the act and writes nothing. The mapping lives in `src/routes/billing-subscription/admin/revocation.ts` as an exhaustive `Record` over `REVOKE_SUBSCRIPTION_REJECTIONS`, so a new service reason without an entry breaks the typecheck.

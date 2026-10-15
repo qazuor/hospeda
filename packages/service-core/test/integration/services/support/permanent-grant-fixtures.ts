@@ -8,8 +8,18 @@ import {
     plans,
     planVersions
 } from '@repo/db';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import type { Actor } from '../../../../src/types/index.js';
 import { getServiceTestDb, getServiceTestPool } from '../helpers';
 import { cleanUpCoverageNoticeRows } from './coverage-notice-fixtures.js';
+
+/** Build a fixture signer actor with the complimentary grant permission. */
+export function grantSignerActor(
+    userId: string,
+    permissions: readonly PermissionEnum[] = [PermissionEnum.BILLING_GRANT_COMPLIMENTARY]
+): Actor {
+    return { id: userId, roles: [RoleEnum.SUPER_ADMIN], permissions };
+}
 
 /** Inserts a plan and current floor version for one vertical. */
 export async function seedGrantPlan(

@@ -11,7 +11,11 @@ import {
     seedCoverageSubscription,
     seedCoverageUser
 } from './support/coverage-fixtures.js';
-import { retirePermanentGrantRows, seedGrantPlan } from './support/permanent-grant-fixtures.js';
+import {
+    grantSignerActor,
+    retirePermanentGrantRows,
+    seedGrantPlan
+} from './support/permanent-grant-fixtures.js';
 
 afterAll(closeServiceTestPool);
 const userIds: string[] = [];
@@ -77,7 +81,7 @@ async function grant(s: Awaited<ReturnType<typeof seed>>) {
     return grantPermanentGrant(
         {
             beneficiaryUserId: s.userId,
-            grantedBy: s.adminId,
+            actor: grantSignerActor(s.adminId),
             reason: 'courtesy grant',
             includesAddons: false,
             anchors: [{ vertical: V, ...s.grantPlan }]
@@ -200,7 +204,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 '../../../src/services/billing/grant/permanent-grant.service.js'
             );
             await anchorPermanentGrantVertical(
-                { permanentGrantId, anchoredBy: s.adminId, vertical: W, ...plan },
+                { permanentGrantId, actor: grantSignerActor(s.adminId), vertical: W, ...plan },
                 ports()
             );
             const [closed] = await getServiceTestDb()

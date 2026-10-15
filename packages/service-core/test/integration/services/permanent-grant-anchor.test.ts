@@ -19,7 +19,11 @@ import {
     seedCoverageUser
 } from './support/coverage-fixtures.js';
 import { realCoverage } from './support/coverage-notice-fixtures.js';
-import { retirePermanentGrantRows, seedGrantPlan } from './support/permanent-grant-fixtures.js';
+import {
+    grantSignerActor,
+    retirePermanentGrantRows,
+    seedGrantPlan
+} from './support/permanent-grant-fixtures.js';
 
 afterAll(closeServiceTestPool);
 const userIds: string[] = [];
@@ -70,7 +74,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const created = await grantPermanentGrant(
                 {
                     beneficiaryUserId: s.userId,
-                    grantedBy: s.adminId,
+                    actor: grantSignerActor(s.adminId),
                     reason: 'anchor test',
                     includesAddons: false,
                     anchors: [{ vertical: V1, ...s.anchor }]
@@ -97,7 +101,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const result = await anchorPermanentGrantVertical(
                 {
                     permanentGrantId: created.permanentGrantId,
-                    anchoredBy: s.adminId,
+                    actor: grantSignerActor(s.adminId),
                     vertical: V2,
                     ...s.added
                 },
@@ -143,7 +147,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const created = await grantPermanentGrant(
                 {
                     beneficiaryUserId: s.userId,
-                    grantedBy: s.adminId,
+                    actor: grantSignerActor(s.adminId),
                     reason: 'notice test',
                     includesAddons: false,
                     anchors: [{ vertical: V1, ...s.anchor }]
@@ -168,7 +172,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             await anchorPermanentGrantVertical(
                 {
                     permanentGrantId: created.permanentGrantId,
-                    anchoredBy: s.adminId,
+                    actor: grantSignerActor(s.adminId),
                     vertical: V2,
                     ...s.added
                 },
@@ -184,7 +188,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const created = await grantPermanentGrant(
                 {
                     beneficiaryUserId: s.userId,
-                    grantedBy: s.adminId,
+                    actor: grantSignerActor(s.adminId),
                     reason: 'empty anchor',
                     includesAddons: false,
                     anchors: [{ vertical: V1, ...s.anchor }]
@@ -195,7 +199,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             await anchorPermanentGrantVertical(
                 {
                     permanentGrantId: created.permanentGrantId,
-                    anchoredBy: s.adminId,
+                    actor: grantSignerActor(s.adminId),
                     vertical: V2,
                     ...s.added
                 },
@@ -211,7 +215,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const created = await grantPermanentGrant(
                 {
                     beneficiaryUserId: s.userId,
-                    grantedBy: s.adminId,
+                    actor: grantSignerActor(s.adminId),
                     reason: 'reject test',
                     includesAddons: false,
                     anchors: [{ vertical: V1, ...s.anchor }]
@@ -228,7 +232,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 anchorPermanentGrantVertical(
                     {
                         permanentGrantId: created.permanentGrantId,
-                        anchoredBy: s.adminId,
+                        actor: grantSignerActor(s.adminId),
                         vertical: V2,
                         ...s.added
                     },
@@ -244,7 +248,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const live = await grantPermanentGrant(
                 {
                     beneficiaryUserId: (await setup()).userId,
-                    grantedBy: s.adminId,
+                    actor: grantSignerActor(s.adminId),
                     reason: 'already anchored',
                     includesAddons: false,
                     anchors: [{ vertical: V1, ...s.anchor }]
@@ -255,7 +259,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 anchorPermanentGrantVertical(
                     {
                         permanentGrantId: live.permanentGrantId,
-                        anchoredBy: s.adminId,
+                        actor: grantSignerActor(s.adminId),
                         vertical: V1,
                         ...s.anchor
                     },
@@ -266,7 +270,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 anchorPermanentGrantVertical(
                     {
                         permanentGrantId: crypto.randomUUID(),
-                        anchoredBy: s.adminId,
+                        actor: grantSignerActor(s.adminId),
                         vertical: V2,
                         ...s.added
                     },
@@ -286,7 +290,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             await grantPermanentGrant(
                 {
                     beneficiaryUserId: s.userId,
-                    grantedBy: s.adminId,
+                    actor: grantSignerActor(s.adminId),
                     reason: 'source check',
                     includesAddons: false,
                     anchors: [{ vertical: V1, ...s.anchor }]

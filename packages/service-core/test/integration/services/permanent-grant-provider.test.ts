@@ -25,7 +25,11 @@ import {
 } from './support/coverage-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
 import { namespaceFake } from './support/payment-provider.js';
-import { retirePermanentGrantRows, seedGrantPlan } from './support/permanent-grant-fixtures.js';
+import {
+    grantSignerActor,
+    retirePermanentGrantRows,
+    seedGrantPlan
+} from './support/permanent-grant-fixtures.js';
 
 const now = new Date('2026-10-14T12:00:00.000Z');
 const clock = { now: () => now };
@@ -175,7 +179,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const result = await grantPermanentGrant(
                 {
                     beneficiaryUserId: userId,
-                    grantedBy: adminId,
+                    actor: grantSignerActor(adminId),
                     reason: 'provider half test',
                     includesAddons: false,
                     anchors: V.map((vertical, index) => ({ vertical, ...anchors[index]! }))
@@ -225,7 +229,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const grant = await grantPermanentGrant(
                 {
                     beneficiaryUserId: userId,
-                    grantedBy: adminId,
+                    actor: grantSignerActor(adminId),
                     reason: 'resume provider test',
                     includesAddons: false,
                     anchors: [
@@ -241,7 +245,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             ]);
             vi.restoreAllMocks();
             const resumed = await resumePermanentGrant(
-                { permanentGrantId: grant.permanentGrantId, actorId: adminId },
+                { permanentGrantId: grant.permanentGrantId, actor: grantSignerActor(adminId) },
                 ports(fake)
             );
             expect(resumed.providerCalls.map(({ cancelCall }) => cancelCall).sort()).toEqual([
@@ -268,7 +272,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const result = await grantPermanentGrant(
                 {
                     beneficiaryUserId: userId,
-                    grantedBy: adminId,
+                    actor: grantSignerActor(adminId),
                     reason: 'notice pending',
                     includesAddons: false,
                     anchors: [{ vertical: V[0], ...plan }]
@@ -279,7 +283,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 { subscriptionId: row.subscriptionId, cancelCall: 'NOTICE_PENDING' }
             ]);
             const resumed = await resumePermanentGrant(
-                { permanentGrantId: result.permanentGrantId, actorId: adminId },
+                { permanentGrantId: result.permanentGrantId, actor: grantSignerActor(adminId) },
                 ports(fake)
             );
             expect(resumed.providerCalls).toMatchObject([
@@ -304,7 +308,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const result = await grantPermanentGrant(
                 {
                     beneficiaryUserId: userId,
-                    grantedBy: adminId,
+                    actor: grantSignerActor(adminId),
                     reason: 'no recipient',
                     includesAddons: false,
                     anchors: [{ vertical: V[0], ...plan }]
@@ -337,7 +341,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const result = await grantPermanentGrant(
                 {
                     beneficiaryUserId: userId,
-                    grantedBy: adminId,
+                    actor: grantSignerActor(adminId),
                     reason: 'without provider link',
                     includesAddons: false,
                     anchors: [{ vertical: V[0], ...anchor }]
@@ -373,7 +377,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const created = await grantPermanentGrant(
                 {
                     beneficiaryUserId: userId,
-                    grantedBy: adminId,
+                    actor: grantSignerActor(adminId),
                     reason: 'anchor first',
                     includesAddons: false,
                     anchors: [{ vertical: V[0], ...firstPlan }]
@@ -384,7 +388,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const anchored = await anchorPermanentGrantVertical(
                 {
                     permanentGrantId: created.permanentGrantId,
-                    anchoredBy: adminId,
+                    actor: grantSignerActor(adminId),
                     vertical: V[1],
                     ...secondPlan
                 },
@@ -407,7 +411,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const created = await grantPermanentGrant(
                 {
                     beneficiaryUserId: userId,
-                    grantedBy: adminId,
+                    actor: grantSignerActor(adminId),
                     reason: 'revoke resume',
                     includesAddons: false,
                     anchors: [{ vertical: V[0], ...anchor }]
@@ -420,7 +424,10 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 .where(eq(permanentGrants.id, created.permanentGrantId));
             await expect(
                 resumePermanentGrant(
-                    { permanentGrantId: created.permanentGrantId, actorId: adminId },
+                    {
+                        permanentGrantId: created.permanentGrantId,
+                        actor: grantSignerActor(adminId)
+                    },
                     ports(fake)
                 )
             ).rejects.toMatchObject({ reason: 'PERMANENT_GRANT_NOT_LIVE' });
