@@ -95,7 +95,7 @@ async function add(
     return subscription;
 }
 
-async function mark(tx: DrizzleClient, id: string, reason = 'ESTADO_DIVERGENTE') {
+async function mark(tx: DrizzleClient, id: string, reason = 'DIVERGENCIA_DE_MONTO') {
     return tx.insert(reconciliationMarks).values({ subscriptionId: id, reason }).returning();
 }
 
