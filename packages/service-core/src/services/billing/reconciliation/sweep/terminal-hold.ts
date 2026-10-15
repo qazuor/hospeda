@@ -2,13 +2,17 @@ import type { TerminalHoldCutoffs } from '@repo/db';
 import { cancellationRereadWindowEndsAt } from '../../coverage/can-charge.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const MONTH_DAYS = 31;
+const QUARTER_DAYS = 92;
+const HALF_YEAR_DAYS = 184;
+const FULL_YEAR_DAYS = 366;
 
 export const TERMINAL_HOLD_DAYS_BY_CYCLE = {
-    monthly: 31,
-    quarterly: 92,
-    semiannual: 184,
-    annual: 366,
-    none: 366
+    monthly: MONTH_DAYS,
+    quarterly: QUARTER_DAYS,
+    semiannual: HALF_YEAR_DAYS,
+    annual: FULL_YEAR_DAYS,
+    none: FULL_YEAR_DAYS
 } as const;
 
 export function terminalHoldCutoffs(input: {
