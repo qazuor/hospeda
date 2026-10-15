@@ -36,6 +36,7 @@ import { openReconciliationMark } from '../reconciliation/open-reconciliation-ma
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port.js';
 import { activatePendingWithSignupNotice } from '../subscription/activate-pending-with-signup-notice.js';
 import type { TouristVipInheritancePort } from '../subscription/cancel-inherited-tourist-vip.service.js';
+import type { ComplementPolicyPorts } from '../subscription/complement-ports.js';
 import { declineFirstCharge } from '../subscription/decline-first-charge.service.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import {
@@ -114,6 +115,7 @@ export interface ProcessProviderNoticePorts {
     readonly markPayments?: ReconciliationMarkPayments;
     /** The internal chargeback interface (AC:B11:27), handed to `recordChargeFact`. */
     readonly chargebacks?: ChargebackDetection;
+    readonly complements?: ComplementPolicyPorts;
 }
 
 /**
@@ -369,7 +371,13 @@ export async function processProviderNotice(
                 }
                 const ours = await mirrorOurCancellationOnActive(
                     { subscriptionId: row.id, readAt, everyMonths: snapshot.cadence.everyMonths },
-                    { clock: ports.clock, coverageNotices: ports.coverageNotices }
+                    {
+                        clock: ports.clock,
+                        coverageNotices: ports.coverageNotices,
+                        complements: ports.complements,
+                        provider: ports.provider,
+                        beforeCancelNotice: ports.beforeCancelNotice
+                    }
                 );
                 if (ours.outcome === 'LOST_RACE') continue;
                 if (ours.outcome === 'SCHEDULED') {
