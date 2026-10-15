@@ -471,8 +471,7 @@
                 "title": "Tu ficha ya está lista",
                 "body": "Completaste todo lo que hacía falta. Si la publicás ahora, va a aparecer en el sitio, visible para los turistas.",
                 "publishNow": "Publicar ahora",
-                "keepEditing": "Seguir editando",
-                "blockedTitle": "Necesitás un plan activo"
+                "keepEditing": "Seguir editando"
             },
             "toast": {
                 "saveSuccess": "Cambios guardados",
