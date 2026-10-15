@@ -31,6 +31,7 @@ import {
 } from '../reconciliation/cancel-our-authorization';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import { applyS21 } from '../subscription/complement-s21';
+import { S21_CAUSES, type S21Cause } from '../subscription/complement-s21-charge';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service';
 import {
     type CancellationSeenAnnotator,
@@ -83,12 +84,14 @@ export type A5Ports = Pick<AddonOrphanhoodPorts, 'addonPolicy' | 'listing'>;
 const applySchema = z.object({
     instanceId: z.uuid(),
     clause: z.enum(['ORPHANED', 'WITHDRAWN']),
+    s21Cause: z.enum(S21_CAUSES).optional(),
     now: z.date(),
     tx: z.custom<DrizzleClient>((value) => value !== undefined && value !== null)
 });
 
 const runSchema = z.object({
     subscriptionId: z.uuid(),
+    s21Cause: z.enum(S21_CAUSES).optional(),
     now: z.date(),
     tx: z.custom<DrizzleClient>((value) => value !== undefined && value !== null)
 });
@@ -130,6 +133,7 @@ export async function applyA5(
         readonly instanceId: string;
         readonly clause: A5Clause;
         readonly now: Date;
+        readonly s21Cause?: S21Cause;
     },
     ports: A5Ports
 ): Promise<A5Result> {
@@ -175,7 +179,8 @@ export async function applyA5(
         ? await closeComplement({
               tx,
               complementSubscriptionId: instance.complementSubscriptionId,
-              now
+              now,
+              s21Cause: input.s21Cause
           })
         : null;
 
@@ -211,9 +216,15 @@ async function closeComplement(input: {
     readonly tx: DrizzleClient;
     readonly complementSubscriptionId: string;
     readonly now: Date;
+    readonly s21Cause?: S21Cause;
 }): Promise<CancelledAddon['providerCancellation']> {
     const { tx, complementSubscriptionId, now } = input;
-    const s21 = await applyS21({ tx, complementSubscriptionId, now });
+    const s21 = await applyS21({
+        tx,
+        complementSubscriptionId,
+        now,
+        cause: input.s21Cause
+    });
     if (s21.outcome !== 'CANCELLED') return null;
     const [complement] = await tx
         .select({
@@ -263,7 +274,12 @@ async function closeComplement(input: {
  * @returns `{ cancelled }`: the instances A5 cancelled as `ORPHANED`
  */
 export async function runOrphanhood(
-    input: { readonly tx: DrizzleClient; readonly subscriptionId: string; readonly now: Date },
+    input: {
+        readonly tx: DrizzleClient;
+        readonly subscriptionId: string;
+        readonly now: Date;
+        readonly s21Cause?: S21Cause;
+    },
     ports: AddonOrphanhoodPorts
 ): Promise<{ readonly cancelled: readonly CancelledAddon[] }> {
     const parsed = runSchema.safeParse(input);
@@ -310,7 +326,7 @@ export async function runOrphanhood(
         );
         if (!orphaned) continue;
         const result = await applyA5(
-            { tx, instanceId: candidate.id, clause: 'ORPHANED', now },
+            { tx, instanceId: candidate.id, clause: 'ORPHANED', now, s21Cause: input.s21Cause },
             ports
         );
         if (result.outcome === 'CANCELLED') cancelled.push(result.addon);
