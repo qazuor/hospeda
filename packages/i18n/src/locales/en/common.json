@@ -119,7 +119,16 @@
         "MISSING_FILE": "No image was received. Choose a file and try again.",
         "EMPTY_FILE": "The file is empty. Choose another image.",
         "NEW_PAID_SIGNUPS_FROZEN": "We've temporarily paused new subscriptions and purchases. If you already have a subscription, it keeps working as usual.",
-        "FIRST_PUBLISH_PAUSED": "We've temporarily paused publishing new listings. Your listing is saved as a draft and you'll be able to publish it once we resume."
+        "FIRST_PUBLISH_PAUSED": "We've temporarily paused publishing new listings. Your listing is saved as a draft and you'll be able to publish it once we resume.",
+        "PROMO_CODE_NOT_FOUND": "We couldn’t find that code.",
+        "PROMO_CODE_NOT_FOR_VERTICAL": "This code isn’t available for this category.",
+        "PROMO_NO_ELIGIBLE_SUBSCRIPTION": "You don’t have an eligible subscription for this code.",
+        "PROMO_NOT_OFFERED_TO_MANUAL_PAYER": "This code is available for card payments.",
+        "PROMO_CODE_ALREADY_REDEEMED": "You’ve already redeemed this code.",
+        "PROMO_NOT_COMBINABLE": "This code can’t be combined with your current discount.",
+        "PROMO_UNSUPPORTED_CURRENCY": "This code isn’t available in your subscription currency.",
+        "PROMO_BELOW_PROVIDER_MINIMUM": "this code brings the amount below the minimum Mercado Pago allows to charge",
+        "PROMO_MUTATION_NOT_APPLIED": "We couldn’t apply the discount. Try again."
     },
     "filters": "Filters",
     "filterChips": {
