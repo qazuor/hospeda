@@ -355,7 +355,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:12 AC:B5:24 S36 orphan ref
         f.at(f.day(5));
         for (const [id, amount] of [
             [complementPayment.paymentId, 25000],
-            [oncePayment.id, 5000]
+            [oncePayment.id, 1000]
         ] as const)
             await requestRefund(
                 {
@@ -386,11 +386,16 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:12 AC:B5:24 S36 orphan ref
             reason: 'ADDON_ORPHAN',
             status: 'REQUESTED'
         });
-        expect(oneTimeRefundRows).toHaveLength(1);
-        expect(oneTimeRefundRows[0]).toMatchObject({
-            reason: 'ONE_TIME_ADDON_REVOCATION',
-            status: 'REQUESTED'
-        });
+        expect(oneTimeRefundRows).toHaveLength(2);
+        expect(oneTimeRefundRows.map(({ amount }) => amount).sort((a, b) => a - b)).toEqual([
+            1000, 4000
+        ]);
+        expect(
+            oneTimeRefundRows.every(
+                ({ reason, status }) =>
+                    reason === 'ONE_TIME_ADDON_REVOCATION' && status === 'REQUESTED'
+            )
+        ).toBe(true);
     });
 
     it('TEST:B5:12 (h) preserves USER addon covered by another live paying principal', async () => {
