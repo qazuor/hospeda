@@ -11,6 +11,7 @@ import {
     createSuccessorGraceCheck,
     creditedPaymentsFromLedger,
     noDeterminableRetainedPaymentBranch,
+    providerLinkCancellationSeen,
     retainedPaymentsFromLedger,
     runReconciliationSweep
 } from '@repo/service-core';
@@ -119,6 +120,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     markPayments: createPaymentReconciliationMarkPayments(clock),
                     // AC:B11:6: retry our decided cancellations for 3 days, then mark 16.
                     cancellationRetry: { beforeCancelNotice },
+                    cancellationSeen: providerLinkCancellationSeen,
                     // AC:B11:12, AC:B11:27: re-read credited payments with the real defaults.
                     creditedPayments: {},
                     // AC:B11:13: zero population until B10 writes order keys; HTTP orders are HOS-1669.
