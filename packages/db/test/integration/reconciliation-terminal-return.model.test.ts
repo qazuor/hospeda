@@ -273,7 +273,7 @@ describe('reconciliation terminal return population', () => {
             expect(has('retrySeen')).toBe(true);
             expect(has('declined')).toBe(true);
             expect(has('rejectedEvent')).toBe(true);
-            expect(has('common')).toBe(false);
+            expect(has('common')).toBe(true);
             expect(has('live')).toBe(false);
             expect(has('scheduled')).toBe(false);
             const retryAll = await reconciliationInventoryModel.listCancellationRetryPage({
