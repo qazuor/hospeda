@@ -1,0 +1,208 @@
+import { randomUUID } from 'node:crypto';
+import {
+    and,
+    domainEvent,
+    eq,
+    getDb,
+    plans,
+    planVersions,
+    promoCodes,
+    promoRedemptions,
+    trialRedemptions,
+    trials,
+    users
+} from '@repo/db';
+import { FakePaymentProvider } from '@repo/payments/fake';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
+import { injectPaymentProvider } from '../../../src/utils/payment-provider';
+import { testDb } from '../../e2e/setup/test-database';
+
+const path = '/api/v1/protected/billing/promo-codes/redeem';
+const now = new Date('2026-10-12T12:00:00.000Z');
+const app = initApp({ clock: { now: () => now } });
+let userId: string | undefined;
+let planId: string | undefined;
+let versionId: string | undefined;
+let trialId: string | undefined;
+let promoCodeId: string | undefined;
+
+function headers(actorId: string) {
+    return {
+        'content-type': 'application/json',
+        'user-agent': 'vitest',
+        'x-mock-actor-id': actorId,
+        'x-mock-actor-role': 'USER',
+        'x-mock-actor-permissions': '[]'
+    };
+}
+
+async function seedExpiredTrialExtension() {
+    const db = getDb();
+    const [user] = await db
+        .insert(users)
+        .values({
+            email: `promo-trial-route-${randomUUID()}@example.test`,
+            displayName: 'Promo trial route',
+            emailVerified: true,
+            lifecycleState: 'ACTIVE'
+        })
+        .returning({ id: users.id });
+    if (!user) throw new Error('Could not create route test user');
+    userId = user.id;
+
+    const [existingPlan] = await db
+        .select({ id: plans.id })
+        .from(plans)
+        .where(and(eq(plans.vertical, 'accommodation'), eq(plans.role, 'trial')))
+        .limit(1);
+    let plan = existingPlan;
+    if (!plan) {
+        const [createdPlan] = await db
+            .insert(plans)
+            .values({
+                vertical: 'accommodation',
+                slug: `promo-trial-route-${randomUUID()}`,
+                name: 'Promo extension route trial',
+                role: 'trial'
+            })
+            .returning({ id: plans.id });
+        plan = createdPlan;
+        planId = createdPlan?.id;
+    }
+    if (!plan) throw new Error('Could not create route test trial plan');
+
+    const [existingVersion] = await db
+        .select({ id: planVersions.id })
+        .from(planVersions)
+        .where(and(eq(planVersions.planId, plan.id), eq(planVersions.current, true)))
+        .limit(1);
+    let version = existingVersion;
+    if (!version) {
+        const [createdVersion] = await db
+            .insert(planVersions)
+            .values({
+                planId: plan.id,
+                vertical: 'accommodation',
+                rank: 0,
+                sellable: false,
+                current: true,
+                trialDays: 30,
+                allowsPause: false
+            })
+            .returning({ id: planVersions.id });
+        version = createdVersion;
+        versionId = createdVersion?.id;
+    }
+    if (!version) throw new Error('Could not create route test plan version');
+
+    const [trial] = await db
+        .insert(trials)
+        .values({
+            userId: user.id,
+            vertical: 'accommodation',
+            status: 'TRIAL_ACTIVE',
+            trialPlanId: plan.id,
+            floorEntitlementsVersionId: version.id,
+            floorLimitsVersionId: version.id,
+            floorTrialPlanVersionId: version.id,
+            startedAt: new Date(now.getTime() - 10 * 86_400_000),
+            endsAt: new Date(now.getTime() - 86_400_000),
+            emailPseudonym: randomUUID().replaceAll('-', '') + randomUUID().replaceAll('-', ''),
+            deadlinesVersion: 1
+        })
+        .returning({ id: trials.id });
+    if (!trial) throw new Error('Could not create route test trial');
+    trialId = trial.id;
+
+    const [promo] = await db
+        .insert(promoCodes)
+        .values({
+            code: `TRIAL-${randomUUID()}`,
+            effectKind: 'TRIAL_EXTENSION',
+            extensionDays: 5,
+            discountKind: null,
+            value: null,
+            allVerticals: true,
+            verticals: null,
+            totalQuota: 1,
+            validFrom: new Date('2026-01-01T00:00:00.000Z'),
+            validUntil: new Date('2027-01-01T00:00:00.000Z'),
+            stackable: false,
+            usableWithAnotherActive: false,
+            durationKind: null,
+            durationCharges: null
+        })
+        .returning({ id: promoCodes.id, code: promoCodes.code });
+    if (!promo) throw new Error('Could not create route test promo code');
+    promoCodeId = promo.id;
+    return { code: promo.code };
+}
+
+afterEach(async () => {
+    if (promoCodeId) {
+        await getDb().delete(promoRedemptions).where(eq(promoRedemptions.promoCodeId, promoCodeId));
+        await getDb().delete(promoCodes).where(eq(promoCodes.id, promoCodeId));
+        promoCodeId = undefined;
+    }
+    if (trialId) {
+        await getDb().delete(domainEvent).where(eq(domainEvent.entityId, trialId));
+        await getDb().delete(trialRedemptions).where(eq(trialRedemptions.userId, userId!));
+        await getDb().delete(trials).where(eq(trials.id, trialId));
+        trialId = undefined;
+    }
+    if (userId) {
+        await getDb().delete(users).where(eq(users.id, userId));
+        userId = undefined;
+    }
+    if (versionId) {
+        await getDb().delete(planVersions).where(eq(planVersions.id, versionId));
+        versionId = undefined;
+    }
+    if (planId) {
+        await getDb().delete(plans).where(eq(plans.id, planId));
+        planId = undefined;
+    }
+});
+
+beforeAll(async () => {
+    process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
+    await testDb.setup();
+    validateApiEnv();
+});
+afterAll(async () => testDb.teardown());
+
+describe('TEST:B9b:6 AC:B9b:6 the redeem route extends a real trial', () => {
+    it('returns TRIAL_ENDED and leaves the extension code unconsumed', async () => {
+        const { code } = await seedExpiredTrialExtension();
+        injectPaymentProvider({
+            provider: new FakePaymentProvider({
+                clock: { now: () => now },
+                idNamespace: randomUUID()
+            })
+        });
+        const response = await app.request(path, {
+            method: 'POST',
+            headers: headers(userId!),
+            body: JSON.stringify({ code, vertical: 'accommodation' })
+        });
+        expect(response.status).toBe(422);
+        expect((await response.json()).error).toMatchObject({
+            code: 'VALIDATION_ERROR',
+            reason: 'TRIAL_ENDED'
+        });
+        expect(
+            await getDb()
+                .select()
+                .from(promoRedemptions)
+                .where(eq(promoRedemptions.promoCodeId, promoCodeId!))
+        ).toHaveLength(0);
+        expect(
+            await getDb()
+                .select()
+                .from(trialRedemptions)
+                .where(eq(trialRedemptions.userId, userId!))
+        ).toHaveLength(0);
+    });
+});
