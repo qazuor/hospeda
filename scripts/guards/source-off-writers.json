@@ -194,6 +194,22 @@
         "reason": "The R18 mirror (AC:B7:15) moves ACTIVE to CANCEL_SCHEDULED; both emit a SUBSCRIPTION source (03-contrato-de-cobertura.md:468, 473), only its end gets a date; the CHANGED notice is emitted after commit."
     },
     {
+        "file": "packages/service-core/src/services/billing/grant/permanent-grant-s20.ts",
+        "symbol": "writeS20ComplementCancellation",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S20 cancels a COMPLEMENTO row, which emits no coverage source (subscription-sources.ts filters PRINCIPAL); its instance stays ACTIVE and keeps its ADDON source"
+    },
+    {
+        "file": "packages/service-core/src/services/billing/grant/permanent-grant-s20.ts",
+        "symbol": "writeS20TitleAnchor",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S20 hangs an ACTIVE instance from the grant anchor as its title; the instance stays ACTIVE, so its ADDON source does not turn off"
+    },
+    {
         "file": "packages/db/src/models/subscription/subscription.model.ts",
         "symbol": "syncNextChargeAt",
         "table": "subscriptions",

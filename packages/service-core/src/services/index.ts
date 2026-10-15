@@ -76,6 +76,7 @@ export * from './billing/deadlines/billing-deadlines.service.js';
 export * from './billing/grant/permanent-grant.service.js';
 export * from './billing/grant/permanent-grant-live-anchors.js';
 export * from './billing/grant/permanent-grant-s13.js';
+export * from './billing/grant/permanent-grant-s20.js';
 export * from './billing/notice/live-preapproval-on-closed-row.js';
 export * from './billing/notice/mirror-cancelled-on-grace.js';
 export * from './billing/notice/process-provider-notice.service.js';
