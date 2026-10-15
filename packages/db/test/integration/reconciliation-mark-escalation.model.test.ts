@@ -1,21 +1,25 @@
-import { max } from 'drizzle-orm';
+import { eq, max } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { reconciliationMarkModel } from '../../src/models/reconciliation-mark/reconciliation-mark.model.ts';
+import { users } from '../../src/schemas/user/user.dbschema.ts';
 import { billingDeadlineVersions } from '../../src/schemas/vertical/billing-deadline-version.dbschema.ts';
+import { reconciliationMarks } from '../../src/schemas/vertical/reconciliation-mark.dbschema.ts';
 import { subscriptions } from '../../src/schemas/vertical/subscription.dbschema.ts';
-import { closeTestPool, withTestTransaction } from './helpers.ts';
+import { closeTestPool, testData, withTestTransaction } from './helpers.ts';
 
 afterAll(closeTestPool);
 
 describe('TEST:1607:2 — reconciliation mark escalation model', () => {
     it('captures the current deadline version and escalates one open mark once', async () => {
         await withTestTransaction(async (tx) => {
+            const [user] = await tx.insert(users).values(testData.user()).returning();
+            if (!user) throw new Error('Expected user');
             const [deadline] = await tx
                 .select({ version: max(billingDeadlineVersions.version) })
                 .from(billingDeadlineVersions);
             const [subject] = await tx
                 .insert(subscriptions)
-                .values({ status: 'CANCELLED', class: 'LAPIDA' })
+                .values({ status: 'CANCELLED', class: 'LAPIDA', userId: user.id })
                 .returning();
             if (!subject || !deadline || deadline.version === null)
                 throw new Error('Required reconciliation fixture missing');
@@ -26,8 +30,19 @@ describe('TEST:1607:2 — reconciliation mark escalation model', () => {
                 placedAt,
                 tx
             });
+            const lifted = await reconciliationMarkModel.insertOpen({
+                subject: { kind: 'SUBSCRIPTION', subscriptionId: subject.id },
+                reason: 'PAGO_PENDIENTE_SIN_RAMA',
+                placedAt,
+                tx
+            });
+            await tx
+                .update(reconciliationMarks)
+                .set({ liftedAt: placedAt, liftedBy: user.id })
+                .where(eq(reconciliationMarks.id, lifted.id));
             expect(mark.deadlinesVersion).toBe(deadline.version);
             const page = await reconciliationMarkModel.listOpenUnescalatedPage({ limit: 100, tx });
+            expect(page.some((item) => item.id === lifted.id)).toBe(false);
             expect(page.find((item) => item.id === mark.id)?.deadlinesVersion).toBe(
                 deadline.version
             );
