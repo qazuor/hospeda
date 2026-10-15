@@ -227,7 +227,8 @@ describe('TEST:V9b:3 AC:V9b:3 calendar revocation', () => {
             .returning({ id: accommodationCalendarSync.id });
         if (!connection) throw new Error('calendar fixture insert failed');
         calendarIds.add(connection.id);
-        const revocations: { accommodationId: string; connectionId: string }[] = [];
+        const revocations: { accommodationId: string; connectionId: string; provider: string }[] =
+            [];
         const result = await purgeInactiveListing({
             ...adapter,
             clock: { now: () => t0 },
@@ -249,7 +250,13 @@ describe('TEST:V9b:3 AC:V9b:3 calendar revocation', () => {
             }
         });
         expect(result).toMatchObject({ purged: true, warnings: ['REMOTE_DELETION_FAILED'] });
-        expect(revocations).toEqual([{ accommodationId: listing.id, connectionId: connection.id }]);
+        expect(revocations).toEqual([
+            {
+                accommodationId: listing.id,
+                connectionId: connection.id,
+                provider: 'GOOGLE_CALENDAR'
+            }
+        ]);
         expect(
             await db
                 .select()
@@ -274,7 +281,8 @@ describe('TEST:V9b:3 AC:V9b:3 calendar revocation', () => {
         if (!connection) throw new Error('calendar fixture insert failed');
         calendarIds.add(connection.id);
         let fail = true;
-        const revocations: { accommodationId: string; connectionId: string }[] = [];
+        const revocations: { accommodationId: string; connectionId: string; provider: string }[] =
+            [];
         const afterCommit = {
             async deleteRemoteMedia() {},
             async revokeCalendarConnection(input: {
@@ -311,7 +319,8 @@ describe('TEST:V9b:3 AC:V9b:3 calendar revocation', () => {
         });
         expect(revocations[0]).toEqual({
             accommodationId: listing.id,
-            connectionId: connection.id
+            connectionId: connection.id,
+            provider: 'GOOGLE_CALENDAR'
         });
         fail = false;
         const retry = await runRemoteDeletionRetry({
@@ -322,6 +331,7 @@ describe('TEST:V9b:3 AC:V9b:3 calendar revocation', () => {
                     },
                     async listMarkedCalendarConnections({ after, limit }) {
                         const page = await listingPurgeModel.listMarkedCalendarConnections({
+                            tx: db,
                             after,
                             limit
                         });
@@ -347,7 +357,8 @@ describe('TEST:V9b:3 AC:V9b:3 calendar revocation', () => {
         expect(retry.calendarDeleted).toBe(1);
         expect(revocations.at(-1)).toEqual({
             accommodationId: listing.id,
-            connectionId: connection.id
+            connectionId: connection.id,
+            provider: 'GOOGLE_CALENDAR'
         });
         const count = await pool.query(
             'SELECT count(*)::int AS count FROM accommodation_calendar_sync WHERE accommodation_id = $1',
