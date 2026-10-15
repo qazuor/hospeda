@@ -16,8 +16,7 @@ import {
     subscriptions
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
-import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
-import { z } from 'zod';
+import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import {
     cancelAddonComplementsAtProvider,
@@ -28,11 +27,21 @@ import type { CoverageNotices } from '../payment/payment-ports.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import type { CancellationSeenAnnotator } from '../subscription/subscription-billing-ports.js';
 import {
+    anchorInputSchema,
+    grantSchema,
+    invalidPermanentGrantInput
+} from './permanent-grant-inputs.js';
+import {
     cancelS13AtProvider,
     emitS13CoverageNotices,
     runS13InTransaction,
     type S13CancelCall
 } from './permanent-grant-s13.js';
+import {
+    cancelS20AtProvider,
+    runS20InTransaction,
+    type S20ProviderResult
+} from './permanent-grant-s20.js';
 
 /**
  * Dependencies used by permanent-grant acts.
@@ -48,46 +57,6 @@ export interface PermanentGrantPorts {
     readonly provider: PaymentProvider;
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly cancellationSeen?: CancellationSeenAnnotator;
-}
-
-const anchorSchema = z.strictObject({
-    vertical: VerticalEnumSchema,
-    planId: z.uuid(),
-    floorPlanVersionId: z.uuid()
-});
-const grantSchema = z
-    .strictObject({
-        beneficiaryUserId: z.uuid(),
-        grantedBy: z.uuid(),
-        reason: z.string().refine((value) => value.trim().length > 0),
-        includesAddons: z.boolean(),
-        anchors: z.array(anchorSchema).min(1)
-    })
-    .superRefine((value, ctx) => {
-        const seen = new Set<string>();
-        for (const anchor of value.anchors) {
-            if (seen.has(anchor.vertical))
-                ctx.addIssue({
-                    code: 'custom',
-                    message: 'Verticals must be unique',
-                    path: ['anchors']
-                });
-            seen.add(anchor.vertical);
-        }
-    });
-const anchorInputSchema = z.strictObject({
-    permanentGrantId: z.uuid(),
-    anchoredBy: z.uuid(),
-    ...anchorSchema.shape
-});
-
-function invalidInput(error: unknown): ServiceError {
-    return new ServiceError(
-        ServiceErrorCode.VALIDATION_ERROR,
-        'Invalid permanent grant input',
-        error,
-        'INVALID_PERMANENT_GRANT_INPUT'
-    );
 }
 
 /**
@@ -131,9 +100,11 @@ export async function grantPermanentGrant(
         readonly cancelCall: S13CancelCall;
         readonly escalated?: 'NO_RECIPIENT' | 'DELIVERY_EXHAUSTED';
     }[];
+    readonly anchoredAddonInstanceIds: readonly string[];
+    readonly addonProviderCalls: readonly S20ProviderResult[];
 }> {
     const parsed = grantSchema.safeParse(raw);
-    if (!parsed.success) throw invalidInput(parsed.error.issues);
+    if (!parsed.success) throw invalidPermanentGrantInput(parsed.error.issues);
     const input = parsed.data;
     const now = ports.clock.now();
     const committed = await getDb().transaction(async (tx) => {
@@ -176,7 +147,22 @@ export async function grantPermanentGrant(
             },
             { orphanhood: ports.orphanhood }
         );
-        return { grantId: grant.id, anchorIds: anchors, result };
+        const s20 = await runS20InTransaction(
+            {
+                tx,
+                includesAddons: input.includesAddons,
+                permanentGrantId: grant.id,
+                beneficiaryUserId: input.beneficiaryUserId,
+                anchors: input.anchors.map(({ vertical }, index) => ({
+                    id: anchors[index]!,
+                    vertical
+                })),
+                now,
+                actorId: input.grantedBy
+            },
+            { orphanhood: ports.orphanhood }
+        );
+        return { grantId: grant.id, anchorIds: anchors, result, s20 };
     });
     await emitS13CoverageNotices({
         beneficiaryUserId: input.beneficiaryUserId,
@@ -195,6 +181,7 @@ export async function grantPermanentGrant(
             { cancelled: committed.result.orphanedAddons },
             ports
         );
+    const addonProviderCalls = await cancelS20AtProvider({ rows: committed.s20.rows }, ports);
     return {
         permanentGrantId: committed.grantId,
         anchorIds: committed.anchorIds,
@@ -203,7 +190,14 @@ export async function grantPermanentGrant(
         ),
         releasedRetentionIds: committed.result.releasedRetentionIds,
         closedCourtesyIds: committed.result.closedCourtesyIds,
-        providerCalls: providerResult.results
+        providerCalls: providerResult.results,
+        anchoredAddonInstanceIds: committed.s20.rows
+            .filter(
+                ({ instanceStatus, titleAnchorId }) =>
+                    instanceStatus === 'ACTIVE' && titleAnchorId === null
+            )
+            .map(({ instanceId }) => instanceId),
+        addonProviderCalls
     };
 }
 
@@ -239,9 +233,11 @@ export async function anchorPermanentGrantVertical(
         readonly cancelCall: S13CancelCall;
         readonly escalated?: 'NO_RECIPIENT' | 'DELIVERY_EXHAUSTED';
     }[];
+    readonly anchoredAddonInstanceIds: readonly string[];
+    readonly addonProviderCalls: readonly S20ProviderResult[];
 }> {
     const parsed = anchorInputSchema.safeParse(raw);
-    if (!parsed.success) throw invalidInput(parsed.error.issues);
+    if (!parsed.success) throw invalidPermanentGrantInput(parsed.error.issues);
     const input = parsed.data;
     const now = ports.clock.now();
     const committed = await getDb().transaction(async (tx) => {
@@ -249,7 +245,8 @@ export async function anchorPermanentGrantVertical(
             .select({
                 id: permanentGrants.id,
                 beneficiaryUserId: permanentGrants.beneficiaryUserId,
-                revokedAt: permanentGrants.revokedAt
+                revokedAt: permanentGrants.revokedAt,
+                includesAddons: permanentGrants.includesAddons
             })
             .from(permanentGrants)
             .where(eq(permanentGrants.id, input.permanentGrantId))
@@ -310,7 +307,19 @@ export async function anchorPermanentGrantVertical(
             },
             { orphanhood: ports.orphanhood }
         );
-        return { anchorId: anchor.id, beneficiaryUserId: grant.beneficiaryUserId, result };
+        const s20 = await runS20InTransaction(
+            {
+                tx,
+                includesAddons: grant.includesAddons,
+                permanentGrantId: grant.id,
+                beneficiaryUserId: grant.beneficiaryUserId,
+                anchors: [{ id: anchor.id, vertical: input.vertical }],
+                now,
+                actorId: input.anchoredBy
+            },
+            { orphanhood: ports.orphanhood }
+        );
+        return { anchorId: anchor.id, beneficiaryUserId: grant.beneficiaryUserId, result, s20 };
     });
     await emitS13CoverageNotices({
         beneficiaryUserId: committed.beneficiaryUserId,
@@ -329,6 +338,7 @@ export async function anchorPermanentGrantVertical(
             { cancelled: committed.result.orphanedAddons },
             ports
         );
+    const addonProviderCalls = await cancelS20AtProvider({ rows: committed.s20.rows }, ports);
     return {
         anchorId: committed.anchorId,
         cancelledSubscriptionIds: committed.result.cancelled.map(
@@ -336,7 +346,14 @@ export async function anchorPermanentGrantVertical(
         ),
         releasedRetentionIds: committed.result.releasedRetentionIds,
         closedCourtesyIds: committed.result.closedCourtesyIds,
-        providerCalls: providerResult.results
+        providerCalls: providerResult.results,
+        anchoredAddonInstanceIds: committed.s20.rows
+            .filter(
+                ({ instanceStatus, titleAnchorId }) =>
+                    instanceStatus === 'ACTIVE' && titleAnchorId === null
+            )
+            .map(({ instanceId }) => instanceId),
+        addonProviderCalls
     };
 }
 
@@ -351,6 +368,7 @@ export async function resumePermanentGrant(
         readonly cancelCall: S13CancelCall;
         readonly escalated?: 'NO_RECIPIENT' | 'DELIVERY_EXHAUSTED';
     }[];
+    readonly addonProviderCalls: readonly S20ProviderResult[];
 }> {
     const now = ports.clock.now();
     const committed = await getDb().transaction(async (tx) => {
@@ -359,7 +377,8 @@ export async function resumePermanentGrant(
                 id: permanentGrants.id,
                 beneficiaryUserId: permanentGrants.beneficiaryUserId,
                 affected: permanentGrants.affectedSubscriptionIds,
-                revokedAt: permanentGrants.revokedAt
+                revokedAt: permanentGrants.revokedAt,
+                includesAddons: permanentGrants.includesAddons
             })
             .from(permanentGrants)
             .where(eq(permanentGrants.id, input.permanentGrantId))
@@ -379,7 +398,7 @@ export async function resumePermanentGrant(
                 'PERMANENT_GRANT_NOT_LIVE'
             );
         const anchors = await tx
-            .select({ vertical: permanentGrantVerticals.vertical })
+            .select({ id: permanentGrantVerticals.id, vertical: permanentGrantVerticals.vertical })
             .from(permanentGrantVerticals)
             .where(eq(permanentGrantVerticals.permanentGrantId, grant.id));
         const local = await runS13InTransaction(
@@ -393,10 +412,23 @@ export async function resumePermanentGrant(
             },
             { orphanhood: ports.orphanhood }
         );
+        const s20 = await runS20InTransaction(
+            {
+                tx,
+                includesAddons: grant.includesAddons,
+                permanentGrantId: grant.id,
+                beneficiaryUserId: grant.beneficiaryUserId,
+                anchors,
+                now,
+                actorId: input.actorId
+            },
+            { orphanhood: ports.orphanhood }
+        );
         const ids = [
             ...new Set([
                 ...grant.affected,
-                ...local.cancelled.map(({ subscriptionId }) => subscriptionId)
+                ...local.cancelled.map(({ subscriptionId }) => subscriptionId),
+                ...s20.rows.map(({ subscriptionId }) => subscriptionId)
             ])
         ];
         const rows = ids.length
@@ -405,6 +437,7 @@ export async function resumePermanentGrant(
                       subscriptionId: subscriptions.id,
                       userId: subscriptions.userId,
                       vertical: subscriptions.vertical,
+                      class: subscriptions.class,
                       origin: subscriptions.status,
                       authorizationId: providerLinks.providerId,
                       cardPayer: subscriptions.paymentMethod
@@ -429,7 +462,7 @@ export async function resumePermanentGrant(
                 cardPayer: row.cardPayer === 'CARD'
             };
         });
-        return { grant, local, rows: providerRows };
+        return { grant, local, s20, rows: providerRows };
     });
     await emitS13CoverageNotices({
         beneficiaryUserId: committed.grant.beneficiaryUserId,
@@ -437,7 +470,17 @@ export async function resumePermanentGrant(
         movedVerticals: committed.local.cancelled.map(({ vertical }) => vertical),
         coverageNotices: ports.coverageNotices
     });
-    const providerResult = await cancelS13AtProvider({ rows: committed.rows }, ports);
+    const principalRows = committed.rows.filter(({ class: rowClass }) => rowClass === 'PRINCIPAL');
+    const complementRows = committed.rows
+        .filter(({ class: rowClass }) => rowClass === 'COMPLEMENTO')
+        .map(({ subscriptionId, userId, authorizationId, cardPayer }) => ({
+            subscriptionId,
+            userId,
+            authorizationId,
+            cardPayer
+        }));
+    const providerResult = await cancelS13AtProvider({ rows: principalRows }, ports);
+    const addonProviderCalls = await cancelS20AtProvider({ rows: complementRows }, ports);
     if (committed.local.orphanedAddons.length > 0) {
         await emitAddonCoverageRemoved({
             cancelled: committed.local.orphanedAddons,
@@ -448,5 +491,9 @@ export async function resumePermanentGrant(
             ports
         );
     }
-    return { permanentGrantId: committed.grant.id, providerCalls: providerResult.results };
+    return {
+        permanentGrantId: committed.grant.id,
+        providerCalls: providerResult.results,
+        addonProviderCalls
+    };
 }

@@ -11,11 +11,13 @@ const {
     mockProviderPauseCheck,
     mockLostFirstRejectionCheck,
     mockSuccessorGraceCheck,
+    mockNextChargeSync,
     mockStateComparison,
     mockPeriodChargesComparison,
     mockAmountComparison
 } = vi.hoisted(() => ({
     mockSuccessorGraceCheck: vi.fn((_ports: unknown) => async () => undefined),
+    mockNextChargeSync: vi.fn((_ports?: unknown) => async () => undefined),
     mockSweep: vi.fn(),
     mockClock: { now: vi.fn(() => new Date('2026-10-11T12:00:00.000Z')) },
     mockProvider: { readAuthorization: vi.fn() },
@@ -38,6 +40,7 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
     runReconciliationSweep: mockSweep,
     createGraceExpiryCheck: mockGraceExpiryCheck,
+    createNextChargeSync: mockNextChargeSync,
     createProviderPauseCheck: mockProviderPauseCheck,
     createLostFirstRejectionCheck: mockLostFirstRejectionCheck,
     createSuccessorGraceCheck: mockSuccessorGraceCheck,
@@ -120,6 +123,7 @@ describe('billing reconciliation sweep cron', () => {
                     expect.any(Function),
                     expect.any(Function),
                     expect.any(Function),
+                    expect.any(Function),
                     expect.any(Function)
                 ],
                 zeroCallChecks: {
@@ -145,6 +149,8 @@ describe('billing reconciliation sweep cron', () => {
         expect(rowChecks?.[1]).toBe(mockLostFirstRejectionCheck.mock.results[0]?.value);
         expect(rowChecks?.[2]).toBe(mockSuccessorGraceCheck.mock.results[0]?.value);
         expect(rowChecks?.[3]).toBe(mockGraceExpiryCheck.mock.results[0]?.value);
+        // HOS-1685: the next charge date copy runs last.
+        expect(rowChecks?.[4]).toBe(mockNextChargeSync.mock.results[0]?.value);
         expect(mockProviderPauseCheck).toHaveBeenCalledWith(
             expect.objectContaining({
                 planPolicy: mockPlanPolicy,
@@ -181,6 +187,32 @@ describe('billing reconciliation sweep cron', () => {
         expect(result.details).toHaveProperty('failedSubscriptionIds', ['failed-id']);
         expect(result.details).toMatchObject({ runId: 'run-id', complete: false, pinged: false });
         expect(result.details).not.toHaveProperty('failures');
+    });
+
+    it('TEST:1685:7 the sweep copies the provider next payment date, last', async () => {
+        mockSweep.mockResolvedValue({
+            rowsRead: 0,
+            runId: 'run-id',
+            complete: true,
+            pinged: true,
+            rowsFailed: 0,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [],
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+
+        await billingReconciliationSweepJob.handler(context());
+
+        const rowChecks = mockSweep.mock.calls[0]?.[1]?.rowChecks;
+        expect(mockNextChargeSync).toHaveBeenCalledTimes(1);
+        expect(rowChecks?.[4]).toBe(mockNextChargeSync.mock.results[0]?.value);
+        expect(rowChecks?.[0]).toBe(mockProviderPauseCheck.mock.results[0]?.value);
+        expect(rowChecks?.[1]).toBe(mockLostFirstRejectionCheck.mock.results[0]?.value);
+        expect(rowChecks?.[2]).toBe(mockSuccessorGraceCheck.mock.results[0]?.value);
+        expect(rowChecks?.[3]).toBe(mockGraceExpiryCheck.mock.results[0]?.value);
     });
 
     it('TEST:B11:7 / TEST:B11:9 / TEST:B11:8 wiring passes three comparisons in order', async () => {

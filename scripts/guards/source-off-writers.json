@@ -216,5 +216,29 @@
         "effect": "neutral",
         "via": null,
         "reason": "S11 schedules cancellation only for a COMPLEMENTO row; the principal sources and unchanged addon instance determine coverage."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/grant/permanent-grant-s20.ts",
+        "symbol": "writeS20ComplementCancellation",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S20 cancels a COMPLEMENTO row, which emits no coverage source (subscription-sources.ts filters PRINCIPAL); its instance stays ACTIVE and keeps its ADDON source"
+    },
+    {
+        "file": "packages/service-core/src/services/billing/grant/permanent-grant-s20.ts",
+        "symbol": "writeS20TitleAnchor",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S20 hangs an ACTIVE instance from the grant anchor as its title; the instance stays ACTIVE, so its ADDON source does not turn off"
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "syncNextChargeAt",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-1685 copies the provider's next payment date onto an ACTIVE row (B11.md:250); coverage does not change."
     }
 ]
