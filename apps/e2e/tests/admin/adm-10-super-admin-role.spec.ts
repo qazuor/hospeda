@@ -85,7 +85,7 @@ test.describe('TEST:V5:18 action 26 confirmation @p1 @admin', () => {
                 response.request().method() === 'POST'
         );
         await confirm.click();
-        expect((await responsePromise).status()).toBe(200);
+        expect((await responsePromise).status()).toBe(201);
 
         const assignments = await execSQL<{ role: string }>(
             "SELECT role FROM user_role WHERE user_id = $1 AND role = 'SUPER_ADMIN'::role_enum",
