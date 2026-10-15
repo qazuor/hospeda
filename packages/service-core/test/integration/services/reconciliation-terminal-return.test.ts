@@ -343,6 +343,25 @@ describe('TEST:B11:14 terminal return and exemption', () => {
             read.mock.calls.filter(([arg]) => arg.authorizationId === row.providerId)
         ).toHaveLength(1);
 
+        const confirmed = await seedTerminalRow({ status: 'CANCELLED', fake });
+        ids.add(confirmed.subscription.id);
+        await seedCancellationDecision({
+            subscriptionId: confirmed.subscription.id,
+            transition: 'S12',
+            decidedAt: T0
+        });
+        await closeRow({
+            fake,
+            id: confirmed.subscription.id,
+            providerId: confirmed.providerId!,
+            seenAt: T0
+        });
+        read.mockClear();
+        await sweep(fake);
+        expect(
+            read.mock.calls.filter(([arg]) => arg.authorizationId === confirmed.providerId)
+        ).toHaveLength(1);
+
         const seen = await seedTerminalRow({ status: 'CANCELLED', fake });
         ids.add(seen.subscription.id);
         await seedCancellationDecision({
