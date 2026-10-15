@@ -18,6 +18,27 @@ import {
     createReconciliationFake,
     reconciliationClock
 } from './reconciliation-zero-call-fixtures.js';
+
+async function runEscalationForMarks(
+    markIds: readonly string[],
+    input: Parameters<typeof runMarkEscalation>[0],
+    ports: Parameters<typeof runMarkEscalation>[1]
+) {
+    const allowed = new Set(markIds);
+    const listPage = reconciliationMarkModel.listOpenUnescalatedPage.bind(reconciliationMarkModel);
+    const listSpy = vi
+        .spyOn(reconciliationMarkModel, 'listOpenUnescalatedPage')
+        .mockImplementation(async (pageInput) => {
+            const page = await listPage({ ...pageInput, limit: 10_000 });
+            return page.filter(({ id }) => allowed.has(id));
+        });
+    try {
+        return await runMarkEscalation(input, ports);
+    } finally {
+        listSpy.mockRestore();
+    }
+}
+
 import {
     seedCoverageAddon,
     seedCoverageAddonInstance,
@@ -65,13 +86,15 @@ describe('TEST:B11:15 — escalation uses the mark deadline version', () => {
             let now = new Date(placedAt.getTime() + 5 * 86_400_000);
             const clock = { now: () => now };
             const correlationId = crypto.randomUUID();
-            const fiveDay = await runMarkEscalation(
+            const fiveDay = await runEscalationForMarks(
+                [oldMark.id],
                 { correlationId, pageSize: 100 },
                 { clock, tx }
             );
             expect(fiveDay.escalated).toBe(0);
             now = new Date(placedAt.getTime() + 7 * 86_400_000);
-            const sevenDay = await runMarkEscalation(
+            const sevenDay = await runEscalationForMarks(
+                [oldMark.id],
                 { correlationId, pageSize: 100 },
                 { clock, tx }
             );
@@ -90,7 +113,8 @@ describe('TEST:B11:15 — escalation uses the mark deadline version', () => {
                         event.reason === oldMark.reason
                 )
             ).toHaveLength(1);
-            const repeated = await runMarkEscalation(
+            const repeated = await runEscalationForMarks(
+                [oldMark.id],
                 { correlationId, pageSize: 100 },
                 { clock, tx }
             );
@@ -102,7 +126,8 @@ describe('TEST:B11:15 — escalation uses the mark deadline version', () => {
                 tx
             });
             now = new Date(newMark.placedAt.getTime() + 3 * 86_400_000);
-            const newVersion = await runMarkEscalation(
+            const newVersion = await runEscalationForMarks(
+                [newMark.id],
                 { correlationId, pageSize: 100 },
                 { clock, tx }
             );
@@ -148,7 +173,8 @@ describe('TEST:B11:15 — escalation uses the mark deadline version', () => {
                 .returning();
             if (!legacy) throw new Error('Expected legacy mark');
             const now = new Date(placedAt.getTime() + 7 * 86_400_000);
-            const summary = await runMarkEscalation(
+            const summary = await runEscalationForMarks(
+                [legacy.id],
                 { correlationId: crypto.randomUUID(), pageSize: 100 },
                 { clock: { now: () => now }, tx }
             );
@@ -197,7 +223,8 @@ describe('TEST:B11:15 — escalation uses the mark deadline version', () => {
                 tx
             });
             const now = new Date(placedAt.getTime() + 7 * 86_400_000);
-            const summary = await runMarkEscalation(
+            const summary = await runEscalationForMarks(
+                [valid.id, missing.id],
                 { correlationId: crypto.randomUUID(), pageSize: 100 },
                 { clock: { now: () => now }, tx }
             );
@@ -274,7 +301,8 @@ describe('TEST:B11:15 — escalation uses the mark deadline version', () => {
                     .where(eq(subscriptions.id, subscription.subscriptionId))
             };
             const now = new Date(placedAt.getTime() + 7 * 86_400_000);
-            await runMarkEscalation(
+            await runEscalationForMarks(
+                [mark.id],
                 { correlationId: crypto.randomUUID(), pageSize: 100 },
                 { clock: { now: () => now }, tx }
             );
@@ -320,7 +348,8 @@ describe('TEST:B11:15 — escalation uses the mark deadline version', () => {
                 tx
             });
             const now = new Date(placedAt.getTime() + 7 * 86_400_000);
-            const summary = await runMarkEscalation(
+            const summary = await runEscalationForMarks(
+                [mark.id],
                 { correlationId: crypto.randomUUID(), pageSize: 100 },
                 { clock: { now: () => now }, tx }
             );
