@@ -20,6 +20,7 @@ import {
 import {
     orphanNow as now,
     orphanPorts,
+    readDecisions,
     seedComplement,
     seedComplementCharge,
     seedOrphanInstance,
@@ -160,6 +161,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     amount: 250000
                 });
                 expect(rows.marks).toEqual([]);
+                expect(await readDecisions(tx, seeded.complementId)).toEqual([]);
             });
         });
 
