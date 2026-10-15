@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq, inArray, isNotNull, isNull, lte } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, lte, ne, or } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     type COURTESY_CLOSE_REASONS,
@@ -56,6 +56,14 @@ export interface DeclinedWithProviderLink {
 export interface FindLiveCommitmentInput {
     readonly userId: string;
     readonly vertical: string;
+    readonly tx?: DrizzleClient;
+}
+
+/** Input for copying the provider's next payment date onto an active subscription. */
+export interface SyncNextChargeAtInput {
+    readonly subscriptionId: string;
+    readonly nextChargeAt: Date;
+    readonly now: Date;
     readonly tx?: DrizzleClient;
 }
 
@@ -175,6 +183,29 @@ export class SubscriptionModel {
                 and(
                     eq(subscriptions.id, input.subscriptionId),
                     eq(subscriptions.status, 'PENDING_AUTHORIZATION')
+                )
+            )
+            .returning({ id: subscriptions.id });
+        return rows.length > 0;
+    }
+
+    /**
+     * HOS-1685: the sweep's copy of the provider's next payment date; a conditional write that
+     * never moves a row out of `ACTIVE` and never rewrites an equal value (B11.md:250).
+     */
+    async syncNextChargeAt(input: SyncNextChargeAtInput): Promise<boolean> {
+        const db = input.tx ?? getDb();
+        const rows = await db
+            .update(subscriptions)
+            .set({ nextChargeAt: input.nextChargeAt, updatedAt: input.now })
+            .where(
+                and(
+                    eq(subscriptions.id, input.subscriptionId),
+                    eq(subscriptions.status, 'ACTIVE'),
+                    or(
+                        isNull(subscriptions.nextChargeAt),
+                        ne(subscriptions.nextChargeAt, input.nextChargeAt)
+                    )
                 )
             )
             .returning({ id: subscriptions.id });
