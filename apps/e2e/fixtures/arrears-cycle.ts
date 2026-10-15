@@ -124,7 +124,7 @@ export async function deliverNotices(args: {
     readonly fakeServer: FakeWorld['fakeServer'];
     readonly advanceMs?: number;
 }): Promise<{ readonly delivered: number; readonly skipped: number }> {
-    if (args.advanceMs !== undefined) args.fakeServer.advanceClock({ ms: args.advanceMs });
+    if (args.advanceMs !== undefined) await args.fakeServer.advanceClock({ ms: args.advanceMs });
     const result = await args.fakeServer.deliverDueAsMercadoPago({
         to: `${API_URL}${E2E_RECEIVER_PATH}`,
         webhookSecret: E2E_WEBHOOK_SECRET
