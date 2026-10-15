@@ -47,6 +47,7 @@ import {
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
 import { namespaceFake } from './support/payment-provider.js';
 import {
+    grantSignerActor,
     retirePermanentGrantRows,
     seedGrantPlan,
     seedPermanentGrant
@@ -643,7 +644,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const initial = await grantPermanentGrant(
                 {
                     beneficiaryUserId: user.userId,
-                    grantedBy: admin.userId,
+                    actor: grantSignerActor(admin.userId),
                     reason: 'S20 anchor sequence',
                     includesAddons: true,
                     anchors: [{ vertical: v, ...planV }]
@@ -662,7 +663,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const anchored = await anchorPermanentGrantVertical(
                 {
                     permanentGrantId: initial.permanentGrantId,
-                    anchoredBy: admin.userId,
+                    actor: grantSignerActor(admin.userId),
                     vertical: w,
                     ...planW
                 },
@@ -966,7 +967,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const result = await grantPermanentGrant(
                 {
                     beneficiaryUserId: user.userId,
-                    grantedBy: admin.userId,
+                    actor: grantSignerActor(admin.userId),
                     reason: 'S20 cable test',
                     includesAddons: true,
                     anchors: [{ vertical, ...grantPlan }]
@@ -1025,7 +1026,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             await grantPermanentGrant(
                 {
                     beneficiaryUserId: user.userId,
-                    grantedBy: admin.userId,
+                    actor: grantSignerActor(admin.userId),
                     reason: 'empty S20',
                     includesAddons: true,
                     anchors: [{ vertical, ...plan }]
@@ -1100,7 +1101,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             await grantPermanentGrant(
                 {
                     beneficiaryUserId: user.userId,
-                    grantedBy: admin.userId,
+                    actor: grantSignerActor(admin.userId),
                     reason: 'incompatible S20',
                     includesAddons: true,
                     anchors: [{ vertical, ...grantPlan }]
@@ -1187,7 +1188,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             await grantPermanentGrant(
                 {
                     beneficiaryUserId: user.userId,
-                    grantedBy: admin.userId,
+                    actor: grantSignerActor(admin.userId),
                     reason: 'mixed S20',
                     includesAddons: true,
                     anchors: [{ vertical, ...plan }]

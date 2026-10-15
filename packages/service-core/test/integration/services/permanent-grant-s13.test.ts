@@ -25,7 +25,11 @@ import {
     seedCoverageSubscription,
     seedCoverageUser
 } from './support/coverage-fixtures.js';
-import { retirePermanentGrantRows, seedGrantPlan } from './support/permanent-grant-fixtures.js';
+import {
+    grantSignerActor,
+    retirePermanentGrantRows,
+    seedGrantPlan
+} from './support/permanent-grant-fixtures.js';
 import {
     openMarksOf,
     paymentFor,
@@ -39,6 +43,7 @@ import {
 afterAll(closeServiceTestPool);
 const now = new Date('2026-10-14T12:00:00.000Z');
 const userIds: string[] = [];
+const grantSignerIds: string[] = [];
 const successionCases: SeededSuccession[] = [];
 const grantOnlyBeneficiaries: string[] = [];
 const V = VerticalEnum.ACCOMMODATION;
@@ -59,6 +64,7 @@ afterEach(async () => {
             .delete(permanentGrants)
             .where(eq(permanentGrants.beneficiaryUserId, beneficiaryUserId));
     }
+    await retirePermanentGrantRows(grantSignerIds.splice(0));
     await retireSuccessionCases(successionCases.splice(0));
 });
 
@@ -99,7 +105,7 @@ async function grant(input: Awaited<ReturnType<typeof seedCase>>) {
     return grantPermanentGrant(
         {
             beneficiaryUserId: input.userId,
-            grantedBy: input.adminId,
+            actor: grantSignerActor(input.adminId),
             reason: 'S13 integration case',
             includesAddons: false,
             anchors: [{ vertical: V, ...input.anchor }]
@@ -230,7 +236,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const result = await grantPermanentGrant(
                 {
                     beneficiaryUserId: seeded.userId,
-                    grantedBy: seeded.adminId,
+                    actor: grantSignerActor(seeded.adminId),
                     reason: 'two anchored verticals',
                     includesAddons: false,
                     anchors: [
@@ -262,6 +268,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
 
         it('c — S19 retention is released in the act, with no refund or succession rewrite', async () => {
             const s = await predecessorInGrace({ approveOnAttempt: 2 });
+            const { userId: adminId } = await seedCoverageUser(getServiceTestDb());
+            grantSignerIds.push(adminId);
             grantOnlyBeneficiaries.push(s.fixture.user.id);
             successionCases.push({
                 subscriptionIds: [...s.seeded.subscriptionIds],
@@ -276,7 +284,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const cancelled = await grantPermanentGrant(
                 {
                     beneficiaryUserId: s.fixture.user.id,
-                    grantedBy: s.fixture.user.id,
+                    actor: grantSignerActor(adminId),
                     reason: 'S19 permanent grant',
                     includesAddons: false,
                     anchors: [{ vertical: V, ...anchor }]
@@ -328,7 +336,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 grantPermanentGrant(
                     {
                         beneficiaryUserId: seeded.userId,
-                        grantedBy: seeded.adminId,
+                        actor: grantSignerActor(seeded.adminId),
                         reason: 'invalid FK',
                         includesAddons: false,
                         anchors: [{ vertical: V, ...wrongPlan }]

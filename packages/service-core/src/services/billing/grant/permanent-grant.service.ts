@@ -1,16 +1,22 @@
 /**
- * Permanent grant acts (B9a.1). The caller authorizes ACC_2 (INV:30, AC:B9a:9,
- * HOS-1584); no route exposes this in HOS-1582. The anchor floor is stored as
+ * Permanent grant acts (B9a.1). The service authorizes ACC_2 (INV:30, AC:B9a:9);
+ * API routes are added in HOS-1584's third rollout. The anchor floor is stored as
  * a reference and is not checked against políticaDePlan(v).vigente (AC:B9a:11,
  * HOS-1585); the real GRANT coverage source arrives with HOS-1585.
  */
 import { and, eq, getDb, permanentGrants, permanentGrantVerticals } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
+import type { Actor } from '../../../types';
 import { ServiceError } from '../../../types';
 import {
     cancelAddonComplementsAtProvider,
     emitAddonCoverageRemoved
 } from '../addon/addon-instance-a5.js';
+import {
+    assertPermanentGrantPermitted,
+    assertPermanentGrantSubject,
+    mapPermanentGrantWriteError
+} from './permanent-grant-authorization.js';
 import {
     anchorInputSchema,
     grantSchema,
@@ -43,13 +49,13 @@ import {
  *   at least one unique vertical anchor.
  * @param ports Clock and integrations required for local and post-commit work.
  * @returns Created grant and anchor IDs, local S13 effects and provider results.
- * @throws {ServiceError} When input is invalid, a referenced grant write fails,
- *   or a transactional S13 operation cannot complete.
+ * @throws {ServiceError} For ADMINISTRATIVE_ACTION_FORBIDDEN, invalid input, missing
+ *   references, or a transactional S13 operation that cannot complete.
  */
 export async function grantPermanentGrant(
     raw: {
         readonly beneficiaryUserId: string;
-        readonly grantedBy: string;
+        readonly actor: Actor;
         readonly reason: string;
         readonly includesAddons: boolean;
         readonly anchors: readonly {
@@ -73,67 +79,72 @@ export async function grantPermanentGrant(
     readonly anchoredAddonInstanceIds: readonly string[];
     readonly addonProviderCalls: readonly S20ProviderResult[];
 }> {
-    const parsed = grantSchema.safeParse(raw);
+    assertPermanentGrantPermitted({ actor: raw.actor });
+    const { actor, ...grantInput } = raw;
+    const parsed = grantSchema.safeParse({ ...grantInput, grantedBy: actor.id });
     if (!parsed.success) throw invalidPermanentGrantInput(parsed.error.issues);
     const input = parsed.data;
+    assertPermanentGrantSubject({ actor, beneficiaryUserId: input.beneficiaryUserId });
     const now = ports.clock.now();
-    const committed = await getDb().transaction(async (tx) => {
-        const [grant] = await tx
-            .insert(permanentGrants)
-            .values({
-                beneficiaryUserId: input.beneficiaryUserId,
-                grantedBy: input.grantedBy,
-                reason: input.reason,
-                includesAddons: input.includesAddons,
-                affectedSubscriptionIds: []
-            })
-            .returning({ id: permanentGrants.id });
-        if (!grant)
-            throw new ServiceError(
-                ServiceErrorCode.INTERNAL_ERROR,
-                'Permanent grant insert returned no row'
-            );
-        const anchors: string[] = [];
-        for (const anchor of input.anchors) {
-            const [row] = await tx
-                .insert(permanentGrantVerticals)
-                .values({ permanentGrantId: grant.id, ...anchor })
-                .returning({ id: permanentGrantVerticals.id });
-            if (!row)
+    const committed = await getDb()
+        .transaction(async (tx) => {
+            const [grant] = await tx
+                .insert(permanentGrants)
+                .values({
+                    beneficiaryUserId: input.beneficiaryUserId,
+                    grantedBy: actor.id,
+                    reason: input.reason,
+                    includesAddons: input.includesAddons,
+                    affectedSubscriptionIds: []
+                })
+                .returning({ id: permanentGrants.id });
+            if (!grant)
                 throw new ServiceError(
                     ServiceErrorCode.INTERNAL_ERROR,
-                    'Permanent grant anchor insert returned no row'
+                    'Permanent grant insert returned no row'
                 );
-            anchors.push(row.id);
-        }
-        const result = await runS13InTransaction(
-            {
-                tx,
-                permanentGrantId: grant.id,
-                beneficiaryUserId: input.beneficiaryUserId,
-                verticals: input.anchors.map(({ vertical }) => vertical),
-                now,
-                actorId: input.grantedBy
-            },
-            { orphanhood: ports.orphanhood }
-        );
-        const s20 = await runS20InTransaction(
-            {
-                tx,
-                includesAddons: input.includesAddons,
-                permanentGrantId: grant.id,
-                beneficiaryUserId: input.beneficiaryUserId,
-                anchors: input.anchors.map(({ vertical }, index) => ({
-                    id: anchors[index]!,
-                    vertical
-                })),
-                now,
-                actorId: input.grantedBy
-            },
-            { orphanhood: ports.orphanhood }
-        );
-        return { grantId: grant.id, anchorIds: anchors, result, s20 };
-    });
+            const anchors: string[] = [];
+            for (const anchor of input.anchors) {
+                const [row] = await tx
+                    .insert(permanentGrantVerticals)
+                    .values({ permanentGrantId: grant.id, ...anchor })
+                    .returning({ id: permanentGrantVerticals.id });
+                if (!row)
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Permanent grant anchor insert returned no row'
+                    );
+                anchors.push(row.id);
+            }
+            const result = await runS13InTransaction(
+                {
+                    tx,
+                    permanentGrantId: grant.id,
+                    beneficiaryUserId: input.beneficiaryUserId,
+                    verticals: input.anchors.map(({ vertical }) => vertical),
+                    now,
+                    actorId: actor.id
+                },
+                { orphanhood: ports.orphanhood }
+            );
+            const s20 = await runS20InTransaction(
+                {
+                    tx,
+                    includesAddons: input.includesAddons,
+                    permanentGrantId: grant.id,
+                    beneficiaryUserId: input.beneficiaryUserId,
+                    anchors: input.anchors.map(({ vertical }, index) => ({
+                        id: anchors[index]!,
+                        vertical
+                    })),
+                    now,
+                    actorId: actor.id
+                },
+                { orphanhood: ports.orphanhood }
+            );
+            return { grantId: grant.id, anchorIds: anchors, result, s20 };
+        })
+        .catch((error: unknown) => mapPermanentGrantWriteError({ error }));
     await emitS13CoverageNotices({
         beneficiaryUserId: input.beneficiaryUserId,
         anchoredVerticals: input.anchors.map(({ vertical }) => vertical),
@@ -181,13 +192,13 @@ export async function grantPermanentGrant(
  * @param raw Grant ID, authorizing actor and the vertical's plan floor.
  * @param ports Clock and integrations required for local and post-commit work.
  * @returns The new anchor ID, local S13 effects and provider results.
- * @throws {ServiceError} When input is invalid, the grant is missing or revoked,
- *   or a transactional S13 operation cannot complete.
+ * @throws {ServiceError} For ADMINISTRATIVE_ACTION_FORBIDDEN, invalid input, a missing
+ *   or revoked grant, or a transactional S13 operation that cannot complete.
  */
 export async function anchorPermanentGrantVertical(
     raw: {
         readonly permanentGrantId: string;
-        readonly anchoredBy: string;
+        readonly actor: Actor;
         readonly vertical: string;
         readonly planId: string;
         readonly floorPlanVersionId: string;
@@ -206,91 +217,96 @@ export async function anchorPermanentGrantVertical(
     readonly anchoredAddonInstanceIds: readonly string[];
     readonly addonProviderCalls: readonly S20ProviderResult[];
 }> {
-    const parsed = anchorInputSchema.safeParse(raw);
+    assertPermanentGrantPermitted({ actor: raw.actor });
+    const { actor, ...inputWithoutActor } = raw;
+    const parsed = anchorInputSchema.safeParse({ ...inputWithoutActor, anchoredBy: actor.id });
     if (!parsed.success) throw invalidPermanentGrantInput(parsed.error.issues);
     const input = parsed.data;
     const now = ports.clock.now();
-    const committed = await getDb().transaction(async (tx) => {
-        const [grant] = await tx
-            .select({
-                id: permanentGrants.id,
-                beneficiaryUserId: permanentGrants.beneficiaryUserId,
-                revokedAt: permanentGrants.revokedAt,
-                includesAddons: permanentGrants.includesAddons
-            })
-            .from(permanentGrants)
-            .where(eq(permanentGrants.id, input.permanentGrantId))
-            .for('update');
-        if (!grant)
-            throw new ServiceError(
-                ServiceErrorCode.NOT_FOUND,
-                'Permanent grant not found',
-                undefined,
-                'PERMANENT_GRANT_NOT_FOUND'
-            );
-        if (grant.revokedAt !== null)
-            throw new ServiceError(
-                ServiceErrorCode.VALIDATION_ERROR,
-                'Permanent grant is not live',
-                undefined,
-                'PERMANENT_GRANT_NOT_LIVE'
-            );
-        const [existing] = await tx
-            .select({ id: permanentGrantVerticals.id })
-            .from(permanentGrantVerticals)
-            .where(
-                and(
-                    eq(permanentGrantVerticals.permanentGrantId, grant.id),
-                    eq(permanentGrantVerticals.vertical, input.vertical)
+    const committed = await getDb()
+        .transaction(async (tx) => {
+            const [grant] = await tx
+                .select({
+                    id: permanentGrants.id,
+                    beneficiaryUserId: permanentGrants.beneficiaryUserId,
+                    revokedAt: permanentGrants.revokedAt,
+                    includesAddons: permanentGrants.includesAddons
+                })
+                .from(permanentGrants)
+                .where(eq(permanentGrants.id, input.permanentGrantId))
+                .for('update');
+            if (!grant)
+                throw new ServiceError(
+                    ServiceErrorCode.NOT_FOUND,
+                    'Permanent grant not found',
+                    undefined,
+                    'PERMANENT_GRANT_NOT_FOUND'
+                );
+            assertPermanentGrantSubject({ actor, beneficiaryUserId: grant.beneficiaryUserId });
+            if (grant.revokedAt !== null)
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Permanent grant is not live',
+                    undefined,
+                    'PERMANENT_GRANT_NOT_LIVE'
+                );
+            const [existing] = await tx
+                .select({ id: permanentGrantVerticals.id })
+                .from(permanentGrantVerticals)
+                .where(
+                    and(
+                        eq(permanentGrantVerticals.permanentGrantId, grant.id),
+                        eq(permanentGrantVerticals.vertical, input.vertical)
+                    )
                 )
-            )
-            .limit(1);
-        if (existing)
-            throw new ServiceError(
-                ServiceErrorCode.ALREADY_EXISTS,
-                'Permanent grant vertical already anchored',
-                undefined,
-                'PERMANENT_GRANT_VERTICAL_ALREADY_ANCHORED'
+                .limit(1);
+            if (existing)
+                throw new ServiceError(
+                    ServiceErrorCode.ALREADY_EXISTS,
+                    'Permanent grant vertical already anchored',
+                    undefined,
+                    'PERMANENT_GRANT_VERTICAL_ALREADY_ANCHORED'
+                );
+            const [anchor] = await tx
+                .insert(permanentGrantVerticals)
+                .values({
+                    permanentGrantId: grant.id,
+                    vertical: input.vertical,
+                    planId: input.planId,
+                    floorPlanVersionId: input.floorPlanVersionId
+                })
+                .returning({ id: permanentGrantVerticals.id });
+            if (!anchor)
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Permanent grant anchor insert returned no row'
+                );
+            const result = await runS13InTransaction(
+                {
+                    tx,
+                    permanentGrantId: grant.id,
+                    beneficiaryUserId: grant.beneficiaryUserId,
+                    verticals: [input.vertical],
+                    now,
+                    actorId: actor.id
+                },
+                { orphanhood: ports.orphanhood }
             );
-        const [anchor] = await tx
-            .insert(permanentGrantVerticals)
-            .values({
-                permanentGrantId: grant.id,
-                vertical: input.vertical,
-                planId: input.planId,
-                floorPlanVersionId: input.floorPlanVersionId
-            })
-            .returning({ id: permanentGrantVerticals.id });
-        if (!anchor)
-            throw new ServiceError(
-                ServiceErrorCode.INTERNAL_ERROR,
-                'Permanent grant anchor insert returned no row'
+            const s20 = await runS20InTransaction(
+                {
+                    tx,
+                    includesAddons: grant.includesAddons,
+                    permanentGrantId: grant.id,
+                    beneficiaryUserId: grant.beneficiaryUserId,
+                    anchors: [{ id: anchor.id, vertical: input.vertical }],
+                    now,
+                    actorId: actor.id
+                },
+                { orphanhood: ports.orphanhood }
             );
-        const result = await runS13InTransaction(
-            {
-                tx,
-                permanentGrantId: grant.id,
-                beneficiaryUserId: grant.beneficiaryUserId,
-                verticals: [input.vertical],
-                now,
-                actorId: input.anchoredBy
-            },
-            { orphanhood: ports.orphanhood }
-        );
-        const s20 = await runS20InTransaction(
-            {
-                tx,
-                includesAddons: grant.includesAddons,
-                permanentGrantId: grant.id,
-                beneficiaryUserId: grant.beneficiaryUserId,
-                anchors: [{ id: anchor.id, vertical: input.vertical }],
-                now,
-                actorId: input.anchoredBy
-            },
-            { orphanhood: ports.orphanhood }
-        );
-        return { anchorId: anchor.id, beneficiaryUserId: grant.beneficiaryUserId, result, s20 };
-    });
+            return { anchorId: anchor.id, beneficiaryUserId: grant.beneficiaryUserId, result, s20 };
+        })
+        .catch((error: unknown) => mapPermanentGrantWriteError({ error }));
     await emitS13CoverageNotices({
         beneficiaryUserId: committed.beneficiaryUserId,
         anchoredVerticals: [input.vertical],

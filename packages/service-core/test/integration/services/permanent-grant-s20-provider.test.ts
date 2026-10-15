@@ -25,7 +25,11 @@ import {
 } from './support/coverage-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
 import { namespaceFake } from './support/payment-provider.js';
-import { retirePermanentGrantRows, seedGrantPlan } from './support/permanent-grant-fixtures.js';
+import {
+    grantSignerActor,
+    retirePermanentGrantRows,
+    seedGrantPlan
+} from './support/permanent-grant-fixtures.js';
 import { retireS20Rows, seedS20Addon } from './support/permanent-grant-s20-fixtures.js';
 
 const now = new Date('2026-10-14T12:00:00.000Z');
@@ -100,7 +104,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
         const result = await grantPermanentGrant(
             {
                 beneficiaryUserId: user.userId,
-                grantedBy: admin.userId,
+                actor: grantSignerActor(admin.userId),
                 reason: 'S20 provider',
                 includesAddons: true,
                 anchors: [{ vertical, ...plan }]
@@ -192,7 +196,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
         const grant = await grantPermanentGrant(
             {
                 beneficiaryUserId: user.userId,
-                grantedBy: admin.userId,
+                actor: grantSignerActor(admin.userId),
                 reason: 'S20 retry',
                 includesAddons: true,
                 anchors: [{ vertical, ...plan }]
@@ -216,7 +220,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
             )
         ).toHaveLength(1);
         const resumed = await resumePermanentGrant(
-            { permanentGrantId: grant.permanentGrantId, actorId: admin.userId },
+            { permanentGrantId: grant.permanentGrantId, actor: grantSignerActor(admin.userId) },
             ports
         );
         expect(resumed.addonProviderCalls).toContainEqual({
@@ -224,7 +228,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
             cancelCall: 'SENT'
         });
         const again = await resumePermanentGrant(
-            { permanentGrantId: grant.permanentGrantId, actorId: admin.userId },
+            { permanentGrantId: grant.permanentGrantId, actor: grantSignerActor(admin.userId) },
             ports
         );
         expect(again.addonProviderCalls).toContainEqual({
@@ -285,7 +289,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
         const grant = await grantPermanentGrant(
             {
                 beneficiaryUserId: user.userId,
-                grantedBy: admin.userId,
+                actor: grantSignerActor(admin.userId),
                 reason: 'S20 dispatch',
                 includesAddons: true,
                 anchors: [{ vertical, ...planForGrant }]
@@ -299,7 +303,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
             .set({ status: 'sent' })
             .where(eq(emailOutbox.recipientUserId, user.userId));
         const resumed = await resumePermanentGrant(
-            { permanentGrantId: grant.permanentGrantId, actorId: admin.userId },
+            { permanentGrantId: grant.permanentGrantId, actor: grantSignerActor(admin.userId) },
             { ...base, beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }) }
         );
         expect(resumed.providerCalls).toContainEqual({
@@ -360,7 +364,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
         const result = await grantPermanentGrant(
             {
                 beneficiaryUserId: user.userId,
-                grantedBy: admin.userId,
+                actor: grantSignerActor(admin.userId),
                 reason: 'S13 only',
                 includesAddons: false,
                 anchors: [{ vertical, ...plan }]
@@ -435,7 +439,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
         const grant = await grantPermanentGrant(
             {
                 beneficiaryUserId: user.userId,
-                grantedBy: admin.userId,
+                actor: grantSignerActor(admin.userId),
                 reason: 'pending notice',
                 includesAddons: true,
                 anchors: [{ vertical, ...plan }]
@@ -455,7 +459,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
             )[0]?.status
         ).toBe('CANCELLED');
         const resumed = await resumePermanentGrant(
-            { permanentGrantId: grant.permanentGrantId, actorId: admin.userId },
+            { permanentGrantId: grant.permanentGrantId, actor: grantSignerActor(admin.userId) },
             { ...ports, beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }) }
         );
         expect(resumed.addonProviderCalls).toContainEqual({
@@ -485,7 +489,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
         const result = await grantPermanentGrant(
             {
                 beneficiaryUserId: user.userId,
-                grantedBy: admin.userId,
+                actor: grantSignerActor(admin.userId),
                 reason: 'escalation',
                 includesAddons: true,
                 anchors: [{ vertical, ...plan }]
@@ -538,7 +542,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
         const result = await grantPermanentGrant(
             {
                 beneficiaryUserId: user.userId,
-                grantedBy: admin.userId,
+                actor: grantSignerActor(admin.userId),
                 reason: 'not applicable',
                 includesAddons: true,
                 anchors: [{ vertical, ...plan }]
