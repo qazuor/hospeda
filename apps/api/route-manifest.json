@@ -367,6 +367,14 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/billing-permanent-grants"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-permanent-grants/:permanentGrantId/anchors"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/billing-refunds/external"
         },
         {
