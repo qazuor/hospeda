@@ -2,6 +2,7 @@
 
 import {
     addonInstances,
+    addonProducts,
     and,
     eq,
     getDb,
@@ -13,6 +14,7 @@ import {
     subscriptions
 } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { requestRefund } from '../../../src/services/billing/refund/request-refund.service';
 import { revokeSubscription } from '../../../src/services/billing/subscription/revoke-subscription.service';
 import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers';
 import {
@@ -23,7 +25,9 @@ import {
 import {
     retireRevocationRows,
     revocationFixture,
+    seedCreditedPayment,
     seedRevocationActor,
+    seedSiblingPrincipal,
     trackSubscription
 } from './support/revocation-fixtures';
 
@@ -66,7 +70,7 @@ afterEach(async () => {
 describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:12 AC:B5:24 S36 orphan refunds', () => {
     it.each([
         2, -7
-    ])('TEST:B5:12 cancels UNA_VEZ and refunds only a payment from day %i', async (purchaseDay) => {
+    ])('TEST:B5:12 (b) cancels UNA_VEZ and refunds only a payment from day %i', async (purchaseDay) => {
         const f = await revocationFixture();
         const { instanceId } = await seedOrphanInstance(getDb(), {
             ownerId: f.userId,
@@ -125,7 +129,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:12 AC:B5:24 S36 orphan ref
 
     it.each([
         2, -7
-    ])('TEST:B5:12 S21 refunds a recent complement charge and marks an older one (%i)', async (chargeDay) => {
+    ])('TEST:B5:12 (c),(g) S21 refunds a recent charge and marks an older one (%i)', async (chargeDay) => {
         const f = await revocationFixture();
         const addon = await seedVerticalAddon(getDb(), {
             userId: f.userId,
@@ -171,7 +175,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:12 AC:B5:24 S36 orphan ref
         }
     });
 
-    it('TEST:B5:12 a LISTING lookup failure rolls back the whole S36 transaction', async () => {
+    it('TEST:B5:12 (d) a LISTING lookup failure rolls back the whole S36 transaction', async () => {
         const f = await revocationFixture();
         const { instanceId } = await seedOrphanInstance(getDb(), {
             ownerId: f.userId,
@@ -210,5 +214,267 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:12 AC:B5:24 S36 orphan ref
                     .where(eq(addonInstances.id, instanceId))
             )[0]?.status
         ).toBe('ACTIVE');
+    });
+
+    it('TEST:B5:12 (a) revokes principal, complement and one-time addon in one act with three RF1s', async () => {
+        const f = await revocationFixture();
+        const recurring = await seedVerticalAddon(getDb(), {
+            userId: f.userId,
+            targetId: f.subscriptionId
+        });
+        trackSubscription(recurring.complementId);
+        createdSubscriptions.push(recurring.complementId);
+        created.push({ instanceId: recurring.instanceId });
+        const complementPayment = await seedComplementCharge(getDb(), {
+            subscriptionId: recurring.complementId,
+            factAt: f.day(2),
+            coveredPeriodStart: f.day(2),
+            amount: 25000
+        });
+        const once = await seedOrphanInstance(getDb(), {
+            ownerId: f.userId,
+            scopeType: 'VERTICAL_SUBSCRIPTION',
+            compatibleVerticals: ['accommodation'],
+            status: 'ACTIVE',
+            targetId: f.subscriptionId,
+            chargeKind: 'UNA_VEZ'
+        });
+        const [product] = await getDb()
+            .select({ chargeKind: addonProducts.chargeKind })
+            .from(addonProducts)
+            .where(eq(addonProducts.id, once.productId));
+        expect(product?.chargeKind).toBe('UNA_VEZ');
+        const [oncePayment] = await getDb()
+            .insert(payments)
+            .values({
+                addonInstanceId: once.instanceId,
+                amount: 5000,
+                currency: 'ARS',
+                status: 'SUCCEEDED',
+                provider: 'FAKE',
+                providerFactId: `b56-${crypto.randomUUID()}`,
+                factAt: f.day(2)
+            })
+            .returning({ id: payments.id });
+        if (!oncePayment) throw new Error('Expected one-time payment');
+        created.push({ instanceId: once.instanceId, paymentId: oncePayment.id });
+        f.at(f.day(5));
+        const result = await revokeSubscription(
+            {
+                actor: await seedRevocationActor(),
+                subscriptionId: f.subscriptionId,
+                expectedPaymentId: f.payment?.id
+            },
+            f.ports
+        );
+        expect(
+            (
+                await getDb()
+                    .select({ status: subscriptions.status })
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, f.subscriptionId))
+            )[0]?.status
+        ).toBe('CANCELLED');
+        expect(
+            (
+                await getDb()
+                    .select({ status: subscriptions.status })
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, recurring.complementId))
+            )[0]?.status
+        ).toBe('CANCELLED');
+        expect(
+            await getDb()
+                .select({ status: addonInstances.status })
+                .from(addonInstances)
+                .where(inArray(addonInstances.id, [recurring.instanceId, once.instanceId]))
+        ).toEqual([{ status: 'CANCELLED' }, { status: 'CANCELLED' }]);
+        const principalRefunds = await getDb()
+            .select()
+            .from(refunds)
+            .where(eq(refunds.paymentId, f.payment!.id));
+        const complementRefunds = await getDb()
+            .select()
+            .from(refunds)
+            .where(eq(refunds.paymentId, complementPayment.paymentId));
+        const onceRefunds = await getDb()
+            .select()
+            .from(refunds)
+            .where(eq(refunds.paymentId, oncePayment.id));
+        expect(principalRefunds).toHaveLength(1);
+        expect(principalRefunds[0]?.reason).toBe('REVOCATION');
+        expect(complementRefunds).toMatchObject([{ reason: 'ADDON_ORPHAN', amount: 25000 }]);
+        expect(onceRefunds).toMatchObject([{ reason: 'ONE_TIME_ADDON_REVOCATION', amount: 5000 }]);
+        expect(onceRefunds[0]?.paymentId).toBe(oncePayment.id);
+        expect(
+            await getDb()
+                .select()
+                .from(reconciliationMarks)
+                .where(inArray(reconciliationMarks.subscriptionId, [recurring.complementId]))
+        ).toHaveLength(0);
+        expect(result.oneTimeAddonRefunds).toHaveLength(1);
+    });
+
+    it('TEST:B5:12 (e) pending full refunds claim complement and UNA_VEZ balances', async () => {
+        const f = await revocationFixture();
+        const recurring = await seedVerticalAddon(getDb(), {
+            userId: f.userId,
+            targetId: f.subscriptionId
+        });
+        trackSubscription(recurring.complementId);
+        createdSubscriptions.push(recurring.complementId);
+        created.push({ instanceId: recurring.instanceId });
+        const complementPayment = await seedComplementCharge(getDb(), {
+            subscriptionId: recurring.complementId,
+            factAt: f.day(2),
+            amount: 25000,
+            coveredPeriodStart: f.day(2)
+        });
+        const once = await seedOrphanInstance(getDb(), {
+            ownerId: f.userId,
+            scopeType: 'VERTICAL_SUBSCRIPTION',
+            compatibleVerticals: ['accommodation'],
+            status: 'ACTIVE',
+            targetId: f.subscriptionId,
+            chargeKind: 'UNA_VEZ'
+        });
+        const [oncePayment] = await getDb()
+            .insert(payments)
+            .values({
+                addonInstanceId: once.instanceId,
+                amount: 5000,
+                currency: 'ARS',
+                status: 'SUCCEEDED',
+                provider: 'FAKE',
+                providerFactId: `b56-${crypto.randomUUID()}`,
+                factAt: f.day(2)
+            })
+            .returning({ id: payments.id });
+        if (!oncePayment) throw new Error('Expected one-time payment');
+        created.push({ instanceId: once.instanceId, paymentId: oncePayment.id });
+        f.at(f.day(5));
+        for (const [id, amount] of [
+            [complementPayment.paymentId, 25000],
+            [oncePayment.id, 5000]
+        ] as const)
+            await requestRefund(
+                {
+                    source: { kind: 'PAYMENT', id },
+                    amount,
+                    reason: id === oncePayment.id ? 'ONE_TIME_ADDON_REVOCATION' : 'ADDON_ORPHAN'
+                },
+                { tx: getDb(), clock: f.fixture.clock }
+            );
+        await revokeSubscription(
+            {
+                actor: await seedRevocationActor(),
+                subscriptionId: f.subscriptionId,
+                expectedPaymentId: f.payment?.id
+            },
+            f.ports
+        );
+        expect(
+            await getDb()
+                .select()
+                .from(refunds)
+                .where(eq(refunds.paymentId, complementPayment.paymentId))
+        ).toMatchObject([{ reason: 'ADDON_ORPHAN', status: 'REQUESTED' }]);
+        expect(
+            await getDb().select().from(refunds).where(eq(refunds.paymentId, oncePayment.id))
+        ).toMatchObject([{ reason: 'ONE_TIME_ADDON_REVOCATION', status: 'REQUESTED' }]);
+    });
+
+    it('TEST:B5:12 (h) preserves USER addon covered by another live paying principal', async () => {
+        const f = await revocationFixture();
+        const sibling = await seedSiblingPrincipal({
+            like: f,
+            status: 'ACTIVE',
+            succeedsId: f.subscriptionId
+        });
+        await seedCreditedPayment({ subscriptionId: sibling.id, factAt: f.day(1) });
+        const instance = await seedOrphanInstance(getDb(), {
+            ownerId: f.userId,
+            scopeType: 'USER',
+            compatibleVerticals: ['accommodation'],
+            status: 'ACTIVE',
+            chargeKind: 'UNA_VEZ'
+        });
+        created.push({ instanceId: instance.instanceId });
+        f.at(f.day(5));
+        const result = await revokeSubscription(
+            {
+                actor: await seedRevocationActor(),
+                subscriptionId: f.subscriptionId,
+                expectedPaymentId: f.payment?.id
+            },
+            f.ports
+        );
+        expect(
+            (
+                await getDb()
+                    .select({ status: addonInstances.status })
+                    .from(addonInstances)
+                    .where(eq(addonInstances.id, instance.instanceId))
+            )[0]?.status
+        ).toBe('ACTIVE');
+        expect(result.orphanedAddonIds).not.toContain(instance.instanceId);
+        expect(result.oneTimeAddonRefunds).toHaveLength(0);
+    });
+
+    it('TEST:B5:12 (i) emits addon REMOVED once after commit and never after rollback', async () => {
+        const f = await revocationFixture();
+        const addon = await seedVerticalAddon(getDb(), {
+            userId: f.userId,
+            targetId: f.subscriptionId
+        });
+        trackSubscription(addon.complementId);
+        createdSubscriptions.push(addon.complementId);
+        created.push({ instanceId: addon.instanceId });
+        f.at(f.day(5));
+        await revokeSubscription(
+            {
+                actor: await seedRevocationActor(),
+                subscriptionId: f.subscriptionId,
+                expectedPaymentId: f.payment?.id
+            },
+            f.ports
+        );
+        expect(
+            f.coverageSeen.filter(
+                ({ event }) => event.change === 'REMOVED' && event.sourceType === 'ADDON'
+            )
+        ).toHaveLength(1);
+
+        const broken = await revocationFixture();
+        const listing = await seedOrphanInstance(getDb(), {
+            ownerId: broken.userId,
+            scopeType: 'LISTING',
+            compatibleVerticals: ['accommodation'],
+            status: 'ACTIVE',
+            targetId: crypto.randomUUID()
+        });
+        created.push({ instanceId: listing.instanceId });
+        broken.at(broken.day(5));
+        await expect(
+            revokeSubscription(
+                {
+                    actor: await seedRevocationActor(),
+                    subscriptionId: broken.subscriptionId,
+                    expectedPaymentId: broken.payment?.id
+                },
+                {
+                    ...broken.ports,
+                    orphanhood: {
+                        ...broken.ports.orphanhood,
+                        listing: async ({ listingId }) => {
+                            throw new Error(`listing ${listingId} not programmed`);
+                        }
+                    }
+                }
+            )
+        ).rejects.toThrow(/listing .* not programmed/);
+        expect(
+            broken.coverageSeen.filter(({ event }) => event.sourceType === 'ADDON')
+        ).toHaveLength(0);
     });
 });
