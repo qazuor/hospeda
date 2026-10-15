@@ -142,7 +142,8 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
             'RECEPTION_TOMBSTONE',
             'TOURIST_VIP_INHERITED',
             'A5',
-            'S13'
+            'S13',
+            'S20'
         ])
             expect(found.has(transition), transition).toBe(true);
     });
