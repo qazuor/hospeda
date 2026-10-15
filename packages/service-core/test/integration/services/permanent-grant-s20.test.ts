@@ -651,7 +651,10 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 await seedOrphanInstance(tx, {
                     ownerId: userId,
                     scopeType: scope,
-                    compatibleVerticals: [targetVertical],
+                    compatibleVerticals:
+                        scope === 'VERTICAL_SUBSCRIPTION' || scope === 'LISTING'
+                            ? [ORPHAN_VERTICAL]
+                            : [targetVertical],
                     status: 'ACTIVE',
                     targetId,
                     complementSubscriptionId: subscriptionId
