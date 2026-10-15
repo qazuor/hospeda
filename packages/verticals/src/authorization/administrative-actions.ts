@@ -108,9 +108,11 @@ export const ADMINISTRATIVE_ACTION_PERMISSION_SET: ReadonlySet<PermissionEnum> =
  * Permissions that guarded an administrative action before it got its own
  * permission, mapped to the action they used to guard. They are still granted
  * to staff roles, so they stay administrative: a system actor must keep being
- * refused them even though no action row lists them any more. Two actions
+ * refused them even though no action row lists them any more. Three actions
  * left entries here: action 23 moved to `LISTING_PURGE_ON_REQUEST` (V8a.2,
- * HOS-1493) and action 24 moved to `USER_CLOSE_ON_REQUEST` (V8a.3, HOS-1494).
+ * HOS-1493), action 24 moved to `USER_CLOSE_ON_REQUEST` (V8a.3, HOS-1494), and
+ * action 26 moved to `USER_MANAGE_SUPER_ADMIN_ROLE` (V5.6, HOS-1460); ADMIN
+ * retains the old permission for managing roles other than SUPER_ADMIN.
  * An entry leaves this list only once no role is granted its permission.
  */
 export const RETIRING_ADMINISTRATIVE_PERMISSIONS: readonly {
