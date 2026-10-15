@@ -1,6 +1,20 @@
 import { providerLinkCancellationSeen } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
 
+const { delegateInputs } = vi.hoisted(() => ({ delegateInputs: [] as unknown[] }));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const original = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...original,
+        createProviderNoticeMirrorDelegates: (input: unknown) => {
+            delegateInputs.push(input);
+            return original.createProviderNoticeMirrorDelegates(
+                input as Parameters<typeof original.createProviderNoticeMirrorDelegates>[0]
+            );
+        }
+    };
+});
+
 vi.mock('../../../src/utils/payment-provider', () => ({
     getPaymentProvider: () => ({ readAuthorization: vi.fn() })
 }));
@@ -44,12 +58,17 @@ describe('AC:B4:11 the provider notice receiver annotates the cancellation seen 
 
         // Assert
         expect(ports.cancellationSeen).toBe(providerLinkCancellationSeen);
+        expect(typeof ports.complements.addonPolicy).toBe('function');
+        expect(typeof ports.complements.listing).toBe('function');
+        expect(ports.complements.liveAnchors).toBeDefined();
+        expect(delegateInputs.at(-1)).toMatchObject({ complements: ports.complements });
         expect(Object.keys(ports).sort()).toEqual(
             [
                 'beforeCancelNotice',
                 'cancellationSeen',
                 'clock',
                 'coverageNotices',
+                'complements',
                 'delegates',
                 'markPayments',
                 'payments',

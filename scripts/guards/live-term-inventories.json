@@ -1,6 +1,34 @@
 {
     "fila_viva": [
         {
+            "file": "packages/service-core/src/services/billing/subscription/complement-selection.ts",
+            "symbol": "selectComplementTargets",
+            "row": null,
+            "why": "HOS-1562 S32/S11 shared selector: reads other vertical principals and applies the rule-specific live-state exclusion for USER/GLOBAL complements.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/complement-selection.ts",
+            "symbol": "pauseEndForUserWide",
+            "row": null,
+            "why": "HOS-1562 S32: reads compatible principal states and their open customer-request pauses to derive the USER/GLOBAL expected end.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/complement-pause-s32.ts",
+            "symbol": "pauseComplementsS32",
+            "row": null,
+            "why": "HOS-1562 S32: validates that the principal is suspended or has left the live rows before selecting complements.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/complement-pause-s32.ts",
+            "symbol": "writeComplementPause",
+            "row": null,
+            "why": "HOS-1562 S32 race check: under row locks confirms the principal still matches the trigger before pausing a complement.",
+            "subject": "subscription"
+        },
+        {
             "file": "packages/db/src/models/subscription/subscription.model.ts",
             "symbol": "findLiveCommitment",
             "row": null,
@@ -113,6 +141,13 @@
             "subject": "addon_instance"
         },
         {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/addon-without-shutdown-check.ts",
+            "symbol": "runAddonWithoutShutdownCheck",
+            "row": 25,
+            "why": "AC:B5:31: la cuarta comprobación inspecciona las instancias vivas (fila 25) para abrir la marca 11 cuando A5 no corrió.",
+            "subject": "addon_instance"
+        },
+        {
             "file": "apps/api/src/services/listing-publication/listing-purge-preview.service.ts",
             "symbol": "readListingPurgePreview",
             "row": 3,
@@ -139,6 +174,20 @@
             "row": 20,
             "why": "AC:B5:28 (HOS-1545): la re-evaluación de S21, las filas vivas DE COMPLEMENTO (las seis) cuya instancia ya está CANCELLED: la corrida que murió entre A5 y S21.",
             "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-s20.ts",
+            "symbol": "readS20ComplementRows",
+            "row": 19,
+            "subject": "subscription",
+            "why": "AC:B9a:4 (HOS-1583): el alcance de S20, toda fila viva DE COMPLEMENTO del beneficiario (las seis)."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-s20.ts",
+            "symbol": "readS20Instances",
+            "row": 19,
+            "subject": "addon_instance",
+            "why": "AC:B9a:4 (HOS-1583): el alcance de S20, la instancia en uno de sus dos estados vivos."
         }
     ],
     "grant_vivo_ancla_viva": [
@@ -153,6 +202,12 @@
             "symbol": "anchorPermanentGrantVertical",
             "row": 6,
             "why": "Anclar exige un grant vivo: a uno revocado no se le ancla nada."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/addon-without-shutdown-check.ts",
+            "symbol": "verdictOf",
+            "row": 2,
+            "why": "AC:B5:31, segunda mitad: reconoce el título de una instancia anclado a un permanent_grant revocado."
         }
     ],
     "marca_abierta": [
