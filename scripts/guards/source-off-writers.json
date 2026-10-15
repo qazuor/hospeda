@@ -208,5 +208,13 @@
         "effect": "neutral",
         "via": null,
         "reason": "S33 reactivates only a COMPLEMENTO row; subscription-sources.ts filters PRINCIPAL and addon-sources.ts reads the unchanged ACTIVE addon instance."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/complement-s11-rule.ts",
+        "symbol": "writeComplementCancelScheduled",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S11 schedules cancellation only for a COMPLEMENTO row; the principal sources and unchanged addon instance determine coverage."
     }
 ]

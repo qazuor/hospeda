@@ -142,6 +142,7 @@ export * from './billing/subscription/cancel-inherited-tourist-vip.service.js';
 export * from './billing/subscription/complement-pause-s32.js';
 export * from './billing/subscription/complement-ports.js';
 export * from './billing/subscription/complement-resume-s33.js';
+export * from './billing/subscription/complement-s11-rule.js';
 export * from './billing/subscription/complement-s21.js';
 export * from './billing/subscription/complement-selection.js';
 export * from './billing/subscription/decline-first-charge.service.js';
