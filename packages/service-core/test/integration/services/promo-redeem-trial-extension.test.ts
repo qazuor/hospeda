@@ -2,9 +2,9 @@ import type { ExtendTrialArgs } from '@repo/billing-verticals-contract';
 import { VerticalsForBillingSimulator } from '@repo/billing-verticals-contract/testing';
 import { eq, getDb, promoCodes, promoRedemptions, users } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { redeemTrialExtensionCode } from '../../../src/services';
-import { closeServiceTestPool } from './helpers';
+import { closeServiceTestPool, getServiceTestDb } from './helpers';
 
 const now = new Date('2026-10-12T12:00:00.000Z');
 const clock = { now: () => new Date(now) };
@@ -12,6 +12,9 @@ const day = 24 * 60 * 60 * 1000;
 const createdUserIds: string[] = [];
 const createdPromoIds: string[] = [];
 
+beforeAll(() => {
+    getServiceTestDb();
+});
 afterAll(closeServiceTestPool);
 afterEach(async () => {
     for (const promoCodeId of createdPromoIds.splice(0)) {

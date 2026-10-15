@@ -11,9 +11,9 @@ import {
     subscriptions
 } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { redeemPromoCode } from '../../../src/services';
-import { closeServiceTestPool } from './helpers';
+import { closeServiceTestPool, getServiceTestDb } from './helpers';
 import {
     createReconciliationFake,
     reconciliationClock,
@@ -26,6 +26,9 @@ const extensionDay = 24 * 60 * 60 * 1000;
 const owned: Array<{ readonly subscriptionId: string; readonly userId: string }> = [];
 const trialPromoIds: string[] = [];
 afterAll(closeServiceTestPool);
+beforeAll(() => {
+    getServiceTestDb();
+});
 afterEach(async () => {
     await retirePromoFixtures();
     for (const promoCodeId of trialPromoIds.splice(0)) {
