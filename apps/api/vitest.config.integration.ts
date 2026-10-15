@@ -73,6 +73,7 @@ export default defineConfig({
             'test/integration/cutover-v6/**/*.test.ts',
             'test/integration/plan-publication/**/*.test.ts',
             'test/integration/billing-subscription/**/*.test.ts',
+            'test/integration/billing-promo/**/*.test.ts',
             'test/integration/trial/**/*.test.ts',
             'test/integration/listing-publication/**/*.test.ts',
             'test/integration/partners/**/*.test.ts',

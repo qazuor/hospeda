@@ -79,6 +79,20 @@ are evaluated for that owner. V5.7 adds `UNAUTHENTICATED` as 401 `UNAUTHORIZED`.
 
 ## Five rules
 
+### Promo code redemption
+
+| `error.reason` | Status | `error.code` |
+|---|---:|---|
+| `PROMO_CODE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `PROMO_CODE_NOT_FOR_VERTICAL` | 422 | `VALIDATION_ERROR` |
+| `PROMO_NO_ELIGIBLE_SUBSCRIPTION` | 422 | `VALIDATION_ERROR` |
+| `PROMO_NOT_OFFERED_TO_MANUAL_PAYER` | 422 | `VALIDATION_ERROR` |
+| `PROMO_CODE_ALREADY_REDEEMED` | 409 | `ALREADY_EXISTS` |
+| `PROMO_NOT_COMBINABLE` | 409 | `ALREADY_EXISTS` |
+| `PROMO_UNSUPPORTED_CURRENCY` | 422 | `VALIDATION_ERROR` |
+| `PROMO_BELOW_PROVIDER_MINIMUM` | 422 | `VALIDATION_ERROR` |
+| `PROMO_MUTATION_NOT_APPLIED` | 500 | `INTERNAL_ERROR` |
+
 ### R1 — `INTERNAL_ERROR` belongs to 5xx alone
 
 A 4xx labelled `INTERNAL_ERROR` tells the client the failure is ours and worth a
