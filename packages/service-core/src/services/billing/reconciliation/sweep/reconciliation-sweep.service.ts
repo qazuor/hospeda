@@ -34,6 +34,11 @@ import type { ReconciliationComparisonInput } from './reconciliation-divergence.
 import { type ReconciliationComparison, recordDivergence } from './reconciliation-divergence.js';
 import type { SweepLivenessPing } from './sweep-liveness-ping.port.js';
 import {
+    runTerminalReturn,
+    type TerminalReturnPorts,
+    type TerminalReturnSummary
+} from './terminal-return.js';
+import {
     runZeroCallChecks,
     type ZeroCallChecksPorts,
     type ZeroCallChecksSummary
@@ -61,6 +66,8 @@ export interface ReconciliationSweepPorts {
     readonly cancellationRetry?: { readonly beforeCancelNotice: BeforeCancelNotice };
     /** Optional B4 annotation port; without it, the sweep behaves as before. */
     readonly cancellationSeen?: CancellationSeenAnnotator;
+    /** Terminal rows returning to the sweep (AC:B11:15); absent preserves the previous pass. */
+    readonly terminalReturn?: TerminalReturnPorts;
     /**
      * The credited-payments check (AC:B11:12, AC:B11:27). Optional: without it the sweep
      * does exactly what it did before. Provider, clock and S14 port are the sweep's own.
@@ -112,6 +119,8 @@ export interface ReconciliationSweepSummary {
         readonly rowsRead: number;
         readonly rowsFailed: number;
     };
+    /** Outcomes of the terminal return pass, when it ran. */
+    readonly terminalReturn?: TerminalReturnSummary;
     /** Outcomes of the credited-payments check, when it ran. */
     readonly creditedPayments?: CreditedPaymentsCheckSummary;
     /** Outcomes of the paid-orders check, when it ran. */
@@ -228,7 +237,7 @@ export async function runReconciliationSweep(
     let cancellationRetry: ReconciliationSweepSummary['cancellationRetry'];
     if (retryPorts) {
         const pass = await runOurCancellationRetry(
-            { correlationId, pageSize },
+            { correlationId, pageSize, ...(ports.terminalReturn ? { unconfirmedOnly: true } : {}) },
             comparisons.length > 0 ? { ...retryPorts, afterRead: compareRow } : retryPorts
         );
         rowsRead += pass.rowsRead;
@@ -245,6 +254,24 @@ export async function runReconciliationSweep(
             rowsRead: pass.rowsRead,
             rowsFailed: pass.rowsFailed
         };
+    }
+
+    let terminalReturn: TerminalReturnSummary | undefined;
+    if (ports.terminalReturn) {
+        terminalReturn = await runTerminalReturn(
+            { correlationId, pageSize },
+            {
+                ...ports.terminalReturn,
+                provider: ports.provider,
+                clock: ports.clock,
+                markPayments: ports.markPayments,
+                cancellationSeen: ports.cancellationSeen,
+                ...(comparisons.length > 0 ? { compareRow } : {})
+            }
+        );
+        rowsRead += terminalReturn.rowsRead;
+        rowsFailed += terminalReturn.rowsFailed;
+        failures.push(...terminalReturn.failures);
     }
 
     let creditedPayments: CreditedPaymentsCheckSummary | undefined;
@@ -312,6 +339,7 @@ export async function runReconciliationSweep(
         finishedAt,
         ...(zeroCallChecks ? { zeroCallChecks } : {}),
         ...(cancellationRetry ? { cancellationRetry } : {}),
+        ...(terminalReturn ? { terminalReturn } : {}),
         ...(creditedPayments ? { creditedPayments } : {}),
         ...(paidOrders ? { paidOrders } : {})
     };
