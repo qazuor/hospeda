@@ -16,8 +16,7 @@ import {
     subscriptions
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
-import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
-import { z } from 'zod';
+import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import {
     cancelAddonComplementsAtProvider,
@@ -27,6 +26,11 @@ import type { AddonOrphanhoodPorts } from '../addon/addon-orphanhood-ports.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import type { CancellationSeenAnnotator } from '../subscription/subscription-billing-ports.js';
+import {
+    anchorInputSchema,
+    grantSchema,
+    invalidPermanentGrantInput
+} from './permanent-grant-inputs.js';
 import {
     cancelS13AtProvider,
     emitS13CoverageNotices,
@@ -48,46 +52,6 @@ export interface PermanentGrantPorts {
     readonly provider: PaymentProvider;
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly cancellationSeen?: CancellationSeenAnnotator;
-}
-
-const anchorSchema = z.strictObject({
-    vertical: VerticalEnumSchema,
-    planId: z.uuid(),
-    floorPlanVersionId: z.uuid()
-});
-const grantSchema = z
-    .strictObject({
-        beneficiaryUserId: z.uuid(),
-        grantedBy: z.uuid(),
-        reason: z.string().refine((value) => value.trim().length > 0),
-        includesAddons: z.boolean(),
-        anchors: z.array(anchorSchema).min(1)
-    })
-    .superRefine((value, ctx) => {
-        const seen = new Set<string>();
-        for (const anchor of value.anchors) {
-            if (seen.has(anchor.vertical))
-                ctx.addIssue({
-                    code: 'custom',
-                    message: 'Verticals must be unique',
-                    path: ['anchors']
-                });
-            seen.add(anchor.vertical);
-        }
-    });
-const anchorInputSchema = z.strictObject({
-    permanentGrantId: z.uuid(),
-    anchoredBy: z.uuid(),
-    ...anchorSchema.shape
-});
-
-function invalidInput(error: unknown): ServiceError {
-    return new ServiceError(
-        ServiceErrorCode.VALIDATION_ERROR,
-        'Invalid permanent grant input',
-        error,
-        'INVALID_PERMANENT_GRANT_INPUT'
-    );
 }
 
 /**
@@ -133,7 +97,7 @@ export async function grantPermanentGrant(
     }[];
 }> {
     const parsed = grantSchema.safeParse(raw);
-    if (!parsed.success) throw invalidInput(parsed.error.issues);
+    if (!parsed.success) throw invalidPermanentGrantInput(parsed.error.issues);
     const input = parsed.data;
     const now = ports.clock.now();
     const committed = await getDb().transaction(async (tx) => {
@@ -241,7 +205,7 @@ export async function anchorPermanentGrantVertical(
     }[];
 }> {
     const parsed = anchorInputSchema.safeParse(raw);
-    if (!parsed.success) throw invalidInput(parsed.error.issues);
+    if (!parsed.success) throw invalidPermanentGrantInput(parsed.error.issues);
     const input = parsed.data;
     const now = ports.clock.now();
     const committed = await getDb().transaction(async (tx) => {
