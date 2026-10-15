@@ -8,6 +8,7 @@ import {
     experiences,
     gastronomies,
     getDb,
+    inArray,
     isNull,
     plans,
     planVersions,
@@ -56,16 +57,28 @@ type CampaignPort = TrialStartTransaction['scheduleExpiryCampaign'];
  * emit an activation notice. The standalone `scripts/cutover/` script never
  * imports system code. V4.6 will supply the real campaign adapter and its CLI;
  * until then the identical T1 scheduling port is injected by the caller.
+ *
+ * `ownerIds` is optional and should only be passed by tests to isolate their
+ * universe from foreign published listings in the shared CI database. When
+ * omitted the cutover reads the entire database (production path).
  */
 export async function writeCutoverTrials({
     db = getDb(),
     scheduleExpiryCampaign,
-    dryRun = false
+    dryRun = false,
+    ownerIds
 }: {
     readonly db?: DrizzleClient;
     readonly scheduleExpiryCampaign: CampaignPort;
     readonly dryRun?: boolean;
+    readonly ownerIds?: readonly string[];
 }): Promise<CutoverTrialResult> {
+    if (ownerIds !== undefined && ownerIds.length === 0) {
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            'V6 cutover ownerIds must not be empty'
+        );
+    }
     const [accommodationRows, gastronomyRows, experienceRows] = await Promise.all([
         db
             .select({
@@ -77,7 +90,8 @@ export async function writeCutoverTrials({
             .where(
                 and(
                     eq(accommodations.publicationStatus, 'PUBLISHED'),
-                    isNull(accommodations.deletedAt)
+                    isNull(accommodations.deletedAt),
+                    ownerIds ? inArray(accommodations.ownerId, [...ownerIds]) : undefined
                 )
             ),
         db
@@ -88,7 +102,11 @@ export async function writeCutoverTrials({
             })
             .from(gastronomies)
             .where(
-                and(eq(gastronomies.publicationStatus, 'PUBLISHED'), isNull(gastronomies.deletedAt))
+                and(
+                    eq(gastronomies.publicationStatus, 'PUBLISHED'),
+                    isNull(gastronomies.deletedAt),
+                    ownerIds ? inArray(gastronomies.ownerId, [...ownerIds]) : undefined
+                )
             ),
         db
             .select({
@@ -98,7 +116,11 @@ export async function writeCutoverTrials({
             })
             .from(experiences)
             .where(
-                and(eq(experiences.publicationStatus, 'PUBLISHED'), isNull(experiences.deletedAt))
+                and(
+                    eq(experiences.publicationStatus, 'PUBLISHED'),
+                    isNull(experiences.deletedAt),
+                    ownerIds ? inArray(experiences.ownerId, [...ownerIds]) : undefined
+                )
             )
     ]);
     const listings = [
