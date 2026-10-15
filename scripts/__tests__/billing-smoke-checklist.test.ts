@@ -86,9 +86,12 @@ describe('HOS-1622 TEST:B13a:14 (support) AC:B13a:14 the new-system smoke checkl
     });
 
     it('TEST:1685:6 S4 is no longer blocked and names the sweep', () => {
-        const s4Match = source.match(/### S4 — Renewal notice\n([\s\S]*?)(?=### S5|$)/);
+        const s4Start = source.indexOf('### S4 — Renewal notice');
+        const s4Match = source
+            .slice(s4Start)
+            .match(/### (S\d+ — .+?)\n([\s\S]*?)(?=### P\d+|### Sign-off|$)/);
         expect(s4Match).toBeTruthy();
-        const s4 = s4Match![1];
+        const s4 = s4Match![2];
         expect(s4).not.toContain('BLOCKED');
         expect(s4).toContain('billing-reconciliation-sweep');
         expect(s4).toContain('next_charge_at');
