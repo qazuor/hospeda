@@ -101,6 +101,8 @@ export * from './billing/promo/promo-composition.js';
 export * from './billing/promo/promo-redemption-reasons.js';
 export * from './billing/promo/provider-amount-floor.js';
 export * from './billing/promo/redeem-discount-code.service.js';
+export * from './billing/promo/redeem-promo-code.service.js';
+export * from './billing/promo/redeem-trial-extension-code.service.js';
 export * from './billing/read-anchored-billing-option.js';
 export * from './billing/reconciliation/cancel-our-authorization.js';
 export * from './billing/reconciliation/chargeback/chargeback-detection.js';

@@ -23,8 +23,14 @@ export async function readPromoCode(input: { tx: DrizzleClient; code: string; ve
         .where(eq(promoCodes.code, input.code))
         .limit(1);
     if (!promo) fail(PromoRedemptionReason.PROMO_CODE_NOT_FOUND, ServiceErrorCode.NOT_FOUND);
+    if (promo.effectKind !== 'DISCOUNT') {
+        throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Promo code is not a discount');
+    }
     if (promo.discountKind !== 'PERCENTAGE' && promo.discountKind !== 'FIXED') {
         throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Promo discount kind is invalid');
+    }
+    if (promo.value === null) {
+        throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Promo discount value is missing');
     }
     if (
         promo.durationKind !== 'FIRST_CHARGE' &&
@@ -46,7 +52,8 @@ export async function readPromoCode(input: { tx: DrizzleClient; code: string; ve
     return {
         ...promo,
         discountKind,
-        durationKind
+        durationKind,
+        value: promo.value
     };
 }
 

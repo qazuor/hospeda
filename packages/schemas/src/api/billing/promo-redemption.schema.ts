@@ -15,6 +15,11 @@ export const RedeemPromoCodeResponseSchema = z.discriminatedUnion('kind', [
         currency: z.string().min(1),
         durationKind: z.enum(['FIRST_CHARGE', 'N_CHARGES', 'FOREVER']),
         remainingCharges: z.number().int().positive().nullable()
+    }),
+    z.strictObject({
+        kind: z.literal('TRIAL_EXTENSION'),
+        days: z.number().int().positive(),
+        replay: z.boolean()
     })
 ]);
 

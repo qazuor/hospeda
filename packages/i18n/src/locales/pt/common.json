@@ -121,6 +121,7 @@
         "NEW_PAID_SIGNUPS_FROZEN": "Pausamos temporariamente novas assinaturas e compras. Se você já tem uma assinatura, ela continua funcionando normalmente.",
         "FIRST_PUBLISH_PAUSED": "Pausamos temporariamente a publicação de novos anúncios. Seu anúncio fica salvo como rascunho e você poderá publicá-lo quando retomarmos.",
         "PROMO_CODE_NOT_FOUND": "Não encontramos esse código.",
+        "PROMO_CODE_NOT_A_TRIAL_EXTENSION": "Este código não estende um período de teste.",
         "PROMO_CODE_NOT_FOR_VERTICAL": "Este código não está disponível para esta categoria.",
         "PROMO_NO_ELIGIBLE_SUBSCRIPTION": "Você não tem uma assinatura elegível para este código.",
         "PROMO_NOT_OFFERED_TO_MANUAL_PAYER": "Este código está disponível para pagamentos com cartão.",
@@ -128,7 +129,11 @@
         "PROMO_NOT_COMBINABLE": "Este código não pode ser combinado com seu desconto atual.",
         "PROMO_UNSUPPORTED_CURRENCY": "Este código não está disponível na moeda da sua assinatura.",
         "PROMO_BELOW_PROVIDER_MINIMUM": "este código deixa o valor abaixo do mínimo que o Mercado Pago permite cobrar",
-        "PROMO_MUTATION_NOT_APPLIED": "Não foi possível aplicar o desconto. Tente novamente."
+        "PROMO_MUTATION_NOT_APPLIED": "Não foi possível aplicar o desconto. Tente novamente.",
+        "NO_TRIAL": "Não encontramos um período de teste ativo para estender.",
+        "TRIAL_ENDED": "Seu período de teste terminou.",
+        "CEILING_REACHED": "Este código ultrapassa o limite de extensão do seu período de teste.",
+        "REDEMPTION_KEY_CONFLICT": "Esta extensão conflita com um resgate anterior."
     },
     "filters": "Filtros",
     "filterChips": {

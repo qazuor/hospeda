@@ -36,6 +36,7 @@ export async function readLivePromos(input: {
     const db = input.executor ?? getDb();
     const predicates = [
         eq(promoRedemptions.subscriptionId, input.subscriptionId),
+        eq(promoCodes.effectKind, 'DISCOUNT'),
         or(isNull(promoRedemptions.remainingCharges), gt(promoRedemptions.remainingCharges, 0))
     ];
     if (input.at) predicates.push(lte(promoRedemptions.redeemedAt, input.at));
@@ -57,7 +58,10 @@ export async function readLivePromos(input: {
         .orderBy(asc(promoRedemptions.redeemedAt), asc(promoRedemptions.id));
 
     return rows.flatMap((row) => {
-        if (row.discountKind !== 'PERCENTAGE' && row.discountKind !== 'FIXED') return [];
-        return [{ ...row, discountKind: row.discountKind }];
+        const { discountKind, value } = row;
+        if ((discountKind !== 'PERCENTAGE' && discountKind !== 'FIXED') || value === null) {
+            return [];
+        }
+        return [{ ...row, discountKind, value }];
     });
 }
