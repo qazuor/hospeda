@@ -146,6 +146,14 @@
         "reason": "S21 cancels a COMPLEMENTO row, which emits no coverage source (subscription-sources.ts filters PRINCIPAL)"
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/complement-pause-s32.ts",
+        "symbol": "writeComplementPause",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S32 pauses only a COMPLEMENTO row: subscription-sources.ts filters PRINCIPAL and addon-sources.ts reads addon_instance.status, which remains ACTIVE."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/service-end-s12.ts",
         "symbol": "applyS12ToPrincipal",
         "table": "subscriptions",
