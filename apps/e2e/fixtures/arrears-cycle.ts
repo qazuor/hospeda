@@ -203,17 +203,16 @@ export async function createApiCardSubscription(args: {
         headers: { 'content-type': 'application/json', cookie: args.user.sessionCookie },
         body: JSON.stringify({ billingOptionId: args.billingOptionId })
     });
-    const text = await response.text();
-    if (response.status !== 201) {
-        throw new Error(
-            `Expected API card signup to create a subscription; got ${response.status}: ${text}`
-        );
-    }
-    const body = JSON.parse(text) as {
+    const body = (await response.json()) as {
         readonly data?: { readonly subscriptionId?: string };
+        readonly error?: { readonly message?: string };
     };
     const subscriptionId = body.data?.subscriptionId;
-    if (!subscriptionId) throw new Error('Expected API card signup to return a subscription id.');
+    if (!subscriptionId) {
+        throw new Error(
+            `Expected API card signup to return a subscription id; saw ${body.error?.message ?? 'no response detail'}.`
+        );
+    }
     const links = await execSQL<{ provider_id: string }>(
         'SELECT provider_id FROM provider_link WHERE subscription_id = $1',
         [subscriptionId]
