@@ -188,6 +188,56 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 ).toEqual([]);
                 expect(await readSubscription(tx, subscriptionId)).toEqual(before);
             }));
+        it('b — TEST:B9a:4 a CANCELLED instance with a live complement is outside S20', async () =>
+            withServiceTestTransaction(async (tx) => {
+                const { userId } = await seedOrphanOwner(tx);
+                const { grantId, anchorIds } = await seedPermanentGrant(tx, {
+                    beneficiaryUserId: userId,
+                    grantedBy: userId,
+                    anchors: [{ vertical: ORPHAN_VERTICAL }],
+                    includesAddons: true
+                });
+                const { subscriptionId: targetId } = await seedPrincipal(tx, {
+                    userId,
+                    vertical: ORPHAN_VERTICAL,
+                    status: 'ACTIVE'
+                });
+                const { subscriptionId } = await seedComplement(tx, {
+                    userId,
+                    vertical: ORPHAN_VERTICAL,
+                    status: 'ACTIVE'
+                });
+                const { instanceId } = await seedOrphanInstance(tx, {
+                    ownerId: userId,
+                    scopeType: 'VERTICAL_SUBSCRIPTION',
+                    compatibleVerticals: [ORPHAN_VERTICAL],
+                    status: 'CANCELLED',
+                    targetId,
+                    complementSubscriptionId: subscriptionId
+                });
+                const result = await runS20InTransaction(
+                    {
+                        tx,
+                        includesAddons: true,
+                        permanentGrantId: grantId,
+                        beneficiaryUserId: userId,
+                        anchors: [{ id: anchorIds[0]!, vertical: ORPHAN_VERTICAL }],
+                        now: orphanNow,
+                        actorId: userId
+                    },
+                    { orphanhood: orphanPorts(tx).ports }
+                );
+                expect(result.rows).toEqual([]);
+                expect((await readSubscription(tx, subscriptionId)).status).toBe('ACTIVE');
+                const [instance] = await tx
+                    .select({
+                        status: addonInstances.status,
+                        titleAnchorId: addonInstances.titleAnchorId
+                    })
+                    .from(addonInstances)
+                    .where(eq(addonInstances.id, instanceId));
+                expect(instance).toEqual({ status: 'CANCELLED', titleAnchorId: null });
+            }));
         it('c — TEST:B9a:4 pending instance remains unanchored while S20 cancels its row and records the decision', async () =>
             withServiceTestTransaction(async (tx) => {
                 const { userId } = await seedOrphanOwner(tx);
