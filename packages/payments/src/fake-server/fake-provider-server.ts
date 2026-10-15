@@ -29,6 +29,7 @@ export interface FakeProviderRequest {
     readonly method: string;
     readonly path: string;
     readonly body: unknown;
+    readonly headers?: Readonly<Record<string, string | undefined>>;
     readonly at: string;
 }
 
@@ -100,6 +101,7 @@ export async function startFakeProviderServer(
 ): Promise<FakeProviderServer> {
     const requests: FakeProviderRequest[] = [];
     const initPoints = new Map<string, string>();
+    const refundAmounts = new Map<string, number>();
     let provider = options.provider;
     const recordRequest = (args: Omit<FakeProviderRequest, 'at'>) => {
         requests.push({ ...args, at: options.clock.now().toISOString() });
@@ -124,7 +126,16 @@ export async function startFakeProviderServer(
         }
         const method = request.method ?? 'GET';
         const path = request.url ?? '/';
-        recordRequest({ method, path, body });
+        recordRequest({
+            method,
+            path,
+            body,
+            headers: {
+                'X-Idempotency-Key': Array.isArray(request.headers['x-idempotency-key'])
+                    ? request.headers['x-idempotency-key'][0]
+                    : request.headers['x-idempotency-key']
+            }
+        });
         if (!/^Bearer .+\S$/.test(request.headers.authorization ?? '')) {
             sendJson(response, 401, {
                 message: 'Authorization required',
@@ -139,7 +150,8 @@ export async function startFakeProviderServer(
                 method,
                 url: new URL(path, 'http://fake.invalid'),
                 headers: request.headers,
-                body
+                body,
+                refundAmounts
             });
             if (extra !== null) {
                 if (extra.body === undefined) response.writeHead(extra.status).end();
@@ -198,16 +210,57 @@ export async function startFakeProviderServer(
                 return;
             }
             if (matchedId && method === 'PUT') {
-                if (objectBody(body).status !== 'cancelled') {
+                const resource =
+                    typeof body === 'object' && body !== null && !Array.isArray(body)
+                        ? (body as Record<string, unknown>)
+                        : {};
+                const fields = Object.keys(resource);
+                const authorizationId = decodeURIComponent(matchedId);
+                if (fields.length !== 1) {
                     sendJson(response, 400, {
-                        message: 'Only cancelled is supported',
+                        message: 'Invalid preapproval update',
                         status: 'INVALID_INPUT',
                         error: 'INVALID_INPUT'
                     });
                     return;
                 }
-                const authorizationId = decodeURIComponent(matchedId);
-                await provider.cancel({ authorizationId });
+                if (fields[0] === 'status' && resource.status === 'cancelled') {
+                    await provider.cancel({ authorizationId });
+                } else if (fields[0] === 'status' && resource.status === 'paused') {
+                    await provider.pause({ authorizationId });
+                } else if (fields[0] === 'status' && resource.status === 'authorized') {
+                    await provider.resume({ authorizationId });
+                } else if (fields[0] === 'auto_recurring') {
+                    const recurring = resource.auto_recurring;
+                    if (
+                        typeof recurring !== 'object' ||
+                        recurring === null ||
+                        Array.isArray(recurring) ||
+                        Object.keys(recurring).length !== 2 ||
+                        !('transaction_amount' in recurring) ||
+                        !('currency_id' in recurring) ||
+                        typeof recurring.currency_id !== 'string'
+                    ) {
+                        sendJson(response, 400, {
+                            status: 'INVALID_INPUT',
+                            error: 'INVALID_INPUT'
+                        });
+                        return;
+                    }
+                    await provider.changeAmount({
+                        authorizationId,
+                        amount: {
+                            amountMinor: Math.round(Number(recurring.transaction_amount) * 100),
+                            currency: recurring.currency_id
+                        }
+                    });
+                } else {
+                    sendJson(response, 400, {
+                        status: 'INVALID_INPUT',
+                        error: 'INVALID_INPUT'
+                    });
+                    return;
+                }
                 const read = await provider.readAuthorization({ authorizationId });
                 sendJson(
                     response,
