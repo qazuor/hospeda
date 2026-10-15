@@ -90,11 +90,7 @@ function newFake(honest = false) {
         idNamespace: crypto.randomUUID(),
         clock,
         ...(honest
-            ? {
-                  honestAbout: [
-                      { lie: 'M8' as const, why: 'settle this seeded approval before the sweep' }
-                  ]
-              }
+            ? { honestAbout: [{ lie: 'M8', why: 'settle this seeded approval before the sweep' }] }
             : {})
     });
     return { fake, provider: fake as unknown as PaymentProvider };
@@ -346,6 +342,23 @@ describe('TEST:B11:14 terminal return and exemption', () => {
         expect(
             read.mock.calls.filter(([arg]) => arg.authorizationId === row.providerId)
         ).toHaveLength(1);
+
+        const seen = await seedTerminalRow({ status: 'CANCELLED', fake });
+        ids.add(seen.subscription.id);
+        await seedCancellationDecision({
+            subscriptionId: seen.subscription.id,
+            transition: 'S12',
+            decidedAt: T0
+        });
+        await getServiceTestDb()
+            .update(providerLinks)
+            .set({ cancelledSeenAt: T0 })
+            .where(eq(providerLinks.subscriptionId, seen.subscription.id));
+        read.mockClear();
+        await sweep(fake);
+        expect(
+            read.mock.calls.filter(([arg]) => arg.authorizationId === seen.providerId)
+        ).toHaveLength(3);
 
         const marked = await seedTerminalRow({ status: 'CANCELLED', fake });
         ids.add(marked.subscription.id);
