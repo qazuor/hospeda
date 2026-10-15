@@ -88,6 +88,7 @@ describe('MercadoPagoPaymentProvider', () => {
                     'authorize',
                     'readAuthorization',
                     'readCharge',
+                    'listCharges',
                     'cancel',
                     'decodeNotice'
                 ].includes(method)
@@ -126,11 +127,12 @@ describe('MercadoPagoPaymentProvider', () => {
                         'authorize',
                         'readAuthorization',
                         'readCharge',
+                        'listCharges',
                         'cancel',
                         'decodeNotice'
                     ].includes(method)
             )
-        ).toHaveLength(9);
+        ).toHaveLength(8);
     });
 
     it('receives its clock injected and refuses to be built without one', () => {
