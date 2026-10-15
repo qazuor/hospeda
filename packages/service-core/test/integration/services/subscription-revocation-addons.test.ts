@@ -373,15 +373,24 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:12 AC:B5:24 S36 orphan ref
             },
             f.ports
         );
-        expect(
-            await getDb()
-                .select()
-                .from(refunds)
-                .where(eq(refunds.paymentId, complementPayment.paymentId))
-        ).toMatchObject([{ reason: 'ADDON_ORPHAN', status: 'REQUESTED' }]);
-        expect(
-            await getDb().select().from(refunds).where(eq(refunds.paymentId, oncePayment.id))
-        ).toMatchObject([{ reason: 'ONE_TIME_ADDON_REVOCATION', status: 'REQUESTED' }]);
+        const complementRefundRows = await getDb()
+            .select()
+            .from(refunds)
+            .where(eq(refunds.paymentId, complementPayment.paymentId));
+        const oneTimeRefundRows = await getDb()
+            .select()
+            .from(refunds)
+            .where(eq(refunds.paymentId, oncePayment.id));
+        expect(complementRefundRows).toHaveLength(1);
+        expect(complementRefundRows[0]).toMatchObject({
+            reason: 'ADDON_ORPHAN',
+            status: 'REQUESTED'
+        });
+        expect(oneTimeRefundRows).toHaveLength(1);
+        expect(oneTimeRefundRows[0]).toMatchObject({
+            reason: 'ONE_TIME_ADDON_REVOCATION',
+            status: 'REQUESTED'
+        });
     });
 
     it('TEST:B5:12 (h) preserves USER addon covered by another live paying principal', async () => {
