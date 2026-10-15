@@ -366,6 +366,33 @@ describe('billing reconciliation sweep cron', () => {
         expect(ports.cancellationSeen).toBe(providerLinkCancellationSeen);
     });
 
+    it('hands the terminal return port the cancellation notice without adding a row check (TEST:1606:6)', async () => {
+        mockSweep.mockResolvedValue({
+            rowsRead: 0,
+            runId: 'run-id',
+            complete: true,
+            pinged: true,
+            rowsFailed: 0,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [],
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        await billingReconciliationSweepJob.handler(context());
+        const ports = mockSweep.mock.calls[0]?.[1] as {
+            cancellationRetry?: { beforeCancelNotice?: unknown };
+            terminalReturn?: { beforeCancelNotice?: unknown };
+            rowChecks?: readonly unknown[];
+        };
+        expect(ports.terminalReturn?.beforeCancelNotice).toBe(
+            ports.cancellationRetry?.beforeCancelNotice
+        );
+        expect(ports.terminalReturn?.beforeCancelNotice).toBe(beforeCancelNotice);
+        expect(ports.rowChecks).toHaveLength(5);
+    });
+
     it('fails the job when the cancellation retry failed a row (HOS-1603, AC:B11:6)', async () => {
         mockSweep.mockResolvedValue({
             rowsRead: 2,
