@@ -113,6 +113,13 @@
             "subject": "addon_instance"
         },
         {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/addon-without-shutdown-check.ts",
+            "symbol": "runAddonWithoutShutdownCheck",
+            "row": 25,
+            "why": "AC:B5:31: la cuarta comprobación inspecciona las instancias vivas (fila 25) para abrir la marca 11 cuando A5 no corrió.",
+            "subject": "addon_instance"
+        },
+        {
             "file": "apps/api/src/services/listing-publication/listing-purge-preview.service.ts",
             "symbol": "readListingPurgePreview",
             "row": 3,
@@ -153,6 +160,12 @@
             "symbol": "anchorPermanentGrantVertical",
             "row": 6,
             "why": "Anclar exige un grant vivo: a uno revocado no se le ancla nada."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/addon-without-shutdown-check.ts",
+            "symbol": "verdictOf",
+            "row": 2,
+            "why": "AC:B5:31, segunda mitad: reconoce el título de una instancia anclado a un permanent_grant revocado."
         }
     ],
     "marca_abierta": [

@@ -108,6 +108,7 @@ export * from './billing/reconciliation/period-charges/read-period-charges.js';
 export * from './billing/reconciliation/provider-cancellation-decision.js';
 export * from './billing/reconciliation/receipt-tombstone.service.js';
 export * from './billing/reconciliation/reconciliation-mark-payments.port.js';
+export * from './billing/reconciliation/sweep/addon-without-shutdown-check.js';
 export * from './billing/reconciliation/sweep/comparisons/amount-comparison.js';
 export * from './billing/reconciliation/sweep/comparisons/amount-mutation-decisions.port.js';
 export * from './billing/reconciliation/sweep/comparisons/expected-amount.js';
