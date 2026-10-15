@@ -30,6 +30,7 @@ import {
 } from './reconciliation-sweep-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
 import { setExpectedPlanAmount } from './support/period-comparison-fixtures.js';
+import { retirePromoFixtures, seedPromoRedemption } from './support/promo-fixtures.js';
 
 afterAll(closeServiceTestPool);
 const owned: Array<{ readonly subscriptionId: string; readonly userId: string }> = [];
@@ -140,6 +141,7 @@ afterEach(async () => {
             .set({ status: 'ABANDONED' })
             .where(eq(subscriptions.id, row.subscriptionId));
     }
+    await retirePromoFixtures();
     await resetSeededReconciliationInventory();
 });
 
@@ -290,43 +292,33 @@ describe('TEST:B11:10 AC:B11:11 the charged amount: over opens 24 with the diffe
         ).toEqual([]);
     });
 
-    it('TEST:B11:10 (h) fails the row visibly when the promo expected-amount policy is absent', async () => {
+    it('TEST:B9b:1 AC:B9b:1 (h) composes the period amount and proposes only the overcharge difference', async () => {
         const fixture = await setup({ expectedMinor: 1_500_000, chargedMinor: 3_000_000 });
-        const [code] = await getServiceTestDb()
-            .insert(promoCodes)
-            .values({
-                code: `CHARGED-${crypto.randomUUID()}`,
-                discountKind: 'FIXED',
-                value: 5000,
-                allVerticals: true,
-                verticals: null,
-                totalQuota: 2,
-                validFrom: new Date('2026-01-01T00:00:00.000Z'),
-                validUntil: new Date('2027-01-01T00:00:00.000Z'),
-                stackable: false,
-                usableWithAnotherActive: false,
-                durationKind: 'N_CHARGES',
-                durationCharges: 2
-            })
-            .returning();
-        if (!code) throw new Error('Promo code fixture failed');
-        await getServiceTestDb().insert(promoRedemptions).values({
-            promoCodeId: code.id,
-            userId: fixture.seeded.subscription.userId!,
-            redeemedAt: reconciliationClock.now(),
+        await seedPromoRedemption({
             subscriptionId: fixture.seeded.subscription.id,
+            userId: fixture.seeded.subscription.userId!,
+            discountKind: 'FIXED',
+            value: 5_000,
+            redeemedAt: new Date('2020-01-01T00:00:00.000Z'),
             remainingCharges: 2
         });
-        const { result } = await sweep({ ...fixture, correlationId: crypto.randomUUID() });
-        expect(result).toMatchObject({ rowsFailed: 1, marksOpened: 0 });
-        expect(result.failures[0]?.message).toContain(
-            'Expected amount needs the promo composition'
-        );
+        const correlationId = crypto.randomUUID();
+        const { result } = await sweep({ ...fixture, correlationId });
+        expect(result).toMatchObject({ rowsFailed: 0, marksOpened: 1 });
         expect(
             await reconciliationMarkModel.listOpen({
                 subject: { kind: 'SUBSCRIPTION', subscriptionId: fixture.seeded.subscription.id }
             })
-        ).toEqual([]);
+        ).toMatchObject([{ reason: 'IMPORTE_COBRADO_DE_MAS' }]);
+        const events = (await domainEventModel.findByCorrelationId({ correlationId })).filter(
+            (event) => event.eventType === 'reconciliation.mark_opened'
+        );
+        expect(events.flatMap((event) => event.changes)).toEqual(
+            expect.arrayContaining([
+                { field: 'reconciliation_mark.expected_minor', new: 1_495_000 },
+                { field: 'reconciliation_mark.proposed_refund_minor', new: 1_505_000 }
+            ])
+        );
     });
 });
 

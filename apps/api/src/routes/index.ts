@@ -55,6 +55,7 @@ import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { publicAuthorRoutes } from './author/public/index.js';
 import { adminBillingDeadlineRoutes } from './billing-deadlines/admin/index.js';
+import { protectedBillingPromoRoutes } from './billing-promo/index.js';
 import { adminBillingRefundRoutes } from './billing-refund/admin/index.js';
 import { adminBillingSubscriptionRoutes } from './billing-subscription/admin/inspect.js';
 import {
@@ -514,6 +515,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // sibling spec handlers land; see ai/protected/index.ts for slots).
         app.route('/api/v1/protected/ai', protectedAiRoutes);
         app.route('/api/v1/protected/billing/subscriptions', protectedBillingSubscriptionRoutes);
+        app.route('/api/v1/protected/billing/promo-codes', protectedBillingPromoRoutes);
         app.route('/api/v1/protected/billing-subscription', protectedBillingSubscriptionReadRoutes);
 
         // Newsletter (SPEC-101 — subscribe / status / resend / unsubscribe live

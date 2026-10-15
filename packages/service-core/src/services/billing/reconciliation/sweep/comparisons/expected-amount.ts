@@ -1,19 +1,13 @@
 import {
-    and,
     eq,
     getDb,
-    gt,
-    isNull,
-    lte,
-    or,
     planMigrationSubscriptions,
     planMigrations,
-    promoRedemptions,
     type SelectSubscription,
     subscriptionScheduledChanges
 } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
-import { ServiceError } from '../../../../../types/index.js';
+import { readLivePromos } from '../../../promo/live-promos.js';
+import { composePromoAmount } from '../../../promo/promo-composition.js';
 import {
     type BillingOptionReader,
     readAnchoredBillingOption
@@ -31,8 +25,8 @@ export type ExpectedAmount =
 /**
  * AC:B11:9 and AC:B11:11: derives the amount to compare for authorization or
  * for a charge period. It must use the same calculation as the mutating writer.
- * B9b.1 (HOS-1588) replaces this policy to compose live promos and round once
- * down, without changing callers (BL, context §14).
+ * AC:B9b:1 (HOS-1588) composes live promos through the shared promo arithmetic
+ * and rounds once down; callers keep using this policy (B/14 §1.2).
  */
 export interface ExpectedAmountPolicy {
     expectedAmount(input: {
@@ -66,7 +60,7 @@ async function preservesPromo(change: NonNullable<Awaited<ReturnType<typeof sche
     return migration?.reason === 'PRICE_INCREASE';
 }
 
-/** Cut implementation: list price only; promo composition is deliberately fail-visible. */
+/** Creates the expected-amount policy, including applicable live promo composition. */
 export function createCutExpectedAmountPolicy(
     ports: { readonly reader?: BillingOptionReader } = {}
 ): ExpectedAmountPolicy {
@@ -102,61 +96,22 @@ export function createCutExpectedAmountPolicy(
             if (!option) return { kind: 'NOT_COMPARABLE', reason: 'NO_ANCHOR' };
 
             const promoApplies = !destination || (await preservesPromo(destination));
-            if (promoApplies) {
-                const rows = await getDb()
-                    .select({ id: promoRedemptions.id })
-                    .from(promoRedemptions)
-                    .where(eq(promoRedemptions.subscriptionId, subscription.id));
-                const live =
-                    rows.length > 0 &&
-                    (purpose.kind === 'AUTHORIZATION'
-                        ? await hasAuthorizationPromo(subscription.id)
-                        : await hasPeriodPromo(subscription.id, purpose.chargeCreatedAt));
-                if (live)
-                    throw new ServiceError(
-                        ServiceErrorCode.INTERNAL_ERROR,
-                        'Expected amount needs the promo composition of B9b',
-                        undefined,
-                        'EXPECTED_AMOUNT_PROMO_POLICY_NOT_REGISTERED'
-                    );
-            }
+            const promos = promoApplies
+                ? await readLivePromos({
+                      subscriptionId: subscription.id,
+                      ...(purpose.kind === 'PERIOD' ? { at: purpose.chargeCreatedAt } : {})
+                  })
+                : [];
+            const composed = composePromoAmount({
+                listAmountMinor: option.amount,
+                promos: promos.map(({ discountKind, value }) => ({ discountKind, value }))
+            });
             return {
                 kind: 'COMPARABLE',
-                amountMinor: option.amount,
+                amountMinor: composed.amountMinor,
                 currency: option.currency,
                 source: destination ? 'SCHEDULED_CHANGE' : 'ANCHORED'
             };
         }
     };
-}
-
-async function hasAuthorizationPromo(subscriptionId: string) {
-    const [live] = await getDb()
-        .select({ id: promoRedemptions.id })
-        .from(promoRedemptions)
-        .where(
-            and(
-                eq(promoRedemptions.subscriptionId, subscriptionId),
-                or(
-                    isNull(promoRedemptions.remainingCharges),
-                    gt(promoRedemptions.remainingCharges, 0)
-                )
-            )
-        )
-        .limit(1);
-    return live !== undefined;
-}
-
-async function hasPeriodPromo(subscriptionId: string, chargeCreatedAt: Date) {
-    const rows = await getDb()
-        .select({ id: promoRedemptions.id, redeemedAt: promoRedemptions.redeemedAt })
-        .from(promoRedemptions)
-        .where(
-            and(
-                eq(promoRedemptions.subscriptionId, subscriptionId),
-                lte(promoRedemptions.redeemedAt, chargeCreatedAt)
-            )
-        )
-        .limit(1);
-    return rows.length > 0;
 }

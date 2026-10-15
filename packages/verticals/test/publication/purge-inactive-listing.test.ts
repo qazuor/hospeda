@@ -7,6 +7,7 @@ const day = 86_400_000;
 const due = new Date(at.getTime() - 180 * day);
 const args = (harness: ReturnType<typeof makeHarness>, now = at) => ({
     ...harness,
+    afterCommit: harness.retentionAfterCommit,
     clock: { now: () => now },
     vertical,
     listingId,
@@ -17,6 +18,8 @@ const noWrites = (h: ReturnType<typeof makeHarness>) => {
     expect(h.statusWrites).toHaveLength(0);
     expect(h.statusEvents).toHaveLength(0);
     expect(h.calls).not.toContain('purgeListingContent');
+    expect(h.retentionAfterCommit.deleteRemoteMedia).not.toHaveBeenCalled();
+    expect(h.retentionAfterCommit.revokeCalendarConnection).not.toHaveBeenCalled();
 };
 
 describe('TEST:V9b:7 AC:V9b:7 purge deadlines', () => {
@@ -204,7 +207,8 @@ describe('AC:V9b:1 PB9 transition boundaries', () => {
             dueAt: at,
             markedMedia: [{ mediaId: 'media-1', publicId: 'remote' }],
             markedCalendar: [{ connectionId: 'cal-1', provider: 'google' }],
-            closedAlerts: 1
+            closedAlerts: 1,
+            warnings: []
         });
         expect(h.calls).toEqual([
             'lock',
@@ -215,8 +219,20 @@ describe('AC:V9b:1 PB9 transition boundaries', () => {
             'event',
             'purgeListingContent',
             'enqueueListingNotice',
-            'commit'
+            'commit',
+            'deleteRemoteMedia',
+            'revokeCalendarConnection'
         ]);
+        expect(h.retentionAfterCommit.deleteRemoteMedia).toHaveBeenCalledWith({
+            vertical,
+            mediaId: 'media-1',
+            publicId: 'remote'
+        });
+        expect(h.retentionAfterCommit.revokeCalendarConnection).toHaveBeenCalledWith({
+            connectionId: 'cal-1',
+            accommodationId: listingId,
+            provider: 'google'
+        });
         expect(h.statusEvents[0]).toEqual({
             vertical: VerticalEnum.ACCOMMODATION,
             listingId,
@@ -235,5 +251,135 @@ describe('AC:V9b:1 PB9 transition boundaries', () => {
         expect(
             h.listingNotices.some((notice) => notice.template === 'verticals.listing-purged')
         ).toBe(false);
+    });
+});
+
+describe('TEST:V9b:3 AC:V9b:3 remote deletion after commit', () => {
+    const marked = {
+        markedMedia: [
+            { mediaId: 'media-null-public-id', publicId: null },
+            { mediaId: 'media-2', publicId: 'remote-2' }
+        ],
+        markedCalendar: [{ connectionId: 'cal-1', provider: 'GOOGLE_CALENDAR' }],
+        closedAlerts: [],
+        closedFixRequestId: null
+    };
+
+    it('calls each marked remote once, in photo then calendar order after commit', async () => {
+        const h = makeHarness({
+            status: Status.ARCHIVED,
+            covered: false,
+            inactiveSince: due,
+            purgeContent: marked
+        });
+        const result = await purgeInactiveListing(args(h));
+        expect(result).toMatchObject({ purged: true, warnings: [] });
+        expect(h.calls.slice(-4)).toEqual([
+            'commit',
+            'deleteRemoteMedia',
+            'deleteRemoteMedia',
+            'revokeCalendarConnection'
+        ]);
+        expect(h.retentionAfterCommit.deleteRemoteMedia).toHaveBeenCalledTimes(2);
+        expect(h.retentionAfterCommit.deleteRemoteMedia).toHaveBeenNthCalledWith(1, {
+            vertical,
+            mediaId: 'media-null-public-id',
+            publicId: null
+        });
+        expect(h.retentionAfterCommit.deleteRemoteMedia).toHaveBeenNthCalledWith(2, {
+            vertical,
+            mediaId: 'media-2',
+            publicId: 'remote-2'
+        });
+        expect(h.retentionAfterCommit.revokeCalendarConnection).toHaveBeenCalledExactlyOnceWith({
+            connectionId: 'cal-1',
+            accommodationId: listingId,
+            provider: 'GOOGLE_CALENDAR'
+        });
+    });
+
+    it('keeps a committed result and attempts calendar when photo deletion fails', async () => {
+        const onePhoto = { ...marked, markedMedia: marked.markedMedia.slice(0, 1) };
+        const h = makeHarness({
+            status: Status.ARCHIVED,
+            covered: false,
+            inactiveSince: due,
+            purgeContent: onePhoto
+        });
+        h.retentionAfterCommit.deleteRemoteMedia.mockRejectedValue(new Error('storage down'));
+        const result = await purgeInactiveListing(args(h));
+        expect(result).toMatchObject({
+            purged: true,
+            warnings: ['REMOTE_DELETION_FAILED']
+        });
+        expect(h.retentionAfterCommit.revokeCalendarConnection).toHaveBeenCalledOnce();
+    });
+
+    it('keeps a committed result and attempts photos when calendar revocation fails', async () => {
+        const h = makeHarness({
+            status: Status.ARCHIVED,
+            covered: false,
+            inactiveSince: due,
+            purgeContent: marked
+        });
+        h.retentionAfterCommit.revokeCalendarConnection.mockRejectedValue(
+            new Error('provider down')
+        );
+        const result = await purgeInactiveListing(args(h));
+        expect(result).toMatchObject({ purged: true, warnings: ['REMOTE_DELETION_FAILED'] });
+        expect(h.retentionAfterCommit.deleteRemoteMedia).toHaveBeenCalledTimes(2);
+    });
+
+    it('records both remote failures independently', async () => {
+        const onePhoto = { ...marked, markedMedia: marked.markedMedia.slice(0, 1) };
+        const h = makeHarness({
+            status: Status.ARCHIVED,
+            covered: false,
+            inactiveSince: due,
+            purgeContent: onePhoto
+        });
+        h.retentionAfterCommit.deleteRemoteMedia.mockRejectedValue(new Error('storage down'));
+        h.retentionAfterCommit.revokeCalendarConnection.mockRejectedValue(
+            new Error('provider down')
+        );
+        await expect(purgeInactiveListing(args(h))).resolves.toMatchObject({
+            purged: true,
+            warnings: ['REMOTE_DELETION_FAILED', 'REMOTE_DELETION_FAILED']
+        });
+    });
+
+    it('does not call remote ports when the transaction rejects', async () => {
+        const h = makeHarness({
+            status: Status.ARCHIVED,
+            covered: false,
+            inactiveSince: due,
+            failTransaction: true,
+            purgeContent: marked
+        });
+        await expect(purgeInactiveListing(args(h))).rejects.toThrow('rollback');
+        expect(h.retentionAfterCommit.deleteRemoteMedia).not.toHaveBeenCalled();
+        expect(h.retentionAfterCommit.revokeCalendarConnection).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['LISTING_NOT_FOUND', { retentionListingMissing: true }],
+        ['STATE_CHANGED owner', { ownerId: 'other-owner' }],
+        ['STATE_CHANGED status write', { setReturnsFalse: true }],
+        ['NOT_ARCHIVED', { status: Status.PUBLISHED }],
+        [
+            'RETENTION_STOPPED',
+            {
+                status: Status.ARCHIVED,
+                covered: false,
+                retention: { stopped: true, pauseEndedAt: null }
+            }
+        ],
+        ['COVERED', { status: Status.ARCHIVED, covered: true }],
+        ['NOT_DUE', { status: Status.ARCHIVED, covered: false, inactiveSince: at }]
+    ] as const)('does not call remote ports for %s', async (_label, config) => {
+        const h = makeHarness({ ...config, purgeContent: marked });
+        await purgeInactiveListing(args(h));
+        expect(h.retentionAfterCommit.deleteRemoteMedia).not.toHaveBeenCalled();
+        expect(h.retentionAfterCommit.revokeCalendarConnection).not.toHaveBeenCalled();
     });
 });

@@ -1,5 +1,5 @@
 {
-  "id": "1c07d8c5-c327-4868-8b4e-e15efd430df5",
+  "id": "fae17d4a-e2d4-449c-b21b-dee186d9ec60",
   "prevId": "93be6b47-8155-494b-8f46-0793b79e527c",
   "version": "7",
   "dialect": "postgresql",
@@ -29499,17 +29499,30 @@
           "primaryKey": false,
           "notNull": true
         },
+        "effect_kind": {
+          "name": "effect_kind",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'DISCOUNT'"
+        },
+        "extension_days": {
+          "name": "extension_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "discount_kind": {
           "name": "discount_kind",
           "type": "varchar(16)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "value": {
           "name": "value",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "all_verticals": {
           "name": "all_verticals",
@@ -29557,7 +29570,7 @@
           "name": "duration_kind",
           "type": "varchar(16)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "duration_charges": {
           "name": "duration_charges",
@@ -29620,13 +29633,17 @@
       },
       "policies": {},
       "checkConstraints": {
+        "ck_promo_code_effect_kind": {
+          "name": "ck_promo_code_effect_kind",
+          "value": "\"promo_code\".\"effect_kind\" IN ('DISCOUNT', 'TRIAL_EXTENSION')"
+        },
         "ck_promo_code_discount_kind": {
           "name": "ck_promo_code_discount_kind",
-          "value": "\"promo_code\".\"discount_kind\" IN ('PERCENTAGE', 'FIXED')"
+          "value": "\"promo_code\".\"discount_kind\" IS NULL OR \"promo_code\".\"discount_kind\" IN ('PERCENTAGE', 'FIXED')"
         },
         "ck_promo_code_value": {
           "name": "ck_promo_code_value",
-          "value": "\"promo_code\".\"value\" > 0 AND (\"promo_code\".\"discount_kind\" <> 'PERCENTAGE' OR \"promo_code\".\"value\" <= 100)"
+          "value": "\"promo_code\".\"value\" IS NULL OR (\"promo_code\".\"value\" > 0 AND (\"promo_code\".\"discount_kind\" IS NULL OR \"promo_code\".\"discount_kind\" <> 'PERCENTAGE' OR \"promo_code\".\"value\" <= 100))"
         },
         "ck_promo_code_verticals": {
           "name": "ck_promo_code_verticals",
@@ -29642,7 +29659,7 @@
         },
         "ck_promo_code_duration_kind": {
           "name": "ck_promo_code_duration_kind",
-          "value": "\"promo_code\".\"duration_kind\" IN ('FIRST_CHARGE', 'N_CHARGES', 'FOREVER')"
+          "value": "\"promo_code\".\"duration_kind\" IS NULL OR \"promo_code\".\"duration_kind\" IN ('FIRST_CHARGE', 'N_CHARGES', 'FOREVER')"
         },
         "ck_promo_code_duration_charges": {
           "name": "ck_promo_code_duration_charges",
@@ -29651,6 +29668,10 @@
         "ck_promo_code_close_together": {
           "name": "ck_promo_code_close_together",
           "value": "(\"promo_code\".\"closed_at\" IS NULL) = (\"promo_code\".\"closed_by\" IS NULL)"
+        },
+        "ck_promo_code_effect_shape": {
+          "name": "ck_promo_code_effect_shape",
+          "value": "(\"promo_code\".\"effect_kind\" = 'DISCOUNT' AND \"promo_code\".\"discount_kind\" IS NOT NULL AND \"promo_code\".\"value\" IS NOT NULL AND \"promo_code\".\"duration_kind\" IS NOT NULL AND \"promo_code\".\"extension_days\" IS NULL) OR (\"promo_code\".\"effect_kind\" = 'TRIAL_EXTENSION' AND \"promo_code\".\"discount_kind\" IS NULL AND \"promo_code\".\"value\" IS NULL AND \"promo_code\".\"duration_kind\" IS NULL AND \"promo_code\".\"duration_charges\" IS NULL AND \"promo_code\".\"extension_days\" IS NOT NULL AND \"promo_code\".\"extension_days\" > 0)"
         }
       },
       "isRLSEnabled": false
@@ -29688,7 +29709,7 @@
           "name": "subscription_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "remaining_charges": {
           "name": "remaining_charges",
@@ -29755,6 +29776,10 @@
         "ck_promo_redemption_remaining_charges": {
           "name": "ck_promo_redemption_remaining_charges",
           "value": "\"promo_redemption\".\"remaining_charges\" IS NULL OR \"promo_redemption\".\"remaining_charges\" >= 0"
+        },
+        "ck_promo_redemption_subscription_or_unlimited": {
+          "name": "ck_promo_redemption_subscription_or_unlimited",
+          "value": "\"promo_redemption\".\"subscription_id\" IS NOT NULL OR \"promo_redemption\".\"remaining_charges\" IS NULL"
         }
       },
       "isRLSEnabled": false
@@ -32925,8 +32950,6 @@
         "billing.settleExternal",
         "billing.cancelSubscription",
         "trial.extend",
-        "user.manageSuperAdminRole",
-        "billing.grantComplimentary",
         "user.update.self",
         "ai.settings.manage",
         "platform.featureFlag.manage",
