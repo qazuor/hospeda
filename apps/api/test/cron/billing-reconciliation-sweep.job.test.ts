@@ -196,6 +196,27 @@ describe('billing reconciliation sweep cron', () => {
         expect(result.details).not.toHaveProperty('failures');
     });
 
+    it('wires mark escalation into the sweep (TEST:1607:4)', async () => {
+        mockSweep.mockResolvedValue({
+            rowsRead: 0,
+            runId: 'run-id',
+            complete: true,
+            pinged: false,
+            rowsFailed: 0,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [],
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        await billingReconciliationSweepJob.handler(context());
+        expect(mockSweep).toHaveBeenCalledWith(
+            { correlationId: expect.any(String) },
+            expect.objectContaining({ markEscalation: {} })
+        );
+    });
+
     it('TEST:1685:7 the sweep copies the provider next payment date, last', async () => {
         mockSweep.mockResolvedValue({
             rowsRead: 0,
