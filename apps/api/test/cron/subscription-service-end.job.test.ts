@@ -74,6 +74,8 @@ describe('HOS-1569 subscription-service-end cron (AC:B8a:5)', () => {
         expect(ports.cancellationSeen).toBe(providerLinkCancellationSeen);
         expect(typeof ports.addonPolicy).toBe('function');
         expect(typeof ports.listing).toBe('function');
+        // endScheduledServices defaults the omitted reader to permanentGrantLiveAnchors.
+        expect(ports.liveAnchors).toBeUndefined();
         // políticaDeAddon and ficha come from the production coverage ports over the real reader
         expect(mockBuildPorts).toHaveBeenCalledWith({ reader: mockReader });
         expect(ports.addonPolicy).toBe(mockCoveragePorts.addonPolicy);
