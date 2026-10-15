@@ -2419,6 +2419,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/protected/billing/promo-codes/redeem"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/protected/billing/subscriptions"
         },
         {

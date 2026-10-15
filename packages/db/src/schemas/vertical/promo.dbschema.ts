@@ -16,12 +16,14 @@ import { subscriptions } from './subscription.dbschema.ts';
 
 export const PROMO_DISCOUNT_KINDS = ['PERCENTAGE', 'FIXED'] as const;
 export const PROMO_DURATION_KINDS = ['FIRST_CHARGE', 'N_CHARGES', 'FOREVER'] as const;
+export const PROMO_EFFECT_KINDS = ['DISCOUNT', 'TRIAL_EXTENSION'] as const;
 
 /**
  * Promotion code with a unique code, positive quota, valid time window and
  * bounded discount/duration values (AC:B3:29; ESQ:6). allVerticals plus the
  * optional vertical array defines its scope (Coord-23 D4); closing it records
- * both timestamp and user, with an FK to users.
+ * both timestamp and user, with an FK to users. H8 adds the defaulted effect
+ * shape needed by AC:B9b:6 while preserving existing discount rows.
  */
 export const promoCodes = pgTable(
     'promo_code',
@@ -29,10 +31,14 @@ export const promoCodes = pgTable(
         id: uuid('id').primaryKey().defaultRandom(),
         /** código */
         code: varchar('code', { length: 64 }).notNull(),
+        /** efecto promocional (H8; AC:B9b:6) */
+        effectKind: varchar('effect_kind', { length: 16 }).notNull().default('DISCOUNT'),
+        /** días de extensión del trial */
+        extensionDays: integer('extension_days'),
         /** tipo de descuento */
-        discountKind: varchar('discount_kind', { length: 16 }).notNull(),
+        discountKind: varchar('discount_kind', { length: 16 }),
         /** valor */
-        value: integer('value').notNull(),
+        value: integer('value'),
         /** todas las verticales, incluidas futuras */
         allVerticals: boolean('all_verticals').notNull(),
         /** verticales elegidas */
@@ -48,7 +54,7 @@ export const promoCodes = pgTable(
         /** usable con otra promo activa */
         usableWithAnotherActive: boolean('usable_with_another_active').notNull(),
         /** duración */
-        durationKind: varchar('duration_kind', { length: 16 }).notNull(),
+        durationKind: varchar('duration_kind', { length: 16 }),
         /** cantidad de cobros */
         durationCharges: integer('duration_charges'),
         /** cerrado_en */
@@ -60,13 +66,17 @@ export const promoCodes = pgTable(
     },
     (t) => ({
         codeUnique: unique('uq_promo_code_code').on(t.code),
+        effectKindCheck: check(
+            'ck_promo_code_effect_kind',
+            sql`${t.effectKind} IN (${quotedList(PROMO_EFFECT_KINDS)})`
+        ),
         discountKindCheck: check(
             'ck_promo_code_discount_kind',
-            sql`${t.discountKind} IN (${quotedList(PROMO_DISCOUNT_KINDS)})`
+            sql`${t.discountKind} IS NULL OR ${t.discountKind} IN (${quotedList(PROMO_DISCOUNT_KINDS)})`
         ),
         valueCheck: check(
             'ck_promo_code_value',
-            sql`${t.value} > 0 AND (${t.discountKind} <> 'PERCENTAGE' OR ${t.value} <= 100)`
+            sql`${t.value} IS NULL OR (${t.value} > 0 AND (${t.discountKind} IS NULL OR ${t.discountKind} <> 'PERCENTAGE' OR ${t.value} <= 100))`
         ),
         verticalsCheck: check(
             'ck_promo_code_verticals',
@@ -76,7 +86,7 @@ export const promoCodes = pgTable(
         windowCheck: check('ck_promo_code_window', sql`${t.validUntil} > ${t.validFrom}`),
         durationKindCheck: check(
             'ck_promo_code_duration_kind',
-            sql`${t.durationKind} IN (${quotedList(PROMO_DURATION_KINDS)})`
+            sql`${t.durationKind} IS NULL OR ${t.durationKind} IN (${quotedList(PROMO_DURATION_KINDS)})`
         ),
         durationChargesCheck: check(
             'ck_promo_code_duration_charges',
@@ -85,6 +95,10 @@ export const promoCodes = pgTable(
         closeTogether: check(
             'ck_promo_code_close_together',
             sql`(${t.closedAt} IS NULL) = (${t.closedBy} IS NULL)`
+        ),
+        effectShapeCheck: check(
+            'ck_promo_code_effect_shape',
+            sql`(${t.effectKind} = 'DISCOUNT' AND ${t.discountKind} IS NOT NULL AND ${t.value} IS NOT NULL AND ${t.durationKind} IS NOT NULL AND ${t.extensionDays} IS NULL) OR (${t.effectKind} = 'TRIAL_EXTENSION' AND ${t.discountKind} IS NULL AND ${t.value} IS NULL AND ${t.durationKind} IS NULL AND ${t.durationCharges} IS NULL AND ${t.extensionDays} IS NOT NULL AND ${t.extensionDays} > 0)`
         )
     })
 );
@@ -109,9 +123,7 @@ export const promoRedemptions = pgTable(
         /** cuándo */
         redeemedAt: timestamp('redeemed_at', { withTimezone: true }).notNull(),
         /** suscripción */
-        subscriptionId: uuid('subscription_id')
-            .notNull()
-            .references(() => subscriptions.id),
+        subscriptionId: uuid('subscription_id').references(() => subscriptions.id),
         /** cobros_restantes */
         remainingCharges: integer('remaining_charges')
     },
@@ -120,6 +132,10 @@ export const promoRedemptions = pgTable(
         remainingChargesCheck: check(
             'ck_promo_redemption_remaining_charges',
             sql`${t.remainingCharges} IS NULL OR ${t.remainingCharges} >= 0`
+        ),
+        subscriptionOrUnlimitedCheck: check(
+            'ck_promo_redemption_subscription_or_unlimited',
+            sql`${t.subscriptionId} IS NOT NULL OR ${t.remainingCharges} IS NULL`
         )
     })
 );
