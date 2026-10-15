@@ -822,6 +822,36 @@
                 "empty": "Este usuário não tem acomodações vinculadas.",
                 "error": "Não conseguimos carregar as acomodações deste usuário."
             },
+            "trialSummary": {
+                "title": "Teste grátis",
+                "description": "Dias de teste acumulados por vertical e de onde vieram.",
+                "none": "Sem teste grátis nesta vertical.",
+                "consumedWithoutClock": "O teste já foi consumido; não tem relógio nem dias.",
+                "error": "Não foi possível ler o teste desta vertical.",
+                "vertical": {
+                    "accommodation": "Acomodações",
+                    "gastronomy": "Gastronomia",
+                    "experience": "Experiências"
+                },
+                "status": {
+                    "TRIAL_ACTIVE": "Em andamento",
+                    "TRIAL_EXPIRED": "Vencido",
+                    "TRIAL_CONVERTED": "Convertido"
+                },
+                "total_one": "{{count}} dia de teste no total",
+                "total_other": "{{count}} dias de teste no total",
+                "totalWithCeiling": "{{total}} de {{ceiling}} dias máx.",
+                "ceilingReached": "O limite de dias de teste foi atingido: somente uma extensão de SUPER_ADMIN pode ultrapassá-lo.",
+                "origins": {
+                    "base_one": "{{count}} do plano",
+                    "base_other": "{{count}} do plano",
+                    "promo_one": "{{count}} por promoções",
+                    "promo_other": "{{count}} por promoções",
+                    "support_one": "{{count}} concedido pelo suporte",
+                    "support_other": "{{count}} concedidos pelo suporte"
+                },
+                "dates": "De {{start}} a {{end}}"
+            },
             "publications": {
                 "title": "Publicações do usuário",
                 "totalCount_one": "{{count}} publicação",

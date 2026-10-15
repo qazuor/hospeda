@@ -822,6 +822,36 @@
                 "empty": "This user has no linked accommodations.",
                 "error": "We couldn't load this user's accommodations."
             },
+            "trialSummary": {
+                "title": "Free trial",
+                "description": "Accumulated trial days by vertical and where they came from.",
+                "none": "No free trial in this vertical.",
+                "consumedWithoutClock": "The trial was already used; it has no clock or days.",
+                "error": "We couldn't read this vertical's trial.",
+                "vertical": {
+                    "accommodation": "Accommodation",
+                    "gastronomy": "Gastronomy",
+                    "experience": "Experiences"
+                },
+                "status": {
+                    "TRIAL_ACTIVE": "Active",
+                    "TRIAL_EXPIRED": "Expired",
+                    "TRIAL_CONVERTED": "Converted"
+                },
+                "total_one": "{{count}} trial day in total",
+                "total_other": "{{count}} trial days in total",
+                "totalWithCeiling": "{{total}} of {{ceiling}} days max.",
+                "ceilingReached": "The trial day limit has been reached: only a SUPER_ADMIN extension can exceed it.",
+                "origins": {
+                    "base_one": "{{count}} from the plan",
+                    "base_other": "{{count}} from the plan",
+                    "promo_one": "{{count}} from promotions",
+                    "promo_other": "{{count}} from promotions",
+                    "support_one": "{{count}} granted by support",
+                    "support_other": "{{count}} granted by support"
+                },
+                "dates": "From {{start}} to {{end}}"
+            },
             "publications": {
                 "title": "User publications",
                 "totalCount_one": "{{count}} publication",

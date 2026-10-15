@@ -822,6 +822,36 @@
                 "empty": "Este usuario no tiene alojamientos asociados.",
                 "error": "No pudimos cargar los alojamientos de este usuario."
             },
+            "trialSummary": {
+                "title": "Prueba gratis",
+                "description": "Días de prueba acumulados por vertical y de dónde salieron.",
+                "none": "Sin prueba gratis en esta vertical.",
+                "consumedWithoutClock": "La prueba ya se consumió; no tiene reloj ni días.",
+                "error": "No pudimos leer la prueba de esta vertical.",
+                "vertical": {
+                    "accommodation": "Alojamiento",
+                    "gastronomy": "Gastronomía",
+                    "experience": "Experiencias"
+                },
+                "status": {
+                    "TRIAL_ACTIVE": "En curso",
+                    "TRIAL_EXPIRED": "Vencida",
+                    "TRIAL_CONVERTED": "Convertida"
+                },
+                "total_one": "{{count}} día de prueba en total",
+                "total_other": "{{count}} días de prueba en total",
+                "totalWithCeiling": "{{total}} de {{ceiling}} días máx.",
+                "ceilingReached": "Llegó al techo de días de prueba: sólo la extensión de un SUPER_ADMIN puede pasarlo.",
+                "origins": {
+                    "base_one": "{{count}} del plan",
+                    "base_other": "{{count}} del plan",
+                    "promo_one": "{{count}} por promociones",
+                    "promo_other": "{{count}} por promociones",
+                    "support_one": "{{count}} regalado por soporte",
+                    "support_other": "{{count}} regalados por soporte"
+                },
+                "dates": "Del {{start}} al {{end}}"
+            },
             "publications": {
                 "title": "Publicaciones del usuario",
                 "totalCount_one": "{{count}} publicación",
