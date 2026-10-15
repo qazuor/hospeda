@@ -210,6 +210,39 @@ describe('HOS-1669 TEST:1669:2 AC:1669:0 listCharges response edges and failures
             '3'
         ]);
     });
+
+    it('(k) fails closed when a payment record has a missing or invalid creation date', async () => {
+        for (const date of [undefined, 'not-a-date']) {
+            const { provider: fakeProvider, server, authorizationId } = await setup();
+            await addCharge({
+                provider: fakeProvider,
+                authorizationId,
+                reference: 'invalid-charge-date'
+            });
+            const fetchWithInjectedDate: typeof fetch = async (input, init) => {
+                const result = await fetch(input, init);
+                if (!String(input).includes('/authorized_payments/search')) return result;
+                const body = (await result.json()) as {
+                    results: Array<Record<string, unknown>>;
+                };
+                if (date === undefined) delete body.results[0]?.date_created;
+                else if (body.results[0]) body.results[0].date_created = date;
+                return new Response(JSON.stringify(body), {
+                    status: result.status,
+                    headers: result.headers
+                });
+            };
+            const adapter = new MercadoPagoPaymentProvider({
+                clock,
+                baseUrl: server.url,
+                accessToken: 'test-token',
+                fetch: fetchWithInjectedDate
+            });
+            await expect(adapter.listCharges({ authorizationId })).rejects.toMatchObject({
+                code: 'UNAVAILABLE'
+            });
+        }
+    });
 });
 
 describe('HOS-1669 TEST:1669:3 AC:1669:6 RC-8 payment ids remain readable', () => {

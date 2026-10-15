@@ -50,13 +50,27 @@ export async function listMercadoPagoCharges(input: {
             );
     }
 
-    const ordered = records
+    const withPayment = records.filter((record) => record.payment?.id !== undefined);
+    if (
+        withPayment.some(
+            (record) =>
+                record.date_created === undefined ||
+                !Number.isFinite(Date.parse(record.date_created))
+        )
+    )
+        throw providerError(
+            'UNAVAILABLE',
+            'read',
+            'Mercado Pago returned a charge without a valid creation date'
+        );
+
+    const ordered = withPayment
         .map((record, index) => ({ record, index }))
         .sort((left, right) => {
-            const leftDate = left.record.date_created;
-            const rightDate = right.record.date_created;
-            if (leftDate === undefined || rightDate === undefined) return left.index - right.index;
-            return Date.parse(leftDate) - Date.parse(rightDate) || left.index - right.index;
+            return (
+                Date.parse(left.record.date_created ?? '') -
+                    Date.parse(right.record.date_created ?? '') || left.index - right.index
+            );
         });
     return {
         chargeIds: ordered.flatMap(({ record }) =>
