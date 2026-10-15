@@ -8,6 +8,7 @@ import type { ListingResponse } from '@repo/billing-verticals-contract';
 import {
     addonInstances,
     addonProducts,
+    coveredPeriods,
     type DrizzleClient,
     domainEventModel,
     emailOutbox,
@@ -132,6 +133,7 @@ export async function seedOrphanProduct(
         readonly scopeType: ScopeType;
         readonly compatibleVerticals: readonly string[];
         readonly chargeKind?: 'PERIODICO' | 'UNA_VEZ';
+        readonly cycle?: 'monthly' | 'quarterly' | 'semiannual' | 'annual';
     }
 ): Promise<{ readonly productId: string; readonly versionId: string }> {
     const { addonId, versionIds } = await seedCoverageAddon(tx, {
@@ -155,7 +157,7 @@ export async function seedOrphanProduct(
             price: 5000,
             currency: 'ARS',
             chargeKind: 'PERIODICO',
-            cycle: 'monthly',
+            cycle: input.cycle ?? 'monthly',
             compatibleVerticals: [...input.compatibleVerticals]
         })
         .returning({ id: addonProducts.id });
@@ -174,12 +176,14 @@ export async function seedOrphanInstance(
         readonly targetId?: string | null;
         readonly complementSubscriptionId?: string | null;
         readonly chargeKind?: 'PERIODICO' | 'UNA_VEZ';
+        readonly cycle?: 'monthly' | 'quarterly' | 'semiannual' | 'annual';
     }
-): Promise<{ readonly instanceId: string }> {
+): Promise<{ readonly instanceId: string; readonly productId: string }> {
     const { productId, versionId } = await seedOrphanProduct(tx, {
         scopeType: input.scopeType,
         compatibleVerticals: input.compatibleVerticals,
-        chargeKind: input.chargeKind
+        chargeKind: input.chargeKind,
+        cycle: input.cycle
     });
     const [instance] = await tx
         .insert(addonInstances)
@@ -195,7 +199,42 @@ export async function seedOrphanInstance(
         })
         .returning({ id: addonInstances.id });
     if (!instance) throw new Error('orphan fixture addon instance missing');
-    return { instanceId: instance.id };
+    return { instanceId: instance.id, productId };
+}
+
+/** Inserts a credited provider charge and its optional open covered period. */
+export async function seedComplementCharge(
+    tx: DrizzleClient,
+    input: {
+        readonly subscriptionId: string;
+        readonly factAt?: Date;
+        readonly status?: string;
+        readonly amount?: number;
+        readonly coveredPeriodStart?: Date;
+    }
+): Promise<{ readonly paymentId: string }> {
+    const factAt = input.factAt ?? new Date('2026-10-02T10:00:00.000Z');
+    const [payment] = await tx
+        .insert(payments)
+        .values({
+            subscriptionId: input.subscriptionId,
+            amount: input.amount ?? 250000,
+            currency: 'ARS',
+            status: input.status ?? 'SUCCEEDED',
+            provider: 'fake',
+            providerFactId: `complement-${crypto.randomUUID()}`,
+            factAt
+        })
+        .returning({ id: payments.id });
+    if (!payment) throw new Error('orphan fixture complement payment missing');
+    if (input.coveredPeriodStart)
+        await tx.insert(coveredPeriods).values({
+            subscriptionId: input.subscriptionId,
+            periodStart: input.coveredPeriodStart,
+            paymentId: payment.id,
+            creditedAt: factAt
+        });
+    return { paymentId: payment.id };
 }
 
 /** An in-memory `ficha` and live-anchor reader, programmable per test. */
