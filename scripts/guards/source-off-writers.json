@@ -208,5 +208,13 @@
         "effect": "neutral",
         "via": null,
         "reason": "S20 hangs an ACTIVE instance from the grant anchor as its title; the instance stays ACTIVE, so its ADDON source does not turn off"
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "syncNextChargeAt",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-1685 copies the provider's next payment date onto an ACTIVE row (B11.md:250); coverage does not change."
     }
 ]
