@@ -226,6 +226,20 @@ describe('billing signup outbox renderers', () => {
         );
     });
 
+    it('HOS-1583 — renders permanent grant addon cancellation without exposing its ID', async () => {
+        const template = 'billing.permanent-grant-addon-cancel';
+        const result = await renderers[template]!({
+            row: row({ template, payload: { subscriptionId } })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject).toBe('Tu addon ya no se cobra');
+        expect(html).toContain(
+            'Te otorgamos acceso permanente sin costo en Hospeda y tu addon queda incluido'
+        );
+        expect(html).toContain('Mercado Pago');
+        expect(html).not.toContain(subscriptionId);
+    });
+
     it.each([
         ['billing.signup-confirmed', { subscriptionId }],
         ['billing.before-cancel', {}],
@@ -240,6 +254,8 @@ describe('billing signup outbox renderers', () => {
         ['billing.revocation-cancel', { subscriptionId: 42 }],
         ['billing.permanent-grant-cancel', {}],
         ['billing.permanent-grant-cancel', { subscriptionId: 42 }],
+        ['billing.permanent-grant-addon-cancel', {}],
+        ['billing.permanent-grant-addon-cancel', { subscriptionId: 42 }],
         ['billing.closed-subscription-authorization-cancel', {}],
         ['billing.closed-subscription-authorization-cancel', { subscriptionId: 42 }],
         ['billing.scheduled-cancellation', {}],
