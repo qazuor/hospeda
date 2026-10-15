@@ -1,6 +1,39 @@
 import { eq, getDb, promoCodes, promoRedemptions } from '@repo/db';
 
-const created: Array<{ readonly redemptionId: string; readonly promoCodeId: string }> = [];
+const created: Array<{ readonly redemptionId?: string; readonly promoCodeId: string }> = [];
+
+export async function seedPromoCode(input: {
+    readonly discountKind: 'PERCENTAGE' | 'FIXED';
+    readonly value: number;
+    readonly allVerticals?: boolean;
+    readonly verticals?: string[];
+    readonly stackable?: boolean;
+    readonly usableWithAnotherActive?: boolean;
+    readonly durationKind?: 'FIRST_CHARGE' | 'N_CHARGES' | 'FOREVER';
+}) {
+    const durationKind = input.durationKind ?? 'N_CHARGES';
+    const [code] = await getDb()
+        .insert(promoCodes)
+        .values({
+            code: `B9B-${crypto.randomUUID()}`,
+            discountKind: input.discountKind,
+            value: input.value,
+            allVerticals: input.allVerticals ?? true,
+            verticals: input.allVerticals === false ? (input.verticals ?? ['tourist']) : null,
+            totalQuota: 10,
+            validFrom: new Date('2026-01-01T00:00:00.000Z'),
+            validUntil: new Date('2027-01-01T00:00:00.000Z'),
+            stackable: input.stackable ?? true,
+            usableWithAnotherActive: input.usableWithAnotherActive ?? true,
+            durationKind,
+            durationCharges:
+                durationKind === 'N_CHARGES' ? 2 : durationKind === 'FIRST_CHARGE' ? 1 : null
+        })
+        .returning();
+    if (!code) throw new Error('Promo code fixture failed');
+    created.push({ promoCodeId: code.id });
+    return code;
+}
 
 /** Seeds one unique discount code and redemption for reconciliation tests. */
 export async function seedPromoRedemption(input: {
@@ -56,7 +89,9 @@ export async function seedPromoRedemption(input: {
 export async function retirePromoFixtures(): Promise<void> {
     const db = getDb();
     for (const fixture of created.splice(0)) {
-        await db.delete(promoRedemptions).where(eq(promoRedemptions.id, fixture.redemptionId));
+        await db
+            .delete(promoRedemptions)
+            .where(eq(promoRedemptions.promoCodeId, fixture.promoCodeId));
         await db.delete(promoCodes).where(eq(promoCodes.id, fixture.promoCodeId));
     }
 }
