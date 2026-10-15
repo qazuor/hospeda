@@ -905,7 +905,30 @@
                 "selectRolePlaceholder": "Select a role to grant",
                 "reasonPlaceholder": "Reason for this grant (optional, recorded in the audit trail)",
                 "revokeReasonPlaceholder": "Reason for this revoke (optional, recorded in the audit trail)",
-                "changesTakeEffectNextRequest": "Changes take effect on the user's next request"
+                "changesTakeEffectNextRequest": "Changes take effect on the user's next request",
+                "superAdmin": {
+                    "title": {
+                        "assign": "Grant the SUPER_ADMIN role",
+                        "remove": "Remove the SUPER_ADMIN role"
+                    },
+                    "description": {
+                        "assign": "You are granting the SUPER_ADMIN role to {{name}} ({{email}}). With this role, they will be able to perform these actions:",
+                        "remove": "You are removing the SUPER_ADMIN role from {{name}} ({{email}}). They will no longer be able to perform these actions:"
+                    },
+                    "reasonLabel": "Reason (required)",
+                    "reasonPlaceholder": "Enter the reason that will be recorded in the audit log",
+                    "confirm": { "assign": "Grant role", "remove": "Remove role" },
+                    "cancel": "Cancel",
+                    "rows": {
+                        "ACC_17": "Migrate customers from a retired plan",
+                        "ACC_18": "Publish a plan version",
+                        "ACC_19": "Set a billing cycle price",
+                        "ACC_20": "Publish an add-on version",
+                        "ACC_21": "Create or close a promotional code",
+                        "ACC_22": "Change a deadline",
+                        "ACC_26": "Assign or remove the SUPER_ADMIN role"
+                    }
+                }
             }
         }
     },

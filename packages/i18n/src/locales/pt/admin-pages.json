@@ -905,7 +905,30 @@
                 "selectRolePlaceholder": "Selecione uma função para conceder",
                 "reasonPlaceholder": "Motivo da concessão (opcional, registrado na auditoria)",
                 "revokeReasonPlaceholder": "Motivo desta revogação (opcional, registrado na auditoria)",
-                "changesTakeEffectNextRequest": "As alterações valem na próxima requisição do usuário"
+                "changesTakeEffectNextRequest": "As alterações valem na próxima requisição do usuário",
+                "superAdmin": {
+                    "title": {
+                        "assign": "Conceder o papel SUPER_ADMIN",
+                        "remove": "Remover o papel SUPER_ADMIN"
+                    },
+                    "description": {
+                        "assign": "Você vai conceder o papel SUPER_ADMIN a {{name}} ({{email}}). Com o papel, poderá executar estas ações:",
+                        "remove": "Você vai remover o papel SUPER_ADMIN de {{name}} ({{email}}). Não poderá mais executar estas ações:"
+                    },
+                    "reasonLabel": "Motivo (obrigatório)",
+                    "reasonPlaceholder": "Informe o motivo que ficará registrado na auditoria",
+                    "confirm": { "assign": "Conceder papel", "remove": "Remover papel" },
+                    "cancel": "Cancelar",
+                    "rows": {
+                        "ACC_17": "Migrar clientes de um plano descontinuado",
+                        "ACC_18": "Publicar uma versão de plano",
+                        "ACC_19": "Definir o preço de um ciclo",
+                        "ACC_20": "Publicar uma versão de complemento",
+                        "ACC_21": "Criar ou fechar um código promocional",
+                        "ACC_22": "Alterar um prazo",
+                        "ACC_26": "Atribuir ou remover o papel SUPER_ADMIN"
+                    }
+                }
             }
         }
     },

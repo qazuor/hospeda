@@ -905,7 +905,30 @@
                 "selectRolePlaceholder": "Elegí un rol para otorgar",
                 "reasonPlaceholder": "Motivo del otorgamiento (opcional, queda en la auditoría)",
                 "revokeReasonPlaceholder": "Motivo de la revocación (opcional, queda en la auditoría)",
-                "changesTakeEffectNextRequest": "Los cambios se aplican en la próxima request del usuario"
+                "changesTakeEffectNextRequest": "Los cambios se aplican en la próxima request del usuario",
+                "superAdmin": {
+                    "title": {
+                        "assign": "Dar el rol SUPER_ADMIN",
+                        "remove": "Quitar el rol SUPER_ADMIN"
+                    },
+                    "description": {
+                        "assign": "Le vas a dar el rol SUPER_ADMIN a {{name}} ({{email}}). Con el rol va a poder ejecutar estas acciones:",
+                        "remove": "Le vas a quitar el rol SUPER_ADMIN a {{name}} ({{email}}). Va a dejar de poder ejecutar estas acciones:"
+                    },
+                    "reasonLabel": "Motivo (obligatorio)",
+                    "reasonPlaceholder": "Escribí el motivo que quedará en la auditoría",
+                    "confirm": { "assign": "Dar el rol", "remove": "Quitar el rol" },
+                    "cancel": "Cancelar",
+                    "rows": {
+                        "ACC_17": "Migrar a los clientes de un plan retirado",
+                        "ACC_18": "Publicar una versión de plan",
+                        "ACC_19": "Fijar el precio de un ciclo",
+                        "ACC_20": "Publicar una versión de complemento",
+                        "ACC_21": "Crear o cerrar un código promocional",
+                        "ACC_22": "Cambiar un plazo",
+                        "ACC_26": "Asignar o quitar el rol SUPER_ADMIN"
+                    }
+                }
             }
         }
     },
