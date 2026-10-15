@@ -6,18 +6,24 @@ import {
 import {
     PromoRedemptionReason,
     type PromoRedemptionReason as PromoRedemptionReasonType,
-    redeemDiscountCode,
+    redeemPromoCode,
     ServiceError
 } from '@repo/service-core';
+import { createExtendTrial } from '@repo/verticals';
 import type { Context } from 'hono';
 import { getActorFromContext, isGuestActor } from '../../utils/actor';
 import { getClock } from '../../utils/clock';
 import { getPaymentProvider } from '../../utils/payment-provider';
 import { createErrorResponse } from '../../utils/response-helpers';
 import { createProtectedRoute } from '../../utils/route-factory';
+import { getTrialMachinePorts } from '../../utils/trial/trial-machine-ports';
 
 const errors: Record<PromoRedemptionReasonType, { code: string; status: number }> = {
     [PromoRedemptionReason.PROMO_CODE_NOT_FOUND]: { code: ServiceErrorCode.NOT_FOUND, status: 404 },
+    [PromoRedemptionReason.PROMO_CODE_NOT_A_TRIAL_EXTENSION]: {
+        code: ServiceErrorCode.VALIDATION_ERROR,
+        status: 422
+    },
     [PromoRedemptionReason.PROMO_CODE_NOT_FOR_VERTICAL]: {
         code: ServiceErrorCode.VALIDATION_ERROR,
         status: 422
@@ -49,6 +55,16 @@ const errors: Record<PromoRedemptionReasonType, { code: string; status: number }
     [PromoRedemptionReason.PROMO_MUTATION_NOT_APPLIED]: {
         code: ServiceErrorCode.INTERNAL_ERROR,
         status: 500
+    },
+    [PromoRedemptionReason.NO_TRIAL]: { code: ServiceErrorCode.VALIDATION_ERROR, status: 422 },
+    [PromoRedemptionReason.TRIAL_ENDED]: { code: ServiceErrorCode.VALIDATION_ERROR, status: 422 },
+    [PromoRedemptionReason.CEILING_REACHED]: {
+        code: ServiceErrorCode.VALIDATION_ERROR,
+        status: 422
+    },
+    [PromoRedemptionReason.REDEMPTION_KEY_CONFLICT]: {
+        code: ServiceErrorCode.ALREADY_EXISTS,
+        status: 409
     }
 };
 
@@ -60,8 +76,8 @@ export const protectedRedeemPromoCodeRoute = createProtectedRoute({
     method: 'post',
     path: '/promo-codes/redeem',
     successStatusCode: 200,
-    summary: 'Redeem a discount code',
-    description: 'Applies a discount code to the owner’s active card subscription.',
+    summary: 'Redeem a promo code',
+    description: 'Applies a discount or extends the owner’s active trial.',
     tags: ['Billing subscriptions'],
     requestBody: RedeemPromoCodeRequestSchema,
     responseSchema: RedeemPromoCodeResponseSchema,
@@ -76,14 +92,36 @@ export const protectedRedeemPromoCodeRoute = createProtectedRoute({
         }
         const request = RedeemPromoCodeRequestSchema.parse(body);
         try {
-            const result = await redeemDiscountCode(
+            const ports = getTrialMachinePorts();
+            const clock = getClock().clock;
+            const result = await redeemPromoCode(
                 { userId: actor.id, ...request },
                 {
                     provider: getPaymentProvider(),
-                    clock: getClock().clock
+                    clock,
+                    extendTrial: createExtendTrial({
+                        unitOfWork: ports.unitOfWork,
+                        clock,
+                        afterCommit: ports.afterCommit
+                    }).extendTrial
                 }
             );
-            return { kind: 'DISCOUNT' as const, ...result };
+            if (result.kind === 'TRIAL_EXTENSION' && result.outcome === 'REJECTED') {
+                const reason = result.reason;
+                if (!isPromoRedemptionReason(reason)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Unexpected trial extension rejection reason'
+                    );
+                }
+                const mapped = errors[reason];
+                return createErrorResponse(
+                    { code: mapped.code, message: reason, reason },
+                    ctx,
+                    mapped.status
+                );
+            }
+            return result;
         } catch (error) {
             if (
                 error instanceof ServiceError &&
