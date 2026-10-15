@@ -36,6 +36,16 @@ describe('TEST:1607:2 — reconciliation mark escalation model', () => {
                 placedAt,
                 tx
             });
+            const [legacy] = await tx
+                .insert(reconciliationMarks)
+                .values({
+                    subscriptionId: subject.id,
+                    reason: 'COBRO_POSTERIOR_A_LA_BAJA',
+                    placedAt,
+                    deadlinesVersion: null
+                })
+                .returning();
+            if (!legacy) throw new Error('Expected legacy mark');
             await tx
                 .update(reconciliationMarks)
                 .set({ liftedAt: placedAt, liftedBy: user.id })
@@ -47,6 +57,7 @@ describe('TEST:1607:2 — reconciliation mark escalation model', () => {
                 deadline.version
             );
             expect(page.find((item) => item.id === mark.id)?.deadlineDays).toBe(7);
+            expect(page.find((item) => item.id === legacy.id)?.deadlineDays).toBe(7);
             const escalatedAt = new Date('2026-01-08T00:00:00Z');
             expect(
                 await reconciliationMarkModel.markEscalated({ markId: mark.id, escalatedAt, tx })
