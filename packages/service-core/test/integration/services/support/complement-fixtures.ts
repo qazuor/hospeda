@@ -1,4 +1,4 @@
-import type { VerticalsForBilling } from '@repo/billing-verticals-contract';
+import type { ListingResponse, VerticalsForBilling } from '@repo/billing-verticals-contract';
 import {
     addonInstances,
     addonVersions,
@@ -15,6 +15,7 @@ import {
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
+import { VerticalEnum } from '@repo/schemas';
 import type { ComplementPolicyPorts } from '../../../../src/services/billing/subscription/complement-ports.js';
 import { getServiceTestDb } from '../helpers.js';
 import {
@@ -34,7 +35,8 @@ export async function seedCommittedComplement(input: {
     readonly fake: FakePaymentProvider;
     readonly principalStatus: string;
     readonly principal?: { readonly userId: string; readonly principalId: string };
-    readonly scopeType: 'VERTICAL_SUBSCRIPTION' | 'USER';
+    readonly scopeType?: 'VERTICAL_SUBSCRIPTION' | 'LISTING' | 'USER' | 'GLOBAL';
+    readonly scopeTypes?: readonly ('VERTICAL_SUBSCRIPTION' | 'LISTING' | 'USER' | 'GLOBAL')[];
     readonly otherStatus?: string;
     readonly complementStatus?: string;
     readonly withLink?: boolean;
@@ -46,17 +48,29 @@ export async function seedCommittedComplement(input: {
     readonly complementId: string;
     readonly instanceId: string;
     readonly authorizationId: string | null;
+    readonly addons: readonly {
+        readonly complementId: string;
+        readonly instanceId: string;
+        readonly authorizationId: string | null;
+    }[];
     readonly policy: ComplementPolicyPorts;
 }> {
-    const { authorizationId } = await input.fake.authorize({
-        reference: `complement-${crypto.randomUUID()}`,
-        amount: { amountMinor: 500000, currency: 'ARS' },
-        cadence: { everyMonths: 1 },
-        reason: 'recurring complement test',
-        returnUrl: 'https://example.test/return',
-        payerEmail: `complement-${crypto.randomUUID()}@example.test`
-    });
-    await input.fake.approve({ authorizationId });
+    const scopeTypes = input.scopeTypes ?? (input.scopeType ? [input.scopeType] : []);
+    if (scopeTypes.length === 0) throw new Error('At least one complement scope is required');
+    const authorizationIds: string[] = [];
+    for (let index = 0; index < scopeTypes.length; index += 1) {
+        const authorization = await input.fake.authorize({
+            reference: `complement-${crypto.randomUUID()}`,
+            amount: { amountMinor: 500000, currency: 'ARS' },
+            cadence: { everyMonths: 1 },
+            reason: 'recurring complement test',
+            returnUrl: 'https://example.test/return',
+            payerEmail: `complement-${crypto.randomUUID()}@example.test`
+        });
+        await input.fake.approve({ authorizationId: authorization.authorizationId });
+        authorizationIds.push(authorization.authorizationId);
+    }
+    const listingRows = new Map<string, ListingResponse>();
     const db = getServiceTestDb();
     const seeded = await db.transaction(async (raw) => {
         const tx = raw as unknown as DrizzleClient;
@@ -71,41 +85,64 @@ export async function seedCommittedComplement(input: {
         const other = input.otherStatus
             ? await seedPrincipal(tx, { userId, vertical: 'gastronomy', status: input.otherStatus })
             : null;
-        const complement = await seedComplement(tx, {
-            userId,
-            vertical: 'accommodation',
-            status: input.complementStatus ?? 'ACTIVE',
-            withLink: false,
-            openPause: input.openPause
-        });
-        const addon = await seedOrphanInstance(tx, {
-            ownerId: userId,
-            scopeType: input.scopeType,
-            compatibleVerticals: ['accommodation', 'gastronomy'],
-            status: 'ACTIVE',
-            targetId: input.scopeType === 'VERTICAL_SUBSCRIPTION' ? principal.subscriptionId : null,
-            complementSubscriptionId: complement.subscriptionId
-        });
-        if (input.withLink ?? true)
-            await tx.insert(providerLinks).values({
-                subscriptionId: complement.subscriptionId,
-                provider: 'MERCADO_PAGO',
-                providerId: authorizationId
+        const addons = [];
+        for (const [index, scopeType] of scopeTypes.entries()) {
+            const complement = await seedComplement(tx, {
+                userId,
+                vertical: 'accommodation',
+                status: input.complementStatus ?? 'ACTIVE',
+                withLink: false,
+                openPause: input.openPause
             });
+            const targetId =
+                scopeType === 'VERTICAL_SUBSCRIPTION'
+                    ? principal.subscriptionId
+                    : scopeType === 'LISTING'
+                      ? crypto.randomUUID()
+                      : null;
+            if (scopeType === 'LISTING' && targetId)
+                listingRows.set(targetId, {
+                    vertical: VerticalEnum.ACCOMMODATION,
+                    ownerId: userId,
+                    acceptsFeature: true
+                });
+            const addon = await seedOrphanInstance(tx, {
+                ownerId: userId,
+                scopeType,
+                compatibleVerticals: ['accommodation', 'gastronomy'],
+                status: 'ACTIVE',
+                targetId,
+                complementSubscriptionId: complement.subscriptionId
+            });
+            const authorizationId = authorizationIds[index];
+            if (!authorizationId) throw new Error('Provider authorization was not seeded');
+            if (input.withLink ?? true)
+                await tx.insert(providerLinks).values({
+                    subscriptionId: complement.subscriptionId,
+                    provider: 'MERCADO_PAGO',
+                    providerId: authorizationId
+                });
+            addons.push({
+                complementId: complement.subscriptionId,
+                instanceId: addon.instanceId,
+                authorizationId: input.withLink === false ? null : authorizationId
+            });
+            subscriptionIds.push(complement.subscriptionId);
+            instanceIds.push(addon.instanceId);
+        }
         owners.push(userId);
         subscriptionIds.push(
             ...(input.principal ? [] : [principal.subscriptionId]),
-            ...(other ? [other.subscriptionId] : []),
-            complement.subscriptionId
+            ...(other ? [other.subscriptionId] : [])
         );
-        instanceIds.push(addon.instanceId);
         return {
             userId,
             principalId: principal.subscriptionId,
             otherPrincipalId: other?.subscriptionId ?? null,
-            complementId: complement.subscriptionId,
-            instanceId: addon.instanceId,
-            authorizationId: input.withLink === false ? null : authorizationId
+            complementId: addons[0]?.complementId ?? '',
+            instanceId: addons[0]?.instanceId ?? '',
+            authorizationId: addons[0]?.authorizationId ?? null,
+            addons
         };
     });
     const policy: ComplementPolicyPorts = {
@@ -122,8 +159,10 @@ export async function seedCommittedComplement(input: {
                 scopeType: version.scopeType
             };
         },
-        listing: async () => {
-            throw new Error('listing policy was not configured');
+        listing: async ({ listingId }) => {
+            const listing = listingRows.get(listingId);
+            if (!listing) throw new Error('listing policy was not configured');
+            return listing;
         },
         liveAnchors: { hasLiveAnchor: async () => false }
     };

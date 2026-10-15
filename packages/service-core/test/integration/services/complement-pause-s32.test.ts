@@ -1,5 +1,8 @@
 import {
+    addonInstances,
     and,
+    coverageLosses,
+    emailOutbox,
     eq,
     getDb,
     isNull,
@@ -24,43 +27,76 @@ afterAll(closeServiceTestPool);
 describe.skipIf(!isServiceTestDbAvailable())(
     'HOS-1562 TEST:B7:14 AC:B7:22 AC:B7:21 S32 pausa complementos recurrentes',
     () => {
-        it('pausa el complemento confirmado y abre una pausa CUSTOMER_REQUEST sin fin previsto', async () => {
+        it('AC:B7:22 pausa VERTICAL_SUBSCRIPTION, LISTING y USER y abre CUSTOMER_REQUEST sin fin previsto', async () => {
             const harness = providerHarness();
             const seeded = await seedCommittedComplement({
                 fake: harness.fake,
                 principalStatus: 'SUSPENDED',
-                scopeType: 'VERTICAL_SUBSCRIPTION'
+                scopeTypes: ['VERTICAL_SUBSCRIPTION', 'LISTING', 'USER'],
+                otherStatus: 'SUSPENDED'
             });
             const result = await pauseComplementsS32(
                 { principalSubscriptionId: seeded.principalId, trigger: 'PRINCIPAL_SUSPENDED' },
                 { provider: harness.provider, clock, policy: seeded.policy }
             );
-            expect(result.results.map(({ outcome }) => outcome)).toEqual(['PAUSED']);
-            const [complement] = await getServiceTestDb()
+            expect(result.results).toHaveLength(3);
+            expect(result.results.every(({ outcome }) => outcome === 'PAUSED')).toBe(true);
+            const [principal] = await getServiceTestDb()
                 .select({ status: subscriptions.status })
                 .from(subscriptions)
-                .where(eq(subscriptions.id, seeded.complementId));
-            expect(complement?.status).toBe('PAUSED');
-            const pauses = await getServiceTestDb()
-                .select()
-                .from(subscriptionPauses)
-                .where(
-                    and(
-                        eq(subscriptionPauses.subscriptionId, seeded.complementId),
-                        isNull(subscriptionPauses.actualEndAt)
-                    )
-                );
-            expect(pauses).toHaveLength(1);
-            expect(pauses[0]).toMatchObject({
-                reason: 'CUSTOMER_REQUEST',
-                requestedMonths: null,
-                expectedEndAt: null
-            });
-            if (!seeded.authorizationId) throw new Error('provider authorization was not seeded');
-            const providerRead = await harness.fake.readAuthorization({
-                authorizationId: seeded.authorizationId
-            });
-            expect(providerRead.snapshot.status).toBe('paused');
+                .where(eq(subscriptions.id, seeded.principalId));
+            expect(principal?.status).toBe('SUSPENDED');
+            for (const addon of seeded.addons) {
+                const [complement] = await getServiceTestDb()
+                    .select({ status: subscriptions.status })
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, addon.complementId));
+                expect(complement?.status).toBe('PAUSED');
+                const [instance] = await getServiceTestDb()
+                    .select({ status: addonInstances.status })
+                    .from(addonInstances)
+                    .where(eq(addonInstances.id, addon.instanceId));
+                expect(instance?.status).toBe('ACTIVE');
+                const pauses = await getServiceTestDb()
+                    .select()
+                    .from(subscriptionPauses)
+                    .where(
+                        and(
+                            eq(subscriptionPauses.subscriptionId, addon.complementId),
+                            isNull(subscriptionPauses.actualEndAt)
+                        )
+                    );
+                expect(pauses).toHaveLength(1);
+                expect(pauses[0]).toMatchObject({
+                    reason: 'CUSTOMER_REQUEST',
+                    requestedMonths: null,
+                    expectedEndAt: null
+                });
+                if (!addon.authorizationId)
+                    throw new Error('provider authorization was not seeded');
+                const providerRead = await harness.fake.readAuthorization({
+                    authorizationId: addon.authorizationId
+                });
+                expect(providerRead.snapshot.status).toBe('paused');
+                expect(
+                    await getServiceTestDb()
+                        .select()
+                        .from(emailOutbox)
+                        .where(eq(emailOutbox.recipientUserId, seeded.userId))
+                ).toHaveLength(0);
+                expect(
+                    await getServiceTestDb()
+                        .select()
+                        .from(reconciliationMarks)
+                        .where(eq(reconciliationMarks.subscriptionId, addon.complementId))
+                ).toHaveLength(0);
+            }
+            expect(
+                await getServiceTestDb()
+                    .select()
+                    .from(coverageLosses)
+                    .where(eq(coverageLosses.userId, seeded.userId))
+            ).toHaveLength(0);
         });
 
         it('deja ACTIVE y abre una sola marca 22 cuando el PUT fue aceptado pero no aplicado', async () => {
