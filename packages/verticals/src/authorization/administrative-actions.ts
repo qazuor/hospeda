@@ -43,8 +43,14 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
         }
     >
 > = {
-    ACC_1: { permissions: [], pendingOwnPermission: 'B9b' },
-    ACC_2: { permissions: [], pendingOwnPermission: 'B9a' },
+    ACC_1: {
+        permissions: [PermissionEnum.BILLING_GRANT_COMPLIMENTARY],
+        pendingOwnPermission: null
+    },
+    ACC_2: {
+        permissions: [PermissionEnum.BILLING_GRANT_COMPLIMENTARY],
+        pendingOwnPermission: null
+    },
     ACC_3: { permissions: [PermissionEnum.PARTNER_MANAGE], pendingOwnPermission: 'B5 (HOS-1541)' },
     ACC_4: { permissions: [], pendingOwnPermission: 'B7' },
     ACC_5: { permissions: [PermissionEnum.PARTNER_MANAGE], pendingOwnPermission: 'V7 (HOS-1484)' },
@@ -86,8 +92,8 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
         pendingOwnPermission: 'V8b (HOS-1498)'
     },
     ACC_26: {
-        permissions: [PermissionEnum.USER_UPDATE_ROLES],
-        pendingOwnPermission: 'V5.6 (HOS-1460)'
+        permissions: [PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE],
+        pendingOwnPermission: null
     }
 };
 
@@ -116,7 +122,8 @@ export const RETIRING_ADMINISTRATIVE_PERMISSIONS: readonly {
     { permission: PermissionEnum.GASTRONOMY_DELETE, formerAction: 'ACC_23' },
     { permission: PermissionEnum.EXPERIENCE_DELETE, formerAction: 'ACC_23' },
     { permission: PermissionEnum.USER_DELETE, formerAction: 'ACC_24' },
-    { permission: PermissionEnum.USER_HARD_DELETE, formerAction: 'ACC_24' }
+    { permission: PermissionEnum.USER_HARD_DELETE, formerAction: 'ACC_24' },
+    { permission: PermissionEnum.USER_UPDATE_ROLES, formerAction: 'ACC_26' }
 ];
 
 /**
