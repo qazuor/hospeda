@@ -204,7 +204,7 @@ describe('reconciliation terminal return population', () => {
             const retryNoMark = await add(tx, anchors, {});
             ids.set('retryNoMark', retryNoMark.id);
             await event(tx, retryNoMark.id, 'subscription.provider_cancellation_decided');
-            await mark(tx, retryNoMark.id, 'ESTADO_DIVERGENTE');
+            await mark(tx, retryNoMark.id, 'DIVERGENCIA_DE_MONTO');
             const retryMarked = await add(tx, anchors, {});
             ids.set('retryMarked', retryMarked.id);
             await event(tx, retryMarked.id, 'subscription.provider_cancellation_decided');
