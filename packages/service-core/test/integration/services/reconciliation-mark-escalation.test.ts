@@ -43,6 +43,7 @@ import {
     seedCoverageAddon,
     seedCoverageAddonInstance,
     seedCoverageAddonProduct,
+    seedCoveragePayment,
     seedCoveragePlanVersion,
     seedCoverageSubscription,
     seedCoverageUser
@@ -249,18 +250,16 @@ describe('TEST:B11:15 — escalation uses the mark deadline version', () => {
                 ...plan,
                 status: 'ACTIVE'
             });
+            await seedCoveragePayment(tx, {
+                subscriptionId: subscription.subscriptionId,
+                status: 'SUCCEEDED'
+            });
             const [payment] = await tx
-                .insert(payments)
-                .values({
-                    subscriptionId: subscription.subscriptionId,
-                    amount: 250000,
-                    currency: 'ARS',
-                    status: 'SUCCEEDED',
-                    provider: 'fake',
-                    providerFactId: `escalation-${crypto.randomUUID()}`,
-                    factAt: new Date('2026-10-01T00:00:00Z')
-                })
-                .returning();
+                .select()
+                .from(payments)
+                .where(eq(payments.subscriptionId, subscription.subscriptionId))
+                .orderBy(desc(payments.createdAt))
+                .limit(1);
             if (!payment) throw new Error('Expected payment');
             const placedAt = new Date('2026-01-01T00:00:00Z');
             const mark = await reconciliationMarkModel.insertOpen({
