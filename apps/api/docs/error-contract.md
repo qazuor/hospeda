@@ -426,7 +426,10 @@ breaks the typecheck.
 | `PERMANENT_GRANT_VERTICAL_ALREADY_ANCHORED` | 409 | `ALREADY_EXISTS` |
 | `PERMANENT_GRANT_ALREADY_LIVE` | 409 | `ALREADY_EXISTS` |
 | `PERMANENT_GRANT_REFERENCE_NOT_FOUND` | 422 | `VALIDATION_ERROR` |
+| `PERMANENT_GRANT_FLOOR_NOT_CURRENT` | 422 | `VALIDATION_ERROR` |
 | `INVALID_PERMANENT_GRANT_INPUT` | 422 | `VALIDATION_ERROR` |
+
+The floor is validated with `políticaDePlan(v).vigente` before writing.
 
 The permission is the route scope (`billing.grantComplimentary`); the service
 decides the action permission, subject, system actor and `actor = subject`, so a

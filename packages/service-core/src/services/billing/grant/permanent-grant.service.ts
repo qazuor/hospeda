@@ -1,8 +1,8 @@
 /**
  * Permanent grant acts (B9a.1). The service authorizes ACC_2 (INV:30, AC:B9a:9);
- * API routes are added in HOS-1584's third rollout. The anchor floor is stored as
- * a reference and is not checked against políticaDePlan(v).vigente (AC:B9a:11,
- * HOS-1585); the real GRANT coverage source arrives with HOS-1585.
+ * API routes are added in HOS-1584's third rollout. Anchor floors are validated
+ * with políticaDePlan(v).vigente before writing; the real GRANT coverage source
+ * arrives with HOS-1585.
  */
 import { and, eq, getDb, permanentGrants, permanentGrantVerticals } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
@@ -17,6 +17,7 @@ import {
     assertPermanentGrantSubject,
     mapPermanentGrantWriteError
 } from './permanent-grant-authorization.js';
+import { assertAnchorFloorsAcceptable } from './permanent-grant-floor.js';
 import {
     anchorInputSchema,
     grantSchema,
@@ -41,9 +42,8 @@ import {
  *
  * Local cancellation, retention release, courtesy closure and add-on
  * orphanhood run in one transaction. Coverage notices and provider
- * cancellation happen after commit. The anchor floor is stored as a reference;
- * current-plan policy validation and the live GRANT coverage source belong to
- * HOS-1585.
+ * cancellation happen after commit. Each floor is validated before writing
+ * with políticaDePlan(v).vigente and stored as a version reference.
  *
  * @param raw Grant beneficiary, authorizing actor, reason, add-on policy and
  *   at least one unique vertical anchor.
@@ -85,6 +85,7 @@ export async function grantPermanentGrant(
     if (!parsed.success) throw invalidPermanentGrantInput(parsed.error.issues);
     const input = parsed.data;
     assertPermanentGrantSubject({ actor, beneficiaryUserId: input.beneficiaryUserId });
+    await assertAnchorFloorsAcceptable({ anchors: input.anchors, planPolicy: ports.planPolicy });
     const now = ports.clock.now();
     const committed = await getDb()
         .transaction(async (tx) => {
@@ -186,8 +187,8 @@ export async function grantPermanentGrant(
  * Adds one vertical anchor to an existing live permanent grant and applies
  * S13 only to the beneficiary's live principal subscriptions in that vertical.
  * The anchor and local cancellation effects are committed atomically; coverage
- * notices and provider cancellation run after commit. The floor is stored as a
- * reference and is not checked against current plan policy in this service.
+ * notices and provider cancellation run after commit. The floor is validated
+ * with políticaDePlan(v).vigente before writing and stored as a version reference.
  *
  * @param raw Grant ID, authorizing actor and the vertical's plan floor.
  * @param ports Clock and integrations required for local and post-commit work.
@@ -267,6 +268,16 @@ export async function anchorPermanentGrantVertical(
                     undefined,
                     'PERMANENT_GRANT_VERTICAL_ALREADY_ANCHORED'
                 );
+            await assertAnchorFloorsAcceptable({
+                anchors: [
+                    {
+                        vertical: input.vertical,
+                        planId: input.planId,
+                        floorPlanVersionId: input.floorPlanVersionId
+                    }
+                ],
+                planPolicy: ports.planPolicy
+            });
             const [anchor] = await tx
                 .insert(permanentGrantVerticals)
                 .values({
