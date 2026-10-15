@@ -6,6 +6,7 @@ const {
     mockClock,
     mockProvider,
     mockPlanPolicy,
+    mockComplementPorts,
     mockGraceExpiryCheck,
     mockProviderPauseCheck,
     mockLostFirstRejectionCheck,
@@ -21,6 +22,11 @@ const {
     mockClock: { now: vi.fn(() => new Date('2026-10-11T12:00:00.000Z')) },
     mockProvider: { readAuthorization: vi.fn() },
     mockPlanPolicy: vi.fn(),
+    mockComplementPorts: {
+        addonPolicy: vi.fn(),
+        listing: vi.fn(),
+        liveAnchors: { hasLiveAnchor: vi.fn() }
+    },
     mockGraceExpiryCheck: vi.fn((_ports: unknown) => async () => undefined),
     mockStateComparison: vi.fn(() => ({ kind: 'state-comparison' })),
     mockPeriodChargesComparison: vi.fn((_ports: unknown) => ({
@@ -44,6 +50,9 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
 }));
 vi.mock('../../src/utils/clock.js', () => ({ getClock: () => ({ clock: mockClock }) }));
 vi.mock('../../src/utils/payment-provider.js', () => ({ getPaymentProvider: () => mockProvider }));
+vi.mock('../../src/utils/billing-complement-ports.js', () => ({
+    buildComplementPolicyPorts: () => mockComplementPorts
+}));
 vi.mock('@repo/db', async () => {
     const { createDbMock } = await import('../helpers/mocks/db-mock');
     return { ...createDbMock(), planCatalogModel: {} };
@@ -131,7 +140,8 @@ describe('billing reconciliation sweep cron', () => {
             clock: mockClock,
             beforeCancelNotice,
             payments: creditedPaymentsFromLedger,
-            coverageNotices: getCoverageNotices()
+            coverageNotices: getCoverageNotices(),
+            complements: mockComplementPorts
         });
         // I-3: the successor grace check runs before the expiry check.
         const rowChecks = mockSweep.mock.calls[0]?.[1]?.rowChecks;
@@ -145,7 +155,8 @@ describe('billing reconciliation sweep cron', () => {
             expect.objectContaining({
                 planPolicy: mockPlanPolicy,
                 payments: creditedPaymentsFromLedger,
-                coverageNotices: getCoverageNotices()
+                coverageNotices: getCoverageNotices(),
+                complements: mockComplementPorts
             })
         );
         // AC:B7:8: the grace expiry check settles a charged period with the real ledger and plan policy.
@@ -155,7 +166,8 @@ describe('billing reconciliation sweep cron', () => {
                 clock: mockClock,
                 beforeCancelNotice: expect.objectContaining({ beforeCancel: expect.any(Function) }),
                 payments: creditedPaymentsFromLedger,
-                planPolicy: mockPlanPolicy
+                planPolicy: mockPlanPolicy,
+                complements: mockComplementPorts
             })
         );
         // HOS-1533: S6 and P1 notify the ONE process-wide coverage registry, never the unwired default.
