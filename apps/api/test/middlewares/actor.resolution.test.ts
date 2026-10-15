@@ -19,7 +19,7 @@
  *    for R-1 (privilege escalation by accumulating hats): collecting roles must
  *    never be a way around an explicit per-user deny.
  */
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, SUPER_ADMIN_EXCLUSIVE_PERMISSIONS } from '@repo/schemas';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings, AuthUser } from '../../src/types';
@@ -34,12 +34,16 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 });
 
 import { getUserRoles } from '@repo/service-core';
-import { actorMiddleware } from '../../src/middlewares/actor';
+import { actorMiddleware, resolveEffectivePermissions } from '../../src/middlewares/actor';
 import { createGuestActor } from '../../src/utils/actor';
-import { getPermissionsForRoles } from '../../src/utils/role-permissions-cache';
+import {
+    getPermissionsForRoles,
+    readPermissionsForRolesUncached
+} from '../../src/utils/role-permissions-cache';
 import {
     getUserPermissions,
-    getUserPermissionsWithEffect
+    getUserPermissionsWithEffect,
+    readUserPermissionsWithEffectUncached
 } from '../../src/utils/user-permissions-cache';
 
 const mockGetPermissionsForRoles = vi.mocked(getPermissionsForRoles);
@@ -209,6 +213,20 @@ describe('Actor permission resolution — deny overrides (SPEC-170)', () => {
 
         expect([...perms].sort()).toEqual([P1, P3].sort());
     });
+
+    it('removes every exclusive grant after applying denies', async () => {
+        mockGetUserPermissionsWithEffect.mockResolvedValue({
+            grants: [...SUPER_ADMIN_EXCLUSIVE_PERMISSIONS, P2],
+            denies: [P2]
+        });
+        expect(await resolvePermissions(createAuthUser())).toEqual([]);
+    });
+
+    it('removes an exclusive permission returned by the ADMIN role cache', async () => {
+        mockGetUserRoles.mockResolvedValue([RoleEnum.ADMIN]);
+        mockGetPermissionsForRoles.mockResolvedValue([SUPER_ADMIN_EXCLUSIVE_PERMISSIONS[0]]);
+        expect(await resolvePermissions(createAuthUser())).toEqual([]);
+    });
 });
 
 describe('Actor permission resolution — multi-role union (HOS-296 AC-3)', () => {
@@ -285,16 +303,34 @@ describe('Actor permission resolution — multi-role union (HOS-296 AC-3)', () =
     });
 
     it('holding SUPER_ADMIN alongside other hats still short-circuits to every permission', async () => {
-        mockGetUserRoles.mockResolvedValue([RoleEnum.USER, RoleEnum.SUPER_ADMIN, RoleEnum.HOST]);
+        mockGetUserRoles.mockResolvedValue([RoleEnum.SUPER_ADMIN, RoleEnum.CLIENT_MANAGER]);
         mockGetUserPermissionsWithEffect.mockResolvedValue({ grants: [], denies: [P1] });
 
         const { roles, permissions } = await resolveActor(createAuthUser());
 
-        expect(roles).toEqual([RoleEnum.USER, RoleEnum.SUPER_ADMIN, RoleEnum.HOST]);
+        expect(roles).toEqual([RoleEnum.SUPER_ADMIN, RoleEnum.CLIENT_MANAGER]);
         expect(permissions).toEqual(Object.values(PermissionEnum));
         // Neither the role-permission cache nor the override cache is consulted.
         expect(mockGetPermissionsForRoles).not.toHaveBeenCalled();
         expect(mockGetUserPermissionsWithEffect).not.toHaveBeenCalled();
+    });
+
+    it('uncached resolution removes exclusive role and grant rows but retains common grants', async () => {
+        vi.mocked(readPermissionsForRolesUncached).mockResolvedValue([
+            SUPER_ADMIN_EXCLUSIVE_PERMISSIONS[0],
+            P1
+        ]);
+        vi.mocked(readUserPermissionsWithEffectUncached).mockResolvedValue({
+            grants: [SUPER_ADMIN_EXCLUSIVE_PERMISSIONS[1], P2],
+            denies: [P1]
+        });
+
+        const result = await resolveEffectivePermissions({
+            userId: USER_ID,
+            roles: [RoleEnum.ADMIN],
+            read: 'uncached'
+        });
+        expect(result.permissions).toEqual([P2]);
     });
 
     it('returns 503 when the account holds no role at all, instead of degrading to [USER]', async () => {
