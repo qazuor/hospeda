@@ -24,6 +24,7 @@ beforeEach(resetSeededReconciliationInventory);
 afterEach(async () => {
     if (ids.length) {
         const db = getServiceTestDb();
+        await db.delete(providerLinks).where(inArray(providerLinks.subscriptionId, ids));
         await db
             .update(subscriptions)
             .set({ status: 'CANCELLED', graceStartedAt: null, graceEndsAt: null })
