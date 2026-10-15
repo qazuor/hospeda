@@ -66,9 +66,25 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 authorizationId: fixture.started.authorizationId
             });
             fixture.advanceToAttempt(3);
+            const principalNotice = fixture.ports.beforeCancelNotice;
+            if (!principalNotice) throw new Error('fixture before-cancel notice missing');
+            let principalStatusDuringComplementNotice: string | undefined;
             const result = await recordChargeFact(
                 { chargeId: fixture.chargeId },
-                { ...fixture.ports, complements: seeded.policy }
+                {
+                    ...fixture.ports,
+                    complements: seeded.policy,
+                    beforeCancelNotice: {
+                        beforeCancel: async (args) => {
+                            const [principal] = await getServiceTestDb()
+                                .select({ status: subscriptions.status })
+                                .from(subscriptions)
+                                .where(eq(subscriptions.id, fixture.started.subscriptionId));
+                            principalStatusDuringComplementNotice = principal?.status;
+                            return principalNotice.beforeCancel(args);
+                        }
+                    }
+                }
             );
             expect(result).toMatchObject({
                 outcome: 'CREDITED',
@@ -83,6 +99,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 .from(subscriptions)
                 .where(eq(subscriptions.id, seeded.complementId));
             expect(main?.status).toBe('CANCEL_SCHEDULED');
+            expect(principalStatusDuringComplementNotice).toBe('CANCEL_SCHEDULED');
             expect(complement).toEqual({ status: 'CANCEL_SCHEDULED', end: main?.end });
             expect(
                 (

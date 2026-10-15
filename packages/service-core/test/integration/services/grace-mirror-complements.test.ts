@@ -40,13 +40,24 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     tx
                 })
             );
+            let principalStatusDuringComplementNotice: string | undefined;
+            const complementNotice = outboxBeforeCancelNotice({ deliver: true });
             const result = await mirrorOurCancellationOnActive(
                 { subscriptionId: seeded.principalId, readAt: complementNow, everyMonths: 1 },
                 {
                     clock,
                     complements: seeded.policy,
                     provider: harness.provider,
-                    beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true })
+                    beforeCancelNotice: {
+                        beforeCancel: async (args) => {
+                            const [principal] = await getServiceTestDb()
+                                .select({ status: subscriptions.status })
+                                .from(subscriptions)
+                                .where(eq(subscriptions.id, seeded.principalId));
+                            principalStatusDuringComplementNotice = principal?.status;
+                            return complementNotice.beforeCancel(args);
+                        }
+                    }
                 }
             );
             expect(result.outcome).toBe('SCHEDULED');
@@ -59,6 +70,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 .from(subscriptions)
                 .where(eq(subscriptions.id, seeded.complementId));
             expect(main?.status).toBe('CANCEL_SCHEDULED');
+            expect(principalStatusDuringComplementNotice).toBe('CANCEL_SCHEDULED');
             expect(complement).toEqual({ status: 'CANCEL_SCHEDULED', end: main?.end });
             expect(
                 (await harness.fake.readAuthorization({ authorizationId: seeded.authorizationId! }))

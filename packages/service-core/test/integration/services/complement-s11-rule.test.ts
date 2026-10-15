@@ -15,6 +15,7 @@ import {
     cancelComplementsByS11Rule,
     cancelDecidedComplementsAtProvider
 } from '../../../src/services/billing/subscription/complement-s11-rule.js';
+import { selectComplementTargets } from '../../../src/services/billing/subscription/complement-selection.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import {
     complementNow,
@@ -153,6 +154,24 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 .update(subscriptions)
                 .set({ serviceEndsAt: principal?.serviceEndsAt ?? complementNow })
                 .where(eq(subscriptions.id, paused.principalId));
+            const selectedPaused = await getServiceTestDb().transaction(async (raw) =>
+                selectComplementTargets(
+                    {
+                        tx: raw,
+                        principal: {
+                            id: paused.principalId,
+                            userId: paused.userId,
+                            vertical: 'accommodation'
+                        },
+                        rule: 'CANCEL',
+                        complementStatus: 'ACTIVE'
+                    },
+                    paused.policy
+                )
+            );
+            expect(selectedPaused.targets.map((target) => target.complementSubscriptionId)).toEqual(
+                []
+            );
             const result = await getServiceTestDb().transaction(async (raw) =>
                 cancelComplementsByS11Rule(
                     { tx: raw, principalSubscriptionId: paused.principalId, now: complementNow },
