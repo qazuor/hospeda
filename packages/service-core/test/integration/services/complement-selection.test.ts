@@ -84,7 +84,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 const principal = await seedPrincipal(tx, {
                     userId,
                     vertical: ORPHAN_VERTICAL,
-                    status: 'SUSPENDED'
+                    status: 'ACTIVE'
                 });
                 await seedOrphanInstance(tx, {
                     ownerId: userId,
