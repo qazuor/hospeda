@@ -3,6 +3,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { FakePaymentProvider } from '../fake/fake-payment-provider';
 import { PaymentProviderError } from '../provider/errors';
 import { AuthorizeInputSchema } from '../provider/schemas';
+import { handleExtraRoutes } from './extra-routes';
 import {
     type MercadoPagoDeliveriesResult,
     translateMercadoPagoDeliveries
@@ -133,6 +134,18 @@ export async function startFakeProviderServer(
             return;
         }
         try {
+            const extra = await handleExtraRoutes({
+                provider,
+                method,
+                url: new URL(path, 'http://fake.invalid'),
+                headers: request.headers,
+                body
+            });
+            if (extra !== null) {
+                if (extra.body === undefined) response.writeHead(extra.status).end();
+                else sendJson(response, extra.status, extra.body);
+                return;
+            }
             if (method === 'POST' && path === '/preapproval') {
                 const resource = objectBody(body);
                 const recurring = objectBody(resource.auto_recurring);
