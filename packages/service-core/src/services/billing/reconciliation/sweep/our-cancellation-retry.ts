@@ -301,7 +301,11 @@ function errorMessage(error: unknown): string {
  * @returns Counts by outcome, rows read, rows failed and the failures
  */
 export async function runOurCancellationRetry(
-    input: { readonly correlationId: string; readonly pageSize: number },
+    input: {
+        readonly correlationId: string;
+        readonly pageSize: number;
+        readonly unconfirmedOnly?: boolean;
+    },
     ports: RetryOurCancellationPorts
 ): Promise<OurCancellationRetrySummary> {
     const tally = createOurCancellationRetryTally();
@@ -311,7 +315,8 @@ export async function runOurCancellationRetry(
     for (;;) {
         const page = await reconciliationInventoryModel.listCancellationRetryPage({
             afterSubscriptionId,
-            limit: input.pageSize
+            limit: input.pageSize,
+            unconfirmedOnly: input.unconfirmedOnly
         });
         for (const row of page) {
             try {
