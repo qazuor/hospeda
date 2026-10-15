@@ -53,7 +53,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 seedServiceEndPrincipal(tx as unknown as DrizzleClient, {
                     userId: seeded.userId,
                     vertical: 'accommodation',
-                    status: 'ACTIVE'
+                    status: 'ACTIVE',
+                    predecessorId: seeded.principalId
                 })
             );
             extraPrincipalIds.push(support.subscriptionId);
