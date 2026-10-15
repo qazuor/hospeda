@@ -147,7 +147,14 @@ describe('HOS-1669 TEST:1669:10 AC:1669:2 orders over fake HTTP', () => {
         const unknown = new MercadoPagoPaymentProvider({
             clock,
             accessToken: 'test-token',
-            fetch: async () => new Response(JSON.stringify({ id: 'o', status: 'mystery' }))
+            fetch: async () =>
+                new Response(
+                    JSON.stringify({
+                        id: 'o',
+                        status: 'mystery',
+                        created_date: clock.now().toISOString()
+                    })
+                )
         });
         await expect(unknown.readOrder({ orderId: 'o' })).rejects.toMatchObject({
             code: 'UNAVAILABLE'
