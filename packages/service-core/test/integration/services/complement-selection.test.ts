@@ -78,6 +78,39 @@ describe.skipIf(!isServiceTestDbAvailable())(
             });
         });
 
+        it('descarta una fila PRINCIPAL aunque una instancia la enlace como complemento', async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { userId } = await seedOrphanOwner(tx);
+                const principal = await seedPrincipal(tx, {
+                    userId,
+                    vertical: ORPHAN_VERTICAL,
+                    status: 'SUSPENDED'
+                });
+                await seedOrphanInstance(tx, {
+                    ownerId: userId,
+                    scopeType: 'VERTICAL_SUBSCRIPTION',
+                    compatibleVerticals: [ORPHAN_VERTICAL],
+                    status: 'ACTIVE',
+                    targetId: principal.subscriptionId,
+                    complementSubscriptionId: principal.subscriptionId
+                });
+                const result = await selectComplementTargets(
+                    {
+                        tx,
+                        principal: {
+                            id: principal.subscriptionId,
+                            userId,
+                            vertical: ORPHAN_VERTICAL
+                        },
+                        rule: 'PAUSE',
+                        complementStatus: 'ACTIVE'
+                    },
+                    orphanPorts(tx).ports
+                );
+                expect(result.targets).toEqual([]);
+            });
+        });
+
         it('USER entra si otra vertical sólo tiene principal PAUSED o SUSPENDED, pero no si está ACTIVE o PENDING_AUTHORIZATION', async () => {
             for (const otherStatus of ['PAUSED', 'SUSPENDED', 'ACTIVE', 'PENDING_AUTHORIZATION']) {
                 await withServiceTestTransaction(async (tx) => {
