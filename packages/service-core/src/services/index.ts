@@ -118,6 +118,7 @@ export * from './billing/reconciliation/sweep/comparisons/unregistered-charge-re
 export * from './billing/reconciliation/sweep/credited-payments-check.js';
 export * from './billing/reconciliation/sweep/grace-expiry-check.js';
 export * from './billing/reconciliation/sweep/lost-rejection-check.js';
+export * from './billing/reconciliation/sweep/next-charge-sync.js';
 export * from './billing/reconciliation/sweep/our-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/paid-orders-check.js';
 export * from './billing/reconciliation/sweep/provider-pause-check.js';

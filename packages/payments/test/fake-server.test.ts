@@ -115,6 +115,7 @@ describe('fake provider HTTP server', () => {
             init_point: created.init_point
         });
         expect(pending.auto_recurring.free_trial).toBeUndefined();
+        expect(pending.next_payment_date).toBeNull();
         await provider.approve({ authorizationId: created.id });
         const authorized = await responseJson(
             await fetch(`${http.url}/preapproval/${created.id}`, {
@@ -123,6 +124,7 @@ describe('fake provider HTTP server', () => {
         );
         expect(authorized.status).toBe('authorized');
         expect(authorized.last_modified).toBe(START.toISOString());
+        expect(authorized.next_payment_date).toBe(START.toISOString());
         const futureCreated = await responseJson(
             await postAuthorization(http.url, {
                 ...BASE,

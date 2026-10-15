@@ -96,6 +96,18 @@ describe('MercadoPagoPaymentProvider HTTP (TEST:B3:43 soporte)', () => {
         expect(actual.snapshot.status).toBe('active');
     });
 
+    it('TEST:1685:1 reads a provider-moved next payment date over HTTP', async () => {
+        const { server, adapter } = await setup();
+        const created = await adapter.authorize(input);
+        await server.provider.approve({ authorizationId: created.authorizationId });
+        const moved = new Date('2026-11-01T03:00:00.000Z');
+        server.provider.moveNextCharge({ authorizationId: created.authorizationId, at: moved });
+        const actual = await adapter.readAuthorization({
+            authorizationId: created.authorizationId
+        });
+        expect(actual.snapshot.nextChargeAt).toBe(moved.toISOString());
+    });
+
     it('reads approved charges and RP12 card validation by id', async () => {
         const { server, adapter } = await setup();
         const created = await adapter.authorize(input);
