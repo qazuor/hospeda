@@ -47,7 +47,7 @@ export function createProviderPauseCheck(ports: GraceExpiryCheckPorts): Reconcil
 
         const decision = arrearsPauseDecision({ subscription, at });
         if (!decision) return;
-        await runArrearsDecisionAfterPeriodRead(
+        const stopped = await runArrearsDecisionAfterPeriodRead(
             { subscription, read: input.read, act: input.act, ...decision },
             ports
         );
@@ -55,5 +55,6 @@ export function createProviderPauseCheck(ports: GraceExpiryCheckPorts): Reconcil
             { subscriptionId: subscription.id, read: snapshot.status, event: decision.event },
             'Provider pause check completed arrears decision'
         );
+        return stopped ? 'STOP_REMAINING_CHECKS' : undefined;
     };
 }

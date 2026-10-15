@@ -15,7 +15,9 @@ import {
     GraceStarted,
     PAYMENT_CREDITED_SUBJECT,
     PaymentCredited,
+    PERMANENT_GRANT_ADDON_CANCEL_SUBJECT,
     PERMANENT_GRANT_CANCEL_SUBJECT,
+    PermanentGrantAddonCancel,
     PermanentGrantCancel,
     REVOCATION_CANCEL_SUBJECT,
     RevocationCancel,
@@ -108,6 +110,13 @@ function permanentGrantCancel(row: EmailOutboxRow) {
             'Faltan datos requeridos del aviso de cancelación por grant permanente'
         );
     return { subject: PERMANENT_GRANT_CANCEL_SUBJECT, react: <PermanentGrantCancel /> };
+}
+
+function permanentGrantAddonCancel(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError('Faltan datos requeridos del aviso de cancelación del addon por grant');
+    return { subject: PERMANENT_GRANT_ADDON_CANCEL_SUBJECT, react: <PermanentGrantAddonCancel /> };
 }
 
 function closedSubscriptionAuthorizationCancel(row: EmailOutboxRow) {
@@ -323,6 +332,7 @@ export function createBillingSignupRenderers(input: {
         'billing.first-charge-declined-cancel': ({ row }) => firstChargeDeclinedCancel(row),
         'billing.revocation-cancel': ({ row }) => revocationCancel(row),
         'billing.permanent-grant-cancel': ({ row }) => permanentGrantCancel(row),
+        'billing.permanent-grant-addon-cancel': ({ row }) => permanentGrantAddonCancel(row),
         'billing.closed-subscription-authorization-cancel': ({ row }) =>
             closedSubscriptionAuthorizationCancel(row),
         'billing.scheduled-cancellation': ({ row }) => scheduledCancellation(row)

@@ -565,3 +565,30 @@ describe('HOS-1582 TEST:B9a:1 AC:B9a:1 — the sweep retries an S13 decision wit
             .where(eq(emailOutbox.recipientUserId, row.userId!));
     });
 });
+
+describe('HOS-1583 TEST:B9a:4 — the sweep retries an S20 decision with its own kind', () => {
+    it('asks with PERMANENT_GRANT_ADDON and writes the addon notice template', async () => {
+        const { fake } = newFake();
+        const row = await decided({
+            fake,
+            status: 'CANCELLED',
+            transition: 'S20',
+            class: 'COMPLEMENTO'
+        });
+        const beforeCancel = vi.fn(outboxBeforeCancelNotice({ deliver: true }).beforeCancel);
+        const result = await runDay(0, fake, beforeCancel);
+        expect(result.summary.rowsFailed).toBe(0);
+        expect(beforeCancel).toHaveBeenCalledWith({
+            subscriptionId: row.id,
+            userId: row.userId,
+            kind: 'PERMANENT_GRANT_ADDON'
+        });
+        expect(BEFORE_CANCEL_KIND_BY_TRANSITION.S20).toBe('PERMANENT_GRANT_ADDON');
+        expect((await templatesOf(row.userId!)).sort()).toEqual([
+            'billing.permanent-grant-addon-cancel'
+        ]);
+        await getServiceTestDb()
+            .delete(emailOutbox)
+            .where(eq(emailOutbox.recipientUserId, row.userId!));
+    });
+});

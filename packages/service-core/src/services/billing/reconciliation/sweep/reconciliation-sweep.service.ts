@@ -73,7 +73,21 @@ export interface ReconciliationSweepPorts {
     readonly paidOrders?: PaidOrdersCheckPorts;
 }
 
-export type ReconciliationRowCheck = (input: ReconciliationComparisonInput) => Promise<void>;
+export type ReconciliationRowCheckResult = 'STOP_REMAINING_CHECKS' | void;
+
+export type ReconciliationRowCheck = (
+    input: ReconciliationComparisonInput
+) => Promise<ReconciliationRowCheckResult>;
+
+/** Runs a row's checks in order; a handled S6 decision prevents stale checks from mutating it. */
+export async function runReconciliationRowChecks(
+    input: ReconciliationComparisonInput,
+    checks: readonly ReconciliationRowCheck[]
+): Promise<void> {
+    for (const check of checks) {
+        if ((await check(input)) === 'STOP_REMAINING_CHECKS') return;
+    }
+}
 
 export interface ReconciliationSweepFailure {
     readonly subscriptionId: string;
@@ -174,9 +188,10 @@ export async function runReconciliationSweep(
                 });
                 rowsRead++;
                 await compareRow({ subscription, providerLink, read, act });
-                for (const check of ports.rowChecks ?? []) {
-                    await check({ subscription, providerLink, read, act });
-                }
+                await runReconciliationRowChecks(
+                    { subscription, providerLink, read, act },
+                    ports.rowChecks ?? []
+                );
                 // A live CANCEL_SCHEDULED left by S11 is retried here, with this loop's read (I8).
                 if (retryPorts && subscription.status === 'CANCEL_SCHEDULED') {
                     const decision = await reconciliationInventoryModel.findCancellationDecision({

@@ -184,7 +184,7 @@ export async function runArrearsDecisionAfterPeriodRead(
         readonly occurrenceId: string;
     },
     ports: GraceExpiryCheckPorts
-): Promise<void> {
+): Promise<boolean> {
     const { subscription, read, act, event, occurrenceId } = input;
     const actStartedAt = actStartInstant({ act }).at.getTime();
     const unresolvedMarkOpen = await hasOpenUnresolvedPeriodChargeMark({
@@ -202,7 +202,7 @@ export async function runArrearsDecisionAfterPeriodRead(
                     { subscriptionId: subscription.id, verdict: result.verdict, event },
                     'Arrears decision waits for S15 while reason 21 is open'
                 );
-                return;
+                return false;
             }
             const suspension = await suspendForArrears(
                 { subscriptionId: subscription.id, event, occurrenceId },
@@ -212,7 +212,7 @@ export async function runArrearsDecisionAfterPeriodRead(
                 { subscriptionId: subscription.id, verdict: result.verdict, ...suspension },
                 'Arrears decision after period read ran S6'
             );
-            return;
+            return suspension.outcome !== 'NOT_APPLICABLE';
         }
         case 'CHARGED': {
             const settled = await settleChargedPeriod({ chargeId: result.chargeId }, ports);
@@ -227,7 +227,7 @@ export async function runArrearsDecisionAfterPeriodRead(
                 },
                 'Arrears decision found a charged period; settled it'
             );
-            return;
+            return false;
         }
         case 'UNKNOWN': {
             const since = result.latestCharge
@@ -238,7 +238,7 @@ export async function runArrearsDecisionAfterPeriodRead(
                     { subscriptionId: subscription.id, reason: result.reason },
                     'Arrears decision has an unresolved period and no instant to age it from'
                 );
-                return;
+                return false;
             }
             const age = actStartedAt - since.getTime();
             if (age >= MARK_AFTER_MS) {
@@ -248,7 +248,7 @@ export async function runArrearsDecisionAfterPeriodRead(
                     actor: { type: 'job' },
                     correlationId: randomUUID()
                 });
-                return;
+                return false;
             }
             if (age > NOTIFY_AFTER_MS)
                 await (ports.unresolvedPeriodCharges ?? loggedUnresolvedPeriodCharges).notify({
@@ -257,7 +257,7 @@ export async function runArrearsDecisionAfterPeriodRead(
                     since,
                     reason: result.reason
                 });
-            return;
+            return false;
         }
         default: {
             const unreachable: never = result;
