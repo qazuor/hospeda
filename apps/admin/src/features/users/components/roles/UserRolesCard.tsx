@@ -58,7 +58,7 @@ import { buildRoleLabelKey } from '@/features/users/utils/role-label';
 import { useTranslations } from '@/hooks/use-translations';
 import { isApiError } from '@/lib/errors';
 import { formatDateWithTime } from '@/lib/format-helpers';
-import { SuperAdminRoleDialog } from './SuperAdminRoleDialog';
+import { SuperAdminRoleDialog, SuperAdminRoleTrigger } from './SuperAdminRoleDialog';
 
 const ROLE_CONFIRMATION: Partial<Record<RoleEnum, true>> = { [RoleEnum.SUPER_ADMIN]: true };
 
@@ -168,7 +168,7 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
     const revoke = useRevokeUserRole(userId);
 
     const [roleToGrant, setRoleToGrant] = useState<RoleEnum | ''>('');
-    const [assignSuperAdminOpen, setAssignSuperAdminOpen] = useState(false);
+    const [superAdminChange, setSuperAdminChange] = useState<'ASSIGN' | 'REMOVE' | null>(null);
     /**
      * Justification for the GRANT only.
      *
@@ -238,7 +238,7 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
     const handleGrant = async (confirmedReason?: string): Promise<void> => {
         if (!roleToGrant) return;
         if (ROLE_CONFIRMATION[roleToGrant] && confirmedReason === undefined)
-            return setAssignSuperAdminOpen(true);
+            return setSuperAdminChange('ASSIGN');
         const trimmed = (confirmedReason ?? grantReason).trim();
         try {
             await grant.mutateAsync({
@@ -286,6 +286,12 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
             });
         }
     };
+
+    const handleSuperAdminConfirm = ({ reason }: { readonly reason: string }) =>
+        (superAdminChange === 'ASSIGN'
+            ? handleGrant(reason)
+            : handleRevoke({ role: RoleEnum.SUPER_ADMIN, reason })
+        ).then(() => setSuperAdminChange(null));
 
     // The last hat cannot be revoked (AC-5) — disable rather than let the
     // operator discover the rule through a failed request.
@@ -353,14 +359,10 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
                                     </div>
 
                                     {ROLE_CONFIRMATION[entry.role] ? (
-                                        <SuperAdminRoleDialog
-                                            userId={userId}
-                                            change="REMOVE"
+                                        <SuperAdminRoleTrigger
                                             disabled={revoke.isPending || isLastRole}
-                                            pending={revoke.isPending}
-                                            onConfirm={(params) =>
-                                                handleRevoke({ role: entry.role, ...params })
-                                            }
+                                            onClick={() => setSuperAdminChange('REMOVE')}
+                                            label={t('admin-pages.access.users.roles.revokeRole')}
                                         />
                                     ) : (
                                         <RevokeRoleDialog
@@ -375,15 +377,13 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
                         </div>
                         <SuperAdminRoleDialog
                             userId={userId}
-                            change="ASSIGN"
-                            open={assignSuperAdminOpen}
-                            onOpenChange={setAssignSuperAdminOpen}
-                            pending={grant.isPending}
-                            onConfirm={(params) =>
-                                handleGrant(params.reason).then(() =>
-                                    setAssignSuperAdminOpen(false)
-                                )
-                            }
+                            change={superAdminChange ?? 'ASSIGN'}
+                            open={superAdminChange !== null}
+                            onOpenChange={(open) => {
+                                if (!open) setSuperAdminChange(null);
+                            }}
+                            pending={grant.isPending || revoke.isPending}
+                            onConfirm={handleSuperAdminConfirm}
                         />
 
                         {isLastRole && (

@@ -24,7 +24,6 @@ import { LAST_ROLE_REVOKE_REASON, type UserRoleGrantsResponse } from '@repo/sche
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type * as React from 'react';
-import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetchApi } from '@/lib/api/client';
 import { ApiError } from '@/lib/errors';
@@ -42,46 +41,45 @@ vi.mock('@/components/ui/ToastProvider', () => ({
 }));
 
 vi.mock('../SuperAdminRoleDialog', () => ({
+    SuperAdminRoleTrigger: ({
+        disabled,
+        onClick,
+        label
+    }: {
+        readonly disabled: boolean;
+        readonly onClick: () => void;
+        readonly label: string;
+    }) => (
+        <button
+            type="button"
+            disabled={disabled}
+            onClick={onClick}
+            aria-label={label}
+        />
+    ),
     SuperAdminRoleDialog: ({
         open,
         change,
-        onConfirm,
-        disabled
+        onConfirm
     }: {
-        readonly open?: boolean;
+        readonly open: boolean;
         readonly change: 'ASSIGN' | 'REMOVE';
         readonly onConfirm: (params: { readonly reason: string }) => void | Promise<void>;
-        readonly disabled?: boolean;
-    }) => {
-        const [internalOpen, setInternalOpen] = useState(false);
-        const isOpen = open ?? internalOpen;
-        return (
-            <>
-                {change === 'REMOVE' && (
-                    <button
-                        type="button"
-                        aria-label="admin-pages.access.users.roles.revokeRole"
-                        disabled={disabled}
-                        onClick={() => setInternalOpen(true)}
-                    />
-                )}
-                {isOpen && (
-                    <section
-                        data-testid="super-admin-role-dialog"
-                        data-change={change}
-                    >
-                        <textarea data-testid="super-admin-role-reason" />
-                        <button
-                            type="button"
-                            onClick={() => onConfirm({ reason: 'approved for pricing' })}
-                        >
-                            Confirm SUPER_ADMIN
-                        </button>
-                    </section>
-                )}
-            </>
-        );
-    }
+    }) =>
+        open ? (
+            <section
+                data-testid="super-admin-role-dialog"
+                data-change={change}
+            >
+                <textarea data-testid="super-admin-role-reason" />
+                <button
+                    type="button"
+                    onClick={() => onConfirm({ reason: 'approved for pricing' })}
+                >
+                    Confirm SUPER_ADMIN
+                </button>
+            </section>
+        ) : null
 }));
 
 vi.mock('@/components/ui/select', () => ({
