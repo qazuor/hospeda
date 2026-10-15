@@ -83,7 +83,9 @@ export const SETTLE_EXTERNAL_REFUND_REJECTIONS = [
     'OPEN_REQUESTS_AMBIGUOUS',
     'REQUESTED_AMOUNT_MISMATCH',
     'REFUND_EXCEEDS_BALANCE',
-    'REFUND_STATE_CHANGED'
+    'REFUND_STATE_CHANGED',
+    // Thrown by assertRetainedPaymentRefundable (GUARD:G-R1-D, AC:B7:17, HOS-1561).
+    'RETAINED_PAYMENT_SUCCESSION_OPEN'
 ] as const;
 
 /** A rejection reason of `settleExternalRefund`. */

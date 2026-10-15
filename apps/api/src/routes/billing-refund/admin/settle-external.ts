@@ -29,27 +29,14 @@ const UNPROCESSABLE: RejectionAnswer = { status: 422, code: ServiceErrorCode.VAL
 const NOT_FOUND: RejectionAnswer = { status: 404, code: ServiceErrorCode.NOT_FOUND };
 const CONFLICT: RejectionAnswer = { status: 409, code: ServiceErrorCode.ALREADY_EXISTS };
 
-/**
- * The rejection of the retained-payment refund gate (`assertRetainedPaymentRefundable`,
- * GUARD:G-R1-D, AC:B7:17, HOS-1561): `settleExternalRefund` calls it inside its
- * transaction, but its `reason` is not in `SETTLE_EXTERNAL_REFUND_REJECTIONS`, so
- * the route lists it here to answer it with its own row of the contract.
- */
-const RETAINED_PAYMENT_REJECTION = 'RETAINED_PAYMENT_SUCCESSION_OPEN';
-
-/** Every `reason` this route answers: the service's list plus the retained-payment gate. */
-type RouteRejection = SettleExternalRefundRejection | typeof RETAINED_PAYMENT_REJECTION;
-
-const ROUTE_REJECTIONS: readonly string[] = [
-    ...SETTLE_EXTERNAL_REFUND_REJECTIONS,
-    RETAINED_PAYMENT_REJECTION
-];
+/** Every `reason` this route answers — the exhaustive list from the service. */
+const ROUTE_REJECTIONS: readonly string[] = SETTLE_EXTERNAL_REFUND_REJECTIONS;
 
 /**
  * Every rejection of `settleExternalRefund`, mapped exhaustively: a new `reason`
  * in the service without an entry here breaks the typecheck.
  */
-const REJECTION_ANSWERS: Readonly<Record<RouteRejection, RejectionAnswer>> = {
+const REJECTION_ANSWERS: Readonly<Record<SettleExternalRefundRejection, RejectionAnswer>> = {
     REFUND_AMOUNT_INVALID: UNPROCESSABLE,
     EXTERNAL_REFERENCE_INVALID: UNPROCESSABLE,
     REFUND_EXCEEDS_BALANCE: UNPROCESSABLE,
@@ -67,7 +54,9 @@ const REJECTION_ANSWERS: Readonly<Record<RouteRejection, RejectionAnswer>> = {
     RETAINED_PAYMENT_SUCCESSION_OPEN: CONFLICT
 };
 
-function isSettlementRejection(reason: string | undefined): reason is RouteRejection {
+function isSettlementRejection(
+    reason: string | undefined
+): reason is SettleExternalRefundRejection {
     return reason !== undefined && ROUTE_REJECTIONS.includes(reason);
 }
 
