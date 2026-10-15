@@ -1,0 +1,2 @@
+ALTER TYPE "public"."permission_enum" ADD VALUE 'user.manageSuperAdminRole' BEFORE 'user.update.self';--> statement-breakpoint
+ALTER TYPE "public"."permission_enum" ADD VALUE 'billing.grantComplimentary' BEFORE 'user.update.self';
