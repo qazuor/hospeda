@@ -4,12 +4,14 @@
  *
  * It declares, gap by gap, what the provider offers of each capability
  * (`MERCADOPAGO_CAPABILITY_SUPPORT`). Authorization creation, authorization
- * reads, charge reads, and charge listings use native fetch; unsupported capabilities refuse
- * with `NOT_IMPLEMENTED`. No SDK is imported here or elsewhere (GUARD:G12).
+ * reads, charge reads, listings, and order operations use native fetch. The
+ * provider runs recurring charges itself, so an on-demand charge is rejected.
+ * No SDK is imported here or elsewhere (GUARD:G12).
  */
 import type { Clock } from '@repo/billing-verticals-contract';
 import { z } from 'zod';
 import type { CapabilitySupportMap, PaymentCapability } from '../../provider/capabilities';
+import { PaymentProviderError } from '../../provider/errors';
 import type {
     AuthorizationRef,
     AuthorizationSearchInput,
@@ -52,13 +54,15 @@ import {
 } from '../../provider/schemas';
 import { MERCADOPAGO_CAPABILITY_SUPPORT } from './mercadopago-capability-support';
 import { listMercadoPagoCharges } from './mercadopago-charges';
-import { assertResponseOk, notImplemented, parseResponse, providerError } from './mercadopago-http';
+import { assertResponseOk, parseResponse, providerError } from './mercadopago-http';
 import {
     changeMercadoPagoAmount,
     refundMercadoPagoPayment,
     setMercadoPagoStatus
 } from './mercadopago-mutations';
 import { decodeMercadoPagoNotice } from './mercadopago-notice';
+import { readMercadoPagoOrder, searchMercadoPagoOrders } from './mercadopago-orders';
+import { searchMercadoPagoAuthorizations } from './mercadopago-search';
 
 const MercadoPagoOptionsSchema = z.strictObject({
     clock: z.custom<Clock>(
@@ -221,10 +225,17 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         return { authorizationId: parsed.id, approvalUrl: parsed.init_point };
     }
 
-    /** Capability 2 · charge. */
+    /**
+     * Capability 2 · charge. EX-31 and MERCADOPAGO_CAPABILITY_SUPPORT.charge
+     * establish that recurring charges are provider-run, with no on-demand endpoint.
+     */
     async charge(input: ChargeInput): Promise<ChargeResult> {
         parseProviderInput({ schema: ChargeInputSchema, input, capability: 'charge' });
-        throw notImplemented({ capability: 'charge' });
+        throw new PaymentProviderError({
+            code: 'REJECTED',
+            capability: 'charge',
+            message: 'Mercado Pago charges every cycle on its own: there is no on-demand charge'
+        });
     }
 
     /** Capability 3 · change the amount. */
@@ -320,7 +331,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         input: AuthorizationSearchInput
     ): Promise<AuthorizationSearchResult> {
         parseProviderInput({ schema: AuthorizationSearchInputSchema, input, capability: 'read' });
-        throw notImplemented({ capability: 'read' });
+        return searchMercadoPagoAuthorizations({ input, send: (args) => this.send(args) });
     }
 
     /** Capability 7 · read a charge by id. */
@@ -370,16 +381,20 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         });
     }
 
-    /** Capability 7 · read an order by id. Not spoken over HTTP yet: HOS-1669 adds it. */
+    /** Capability 7 · read an order by id. */
     async readOrder(input: OrderRef): Promise<ProviderRead<OrderSnapshot>> {
         parseProviderInput({ schema: OrderRefSchema, input, capability: 'read' });
-        throw notImplemented({ capability: 'read' });
+        const snapshot = await readMercadoPagoOrder({
+            orderId: input.orderId,
+            send: (args) => this.send(args)
+        });
+        return stampProviderRead({ clock: this.clock, snapshot });
     }
 
-    /** Capability 7 · search orders (EX-57). Not spoken over HTTP yet: HOS-1669 adds it. */
+    /** Capability 7 · search orders (EX-57). */
     async searchOrders(input: OrderSearchInput): Promise<OrderSearchResult> {
         parseProviderInput({ schema: OrderSearchInputSchema, input, capability: 'read' });
-        throw notImplemented({ capability: 'read' });
+        return searchMercadoPagoOrders({ input, send: (args) => this.send(args) });
     }
 
     /** Capability 8 · decode a delivery into a notice. */

@@ -1,6 +1,8 @@
 import type { IncomingHttpHeaders } from 'node:http';
 import type { FakePaymentProvider } from '../fake/fake-payment-provider';
 import { handleAuthorizedPaymentsRoute } from './authorized-payments-route';
+import { handleOrdersRoute } from './orders-route';
+import { handlePreapprovalSearchRoute } from './preapproval-search-route';
 import { handleRefundsRoute } from './refunds-route';
 
 /** An HTTP response handled by an additive fake provider route. */
@@ -15,5 +17,10 @@ export async function handleExtraRoutes(args: {
     readonly body: unknown;
     readonly refundAmounts: Map<string, number>;
 }): Promise<ExtraRouteResult | null> {
-    return (await handleAuthorizedPaymentsRoute(args)) ?? handleRefundsRoute(args);
+    return (
+        (await handlePreapprovalSearchRoute(args)) ??
+        (await handleOrdersRoute(args)) ??
+        (await handleAuthorizedPaymentsRoute(args)) ??
+        handleRefundsRoute(args)
+    );
 }

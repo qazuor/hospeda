@@ -71,14 +71,3 @@ export function providerError(
         ...(cause === undefined ? {} : { cause })
     });
 }
-
-/** Builds the typed error used by adapter capabilities not implemented yet. */
-export function notImplemented(args: {
-    readonly capability: PaymentCapability;
-}): PaymentProviderError {
-    return new PaymentProviderError({
-        code: 'NOT_IMPLEMENTED',
-        capability: args.capability,
-        message: `the Mercado Pago adapter does not implement ${args.capability} yet`
-    });
-}
