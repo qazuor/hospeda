@@ -1,5 +1,6 @@
-import { and, asc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, eq, gt, isNull, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
+import { billingDeadlineVersions } from '../../schemas/vertical/billing-deadline-version.dbschema.ts';
 import {
     reconciliationMarks,
     type SelectReconciliationMark
@@ -32,6 +33,24 @@ export interface FindOpenReconciliationMarkInput {
 export interface ListOpenReconciliationMarkInput {
     readonly subject: ReconciliationMarkSubject;
     readonly tx?: DrizzleClient;
+}
+
+/** Keyset page of open marks that have not escalated. */
+export interface ListOpenUnescalatedPageInput {
+    readonly afterMarkId?: string;
+    readonly limit: number;
+    readonly tx?: DrizzleClient;
+}
+
+/** A mark and the deadline-17 value captured when its clock started. */
+export interface OpenUnescalatedReconciliationMark {
+    readonly id: string;
+    readonly subscriptionId: string | null;
+    readonly addonInstanceId: string | null;
+    readonly reason: ReconciliationMarkReason;
+    readonly placedAt: Date;
+    readonly deadlinesVersion: number | null;
+    readonly deadlineDays: number | null;
 }
 
 /** Input to find or bump one mark by id (B3.md AC:B3:13–15). */
@@ -73,11 +92,65 @@ export class ReconciliationMarkModel {
                 ...(input.subject.kind === 'SUBSCRIPTION'
                     ? { subscriptionId: input.subject.subscriptionId }
                     : { addonInstanceId: input.subject.addonInstanceId }),
-                ...(input.placedAt === undefined ? {} : { placedAt: input.placedAt })
+                ...(input.placedAt === undefined ? {} : { placedAt: input.placedAt }),
+                deadlinesVersion: sql`(SELECT max("version") FROM "billing_deadline_version")`
             })
             .returning();
         if (!mark) throw new Error('Reconciliation mark insert returned no row');
         return mark;
+    }
+
+    /** Lists open, unescalated marks in id order, retaining rows whose deadline version is missing. */
+    async listOpenUnescalatedPage(
+        input: ListOpenUnescalatedPageInput
+    ): Promise<OpenUnescalatedReconciliationMark[]> {
+        const db = input.tx ?? getDb();
+        const version = sql`COALESCE(${reconciliationMarks.deadlinesVersion}, (SELECT max("version") FROM "billing_deadline_version"))`;
+        const deadlineDays = sql<
+            number | null
+        >`(${billingDeadlineVersions.values}->'17'->>'days')::int`;
+        return db
+            .select({
+                id: reconciliationMarks.id,
+                subscriptionId: reconciliationMarks.subscriptionId,
+                addonInstanceId: reconciliationMarks.addonInstanceId,
+                reason: sql<ReconciliationMarkReason>`${reconciliationMarks.reason}`,
+                placedAt: reconciliationMarks.placedAt,
+                deadlinesVersion: reconciliationMarks.deadlinesVersion,
+                deadlineDays
+            })
+            .from(reconciliationMarks)
+            .leftJoin(billingDeadlineVersions, eq(billingDeadlineVersions.version, version))
+            .where(
+                and(
+                    isNull(reconciliationMarks.liftedAt),
+                    isNull(reconciliationMarks.escalatedAt),
+                    input.afterMarkId ? gt(reconciliationMarks.id, input.afterMarkId) : undefined
+                )
+            )
+            .orderBy(asc(reconciliationMarks.id))
+            .limit(input.limit);
+    }
+
+    /** Marks one still-open row as escalated exactly once. */
+    async markEscalated(input: {
+        readonly markId: string;
+        readonly escalatedAt: Date;
+        readonly tx?: DrizzleClient;
+    }): Promise<boolean> {
+        const db = input.tx ?? getDb();
+        const rows = await db
+            .update(reconciliationMarks)
+            .set({ escalatedAt: input.escalatedAt })
+            .where(
+                and(
+                    eq(reconciliationMarks.id, input.markId),
+                    isNull(reconciliationMarks.liftedAt),
+                    isNull(reconciliationMarks.escalatedAt)
+                )
+            )
+            .returning({ id: reconciliationMarks.id });
+        return rows.length === 1;
     }
 
     /** Reads one mark, including a lifted mark, or null. */
