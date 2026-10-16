@@ -276,7 +276,7 @@ describe('provider notices, order and acknowledgements', () => {
         await provider.approve({ authorizationId: started.authorizationId });
         await getServiceTestDb()
             .update(subscriptions)
-            .set({ status: 'GRACE_PERIOD' })
+            .set({ status: 'SUSPENDED' })
             .where(eq(subscriptions.id, started.subscriptionId));
         const invoke = (version: string) =>
             processProviderNotice(
@@ -293,10 +293,38 @@ describe('provider notices, order and acknowledgements', () => {
             .select()
             .from(reconciliationMarks)
             .where(eq(reconciliationMarks.subscriptionId, started.subscriptionId));
-        expect(row?.status).toBe('GRACE_PERIOD');
+        expect(row?.status).toBe('SUSPENDED');
         expect(
             marks.filter((mark) => mark.reason === 'TRANSICION_NO_DECLARADA' && !mark.liftedAt)
         ).toHaveLength(1);
+    });
+
+    it('TEST:1688:3 does not mark a GRACE_PERIOD row whose preapproval the provider reads active', async () => {
+        const { provider, started } = await setup();
+        await provider.approve({ authorizationId: started.authorizationId });
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'GRACE_PERIOD' })
+            .where(eq(subscriptions.id, started.subscriptionId));
+        const invoke = (version: string) =>
+            processProviderNotice(
+                { channel: 'WEBHOOKS', delivery: delivery(started.authorizationId, version) },
+                { provider, clock, beforeCancelNotice }
+            );
+        expect((await invoke('7')).outcome).toBe('NOOP');
+        expect((await invoke('8')).outcome).toBe('NOOP');
+        const [row] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, started.subscriptionId));
+        const marks = await getServiceTestDb()
+            .select()
+            .from(reconciliationMarks)
+            .where(eq(reconciliationMarks.subscriptionId, started.subscriptionId));
+        expect(
+            marks.filter((mark) => mark.reason === 'TRANSICION_NO_DECLARADA' && !mark.liftedAt)
+        ).toEqual([]);
+        expect(row?.status).toBe('GRACE_PERIOD');
     });
 
     it('TEST:B3:18 fails an unregistered delegate and does not advance its version', async () => {

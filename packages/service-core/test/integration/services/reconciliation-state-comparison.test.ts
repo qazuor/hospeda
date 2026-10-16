@@ -50,7 +50,6 @@ afterEach(async () => {
 
 describe('TEST:B11:7 AC:B11:8 the state comparison marks what the transition table does not declare', () => {
     it.each([
-        ['GRACE_PERIOD', 'ACTIVE'],
         ['SUSPENDED', 'ACTIVE'],
         ['SUSPENDED', 'PAUSED'],
         ['PENDING_AUTHORIZATION', 'PAUSED']
@@ -128,6 +127,91 @@ describe('TEST:B11:7 AC:B11:8 the state comparison marks what the transition tab
             )
         ).toBe(true);
         for (const call of calls) expect(call).not.toHaveBeenCalled();
+    });
+
+    it('TEST:1688:2 leaves a GRACE_PERIOD row whose preapproval the provider reads active without a mark', async () => {
+        const { fake } = createReconciliationFake();
+        const seeded = await seedSubscription({ status: 'GRACE_PERIOD', withLink: true, fake });
+        track(seeded.subscription.id, seeded.subscription.userId);
+        expect(await fake.readAuthorization({ authorizationId: seeded.providerId! })).toMatchObject(
+            { snapshot: { status: 'active' } }
+        );
+        const before = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, seeded.subscription.id));
+        const beforeLink = await getServiceTestDb()
+            .select()
+            .from(providerLinks)
+            .where(eq(providerLinks.subscriptionId, seeded.subscription.id));
+        const calls = [
+            vi.spyOn(fake, 'cancel'),
+            vi.spyOn(fake, 'changeAmount'),
+            vi.spyOn(fake, 'pause'),
+            vi.spyOn(fake, 'resume'),
+            vi.spyOn(fake, 'charge'),
+            vi.spyOn(fake, 'refund')
+        ];
+        const correlationId = crypto.randomUUID();
+        const sweep = () =>
+            withSeededReconciliationInventory(() =>
+                runReconciliationSweep(
+                    { correlationId },
+                    {
+                        provider: fake,
+                        clock: reconciliationClock,
+                        comparisons: [createStateComparison()]
+                    }
+                )
+            );
+        expect(await sweep()).toMatchObject({ divergences: 0, marksOpened: 0, rowsFailed: 0 });
+        expect(await sweep()).toMatchObject({ divergences: 0, marksOpened: 0, rowsFailed: 0 });
+        expect(
+            await reconciliationMarkModel.listOpen({
+                subject: { kind: 'SUBSCRIPTION', subscriptionId: seeded.subscription.id }
+            })
+        ).toEqual([]);
+        expect(
+            (await domainEventModel.findByCorrelationId({ correlationId })).filter(
+                (event) => event.eventType === 'reconciliation.mark_opened'
+            )
+        ).toEqual([]);
+        expect(
+            await getServiceTestDb()
+                .select()
+                .from(subscriptions)
+                .where(eq(subscriptions.id, seeded.subscription.id))
+        ).toEqual(before);
+        expect(
+            await getServiceTestDb()
+                .select()
+                .from(providerLinks)
+                .where(eq(providerLinks.subscriptionId, seeded.subscription.id))
+        ).toEqual(beforeLink);
+        for (const call of calls) expect(call).not.toHaveBeenCalled();
+    });
+
+    it('TEST:1688:2 does not mark a GRACE_PERIOD row when the provider reads paused', async () => {
+        const { fake } = createReconciliationFake();
+        const seeded = await seedSubscription({ status: 'GRACE_PERIOD', withLink: true, fake });
+        track(seeded.subscription.id, seeded.subscription.userId);
+        await fake.pause({ authorizationId: seeded.providerId! });
+        const summary = await withSeededReconciliationInventory(() =>
+            runReconciliationSweep(
+                {},
+                {
+                    provider: fake,
+                    clock: reconciliationClock,
+                    comparisons: [createStateComparison()]
+                }
+            )
+        );
+        expect(summary.divergences).toBe(0);
+        expect(
+            await reconciliationMarkModel.listOpen({
+                subject: { kind: 'SUBSCRIPTION', subscriptionId: seeded.subscription.id }
+            })
+        ).toEqual([]);
     });
 
     it('TEST:B11:7 (b)(c)(d) leaves S2, a delegate and NOOP without a mark and accumulates a divergence', async () => {
