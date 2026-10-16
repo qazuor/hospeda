@@ -28,7 +28,8 @@ const logger = createLogger('suspend-for-arrears');
  * - `GRACE_EXPIRED` — first event, the grace clock ran out (AC:B7:7);
  * - `PROVIDER_PAUSE_OBSERVED` — second event (`provider_pause_observed`), for now
  *   a card principal in `ACTIVE` or `GRACE_PERIOD` whose preapproval was read
- *   `paused` (AC:B7:9; B7.3; from `ACTIVE` the occurrence is stable per next charge);
+ *   `paused` (AC:B7:9; B7.3; from `ACTIVE` the occurrence is stable per next charge;
+ *   that second event writes the unpaid-period anchor for S7, HOS-1690);
  * - `SUCCESSOR_PROVIDER_CANCELLED` — fifth event (`successor_provider_cancelled`),
  *   that successor's preapproval read `cancelled` by the sweep or the receiver
  *   (AC:B7:4, DEC-SUB-022).
@@ -109,6 +110,20 @@ export interface SuspendForArrearsPorts {
 export type ArrearsSuspensionWrite = 'SUSPENDED' | 'LOST_RACE' | 'RETAINED_PAYMENT';
 
 /**
+ * S6 ends the provider-side grace too when a provider pause is observed from
+ * `ACTIVE`: DEC-MP-008 says the provider has given up, so our grace has ended.
+ * S7 binds condition 4 to `grace_started_at`; HOS-1690 writes the suspension
+ * instant as its anchor. A row already in `GRACE_PERIOD` keeps S4's clock.
+ */
+const GRACE_CLOCK_BY_ORIGIN: Record<
+    'ACTIVE' | 'GRACE_PERIOD',
+    (now: Date) => { readonly graceStartedAt?: Date; readonly graceEndsAt?: Date }
+> = {
+    ACTIVE: (now) => ({ graceStartedAt: now, graceEndsAt: now }),
+    GRACE_PERIOD: () => ({})
+};
+
+/**
  * The single write of S6 plus its post-commit coverage notice (G5 `via: "notice"`):
  * `<origin> → SUSPENDED`, then `REMOVED` is emitted once the transaction committed.
  * Inside the transaction the row is locked first and S19 is asked again (HOS-1561
@@ -118,9 +133,10 @@ export type ArrearsSuspensionWrite = 'SUSPENDED' | 'LOST_RACE' | 'RETAINED_PAYME
  * serialize. A notice failure is logged and undoes nothing. When no source is left,
  * the same transaction records the coverage-loss instant
  * (`recordCoverageLossIfUncovered`, contract §4.1) right after the `UPDATE`, so it
- * survives a lost notice. The grace clock is KEPT: on a
- * `SUSPENDED` row `grace_started_at` is the anchor of the unpaid period that S7
- * binds condition 4 to (HOS-1560, H1); S7 empties it when the row leaves.
+ * survives a lost notice. From `GRACE_PERIOD`, the grace clock written by S4 is
+ * kept. From `ACTIVE` (the second event only), S6 writes the suspension instant
+ * as the unpaid-period anchor so S7 can bind condition 4 to it (HOS-1690); S7
+ * empties both values when the row leaves.
  *
  * @param input.subscriptionId - The row being suspended
  * @param input.origin - The status the event leaves (the `UPDATE` guard)
@@ -149,6 +165,7 @@ export async function writeArrearsSuspension(input: {
             .update(subscriptions)
             .set({
                 status: 'SUSPENDED',
+                ...GRACE_CLOCK_BY_ORIGIN[input.origin](input.now),
                 updatedAt: input.now
             })
             .where(

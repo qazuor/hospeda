@@ -39,6 +39,7 @@ describe('HOS-1559 TEST:B7:6 AC:B7:9 — provider pause is S6 second event', () 
             const s = await providerPauseFixture();
             seeded.push(s.seeded);
             await s.pause();
+            const suspendedAt = s.fixture.clock.now();
 
             await s.runSweepDay();
 
@@ -81,7 +82,8 @@ describe('HOS-1559 TEST:B7:6 AC:B7:9 — provider pause is S6 second event', () 
                     statusCommitted: 'SUSPENDED'
                 }
             ]);
-            expect((await row(s.subscriptionId)).graceStartedAt).toBeNull();
+            expect((await row(s.subscriptionId)).graceStartedAt).toEqual(suspendedAt);
+            expect((await row(s.subscriptionId)).graceEndsAt).toEqual(suspendedAt);
             expect(
                 await getServiceTestDb()
                     .select()
