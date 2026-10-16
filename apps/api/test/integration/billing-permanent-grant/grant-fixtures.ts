@@ -40,7 +40,10 @@ export async function seedGrantUser(label: string): Promise<string> {
 }
 
 /** Seed a plan and non-sellable floor reference for one vertical. */
-export async function seedGrantPlan(vertical: string) {
+export async function seedGrantPlan(
+    vertical: string,
+    options: { readonly current?: boolean } = {}
+) {
     const [plan] = await getDb()
         .insert(plans)
         .values({
@@ -58,7 +61,7 @@ export async function seedGrantPlan(vertical: string) {
             vertical,
             rank: Math.floor(Math.random() * 1_000_000_000) + 1,
             sellable: false,
-            current: true,
+            current: options.current ?? true,
             trialDays: 0,
             allowsPause: false
         })

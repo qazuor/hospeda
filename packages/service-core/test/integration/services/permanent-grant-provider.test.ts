@@ -26,6 +26,7 @@ import {
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
 import { namespaceFake } from './support/payment-provider.js';
 import {
+    currentFloorPolicy,
     grantSignerActor,
     retirePermanentGrantRows,
     seedGrantPlan
@@ -92,6 +93,7 @@ function ports(
     beforeCancelNotice = outboxBeforeCancelNotice({ deliver: true })
 ) {
     return {
+        planPolicy: currentFloorPolicy,
         clock,
         provider,
         beforeCancelNotice,
