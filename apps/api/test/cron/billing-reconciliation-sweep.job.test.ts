@@ -113,9 +113,12 @@ describe('billing reconciliation sweep cron', () => {
             promoCharges: unknown;
             promoExhaustion: unknown;
         };
+        expect(gracePorts.promoCharges).toBeDefined();
         expect(gracePorts.promoCharges).not.toBe(unregisteredPromoChargePolicy);
+        expect(gracePorts.promoExhaustion).toBeDefined();
         expect(gracePorts.promoExhaustion).not.toBe(unregisteredPromoExhaustion);
         const amountPorts = mockAmountComparison.mock.calls[0]?.[0] as { mutations: unknown };
+        expect(amountPorts.mutations).toBeDefined();
         expect(amountPorts.mutations).not.toBe(noAmountMutationDecisions);
     });
 
