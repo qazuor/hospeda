@@ -10,6 +10,7 @@ import {
     inArray,
     reconciliationMarkModel,
     reconciliationSummaryWindowModel,
+    sql,
     subscriptionPauses
 } from '@repo/db';
 import { afterAll, describe, expect, it, vi } from 'vitest';
@@ -31,14 +32,18 @@ async function mailsFor(tx: DrizzleClient, userIds: readonly string[]) {
         .where(inArray(emailOutbox.recipientUserId, [...userIds]));
 }
 
-async function seedClosedWindowBefore(tx: DrizzleClient, boundary: Date): Promise<void> {
+async function seedClosedWindowBefore(
+    tx: DrizzleClient,
+    boundary: Date,
+    leadMilliseconds = 2_000
+): Promise<void> {
     const [deadline] = await tx
         .select()
         .from(billingDeadlineVersions)
         .orderBy(desc(billingDeadlineVersions.version))
         .limit(1);
     if (!deadline) throw new Error('Current deadline version missing');
-    const closesAt = new Date(boundary.getTime() - 2_000);
+    const closesAt = new Date(boundary.getTime() - leadMilliseconds);
     const previous = await reconciliationSummaryWindowModel.open({
         coversFrom: new Date(closesAt.getTime() - 60 * 60_000),
         openedAt: new Date(closesAt.getTime() - 60 * 60_000),
@@ -90,12 +95,14 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
                     tx
                 })
             ).toHaveLength(1);
-            const base = new Date(Date.now() + 2_000);
             const recipients = [recipient1.userId, recipient2.userId].map((id, index) => ({
                 userId: id,
                 email: `summary-${index}-${id}@example.test`
             }));
             const port = { list: async () => recipients };
+            const transactionTime = await tx.execute(sql`select transaction_timestamp() as now`);
+            const base = new Date(String(transactionTime.rows[0]?.now));
+            await seedClosedWindowBefore(tx, base, 1);
             const correlation = crypto.randomUUID();
             expect(
                 await runReconciliationSummaryTick(
