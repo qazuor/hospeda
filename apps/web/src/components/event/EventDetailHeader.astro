@@ -107,7 +107,10 @@ const authorLabel = author
     ? t('events.detail.byline', 'Por {{name}}', { name: author.name })
     : null;
 
-const categoryStyle = `background-color: ${categoryColors.bg}; color: ${categoryColors.text}; border: 1px solid ${categoryColors.border};`;
+const categoryTextColor = category.toLowerCase() === 'other'
+    ? 'var(--event-category-other-text)'
+    : categoryColors.text;
+const categoryStyle = `background-color: ${categoryColors.bg}; color: ${categoryTextColor}; border: 1px solid ${categoryColors.border};`;
 const pastStyle = `background-color: ${pastColors.bg}; color: ${pastColors.text};`;
 const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancelledColors.text};`;
 ---
@@ -216,6 +219,11 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         display: flex;
         flex-direction: column;
         gap: var(--space-2, 8px);
+        --event-category-other-text: var(--core-muted-foreground);
+    }
+
+    :global([data-theme='dark']) .event-header {
+        --event-category-other-text: var(--core-foreground);
     }
 
     /* Back-button row — collapses out via `wh-compact-hide` in compact mode, so

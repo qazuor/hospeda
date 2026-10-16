@@ -83,12 +83,12 @@ function ConversationsIndexPage() {
     const total = data?.pagination.total ?? 0;
 
     const handlePageChange = (page: number) => {
-        navigate({ search: (prev) => ({ ...prev, page }) });
+        navigate({ search: (prev: z.infer<typeof searchSchema>) => ({ ...prev, page }) });
     };
 
     const handleStatusChange = (value: string) => {
         navigate({
-            search: (prev) => ({
+            search: (prev: z.infer<typeof searchSchema>) => ({
                 ...prev,
                 status: value === '__all__' ? undefined : (value as ConversationStatus),
                 page: 1
@@ -98,7 +98,13 @@ function ConversationsIndexPage() {
 
     const handleGuestEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value || undefined;
-        navigate({ search: (prev) => ({ ...prev, guestEmail: value, page: 1 }) });
+        navigate({
+            search: (prev: z.infer<typeof searchSchema>) => ({
+                ...prev,
+                guestEmail: value,
+                page: 1
+            })
+        });
     };
 
     const handleClearFilters = () => {
