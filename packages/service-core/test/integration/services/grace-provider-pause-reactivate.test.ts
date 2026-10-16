@@ -1,5 +1,6 @@
 import {
     and,
+    coverageLosses,
     coveredPeriods,
     emailOutbox,
     eq,
@@ -52,6 +53,7 @@ afterEach(async () => {
             .set({ status: 'CANCELLED', graceStartedAt: null, graceEndsAt: null })
             .where(eq(subscriptions.id, own.subscriptionId));
         await db.delete(emailOutbox).where(eq(emailOutbox.recipientUserId, own.userId));
+        await db.delete(coverageLosses).where(eq(coverageLosses.userId, own.userId));
     }
 });
 
