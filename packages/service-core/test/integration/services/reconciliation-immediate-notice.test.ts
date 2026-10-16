@@ -51,6 +51,15 @@ describe('TEST:B11:16 second clause / TEST:1607:15-16 immediate duplicate charge
                 })
             );
             const payment = { source: 'PAYMENT' as const, id: paymentRow.id };
+            let recipientListCalls = 0;
+            const notice = {
+                recipients: {
+                    list: async () => {
+                        recipientListCalls++;
+                        return recipients;
+                    }
+                }
+            };
             const markPayments: ReconciliationMarkPayments = {
                 hang: async ({ markId, payment: hungPayment, tx: transaction }) => {
                     await transaction.insert(reconciliationMarkPayments).values({
@@ -72,7 +81,7 @@ describe('TEST:B11:16 second clause / TEST:1607:15-16 immediate duplicate charge
                     correlationId,
                     tx
                 },
-                { markPayments }
+                { markPayments, notice }
             );
             expect(result.outcome).toBe('OPENED');
             const hung = await tx
@@ -130,10 +139,11 @@ describe('TEST:B11:16 second clause / TEST:1607:15-16 immediate duplicate charge
                     correlationId,
                     tx
                 },
-                { markPayments }
+                { markPayments, notice }
             );
             expect(accumulated.outcome).toBe('ACCUMULATED');
             expect(await rowsForMark()).toHaveLength(2);
+            expect(recipientListCalls).toBe(1);
 
             const lifted = await reconciliationMarkModel.lift({
                 markId: result.mark.id,
