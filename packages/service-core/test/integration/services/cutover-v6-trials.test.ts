@@ -5,10 +5,7 @@ import {
     accommodations,
     and,
     eq,
-    experiences,
-    gastronomies,
     inArray,
-    isNull,
     plans,
     planVersions,
     trials,
@@ -39,25 +36,8 @@ interface SeededListing {
 }
 const cutoverInstant = new Date('2026-10-10T12:00:00.000Z');
 
-async function hideOtherPublishedListings(tx: DrizzleClient): Promise<void> {
-    // The caller owns a rollback-only transaction, so this creates an isolated
-    // five-listing cutover world without persisting changes to shared fixtures.
-    await tx
-        .update(accommodations)
-        .set({ publicationStatus: 'DRAFT' })
-        .where(
-            and(eq(accommodations.publicationStatus, 'PUBLISHED'), isNull(accommodations.deletedAt))
-        );
-    await tx
-        .update(gastronomies)
-        .set({ publicationStatus: 'DRAFT' })
-        .where(
-            and(eq(gastronomies.publicationStatus, 'PUBLISHED'), isNull(gastronomies.deletedAt))
-        );
-    await tx
-        .update(experiences)
-        .set({ publicationStatus: 'DRAFT' })
-        .where(and(eq(experiences.publicationStatus, 'PUBLISHED'), isNull(experiences.deletedAt)));
+function ownerIdsOf(seeded: readonly SeededListing[]): readonly string[] {
+    return seeded.map((row) => row.userId);
 }
 
 async function seedPublished(tx: DrizzleClient, kind: Kind): Promise<SeededListing> {
@@ -128,9 +108,8 @@ describe('TEST:V6:21 cutover V6 trials', () => {
 
     it('writes five active catalog-backed trials and schedules five campaigns; a rerun skips them', async () => {
         await withServiceTestTransaction(async (tx) => {
-            // Simulate a PUBLISHED listing left by another integration suite.
-            await seedPublished(tx, 'accommodation');
-            await hideOtherPublishedListings(tx);
+            // A published listing owned by someone else: the scoped call must ignore it.
+            const foreign = await seedPublished(tx, 'accommodation');
             const seeded = await Promise.all([
                 seedPublished(tx, 'accommodation'),
                 seedPublished(tx, 'accommodation'),
@@ -144,12 +123,17 @@ describe('TEST:V6:21 cutover V6 trials', () => {
             ) => {
                 campaigns.push(args);
             };
-            const result = await writeCutoverTrials({ db: tx, scheduleExpiryCampaign });
+            const result = await writeCutoverTrials({
+                db: tx,
+                scheduleExpiryCampaign,
+                ownerIds: ownerIdsOf(seeded)
+            });
             expect(result.written).toHaveLength(5);
             expect(result.skipped).toHaveLength(0);
             expect(new Set(result.written.map((row) => row.listingId))).toEqual(
                 new Set(seeded.map((row) => row.listingId))
             );
+            expect(result.written.map((row) => row.listingId)).not.toContain(foreign.listingId);
             const stored = await trialsFor(tx, seeded);
             expect(stored).toHaveLength(5);
             const allDeadlines = await tx
@@ -187,7 +171,11 @@ describe('TEST:V6:21 cutover V6 trials', () => {
                 });
             }
             expect(campaigns).toHaveLength(5);
-            const second = await writeCutoverTrials({ db: tx, scheduleExpiryCampaign });
+            const second = await writeCutoverTrials({
+                db: tx,
+                scheduleExpiryCampaign,
+                ownerIds: ownerIdsOf(seeded)
+            });
             expect(second.written).toEqual([]);
             expect(second.skipped).toHaveLength(5);
             expect(await trialsFor(tx, seeded)).toHaveLength(5);
@@ -197,7 +185,6 @@ describe('TEST:V6:21 cutover V6 trials', () => {
 
     it('rejects six published listings before writing any trial', async () => {
         await withServiceTestTransaction(async (tx) => {
-            await hideOtherPublishedListings(tx);
             const seeded = await Promise.all(
                 Array.from({ length: 6 }, () => seedPublished(tx, 'accommodation'))
             );
@@ -217,7 +204,6 @@ describe('TEST:V6:21 cutover V6 trials', () => {
 
     it('rejects two published listings for one owner and vertical before writing', async () => {
         await withServiceTestTransaction(async (tx) => {
-            await hideOtherPublishedListings(tx);
             const first = await seedPublished(tx, 'accommodation');
             const second = await seedPublished(tx, 'accommodation');
             await tx
@@ -225,7 +211,11 @@ describe('TEST:V6:21 cutover V6 trials', () => {
                 .set({ ownerId: first.userId })
                 .where(eq(accommodations.id, second.listingId));
             await expect(
-                writeCutoverTrials({ db: tx, scheduleExpiryCampaign: async () => {} })
+                writeCutoverTrials({
+                    db: tx,
+                    scheduleExpiryCampaign: async () => {},
+                    ownerIds: [first.userId, second.userId]
+                })
             ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
             expect(await trialsFor(tx, [first, second])).toEqual([]);
         });
@@ -233,12 +223,15 @@ describe('TEST:V6:21 cutover V6 trials', () => {
 
     it('rejects an invalid owner email before writing', async () => {
         await withServiceTestTransaction(async (tx) => {
-            await hideOtherPublishedListings(tx);
             const good = await seedPublished(tx, 'accommodation');
             const bad = await seedPublished(tx, 'gastronomy');
             await tx.update(users).set({ email: 'invalid-email' }).where(eq(users.id, bad.userId));
             await expect(
-                writeCutoverTrials({ db: tx, scheduleExpiryCampaign: async () => {} })
+                writeCutoverTrials({
+                    db: tx,
+                    scheduleExpiryCampaign: async () => {},
+                    ownerIds: [good.userId, bad.userId]
+                })
             ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
             expect(await trialsFor(tx, [good, bad])).toEqual([]);
         });
@@ -246,7 +239,6 @@ describe('TEST:V6:21 cutover V6 trials', () => {
 
     it('returns a dry-run plan without inserts or campaigns', async () => {
         await withServiceTestTransaction(async (tx) => {
-            await hideOtherPublishedListings(tx);
             const seeded = [await seedPublished(tx, 'experience')];
             const campaigns: Campaign[] = [];
             const result = await writeCutoverTrials({
@@ -254,7 +246,8 @@ describe('TEST:V6:21 cutover V6 trials', () => {
                 dryRun: true,
                 scheduleExpiryCampaign: async (args) => {
                     campaigns.push(args);
-                }
+                },
+                ownerIds: ownerIdsOf(seeded)
             });
             expect(result.planned).toHaveLength(1);
             expect(result.planned[0]).toMatchObject({
@@ -270,7 +263,6 @@ describe('TEST:V6:21 cutover V6 trials', () => {
 
     it('rolls back only the failed third row and completes it on retry', async () => {
         await withServiceTestTransaction(async (tx) => {
-            await hideOtherPublishedListings(tx);
             const seeded = [
                 await seedPublished(tx, 'accommodation'),
                 await seedPublished(tx, 'gastronomy'),
@@ -284,7 +276,8 @@ describe('TEST:V6:21 cutover V6 trials', () => {
                     scheduleExpiryCampaign: async () => {
                         calls += 1;
                         if (calls === 3) throw failure;
-                    }
+                    },
+                    ownerIds: ownerIdsOf(seeded)
                 })
             ).rejects.toBe(failure);
             expect(await trialsFor(tx, seeded)).toHaveLength(2);
@@ -293,12 +286,56 @@ describe('TEST:V6:21 cutover V6 trials', () => {
                 db: tx,
                 scheduleExpiryCampaign: async (args) => {
                     retry.push(args);
-                }
+                },
+                ownerIds: ownerIdsOf(seeded)
             });
             expect(result.written).toHaveLength(1);
             expect(result.skipped).toHaveLength(2);
             expect(await trialsFor(tx, seeded)).toHaveLength(3);
             expect(retry).toHaveLength(1);
+        });
+    });
+
+    it('scopes the read to the given owners and ignores other published listings', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            const foreign = await Promise.all(
+                Array.from({ length: 6 }, () => seedPublished(tx, 'accommodation'))
+            );
+            void foreign; // seeded to test scoping; the scoped read must ignore them
+            const propia = await seedPublished(tx, 'experience');
+            const campaigns: Campaign[] = [];
+            const scoped = await writeCutoverTrials({
+                db: tx,
+                dryRun: true,
+                scheduleExpiryCampaign: async (args) => {
+                    campaigns.push(args);
+                },
+                ownerIds: [propia.userId]
+            });
+            expect(scoped.planned).toHaveLength(1);
+            expect(scoped.planned[0]?.listingId).toBe(propia.listingId);
+            expect(scoped.written).toEqual([]);
+            await expect(
+                writeCutoverTrials({
+                    db: tx,
+                    dryRun: true,
+                    scheduleExpiryCampaign: async (args) => {
+                        campaigns.push(args);
+                    }
+                })
+            ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+        });
+    });
+
+    it('rejects an empty ownerIds list instead of reading the whole base', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            await expect(
+                writeCutoverTrials({
+                    db: tx,
+                    scheduleExpiryCampaign: async () => {},
+                    ownerIds: []
+                })
+            ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
         });
     });
 });
