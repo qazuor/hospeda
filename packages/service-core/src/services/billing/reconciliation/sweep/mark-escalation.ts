@@ -2,6 +2,10 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import { type DrizzleClient, domainEventModel, getDb, reconciliationMarkModel } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../../types';
+import {
+    enqueueMarkEscalatedNotice,
+    type MarkEscalatedNoticeRecipients
+} from '../escalation-notice.js';
 
 const DAY_MS = 86_400_000;
 
@@ -31,6 +35,8 @@ export interface MarkEscalationSummary {
 export interface MarkEscalationPorts {
     readonly clock: Clock;
     readonly tx?: DrizzleClient;
+    /** Omit to run the pass without enqueuing escalation notices. */
+    readonly notice?: { readonly recipients?: MarkEscalatedNoticeRecipients };
 }
 
 /** Escalates overdue marks, recording the mark and its domain event atomically. */
@@ -62,8 +68,9 @@ export async function runMarkEscalation(
                 failures.push({ markId: mark.id, message: `${error.reason}: ${error.message}` });
                 continue;
             }
+            const deadlineDays = mark.deadlineDays;
             const now = ports.clock.now();
-            if (!isMarkEscalationDue({ placedAt: mark.placedAt, days: mark.deadlineDays, now }))
+            if (!isMarkEscalationDue({ placedAt: mark.placedAt, days: deadlineDays, now }))
                 continue;
             due++;
             try {
@@ -101,6 +108,20 @@ export async function runMarkEscalation(
                         ],
                         tx
                     });
+                    if (ports.notice)
+                        await enqueueMarkEscalatedNotice(
+                            {
+                                tx,
+                                markId: mark.id,
+                                subject: { subjectType, subjectId },
+                                reason: mark.reason,
+                                placedAt: mark.placedAt,
+                                escalatedAt: now,
+                                escalationDays: deadlineDays,
+                                correlationId: input.correlationId
+                            },
+                            ports.notice
+                        );
                     return true;
                 });
                 if (didEscalate) escalated++;

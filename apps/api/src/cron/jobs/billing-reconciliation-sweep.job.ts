@@ -144,7 +144,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     creditedPayments: {},
                     // AC:B11:13: zero population until B10 writes order keys.
                     paidOrders: {},
-                    markEscalation: {},
+                    markEscalation: { notice: {} },
                     pauseGifts: {},
                     livenessPing: createSentryCronMonitorPing()
                 }

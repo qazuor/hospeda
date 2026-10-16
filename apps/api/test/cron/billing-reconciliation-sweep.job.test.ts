@@ -238,7 +238,7 @@ describe('billing reconciliation sweep cron', () => {
         await billingReconciliationSweepJob.handler(context());
         expect(mockSweep).toHaveBeenCalledWith(
             { correlationId: expect.any(String) },
-            expect.objectContaining({ markEscalation: {} })
+            expect.objectContaining({ markEscalation: { notice: {} } })
         );
     });
 

@@ -20,7 +20,11 @@ import {
     type CreditedPaymentsCheckSummary,
     runCreditedPaymentsCheck
 } from './credited-payments-check.js';
-import { type MarkEscalationSummary, runMarkEscalation } from './mark-escalation.js';
+import {
+    type MarkEscalationPorts,
+    type MarkEscalationSummary,
+    runMarkEscalation
+} from './mark-escalation.js';
 import {
     createOurCancellationRetryTally,
     type OurCancellationRetryCounts,
@@ -82,7 +86,7 @@ export interface ReconciliationSweepPorts {
      */
     readonly paidOrders?: PaidOrdersCheckPorts;
     /** Optional escalation pass; without it the sweep performs exactly as before. */
-    readonly markEscalation?: { readonly tx?: DrizzleClient };
+    readonly markEscalation?: Omit<MarkEscalationPorts, 'clock'>;
     readonly pauseGifts?: { readonly tx?: DrizzleClient };
 }
 
