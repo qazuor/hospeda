@@ -24,8 +24,6 @@ const now = new Date('2026-10-11T12:00:00.000Z');
 const clock = { now: () => new Date(now) };
 const usersOwned: string[] = [];
 const optionsOwned: string[] = [];
-const plansOwned: string[] = [];
-const versionsOwned: string[] = [];
 const subscriptionsOwned: string[] = [];
 const promosOwned: string[] = [];
 const linksOwned: string[] = [];
@@ -62,7 +60,6 @@ async function fixture(input: { totalQuota?: number; validFrom?: Date; validUnti
         })
         .returning();
     if (!plan) throw new Error('No plan');
-    plansOwned.push(plan.id);
     const [version] = await db
         .insert(planVersions)
         .values({
@@ -76,7 +73,6 @@ async function fixture(input: { totalQuota?: number; validFrom?: Date; validUnti
         })
         .returning();
     if (!version) throw new Error('No version');
-    versionsOwned.push(version.id);
     const [option] = await db
         .insert(billingOptions)
         .values({ planVersionId: version.id, cycle: 'monthly', amount: 250000, currency: 'ARS' })
@@ -147,9 +143,7 @@ async function cleanup() {
     for (const id of promoIds) await getDb().delete(promoCodes).where(eq(promoCodes.id, id));
     for (const id of optionsOwned.splice(0))
         await getDb().delete(billingOptions).where(eq(billingOptions.id, id));
-    for (const id of versionsOwned.splice(0))
-        await getDb().delete(planVersions).where(eq(planVersions.id, id));
-    for (const id of plansOwned.splice(0)) await getDb().delete(plans).where(eq(plans.id, id));
+    // Plan versions are immutable and must remain with their parent plans.
     for (const id of usersOwned.splice(0)) await getDb().delete(users).where(eq(users.id, id));
 }
 
@@ -218,7 +212,8 @@ describe('TEST:B9b:3 AC:B9b:3 promo availability route errors', () => {
             });
         const first = await redeem();
         expect(first.status).toBe(200);
-        expect(RedeemPromoCodeResponseSchema.safeParse(await first.json()).success).toBe(true);
+        const firstBody = await first.json();
+        expect(RedeemPromoCodeResponseSchema.safeParse(firstBody.data).success).toBe(true);
         const second = await redeem();
         expect(second.status).toBe(409);
         expect((await second.json()).error.reason).toBe('PROMO_CODE_ALREADY_REDEEMED');
