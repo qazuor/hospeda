@@ -91,9 +91,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             planPolicy,
                             coverageNotices: getCoverageNotices(),
                             touristVipInheritance,
-                            complements,
-                            promoCharges: createPromoChargePolicy(),
-                            promoExhaustion: createPromoExhaustion({ provider, clock })
+                            complements
                         }),
                         createLostFirstRejectionCheck({
                             provider,
@@ -128,7 +126,9 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             // AC:B7:31: a charged period settled on a SUSPENDED row runs S7, whose
                             // clause cancels a paid Tourist VIP the restored plan grants again.
                             touristVipInheritance,
-                            complements
+                            complements,
+                            promoCharges: createPromoChargePolicy(),
+                            promoExhaustion: createPromoExhaustion({ provider, clock })
                         }),
                         // HOS-1685, CRIT:1685:2: copy the provider's next payment date onto the ACTIVE card row. Last, so no check above sees a value this run moved (H4).
                         createNextChargeSync()
