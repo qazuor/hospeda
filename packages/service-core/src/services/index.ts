@@ -128,6 +128,7 @@ export * from './billing/reconciliation/summary/index.js';
 export * from './billing/reconciliation/sweep/addon-without-shutdown-check.js';
 export * from './billing/reconciliation/sweep/cancellation-observation.js';
 export * from './billing/reconciliation/sweep/comparisons/amount-comparison.js';
+export * from './billing/reconciliation/sweep/comparisons/amount-mutation-decision.js';
 export * from './billing/reconciliation/sweep/comparisons/amount-mutation-decisions.port.js';
 export * from './billing/reconciliation/sweep/comparisons/expected-amount.js';
 export * from './billing/reconciliation/sweep/comparisons/listed-charges.js';
