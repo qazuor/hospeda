@@ -155,7 +155,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:10 grant scope', () => {
             []
         );
         const anchors = await getServiceTestDb()
-            .select({ vertical: permanentGrantVerticals.vertical })
+            .select({ id: permanentGrantVerticals.id, vertical: permanentGrantVerticals.vertical })
             .from(permanentGrantVerticals)
             .where(eq(permanentGrantVerticals.permanentGrantId, grant.grantId));
         expect(anchors).toHaveLength(anchorsBefore.length);
