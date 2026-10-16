@@ -2090,6 +2090,10 @@
             "path": "/api/v1/admin/users/:id/roles/:role"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/admin/users/:id/trial-summary"
+        },
+        {
             "method": "PUT",
             "path": "/api/v1/admin/users/:id/trusted-editor"
         },
