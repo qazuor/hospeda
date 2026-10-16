@@ -137,7 +137,7 @@ describe('SPEC-063 T-058 — cross-cutting lifecycleState strip on public endpoi
         });
 
         it('strips lifecycleState and other admin-only fields from response items', async () => {
-            const res = await app.request(base, { headers: publicHeaders });
+            const res = await app.request(`${base}?page=3`, { headers: publicHeaders });
             expect(res.status).toBe(200);
 
             const body = (await res.json()) as {
@@ -157,7 +157,7 @@ describe('SPEC-063 T-058 — cross-cutting lifecycleState strip on public endpoi
         });
 
         it('preserves public fields in response items', async () => {
-            const res = await app.request(base, { headers: publicHeaders });
+            const res = await app.request(`${base}?page=4`, { headers: publicHeaders });
             expect(res.status).toBe(200);
 
             const body = (await res.json()) as {
@@ -251,7 +251,7 @@ describe('SPEC-063 T-058 — cross-cutting lifecycleState strip on public endpoi
         });
 
         it('strips lifecycleState and other admin-only fields from response items', async () => {
-            const res = await app.request(base, { headers: publicHeaders });
+            const res = await app.request(`${base}?page=3`, { headers: publicHeaders });
             expect(res.status).toBe(200);
 
             const body = (await res.json()) as {
@@ -271,7 +271,7 @@ describe('SPEC-063 T-058 — cross-cutting lifecycleState strip on public endpoi
         });
 
         it('preserves public fields in response items', async () => {
-            const res = await app.request(base, { headers: publicHeaders });
+            const res = await app.request(`${base}?page=4`, { headers: publicHeaders });
             expect(res.status).toBe(200);
 
             const body = (await res.json()) as {
