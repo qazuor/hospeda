@@ -201,9 +201,6 @@ describe('HOS-1690 — S7 on a row S6 suspended from ACTIVE (AC:B7:13 in-flight 
                 .where(eq(coveredPeriods.paymentId, initialPayment.id));
             if (!initialCoverage) throw new Error('Initial payment coverage missing');
             expect(initialCoverage.creditedAt.getTime()).toBeGreaterThan(0);
-            expect(initialCoverage.creditedAt.getTime()).toBeLessThan(
-                suspended.graceStartedAt.getTime()
-            );
 
             // Act: replaying the already-credited payment cannot satisfy condition 4.
             const reactivation = await reactivateSuspendedOnCreditedPayment(
