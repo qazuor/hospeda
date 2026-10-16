@@ -21,7 +21,8 @@ export type PurgeInactiveListingResult =
               | 'NOT_ARCHIVED'
               | 'RETENTION_STOPPED'
               | 'COVERED'
-              | 'NOT_DUE';
+              | 'NOT_DUE'
+              | 'FIRST_PASS';
       }
     | {
           readonly purged: true;
@@ -59,9 +60,21 @@ export function purgeDueAt(args: {
         : deadline;
 }
 
+/** First-pass safety rule for missing coverage loss (AC:V9b:6, TRANS:V:PB9). */
+export function isFirstPurgePass(args: {
+    readonly coverageLostAt: Date | null;
+    readonly dueAt: Date;
+    readonly previousPassStartedAt: Date | null;
+}): boolean {
+    return (
+        args.coverageLostAt === null &&
+        (args.previousPassStartedAt === null || args.dueAt > args.previousPassStartedAt)
+    );
+}
+
 /**
- * TRANS:V:PB9 under the owner's publication lock. Covers AC:V9b:1, AC:V9b:3, AC:V9b:7, DEC-DATA-005, HOS-1501, HOS-1502.
- * Later work: clock reset/two passes (AC:V9b:6, HOS-1503), billing push (AC:V9b:8, HOS-1503), V9a fact 1 (AC:V9b:9, HOS-1504), and the job (HOS-1503/HOS-1504).
+ * TRANS:V:PB9 under the owner's publication lock. Covers AC:V9b:1, AC:V9b:3, AC:V9b:6, AC:V9b:7, AC:V9b:8, DEC-DATA-005, HOS-1501, HOS-1502, HOS-1503.
+ * Later work: V9a fact 1 (AC:V9b:9) and the pass with its job (HOS-1504).
  */
 export async function purgeInactiveListing(args: {
     readonly unitOfWork: PublicationUnitOfWork;
@@ -72,6 +85,8 @@ export async function purgeInactiveListing(args: {
     readonly ownerId: string;
     readonly correlationId: string;
     readonly afterCommit: RetentionAfterCommit;
+    /** Start instant of the previous PB9 pass, or null when none has run (H1). */
+    readonly previousPassStartedAt: Date | null;
 }): Promise<PurgeInactiveListingResult> {
     const result = await withPublicationLock<PurgeInactiveListingLockedResult>({
         unitOfWork: args.unitOfWork,
@@ -95,7 +110,14 @@ export async function purgeInactiveListing(args: {
                 userId: args.ownerId,
                 vertical: args.vertical
             });
-            if (coverage.covered) return { purged: false, reason: 'COVERED' };
+            if (coverage.covered) {
+                await tx.stampInactiveSince({
+                    vertical: args.vertical,
+                    listingIds: [listing.id],
+                    at: args.clock.now()
+                });
+                return { purged: false, reason: 'COVERED' };
+            }
             const clockStart = retentionClockStart({
                 inactiveSince: listing.inactiveSince,
                 pauseEndedAt: pause.pauseEndedAt
@@ -108,6 +130,14 @@ export async function purgeInactiveListing(args: {
             });
             const now = args.clock.now();
             if (now < dueAt) return { purged: false, reason: 'NOT_DUE' };
+            if (
+                isFirstPurgePass({
+                    coverageLostAt: pause.coverageLostAt,
+                    dueAt,
+                    previousPassStartedAt: args.previousPassStartedAt
+                })
+            )
+                return { purged: false, reason: 'FIRST_PASS' };
             const changed = await tx.setPublicationStatus({
                 vertical: args.vertical,
                 listingId: listing.id,
@@ -154,6 +184,10 @@ export async function purgeInactiveListing(args: {
     if (!result.purged) return result;
     const warnings = await publicationAfterCommit({
         tasks: [
+            {
+                warning: 'PURGE_NOTICE_FAILED' as const,
+                run: () => args.afterCommit.emitListingPurged({ listingId: args.listingId })
+            },
             ...result.markedMedia.map((media) => ({
                 warning: 'REMOTE_DELETION_FAILED' as const,
                 run: () =>

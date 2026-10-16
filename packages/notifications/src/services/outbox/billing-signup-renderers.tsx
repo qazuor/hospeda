@@ -9,6 +9,8 @@ import {
     type ArrearsSuspensionOneTimeAddon,
     CLOSED_SUBSCRIPTION_AUTHORIZATION_CANCEL_SUBJECT,
     ClosedSubscriptionAuthorizationCancel,
+    DIRECT_CANCELLATION_SUBJECT,
+    DirectCancellation,
     FIRST_CHARGE_DECLINED_CANCEL_SUBJECT,
     FirstChargeDeclinedCancel,
     GRACE_STARTED_SUBJECT,
@@ -117,6 +119,13 @@ function permanentGrantAddonCancel(row: EmailOutboxRow) {
     if (typeof data.subscriptionId !== 'string')
         throw new TypeError('Faltan datos requeridos del aviso de cancelación del addon por grant');
     return { subject: PERMANENT_GRANT_ADDON_CANCEL_SUBJECT, react: <PermanentGrantAddonCancel /> };
+}
+
+function directCancellation(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError('Faltan datos requeridos del aviso de baja directa');
+    return { subject: DIRECT_CANCELLATION_SUBJECT, react: <DirectCancellation /> };
 }
 
 function closedSubscriptionAuthorizationCancel(row: EmailOutboxRow) {
@@ -335,6 +344,7 @@ export function createBillingSignupRenderers(input: {
         'billing.permanent-grant-addon-cancel': ({ row }) => permanentGrantAddonCancel(row),
         'billing.closed-subscription-authorization-cancel': ({ row }) =>
             closedSubscriptionAuthorizationCancel(row),
-        'billing.scheduled-cancellation': ({ row }) => scheduledCancellation(row)
+        'billing.scheduled-cancellation': ({ row }) => scheduledCancellation(row),
+        'billing.direct-cancellation': ({ row }) => directCancellation(row)
     };
 }

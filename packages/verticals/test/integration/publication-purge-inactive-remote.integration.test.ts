@@ -139,6 +139,7 @@ describe.each(verticals)('TEST:V9b:3 AC:V9b:3 %s remote media', (vertical) => {
         const storage = new Set([publicId]);
         let firstAttemptFails = true;
         const afterCommit = {
+            async emitListingPurged() {},
             async deleteRemoteMedia(input: {
                 vertical: (typeof verticals)[number];
                 mediaId: string;
@@ -165,6 +166,7 @@ describe.each(verticals)('TEST:V9b:3 AC:V9b:3 %s remote media', (vertical) => {
         const result = await purgeInactiveListing({
             ...adapter,
             clock: { now: () => t0 },
+            previousPassStartedAt: t0,
             afterCommit,
             vertical,
             listingId: listing.id,
@@ -232,11 +234,13 @@ describe('TEST:V9b:3 AC:V9b:3 calendar revocation', () => {
         const result = await purgeInactiveListing({
             ...adapter,
             clock: { now: () => t0 },
+            previousPassStartedAt: t0,
             vertical: VerticalEnum.ACCOMMODATION,
             listingId: listing.id,
             ownerId: userId,
             correlationId: randomUUID(),
             afterCommit: {
+                async emitListingPurged() {},
                 async deleteRemoteMedia() {
                     throw new Error('fake storage unavailable');
                 },
@@ -284,6 +288,7 @@ describe('TEST:V9b:3 AC:V9b:3 calendar revocation', () => {
         const revocations: { accommodationId: string; connectionId: string; provider: string }[] =
             [];
         const afterCommit = {
+            async emitListingPurged() {},
             async deleteRemoteMedia() {},
             async revokeCalendarConnection(input: {
                 accommodationId: string;
@@ -301,6 +306,7 @@ describe('TEST:V9b:3 AC:V9b:3 calendar revocation', () => {
         const result = await purgeInactiveListing({
             ...adapter,
             clock: { now: () => t0 },
+            previousPassStartedAt: t0,
             afterCommit,
             vertical: VerticalEnum.ACCOMMODATION,
             listingId: listing.id,
@@ -396,6 +402,7 @@ describe('TEST:V9b:3 AC:V9b:3 non-purged listings and third-party reviews', () =
         for (const row of media.rows) mediaIds.set(String(row.id), 'accommodation_media');
         let calls = 0;
         const afterCommit = {
+            async emitListingPurged() {},
             async deleteRemoteMedia() {
                 calls += 1;
             },
@@ -412,6 +419,7 @@ describe('TEST:V9b:3 AC:V9b:3 non-purged listings and third-party reviews', () =
             const result = await purgeInactiveListing({
                 ...adapter,
                 clock: { now: () => t0 },
+                previousPassStartedAt: t0,
                 afterCommit,
                 vertical: VerticalEnum.ACCOMMODATION,
                 listingId: listing.id,
@@ -475,7 +483,12 @@ describe('TEST:V9b:3 AC:V9b:3 non-purged listings and third-party reviews', () =
         await purgeInactiveListing({
             ...adapter,
             clock: { now: () => t0 },
-            afterCommit: { async deleteRemoteMedia() {}, async revokeCalendarConnection() {} },
+            previousPassStartedAt: t0,
+            afterCommit: {
+                async emitListingPurged() {},
+                async deleteRemoteMedia() {},
+                async revokeCalendarConnection() {}
+            },
             vertical: VerticalEnum.ACCOMMODATION,
             listingId: listing.id,
             ownerId: userId,
