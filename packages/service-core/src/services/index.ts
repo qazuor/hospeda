@@ -106,6 +106,7 @@ export * from './billing/promo/live-promos.js';
 export * from './billing/promo/promo-availability.js';
 export * from './billing/promo/promo-charge-policy.js';
 export * from './billing/promo/promo-composition.js';
+export * from './billing/promo/promo-exhaustion.service.js';
 export * from './billing/promo/promo-redemption-reasons.js';
 export * from './billing/promo/provider-amount-floor.js';
 export * from './billing/promo/redeem-discount-code.service.js';
