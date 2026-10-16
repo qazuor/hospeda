@@ -32,7 +32,11 @@ const tables: Readonly<Record<DeadlineListingRef['vertical'], string>> = {
     experience: 'experiences'
 };
 const now = new Date('2026-10-10T12:00:00.000Z');
-const afterCommit = { deleteRemoteMedia: async () => {}, revokeCalendarConnection: async () => {} };
+const afterCommit = {
+    emitListingPurged: async () => {},
+    deleteRemoteMedia: async () => {},
+    revokeCalendarConnection: async () => {}
+};
 const created: DeadlineListingRef[] = [];
 
 afterEach(async () => {
@@ -74,6 +78,7 @@ async function purge(
     return purgeInactiveListing({
         ...adapter(args.covered, args.stopped),
         clock: { now: () => now },
+        previousPassStartedAt: now,
         vertical: item.vertical,
         listingId: item.listingId,
         ownerId: item.ownerId,
@@ -128,7 +133,20 @@ describe('TEST:V9b:11 AC:V9b:11 — PB9 reads the versioned deadlines without wr
             });
             expect(result.purged ? 'purged' : result.reason).toBe(outcome);
             const after = await snapshotDeadlineSources({ db, listings: [item] });
-            expectDeadlineSourcesUnchanged({ before, after });
+            if (outcome === 'COVERED') {
+                expect({
+                    ...after,
+                    listings: after.listings.map((row) => ({
+                        ...row,
+                        inactive_since: new Date(String(row.inactive_since))
+                    }))
+                }).toEqual({
+                    ...before,
+                    listings: before.listings.map((row) => ({ ...row, inactive_since: now }))
+                });
+            } else {
+                expectDeadlineSourcesUnchanged({ before, after });
+            }
         }
     });
 
