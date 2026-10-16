@@ -35,11 +35,13 @@ describe('TEST:B11:16 second clause / TEST:1607:15-16 immediate duplicate charge
                 .where(eq(payments.subscriptionId, subject.subscriptionId));
             if (!paymentRow) throw new Error('test payment missing');
             const recipientIds = [await seedCoverageUser(tx), await seedCoverageUser(tx)];
-            await tx
-                .insert(userRole)
-                .values(
-                    recipientIds.map(({ userId }) => ({ userId, role: 'SUPER_ADMIN' as const }))
-                );
+            const unrelatedSuperAdmin = await seedCoverageUser(tx);
+            await tx.insert(userRole).values(
+                [...recipientIds, unrelatedSuperAdmin].map(({ userId }) => ({
+                    userId,
+                    role: 'SUPER_ADMIN' as const
+                }))
+            );
             const recipients = await Promise.all(
                 recipientIds.map(async ({ userId }) => {
                     const [user] = await tx
@@ -162,6 +164,10 @@ describe('TEST:B11:16 second clause / TEST:1607:15-16 immediate duplicate charge
             });
             expect(reopened.outcome).toBe('OPENED');
             expect(reopened.mark.id).not.toBe(result.mark.id);
+            const expectedSuperAdminIds = await tx
+                .select({ userId: userRole.userId })
+                .from(userRole)
+                .where(eq(userRole.role, 'SUPER_ADMIN'));
             const reopenedRows = await tx
                 .select()
                 .from(emailOutbox)
@@ -171,7 +177,13 @@ describe('TEST:B11:16 second clause / TEST:1607:15-16 immediate duplicate charge
                         sql`${emailOutbox.payload}->>'markId' = ${reopened.mark.id}`
                     )
                 );
-            expect(reopenedRows).toHaveLength(2);
+            expect(reopenedRows).toHaveLength(expectedSuperAdminIds.length);
+            expect(reopenedRows.map(({ recipientUserId }) => recipientUserId).sort()).toEqual(
+                expectedSuperAdminIds.map(({ userId }) => userId).sort()
+            );
+            expect(reopenedRows.map(({ recipientUserId }) => recipientUserId)).toContain(
+                unrelatedSuperAdmin.userId
+            );
 
             const ordinarySubject = await seedRenewalSubscription(tx, { nextChargeAt: null });
             const ordinary = await openReconciliationMark({
