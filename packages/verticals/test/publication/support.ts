@@ -80,6 +80,7 @@ export function makeHarness(
     const calls: string[] = [];
     const statusWrites: Parameters<PublicationTransaction['setPublicationStatus']>[0][] = [];
     const statusEvents: Parameters<PublicationTransaction['insertStatusChangedEvent']>[0][] = [];
+    const stampWrites: Parameters<PublicationTransaction['stampInactiveSince']>[0][] = [];
     let openFixRequest:
         | import('../../src/publication/publication-types').PublicationFixRequest
         | null = null;
@@ -250,7 +251,8 @@ export function makeHarness(
             calls.push('set');
             return true;
         },
-        async stampInactiveSince() {
+        async stampInactiveSince(input) {
+            stampWrites.push(input);
             calls.push('stamp');
         },
         async insertStatusChangedEvent(input) {
@@ -310,6 +312,9 @@ export function makeHarness(
         })
     };
     const retentionAfterCommit = {
+        emitListingPurged: vi.fn(async () => {
+            calls.push('emitListingPurged');
+        }),
         deleteRemoteMedia: vi.fn(async () => {
             calls.push('deleteRemoteMedia');
         }),
@@ -325,6 +330,7 @@ export function makeHarness(
         calls,
         statusWrites,
         statusEvents,
+        stampWrites,
         insertedRows,
         restitutionNotices,
         listingNotices,

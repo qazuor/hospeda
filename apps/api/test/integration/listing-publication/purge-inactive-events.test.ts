@@ -145,7 +145,9 @@ describe.each(
             listingId,
             ownerId: owner.id,
             correlationId: randomUUID(),
+            previousPassStartedAt: MATRIX_NOW,
             afterCommit: {
+                emitListingPurged: async () => {},
                 deleteRemoteMedia: async () => {},
                 revokeCalendarConnection: async () => {}
             }

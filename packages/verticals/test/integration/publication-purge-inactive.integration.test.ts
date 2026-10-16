@@ -42,6 +42,7 @@ const afterCommit = {
     revalidate: async () => {}
 };
 const retentionAfterCommit = {
+    emitListingPurged: async () => {},
     deleteRemoteMedia: async () => {},
     revokeCalendarConnection: async () => {}
 };
@@ -231,6 +232,7 @@ describe.each([
         const result = await purgeInactiveListing({
             ...adapter,
             clock: { now: () => t0 },
+            previousPassStartedAt: t0,
             vertical,
             listingId: archived.id,
             ownerId: userId,
@@ -370,6 +372,7 @@ describe('TEST:V9b:7 AC:V9b:7', () => {
             purgeInactiveListing({
                 ...adapter,
                 clock: { now: () => now },
+                previousPassStartedAt: now,
                 vertical: VerticalEnum.ACCOMMODATION,
                 listingId: listing.id,
                 ownerId: userId,
@@ -413,6 +416,7 @@ describe('TEST:V9b:7 AC:V9b:7', () => {
             purgeInactiveListing({
                 ...adapter,
                 clock: { now: () => now },
+                previousPassStartedAt: now,
                 vertical: VerticalEnum.ACCOMMODATION,
                 listingId: listing.id,
                 ownerId: userId,
@@ -446,6 +450,7 @@ describe('TEST:V9b:7 AC:V9b:7', () => {
             purgeInactiveListing({
                 ...coverageAdapter,
                 clock: { now: () => now },
+                previousPassStartedAt: now,
                 vertical: VerticalEnum.ACCOMMODATION,
                 listingId: second.id,
                 ownerId: userId,
@@ -477,6 +482,7 @@ describe('TEST:V9b:7 AC:V9b:7', () => {
             purgeInactiveListing({
                 ...adapter,
                 clock: { now: () => t0 },
+                previousPassStartedAt: t0,
                 vertical: VerticalEnum.ACCOMMODATION,
                 listingId: listing.id,
                 ownerId: userId,

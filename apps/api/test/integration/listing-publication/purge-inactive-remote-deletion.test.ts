@@ -202,6 +202,7 @@ async function runPurge(fixture: Fixture) {
         },
         afterCommit: getPurgeAfterCommit(),
         clock: { now: () => now },
+        previousPassStartedAt: now,
         vertical: fixture.vertical,
         listingId: fixture.listingId,
         ownerId: fixture.ownerId,

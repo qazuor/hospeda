@@ -46,6 +46,15 @@
             "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:874-878"
         },
         {
+            "file": "packages/verticals/src/publication/purge-inactive-listing.ts",
+            "symbol": "purgeInactiveListing",
+            "count": 1,
+            "facts": [2],
+            "executors": "the coverage re-read of PB9 (the last of the four moments)",
+            "kind": "recalculation",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:497-503; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:609-612"
+        },
+        {
             "file": "packages/verticals/src/publication/lift-moderation.ts",
             "symbol": "liftModeration",
             "count": 2,

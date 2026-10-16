@@ -8,6 +8,8 @@ const due = new Date(at.getTime() - 180 * day);
 const args = (harness: ReturnType<typeof makeHarness>, now = at) => ({
     ...harness,
     afterCommit: harness.retentionAfterCommit,
+    // Passing this call's clock keeps legacy expired-listing cases past the first-pass guard.
+    previousPassStartedAt: now,
     clock: { now: () => now },
     vertical,
     listingId,
@@ -18,6 +20,8 @@ const noWrites = (h: ReturnType<typeof makeHarness>) => {
     expect(h.statusWrites).toHaveLength(0);
     expect(h.statusEvents).toHaveLength(0);
     expect(h.calls).not.toContain('purgeListingContent');
+    expect(h.calls).not.toContain('stamp');
+    expect(h.retentionAfterCommit.emitListingPurged).not.toHaveBeenCalled();
     expect(h.retentionAfterCommit.deleteRemoteMedia).not.toHaveBeenCalled();
     expect(h.retentionAfterCommit.revokeCalendarConnection).not.toHaveBeenCalled();
 };
@@ -161,7 +165,10 @@ describe('AC:V9b:1 PB9 transition boundaries', () => {
             purged: false,
             reason: 'COVERED'
         });
-        noWrites(covered);
+        expect(covered.stampWrites).toEqual([{ vertical, listingIds: [listingId], at }]);
+        expect(covered.calls).not.toContain('set');
+        expect(covered.calls).not.toContain('event');
+        expect(covered.calls).not.toContain('purgeListingContent');
         const wrongOwner = makeHarness({
             status: Status.ARCHIVED,
             covered: false,
@@ -220,6 +227,7 @@ describe('AC:V9b:1 PB9 transition boundaries', () => {
             'purgeListingContent',
             'enqueueListingNotice',
             'commit',
+            'emitListingPurged',
             'deleteRemoteMedia',
             'revokeCalendarConnection'
         ]);
@@ -274,8 +282,9 @@ describe('TEST:V9b:3 AC:V9b:3 remote deletion after commit', () => {
         });
         const result = await purgeInactiveListing(args(h));
         expect(result).toMatchObject({ purged: true, warnings: [] });
-        expect(h.calls.slice(-4)).toEqual([
+        expect(h.calls.slice(-5)).toEqual([
             'commit',
+            'emitListingPurged',
             'deleteRemoteMedia',
             'deleteRemoteMedia',
             'revokeCalendarConnection'
