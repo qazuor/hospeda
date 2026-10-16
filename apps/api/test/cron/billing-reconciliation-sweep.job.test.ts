@@ -100,6 +100,31 @@ describe('billing reconciliation sweep cron', () => {
         });
     });
 
+    it('wires pause gifts and the persisted undercharge summary (TEST:1607:7)', async () => {
+        mockSweep.mockResolvedValue({
+            rowsRead: 0,
+            runId: 'r',
+            complete: true,
+            pinged: false,
+            rowsFailed: 0,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [],
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        const ctx = context();
+        await billingReconciliationSweepJob.handler(ctx);
+        expect(mockSweep.mock.calls[0]?.[1]).toEqual(expect.objectContaining({ pauseGifts: {} }));
+        expect(mockPeriodChargesComparison).toHaveBeenCalledWith(
+            expect.objectContaining({
+                provider: mockProvider,
+                dailySummary: expect.objectContaining({ addUndercharge: expect.any(Function) })
+            })
+        );
+    });
+
     it('injects provider and clock and maps summary counters', async () => {
         mockSweep.mockResolvedValue({
             rowsRead: 8,
@@ -269,7 +294,10 @@ describe('billing reconciliation sweep cron', () => {
         expect(comparisons?.[0]).toBe(mockStateComparison.mock.results[0]?.value);
         expect(comparisons?.[1]).toBe(mockPeriodChargesComparison.mock.results[0]?.value);
         expect(comparisons?.[2]).toBe(mockAmountComparison.mock.results[0]?.value);
-        expect(mockPeriodChargesComparison).toHaveBeenCalledWith({ provider: mockProvider });
+        expect(mockPeriodChargesComparison).toHaveBeenCalledWith({
+            provider: mockProvider,
+            dailySummary: expect.objectContaining({ addUndercharge: expect.any(Function) })
+        });
         expect(mockAmountComparison).toHaveBeenCalledWith({
             provider: mockProvider,
             clock: mockClock

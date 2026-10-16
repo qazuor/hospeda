@@ -6,6 +6,7 @@ import {
     createNextChargeSync,
     createPaymentReconciliationMarkPayments,
     createPeriodChargesComparison,
+    createPersistedReconciliationDailySummary,
     createProviderPauseCheck,
     createStateComparison,
     createSuccessorGraceCheck,
@@ -64,7 +65,13 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     clock,
                     comparisons: [
                         createStateComparison(),
-                        createPeriodChargesComparison({ provider }),
+                        createPeriodChargesComparison({
+                            provider,
+                            dailySummary: createPersistedReconciliationDailySummary({
+                                correlationId: ctx.correlationId,
+                                clock
+                            })
+                        }),
                         createAmountComparison({ provider, clock })
                     ],
                     rowChecks: [
@@ -138,6 +145,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     // AC:B11:13: zero population until B10 writes order keys.
                     paidOrders: {},
                     markEscalation: {},
+                    pauseGifts: {},
                     livenessPing: createSentryCronMonitorPing()
                 }
             );
