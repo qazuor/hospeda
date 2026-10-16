@@ -60,7 +60,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8a:3 / TEST:1568:5 S11 compl
         expect(result.complements.decided).toBe(2);
         expect(result.complements.calls).toHaveLength(2);
         expect(cancel).toHaveBeenCalledTimes(3);
-        expect(read).toHaveBeenCalledTimes(3);
+        expect(read).toHaveBeenCalledTimes(6);
         expect(sendNotice).toHaveBeenCalledTimes(3);
         const [principalRow] = await getServiceTestDb()
             .select({ serviceEndsAt: subscriptions.serviceEndsAt })
