@@ -90,6 +90,14 @@
         "reason": "S6 moves GRACE_PERIOD or ACTIVE (second event) to SUSPENDED, which emits no source (03-contrato-de-cobertura.md:472); the coverage notice is emitted after commit."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/cancel-direct-subscription.service.ts",
+        "symbol": "writeDirectCancellation",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S23/S24 move SUSPENDED/GRACE_PERIOD to CANCELLED with service ended today; GRACE_PERIOD emits a source and CANCELLED does not (03-contrato-de-cobertura.md:469,474); the coverage notice is emitted after commit."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/revoke-subscription.service.ts",
         "symbol": "writeRevocation",
         "table": "subscriptions",

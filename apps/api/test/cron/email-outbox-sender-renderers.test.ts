@@ -213,6 +213,11 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
             ]
         },
         {
+            template: 'billing.direct-cancellation',
+            payload: { subscriptionId },
+            expected: ['Diste de baja tu suscripción y el servicio terminó hoy', 'Mercado Pago']
+        },
+        {
             // HOS-1683 AC:1683:2: REJECTION_REVIVED's notice before cancelling a live authorization.
             template: 'billing.closed-subscription-authorization-cancel',
             payload: { subscriptionId },

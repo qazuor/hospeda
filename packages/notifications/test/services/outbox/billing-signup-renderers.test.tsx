@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createBillingSignupRenderers } from '../../../src/services/outbox/billing-signup-renderers.js';
 import {
     CLOSED_SUBSCRIPTION_AUTHORIZATION_CANCEL_SUBJECT,
+    DIRECT_CANCELLATION_SUBJECT,
     FIRST_CHARGE_DECLINED_CANCEL_SUBJECT,
     PERMANENT_GRANT_CANCEL_SUBJECT,
     REVOCATION_CANCEL_SUBJECT,
@@ -240,6 +241,17 @@ describe('billing signup outbox renderers', () => {
         expect(html).not.toContain(subscriptionId);
     });
 
+    it('TEST:1570:3 renders direct cancellation without exposing its ID', async () => {
+        const template = 'billing.direct-cancellation';
+        const result = await renderers[template]!({
+            row: row({ template, payload: { subscriptionId } })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject).toBe(DIRECT_CANCELLATION_SUBJECT);
+        expect(html).toContain('Diste de baja tu suscripción y el servicio terminó hoy');
+        expect(html).not.toContain(subscriptionId);
+    });
+
     it.each([
         ['billing.signup-confirmed', { subscriptionId }],
         ['billing.before-cancel', {}],
@@ -256,6 +268,8 @@ describe('billing signup outbox renderers', () => {
         ['billing.permanent-grant-cancel', { subscriptionId: 42 }],
         ['billing.permanent-grant-addon-cancel', {}],
         ['billing.permanent-grant-addon-cancel', { subscriptionId: 42 }],
+        ['billing.direct-cancellation', {}],
+        ['billing.direct-cancellation', { subscriptionId: 42 }],
         ['billing.closed-subscription-authorization-cancel', {}],
         ['billing.closed-subscription-authorization-cancel', { subscriptionId: 42 }],
         ['billing.scheduled-cancellation', {}],

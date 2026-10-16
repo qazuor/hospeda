@@ -112,7 +112,8 @@ const EXPECTED_KINDS = [
     'ARREARS_SUSPENSION',
     'ADDON_CANCELLED',
     'PERMANENT_GRANT',
-    'PERMANENT_GRANT_ADDON'
+    'PERMANENT_GRANT_ADDON',
+    'DIRECT_CANCELLATION'
 ];
 
 describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice kind', () => {
@@ -143,12 +144,14 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
             'TOURIST_VIP_INHERITED',
             'A5',
             'S13',
-            'S20'
+            'S20',
+            'S23',
+            'S24'
         ])
             expect(found.has(transition), transition).toBe(true);
     });
 
-    it('(d) the ten kinds have ten distinct templates and only S3 says the window expired', () => {
+    it('(d) the eleven kinds have eleven distinct templates and only S3 says the window expired', () => {
         expect(Object.keys(BEFORE_CANCEL_TEMPLATE_BY_KIND)).toStrictEqual(EXPECTED_KINDS);
         const templates = Object.values(BEFORE_CANCEL_TEMPLATE_BY_KIND);
         expect(new Set(templates).size).toBe(templates.length);
