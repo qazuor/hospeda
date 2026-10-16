@@ -1,5 +1,5 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import { getDb, promoRedemptions } from '@repo/db';
+import { and, billingOptions, eq, getDb, promoRedemptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
     actStartInstant,
@@ -11,6 +11,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types/index.js';
 import { readAnchoredBillingOption } from '../read-anchored-billing-option.js';
 import { readLivePromos } from './live-promos.js';
+import { assertPromoCodeAvailable } from './promo-availability.js';
 import { composePromoAmount, type PromoDiscount } from './promo-composition.js';
 import { PromoRedemptionReason } from './promo-redemption-reasons.js';
 import { assertAboveProviderFloor } from './provider-amount-floor.js';
@@ -27,8 +28,8 @@ const logger = createLogger('redeem-discount-code');
  * applied amount, asserts it meets the provider floor, mutates the MercadoPago
  * preapproval, and records the redemption.
  *
- * Runs inside a single database transaction that locks the promo code, the subscription,
- * and the redemption uniqueness constraint in order.
+ * Runs inside one transaction: locks the promo code, checks prior use and availability,
+ * then locks the eligible subscription before mutation and redemption insert.
  *
  * @param input - The user id, promo code string, and vertical.
  * @param ports - The payment provider and a wall-clock for activity timestamps.
@@ -57,12 +58,13 @@ export async function redeemDiscountCode(
             code: input.code.trim(),
             vertical: input.vertical
         });
+        await assertNotRedeemed({ tx, promoCodeId: promo.id, userId: input.userId });
+        await assertPromoCodeAvailable({ tx, promo, now: ports.clock.now() });
         const subscription = await readEligibleSubscription({
             tx,
             userId: input.userId,
             vertical: input.vertical
         });
-        await assertNotRedeemed({ tx, promoCodeId: promo.id, userId: input.userId });
         const live = await readLivePromos({ subscriptionId: subscription.id, executor: tx });
         if (
             live.length > 0 &&
@@ -87,6 +89,27 @@ export async function redeemDiscountCode(
             subscription: {
                 planVersionId: subscription.planVersionId,
                 billingOptionId: subscription.billingOptionId
+            },
+            reader: {
+                async findByVersionAndId({ planVersionId, billingOptionId }) {
+                    const rows = await tx
+                        .select({
+                            id: billingOptions.id,
+                            planVersionId: billingOptions.planVersionId,
+                            cycle: billingOptions.cycle,
+                            amount: billingOptions.amount,
+                            currency: billingOptions.currency
+                        })
+                        .from(billingOptions)
+                        .where(
+                            and(
+                                eq(billingOptions.planVersionId, planVersionId),
+                                eq(billingOptions.id, billingOptionId)
+                            )
+                        )
+                        .limit(1);
+                    return rows[0] ?? null;
+                }
             }
         });
         if (!option)

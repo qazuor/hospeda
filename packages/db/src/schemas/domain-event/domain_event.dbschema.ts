@@ -39,6 +39,10 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  *   the B11 sweep reads both the population and the 3-day retry clock from
  *   (AC:B11:6; B11.md "the instant of the transition is already recorded:
  *   every transition is auditable"; NUCLEO/08 §1.1 criterion 2; HOS-1603).
+ * - `subscription.amount_mutation_decided`: one of OUR amount-mutating transitions
+ *   (S30 in B9b; S37 in B12 and S10 in B8b later) decided to change the
+ *   authorization amount; the sweep retries the mutation for 3 days from it
+ *   (MOT:5, AC:B9b:5).
  * - `subscription.provider_cancelled_after_rejection`: the `B/03` §10.1 mirror
  *   moved a `GRACE_PERIOD` row to `CANCELLED` because the provider cancelled
  *   its preapproval after a rejected charge (mirror pair `CANCELLED_ON_GRACE`).
@@ -63,6 +67,7 @@ export const DOMAIN_EVENT_TYPES = [
     'partner_application.email_replaced',
     'subscription.provider_cancellation_decided',
     'subscription.provider_cancelled_after_rejection',
+    'subscription.amount_mutation_decided',
     /** An open reconciliation mark passed deadline 17; written by the sweep. */
     'reconciliation.mark_escalated',
     /** An accredited payment was charged below the expected amount (corrida 2). */

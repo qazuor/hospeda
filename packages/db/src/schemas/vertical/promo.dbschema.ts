@@ -43,12 +43,12 @@ export const promoCodes = pgTable(
         allVerticals: boolean('all_verticals').notNull(),
         /** verticales elegidas */
         verticals: varchar('verticals', { length: 32 }).array(),
-        /** cupo total */
-        totalQuota: integer('total_quota').notNull(),
-        /** ventana de inicio */
-        validFrom: timestamp('valid_from', { withTimezone: true }).notNull(),
-        /** ventana de fin */
-        validUntil: timestamp('valid_until', { withTimezone: true }).notNull(),
+        /** cupo total; NULL = sin tope (H2, decisión del owner) */
+        totalQuota: integer('total_quota'),
+        /** ventana de inicio; default de base para códigos nuevos */
+        validFrom: timestamp('valid_from', { withTimezone: true }).notNull().defaultNow(),
+        /** ventana de fin; NULL = sin tope (H2, decisión del owner) */
+        validUntil: timestamp('valid_until', { withTimezone: true }),
         /** acumulable */
         stackable: boolean('stackable').notNull(),
         /** usable con otra promo activa */

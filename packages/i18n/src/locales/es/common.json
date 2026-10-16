@@ -123,6 +123,7 @@
         "PROMO_CODE_NOT_FOUND": "No encontramos ese código.",
         "PROMO_CODE_NOT_A_TRIAL_EXTENSION": "Este código no extiende una prueba gratis.",
         "PROMO_CODE_NOT_FOR_VERTICAL": "Este código no está disponible para esta vertical.",
+        "PROMO_CODE_NOT_AVAILABLE": "Este código ya no está disponible.",
         "PROMO_NO_ELIGIBLE_SUBSCRIPTION": "No tenés una suscripción elegible para este código.",
         "PROMO_NOT_OFFERED_TO_MANUAL_PAYER": "Este código está disponible para pagos con tarjeta.",
         "PROMO_CODE_ALREADY_REDEEMED": "Ya canjeaste este código.",

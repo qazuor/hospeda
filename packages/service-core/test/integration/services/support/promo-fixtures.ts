@@ -3,31 +3,48 @@ import { eq, getDb, promoCodes, promoRedemptions } from '@repo/db';
 const created: Array<{ readonly redemptionId?: string; readonly promoCodeId: string }> = [];
 
 export async function seedPromoCode(input: {
-    readonly discountKind: 'PERCENTAGE' | 'FIXED';
-    readonly value: number;
+    readonly discountKind?: 'PERCENTAGE' | 'FIXED';
+    readonly value?: number;
     readonly allVerticals?: boolean;
     readonly verticals?: string[];
     readonly stackable?: boolean;
     readonly usableWithAnotherActive?: boolean;
     readonly durationKind?: 'FIRST_CHARGE' | 'N_CHARGES' | 'FOREVER';
+    readonly totalQuota?: number | null;
+    readonly validFrom?: Date;
+    readonly validUntil?: Date | null;
+    readonly effectKind?: 'DISCOUNT' | 'TRIAL_EXTENSION';
+    readonly extensionDays?: number;
 }) {
+    const effectKind = input.effectKind ?? 'DISCOUNT';
+    if (
+        effectKind === 'DISCOUNT' &&
+        (input.discountKind === undefined || input.value === undefined)
+    ) {
+        throw new Error('Discount promo fixtures require discountKind and value');
+    }
     const durationKind = input.durationKind ?? 'N_CHARGES';
     const [code] = await getDb()
         .insert(promoCodes)
         .values({
             code: `B9B-${crypto.randomUUID()}`,
-            discountKind: input.discountKind,
-            value: input.value,
+            effectKind,
+            extensionDays: effectKind === 'TRIAL_EXTENSION' ? (input.extensionDays ?? 5) : null,
+            discountKind: effectKind === 'DISCOUNT' ? input.discountKind : null,
+            value: effectKind === 'DISCOUNT' ? input.value : null,
             allVerticals: input.allVerticals ?? true,
             verticals: input.allVerticals === false ? (input.verticals ?? ['tourist']) : null,
-            totalQuota: 10,
-            validFrom: new Date('2026-01-01T00:00:00.000Z'),
-            validUntil: new Date('2027-01-01T00:00:00.000Z'),
+            totalQuota: input.totalQuota === undefined ? 10 : input.totalQuota,
+            validFrom: input.validFrom ?? new Date('2026-01-01T00:00:00.000Z'),
+            validUntil:
+                input.validUntil === undefined
+                    ? new Date('2027-01-01T00:00:00.000Z')
+                    : input.validUntil,
             stackable: input.stackable ?? true,
             usableWithAnotherActive: input.usableWithAnotherActive ?? true,
-            durationKind,
+            durationKind: effectKind === 'DISCOUNT' ? durationKind : null,
             durationCharges:
-                durationKind === 'N_CHARGES' ? 2 : durationKind === 'FIRST_CHARGE' ? 1 : null
+                effectKind === 'TRIAL_EXTENSION' || durationKind !== 'N_CHARGES' ? null : 2
         })
         .returning();
     if (!code) throw new Error('Promo code fixture failed');
@@ -49,8 +66,7 @@ export async function seedPromoRedemption(input: {
 }) {
     const db = getDb();
     const durationKind = input.durationKind ?? 'N_CHARGES';
-    const durationCharges =
-        durationKind === 'FOREVER' ? null : durationKind === 'FIRST_CHARGE' ? 1 : 2;
+    const durationCharges = durationKind === 'N_CHARGES' ? 2 : null;
     const [code] = await db
         .insert(promoCodes)
         .values({

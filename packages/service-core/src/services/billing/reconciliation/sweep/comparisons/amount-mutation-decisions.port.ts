@@ -1,8 +1,6 @@
 /**
- * Records whether this system decided a subscription amount mutation. At this
- * cut no transition (S30 in B9b, S37 in B12, S10 in B8b) mutates the amount or
- * records its decision. The first writer's sheet supplies the real reader.
- * With this default, every amount divergence opens MOT:5 immediately.
+ * Records whether this system decided a subscription amount mutation. S30 in
+ * B9b records its decision; S37 and S10 may add further writers later.
  */
 export interface AmountMutationDecisions {
     findLatest(input: { readonly subscriptionId: string }): Promise<{
@@ -11,7 +9,7 @@ export interface AmountMutationDecisions {
     } | null>;
 }
 
-/** No amount-mutating transition has registered a decision at this cut. */
+/** No amount-mutation decision reader is registered. */
 export const noAmountMutationDecisions: AmountMutationDecisions = {
     async findLatest() {
         return null;

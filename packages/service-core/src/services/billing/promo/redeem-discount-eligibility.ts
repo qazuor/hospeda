@@ -30,7 +30,8 @@ export async function readPromoCode(input: { tx: DrizzleClient; code: string; ve
         .select()
         .from(promoCodes)
         .where(eq(promoCodes.code, input.code))
-        .limit(1);
+        .limit(1)
+        .for('update');
     if (!promo) fail(PromoRedemptionReason.PROMO_CODE_NOT_FOUND, ServiceErrorCode.NOT_FOUND);
     if (promo.effectKind !== 'DISCOUNT') {
         throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Promo code is not a discount');

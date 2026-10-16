@@ -123,6 +123,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Run S12 on scheduled cancellations whose end of service passed (HOS-1569, AC:B8a:5-6).'
     },
     {
+        name: 'billing-promo-ending-notice',
+        displayName: 'Avisos de fin de promo',
+        category: 'billing',
+        schedule: '0 9 * * *',
+        description:
+            'Enqueue the configurable PLAZO:14 notice before the last discounted charge (HOS-1589, AC:B9b:5).'
+    },
+    {
         name: 'subscription-renewal-notice',
         displayName: 'Avisos de renovación',
         category: 'billing',

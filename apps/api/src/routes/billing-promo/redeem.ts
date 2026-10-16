@@ -28,6 +28,10 @@ const errors: Record<PromoRedemptionReasonType, { code: string; status: number }
         code: ServiceErrorCode.VALIDATION_ERROR,
         status: 422
     },
+    [PromoRedemptionReason.PROMO_CODE_NOT_AVAILABLE]: {
+        code: ServiceErrorCode.VALIDATION_ERROR,
+        status: 422
+    },
     [PromoRedemptionReason.PROMO_NO_ELIGIBLE_SUBSCRIPTION]: {
         code: ServiceErrorCode.VALIDATION_ERROR,
         status: 422

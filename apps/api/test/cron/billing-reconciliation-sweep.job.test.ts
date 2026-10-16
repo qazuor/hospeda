@@ -67,9 +67,12 @@ import {
     createPeriodChargesComparison,
     createStateComparison,
     creditedPaymentsFromLedger,
+    noAmountMutationDecisions,
     noDeterminableRetainedPaymentBranch,
     providerLinkCancellationSeen,
-    retainedPaymentsFromLedger
+    retainedPaymentsFromLedger,
+    unregisteredPromoChargePolicy,
+    unregisteredPromoExhaustion
 } from '@repo/service-core';
 import { billingReconciliationSweepJob } from '../../src/cron/jobs/billing-reconciliation-sweep.job';
 import { beforeCancelNotice } from '../../src/routes/billing-subscription/before-cancel-notice';
@@ -89,6 +92,34 @@ function context(dryRun = false): CronJobContext {
 describe('billing reconciliation sweep cron', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it('TEST:HOS-1589:2 wires promo services and the recorded amount decision reader', async () => {
+        mockSweep.mockResolvedValue({
+            rowsRead: 0,
+            runId: 'r',
+            complete: true,
+            pinged: false,
+            rowsFailed: 0,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [],
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        await billingReconciliationSweepJob.handler(context());
+        const gracePorts = mockGraceExpiryCheck.mock.calls[0]?.[0] as {
+            promoCharges: unknown;
+            promoExhaustion: unknown;
+        };
+        expect(gracePorts.promoCharges).toBeDefined();
+        expect(gracePorts.promoCharges).not.toBe(unregisteredPromoChargePolicy);
+        expect(gracePorts.promoExhaustion).toBeDefined();
+        expect(gracePorts.promoExhaustion).not.toBe(unregisteredPromoExhaustion);
+        const amountPorts = mockAmountComparison.mock.calls[0]?.[0] as { mutations: unknown };
+        expect(amountPorts.mutations).toBeDefined();
+        expect(amountPorts.mutations).not.toBe(noAmountMutationDecisions);
     });
 
     it('registers the daily job metadata', () => {
@@ -298,10 +329,13 @@ describe('billing reconciliation sweep cron', () => {
             provider: mockProvider,
             dailySummary: expect.objectContaining({ addUndercharge: expect.any(Function) })
         });
-        expect(mockAmountComparison).toHaveBeenCalledWith({
-            provider: mockProvider,
-            clock: mockClock
-        });
+        expect(mockAmountComparison).toHaveBeenCalledWith(
+            expect.objectContaining({
+                provider: mockProvider,
+                clock: mockClock,
+                mutations: expect.objectContaining({ findLatest: expect.any(Function) })
+            })
+        );
         expect(createStateComparison).toBe(mockStateComparison);
         expect(createPeriodChargesComparison).toBe(mockPeriodChargesComparison);
         expect(createAmountComparison).toBe(mockAmountComparison);
