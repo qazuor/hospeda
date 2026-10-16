@@ -32,6 +32,7 @@ import {
     type PaidOrdersCheckSummary,
     runPaidOrdersCheck
 } from './paid-orders-check.js';
+import { type PauseGiftSummary, runPauseGiftDetection } from './pause-gift-check.js';
 import type { ReconciliationComparisonInput } from './reconciliation-divergence.js';
 import { type ReconciliationComparison, recordDivergence } from './reconciliation-divergence.js';
 import type { SweepLivenessPing } from './sweep-liveness-ping.port.js';
@@ -82,6 +83,7 @@ export interface ReconciliationSweepPorts {
     readonly paidOrders?: PaidOrdersCheckPorts;
     /** Optional escalation pass; without it the sweep performs exactly as before. */
     readonly markEscalation?: { readonly tx?: DrizzleClient };
+    readonly pauseGifts?: { readonly tx?: DrizzleClient };
 }
 
 export type ReconciliationRowCheckResult = 'STOP_REMAINING_CHECKS' | void;
@@ -131,6 +133,7 @@ export interface ReconciliationSweepSummary {
     readonly paidOrders?: PaidOrdersCheckSummary;
     /** Outcomes of overdue mark escalation, when enabled. */
     readonly markEscalation?: MarkEscalationSummary;
+    readonly pauseGifts?: PauseGiftSummary;
 }
 
 function errorMessage(error: unknown): string {
@@ -324,6 +327,22 @@ export async function runReconciliationSweep(
         );
     }
 
+    let pauseGifts: PauseGiftSummary | undefined;
+    if (ports.pauseGifts) {
+        pauseGifts = await runPauseGiftDetection(
+            { correlationId, pageSize },
+            { ...ports.pauseGifts, clock: ports.clock }
+        );
+        rowsRead += pauseGifts.examined;
+        rowsFailed += pauseGifts.failures.length;
+        failures.push(
+            ...pauseGifts.failures.map(({ pauseId, message }) => ({
+                subscriptionId: pauseId,
+                message
+            }))
+        );
+    }
+
     const zeroCallChecks = ports.zeroCallChecks
         ? await runZeroCallChecks(
               { correlationId, pageSize },
@@ -364,6 +383,7 @@ export async function runReconciliationSweep(
         ...(terminalReturn ? { terminalReturn } : {}),
         ...(creditedPayments ? { creditedPayments } : {}),
         ...(paidOrders ? { paidOrders } : {}),
-        ...(markEscalation ? { markEscalation } : {})
+        ...(markEscalation ? { markEscalation } : {}),
+        ...(pauseGifts ? { pauseGifts } : {})
     };
 }

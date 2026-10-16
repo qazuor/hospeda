@@ -124,6 +124,7 @@ export * from './billing/reconciliation/sweep/comparisons/amount-mutation-decisi
 export * from './billing/reconciliation/sweep/comparisons/expected-amount.js';
 export * from './billing/reconciliation/sweep/comparisons/listed-charges.js';
 export * from './billing/reconciliation/sweep/comparisons/period-charges-comparison.js';
+export * from './billing/reconciliation/sweep/comparisons/persisted-daily-summary.js';
 export * from './billing/reconciliation/sweep/comparisons/reconciliation-daily-summary.port.js';
 export * from './billing/reconciliation/sweep/comparisons/state-comparison.js';
 export * from './billing/reconciliation/sweep/comparisons/unregistered-charge-reason.js';
@@ -135,6 +136,8 @@ export * from './billing/reconciliation/sweep/mark-escalation.js';
 export * from './billing/reconciliation/sweep/next-charge-sync.js';
 export * from './billing/reconciliation/sweep/our-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/paid-orders-check.js';
+export * from './billing/reconciliation/sweep/pause-gift.js';
+export * from './billing/reconciliation/sweep/pause-gift-check.js';
 export * from './billing/reconciliation/sweep/provider-pause-check.js';
 export * from './billing/reconciliation/sweep/reconciliation-divergence.js';
 export * from './billing/reconciliation/sweep/reconciliation-sweep.service.js';
