@@ -122,8 +122,14 @@ describe('TEST:B9b:3 AC:B9b:3 quota, validity window and one use per person', ()
     it('(e) serializes five distinct discount redeemers against a quota of two', async () => {
         const promo = await seedPromoCode({ discountKind: 'FIXED', value: 1_000, totalQuota: 2 });
         const { fake } = createReconciliationFake(reconciliationClock);
-        const inputs = await Promise.all(Array.from({ length: 5 }, () => setup(fake)));
+        const inputs = [];
+        for (let index = 0; index < 5; index += 1) inputs.push(await setup(fake));
         const mutate = vi.spyOn(fake, 'changeAmount');
+        const originalMutation = fake.changeAmount.bind(fake);
+        mutate.mockImplementation(async (input) => {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            return originalMutation(input);
+        });
         const results = await Promise.allSettled(inputs.map((input) => redeem(input, promo.code)));
         expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(2);
         expect(results.filter((result) => result.status === 'rejected')).toHaveLength(3);
