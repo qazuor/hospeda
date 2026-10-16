@@ -188,7 +188,7 @@ describe('HOS-1690 — S7 on a row S6 suspended from ACTIVE (AC:B7:13 in-flight 
             await s.runPauseCheck();
             const suspended = await ownRow(s.subscriptionId);
             expect(suspended.status).toBe('SUSPENDED');
-            if (!suspended.graceStartedAt) throw new Error('Expected S6 anchor');
+            const anchoredAt = suspended.graceStartedAt;
             const [initialPayment] = await getServiceTestDb()
                 .select()
                 .from(payments)
@@ -212,10 +212,9 @@ describe('HOS-1690 — S7 on a row S6 suspended from ACTIVE (AC:B7:13 in-flight 
                 outcome: 'CONDITION_FAILED',
                 failedCondition: 4
             });
-            expect((await ownRow(s.subscriptionId)).status).toBe('SUSPENDED');
-            expect((await ownRow(s.subscriptionId)).graceStartedAt).toEqual(
-                suspended.graceStartedAt
-            );
+            const row = await ownRow(s.subscriptionId);
+            expect(row.status).toBe('SUSPENDED');
+            expect(row.graceStartedAt).toEqual(anchoredAt);
             expect(await openMarks(s.subscriptionId)).toHaveLength(0);
         }
     );
