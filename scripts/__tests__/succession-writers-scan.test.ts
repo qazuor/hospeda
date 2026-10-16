@@ -26,8 +26,10 @@ const b = db.selectDistinct({ succeedsId: t.succeedsId }).from(t);
 const c = db.update(t).set({ x: 1 }).returning({ succeedsId: t.succeedsId });
 const d = db.insert(t).values({ succeedsId: x });
 const e = db.update(t).set({ succeedsId: y });
-const f = { succeedsId: z };`;
-        expect(findSuccessionWrites({ file: 'a.ts', source }).map((w) => w.line)).toEqual([4, 5]);
+const f = { succeedsId: w };`;
+        expect(findSuccessionWrites({ file: 'a.ts', source }).map((w) => w.line)).toEqual([
+            4, 5, 6
+        ]);
     });
     it('recognizes raw SQL writes, not SELECT reads', () => {
         expect(
