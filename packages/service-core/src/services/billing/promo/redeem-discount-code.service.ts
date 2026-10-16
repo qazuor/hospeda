@@ -1,5 +1,5 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import { getDb, promoRedemptions } from '@repo/db';
+import { and, billingOptions, eq, getDb, promoRedemptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
     actStartInstant,
@@ -89,6 +89,27 @@ export async function redeemDiscountCode(
             subscription: {
                 planVersionId: subscription.planVersionId,
                 billingOptionId: subscription.billingOptionId
+            },
+            reader: {
+                async findByVersionAndId({ planVersionId, billingOptionId }) {
+                    const rows = await tx
+                        .select({
+                            id: billingOptions.id,
+                            planVersionId: billingOptions.planVersionId,
+                            cycle: billingOptions.cycle,
+                            amount: billingOptions.amount,
+                            currency: billingOptions.currency
+                        })
+                        .from(billingOptions)
+                        .where(
+                            and(
+                                eq(billingOptions.planVersionId, planVersionId),
+                                eq(billingOptions.id, billingOptionId)
+                            )
+                        )
+                        .limit(1);
+                    return rows[0] ?? null;
+                }
             }
         });
         if (!option)

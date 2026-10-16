@@ -124,8 +124,8 @@ describe('TEST:B9b:3 AC:B9b:3 quota, validity window and one use per person', ()
         const { fake } = createReconciliationFake(reconciliationClock);
         const inputs = [];
         for (let index = 0; index < 5; index += 1) inputs.push(await setup(fake));
-        const mutate = vi.spyOn(fake, 'changeAmount');
         const originalMutation = fake.changeAmount.bind(fake);
+        const mutate = vi.spyOn(fake, 'changeAmount');
         mutate.mockImplementation(async (input) => {
             await new Promise((resolve) => setTimeout(resolve, 50));
             return originalMutation(input);
