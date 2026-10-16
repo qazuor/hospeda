@@ -1,3 +1,4 @@
+export * from './billing-promo-renderers.js';
 export * from './billing-reconciliation-renderers.js';
 export * from './billing-renewal-renderers.js';
 export * from './billing-signup-renderers.js';

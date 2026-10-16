@@ -16,6 +16,7 @@ export * from './permanent-grant-addon-cancel.js';
 export * from './permanent-grant-cancel.js';
 export * from './plan-change-confirmation.js';
 export * from './plan-price-change-notice.js';
+export * from './promo-ending.js';
 export * from './purchase-confirmation.js';
 export * from './reconciliation-summary.js';
 export * from './renewal-reminder.js';
