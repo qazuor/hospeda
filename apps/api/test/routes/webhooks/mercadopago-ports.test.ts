@@ -1,4 +1,8 @@
-import { providerLinkCancellationSeen } from '@repo/service-core';
+import {
+    providerLinkCancellationSeen,
+    unregisteredPromoChargePolicy,
+    unregisteredPromoExhaustion
+} from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
 
 const { delegateInputs } = vi.hoisted(() => ({ delegateInputs: [] as unknown[] }));
@@ -74,9 +78,19 @@ describe('AC:B4:11 the provider notice receiver annotates the cancellation seen 
                 'payments',
                 'planPolicy',
                 'provider',
+                'promoCharges',
+                'promoExhaustion',
                 'touristVipInheritance'
             ].sort()
         );
+    });
+});
+
+describe('TEST:HOS-1589:1 production webhook ports register promo services', () => {
+    it('does not expose either unregistered promo default', () => {
+        const ports = buildMercadoPagoNoticePorts();
+        expect(ports.promoCharges).not.toBe(unregisteredPromoChargePolicy);
+        expect(ports.promoExhaustion).not.toBe(unregisteredPromoExhaustion);
     });
 });
 

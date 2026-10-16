@@ -44,13 +44,7 @@ export async function seedPromoCode(input: {
             usableWithAnotherActive: input.usableWithAnotherActive ?? true,
             durationKind: effectKind === 'DISCOUNT' ? durationKind : null,
             durationCharges:
-                effectKind === 'TRIAL_EXTENSION'
-                    ? null
-                    : durationKind === 'N_CHARGES'
-                      ? 2
-                      : durationKind === 'FIRST_CHARGE'
-                        ? 1
-                        : null
+                effectKind === 'TRIAL_EXTENSION' || durationKind !== 'N_CHARGES' ? null : 2
         })
         .returning();
     if (!code) throw new Error('Promo code fixture failed');
@@ -72,8 +66,7 @@ export async function seedPromoRedemption(input: {
 }) {
     const db = getDb();
     const durationKind = input.durationKind ?? 'N_CHARGES';
-    const durationCharges =
-        durationKind === 'FOREVER' ? null : durationKind === 'FIRST_CHARGE' ? 1 : 2;
+    const durationCharges = durationKind === 'N_CHARGES' ? 2 : null;
     const [code] = await db
         .insert(promoCodes)
         .values({
