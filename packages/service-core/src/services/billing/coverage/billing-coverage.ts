@@ -1,7 +1,6 @@
 /**
- * Billing's real `coverage()` (contract §5.2): the trial and BASE resolution
- * of verticals, joined with the sources billing owns. It plugs in as sources
- * and touches nothing already built.
+ * Billing's real `coverage()` (contract §5.2): joins verticals' trial and BASE
+ * resolution with billing's subscription, courtesy, grant and addon sources.
  */
 import {
     type BillingForVerticals,
@@ -14,21 +13,30 @@ import {
 } from '@repo/billing-verticals-contract';
 import type { DrizzleClient } from '@repo/db';
 import { resolveAddonSources } from './addon-sources';
+import { resolveCourtesySources } from './courtesy-sources';
 import type { BillingCoveragePorts } from './coverage-ports';
+import { resolveGrantSources } from './grant-sources';
 import { resolveSubscriptionSources } from './subscription-sources';
 
 /**
- * The `CORTESÍA` and `GRANT` sources. B9a plugs the real ones in here without
- * touching anything else of this module; until then the answer is "none", the
- * default of denying (contract §6.1). Never the bootstrap answers (G13).
+ * Resolves real `CORTESÍA` and `GRANT` sources from their billing tables.
+ * Never uses bootstrap answers (G13).
  *
- * @returns `{ sources }`, always empty in this cut
+ * @param args.ports - The clock used to expire courtesy sources
+ * @param args.tx - Optional transaction every read runs in
+ * @returns `{ sources }` in courtesy-then-grant order
  */
-async function resolveCourtesyAndGrantSources(_args: {
+async function resolveCourtesyAndGrantSources(args: {
     readonly userId: string;
     readonly vertical: CoverageArgs['vertical'];
+    readonly ports: BillingCoveragePorts;
+    readonly tx?: DrizzleClient;
 }): Promise<{ readonly sources: CoverageSource[] }> {
-    return { sources: [] };
+    const [courtesy, grant] = await Promise.all([
+        resolveCourtesySources(args),
+        resolveGrantSources(args)
+    ]);
+    return { sources: [...courtesy.sources, ...grant.sources] };
 }
 
 /**
@@ -55,7 +63,7 @@ export function createBillingCoverage(args: {
                 ports.trialAndBase({ userId, vertical }),
                 resolveSubscriptionSources({ userId, vertical, ports, tx }),
                 resolveAddonSources({ userId, vertical, ports, tx }),
-                resolveCourtesyAndGrantSources({ userId, vertical })
+                resolveCourtesyAndGrantSources({ userId, vertical, ports, tx })
             ]);
             const sources: CoverageSource[] = [
                 ...trialAndBase.sources,

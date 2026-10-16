@@ -1,8 +1,7 @@
 /**
  * Permanent grant acts (B9a.1). The service authorizes ACC_2 (INV:30, AC:B9a:9);
  * API routes are added in HOS-1584's third rollout. Anchor floors are validated
- * with políticaDePlan(v).vigente before writing; the real GRANT coverage source
- * arrives with HOS-1585.
+ * with políticaDePlan(v).vigente before writing.
  */
 import { and, eq, getDb, permanentGrants, permanentGrantVerticals } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';

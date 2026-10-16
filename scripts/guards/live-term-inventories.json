@@ -198,6 +198,12 @@
             "why": "Tercera mitad de la orfandad (B/16 §4.2): ¿hay un ancla viva en esa vertical?"
         },
         {
+            "file": "packages/service-core/src/services/billing/coverage/grant-sources.ts",
+            "symbol": "resolveGrantSources",
+            "row": null,
+            "why": "La fuente GRANT de coverage() lee el ancla viva de UNA vertical."
+        },
+        {
             "file": "packages/service-core/src/services/billing/grant/permanent-grant.service.ts",
             "symbol": "anchorPermanentGrantVertical",
             "row": 6,
@@ -261,6 +267,12 @@
         }
     ],
     "cortesia_diferida": [
+        {
+            "file": "packages/service-core/src/services/billing/coverage/courtesy-sources.ts",
+            "symbol": "resolveCourtesySources",
+            "row": null,
+            "why": "La fuente CORTESÍA emite sólo la cortesía vigente: excluye la diferida (balance_months no nulo)."
+        },
         {
             "file": "packages/service-core/src/services/billing/grant/permanent-grant-courtesy.ts",
             "symbol": "closeDeferredCourtesyBalances",
