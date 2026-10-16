@@ -64,10 +64,9 @@ export const BEFORE_CANCEL_KIND_BY_TRANSITION: Readonly<
     S21: 'UNDECLARED',
     // No writer records S22 yet: its leaf declares the kind in the same PR.
     S22: 'UNDECLARED',
-    // No writer records S23 yet: HOS-1570 declares its kind.
-    S23: 'UNDECLARED',
-    // No writer records S24 yet: HOS-1570 declares its kind.
-    S24: 'UNDECLARED',
+    // S23 and S24 are direct cancellations and share one before-cancel kind.
+    S23: 'DIRECT_CANCELLATION',
+    S24: 'DIRECT_CANCELLATION',
     // No writer records S31 yet: its leaf declares the kind in the same PR.
     S31: 'UNDECLARED',
     // No writer records A3 yet: its leaf declares the kind in the same PR.

@@ -39,6 +39,14 @@ describe('HOS-1559 TEST:B7:6 AC:B7:9 — provider pause is S6 second event', () 
             const s = await providerPauseFixture();
             seeded.push(s.seeded);
             await s.pause();
+            const suspendedAt = s.fixture.clock.now();
+            const originalBeforeCancel = s.beforeCancel.getMockImplementation();
+            if (!originalBeforeCancel) throw new Error('Expected before-cancel fixture handler');
+            s.beforeCancel.mockImplementation(async (notice) => {
+                const result = await originalBeforeCancel(notice);
+                s.fixture.clock.advance({ ms: 60_000 });
+                return result;
+            });
 
             await s.runSweepDay();
 
@@ -81,7 +89,9 @@ describe('HOS-1559 TEST:B7:6 AC:B7:9 — provider pause is S6 second event', () 
                     statusCommitted: 'SUSPENDED'
                 }
             ]);
-            expect((await row(s.subscriptionId)).graceStartedAt).toBeNull();
+            expect((await row(s.subscriptionId)).graceStartedAt).toEqual(suspendedAt);
+            expect((await row(s.subscriptionId)).graceEndsAt).toEqual(suspendedAt);
+            expect(s.fixture.clock.now().getTime()).toBeGreaterThan(suspendedAt.getTime());
             expect(
                 await getServiceTestDb()
                     .select()
@@ -115,13 +125,17 @@ describe('HOS-1559 TEST:B7:6 AC:B7:9 — provider pause is S6 second event', () 
         async () => {
             const s = await providerPauseFixture({ grace: true });
             seeded.push(s.seeded);
+            const graceStartedAt = s.subscription.graceStartedAt;
+            const graceEndsAt = s.subscription.graceEndsAt;
+            if (graceStartedAt === null || graceEndsAt === null)
+                throw new Error('Expected S4 grace clock');
             await s.pause();
+            s.fixture.clock.advance({ ms: 60_000 });
             await s.runPauseCheck();
             const suspended = await row(s.subscriptionId);
-            const graceStartedAt = s.subscription.graceStartedAt;
-            if (graceStartedAt === null) throw new Error('Expected grace start');
             expect(suspended.status).toBe('SUSPENDED');
-            expect(suspended.graceStartedAt).toEqual(s.subscription.graceStartedAt);
+            expect(suspended.graceStartedAt).toEqual(graceStartedAt);
+            expect(suspended.graceEndsAt).toEqual(graceEndsAt);
             expect(s.beforeCancel).toHaveBeenCalledWith(
                 expect.objectContaining({
                     occurrenceId: providerPauseObservedOccurrenceId({

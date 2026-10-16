@@ -206,7 +206,9 @@ describe.each(verticals)('TEST:V9b:3 AC:V9b:3 reseñas de terceros — %s', (ver
             ownerId: owner.id,
             correlationId: randomUUID(),
             clock: { now: () => MATRIX_NOW },
+            previousPassStartedAt: MATRIX_NOW,
             afterCommit: {
+                emitListingPurged: async () => {},
                 deleteRemoteMedia: async () => {},
                 revokeCalendarConnection: async () => {}
             }

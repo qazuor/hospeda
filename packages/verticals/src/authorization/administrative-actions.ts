@@ -33,7 +33,11 @@ export const ADMINISTRATIVE_ACTIONS = [
 /** An action in the closed NUCLEO/08 §3 catalog, as required by V5.md §3.3. */
 export type AdministrativeAction = (typeof ADMINISTRATIVE_ACTIONS)[number];
 
-/** Current route permissions and future owning pieces for NUCLEO/08 §3 and V5.md §3.3. */
+/**
+ * Current route permissions and future owning pieces for NUCLEO/08 §3 and V5.md §3.3.
+ * Each row is compared with the gate of the route that implements it in
+ * `apps/api/test/routes/administrative-action-route-permissions.guard.test.ts` (HOS-1689).
+ */
 export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
     Record<
         AdministrativeAction,
@@ -62,7 +66,10 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
     },
     ACC_9: { permissions: [], pendingOwnPermission: 'B8b' },
     ACC_10: { permissions: [], pendingOwnPermission: 'B8b' },
-    ACC_11: { permissions: [], pendingOwnPermission: 'V4.3 (HOS-1445)' },
+    ACC_11: {
+        permissions: [PermissionEnum.TRIAL_EXTEND],
+        pendingOwnPermission: null
+    },
     ACC_12: { permissions: [PermissionEnum.LISTING_MODERATE], pendingOwnPermission: null },
     ACC_13: { permissions: [], pendingOwnPermission: 'B6' },
     ACC_14: { permissions: [PermissionEnum.BILLING_SETTLE_EXTERNAL], pendingOwnPermission: null },

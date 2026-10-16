@@ -171,6 +171,7 @@ export * from './billing/subscription/arrears-suspension-notice.js';
 export * from './billing/subscription/before-cancel-notice-kinds.js';
 export * from './billing/subscription/billing-period-end.js';
 export * from './billing/subscription/cancel-active-subscription.service.js';
+export * from './billing/subscription/cancel-direct-subscription.service.js';
 export * from './billing/subscription/cancel-inherited-tourist-vip.service.js';
 export * from './billing/subscription/cancellation-authorization.js';
 export * from './billing/subscription/complement-pause-s32.js';
