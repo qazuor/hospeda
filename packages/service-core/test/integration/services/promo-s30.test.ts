@@ -187,7 +187,7 @@ describe('TEST:B9b:5 AC:B9b:5 S30 mutates without the exhausted promo', () => {
         await pool.query(
             `CREATE FUNCTION ${fn}() RETURNS trigger LANGUAGE plpgsql AS $$
              BEGIN
-                 IF NEW.entity_id = '${seeded.subscription.id}'::uuid AND NEW.reason = 'S30' THEN
+                 IF NEW.entity_id = '${seeded.subscription.id}'::uuid AND NEW.reason::text = 'S30' THEN
                      UPDATE subscriptions SET plan_version_id = NULL WHERE id = NEW.entity_id;
                  END IF;
                  RETURN NEW;
@@ -378,11 +378,12 @@ describe('TEST:B9b:5 AC:B9b:5 S30 mutates without the exhausted promo', () => {
         adjustable.advance(1);
         expect(await sweep()).toMatchObject({ marksOpened: 0, rowsFailed: 0 });
         expect(retry).toHaveBeenCalledTimes(2);
-        adjustable.advance(2);
+        adjustable.advance(1);
+        adjustable.advance(1 / 86_400_000);
         expect(await sweep()).toMatchObject({ marksOpened: 0, rowsFailed: 0 });
         expect(retry).toHaveBeenCalledTimes(2);
         // The retry window expires at exactly day three; this one millisecond is outside it.
-        adjustable.advance(1 / 86_400_000);
+        adjustable.advance(1);
         expect(await sweep()).toMatchObject({ marksOpened: 1, rowsFailed: 0 });
         expect(retry).toHaveBeenCalledTimes(2);
     });
