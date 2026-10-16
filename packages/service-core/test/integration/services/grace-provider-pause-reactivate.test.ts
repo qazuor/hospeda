@@ -177,4 +177,49 @@ describe('HOS-1690 — S7 on a row S6 suspended from ACTIVE (AC:B7:13 in-flight 
             expect(await openMarks(s.subscriptionId)).toHaveLength(0);
         }
     );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'c — a payment credited before S6 does not reactivate',
+        async () => {
+            // Arrange: the fixture's initial payment is credited after epoch and before S6.
+            const s = await providerPauseFixture({ activeApprovedCycle: true });
+            seeded.push({ subscriptionId: s.subscriptionId, userId: s.fixture.user.id });
+            await s.pause();
+            await s.runPauseCheck();
+            const suspended = await ownRow(s.subscriptionId);
+            expect(suspended.status).toBe('SUSPENDED');
+            if (!suspended.graceStartedAt) throw new Error('Expected S6 anchor');
+            const [initialPayment] = await getServiceTestDb()
+                .select()
+                .from(payments)
+                .where(eq(payments.providerFactId, s.fixture.initialChargeId));
+            if (!initialPayment) throw new Error('Initial payment fact missing');
+            expect(initialPayment.status).toBe('SUCCEEDED');
+            const [initialCoverage] = await getServiceTestDb()
+                .select()
+                .from(coveredPeriods)
+                .where(eq(coveredPeriods.paymentId, initialPayment.id));
+            if (!initialCoverage) throw new Error('Initial payment coverage missing');
+            expect(initialCoverage.creditedAt.getTime()).toBeGreaterThan(0);
+            expect(initialCoverage.creditedAt.getTime()).toBeLessThan(
+                suspended.graceStartedAt.getTime()
+            );
+
+            // Act: replaying the already-credited payment cannot satisfy condition 4.
+            const reactivation = await reactivateSuspendedOnCreditedPayment(
+                { paymentId: initialPayment.id },
+                { provider: s.provider, clock: s.fixture.clock }
+            );
+
+            expect(reactivation).toMatchObject({
+                outcome: 'CONDITION_FAILED',
+                failedCondition: 4
+            });
+            expect((await ownRow(s.subscriptionId)).status).toBe('SUSPENDED');
+            expect((await ownRow(s.subscriptionId)).graceStartedAt).toEqual(
+                suspended.graceStartedAt
+            );
+            expect(await openMarks(s.subscriptionId)).toHaveLength(0);
+        }
+    );
 });
