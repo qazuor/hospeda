@@ -69,6 +69,14 @@ function nonNullValue(value: ts.Expression): boolean {
     if (isSchemaCall(value)) return false;
     return true;
 }
+/** Returns true when `object` is the first argument of `db.select(…)/db.selectDistinct(…)/.returning(…)`. */
+function isProjectionObject(object: ts.ObjectLiteralExpression): boolean {
+    const call = object.parent;
+    if (!ts.isCallExpression(call)) return false;
+    if (call.arguments[0] !== object) return false;
+    if (!ts.isPropertyAccessExpression(call.expression)) return false;
+    return ['select', 'selectDistinct', 'returning'].includes(call.expression.name.text);
+}
 export function findSuccessionWrites({
     file,
     source
@@ -95,7 +103,8 @@ export function findSuccessionWrites({
             property &&
             value &&
             ts.isObjectLiteralExpression(property.parent) &&
-            nonNullValue(value)
+            nonNullValue(value) &&
+            !isProjectionObject(property.parent)
         ) {
             findings.push({
                 file,

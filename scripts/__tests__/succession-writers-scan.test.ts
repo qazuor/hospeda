@@ -20,6 +20,17 @@ describe('succession-writers-scan', () => {
             2, 3, 4
         ]);
     });
+    it('does not treat a select/returning projection as a write, but still flags values/set (HOS-1681)', () => {
+        const source = `const a = db.select({ succeedsId: t.succeedsId }).from(t);
+const b = db.selectDistinct({ succeedsId: t.succeedsId }).from(t);
+const c = db.update(t).set({ x: 1 }).returning({ succeedsId: t.succeedsId });
+const d = db.insert(t).values({ succeedsId: x });
+const e = db.update(t).set({ succeedsId: y });
+const f = { succeedsId: w };`;
+        expect(findSuccessionWrites({ file: 'a.ts', source }).map((w) => w.line)).toEqual([
+            4, 5, 6
+        ]);
+    });
     it('recognizes raw SQL writes, not SELECT reads', () => {
         expect(
             findRawSqlSuccessionWrites({

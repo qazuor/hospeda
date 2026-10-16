@@ -914,15 +914,14 @@ export async function signInExistingUser(
 export async function createConversation(options: {
     readonly guestUserId: string;
     readonly accommodationId: string;
-    readonly subject?: string;
 }): Promise<{ readonly id: string }> {
     const rows = await execSQL<{ id: string }>(
         `INSERT INTO conversations (
              user_id, accommodation_id,
-             subject, status, created_at, updated_at
-         ) VALUES ($1, $2, $3, 'OPEN', NOW(), NOW())
+             status, created_at, updated_at
+         ) VALUES ($1, $2, 'OPEN', NOW(), NOW())
          RETURNING id`,
-        [options.guestUserId, options.accommodationId, options.subject ?? 'E2E test conversation']
+        [options.guestUserId, options.accommodationId]
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('createConversation: insert returned no id');

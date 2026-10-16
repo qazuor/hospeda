@@ -123,6 +123,7 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
     });
 
     afterEach(() => {
+        vi.useRealTimers();
         vi.restoreAllMocks();
         sessionStorage.clear();
     });
@@ -224,6 +225,8 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
     });
 
     it('clicking an option closes the submenu AND the whole overlay (same `onLinkClick` navigation path every other menu link uses)', () => {
+        // handleLinkClick arms a 160 ms navigation timer; drop it so it cannot fire after teardown.
+        vi.useFakeTimers();
         const { container } = renderMenu();
         openMenu();
         const trigger = openPublishSubmenu();
@@ -236,6 +239,7 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
         // computation for a hidden subtree is unreliable to assert on.
         const overlay = container.querySelector('[role="dialog"]');
         expect(overlay).toHaveAttribute('aria-hidden', 'true');
+        vi.clearAllTimers();
     });
 
     it('closes the submenu when clicking outside it (still inside the overlay)', () => {
