@@ -1,10 +1,11 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { DrizzleClient } from '@repo/db';
 import { domainEventModel, reconciliationPauseGiftModel } from '@repo/db';
+import { BILLING_CYCLE_MONTHS, type BillingCycle } from '@repo/schemas';
 import { computePauseGift } from './pause-gift.js';
 
-type Cycle = 'monthly' | 'quarterly' | 'semiannual' | 'annual';
-const CYCLE_MONTHS: Record<Cycle, number> = { monthly: 1, quarterly: 3, semiannual: 6, annual: 12 };
+type Cycle = BillingCycle;
+const CYCLE_MONTHS: Readonly<Record<Cycle, number>> = BILLING_CYCLE_MONTHS;
 
 function isCycle(value: string | null): value is Cycle {
     return value !== null && Object.hasOwn(CYCLE_MONTHS, value);
