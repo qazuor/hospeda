@@ -522,7 +522,7 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
 
     it('TEST:B11:16(h): caps 250 distinct mark subjects at 200 with 50 omitted', async () => {
         await withServiceTestTransaction(async (tx) => {
-            const base = new Date(Date.now() + 2_000);
+            const base = new Date('2099-01-01T00:00:00.000Z');
             await seedClosedWindowBefore(tx, base);
             const correlationId = crypto.randomUUID();
             for (let index = 0; index < 250; index++) {
