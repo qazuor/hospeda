@@ -1,5 +1,5 @@
 import type { EmailOutboxRow } from '@repo/db';
-import { NotificationType, OUTBOX_MAIL_RENDERERS } from '@repo/notifications';
+import { NotificationType, OUTBOX_MAIL_RENDERERS, PROMO_ENDING_SUBJECT } from '@repo/notifications';
 import { BEFORE_CANCEL_TEMPLATE_BY_KIND } from '@repo/service-core';
 import { LISTING_ARCHIVED_TEMPLATE } from '@repo/verticals';
 import { createElement, type ReactElement } from 'react';
@@ -392,5 +392,28 @@ describe('TEST:V6:36 the production outbox sender renders the on-archive notice'
         expect(result.subject).toContain('gastronomía');
         expect(html).toContain('7 de enero de 2027');
         expect(html).not.toContain(listingId);
+    });
+});
+
+describe('TEST:B9b:5 AC:B9b:5 the production sender renders promo-ending mail', () => {
+    it('(a) resolves billing.promo-ending through its registered renderer', async () => {
+        const render = buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' });
+        const result = await render({
+            row: row('billing.promo-ending', {
+                subscriptionId: 'sub-private',
+                redemptionId: 'redemption-private',
+                vertical: 'accommodation',
+                planName: 'Plan premium',
+                lastDiscountedChargeDate: '2026-10-20',
+                amountAfterMinor: 80000,
+                currency: 'ARS',
+                daysBefore: 7,
+                deadlinesVersion: 1
+            })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject).toBe(PROMO_ENDING_SUBJECT);
+        expect(html).toContain('20 de octubre de 2026');
+        expect(html).toContain('$800,00');
     });
 });
