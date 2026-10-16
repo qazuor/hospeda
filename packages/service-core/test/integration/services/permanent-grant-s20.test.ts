@@ -47,6 +47,7 @@ import {
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
 import { namespaceFake } from './support/payment-provider.js';
 import {
+    currentFloorPolicy,
     grantSignerActor,
     retirePermanentGrantRows,
     seedGrantPlan,
@@ -630,6 +631,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const planV = await seedGrantPlan(getServiceTestDb(), v);
             const planW = await seedGrantPlan(getServiceTestDb(), w);
             const ports = {
+                planPolicy: currentFloorPolicy,
                 clock,
                 provider: namespaceFake(fake),
                 beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
@@ -952,6 +954,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 }
             }) as PaymentProvider;
             const ports = {
+                planPolicy: currentFloorPolicy,
                 clock,
                 provider,
                 beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
@@ -1032,6 +1035,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     anchors: [{ vertical, ...plan }]
                 },
                 {
+                    planPolicy: currentFloorPolicy,
                     clock,
                     provider: namespaceFake(
                         new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock })
@@ -1107,6 +1111,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     anchors: [{ vertical, ...grantPlan }]
                 },
                 {
+                    planPolicy: currentFloorPolicy,
                     clock,
                     provider: namespaceFake(fake),
                     beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
@@ -1194,6 +1199,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     anchors: [{ vertical, ...plan }]
                 },
                 {
+                    planPolicy: currentFloorPolicy,
                     clock,
                     provider: namespaceFake(fake),
                     beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),

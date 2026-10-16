@@ -24,6 +24,7 @@ import {
 import { adminRestoreUserRoute } from './restore';
 import { adminGetUserRolesRoute, adminGrantUserRoleRoute, adminRevokeUserRoleRoute } from './roles';
 import { adminUserStatsRoute } from './stats';
+import { adminGetUserTrialSummaryRoute } from './trial-summary';
 import { adminUpdateUserRoute } from './update';
 
 const app = createRouter();
@@ -42,6 +43,9 @@ app.route('/', adminUserOptionsRoute);
 
 // GET /:id/effective-set (HOS-1638, AC:B13a:23) — before the bare /:id routes.
 app.route('/', adminGetUserEffectiveSetRoute);
+
+// GET /:id/trial-summary (HOS-1677, V8a fila 4, mitad panel)
+app.route('/', adminGetUserTrialSummaryRoute);
 
 // Per-user permission overrides (SPEC-170). Registered BEFORE the /:id routes
 // so "permissions" is never matched as a bare /:id segment.

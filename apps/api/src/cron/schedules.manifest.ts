@@ -131,6 +131,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Enqueue the renewal notice at 5 and 1 days before the next charge (HOS-1622, AC:B13a:13).'
     },
     {
+        name: 'billing-reconciliation-summary',
+        displayName: 'Resumen de conciliación',
+        category: 'billing',
+        schedule: '*/5 * * * *',
+        description:
+            'Run one tick of the aggregated billing reconciliation summary window (HOS-1607).'
+    },
+    {
         name: 'host-trade-usage-reminder',
         displayName: 'Recordatorio de usos del beneficio',
         category: 'notifications',

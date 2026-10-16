@@ -19,7 +19,7 @@ import { DomainEventModel } from '../../src/models/domain-event/domain-event.mod
 import { EmailOutboxModel } from '../../src/models/email-outbox/email-outbox.model.ts';
 import { buildEmailDedupKey } from '../../src/models/email-outbox/email-outbox-dedup-key.ts';
 import { emailOutbox } from '../../src/schemas/email-outbox/email_outbox.dbschema.ts';
-import { closeTestPool, getTestDb, getTestPool } from './helpers.ts';
+import { closeTestPool, getTestDb, getTestPool, withTestTransaction } from './helpers.ts';
 
 const events = new DomainEventModel();
 const outbox = new EmailOutboxModel();
@@ -167,6 +167,61 @@ describe('TEST:U2:11 domain_event after db:migrate from empty', () => {
         expect(personWithoutId).toMatchObject({
             code: '23514',
             constraint: 'domain_event_person_actor_check'
+        });
+    });
+
+    it('accepts the three reconciliation event types added in HOS-1607', async () => {
+        const client = await getTestPool().connect();
+        try {
+            await client.query('BEGIN');
+            for (const type of [
+                'reconciliation.mark_escalated',
+                'reconciliation.undercharge_detected',
+                'reconciliation.pause_gift_detected'
+            ]) {
+                await client.query(
+                    `INSERT INTO domain_event (event_type, entity_type, entity_id, actor_type, correlation_id)
+                     VALUES ($1, 'subscription', $2, 'job', $3)`,
+                    [type, randomUUID(), randomUUID()]
+                );
+            }
+            await client.query('ROLLBACK');
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+    });
+
+    it('checks an event by entity and type without relying on event order', async () => {
+        await withTestTransaction(async (tx) => {
+            const entityId = randomUUID();
+            const correlationId = randomUUID();
+            await events.insert({
+                eventType: 'reconciliation.pause_gift_detected',
+                entityType: 'subscription_pause',
+                entityId,
+                actorType: 'job',
+                correlationId,
+                tx
+            });
+            expect(
+                await events.existsByEntity({
+                    eventType: 'reconciliation.pause_gift_detected',
+                    entityType: 'subscription_pause',
+                    entityId,
+                    tx
+                })
+            ).toBe(true);
+            expect(
+                await events.existsByEntity({
+                    eventType: 'reconciliation.pause_gift_detected',
+                    entityType: 'subscription_pause',
+                    entityId: randomUUID(),
+                    tx
+                })
+            ).toBe(false);
         });
     });
 });

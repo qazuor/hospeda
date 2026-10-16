@@ -1,4 +1,4 @@
-import type { Clock } from '@repo/billing-verticals-contract';
+import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contract';
 import type { PaymentProvider } from '@repo/payments';
 import type { AddonOrphanhoodPorts } from '../addon/addon-orphanhood-ports.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
@@ -14,6 +14,8 @@ import type { CancellationSeenAnnotator } from '../subscription/subscription-bil
  * Coverage notifications and provider ports handle post-commit effects.
  */
 export interface PermanentGrantPorts {
+    /** políticaDePlan de verticales: valida el piso; billing no resuelve la vigente. */
+    readonly planPolicy: VerticalsForBilling['planPolicy'];
     readonly clock: Clock;
     readonly coverageNotices: CoverageNotices;
     readonly orphanhood: AddonOrphanhoodPorts;

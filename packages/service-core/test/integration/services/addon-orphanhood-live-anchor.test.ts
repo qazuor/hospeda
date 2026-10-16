@@ -24,6 +24,7 @@ import {
 } from './support/addon-orphan-fixtures';
 import { addonPolicyFromTx } from './support/coverage-fixtures';
 import {
+    currentFloorPolicy,
     retirePermanentGrantRows,
     seedGrantPlan,
     seedPermanentGrant
@@ -226,6 +227,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         anchors: [{ vertical: V, ...seeded.plan }]
                     },
                     {
+                        planPolicy: currentFloorPolicy,
                         clock: { now: () => orphanNow },
                         provider: new FakePaymentProvider({
                             idNamespace: crypto.randomUUID(),

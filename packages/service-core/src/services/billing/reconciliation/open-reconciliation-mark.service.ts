@@ -13,6 +13,10 @@ import { z } from 'zod';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
 import {
+    type DuplicateChargeNoticeRecipients,
+    enqueueDuplicateChargeNotice
+} from './immediate-notice.js';
+import {
     type HangablePayment,
     type ReconciliationMarkPayments,
     unimplementedReconciliationMarkPayments
@@ -34,6 +38,7 @@ export interface OpenReconciliationMarkInput {
 }
 export interface OpenReconciliationMarkPorts {
     readonly markPayments?: ReconciliationMarkPayments;
+    readonly notice?: { readonly recipients?: DuplicateChargeNoticeRecipients };
 }
 export interface OpenReconciliationMarkResult {
     readonly mark: NonNullable<Awaited<ReturnType<typeof reconciliationMarkModel.findById>>>;
@@ -231,6 +236,24 @@ export async function openReconciliationMark(
             reason: null,
             tx
         });
+        if (outcome === 'OPENED' && input.reason === 'COBRO_DUPLICADO')
+            await enqueueDuplicateChargeNotice(
+                {
+                    tx,
+                    markId: mark.id,
+                    subject: {
+                        subjectType:
+                            input.subject.kind === 'SUBSCRIPTION'
+                                ? 'subscription'
+                                : 'addon_instance',
+                        subjectId
+                    },
+                    openedAt: mark.placedAt,
+                    paymentId: input.payment?.id ?? null,
+                    correlationId: input.correlationId
+                },
+                ports.notice
+            );
         return { mark, outcome, paymentHung };
     });
 }

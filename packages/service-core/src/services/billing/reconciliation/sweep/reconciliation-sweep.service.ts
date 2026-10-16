@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { Clock } from '@repo/billing-verticals-contract';
+import type { DrizzleClient } from '@repo/db';
 import {
     isReconciliationSweepRunComplete,
     reconciliationInventoryModel,
@@ -20,6 +21,11 @@ import {
     runCreditedPaymentsCheck
 } from './credited-payments-check.js';
 import {
+    type MarkEscalationPorts,
+    type MarkEscalationSummary,
+    runMarkEscalation
+} from './mark-escalation.js';
+import {
     createOurCancellationRetryTally,
     type OurCancellationRetryCounts,
     retryOurCancellation,
@@ -30,6 +36,7 @@ import {
     type PaidOrdersCheckSummary,
     runPaidOrdersCheck
 } from './paid-orders-check.js';
+import { type PauseGiftSummary, runPauseGiftDetection } from './pause-gift-check.js';
 import type { ReconciliationComparisonInput } from './reconciliation-divergence.js';
 import { type ReconciliationComparison, recordDivergence } from './reconciliation-divergence.js';
 import type { SweepLivenessPing } from './sweep-liveness-ping.port.js';
@@ -78,6 +85,9 @@ export interface ReconciliationSweepPorts {
      * what it did before. Provider and clock are the sweep's own.
      */
     readonly paidOrders?: PaidOrdersCheckPorts;
+    /** Optional escalation pass; without it the sweep performs exactly as before. */
+    readonly markEscalation?: Omit<MarkEscalationPorts, 'clock'>;
+    readonly pauseGifts?: { readonly tx?: DrizzleClient };
 }
 
 export type ReconciliationRowCheckResult = 'STOP_REMAINING_CHECKS' | void;
@@ -125,6 +135,9 @@ export interface ReconciliationSweepSummary {
     readonly creditedPayments?: CreditedPaymentsCheckSummary;
     /** Outcomes of the paid-orders check, when it ran. */
     readonly paidOrders?: PaidOrdersCheckSummary;
+    /** Outcomes of overdue mark escalation, when enabled. */
+    readonly markEscalation?: MarkEscalationSummary;
+    readonly pauseGifts?: PauseGiftSummary;
 }
 
 function errorMessage(error: unknown): string {
@@ -302,6 +315,38 @@ export async function runReconciliationSweep(
         rowsFailed += paidOrders.failures.length;
     }
 
+    let markEscalation: MarkEscalationSummary | undefined;
+    if (ports.markEscalation) {
+        markEscalation = await runMarkEscalation(
+            { correlationId, pageSize },
+            { ...ports.markEscalation, clock: ports.clock }
+        );
+        rowsRead += markEscalation.examined;
+        rowsFailed += markEscalation.failures.length;
+        failures.push(
+            ...markEscalation.failures.map(({ markId, message }) => ({
+                subscriptionId: markId,
+                message
+            }))
+        );
+    }
+
+    let pauseGifts: PauseGiftSummary | undefined;
+    if (ports.pauseGifts) {
+        pauseGifts = await runPauseGiftDetection(
+            { correlationId, pageSize },
+            { ...ports.pauseGifts, clock: ports.clock }
+        );
+        rowsRead += pauseGifts.examined;
+        rowsFailed += pauseGifts.failures.length;
+        failures.push(
+            ...pauseGifts.failures.map(({ pauseId, message }) => ({
+                subscriptionId: pauseId,
+                message
+            }))
+        );
+    }
+
     const zeroCallChecks = ports.zeroCallChecks
         ? await runZeroCallChecks(
               { correlationId, pageSize },
@@ -341,6 +386,8 @@ export async function runReconciliationSweep(
         ...(cancellationRetry ? { cancellationRetry } : {}),
         ...(terminalReturn ? { terminalReturn } : {}),
         ...(creditedPayments ? { creditedPayments } : {}),
-        ...(paidOrders ? { paidOrders } : {})
+        ...(paidOrders ? { paidOrders } : {}),
+        ...(markEscalation ? { markEscalation } : {}),
+        ...(pauseGifts ? { pauseGifts } : {})
     };
 }

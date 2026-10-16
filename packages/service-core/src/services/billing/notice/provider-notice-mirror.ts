@@ -48,7 +48,9 @@ const buildProviderNoticeMirror = (): ProviderNoticeMirror => ({
     }),
     active: row({
         PENDING_AUTHORIZATION: { kind: 'S2' },
-        GRACE_PERIOD: { kind: 'DIVERGENCE' },
+        // After S4 the provider keeps the preapproval authorized while retrying; active over grace is expected.
+        // active over SUSPENDED remains a divergence because S6 cancels the preapproval when it suspends.
+        GRACE_PERIOD: noop,
         SUSPENDED: { kind: 'DIVERGENCE' },
         PAUSED: delegate('RESUME_MIRROR'),
         CANCEL_SCHEDULED: delegate('LIVE_PREAPPROVAL_ON_CLOSED_ROW'),

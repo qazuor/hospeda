@@ -1,3 +1,4 @@
+import type { VerticalsForBilling } from '@repo/billing-verticals-contract';
 import {
     addonInstances,
     courtesyGrants,
@@ -5,10 +6,12 @@ import {
     inArray,
     permanentGrants,
     permanentGrantVerticals,
+    planCatalogModel,
     plans,
     planVersions
 } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { createPlanCatalogInverse } from '@repo/verticals';
 import type { Actor } from '../../../../src/types/index.js';
 import { getServiceTestDb, getServiceTestPool } from '../helpers';
 import { cleanUpCoverageNoticeRows } from './coverage-notice-fixtures.js';
@@ -118,4 +121,17 @@ export async function retirePermanentGrantRows(userIds: readonly string[]): Prom
     );
     await cleanUpCoverageNoticeRows({ userIds, promoCodeIds: [] });
     await getServiceTestPool().query('DELETE FROM users WHERE id = ANY($1::uuid[])', [userIds]);
+}
+
+/** Policy port for tests whose behavior does not exercise floor rejection. */
+export const currentFloorPolicy: VerticalsForBilling['planPolicy'] = async () => ({
+    graceDays: 0,
+    allowsPause: false,
+    current: true,
+    sellable: false
+});
+
+/** Build the real catalog policy for integration cases that verify catalog currentness. */
+export function catalogPlanPolicy(): VerticalsForBilling['planPolicy'] {
+    return createPlanCatalogInverse({ reader: planCatalogModel }).planPolicy;
 }

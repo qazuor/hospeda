@@ -15,7 +15,7 @@
  * the API's request context.
  */
 
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, gt, inArray, lte, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     type DomainEventActorType,
@@ -67,11 +67,57 @@ export interface FindDomainEventsByCorrelationInput {
     readonly tx?: DrizzleClient;
 }
 
+/** Input of {@link DomainEventModel.existsByEntity}. */
+export interface ExistsDomainEventByEntityInput {
+    readonly eventType: DomainEventType;
+    readonly entityType: string;
+    readonly entityId: string;
+    readonly tx?: DrizzleClient;
+}
+
+/** Input for keyset pagination through a closed set of event types and time range. */
+export interface ListDomainEventsByTypesInRangeInput {
+    readonly eventTypes: readonly DomainEventType[];
+    readonly after: Date;
+    readonly until: Date;
+    readonly afterEventId?: string;
+    readonly limit: number;
+    readonly tx?: DrizzleClient;
+}
+
+/** Input for counting a closed set of event types in a time range. */
+export interface CountDomainEventsByTypesInRangeInput {
+    readonly eventTypes: readonly DomainEventType[];
+    readonly after: Date;
+    readonly until: Date;
+    readonly tx?: DrizzleClient;
+}
+
 /** Model for the append-only `domain_event` table. */
 export class DomainEventModel {
     /** Resolves the transaction client when given, the shared client otherwise. */
     private client(tx?: DrizzleClient): DrizzleClient {
         return tx ?? getDb();
+    }
+
+    /** Checks whether an append-only event already exists for this entity and type. */
+    async existsByEntity(input: ExistsDomainEventByEntityInput): Promise<boolean> {
+        try {
+            const rows = await this.client(input.tx)
+                .select({ exists: sql<number>`1` })
+                .from(domainEvent)
+                .where(
+                    and(
+                        eq(domainEvent.eventType, input.eventType),
+                        eq(domainEvent.entityType, input.entityType),
+                        eq(domainEvent.entityId, input.entityId)
+                    )
+                )
+                .limit(1);
+            return rows.length > 0;
+        } catch (error) {
+            this.fail('existsByEntity', input, error);
+        }
     }
 
     /**
@@ -164,6 +210,41 @@ export class DomainEventModel {
         } catch (error) {
             this.fail('findByCorrelationId', logContext, error);
         }
+    }
+
+    /** Lists events in (after, until], ordered by id for stable keyset pagination. */
+    async listByTypesInRange(
+        input: ListDomainEventsByTypesInRangeInput
+    ): Promise<SelectDomainEvent[]> {
+        if (input.eventTypes.length === 0 || input.limit <= 0) return [];
+        const predicates = [
+            inArray(domainEvent.eventType, [...input.eventTypes]),
+            gt(domainEvent.occurredAt, input.after),
+            lte(domainEvent.occurredAt, input.until)
+        ];
+        if (input.afterEventId) predicates.push(gt(domainEvent.id, input.afterEventId));
+        return (input.tx ?? getDb())
+            .select()
+            .from(domainEvent)
+            .where(and(...predicates))
+            .orderBy(asc(domainEvent.id))
+            .limit(input.limit);
+    }
+
+    /** Counts events in the half-open/closed interval (after, until]. */
+    async countByTypesInRange(input: CountDomainEventsByTypesInRangeInput): Promise<number> {
+        if (input.eventTypes.length === 0) return 0;
+        const [row] = await (input.tx ?? getDb())
+            .select({ count: sql<number>`count(*)::int` })
+            .from(domainEvent)
+            .where(
+                and(
+                    inArray(domainEvent.eventType, [...input.eventTypes]),
+                    gt(domainEvent.occurredAt, input.after),
+                    lte(domainEvent.occurredAt, input.until)
+                )
+            );
+        return row?.count ?? 0;
     }
 
     /** Logs a successful query; logging never breaks the operation. */
