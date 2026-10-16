@@ -165,6 +165,7 @@ type ViolationDetail = {
         target: ReadonlyArray<string>;
         html: string;
         failureSummary?: string;
+        checks: ReadonlyArray<{ message: string; data?: unknown }>;
     }>;
 };
 
@@ -184,6 +185,8 @@ type PageResult = {
     };
     /** Populated only when A11Y_DETAIL=1. */
     details?: ReadonlyArray<ViolationDetail>;
+    /** Node details retained for reporting only if the violation is new. */
+    newViolationDetails?: ReadonlyArray<ViolationDetail>;
     durationMs: number;
 };
 
@@ -345,6 +348,22 @@ async function sweepEntry(
             .analyze();
 
         const violations = axeResults.violations;
+        result.newViolationDetails = violations
+            .filter((v) => v.impact === 'critical' || v.impact === 'serious')
+            .map((v) => ({
+                rule: v.id,
+                impact: v.impact ?? 'unknown',
+                help: v.help,
+                nodes: v.nodes.map((n) => ({
+                    target: n.target.map((t) => (Array.isArray(t) ? t.join(' ') : String(t))),
+                    html: n.html.slice(0, 300),
+                    failureSummary: n.failureSummary,
+                    checks: [...n.any, ...n.all, ...n.none].map((check) => ({
+                        message: check.message,
+                        data: check.data
+                    }))
+                }))
+            }));
         result.axe = {
             violations: violations.length,
             critical: violations.filter((v) => v.impact === 'critical').length,
@@ -450,7 +469,16 @@ async function main() {
     };
 
     const reportPath = resolve(REPORT_DIR, 'sweep-report.json');
-    writeFileSync(reportPath, JSON.stringify({ summary, results }, null, 2));
+    // Keep the uploaded summary artifact compact; node-level details are printed
+    // to the job log only when the baseline comparison identifies a new blocker.
+    writeFileSync(
+        reportPath,
+        JSON.stringify(
+            { summary, results },
+            (key, value: unknown) => (key === 'newViolationDetails' ? undefined : value),
+            2
+        )
+    );
     console.log(`\nReport saved to ${reportPath}`);
 
     if (DETAIL) {
@@ -527,6 +555,24 @@ async function main() {
         );
         for (const nv of newViolations) {
             console.error(`  - ${nv.key} (${nv.url}): ${nv.id} (${nv.impact})`);
+            const page = results.find(
+                (r) => baselineKey({ name: r.name, theme: r.theme }) === nv.key && r.url === nv.url
+            );
+            const detail = page?.newViolationDetails?.find((v) => v.rule === nv.id);
+            for (const [index, node] of (detail?.nodes ?? []).entries()) {
+                console.error(`      node ${index + 1}:`);
+                console.error(`        target: ${node.target.join(' | ')}`);
+                console.error(`        html: ${node.html}`);
+                if (node.failureSummary) {
+                    console.error(`        failureSummary: ${node.failureSummary}`);
+                }
+                for (const check of node.checks) {
+                    console.error(`        check: ${check.message}`);
+                    if (check.data !== undefined) {
+                        console.error(`        colors/data: ${JSON.stringify(check.data)}`);
+                    }
+                }
+            }
         }
         console.error(
             '\nFix the violation, or — if it is intentional and tracked — re-run with A11Y_UPDATE_BASELINE=1 to accept it.'
