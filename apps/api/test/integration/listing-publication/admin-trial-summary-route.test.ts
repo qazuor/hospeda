@@ -1,6 +1,6 @@
 /** TEST:V8a:7 (panel, fila 4): admin reads another user's trial facts. */
 import { randomUUID } from 'node:crypto';
-import { domainEventModel, getDb, sql, trialRedemptions } from '@repo/db';
+import { domainEventModel, getDb, setDb, sql, trialRedemptions } from '@repo/db';
 import { PermissionEnum, RoleEnum, VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -20,6 +20,25 @@ const verticals = [
     VerticalEnum.EXPERIENCE
 ] as const;
 const owners: string[] = [];
+class RollbackSignal extends Error {}
+
+async function withRollbackTransaction(run: (db: ReturnType<typeof getDb>) => Promise<void>) {
+    const runtimeDb = getDb();
+    try {
+        await runtimeDb.transaction(async (tx) => {
+            setDb(tx);
+            try {
+                await run(tx);
+            } finally {
+                setDb(runtimeDb);
+            }
+            throw new RollbackSignal();
+        });
+    } catch (error) {
+        if (!(error instanceof RollbackSignal)) throw error;
+    }
+}
+
 const adminHeaders = (id: string) =>
     actorHeaders({
         id,
@@ -122,6 +141,72 @@ describe.each(verticals)('TEST:V8a:7 (panel, fila 4) admin trial summary — %s'
             summary: { status: 'NONE' },
             ceilingDays: null
         });
+    });
+});
+
+it('c2: reads the ceiling from the trial snapshot when a newer deadline version exists', async () => {
+    const vertical = VerticalEnum.ACCOMMODATION;
+    await ensurePublicationCatalog(vertical);
+    const actorId = await newOwner();
+    const subjectId = await newOwner();
+    await createTrial({ userId: subjectId, vertical, status: 'TRIAL_ACTIVE' });
+    const [trial] = (
+        await getDb().execute(sql<{ id: string; version: number }>`
+        SELECT id, deadlines_version AS version FROM trial
+        WHERE user_id = ${subjectId}::uuid AND vertical = ${vertical}`)
+    ).rows;
+    const [snapshot] = (
+        await getDb().execute(sql<{ days: number }>`
+        SELECT ("values"->'7'->>'days')::int AS days FROM vertical_deadline_version
+        WHERE version = ${trial?.version}`)
+    ).rows;
+    expect(trial?.version).toBeTruthy();
+
+    await withRollbackTransaction(async (tx) => {
+        await tx.execute(sql`
+            INSERT INTO vertical_deadline_version (version, "values")
+            SELECT (SELECT COALESCE(MAX(version), 0) + 1 FROM vertical_deadline_version),
+                jsonb_set("values", '{7}', '{"days":7}'::jsonb)
+            FROM vertical_deadline_version WHERE version = ${trial?.version}
+        `);
+        const response = await request(subjectId, vertical, adminHeaders(actorId));
+        expect(response.status).toBe(200);
+        expect(
+            ((await response.json()) as { data: { ceilingDays: number } }).data.ceilingDays
+        ).toBe(snapshot?.days);
+        expect(snapshot?.days).not.toBe(7);
+    });
+});
+
+it('c3: returns 500 when the trial snapshot has no valid PLAZO:7 value', async () => {
+    const vertical = VerticalEnum.ACCOMMODATION;
+    await ensurePublicationCatalog(vertical);
+    const actorId = await newOwner();
+    const subjectId = await newOwner();
+    await createTrial({ userId: subjectId, vertical, status: 'TRIAL_ACTIVE' });
+    const [trial] = (
+        await getDb().execute(sql<{ id: string }>`
+        SELECT id FROM trial WHERE user_id = ${subjectId}::uuid AND vertical = ${vertical}`)
+    ).rows;
+
+    await withRollbackTransaction(async (tx) => {
+        const [version] = (
+            await tx.execute(sql<{ version: number }>`
+            INSERT INTO vertical_deadline_version (version, "values")
+            SELECT (SELECT COALESCE(MAX(version), 0) + 1 FROM vertical_deadline_version), "values" - '7'
+            FROM vertical_deadline_version WHERE version = (
+                SELECT deadlines_version FROM trial WHERE id = ${trial?.id}::uuid
+            )
+            RETURNING version
+        `)
+        ).rows;
+        await tx.execute(sql`UPDATE trial SET deadlines_version = ${version?.version}
+            WHERE id = ${trial?.id}::uuid`);
+
+        const response = await request(subjectId, vertical, adminHeaders(actorId));
+        expect(response.status).toBe(500);
+        const body = await response.json();
+        expect(JSON.stringify(body)).not.toContain('ceilingDays');
     });
 });
 
