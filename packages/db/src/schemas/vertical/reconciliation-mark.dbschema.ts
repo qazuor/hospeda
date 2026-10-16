@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import {
     check,
+    index,
     integer,
     pgTable,
     timestamp,
@@ -10,6 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
 import { addonInstances } from './addon-product.dbschema.ts';
+import { billingDeadlineVersions } from './billing-deadline-version.dbschema.ts';
 import { quotedList } from './quoted-list.ts';
 import { RECONCILIATION_MARK_REASONS } from './reconciliation-mark-reasons.ts';
 import { subscriptions } from './subscription.dbschema.ts';
@@ -32,7 +34,13 @@ export const reconciliationMarks = pgTable(
         /** quién la levantó */
         liftedBy: uuid('lifted_by').references(() => users.id),
         /** versión optimista de la marca (cap. 03 §10.3) */
-        version: integer('version').notNull().default(1)
+        version: integer('version').notNull().default(1),
+        /** Version of billing deadlines captured when opened; null marks pre-HOS-1607 rows and reads the current version. */
+        deadlinesVersion: integer('deadlines_version').references(
+            () => billingDeadlineVersions.version
+        ),
+        /** Instant this open mark escalated; null means it has not escalated. */
+        escalatedAt: timestamp('escalated_at', { withTimezone: true })
     },
     (t) => ({
         reasonCheck: check(
@@ -57,7 +65,10 @@ export const reconciliationMarks = pgTable(
             .where(sql`${t.liftedAt} IS NULL`),
         openAddonInstanceReason: uniqueIndex('uq_reconciliation_mark_open_addon_instance_reason')
             .on(t.addonInstanceId, t.reason)
-            .where(sql`${t.liftedAt} IS NULL`)
+            .where(sql`${t.liftedAt} IS NULL`),
+        openUnescalated: index('ix_reconciliation_mark_open_unescalated')
+            .on(t.placedAt)
+            .where(sql`${t.liftedAt} IS NULL AND ${t.escalatedAt} IS NULL`)
     })
 );
 

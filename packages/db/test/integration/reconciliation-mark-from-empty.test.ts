@@ -98,7 +98,9 @@ describe('TEST:B3:16 — reconciliation mark migration from empty', () => {
             placed_at: 'NO',
             lifted_at: 'YES',
             lifted_by: 'YES',
-            version: 'NO'
+            version: 'NO',
+            deadlines_version: 'YES',
+            escalated_at: 'YES'
         });
         const count = await getTestPool().query<{ n: string }>(
             'SELECT count(*)::text AS n FROM reconciliation_mark'
