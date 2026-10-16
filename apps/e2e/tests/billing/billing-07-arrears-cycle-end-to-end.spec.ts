@@ -437,5 +437,12 @@ test.describe('TEST:B7:20 AC:B7:32 the arrears cycle end to end @p0 @billing @cl
             type: 'reconciliation-marks',
             description: JSON.stringify(marks)
         });
+        const openUndeclaredTransitionMarks = marks.filter(
+            (mark) => mark.reason === 'TRANSICION_NO_DECLARADA' && mark.lifted_at === null
+        );
+        expect(
+            openUndeclaredTransitionMarks,
+            `Expected no open TRANSICION_NO_DECLARADA marks for ${subscriptionId}; found ${JSON.stringify(openUndeclaredTransitionMarks)}.`
+        ).toHaveLength(0);
     }
 });

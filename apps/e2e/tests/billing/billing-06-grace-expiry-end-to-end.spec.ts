@@ -37,6 +37,11 @@ type SubscriptionRow = {
     readonly grace_ends_at: Date | null;
 } & Record<string, unknown>;
 type OutboxRow = { readonly status: string } & Record<string, unknown>;
+type MarkRow = {
+    readonly id: string;
+    readonly reason: string;
+    readonly lifted_at: Date | null;
+} & Record<string, unknown>;
 
 const MAIL_TIMEOUT_MS = 30_000;
 
@@ -286,8 +291,25 @@ test.describe('TEST:B7:17 AC:B7:29 the grace expires against the fake provider s
                 page.url(),
                 'Expected authenticated subscription page without sign-in redirect.'
             ).not.toContain('/auth/signin');
+            await expect(page.getByRole('heading', { name: 'Suscripción' })).toBeVisible();
         });
+        await assertNoOpenUndeclaredTransitionMarks(subscriptionId);
     });
+
+    async function assertNoOpenUndeclaredTransitionMarks(id: string): Promise<void> {
+        const marks = await execSQL<MarkRow>(
+            "SELECT id, reason, lifted_at FROM reconciliation_mark WHERE subscription_id = $1 AND reason = 'TRANSICION_NO_DECLARADA' AND lifted_at IS NULL ORDER BY placed_at",
+            [id]
+        );
+        test.info().annotations.push({
+            type: 'reconciliation-marks',
+            description: JSON.stringify(marks)
+        });
+        expect(
+            marks,
+            `Expected no open TRANSICION_NO_DECLARADA marks for ${id}; found ${JSON.stringify(marks)}.`
+        ).toHaveLength(0);
+    }
 
     async function readSubscription(): Promise<SubscriptionRow[]> {
         return execSQL<SubscriptionRow>(

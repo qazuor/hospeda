@@ -6,6 +6,7 @@ import {
 } from '@repo/payments/fake';
 import type { FakeProviderRequest } from '@repo/payments/fake-server';
 import { createAdjustableClock } from '@repo/test-clock';
+import { z } from 'zod';
 import { cleanupTestUsers } from '../support/test-cleanup.ts';
 import { type CreatedUser, createUser, markProfileCompleted } from './api-helpers.ts';
 import { execSQL, getDbPool } from './db-helpers.ts';
@@ -45,6 +46,19 @@ export interface CronData {
     readonly details?: { readonly failedSubscriptionIds?: readonly string[] };
     readonly jobName?: string;
 }
+
+const CronDataSchema = z.object({
+    success: z.boolean().optional(),
+    processed: z.number().optional(),
+    errors: z.number().optional(),
+    details: z.object({ failedSubscriptionIds: z.array(z.string()).optional() }).optional(),
+    jobName: z.string().optional()
+});
+const CronResponseSchema = CronDataSchema.extend({ data: CronDataSchema.optional() });
+const CardSubscriptionResponseSchema = z.object({
+    data: z.object({ subscriptionId: z.string().optional() }).optional(),
+    error: z.object({ message: z.string().optional() }).optional()
+});
 
 /** Create a subscriber with completed onboarding and its SUPER_ADMIN cron actor. */
 export async function createSubscriber(): Promise<ArrearsSubscriber> {
@@ -186,7 +200,7 @@ export async function runCron(args: {
     const text = await response.text();
     if (response.status !== 201)
         throw new Error(`Expected cron ${args.jobName} HTTP 201; got ${response.status}: ${text}`);
-    const body = JSON.parse(text) as { readonly data?: CronData } & CronData;
+    const body = CronResponseSchema.parse(JSON.parse(text));
     const data = body.data ?? body;
     if (!data || typeof data !== 'object')
         throw new Error(`Cron ${args.jobName} returned no data object`);
@@ -203,10 +217,7 @@ export async function createApiCardSubscription(args: {
         headers: { 'content-type': 'application/json', cookie: args.user.sessionCookie },
         body: JSON.stringify({ billingOptionId: args.billingOptionId })
     });
-    const body = (await response.json()) as {
-        readonly data?: { readonly subscriptionId?: string };
-        readonly error?: { readonly message?: string };
-    };
+    const body = CardSubscriptionResponseSchema.parse(await response.json());
     const subscriptionId = body.data?.subscriptionId;
     if (!subscriptionId) {
         throw new Error(
