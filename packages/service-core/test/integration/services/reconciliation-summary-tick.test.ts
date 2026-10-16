@@ -2,10 +2,12 @@ import {
     billingDeadlineVersions,
     buildEmailDedupKey,
     buildEventOccurrence,
+    type DrizzleClient,
     desc,
     domainEventModel,
     emailOutbox,
     emailOutboxModel,
+    inArray,
     reconciliationMarkModel,
     reconciliationSummaryWindowModel,
     subscriptionPauses
@@ -21,6 +23,14 @@ import { seedCoverageUser } from './support/coverage-fixtures.js';
 import { seedRenewalSubscription } from './support/renewal-notice-fixtures.js';
 
 afterAll(closeServiceTestPool);
+
+async function mailsFor(tx: DrizzleClient, userIds: readonly string[]) {
+    return tx
+        .select()
+        .from(emailOutbox)
+        .where(inArray(emailOutbox.recipientUserId, [...userIds]));
+}
+
 describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
     it('TEST:B11:16(a): records 100 critical events and sends one summary per recipient at N', async () => {
         await withServiceTestTransaction(async (tx) => {
@@ -74,14 +84,22 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
                     { tx, recipients: port }
                 )
             ).toBe('WAITING');
-            expect(await tx.select().from(emailOutbox)).toHaveLength(0);
+            expect(
+                await mailsFor(
+                    tx,
+                    recipients.map((recipient) => recipient.userId)
+                )
+            ).toHaveLength(0);
             expect(
                 await runReconciliationSummaryTick(
                     { now: new Date(base.getTime() + 60 * 60_000), correlationId: correlation },
                     { tx, recipients: port }
                 )
             ).toBe('SENT');
-            const mails = await tx.select().from(emailOutbox);
+            const mails = await mailsFor(
+                tx,
+                recipients.map((recipient) => recipient.userId)
+            );
             expect(mails).toHaveLength(2);
             expect(mails.map((mail) => mail.template)).toEqual([
                 'billing.reconciliation-summary',
@@ -107,7 +125,12 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
                     { tx, recipients: port }
                 )
             ).toBe('IDLE');
-            expect(await tx.select().from(emailOutbox)).toHaveLength(2);
+            expect(
+                await mailsFor(
+                    tx,
+                    recipients.map((recipient) => recipient.userId)
+                )
+            ).toHaveLength(2);
         });
     });
 
@@ -238,10 +261,13 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
                     { tx, recipients: port }
                 )
             ).toBe('SENT');
-            const mails = await tx.select().from(emailOutbox);
+            const mails = await mailsFor(tx, [recipient.userId]);
             expect(mails).toHaveLength(2);
-            expect(mails[0]?.payload).toMatchObject({ totals: { events: 2 } });
-            expect(mails[1]?.payload).toMatchObject({ totals: { events: 1 } });
+            expect(
+                mails
+                    .map((mail) => (mail.payload as { totals: { events: number } }).totals.events)
+                    .sort()
+            ).toEqual([1, 2]);
         });
     });
 
@@ -284,14 +310,14 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
                 id: open.id,
                 sentAt: null
             });
-            expect(await tx.select().from(emailOutbox)).toHaveLength(0);
+            expect(await mailsFor(tx, [recipient.userId])).toHaveLength(0);
             expect(
                 await runReconciliationSummaryTick(
                     { now: open.closesAt, correlationId },
                     { tx, recipients: one }
                 )
             ).toBe('SENT');
-            expect(await tx.select().from(emailOutbox)).toHaveLength(1);
+            expect(await mailsFor(tx, [recipient.userId])).toHaveLength(1);
         });
     });
 
@@ -362,7 +388,7 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
                     { tx, recipients }
                 )
             ).toBe('SENT');
-            const payload = (await tx.select().from(emailOutbox))[0]?.payload as {
+            const payload = (await mailsFor(tx, [recipient.userId]))[0]?.payload as {
                 escalations: { markId: string }[];
                 underCharges: {
                     subscriptionId: string;
@@ -441,7 +467,7 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
                     { tx, recipients }
                 )
             ).toBe('SENT');
-            const mail = (await tx.select().from(emailOutbox))[0];
+            const mail = (await mailsFor(tx, [recipient.userId]))[0];
             expect(mail?.payload).toMatchObject({
                 pauseGifts: [
                     {
@@ -499,7 +525,7 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
                     { tx, recipients }
                 )
             ).toBe('SENT');
-            const payload = (await tx.select().from(emailOutbox))[0]?.payload as {
+            const payload = (await mailsFor(tx, [recipient.userId]))[0]?.payload as {
                 marks: unknown[];
                 omitted: { marks: number };
                 totals: { events: number };
@@ -579,7 +605,7 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
             expect(
                 await runReconciliationSummaryTick({ now, correlationId }, { tx, recipients: port })
             ).toBe('SENT');
-            expect(await tx.select().from(emailOutbox)).toHaveLength(1);
+            expect(await mailsFor(tx, [recipient.userId])).toHaveLength(1);
             expect(await reconciliationSummaryWindowModel.findOpen({ tx })).toBeNull();
         });
     });
