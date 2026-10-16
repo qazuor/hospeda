@@ -188,7 +188,7 @@ describe('TEST:B9b:5 AC:B9b:5 S30 mutates without the exhausted promo', () => {
             `CREATE FUNCTION ${fn}() RETURNS trigger LANGUAGE plpgsql AS $$
              BEGIN
                  IF NEW.entity_id::text = '${seeded.subscription.id}' AND NEW.reason::text = 'S30' THEN
-                     UPDATE subscription SET plan_version_id = NULL WHERE id = NEW.entity_id;
+                     UPDATE subscription SET plan_version_id = NULL WHERE id::text = NEW.entity_id::text;
                  END IF;
                  RETURN NEW;
              END $$`
