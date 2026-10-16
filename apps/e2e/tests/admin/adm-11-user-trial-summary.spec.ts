@@ -29,6 +29,9 @@ test.describe('TEST:V8a:7 (panel, fila 4) admin user trial summary @p1 @admin', 
     const ownedUserIds: string[] = [];
     test.afterEach(async () => {
         if (ownedUserIds.length) {
+            await execSQL('DELETE FROM canje_de_trial WHERE user_id = ANY($1::uuid[])', [
+                [...ownedUserIds]
+            ]);
             await cleanupTestUsers(getDbPool(), [...ownedUserIds]);
             ownedUserIds.length = 0;
         }
