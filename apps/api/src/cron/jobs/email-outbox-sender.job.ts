@@ -30,6 +30,7 @@ import {
 } from '@repo/db';
 import {
     BrevoEmailTransport,
+    createBillingPromoRenderers,
     createBillingReconciliationRenderers,
     createBillingRenewalRenderers,
     createBillingSignupRenderers,
@@ -63,7 +64,7 @@ export const EMAIL_OUTBOX_LEASE_MS = 5 * 60 * 1000;
 export const EMAIL_OUTBOX_BATCH_SIZE = 50;
 
 /**
- * Builds the production outbox renderer with shared, trial, renewal, reconciliation,
+ * Builds the production outbox renderer with shared, trial, renewal, promo-ending, reconciliation,
  * signup and vertical listing notices.
  *
  * @param input - Renderer configuration. `readListingNames` defaults to the
@@ -79,6 +80,7 @@ export function buildOutboxSenderRender(input: {
             ...OUTBOX_MAIL_RENDERERS,
             ...createTrialCampaignRenderers({ siteUrl: input.siteUrl }),
             ...createBillingRenewalRenderers({ siteUrl: input.siteUrl }),
+            ...createBillingPromoRenderers({ siteUrl: input.siteUrl }),
             ...createBillingReconciliationRenderers({ siteUrl: input.siteUrl }),
             ...createBillingSignupRenderers({ siteUrl: input.siteUrl }),
             ...createVerticalListingRenderers({

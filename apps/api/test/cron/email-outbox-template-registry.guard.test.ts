@@ -128,6 +128,9 @@ const ENQUEUE_SITES: Readonly<
     'packages/service-core/src/services/billing/subscription/renewal-notice.ts': [
         'billing.renewal-upcoming'
     ],
+    'packages/service-core/src/services/billing/promo/promo-ending-notice.ts': [
+        'billing.promo-ending'
+    ],
     'packages/service-core/src/services/billing/subscription/signup-declined-notice.ts': [
         'billing.signup-declined'
     ],
