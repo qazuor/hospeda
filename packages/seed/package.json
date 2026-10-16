@@ -57,7 +57,7 @@
         "@types/bcryptjs": "^3.0.0",
         "@types/node": "^26.6.1",
         "@types/pg": "^8.21.0",
-        "@vitest/coverage-v8": "^4.1.10",
+        "@vitest/coverage-v8": "^5.0.2",
         "tsup": "^8.5.1",
         "tsx": "^4.23.13",
         "typescript": "6.0.3",
