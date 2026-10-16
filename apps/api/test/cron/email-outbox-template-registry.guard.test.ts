@@ -111,6 +111,8 @@ const ENQUEUE_SITES: Readonly<
         'verticals.listing-purged',
         'verticals.price-alert-closed'
     ],
+    'packages/service-core/src/services/billing/reconciliation/summary/run-summary-tick.service.ts':
+        ['billing.reconciliation-summary'],
     'packages/service-core/src/services/billing/subscription/signup-confirmed-notice.ts': [
         'billing.signup-confirmed'
     ],
