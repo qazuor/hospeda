@@ -299,6 +299,10 @@ export async function cleanupArrearsRows(args: {
         [args.userIds]
     );
     await execSQL(
+        `DELETE FROM covered_period WHERE subscription_id IN (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))`,
+        [args.userIds]
+    );
+    await execSQL(
         `DELETE FROM payment WHERE subscription_id IN (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))`,
         [args.userIds]
     );
