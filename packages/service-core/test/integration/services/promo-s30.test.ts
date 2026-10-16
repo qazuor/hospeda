@@ -17,7 +17,7 @@ import { runS30 } from '../../../src/services/billing/promo/promo-exhaustion.ser
 import { createAmountComparison } from '../../../src/services/billing/reconciliation/sweep/comparisons/amount-comparison.js';
 import { createRecordedAmountMutationDecisions } from '../../../src/services/billing/reconciliation/sweep/comparisons/amount-mutation-decision.js';
 import { runReconciliationSweep } from '../../../src/services/billing/reconciliation/sweep/reconciliation-sweep.service.js';
-import { closeServiceTestPool, getServiceTestDb } from './helpers.js';
+import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers.js';
 import {
     reconciliationClock,
     resetSeededReconciliationInventory,
@@ -164,6 +164,54 @@ describe('TEST:B9b:5 AC:B9b:5 S30 mutates without the exhausted promo', () => {
             .from(promoRedemptions)
             .where(eq(promoRedemptions.id, live.redemptionId));
         expect(liveAfter?.remainingCharges).toBe(2);
+    });
+
+    it('(e) rereads the subscription after the decision commits before deriving the amount', async () => {
+        const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
+            clock: reconciliationClock
+        });
+        const seeded = await seedSubscription({ status: 'ACTIVE', withLink: true, fake });
+        owned.push({ subscriptionId: seeded.subscription.id, userId: seeded.subscription.userId! });
+        const exhausted = await seedPromoRedemption({
+            subscriptionId: seeded.subscription.id,
+            userId: seeded.subscription.userId!,
+            discountKind: 'PERCENTAGE',
+            value: 20,
+            remainingCharges: 0
+        });
+        const suffix = crypto.randomUUID().replaceAll('-', '');
+        const fn = `hos1589_s30_refresh_${suffix}`;
+        const trigger = `hos1589_s30_refresh_${suffix}`;
+        const pool = getServiceTestPool();
+        await pool.query(
+            `CREATE FUNCTION ${fn}() RETURNS trigger LANGUAGE plpgsql AS $$
+             BEGIN
+                 IF NEW.entity_id = '${seeded.subscription.id}'::uuid AND NEW.reason = 'S30' THEN
+                     UPDATE subscriptions SET plan_version_id = NULL WHERE id = NEW.entity_id;
+                 END IF;
+                 RETURN NEW;
+             END $$`
+        );
+        try {
+            await pool.query(
+                `CREATE TRIGGER ${trigger} AFTER INSERT ON domain_event FOR EACH ROW EXECUTE FUNCTION ${fn}()`
+            );
+            const changeAmount = vi.spyOn(fake, 'changeAmount');
+            await expect(
+                runS30(
+                    {
+                        subscriptionId: seeded.subscription.id,
+                        redemptionId: exhausted.redemptionId
+                    },
+                    { provider: fake, clock: reconciliationClock }
+                )
+            ).resolves.toEqual({ outcome: 'NOT_APPLICABLE', reason: 'NOT_COMPARABLE' });
+            expect(changeAmount).not.toHaveBeenCalled();
+        } finally {
+            await pool.query(`DROP TRIGGER IF EXISTS ${trigger} ON domain_event`);
+            await pool.query(`DROP FUNCTION IF EXISTS ${fn}()`);
+        }
     });
 
     it('(c) declares PAUSED without a decision or provider mutation', async () => {
