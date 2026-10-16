@@ -316,6 +316,10 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8a:3 / TEST:1568:5 S11 compl
                 )
         ).toHaveLength(2);
         const cancelCallsBeforeRepeat = harness.calls.length;
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'ACTIVE', serviceEndsAt: null })
+            .where(eq(subscriptions.id, seeded.complementId));
         const repeated = await cancelActiveSubscription(
             { actor: owner(principal.userId), subscriptionId: principal.subscriptionId },
             {
@@ -334,7 +338,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8a:3 / TEST:1568:5 S11 compl
             .select({ status: subscriptions.status })
             .from(subscriptions)
             .where(eq(subscriptions.id, seeded.complementId));
-        expect(row?.status).toBe('CANCEL_SCHEDULED');
+        expect(row?.status).toBe('ACTIVE');
         const decisionsAfterRepeat = await domainEventModel.findByEntity({
             entityType: 'subscription',
             entityId: seeded.complementId
