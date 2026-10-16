@@ -1212,6 +1212,13 @@
       "when": 1792105099507,
       "tag": "0172_b116_mark_escalation_summary",
       "breakpoints": true
+    },
+    {
+      "idx": 173,
+      "version": "7",
+      "when": 1792177949341,
+      "tag": "0173_b9b2_promo_quota_s30_decision",
+      "breakpoints": true
     }
   ]
 }

@@ -194,6 +194,24 @@ describe('TEST:U2:11 domain_event after db:migrate from empty', () => {
         }
     });
 
+    it('TEST:B9b:3 accepts the amount mutation decision event in a rolled-back transaction', async () => {
+        const client = await getTestPool().connect();
+        try {
+            await client.query('BEGIN');
+            await client.query(
+                `INSERT INTO domain_event (event_type, entity_type, entity_id, actor_type, correlation_id)
+                 VALUES ('subscription.amount_mutation_decided', 'subscription', $1, 'provider', $2)`,
+                [randomUUID(), randomUUID()]
+            );
+            await client.query('ROLLBACK');
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+    });
+
     it('checks an event by entity and type without relying on event order', async () => {
         await withTestTransaction(async (tx) => {
             const entityId = randomUUID();
