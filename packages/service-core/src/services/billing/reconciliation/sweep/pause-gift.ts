@@ -5,6 +5,17 @@ function localDayNumber(date: Date): number {
     return Math.floor(Date.UTC(year ?? 0, (month ?? 1) - 1, day ?? 1) / 86_400_000);
 }
 
+/**
+ * Calculates the positive net days granted after a pause skips billing cycles.
+ *
+ * Charge dates are derived from the anchor and cycle length, while pause
+ * boundaries are compared as local calendar days. Returns `null` when the
+ * pause contains no skipped charge or does not yield positive gift days.
+ *
+ * @param input - Pause interval, anchor charge date, and billing cycle length.
+ * @returns The first skipped charge, next charge after return, and gift days,
+ *   or `null` when there is no positive gift.
+ */
 export function computePauseGift(input: {
     readonly pauseStartedAt: Date;
     readonly pauseEndedAt: Date;

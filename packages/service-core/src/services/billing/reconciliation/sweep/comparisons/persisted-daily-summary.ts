@@ -3,6 +3,16 @@ import type { DrizzleClient } from '@repo/db';
 import { domainEventModel } from '@repo/db';
 import type { ReconciliationDailySummary } from './reconciliation-daily-summary.port.js';
 
+/**
+ * Creates the database-backed daily reconciliation summary writer.
+ *
+ * Undercharges are recorded as domain events and deduplicated by payment ID.
+ * The supplied transaction is used when present; otherwise the model uses
+ * its configured database client.
+ *
+ * @param input - Correlation ID, clock, and optional transaction for writes.
+ * @returns A summary port that persists each undercharge at most once.
+ */
 export function createPersistedReconciliationDailySummary(input: {
     readonly correlationId: string;
     readonly clock: Clock;

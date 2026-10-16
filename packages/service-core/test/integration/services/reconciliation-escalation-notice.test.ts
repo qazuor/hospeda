@@ -1,4 +1,4 @@
-import { and, emailOutbox, eq, reconciliationMarkModel, sql, users } from '@repo/db';
+import { and, domainEvent, emailOutbox, eq, reconciliationMarkModel, sql, users } from '@repo/db';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { enqueueMarkEscalatedNotice } from '../../../src/services/billing/reconciliation/escalation-notice.js';
 import { runMarkEscalation } from '../../../src/services/billing/reconciliation/sweep/mark-escalation.js';
@@ -230,6 +230,84 @@ describe('TEST:1607:18 immediate escalation notice', () => {
             } finally {
                 updateSpy.mockRestore();
                 listSpy.mockRestore();
+            }
+        });
+    });
+
+    it('rolls back escalation when recipient lookup fails before SQL and retries on the next pass', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            const { userId } = await seedCoverageUser(tx);
+            const plan = await seedCoveragePlanVersion(tx, 'accommodation');
+            const subject = await seedCoverageSubscription(tx, {
+                userId,
+                vertical: 'accommodation',
+                ...plan,
+                status: 'ACTIVE'
+            });
+            const placedAt = new Date('2001-01-01T00:00:00.000Z');
+            const mark = await reconciliationMarkModel.insertOpen({
+                subject: { kind: 'SUBSCRIPTION', subscriptionId: subject.subscriptionId },
+                reason: 'DIVERGENCIA_DE_MONTO',
+                placedAt,
+                tx
+            });
+            const listPage =
+                reconciliationMarkModel.listOpenUnescalatedPage.bind(reconciliationMarkModel);
+            const spy = vi
+                .spyOn(reconciliationMarkModel, 'listOpenUnescalatedPage')
+                .mockImplementation(async (page) => {
+                    const rows = await listPage({ ...page, limit: 10_000 });
+                    return rows.filter(({ id }) => id === mark.id);
+                });
+            const run = (list: () => Promise<{ userId: string; email: string }[]>) =>
+                runMarkEscalation(
+                    { correlationId: crypto.randomUUID(), pageSize: 100 },
+                    {
+                        clock: { now: () => new Date('2026-10-14T12:00:00.000Z') },
+                        tx,
+                        notice: { recipients: { list } }
+                    }
+                );
+            try {
+                const failed = await run(async () => {
+                    throw new Error('recipient lookup failed before enqueue SQL');
+                });
+                expect(failed.failures).toHaveLength(1);
+                expect(
+                    await reconciliationMarkModel.findById({ markId: mark.id, tx })
+                ).toMatchObject({ escalatedAt: null });
+                const events = await tx
+                    .select()
+                    .from(domainEvent)
+                    .where(
+                        and(
+                            eq(domainEvent.eventType, 'reconciliation.mark_escalated'),
+                            sql`${domainEvent.changes}->0->>'new' = ${mark.id}`
+                        )
+                    );
+                expect(events).toHaveLength(0);
+                expect(
+                    await tx
+                        .select()
+                        .from(emailOutbox)
+                        .where(
+                            and(
+                                eq(emailOutbox.template, TEMPLATE),
+                                sql`${emailOutbox.payload}->>'markId' = ${mark.id}`
+                            )
+                        )
+                ).toHaveLength(0);
+
+                const recipient = await seedCoverageUser(tx);
+                const succeeded = await run(async () => [
+                    { userId: recipient.userId, email: `${recipient.userId}@example.test` }
+                ]);
+                expect(succeeded.escalated).toBe(1);
+                expect(
+                    await reconciliationMarkModel.findById({ markId: mark.id, tx })
+                ).toMatchObject({ escalatedAt: new Date('2026-10-14T12:00:00.000Z') });
+            } finally {
+                spy.mockRestore();
             }
         });
     });

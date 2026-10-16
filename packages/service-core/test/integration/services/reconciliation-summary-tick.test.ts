@@ -10,11 +10,9 @@ import {
     inArray,
     reconciliationMarkModel,
     reconciliationSummaryWindowModel,
-    sql,
     subscriptionPauses
 } from '@repo/db';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import { openReconciliationMark } from '../../../src/services/billing/reconciliation/open-reconciliation-mark.service.js';
 import { runReconciliationSummaryTick } from '../../../src/services/billing/reconciliation/summary/run-summary-tick.service.js';
 import { createPersistedReconciliationDailySummary } from '../../../src/services/billing/reconciliation/sweep/comparisons/persisted-daily-summary.js';
 import { runMarkEscalation } from '../../../src/services/billing/reconciliation/sweep/mark-escalation.js';
@@ -71,23 +69,27 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
             const recipient2 = await seedCoverageUser(tx);
             const subjectId = seeded.subscriptionId;
             const correlationId = crypto.randomUUID();
+            const base = new Date('2099-06-15T12:00:00.000Z');
+            await reconciliationMarkModel.insertOpen({
+                subject: { kind: 'SUBSCRIPTION', subscriptionId: subjectId },
+                reason: 'COBRO_DUPLICADO',
+                placedAt: new Date('2099-06-01T00:00:00.000Z'),
+                tx
+            });
             for (let index = 0; index < 100; index++) {
-                await openReconciliationMark({
-                    subject: { kind: 'SUBSCRIPTION', subscriptionId: subjectId },
-                    reason: 'COBRO_DUPLICADO',
-                    actor: { type: 'job' },
+                await domainEventModel.insert({
+                    eventType: 'reconciliation.mark_opened',
+                    entityType: 'subscription',
+                    entityId: subjectId,
+                    actorType: 'job',
                     correlationId,
+                    reason: 'COBRO_DUPLICADO',
+                    occurredAt: new Date(base.getTime() - 1_000 + index),
+                    changes: [{ field: 'reconciliation_mark.reason', new: 'COBRO_DUPLICADO' }],
                     tx
                 });
             }
-            const events = await domainEventModel.findByEntity({
-                entityType: 'subscription',
-                entityId: subjectId,
-                tx
-            });
-            const markOpened = events.filter(
-                (event) => event.eventType === 'reconciliation.mark_opened'
-            );
+            const markOpened = await domainEventModel.findByCorrelationId({ correlationId, tx });
             expect(markOpened).toHaveLength(100);
             expect(
                 await reconciliationMarkModel.listOpen({
@@ -100,9 +102,7 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
                 email: `summary-${index}-${id}@example.test`
             }));
             const port = { list: async () => recipients };
-            const transactionTime = await tx.execute(sql`select transaction_timestamp() as now`);
-            const base = new Date(new Date(String(transactionTime.rows[0]?.now)).getTime() + 1);
-            await seedClosedWindowBefore(tx, base, 2);
+            await seedClosedWindowBefore(tx, base, 2_000);
             const correlation = crypto.randomUUID();
             expect(
                 await runReconciliationSummaryTick(
