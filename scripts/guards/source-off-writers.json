@@ -240,5 +240,13 @@
         "effect": "neutral",
         "via": null,
         "reason": "HOS-1685 copies the provider's next payment date onto an ACTIVE row (B11.md:250); coverage does not change."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/cancel-active-subscription.service.ts",
+        "symbol": "writeS11Cancellation",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S11 moves ACTIVE to CANCEL_SCHEDULED, and both states emit the same SUBSCRIPCIÓN source; only the scheduled row receives an end date and S12 records the cutoff."
     }
 ]
