@@ -85,8 +85,14 @@ export async function runS30(
         return { outcome: 'DECIDED' as const, subscription, authorizationId: link.providerId };
     });
     if (decision.outcome !== 'DECIDED') return decision;
+    const [subscription] = await getDb()
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.id, input.subscriptionId))
+        .limit(1);
+    if (!subscription) return { outcome: 'NOT_APPLICABLE', reason: 'SUBSCRIPTION_NOT_FOUND' };
     const expected = await createCutExpectedAmountPolicy().expectedAmount({
-        subscription: decision.subscription,
+        subscription,
         purpose: { kind: 'AUTHORIZATION' }
     });
     if (expected.kind === 'NOT_COMPARABLE') {

@@ -116,6 +116,21 @@ describe('TEST:B9b:5 AC:B9b:5 S30 mutates without the exhausted promo', () => {
             authorizationId: seeded.providerId!,
             amount: { amountMinor: 70000, currency: 'ARS' }
         });
+        const changeAmount = vi.spyOn(fake, 'changeAmount');
+        changeAmount.mockImplementation(async (input) => {
+            const [decision] = await getDb()
+                .select({ id: domainEvent.id })
+                .from(domainEvent)
+                .where(
+                    and(
+                        eq(domainEvent.eventType, 'subscription.amount_mutation_decided'),
+                        eq(domainEvent.entityId, seeded.subscription.id),
+                        eq(domainEvent.reason, 'S30')
+                    )
+                );
+            expect(decision).toBeDefined();
+            return FakePaymentProvider.prototype.changeAmount.call(fake, input);
+        });
         const outcome = await runS30(
             { subscriptionId: seeded.subscription.id, redemptionId: exhausted.redemptionId },
             {
@@ -316,6 +331,8 @@ describe('TEST:B9b:5 AC:B9b:5 S30 mutates without the exhausted promo', () => {
         expect(await sweep()).toMatchObject({ marksOpened: 0, rowsFailed: 0 });
         expect(retry).toHaveBeenCalledTimes(2);
         adjustable.advance(2);
+        expect(await sweep()).toMatchObject({ marksOpened: 0, rowsFailed: 0 });
+        expect(retry).toHaveBeenCalledTimes(2);
         // The retry window expires at exactly day three; this one millisecond is outside it.
         adjustable.advance(1 / 86_400_000);
         expect(await sweep()).toMatchObject({ marksOpened: 1, rowsFailed: 0 });
