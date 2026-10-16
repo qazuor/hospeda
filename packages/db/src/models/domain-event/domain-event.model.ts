@@ -15,7 +15,7 @@
  * the API's request context.
  */
 
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     type DomainEventActorType,
@@ -67,11 +67,39 @@ export interface FindDomainEventsByCorrelationInput {
     readonly tx?: DrizzleClient;
 }
 
+/** Input of {@link DomainEventModel.existsByEntity}. */
+export interface ExistsDomainEventByEntityInput {
+    readonly eventType: DomainEventType;
+    readonly entityType: string;
+    readonly entityId: string;
+    readonly tx?: DrizzleClient;
+}
+
 /** Model for the append-only `domain_event` table. */
 export class DomainEventModel {
     /** Resolves the transaction client when given, the shared client otherwise. */
     private client(tx?: DrizzleClient): DrizzleClient {
         return tx ?? getDb();
+    }
+
+    /** Checks whether an append-only event already exists for this entity and type. */
+    async existsByEntity(input: ExistsDomainEventByEntityInput): Promise<boolean> {
+        try {
+            const rows = await this.client(input.tx)
+                .select({ exists: sql<number>`1` })
+                .from(domainEvent)
+                .where(
+                    and(
+                        eq(domainEvent.eventType, input.eventType),
+                        eq(domainEvent.entityType, input.entityType),
+                        eq(domainEvent.entityId, input.entityId)
+                    )
+                )
+                .limit(1);
+            return rows.length > 0;
+        } catch (error) {
+            this.fail('existsByEntity', input, error);
+        }
     }
 
     /**

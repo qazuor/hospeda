@@ -19,7 +19,7 @@ import { DomainEventModel } from '../../src/models/domain-event/domain-event.mod
 import { EmailOutboxModel } from '../../src/models/email-outbox/email-outbox.model.ts';
 import { buildEmailDedupKey } from '../../src/models/email-outbox/email-outbox-dedup-key.ts';
 import { emailOutbox } from '../../src/schemas/email-outbox/email_outbox.dbschema.ts';
-import { closeTestPool, getTestDb, getTestPool } from './helpers.ts';
+import { closeTestPool, getTestDb, getTestPool, withTestTransaction } from './helpers.ts';
 
 const events = new DomainEventModel();
 const outbox = new EmailOutboxModel();
@@ -192,6 +192,37 @@ describe('TEST:U2:11 domain_event after db:migrate from empty', () => {
         } finally {
             client.release();
         }
+    });
+
+    it('checks an event by entity and type without relying on event order', async () => {
+        await withTestTransaction(async (tx) => {
+            const entityId = randomUUID();
+            const correlationId = randomUUID();
+            await events.insert({
+                eventType: 'reconciliation.pause_gift_detected',
+                entityType: 'subscription_pause',
+                entityId,
+                actorType: 'job',
+                correlationId,
+                tx
+            });
+            expect(
+                await events.existsByEntity({
+                    eventType: 'reconciliation.pause_gift_detected',
+                    entityType: 'subscription_pause',
+                    entityId,
+                    tx
+                })
+            ).toBe(true);
+            expect(
+                await events.existsByEntity({
+                    eventType: 'reconciliation.pause_gift_detected',
+                    entityType: 'subscription_pause',
+                    entityId: randomUUID(),
+                    tx
+                })
+            ).toBe(false);
+        });
     });
 });
 
