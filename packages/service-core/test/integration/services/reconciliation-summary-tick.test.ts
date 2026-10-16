@@ -83,6 +83,13 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
             ).toBe('SENT');
             const mails = await tx.select().from(emailOutbox);
             expect(mails).toHaveLength(2);
+            expect(mails.map((mail) => mail.template)).toEqual([
+                'billing.reconciliation-summary',
+                'billing.reconciliation-summary'
+            ]);
+            expect(mails.map((mail) => mail.recipientUserId).sort()).toEqual(
+                recipients.map((recipient) => recipient.userId).sort()
+            );
             expect(mails[0]?.payload).toMatchObject({
                 totals: { events: 100 },
                 marks: [
