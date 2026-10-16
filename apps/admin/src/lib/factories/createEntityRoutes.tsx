@@ -57,9 +57,12 @@ const PENDING_STYLES = {
  * });
  * ```
  */
-export function createErrorComponent(displayName: string): (props: { error: Error }) => ReactNode {
-    return function EntityErrorComponent({ error }: { error: Error }) {
+export function createErrorComponent(
+    displayName: string
+): (props: { error: unknown }) => ReactNode {
+    return function EntityErrorComponent({ error }: { error: unknown }) {
         const { t } = useTranslations();
+        const errorMessage = error instanceof Error ? error.message : undefined;
         return (
             <div className={ERROR_STYLES.container}>
                 <div className={ERROR_STYLES.content}>
@@ -68,7 +71,7 @@ export function createErrorComponent(displayName: string): (props: { error: Erro
                         {displayName.includes('.') ? t(displayName as TranslationKey) : displayName}
                     </h2>
                     <p className={ERROR_STYLES.message}>
-                        {error.message || 'An unexpected error occurred'}
+                        {errorMessage || 'An unexpected error occurred'}
                     </p>
                 </div>
                 <Button
