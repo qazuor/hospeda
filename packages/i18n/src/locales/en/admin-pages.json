@@ -840,7 +840,8 @@
                 },
                 "total_one": "{{count}} trial day in total",
                 "total_other": "{{count}} trial days in total",
-                "totalWithCeiling": "{{total}} of {{ceiling}} days max.",
+                "totalWithCeiling_one": "{{total}} of {{count}} day max.",
+                "totalWithCeiling_other": "{{total}} of {{count}} days max.",
                 "ceilingReached": "The trial day limit has been reached: only a SUPER_ADMIN extension can exceed it.",
                 "origins": {
                     "base_one": "{{count}} from the plan",

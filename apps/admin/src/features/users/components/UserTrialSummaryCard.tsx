@@ -61,9 +61,9 @@ export function UserTrialSummaryCard({ userId }: { readonly userId: string }) {
                                             ? tPlural(`${key}.total`, data.summary.totalDays, {
                                                   count: data.summary.totalDays
                                               })
-                                            : t(`${key}.totalWithCeiling`, {
+                                            : tPlural(`${key}.totalWithCeiling`, data.ceilingDays, {
                                                   total: data.summary.totalDays,
-                                                  ceiling: data.ceilingDays
+                                                  count: data.ceilingDays
                                               })}
                                     </p>
                                     {data.ceilingDays !== null &&

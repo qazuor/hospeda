@@ -840,7 +840,8 @@
                 },
                 "total_one": "{{count}} día de prueba en total",
                 "total_other": "{{count}} días de prueba en total",
-                "totalWithCeiling": "{{total}} de {{ceiling}} días máx.",
+                "totalWithCeiling_one": "{{total}} de {{count}} día máx.",
+                "totalWithCeiling_other": "{{total}} de {{count}} días máx.",
                 "ceilingReached": "Llegó al techo de días de prueba: sólo la extensión de un SUPER_ADMIN puede pasarlo.",
                 "origins": {
                     "base_one": "{{count}} del plan",

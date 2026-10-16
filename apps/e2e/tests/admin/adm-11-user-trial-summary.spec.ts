@@ -93,7 +93,9 @@ test.describe('TEST:V8a:7 (panel, fila 4) admin user trial summary @p1 @admin', 
         await expect(card).toBeVisible({ timeout: 30_000 });
         expect((await summaryResponse).status()).toBe(200);
         await expect(card).toContainText('Alojamiento');
-        await expect(card).toContainText(`${facts.total} de ${facts.ceiling} días máx.`);
+        await expect(card).toContainText(
+            `${facts.total} de ${facts.ceiling} ${facts.ceiling === 1 ? 'día' : 'días'} máx.`
+        );
         await expect(card).toContainText(`${facts.base_days} del plan`);
         await expect(card).toContainText('10 por promociones');
         await expect(card).toContainText('7 regalados por soporte');

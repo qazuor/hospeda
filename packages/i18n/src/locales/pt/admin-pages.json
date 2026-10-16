@@ -840,7 +840,8 @@
                 },
                 "total_one": "{{count}} dia de teste no total",
                 "total_other": "{{count}} dias de teste no total",
-                "totalWithCeiling": "{{total}} de {{ceiling}} dias máx.",
+                "totalWithCeiling_one": "{{total}} de {{count}} dia máx.",
+                "totalWithCeiling_other": "{{total}} de {{count}} dias máx.",
                 "ceilingReached": "O limite de dias de teste foi atingido: somente uma extensão de SUPER_ADMIN pode ultrapassá-lo.",
                 "origins": {
                     "base_one": "{{count}} do plano",

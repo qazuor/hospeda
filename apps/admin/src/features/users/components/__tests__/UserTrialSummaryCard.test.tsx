@@ -120,10 +120,10 @@ describe('TEST:V8a:7 (panel, fila 4) UserTrialSummaryCard', () => {
         expect(screen.getByTestId('user-trial-summary-accommodation')).toHaveTextContent(
             '1 día de prueba en total'
         );
-        rows = makeRows({ ...trial, summary: { ...trial.summary, totalDays: 1 }, ceilingDays: 90 });
+        rows = makeRows({ ...trial, summary: { ...trial.summary, totalDays: 1 }, ceilingDays: 1 });
         rerender(<UserTrialSummaryCard userId="user-1" />);
         expect(screen.getByTestId('user-trial-summary-accommodation')).toHaveTextContent(
-            '1 de 90 días máx.'
+            '1 de 1 día máx.'
         );
     });
 
