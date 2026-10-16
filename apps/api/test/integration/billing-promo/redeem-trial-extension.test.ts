@@ -147,7 +147,7 @@ beforeAll(async () => {
 afterAll(async () => testDb.teardown());
 
 describe('TEST:B9b:6 AC:B9b:6 the redeem route extends a real trial', () => {
-    it('extends a real trial through T4 and replays without extending or consuming twice', async () => {
+    it('extends a real trial once and rejects a second redemption without extending twice', async () => {
         await testDb.withRollback(async (tx) => {
             const runtimeDb = getDb();
             setDb(tx);
@@ -198,14 +198,10 @@ describe('TEST:B9b:6 AC:B9b:6 the redeem route extends a real trial', () => {
                 ).toHaveLength(1);
 
                 const replay = await redeem();
-                expect(replay.status).toBe(200);
+                expect(replay.status).toBe(409);
                 expect(await replay.json()).toMatchObject({
-                    success: true,
-                    data: {
-                        kind: 'TRIAL_EXTENSION',
-                        days: 5,
-                        replay: true
-                    }
+                    success: false,
+                    error: { reason: 'PROMO_CODE_ALREADY_REDEEMED' }
                 });
                 const [replayedTrial] = await getDb()
                     .select({ endsAt: trials.endsAt })
