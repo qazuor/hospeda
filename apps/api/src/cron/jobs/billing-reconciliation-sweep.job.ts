@@ -7,7 +7,10 @@ import {
     createPaymentReconciliationMarkPayments,
     createPeriodChargesComparison,
     createPersistedReconciliationDailySummary,
+    createPromoChargePolicy,
+    createPromoExhaustion,
     createProviderPauseCheck,
+    createRecordedAmountMutationDecisions,
     createStateComparison,
     createSuccessorGraceCheck,
     creditedPaymentsFromLedger,
@@ -72,7 +75,11 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                                 clock
                             })
                         }),
-                        createAmountComparison({ provider, clock })
+                        createAmountComparison({
+                            provider,
+                            clock,
+                            mutations: createRecordedAmountMutationDecisions()
+                        })
                     ],
                     rowChecks: [
                         // AC:B7:9 (DEC-MP-008): grace never outlasts a provider pause.
@@ -84,7 +91,9 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             planPolicy,
                             coverageNotices: getCoverageNotices(),
                             touristVipInheritance,
-                            complements
+                            complements,
+                            promoCharges: createPromoChargePolicy(),
+                            promoExhaustion: createPromoExhaustion({ provider, clock })
                         }),
                         createLostFirstRejectionCheck({
                             provider,

@@ -1,6 +1,8 @@
 import { planCatalogModel } from '@repo/db';
 import {
     createPaymentReconciliationMarkPayments,
+    createPromoChargePolicy,
+    createPromoExhaustion,
     createProviderNoticeMirrorDelegates,
     creditedPaymentsFromLedger,
     providerLinkCancellationSeen
@@ -35,6 +37,7 @@ import { touristVipInheritance } from '../billing-subscription/tourist-vip-inher
  *   cells `CANCELLED_ON_GRACE` (branch 5, HOS-1561 H7) and `PROVIDER_PAUSE_IS_ARREARS` (B7.3, HOS-1559),
  *   `LIVE_PREAPPROVAL_ON_CLOSED_ROW` (H-7). The unknown preapproval is not a grid
  *   cell: the receiver itself hands it to `handleUnknownAuthorization`.
+ * HOS-1589 (AC:B9b:4/5) registers the production promo counter and S30 ports.
  *
  * NOT registered (H-1, H-14): `RESUME_MIRROR`, `CANCELLED_ON_PAUSE` and
  * `CANCELLED_WHILE_PENDING` keep throwing `MIRROR_PAIR_NOT_REGISTERED`; there is no `successionCloser`: S18 does not exist yet (B8b), so
@@ -50,6 +53,8 @@ export function buildMercadoPagoNoticePorts() {
     return {
         provider,
         clock,
+        promoCharges: createPromoChargePolicy(),
+        promoExhaustion: createPromoExhaustion({ provider, clock }),
         beforeCancelNotice,
         planPolicy,
         payments: creditedPaymentsFromLedger,
