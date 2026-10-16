@@ -134,23 +134,35 @@ const GRACE_CLOCK_BY_ORIGIN: Record<
  * the same transaction records the coverage-loss instant
  * (`recordCoverageLossIfUncovered`, contract §4.1) right after the `UPDATE`, so it
  * survives a lost notice. From `GRACE_PERIOD`, the grace clock written by S4 is
- * kept. From `ACTIVE` (the second event only), S6 writes the suspension instant
+ * kept. From `ACTIVE` (the second event only), S6 writes the authorization
+ * provider-read instant
  * as the unpaid-period anchor so S7 can bind condition 4 to it (HOS-1690); S7
  * empties both values when the row leaves.
  *
  * @param input.subscriptionId - The row being suspended
  * @param input.origin - The status the event leaves (the `UPDATE` guard)
  * @param input.now - The write instant
+ * @param input.readAt - The provider-read instant, required from `ACTIVE`
  * @param input.coverageNotices - The coverage listener (B4.2 wires it)
  * @returns `SUSPENDED` when this call moved the row; `LOST_RACE` when it was no
  *   longer in the origin; `RETAINED_PAYMENT` when S19 retained a payment meanwhile
  */
-export async function writeArrearsSuspension(input: {
-    readonly subscriptionId: string;
-    readonly origin: 'GRACE_PERIOD' | 'ACTIVE';
-    readonly now: Date;
-    readonly coverageNotices: CoverageNotices;
-}): Promise<ArrearsSuspensionWrite> {
+export async function writeArrearsSuspension(
+    input:
+        | {
+              readonly subscriptionId: string;
+              readonly origin: 'ACTIVE';
+              readonly now: Date;
+              readonly readAt: Date;
+              readonly coverageNotices: CoverageNotices;
+          }
+        | {
+              readonly subscriptionId: string;
+              readonly origin: 'GRACE_PERIOD';
+              readonly now: Date;
+              readonly coverageNotices: CoverageNotices;
+          }
+): Promise<ArrearsSuspensionWrite> {
     const written = await getDb().transaction(async (tx) => {
         const [locked] = await tx
             .select({ status: subscriptions.status })
@@ -165,7 +177,9 @@ export async function writeArrearsSuspension(input: {
             .update(subscriptions)
             .set({
                 status: 'SUSPENDED',
-                ...GRACE_CLOCK_BY_ORIGIN[input.origin](input.now),
+                ...GRACE_CLOCK_BY_ORIGIN[input.origin](
+                    input.origin === 'ACTIVE' ? input.readAt : input.now
+                ),
                 updatedAt: input.now
             })
             .where(
@@ -410,12 +424,22 @@ export async function suspendForArrears(
         }
     }
 
-    const write = await writeArrearsSuspension({
-        subscriptionId: subscription.id,
-        origin,
-        now: ports.clock.now(),
-        coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices
-    });
+    const writeInput =
+        origin === 'ACTIVE'
+            ? {
+                  subscriptionId: subscription.id,
+                  origin,
+                  now: ports.clock.now(),
+                  readAt: authorization.readAt,
+                  coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices
+              }
+            : {
+                  subscriptionId: subscription.id,
+                  origin,
+                  now: ports.clock.now(),
+                  coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices
+              };
+    const write = await writeArrearsSuspension(writeInput);
     if (write === 'RETAINED_PAYMENT')
         return { outcome: 'NOT_APPLICABLE', reason: 'RETAINED_PAYMENT' };
     if (write === 'LOST_RACE') return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };

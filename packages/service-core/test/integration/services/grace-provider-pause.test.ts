@@ -40,6 +40,13 @@ describe('HOS-1559 TEST:B7:6 AC:B7:9 — provider pause is S6 second event', () 
             seeded.push(s.seeded);
             await s.pause();
             const suspendedAt = s.fixture.clock.now();
+            const originalBeforeCancel = s.beforeCancel.getMockImplementation();
+            if (!originalBeforeCancel) throw new Error('Expected before-cancel fixture handler');
+            s.beforeCancel.mockImplementation(async (notice) => {
+                const result = await originalBeforeCancel(notice);
+                s.fixture.clock.advance({ ms: 60_000 });
+                return result;
+            });
 
             await s.runSweepDay();
 
@@ -84,6 +91,7 @@ describe('HOS-1559 TEST:B7:6 AC:B7:9 — provider pause is S6 second event', () 
             ]);
             expect((await row(s.subscriptionId)).graceStartedAt).toEqual(suspendedAt);
             expect((await row(s.subscriptionId)).graceEndsAt).toEqual(suspendedAt);
+            expect(s.fixture.clock.now().getTime()).toBeGreaterThan(suspendedAt.getTime());
             expect(
                 await getServiceTestDb()
                     .select()
