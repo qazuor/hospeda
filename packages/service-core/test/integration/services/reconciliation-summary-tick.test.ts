@@ -208,6 +208,7 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
                     { tx, recipients: port }
                 )
             ).toBe('WINDOW_OPENED');
+            await addEvent('at-boundary', closesAt);
             await addEvent('after-boundary', new Date(closesAt.getTime() + 1));
             expect(
                 await runReconciliationSummaryTick(
@@ -224,9 +225,16 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
             expect(await reconciliationSummaryWindowModel.findOpen({ tx })).toMatchObject({
                 coversFrom: closesAt
             });
+            expect(
+                await runReconciliationSummaryTick(
+                    { now: new Date(closesAt.getTime() + 60 * 60_000 + 2), correlationId },
+                    { tx, recipients: port }
+                )
+            ).toBe('SENT');
             const mails = await tx.select().from(emailOutbox);
-            expect(mails).toHaveLength(1);
-            expect(mails[0]?.payload).toMatchObject({ totals: { events: 1 } });
+            expect(mails).toHaveLength(2);
+            expect(mails[0]?.payload).toMatchObject({ totals: { events: 2 } });
+            expect(mails[1]?.payload).toMatchObject({ totals: { events: 1 } });
         });
     });
 
