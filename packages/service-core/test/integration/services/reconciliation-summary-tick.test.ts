@@ -101,8 +101,8 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
             }));
             const port = { list: async () => recipients };
             const transactionTime = await tx.execute(sql`select transaction_timestamp() as now`);
-            const base = new Date(String(transactionTime.rows[0]?.now));
-            await seedClosedWindowBefore(tx, base, 1);
+            const base = new Date(new Date(String(transactionTime.rows[0]?.now)).getTime() + 1);
+            await seedClosedWindowBefore(tx, base, 2);
             const correlation = crypto.randomUUID();
             expect(
                 await runReconciliationSummaryTick(
