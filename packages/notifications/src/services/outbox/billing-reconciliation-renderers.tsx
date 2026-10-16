@@ -104,6 +104,7 @@ function reconciliationSummary(row: EmailOutboxRow) {
         !validOmitted(data.omitted)
     )
         throw new TypeError(REQUIRED);
+    // TYPE-WORKAROUND: The manually validated outbox payload is the template props contract.
     return {
         subject: RECONCILIATION_SUMMARY_SUBJECT,
         react: (
@@ -124,6 +125,7 @@ function duplicateChargeDetected(row: EmailOutboxRow) {
         !(data.paymentId === null || isString(data.paymentId))
     )
         throw new TypeError(REQUIRED);
+    // TYPE-WORKAROUND: The manually validated outbox payload is the template props contract.
     return {
         subject: DUPLICATE_CHARGE_DETECTED_SUBJECT,
         react: (
@@ -145,6 +147,7 @@ function markEscalated(row: EmailOutboxRow) {
         (data.escalationDays as number) <= 0
     )
         throw new TypeError(REQUIRED);
+    // TYPE-WORKAROUND: The manually validated outbox payload is the template props contract.
     return {
         subject: MARK_ESCALATED_SUBJECT,
         react: <MarkEscalated {...(data as unknown as Parameters<typeof MarkEscalated>[0])} />
