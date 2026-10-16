@@ -17,6 +17,7 @@ import {
     seedCoverageUser
 } from './support/coverage-fixtures.js';
 import {
+    currentFloorPolicy,
     grantSignerActor,
     retirePermanentGrantRows,
     seedGrantPlan,
@@ -97,6 +98,7 @@ function ports() {
     const beforeCancel = vi.fn(async () => 'SENT' as const);
     return {
         value: {
+            planPolicy: currentFloorPolicy,
             clock: { now: () => now },
             provider,
             beforeCancelNotice: { beforeCancel },

@@ -26,6 +26,7 @@ import {
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
 import { namespaceFake } from './support/payment-provider.js';
 import {
+    currentFloorPolicy,
     grantSignerActor,
     retirePermanentGrantRows,
     seedGrantPlan
@@ -110,6 +111,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
                 anchors: [{ vertical, ...plan }]
             },
             {
+                planPolicy: currentFloorPolicy,
                 clock,
                 provider: namespaceFake(fake),
                 beforeCancelNotice: { beforeCancel },
@@ -182,6 +184,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
         const cancel = vi.spyOn(fake, 'cancel').mockRejectedValueOnce(new Error('boom'));
         const plan = await seedGrantPlan(getServiceTestDb(), vertical);
         const ports = {
+            planPolicy: currentFloorPolicy,
             clock,
             provider: namespaceFake(fake),
             beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
@@ -275,6 +278,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
         });
         const planForGrant = await seedGrantPlan(getServiceTestDb(), vertical);
         const base = {
+            planPolicy: currentFloorPolicy,
             clock,
             provider: namespaceFake(fake),
             beforeCancelNotice: outboxBeforeCancelNotice({}),
@@ -370,6 +374,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
                 anchors: [{ vertical, ...plan }]
             },
             {
+                planPolicy: currentFloorPolicy,
                 clock,
                 provider: namespaceFake(fake),
                 beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
@@ -425,6 +430,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
         });
         const plan = await seedGrantPlan(getServiceTestDb(), vertical);
         const ports = {
+            planPolicy: currentFloorPolicy,
             clock,
             provider: namespaceFake(fake),
             beforeCancelNotice: outboxBeforeCancelNotice({ deliver: false }),
@@ -495,6 +501,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
                 anchors: [{ vertical, ...plan }]
             },
             {
+                planPolicy: currentFloorPolicy,
                 clock,
                 provider: namespaceFake(fake),
                 beforeCancelNotice: { beforeCancel: async () => notice },
@@ -548,6 +555,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:4 — S20 provider half',
                 anchors: [{ vertical, ...plan }]
             },
             {
+                planPolicy: currentFloorPolicy,
                 clock,
                 provider: namespaceFake(fake),
                 beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),

@@ -26,6 +26,7 @@ import {
     seedCoverageUser
 } from './support/coverage-fixtures.js';
 import {
+    currentFloorPolicy,
     grantSignerActor,
     retirePermanentGrantRows,
     seedGrantPlan
@@ -88,6 +89,7 @@ async function seedCase(vertical = V, status = 'ACTIVE') {
 function ports(onNotice: () => Promise<void> = async () => undefined) {
     const clock = { now: () => now };
     return {
+        planPolicy: currentFloorPolicy,
         clock,
         provider: new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock }),
         beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
@@ -290,6 +292,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     anchors: [{ vertical: V, ...anchor }]
                 },
                 {
+                    planPolicy: currentFloorPolicy,
                     clock: s.fixture.clock,
                     provider: new FakePaymentProvider({
                         idNamespace: crypto.randomUUID(),
