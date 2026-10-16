@@ -1,17 +1,11 @@
 import { CoverageResponseSchema } from '@repo/billing-verticals-contract';
-import {
-    eq,
-    permanentGrantVerticals,
-    subscriptions
-} from '@repo/db';
+import { eq, permanentGrantVerticals, subscriptions } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { VerticalEnum } from '@repo/schemas';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { createBillingCoverage } from '../../../src/services/billing/coverage/billing-coverage';
 import { resolveGrantSources } from '../../../src/services/billing/coverage/grant-sources';
-import {
-    anchorPermanentGrantVertical
-} from '../../../src/services/billing/grant/permanent-grant.service.js';
+import { anchorPermanentGrantVertical } from '../../../src/services/billing/grant/permanent-grant.service.js';
 import { creditedPaymentsFromLedger } from '../../../src/services/billing/payment/payment-ledger';
 import {
     closeServiceTestPool,
@@ -30,11 +24,14 @@ import {
 import {
     currentFloorPolicy,
     grantSignerActor,
+    retirePermanentGrantRows,
     seedGrantPlan,
     seedPermanentGrant
 } from './support/permanent-grant-fixtures';
 
 afterAll(closeServiceTestPool);
+const userIds: string[] = [];
+afterEach(async () => retirePermanentGrantRows(userIds.splice(0)));
 
 function grantPorts() {
     const clock = frozenClock(coverageNow);
@@ -53,9 +50,7 @@ function grantPorts() {
     };
 }
 
-async function expectGrantFloor(
-    input: Parameters<typeof resolveGrantSources>[0]
-): Promise<string> {
+async function expectGrantFloor(input: Parameters<typeof resolveGrantSources>[0]): Promise<string> {
     const answer = await resolveGrantSources(input);
     expect(answer.sources).toHaveLength(1);
     const source = answer.sources[0];
@@ -143,6 +138,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:10 grant scope', () => {
         const futureVertical = VerticalEnum.PARTNER;
         const { userId } = await seedCoverageUser(getServiceTestDb());
         const { userId: signer } = await seedCoverageUser(getServiceTestDb());
+        userIds.push(userId, signer);
         const grant = await seedPermanentGrant(getServiceTestDb(), {
             beneficiaryUserId: userId,
             grantedBy: signer,
@@ -151,6 +147,10 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:10 grant scope', () => {
                 { vertical: VerticalEnum.EXPERIENCE }
             ]
         });
+        const anchorsBefore = await getServiceTestDb()
+            .select({ id: permanentGrantVerticals.id, vertical: permanentGrantVerticals.vertical })
+            .from(permanentGrantVerticals)
+            .where(eq(permanentGrantVerticals.permanentGrantId, grant.grantId));
         expect((await resolveGrantSources({ userId, vertical: futureVertical })).sources).toEqual(
             []
         );
@@ -158,6 +158,8 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:10 grant scope', () => {
             .select({ vertical: permanentGrantVerticals.vertical })
             .from(permanentGrantVerticals)
             .where(eq(permanentGrantVerticals.permanentGrantId, grant.grantId));
+        expect(anchors).toHaveLength(anchorsBefore.length);
+        for (const anchor of anchorsBefore) expect(anchors).toContainEqual(anchor);
         expect(anchors.map(({ vertical }) => vertical).sort()).toEqual([
             VerticalEnum.ACCOMMODATION,
             VerticalEnum.EXPERIENCE
@@ -168,6 +170,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:10 grant scope', () => {
         const futureVertical = VerticalEnum.TOURIST;
         const { userId } = await seedCoverageUser(getServiceTestDb());
         const { userId: signer } = await seedCoverageUser(getServiceTestDb());
+        userIds.push(userId, signer);
         const grant = await seedPermanentGrant(getServiceTestDb(), {
             beneficiaryUserId: userId,
             grantedBy: signer,
