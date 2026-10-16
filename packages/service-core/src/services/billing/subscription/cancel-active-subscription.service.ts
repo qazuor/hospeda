@@ -13,6 +13,12 @@ import {
 } from '../reconciliation/cancel-our-authorization.js';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision.js';
 import { resolveCancellationAuthority } from './cancellation-authorization.js';
+import type { ComplementPolicyPorts } from './complement-ports.js';
+import {
+    cancelComplementsByS11Rule,
+    cancelDecidedComplementsAtProvider,
+    type DecidedComplementCancellationCall
+} from './complement-s11-rule.js';
 import { computeS11ServiceEnd, readS11ServiceEndFacts } from './s11-service-end.js';
 import type { BeforeCancelNotice, BeforeCancelNoticeStatus } from './start-subscription.service.js';
 import {
@@ -85,6 +91,8 @@ export interface CancelActiveSubscriptionPorts {
     readonly beforeCancelNotice: BeforeCancelNotice;
     /** Required best-effort coverage change notifier. */
     readonly coverageNotices: CoverageNotices;
+    /** Required readers for the S11 complement selection policy. */
+    readonly complements: ComplementPolicyPorts;
     /** Optional annotation of provider cancellation observations. */
     readonly cancellationSeen?: CancellationSeenAnnotator;
 }
@@ -96,12 +104,20 @@ export type CancelActiveSubscriptionResult =
           readonly serviceEndsAt: Date;
           readonly basis: 'PAID_PERIOD' | 'CREDIT' | 'NOW';
           readonly cancelCall: CancelActiveCall;
+          readonly complements: {
+              readonly decided: number;
+              readonly calls: readonly DecidedComplementCancellationCall[];
+          };
           readonly escalated?: 'NO_RECIPIENT' | 'DELIVERY_EXHAUSTED';
       }
     | {
           readonly outcome: 'ALREADY_SCHEDULED';
           readonly subscriptionId: string;
           readonly serviceEndsAt: Date;
+          readonly complements: {
+              readonly decided: 0;
+              readonly calls: readonly [];
+          };
       };
 interface S11Reading {
     readonly subscriptionId: string;
@@ -205,6 +221,10 @@ export async function cancelActiveSubscription(
                 'CANCELLATION_STATE_NOT_ALLOWED',
                 'Subscription state changed'
             );
+        const { decided } = await cancelComplementsByS11Rule(
+            { tx, principalSubscriptionId: subscription.id, now },
+            ports.complements
+        );
         const [link] = await tx
             .select()
             .from(providerLinks)
@@ -237,14 +257,16 @@ export async function cancelActiveSubscription(
                 basis: end.basis,
                 cardPayer,
                 authorizationId: link?.providerId ?? null
-            } satisfies S11Reading
+            } satisfies S11Reading,
+            decided
         };
     });
     if (committed.already)
         return {
             outcome: 'ALREADY_SCHEDULED',
             subscriptionId: committed.subscriptionId,
-            serviceEndsAt: committed.serviceEndsAt
+            serviceEndsAt: committed.serviceEndsAt,
+            complements: { decided: 0, calls: [] }
         };
     const reading = committed.reading;
     const vertical = VerticalEnumSchema.safeParse(reading.vertical);
@@ -268,11 +290,30 @@ export async function cancelActiveSubscription(
             'S11 row has no valid coverage subject'
         );
     const providerResult = await cancelAtProvider({ reading, ports });
+    let complementResults: readonly DecidedComplementCancellationCall[] = [];
+    try {
+        const { results } = await cancelDecidedComplementsAtProvider(
+            { decided: committed.decided },
+            {
+                provider: ports.provider,
+                clock: ports.clock,
+                beforeCancelNotice: ports.beforeCancelNotice,
+                cancellationSeen: ports.cancellationSeen
+            }
+        );
+        complementResults = results;
+    } catch (error) {
+        logger.error(
+            { subscriptionId: reading.subscriptionId, error },
+            'S11 complement provider cancellation failed after commit'
+        );
+    }
     return {
         outcome: 'SCHEDULED',
         subscriptionId: reading.subscriptionId,
         serviceEndsAt: reading.serviceEndsAt,
         basis: reading.basis,
+        complements: { decided: committed.decided.length, calls: complementResults },
         ...providerResult
     };
 }

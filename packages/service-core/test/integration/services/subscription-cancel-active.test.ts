@@ -8,7 +8,8 @@ import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from
 import {
     cancelActiveNow,
     retireCancelActiveRows,
-    seedCancelActive
+    seedCancelActive,
+    unusedComplementPolicy
 } from './support/cancel-active-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
 
@@ -47,6 +48,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     provider: fakeProvider(fake),
                     clock,
                     beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                    complements: unusedComplementPolicy,
                     coverageNotices: { emitCoverageChanged: coverage }
                 }
             );
@@ -91,6 +93,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     provider: fake,
                     clock,
                     beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                    complements: unusedComplementPolicy,
                     coverageNotices: { emitCoverageChanged: async () => undefined }
                 }
             );
@@ -109,6 +112,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     provider: fake,
                     clock,
                     beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                    complements: unusedComplementPolicy,
                     coverageNotices: { emitCoverageChanged: async () => undefined }
                 }
             );
@@ -133,6 +137,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     provider: fake,
                     clock,
                     beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                    complements: unusedComplementPolicy,
                     coverageNotices: { emitCoverageChanged: async () => undefined }
                 }
             );
@@ -166,6 +171,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     provider: fake,
                     clock,
                     beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                    complements: unusedComplementPolicy,
                     coverageNotices: { emitCoverageChanged: async () => undefined }
                 }
             );
@@ -193,6 +199,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 provider: fake,
                 clock,
                 beforeCancelNotice: outboxBeforeCancelNotice(),
+                complements: unusedComplementPolicy,
                 coverageNotices: { emitCoverageChanged: async () => undefined }
             };
             const first = await cancelActiveSubscription(
@@ -231,6 +238,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         provider: fake,
                         clock,
                         beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                        complements: unusedComplementPolicy,
                         coverageNotices: { emitCoverageChanged: async () => undefined }
                     }
                 )
@@ -245,6 +253,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         provider: fake,
                         clock,
                         beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                        complements: unusedComplementPolicy,
                         coverageNotices: { emitCoverageChanged: async () => undefined }
                     }
                 )
@@ -267,6 +276,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     provider: fake,
                     clock,
                     beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                    complements: unusedComplementPolicy,
                     coverageNotices: { emitCoverageChanged: async () => undefined }
                 }
             );
@@ -296,6 +306,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         provider: secondFake,
                         clock,
                         beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                        complements: unusedComplementPolicy,
                         coverageNotices: { emitCoverageChanged: async () => undefined }
                     }
                 )
@@ -321,6 +332,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                             provider: fake,
                             clock,
                             beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                            complements: unusedComplementPolicy,
                             coverageNotices: { emitCoverageChanged: async () => undefined }
                         }
                     )
@@ -342,6 +354,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         provider: fake,
                         clock,
                         beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                        complements: unusedComplementPolicy,
                         coverageNotices: { emitCoverageChanged: async () => undefined }
                     }
                 )

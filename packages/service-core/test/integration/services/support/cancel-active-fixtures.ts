@@ -14,6 +14,7 @@ import {
     users
 } from '@repo/db';
 import type { FakePaymentProvider } from '@repo/payments/fake';
+import type { ComplementPolicyPorts } from '../../../../src/services/billing/subscription/complement-ports.js';
 import { getServiceTestDb } from '../helpers.js';
 
 const trackedUsers: string[] = [];
@@ -24,6 +25,16 @@ const trackedOptions: string[] = [];
 
 const trackedAuthorizations: { fake: FakePaymentProvider; id: string }[] = [];
 export const cancelActiveNow = new Date('2026-10-14T12:00:00.000Z');
+
+/** Existing S11 tests have no addon rows, so fail loudly if selection is unexpectedly attempted. */
+export const unusedComplementPolicy: ComplementPolicyPorts = {
+    addonPolicy: async () => {
+        throw new Error('unexpected complement addon policy read');
+    },
+    listing: async () => {
+        throw new Error('unexpected complement listing read');
+    }
+};
 
 export async function seedCancelActive(input: {
     fake: FakePaymentProvider;

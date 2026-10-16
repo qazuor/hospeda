@@ -8,7 +8,8 @@ import { orphanPorts } from './support/addon-orphan-fixtures.js';
 import {
     cancelActiveNow,
     retireCancelActiveRows,
-    seedCancelActive
+    seedCancelActive,
+    unusedComplementPolicy
 } from './support/cancel-active-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
 
@@ -17,6 +18,7 @@ const ports = (fake: FakePaymentProvider) => ({
     provider: fake,
     clock,
     beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+    complements: unusedComplementPolicy,
     coverageNotices: { emitCoverageChanged: async () => undefined }
 });
 const owner = (id: string): Actor => ({ id, roles: [], permissions: [] });
