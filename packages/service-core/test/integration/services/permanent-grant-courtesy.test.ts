@@ -12,6 +12,7 @@ import {
     seedCoverageUser
 } from './support/coverage-fixtures.js';
 import {
+    currentFloorPolicy,
     grantSignerActor,
     retirePermanentGrantRows,
     seedGrantPlan
@@ -64,6 +65,7 @@ async function seed() {
 function ports() {
     const clock = { now: () => now };
     return {
+        planPolicy: currentFloorPolicy,
         clock,
         provider: new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock }),
         beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },

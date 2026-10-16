@@ -20,6 +20,7 @@ import {
     seedCoverageUser
 } from './support/coverage-fixtures.js';
 import {
+    currentFloorPolicy,
     grantSignerActor,
     retirePermanentGrantRows,
     seedGrantPlan,
@@ -93,6 +94,7 @@ function makePorts() {
         calls: () => calls,
         notices: () => notices,
         ports: {
+            planPolicy: currentFloorPolicy,
             clock: { now: () => now },
             provider,
             beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },

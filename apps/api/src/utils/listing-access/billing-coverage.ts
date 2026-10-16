@@ -10,9 +10,8 @@
  * `onCoverageChanged`/`emitCoverageChanged` composed beside it in `ports.ts`
  * (B4.2, HOS-1533, from `coverage-notices.ts`): no bootstrap answer for billing
  * reaches production (contract §6.3, G13).
- * `CORTESÍA` and `GRANT` answer "none" until B9a. `ficha` is the real query of
- * verticals over the listing tables, registered here by V6.13 (AC:V6:26,
- * HOS-1483), replacing the port that failed visibly (decision X-1).
+ * `ficha` is the real query of verticals over the listing tables, registered here
+ * by V6.13 (AC:V6:26, HOS-1483), replacing the port that failed visibly (decision X-1).
  */
 
 import type { Clock } from '@repo/billing-verticals-contract';
