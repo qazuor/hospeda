@@ -335,7 +335,7 @@ describe('SPEC-063 T-058 — cross-cutting lifecycleState strip on public endpoi
     //   - packages/service-core/test/services/destinationReview/listByDestination.test.ts
     // ------------------------------------------------------------------------
     describe('T-009: non-ACTIVE records excluded from public result set', () => {
-        it('AccommodationReview: route calls listByAccommodation with accommodationId and no lifecycleState override', async () => {
+        it('AccommodationReview: route rejects ?lifecycleState with 400 INVALID_PAGINATION_PARAMS (unknown query param)', async () => {
             // Arrange
             const accommodationId = '123e4567-e89b-12d3-a456-426614174000';
             const spy = vi.fn().mockResolvedValue({
@@ -346,6 +346,29 @@ describe('SPEC-063 T-058 — cross-cutting lifecycleState strip on public endpoi
             // Act — an attacker passes `?lifecycleState=DRAFT` hoping to override
             const res = await app.request(
                 `/api/v1/public/accommodations/${accommodationId}/reviews?lifecycleState=DRAFT`,
+                { headers: publicHeaders }
+            );
+
+            // Assert — the public list schema does not declare lifecycleState,
+            // so route-factory rejects it as an unknown query param (400).
+            // The service must NOT be called.
+            expect(res.status).toBe(400);
+            const body = (await res.json()) as { error?: { code?: string } };
+            expect(body.error?.code).toBe('INVALID_PAGINATION_PARAMS');
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('AccommodationReview: route calls listByAccommodation with accommodationId and no lifecycleState override', async () => {
+            // Arrange
+            const accommodationId = '123e4567-e89b-12d3-a456-426614174000';
+            const spy = vi.fn().mockResolvedValue({
+                data: { accommodationReviews: [], total: 0 }
+            });
+            accommodationReviewMock.listByAccommodation = spy;
+
+            // Act — no unknown query params
+            const res = await app.request(
+                `/api/v1/public/accommodations/${accommodationId}/reviews?page=1`,
                 { headers: publicHeaders }
             );
 
@@ -388,9 +411,10 @@ describe('SPEC-063 T-058 — cross-cutting lifecycleState strip on public endpoi
             destinationReviewMock.listByDestination = spy;
 
             // Act
-            const res = await app.request(`/api/v1/public/destinations/${destinationId}/reviews`, {
-                headers: publicHeaders
-            });
+            const res = await app.request(
+                `/api/v1/public/destinations/${destinationId}/reviews?page=1`,
+                { headers: publicHeaders }
+            );
 
             // Assert — service was called with the path's destinationId.
             // Regression: previously the route called service.list() and the
@@ -511,7 +535,7 @@ describe('SPEC-063 T-058 — cross-cutting lifecycleState strip on public endpoi
                         data: { accommodationReviews: [], total: 0 }
                     });
                 },
-                '/api/v1/public/accommodations/123e4567-e89b-12d3-a456-426614174000/reviews',
+                '/api/v1/public/accommodations/123e4567-e89b-12d3-a456-426614174000/reviews?page=2',
                 (body: unknown) => {
                     const items =
                         (body as { data?: { items?: unknown[] }; items?: unknown[] }).data?.items ??
@@ -537,7 +561,7 @@ describe('SPEC-063 T-058 — cross-cutting lifecycleState strip on public endpoi
                         }
                     });
                 },
-                '/api/v1/public/destinations/d23e4567-e89b-12d3-a456-426614174000/reviews',
+                '/api/v1/public/destinations/d23e4567-e89b-12d3-a456-426614174000/reviews?page=2',
                 (body: unknown) => {
                     const items =
                         (body as { data?: { items?: unknown[] }; items?: unknown[] }).data?.items ??
