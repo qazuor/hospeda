@@ -125,6 +125,12 @@ describe('TEST:1607:6 persisted undercharge summary', () => {
                     .from(reconciliationMarks)
                     .where(eq(reconciliationMarks.subscriptionId, input.subscriptionId))
             ).toHaveLength(0);
+            expect(
+                await tx
+                    .select()
+                    .from(reconciliationMarks)
+                    .where(eq(reconciliationMarks.subscriptionId, subscription.id))
+            ).toHaveLength(0);
         });
     });
 });
