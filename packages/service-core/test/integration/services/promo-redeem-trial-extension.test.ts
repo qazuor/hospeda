@@ -45,6 +45,9 @@ async function seedExtensionCode(
     input: {
         readonly verticals?: string[];
         readonly effectKind?: 'TRIAL_EXTENSION' | 'DISCOUNT';
+        readonly totalQuota?: number | null;
+        readonly validFrom?: Date;
+        readonly validUntil?: Date | null;
     } = {}
 ) {
     const [promo] = await getDb()
@@ -57,9 +60,12 @@ async function seedExtensionCode(
             value: input.effectKind === 'DISCOUNT' ? 100 : null,
             allVerticals: input.verticals === undefined,
             verticals: input.verticals ?? null,
-            totalQuota: 10,
-            validFrom: new Date('2026-01-01T00:00:00.000Z'),
-            validUntil: new Date('2027-01-01T00:00:00.000Z'),
+            totalQuota: input.totalQuota === undefined ? 10 : input.totalQuota,
+            validFrom: input.validFrom ?? new Date('2026-01-01T00:00:00.000Z'),
+            validUntil:
+                input.validUntil === undefined
+                    ? new Date('2027-01-01T00:00:00.000Z')
+                    : input.validUntil,
             stackable: false,
             usableWithAnotherActive: false,
             durationKind: input.effectKind === 'DISCOUNT' ? 'FOREVER' : null,
@@ -164,7 +170,7 @@ describe('TEST:B9b:6 AC:B9b:6 redeeming a trial extension code with extenderTria
         );
     });
 
-    it('(c) marks the same-key retry as replay without extending or consuming twice', async () => {
+    it('(c) TEST:B9b:3 rejects a second use without extending or consuming twice', async () => {
         const userId = await seedUser();
         const promo = await seedExtensionCode();
         const simulator = configuredSimulator({
@@ -176,17 +182,17 @@ describe('TEST:B9b:6 AC:B9b:6 redeeming a trial extension code with extenderTria
             extendTrial: (args: ExtendTrialArgs) => simulator.extendTrial(args),
             clock
         };
+        const extend = vi.spyOn(simulator, 'extendTrial');
         await redeemTrialExtensionCode(input, ports);
         const afterFirst = simulator.trialEndsAt({ userId, vertical: VerticalEnum.ACCOMMODATION });
-        await expect(redeemTrialExtensionCode(input, ports)).resolves.toEqual({
-            outcome: 'REDEEMED',
-            days: 5,
-            replay: true
+        await expect(redeemTrialExtensionCode(input, ports)).rejects.toMatchObject({
+            reason: 'PROMO_CODE_ALREADY_REDEEMED'
         });
         expect(simulator.trialEndsAt({ userId, vertical: VerticalEnum.ACCOMMODATION })).toEqual(
             afterFirst
         );
         expect(await redemptionCount(promo.id)).toBe(1);
+        expect(extend).toHaveBeenCalledTimes(1);
     });
 
     it('(d) records an accepted extension after a process dies before inserting its redemption', async () => {
@@ -243,6 +249,59 @@ describe('TEST:B9b:6 AC:B9b:6 redeeming a trial extension code with extenderTria
         expect(extend).not.toHaveBeenCalled();
     });
 
+    it('(d) TEST:B9b:3 rejects exhausted and expired trial codes before calling extendTrial', async () => {
+        const userId = await seedUser();
+        const quotaOwner = await seedUser();
+        const exhausted = await seedExtensionCode({ totalQuota: 1 });
+        await getDb().insert(promoRedemptions).values({
+            promoCodeId: exhausted.id,
+            userId: quotaOwner,
+            subscriptionId: null,
+            remainingCharges: null,
+            redeemedAt: now
+        });
+        const expired = await seedExtensionCode({ validUntil: now });
+        const simulator = configuredSimulator({
+            userId,
+            endsAt: new Date(now.getTime() + 10 * day)
+        });
+        const extend = vi.spyOn(simulator, 'extendTrial');
+        for (const promo of [exhausted, expired]) {
+            await expect(
+                redeemTrialExtensionCode(
+                    { userId, code: promo.code, vertical: VerticalEnum.ACCOMMODATION },
+                    { extendTrial: (args) => simulator.extendTrial(args), clock }
+                )
+            ).rejects.toMatchObject({ reason: 'PROMO_CODE_NOT_AVAILABLE' });
+        }
+        expect(extend).not.toHaveBeenCalled();
+    });
+
+    it('(e) TEST:B9b:3 serializes five different trial extension redeemers against a quota of two', async () => {
+        const promo = await seedExtensionCode({ totalQuota: 2 });
+        const userIds = await Promise.all(Array.from({ length: 5 }, () => seedUser()));
+        const simulator = new VerticalsForBillingSimulator({ clock });
+        for (const userId of userIds)
+            simulator.setTrial({
+                userId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                endsAt: new Date(now.getTime() + 10 * day)
+            });
+        const extend = vi.spyOn(simulator, 'extendTrial');
+        const results = await Promise.allSettled(
+            userIds.map((userId) =>
+                redeemTrialExtensionCode(
+                    { userId, code: promo.code, vertical: VerticalEnum.ACCOMMODATION },
+                    { extendTrial: (args) => simulator.extendTrial(args), clock }
+                )
+            )
+        );
+        expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(2);
+        expect(results.filter((result) => result.status === 'rejected')).toHaveLength(3);
+        expect(extend).toHaveBeenCalledTimes(2);
+        expect(await redemptionCount(promo.id)).toBe(2);
+    });
+
     it('(h) inserts one redemption and extends once for two simultaneous requests', async () => {
         const userId = await seedUser();
         const promo = await seedExtensionCode();
@@ -255,14 +314,12 @@ describe('TEST:B9b:6 AC:B9b:6 redeeming a trial extension code with extenderTria
             extendTrial: (args: ExtendTrialArgs) => simulator.extendTrial(args),
             clock
         };
-        const results = await Promise.all([
+        const results = await Promise.allSettled([
             redeemTrialExtensionCode(input, ports),
             redeemTrialExtensionCode(input, ports)
         ]);
-        expect(results.filter((result) => result.outcome === 'REDEEMED')).toHaveLength(2);
-        expect(
-            results.filter((result) => result.outcome === 'REDEEMED' && result.replay)
-        ).toHaveLength(1);
+        expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+        expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1);
         expect(await redemptionCount(promo.id)).toBe(1);
         expect(simulator.trialEndsAt({ userId, vertical: VerticalEnum.ACCOMMODATION })).toEqual(
             new Date(now.getTime() + 15 * day)
