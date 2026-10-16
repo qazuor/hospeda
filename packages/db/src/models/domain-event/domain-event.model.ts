@@ -15,7 +15,7 @@
  * the API's request context.
  */
 
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, gt, inArray, lte, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     type DomainEventActorType,
@@ -72,6 +72,24 @@ export interface ExistsDomainEventByEntityInput {
     readonly eventType: DomainEventType;
     readonly entityType: string;
     readonly entityId: string;
+    readonly tx?: DrizzleClient;
+}
+
+/** Input for keyset pagination through a closed set of event types and time range. */
+export interface ListDomainEventsByTypesInRangeInput {
+    readonly eventTypes: readonly DomainEventType[];
+    readonly after: Date;
+    readonly until: Date;
+    readonly afterEventId?: string;
+    readonly limit: number;
+    readonly tx?: DrizzleClient;
+}
+
+/** Input for counting a closed set of event types in a time range. */
+export interface CountDomainEventsByTypesInRangeInput {
+    readonly eventTypes: readonly DomainEventType[];
+    readonly after: Date;
+    readonly until: Date;
     readonly tx?: DrizzleClient;
 }
 
@@ -192,6 +210,41 @@ export class DomainEventModel {
         } catch (error) {
             this.fail('findByCorrelationId', logContext, error);
         }
+    }
+
+    /** Lists events in (after, until], ordered by id for stable keyset pagination. */
+    async listByTypesInRange(
+        input: ListDomainEventsByTypesInRangeInput
+    ): Promise<SelectDomainEvent[]> {
+        if (input.eventTypes.length === 0 || input.limit <= 0) return [];
+        const predicates = [
+            inArray(domainEvent.eventType, [...input.eventTypes]),
+            gt(domainEvent.occurredAt, input.after),
+            lte(domainEvent.occurredAt, input.until)
+        ];
+        if (input.afterEventId) predicates.push(gt(domainEvent.id, input.afterEventId));
+        return (input.tx ?? getDb())
+            .select()
+            .from(domainEvent)
+            .where(and(...predicates))
+            .orderBy(asc(domainEvent.id))
+            .limit(input.limit);
+    }
+
+    /** Counts events in the half-open/closed interval (after, until]. */
+    async countByTypesInRange(input: CountDomainEventsByTypesInRangeInput): Promise<number> {
+        if (input.eventTypes.length === 0) return 0;
+        const [row] = await (input.tx ?? getDb())
+            .select({ count: sql<number>`count(*)::int` })
+            .from(domainEvent)
+            .where(
+                and(
+                    inArray(domainEvent.eventType, [...input.eventTypes]),
+                    gt(domainEvent.occurredAt, input.after),
+                    lte(domainEvent.occurredAt, input.until)
+                )
+            );
+        return row?.count ?? 0;
     }
 
     /** Logs a successful query; logging never breaks the operation. */
