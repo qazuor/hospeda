@@ -144,6 +144,11 @@ const fmt = (amount: number) =>
         margin: 0;
     }
 
+    /* In the dark theme brand-tertiary is a surface shade, not a text color. */
+    :global([data-theme='dark']) .event-pricing-card__free {
+        color: var(--success);
+    }
+
     .event-pricing-card__body {
         display: flex;
         flex-direction: column;
