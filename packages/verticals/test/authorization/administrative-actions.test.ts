@@ -173,6 +173,37 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(true);
     });
 
+    it('HOS-1689 assigns ACC_11 only its own trial-extend permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_11).toEqual({
+            permissions: [PermissionEnum.TRIAL_EXTEND],
+            pendingOwnPermission: null
+        });
+        expect(ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.TRIAL_EXTEND)).toBe(true);
+        expect(SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.TRIAL_EXTEND)).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_11',
+                actorPermissions: [
+                    PermissionEnum.BILLING_GRANT_COMPLIMENTARY,
+                    PermissionEnum.MAINTENANCE_MODE_WRITE,
+                    PermissionEnum.PARTNER_MANAGE
+                ]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_11',
+                actorPermissions: [PermissionEnum.TRIAL_EXTEND]
+            })
+        ).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_1',
+                actorPermissions: [PermissionEnum.TRIAL_EXTEND]
+            })
+        ).toBe(false);
+    });
+
     it('TEST:V8a:15 assigns ACC_24 only its own close-on-request permission', () => {
         expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_24).toEqual({
             permissions: [PermissionEnum.USER_CLOSE_ON_REQUEST],
