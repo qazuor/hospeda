@@ -31,6 +31,31 @@ async function mailsFor(tx: DrizzleClient, userIds: readonly string[]) {
         .where(inArray(emailOutbox.recipientUserId, [...userIds]));
 }
 
+async function seedClosedWindowBefore(tx: DrizzleClient, boundary: Date): Promise<void> {
+    const [deadline] = await tx
+        .select()
+        .from(billingDeadlineVersions)
+        .orderBy(desc(billingDeadlineVersions.version))
+        .limit(1);
+    if (!deadline) throw new Error('Current deadline version missing');
+    const closesAt = new Date(boundary.getTime() - 1_000);
+    const previous = await reconciliationSummaryWindowModel.open({
+        coversFrom: new Date(closesAt.getTime() - 60 * 60_000),
+        openedAt: new Date(closesAt.getTime() - 60 * 60_000),
+        closesAt,
+        windowMinutes: 60,
+        deadlinesVersion: deadline.version,
+        tx
+    });
+    if (!previous) throw new Error('Expected to open preceding summary window');
+    await reconciliationSummaryWindowModel.markSent({
+        id: previous.id,
+        sentAt: closesAt,
+        eventCount: 0,
+        tx
+    });
+}
+
 describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
     it('TEST:B11:16(a): records 100 critical events and sends one summary per recipient at N', async () => {
         await withServiceTestTransaction(async (tx) => {
@@ -213,6 +238,7 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
         await withServiceTestTransaction(async (tx) => {
             const base = new Date(Date.now() + 2_000);
             const closesAt = new Date(base.getTime() + 60 * 60_000);
+            await seedClosedWindowBefore(tx, base);
             const correlationId = crypto.randomUUID();
             const recipient = await seedCoverageUser(tx);
             const port = {
@@ -497,6 +523,7 @@ describe('TEST:B11:16 / TEST:B11:17 reconciliation summary tick', () => {
     it('TEST:B11:16(h): caps 250 distinct mark subjects at 200 with 50 omitted', async () => {
         await withServiceTestTransaction(async (tx) => {
             const base = new Date(Date.now() + 2_000);
+            await seedClosedWindowBefore(tx, base);
             const correlationId = crypto.randomUUID();
             for (let index = 0; index < 250; index++) {
                 await domainEventModel.insert({
