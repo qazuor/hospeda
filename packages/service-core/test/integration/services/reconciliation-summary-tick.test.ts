@@ -38,7 +38,7 @@ async function seedClosedWindowBefore(tx: DrizzleClient, boundary: Date): Promis
         .orderBy(desc(billingDeadlineVersions.version))
         .limit(1);
     if (!deadline) throw new Error('Current deadline version missing');
-    const closesAt = new Date(boundary.getTime() - 1_000);
+    const closesAt = new Date(boundary.getTime() - 2_000);
     const previous = await reconciliationSummaryWindowModel.open({
         coversFrom: new Date(closesAt.getTime() - 60 * 60_000),
         openedAt: new Date(closesAt.getTime() - 60 * 60_000),
