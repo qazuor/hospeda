@@ -285,7 +285,8 @@ describe('TEST:B9b:6 AC:B9b:6 redeeming a trial extension code with extenderTria
             simulator.setTrial({
                 userId,
                 vertical: VerticalEnum.ACCOMMODATION,
-                endsAt: new Date(now.getTime() + 10 * day)
+                endsAt: new Date(now.getTime() + 10 * day),
+                remainingExtensionDays: 20
             });
         const extend = vi.spyOn(simulator, 'extendTrial');
         const results = await Promise.allSettled(
