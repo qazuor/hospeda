@@ -7,9 +7,9 @@ import {
     reconciliationMarkPayments,
     subscriptions
 } from '@repo/db';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { redeemDiscountCode } from '../../../src/services';
-import { closeServiceTestPool } from './helpers';
+import { closeServiceTestPool, getServiceTestDb } from './helpers';
 import {
     createReconciliationFake,
     reconciliationClock,
@@ -19,6 +19,9 @@ import {
 import { retirePromoFixtures, seedPromoCode } from './support/promo-fixtures';
 
 const owned: Array<{ subscriptionId: string; userId: string }> = [];
+beforeAll(() => {
+    getServiceTestDb();
+});
 afterAll(closeServiceTestPool);
 afterEach(async () => {
     await retirePromoFixtures();
