@@ -1,4 +1,4 @@
-import { coverageLosses, eq, inArray, subscriptions } from '@repo/db';
+import { coverageLosses, emailOutbox, eq, inArray, subscriptions } from '@repo/db';
 import type { FakePaymentProvider } from '@repo/payments/fake';
 import { getServiceTestDb } from '../helpers.js';
 import {
@@ -78,9 +78,13 @@ export async function retireCancelDirectRows(): Promise<void> {
             .set({ status: 'CANCELLED', serviceEndsAt: cancelActiveNow })
             .where(inArray(subscriptions.id, ids));
     const users = directUsers.splice(0);
-    if (users.length)
+    if (users.length) {
+        await getServiceTestDb()
+            .delete(emailOutbox)
+            .where(inArray(emailOutbox.recipientUserId, users));
         await getServiceTestDb()
             .delete(coverageLosses)
             .where(inArray(coverageLosses.userId, users));
+    }
     await retireCancelActiveRows();
 }
