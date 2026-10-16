@@ -266,8 +266,13 @@ test.describe('TEST:B7:17 AC:B7:29 the grace expires against the fake provider s
                 requests.some(
                     (request) =>
                         request.method === 'GET' &&
-                        request.path ===
-                            `/authorized_payments/search?preapproval_id=${authorizationId}`
+                        (() => {
+                            const requestUrl = new URL(request.path, 'http://fake.invalid');
+                            return (
+                                requestUrl.pathname === '/authorized_payments/search' &&
+                                requestUrl.searchParams.get('preapproval_id') === authorizationId
+                            );
+                        })()
                 ),
                 `Expected period lookup against fake provider; reread subscription status was ${(await readSubscription())[0]?.status ?? 'missing'}.`
             ).toBe(true);
