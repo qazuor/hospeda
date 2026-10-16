@@ -13,6 +13,8 @@ export interface PromoChargePolicy {
         readonly redemptionId: string;
         readonly amountMinor: number;
         readonly currency: string;
+        /** The charge record's creation instant; a promo redeemed after it did not discount this charge. */
+        readonly chargeCreatedAt: Date;
         readonly tx: DrizzleClient;
     }): Promise<boolean>;
 }

@@ -212,6 +212,7 @@ export async function creditPayment(
                             redemptionId: redemption.id,
                             amountMinor: payment.amount,
                             currency: payment.currency,
+                            chargeCreatedAt: input.chargeCreatedAt,
                             tx
                         });
                         if (!discounted) continue;
