@@ -32,6 +32,7 @@ export * from './qr-code/index.ts';
 export * from './quota-window/index.ts';
 export * from './reconciliation-inventory/index.ts';
 export * from './reconciliation-mark/index.ts';
+export * from './reconciliation-summary-window/index.ts';
 export * from './reconciliation-sweep-run/index.ts';
 export * from './revalidation/index.ts';
 export * from './social/index.ts';
