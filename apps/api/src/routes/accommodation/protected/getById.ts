@@ -139,7 +139,7 @@ async function fetchProtectedFeatures(accommodationId: string): Promise<FeatureP
  * Get own accommodation by ID - Protected endpoint
  *
  * Returns the accommodation only if the resource step admits the owner
- * or the actor holds ACCOMMODATION_UPDATE_ANY permission.
+ * or the actor holds ACCOMMODATION_VIEW_ALL, the inspection permission.
  * Returns 404 if the record is not found or belongs to a different user.
  *
  * HOS-321: the response is enriched with the `amenities` / `features` junction
@@ -179,15 +179,16 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
         const accommodation = result.data;
 
         // Ownership check: only return if the actor is the owner.
-        // ACCOMMODATION_UPDATE_ANY bypasses the ownership check (admin-level perm).
+        // ACCOMMODATION_VIEW_ALL is the inspection bypass (V5 §3.2 rule 1, HOS-1693).
+        // ACCOMMODATION_UPDATE_ANY is a write permission and does not read foreign rows.
         // HOS-600: built by the shared helper, never spelled out here. The
         // literal this replaced was `'Accommodation not found'` while the
         // missing-row branch above re-throws the service's
         // `'accommodation not found'` — same 404, same NOT_FOUND code, and the
         // whole difference between "this listing is real and belongs to
         // somebody else" and "no such listing" lived in that capital A.
-        const hasUpdateAny = actor.permissions?.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY);
-        if (!hasUpdateAny) {
+        const hasViewAll = actor.permissions?.includes(PermissionEnum.ACCOMMODATION_VIEW_ALL);
+        if (!hasViewAll) {
             const access = resolveResourceStep({
                 actorId: actor.id,
                 facts: readListingAccessFacts({ entity: accommodation }),

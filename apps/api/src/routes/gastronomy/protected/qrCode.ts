@@ -9,8 +9,8 @@
  * the full reasoning: why the dashboard needs the SVG rather than the PDF, why
  * this is the SAME code the printable sheet carries and not a second one, why
  * the "published" state is checked before anything is minted, and why
- * there is no entitlement gate. One thing differs here: the staff bypass is
- * `GASTRONOMY_VIEW_ALL`, not `ACCOMMODATION_UPDATE_ANY`.
+ * there is no entitlement gate. The staff bypass is the vertical's inspection
+ * permission, `GASTRONOMY_VIEW_ALL`, as `ACCOMMODATION_VIEW_ALL` is in the twin.
  *
  * ## Not to be confused with `menuQr.ts`
  *

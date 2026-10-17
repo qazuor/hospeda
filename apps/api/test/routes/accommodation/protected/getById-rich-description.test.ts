@@ -218,7 +218,7 @@ describe('TEST:V5:31 GET /api/v1/protected/accommodations/:id — owner rich des
     });
 
     it('serves an authorized admin reading another owner’s row', async () => {
-        // An admin holding ACCOMMODATION_UPDATE_ANY reads someone else's row. The
+        // An admin holding ACCOMMODATION_VIEW_ALL reads someone else's row. The
         // entitlement lookup must be keyed by that row's ownerId — keying it by
         // the reader would hand out (or withhold) premium content according to
         // who happens to be looking.
@@ -233,7 +233,7 @@ describe('TEST:V5:31 GET /api/v1/protected/accommodations/:id — owner rich des
         const app = buildApp({
             id: OWNER_ID,
             roles: [RoleEnum.ADMIN],
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
+            permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL]
         });
         const res = await app.request(`/${ACCOMMODATION_ID}`);
 
