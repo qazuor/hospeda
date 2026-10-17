@@ -296,15 +296,6 @@ describe('TEST:V9b:10 AC:V9b:10 retention notices integration', () => {
     it('keeps archive notice anchored to inactive_since while owner edits move deletion notice', async () => {
         const inactiveSince = new Date(now.getTime() - 110 * day);
         const f = await fixture({ status: Status.PUBLISHED, inactiveSince });
-        const archive = await decide({
-            userId: f.userId,
-            listingId: f.listing.id,
-            vertical: f.vertical
-        });
-        expect(archive).toMatchObject({
-            sent: true,
-            targetAt: new Date(inactiveSince.getTime() + 90 * day)
-        });
         await db.insert(domainEvent).values({
             eventType: 'listing.edited',
             entityType: f.vertical,
@@ -314,6 +305,15 @@ describe('TEST:V9b:10 AC:V9b:10 retention notices integration', () => {
             occurredAt: new Date(now.getTime() - 10 * day),
             correlationId: randomUUID(),
             changes: []
+        });
+        const archive = await decide({
+            userId: f.userId,
+            listingId: f.listing.id,
+            vertical: f.vertical
+        });
+        expect(archive).toMatchObject({
+            sent: true,
+            targetAt: new Date(inactiveSince.getTime() + 90 * day)
         });
         await db.execute(
             sql`UPDATE accommodations SET publication_status = 'ARCHIVED', deletion_announced_at = NULL WHERE id = ${f.listing.id}`
