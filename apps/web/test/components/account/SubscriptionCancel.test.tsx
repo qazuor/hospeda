@@ -88,6 +88,40 @@ describe('SubscriptionCancel island', () => {
         expect(line).toHaveTextContent('5 de noviembre de 2026');
     });
 
+    it('shows the ended result for GRACE_PERIOD even when the API returns its service end instant', async () => {
+        vi.mocked(billingSubscriptionApi.cancellationPreview).mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptionId: id,
+                vertical: 'accommodation',
+                paymentMethod: 'CARD',
+                origin: 'GRACE_PERIOD',
+                graceEndsAt: '2026-11-05T03:00:00.000Z',
+                addons: []
+            }
+        } as never);
+        vi.mocked(billingSubscriptionApi.cancel).mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptionId: id,
+                outcome: 'CANCELLED',
+                serviceEndsAt: '2026-11-05T03:00:00.000Z'
+            }
+        } as never);
+        render(
+            <SubscriptionCancel
+                subscriptionId={id}
+                locale="es"
+            />
+        );
+        fireEvent.click(screen.getByTestId('self-cancel-open'));
+        await screen.findByTestId('self-cancel-confirm');
+        fireEvent.click(screen.getByTestId('self-cancel-confirm'));
+        expect(await screen.findByTestId('self-cancel-done')).toHaveTextContent(
+            'El servicio terminó hoy.'
+        );
+    });
+
     it('says SUSPENDED ends today without referring to the grace period', async () => {
         vi.mocked(billingSubscriptionApi.cancellationPreview).mockResolvedValue({
             ok: true,

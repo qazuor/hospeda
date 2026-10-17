@@ -59,7 +59,7 @@ export function SubscriptionCancel({ subscriptionId, locale }: SubscriptionCance
             }
             const parsed = result.data;
             setEndDate(
-                parsed.serviceEndsAt
+                preview.origin === 'ACTIVE' && parsed.serviceEndsAt
                     ? formatSelfCancelDate({ iso: parsed.serviceEndsAt, locale })
                     : null
             );
