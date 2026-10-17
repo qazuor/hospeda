@@ -256,5 +256,21 @@
         "effect": "neutral",
         "via": null,
         "reason": "S11 moves ACTIVE to CANCEL_SCHEDULED, and both states emit the same SUBSCRIPCIÓN source; only the scheduled row receives an end date and S12 records the cutoff."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/cancellation-crossing-charge.ts",
+        "symbol": "writeCrossingExtensionOnPrincipal",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "C2 extends service_ends_at with max on a PRINCIPAL CANCEL_SCHEDULED row. That row emits its subscription source through subscription-sources.ts:69-76; the CHANGED coverage notice is sent after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/cancellation-crossing-charge.ts",
+        "symbol": "writeCrossingExtensionOnComplement",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A COMPLEMENTO emits no subscription source and its addon instance does not change; S12 orphanhood on the principal turns it off."
     }
 ]
