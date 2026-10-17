@@ -5,7 +5,8 @@ import { classifyOutboxTemplate } from '../../../src/services/outbox/email-outbo
 import {
     DUPLICATE_CHARGE_DETECTED_SUBJECT,
     MARK_ESCALATED_SUBJECT,
-    RECONCILIATION_SUMMARY_SUBJECT
+    RECONCILIATION_SUMMARY_SUBJECT,
+    REVOCATION_REFUND_FAILED_SUBJECT
 } from '../../../src/templates/billing/index.js';
 import { row } from './outbox-batch.harness.js';
 
@@ -98,6 +99,39 @@ describe('TEST:1607:8 reconciliation summary renderer', () => {
 });
 
 describe('TEST:1607:9 immediate transactional renderers', () => {
+    it('renders revocation refund failure and rejects invalid payload fields', async () => {
+        const payload = {
+            refundId: 'refund-1',
+            refundReason: 'REVOCATION',
+            sourceKind: 'payment',
+            sourceId: 'payment-1',
+            subjectType: null,
+            subjectId: null,
+            amountMinor: 250000,
+            currency: 'ARS',
+            failedAt: '2026-10-01T00:00:00.000Z'
+        };
+        const result = await renderers['billing.revocation-refund-failed']!({
+            row: row({ template: 'billing.revocation-refund-failed', payload })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject).toBe(REVOCATION_REFUND_FAILED_SUBJECT);
+        expect(html).toContain('refund-1');
+        expect(html).toContain('$2.500,00');
+        expect(html).not.toContain('Sujeto:');
+        for (const invalid of [
+            { ...payload, refundReason: 'MARK_PROPOSAL' },
+            { ...payload, amountMinor: 0 },
+            { ...payload, failedAt: 'yesterday' },
+            { ...payload, subjectType: 'subscription' }
+        ]) {
+            expect(() =>
+                renderers['billing.revocation-refund-failed']!({
+                    row: row({ template: 'billing.revocation-refund-failed', payload: invalid })
+                })
+            ).toThrow(TypeError);
+        }
+    });
     it('renders duplicate charge details and omits a null payment identifier', async () => {
         const payload = {
             markId: 'mark-1',
@@ -166,11 +200,12 @@ describe('TEST:1607:9 immediate transactional renderers', () => {
         }
     });
 
-    it('classifies all three templates as transactional by default', () => {
+    it('classifies all four templates as transactional by default', () => {
         for (const template of [
             'billing.reconciliation-summary',
             'billing.duplicate-charge-detected',
-            'billing.mark-escalated'
+            'billing.mark-escalated',
+            'billing.revocation-refund-failed'
         ]) {
             expect(classifyOutboxTemplate({ template }).emailClass).toBe('transactional');
         }

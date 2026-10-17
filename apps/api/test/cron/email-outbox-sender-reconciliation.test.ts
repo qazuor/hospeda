@@ -2,7 +2,8 @@ import type { EmailOutboxRow } from '@repo/db';
 import {
     DUPLICATE_CHARGE_DETECTED_SUBJECT,
     MARK_ESCALATED_SUBJECT,
-    RECONCILIATION_SUMMARY_SUBJECT
+    RECONCILIATION_SUMMARY_SUBJECT,
+    REVOCATION_REFUND_FAILED_SUBJECT
 } from '@repo/notifications';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -91,6 +92,23 @@ describe('TEST:1607:10 reconciliation renderers are registered in the production
                 MARK_ESCALATED_SUBJECT,
                 ['mark-2', 'visible-addon'],
                 ['private-token']
+            ],
+            [
+                'billing.revocation-refund-failed',
+                {
+                    refundId: 'refund-visible',
+                    refundReason: 'REVOCATION',
+                    sourceKind: 'payment',
+                    sourceId: 'private-payment-id',
+                    subjectType: null,
+                    subjectId: null,
+                    amountMinor: 250000,
+                    currency: 'ARS',
+                    failedAt: '2026-10-01T00:00:00.000Z'
+                },
+                REVOCATION_REFUND_FAILED_SUBJECT,
+                ['refund-visible', '$2.500,00'],
+                ['private-payment-id']
             ]
         ] as const;
         for (const [template, payload, subject, includes, excludes] of cases) {
@@ -104,5 +122,20 @@ describe('TEST:1607:10 reconciliation renderers are registered in the production
 
     it('routes an invalid payload to the registered renderer, which rejects it with TypeError', async () => {
         await expect(render({ row: row('billing.mark-escalated', {}) })).rejects.toThrow(TypeError);
+        await expect(
+            render({
+                row: row('billing.revocation-refund-failed', {
+                    refundId: 'refund-1',
+                    refundReason: 'MARK_PROPOSAL',
+                    sourceKind: 'payment',
+                    sourceId: 'payment-1',
+                    subjectType: null,
+                    subjectId: null,
+                    amountMinor: 250000,
+                    currency: 'ARS',
+                    failedAt: '2026-10-01T00:00:00.000Z'
+                })
+            })
+        ).rejects.toThrow(TypeError);
     });
 });

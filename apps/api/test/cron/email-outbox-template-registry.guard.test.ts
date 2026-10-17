@@ -119,6 +119,8 @@ const ENQUEUE_SITES: Readonly<
     'packages/service-core/src/services/billing/reconciliation/escalation-notice.ts': [
         'billing.mark-escalated'
     ],
+    'packages/service-core/src/services/billing/reconciliation/revocation-refund-failed-notice.ts':
+        ['billing.revocation-refund-failed'],
     'packages/service-core/src/services/billing/subscription/signup-confirmed-notice.ts': [
         'billing.signup-confirmed'
     ],
@@ -166,6 +168,55 @@ const allSourceFiles = sourceRoots.flatMap(sourceFiles).filter((file) => {
         !/(^|\/)(test|__tests__)(\/|$)/.test(rel) &&
         !rel.startsWith('packages/db/src/models/email-outbox/')
     );
+});
+
+describe('TEST:1608:3 AC:B11:22 la lista de correos inmediatos de conciliación es cerrada', () => {
+    const immediateTemplates = [
+        'billing.duplicate-charge-detected',
+        'billing.mark-escalated',
+        'billing.revocation-refund-failed'
+    ].sort();
+
+    it('declares exactly the three immediate reconciliation templates in their closed list', () => {
+        const sourceTemplates = (file: string): string[] => {
+            const source = sourceByPath.get(file) ?? '';
+            const constants = [...source.matchAll(/\b([A-Z][A-Z0-9_]*_TEMPLATE)\b/g)]
+                .map(([identifier]) => templateConstants.get(identifier!))
+                .filter((template): template is string => template !== undefined);
+            const literals = [...source.matchAll(/'(?:billing|verticals)\.[a-z0-9-]+'/g)].map(
+                ([literal]) => literal!.slice(1, -1)
+            );
+            return [...constants, ...literals];
+        };
+        const reconciliationEntries = Object.entries(ENQUEUE_SITES).filter(
+            ([file]) =>
+                file.startsWith('packages/service-core/src/services/billing/reconciliation/') &&
+                file !==
+                    'packages/service-core/src/services/billing/reconciliation/summary/run-summary-tick.service.ts'
+        );
+        const declaredInReconciliation = reconciliationEntries.flatMap(([file, entry]) => [
+            ...(Array.isArray(entry) ? entry : []),
+            ...sourceTemplates(file)
+        ]);
+        expect(
+            [...new Set(declaredInReconciliation)].sort(),
+            'correo inmediato nuevo: la lista de la excepción de DEC-OBS-001 es cerrada'
+        ).toEqual(immediateTemplates);
+
+        const declaredOutsideReconciliation = Object.entries(ENQUEUE_SITES)
+            .filter(
+                ([file]) =>
+                    !file.startsWith('packages/service-core/src/services/billing/reconciliation/')
+            )
+            .flatMap(([file, entry]) => [
+                ...(Array.isArray(entry) ? entry : []),
+                ...sourceTemplates(file)
+            ]);
+        expect(
+            declaredOutsideReconciliation.some((template) => immediateTemplates.includes(template)),
+            'correo inmediato nuevo: la lista de la excepción de DEC-OBS-001 es cerrada'
+        ).toBe(false);
+    });
 });
 const sourceByPath = new Map(
     allSourceFiles.map((file) => [

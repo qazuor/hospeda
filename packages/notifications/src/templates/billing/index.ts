@@ -23,6 +23,7 @@ export * from './reconciliation-summary.js';
 export * from './renewal-reminder.js';
 export * from './renewal-upcoming.js';
 export * from './revocation-cancel.js';
+export * from './revocation-refund-failed.js';
 export * from './scheduled-cancellation.js';
 export * from './signup-before-cancel.js';
 export * from './signup-confirmed.js';
