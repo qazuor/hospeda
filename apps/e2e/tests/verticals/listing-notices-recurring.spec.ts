@@ -34,7 +34,6 @@ const created = {
     listingIds: [] as string[],
     addonInstanceIds: [] as string[],
     addonProductIds: [] as string[],
-    addonVersionIds: [] as string[],
     addonIds: [] as string[]
 };
 
@@ -79,10 +78,11 @@ function uniqueName(): string {
 
 test.describe('Listing notices of V8a, row 25 @verticals @billing', () => {
     test.afterEach(async () => {
+        // addon_version is append-only; deleting it is rejected by the database.
+        // Its uniquely-slugged catalog parents stay retained by foreign keys.
         for (const [table, ids] of [
             ['addon_instance', created.addonInstanceIds],
             ['addon_product', created.addonProductIds],
-            ['addon_version', created.addonVersionIds],
             ['addon', created.addonIds]
         ] as const) {
             for (const id of ids) {
@@ -146,7 +146,6 @@ test.describe('Listing notices of V8a, row 25 @verticals @billing', () => {
         const catalog = addonRows[0];
         if (!catalog) throw new Error('Failed to seed the recurring listing add-on catalog');
         created.addonIds.push(catalog.addon_id);
-        created.addonVersionIds.push(catalog.version_id);
         created.addonProductIds.push(catalog.product_id);
         const instances = await execSQL<{ id: string }>(
             `INSERT INTO addon_instance (
