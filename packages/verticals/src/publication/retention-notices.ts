@@ -55,7 +55,8 @@ export function buildListingRetentionBeforeDeletionPayload(args: {
 }
 /** Returns the market-calendar target day (AC:V9b:10, outbox §6). */
 export function retentionNoticeTargetDay(args: { readonly at: Date }): string {
-    return String(marketCalendarDay(args.at));
+    const { year, month, day } = marketCalendarDay(args.at);
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 /** Subtracts plazo 4 exactly in milliseconds (AC:V9b:10, outbox §6). */
 export function retentionNoticeAt(args: {
