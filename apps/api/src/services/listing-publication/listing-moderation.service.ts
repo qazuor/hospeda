@@ -6,7 +6,8 @@ import {
     ServiceErrorCode,
     VerticalEnum
 } from '@repo/schemas';
-import { type Actor, ServiceError } from '@repo/service-core';
+import { type Actor, isSystemActor, ServiceError } from '@repo/service-core';
+import { isAdministrativeActionPermitted, resolveAdministrativeActionStep } from '@repo/verticals';
 import { sql } from 'drizzle-orm';
 import {
     closeListingFixRequest,
@@ -23,7 +24,7 @@ const LISTING_TABLES: Readonly<Record<PublicationVertical, string>> = {
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 
-/** API adapter for the four two-level listing moderation gestures. */
+/** API adapter for the four gestures; ACC:12 step 3 follows the missing-listing 404 because the subject comes from its row. */
 export class ListingModerationService {
     /** Applies one administrative gesture and returns the resulting state. */
     async moderate(args: {
@@ -44,6 +45,18 @@ export class ListingModerationService {
         if (typeof ownerValue !== 'string')
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');
         const ownerId = ownerValue;
+        const action = 'ACC_12' as const;
+        const step = resolveAdministrativeActionStep({
+            action,
+            actorId: args.actor.id,
+            subjectId: ownerId,
+            permitted: isAdministrativeActionPermitted({
+                action,
+                actorPermissions: args.actor.permissions
+            }),
+            isSystemActor: isSystemActor(args.actor)
+        });
+        if (!step.allowed) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
         const common = {
             unitOfWork: ports.unitOfWork,
             clock: ports.clock,

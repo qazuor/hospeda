@@ -543,6 +543,34 @@ listings, no presence).
 `puedeCobrarle`: that mailbox is replaced by closing the account, with its
 preconditions. A refusal writes nothing, not even the audit event.
 
+## Actions 11 and 12: step 3 refuses the actor's own account (HOS-1691)
+
+`POST /api/v1/admin/trials/extend` (ACC:11):
+
+| Situation | Status | `error.code` |
+|---|---:|---|
+| No session | 401 | `UNAUTHORIZED` |
+| Lacks `TRIAL_EXTEND` | 403 | `FORBIDDEN` |
+| Invalid body | 400 | `VALIDATION_ERROR` |
+| Actor = subject (`userId` in the body, ignoring case), or system actor | 403 | `FORBIDDEN` |
+| Trial does not exist | 404 | `NOT_FOUND` |
+| Trial has ended | 409 | `ALREADY_EXISTS` |
+
+Step 3 runs before reading the trial.
+
+`POST /api/v1/admin/{accommodations|gastronomies|experiences}/{id}/moderate` (ACC:12):
+
+| Situation | Status | `error.code` |
+|---|---:|---|
+| No session | 401 | `UNAUTHORIZED` |
+| Lacks `LISTING_MODERATE` | 403 | `FORBIDDEN` |
+| Invalid body | 400 | `VALIDATION_ERROR` |
+| Listing does not exist or is deleted | 404 | `NOT_FOUND` |
+| Actor = listing owner | 403 | `FORBIDDEN` |
+| Incompatible state | 409 | `ALREADY_EXISTS` |
+
+The listing row is read before its owner is checked, so 404 precedes step 3. A step 3 refusal writes nothing, including no domain event.
+
 ## Row 30: "I already fixed it" (V8a.1b, HOS-1492)
 
 `POST /api/v1/protected/{accommodations|gastronomies|experiences}/{id}/fix-request/report-fixed`:
