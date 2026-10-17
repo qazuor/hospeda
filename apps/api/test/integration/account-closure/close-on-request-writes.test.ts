@@ -5,12 +5,14 @@
  * `session` rows are gone, the partner application carrying its mailbox gets a
  * pseudonym, the trigger deletes the bookmarks OTHER accounts saved on it, the
  * `trial` row is untouched, the audit event names fields and never old values,
+ * the audit events written before the closure keep their actor and subject ids,
  * the account can no longer sign in (H19), and the two mails enqueued BEFORE the
  * closure still leave to the real address while one enqueued after is
  * suppressed as `account_deleted` (the outbox part mirrors TEST:U2:2).
  */
 import {
     buildEmailDedupKey,
+    domainEventModel,
     emailOutbox,
     emailOutboxModel,
     getDb,
@@ -168,6 +170,27 @@ describe('TEST:V8a:13 what action 24 writes', () => {
         const juan = await seedJuan();
         const { id: adminId } = await createOwner();
         createdUsers.push(adminId);
+        const priorActorEvent = await domainEventModel.insert({
+            eventType: 'listing.edited',
+            entityType: 'accommodation',
+            entityId: crypto.randomUUID(),
+            actorType: 'owner',
+            actorId: juan.juanId,
+            changes: [{ field: 'description' }],
+            correlationId: crypto.randomUUID()
+        });
+        const priorSubjectEvent = await domainEventModel.insert({
+            eventType: 'trial.extended',
+            entityType: 'user',
+            entityId: juan.juanId,
+            actorType: 'admin',
+            actorId: adminId,
+            changes: [{ field: 'endsAt' }],
+            correlationId: crypto.randomUUID()
+        });
+        const priorAuditRows = await rows(sql`SELECT * FROM domain_event
+            WHERE id IN (${priorActorEvent.id}::uuid, ${priorSubjectEvent.id}::uuid)
+            ORDER BY id`);
         const trialBefore = await rows(
             sql`SELECT * FROM trial WHERE user_id = ${juan.juanId}::uuid`
         );
@@ -245,6 +268,18 @@ describe('TEST:V8a:13 what action 24 writes', () => {
                 changes: [{ field: 'email' }]
             }
         ]);
+
+        // the audit trail written before the closure is untouched: actor and subject stay by id
+        const priorAuditAfter = await rows(sql`SELECT * FROM domain_event
+            WHERE id IN (${priorActorEvent.id}::uuid, ${priorSubjectEvent.id}::uuid)
+            ORDER BY id`);
+        expect(priorAuditAfter).toEqual(priorAuditRows);
+        expect(priorAuditAfter.find((row) => row.id === priorActorEvent.id)?.actor_id).toBe(
+            juan.juanId
+        );
+        expect(priorAuditAfter.find((row) => row.id === priorSubjectEvent.id)?.entity_id).toBe(
+            juan.juanId
+        );
 
         // no session can be born on the account (H19)
         expect(await isUserSoftDeleted({ userId: juan.juanId })).toBe(true);
