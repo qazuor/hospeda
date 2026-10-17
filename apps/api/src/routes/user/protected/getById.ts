@@ -19,6 +19,7 @@ const userService = new UserService({ logger: apiLogger });
 export const protectedGetUserByIdRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}',
+    emailUnverifiedOperation: 'READ_OWN',
     summary: 'Get user by ID',
     description: 'Retrieves user information. Users can only view their own profile.',
     tags: ['Users'],

@@ -322,6 +322,8 @@ export interface ProtectedListRouteOptions extends CreateOpenApiRouteInterface {
     requestQuery?: Record<string, z.ZodTypeAny>;
     allowedQueryParams?: string[];
     requiredPermissions?: PermissionEnum[];
+    /** Closed-list operation permitted before email verification. */
+    emailUnverifiedOperation?: EmailUnverifiedAllowedOperation;
     /**
      * OR-groups of permissions, ANDed together (HOS-1077).
      *
@@ -414,7 +416,13 @@ export const createPublicListRoute = (options: PublicListRouteOptions) => {
  * });
  */
 export const createProtectedListRoute = (options: ProtectedListRouteOptions) => {
-    const { protectedTag = true, requiredPermissions, anyOfPermissions, ...routeOptions } = options;
+    const {
+        protectedTag = true,
+        requiredPermissions,
+        anyOfPermissions,
+        emailUnverifiedOperation,
+        ...routeOptions
+    } = options;
 
     // Add Protected tag prefix if enabled
     const tags = protectedTag
@@ -428,7 +436,11 @@ export const createProtectedListRoute = (options: ProtectedListRouteOptions) => 
             ...routeOptions.options,
             skipAuth: false,
             middlewares: [
-                protectedAuthMiddleware(requiredPermissions, anyOfPermissions),
+                protectedAuthMiddleware(
+                    requiredPermissions,
+                    anyOfPermissions,
+                    emailUnverifiedOperation
+                ),
                 ...(routeOptions.options?.middlewares || [])
             ]
         }
