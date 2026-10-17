@@ -17,20 +17,37 @@ import type { Rf1Reason } from '../refund/refund-machine.js';
 
 const logger = createLogger('billing-revocation-refund-failed-notice');
 
+/** Registered outbox template key for failed revocation refund notices. */
 export const REVOCATION_REFUND_FAILED_TEMPLATE = 'billing.revocation-refund-failed';
+
+/** RF1 refund reasons that qualify for an immediate failed refund notice. */
 export const REVOCATION_REFUND_REASONS = [
     'REVOCATION',
     'ADDON_ORPHAN',
     'ONE_TIME_ADDON_REVOCATION'
 ] as const satisfies readonly Rf1Reason[];
 
+/** Recipient lookup port used to select staff for a failed refund notice.
+ *
+ * @property list - Loads recipients, optionally using the supplied database transaction.
+ */
 export interface RevocationRefundFailedNoticeRecipients {
     list(input?: {
         readonly tx?: DrizzleClient;
     }): Promise<readonly { userId: string; email: string }[]>;
 }
 
-/** Enqueues the failed revocation refund notice inside a savepoint of RF5's transaction. */
+/** Enqueues a failed revocation refund notice inside a savepoint of RF5's transaction.
+ *
+ * @param input - Refund and transaction context.
+ * @param input.tx - Transaction that contains the failed refund.
+ * @param input.refundId - Identifier of the refund to inspect.
+ * @param input.failedAt - Timestamp used in the rendered notice.
+ * @param input.correlationId - Correlation identifier recorded on each outbox row.
+ * @param ports - Optional dependencies for recipient lookup.
+ * @param ports.recipients - Recipient lookup implementation; defaults to super admins.
+ * @returns The number of notices enqueued and a skip or failure reason when none were enqueued.
+ */
 export async function enqueueRevocationRefundFailedNotice(
     input: {
         readonly tx: DrizzleClient;
