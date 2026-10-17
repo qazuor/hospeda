@@ -459,6 +459,42 @@
                 "support_other": "{{count}} regalados por soporte"
             },
             "dates": "Del {{start}} al {{end}}"
+        },
+        "mine": {
+            "title": "Tus suscripciones",
+            "empty": "No tenés suscripciones vigentes.",
+            "status": {
+                "ACTIVE": "Activa",
+                "GRACE_PERIOD": "Pago pendiente",
+                "SUSPENDED": "Suspendida",
+                "CANCEL_SCHEDULED": "Baja pedida"
+            },
+            "loadError": "No pudimos leer tus suscripciones. Recargá la página.",
+            "scheduledUntil": "Diste de baja esta suscripción: seguís hasta el {{date}}.",
+            "grace": "No pudimos cobrar tu cuota. Si cambiás la tarjeta con la que pagás en Mercado Pago, el cobro se vuelve a intentar en el momento; no podemos asegurarte que entre. Si el cobro no entra antes del {{date}}, tu suscripción se suspende y vas a tener que volver a suscribirte."
+        },
+        "cancel": {
+            "open": "Dar de baja",
+            "activeEnds": "Si confirmás, cancelamos hoy el cobro automático y seguís con el servicio hasta el {{date}}.",
+            "suspendedEnds": "Si confirmás, la suscripción termina hoy: estaba suspendida, así que no queda período pagado que sostener.",
+            "graceEnds": "Si confirmás, el servicio termina hoy: perdés el servicio que el período de gracia te daba hasta el {{date}}. A cambio, no te reclamamos la cuota que no se pudo cobrar.",
+            "noMoreCharges": "No se te va a volver a cobrar. Primero te llega nuestro correo; después puede llegarte uno de Mercado Pago avisando la cancelación.",
+            "addonsTitle": "Estos complementos recurrentes se cancelan con tu suscripción:",
+            "addon": {
+                "CHARGE_CUT_TODAY": "{{name}}: {{price}} {{cycle}}. Su cobro se corta hoy y lo seguís viendo hasta el {{date}}.",
+                "AT_SERVICE_END": "{{name}}: {{price}} {{cycle}}. Está esperando autorización o tiene un cobro pendiente: se apaga el {{date}}, con el fin del servicio.",
+                "TODAY": "{{name}}: {{price}} {{cycle}}. Se apaga hoy con tu suscripción."
+            },
+            "addonsComeBack": "Si volvés, los contratás de nuevo: no se reanudan.",
+            "confirm": "Confirmar la baja",
+            "back": "Volver",
+            "pending": "Dando de baja…",
+            "loadError": "No pudimos leer qué pasa si das de baja esta suscripción. Probá de nuevo.",
+            "retry": "Reintentar",
+            "actError": "No pudimos dar de baja tu suscripción. Probá de nuevo.",
+            "stateChanged": "Tu suscripción cambió mientras la mirabas. Recargá la página para ver cómo quedó.",
+            "doneScheduled": "Listo: diste de baja tu suscripción. Seguís hasta el {{date}}.",
+            "doneEnded": "Listo: diste de baja tu suscripción. El servicio terminó hoy."
         }
     },
     "favorites": {

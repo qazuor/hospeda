@@ -461,6 +461,24 @@ A non-uuid `subscriptionId`, or a body without a uuid `expectedPaymentId`, with 
 
 The permission is the route's scope (`billing.cancelSubscription`); the subject, the system actor and `actor = subject` are decided inside the revocation transaction, so a 403 can come from either. The row is read before the subject, so a missing subscription answers 404 to an actor holding the permission, as in action 14.
 
+## Self-service cancellation (B13a.1, HOS-1617)
+
+`GET /api/v1/protected/billing-subscription/` lists the caller's principal subscriptions.
+`GET /api/v1/protected/billing-subscription/{subscriptionId}/cancellation-preview` previews the cancellation, and
+`POST /api/v1/protected/billing-subscription/{subscriptionId}/cancellation` performs it. Both resource routes are owner-only: another person's subscription is
+404, including for staff holding `billing.cancelSubscription`, because these routes are in the protected tier.
+The POST declares `CLOSE_ACCOUNT` for the unverified-email step; both GET routes declare `READ_OWN`. The preview also declares `BILLING_VIEW_OWN` at the route factory, before input-shape validation.
+
+| Rejection | Status | `error.code` |
+|---|---:|---|
+| `SUBSCRIPTION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `CANCELLATION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `CANCELLATION_NOT_PRINCIPAL` | 409 | `ALREADY_EXISTS` |
+| `CANCELLATION_STATE_NOT_ALLOWED` | 409 | `ALREADY_EXISTS` |
+
+States without self-service cancellation at this cut, including `PAUSED` and `PENDING_AUTHORIZATION`, answer
+409 `ALREADY_EXISTS` with `CANCELLATION_STATE_NOT_ALLOWED`.
+
 ## Action 24 (V8a.3, HOS-1494)
 
 `GET` and `POST /api/v1/admin/users/{id}/close-on-request`: administrative

@@ -459,6 +459,42 @@
                 "support_other": "{{count}} granted by support"
             },
             "dates": "From {{start}} to {{end}}"
+        },
+        "mine": {
+            "title": "Your subscriptions",
+            "empty": "You have no current subscriptions.",
+            "status": {
+                "ACTIVE": "Active",
+                "GRACE_PERIOD": "Payment pending",
+                "SUSPENDED": "Suspended",
+                "CANCEL_SCHEDULED": "Cancellation requested"
+            },
+            "loadError": "We could not read your subscriptions. Reload the page.",
+            "scheduledUntil": "You cancelled this subscription: you keep it until {{date}}.",
+            "grace": "We could not charge your installment. If you change the card you pay with on Mercado Pago, the charge is retried right away; we cannot promise it will go through. If it does not go through before {{date}}, your subscription is suspended and you will have to subscribe again."
+        },
+        "cancel": {
+            "open": "Cancel subscription",
+            "activeEnds": "If you confirm, we cancel the automatic charge today and you keep the service until {{date}}.",
+            "suspendedEnds": "If you confirm, the subscription ends today: it was suspended, so there is no paid period left to keep.",
+            "graceEnds": "If you confirm, the service ends today: you lose the service the grace period was giving you until {{date}}. In exchange, we will not claim the installment we could not charge.",
+            "noMoreCharges": "You will not be charged again. Our email arrives first; then Mercado Pago may send one about the cancellation.",
+            "addonsTitle": "These recurring add-ons are cancelled with your subscription:",
+            "addon": {
+                "CHARGE_CUT_TODAY": "{{name}}: {{price}} {{cycle}}. Its charge stops today and you keep seeing it until {{date}}.",
+                "AT_SERVICE_END": "{{name}}: {{price}} {{cycle}}. It is awaiting authorization or has a pending charge: it turns off on {{date}}, when the service ends.",
+                "TODAY": "{{name}}: {{price}} {{cycle}}. It turns off today with your subscription."
+            },
+            "addonsComeBack": "If you come back, you buy them again: they do not resume.",
+            "confirm": "Confirm cancellation",
+            "back": "Back",
+            "pending": "Cancelling…",
+            "loadError": "We could not read what happens if you cancel this subscription. Try again.",
+            "retry": "Retry",
+            "actError": "We could not cancel your subscription. Try again.",
+            "stateChanged": "Your subscription changed while you were looking at it. Reload the page to see its state.",
+            "doneScheduled": "Done: you cancelled your subscription. You keep it until {{date}}.",
+            "doneEnded": "Done: you cancelled your subscription. The service ended today."
         }
     },
     "favorites": {

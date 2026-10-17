@@ -11,14 +11,18 @@ export const SCHEDULED_CANCELLATION_SUBJECT = 'Cancelamos el cobro automático d
  * HOS-1683, AC:1683:2, DEC-MAIL-001): no further charge, the service runs to the end of the
  * paid period, and Mercado Pago may send its own cancellation email.
  */
-export function ScheduledCancellation() {
+export function ScheduledCancellation({
+    serviceEndDate
+}: {
+    readonly serviceEndDate: string | null;
+}) {
     return (
         <EmailLayout previewText={SCHEDULED_CANCELLATION_SUBJECT}>
             <Heading>{SCHEDULED_CANCELLATION_SUBJECT}</Heading>
             <Text>
-                Pediste la baja de tu suscripción, así que cancelamos su cobro automático: no se te
-                va a volver a cobrar. El servicio sigue hasta el final del período que ya pagaste.
-                Puede llegarte un correo de Mercado Pago avisando la cancelación.
+                {serviceEndDate
+                    ? `Pediste la baja de tu suscripción, así que cancelamos su cobro automático: no se te va a volver a cobrar. El servicio sigue hasta el ${serviceEndDate}. Puede llegarte un correo de Mercado Pago avisando la cancelación.`
+                    : 'Pediste la baja de tu suscripción, así que cancelamos su cobro automático: no se te va a volver a cobrar. El servicio sigue hasta el final del período que ya pagaste. Puede llegarte un correo de Mercado Pago avisando la cancelación.'}
             </Text>
         </EmailLayout>
     );
