@@ -53,12 +53,12 @@ const clauseFiles = CLAUSE_FILES.map((row) => {
 const ACTION_24_ANCHORS = [
     {
         file: 'apps/api/test/integration/account-closure/close-on-request-writes.test.ts',
-        scope: 'TEST:V8a:13',
+        scope: "describe('TEST:V8a:13 what action 24 writes",
         anchors: ['FROM account WHERE user_id', 'toEqual([juan.ownBookmarkId])']
     },
     {
         file: 'packages/db/test/integration/account-closure/account-closure.writes.integration.test.ts',
-        scope: 'TEST:V8a:13',
+        scope: "describe('TEST:V8a:13 the account closure writes (model)",
         anchors: ['accounts: 0,', 'foreign_bookmarks: 0,']
     }
 ] as const;
