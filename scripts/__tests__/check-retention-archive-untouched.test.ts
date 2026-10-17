@@ -97,6 +97,7 @@ describe('TEST:V9b:14 PB4/PB5 freeze guard', () => {
             'tsx scripts/check-retention-archive-untouched.ts'
         );
         const guards = scripts['check:guards'] ?? '';
+        expect(guards).toContain('pnpm check:retention-archive-untouched');
         expect(guards.indexOf('pnpm check:retention-archive-untouched')).toBeLessThan(
             guards.indexOf('pnpm check:role-never-decides')
         );
