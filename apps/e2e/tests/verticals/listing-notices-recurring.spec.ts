@@ -88,7 +88,12 @@ test.describe('Listing notices of V8a, row 25 @verticals @billing', () => {
             for (const id of ids) {
                 try {
                     await execSQL(`DELETE FROM ${table} WHERE id = $1::uuid`, [id]);
-                } catch {
+                } catch (error) {
+                    const code =
+                        typeof error === 'object' && error !== null && 'code' in error
+                            ? error.code
+                            : undefined;
+                    if (table === 'addon_instance' || code !== '23503') throw error;
                     // H-8: leave uniquely-slugged catalog rows if a foreign key retains them.
                 }
             }
