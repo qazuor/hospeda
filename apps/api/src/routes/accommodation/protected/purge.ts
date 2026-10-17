@@ -12,6 +12,7 @@ export const protectedPurgeAccommodationRoute = createProtectedRoute({
     successStatusCode: 200,
     path: '/{id}/purge',
     listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'DELETE', idParam: 'id' },
+    emailUnverifiedOperation: 'DELETE_LISTING',
     summary: 'Purge own accommodation listing',
     description: 'Permanently removes listing content through PB12.',
     tags: ['Accommodations'],

@@ -25,6 +25,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
 export const protectedListMyExperienceRoute = createProtectedRoute({
     method: 'get',
     path: '/mine',
+    emailUnverifiedOperation: 'READ_OWN',
     summary: 'List my experience listings (protected)',
     description: "Returns the authenticated owner's own experience listings as summaries",
     tags: ['Experience'],

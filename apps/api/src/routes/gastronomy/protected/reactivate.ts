@@ -13,6 +13,7 @@ export const protectedReactivateGastronomyRoute = createProtectedRoute({
     successStatusCode: 200,
     path: '/{id}/reactivate',
     listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'REACTIVATE', idParam: 'id' },
+    emailUnverifiedOperation: 'REACTIVATE_LISTING',
     summary: 'Reactivate archived gastronomy listing',
     description: 'Moves an archived listing back to DRAFT through PB8.',
     tags: ['Gastronomy'],

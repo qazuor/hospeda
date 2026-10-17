@@ -18,6 +18,7 @@ export const protectedReactivateAccommodationRoute = createProtectedRoute({
     successStatusCode: 200,
     path: '/{id}/reactivate',
     listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'REACTIVATE', idParam: 'id' },
+    emailUnverifiedOperation: 'REACTIVATE_LISTING',
     summary: 'Reactivate archived accommodation listing',
     description: 'Moves an archived listing back to DRAFT through PB8.',
     tags: ['Accommodations'],
