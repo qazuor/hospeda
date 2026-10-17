@@ -72,7 +72,7 @@ describe.each(
             suggestedDate: '2026-10-20'
         };
         const before = await getDb().execute(
-            sql`SELECT publication_status AS status, (SELECT count(*) FROM fix_request WHERE entity_type = ${vertical} AND entity_id = ${listingId}::uuid AND closed_at IS NULL) AS requests, (SELECT count(*) FROM email_outbox WHERE recipient_user_id = ${owner.id}::uuid) AS mail, (SELECT count(*) FROM domain_event WHERE entity_id = ${listingId}::uuid) AS events FROM ${sql.identifier(table[vertical])} WHERE id = ${listingId}::uuid`
+            sql`SELECT publication_status AS status, (SELECT count(*) FROM fix_request WHERE entity_type = ${vertical} AND entity_id = ${listingId} AND closed_at IS NULL) AS requests, (SELECT count(*) FROM email_outbox WHERE recipient_user_id = ${owner.id}::uuid) AS mail, (SELECT count(*) FROM domain_event WHERE entity_id = ${listingId}) AS events FROM ${sql.identifier(table[vertical])} WHERE id = ${listingId}::uuid`
         );
         const denied = await readResponse(
             await app.request(path, {
@@ -84,7 +84,7 @@ describe.each(
         expect(denied.status).toBe(403);
         expect(denied.body.error?.code).toBe('FORBIDDEN');
         const after = await getDb().execute(
-            sql`SELECT publication_status AS status, (SELECT count(*) FROM fix_request WHERE entity_type = ${vertical} AND entity_id = ${listingId}::uuid AND closed_at IS NULL) AS requests, (SELECT count(*) FROM email_outbox WHERE recipient_user_id = ${owner.id}::uuid) AS mail, (SELECT count(*) FROM domain_event WHERE entity_id = ${listingId}::uuid) AS events FROM ${sql.identifier(table[vertical])} WHERE id = ${listingId}::uuid`
+            sql`SELECT publication_status AS status, (SELECT count(*) FROM fix_request WHERE entity_type = ${vertical} AND entity_id = ${listingId} AND closed_at IS NULL) AS requests, (SELECT count(*) FROM email_outbox WHERE recipient_user_id = ${owner.id}::uuid) AS mail, (SELECT count(*) FROM domain_event WHERE entity_id = ${listingId}) AS events FROM ${sql.identifier(table[vertical])} WHERE id = ${listingId}::uuid`
         );
         expect(after.rows).toEqual(before.rows);
         const accepted = await readResponse(
