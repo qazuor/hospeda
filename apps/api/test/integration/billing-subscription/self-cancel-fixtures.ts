@@ -1,4 +1,7 @@
 import {
+    addonInstances,
+    addonProducts,
+    addons,
     buildEmailDedupKey,
     buildEventOccurrence,
     coveredPeriods,
@@ -23,6 +26,8 @@ import {
 } from './revocation-route-fixtures';
 
 const periodIds: string[] = [];
+const addonInstanceIds: string[] = [];
+const addonComplementIds: string[] = [];
 export const routeClock = baseRouteClock;
 export const routeFake = baseRouteFake;
 export const actorHeaders = baseActorHeaders;
@@ -104,6 +109,46 @@ export async function seedSelfState(
     return { ownerId, subscriptionId };
 }
 
+/** Seed recurrent addon fixtures matching the addon-orphanhood integration helpers. */
+export async function seedSelfPreviewAddon(input: {
+    readonly ownerId: string;
+    readonly targetId: string;
+    readonly status: 'ACTIVE' | 'PENDING_AUTHORIZATION';
+    readonly chargeKind?: 'PERIODICO' | 'UNA_VEZ';
+}) {
+    const { seedOrphanInstance, seedComplement } = await import(
+        '../../../../../packages/service-core/test/integration/services/support/addon-orphan-fixtures'
+    );
+    return getDb().transaction(async (tx) => {
+        const complement = await seedComplement(tx, {
+            userId: input.ownerId,
+            vertical: 'accommodation',
+            status: 'ACTIVE'
+        });
+        const seeded = await seedOrphanInstance(tx, {
+            ownerId: input.ownerId,
+            scopeType: 'VERTICAL_SUBSCRIPTION',
+            compatibleVerticals: ['accommodation'],
+            status: input.status,
+            targetId: input.targetId,
+            complementSubscriptionId: complement.subscriptionId,
+            chargeKind: input.chargeKind
+        });
+        const [product] = await tx
+            .select({ addonId: addonProducts.addonId })
+            .from(addonProducts)
+            .where(eq(addonProducts.id, seeded.productId));
+        if (!product) throw new Error('Expected addon product');
+        await tx
+            .update(addons)
+            .set({ name: 'Preview addon' })
+            .where(eq(addons.id, product.addonId));
+        addonInstanceIds.push(seeded.instanceId);
+        addonComplementIds.push(complement.subscriptionId);
+        return { instanceId: seeded.instanceId, complementId: complement.subscriptionId };
+    });
+}
+
 /** Preset the scheduled-cancellation notice as sent, transient or exhausted. */
 export async function presetSelfCancelNotice(input: {
     readonly ownerId: string;
@@ -138,5 +183,14 @@ export async function presetSelfCancelNotice(input: {
 export async function retireSelfCancelRows() {
     const ids = periodIds.splice(0);
     if (ids.length) await getDb().delete(coveredPeriods).where(inArray(coveredPeriods.id, ids));
+    const instances = addonInstanceIds.splice(0);
+    if (instances.length)
+        await getDb().delete(addonInstances).where(inArray(addonInstances.id, instances));
+    const complements = addonComplementIds.splice(0);
+    if (complements.length)
+        await getDb()
+            .update(subscriptions)
+            .set({ status: 'CANCELLED' })
+            .where(inArray(subscriptions.id, complements));
     await retireRevocationRouteRows();
 }

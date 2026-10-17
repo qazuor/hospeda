@@ -12,7 +12,9 @@ import {
     routeClock,
     routeFake,
     seedSelfActive,
-    seedSelfState
+    seedSelfPreviewAddon,
+    seedSelfState,
+    seedUser
 } from './self-cancel-fixtures';
 
 const clock = routeClock();
@@ -117,5 +119,99 @@ describe('TEST:1617:2 cancellation preview through its route', () => {
             serviceEndsAt: '2026-11-05T12:00:00.000Z',
             addons: []
         });
+    });
+
+    it('(d)-(f) previews do not write and report recurrent addon timing by source state', async () => {
+        const active = await seedSelfActive(fake, clock);
+        const activeAddon = await seedSelfPreviewAddon({
+            ownerId: active.ownerId,
+            targetId: active.subscriptionId,
+            status: 'ACTIVE'
+        });
+        const pendingAddon = await seedSelfPreviewAddon({
+            ownerId: active.ownerId,
+            targetId: active.subscriptionId,
+            status: 'PENDING_AUTHORIZATION'
+        });
+        await seedSelfPreviewAddon({
+            ownerId: active.ownerId,
+            targetId: active.subscriptionId,
+            status: 'ACTIVE',
+            chargeKind: 'UNA_VEZ'
+        });
+        const before = await getDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, active.subscriptionId));
+        const response = await app.request(pathOf(active.subscriptionId), {
+            headers: headers(active.ownerId)
+        });
+        expect(response.status).toBe(200);
+        const body = SubscriptionCancellationPreviewResponseSchema.parse(
+            ((await response.json()) as { data: unknown }).data
+        );
+        expect(body.origin).toBe('ACTIVE');
+        expect(body.addons).toEqual([
+            expect.objectContaining({
+                addonInstanceId: activeAddon.instanceId,
+                name: 'Preview addon',
+                price: 5000,
+                currency: 'ARS',
+                whenOff: 'CHARGE_CUT_TODAY'
+            }),
+            expect.objectContaining({
+                addonInstanceId: pendingAddon.instanceId,
+                whenOff: 'AT_SERVICE_END'
+            })
+        ]);
+        expect(
+            await getDb()
+                .select()
+                .from(subscriptions)
+                .where(eq(subscriptions.id, active.subscriptionId))
+        ).toEqual(before);
+
+        const grace = await seedSelfState('GRACE_PERIOD');
+        const graceAddon = await seedSelfPreviewAddon({
+            ownerId: grace.ownerId,
+            targetId: grace.subscriptionId,
+            status: 'ACTIVE'
+        });
+        const graceResponse = await app.request(pathOf(grace.subscriptionId), {
+            headers: headers(grace.ownerId)
+        });
+        const graceBody = SubscriptionCancellationPreviewResponseSchema.parse(
+            ((await graceResponse.json()) as { data: unknown }).data
+        );
+        expect(graceBody.addons).toEqual([
+            expect.objectContaining({
+                addonInstanceId: graceAddon.instanceId,
+                whenOff: 'TODAY'
+            })
+        ]);
+    });
+
+    it('(g) hides another owner from ordinary and billing staff; PAUSED is rejected', async () => {
+        const seeded = await seedSelfActive(fake, clock);
+        const stranger = await seedUser('preview-stranger');
+        const staff = actorHeaders({
+            id: stranger,
+            role: 'ADMIN',
+            permissions: [
+                PermissionEnum.BILLING_CANCEL_SUBSCRIPTION,
+                PermissionEnum.BILLING_VIEW_OWN
+            ]
+        });
+        for (const requestHeaders of [headers(stranger), staff]) {
+            const response = await app.request(pathOf(seeded.subscriptionId), {
+                headers: requestHeaders
+            });
+            expect(response.status).toBe(404);
+        }
+        const paused = await seedSelfState('PAUSED');
+        const pausedResponse = await app.request(pathOf(paused.subscriptionId), {
+            headers: headers(paused.ownerId)
+        });
+        expect(pausedResponse.status).toBe(409);
     });
 });
