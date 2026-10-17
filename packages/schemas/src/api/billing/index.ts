@@ -34,6 +34,7 @@ export * from './subscription-pause.schema.js';
 export * from './subscription-promo-effect.schema.js';
 export * from './subscription-read.schema.js';
 export * from './subscription-revocation.schema.js';
+export * from './subscription-self-cancel.schema.js';
 export * from './subscription-start.schema.js';
 export * from './subscription-status.schema.js';
 export * from './trial.schema.js';
