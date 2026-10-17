@@ -300,6 +300,32 @@ describe('TEST:V5:8 TEST:1691:2 action 11 refuses the actor on their own account
                 .where(eq(trialRedemptions.userId, user.id))
         ).toHaveLength(0);
     });
+    it('measures whether the request schema accepts uppercase account ids', async () => {
+        const { user, trial, end } = await fixture();
+        if (!trial) throw new Error('Missing trial');
+        const response = await request(
+            { userId: user.id.toUpperCase(), vertical: 'accommodation', days: 15, reason: 'self' },
+            user.id
+        );
+        expect([400, 403]).toContain(response.status);
+        if (response.status === 400) {
+            // The schema rejects uppercase UUIDs; the domain resolver still covers case-insensitive comparison.
+            expect((await response.json()).error.code).toBe('VALIDATION_ERROR');
+        } else {
+            expect((await response.json()).error.code).toBe('FORBIDDEN');
+        }
+        const [stored] = await getDb().select().from(trials).where(eq(trials.id, trial.id));
+        expect(stored?.endsAt?.toISOString()).toBe(end.toISOString());
+        expect(
+            await getDb().select().from(domainEvent).where(eq(domainEvent.entityId, trial.id))
+        ).toHaveLength(0);
+        expect(
+            await getDb()
+                .select()
+                .from(trialRedemptions)
+                .where(eq(trialRedemptions.userId, user.id))
+        ).toHaveLength(0);
+    });
     it('returns FORBIDDEN for the actor before a missing trial 404', async () => {
         const { user } = await fixture(false);
         const response = await request(
