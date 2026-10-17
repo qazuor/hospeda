@@ -41,7 +41,12 @@ import type {
     UserPublic,
     VerticalEnum
 } from '@repo/schemas';
-import { MAX_BULK_CHECK_ENTITY_IDS } from '@repo/schemas';
+import {
+    MAX_BULK_CHECK_ENTITY_IDS,
+    type OwnSubscriptionsResponseSchema,
+    type SubscriptionCancellationPreviewResponseSchema,
+    type SubscriptionCancellationResponseSchema
+} from '@repo/schemas';
 import type { z } from 'zod';
 import type { MediaAttribution } from '../media';
 import { apiClient } from './client';
@@ -5496,6 +5501,34 @@ export type StartSubscriptionResponse = z.infer<typeof StartSubscriptionResponse
 
 /** Protected S1 endpoint for starting a signup checkout. */
 export const billingSubscriptionApi = {
+    /** Read the authenticated user's own principal subscriptions. */
+    listMine({
+        cookieHeader
+    }: {
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<z.infer<typeof OwnSubscriptionsResponseSchema>>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/billing-subscription/`, cookieHeader });
+    },
+    /** Read the cancellation consequences for one owned subscription. */
+    cancellationPreview({
+        subscriptionId
+    }: {
+        readonly subscriptionId: string;
+    }): Promise<ApiResult<z.infer<typeof SubscriptionCancellationPreviewResponseSchema>>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing-subscription/${subscriptionId}/cancellation-preview`
+        });
+    },
+    /** Request cancellation without a request body. */
+    cancel({
+        subscriptionId
+    }: {
+        readonly subscriptionId: string;
+    }): Promise<ApiResult<z.infer<typeof SubscriptionCancellationResponseSchema>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing-subscription/${subscriptionId}/cancellation`
+        });
+    },
     /** Read the selected option's vertical and the current user's trial notice. */
     signupNotice({
         billingOptionId,

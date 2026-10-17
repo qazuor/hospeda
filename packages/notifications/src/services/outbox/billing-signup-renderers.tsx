@@ -146,7 +146,24 @@ function scheduledCancellation(row: EmailOutboxRow) {
         throw new TypeError(
             'Faltan datos requeridos del aviso de cancelación del cobro automático'
         );
-    return { subject: SCHEDULED_CANCELLATION_SUBJECT, react: <ScheduledCancellation /> };
+    const serviceEndsAt = data.serviceEndsAt;
+    let serviceEndDate: string | null = null;
+    if (serviceEndsAt !== undefined && serviceEndsAt !== null) {
+        if (typeof serviceEndsAt !== 'string' || !ISO_INSTANT.test(serviceEndsAt))
+            throw new TypeError(
+                'La fecha de fin del servicio del aviso de cancelación no es válida'
+            );
+        const instant = new Date(serviceEndsAt);
+        if (Number.isNaN(instant.getTime()))
+            throw new TypeError(
+                'La fecha de fin del servicio del aviso de cancelación no es válida'
+            );
+        serviceEndDate = formatDate({ dateString: getLocalDateString({ instant }) });
+    }
+    return {
+        subject: SCHEDULED_CANCELLATION_SUBJECT,
+        react: <ScheduledCancellation serviceEndDate={serviceEndDate} />
+    };
 }
 
 function incomplete(row: EmailOutboxRow) {

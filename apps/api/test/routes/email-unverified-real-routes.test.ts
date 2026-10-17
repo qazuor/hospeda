@@ -10,11 +10,25 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { protectedAccommodationRoutes } from '../../src/routes/accommodation/protected/index';
-import { protectedBillingSubscriptionRoutes } from '../../src/routes/billing-subscription/index';
+import {
+    protectedBillingSubscriptionReadRoutes,
+    protectedBillingSubscriptionRoutes
+} from '../../src/routes/billing-subscription/index';
 import { protectedExperienceRoutes } from '../../src/routes/experience/protected/index';
 import { protectedGastronomyRoutes } from '../../src/routes/gastronomy/protected/index';
 import { protectedUserRoutes } from '../../src/routes/user/protected/index';
 import type { AppBindings } from '../../src/types';
+
+const cancellationRouteMocks = vi.hoisted(() => ({
+    readOwnSubscriptions: vi.fn(async () => []),
+    readSubscription: vi.fn(async () => null)
+}));
+vi.mock('../../src/routes/billing-subscription/read-own-subscriptions', () => ({
+    readOwnSubscriptions: cancellationRouteMocks.readOwnSubscriptions
+}));
+vi.mock('../../src/routes/billing-subscription/read-subscription', () => ({
+    readSubscription: cancellationRouteMocks.readSubscription
+}));
 
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const LISTING_ID = '22222222-2222-4222-8222-222222222222';
@@ -45,18 +59,26 @@ const app = (options: {
     result.route('/api/v1/protected/experiences', protectedExperienceRoutes);
     result.route('/api/v1/protected/users', protectedUserRoutes);
     result.route('/api/v1/protected/billing/subscriptions', protectedBillingSubscriptionRoutes);
+    result.route('/api/v1/protected/billing-subscription', protectedBillingSubscriptionReadRoutes);
     return result;
 };
-async function probe(options: { readonly target: Hono<AppBindings>; readonly path: string }) {
+async function probe(options: {
+    readonly target: Hono<AppBindings>;
+    readonly path: string;
+    readonly method?: 'GET' | 'POST';
+}) {
     const { target, path } = options;
     const response = await target.request(path, {
         method:
-            path.includes('/reactivate') ||
+            options.method ??
+            (path.includes('/reactivate') ||
             path.includes('/purge') ||
             path.endsWith('/publish') ||
             path.includes('/subscriptions')
                 ? 'POST'
-                : 'GET'
+                : 'GET'),
+        headers: { 'Content-Type': 'application/json' },
+        body: options.method === 'POST' ? '{}' : undefined
     });
     const body = (await response.json().catch(() => ({}))) as { error?: { code?: string } };
     return { status: response.status, error: { code: body.error?.code } };
@@ -97,7 +119,27 @@ describe('TEST:V5:3 TEST:1692:1 the closed list passes step 2 on the real router
             expect(spy).toHaveBeenCalled();
         }
     });
-    const covered = [
+    const covered: Array<{
+        readonly op: string;
+        readonly path: string;
+        readonly method?: 'POST';
+        readonly permissions?: PermissionEnum[];
+    }> = [
+        {
+            op: 'READ_OWN',
+            path: '/api/v1/protected/billing-subscription',
+            permissions: [PermissionEnum.BILLING_VIEW_OWN]
+        },
+        {
+            op: 'READ_OWN',
+            path: `/api/v1/protected/billing-subscription/${OWNER_ID}/cancellation-preview`,
+            permissions: [PermissionEnum.BILLING_VIEW_OWN]
+        },
+        {
+            op: 'CLOSE_ACCOUNT',
+            path: `/api/v1/protected/billing-subscription/${OWNER_ID}/cancellation`,
+            method: 'POST' as const
+        },
         ...(['accommodations', 'gastronomies', 'experiences'] as const).map((v) => ({
             op: 'REACTIVATE_LISTING',
             path: `/api/v1/protected/${v}/${LISTING_ID}/reactivate`
@@ -111,11 +153,31 @@ describe('TEST:V5:3 TEST:1692:1 the closed list passes step 2 on the real router
             { op: 'READ_OWN', path: `/api/v1/protected/${v}/${LISTING_ID}/support-edits` }
         ])
     ];
-    it.each(covered)('$op passes step 2 on $path', async ({ path }) => {
-        const unverified = await probe({ target: app({ emailVerified: false }), path });
-        const verified = await probe({ target: app({ emailVerified: true }), path });
+    it.each(covered)('$op passes step 2 on $path', async ({ path, method, permissions = [] }) => {
+        cancellationRouteMocks.readOwnSubscriptions.mockClear();
+        cancellationRouteMocks.readSubscription.mockClear();
+        const unverified = await probe({
+            target: app({ emailVerified: false, permissions }),
+            path,
+            method
+        });
+        const verified = await probe({
+            target: app({ emailVerified: true, permissions }),
+            path,
+            method
+        });
         expect(unverified).toEqual(verified);
         expect(unverified.error.code).not.toBe(ServiceErrorCode.EMAIL_NOT_VERIFIED);
+        if (path.endsWith('/billing-subscription')) {
+            expect(unverified.status).toBe(200);
+            expect(cancellationRouteMocks.readOwnSubscriptions).toHaveBeenCalled();
+        } else if (path.endsWith('/cancellation') && method === 'POST') {
+            expect(cancellationRouteMocks.readSubscription).toHaveBeenCalled();
+            expect(unverified.status).toBe(404);
+        } else if (path.endsWith('/cancellation-preview')) {
+            expect(cancellationRouteMocks.readSubscription).toHaveBeenCalled();
+            expect(unverified.status).toBe(404);
+        }
     });
 });
 

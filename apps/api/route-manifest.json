@@ -2427,7 +2427,19 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/billing-subscription"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/billing-subscription/:subscriptionId"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/billing-subscription/:subscriptionId/cancellation"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/billing-subscription/:subscriptionId/cancellation-preview"
         },
         {
             "method": "POST",

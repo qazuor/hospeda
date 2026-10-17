@@ -9,9 +9,8 @@
  * old billing client (HOS-1637, AC:B13a:21 / AC:B13a:22). Every one of those
  * reads targeted a billing route the API no longer registers.
  *
- * The page keeps its URL, its layout and its account-nav entry, and renders
- * only its header until the leaf that rewrites "Mi Suscripción" against the
- * new billing (`B13a.4`) fills it in. It makes no billing call.
+ * The page reads the authenticated owner's subscriptions during SSR and shows
+ * the grace notice and self-service cancellation block above trial summary.
  *
  * Under the header, `TrialSummary` (HOS-1492, row 4) shows the accumulated
  * free-trial days per vertical and their origin. It reads the publish
@@ -26,7 +25,9 @@
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import TrialSummary from '@/components/account/TrialSummary.astro';
-import { publishApi, type PublishVerticalSlug } from '@/lib/api/endpoints-protected';
+import MySubscriptions from '@/components/account/MySubscriptions.astro';
+import { billingSubscriptionApi, publishApi, type PublishVerticalSlug } from '@/lib/api/endpoints-protected';
+import { parseOwnSubscriptions } from '@/lib/billing/self-cancel';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -59,9 +60,16 @@ const trialSummaryReads = await Promise.all(
 	})
 );
 const trialSummaries = trialSummaryReads.flat();
+let ownSubscriptions = null;
+try {
+	ownSubscriptions = parseOwnSubscriptions({ result: await billingSubscriptionApi.listMine({ cookieHeader }) });
+} catch {
+	 ownSubscriptions = null;
+}
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
 	<AccountPageHeader title={title} />
+	<MySubscriptions locale={locale} result={ownSubscriptions} />
 	<TrialSummary locale={locale} entries={trialSummaries} />
 </AccountLayout>

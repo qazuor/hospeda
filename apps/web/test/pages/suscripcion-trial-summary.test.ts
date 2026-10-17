@@ -32,16 +32,21 @@ describe('mi-cuenta/suscripcion — row 4 trial summary (HOS-1492)', () => {
         expect(source).toMatch(/\} catch \{\s*return \[\];\s*\}/);
     });
 
-    it('mounts TrialSummary right under the header, as one movable block', () => {
+    it('mounts TrialSummary below the header, as one movable block', () => {
         expect(source).toContain(
             "import TrialSummary from '@/components/account/TrialSummary.astro';"
         );
-        expect(source).toMatch(
-            /<AccountPageHeader title=\{title\} \/>\s*<TrialSummary locale=\{locale\} entries=\{trialSummaries\} \/>/
-        );
+        // Below the header as one block; HOS-1617 mounts the own-subscriptions
+        // list between them.
+        const header = source.indexOf('<AccountPageHeader title={title} />');
+        const summary = source.indexOf('<TrialSummary locale={locale} entries={trialSummaries} />');
+        expect(header).toBeGreaterThan(-1);
+        expect(summary).toBeGreaterThan(header);
     });
 
-    it('still makes no billing call', () => {
-        expect(source).not.toMatch(/billingApi|\/billing\//);
+    // HOS-1617 (AC:B13a:1) made this page read the caller's own subscriptions
+    // through `billingSubscriptionApi`; the retired billing client stays out.
+    it('never uses the retired billing client', () => {
+        expect(source).not.toMatch(/\bbillingApi\b/);
     });
 });

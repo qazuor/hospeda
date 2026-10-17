@@ -18,7 +18,12 @@ import { getPaymentProvider } from '../../utils/payment-provider';
 import { createErrorResponse } from '../../utils/response-helpers';
 import { createProtectedRoute } from '../../utils/route-factory';
 import { beforeCancelNotice } from './before-cancel-notice';
+import {
+    protectedCancellationPreviewRoute,
+    protectedCancelSubscriptionRoute
+} from './cancellation';
 import { protectedReadSubscriptionRoute } from './read';
+import { protectedReadOwnSubscriptionsRoute } from './read-mine';
 import { readSignupNotice } from './read-signup-notice';
 import { readSignupWindow } from './read-signup-window';
 import { touristVipInheritance } from './tourist-vip-inheritance';
@@ -124,6 +129,9 @@ router.route('/', protectedSignupNoticeRoute);
 export const protectedBillingSubscriptionRoutes = router;
 
 const readRouter = createRouter();
+readRouter.route('/', protectedReadOwnSubscriptionsRoute);
 readRouter.route('/', protectedReadSubscriptionRoute);
+readRouter.route('/', protectedCancellationPreviewRoute);
+readRouter.route('/', protectedCancelSubscriptionRoute);
 
 export { readRouter as protectedBillingSubscriptionReadRoutes };
