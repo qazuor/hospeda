@@ -9,7 +9,7 @@
  *
  * 1. **Authentication** — `createProtectedRoute`, before anything else.
  * 2. **Ownership** — the service's owner-tier read, then the same explicit
- *    `ownerId === actor.id || ACCOMMODATION_UPDATE_ANY` check
+ *    `ownerId === actor.id || ACCOMMODATION_VIEW_ALL` inspection permission check
  *    `protected/getById.ts` makes, answering NOT_FOUND for a listing that is not
  *    the caller's. A 403 would confirm the id exists (HOS-600).
  * 3. **Is there a public ficha at all** — a listing with no public page has
@@ -118,8 +118,8 @@ export async function handleGetAccommodationQrSheet(
 
     const entity = result.data;
 
-    const hasUpdateAny = actor.permissions?.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY);
-    if (!entity || (!hasUpdateAny && entity.ownerId !== actor.id)) {
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.ACCOMMODATION_VIEW_ALL);
+    if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: AccommodationService.ENTITY_NAME });
     }
 

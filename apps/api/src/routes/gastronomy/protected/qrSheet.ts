@@ -8,8 +8,9 @@
  * The accommodation twin (`routes/accommodation/protected/qrSheet.ts`) carries
  * the full reasoning for the order of the checks, for why there is NO
  * entitlement gate, for why the code is minted once and reused, and for why the
- * minted destination ignores the downloader's language. One thing differs here:
- * the staff bypass is `GASTRONOMY_VIEW_ALL`, not `ACCOMMODATION_UPDATE_ANY`.
+ * minted destination ignores the downloader's language. The staff bypass is
+ * the vertical's inspection permission, `GASTRONOMY_VIEW_ALL`, as
+ * `ACCOMMODATION_VIEW_ALL` is in the twin.
  *
  * ## The publicity check is the publication state, as in accommodation
  *
