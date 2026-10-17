@@ -28,7 +28,7 @@ export class StatsService {
      * scale, rounded to 2 decimals (matching the `numeric(3, 2)` storage
      * precision). Considers only non-deleted, ACTIVE reviews. Returns 0 when
      * there are no reviews.
-     * Excluye las reseñas de fichas `PURGED` (AC:1686:3).
+     * Excludes reviews of `PURGED` listings (AC:1686:3).
      */
     async getGlobalAccommodationAverageRating(): Promise<number> {
         const db = getDb();
@@ -73,7 +73,7 @@ export class StatsService {
      * - Over-fetches by a small factor (`limit * 3`, capped at 30) before the
      *   in-JS filter so the final list almost always reaches `limit` even when
      *   recent reviewers happen to lack avatars.
-     * - Excluye las reseñas de fichas `PURGED` (AC:1686:3).
+     * - Excludes reviews of `PURGED` listings (AC:1686:3).
      */
     async getRecentReviewerAvatars(input: { limit: number }): Promise<readonly string[]> {
         const safeLimit = Math.max(0, Math.floor(input.limit));

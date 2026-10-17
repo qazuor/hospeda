@@ -183,7 +183,7 @@ export class AccommodationReviewService extends BaseCrudService<
         // (regression covered by test/services/where-leak.regression.test.ts).
         (filters as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
         (filters as Record<string, unknown>).moderationState = ModerationStatusEnum.APPROVED;
-        // AC:1686:3: sólo PURGED oculta reseñas en lectores públicos.
+        // AC:1686:3: only PURGED listings hide reviews from public readers.
         return this.model.findAll({ ...filters, deletedAt: null }, { page, pageSize }, [
             listingReviewsShownCondition({ vertical: VerticalEnum.ACCOMMODATION })
         ]);
@@ -206,7 +206,7 @@ export class AccommodationReviewService extends BaseCrudService<
         // sortBy/sortOrder also stripped to prevent WHERE-clause leak.
         (filters as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
         (filters as Record<string, unknown>).moderationState = ModerationStatusEnum.APPROVED;
-        // AC:1686:3: sólo PURGED oculta reseñas en lectores públicos.
+        // AC:1686:3: only PURGED listings hide reviews from public readers.
         const count = await this.model.count(
             { ...filters, deletedAt: null },
             {
@@ -833,7 +833,7 @@ export class AccommodationReviewService extends BaseCrudService<
                 (defaultFilters as Record<string, unknown>).moderationState =
                     ModerationStatusEnum.APPROVED;
 
-                // AC:1686:2: sólo PURGED oculta reseñas en testimonios públicos.
+                // AC:1686:2: only PURGED listings hide reviews in public testimonials.
                 const result = await this.model.findAllWithUser(
                     defaultFilters,
                     { page, pageSize },
