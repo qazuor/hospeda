@@ -22,6 +22,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 export const protectedListOwnAccommodationsRoute = createProtectedListRoute({
     method: 'get',
     path: '/',
+    emailUnverifiedOperation: 'READ_OWN',
     summary: 'List own accommodations',
     description:
         'Returns a paginated list of accommodations owned by the authenticated user. Optionally filter by publicationStatus.',
