@@ -12,6 +12,7 @@ import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { openReconciliationMark } from '../../../src/services/billing/reconciliation/open-reconciliation-mark.service.js';
 import { runReconciliationSummaryTick } from '../../../src/services/billing/reconciliation/summary/run-summary-tick.service.js';
+import type { ReconciliationSummaryPayload } from '../../../src/services/billing/reconciliation/summary/summary-types.js';
 import { closeServiceTestPool, withServiceTestTransaction } from './helpers.js';
 import { seedCoverageUser } from './support/coverage-fixtures.js';
 import { seedRenewalSubscription } from './support/renewal-notice-fixtures.js';
@@ -91,12 +92,27 @@ describe('TEST:B11:21 summary window deadline source', () => {
                 .from(emailOutbox)
                 .where(inArray(emailOutbox.recipientUserId, [u1.userId, u2.userId]));
             expect(mails).toHaveLength(2);
-            for (const mail of mails)
+            for (const mail of mails) {
+                const marks = mail.payload.marks;
+                expect(Array.isArray(marks)).toBe(true);
+                if (!Array.isArray(marks)) throw new Error('Summary payload marks are missing');
                 expect(
-                    (mail.payload as any).marks.find(
-                        (m: any) => m.subjectId === seeded.subscriptionId
+                    marks.find(
+                        (
+                            mark
+                        ): mark is Pick<
+                            ReconciliationSummaryPayload['marks'][number],
+                            'subjectId' | 'count'
+                        > =>
+                            typeof mark === 'object' &&
+                            mark !== null &&
+                            'subjectId' in mark &&
+                            typeof mark.subjectId === 'string' &&
+                            'count' in mark &&
+                            typeof mark.count === 'number'
                     )
                 ).toMatchObject({ count: 100 });
+            }
             expect(
                 await tick(tx, new Date(open!.closesAt.getTime() + 1), correlationId, recipients)
             ).toBe('IDLE');
