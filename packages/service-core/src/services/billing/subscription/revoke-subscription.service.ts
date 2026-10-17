@@ -40,6 +40,8 @@ import {
     readRevocation
 } from './revocation-reading';
 import { requestRevocationRefund } from './revocation-refund';
+import { type SuccessionCloser, unimplementedSuccessionCloser } from './subscription-billing-ports';
+import { closeSuccessionIfPredecessor } from './succession-end';
 
 export {
     previewSubscriptionRevocation,
@@ -76,6 +78,8 @@ export interface RevokeSubscriptionPorts {
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly coverageNotices: CoverageNotices;
     readonly orphanhood: AddonOrphanhoodPorts;
+    /** S18's interface (B8b); defaults to `unimplementedSuccessionCloser`, which throws. */
+    readonly successionCloser?: SuccessionCloser;
     /** Defaults to the no-op; the route passes `providerLinkCancellationSeen`. */
     readonly cancellationSeen?: CancellationSeenAnnotator;
 }
@@ -269,7 +273,8 @@ async function cancelAtProvider(input: {
  * the authorization of action 8 against the subject read there, the guards (principal, origin,
  * a credited payment through `sucedida_por`, the 10-day window, the payment the preview showed),
  * `CANCELLED` with the service ended now and the grace clock off, the open pause closed, the
- * coverage loss, the decision to cancel at the provider (card payers only) and the RF1. Then,
+ * coverage loss, the decision to cancel at the provider (card payers only), the RF1, S18 when
+ * this is a live succession predecessor, orphanhood and one-time-addon refunds. Then,
  * after the commit, the coverage notice and the provider call.
  *
  * @param input.actor - The person registering the revocation
@@ -336,7 +341,10 @@ export async function revokeSubscription(
             now,
             clock: ports.clock
         });
-        // HOS-1547 inserts closeSuccessionIfPredecessor right before this call.
+        await closeSuccessionIfPredecessor(
+            { predecessorSubscriptionId: reading.subscriptionId, tx },
+            { successionCloser: ports.successionCloser ?? unimplementedSuccessionCloser }
+        );
         const { cancelled } = await runOrphanhood(
             { tx, subscriptionId: reading.subscriptionId, now, s21Cause: 'REVOCATION' },
             ports.orphanhood

@@ -7,7 +7,7 @@
  */
 
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import type { Actor } from '@repo/service-core';
+import { type Actor, PartnerService } from '@repo/service-core';
 import type { EmailUnverifiedAllowedOperation } from '@repo/verticals';
 import { resolvePersonStateStep } from '@repo/verticals';
 import type { MiddlewareHandler } from 'hono';
@@ -17,6 +17,7 @@ import { getActorFromContext, isGuestActor } from '../utils/actor';
 import { AuditEventType, auditLog } from '../utils/audit-logger';
 import { apiLogger } from '../utils/logger';
 import { createErrorResponse } from '../utils/response-helpers';
+import { stripStaffBypassPermissions } from './step2-staff-bypass';
 
 /**
  * Permissions that grant admin-level access
@@ -26,6 +27,32 @@ const ADMIN_ACCESS_PERMISSIONS: PermissionEnum[] = [
     PermissionEnum.ACCESS_PANEL_ADMIN,
     PermissionEnum.ACCESS_API_ADMIN
 ];
+
+/**
+ * Resolve the real Partner ownership link only when it changes CHANGE_EMAIL's
+ * step-2 decision. V5 permits that operation only without a Partner link; the
+ * link is partners.owner_user_id, read through PartnerService.getOwn (no SQL
+ * here). PARTNER_OWNER is not a link and G6 forbids deciding by role. Lookup
+ * failures fail closed (Coord-242).
+ */
+async function resolvePartnerLinkForStep2(args: {
+    actor: Actor;
+    operation: EmailUnverifiedAllowedOperation | undefined;
+}): Promise<boolean | undefined> {
+    if (args.actor.emailVerified !== false || args.operation !== 'CHANGE_EMAIL') {
+        return undefined;
+    }
+
+    try {
+        const result = await new PartnerService({ logger: apiLogger }).getOwn(args.actor);
+        if (result.error) {
+            throw new HTTPException(503, { message: 'Service temporarily unavailable' });
+        }
+        return result.data.partner !== null;
+    } catch {
+        throw new HTTPException(503, { message: 'Service temporarily unavailable' });
+    }
+}
 
 /**
  * Check if actor has any of the specified permissions
@@ -206,7 +233,11 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
 
             const personState = resolvePersonStateStep({
                 emailVerified: actor.emailVerified,
-                operation: emailUnverifiedOperation
+                operation: emailUnverifiedOperation,
+                hasPartnerLink: await resolvePartnerLinkForStep2({
+                    actor,
+                    operation: emailUnverifiedOperation
+                })
             });
             if (!personState.allowed) {
                 apiLogger.warn('Email verification required for protected route');
@@ -229,9 +260,18 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
                 );
             }
 
+            // AC:1692:5 removes staff bypasses only after step 2 admits the request.
+            // Do this before the permission gate so a staff gate gives the same answer
+            // as an actor without that permission.
+            const gatedActor =
+                actor.emailVerified === false && emailUnverifiedOperation !== undefined
+                    ? stripStaffBypassPermissions({ actor }).actor
+                    : actor;
+            if (gatedActor !== actor) c.set('actor', gatedActor);
+
             // If specific permissions are required, check them
             if (hasPermissionGate(requiredPermissions, anyOfPermissions)) {
-                if (!passesPermissionGate(actor, requiredPermissions, anyOfPermissions)) {
+                if (!passesPermissionGate(gatedActor, requiredPermissions, anyOfPermissions)) {
                     apiLogger.warn(
                         `Forbidden: Actor ${actor.id} lacks required permissions for protected route`
                     );

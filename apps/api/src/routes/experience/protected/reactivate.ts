@@ -13,6 +13,7 @@ export const protectedReactivateExperienceRoute = createProtectedRoute({
     successStatusCode: 200,
     path: '/{id}/reactivate',
     listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'REACTIVATE', idParam: 'id' },
+    emailUnverifiedOperation: 'REACTIVATE_LISTING',
     summary: 'Reactivate archived experience listing',
     description: 'Moves an archived listing back to DRAFT through PB8.',
     tags: ['Experience'],

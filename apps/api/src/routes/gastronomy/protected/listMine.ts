@@ -25,6 +25,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
 export const protectedListMyGastronomyRoute = createProtectedRoute({
     method: 'get',
     path: '/mine',
+    emailUnverifiedOperation: 'READ_OWN',
     summary: 'List my gastronomy listings (protected)',
     description: "Returns the authenticated owner's own gastronomy listings as summaries",
     tags: ['Gastronomy'],
