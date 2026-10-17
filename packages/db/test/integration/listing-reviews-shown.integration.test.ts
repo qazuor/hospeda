@@ -215,7 +215,7 @@ describe('TEST:1686:1 AC:1686:1 AC:1686:4 listingReviewsShownCondition', () => {
                 tx,
                 [condition]
             );
-            expect(unpaged.items).toEqual([]);
+            expect(unpaged).toMatchObject({ items: [], total: 0 });
             expect(
                 await accommodationReviewModel.findAllWithUser(
                     { accommodationId: published.id },

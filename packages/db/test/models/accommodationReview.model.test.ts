@@ -110,7 +110,9 @@ describe('AccommodationReviewModel', () => {
             await model.findAllWithUser({}, { page: 1, pageSize: 10 }, undefined, [condition]);
 
             const findManyArgs = findMany.mock.calls[0]?.[0] as { where: unknown };
-            expect(findManyArgs.where).toMatchObject({ queryChunks: expect.any(Array) });
+            expect((findManyArgs.where as { queryChunks: unknown[] }).queryChunks).toContain(
+                condition
+            );
             expect(count).toHaveBeenCalledWith(
                 {},
                 { tx: undefined, additionalConditions: [condition] }
