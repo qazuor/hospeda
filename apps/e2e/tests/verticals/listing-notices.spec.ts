@@ -10,9 +10,9 @@
  * and the accumulated trial days in Mi Suscripción (4).
  *
  * Not here (H12): row 1 (the pricing is empty until HOS-1621: component test),
- * row 19 and the text of every mail (renderer tests), and row 25 — a recurring
- * LISTING add-on makes `coverage()` throw until V6.13 registers `ficha`
- * (`unregisteredListingQuery`), so the e2e environment cannot seed its source.
+ * row 19 and the text of every mail (renderer tests), and row 25, which lives
+ * in `listing-notices-recurring.spec.ts` (HOS-1495) because it needs to seed a
+ * LISTING add-on.
  *
  * Every case uses its own users and listings and never retires the global plan
  * catalog, so it can run beside the other `@verticals` specs. Not `@p0`.
@@ -185,7 +185,7 @@ test.describe('Listing notices of V8a @verticals', () => {
         await expect(card.getByTestId('unpublish-trial-note')).toHaveText(
             'La prueba gratis sigue corriendo: despublicar no detiene el reloj del trial.'
         );
-        // Row 25 has no seedable source in e2e (see the header): no recurring line.
+        // This owner has no add-ons, so there is no recurring line; row 25 lives in listing-notices-recurring.spec.ts.
         await expect(card.getByTestId('unpublish-recurring-note')).toHaveCount(0);
         await card.getByRole('button', { name: 'Cancelar', exact: true }).click();
         expect(await readPublicationStatus({ listingId })).toBe('PUBLISHED');
