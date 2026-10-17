@@ -141,7 +141,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
         });
     });
 
-    describe('K2 ACCOMMODATION_UPDATE_ANY bypass in accommodation detail', () => {
+    describe('K2 ACCOMMODATION_VIEW_ALL bypass in accommodation detail', () => {
         it('unverified with and without the permission gets the same 404', async () => {
             const spy = vi
                 .spyOn(AccommodationService.prototype, 'getById')
@@ -156,7 +156,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
             const withPermission = await probe({
                 actorId: OWNER_ID,
                 emailVerified: false,
-                permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY],
+                permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                 path
             });
             expect(withPermission).toEqual(without);
@@ -179,7 +179,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
             const result = await probe({
                 actorId: OWNER_ID,
                 emailVerified: true,
-                permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY],
+                permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                 path
             });
             expect(result).not.toEqual(without);
@@ -194,13 +194,13 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
             const unverified = await probe({
                 actorId: OWNER_ID,
                 emailVerified: false,
-                permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY],
+                permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                 path
             });
             const verified = await probe({
                 actorId: OWNER_ID,
                 emailVerified: true,
-                permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY],
+                permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                 path
             });
             expect(unverified).toEqual(verified);
