@@ -226,11 +226,8 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
         {
             // HOS-1683 AC:1683:2: S11's notice before cancelling the automatic charge.
             template: 'billing.scheduled-cancellation',
-            payload: { subscriptionId },
-            expected: [
-                'El servicio sigue hasta el final del período que ya pagaste',
-                'Mercado Pago'
-            ]
+            payload: { subscriptionId, serviceEndsAt: '2026-10-12T12:00:00.000Z' },
+            expected: ['El servicio sigue hasta el 12 de octubre de 2026.', 'Mercado Pago']
         }
     ])('renders $template through the production sender', async ({
         template,
@@ -242,6 +239,15 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
         expect(result.subject.trim()).not.toBe('');
         for (const phrase of expected) expect(html).toContain(phrase);
         expect(html).not.toContain(subscriptionId);
+    });
+
+    it('renders scheduled cancellation without a service end date using the existing copy', async () => {
+        const result = await render({
+            row: row('billing.scheduled-cancellation', { subscriptionId })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(html).toContain('El servicio sigue hasta el final del período que ya pagaste.');
+        expect(html).not.toContain('El servicio sigue hasta el 12 de octubre');
     });
 });
 
