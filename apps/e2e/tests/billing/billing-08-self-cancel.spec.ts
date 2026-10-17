@@ -206,6 +206,39 @@ test.describe('TEST:B13a:1 self-service cancellation @p0 @billing @clock', () =>
             [subscriptionId]
         );
         expect(ended[0]?.status).toBe('CANCELLED');
+        const directNotice = await execSQL<{ status: string }>(
+            `SELECT status FROM email_outbox
+             WHERE recipient_user_id = $1 AND template = 'billing.direct-cancellation'
+             ORDER BY created_at DESC LIMIT 1`,
+            [graceSubscriber.user.id]
+        );
+        expect(directNotice[0]?.status).toBe('pending');
+        expect(
+            cancelRequestsFor({ requests: world.fakeServer.requests(), authorizationId })
+        ).toHaveLength(0);
+        await runCron({
+            jobName: 'email-outbox-sender',
+            adminCookie: graceSubscriber.admin.sessionCookie
+        });
+        await world.mailCapture.waitForMail({
+            to: graceSubscriber.user.email,
+            subject: 'Tu suscripción quedó cancelada',
+            timeoutMs: MAIL_TIMEOUT_MS
+        });
+        const directNoticeSent = await execSQL<{ status: string }>(
+            `SELECT status FROM email_outbox
+             WHERE recipient_user_id = $1 AND template = 'billing.direct-cancellation'
+             ORDER BY created_at DESC LIMIT 1`,
+            [graceSubscriber.user.id]
+        );
+        expect(directNoticeSent[0]?.status).toBe('sent');
+        await runCron({
+            jobName: 'billing-reconciliation-sweep',
+            adminCookie: graceSubscriber.admin.sessionCookie
+        });
+        expect(
+            cancelRequestsFor({ requests: world.fakeServer.requests(), authorizationId })
+        ).toHaveLength(1);
     });
 
     test('SUSPENDED has no grace notice and cancels service today', async ({ page }) => {
@@ -221,6 +254,12 @@ test.describe('TEST:B13a:1 self-service cancellation @p0 @billing @clock', () =>
         await expect(pending).toBeVisible();
         const subscriptionId = await pending.getAttribute('data-subscription-id');
         if (!subscriptionId) throw new Error('Expected web checkout subscription id.');
+        const links = await execSQL<{ provider_id: string }>(
+            'SELECT provider_id FROM provider_link WHERE subscription_id = $1',
+            [subscriptionId]
+        );
+        const authorizationId = links[0]?.provider_id;
+        if (!authorizationId) throw new Error('Expected fake-provider authorization id.');
         await activateCardSubscription({ fakeServer: world.fakeServer, subscriptionId });
         // The expiry path can outlive this spec's bounded setup; seed the final row state explicitly.
         await execSQL("UPDATE subscription SET status = 'SUSPENDED' WHERE id = $1", [
@@ -239,5 +278,38 @@ test.describe('TEST:B13a:1 self-service cancellation @p0 @billing @clock', () =>
             [subscriptionId]
         );
         expect(ended[0]?.status).toBe('CANCELLED');
+        const directNotice = await execSQL<{ status: string }>(
+            `SELECT status FROM email_outbox
+             WHERE recipient_user_id = $1 AND template = 'billing.direct-cancellation'
+             ORDER BY created_at DESC LIMIT 1`,
+            [suspendedSubscriber.user.id]
+        );
+        expect(directNotice[0]?.status).toBe('pending');
+        expect(
+            cancelRequestsFor({ requests: world.fakeServer.requests(), authorizationId })
+        ).toHaveLength(0);
+        await runCron({
+            jobName: 'email-outbox-sender',
+            adminCookie: suspendedSubscriber.admin.sessionCookie
+        });
+        await world.mailCapture.waitForMail({
+            to: suspendedSubscriber.user.email,
+            subject: 'Tu suscripción quedó cancelada',
+            timeoutMs: MAIL_TIMEOUT_MS
+        });
+        const directNoticeSent = await execSQL<{ status: string }>(
+            `SELECT status FROM email_outbox
+             WHERE recipient_user_id = $1 AND template = 'billing.direct-cancellation'
+             ORDER BY created_at DESC LIMIT 1`,
+            [suspendedSubscriber.user.id]
+        );
+        expect(directNoticeSent[0]?.status).toBe('sent');
+        await runCron({
+            jobName: 'billing-reconciliation-sweep',
+            adminCookie: suspendedSubscriber.admin.sessionCookie
+        });
+        expect(
+            cancelRequestsFor({ requests: world.fakeServer.requests(), authorizationId })
+        ).toHaveLength(1);
     });
 });
