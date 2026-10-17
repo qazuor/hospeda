@@ -1,4 +1,4 @@
-import { TrialStatusEnum, VerticalEnum } from '@repo/schemas';
+import { PermissionEnum, TrialStatusEnum, VerticalEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { computePreExpiryMilestones } from '../../src/trial/trial-deadlines';
 import { createExtendTrial, extendTrialByAdmin } from '../../src/trial/trial-extension';
@@ -17,7 +17,9 @@ const input = {
     vertical,
     days: 7,
     reason: '  compensación por moderación errónea  ',
-    actorId
+    actorId,
+    actorPermissions: [PermissionEnum.TRIAL_EXTEND],
+    isSystemActor: false
 };
 
 function setup(options: { seed?: boolean; status?: TrialStatusEnum; endsAt?: Date } = {}) {
@@ -176,5 +178,35 @@ describe('AC:V4:9 (unitaria, la máquina) administrative T4', () => {
         expect(f.machine.adminExtensions).toHaveLength(0);
         expect(f.events).toHaveLength(0);
         expect(f.invalidations).toHaveLength(0);
+    });
+});
+
+describe('TEST:1691:1 step 3 of administrative action 11 refuses the actor on their own account', () => {
+    async function rejected(f: ReturnType<typeof setup>, patch: Partial<typeof input> = {}) {
+        const before = f.machine.trialOf(userId, vertical)?.endsAt;
+        expect(await f.extend(patch)).toEqual({ extended: false, reason: 'FORBIDDEN' });
+        expect(f.machine.log).toHaveLength(0);
+        expect(f.machine.trialOf(userId, vertical)?.endsAt).toEqual(before);
+        expect(f.machine.adminExtensions).toHaveLength(0);
+        expect(f.machine.campaigns).toHaveLength(0);
+        expect(f.events).toHaveLength(0);
+        expect(f.invalidations).toHaveLength(0);
+    }
+    it('rejects same account', async () => rejected(setup(), { actorId: userId }));
+    it('rejects uppercase subject identity', async () =>
+        rejected(setup(), { actorId: userId.toUpperCase() }));
+    it('rejects self before checking a missing trial', async () =>
+        rejected(setup({ seed: false }), { actorId: userId }));
+    it('rejects without action permission', async () =>
+        rejected(setup(), { actorPermissions: [] }));
+    it('rejects another action permission', async () =>
+        rejected(setup(), { actorPermissions: [PermissionEnum.LISTING_MODERATE] }));
+    it('rejects a system actor', async () => rejected(setup(), { isSystemActor: true }));
+    it('allows another account with the action permission', async () => {
+        const f = setup();
+        expect(await f.extend()).toMatchObject({ extended: true });
+        expect(f.machine.trialOf(userId, vertical)?.endsAt).toEqual(
+            new Date(initialEndsAt.getTime() + 7 * DAY)
+        );
     });
 });
