@@ -4,6 +4,7 @@ import { PermissionEnum, VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { resolveSubscriptionSources } from '../../../src/services/billing/coverage/subscription-sources.js';
 import { cancelActiveSubscription } from '../../../src/services/billing/subscription/cancel-active-subscription.service.js';
+import { classifyCancellationCrossing } from '../../../src/services/billing/subscription/cancellation-crossing-rule.js';
 import { computeS11ServiceEnd } from '../../../src/services/billing/subscription/s11-service-end.js';
 import { noCreditedPayments } from '../../../src/services/billing/subscription/subscription-billing-ports.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
@@ -269,6 +270,14 @@ describe.skipIf(!isServiceTestDbAvailable())(
         });
 
         it('TEST:1571:2 (g): a scheduled row without an S11 decision remains outside this rule', async () => {
+            expect(
+                classifyCancellationCrossing({
+                    status: 'CANCEL_SCHEDULED',
+                    class: 'PRINCIPAL',
+                    decision: null,
+                    factAt: T0
+                })
+            ).toBe('NONE');
             const { clock, setNow } = crossingClock(new Date('2026-10-01T00:00:00.000Z'));
             const fake = fakeFor(clock, true);
             const seeded = await seedCrossingActive({
