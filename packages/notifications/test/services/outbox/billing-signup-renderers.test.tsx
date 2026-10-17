@@ -117,6 +117,27 @@ describe('billing signup outbox renderers', () => {
         expect(html).not.toContain(subscriptionId);
     });
 
+    it('TEST:1617:7 — renders the scheduled cancellation service end date and keeps the legacy copy without one', async () => {
+        const render = (payload: Record<string, unknown>) =>
+            renderers['billing.scheduled-cancellation']!({
+                row: row({
+                    template: 'billing.scheduled-cancellation',
+                    payload: { subscriptionId, ...payload }
+                })
+            });
+        const dated = renderToStaticMarkup(
+            (await render({ serviceEndsAt: '2026-10-12T12:00:00.000Z' })).react
+        );
+        expect(dated).toContain('El servicio sigue hasta el 12 de octubre de 2026.');
+        for (const payload of [{}, { serviceEndsAt: null }]) {
+            const html = renderToStaticMarkup((await render(payload)).react);
+            expect(html).toContain('El servicio sigue hasta el final del período que ya pagaste.');
+            expect(html).not.toContain('sigue hasta el 12 de octubre');
+        }
+        expect(() => render({ serviceEndsAt: 42 })).toThrow(TypeError);
+        expect(() => render({ serviceEndsAt: '2026-99-99T12:00:00Z' })).toThrow(TypeError);
+    });
+
     it('AC:B7:30 — renders the manual arrears suspension with the owed instalment and nothing else', async () => {
         const result = await renderers['billing.arrears-suspension']!({
             row: row({
