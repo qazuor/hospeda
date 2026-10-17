@@ -7,7 +7,7 @@ import { createInMemoryTrialMachine } from './in-memory-trial-machine';
 
 const DAY = 86_400_000;
 const NOW = new Date('2026-10-10T12:00:00.000Z');
-const userId = '11111111-1111-4111-8111-111111111111';
+const userId = 'abcdefab-cdef-4abc-8def-abcdefabcdef';
 const actorId = '22222222-2222-4222-8222-222222222222';
 const vertical = VerticalEnum.ACCOMMODATION;
 const startedAt = new Date(NOW.getTime() - 10 * DAY);

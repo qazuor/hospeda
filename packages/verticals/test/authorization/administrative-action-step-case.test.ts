@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { resolveAdministrativeActionStep } from '../../src/authorization/administrative-action-step';
 
 describe('TEST:1691:4 step 3 compares accounts ignoring case', () => {
-    const actorId = '11111111-1111-4111-8111-111111111111';
+    const actorId = 'abcdefab-cdef-4abc-8def-abcdefabcdef';
     const action = 'ACC_11' as const;
     it('rejects subject uppercase', () =>
         expect(
