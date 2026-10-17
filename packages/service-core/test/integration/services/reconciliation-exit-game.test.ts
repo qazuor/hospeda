@@ -1,7 +1,5 @@
 /**
- * LISTA:B11 against the fake. Here: clauses 1, 5, 9 (second half), 11, 15 and 16
- * (HOS-1602, HOS-1603). The other fifteen (2–4, 6–8, the first half of 9, 10,
- * 12–14 and 17–21) are completed by B11.10 (HOS-1610) and the sibling leaves.
+ * LISTA:B11 against the fake. This file: clauses 1, 5, 9 (second half), 11, 15 and 16 (HOS-1602, HOS-1603, HOS-1676). The rest live in the sibling `reconciliation-exit-game-*.test.ts` files (HOS-1611, B11.10); clauses 8, 17 and 18 are phase 2 (AC:B11:14, HOS-1636).
  */
 import {
     eq,
