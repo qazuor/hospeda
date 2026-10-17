@@ -30,6 +30,7 @@ import {
     listingCoverageReconcilerJob,
     listingInactivityArchiveJob,
     listingRemoteDeletionRetryJob,
+    listingRetentionPassJob,
     mediaOrphanCleanupJob,
     newsletterCloseCampaignsJob,
     notificationLogPurgeJob,
@@ -95,7 +96,8 @@ export const cronJobs: CronJobDefinition[] = [
     pollApifyReputationRunsJob,
     listingCoverageReconcilerJob,
     listingInactivityArchiveJob,
-    listingRemoteDeletionRetryJob
+    listingRemoteDeletionRetryJob,
+    listingRetentionPassJob
 ];
 
 /**

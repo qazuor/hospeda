@@ -67,6 +67,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Retry the pending remote deletions of purged listings (photos and calendar tokens) once per day.'
     },
     {
+        name: 'listing-retention-pass',
+        displayName: 'Avisos de retención y borrado del día 180',
+        category: 'system',
+        schedule: '0 6 * * *',
+        description:
+            'Send the two retention pre-notices and run PB9 over expired archived listings once per day.'
+    },
+    {
         name: 'billing-reconciliation-sweep',
         displayName: 'Barrido de conciliación de cobros',
         category: 'billing',
