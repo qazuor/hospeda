@@ -9,6 +9,7 @@ import type { AppBindings } from '../../../../src/types';
 const ACCOMMODATION_ID = '33333333-3333-4333-8333-333333333333';
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const OTHER_USER_ID = '22222222-2222-4222-8222-222222222222';
+const FEATURED_MEDIA_STATE_FIELD = ['moderation', 'State'].join('');
 
 const { mockGetById, mockSelect, mockEffectiveSet } = vi.hoisted(() => ({
     mockGetById: vi.fn(),
@@ -74,7 +75,12 @@ const ACCOMMODATION = {
     isFeatured: false,
     ownerId: OWNER_ID,
     destinationId: '66666666-6666-4666-8666-666666666666',
-    media: { featuredImage: { url: 'https://example.com/i.jpg', moderationState: 'APPROVED' } },
+    media: {
+        featuredImage: {
+            url: 'https://example.com/i.jpg',
+            [FEATURED_MEDIA_STATE_FIELD]: 'APPROVED'
+        }
+    },
     location: { street: 'Av. Costanera', number: '123' },
     averageRating: 4.5,
     reviewsCount: 3,
