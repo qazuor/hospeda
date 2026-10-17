@@ -28,6 +28,7 @@ import { createSentryCronMonitorPing } from '../../utils/cron-monitor-ping.js';
 import { buildBillingCoveragePorts } from '../../utils/listing-access/billing-coverage.js';
 import { createBootstrapCoverageReader } from '../../utils/listing-access/bootstrap-coverage-reader.js';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
+import { createApiListingInverse } from '../../utils/listing-publication/listing-inverse.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -139,7 +140,12 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     zeroCallChecks: {
                         retainedPayments: retainedPaymentsFromLedger,
                         retainedPaymentBranches: noDeterminableRetainedPaymentBranch,
-                        addonOrphanhood: { addonPolicy, listing }
+                        // B10 registers A6; until then the unimplemented boundary opens the red mark.
+                        addonOrphanhood: {
+                            addonPolicy,
+                            listing,
+                            listingPurged: createApiListingInverse().listingPurged
+                        }
                     },
                     // The mark opened for a retained payment hangs it (AC:B5:32); without
                     // the real ledger port each one fails as "not registered". The sweep
