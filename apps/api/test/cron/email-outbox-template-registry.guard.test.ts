@@ -111,6 +111,10 @@ const ENQUEUE_SITES: Readonly<
         'verticals.listing-purged',
         'verticals.price-alert-closed'
     ],
+    'packages/verticals/src/publication/send-retention-notice.ts': [
+        'verticals.listing-retention-before-archive',
+        'verticals.listing-retention-before-deletion'
+    ],
     'packages/service-core/src/services/billing/reconciliation/summary/run-summary-tick.service.ts':
         ['billing.reconciliation-summary'],
     'packages/service-core/src/services/billing/reconciliation/immediate-notice.ts': [
@@ -148,7 +152,7 @@ const ENQUEUE_SITES: Readonly<
 };
 
 const enqueuePattern =
-    /emailOutboxModel\.enqueue\b|\benqueueOrMergeScheduledEmail\(|\.enqueueListingNotice\(|\.enqueueRestitutionNotice\(/;
+    /emailOutboxModel\.enqueue\b|\benqueueOrMergeScheduledEmail\(|\.enqueueListingNotice\(|\.enqueueRestitutionNotice\(|\.enqueueRetentionNotice\(/;
 const sourceRoots = [
     ...readdirSync(join(REPO_ROOT, 'packages'))
         .map((name) => join(REPO_ROOT, 'packages', name, 'src'))
@@ -345,7 +349,7 @@ describe('TEST:1675:2 AC:1675:1 the four pending templates render through the pr
 /**
  * Protects Coord-283: an outbox row without a renderer ends as failed and the email never goes out.
  * When adding an enqueue site or template, declare it in ENQUEUE_SITES in the same PR and register
- * its renderer in buildOutboxSenderRender. A new enqueue primitive outside the four censused calls
+ * its renderer in buildOutboxSenderRender. A new enqueue primitive outside the five censused calls
  * escapes this inventory; its author must add that primitive to the census regex.
  */
 describe('TEST:1675:3 AC:1675:2 every template the outbox enqueues has a production renderer', () => {
