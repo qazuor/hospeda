@@ -5,16 +5,24 @@ import {
     emailOutboxModel,
     eq,
     getDb,
+    subscriptions,
     users
 } from '@repo/db';
-import { BEFORE_CANCEL_TEMPLATE_BY_KIND, type BeforeCancelNotice } from '@repo/service-core';
+import {
+    BEFORE_CANCEL_TEMPLATE_BY_KIND,
+    type BeforeCancelNotice,
+    type BeforeCancelNoticeKind
+} from '@repo/service-core';
+
+const SCHEDULED_CANCELLATION_KIND = 'SCHEDULED_CANCELLATION' satisfies BeforeCancelNoticeKind;
 
 /**
  * Outbox contract for the notice that precedes every cancellation we execute.
  * The template comes from the mandatory `kind`, through service-core's
  * `BEFORE_CANCEL_TEMPLATE_BY_KIND`: there is no default notice (HOS-1683). The occurrence is the fact that decided the cancellation (`occurrenceId`,
  * defaulting to the subscription id), so a retry reads the row already enqueued.
- * The arrears suspension carries its `content` (AC:B7:30) into the payload.
+ * The arrears suspension carries its `content` (AC:B7:30) into the payload. Scheduled
+ * cancellation also carries the committed service end date for its notice (HOS-1617).
  */
 export const beforeCancelNotice: BeforeCancelNotice = {
     async beforeCancel({ subscriptionId, userId, kind, occurrenceId, content }) {
@@ -30,11 +38,24 @@ export const beforeCancelNotice: BeforeCancelNotice = {
             template,
             occurrence: buildEventOccurrence({ eventId: occurrenceId ?? subscriptionId })
         });
+        const scheduledServiceEnd =
+            kind === SCHEDULED_CANCELLATION_KIND
+                ? await getDb()
+                      .select({ serviceEndsAt: subscriptions.serviceEndsAt })
+                      .from(subscriptions)
+                      .where(eq(subscriptions.id, subscriptionId))
+                      .limit(1)
+                : null;
+        const serviceEndsAt = scheduledServiceEnd?.[0]?.serviceEndsAt?.toISOString() ?? null;
         await emailOutboxModel.enqueue({
             recipientUserId: userId,
             recipientEmail: recipient.email,
             template,
-            payload: { subscriptionId, ...(content ?? {}) },
+            payload: {
+                subscriptionId,
+                ...(kind === SCHEDULED_CANCELLATION_KIND ? { serviceEndsAt } : {}),
+                ...(content ?? {})
+            },
             dedupKey
         });
         if (recipient.deletedAt) return 'NO_RECIPIENT';
