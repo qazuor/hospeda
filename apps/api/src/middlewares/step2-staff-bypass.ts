@@ -10,8 +10,10 @@ import type { Actor } from '@repo/service-core';
  */
 export const UNVERIFIED_STAFF_BYPASS_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.USER_READ_ALL, // Mi Cuenta handler and UserService._canView.
-    PermissionEnum.ACCOMMODATION_UPDATE_ANY, // accommodation/protected/getById.ts.
-    PermissionEnum.ACCOMMODATION_VIEW_ALL, // checkCanView in AccommodationService.
+    // HOS-1693: no closed-list route reads this; keep it because removal fails open.
+    PermissionEnum.ACCOMMODATION_UPDATE_ANY,
+    // Read by accommodation/protected/getById.ts and checkCanView.
+    PermissionEnum.ACCOMMODATION_VIEW_ALL,
     PermissionEnum.GASTRONOMY_VIEW_ALL, // gastronomy/protected/getById.ts and _canView.
     PermissionEnum.EXPERIENCE_VIEW_ALL, // experience/protected/getById.ts and _canView.
     PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT, // ownership bypass and enforceListingAccess action 15.
