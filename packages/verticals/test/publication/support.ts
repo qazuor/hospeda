@@ -40,12 +40,16 @@ export function makeHarness(
         };
         readonly deletionAnnouncedAt?: Date | null;
         readonly deletionAfterDays?: number;
+        readonly beforeArchiveDays?: number;
+        readonly beforeDeletionDays?: number;
+        readonly noticeEnqueued?: boolean;
         readonly ownerId?: string;
         readonly archiveOrigins?: ReadonlyMap<string, PublicationStatusEnum>;
         readonly moderationOrigin?:
             | import('../../src/publication/publication-types').PublicationModerationOrigin
             | null;
         readonly inactiveSince?: Date;
+        readonly lastOwnerActAt?: Date | null;
         readonly retentionListingMissing?: boolean;
         readonly recordBillingCalls?: boolean;
         readonly purgeContent?: Awaited<
@@ -78,6 +82,7 @@ export function makeHarness(
         inactiveSince: args.inactiveSince ?? at
     };
     const calls: string[] = [];
+    const ownerActReads: Parameters<PublicationTransaction['readLastOwnerActAt']>[0][] = [];
     const statusWrites: Parameters<PublicationTransaction['setPublicationStatus']>[0][] = [];
     const statusEvents: Parameters<PublicationTransaction['insertStatusChangedEvent']>[0][] = [];
     const stampWrites: Parameters<PublicationTransaction['stampInactiveSince']>[0][] = [];
@@ -85,6 +90,7 @@ export function makeHarness(
         | import('../../src/publication/publication-types').PublicationFixRequest
         | null = null;
     const listingNotices: Parameters<PublicationTransaction['enqueueListingNotice']>[0][] = [];
+    const retentionNotices: Parameters<PublicationTransaction['enqueueRetentionNotice']>[0][] = [];
     const restitutionNotices: Parameters<PublicationTransaction['enqueueRestitutionNotice']>[0][] =
         [];
     const insertedRows: unknown[] = [];
@@ -164,6 +170,18 @@ export function makeHarness(
                     deletionAfterDays: args.deletionAfterDays ?? 180,
                     draftArchiveMonths: 3
                 }
+            };
+        },
+        async readLastOwnerActAt(input) {
+            expect(locked).toBe(true);
+            ownerActReads.push(input);
+            return args.lastOwnerActAt ?? null;
+        },
+        async readRetentionNoticeDeadlines() {
+            expect(locked).toBe(true);
+            return {
+                beforeArchiveDays: args.beforeArchiveDays ?? 15,
+                beforeDeletionDays: args.beforeDeletionDays ?? 15
             };
         },
         async readArchiveOrigins({ listingIds }) {
@@ -266,6 +284,10 @@ export function makeHarness(
         async enqueueListingNotice(input) {
             calls.push('enqueueListingNotice');
             listingNotices.push(input);
+        },
+        async enqueueRetentionNotice(input) {
+            retentionNotices.push(input);
+            return { enqueued: args.noticeEnqueued ?? true };
         }
     };
     const unitOfWork: PublicationUnitOfWork = {
@@ -328,12 +350,14 @@ export function makeHarness(
         afterCommit,
         retentionAfterCommit,
         calls,
+        ownerActReads,
         statusWrites,
         statusEvents,
         stampWrites,
         insertedRows,
         restitutionNotices,
         listingNotices,
+        retentionNotices,
         getStatus: () => status
     };
 }

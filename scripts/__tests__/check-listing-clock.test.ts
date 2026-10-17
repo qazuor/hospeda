@@ -73,7 +73,7 @@ describe('TEST:V6:16 GUARD:G-R6-B - the four halves of the closed list of listin
         expect(result.exitCode).toBe(0);
         expect(result.output).toMatch(/^OK GUARD:G-R6-B: \d+ production files scanned; /);
         expect(result.output).toContain(
-            'consumers implemented: PB4, PB5, ARCHIVE_NOTICE_DATE, PB9; pending (V9b): NOTICE_BEFORE_DAY_90, NOTICE_BEFORE_DAY_180'
+            'consumers implemented: NOTICE_BEFORE_DAY_90, NOTICE_BEFORE_DAY_180, PB4, PB5, ARCHIVE_NOTICE_DATE, PB9; pending (V9b): '
         );
         const writers = parsed().writers ?? [];
         const facts = (symbol: string) =>
@@ -197,6 +197,33 @@ describe('TEST:V6:16 GUARD:G-R6-B - the four halves of the closed list of listin
     });
 
     describe('half (d) "lector de retención que no pregunta por la pausa"', () => {
+        it('rejects the archive notice without the retentionStopped query', () => {
+            const file = 'packages/verticals/src/publication/send-retention-notice.ts';
+            const mutated = replaceOnce(
+                real(file),
+                /const pause = await args\.billing\.retentionStopped\([\s\S]*?\);\n\s*if \(pause\.stopped\)[^\n]*\n/,
+                ''
+            );
+            const result = check({ files: { [file]: mutated } });
+            expect(result.exitCode).toBe(1);
+            expect(result.output).toContain(`consumer NOTICE_BEFORE_DAY_90 (${file}:`);
+            expect(result.output).toContain('sendRetentionNotice) does not ask retentionStopped');
+        });
+
+        it('rejects counting the notice only from inactive_since', () => {
+            const file = 'packages/verticals/src/publication/send-retention-notice.ts';
+            const mutated = replaceOnce(
+                real(file),
+                /retentionClockStart\(\{\s*inactiveSince: listing\.inactiveSince,\s*pauseEndedAt: pause\.pauseEndedAt\s*\}\)/,
+                'listing.inactiveSince'
+            );
+            const result = check({ files: { [file]: mutated } });
+            expect(result.exitCode).toBe(1);
+            expect(result.output).toContain(
+                'sendRetentionNotice) does not count from the later of inactive_since and pauseEndedAt'
+            );
+        });
+
         it('rejects PB5 without the retentionStopped query', () => {
             const mutated = replaceOnce(
                 real(ARCHIVE),

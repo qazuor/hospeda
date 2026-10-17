@@ -36,6 +36,7 @@ import {
     createBillingSignupRenderers,
     createEmailClient,
     createListingArchivedRenderers,
+    createListingRetentionRenderers,
     createOutboxMailRenderer,
     createOutboxOptOutReader,
     createTrialCampaignRenderers,
@@ -65,7 +66,7 @@ export const EMAIL_OUTBOX_BATCH_SIZE = 50;
 
 /**
  * Builds the production outbox renderer with shared, trial, renewal, promo-ending, reconciliation,
- * signup and vertical listing notices.
+ * signup, vertical listing, on-archive, and pre-archive/pre-deletion retention notices.
  *
  * @param input - Renderer configuration. `readListingNames` defaults to the
  *   database reader; tests inject a fake.
@@ -87,7 +88,8 @@ export function buildOutboxSenderRender(input: {
                 siteUrl: input.siteUrl,
                 readListingNames: input.readListingNames ?? readListingNames
             }),
-            ...createListingArchivedRenderers({ siteUrl: input.siteUrl })
+            ...createListingArchivedRenderers({ siteUrl: input.siteUrl }),
+            ...createListingRetentionRenderers({ siteUrl: input.siteUrl })
         }
     });
 }

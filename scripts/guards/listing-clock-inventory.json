@@ -153,6 +153,14 @@
             "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:863-864; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:196-204"
         },
         {
+            "file": "packages/verticals/src/publication/send-retention-notice.ts",
+            "symbol": "sendRetentionNotice",
+            "count": 1,
+            "consumers": ["NOTICE_BEFORE_DAY_90", "NOTICE_BEFORE_DAY_180"],
+            "role": "decision",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:228-242; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-outbox.md:302"
+        },
+        {
             "file": "packages/db/src/models/listing/listing-retention.model.ts",
             "symbol": "listRetentionCandidates",
             "count": 2,
@@ -160,6 +168,24 @@
             "role": "prefilter",
             "note": "A superset of the due listings: it decides which listings are looked at, never which are archived (HOS-1476 H8).",
             "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:860-862"
+        },
+        {
+            "file": "packages/db/src/models/listing/listing-retention-schedule.model.ts",
+            "symbol": "listRetentionNoticeCandidates",
+            "count": 2,
+            "consumers": ["NOTICE_BEFORE_DAY_90", "NOTICE_BEFORE_DAY_180"],
+            "role": "prefilter",
+            "note": "A superset of the due listings: it decides which listings are looked at, never which are notified or purged.",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:631-640"
+        },
+        {
+            "file": "packages/db/src/models/listing/listing-retention-schedule.model.ts",
+            "symbol": "listPurgeCandidates",
+            "count": 1,
+            "consumers": ["PB9"],
+            "role": "prefilter",
+            "note": "A superset of the due listings: it decides which listings are looked at, never which are notified or purged.",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:633-636"
         }
     ],
     "transport": [
@@ -185,19 +211,16 @@
             "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-glosario.md:58-73"
         }
     ],
-    "pendingConsumers": [
+    "pendingConsumers": [],
+    "implementedConsumers": [
         {
             "id": "NOTICE_BEFORE_DAY_90",
-            "owner": "V9b",
-            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:94; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:864-865"
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:228-242; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-outbox.md:302"
         },
         {
             "id": "NOTICE_BEFORE_DAY_180",
-            "owner": "V9b",
-            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:94; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:864-865"
-        }
-    ],
-    "implementedConsumers": [
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:228-242; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-outbox.md:302"
+        },
         {
             "id": "PB4",
             "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:861"

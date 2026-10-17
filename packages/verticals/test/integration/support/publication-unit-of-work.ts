@@ -2,6 +2,7 @@ import type { BillingForVerticals } from '@repo/billing-verticals-contract';
 import {
     buildEmailDedupKey,
     buildEventOccurrence,
+    buildScheduleOccurrence,
     type DrizzleClient,
     emailOutboxModel,
     listingPurgeModel,
@@ -15,6 +16,7 @@ import { eq, sql } from 'drizzle-orm';
 import { listingModerationModel } from '../../../../db/src/models/listing/listing-moderation.model';
 import { listingPublicationModel } from '../../../../db/src/models/listing/listing-publication.model';
 import { listingRetentionModel } from '../../../../db/src/models/listing/listing-retention.model';
+import { listingRetentionScheduleModel } from '../../../../db/src/models/listing/listing-retention-schedule.model';
 import { users } from '../../../../db/src/schemas/user/user.dbschema';
 import type {
     PublicationUnitOfWork,
@@ -153,6 +155,17 @@ export function createPublicationTestAdapter(args: {
                             listingPublicationModel.readListing({ tx, vertical, listingId }),
                         readRetentionListing: ({ vertical, listingId }) =>
                             listingRetentionModel.readRetentionListing({ tx, vertical, listingId }),
+                        readLastOwnerActAt: ({ vertical, listingId }) =>
+                            listingRetentionScheduleModel.readLastOwnerActAt({
+                                tx,
+                                vertical,
+                                listingId
+                            }),
+                        readRetentionNoticeDeadlines: (input) =>
+                            listingRetentionScheduleModel.readRetentionNoticeDeadlines({
+                                ...input,
+                                tx
+                            }),
                         readArchiveOrigins: (input) =>
                             listingRetentionModel.readArchiveOrigins({ ...input, tx }),
                         readModerationOrigin: (input) =>
@@ -214,6 +227,36 @@ export function createPublicationTestAdapter(args: {
                                 tx
                             );
                             await args.afterEnqueueListingNotice?.();
+                        },
+                        async enqueueRetentionNotice(input) {
+                            const [recipient] = await tx
+                                .select({ email: users.email })
+                                .from(users)
+                                .where(eq(users.id, input.recipientUserId))
+                                .limit(1);
+                            if (!recipient?.email) return { enqueued: false };
+                            const dedupKey = buildEmailDedupKey({
+                                recipient: input.recipientUserId,
+                                template: input.template,
+                                occurrence: buildScheduleOccurrence({
+                                    subjectKind: 'listing',
+                                    subjectId: input.listingId,
+                                    milestone: input.milestone,
+                                    targetDate: input.targetDate
+                                })
+                            });
+                            const result = await emailOutboxModel.enqueue(
+                                {
+                                    recipientUserId: input.recipientUserId,
+                                    recipientEmail: recipient.email,
+                                    template: input.template,
+                                    payload: { ...input.payload },
+                                    dedupKey,
+                                    correlationId: input.correlationId
+                                },
+                                tx
+                            );
+                            return { enqueued: result.enqueued };
                         }
                     };
                 return work(port);

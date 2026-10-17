@@ -152,7 +152,38 @@ describe.each(
                 revokeCalendarConnection: async () => {}
             }
         });
-        expect(result.purged).toBe(true);
+        expect(result).toEqual({ purged: false, reason: 'NOT_DUE' });
+
+        const purgeAt = new Date(Date.now() + 181 * DAY);
+        await getDb().execute(
+            sql`UPDATE ${sql.identifier(tables[vertical])}
+                SET inactive_since = ${new Date(purgeAt.getTime() - 200 * DAY)},
+                    deletion_announced_at = ${new Date(purgeAt.getTime() - DAY)}
+                WHERE id = ${listingId}::uuid`
+        );
+        const finalResult = await purgeInactiveListing({
+            ...getListingPublicationPorts(),
+            billing: {
+                coverage: async () => ({ covered: false, sources: [] }),
+                retentionStopped: async () => ({
+                    stopped: false,
+                    pauseEndedAt: null,
+                    coverageLostAt: null
+                })
+            },
+            vertical,
+            listingId,
+            ownerId: owner.id,
+            correlationId: randomUUID(),
+            clock: { now: () => purgeAt },
+            previousPassStartedAt: purgeAt,
+            afterCommit: {
+                emitListingPurged: async () => {},
+                deleteRemoteMedia: async () => {},
+                revokeCalendarConnection: async () => {}
+            }
+        });
+        expect(finalResult.purged).toBe(true);
 
         const events = await getDb().execute(
             sql`SELECT * FROM domain_event WHERE entity_id = ${listingId}`

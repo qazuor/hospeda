@@ -38,8 +38,8 @@ import { type ClockSite, scanTree } from './listing-clock-scan';
 /** Fewer files than this means the scan looked at the wrong tree (same floor as GUARD:G5). */
 export const MIN_SCANNED_FILES = 1000;
 
-/** Consumers still to be built (V9b). It only goes down (Coord-93). */
-export const PENDING_CEILING = 2;
+/** No V9b consumers remain pending; this ceiling only goes down (Coord-93). */
+export const PENDING_CEILING = 0;
 
 /** Default inventory path, relative to the repository root. */
 export const INVENTORY_PATH = 'scripts/guards/listing-clock-inventory.json';
