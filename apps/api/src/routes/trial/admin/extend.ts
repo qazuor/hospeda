@@ -4,7 +4,7 @@ import {
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import { entityNotFoundError } from '@repo/service-core';
+import { entityNotFoundError, isSystemActor, ServiceError } from '@repo/service-core';
 import { extendTrialByAdmin, InvalidTrialMachineInputError } from '@repo/verticals';
 import { getActorFromContext } from '../../../utils/actor';
 import { getClock } from '../../../utils/clock';
@@ -19,7 +19,7 @@ export const adminExtendTrialRoute = createAdminRoute({
     path: '/extend',
     summary: 'Extend a trial',
     description:
-        'Administrative action 11: extends a running trial past the ceiling with a mandatory reason.',
+        "Administrative action 11: extends a running trial past the ceiling with a mandatory reason on another person's account; the actor's own account is refused at step 3.",
     tags: ['Trials'],
     requiredPermissions: [PermissionEnum.TRIAL_EXTEND],
     requestBody: AdminExtendTrialRequestSchema,
@@ -31,16 +31,30 @@ export const adminExtendTrialRoute = createAdminRoute({
             const result = await extendTrialByAdmin({
                 ...getTrialMachinePorts(),
                 clock: getClock().clock,
-                input: { ...AdminExtendTrialRequestSchema.parse(body), actorId: actor.id }
+                input: {
+                    ...AdminExtendTrialRequestSchema.parse(body),
+                    actorId: actor.id,
+                    actorPermissions: actor.permissions,
+                    isSystemActor: isSystemActor(actor)
+                }
             });
             if (!result.extended) {
-                if (result.reason === 'NO_TRIAL')
-                    throw entityNotFoundError({ entityName: 'Trial' });
-                return createErrorResponse(
-                    { code: ServiceErrorCode.ALREADY_EXISTS, message: 'Trial has ended' },
-                    ctx,
-                    409
-                );
+                switch (result.reason) {
+                    case 'FORBIDDEN':
+                        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
+                    case 'NO_TRIAL':
+                        throw entityNotFoundError({ entityName: 'Trial' });
+                    case 'TRIAL_ENDED':
+                        return createErrorResponse(
+                            { code: ServiceErrorCode.ALREADY_EXISTS, message: 'Trial has ended' },
+                            ctx,
+                            409
+                        );
+                    default: {
+                        const neverReason: never = result.reason;
+                        throw new Error(`Unhandled trial rejection: ${neverReason}`);
+                    }
+                }
             }
             return {
                 previousEndsAt: result.previousEndsAt.toISOString(),

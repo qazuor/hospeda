@@ -12,6 +12,8 @@ import {
 } from '../reconciliation/chargeback/chargeback-detection';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
 import type { TouristVipInheritancePort } from '../subscription/cancel-inherited-tourist-vip.service';
+import type { CancellationCrossingResult } from '../subscription/cancellation-crossing-charge';
+import { settleChargeAcrossCancellation } from '../subscription/cancellation-crossing-charge';
 import type { ComplementPolicyPorts } from '../subscription/complement-ports.js';
 import type {
     DeclineFirstChargePorts,
@@ -82,6 +84,8 @@ export type RecordChargeFactResult =
           readonly exit?: ExitGraceResult;
           /** S7's outcome, present only when the linked row was SUSPENDED (AC:B7:13). */
           readonly reactivation?: ReactivateSuspendedResult;
+          /** C2 settlement for a payment whose fact crosses a recorded cancellation. */
+          readonly crossing?: CancellationCrossingResult;
       }
     | {
           readonly outcome: 'DECLINED';
@@ -217,11 +221,12 @@ export async function recordChargeFact(
                 coverageNotices: ports.coverageNotices
             }
         );
-        if (
-            (credit.outcome === 'CREDITED' || credit.outcome === 'ALREADY_CREDITED') &&
-            linked.subscription.status === 'GRACE_PERIOD'
-        ) {
-            const exit = await exitGraceOnCreditedPayment(
+        if (credit.outcome !== 'CREDITED' && credit.outcome !== 'ALREADY_CREDITED')
+            return { outcome: 'CREDITED', paymentId, credit };
+        let exit: ExitGraceResult | undefined;
+        let reactivation: ReactivateSuspendedResult | undefined;
+        if (linked.subscription.status === 'GRACE_PERIOD') {
+            exit = await exitGraceOnCreditedPayment(
                 { paymentId },
                 {
                     provider: ports.provider,
@@ -230,13 +235,16 @@ export async function recordChargeFact(
                     actorType: ports.actorType
                 }
             );
-            return { outcome: 'CREDITED', paymentId, credit, exit };
+            if (
+                !(
+                    exit.outcome === 'NOT_APPLICABLE' &&
+                    ['NOT_IN_GRACE', 'LOST_RACE'].includes(exit.reason)
+                )
+            )
+                return { outcome: 'CREDITED', paymentId, credit, exit };
         }
-        if (
-            (credit.outcome === 'CREDITED' || credit.outcome === 'ALREADY_CREDITED') &&
-            linked.subscription.status === 'SUSPENDED'
-        ) {
-            const reactivation = await reactivateSuspendedOnCreditedPayment(
+        if (linked.subscription.status === 'SUSPENDED') {
+            reactivation = await reactivateSuspendedOnCreditedPayment(
                 { paymentId },
                 {
                     provider: ports.provider,
@@ -250,9 +258,31 @@ export async function recordChargeFact(
                     ...(ports.complements ? { complements: ports.complements } : {})
                 }
             );
-            return { outcome: 'CREDITED', paymentId, credit, reactivation };
+            if (
+                !(
+                    reactivation.outcome === 'NOT_APPLICABLE' &&
+                    ['NOT_SUSPENDED', 'LOST_RACE'].includes(reactivation.reason)
+                )
+            )
+                return { outcome: 'CREDITED', paymentId, credit, reactivation };
         }
-        return { outcome: 'CREDITED', paymentId, credit };
+        const crossing = await settleChargeAcrossCancellation(
+            { paymentId },
+            {
+                clock: ports.clock,
+                coverageNotices: ports.coverageNotices,
+                markPayments: ports.markPayments,
+                actorType: ports.actorType
+            }
+        );
+        return {
+            outcome: 'CREDITED',
+            paymentId,
+            credit,
+            ...(exit ? { exit } : {}),
+            ...(reactivation ? { reactivation } : {}),
+            ...(crossing.outcome === 'NOT_APPLICABLE' ? {} : { crossing })
+        };
     }
     if (charge.status === 'pending') return { outcome: 'RECORDED_PENDING', paymentId };
     logger.info({ paymentId }, 'Provider charge was rejected; payment fact remains pending');

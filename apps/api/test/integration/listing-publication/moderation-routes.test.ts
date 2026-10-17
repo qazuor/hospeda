@@ -78,6 +78,7 @@ describe.each(verticals)('TEST:V6:12 moderation HTTP — %s', (vertical) => {
     it('TEST:V6:12 enforces action 13 permission and validates bodies', async () => {
         await ensurePublicationCatalog(vertical);
         const owner = await createOwner();
+        const admin = await createOwner();
         const destinationId = await createVerticalDestination();
         const id = await makeListing(vertical, owner.id, destinationId);
         const path = listingPath(vertical, id);
@@ -105,7 +106,7 @@ describe.each(verticals)('TEST:V6:12 moderation HTTP — %s', (vertical) => {
                 method: 'POST',
                 body: JSON.stringify({ action: 'TAKE_DOWN', reason: 'x' }),
                 headers: actorHeaders({
-                    id: owner.id,
+                    id: admin.id,
                     role: RoleEnum.ADMIN,
                     permissions: adminPermissions(legacyPermission[vertical])
                 })
@@ -117,7 +118,7 @@ describe.each(verticals)('TEST:V6:12 moderation HTTP — %s', (vertical) => {
                 method: 'POST',
                 body: JSON.stringify({ action: 'TAKE_DOWN', reason: '' }),
                 headers: actorHeaders({
-                    id: owner.id,
+                    id: admin.id,
                     role: RoleEnum.ADMIN,
                     permissions: adminPermissions(PermissionEnum.LISTING_MODERATE)
                 })
@@ -129,7 +130,7 @@ describe.each(verticals)('TEST:V6:12 moderation HTTP — %s', (vertical) => {
                 method: 'POST',
                 body: JSON.stringify(body),
                 headers: actorHeaders({
-                    id: owner.id,
+                    id: admin.id,
                     role: RoleEnum.ADMIN,
                     permissions: adminPermissions(PermissionEnum.LISTING_MODERATE)
                 })
@@ -151,7 +152,7 @@ describe.each(verticals)('TEST:V6:12 moderation HTTP — %s', (vertical) => {
                 method: 'POST',
                 body: JSON.stringify({ action: 'TAKE_DOWN', reason: 'Review' }),
                 headers: actorHeaders({
-                    id: owner.id,
+                    id: admin.id,
                     role: RoleEnum.ADMIN,
                     permissions: adminPermissions(PermissionEnum.LISTING_MODERATE)
                 })
@@ -170,7 +171,7 @@ describe.each(verticals)('TEST:V6:12 moderation HTTP — %s', (vertical) => {
                     method: 'POST',
                     body: JSON.stringify(gesture),
                     headers: actorHeaders({
-                        id: owner.id,
+                        id: admin.id,
                         role: RoleEnum.ADMIN,
                         permissions: adminPermissions(PermissionEnum.LISTING_MODERATE)
                     })
@@ -187,7 +188,7 @@ describe.each(verticals)('TEST:V6:12 moderation HTTP — %s', (vertical) => {
                         method: 'POST',
                         body: JSON.stringify(gesture),
                         headers: actorHeaders({
-                            id: owner.id,
+                            id: admin.id,
                             role: RoleEnum.ADMIN,
                             permissions: adminPermissions(PermissionEnum.LISTING_MODERATE)
                         })

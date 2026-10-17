@@ -6,7 +6,9 @@ import {
     UserIdSchema,
     type VerticalsForBilling
 } from '@repo/billing-verticals-contract';
-import { TrialStatusEnum, type Vertical } from '@repo/schemas';
+import { type PermissionEnum, TrialStatusEnum, type Vertical } from '@repo/schemas';
+import { resolveAdministrativeActionStep } from '../authorization/administrative-action-step';
+import { isAdministrativeActionPermitted } from '../authorization/administrative-actions';
 import { computePreExpiryMilestones, TRIAL_DEADLINES_VERSION } from './trial-deadlines';
 import type {
     TrialAfterCommit,
@@ -142,9 +144,9 @@ export type AdminTrialExtensionResult =
           readonly totalDays: number;
           readonly notices: TrialPostCommitNotices;
       }
-    | { readonly extended: false; readonly reason: 'NO_TRIAL' | 'TRIAL_ENDED' };
+    | { readonly extended: false; readonly reason: 'NO_TRIAL' | 'TRIAL_ENDED' | 'FORBIDDEN' };
 
-/** Extends a running trial as an audited administrator action beyond the ceiling. */
+/** Step 3 (V5 §3.2 rule 5, ACC:11) runs before the lock: an actor on their own account, a system actor or an actor without TRIAL_EXTEND gets FORBIDDEN and nothing is read or written (HOS-1691). */
 export async function extendTrialByAdmin(args: {
     readonly unitOfWork: TrialMachineUnitOfWork;
     readonly clock: Clock;
@@ -155,6 +157,8 @@ export async function extendTrialByAdmin(args: {
         readonly days: number;
         readonly reason: string;
         readonly actorId: string;
+        readonly actorPermissions: readonly PermissionEnum[];
+        readonly isSystemActor: boolean;
     };
 }): Promise<AdminTrialExtensionResult> {
     const { userId, vertical, days, reason, actorId } = args.input;
@@ -177,6 +181,18 @@ export async function extendTrialByAdmin(args: {
     if (typeof reason !== 'string' || reason.trim().length < 1) {
         throw new InvalidTrialMachineInputError({ field: 'reason' });
     }
+    const action = 'ACC_11' as const;
+    const step = resolveAdministrativeActionStep({
+        action,
+        actorId,
+        subjectId: userId,
+        permitted: isAdministrativeActionPermitted({
+            action,
+            actorPermissions: args.input.actorPermissions
+        }),
+        isSystemActor: args.input.isSystemActor
+    });
+    if (!step.allowed) return { extended: false, reason: 'FORBIDDEN' } as const;
     const decision = await args.unitOfWork.runLocked({ userId, vertical }, async (tx) => {
         const trial = await tx.findTrialForUpdate({ userId, vertical });
         if (trial === null) return { extended: false, reason: 'NO_TRIAL' } as const;
