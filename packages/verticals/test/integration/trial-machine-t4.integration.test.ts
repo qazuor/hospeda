@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { extendTrialCaseSet } from '@repo/billing-verticals-contract/testing';
 import type { DrizzleClient } from '@repo/db';
-import { VerticalEnum } from '@repo/schemas';
+import { PermissionEnum, VerticalEnum } from '@repo/schemas';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -125,7 +125,15 @@ describe('TEST:V4:10 - extendTrial persists T4 atomically under the ceiling', ()
         const actorId = randomUUID();
         const before = await endsAt(userId);
         const adapter = createTrialMachineAdapter({ db, ceilingDays: () => 10 });
-        const input = { userId, vertical, days: 2, actorId, reason: 'Correction' };
+        const input = {
+            userId,
+            vertical,
+            days: 2,
+            actorId,
+            reason: 'Correction',
+            actorPermissions: [PermissionEnum.TRIAL_EXTEND],
+            isSystemActor: false
+        };
         expect(
             await extendTrialByAdmin({ unitOfWork: adapter.unitOfWork, clock, afterCommit, input })
         ).toMatchObject({ extended: true, totalDays: 12 });
