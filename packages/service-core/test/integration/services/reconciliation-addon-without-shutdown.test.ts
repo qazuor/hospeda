@@ -88,7 +88,7 @@ describe('TEST:B5:15 fourth zero-call sweep check', () => {
             }
         });
         const portsWithTripwire = {
-            addonOrphanhood: ports,
+            addonOrphanhood: { ...ports, listingPurged: async () => ({ purged: false }) },
             markPayments,
             retainedPayments: { listRetainedPayments: async () => [] },
             retainedPaymentBranches: {
@@ -148,7 +148,7 @@ describe('TEST:B5:15 fourth zero-call sweep check', () => {
             const summary = await runZeroCallChecks(
                 { correlationId: crypto.randomUUID() },
                 {
-                    addonOrphanhood: ports,
+                    addonOrphanhood: { ...ports, listingPurged: async () => ({ purged: false }) },
                     markPayments,
                     retainedPayments: { listRetainedPayments: async () => [] },
                     retainedPaymentBranches: {
@@ -195,7 +195,7 @@ describe('TEST:B5:15 fourth zero-call sweep check', () => {
         const summary = await runZeroCallChecks(
             { correlationId: crypto.randomUUID() },
             {
-                addonOrphanhood: ports,
+                addonOrphanhood: { ...ports, listingPurged: async () => ({ purged: false }) },
                 markPayments,
                 retainedPayments: { listRetainedPayments: async () => [] },
                 retainedPaymentBranches: { resolveByBranch: async () => ({ kind: 'NO_BRANCH' }) }
@@ -225,7 +225,7 @@ describe('TEST:B5:15 fourth zero-call sweep check', () => {
         isolateUnrelatedChecks();
         const input = { correlationId: crypto.randomUUID() };
         const portsForCheck = {
-            addonOrphanhood: ports,
+            addonOrphanhood: { ...ports, listingPurged: async () => ({ purged: false }) },
             markPayments,
             retainedPayments: { listRetainedPayments: async () => [] },
             retainedPaymentBranches: {
@@ -269,7 +269,7 @@ describe('TEST:B5:15 fourth zero-call sweep check', () => {
         const summary = await runZeroCallChecks(
             { correlationId: crypto.randomUUID() },
             {
-                addonOrphanhood: ports,
+                addonOrphanhood: { ...ports, listingPurged: async () => ({ purged: false }) },
                 markPayments,
                 retainedPayments: { listRetainedPayments: async () => [] },
                 retainedPaymentBranches: { resolveByBranch: async () => ({ kind: 'NO_BRANCH' }) }
@@ -316,7 +316,7 @@ describe('TEST:B5:15 fourth zero-call sweep check', () => {
         const summary = await runZeroCallChecks(
             { correlationId: crypto.randomUUID() },
             {
-                addonOrphanhood: ports,
+                addonOrphanhood: { ...ports, listingPurged: async () => ({ purged: false }) },
                 markPayments,
                 retainedPayments: { listRetainedPayments: async () => [] },
                 retainedPaymentBranches: { resolveByBranch: async () => ({ kind: 'NO_BRANCH' }) }
@@ -359,7 +359,7 @@ describe('TEST:B5:15 fourth zero-call sweep check', () => {
         const summary = await runZeroCallChecks(
             { correlationId: crypto.randomUUID() },
             {
-                addonOrphanhood: ports,
+                addonOrphanhood: { ...ports, listingPurged: async () => ({ purged: false }) },
                 markPayments,
                 retainedPayments: { listRetainedPayments: async () => [] },
                 retainedPaymentBranches: { resolveByBranch: async () => ({ kind: 'NO_BRANCH' }) }
@@ -415,7 +415,7 @@ describe('TEST:B5:15 fourth zero-call sweep check', () => {
         const result = await runZeroCallChecks(
             { correlationId: crypto.randomUUID() },
             {
-                addonOrphanhood: ports,
+                addonOrphanhood: { ...ports, listingPurged: async () => ({ purged: false }) },
                 markPayments,
                 retainedPayments: { listRetainedPayments: async () => [] },
                 retainedPaymentBranches: { resolveByBranch: async () => ({ kind: 'NO_BRANCH' }) }
