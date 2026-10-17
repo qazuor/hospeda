@@ -214,6 +214,12 @@
             "symbol": "verdictOf",
             "row": 2,
             "why": "AC:B5:31, segunda mitad: reconoce el título de una instancia anclado a un permanent_grant revocado."
+        },
+        {
+            "file": "apps/api/src/services/cutover-b9a/step-3b.service.ts",
+            "symbol": "runStep3b",
+            "row": null,
+            "why": "La herramienta del 3b saltea al beneficiario que ya tiene un ancla viva de Alojamiento (AC:B9a:15)."
         }
     ],
     "marca_abierta": [
