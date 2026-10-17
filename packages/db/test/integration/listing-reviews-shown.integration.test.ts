@@ -210,40 +210,46 @@ describe('TEST:1686:1 AC:1686:1 AC:1686:4 listingReviewsShownCondition', () => {
                 tx,
                 [condition]
             );
-            expect(paged).toMatchObject({ items: [], total: 0 });
+            expect.soft(paged).toMatchObject({ items: [], total: 0 });
             const unpaged = await accommodationReviewModel.findAllWithUser(
                 { accommodationId: purged.id },
                 undefined,
                 tx,
                 [condition]
             );
-            expect(unpaged).toMatchObject({ items: [], total: 0 });
-            expect(
-                await accommodationReviewModel.findAllWithUser(
-                    { accommodationId: published.id },
-                    { page: 1, pageSize: 10 },
-                    tx,
-                    [condition]
+            expect.soft(unpaged).toMatchObject({ items: [], total: 0 });
+            expect
+                .soft(
+                    await accommodationReviewModel.findAllWithUser(
+                        { accommodationId: published.id },
+                        { page: 1, pageSize: 10 },
+                        tx,
+                        [condition]
+                    )
                 )
-            ).toMatchObject({ items: [expect.anything()], total: 1 });
-            expect(
-                await accommodationReviewModel.findAllWithUser(
-                    { accommodationId: published.id },
-                    undefined,
-                    tx,
-                    [condition]
+                .toMatchObject({ items: [expect.anything()], total: 1 });
+            expect
+                .soft(
+                    await accommodationReviewModel.findAllWithUser(
+                        { accommodationId: published.id },
+                        undefined,
+                        tx,
+                        [condition]
+                    )
                 )
-            ).toMatchObject({ items: [expect.anything()], total: 1 });
-            expect(
-                await accommodationReviewModel.findAllWithUser(
-                    { accommodationId: purged.id },
-                    undefined,
-                    tx
+                .toMatchObject({ items: [expect.anything()], total: 1 });
+            expect
+                .soft(
+                    await accommodationReviewModel.findAllWithUser(
+                        { accommodationId: purged.id },
+                        undefined,
+                        tx
+                    )
                 )
-            ).toMatchObject({
-                items: [expect.objectContaining({ id: purgedReview.id })],
-                total: 1
-            });
+                .toMatchObject({
+                    items: [expect.objectContaining({ id: purgedReview.id })],
+                    total: 1
+                });
         });
     });
 });
