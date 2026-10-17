@@ -360,6 +360,9 @@ jobs:
       # TEST:V6:18 (HOS-1641, AC:V6:32). Its own step, like every guard here.
       - name: Check no file reads the six old listing columns (TEST:V6:18)
         run: pnpm check:listing-old-columns
+      # TEST:V9b:14 (HOS-1504, AC:V9b:14). Its own step, like every guard here.
+      - name: Check PB4 and PB5 code is untouched by V9b (TEST:V9b:14)
+        run: pnpm check:retention-archive-untouched
       # TEST:V6:31 (HOS-1481, AC:V6:23). Its own step, like every guard here.
       - name: Check partners has no tier and no start or end dates (TEST:V6:31)
         run: pnpm check:partner-no-tier-and-dates
