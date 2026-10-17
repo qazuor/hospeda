@@ -189,7 +189,8 @@ describe('billing reconciliation sweep cron', () => {
                     retainedPaymentBranches: noDeterminableRetainedPaymentBranch,
                     addonOrphanhood: {
                         addonPolicy: expect.any(Function),
-                        listing: expect.any(Function)
+                        listing: expect.any(Function),
+                        listingPurged: expect.any(Function)
                     }
                 },
                 livenessPing: expect.any(Object)

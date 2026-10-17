@@ -34,6 +34,7 @@ import type { Actor } from '../../../../src/types/index.js';
 import { getServiceTestDb, getServiceTestPool } from '../helpers.js';
 import { orphanPorts } from './addon-orphan-fixtures.js';
 import { paymentFixture } from './payment-fixtures.js';
+import { spySuccessionCloser } from './succession-retention-fixtures.js';
 
 export const DAY_MS = 86_400_000;
 /** 2026-10-01 10:00 in Buenos Aires: the day-0 charge. The fixture clock starts 2026-10-01 00:00 AR. */
@@ -302,6 +303,7 @@ export async function revocationFixture({
             annotations.push({ kind: 'alive', at: seenAliveAt });
         }
     } satisfies CancellationSeenAnnotator;
+    const succession = spySuccessionCloser();
 
     const ports: RevokeSubscriptionPorts = {
         provider,
@@ -309,7 +311,8 @@ export async function revocationFixture({
         beforeCancelNotice: { beforeCancel },
         coverageNotices,
         orphanhood: orphanPorts(getServiceTestDb()).ports,
-        cancellationSeen
+        cancellationSeen,
+        successionCloser: succession.closer
     };
 
     /** Moves the fixture clock to `instant`. */
@@ -330,6 +333,7 @@ export async function revocationFixture({
         optionId: base.billingOptionId ?? '',
         payment,
         ports,
+        succession,
         sequence,
         beforeCancel,
         coverageSeen,

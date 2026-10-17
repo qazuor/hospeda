@@ -1,6 +1,29 @@
+import type { VerticalsForBilling } from '@repo/billing-verticals-contract';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../../types/index.js';
+import type { AddonOrphanhoodPorts } from '../../addon/addon-orphanhood-ports.js';
 import type { HangablePayment } from '../reconciliation-mark-payments.port.js';
+
+/** Internal A6 boundary implemented by B10 (BL); failure to execute means it throws. */
+export interface ListingPurgedAddonCanceller {
+    cancelPurgedListingAddon(input: {
+        readonly instanceId: string;
+        readonly correlationId: string;
+    }): Promise<void>;
+}
+
+/** Default until B10 registers the A6 implementation. */
+export const unimplementedListingPurgedAddonCanceller: ListingPurgedAddonCanceller = {
+    async cancelPurgedListingAddon() {
+        throw unimplemented('LISTING_PURGED_ADDON_CANCELLER_NOT_REGISTERED');
+    }
+};
+
+/** Ports needed by the fourth check; fichaPurgada is required to avoid a permissive fallback. */
+export type AddonWithoutShutdownPorts = AddonOrphanhoodPorts & {
+    readonly listingPurged: VerticalsForBilling['listingPurged'];
+    readonly listingPurgedAddons?: ListingPurgedAddonCanceller;
+};
 
 /** Pago que S19 retuvo en una fila propia; contexto §8. */
 export interface RetainedPayment {
