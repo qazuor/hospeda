@@ -1,11 +1,13 @@
 import {
     and,
+    coveredPeriods,
     domainEvent,
     emailOutbox,
     eq,
     inArray,
     isNull,
     payments,
+    receipts,
     reconciliationMarkPayments,
     reconciliationMarks,
     refunds,
@@ -117,6 +119,21 @@ export async function retireCancelCrossingRows() {
             await getServiceTestDb()
                 .delete(reconciliationMarkPayments)
                 .where(inArray(reconciliationMarkPayments.markId, markIds));
+        const paymentRows = await getServiceTestDb()
+            .select({ id: payments.id })
+            .from(payments)
+            .where(inArray(payments.subscriptionId, ids));
+        const paymentIds = paymentRows.map((row) => row.id);
+        if (paymentIds.length) {
+            await getServiceTestDb()
+                .delete(receipts)
+                .where(inArray(receipts.paymentId, paymentIds));
+            await getServiceTestDb().delete(refunds).where(inArray(refunds.paymentId, paymentIds));
+            await getServiceTestDb()
+                .delete(coveredPeriods)
+                .where(inArray(coveredPeriods.paymentId, paymentIds));
+            await getServiceTestDb().delete(payments).where(inArray(payments.id, paymentIds));
+        }
         await getServiceTestDb()
             .delete(reconciliationMarks)
             .where(inArray(reconciliationMarks.subscriptionId, ids));
