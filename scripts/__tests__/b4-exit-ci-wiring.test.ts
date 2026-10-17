@@ -17,8 +17,8 @@ import { describe, expect, it } from 'vitest';
  * - every clause of the cut maps to its AC and TEST ids, each named by a test
  *   title under the test roots;
  * - clause 3 (a GRANT case with its `floor` in the real implementation's own
- *   set) is deferred to B9a (HOS-1585, AC:B9a:12), and the real set's docblock
- *   names that promise;
+ *   set) is resolved by B9a in its own set, which runs against the production
+ *   composition (HOS-1585, AC:B9a:12); HOS-1587 moved it into this map;
  * - every TEST:B4 id (1..12 but this one) appears in a test file;
  * - the inventories of G-R1-E and G-R1-F name `can-charge.ts` (clause 6), and
  *   the real set holds the exact G-R2-C case (clause 7);
@@ -40,6 +40,11 @@ const rootPkg = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'ut
 };
 
 const REAL_SET = 'apps/api/test/integration/billing-subscription/real-coverage-case-set.ts';
+const GRANT_SET = 'apps/api/test/integration/billing-subscription/grant-coverage-case-set.ts';
+const GRANT_SET_TEST =
+    'apps/api/test/integration/billing-subscription/grant-coverage-case-set.test.ts';
+const LIVE_GRANT_CASE =
+    'a live permanent grant covers its anchored vertical with a GRANT source that carries its floor (AC:B9a:12)';
 const G_R2_C_CASE =
     'a USER and a GLOBAL addon appear only in the verticals their product declares compatible (G-R2-C)';
 const CAN_CHARGE = 'packages/service-core/src/services/billing/coverage/can-charge.ts';
@@ -50,14 +55,6 @@ interface CorteEntry {
     readonly clause: number;
     readonly acs: readonly string[];
     readonly tests: readonly string[];
-}
-
-interface DeferredEntry {
-    readonly clause: number;
-    readonly what: string;
-    readonly ac: string;
-    readonly issue: string;
-    readonly reason: string;
 }
 
 interface GuardContract {
@@ -72,22 +69,13 @@ interface GuardContract {
 const CORTE_MAP: readonly CorteEntry[] = [
     { clause: 1, acs: ['AC:B4:9'], tests: ['TEST:B4:9'] },
     { clause: 2, acs: ['AC:B4:9'], tests: ['TEST:B4:9'] },
+    // Clause 3 is resolved by B9a in its own set (grant-coverage-case-set.ts, HOS-1585, AC:B9a:12); HOS-1587 moved it here (Coord-677).
+    { clause: 3, acs: ['AC:B9a:12'], tests: ['TEST:B9a:12'] },
     { clause: 4, acs: ['AC:B4:3'], tests: ['TEST:B4:2'] },
     { clause: 5, acs: ['AC:B4:2'], tests: ['TEST:B4:2'] },
     { clause: 6, acs: ['AC:B4:5'], tests: ['TEST:B4:4', 'TEST:B4:5'] },
     { clause: 7, acs: ['AC:B4:7', 'AC:B4:8'], tests: ['TEST:B4:6', 'TEST:B4:7', 'TEST:B4:8'] },
     { clause: 8, acs: ['AC:B4:11'], tests: ['TEST:B4:11'] }
-];
-
-// B4.md:246-247 and :511-512: clause 3 waits until B9a plugs the grants in.
-const DEFERRED: readonly DeferredEntry[] = [
-    {
-        clause: 3,
-        what: 'GRANT case with its floor in the real implementation own set',
-        ac: 'AC:B9a:12',
-        issue: 'HOS-1585',
-        reason: 'un caso de `GRANT` que traiga su `piso` en el juego de la real, cuando `B9a` (Z) enchufe los grants'
-    }
 ];
 
 // GUARD:G-R2-C (B4), G-R1-E and G-R1-F (the two halves of clause 6's inventories).
@@ -241,24 +229,21 @@ describe('TEST:B4:10 AC:B4:10 - B4 exit: LISTA:B4 evidence in the tree, guards w
             });
         }
 
-        it('the cut map plus the deferred clause cover clauses 1 to 8', () => {
-            const clauses = new Set([
-                ...CORTE_MAP.map((entry) => entry.clause),
-                ...DEFERRED.map((entry) => entry.clause)
-            ]);
+        it('the cut map covers clauses 1 to 8', () => {
+            const clauses = new Set(CORTE_MAP.map((entry) => entry.clause));
             for (let clause = 1; clause <= 8; clause += 1) expect(clauses.has(clause)).toBe(true);
         });
     });
 
-    describe('(b) clause 3 is deferred to B9a, and the real set names that promise', () => {
-        for (const entry of DEFERRED) {
-            it(`clause ${entry.clause} waits on ${entry.issue} (${entry.ac}): ${entry.what}`, () => {
-                const realSet = readFileSync(path.join(repoRoot, REAL_SET), 'utf8');
-                expect(entry.reason).toContain('B9a');
-                expect(realSet).toContain('B9a');
-                expect(realSet).toContain('GRANT');
-            });
-        }
+    describe("(b) clause 3 is satisfied by B9a's own real set (HOS-1585)", () => {
+        it('the grant set carries the live GRANT case with its floor, run against the production composition', () => {
+            const grantSet = readFileSync(path.join(repoRoot, GRANT_SET), 'utf8');
+            const grantSetTest = readFileSync(path.join(repoRoot, GRANT_SET_TEST), 'utf8');
+            expect(grantSet).toContain(LIVE_GRANT_CASE);
+            expect(grantSet).toContain('floor');
+            expect(grantSetTest).toContain('createApiBillingCoverage({');
+            expect(grantSetTest).toContain('grantCoverageCaseSet(');
+        });
     });
 
     describe('(c) every TEST:B4 id has a test file', () => {
