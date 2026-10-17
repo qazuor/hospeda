@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { AccommodationReviewModel } from '../../src/models/accommodation/accommodationReview.model';
@@ -97,6 +98,24 @@ describe('AccommodationReviewModel', () => {
             });
 
             mockCount.mockRestore();
+        });
+
+        it('applies additional SQL conditions to relational items and count', async () => {
+            const condition = sql`accommodation_reviews.id IS NOT NULL`;
+            const findMany = vi.fn().mockResolvedValue([{ id: '1' }]);
+            const db = { query: { accommodationReviews: { findMany } } };
+            getDb.mockReturnValue(db);
+            const count = vi.spyOn(model, 'count').mockResolvedValue(1);
+
+            await model.findAllWithUser({}, { page: 1, pageSize: 10 }, undefined, [condition]);
+
+            const findManyArgs = findMany.mock.calls[0]?.[0] as { where: unknown };
+            expect(findManyArgs.where).toMatchObject({ queryChunks: expect.any(Array) });
+            expect(count).toHaveBeenCalledWith(
+                {},
+                { tx: undefined, additionalConditions: [condition] }
+            );
+            count.mockRestore();
         });
 
         it('should throw DbError on database failure', async () => {
