@@ -53,10 +53,12 @@ const clauseFiles = CLAUSE_FILES.map((row) => {
 const ACTION_24_ANCHORS = [
     {
         file: 'apps/api/test/integration/account-closure/close-on-request-writes.test.ts',
+        scope: 'TEST:V8a:13',
         anchors: ['FROM account WHERE user_id', 'toEqual([juan.ownBookmarkId])']
     },
     {
         file: 'packages/db/test/integration/account-closure/account-closure.writes.integration.test.ts',
+        scope: 'TEST:V8a:13',
         anchors: ['accounts: 0,', 'foreign_bookmarks: 0,']
     }
 ] as const;
@@ -284,10 +286,12 @@ describe('TEST:V8a:16 AC:V8a:14 - V8a exit: LISTA:V8 evidence in the tree, every
                     });
                 const missingAnchors =
                     entry.clause === 5
-                        ? ACTION_24_ANCHORS.flatMap(({ file, anchors }) => {
+                        ? ACTION_24_ANCHORS.flatMap(({ file, scope, anchors }) => {
                               const source = sources.find((item) => item.file.endsWith(file));
+                              const start = source?.source.indexOf(scope) ?? -1;
+                              const evidence = start < 0 ? '' : (source?.source.slice(start) ?? '');
                               return anchors
-                                  .filter((anchor) => !source?.source.includes(anchor))
+                                  .filter((anchor) => !evidence.includes(anchor))
                                   .map((anchor) => `${file} (${anchor})`);
                           })
                         : [];
