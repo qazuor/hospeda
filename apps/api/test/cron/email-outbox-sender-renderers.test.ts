@@ -400,6 +400,46 @@ describe('TEST:V6:36 the production outbox sender renders the on-archive notice'
     });
 });
 
+describe('TEST:V9b:10 the production outbox sender renders retention notices', () => {
+    const render = buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' });
+    const listingId = 'retention-listing-private';
+
+    it.each([
+        {
+            template: 'verticals.listing-retention-before-archive',
+            payload: {
+                vertical: 'gastronomy',
+                listingId,
+                transition: 'PB5',
+                archiveAt: '2027-01-12T02:00:00.000Z'
+            },
+            subject: 'Tu ficha de gastronomía se va a archivar por inactividad',
+            body: '11 de enero de 2027'
+        },
+        {
+            template: 'verticals.listing-retention-before-deletion',
+            payload: {
+                vertical: 'gastronomy',
+                listingId,
+                deletionAt: '2027-01-12T02:00:00.000Z'
+            },
+            subject: 'El contenido de tu ficha de gastronomía se va a borrar',
+            body: '11 de enero de 2027'
+        }
+    ])('renders $template through the production sender', async ({
+        template,
+        payload,
+        subject,
+        body
+    }) => {
+        const result = await render({ row: row(template, payload) });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject).toBe(subject);
+        expect(html).toContain(body);
+        expect(html).not.toContain(listingId);
+    });
+});
+
 describe('TEST:B9b:5 AC:B9b:5 the production sender renders promo-ending mail', () => {
     it('(a) resolves billing.promo-ending through its registered renderer', async () => {
         const render = buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' });
