@@ -1,15 +1,25 @@
 // TEST:V9b:13 AC:V9b:14 — H12 trusted previous pass selection.
-import { afterAll, describe, expect, it } from 'vitest';
+
+import { eq } from 'drizzle-orm';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { cronRunModel } from '../../src/models/cron/cronRun.model.ts';
 import { cronRuns } from '../../src/schemas/cron/cron_run.dbschema.ts';
-import { closeTestPool, withTestTransaction } from './helpers.ts';
+import { closeTestPool, getTestDb, withTestTransaction } from './helpers.ts';
 
 afterAll(async () => closeTestPool());
+let testJobName: string | null = null;
+afterEach(async () => {
+    if (testJobName) {
+        await getTestDb().delete(cronRuns).where(eq(cronRuns.jobName, testJobName));
+        testJobName = null;
+    }
+});
 
 describe('cron run previous startedAt', () => {
     it('selects only the newest strictly prior successful non-dry run of this job', async () => {
         await withTestTransaction(async (tx) => {
             const jobName = `retention-test-${crypto.randomUUID()}`;
+            testJobName = jobName;
             const before = new Date('2026-10-17T06:00:00Z');
             const find = () => cronRunModel.findPreviousRunStartedAt({ jobName, before, tx });
             expect(await find()).toBeNull();
