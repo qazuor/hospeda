@@ -8,14 +8,14 @@
  * - Verifies that caller-supplied lifecycleState cannot override the forced filter
  */
 
-import { AccommodationReviewModel } from '@repo/db';
+import { AccommodationReviewModel, listingReviewsShownCondition } from '@repo/db';
 import type {
     AccommodationIdType,
     AccommodationReview,
     AccommodationReviewIdType,
     UserIdType
 } from '@repo/schemas';
-import { LifecycleStatusEnum, ModerationStatusEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, ModerationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service.js';
 import type { ServiceConfig } from '../../../src/types/index.js';
@@ -86,7 +86,8 @@ describe('AccommodationReviewService.listWithUser', () => {
                 moderationState: ModerationStatusEnum.APPROVED
             }),
             expect.any(Object),
-            undefined
+            undefined,
+            [listingReviewsShownCondition({ vertical: VerticalEnum.ACCOMMODATION })]
         );
     });
 
@@ -115,7 +116,8 @@ describe('AccommodationReviewService.listWithUser', () => {
         expect(reviewModel.findAllWithUser).toHaveBeenCalledWith(
             expect.any(Object),
             expect.objectContaining({ page: 1, pageSize: 10 }),
-            undefined
+            undefined,
+            [listingReviewsShownCondition({ vertical: VerticalEnum.ACCOMMODATION })]
         );
     });
 
