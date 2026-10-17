@@ -7,6 +7,8 @@ import {
     cancelRequestsFor,
     cleanupArrearsRows,
     createSubscriber,
+    DAY_MS,
+    deliverNotices,
     ensureDeadlineVersion,
     type FakeWorld,
     formatMarketDate,
@@ -111,5 +113,97 @@ test.describe('TEST:B13a:1 self-service cancellation @p0 @billing @clock', () =>
         expect(
             cancelRequestsFor({ requests: world.fakeServer.requests(), authorizationId })
         ).toHaveLength(0);
+    });
+
+    test('GRACE_PERIOD shows its own end date and ends service today on cancellation', async ({
+        page
+    }) => {
+        if (!world) throw new Error('Expected fake provider world.');
+        const graceSubscriber = await createSubscriber();
+        userIds.push(graceSubscriber.user.id, graceSubscriber.admin.id);
+        await seedCookieConsent(page);
+        await attachSession(page, graceSubscriber.user.sessionCookie);
+        const optionId = await monthlyOptionForSlug('owner-basico');
+        await openSignupCheckout({ page, webUrl: WEB_URL, billingOptionId: optionId });
+        await page.getByTestId('signup-checkout-confirm').click();
+        const pending = page.getByTestId('signup-checkout-pending');
+        await expect(pending).toBeVisible();
+        const subscriptionId = await pending.getAttribute('data-subscription-id');
+        if (!subscriptionId) throw new Error('Expected web checkout subscription id.');
+        const links = await execSQL<{ provider_id: string }>(
+            'SELECT provider_id FROM provider_link WHERE subscription_id = $1',
+            [subscriptionId]
+        );
+        const authorizationId = links[0]?.provider_id;
+        if (!authorizationId) throw new Error('Expected fake-provider authorization id.');
+        await activateCardSubscription({ fakeServer: world.fakeServer, subscriptionId });
+        await recordCreditedCycle({
+            fakeServer: world.fakeServer,
+            subscriptionId,
+            authorizationId
+        });
+        await world.fakeServer.advanceClock({ ms: 31 * DAY_MS });
+        await world.fakeServer.provider.declineCharge({
+            authorizationId,
+            declineReason: 'cc_rejected_other_reason'
+        });
+        await deliverNotices({ fakeServer: world.fakeServer });
+        const graceRows = await execSQL<{ status: string; grace_ends_at: Date }>(
+            'SELECT status, grace_ends_at FROM subscription WHERE id = $1',
+            [subscriptionId]
+        );
+        expect(graceRows[0]?.status).toBe('GRACE_PERIOD');
+        const graceDate = formatMarketDate(new Date(graceRows[0]!.grace_ends_at));
+        await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
+        const notice = page.getByTestId('my-subscription-grace');
+        await expect(notice).toContainText(graceDate);
+        await expect(notice).toContainText('se vuelve a intentar en el momento');
+        await expect(notice).toContainText('no podemos asegurarte que entre');
+        await expect(notice).toContainText('volver a suscribirte');
+        await page.getByTestId('self-cancel-open').click();
+        const end = page.getByTestId('self-cancel-end');
+        await expect(end).toContainText('termina hoy');
+        await expect(end).toContainText('perdés el servicio');
+        await expect(end).toContainText(graceDate);
+        await page.getByTestId('self-cancel-confirm').click();
+        await expect(page.getByTestId('self-cancel-done')).toContainText('terminó hoy');
+        const ended = await execSQL<{ status: string }>(
+            'SELECT status FROM subscription WHERE id = $1',
+            [subscriptionId]
+        );
+        expect(ended[0]?.status).toBe('CANCELLED');
+    });
+
+    test('SUSPENDED has no grace notice and cancels service today', async ({ page }) => {
+        if (!world) throw new Error('Expected fake provider world.');
+        const suspendedSubscriber = await createSubscriber();
+        userIds.push(suspendedSubscriber.user.id, suspendedSubscriber.admin.id);
+        await seedCookieConsent(page);
+        await attachSession(page, suspendedSubscriber.user.sessionCookie);
+        const optionId = await monthlyOptionForSlug('owner-basico');
+        await openSignupCheckout({ page, webUrl: WEB_URL, billingOptionId: optionId });
+        await page.getByTestId('signup-checkout-confirm').click();
+        const pending = page.getByTestId('signup-checkout-pending');
+        await expect(pending).toBeVisible();
+        const subscriptionId = await pending.getAttribute('data-subscription-id');
+        if (!subscriptionId) throw new Error('Expected web checkout subscription id.');
+        await activateCardSubscription({ fakeServer: world.fakeServer, subscriptionId });
+        // The expiry path can outlive this spec's bounded setup; seed the final row state explicitly.
+        await execSQL("UPDATE subscription SET status = 'SUSPENDED' WHERE id = $1", [
+            subscriptionId
+        ]);
+        await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
+        await expect(page.getByTestId('my-subscription-grace')).toHaveCount(0);
+        await page.getByTestId('self-cancel-open').click();
+        const end = page.getByTestId('self-cancel-end');
+        await expect(end).toContainText('termina hoy');
+        await expect(end).not.toContainText('gracia');
+        await page.getByTestId('self-cancel-confirm').click();
+        await expect(page.getByTestId('self-cancel-done')).toContainText('terminó hoy');
+        const ended = await execSQL<{ status: string }>(
+            'SELECT status FROM subscription WHERE id = $1',
+            [subscriptionId]
+        );
+        expect(ended[0]?.status).toBe('CANCELLED');
     });
 });
