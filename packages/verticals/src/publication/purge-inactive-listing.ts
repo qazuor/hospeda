@@ -1,5 +1,6 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import { PublicationStatusEnum as Status } from '@repo/schemas';
+import { inactivityClockStart } from './inactivity-clock';
 import { publicationAfterCommit, withPublicationLock } from './publication-lock';
 import type {
     PostCommitWarning,
@@ -73,8 +74,8 @@ export function isFirstPurgePass(args: {
 }
 
 /**
- * TRANS:V:PB9 under the owner's publication lock. Covers AC:V9b:1, AC:V9b:3, AC:V9b:6, AC:V9b:7, AC:V9b:8, DEC-DATA-005, HOS-1501, HOS-1502, HOS-1503.
- * Later work: V9a fact 1 (AC:V9b:9) and the pass with its job (HOS-1504).
+ * TRANS:V:PB9 under the owner's publication lock. Covers AC:V9b:1, AC:V9b:3, AC:V9b:6, AC:V9b:7, AC:V9b:8, AC:V9b:9, DEC-DATA-005, HOS-1501, HOS-1502, HOS-1503, HOS-1504.
+ * Later work: the pass with its job (HOS-1504, runs 4-5).
  */
 export async function purgeInactiveListing(args: {
     readonly unitOfWork: PublicationUnitOfWork;
@@ -118,9 +119,16 @@ export async function purgeInactiveListing(args: {
                 });
                 return { purged: false, reason: 'COVERED' };
             }
-            const clockStart = retentionClockStart({
-                inactiveSince: listing.inactiveSince,
-                pauseEndedAt: pause.pauseEndedAt
+            const lastOwnerActAt = await tx.readLastOwnerActAt({
+                vertical: args.vertical,
+                listingId: listing.id
+            });
+            const clockStart = inactivityClockStart({
+                clockStart: retentionClockStart({
+                    inactiveSince: listing.inactiveSince,
+                    pauseEndedAt: pause.pauseEndedAt
+                }),
+                lastOwnerActAt
             });
             const dueAt = purgeDueAt({
                 clockStart,

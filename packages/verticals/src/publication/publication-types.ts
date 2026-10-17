@@ -147,6 +147,11 @@ export interface PublicationTransaction extends TrialStartTransaction {
         readonly vertical: PublicationVertical;
         readonly listingId: string;
     }): Promise<RetentionListing | null>;
+    /** Reads the latest owner act on the listing in V9a's domain_event register, or null when absent. */
+    readLastOwnerActAt(args: {
+        readonly vertical: PublicationVertical;
+        readonly listingId: string;
+    }): Promise<Date | null>;
     readArchiveOrigins(args: {
         readonly vertical: PublicationVertical;
         readonly listingIds: readonly string[];

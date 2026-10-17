@@ -46,6 +46,7 @@ export function makeHarness(
             | import('../../src/publication/publication-types').PublicationModerationOrigin
             | null;
         readonly inactiveSince?: Date;
+        readonly lastOwnerActAt?: Date | null;
         readonly retentionListingMissing?: boolean;
         readonly recordBillingCalls?: boolean;
         readonly purgeContent?: Awaited<
@@ -78,6 +79,7 @@ export function makeHarness(
         inactiveSince: args.inactiveSince ?? at
     };
     const calls: string[] = [];
+    const ownerActReads: Parameters<PublicationTransaction['readLastOwnerActAt']>[0][] = [];
     const statusWrites: Parameters<PublicationTransaction['setPublicationStatus']>[0][] = [];
     const statusEvents: Parameters<PublicationTransaction['insertStatusChangedEvent']>[0][] = [];
     const stampWrites: Parameters<PublicationTransaction['stampInactiveSince']>[0][] = [];
@@ -165,6 +167,11 @@ export function makeHarness(
                     draftArchiveMonths: 3
                 }
             };
+        },
+        async readLastOwnerActAt(input) {
+            expect(locked).toBe(true);
+            ownerActReads.push(input);
+            return args.lastOwnerActAt ?? null;
         },
         async readArchiveOrigins({ listingIds }) {
             calls.push('archiveOrigins');
@@ -328,6 +335,7 @@ export function makeHarness(
         afterCommit,
         retentionAfterCommit,
         calls,
+        ownerActReads,
         statusWrites,
         statusEvents,
         stampWrites,

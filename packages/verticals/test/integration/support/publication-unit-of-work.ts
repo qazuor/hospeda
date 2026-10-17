@@ -15,6 +15,7 @@ import { eq, sql } from 'drizzle-orm';
 import { listingModerationModel } from '../../../../db/src/models/listing/listing-moderation.model';
 import { listingPublicationModel } from '../../../../db/src/models/listing/listing-publication.model';
 import { listingRetentionModel } from '../../../../db/src/models/listing/listing-retention.model';
+import { listingRetentionScheduleModel } from '../../../../db/src/models/listing/listing-retention-schedule.model';
 import { users } from '../../../../db/src/schemas/user/user.dbschema';
 import type {
     PublicationUnitOfWork,
@@ -153,6 +154,12 @@ export function createPublicationTestAdapter(args: {
                             listingPublicationModel.readListing({ tx, vertical, listingId }),
                         readRetentionListing: ({ vertical, listingId }) =>
                             listingRetentionModel.readRetentionListing({ tx, vertical, listingId }),
+                        readLastOwnerActAt: ({ vertical, listingId }) =>
+                            listingRetentionScheduleModel.readLastOwnerActAt({
+                                tx,
+                                vertical,
+                                listingId
+                            }),
                         readArchiveOrigins: (input) =>
                             listingRetentionModel.readArchiveOrigins({ ...input, tx }),
                         readModerationOrigin: (input) =>

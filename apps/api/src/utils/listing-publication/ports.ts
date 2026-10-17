@@ -9,6 +9,7 @@ import {
     listingPublicationModel,
     listingPurgeModel,
     listingRetentionModel,
+    listingRetentionScheduleModel,
     trials,
     users
 } from '@repo/db';
@@ -80,6 +81,9 @@ export function getListingPublicationPorts(options?: {
                     },
                     async readRetentionListing(input) {
                         return listingRetentionModel.readRetentionListing({ ...input, tx });
+                    },
+                    async readLastOwnerActAt(input) {
+                        return listingRetentionScheduleModel.readLastOwnerActAt({ ...input, tx });
                     },
                     async readArchiveOrigins(input) {
                         return listingRetentionModel.readArchiveOrigins({ ...input, tx });
