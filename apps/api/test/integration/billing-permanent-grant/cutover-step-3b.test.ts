@@ -132,9 +132,13 @@ afterAll(async () => {
 
 describe('TEST:B9a:16 — la herramienta del 3b, dos veces', () => {
     it('(a) escribe dos grants, convierte ambos trials y audita ACC_2', async () => {
-        const first = await trialUser('a1');
-        const second = await trialUser('a2');
-        const untouched = await trialUser('a3');
+        const seededTrials: string[] = [];
+        for (const label of ['a1', 'a2', 'a3', 'a4', 'a5']) {
+            seededTrials.push(await trialUser(label));
+        }
+        const [first, second, ...notSelected] = seededTrials;
+        if (!first || !second || notSelected.length !== 3)
+            throw new Error('Expected five seeded trials');
         const before = audit.mock.calls.length;
         const result = await args([first, second]);
         expect(result.status).toBe('completed');
@@ -151,7 +155,9 @@ describe('TEST:B9a:16 — la herramienta del 3b, dos veces', () => {
             });
             expect(current.status).toBe('TRIAL_CONVERTED');
         }
-        expect((await state(untouched)).status).toBe('TRIAL_ACTIVE');
+        for (const userId of notSelected) {
+            expect((await state(userId)).status).toBe('TRIAL_ACTIVE');
+        }
         expect(audit.mock.calls.length - before).toBe(2);
         expect(
             audit.mock.calls.slice(before).every(([entry]) => {

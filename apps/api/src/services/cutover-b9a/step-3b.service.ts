@@ -77,9 +77,11 @@ export async function runStep3b(input: RunStep3bInput): Promise<Step3bResult> {
         assertPermanentGrantSubject({ actor: input.actor, beneficiaryUserId });
     }
 
-    const initialTrials = await Promise.all(beneficiaryUserIds.map((userId) => readTrial(userId)));
+    const initialTrials = await Promise.all(
+        beneficiaryUserIds.map((userId) => readTrial({ userId }))
+    );
     for (const [index, userId] of beneficiaryUserIds.entries()) {
-        if (!initialTrials[index]) throw new Step3bTrialMissingError(userId);
+        if (!initialTrials[index]?.trial) throw new Step3bTrialMissingError(userId);
     }
 
     const live = await Promise.all(
@@ -112,7 +114,7 @@ export async function runStep3b(input: RunStep3bInput): Promise<Step3bResult> {
                 userId,
                 outcome: live[index] ? 'skipped' : 'would_write',
                 permanentGrantId: null,
-                trialStatus: initialTrials[index]?.status ?? null
+                trialStatus: initialTrials[index]?.trial?.status ?? null
             }))
         };
     }
@@ -124,7 +126,7 @@ export async function runStep3b(input: RunStep3bInput): Promise<Step3bResult> {
                 userId,
                 outcome: 'skipped',
                 permanentGrantId: null,
-                trialStatus: initialTrials[index]?.status ?? null
+                trialStatus: initialTrials[index]?.trial?.status ?? null
             });
             continue;
         }
@@ -187,24 +189,28 @@ export async function runStep3b(input: RunStep3bInput): Promise<Step3bResult> {
         }
     }
 
-    const finalTrials = await Promise.all(beneficiaryUserIds.map((userId) => readTrial(userId)));
+    const finalTrials = await Promise.all(
+        beneficiaryUserIds.map((userId) => readTrial({ userId }))
+    );
     const beneficiaries = results.map((result, index) => ({
         ...result,
-        trialStatus: finalTrials[index]?.status ?? null
+        trialStatus: finalTrials[index]?.trial?.status ?? null
     }));
     return {
-        status: finalTrials.every((trial) => trial?.status === 'TRIAL_CONVERTED')
+        status: finalTrials.every((result) => result.trial?.status === 'TRIAL_CONVERTED')
             ? 'completed'
             : 'failed',
         beneficiaries
     };
 }
 
-async function readTrial(userId: string): Promise<{ readonly status: string } | null> {
+async function readTrial({ userId }: { readonly userId: string }): Promise<{
+    readonly trial: { readonly status: string } | null;
+}> {
     const [trial] = await getDb()
         .select({ status: trials.status })
         .from(trials)
         .where(and(eq(trials.userId, userId), eq(trials.vertical, VERTICAL)))
         .limit(1);
-    return trial ?? null;
+    return { trial: trial ?? null };
 }

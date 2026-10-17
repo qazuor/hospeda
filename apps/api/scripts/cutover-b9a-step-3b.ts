@@ -11,6 +11,7 @@ import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import { parseStep3bArgs } from '../src/services/cutover-b9a/step-3b.args.js';
 import type { composeStep3bProcess } from '../src/services/cutover-b9a/step-3b.compose.js';
+import { serviceErrorReason } from '../src/services/cutover-b9a/step-3b.errors.js';
 import { env, validateApiEnv } from '../src/utils/env.js';
 
 /** Executes the protected, explicitly confirmed B9a cutover operation. */
@@ -46,10 +47,11 @@ async function main(): Promise<void> {
         console.info(JSON.stringify(result));
         process.exitCode = result.status === 'failed' ? 1 : 0;
     } catch (error) {
+        const { reason } = serviceErrorReason({ error });
         console.error(
             JSON.stringify({
                 errorClass: error instanceof Error ? error.name : 'UnknownError',
-                ...(serviceErrorReason(error) ? { reason: serviceErrorReason(error) } : {}),
+                ...(reason ? { reason } : {}),
                 message: error instanceof Error ? error.message : 'Unknown error'
             })
         );
@@ -61,19 +63,13 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
+    const { reason } = serviceErrorReason({ error });
     console.error(
         JSON.stringify({
             errorClass: error instanceof Error ? error.name : 'UnknownError',
-            ...(serviceErrorReason(error) ? { reason: serviceErrorReason(error) } : {}),
+            ...(reason ? { reason } : {}),
             message: error instanceof Error ? error.message : 'Unknown error'
         })
     );
     process.exitCode = 1;
 });
-
-function serviceErrorReason(error: unknown): string | undefined {
-    if (error instanceof Error && 'reason' in error && typeof error.reason === 'string') {
-        return error.reason;
-    }
-    return undefined;
-}
