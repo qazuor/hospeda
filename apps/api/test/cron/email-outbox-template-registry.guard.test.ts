@@ -178,19 +178,28 @@ describe('TEST:1608:3 AC:B11:22 la lista de correos inmediatos de conciliación 
     ].sort();
 
     it('declares exactly the three immediate reconciliation templates in their closed list', () => {
+        const sourceTemplates = (file: string): string[] => {
+            const source = sourceByPath.get(file) ?? '';
+            const constants = [...source.matchAll(/\b([A-Z][A-Z0-9_]*_TEMPLATE)\b/g)]
+                .map(([identifier]) => templateConstants.get(identifier!))
+                .filter((template): template is string => template !== undefined);
+            const literals = [...source.matchAll(/'(?:billing|verticals)\.[a-z0-9-]+'/g)].map(
+                ([literal]) => literal!.slice(1, -1)
+            );
+            return [...constants, ...literals];
+        };
         const reconciliationEntries = Object.entries(ENQUEUE_SITES).filter(
             ([file]) =>
                 file.startsWith('packages/service-core/src/services/billing/reconciliation/') &&
                 file !==
                     'packages/service-core/src/services/billing/reconciliation/summary/run-summary-tick.service.ts'
         );
-        const declaredInReconciliation = reconciliationEntries.flatMap(([, entry]) =>
-            Array.isArray(entry) ? entry : []
-        );
+        const declaredInReconciliation = reconciliationEntries.flatMap(([file, entry]) => [
+            ...(Array.isArray(entry) ? entry : []),
+            ...sourceTemplates(file)
+        ]);
         expect(
-            [...new Set(declaredInReconciliation)]
-                .filter((template) => immediateTemplates.includes(template))
-                .sort(),
+            [...new Set(declaredInReconciliation)].sort(),
             'correo inmediato nuevo: la lista de la excepción de DEC-OBS-001 es cerrada'
         ).toEqual(immediateTemplates);
 
@@ -199,7 +208,10 @@ describe('TEST:1608:3 AC:B11:22 la lista de correos inmediatos de conciliación 
                 ([file]) =>
                     !file.startsWith('packages/service-core/src/services/billing/reconciliation/')
             )
-            .flatMap(([, entry]) => (Array.isArray(entry) ? entry : []));
+            .flatMap(([file, entry]) => [
+                ...(Array.isArray(entry) ? entry : []),
+                ...sourceTemplates(file)
+            ]);
         expect(
             declaredOutsideReconciliation.some((template) => immediateTemplates.includes(template)),
             'correo inmediato nuevo: la lista de la excepción de DEC-OBS-001 es cerrada'
