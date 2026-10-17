@@ -277,3 +277,60 @@ describe('TEST:V4:11 administrative trial extension', () => {
         expect(stored?.endsAt?.toISOString()).toBe(end.toISOString());
     });
 });
+
+describe('TEST:V5:8 TEST:1691:2 action 11 refuses the actor on their own account', () => {
+    it('returns FORBIDDEN before reading or writing the actor trial', async () => {
+        const { user, trial, end } = await fixture();
+        if (!trial) throw new Error('Missing trial');
+        const response = await request(
+            { userId: user.id, vertical: 'accommodation', days: 15, reason: 'self' },
+            user.id
+        );
+        expect(response.status).toBe(403);
+        expect((await response.json()).error.code).toBe('FORBIDDEN');
+        const [stored] = await getDb().select().from(trials).where(eq(trials.id, trial.id));
+        expect(stored?.endsAt?.toISOString()).toBe(end.toISOString());
+        expect(
+            await getDb().select().from(domainEvent).where(eq(domainEvent.entityId, trial.id))
+        ).toHaveLength(0);
+        expect(
+            await getDb()
+                .select()
+                .from(trialRedemptions)
+                .where(eq(trialRedemptions.userId, user.id))
+        ).toHaveLength(0);
+    });
+    it('returns FORBIDDEN for the actor before a missing trial 404', async () => {
+        const { user } = await fixture(false);
+        const response = await request(
+            { userId: user.id, vertical: 'accommodation', days: 15, reason: 'self' },
+            user.id
+        );
+        expect(response.status).toBe(403);
+        expect((await response.json()).error.code).toBe('FORBIDDEN');
+    });
+    it('allows another account with the action permission', async () => {
+        const { user, trial, end } = await fixture();
+        if (!trial) throw new Error('Missing trial');
+        const actorId = randomUUID();
+        const response = await app.request(path, {
+            method: 'POST',
+            headers: headers(
+                actorId,
+                'ADMIN',
+                '["access.panelAdmin","access.apiAdmin","trial.extend"]'
+            ),
+            body: JSON.stringify({
+                userId: user.id,
+                vertical: 'accommodation',
+                days: 15,
+                reason: 'moderation error'
+            })
+        });
+        expect(response.status).toBe(200);
+        const [stored] = await getDb().select().from(trials).where(eq(trials.id, trial.id));
+        expect(stored?.endsAt?.toISOString()).toBe(
+            new Date(end.getTime() + 15 * day).toISOString()
+        );
+    });
+});

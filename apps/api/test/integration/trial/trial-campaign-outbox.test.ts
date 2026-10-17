@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { type CoverageResponse, CoverageResponseSchema } from '@repo/billing-verticals-contract';
 import { emailOutbox, eq, getDb, trials } from '@repo/db';
-import { VERTICAL_ACTIVATION_EVENT_BY_VERTICAL, VerticalEnum } from '@repo/schemas';
+import { PermissionEnum, VERTICAL_ACTIVATION_EVENT_BY_VERTICAL, VerticalEnum } from '@repo/schemas';
 import { computeTrialEmailPseudonym } from '@repo/service-core';
 import { marketMidnight } from '@repo/verticals';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -163,7 +163,9 @@ describe('TEST:V4:22 (parte 1: escritura) - trial campaigns are outbox rows writ
                 vertical: VerticalEnum.ACCOMMODATION,
                 days: 7,
                 reason: 'schedule test',
-                actorId: randomUUID()
+                actorId: randomUUID(),
+                actorPermissions: [PermissionEnum.TRIAL_EXTEND],
+                isSystemActor: false
             }
         });
         expect(extended.extended).toBe(true);
