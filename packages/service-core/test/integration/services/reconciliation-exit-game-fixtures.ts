@@ -5,15 +5,19 @@ import {
     eq,
     inArray,
     payments,
+    promoCodes,
+    promoRedemptions,
     providerLinks,
     reconciliationMarkModel,
     reconciliationMarkPayments,
+    refunds,
     subscriptions,
     successionRetainedPayments
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { createPaymentReconciliationMarkPayments } from '../../../src/services/billing/payment/payment-ledger.js';
+import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
 import { createAmountComparison } from '../../../src/services/billing/reconciliation/sweep/comparisons/amount-comparison.js';
 import { createRecordedAmountMutationDecisions } from '../../../src/services/billing/reconciliation/sweep/comparisons/amount-mutation-decision.js';
 import type { AmountMutationDecisions } from '../../../src/services/billing/reconciliation/sweep/comparisons/amount-mutation-decisions.port.js';
@@ -28,10 +32,12 @@ import { providerLinkCancellationSeen } from '../../../src/services/billing/subs
 import { getServiceTestDb } from './helpers.js';
 import {
     resetSeededReconciliationInventory,
+    seedSubscription,
     withSeededCancellationRetryInventory,
     withSeededReconciliationInventory
 } from './reconciliation-sweep-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
+import { setExpectedPlanAmount } from './support/period-comparison-fixtures.js';
 import {
     resetSeededTerminalReturnInventory,
     withSeededTerminalReturnInventory
@@ -128,6 +134,46 @@ export function trackExitGameRow(subscriptionId: string, userId: string): void {
     trackedRows.set(subscriptionId, userId);
 }
 
+/** Seeds one approved payment against an explicitly anchored expected period amount. */
+export async function seedChargedExitGameRow(input: {
+    readonly provider: FakePaymentProvider;
+    readonly clock: Clock;
+    readonly expectedMinor: number;
+    readonly chargedMinor: number;
+}) {
+    const { subscription, providerId } = await seedSubscription({
+        status: 'ACTIVE',
+        withLink: true,
+        fake: input.provider
+    });
+    if (!subscription.userId || !providerId) throw new Error('Linked charged row is incomplete');
+    trackExitGameRow(subscription.id, subscription.userId);
+    await setExpectedPlanAmount({
+        subscriptionId: subscription.id,
+        amountMinor: input.expectedMinor
+    });
+    const charged = await input.provider.charge({
+        authorizationId: providerId,
+        amount: { amountMinor: input.chargedMinor, currency: 'ARS' },
+        reference: subscription.id
+    });
+    await recordChargeFact(
+        { chargeId: charged.chargeId },
+        {
+            provider: input.provider as unknown as PaymentProvider,
+            clock: input.clock,
+            beforeCancelNotice: outboxBeforeCancelNotice(),
+            markPayments: createPaymentReconciliationMarkPayments(input.clock)
+        }
+    );
+    const [payment] = await getServiceTestDb()
+        .select()
+        .from(payments)
+        .where(eq(payments.providerFactId, charged.chargeId));
+    if (!payment) throw new Error('recordChargeFact did not persist the charged payment');
+    return { subscription, providerId, chargeId: charged.chargeId, payment };
+}
+
 /** Cleans this game's marks and rows, retaining provider links on receipt tombstones. */
 export async function retireExitGameRows(): Promise<void> {
     const db = getServiceTestDb();
@@ -157,6 +203,21 @@ export async function retireExitGameRows(): Promise<void> {
                     now: new Date()
                 });
             }
+            const paymentRows = await db
+                .select({ id: payments.id })
+                .from(payments)
+                .where(eq(payments.subscriptionId, subscriptionId));
+            for (const payment of paymentRows)
+                await db.delete(refunds).where(eq(refunds.paymentId, payment.id));
+            const redemptions = await db
+                .select({ promoCodeId: promoRedemptions.promoCodeId })
+                .from(promoRedemptions)
+                .where(eq(promoRedemptions.subscriptionId, subscriptionId));
+            await db
+                .delete(promoRedemptions)
+                .where(eq(promoRedemptions.subscriptionId, subscriptionId));
+            for (const redemption of redemptions)
+                await db.delete(promoCodes).where(eq(promoCodes.id, redemption.promoCodeId));
             await db
                 .update(payments)
                 .set({ status: 'FAILED', factAt: new Date('2000-01-01T00:00:00.000Z') })
