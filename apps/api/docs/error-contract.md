@@ -54,6 +54,7 @@ cannot be used to probe permissions. The allowed operations are `VERIFY_EMAIL`,
 `CHANGE_EMAIL` (except with a Partner link), `READ_OWN`, `EXPORT`,
 `REACTIVATE_LISTING`, `DELETE_LISTING`, `REGULARIZE_CHARGE`, and `CLOSE_ACCOUNT`.
 They are declared by `emailUnverifiedOperation` on `createProtectedRoute` and `createProtectedListRoute`. For `CHANGE_EMAIL`, the Partner link is read through `PartnerService.getOwn`; a failed lookup returns 503.
+For an unverified account, an operation on the list runs without the staff permissions in `UNVERIFIED_STAFF_BYPASS_PERMISSIONS` (`apps/api/src/middlewares/step2-staff-bypass.ts`), so a foreign resource answers exactly as it does for an account without that permission.
 
 ### The coverage step (V5.3, HOS-1457)
 
