@@ -14,9 +14,12 @@ import {
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { isAddonInstanceOrphaned } from '../../addon/addon-orphanhood.js';
-import type { AddonOrphanhoodPorts } from '../../addon/addon-orphanhood-ports.js';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
 import { recordDivergence } from './reconciliation-divergence.js';
+import {
+    type AddonWithoutShutdownPorts,
+    unimplementedListingPurgedAddonCanceller
+} from './zero-call-ports.js';
 
 const logger = createLogger('billing-reconciliation-sweep');
 const CHECK = 'ADDON_LIVE_ON_DEAD_TARGET' as const;
@@ -46,7 +49,7 @@ export interface AddonWithoutShutdownResult {
 export async function runAddonWithoutShutdownCheck(
     input: { readonly correlationId: string; readonly pageSize?: number },
     ports: {
-        readonly orphanhood: AddonOrphanhoodPorts;
+        readonly orphanhood: AddonWithoutShutdownPorts;
         readonly markPayments?: ReconciliationMarkPayments;
     }
 ): Promise<AddonWithoutShutdownResult> {
@@ -73,7 +76,25 @@ export async function runAddonWithoutShutdownCheck(
             try {
                 const decision = await db.transaction(
                     async (tx) => {
-                        // HOS-1547 (AC:B5:36): the fichaPurgada half runs A6 first, before this verdict
+                        const [row] = await tx
+                            .select({
+                                addonVersionId: addonInstances.addonVersionId,
+                                targetId: addonInstances.targetId,
+                                complementSubscriptionId: addonInstances.complementSubscriptionId
+                            })
+                            .from(addonInstances)
+                            .where(eq(addonInstances.id, id))
+                            .limit(1);
+                        if (!row) throw new Error(`Addon instance ${id} disappeared during sweep`);
+                        const { scopeType } = await ports.orphanhood.addonPolicy({
+                            addonVersionId: row.addonVersionId
+                        });
+                        if (scopeType === 'LISTING' && row.targetId)
+                            return {
+                                verdict: 'LISTING_PURGED' as const,
+                                targetId: row.targetId,
+                                complementSubscriptionId: row.complementSubscriptionId
+                            };
                         const verdict = await verdictOf(tx, id, ports.orphanhood);
                         const [instance] = await tx
                             .select({
@@ -84,12 +105,61 @@ export async function runAddonWithoutShutdownCheck(
                             .limit(1);
                         return {
                             verdict,
-                            complementSubscriptionId: instance?.complementSubscriptionId
+                            complementSubscriptionId: instance?.complementSubscriptionId,
+                            targetId: null
                         };
                     },
                     { accessMode: 'read only' }
                 );
-                const { verdict, complementSubscriptionId } = decision;
+                let { verdict } = decision;
+                const { complementSubscriptionId } = decision;
+                if (verdict === 'LISTING_PURGED' && decision.targetId) {
+                    const { purged } = await ports.orphanhood.listingPurged({
+                        listingId: decision.targetId
+                    });
+                    if (purged) {
+                        try {
+                            await (
+                                ports.orphanhood.listingPurgedAddons ??
+                                unimplementedListingPurgedAddonCanceller
+                            ).cancelPurgedListingAddon({
+                                instanceId: id,
+                                correlationId: input.correlationId
+                            });
+                            result.resolved++;
+                            continue;
+                        } catch (error) {
+                            logger.warn({ instanceId: id, error }, 'A6 could not execute');
+                        }
+                        if (!complementSubscriptionId) {
+                            logger.warn(
+                                { instanceId: id },
+                                'Purged listing addon has no complement subscription to mark'
+                            );
+                            continue;
+                        }
+                        const recorded = await recordDivergence(
+                            {
+                                subscriptionId: complementSubscriptionId,
+                                divergence: {
+                                    reason: REASON,
+                                    detail: [
+                                        { field: 'addon_instance.id', new: id },
+                                        { field: 'verdict', new: 'LISTING_PURGED' }
+                                    ]
+                                },
+                                correlationId: input.correlationId
+                            },
+                            ports.markPayments ? { markPayments: ports.markPayments } : {}
+                        );
+                        if (recorded.markOutcome === 'OPENED') result.marksOpened++;
+                        else result.marksAccumulated++;
+                        continue;
+                    }
+                    verdict = await db.transaction((tx) => verdictOf(tx, id, ports.orphanhood), {
+                        accessMode: 'read only'
+                    });
+                }
                 if (verdict === 'LIVE') continue;
                 if (!complementSubscriptionId) {
                     logger.warn(
@@ -131,7 +201,7 @@ export async function runAddonWithoutShutdownCheck(
 async function verdictOf(
     tx: DrizzleClient,
     instanceId: string,
-    orphanhood: AddonOrphanhoodPorts
+    orphanhood: AddonWithoutShutdownPorts
 ): Promise<'LIVE' | 'DEAD_TARGET' | 'REVOKED_ANCHOR'> {
     const [row] = await tx
         .select({
