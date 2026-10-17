@@ -4,14 +4,16 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const ROOT = join(import.meta.dirname, '../../src/routes');
-function files(dir: string, prefix = ''): string[] {
+function files(options: { readonly dir: string; readonly prefix?: string }): string[] {
+    const { dir, prefix = '' } = options;
     return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
         const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
-        if (entry.isDirectory()) return files(join(dir, entry.name), relative);
+        if (entry.isDirectory()) return files({ dir: join(dir, entry.name), prefix: relative });
         return entry.name.endsWith('.ts') ? [relative] : [];
     });
 }
-function source(path: string) {
+function source(options: { readonly path: string }) {
+    const { path } = options;
     return readFileSync(join(ROOT, path), 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, '')
         .replace(/(^|[^:])\/\/.*$/gm, '$1');
@@ -21,8 +23,8 @@ const declaration =
 const listing = /listingAccess:\s*\{[^}]*operation:\s*'(REACTIVATE|DELETE|READ_OWN)'/s;
 
 describe('TEST:1692:4 every protected route of the closed list declares its step-2 operation', () => {
-    const protectedFiles = files(ROOT).filter((file) => file.includes('/protected/'));
-    const rows = protectedFiles.map((file) => ({ file, text: source(file) }));
+    const protectedFiles = files({ dir: ROOT }).filter((file) => file.includes('/protected/'));
+    const rows = protectedFiles.map((file) => ({ file, text: source({ path: file }) }));
     it('instruments the current three REACTIVATE, three DELETE and six GET READ_OWN declarations', () => {
         expect(rows.filter(({ text }) => listing.exec(text)?.[1] === 'REACTIVATE')).toHaveLength(3);
         expect(rows.filter(({ text }) => listing.exec(text)?.[1] === 'DELETE')).toHaveLength(3);

@@ -28,7 +28,8 @@ const own = createProtectedRoute({
     responseSchema: z.object({ ok: z.boolean() }),
     handler: async () => ({ ok: true })
 });
-function build(verified: boolean, route = change) {
+function build(options: { readonly verified: boolean; readonly route?: typeof change }) {
+    const { verified, route = change } = options;
     const app = new Hono<AppBindings>();
     app.onError((error, c) =>
         error instanceof HTTPException
@@ -55,7 +56,7 @@ describe('TEST:V5:3 TEST:1692:3 step 2 reads the Partner link only for CHANGE_EM
         const spy = vi
             .spyOn(PartnerService.prototype, 'getOwn')
             .mockResolvedValue({ data: { partner: {} } } as never);
-        const response = await build(false).request('/change');
+        const response = await build({ verified: false }).request('/change');
         expect(response.status).toBe(403);
         expect((await response.json()).error.code).toBe('EMAIL_NOT_VERIFIED');
         expect(spy).toHaveBeenCalledOnce();
@@ -65,18 +66,18 @@ describe('TEST:V5:3 TEST:1692:3 step 2 reads the Partner link only for CHANGE_EM
         vi.spyOn(PartnerService.prototype, 'getOwn').mockResolvedValue({
             data: { partner: null }
         } as never);
-        expect((await build(false).request('/change')).status).toBe(200);
+        expect((await build({ verified: false }).request('/change')).status).toBe(200);
         vi.restoreAllMocks();
     });
     it('does not look up a link for a verified account', async () => {
         const spy = vi.spyOn(PartnerService.prototype, 'getOwn');
-        expect((await build(true).request('/change')).status).toBe(200);
+        expect((await build({ verified: true }).request('/change')).status).toBe(200);
         expect(spy).not.toHaveBeenCalled();
         vi.restoreAllMocks();
     });
     it('does not look up a link for READ_OWN', async () => {
         const spy = vi.spyOn(PartnerService.prototype, 'getOwn');
-        expect((await build(false, own).request('/own')).status).toBe(200);
+        expect((await build({ verified: false, route: own }).request('/own')).status).toBe(200);
         expect(spy).not.toHaveBeenCalled();
         vi.restoreAllMocks();
     });
@@ -85,14 +86,14 @@ describe('TEST:V5:3 TEST:1692:3 step 2 reads the Partner link only for CHANGE_EM
         vi.fn().mockRejectedValue(new Error('lookup failed'))
     ])('fails closed when getOwn fails', async (implementation) => {
         vi.spyOn(PartnerService.prototype, 'getOwn').mockImplementation(implementation as never);
-        expect((await build(false).request('/change')).status).toBe(503);
+        expect((await build({ verified: false }).request('/change')).status).toBe(503);
         vi.restoreAllMocks();
     });
     it('passes the request actor to getOwn', async () => {
         const spy = vi
             .spyOn(PartnerService.prototype, 'getOwn')
             .mockResolvedValue({ data: { partner: null } } as never);
-        await build(false).request('/change');
+        await build({ verified: false }).request('/change');
         expect(spy.mock.calls[0]?.[0].id).toBe(ACTOR_ID);
         vi.restoreAllMocks();
     });

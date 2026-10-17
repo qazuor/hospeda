@@ -18,7 +18,11 @@ import type { AppBindings } from '../../src/types';
 
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const LISTING_ID = '22222222-2222-4222-8222-222222222222';
-const app = (emailVerified: boolean, permissions: PermissionEnum[] = []) => {
+const app = (options: {
+    readonly emailVerified: boolean;
+    readonly permissions?: PermissionEnum[];
+}) => {
+    const { emailVerified, permissions = [] } = options;
     const result = new Hono<AppBindings>();
     result.onError((error, c) => {
         if (error instanceof HTTPException)
@@ -43,7 +47,8 @@ const app = (emailVerified: boolean, permissions: PermissionEnum[] = []) => {
     result.route('/api/v1/protected/billing/subscriptions', protectedBillingSubscriptionRoutes);
     return result;
 };
-async function probe(target: Hono<AppBindings>, path: string) {
+async function probe(options: { readonly target: Hono<AppBindings>; readonly path: string }) {
+    const { target, path } = options;
     const response = await target.request(path, {
         method:
             path.includes('/reactivate') ||
@@ -88,7 +93,7 @@ describe('TEST:V5:3 TEST:1692:1 the closed list passes step 2 on the real router
             ['/api/v1/protected/experiences/mine', experienceSpy],
             ['/api/v1/protected/accommodations', accommodationSpy]
         ] as const) {
-            expect((await probe(app(false), path)).status).toBe(200);
+            expect((await probe({ target: app({ emailVerified: false }), path })).status).toBe(200);
             expect(spy).toHaveBeenCalled();
         }
     });
@@ -107,8 +112,8 @@ describe('TEST:V5:3 TEST:1692:1 the closed list passes step 2 on the real router
         ])
     ];
     it.each(covered)('$op passes step 2 on $path', async ({ path }) => {
-        const unverified = await probe(app(false), path);
-        const verified = await probe(app(true), path);
+        const unverified = await probe({ target: app({ emailVerified: false }), path });
+        const verified = await probe({ target: app({ emailVerified: true }), path });
         expect(unverified).toEqual(verified);
         expect(unverified.error.code).not.toBe(ServiceErrorCode.EMAIL_NOT_VERIFIED);
     });
@@ -119,8 +124,11 @@ describe('TEST:V5:3 TEST:1692:2 outside the closed list step 2 answers the same 
         '/api/v1/protected/accommodations/22222222-2222-4222-8222-222222222222/publish',
         '/api/v1/protected/billing/subscriptions'
     ])('%s refuses before permissions', async (path) => {
-        const without = await probe(app(false, []), path);
-        const withAll = await probe(app(false, Object.values(PermissionEnum)), path);
+        const without = await probe({ target: app({ emailVerified: false }), path });
+        const withAll = await probe({
+            target: app({ emailVerified: false, permissions: Object.values(PermissionEnum) }),
+            path
+        });
         expect(without).toEqual(withAll);
         expect(without.status).toBe(403);
         expect(without.error.code).toBe(ServiceErrorCode.EMAIL_NOT_VERIFIED);
@@ -128,10 +136,10 @@ describe('TEST:V5:3 TEST:1692:2 outside the closed list step 2 answers the same 
     it('keeps the verified publish request beyond step 2', async () => {
         expect(
             (
-                await probe(
-                    app(true),
-                    '/api/v1/protected/accommodations/22222222-2222-4222-8222-222222222222/publish'
-                )
+                await probe({
+                    target: app({ emailVerified: true }),
+                    path: '/api/v1/protected/accommodations/22222222-2222-4222-8222-222222222222/publish'
+                })
             ).error.code
         ).not.toBe(ServiceErrorCode.EMAIL_NOT_VERIFIED);
     });
