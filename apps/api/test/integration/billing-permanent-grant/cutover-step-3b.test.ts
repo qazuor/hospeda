@@ -272,6 +272,7 @@ describe('TEST:B9a:16 — la herramienta del 3b, dos veces', () => {
     });
     it('(h1) refuses when operator is the second beneficiary before the first write', async () => {
         const first = await trialUser('h1a');
+        await createTrial({ userId: operatorId, status: 'TRIAL_ACTIVE' });
         await expect(args([first, operatorId])).rejects.toMatchObject({
             reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN'
         });
