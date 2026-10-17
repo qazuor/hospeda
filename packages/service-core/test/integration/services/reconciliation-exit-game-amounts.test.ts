@@ -193,7 +193,16 @@ describe('TEST:B11:20 el juego de salida contra el falso — importes y órdenes
                 authorizationId: row.providerId,
                 amount: { amountMinor: 1_500_000, currency: 'ARS' }
             });
-        const first = await runExitGameSweep({ provider, clock });
+        const firstCorrelationId = crypto.randomUUID();
+        const first = await runExitGameSweep({
+            provider,
+            clock,
+            correlationId: firstCorrelationId,
+            dailySummary: createPersistedReconciliationDailySummary({
+                correlationId: firstCorrelationId,
+                clock
+            })
+        });
         expect(first).toMatchObject({ marksOpened: 2, rowsFailed: 0 });
         const liftedMark = (await reason24Marks(lifted.subscription.id))[0];
         const refundedMark = (await reason24Marks(refunded.subscription.id))[0];
@@ -223,7 +232,16 @@ describe('TEST:B11:20 el juego de salida contra el falso — importes y órdenes
             (await reason24Marks(refunded.subscription.id)).length
         ];
 
-        const second = await runExitGameSweep({ provider, clock });
+        const secondCorrelationId = crypto.randomUUID();
+        const second = await runExitGameSweep({
+            provider,
+            clock,
+            correlationId: secondCorrelationId,
+            dailySummary: createPersistedReconciliationDailySummary({
+                correlationId: secondCorrelationId,
+                clock
+            })
+        });
 
         expect(second).toMatchObject({ divergences: 0, rowsFailed: 0 });
         expect(
