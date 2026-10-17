@@ -5,7 +5,9 @@ import {
     MARK_ESCALATED_SUBJECT,
     MarkEscalated,
     RECONCILIATION_SUMMARY_SUBJECT,
-    ReconciliationSummary
+    REVOCATION_REFUND_FAILED_SUBJECT,
+    ReconciliationSummary,
+    RevocationRefundFailed
 } from '../../templates/billing/index.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 
@@ -154,13 +156,43 @@ function markEscalated(row: EmailOutboxRow) {
     };
 }
 
-/** Creates production renderers for the aggregated reconciliation and two immediate billing notices. */
+function revocationRefundFailed(row: EmailOutboxRow) {
+    const data = payloadOf(row);
+    const subjectValid =
+        (data.subjectType === null && data.subjectId === null) ||
+        (isSubject(data.subjectType) && isString(data.subjectId));
+    if (
+        !stringFields(data, ['refundId', 'sourceId']) ||
+        !['REVOCATION', 'ADDON_ORPHAN', 'ONE_TIME_ADDON_REVOCATION'].includes(
+            data.refundReason as string
+        ) ||
+        !['payment', 'manual_payment'].includes(data.sourceKind as string) ||
+        !subjectValid ||
+        !isInteger(data.amountMinor) ||
+        data.amountMinor <= 0 ||
+        !(data.currency === null || isString(data.currency)) ||
+        !isIso(data.failedAt)
+    )
+        throw new TypeError(REQUIRED);
+    // TYPE-WORKAROUND: The manually validated outbox payload is the template props contract.
+    return {
+        subject: REVOCATION_REFUND_FAILED_SUBJECT,
+        react: (
+            <RevocationRefundFailed
+                {...(data as unknown as Parameters<typeof RevocationRefundFailed>[0])}
+            />
+        )
+    };
+}
+
+/** Creates production renderers for the aggregated reconciliation and three immediate billing notices. */
 export function createBillingReconciliationRenderers(_input: {
     readonly siteUrl: string;
 }): Readonly<Record<string, OutboxMailRenderer>> {
     return {
         'billing.reconciliation-summary': ({ row }) => reconciliationSummary(row),
         'billing.duplicate-charge-detected': ({ row }) => duplicateChargeDetected(row),
-        'billing.mark-escalated': ({ row }) => markEscalated(row)
+        'billing.mark-escalated': ({ row }) => markEscalated(row),
+        'billing.revocation-refund-failed': ({ row }) => revocationRefundFailed(row)
     };
 }
