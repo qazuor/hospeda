@@ -25,6 +25,7 @@ export const protectedGastronomyPurgePreviewRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/purge-preview',
     listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'READ_OWN', idParam: 'id' },
+    emailUnverifiedOperation: 'READ_OWN',
     options: { middlewares: [ownerAccess] },
     summary: 'Preview add-ons lost when purging own gastronomy listing',
     description: 'Lists live listing add-ons that remain after a purge.',

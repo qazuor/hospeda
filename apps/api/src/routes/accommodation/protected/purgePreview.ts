@@ -13,6 +13,7 @@ export const protectedAccommodationPurgePreviewRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/purge-preview',
     listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'READ_OWN', idParam: 'id' },
+    emailUnverifiedOperation: 'READ_OWN',
     summary: 'Preview add-ons lost when purging own accommodation',
     description: 'Lists live listing add-ons that remain after a purge.',
     tags: ['Accommodations'],

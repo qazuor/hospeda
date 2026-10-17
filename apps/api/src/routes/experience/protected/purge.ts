@@ -24,6 +24,7 @@ export const protectedPurgeExperienceRoute = createProtectedRoute({
     successStatusCode: 200,
     path: '/{id}/purge',
     listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'DELETE', idParam: 'id' },
+    emailUnverifiedOperation: 'DELETE_LISTING',
     options: { middlewares: [ownerAccess] },
     summary: 'Purge own experience listing',
     description: 'Permanently removes listing content through PB12.',

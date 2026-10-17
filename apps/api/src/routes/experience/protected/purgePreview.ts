@@ -25,6 +25,7 @@ export const protectedExperiencePurgePreviewRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/purge-preview',
     listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'READ_OWN', idParam: 'id' },
+    emailUnverifiedOperation: 'READ_OWN',
     options: { middlewares: [ownerAccess] },
     summary: 'Preview add-ons lost when purging own experience',
     description: 'Lists live listing add-ons that remain after a purge.',
