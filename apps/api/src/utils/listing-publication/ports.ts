@@ -3,6 +3,7 @@ import type { DrizzleClient } from '@repo/db';
 import {
     buildEmailDedupKey,
     buildEventOccurrence,
+    buildScheduleOccurrence,
     emailOutboxModel,
     getDb,
     listingModerationModel,
@@ -84,6 +85,12 @@ export function getListingPublicationPorts(options?: {
                     },
                     async readLastOwnerActAt(input) {
                         return listingRetentionScheduleModel.readLastOwnerActAt({ ...input, tx });
+                    },
+                    async readRetentionNoticeDeadlines(input) {
+                        return listingRetentionScheduleModel.readRetentionNoticeDeadlines({
+                            ...input,
+                            tx
+                        });
                     },
                     async readArchiveOrigins(input) {
                         return listingRetentionModel.readArchiveOrigins({ ...input, tx });
@@ -207,6 +214,45 @@ export function getListingPublicationPorts(options?: {
                             },
                             tx
                         );
+                    },
+                    async enqueueRetentionNotice(input) {
+                        const [recipient] = await tx
+                            .select({ email: users.email })
+                            .from(users)
+                            .where(eq(users.id, input.recipientUserId))
+                            .limit(1);
+                        if (!recipient?.email) {
+                            apiLogger.warn(
+                                {
+                                    recipientUserId: input.recipientUserId,
+                                    correlationId: input.correlationId
+                                },
+                                'Listing notice has no recipient email'
+                            );
+                            return { enqueued: false };
+                        }
+                        const dedupKey = buildEmailDedupKey({
+                            recipient: input.recipientUserId,
+                            template: input.template,
+                            occurrence: buildScheduleOccurrence({
+                                subjectKind: 'listing',
+                                subjectId: input.listingId,
+                                milestone: input.milestone,
+                                targetDate: input.targetDate
+                            })
+                        });
+                        const result = await emailOutboxModel.enqueue(
+                            {
+                                recipientUserId: input.recipientUserId,
+                                recipientEmail: recipient.email,
+                                template: input.template,
+                                payload: { ...input.payload },
+                                dedupKey,
+                                correlationId: input.correlationId
+                            },
+                            tx
+                        );
+                        return { enqueued: result.enqueued };
                     },
                     async insertTrial({ row }) {
                         const inserted = await tx

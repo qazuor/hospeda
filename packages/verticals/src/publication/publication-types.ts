@@ -152,6 +152,20 @@ export interface PublicationTransaction extends TrialStartTransaction {
         readonly vertical: PublicationVertical;
         readonly listingId: string;
     }): Promise<Date | null>;
+    /** Reads plazo 4's two values from the deadline snapshot stored by the listing. */
+    readRetentionNoticeDeadlines(args: {
+        readonly deadlinesVersion: number;
+    }): Promise<{ readonly beforeArchiveDays: number; readonly beforeDeletionDays: number }>;
+    /** Enqueues a SCHEDULE notice keyed by buildScheduleOccurrence, never by event. */
+    enqueueRetentionNotice(args: {
+        readonly template: string;
+        readonly recipientUserId: string;
+        readonly listingId: string;
+        readonly milestone: string;
+        readonly targetDate: string;
+        readonly payload: Readonly<Record<string, unknown>>;
+        readonly correlationId: string;
+    }): Promise<{ readonly enqueued: boolean }>;
     readArchiveOrigins(args: {
         readonly vertical: PublicationVertical;
         readonly listingIds: readonly string[];

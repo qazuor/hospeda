@@ -40,6 +40,9 @@ export function makeHarness(
         };
         readonly deletionAnnouncedAt?: Date | null;
         readonly deletionAfterDays?: number;
+        readonly beforeArchiveDays?: number;
+        readonly beforeDeletionDays?: number;
+        readonly noticeEnqueued?: boolean;
         readonly ownerId?: string;
         readonly archiveOrigins?: ReadonlyMap<string, PublicationStatusEnum>;
         readonly moderationOrigin?:
@@ -87,6 +90,7 @@ export function makeHarness(
         | import('../../src/publication/publication-types').PublicationFixRequest
         | null = null;
     const listingNotices: Parameters<PublicationTransaction['enqueueListingNotice']>[0][] = [];
+    const retentionNotices: Parameters<PublicationTransaction['enqueueRetentionNotice']>[0][] = [];
     const restitutionNotices: Parameters<PublicationTransaction['enqueueRestitutionNotice']>[0][] =
         [];
     const insertedRows: unknown[] = [];
@@ -172,6 +176,13 @@ export function makeHarness(
             expect(locked).toBe(true);
             ownerActReads.push(input);
             return args.lastOwnerActAt ?? null;
+        },
+        async readRetentionNoticeDeadlines() {
+            expect(locked).toBe(true);
+            return {
+                beforeArchiveDays: args.beforeArchiveDays ?? 15,
+                beforeDeletionDays: args.beforeDeletionDays ?? 15
+            };
         },
         async readArchiveOrigins({ listingIds }) {
             calls.push('archiveOrigins');
@@ -273,6 +284,10 @@ export function makeHarness(
         async enqueueListingNotice(input) {
             calls.push('enqueueListingNotice');
             listingNotices.push(input);
+        },
+        async enqueueRetentionNotice(input) {
+            retentionNotices.push(input);
+            return { enqueued: args.noticeEnqueued ?? true };
         }
     };
     const unitOfWork: PublicationUnitOfWork = {
@@ -342,6 +357,7 @@ export function makeHarness(
         insertedRows,
         restitutionNotices,
         listingNotices,
+        retentionNotices,
         getStatus: () => status
     };
 }

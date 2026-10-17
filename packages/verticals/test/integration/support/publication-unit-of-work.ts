@@ -2,6 +2,7 @@ import type { BillingForVerticals } from '@repo/billing-verticals-contract';
 import {
     buildEmailDedupKey,
     buildEventOccurrence,
+    buildScheduleOccurrence,
     type DrizzleClient,
     emailOutboxModel,
     listingPurgeModel,
@@ -160,6 +161,11 @@ export function createPublicationTestAdapter(args: {
                                 vertical,
                                 listingId
                             }),
+                        readRetentionNoticeDeadlines: (input) =>
+                            listingRetentionScheduleModel.readRetentionNoticeDeadlines({
+                                ...input,
+                                tx
+                            }),
                         readArchiveOrigins: (input) =>
                             listingRetentionModel.readArchiveOrigins({ ...input, tx }),
                         readModerationOrigin: (input) =>
@@ -221,6 +227,36 @@ export function createPublicationTestAdapter(args: {
                                 tx
                             );
                             await args.afterEnqueueListingNotice?.();
+                        },
+                        async enqueueRetentionNotice(input) {
+                            const [recipient] = await tx
+                                .select({ email: users.email })
+                                .from(users)
+                                .where(eq(users.id, input.recipientUserId))
+                                .limit(1);
+                            if (!recipient?.email) return { enqueued: false };
+                            const dedupKey = buildEmailDedupKey({
+                                recipient: input.recipientUserId,
+                                template: input.template,
+                                occurrence: buildScheduleOccurrence({
+                                    subjectKind: 'listing',
+                                    subjectId: input.listingId,
+                                    milestone: input.milestone,
+                                    targetDate: input.targetDate
+                                })
+                            });
+                            const result = await emailOutboxModel.enqueue(
+                                {
+                                    recipientUserId: input.recipientUserId,
+                                    recipientEmail: recipient.email,
+                                    template: input.template,
+                                    payload: { ...input.payload },
+                                    dedupKey,
+                                    correlationId: input.correlationId
+                                },
+                                tx
+                            );
+                            return { enqueued: result.enqueued };
                         }
                     };
                 return work(port);

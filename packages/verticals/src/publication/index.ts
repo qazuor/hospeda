@@ -23,5 +23,7 @@ export * from './purge-notices';
 export * from './reactivate-listing';
 export * from './remote-deletion-retry';
 export * from './retention-clock';
+export * from './retention-notices';
+export * from './send-retention-notice';
 export * from './subscribe-destination';
 export * from './unpublish-listing';
