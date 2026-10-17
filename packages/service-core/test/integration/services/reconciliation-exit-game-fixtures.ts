@@ -38,6 +38,9 @@ import {
 } from './support/terminal-return-fixtures.js';
 
 const trackedRows = new Map<string, string>();
+type ExitGameFakeOptions = {
+    readonly clock: Clock;
+} & Pick<ConstructorParameters<typeof FakePaymentProvider>[0], 'honestAbout'>;
 
 /** Returns a mutable test clock whose advances add exact milliseconds. */
 export function exitGameClock(start = new Date('2026-11-01T10:00:00.000Z')): {
@@ -62,15 +65,8 @@ export function exitGameClock(start = new Date('2026-11-01T10:00:00.000Z')): {
 }
 
 /** Creates the exit-game fake with an isolated provider id namespace. */
-export function exitGameFake(input: {
-    readonly clock: Clock;
-    readonly honestAbout?: ConstructorParameters<typeof FakePaymentProvider>[0]['honestAbout'];
-}): FakePaymentProvider {
-    return new FakePaymentProvider({
-        idNamespace: crypto.randomUUID(),
-        clock: input.clock,
-        ...(input.honestAbout ? { honestAbout: input.honestAbout } : {})
-    });
+export function exitGameFake(input: ExitGameFakeOptions): FakePaymentProvider {
+    return new FakePaymentProvider({ idNamespace: crypto.randomUUID(), ...input });
 }
 
 /** Mirrors the production sweep's comparison list (H5); TEST:1611:1 pins the cron to these three. */
