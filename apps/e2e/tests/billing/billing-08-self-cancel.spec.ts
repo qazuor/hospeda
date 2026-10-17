@@ -8,11 +8,13 @@ import {
     cleanupArrearsRows,
     createSubscriber,
     DAY_MS,
+    decodeHtmlEntities,
     deliverNotices,
     ensureDeadlineVersion,
     type FakeWorld,
     formatMarketDate,
     recordCreditedCycle,
+    runCron,
     WEB_URL
 } from '../../fixtures/arrears-cycle.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
@@ -31,6 +33,7 @@ test.describe('TEST:B13a:1 self-service cancellation @p0 @billing @clock', () =>
     let world: FakeWorld | null = null;
     let subscriber: Awaited<ReturnType<typeof createSubscriber>> | null = null;
     let userIds: string[] = [];
+    const MAIL_TIMEOUT_MS = 30_000;
 
     test.beforeAll(async () => {
         await ensureDeadlineVersion();
@@ -64,6 +67,7 @@ test.describe('TEST:B13a:1 self-service cancellation @p0 @billing @clock', () =>
 
     test('checkout steps are no fewer than the self-cancellation steps', async ({ page }) => {
         if (!subscriber || !world) throw new Error('Expected fake provider and subscriber.');
+        const { user, admin } = subscriber;
         await seedCookieConsent(page);
         await attachSession(page, subscriber.user.sessionCookie);
         const optionId = await monthlyOptionForSlug('owner-basico');
@@ -110,9 +114,39 @@ test.describe('TEST:B13a:1 self-service cancellation @p0 @billing @clock', () =>
         const marketEnd = formatMarketDate(new Date(rows[0]!.service_ends_at));
         await expect(end).toContainText(marketEnd);
         await expect(done).toContainText(marketEnd);
+        const outboxBeforeSend = await execSQL<{ status: string }>(
+            `SELECT status FROM email_outbox
+             WHERE recipient_user_id = $1 AND template = 'billing.scheduled-cancellation'
+             ORDER BY created_at DESC LIMIT 1`,
+            [user.id]
+        );
+        expect(outboxBeforeSend[0]?.status).toBe('pending');
+        await runCron({ jobName: 'email-outbox-sender', adminCookie: admin.sessionCookie });
+        const mail = await world.mailCapture.waitForMail({
+            to: user.email,
+            subject: 'Cancelamos el cobro automático de tu suscripción',
+            timeoutMs: MAIL_TIMEOUT_MS
+        });
+        const html = decodeHtmlEntities(mail.html);
+        expect(html).toContain('El servicio sigue hasta');
+        expect(html).toContain(marketEnd);
+        const sent = await execSQL<{ status: string }>(
+            `SELECT status FROM email_outbox
+             WHERE recipient_user_id = $1 AND template = 'billing.scheduled-cancellation'
+             ORDER BY created_at DESC LIMIT 1`,
+            [user.id]
+        );
+        expect(sent[0]?.status).toBe('sent');
         expect(
             cancelRequestsFor({ requests: world.fakeServer.requests(), authorizationId })
         ).toHaveLength(0);
+        await runCron({
+            jobName: 'billing-reconciliation-sweep',
+            adminCookie: admin.sessionCookie
+        });
+        expect(
+            cancelRequestsFor({ requests: world.fakeServer.requests(), authorizationId })
+        ).toHaveLength(1);
     });
 
     test('GRACE_PERIOD shows its own end date and ends service today on cancellation', async ({
