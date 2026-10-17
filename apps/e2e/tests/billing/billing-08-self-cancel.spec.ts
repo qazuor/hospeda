@@ -100,7 +100,7 @@ test.describe('TEST:B13a:1 self-service cancellation @p0 @billing @clock', () =>
                 response
                     .url()
                     .includes(
-                        `/api/v1/protected/billing-subscription/${subscriptionId}/cancellation`
+                        `/api/v1/protected/billing-subscription/${subscriptionId}/cancellation-preview`
                     )
         );
         await open.click();
@@ -277,9 +277,12 @@ test.describe('TEST:B13a:1 self-service cancellation @p0 @billing @clock', () =>
         if (!authorizationId) throw new Error('Expected fake-provider authorization id.');
         await activateCardSubscription({ fakeServer: world.fakeServer, subscriptionId });
         // The expiry path can outlive this spec's bounded setup; seed the final row state explicitly.
-        await execSQL("UPDATE subscription SET status = 'SUSPENDED' WHERE id = $1", [
-            subscriptionId
-        ]);
+        // S6 writes both grace timestamps when suspending from ACTIVE (suspend-for-arrears.service.ts:120-122).
+        const suspendedAt = new Date();
+        await execSQL(
+            "UPDATE subscription SET status = 'SUSPENDED', grace_started_at = $2, grace_ends_at = $2 WHERE id = $1",
+            [subscriptionId, suspendedAt]
+        );
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         await expect(page.getByTestId('my-subscription-grace')).toHaveCount(0);
         await page.getByTestId('self-cancel-open').click();
