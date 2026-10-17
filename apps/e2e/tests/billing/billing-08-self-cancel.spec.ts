@@ -94,9 +94,23 @@ test.describe('TEST:B13a:1 self-service cancellation @p0 @billing @clock', () =>
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         const open = page.getByTestId('self-cancel-open');
         await expect(open).toBeVisible();
+        const previewResponse = page.waitForResponse(
+            (response) =>
+                response.request().method() === 'GET' &&
+                response
+                    .url()
+                    .includes(
+                        `/api/v1/protected/billing-subscription/${subscriptionId}/cancellation`
+                    )
+        );
         await open.click();
+        const previewBody = await (await previewResponse).json();
+        const preview = previewBody.data ?? previewBody;
+        expect(preview.serviceEndsAt).toBeTruthy();
+        const marketEnd = formatMarketDate(new Date(preview.serviceEndsAt));
         const end = page.getByTestId('self-cancel-end');
         await expect(end).toBeVisible();
+        await expect(end).toContainText(marketEnd);
         const cancelStepsBeforeConfirm = 1;
         await page.getByTestId('self-cancel-confirm').click();
         const cancelSteps = cancelStepsBeforeConfirm + 1;
@@ -104,15 +118,16 @@ test.describe('TEST:B13a:1 self-service cancellation @p0 @billing @clock', () =>
         const done = page.getByTestId('self-cancel-done');
         await expect(done).toBeVisible();
         expect(cancelSteps).toBeLessThanOrEqual(signupSteps);
-        await expect(page.locator('input, textarea')).toHaveCount(0);
-        const rows = await execSQL<{ status: string; service_ends_at: Date }>(
+        const cancellation = page
+            .getByTestId('self-cancel-open')
+            .locator('xpath=ancestor::*[@data-testid="my-subscription"][1]');
+        await expect(cancellation.locator('input, textarea')).toHaveCount(0);
+        const cancelledRows = await execSQL<{ status: string; service_ends_at: Date }>(
             'SELECT status, service_ends_at FROM subscription WHERE id = $1',
             [subscriptionId]
         );
-        expect(rows[0]?.status).toBe('CANCEL_SCHEDULED');
-        expect(rows[0]?.service_ends_at).toBeTruthy();
-        const marketEnd = formatMarketDate(new Date(rows[0]!.service_ends_at));
-        await expect(end).toContainText(marketEnd);
+        expect(cancelledRows[0]?.status).toBe('CANCEL_SCHEDULED');
+        expect(cancelledRows[0]?.service_ends_at).toBeTruthy();
         await expect(done).toContainText(marketEnd);
         const outboxBeforeSend = await execSQL<{ status: string }>(
             `SELECT status FROM email_outbox
