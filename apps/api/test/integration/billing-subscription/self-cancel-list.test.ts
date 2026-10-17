@@ -10,6 +10,7 @@ import {
     retireSelfCancelRows,
     routeClock,
     routeFake,
+    seedSelfComplement,
     seedSelfState
 } from './self-cancel-fixtures';
 
@@ -47,6 +48,7 @@ describe('TEST:1617:3 own subscription list', () => {
             )
         );
         const foreign = await seedSelfState('ACTIVE');
+        const complement = await seedSelfComplement(own[0]!.ownerId);
         const excluded = await Promise.all(
             ['CANCELLED', 'PAUSED', 'PENDING_AUTHORIZATION'].map((status) =>
                 seedSelfState(status as 'CANCELLED' | 'PAUSED' | 'PENDING_AUTHORIZATION')
@@ -61,6 +63,7 @@ describe('TEST:1617:3 own subscription list', () => {
             ).data.subscriptions.map((subscription) => subscription.id);
             expect(ids).toEqual([row.subscriptionId]);
             expect(ids).not.toContain(foreign.subscriptionId);
+            expect(ids).not.toContain(complement.subscriptionId);
             for (const excludedRow of excluded)
                 expect(ids).not.toContain(excludedRow.subscriptionId);
         }

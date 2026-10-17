@@ -2,6 +2,7 @@ import {
     addonInstances,
     addonProducts,
     addons,
+    billingOptions,
     buildEmailDedupKey,
     buildEventOccurrence,
     coveredPeriods,
@@ -10,9 +11,12 @@ import {
     eq,
     getDb,
     inArray,
+    plans,
+    planVersions,
     subscriptions
 } from '@repo/db';
 import type { FakePaymentProvider } from '@repo/payments/fake';
+import { VerticalEnum } from '@repo/schemas';
 import { BEFORE_CANCEL_TEMPLATE_BY_KIND } from '@repo/service-core';
 import {
     actorHeaders as baseActorHeaders,
@@ -107,6 +111,53 @@ export async function seedSelfState(
             .where(eq(subscriptions.id, subscriptionId));
     }
     return { ownerId, subscriptionId };
+}
+
+/** Seed a live complement row for list-exclusion assertions. */
+export async function seedSelfComplement(ownerId: string) {
+    const db = getDb();
+    const [plan] = await db
+        .insert(plans)
+        .values({
+            vertical: VerticalEnum.GASTRONOMY,
+            slug: `self-cancel-complement-${crypto.randomUUID()}`,
+            name: 'Self cancel complement fixture'
+        })
+        .returning({ id: plans.id });
+    if (!plan) throw new Error('Expected complement plan');
+    const [version] = await db
+        .insert(planVersions)
+        .values({
+            planId: plan.id,
+            vertical: VerticalEnum.GASTRONOMY,
+            rank: Math.floor(Math.random() * 100000000) + 1000,
+            sellable: false,
+            current: false,
+            trialDays: 0,
+            allowsPause: false
+        })
+        .returning({ id: planVersions.id });
+    if (!version) throw new Error('Expected complement plan version');
+    const [option] = await db
+        .insert(billingOptions)
+        .values({ planVersionId: version.id, cycle: 'monthly', amount: 7300, currency: 'ARS' })
+        .returning({ id: billingOptions.id });
+    if (!option) throw new Error('Expected complement billing option');
+    const [row] = await db
+        .insert(subscriptions)
+        .values({
+            userId: ownerId,
+            vertical: VerticalEnum.GASTRONOMY,
+            planVersionId: version.id,
+            billingOptionId: option.id,
+            paymentMethod: 'CARD',
+            status: 'ACTIVE',
+            class: 'COMPLEMENTO'
+        })
+        .returning({ id: subscriptions.id });
+    if (!row) throw new Error('Expected complement subscription');
+    addonComplementIds.push(row.id);
+    return { subscriptionId: row.id };
 }
 
 /** Seed recurrent addon fixtures matching the addon-orphanhood integration helpers. */
