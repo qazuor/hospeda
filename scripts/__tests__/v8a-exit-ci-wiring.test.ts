@@ -82,9 +82,6 @@ const CASE_ACS: Readonly<Record<string, readonly string[]>> = {
 
 // TEST:V8a:1 through TEST:V8a:15 are the cut suite from V8a.md:484-592.
 const CUT_TESTS = Array.from({ length: 15 }, (_, index) => `TEST:V8a:${index + 1}`);
-// Static exit test id assigned by V8a.md:594-599 and .hoja/notas.md §4 H-1.
-const SELF_TEST = 'TEST:V8a:16';
-
 // AC:V8a:6 / TEST:V8a:7 row evidence from .hoja/notas.md §5.b.
 const ROW_EVIDENCE = [
     '1|apps/web/test/components/billing/PricingCardsGrid.tourist-trial.test.ts|the row 1 copy|component|the pricing is empty until HOS-1621',
@@ -323,11 +320,10 @@ describe('TEST:V8a:16 AC:V8a:14 - V8a exit: LISTA:V8 evidence in the tree, every
             const outside = mapped.filter((test) => !CUT_TESTS.includes(test));
             expect(outside, `mapped tests outside CUT_TESTS: ${outside.join(', ')}`).toEqual([]);
         });
-        it('maps exactly AC:V8a:1 through AC:V8a:13 and keeps the static exit id distinct', () => {
+        it('maps exactly AC:V8a:1 through AC:V8a:13', () => {
             expect(Object.keys(CASE_ACS).sort()).toEqual(
                 Array.from({ length: 13 }, (_, index) => `AC:V8a:${index + 1}`).sort()
             );
-            expect(CUT_TESTS).not.toContain(SELF_TEST);
         });
     });
 
