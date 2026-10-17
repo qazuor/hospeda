@@ -198,6 +198,7 @@ describe('TEST:B11:20 el juego de salida contra el falso — correos, resumen, b
         await withServiceTestTransaction(async (tx) => {
             const { recipients, unrelatedId } = await seedRecipients(tx);
             const recipientIds = recipients.map(({ userId }) => userId);
+            const seededIds = [...recipientIds, unrelatedId];
             const beforeWindows = await tx
                 .select({ id: reconciliationSummaryWindows.id })
                 .from(reconciliationSummaryWindows);
@@ -210,7 +211,7 @@ describe('TEST:B11:20 el juego de salida contra el falso — correos, resumen, b
                     and(
                         eq(emailOutbox.template, 'billing.revocation-refund-failed'),
                         sql`${emailOutbox.payload}->>'refundId' = ${refundId}`,
-                        inArray(emailOutbox.recipientUserId, recipientIds)
+                        inArray(emailOutbox.recipientUserId, seededIds)
                     )
                 );
             expect(refundRows).toHaveLength(2);
@@ -241,7 +242,7 @@ describe('TEST:B11:20 el juego de salida contra el falso — correos, resumen, b
                     and(
                         eq(emailOutbox.template, 'billing.duplicate-charge-detected'),
                         sql`${emailOutbox.payload}->>'markId' = ${opened.mark.id}`,
-                        inArray(emailOutbox.recipientUserId, recipientIds)
+                        inArray(emailOutbox.recipientUserId, seededIds)
                     )
                 );
             expect(markRows).toHaveLength(2);
@@ -260,7 +261,7 @@ describe('TEST:B11:20 el juego de salida contra el falso — correos, resumen, b
                     .where(
                         and(
                             eq(emailOutbox.template, 'billing.reconciliation-summary'),
-                            inArray(emailOutbox.recipientUserId, recipientIds)
+                            inArray(emailOutbox.recipientUserId, seededIds)
                         )
                     )
             ).toHaveLength(0);
