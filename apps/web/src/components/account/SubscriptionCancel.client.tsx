@@ -48,7 +48,7 @@ export function SubscriptionCancel({ subscriptionId, locale }: SubscriptionCance
             setState('loadError');
         }
     }
-    async function confirm() {
+    async function confirmCancellation() {
         if (!preview || preview.origin === 'CANCEL_SCHEDULED') return;
         setState('pending');
         try {
@@ -139,7 +139,7 @@ export function SubscriptionCancel({ subscriptionId, locale }: SubscriptionCance
                 <p>{t('account.subscription.cancel.actError')}</p>
                 <button
                     type="button"
-                    onClick={() => void confirm()}
+                    onClick={() => void confirmCancellation()}
                 >
                     {t('account.subscription.cancel.retry')}
                 </button>
@@ -215,7 +215,7 @@ export function SubscriptionCancel({ subscriptionId, locale }: SubscriptionCance
                     type="button"
                     className={styles.danger}
                     data-testid="self-cancel-confirm"
-                    onClick={() => void confirm()}
+                    onClick={() => void confirmCancellation()}
                 >
                     {t('account.subscription.cancel.confirm')}
                 </button>
