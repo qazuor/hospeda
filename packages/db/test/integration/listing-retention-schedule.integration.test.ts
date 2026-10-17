@@ -104,3 +104,22 @@ describe.each(verticals)('TEST:V9b:9 AC:V9b:9 owner act register reader: %s', (v
         });
     });
 });
+
+describe('TEST:V9b:10 AC:V9b:10 retention notice deadlines', () => {
+    it('reads and validates plazo 4 from the listing deadline version', async () => {
+        await withTestTransaction(async (tx) => {
+            await expect(
+                listingRetentionScheduleModel.readRetentionNoticeDeadlines({
+                    tx,
+                    deadlinesVersion: 1
+                })
+            ).resolves.toEqual({ beforeArchiveDays: 15, beforeDeletionDays: 15 });
+            await expect(
+                listingRetentionScheduleModel.readRetentionNoticeDeadlines({
+                    tx,
+                    deadlinesVersion: 987654
+                })
+            ).rejects.toThrow('Invalid deadline version 987654');
+        });
+    });
+});
