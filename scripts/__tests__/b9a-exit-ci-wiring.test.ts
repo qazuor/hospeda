@@ -5,15 +5,13 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * B9a exit evidence (AC:B9a:16, HOS-1587, B9a.5): the static half of the
- * "Lista cuando" of B9a and what it takes from B9.
- *
- * The spec assigns this exit check no TEST id of its own (the four ids in
- * AC:B9a:16 belong to other ACs), so this file carries none. It does not run
- * the tests: the exit run and CI do that. It proves that the evidence IS in
- * the tree and is wired:
+ * "Lista cuando" of B9a and what it takes from B9. The spec assigns this exit
+ * check no TEST id of its own (the four ids in AC:B9a:16 belong to other
+ * ACs), so this file carries none. It does not run the tests: the exit run
+ * and CI do that. It proves that the evidence IS in the tree and is wired:
  *
  * - every clause of LISTA:B9a maps to its LISTA:B9 clause, AC and TEST ids,
- *   each TEST named by a test title and each clause by its evidence file;
+ *   each TEST named by a test title and each clause by its evidence files;
  * - the schema-from-empty half and every cut TEST id are in the tree;
  * - the BL clause (S13 over a succession with a retained payment,
  *   AC:B9a:17/TEST:B9a:17) left the cut by letter CU (HOS-1635, phase 2) and
@@ -22,12 +20,12 @@ import { describe, expect, it } from 'vitest';
  *
  * Every assertion is about PRESENCE: other leaves edit these files in
  * parallel, so this test never pins counts, line numbers, absences nor the
- * relative order of files. The workflow is read as text by indentation: the
- * repo has no YAML parser among its root dependencies.
+ * relative order of files.
  */
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const selfPath = fileURLToPath(import.meta.url);
 const ciYml = readFileSync(path.join(repoRoot, '.github/workflows/ci.yml'), 'utf8');
+const read = (file: string) => readFileSync(path.join(repoRoot, file), 'utf8');
 
 interface CorteEntry {
     readonly clause: number;
@@ -35,7 +33,6 @@ interface CorteEntry {
     readonly acs: readonly string[];
     readonly tests: readonly string[];
 }
-
 interface DeferredEntry {
     readonly clause: number;
     readonly what: string;
@@ -46,18 +43,12 @@ interface DeferredEntry {
     readonly letter: string;
 }
 
-interface ClauseFile {
-    readonly file: string;
-    readonly test: string;
-}
-
 // LISTA:B9a, B9a.md:1068-1078; numbering from .hoja/notas.md §4 H-7 and the §5 table.
 const CORTE_MAP: readonly CorteEntry[] = [
     { clause: 1, b9Clause: 4, acs: ['AC:B9a:12'], tests: ['TEST:B9a:12'] },
     { clause: 2, b9Clause: 7, acs: ['AC:B9a:11'], tests: ['TEST:B9a:11'] },
     { clause: 3, b9Clause: 4, acs: ['AC:B9a:12'], tests: ['TEST:B9a:12'] }
 ];
-
 // B9a.md:803, :1032; letter CU, .hoja/contexto.md §2b: BL is phase 2 (HOS-1635).
 const DEFERRED: readonly DeferredEntry[] = [
     {
@@ -70,47 +61,24 @@ const DEFERRED: readonly DeferredEntry[] = [
         letter: 'CU'
     }
 ];
-
 // AC:B9a:16 "sobre una base creada desde cero"; B9a.md:1296-1308.
 const FROM_EMPTY = {
     test: 'TEST:B9a:8',
     file: 'packages/db/test/integration/b9a-schema-from-empty.test.ts'
 } as const;
-
-// The evidence file of each clause, .hoja/notas.md §5.
-const CLAUSE_FILES: Readonly<Record<number, readonly ClauseFile[]>> = {
+// The evidence files of each clause, .hoja/notas.md §5; each names its TEST in a title.
+const CLAUSE_FILES: Readonly<Record<number, readonly string[]>> = {
     1: [
-        {
-            file: 'packages/service-core/test/services/billing/coverage/b9a-sources-composition.guard.test.ts',
-            test: 'TEST:B9a:12'
-        },
-        {
-            file: 'apps/api/test/integration/billing-subscription/grant-coverage-case-set.test.ts',
-            test: 'TEST:B9a:12'
-        }
+        'packages/service-core/test/services/billing/coverage/b9a-sources-composition.guard.test.ts',
+        'apps/api/test/integration/billing-subscription/grant-coverage-case-set.test.ts'
     ],
     2: [
-        {
-            file: 'packages/service-core/test/integration/services/permanent-grant-floor.test.ts',
-            test: 'TEST:B9a:11'
-        },
-        {
-            file: 'apps/api/test/integration/billing-permanent-grant/permanent-grant-route-floor.test.ts',
-            test: 'TEST:B9a:11'
-        },
-        {
-            file: 'apps/api/test/integration/billing-permanent-grant/cutover-step-3b.test.ts',
-            test: 'TEST:B9a:11'
-        }
+        'packages/service-core/test/integration/services/permanent-grant-floor.test.ts',
+        'apps/api/test/integration/billing-permanent-grant/permanent-grant-route-floor.test.ts',
+        'apps/api/test/integration/billing-permanent-grant/cutover-step-3b.test.ts'
     ],
-    3: [
-        {
-            file: 'packages/service-core/test/integration/services/coverage-courtesy-source.test.ts',
-            test: 'TEST:B9a:12'
-        }
-    ]
+    3: ['packages/service-core/test/integration/services/coverage-courtesy-source.test.ts']
 };
-
 // The five files of B4 the composition guard protects, b9a-sources-composition.guard.test.ts:10-16.
 const B4_FILES = [
     'packages/service-core/src/services/billing/coverage/subscription-sources.ts',
@@ -119,7 +87,6 @@ const B4_FILES = [
     'packages/service-core/src/services/billing/coverage/retention-stopped.ts',
     'packages/service-core/src/services/billing/coverage/coverage-ports.ts'
 ] as const;
-
 // B9a's own real set, grant-coverage-case-set.ts:6-11.
 const GRANT_SET = 'apps/api/test/integration/billing-subscription/grant-coverage-case-set.ts';
 const GRANT_SET_TEST =
@@ -128,7 +95,6 @@ const LIVE_GRANT_CASE =
     'a live permanent grant covers its anchored vertical with a GRANT source that carries its floor (AC:B9a:12)';
 const REAL_COURTESY_CASE =
     'the real COURTESY source emits nothing from empty tables and one source from a seeded row (AC:B9a:12)';
-
 // B9a.md:1206-1405; cut TEST ids, excluding phase 2 (6, 7, 13, 14, 17).
 const CUT_TESTS = [
     'TEST:B9a:1',
@@ -143,14 +109,10 @@ const CUT_TESTS = [
     'TEST:B9a:12',
     'TEST:B9a:16'
 ] as const;
-
 // B9a.md:1301, :1339, :1351; cut tests whose "Cubre" names AC:B9a:16.
 const SPEC_EXIT_TESTS = ['TEST:B9a:8', 'TEST:B9a:11', 'TEST:B9a:12'] as const;
 
-/**
- * Returns the lines of one job under `jobs:` (its header up to the next job
- * header or the next top-level key). Empty when the job does not exist.
- */
+/** Returns the lines of one job under `jobs:` (header up to the next job or top-level key). */
 function jobBlock({ source, job }: { readonly source: string; readonly job: string }): string {
     const lines = source.split('\n');
     const jobsAt = lines.findIndex((line) => /^jobs:\s*$/.test(line));
@@ -164,7 +126,6 @@ function jobBlock({ source, job }: { readonly source: string; readonly job: stri
     }
     return body.join('\n');
 }
-
 /** Returns the job names listed in a job's `needs:` (list or single-value form). */
 function needsOf({ block }: { readonly block: string }): readonly string[] {
     const inline = /^ {4}needs:\s*([A-Za-z0-9_-]+)\s*$/m.exec(block);
@@ -180,12 +141,10 @@ function needsOf({ block }: { readonly block: string }): readonly string[] {
     }
     return needs;
 }
-
 /** Returns the commands of every `run:` step of a job (single-line form). */
 function stepRuns({ block }: { readonly block: string }): readonly string[] {
     return [...block.matchAll(/^\s+run:\s*(.+)$/gm)].map((match) => (match[1] ?? '').trim());
 }
-
 /** Lists the test roots: `test/` and `tests/` of `apps/*` and `packages/*`, plus `scripts/__tests__`. */
 function collectTestRoots(): readonly string[] {
     const roots: string[] = [];
@@ -205,7 +164,6 @@ function collectTestRoots(): readonly string[] {
     if (existsSync(scriptsTests)) roots.push(scriptsTests);
     return roots;
 }
-
 /** Recursively collects `*.test.ts(x)`/`*.spec.ts` files, skipping build output. */
 function collectTestFiles(dir: string, out: string[]): void {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -216,23 +174,16 @@ function collectTestFiles(dir: string, out: string[]): void {
         else if (entry.isFile() && /\.(test|spec)\.tsx?$/.test(entry.name)) out.push(full);
     }
 }
-
-/**
- * Returns the titles of the `describe(`, `it(`, `test(` and `test.describe(`
- * calls of a source, also behind `.skipIf(...)`/`.runIf(...)`: the first
- * argument when it is a single-quoted, double-quoted or backtick literal.
- */
+/** Returns the literal titles of the `describe(`, `it(`, `test(` and `test.describe(` calls. */
 function testTitles({ source }: { readonly source: string }): readonly string[] {
     const call =
         /(?<![\w.$])(?:describe|it|test(?:\.describe)?)(?:\.(?:only|skip|concurrent|sequential|serial|parallel|fixme)|\.(?:skipIf|runIf)\((?:[^()]|\([^()]*\))*\)\s*)*\s*\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/g;
     return [...source.matchAll(call)].map((match) => match[2] ?? '');
 }
-
 /** True when the text names the id with a numeric boundary (`TEST:B9a:1` is not `TEST:B9a:11`). */
 function namesId({ text, id }: { readonly text: string; readonly id: string }): boolean {
     return new RegExp(`${id}(?![0-9])`).test(text);
 }
-
 /** Every test file under the roots but this one, with its source. */
 function collectSources(): readonly string[] {
     const files: string[] = [];
@@ -241,7 +192,6 @@ function collectSources(): readonly string[] {
         .filter((file) => path.resolve(file) !== path.resolve(selfPath))
         .map((file) => readFileSync(file, 'utf8'));
 }
-
 /** Every title of the test files under one root (relative to the repo root). */
 function titlesInRoot({ root }: { readonly root: string }): readonly string[] {
     const files: string[] = [];
@@ -254,8 +204,7 @@ function titlesInRoot({ root }: { readonly root: string }): readonly string[] {
 }
 
 describe('AC:B9a:16 - B9a exit: LISTA:B9a evidence in the tree, BL deferred, suite collected (HOS-1587)', () => {
-    const sources = collectSources();
-    const allTitles = sources.flatMap((source) => testTitles({ source }));
+    const allTitles = collectSources().flatMap((source) => testTitles({ source }));
     const guards = jobBlock({ source: ciYml, job: 'guards' });
     const guardsRuns = stepRuns({ block: guards });
 
@@ -268,9 +217,7 @@ describe('AC:B9a:16 - B9a exit: LISTA:B9a evidence in the tree, BL deferred, sui
                 (root) => !titlesInRoot({ root }).some((title) => title.includes('TEST:B9a:'))
             );
             // Assert
-            expect(blindRoots, `roots without a TEST:B9a title: ${blindRoots.join(', ')}`).toEqual(
-                []
-            );
+            expect(blindRoots).toEqual([]);
         });
     });
 
@@ -284,15 +231,17 @@ describe('AC:B9a:16 - B9a exit: LISTA:B9a evidence in the tree, BL deferred, sui
                     (id) => !allTitles.some((title) => namesId({ text: title, id }))
                 );
                 const missingFiles: string[] = [];
-                for (const clauseFile of clauseFiles) {
-                    const full = path.join(repoRoot, clauseFile.file);
-                    if (!existsSync(full)) {
-                        missingFiles.push(`${clauseFile.file} (missing)`);
+                for (const file of clauseFiles) {
+                    if (!existsSync(path.join(repoRoot, file))) {
+                        missingFiles.push(`${file} (missing)`);
                         continue;
                     }
-                    const fileTitles = testTitles({ source: readFileSync(full, 'utf8') });
-                    if (!fileTitles.some((title) => namesId({ text: title, id: clauseFile.test })))
-                        missingFiles.push(`${clauseFile.file} (no title names ${clauseFile.test})`);
+                    const titles = testTitles({ source: read(file) });
+                    const named = entry.tests.some((id) =>
+                        titles.some((title) => namesId({ text: title, id }))
+                    );
+                    if (!named)
+                        missingFiles.push(`${file} (no title names ${entry.tests.join(', ')})`);
                 }
                 // Assert
                 expect(
@@ -303,35 +252,22 @@ describe('AC:B9a:16 - B9a exit: LISTA:B9a evidence in the tree, BL deferred, sui
                     missingFiles,
                     `evidence files without the title: ${missingFiles.join(', ')}`
                 ).toEqual([]);
-
                 if (entry.clause === 1) {
-                    // The composition guard names all five B4 files; the real set carries the LIVE case with its floor.
-                    const guard = readFileSync(
-                        path.join(
-                            repoRoot,
-                            'packages/service-core/test/services/billing/coverage/b9a-sources-composition.guard.test.ts'
-                        ),
-                        'utf8'
+                    const guard = read(
+                        'packages/service-core/test/services/billing/coverage/b9a-sources-composition.guard.test.ts'
                     );
-                    const grantSet = readFileSync(path.join(repoRoot, GRANT_SET), 'utf8');
-                    const grantSetTest = readFileSync(path.join(repoRoot, GRANT_SET_TEST), 'utf8');
+                    const grantSet = read(GRANT_SET);
+                    const grantSetTest = read(GRANT_SET_TEST);
                     const missingB4 = B4_FILES.filter((file) => !guard.includes(file));
-                    expect(
-                        missingB4,
-                        `B4 files the guard does not name: ${missingB4.join(', ')}`
-                    ).toEqual([]);
+                    expect(missingB4, `B4 files the guard misses: ${missingB4.join(', ')}`).toEqual(
+                        []
+                    );
                     expect(grantSet).toContain(LIVE_GRANT_CASE);
                     expect(grantSet).toContain('floor');
                     expect(grantSetTest).toContain('createApiBillingCoverage({');
                     expect(grantSetTest).toContain('grantCoverageCaseSet(');
                 }
-
-                if (entry.clause === 3) {
-                    // The real COURTESY case lives in the same real set.
-                    expect(readFileSync(path.join(repoRoot, GRANT_SET), 'utf8')).toContain(
-                        REAL_COURTESY_CASE
-                    );
-                }
+                if (entry.clause === 3) expect(read(GRANT_SET)).toContain(REAL_COURTESY_CASE);
             });
         }
     });
@@ -339,21 +275,19 @@ describe('AC:B9a:16 - B9a exit: LISTA:B9a evidence in the tree, BL deferred, sui
     describe('(c) the schema from empty', () => {
         it(`${FROM_EMPTY.test} exists and is named by a title of ${FROM_EMPTY.file}`, () => {
             // Arrange
-            const full = path.join(repoRoot, FROM_EMPTY.file);
+            const exists = existsSync(path.join(repoRoot, FROM_EMPTY.file));
             // Act
-            const exists = existsSync(full);
-            const titles = exists ? testTitles({ source: readFileSync(full, 'utf8') }) : [];
+            const titles = exists ? testTitles({ source: read(FROM_EMPTY.file) }) : [];
             // Assert
-            expect(exists, `${FROM_EMPTY.file} is missing`).toBe(true);
-            expect(
-                titles.some((title) => namesId({ text: title, id: FROM_EMPTY.test })),
-                `${FROM_EMPTY.file} has no title naming ${FROM_EMPTY.test}`
-            ).toBe(true);
+            expect(exists).toBe(true);
+            expect(titles.some((title) => namesId({ text: title, id: FROM_EMPTY.test }))).toBe(
+                true
+            );
         });
     });
 
     describe('(d) the cut TEST ids, the clause coverage and the deferred BL', () => {
-        it('every cut TEST id appears in at least one test title', () => {
+        it('every cut TEST id appears in at least one test title and every exit id is in the cut', () => {
             // Arrange
             const missing = CUT_TESTS.filter(
                 (id) => !allTitles.some((title) => namesId({ text: title, id }))
@@ -364,9 +298,8 @@ describe('AC:B9a:16 - B9a exit: LISTA:B9a evidence in the tree, BL deferred, sui
             );
             // Assert
             expect(missing, `cut TEST ids without a title: ${missing.join(', ')}`).toEqual([]);
-            expect(unused, `exit TEST ids outside the cut: ${unused.join(', ')}`).toEqual([]);
+            expect(unused).toEqual([]);
         });
-
         it('the cut map plus the deferred clause cover clauses 1 to 4 without repeating', () => {
             // Arrange
             const clauses = [
@@ -377,19 +310,15 @@ describe('AC:B9a:16 - B9a exit: LISTA:B9a evidence in the tree, BL deferred, sui
             const unique = new Set(clauses);
             const missing = [1, 2, 3, 4].filter((clause) => !unique.has(clause));
             // Assert
-            expect(new Set(clauses).size, `repeated clauses: ${clauses.join(', ')}`).toBe(
-                clauses.length
-            );
-            expect(missing, `clauses without an entry: ${missing.join(', ')}`).toEqual([]);
+            expect(unique.size).toBe(clauses.length);
+            expect(missing).toEqual([]);
         });
-
         it('the BL clause is exactly one deferred entry pointing at HOS-1635 phase 2', () => {
             // Arrange
             const entry = DEFERRED[0];
             // Act
-            const deferred = [...DEFERRED];
             // Assert
-            expect(deferred).toHaveLength(1);
+            expect(DEFERRED).toHaveLength(1);
             expect(entry?.issue).toBe('HOS-1635');
             expect(entry?.phase).toBe('fase-2');
             expect(entry?.letter).toBe('CU');
@@ -398,38 +327,21 @@ describe('AC:B9a:16 - B9a exit: LISTA:B9a evidence in the tree, BL deferred, sui
     });
 
     describe('(e) the suite is collected and gated', () => {
-        it('the API integration config collects the permanent-grant and billing-subscription suites', () => {
+        it('the integration configs collect the B9a suites', () => {
             // Arrange
-            const config = readFileSync(
-                path.join(repoRoot, 'apps/api/vitest.config.integration.ts'),
-                'utf8'
-            );
+            const api = read('apps/api/vitest.config.integration.ts');
+            const serviceCore = read('packages/service-core/vitest.integration.config.ts');
+            const db = read('packages/db/vitest.config.integration.ts');
             // Act
             const includes = [
                 'test/integration/billing-permanent-grant/**/*.test.ts',
                 'test/integration/billing-subscription/**/*.test.ts'
             ];
             // Assert
-            for (const dir of includes)
-                expect(config, `missing include ${dir}`).toContain(`'${dir}'`);
-        });
-
-        it('the service-core and db integration configs collect their suites', () => {
-            // Arrange
-            const serviceCore = readFileSync(
-                path.join(repoRoot, 'packages/service-core/vitest.integration.config.ts'),
-                'utf8'
-            );
-            const db = readFileSync(
-                path.join(repoRoot, 'packages/db/vitest.config.integration.ts'),
-                'utf8'
-            );
-            // Act
-            // Assert
+            for (const dir of includes) expect(api).toContain(`'${dir}'`);
             expect(serviceCore).toContain("'test/integration/services/**/*.test.ts'");
             expect(db).toContain("'test/integration/**/*.test.ts'");
         });
-
         it('the guards job runs the scripts suite and CI Pass waits on it', () => {
             // Arrange
             const needs = needsOf({ block: jobBlock({ source: ciYml, job: 'ci-pass' }) });
@@ -439,10 +351,8 @@ describe('AC:B9a:16 - B9a exit: LISTA:B9a evidence in the tree, BL deferred, sui
             );
             // Assert
             expect(guards.length).toBeGreaterThan(0);
-            expect(guardsRuns, 'the guards job does not run pnpm test:scripts').toContain(
-                'pnpm test:scripts'
-            );
-            expect(missingJobs, `CI Pass does not wait on: ${missingJobs.join(', ')}`).toEqual([]);
+            expect(guardsRuns).toContain('pnpm test:scripts');
+            expect(missingJobs).toEqual([]);
         });
     });
 });
