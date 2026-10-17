@@ -20,7 +20,9 @@ import {
 const clock = routeClock();
 const fake = routeFake(clock);
 let app: ReturnType<typeof initApp>;
-const pathOf = (id: string) => `/api/v1/protected/billing-subscription/${id}/cancellation`;
+const pathOf = (id: string) => `/api/v1/protected/billing-subscription/${id}/cancellation-preview`;
+const cancellationPathOf = (id: string) =>
+    `/api/v1/protected/billing-subscription/${id}/cancellation`;
 const headers = (id: string) =>
     actorHeaders({ id, role: 'USER', permissions: [PermissionEnum.BILLING_VIEW_OWN] });
 beforeAll(async () => {
@@ -70,7 +72,7 @@ describe('TEST:1617:2 cancellation preview through its route', () => {
             .from(subscriptions)
             .where(eq(subscriptions.id, seeded.subscriptionId));
         expect(afterPreview).toEqual(before);
-        const act = await app.request(pathOf(seeded.subscriptionId), {
+        const act = await app.request(cancellationPathOf(seeded.subscriptionId), {
             method: 'POST',
             headers: headers(seeded.ownerId)
         });

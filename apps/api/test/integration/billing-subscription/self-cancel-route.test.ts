@@ -26,6 +26,8 @@ vi.mock('../../../src/utils/audit-logger', async (importOriginal) => ({
 }));
 let app: ReturnType<typeof initApp>;
 const pathOf = (id: string) => `/api/v1/protected/billing-subscription/${id}/cancellation`;
+const previewPathOf = (id: string) =>
+    `/api/v1/protected/billing-subscription/${id}/cancellation-preview`;
 const ownerHeaders = (id: string) => actorHeaders({ id, role: 'USER', permissions: [] });
 const ownerReadHeaders = (id: string) =>
     actorHeaders({ id, role: 'USER', permissions: [PermissionEnum.BILLING_VIEW_OWN] });
@@ -55,7 +57,7 @@ describe('TEST:1617:1 self cancellation through the protected route', () => {
     it('(a) ACTIVE schedules the S11 date shown by its preview', async () => {
         const seeded = await seedSelfActive(fake, clock);
         await presetSelfCancelNotice({ ...seeded, status: 'sent' });
-        const shown = await app.request(pathOf(seeded.subscriptionId), {
+        const shown = await app.request(previewPathOf(seeded.subscriptionId), {
             headers: ownerReadHeaders(seeded.ownerId)
         });
         expect(shown.status).toBe(200);

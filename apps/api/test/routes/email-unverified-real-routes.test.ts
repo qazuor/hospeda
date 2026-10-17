@@ -132,7 +132,7 @@ describe('TEST:V5:3 TEST:1692:1 the closed list passes step 2 on the real router
         },
         {
             op: 'READ_OWN',
-            path: `/api/v1/protected/billing-subscription/${OWNER_ID}/cancellation`,
+            path: `/api/v1/protected/billing-subscription/${OWNER_ID}/cancellation-preview`,
             permissions: [PermissionEnum.BILLING_VIEW_OWN]
         },
         {
@@ -174,7 +174,7 @@ describe('TEST:V5:3 TEST:1692:1 the closed list passes step 2 on the real router
         } else if (path.endsWith('/cancellation') && method === 'POST') {
             expect(cancellationRouteMocks.readSubscription).toHaveBeenCalled();
             expect(unverified.status).toBe(404);
-        } else if (path.endsWith('/cancellation')) {
+        } else if (path.endsWith('/cancellation-preview')) {
             expect(cancellationRouteMocks.readSubscription).toHaveBeenCalled();
             expect(unverified.status).toBe(404);
         }

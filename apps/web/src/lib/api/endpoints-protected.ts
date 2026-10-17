@@ -5516,7 +5516,7 @@ export const billingSubscriptionApi = {
         readonly subscriptionId: string;
     }): Promise<ApiResult<z.infer<typeof SubscriptionCancellationPreviewResponseSchema>>> {
         return apiClient.getProtected({
-            path: `${PROTECTED}/billing-subscription/${subscriptionId}/cancellation`
+            path: `${PROTECTED}/billing-subscription/${subscriptionId}/cancellation-preview`
         });
     },
     /** Request cancellation without a request body. */

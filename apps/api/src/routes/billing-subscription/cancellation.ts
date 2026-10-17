@@ -17,7 +17,6 @@ import {
     ServiceError
 } from '@repo/service-core';
 import type { Context } from 'hono';
-import { protectedAuthMiddleware } from '../../middlewares/authorization';
 import { getActorFromContext } from '../../utils/actor';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createErrorResponse } from '../../utils/response-helpers';
@@ -61,18 +60,15 @@ async function owned(subscriptionId: string, actorId: string) {
 /** Read the exact effects of cancelling an owned subscription. */
 export const protectedCancellationPreviewRoute = createProtectedRoute({
     method: 'get',
-    path: '/{subscriptionId}/cancellation',
+    path: '/{subscriptionId}/cancellation-preview',
     summary: 'Preview own subscription cancellation',
     description: 'Previews service end and recurrent addon effects before cancellation.',
     tags: ['Billing subscriptions'],
     emailUnverifiedOperation: 'READ_OWN',
+    requiredPermissions: [PermissionEnum.BILLING_VIEW_OWN],
     requestParams: SubscriptionCancellationParamsSchema.shape,
     responseSchema: SubscriptionCancellationPreviewResponseSchema,
     handler: async (ctx, params) => {
-        // `createProtectedRoute` scopes its permission middleware by pathname, while this
-        // POST shares the pathname and intentionally has no permission gate. Keep the
-        // read permission on the GET method itself to avoid leaking it onto the POST.
-        await protectedAuthMiddleware([PermissionEnum.BILLING_VIEW_OWN])(ctx, async () => {});
         const actor = getActorFromContext(ctx);
         const id = params.subscriptionId as string;
         await owned(id, actor.id);

@@ -464,10 +464,10 @@ The permission is the route's scope (`billing.cancelSubscription`); the subject,
 ## Self-service cancellation (B13a.1, HOS-1617)
 
 `GET /api/v1/protected/billing-subscription/` lists the caller's principal subscriptions.
-`GET /api/v1/protected/billing-subscription/{subscriptionId}/cancellation` previews the cancellation, and
-`POST` on that same path performs it. Both resource routes are owner-only: another person's subscription is
+`GET /api/v1/protected/billing-subscription/{subscriptionId}/cancellation-preview` previews the cancellation, and
+`POST /api/v1/protected/billing-subscription/{subscriptionId}/cancellation` performs it. Both resource routes are owner-only: another person's subscription is
 404, including for staff holding `billing.cancelSubscription`, because these routes are in the protected tier.
-The POST declares `CLOSE_ACCOUNT` for the unverified-email step; both GET routes declare `READ_OWN`.
+The POST declares `CLOSE_ACCOUNT` for the unverified-email step; both GET routes declare `READ_OWN`. The preview also declares `BILLING_VIEW_OWN` at the route factory, before input-shape validation.
 
 | Rejection | Status | `error.code` |
 |---|---:|---|
