@@ -459,6 +459,42 @@
                 "support_other": "{{count}} concedidos pelo suporte"
             },
             "dates": "De {{start}} a {{end}}"
+        },
+        "mine": {
+            "title": "Suas assinaturas",
+            "empty": "Você não tem assinaturas vigentes.",
+            "status": {
+                "ACTIVE": "Ativa",
+                "GRACE_PERIOD": "Pagamento pendente",
+                "SUSPENDED": "Suspensa",
+                "CANCEL_SCHEDULED": "Cancelamento solicitado"
+            },
+            "loadError": "Não conseguimos ler suas assinaturas. Recarregue a página.",
+            "scheduledUntil": "Você cancelou esta assinatura: ela continua até {{date}}.",
+            "grace": "Não conseguimos cobrar sua parcela. Se você trocar o cartão com que paga no Mercado Pago, a cobrança é tentada de novo na hora; não podemos garantir que ela passe. Se a cobrança não passar antes de {{date}}, sua assinatura é suspensa e você vai ter que assinar de novo."
+        },
+        "cancel": {
+            "open": "Cancelar assinatura",
+            "activeEnds": "Se você confirmar, cancelamos hoje a cobrança automática e você continua com o serviço até {{date}}.",
+            "suspendedEnds": "Se você confirmar, a assinatura termina hoje: ela estava suspensa, então não resta período pago.",
+            "graceEnds": "Se você confirmar, o serviço termina hoje: você perde o serviço que o período de carência lhe dava até {{date}}. Em troca, não cobramos a parcela que não conseguimos cobrar.",
+            "noMoreCharges": "Você não será cobrado de novo. Primeiro chega o nosso e-mail; depois o Mercado Pago pode enviar um avisando o cancelamento.",
+            "addonsTitle": "Estes complementos recorrentes são cancelados com a sua assinatura:",
+            "addon": {
+                "CHARGE_CUT_TODAY": "{{name}}: {{price}} {{cycle}}. A cobrança para hoje e você continua vendo até {{date}}.",
+                "AT_SERVICE_END": "{{name}}: {{price}} {{cycle}}. Está aguardando autorização ou tem uma cobrança pendente: desliga em {{date}}, com o fim do serviço.",
+                "TODAY": "{{name}}: {{price}} {{cycle}}. Desliga hoje com a sua assinatura."
+            },
+            "addonsComeBack": "Se você voltar, contrata de novo: eles não são retomados.",
+            "confirm": "Confirmar o cancelamento",
+            "back": "Voltar",
+            "pending": "Cancelando…",
+            "loadError": "Não conseguimos ler o que acontece se você cancelar esta assinatura. Tente de novo.",
+            "retry": "Tentar de novo",
+            "actError": "Não conseguimos cancelar sua assinatura. Tente de novo.",
+            "stateChanged": "Sua assinatura mudou enquanto você olhava. Recarregue a página para ver como ficou.",
+            "doneScheduled": "Pronto: você cancelou sua assinatura. Ela continua até {{date}}.",
+            "doneEnded": "Pronto: você cancelou sua assinatura. O serviço terminou hoje."
         }
     },
     "favorites": {

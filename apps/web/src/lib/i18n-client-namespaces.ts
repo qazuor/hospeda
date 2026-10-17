@@ -90,6 +90,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.searchHistory',
     'account.setPassword',
     'account.status',
+    'account.subscription',
     'account.welcomeTour',
     'account.whatsNewBadge',
     'account.whatsNewModal',
