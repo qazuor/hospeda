@@ -21,7 +21,14 @@ import { selectComplementTargets } from './complement-selection.js';
 import { computeS11ServiceEnd, readS11ServiceEndFacts } from './s11-service-end.js';
 
 const inputSchema = z.strictObject({
-    actor: z.custom<Actor>((v) => typeof v === 'object' && v !== null),
+    actor: z.custom<Actor>((value) => {
+        if (typeof value !== 'object' || value === null) return false;
+        const actor = value as { readonly id?: unknown; readonly permissions?: unknown };
+        return (
+            z.uuid().safeParse(actor.id).success &&
+            z.array(z.string()).safeParse(actor.permissions).success
+        );
+    }),
     subscriptionId: z.string()
 });
 const cycles = ['monthly', 'quarterly', 'semiannual', 'annual'] as const;
@@ -147,12 +154,29 @@ export async function previewSubscriptionCancellation(
                 ));
             }
             const targetIds = new Set(targets.map((target) => target.instanceId));
+            const complementIds = candidates
+                .map((candidate) => candidate.complementSubscriptionId)
+                .filter((id): id is string => id !== null);
+            const activeComplements = complementIds.length
+                ? await tx
+                      .select({ id: subscriptions.id })
+                      .from(subscriptions)
+                      .where(
+                          and(
+                              inArray(subscriptions.id, complementIds),
+                              eq(subscriptions.status, 'ACTIVE')
+                          )
+                      )
+                : [];
+            const activeComplementIds = new Set(activeComplements.map((row) => row.id));
             const candidateIds = candidates
                 .filter(
                     (candidate) =>
                         (candidate.scopeType !== 'USER' && candidate.scopeType !== 'GLOBAL') ||
                         candidate.status !== 'ACTIVE' ||
-                        targetIds.has(candidate.id)
+                        targetIds.has(candidate.id) ||
+                        !candidate.complementSubscriptionId ||
+                        !activeComplementIds.has(candidate.complementSubscriptionId)
                 )
                 .map((candidate) => candidate.id);
             const rows = candidateIds.length
