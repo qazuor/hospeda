@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { type ReconciliationMarkReason, reconciliationZeroCallModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import type { AddonOrphanhoodPorts } from '../../addon/addon-orphanhood-ports.js';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
 import { runAddonWithoutShutdownCheck } from './addon-without-shutdown-check.js';
 import { recordDivergence } from './reconciliation-divergence.js';
 import {
+    type AddonWithoutShutdownPorts,
     type RetainedPaymentBranchResolver,
     type RetainedPaymentsSource,
     unimplementedRetainedPaymentBranchResolver,
@@ -33,7 +33,7 @@ export interface ZeroCallChecksPorts {
     /** Resolver for the corresponding B/12 §5.3 branch. */
     readonly retainedPaymentBranches?: RetainedPaymentBranchResolver;
     /** Orphanhood reader for the fourth zero-call check. */
-    readonly addonOrphanhood?: AddonOrphanhoodPorts;
+    readonly addonOrphanhood?: AddonWithoutShutdownPorts;
 }
 
 /** Counts and isolated failures for one run of the three checks. */
