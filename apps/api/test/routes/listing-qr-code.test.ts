@@ -109,8 +109,8 @@ const CASES = [
     {
         label: 'accommodation',
         service: AccommodationService,
-        /** The permission that lets staff read somebody else's code. */
-        staffPermission: PermissionEnum.ACCOMMODATION_UPDATE_ANY,
+        /** The inspection permission that lets staff read somebody else's code. */
+        staffPermission: PermissionEnum.ACCOMMODATION_VIEW_ALL,
         /** The path segment the minted destination must carry. */
         segment: 'alojamientos',
         importRoute: async () => {
@@ -325,5 +325,47 @@ describe.each(CASES)('GET /protected/$label/:id/qr (HOS-982)', ({
 
         expect(res.status).toBe(404);
         expect(body.error?.code).toBe('NOT_FOUND');
+    });
+});
+
+describe('TEST:1693:2 the accommodation QR reads a foreign listing only with the inspection permission', () => {
+    it('denies UPDATE_ANY alone with the same 404 as a stranger and does not mint', async () => {
+        vi.spyOn(AccommodationService.prototype, 'getById').mockResolvedValue({
+            data: publishedListing({ ownerId: OTHER_OWNER_ID })
+        } as never);
+        const route = (await import('../../src/routes/accommodation/protected/qrCode.js'))
+            .protectedGetAccommodationQrCodeRoute;
+        const staff = await buildApp(route, {
+            ...ownerActor,
+            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
+        }).request(`/${LISTING_ID}/qr`);
+        const stranger = await buildApp(route, ownerActor).request(`/${LISTING_ID}/qr`);
+        const { metadata: _staffMetadata, ...staffBody } = await staff.json();
+        const { metadata: _strangerMetadata, ...strangerBody } = await stranger.json();
+
+        expect({ status: staff.status, body: staffBody }).toEqual({
+            status: stranger.status,
+            body: strangerBody
+        });
+        expect(staff.status).toBe(404);
+        expect(mintSpy).not.toHaveBeenCalled();
+    });
+
+    it('lets VIEW_ALL read a foreign published listing and mints its entity QR', async () => {
+        vi.spyOn(AccommodationService.prototype, 'getById').mockResolvedValue({
+            data: publishedListing({ ownerId: OTHER_OWNER_ID })
+        } as never);
+        const route = (await import('../../src/routes/accommodation/protected/qrCode.js'))
+            .protectedGetAccommodationQrCodeRoute;
+        const res = await buildApp(route, {
+            ...ownerActor,
+            permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL]
+        }).request(`/${LISTING_ID}/qr`);
+
+        expect(res.status).toBe(200);
+        expect(mintSpy).toHaveBeenCalledTimes(1);
+        expect(mintSpy.mock.calls[0]?.[0]).toEqual(
+            expect.objectContaining({ entityId: LISTING_ID })
+        );
     });
 });

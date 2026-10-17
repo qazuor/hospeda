@@ -50,7 +50,7 @@ describe('TEST:1692:7 the staff bypass set covers every permission read on a clo
         ].sort();
         expect(closedListRows).toHaveLength(21);
         expect(permissions).toEqual([
-            'ACCOMMODATION_UPDATE_ANY',
+            'ACCOMMODATION_VIEW_ALL',
             'BILLING_VIEW_OWN',
             'EXPERIENCE_VIEW_ALL',
             'GASTRONOMY_VIEW_ALL',

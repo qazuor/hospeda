@@ -119,8 +119,8 @@ export async function handleGetAccommodationQrCode(
 
     const entity = result.data;
 
-    const hasUpdateAny = actor.permissions?.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY);
-    if (!entity || (!hasUpdateAny && entity.ownerId !== actor.id)) {
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.ACCOMMODATION_VIEW_ALL);
+    if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: AccommodationService.ENTITY_NAME });
     }
 
