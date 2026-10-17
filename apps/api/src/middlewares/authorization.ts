@@ -7,7 +7,7 @@
  */
 
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import type { Actor } from '@repo/service-core';
+import { type Actor, PartnerService } from '@repo/service-core';
 import type { EmailUnverifiedAllowedOperation } from '@repo/verticals';
 import { resolvePersonStateStep } from '@repo/verticals';
 import type { MiddlewareHandler } from 'hono';
@@ -26,6 +26,32 @@ const ADMIN_ACCESS_PERMISSIONS: PermissionEnum[] = [
     PermissionEnum.ACCESS_PANEL_ADMIN,
     PermissionEnum.ACCESS_API_ADMIN
 ];
+
+/**
+ * Resolve the real Partner ownership link only when it changes CHANGE_EMAIL's
+ * step-2 decision. V5 permits that operation only without a Partner link; the
+ * link is partners.owner_user_id, read through PartnerService.getOwn (no SQL
+ * here). PARTNER_OWNER is not a link and G6 forbids deciding by role. Lookup
+ * failures fail closed (Coord-242).
+ */
+async function resolvePartnerLinkForStep2(args: {
+    actor: Actor;
+    operation: EmailUnverifiedAllowedOperation | undefined;
+}): Promise<boolean | undefined> {
+    if (args.actor.emailVerified !== false || args.operation !== 'CHANGE_EMAIL') {
+        return undefined;
+    }
+
+    try {
+        const result = await new PartnerService({ logger: apiLogger }).getOwn(args.actor);
+        if (result.error) {
+            throw new HTTPException(503, { message: 'Service temporarily unavailable' });
+        }
+        return result.data.partner !== null;
+    } catch {
+        throw new HTTPException(503, { message: 'Service temporarily unavailable' });
+    }
+}
 
 /**
  * Check if actor has any of the specified permissions
@@ -206,7 +232,11 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
 
             const personState = resolvePersonStateStep({
                 emailVerified: actor.emailVerified,
-                operation: emailUnverifiedOperation
+                operation: emailUnverifiedOperation,
+                hasPartnerLink: await resolvePartnerLinkForStep2({
+                    actor,
+                    operation: emailUnverifiedOperation
+                })
             });
             if (!personState.allowed) {
                 apiLogger.warn('Email verification required for protected route');
