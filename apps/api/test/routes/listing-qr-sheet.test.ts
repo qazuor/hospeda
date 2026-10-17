@@ -288,6 +288,8 @@ describe('TEST:1693:3 the accommodation QR sheet reads a foreign listing only wi
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
         }).request(`/${LISTING_ID}/qr-sheet`);
         const stranger = await buildApp(route, ownerActor).request(`/${LISTING_ID}/qr-sheet`);
+        expect(staff.status).toBe(404);
+        expect(stranger.status).toBe(404);
         const { metadata: _staffMetadata, ...staffBody } = await staff.json();
         const { metadata: _strangerMetadata, ...strangerBody } = await stranger.json();
 
