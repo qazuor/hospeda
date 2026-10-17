@@ -209,12 +209,10 @@ function needsOf({ block }: { readonly block: string }): readonly string[] {
     return needs;
 }
 
-/** Returns the single-line `run:` commands of a job. */
 function stepRuns({ block }: { readonly block: string }): readonly string[] {
     return [...block.matchAll(/^\s+run:\s*(.+)$/gm)].map((match) => (match[1] ?? '').trim());
 }
 
-/** Resolves each `pnpm <script>` in `check:guards` to its package script. */
 function checkGuardsCommands(): readonly string[] {
     const chain = rootPkg.scripts['check:guards'] ?? '';
     return chain.split('&&').map((part) => {
@@ -262,7 +260,6 @@ function testTitles({ source }: { readonly source: string }): readonly string[] 
     return [...source.matchAll(call)].map((match) => match[2] ?? '');
 }
 
-/** True when an id ends at a non-numeric boundary (`TEST:V5:1` is not `:10`). */
 function namesId({ text, id }: { readonly text: string; readonly id: string }): boolean {
     return new RegExp(`${id}(?![0-9])`).test(text);
 }
