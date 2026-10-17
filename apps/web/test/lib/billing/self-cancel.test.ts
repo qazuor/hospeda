@@ -31,7 +31,19 @@ describe('self-cancel helpers', () => {
     });
     it('parses valid reads and fails closed for errors or malformed bodies', () => {
         const valid = { ok: true, data: { subscriptions: [] } };
+        const validPreview = {
+            ok: true,
+            data: {
+                subscriptionId: '123e4567-e89b-42d3-a456-426614174000',
+                vertical: 'accommodation',
+                paymentMethod: 'CARD',
+                origin: 'ACTIVE',
+                serviceEndsAt: '2026-11-05T03:00:00.000Z',
+                addons: []
+            }
+        };
         expect(parseOwnSubscriptions({ result: valid })).toEqual(valid.data);
+        expect(parseCancellationPreview({ result: validPreview })).toEqual(validPreview.data);
         expect(parseOwnSubscriptions({ result: { ok: false } })).toBeNull();
         expect(parseOwnSubscriptions({ result: { ok: true, data: {} } })).toBeNull();
         expect(parseCancellationPreview({ result: { ok: false } })).toBeNull();
