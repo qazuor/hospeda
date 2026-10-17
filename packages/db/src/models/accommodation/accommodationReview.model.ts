@@ -1,4 +1,6 @@
 import type { AccommodationReview } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
+import { and } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodationReviews } from '../../schemas/accommodation/accommodation_review.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -33,12 +35,14 @@ export class AccommodationReviewModel extends BaseModelImpl<AccommodationReview>
      * @param where - The filter object to apply
      * @param options - Optional pagination parameters
      * @param tx - Optional transaction client
+     * @param additionalConditions - Extra SQL filters applied to both item and count queries
      * @returns Promise resolving to reviews with user data
      */
     async findAllWithUser(
         where: Record<string, unknown>,
         options?: { page?: number; pageSize?: number },
-        tx?: DrizzleClient
+        tx?: DrizzleClient,
+        additionalConditions?: SQL[]
     ): Promise<{
         items: AccommodationReviewWithRelations[];
         total: number;
@@ -52,17 +56,20 @@ export class AccommodationReviewModel extends BaseModelImpl<AccommodationReview>
 
         try {
             const whereClause = buildWhereClause(safeWhere, this.table);
+            const combinedWhere = additionalConditions?.length
+                ? and(whereClause, ...additionalConditions)
+                : whereClause;
 
             if (isPaginated) {
                 const offset = (page - 1) * pageSize;
                 const [items, total] = await Promise.all([
                     db.query.accommodationReviews.findMany({
-                        where: whereClause,
+                        where: combinedWhere,
                         with: { user: true, accommodation: true },
                         limit: pageSize,
                         offset: offset
                     }),
-                    this.count(safeWhere, { tx })
+                    this.count(safeWhere, { tx, additionalConditions })
                 ]);
 
                 const result = {
@@ -77,7 +84,7 @@ export class AccommodationReviewModel extends BaseModelImpl<AccommodationReview>
             }
 
             const items = await db.query.accommodationReviews.findMany({
-                where: whereClause,
+                where: combinedWhere,
                 with: { user: true, accommodation: true }
             });
 
