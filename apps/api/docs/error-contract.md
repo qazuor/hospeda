@@ -53,7 +53,7 @@ response is identical whether the account holds the permission or not, so it
 cannot be used to probe permissions. The allowed operations are `VERIFY_EMAIL`,
 `CHANGE_EMAIL` (except with a Partner link), `READ_OWN`, `EXPORT`,
 `REACTIVATE_LISTING`, `DELETE_LISTING`, `REGULARIZE_CHARGE`, and `CLOSE_ACCOUNT`.
-They are declared by `emailUnverifiedOperation` on `createProtectedRoute`.
+They are declared by `emailUnverifiedOperation` on `createProtectedRoute` and `createProtectedListRoute`. For `CHANGE_EMAIL`, the Partner link is read through `PartnerService.getOwn`; a failed lookup returns 503.
 
 ### The coverage step (V5.3, HOS-1457)
 
