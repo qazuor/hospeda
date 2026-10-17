@@ -139,10 +139,12 @@ describe('TEST:1686:1 AC:1686:1 AC:1686:4 listingReviewsShownCondition', () => {
                         SELECT id FROM ${fixture.reviewTable}
                         WHERE ${fixture.fk} = ${fixture.listing.id}
                           AND ${listingReviewsShownCondition({ vertical: fixture.vertical })}`);
-                    expect(
-                        result.rows.map((row) => row.id),
-                        `${fixture.vertical} ${status}`
-                    ).toEqual(status === PublicationStatusEnum.PURGED ? [] : [review.id]);
+                    expect
+                        .soft(
+                            result.rows.map((row) => row.id),
+                            `${fixture.vertical} ${status}`
+                        )
+                        .toEqual(status === PublicationStatusEnum.PURGED ? [] : [review.id]);
                     await tx
                         .delete(fixture.reviewTable)
                         .where(sql`${fixture.reviewTable.id} = ${review.id}`);
