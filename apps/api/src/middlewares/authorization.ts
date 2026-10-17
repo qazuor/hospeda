@@ -17,6 +17,7 @@ import { getActorFromContext, isGuestActor } from '../utils/actor';
 import { AuditEventType, auditLog } from '../utils/audit-logger';
 import { apiLogger } from '../utils/logger';
 import { createErrorResponse } from '../utils/response-helpers';
+import { stripStaffBypassPermissions } from './step2-staff-bypass';
 
 /**
  * Permissions that grant admin-level access
@@ -259,9 +260,18 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
                 );
             }
 
+            // AC:1692:5 removes staff bypasses only after step 2 admits the request.
+            // Do this before the permission gate so a staff gate gives the same answer
+            // as an actor without that permission.
+            const gatedActor =
+                actor.emailVerified === false && emailUnverifiedOperation !== undefined
+                    ? stripStaffBypassPermissions({ actor }).actor
+                    : actor;
+            if (gatedActor !== actor) c.set('actor', gatedActor);
+
             // If specific permissions are required, check them
             if (hasPermissionGate(requiredPermissions, anyOfPermissions)) {
-                if (!passesPermissionGate(actor, requiredPermissions, anyOfPermissions)) {
+                if (!passesPermissionGate(gatedActor, requiredPermissions, anyOfPermissions)) {
                     apiLogger.warn(
                         `Forbidden: Actor ${actor.id} lacks required permissions for protected route`
                     );
