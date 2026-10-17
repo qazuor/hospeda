@@ -222,7 +222,6 @@ describe('TEST:V9b:13 production retention pass', () => {
             .from(accommodations)
             .where(eq(accommodations.id, id));
         expect(row?.status).toBe(Status.ARCHIVED);
-        expect(row?.status).toBe(Status.ARCHIVED);
     });
 
     it('does not enqueue for MODERATED listings while retention is stopped', async () => {
