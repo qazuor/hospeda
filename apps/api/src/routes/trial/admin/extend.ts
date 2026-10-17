@@ -19,7 +19,7 @@ export const adminExtendTrialRoute = createAdminRoute({
     path: '/extend',
     summary: 'Extend a trial',
     description:
-        'Administrative action 11: extends a running trial past the ceiling with a mandatory reason.',
+        "Administrative action 11: extends a running trial past the ceiling with a mandatory reason on another person's account; the actor's own account is refused at step 3.",
     tags: ['Trials'],
     requiredPermissions: [PermissionEnum.TRIAL_EXTEND],
     requestBody: AdminExtendTrialRequestSchema,
