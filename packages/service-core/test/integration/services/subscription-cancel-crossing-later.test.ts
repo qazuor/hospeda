@@ -130,6 +130,14 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 honestAbout: [{ lie: 'M8', why: 'TEST:B8a:11 reads charges approved at once' }]
             });
             const seeded = await seedCrossingDirect({ fake, status, preapproval: 'LIVE' });
+            if (transition === 'S23')
+                await getServiceTestDb()
+                    .update(subscriptions)
+                    .set({
+                        graceStartedAt: new Date('2026-10-10T12:00:00.000Z'),
+                        graceEndsAt: new Date('2026-10-17T12:00:00.000Z')
+                    })
+                    .where(eq(subscriptions.id, seeded.subscriptionId));
             await cancelDirectSubscription(
                 { actor: owner(seeded.userId), subscriptionId: seeded.subscriptionId },
                 {
