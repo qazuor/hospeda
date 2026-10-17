@@ -7,26 +7,41 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@repo/db', () => ({
-    accommodationReviews: {
-        lifecycleState: 'lifecycleState',
-        deletedAt: 'deletedAt',
-        userId: 'userId',
-        createdAt: 'createdAt'
-    },
-    users: {
-        id: 'id',
-        image: 'image',
-        profile: 'profile',
-        deletedAt: 'deletedAt'
-    },
-    getDb: vi.fn()
-}));
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/db')>();
+    return {
+        accommodationReviews: {
+            lifecycleState: 'lifecycleState',
+            deletedAt: 'deletedAt',
+            userId: 'userId',
+            createdAt: 'createdAt'
+        },
+        users: {
+            id: 'id',
+            image: 'image',
+            profile: 'profile',
+            deletedAt: 'deletedAt'
+        },
+        getDb: vi.fn(),
+        listingReviewsShownCondition: vi.fn(actual.listingReviewsShownCondition)
+    };
+});
 
 import * as dbModule from '@repo/db';
 import { StatsService } from '../../../src/services/stats/stats.service.js';
 
 const mockGetDb = dbModule.getDb as unknown as ReturnType<typeof vi.fn>;
+const mockListingReviewsShownCondition =
+    dbModule.listingReviewsShownCondition as unknown as ReturnType<typeof vi.fn>;
+
+function containsCondition(value: unknown, expected: unknown): boolean {
+    if (value === expected) return true;
+    if (Array.isArray(value)) return value.some((item) => containsCondition(item, expected));
+    if (typeof value === 'object' && value !== null && 'queryChunks' in value) {
+        return containsCondition((value as { queryChunks: unknown }).queryChunks, expected);
+    }
+    return false;
+}
 
 /**
  * Builds a chainable `db.select().from().where()` mock that resolves to the
@@ -59,15 +74,24 @@ describe('StatsService.getGlobalAccommodationAverageRating', () => {
         expect(result).toBe(0);
     });
 
-    it('coerces a string AVG result to a number rounded to 2 decimals', async () => {
+    it('adds the PURGED visibility condition and rounds the result', async () => {
         // Arrange — Drizzle `numeric()` columns may surface as strings.
-        mockGetDb.mockReturnValue(buildDbStub([{ avg: '4.3567' }]));
+        const stub = buildDbStub([{ avg: '4.3567' }]);
+        mockGetDb.mockReturnValue(stub);
 
         // Act
         const result = await service.getGlobalAccommodationAverageRating();
 
         // Assert
         expect(result).toBe(4.36);
+        expect(mockListingReviewsShownCondition).toHaveBeenCalledOnce();
+        expect(mockListingReviewsShownCondition).toHaveBeenCalledWith({
+            vertical: 'accommodation'
+        });
+        const condition = mockListingReviewsShownCondition.mock.results[0]?.value;
+        expect(containsCondition(stub.select().from().where.mock.calls[0]?.[0], condition)).toBe(
+            true
+        );
     });
 
     it('clamps values above 5 down to 5', async () => {
@@ -127,7 +151,7 @@ function buildAvatarsDbStub(
     const innerJoin = vi.fn().mockReturnValue({ where });
     const from = vi.fn().mockReturnValue({ innerJoin });
     const select = vi.fn().mockReturnValue({ from });
-    return { db: { select } as const, limit } as const;
+    return { db: { select } as const, limit, where } as const;
 }
 
 describe('StatsService.getRecentReviewerAvatars', () => {
@@ -164,6 +188,12 @@ describe('StatsService.getRecentReviewerAvatars', () => {
         const result = await service.getRecentReviewerAvatars({ limit: 4 });
 
         expect(result).toEqual(['https://cdn.example.com/social.jpg']);
+        expect(mockListingReviewsShownCondition).toHaveBeenCalledOnce();
+        expect(mockListingReviewsShownCondition).toHaveBeenCalledWith({
+            vertical: 'accommodation'
+        });
+        const condition = mockListingReviewsShownCondition.mock.results[0]?.value;
+        expect(containsCondition(stub.where.mock.calls[0]?.[0], condition)).toBe(true);
     });
 
     it('falls back to profile.avatar when users.image is null', async () => {
