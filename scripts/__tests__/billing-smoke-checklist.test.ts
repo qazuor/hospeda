@@ -74,7 +74,7 @@ describe('HOS-1622 TEST:B13a:14 (support) AC:B13a:14 the new-system smoke checkl
 
     it('every S* item has the five required lines', () => {
         const itemMatches = [
-            ...source.matchAll(/### (S\d+ — .+?)\n([\s\S]*?)(?=### P\d+|### Sign-off|$)/g)
+            ...source.matchAll(/### (S\d+ — .+?)\n([\s\S]*?)(?=### S\d+|### Sign-off|$)/g)
         ];
         for (const [, _id, body] of itemMatches) {
             expect(body).toContain('**Preconditions:**');
