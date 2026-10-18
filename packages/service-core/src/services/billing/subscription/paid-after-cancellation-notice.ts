@@ -14,7 +14,14 @@ const inputSchema = z.strictObject({
     recurringAddonsCut: z.boolean()
 });
 
-/** Enqueues the once-per-subscription notice when a credited payment arrives after cancellation. */
+/**
+ * Enqueues the once-per-subscription notice when a credited payment arrives after cancellation.
+ * The recipient is read through the caller's transaction so the notice commits with the row
+ * transition. Missing users or email addresses are logged and skipped.
+ *
+ * @param input - Transaction, subscription, persisted service end, and recurring-addon outcome
+ * @returns Resolves after enqueueing the notice or skipping an unavailable recipient
+ */
 export async function enqueuePaidAfterCancellationNotice(input: {
     readonly tx: DrizzleClient;
     readonly subscription: SelectSubscription;
