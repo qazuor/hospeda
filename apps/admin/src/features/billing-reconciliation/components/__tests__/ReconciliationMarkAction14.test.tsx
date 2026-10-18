@@ -34,6 +34,7 @@ vi.mock('@/lib/api/client', () => ({ fetchApi: state.fetchApi }));
 const paymentId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const mark = (reason: string, source: 'PAYMENT' | 'MANUAL_PAYMENT' = 'PAYMENT') => ({
     markId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    version: 1,
     reason,
     reasonNumber: reason === 'REEMBOLSO_FUERA_DEL_FLUJO' ? 18 : 19,
     refundConfirmation: false,

@@ -227,7 +227,7 @@ describe('TEST:1620:9 actionable reconciliation marks screen', () => {
                 pagination: { page: 1, pageSize: 50, total: 1, totalPages: 1 }
             }
         };
-        render(<ReconciliationMarksScreen />);
+        renderScreen();
         const article = screen.getByTestId('reconciliation-mark');
         expect(article).toBeInTheDocument();
         expect(within(article).getByTestId('reconciliation-mark-action14')).toHaveAttribute(
@@ -248,7 +248,7 @@ describe('TEST:1620:9 actionable reconciliation marks screen', () => {
                 pagination: { page: 1, pageSize: 50, total: 1, totalPages: 1 }
             }
         };
-        render(<ReconciliationMarksScreen />);
+        renderScreen();
         const article = screen.getByTestId('reconciliation-mark');
         expect(article).toBeInTheDocument();
         expect(
