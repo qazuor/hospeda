@@ -20,6 +20,7 @@ export async function seedUnrecordedApprovedCharge() {
         amount: { amountMinor: 10000, currency: 'ARS' },
         reference: `b59-charge-${crypto.randomUUID()}`
     });
+    chargeClock.set(new Date(chargeClock.now().getTime() + 60 * 60 * 1000));
     await chargeFake.readCharge({ chargeId: charge.chargeId });
     return { ...seeded, chargeId: charge.chargeId };
 }
