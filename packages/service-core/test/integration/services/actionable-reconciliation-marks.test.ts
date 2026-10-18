@@ -13,10 +13,13 @@ import { createPaymentReconciliationMarkPayments } from '../../../src/services/b
 import { readReconciliationMarkEvents } from '../../../src/services/billing/reconciliation/actionable-mark-events.js';
 import { listActionableReconciliationMarks } from '../../../src/services/billing/reconciliation/actionable-marks.js';
 import { liftReconciliationMark } from '../../../src/services/billing/reconciliation/lift-reconciliation-mark.service.js';
+import { liftReconciliationMarkByAdmin } from '../../../src/services/billing/reconciliation/lift-reconciliation-mark-by-admin.service.js';
 import { openReconciliationMark } from '../../../src/services/billing/reconciliation/open-reconciliation-mark.service.js';
 import type { HangablePayment } from '../../../src/services/billing/reconciliation/reconciliation-mark-payments.port.js';
 import { lateRejectionDetail } from '../../../src/services/billing/subscription/late-payment-conditions.js';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers.js';
+import { seedLiftAdmin } from './support/admin-lift-fixtures.js';
+import { markPaymentClock } from './support/mark-payment-fixtures.js';
 
 type Fixture = {
     readonly userId: string;
@@ -204,6 +207,30 @@ async function allActionableMarks() {
 }
 
 describe('TEST:1620:6 — actionable reconciliation mark reads', () => {
+    it('TEST:1697:14 AC:1697:2 lists each open mark with the version a lift must name', async () => {
+        const fixture = await seedFixture();
+        const opened = await open(fixture, 'COBRO_DUPLICADO');
+        let listed = await listActionableReconciliationMarks({ page: 1, pageSize: 100 });
+        expect(listed.items.find((item) => item.markId === opened.mark.id)?.version).toBe(1);
+
+        const payment = await seedProviderPayment(fixture.subscriptionId, 250000);
+        const accumulated = await open(fixture, 'COBRO_DUPLICADO', payment);
+        listed = await listActionableReconciliationMarks({ page: 1, pageSize: 100 });
+        const version = listed.items.find((item) => item.markId === accumulated.mark.id)?.version;
+        expect(version).toBe(2);
+        const admin = await seedLiftAdmin();
+        const result = await liftReconciliationMarkByAdmin(
+            {
+                actor: admin,
+                markId: accumulated.mark.id,
+                expectedVersion: version!,
+                resolveWithoutRefund: [payment]
+            },
+            { clock: markPaymentClock }
+        );
+        expect(result.version).toBe(version! + 1);
+    });
+
     it('a-g/i: lists mark units and resolves only the current reason-7 events from placed_at', async () => {
         const subject = await seedFixture({ status: 'GRACE_PERIOD' });
         const otherSubject = await seedFixture();
