@@ -8,8 +8,14 @@ const logger = createLogger('paid-after-cancellation-notice');
 export const PAID_AFTER_CANCELLATION_TEMPLATE = 'billing.paid-after-cancellation';
 
 const inputSchema = z.strictObject({
-    tx: z.custom<DrizzleClient>(),
-    subscription: z.custom<SelectSubscription>(),
+    tx: z.custom<DrizzleClient>((value) => typeof value === 'object' && value !== null),
+    subscription: z
+        .object({
+            id: z.string().uuid(),
+            userId: z.string().uuid().nullable(),
+            vertical: z.string().nullable()
+        })
+        .passthrough(),
     serviceEndsAt: z.date(),
     recurringAddonsCut: z.boolean()
 });
