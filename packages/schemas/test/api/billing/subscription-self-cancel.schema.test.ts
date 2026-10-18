@@ -7,6 +7,35 @@ import {
 
 describe('self cancellation schemas', () => {
     const ownSubscriptions = { subscriptions: [], deferredCourtesies: [] };
+    const ownRow = {
+        id: '00000000-0000-4000-8000-000000000001',
+        vertical: 'accommodation',
+        status: 'CANCEL_SCHEDULED',
+        paymentMethod: 'CARD',
+        serviceEndsAt: new Date().toISOString(),
+        graceEndsAt: null,
+        createdAt: new Date().toISOString()
+    };
+    it('requires paidAfterCancellation and accepts null or the addon outcome', () => {
+        expect(
+            OwnSubscriptionsResponseSchema.safeParse({
+                ...ownSubscriptions,
+                subscriptions: [{ ...ownRow, paidAfterCancellation: null }]
+            }).success
+        ).toBe(true);
+        expect(
+            OwnSubscriptionsResponseSchema.safeParse({
+                ...ownSubscriptions,
+                subscriptions: [{ ...ownRow, paidAfterCancellation: { recurringAddonsCut: true } }]
+            }).success
+        ).toBe(true);
+        expect(
+            OwnSubscriptionsResponseSchema.safeParse({
+                ...ownSubscriptions,
+                subscriptions: [ownRow]
+            }).success
+        ).toBe(false);
+    });
     it('accepts an empty or populated deferred courtesy list', () => {
         expect(OwnSubscriptionsResponseSchema.safeParse(ownSubscriptions).success).toBe(true);
         expect(
