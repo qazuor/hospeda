@@ -2,7 +2,7 @@
 import es from '@repo/i18n/locales/es/admin-billing.json';
 import { PermissionEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/lib/errors';
 import { ReconciliationMarkAction14 } from '../ReconciliationMarkAction14';
@@ -66,9 +66,14 @@ const mark = (reason: string, source: 'PAYMENT' | 'MANUAL_PAYMENT' = 'PAYMENT') 
 const renderAction = (value: ReturnType<typeof mark>) => {
     const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
     return render(
-        <QueryClientProvider client={client}>
-            <ReconciliationMarkAction14 mark={value} />
-        </QueryClientProvider>
+        <article
+            data-testid="reconciliation-mark"
+            data-mark-id={value.markId}
+        >
+            <QueryClientProvider client={client}>
+                <ReconciliationMarkAction14 mark={value} />
+            </QueryClientProvider>
+        </article>
     );
 };
 const permit = () => {
@@ -93,14 +98,24 @@ describe('TEST:1621:6 action 14 from reconciliation marks', () => {
     });
 
     it('b) hides the action without its route permission', () => {
-        const { container } = renderAction(mark('REEMBOLSO_FUERA_DEL_FLUJO'));
-        expect(container).toBeEmptyDOMElement();
+        const value = mark('REEMBOLSO_FUERA_DEL_FLUJO');
+        renderAction(value);
+        const article = screen.getByTestId('reconciliation-mark');
+        expect(article).toHaveAttribute('data-mark-id', value.markId);
+        expect(
+            within(article).queryByTestId('reconciliation-mark-action14')
+        ).not.toBeInTheDocument();
     });
 
     it('c) offers nothing for mark 7', () => {
         permit();
-        const { container } = renderAction({ ...mark('PAGO_TARDIO_RECHAZADO'), reasonNumber: 7 });
-        expect(container).toBeEmptyDOMElement();
+        const value = { ...mark('PAGO_TARDIO_RECHAZADO'), reasonNumber: 7 };
+        renderAction(value);
+        const article = screen.getByTestId('reconciliation-mark');
+        expect(article).toHaveAttribute('data-mark-id', value.markId);
+        expect(
+            within(article).queryByTestId('reconciliation-mark-action14')
+        ).not.toBeInTheDocument();
     });
 
     it('d) describes the settlement and makes no request before confirmation', async () => {
