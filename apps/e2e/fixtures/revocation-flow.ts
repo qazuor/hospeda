@@ -39,8 +39,9 @@ export async function seedPausedSubscription(args: {
     };
 }): Promise<void> {
     await args.fakeServer.provider.pause({ authorizationId: args.authorizationId });
-    const [{ now }] = await execSQL<{ now: Date }>('SELECT NOW() AS now');
-    const startsAt = now;
+    const [row] = await execSQL<{ now: Date }>('SELECT NOW() AS now');
+    if (!row) throw new Error('SELECT NOW() returned no row');
+    const startsAt = row.now;
     const expectedEndAt = new Date(startsAt.getTime() + 60 * 24 * 60 * 60 * 1000);
     await execSQL("UPDATE subscription SET status = 'PAUSED' WHERE id = $1", [args.subscriptionId]);
     await execSQL(
