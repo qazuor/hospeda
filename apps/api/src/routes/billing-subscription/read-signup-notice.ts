@@ -3,6 +3,7 @@ import { ServiceErrorCode, type SignupNoticeResponse, VerticalEnumSchema } from 
 import { readBillingChoice, ServiceError } from '@repo/service-core';
 import { isTrialRunning } from '../../services/listing-notices/listing-notices.builder';
 import { getClock } from '../../utils/clock';
+import { touristVipCancelledOnReturn } from './tourist-vip-inheritance';
 
 const DAY_MS = 86_400_000;
 
@@ -25,6 +26,27 @@ export async function readSignupNotice(input: {
     }
 
     const vertical = parsedVertical.data;
+    let touristVip: SignupNoticeResponse['touristVip'];
+    switch (vertical) {
+        case 'tourist':
+            if (await touristVipCancelledOnReturn({ userId: input.userId })) {
+                touristVip = { status: 'CANCELLED_ON_RETURN' };
+            } else {
+                touristVip = { status: 'NOT_AFFECTED' };
+            }
+            break;
+        case 'accommodation':
+        case 'gastronomy':
+        case 'experience':
+        case 'partner':
+            touristVip = { status: 'NOT_AFFECTED' };
+            break;
+        default:
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Unknown billing option vertical'
+            );
+    }
     const [trial] = await getDb()
         .select({
             id: trials.id,
@@ -37,11 +59,12 @@ export async function readSignupNotice(input: {
         .limit(1);
     const now = getClock().clock.now();
     if (!isTrialRunning({ trial: trial ?? null, now }).running || !trial?.endsAt) {
-        return { vertical, trial: { status: 'NOT_RUNNING' } };
+        return { vertical, touristVip, trial: { status: 'NOT_RUNNING' } };
     }
 
     return {
         vertical,
+        touristVip,
         trial: {
             status: 'RUNNING',
             endsAt: trial.endsAt.toISOString(),
