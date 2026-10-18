@@ -499,12 +499,13 @@ const comunidadSidebar: SidebarInput = {
 // ---------------------------------------------------------------------------
 
 /**
- * Comercial sidebar — Promotions, sponsorships, exchange rates.
+ * Comercial sidebar — Promotions, sponsorships, exchange rates, promo codes, reconciliation.
  *
  * (HOS-1416: the plans/subscriptions/addons/metrics/payments/invoices/
  * reconciliation/promo-codes/settings/webhook-events entries were removed
- * along with the legacy billing pages. Owner promotions, sponsorships and
- * exchange rates are live features that survived the demolition.)
+ * along with the legacy billing pages. Promo codes return here through the
+ * new action 21 editor; owner promotions, sponsorships, exchange rates and
+ * reconciliation are also live features.)
  *
  * @example
  * ```ts
@@ -600,6 +601,15 @@ const comercialSidebar: SidebarInput = {
             icon: 'DollarSignIcon',
             route: '/billing/reconciliation',
             permissions: ['BILLING_SUBSCRIPTION_INSPECT'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'promo-codes',
+            label: { es: 'Códigos promocionales', en: 'Promo codes', pt: 'Códigos promocionais' },
+            icon: 'CouponsIcon',
+            route: '/billing/promo-codes',
+            permissions: ['BILLING_MANAGE_PROMO_CODES'],
             onMissing: 'hide'
         }
     ]
