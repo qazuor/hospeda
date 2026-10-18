@@ -84,7 +84,8 @@ describe('TEST:B9b:9 (support) AC:B9b:9 HOS-1591 only SUPER_ADMIN may create, cl
     it('returns the factory 403 before parsing an invalid admin body', async () => {
         const app = createAdminPromoApp();
         const actorId = await seedPromoAdminUser('invalid-admin');
-        const code = `bad-${crypto.randomUUID()}`;
+        const code = `INVALID-${crypto.randomUUID().replaceAll('-', '').slice(0, 12).toUpperCase()}`;
+        const body = { ...promoCreateBody(code), effect: null };
         const response = await app.request(adminPromoPath, {
             method: 'POST',
             headers: adminPromoHeaders({
@@ -92,7 +93,7 @@ describe('TEST:B9b:9 (support) AC:B9b:9 HOS-1591 only SUPER_ADMIN may create, cl
                 role: 'ADMIN',
                 permissions: [PermissionEnum.ACCESS_PANEL_ADMIN]
             }),
-            body: JSON.stringify(promoCreateBody(code))
+            body: JSON.stringify(body)
         });
         expect(response.status).toBe(403);
         expect(await promoRowsByCode(code)).toHaveLength(0);
