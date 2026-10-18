@@ -59,5 +59,20 @@ describe('TEST:1696:6 AC:1696:1 admin cancellation schemas', () => {
             expect(AdminSubscriptionCancellationResponseSchema.safeParse(variant).success).toBe(
                 true
             );
+        expect(
+            AdminSubscriptionCancellationResponseSchema.safeParse({
+                ...base,
+                outcome: 'ALREADY_SCHEDULED',
+                transition: 'S11'
+            }).success
+        ).toBe(false);
+        expect(
+            AdminSubscriptionCancellationResponseSchema.safeParse({
+                ...base,
+                outcome: 'ALREADY_CANCELLED',
+                transition: null,
+                cancelCall: 'SENT'
+            }).success
+        ).toBe(false);
     });
 });

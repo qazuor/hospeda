@@ -18,16 +18,30 @@ export const AdminSubscriptionCancellationRequestSchema = z.strictObject({
 });
 
 /** Result of administrative cancellation without a refund. */
-export const AdminSubscriptionCancellationResponseSchema = z.object({
-    subscriptionId: z.string().uuid(),
-    outcome: z.enum(['SCHEDULED', 'ALREADY_SCHEDULED', 'CANCELLED', 'ALREADY_CANCELLED']),
-    transition: z.enum(['S11', 'S23', 'S24']).nullable(),
-    serviceEndsAt: z.string().datetime().nullable(),
-    cancelCall: z
-        .enum(['SENT', 'NOT_NEEDED', 'NOTICE_PENDING', 'FAILED', 'NOT_APPLICABLE'])
-        .optional(),
-    escalated: z.enum(['NO_RECIPIENT', 'DELIVERY_EXHAUSTED']).optional()
-});
+export const AdminSubscriptionCancellationResponseSchema = z
+    .object({
+        subscriptionId: z.string().uuid(),
+        outcome: z.enum(['SCHEDULED', 'ALREADY_SCHEDULED', 'CANCELLED', 'ALREADY_CANCELLED']),
+        transition: z.enum(['S11', 'S23', 'S24']).nullable(),
+        serviceEndsAt: z.string().datetime().nullable(),
+        cancelCall: z
+            .enum(['SENT', 'NOT_NEEDED', 'NOTICE_PENDING', 'FAILED', 'NOT_APPLICABLE'])
+            .optional(),
+        escalated: z.enum(['NO_RECIPIENT', 'DELIVERY_EXHAUSTED']).optional()
+    })
+    .superRefine((response, ctx) => {
+        const already =
+            response.outcome === 'ALREADY_SCHEDULED' || response.outcome === 'ALREADY_CANCELLED';
+        if (already && response.transition !== null)
+            ctx.addIssue({ code: 'custom', message: 'Already outcomes have no transition' });
+        if (already && (response.cancelCall !== undefined || response.escalated !== undefined))
+            ctx.addIssue({
+                code: 'custom',
+                message: 'Already outcomes omit provider call details'
+            });
+        if (!already && response.cancelCall === undefined)
+            ctx.addIssue({ code: 'custom', message: 'Executed outcomes include cancelCall' });
+    });
 
 /** Parsed request for administrative cancellation without a refund. */
 export type AdminSubscriptionCancellationRequest = z.infer<
