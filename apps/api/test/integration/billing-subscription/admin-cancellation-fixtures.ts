@@ -1,16 +1,28 @@
 import {
     billingDeadlineVersions,
+    billingOptions,
+    buildEmailDedupKey,
+    buildEventOccurrence,
     coveredPeriods,
+    emailOutbox,
+    emailOutboxModel,
     eq,
     getDb,
     payments,
+    plans,
+    planVersions,
     reconciliationMarkPayments,
     reconciliationMarks,
+    subscriptionModel,
     subscriptions
 } from '@repo/db';
 import type { FakePaymentProvider } from '@repo/payments/fake';
-import type { BillingDeadlineValues } from '@repo/schemas';
-import { createChargebackDetection } from '@repo/service-core';
+import { type BillingDeadlineValues, VerticalEnum } from '@repo/schemas';
+import {
+    BEFORE_CANCEL_TEMPLATE_BY_KIND,
+    createChargebackDetection,
+    startSubscription
+} from '@repo/service-core';
 import {
     actorHeaders,
     CHARGED_12_DAYS_AGO,
@@ -29,6 +41,7 @@ import {
     presetSelfCancelNotice,
     retireSelfCancelRows,
     seedSelfActive,
+    seedSelfComplement,
     seedSelfState
 } from './self-cancel-fixtures';
 
@@ -53,7 +66,36 @@ export async function ensureBillingDeadlineVersion1(): Promise<void> {
         .onConflictDoNothing();
 }
 
-const chargebacks: Array<{ subscriptionId: string; ownerId: string; markId: string }> = [];
+const chargebacks: Array<{
+    subscriptionId: string;
+    ownerId: string;
+    paymentId: string;
+    markId: string;
+}> = [];
+
+/** Preset the S23/S24 direct-cancellation notice as sent so the provider call can proceed. */
+export async function presetAdminDirectCancelNotice(input: {
+    readonly ownerId: string;
+    readonly subscriptionId: string;
+}): Promise<void> {
+    const template = BEFORE_CANCEL_TEMPLATE_BY_KIND.DIRECT_CANCELLATION;
+    const dedupKey = buildEmailDedupKey({
+        recipient: input.ownerId,
+        template,
+        occurrence: buildEventOccurrence({ eventId: input.subscriptionId })
+    });
+    await emailOutboxModel.enqueue({
+        recipientUserId: input.ownerId,
+        recipientEmail: `admin-direct-cancel-${crypto.randomUUID()}@example.test`,
+        template,
+        payload: { subscriptionId: input.subscriptionId },
+        dedupKey
+    });
+    await getDb()
+        .update(emailOutbox)
+        .set({ status: 'sent' })
+        .where(eq(emailOutbox.dedupKey, dedupKey));
+}
 
 /** Seed an active card subscription with the complete S6 suspension clock and selected provider state. */
 export async function seedAdminSuspendedCard(input: {
@@ -121,23 +163,84 @@ export async function seedAdminChargebackActive(input: {
     readonly clock: ReturnType<typeof routeClock>;
 }) {
     await ensureBillingDeadlineVersion1();
-    const seeded = await seedSelfActive(input.fake, input.clock);
-    const { ownerId, paymentId, subscriptionId, authorizationId } = seeded;
-    await getDb()
-        .update(payments)
-        .set({ factAt: CHARGED_12_DAYS_AGO })
-        .where(eq(payments.id, paymentId));
-    await getDb()
-        .update(coveredPeriods)
-        .set({ creditedAt: CHARGED_12_DAYS_AGO })
-        .where(eq(coveredPeriods.paymentId, paymentId));
+    const db = getDb();
+    const ownerId = await seedUser('admin-chargeback');
+    const [plan] = await db
+        .insert(plans)
+        .values({
+            vertical: VerticalEnum.ACCOMMODATION,
+            slug: `admin-chargeback-${crypto.randomUUID()}`,
+            name: 'Admin chargeback fixture'
+        })
+        .returning({ id: plans.id });
+    if (!plan) throw new Error('Expected plan');
+    const [version] = await db
+        .insert(planVersions)
+        .values({
+            planId: plan.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            rank: Math.floor(Math.random() * 100000000) + 1000,
+            sellable: false,
+            current: false,
+            trialDays: 0,
+            allowsPause: false
+        })
+        .returning({ id: planVersions.id });
+    if (!version) throw new Error('Expected plan version');
+    const [option] = await db
+        .insert(billingOptions)
+        .values({ planVersionId: version.id, cycle: 'monthly', amount: 10000, currency: 'ARS' })
+        .returning({ id: billingOptions.id });
+    if (!option) throw new Error('Expected billing option');
+    const started = await startSubscription(
+        { userId: ownerId, billingOptionId: option.id, returnUrl: 'https://example.test' },
+        {
+            provider: input.fake,
+            clock: input.clock,
+            beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+            touristVipInheritance: { inherits: async () => false },
+            planPolicy: async () => ({
+                graceDays: 10,
+                allowsPause: false,
+                current: true,
+                sellable: true
+            })
+        }
+    );
+    const { subscriptionId, authorizationId } = started;
+    await input.fake.approve({ authorizationId });
+    await subscriptionModel.activatePendingAuthorization({
+        subscriptionId,
+        now: input.clock.now()
+    });
+    input.fake.takeDeliveries();
+    const [payment] = await db
+        .insert(payments)
+        .values({
+            subscriptionId,
+            amount: 10000,
+            currency: 'ARS',
+            status: 'SUCCEEDED',
+            provider: 'FAKE',
+            providerFactId: `admin-chargeback-${crypto.randomUUID()}`,
+            factAt: CHARGED_12_DAYS_AGO
+        })
+        .returning({ id: payments.id });
+    if (!payment) throw new Error('Expected credited payment');
+    const paymentId = payment.id;
+    await db.insert(coveredPeriods).values({
+        subscriptionId,
+        paymentId,
+        periodStart: new Date('2026-09-08T12:00:00.000Z'),
+        creditedAt: CHARGED_12_DAYS_AGO
+    });
     const result = await createChargebackDetection({}).detect({
         payment: { id: paymentId, subscriptionId, status: 'SUCCEEDED' },
         actor: 'job',
         correlationId: crypto.randomUUID()
     });
     if (result.outcome !== 'MARKED' || !result.markId) throw new Error('Expected chargeback mark');
-    chargebacks.push({ subscriptionId, ownerId, markId: result.markId });
+    chargebacks.push({ subscriptionId, ownerId, paymentId, markId: result.markId });
     return { ownerId, subscriptionId, authorizationId, paymentId, markId: result.markId };
 }
 
@@ -156,10 +259,19 @@ export async function retireAdminCancellationRows(): Promise<void> {
         await db
             .update(payments)
             .set({ factAt: new Date('2000-01-01T00:00:00.000Z') })
-            .where(eq(payments.subscriptionId, item.subscriptionId));
+            .where(eq(payments.id, item.paymentId));
+        await db
+            .update(subscriptions)
+            .set({
+                status: 'CANCELLED',
+                graceStartedAt: null,
+                graceEndsAt: null,
+                updatedAt: NOW
+            })
+            .where(eq(subscriptions.id, item.subscriptionId));
     }
-    await retireRevocationRouteRows();
     await retireSelfCancelRows();
+    await retireRevocationRouteRows();
 }
 
 export {
@@ -174,5 +286,6 @@ export {
     routeClock,
     routeFake,
     seedSelfActive,
+    seedSelfComplement,
     seedSelfState
 };
