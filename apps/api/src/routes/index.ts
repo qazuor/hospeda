@@ -57,6 +57,7 @@ import { publicAuthorRoutes } from './author/public/index.js';
 import { adminBillingDeadlineRoutes } from './billing-deadlines/admin/index.js';
 import { adminBillingPermanentGrantRoutes } from './billing-permanent-grant/admin/index.js';
 import { protectedBillingPromoRoutes } from './billing-promo/index.js';
+import { adminBillingReconciliationRoutes } from './billing-reconciliation/admin/index.js';
 import { adminBillingRefundRoutes } from './billing-refund/admin/index.js';
 import { adminBillingSubscriptionRoutes } from './billing-subscription/admin/inspect.js';
 import {
@@ -668,6 +669,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/vertical-deadlines', adminVerticalDeadlineRoutes);
         app.route('/api/v1/admin/billing-subscription', adminBillingSubscriptionRoutes);
         app.route('/api/v1/admin/billing-refunds', adminBillingRefundRoutes);
+        app.route('/api/v1/admin/billing-reconciliation', adminBillingReconciliationRoutes);
         app.route('/api/v1/admin/billing-permanent-grants', adminBillingPermanentGrantRoutes);
         app.route('/api/v1/admin/trials', adminTrialRoutes);
         app.route('/api/v1/admin/plan-catalog', adminPlanCatalogRoutes);
