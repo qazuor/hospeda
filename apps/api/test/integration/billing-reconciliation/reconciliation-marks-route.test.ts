@@ -4,6 +4,7 @@ import {
     manualPayments,
     reconciliationMarkPayments,
     reconciliationMarks,
+    sql,
     subscriptions
 } from '@repo/db';
 import {
@@ -12,7 +13,7 @@ import {
     ReconciliationMarkEventsResponseSchema
 } from '@repo/schemas';
 import { openReconciliationMark } from '@repo/service-core';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
@@ -60,6 +61,8 @@ beforeAll(async () => {
     await testDb.setup();
     validateApiEnv();
     app = initApp();
+});
+beforeEach(async () => {
     adminId = await seedUser('reconciliation-admin');
 });
 afterEach(async () => {
@@ -83,6 +86,31 @@ const requestHeaders = () =>
     actorHeaders({ id: adminId, role: 'SUPER_ADMIN', permissions: inspect });
 
 describe('TEST:1620:7 actionable reconciliation mark routes', () => {
+    it('keeps an unresolved open subject in the list response', async () => {
+        const subject = await seedPaidSubscription();
+        const normal = await seedMark(subject, 'DIVERGENCIA_DE_MONTO');
+        const orphanId = crypto.randomUUID();
+        const orphan = await getDb().transaction(async (tx) => {
+            await tx.execute(sql`SET LOCAL session_replication_role = 'replica'`);
+            const [inserted] = await tx
+                .insert(reconciliationMarks)
+                .values({ subscriptionId: orphanId, reason: 'DIVERGENCIA_DE_MONTO' })
+                .returning({ id: reconciliationMarks.id });
+            if (!inserted) throw new Error('Expected orphan reconciliation mark');
+            return inserted;
+        });
+        markIds.push(orphan.id);
+
+        const response = await app.request(`${BASE}?page=1&pageSize=100`, {
+            headers: requestHeaders()
+        });
+        expect(response.status).toBe(200);
+        const items = (await response.json()).data.items as any[];
+        expect(items).toHaveLength(2);
+        expect(items.find((item) => item.markId === normal.markId)?.subject.status).toBeTruthy();
+        expect(items.find((item) => item.markId === orphan.id)?.subject.status).toBeNull();
+    });
+
     it('(a) lists its reason 7 and 5 marks, payment evidence, ordering, and schema-valid response', async () => {
         const subject = await seedPaidSubscription();
         const reason5 = await seedMark(subject, 'DIVERGENCIA_DE_MONTO');
