@@ -1,5 +1,5 @@
 {
-  "id": "e4947a89-05fa-42f3-9238-2f0d036d88f8",
+  "id": "e74f7a02-bae4-465e-98c6-ba398a4292a5",
   "prevId": "e22969f9-b068-4199-866e-46c9b1de41b2",
   "version": "7",
   "dialect": "postgresql",
@@ -33112,10 +33112,10 @@
         "billing.viewOwn",
         "billing.settleExternal",
         "billing.cancelSubscription",
+        "billing.liftReconciliationMark",
         "trial.extend",
         "user.manageSuperAdminRole",
         "billing.grantComplimentary",
-        "billing.managePromoCodes",
         "user.update.self",
         "ai.settings.manage",
         "platform.featureFlag.manage",

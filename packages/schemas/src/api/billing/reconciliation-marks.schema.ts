@@ -14,6 +14,7 @@ export const ReconciliationMarkHungPaymentSchema = z.object({
 /** One open mark and the evidence needed to review its system proposal. */
 export const ActionableReconciliationMarkSchema = z.object({
     markId: z.string().uuid(),
+    version: z.number().int().min(1),
     reason: z.string(),
     reasonNumber: z.number().int().min(1).max(24),
     refundConfirmation: z.boolean(),
@@ -30,6 +31,42 @@ export const ActionableReconciliationMarkSchema = z.object({
     unknownAmountCount: z.number().int().nonnegative(),
     eventLink: z.object({ markId: z.string().uuid() }).nullable()
 });
+
+/** A provider or manual payment explicitly resolved while lifting a mark. */
+export const ReconciliationMarkPaymentRefSchema = z
+    .object({ source: z.enum(['PAYMENT', 'MANUAL_PAYMENT']), paymentId: z.string().uuid() })
+    .strict();
+
+/** Request body for administrative action 7 (ACC:7, S15). */
+export const ReconciliationMarkLiftRequestSchema = z
+    .object({
+        expectedVersion: z.number().int().min(1),
+        resolveWithoutRefund: z.array(ReconciliationMarkPaymentRefSchema).max(100).default([]),
+        note: z.string().trim().min(1).max(2000).optional()
+    })
+    .strict()
+    .refine(
+        ({ resolveWithoutRefund }) =>
+            new Set(resolveWithoutRefund.map(({ source, paymentId }) => `${source}:${paymentId}`))
+                .size === resolveWithoutRefund.length,
+        { message: 'Payment references must be unique', path: ['resolveWithoutRefund'] }
+    );
+
+/** Successful response of administrative action 7 (ACC:7, S15). */
+export const ReconciliationMarkLiftResponseSchema = z.object({
+    markId: z.string().uuid(),
+    reason: z.string(),
+    liftedAt: z.string().datetime(),
+    liftedBy: z.string().uuid(),
+    version: z.number().int().min(2),
+    resolvedWithoutRefund: z.array(ReconciliationMarkPaymentRefSchema)
+});
+
+/** Parsed body of administrative action 7. */
+export type ReconciliationMarkLiftRequest = z.infer<typeof ReconciliationMarkLiftRequestSchema>;
+
+/** Response of administrative action 7. */
+export type ReconciliationMarkLiftResponse = z.infer<typeof ReconciliationMarkLiftResponseSchema>;
 
 /** Standard pagination query for the actionable mark list. */
 export const ReconciliationMarkListQuerySchema = z.object({
