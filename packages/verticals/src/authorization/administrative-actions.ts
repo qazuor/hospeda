@@ -84,7 +84,10 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
     },
     ACC_19: { permissions: [], pendingOwnPermission: 'B2 (HOS-1515)' },
     ACC_20: { permissions: [], pendingOwnPermission: 'B10 (HOS-1595)' },
-    ACC_21: { permissions: [], pendingOwnPermission: 'B9b (HOS-1591)' },
+    ACC_21: {
+        permissions: [PermissionEnum.BILLING_MANAGE_PROMO_CODES],
+        pendingOwnPermission: null
+    },
     ACC_22: { permissions: [], pendingOwnPermission: 'V6.9 (HOS-1479)' },
     ACC_23: {
         permissions: [PermissionEnum.LISTING_PURGE_ON_REQUEST],
