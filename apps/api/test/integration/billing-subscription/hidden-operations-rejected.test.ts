@@ -10,18 +10,29 @@ import {
     subscriptions,
     users
 } from '@repo/db';
-import { FakePaymentProvider } from '@repo/payments/fake';
 import { type BillingDeadlineValues, PermissionEnum } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
+import { injectPaymentProvider } from '../../../src/utils/payment-provider';
 import { testDb } from '../../e2e/setup/test-database';
+import {
+    chargeClock,
+    chargeFake,
+    cleanupExternalChargeRows,
+    seedUnrecordedApprovedCharge
+} from '../billing-refund/settle-external-charge-fixtures';
+import {
+    cleanupSettleExternalRows,
+    seedPaidSubscription
+} from '../billing-refund/settle-external-fixtures';
+import { actorHeaders as refundActorHeaders } from './revocation-route-fixtures';
 
 const situationPath = '/api/v1/protected/billing-subscription/pricing-situation';
 const startPath = '/api/v1/protected/billing/subscriptions';
 const refundPath = '/api/v1/admin/billing-refunds/external';
 const chargePath = '/api/v1/admin/billing-refunds/external-charge';
-const clock = { now: () => new Date('2026-10-08T20:00:00.000Z') };
+const clock = chargeClock;
 const deadlineValues = {
     '10': { cardHours: 72, manualDays: 7 },
     '11': { noticeDays: 60, contactDays: [30, 7] },
@@ -103,8 +114,7 @@ function userHeaders(id: string) {
     return actorHeaders({ id, role: 'USER' });
 }
 
-const fake = new FakePaymentProvider({ clock, idNamespace: randomUUID() });
-const app = initApp({ clock, paymentProvider: fake });
+let app: ReturnType<typeof initApp>;
 
 async function readSituation(userId: string, vertical: string) {
     const response = await app.request(`${situationPath}/${vertical}`, {
@@ -126,6 +136,8 @@ describe('TEST:B13a:12 hidden pricing and action 14 operations are rejected by t
         process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
         await testDb.setup();
         validateApiEnv();
+        injectPaymentProvider({ provider: chargeFake });
+        app = initApp({ clock, paymentProvider: chargeFake });
         await getDb()
             .insert(billingDeadlineVersions)
             .values({ version: 1, values: deadlineValues })
@@ -139,6 +151,8 @@ describe('TEST:B13a:12 hidden pricing and action 14 operations are rejected by t
                 .set({ current: false })
                 .where(inArray(planVersions.id, madeVersions));
         }
+        await cleanupSettleExternalRows();
+        await cleanupExternalChargeRows();
         await testDb.clean();
         await testDb.teardown();
     });
@@ -204,15 +218,21 @@ describe('TEST:B13a:12 hidden pricing and action 14 operations are rejected by t
 
     it('TEST:B13a:12 (c) requires the action 14 permission at both endpoints', async () => {
         const userId = await seedUser();
+        const refundFixture = await seedPaidSubscription(10000);
+        const chargeFixture = await seedUnrecordedApprovedCharge();
         const refundBody = {
-            paymentId: randomUUID(),
+            paymentId: refundFixture.paymentId,
             amount: 10000,
             channel: 'BANK_TRANSFER',
             reference: 'EXTERNAL-TEST-REFUND',
             reason: 'OUT_OF_FLOW_REFUND'
         };
-        const chargeBody = { chargeId: `missing-${randomUUID()}` };
-        const admin = actorHeaders({ id: userId, role: 'ADMIN' });
+        const chargeBody = { chargeId: chargeFixture.chargeId };
+        const admin = actorHeaders({
+            id: userId,
+            role: 'ADMIN',
+            permissions: [PermissionEnum.ACCESS_PANEL_ADMIN]
+        });
         const deniedRefund = await app.request(refundPath, {
             method: 'POST',
             headers: admin,
@@ -228,7 +248,7 @@ describe('TEST:B13a:12 hidden pricing and action 14 operations are rejected by t
         expect(deniedCharge.status).toBe(403);
         expect((await deniedCharge.json()).error.code).toBe('FORBIDDEN');
 
-        const superAdmin = actorHeaders({
+        const superAdmin = refundActorHeaders({
             id: userId,
             role: 'SUPER_ADMIN',
             permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.BILLING_SETTLE_EXTERNAL]
@@ -238,12 +258,12 @@ describe('TEST:B13a:12 hidden pricing and action 14 operations are rejected by t
             headers: superAdmin,
             body: JSON.stringify(refundBody)
         });
-        expect(passedRefundGate.status).toBe(404);
+        expect(passedRefundGate.status).toBe(200);
         const passedChargeGate = await app.request(chargePath, {
             method: 'POST',
             headers: superAdmin,
             body: JSON.stringify(chargeBody)
         });
-        expect(passedChargeGate.status).toBe(404);
+        expect(passedChargeGate.status).toBe(200);
     });
 });
