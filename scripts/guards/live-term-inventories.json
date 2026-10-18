@@ -236,6 +236,12 @@
             "why": "S15 relee levantada_en para decidir el desde."
         },
         {
+            "file": "packages/service-core/src/services/billing/reconciliation/lift-reconciliation-mark-by-admin.service.ts",
+            "symbol": "liftReconciliationMarkByAdmin",
+            "row": null,
+            "why": "La acción 7 devuelve lifted_at recién escrito por S15 para auditar qué marca se levantó; no lo relee como estado de origen y no corresponde a una fila del glosario."
+        },
+        {
             "file": "packages/service-core/src/services/billing/subscription/succession-target-guard.ts",
             "symbol": "checkSuccessionTarget",
             "row": 2,
