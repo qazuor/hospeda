@@ -7,10 +7,10 @@ import {
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { PublicationVertical } from '../../../../../packages/verticals/src/publication/publication-types';
-import { isTrialRunning } from '../../services/listing-notices/listing-notices.builder';
-import { resolveSubscribeDestinationForUser } from '../../services/listing-publication/subscribe-destination.service';
+import { touristVipInheritance } from '../../routes/billing-subscription/tourist-vip-inheritance';
 import { getClock } from '../../utils/clock';
-import { touristVipInheritance } from './tourist-vip-inheritance';
+import { isTrialRunning } from '../listing-notices/listing-notices.builder';
+import { resolveSubscribeDestinationForUser } from '../listing-publication/subscribe-destination.service';
 
 type Vertical = PricingSituationVertical;
 

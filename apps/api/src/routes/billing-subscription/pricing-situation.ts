@@ -5,9 +5,9 @@ import {
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { readPricingSituation } from '../../services/pricing-situation/read-pricing-situation';
 import { getActorFromContext, isGuestActor } from '../../utils/actor';
 import { createProtectedRoute } from '../../utils/route-factory';
-import { readPricingSituation } from './read-pricing-situation';
 
 /** Read the authenticated person's situation for one pricing vertical. */
 export const protectedPricingSituationRoute = createProtectedRoute({
