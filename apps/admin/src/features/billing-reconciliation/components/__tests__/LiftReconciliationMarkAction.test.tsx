@@ -126,6 +126,14 @@ describe('TEST:1697:13 AC:1697:5 lift action', () => {
                 `${tr('admin-billing.reconciliationMarks.proposal')}: ${tr('admin-billing.reconciliationMarks.proposals.refund')}`
             )
         ).toBeInTheDocument();
+        expect(
+            within(dialog).getByText(
+                (_, element) =>
+                    element?.tagName === 'P' &&
+                    element.textContent?.includes(tr('admin-billing.reconciliationMarks.total')) ===
+                        true
+            )
+        ).toBeInTheDocument();
     });
 
     it('shows unresolved payments unchecked and resolved payments without a checkbox', () => {

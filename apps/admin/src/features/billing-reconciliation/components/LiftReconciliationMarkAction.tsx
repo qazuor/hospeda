@@ -119,6 +119,16 @@ export function LiftReconciliationMarkAction({ mark, locale }: LiftReconciliatio
                         {t('admin-billing.reconciliationMarks.proposal')}:{' '}
                         {t(PROPOSALS[mark.defaultProposal])}
                     </p>
+                    {mark.totalAmount.map((total) => (
+                        <p key={total.currency}>
+                            {t('admin-billing.reconciliationMarks.total')}:{' '}
+                            {formatCurrency({
+                                value: total.amountMinor / 100,
+                                currency: total.currency,
+                                locale
+                            })}
+                        </p>
+                    ))}
                     {unresolved.map((payment) => {
                         const key = `${payment.source}:${payment.paymentId}`;
                         return (
