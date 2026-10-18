@@ -32,7 +32,7 @@ import {
 } from '@/components/billing/plan-comparison-rows';
 
 // ---------------------------------------------------------------------------
-// Fixtures — the real entitlement sets, as returned by /api/v1/public/plans.
+// Fixtures — the real entitlement sets, as returned by /api/v1/public/plan-catalog.
 // Only the entitlements the assertions below exercise are listed.
 // ---------------------------------------------------------------------------
 
@@ -65,7 +65,7 @@ const OWNER_PREMIUM = plan('owner-premium', [
 
 // tourist-free deliberately lacks CAN_VIEW_RECOMMENDATIONS: it was moved to
 // tourist-plus by HOS-16 and is enforced by the API. Verified against the prod
-// payload (api.hospeda.com.ar/api/v1/public/plans).
+// payload (api.hospeda.com.ar/api/v1/public/plan-catalog).
 const TOURIST_FREE = plan('tourist-free', [EntitlementKey.READ_REVIEWS]);
 const TOURIST_PLUS = plan('tourist-plus', [
     EntitlementKey.READ_REVIEWS,
