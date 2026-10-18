@@ -19,6 +19,7 @@ export const breadcrumbLabels: Readonly<Record<string, string>> = {
     '/billing/sponsorships': 'admin-menu.billing.sponsorships',
     '/billing/owner-promotions': 'admin-menu.billing.ownerPromotions',
     '/billing/exchange-rates': 'admin-menu.billing.exchangeRates',
+    '/billing/reconciliation': 'admin-menu.billing.reconciliation',
     '/platform/ops/cron': 'admin-menu.billing.cron',
     '/platform/ops/logs': 'admin-menu.billing.appLogs',
     '/platform/ops/webhooks': 'admin-menu.billing.webhookEvents',

@@ -1685,5 +1685,46 @@
         },
         "successTitle": "Assinatura revogada",
         "errorTitle": "Não foi possível revogar a assinatura"
+    },
+    "reconciliationMarks": {
+        "title": "Conciliação de pagamentos",
+        "loading": "Carregando marcas abertas...",
+        "error": "Não foi possível carregar as marcas abertas.",
+        "retry": "Tentar novamente",
+        "empty": "Não há marcas abertas.",
+        "openedAt": "Aberta desde",
+        "subjectStatus": "Estado da linha",
+        "proposal": "Proposta do sistema",
+        "proposals": {
+            "refund": "Devolver",
+            "refundDifference": "Devolver a diferença",
+            "noRefund": "Não devolver",
+            "none": "Sem proposta"
+        },
+        "refundNotice": "Há dinheiro do cliente para devolver",
+        "sources": { "card": "Pagamento com cartão", "manual": "Pagamento manual" },
+        "unknownAmount": "valor desconhecido",
+        "paymentCount": "Quantidade de pagamentos pendentes",
+        "total": "Total",
+        "eventLink": "Ver qual condição falhou",
+        "pagination": "Paginação de marcas",
+        "previous": "Anterior",
+        "next": "Próxima",
+        "eventsTitle": "Evento de conciliação",
+        "liftedAt": "Encerrada em",
+        "notLifted": "A marca continua aberta.",
+        "actor": "Ator",
+        "correlation": "Correlação",
+        "outcome": "Resultado",
+        "condition": "Condição",
+        "conditions": {
+            "one": "A assinatura existe e está em GRACE_PERIOD ou SUSPENDED.",
+            "two": "O valor corresponde ao esperado para o período coberto.",
+            "three": "Não há outra linha principal ativa para o mesmo usuário e vertical, nem uma sucessora já autorizada.",
+            "four": "Não há outro pagamento creditado para o mesmo período."
+        },
+        "conditionNotEvaluated": "Este caminho não avalia as quatro condições.",
+        "conditionNotRecorded": "Este evento não registra a condição (anterior a esta alteração).",
+        "markNotFound": "A marca não existe."
     }
 }

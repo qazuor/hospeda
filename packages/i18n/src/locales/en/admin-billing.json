@@ -1685,5 +1685,46 @@
         },
         "successTitle": "Subscription revoked",
         "errorTitle": "The subscription could not be revoked"
+    },
+    "reconciliationMarks": {
+        "title": "Payment reconciliation",
+        "loading": "Loading open marks...",
+        "error": "Open marks could not be loaded.",
+        "retry": "Retry",
+        "empty": "There are no open marks.",
+        "openedAt": "Open since",
+        "subjectStatus": "Row status",
+        "proposal": "System proposal",
+        "proposals": {
+            "refund": "Refund",
+            "refundDifference": "Refund the difference",
+            "noRefund": "Do not refund",
+            "none": "No proposal"
+        },
+        "refundNotice": "The customer's money needs to be returned",
+        "sources": { "card": "Card payment", "manual": "Manual payment" },
+        "unknownAmount": "amount unknown",
+        "paymentCount": "Hung payments",
+        "total": "Total",
+        "eventLink": "See which condition failed",
+        "pagination": "Marks pagination",
+        "previous": "Previous",
+        "next": "Next",
+        "eventsTitle": "Reconciliation event",
+        "liftedAt": "Lifted at",
+        "notLifted": "The mark is still open.",
+        "actor": "Actor",
+        "correlation": "Correlation",
+        "outcome": "Outcome",
+        "condition": "Condition",
+        "conditions": {
+            "one": "The subscription exists and is in GRACE_PERIOD or SUSPENDED.",
+            "two": "The amount matches what is expected for the covered period.",
+            "three": "There is no other live principal row for the same user and vertical, nor a successor that has already authorized.",
+            "four": "There is no other credited payment for the same period."
+        },
+        "conditionNotEvaluated": "This path does not evaluate the four conditions.",
+        "conditionNotRecorded": "This event does not record the condition (before this change).",
+        "markNotFound": "The mark does not exist."
     }
 }
