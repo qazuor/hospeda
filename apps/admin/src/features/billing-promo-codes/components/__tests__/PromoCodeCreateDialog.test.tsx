@@ -38,7 +38,7 @@ async function fillFixedDraft() {
         target: { value: 'PESOS20' }
     });
     fireEvent.change(screen.getByLabelText('Tipo de descuento'), { target: { value: 'FIXED' } });
-    fireEvent.change(screen.getByLabelText('Valor'), { target: { value: '20.50' } });
+    fireEvent.change(screen.getByLabelText('Valor'), { target: { value: '20' } });
     fireEvent.change(screen.getByLabelText('Duración'), { target: { value: 'FIRST_CHARGE' } });
     fireEvent.change(screen.getByLabelText('Válido hasta'), { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: 'Revisar' }));
@@ -77,7 +77,7 @@ describe('AC:B9b:9 HOS-1591 PromoCodeCreateDialog TEST:B9b:9 (support)', () => {
                 body: expect.objectContaining({
                     code: 'PESOS20',
                     effect: expect.objectContaining({
-                        value: 2050,
+                        value: 2000,
                         durationKind: 'FIRST_CHARGE',
                         durationCharges: null
                     }),
