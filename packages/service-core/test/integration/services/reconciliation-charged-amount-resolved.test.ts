@@ -118,6 +118,12 @@ afterEach(async () => {
                     now: new Date()
                 });
         }
+        for (const mark of marks) {
+            await db
+                .delete(reconciliationMarkPayments)
+                .where(eq(reconciliationMarkPayments.markId, mark.id));
+            await db.delete(reconciliationMarks).where(eq(reconciliationMarks.id, mark.id));
+        }
         const paymentsForRow = await db
             .select({ id: payments.id })
             .from(payments)
