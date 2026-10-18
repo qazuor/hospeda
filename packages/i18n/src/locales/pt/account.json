@@ -501,6 +501,24 @@
             "stateChanged": "Sua assinatura mudou enquanto você olhava. Recarregue a página para ver como ficou.",
             "doneScheduled": "Pronto: você cancelou sua assinatura. Ela continua até {{date}}.",
             "doneEnded": "Pronto: você cancelou sua assinatura. O serviço terminou hoje."
+        },
+        "promoRedeem": {
+            "trialTitle": "Você tem um código para estender seu período de teste?",
+            "subscriptionTitle": "Você tem um código promocional?",
+            "trialSectionTitle": "Você tem um período de teste ativo?",
+            "label": "Código promocional",
+            "submit": "Resgatar código",
+            "pending": "Resgatando…",
+            "error": "Não foi possível resgatar o código. Tente novamente.",
+            "firstCharge": "Sua próxima cobrança terá desconto: {{amount}}.",
+            "after": "Depois, você pagará {{amount}}.",
+            "providerEmail": "Quando terminar, o Mercado Pago enviará um e-mail avisando que o vendedor alterou o valor.",
+            "promoEnds": "Este também é o aviso de que sua promoção termina.",
+            "nCharges_one": "O desconto será aplicado na sua próxima cobrança {{count}}: {{amount}}.",
+            "nCharges_other": "O desconto será aplicado nas próximas {{count}} cobranças: {{amount}}.",
+            "forever": "Sua mensalidade passa para {{amount}}, sem data para terminar.",
+            "trialExtension_one": "Você ganhou {{count}} dia de teste.",
+            "trialExtension_other": "Você ganhou {{count}} dias de teste."
         }
     },
     "favorites": {
