@@ -239,6 +239,10 @@
                 "keepsOnDecline": "Se a cobrança for recusada, você continua no teste com esses dias.",
                 "unknown": "Se você está em período de teste nesta categoria: quando a primeira cobrança for aprovada ele termina e você perde os dias restantes; se a cobrança for recusada, você continua no teste com esses dias."
             },
+            "touristVipNotice": {
+                "cancelledOnReturn": "Você tem uma assinatura suspensa cujo plano lhe dava os benefícios de Turista VIP. Se você regularizá-la, esta assinatura de Turista VIP é cancelada na hora e o que você pagou não é reembolsado, porque seu plano volta a lhe dar esses benefícios.",
+                "unknown": "Se você tem uma assinatura suspensa cujo plano lhe dava os benefícios de Turista VIP e a regulariza, uma assinatura de Turista VIP que você comprar é cancelada na hora, sem reembolso."
+            },
             "retry": "Tentar novamente",
             "vertical": {
                 "accommodation": "hospedagem",

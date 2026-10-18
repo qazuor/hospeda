@@ -289,6 +289,23 @@ describe('TEST:1683:4 AC:1683:2 every before-cancel template renders through the
     });
 });
 
+describe('TEST:1623:4 AC:B13a:17 paid-after-cancellation renders through the production sender', () => {
+    it('renders the enqueued notice with the market date and addon consequence', async () => {
+        const result = await buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' })({
+            row: row('billing.paid-after-cancellation', {
+                subscriptionId: 'private-paid-subscription',
+                vertical: 'gastronomy',
+                serviceEndsAt: '2026-10-20T02:00:00.000Z',
+                recurringAddonsCut: true
+            })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(html).toContain('El cobro de tus complementos recurrentes');
+        expect(html).toContain('19 de octubre de 2026');
+        expect(html).not.toContain('private-paid-subscription');
+    });
+});
+
 describe('TEST:V8a:6 / TEST:V8a:7 the production outbox sender renders the listing notices (HOS-1492)', () => {
     const listingId = '2f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11';
     const readListingNames = async ({ ids }: { readonly ids: readonly string[] }) =>

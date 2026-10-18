@@ -37,6 +37,7 @@ describe('signup checkout page — B3 UI (B3.md:1045-1053)', () => {
         expect(indexSrc).not.toContain('Astro.params.lang');
         expect(indexSrc).toContain('<SignupCheckout');
         expect(indexSrc).toContain('trialNotice={trialNotice}');
+        expect(indexSrc).toContain('touristVipNotice={touristVipNotice}');
         expect(indexSrc).toContain('billingSubscriptionApi.signupNotice');
         expect(indexSrc).toContain('noindex={true}');
         expect(indexSrc).toContain('canonical={canonicalUrl}');

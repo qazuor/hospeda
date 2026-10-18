@@ -18,6 +18,8 @@ import { buildUrl } from '@/lib/urls';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import {
     resolveSignupTrialNotice,
+    resolveSignupTouristVipNotice,
+    type SignupTouristVipNotice,
     type SignupTrialNotice
 } from '@/lib/billing/signup-checkout';
 
@@ -55,14 +57,17 @@ const title = t('billing.checkout.signup.title');
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ roles: user.roles }) });
 let trialNotice: SignupTrialNotice | null;
+let touristVipNotice: SignupTouristVipNotice | null;
 try {
     const result = await billingSubscriptionApi.signupNotice({
         billingOptionId: optionId,
         cookieHeader: cookieHeader ?? undefined
     });
     trialNotice = resolveSignupTrialNotice({ result });
+    touristVipNotice = resolveSignupTouristVipNotice({ result });
 } catch {
     trialNotice = { kind: 'UNKNOWN' } as const;
+    touristVipNotice = { kind: 'UNKNOWN' } as const;
 }
 ---
 
@@ -74,5 +79,6 @@ try {
         billingOptionId={optionId}
         plansHref={plansHref}
         trialNotice={trialNotice}
+        touristVipNotice={touristVipNotice}
     />
 </BaseLayout>

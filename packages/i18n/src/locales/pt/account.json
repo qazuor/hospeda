@@ -464,13 +464,16 @@
             "title": "Suas assinaturas",
             "empty": "Você não tem assinaturas vigentes.",
             "planChangeUnavailable": "Ainda não é possível mudar de plano: cancele no fim do período e assine de novo.",
+            "paidAfterCancellation": "Seu pagamento entrou e você tem serviço até {{date}}; sua assinatura já estava cancelada, então ela não é renovada: se quiser continuar, assine de novo.",
+            "paidAfterCancellationAddons": "A cobrança dos complementos recorrentes desta assinatura também foi interrompida: você continua vendo-os até {{date}}.",
             "deferredCourtesy_one": "Você tem 1 mês restante, que começa a contar quando você concluir o pagamento.",
             "deferredCourtesy_other": "Você tem {{count}} meses restantes, que começam a contar quando você concluir o pagamento.",
             "status": {
                 "ACTIVE": "Ativa",
                 "GRACE_PERIOD": "Pagamento pendente",
                 "SUSPENDED": "Suspensa",
-                "CANCEL_SCHEDULED": "Cancelamento solicitado"
+                "CANCEL_SCHEDULED": "Cancelamento solicitado",
+                "NOT_RENEWING": "Não será renovada"
             },
             "loadError": "Não conseguimos ler suas assinaturas. Recarregue a página.",
             "scheduledUntil": "Você cancelou esta assinatura: ela continua até {{date}}.",

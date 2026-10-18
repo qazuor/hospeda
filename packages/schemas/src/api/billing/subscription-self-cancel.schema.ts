@@ -10,7 +10,9 @@ export const OwnSubscriptionsResponseSchema = z.object({
             paymentMethod: z.enum(['CARD', 'MANUAL']),
             serviceEndsAt: z.string().datetime().nullable(),
             graceEndsAt: z.string().datetime().nullable(),
-            createdAt: z.string().datetime()
+            createdAt: z.string().datetime(),
+            /** A payment arrived after cancellation was already requested; addon billing outcome. */
+            paidAfterCancellation: z.object({ recurringAddonsCut: z.boolean() }).nullable()
         })
     ),
     /** Deferred courtesy terms from glossary §2.6, for display only. */

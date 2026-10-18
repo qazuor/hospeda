@@ -32,6 +32,7 @@ import {
     type LatePaymentFailedCondition
 } from './late-payment-conditions';
 import { openLatePaymentRejectedMark } from './late-payment-rejected-mark';
+import { enqueuePaidAfterCancellationNotice } from './paid-after-cancellation-notice.js';
 import {
     cancelInheritedTouristVipAfterCommit,
     cancelScheduledComplementsAfterCommit,
@@ -160,6 +161,7 @@ type InTransactionVerdict =
  * authorization neither `authorized` nor `cancelled` writes nothing (H3).
  * `ADDED` goes to the coverage listener after the commit; then, outside any
  * transaction, the Tourist VIP clause runs on the reactivated row's user (AC:B7:31).
+ * A `CANCEL_SCHEDULED` destination also enqueues the paid-after-cancellation notice (AC:B13a:17).
  *
  * @param input.paymentId - The credited payment
  * @param input.unpaidSince - The unpaid-period anchor (S19's re-evaluation); defaults to `grace_started_at`
@@ -340,6 +342,13 @@ export async function reactivateSuspendedOnCreditedPayment(
                       )
                   ).decided
                 : undefined;
+        if (destination === 'CANCEL_SCHEDULED' && serviceEndsAt)
+            await enqueuePaidAfterCancellationNotice({
+                tx,
+                subscription: locked,
+                serviceEndsAt,
+                recurringAddonsCut: (decided?.length ?? 0) > 0
+            });
         return {
             kind: 'WRITTEN',
             destination,

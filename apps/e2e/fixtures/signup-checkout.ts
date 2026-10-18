@@ -4,7 +4,7 @@ import { execSQL } from './db-helpers.ts';
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
 
 /** The 0144 catalog plans these fixtures hold a monthly option of. */
-export type CatalogSlug = 'owner-basico' | 'owner-premium' | 'tourist-vip';
+export type CatalogSlug = 'owner-basico' | 'owner-premium' | 'tourist-vip' | 'partner-silver';
 
 /**
  * The monthly billing option of the current catalog version of `slug`,
@@ -78,6 +78,22 @@ export async function seedActivePlanHolder(options: {
         throw new Error(`seedActivePlanHolder: current ${options.slug} catalog version not found`);
     }
     return { subscriptionId: rows[0].id };
+}
+
+/** Seeds a suspended principal title with the grace timestamps written by S6. */
+export async function seedSuspendedPlanHolder(options: {
+    readonly userId: string;
+    readonly slug: CatalogSlug;
+}): Promise<{ readonly subscriptionId: string }> {
+    const seeded = await seedActivePlanHolder(options);
+    const suspendedAt = new Date();
+    await execSQL(
+        `UPDATE subscription
+            SET status = 'SUSPENDED', grace_started_at = $2, grace_ends_at = $3
+          WHERE id = $1`,
+        [seeded.subscriptionId, suspendedAt, suspendedAt]
+    );
+    return seeded;
 }
 
 /**

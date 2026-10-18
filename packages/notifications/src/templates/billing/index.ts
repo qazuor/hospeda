@@ -10,6 +10,7 @@ export * from './duplicate-charge-detected.js';
 export * from './first-charge-declined-cancel.js';
 export * from './grace-started.js';
 export * from './mark-escalated.js';
+export * from './paid-after-cancellation.js';
 export * from './payment-credited.js';
 export * from './payment-failure.js';
 export * from './payment-success.js';

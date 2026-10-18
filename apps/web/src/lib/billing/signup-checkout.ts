@@ -14,6 +14,11 @@ export type SignupTrialNotice =
     | { readonly kind: 'RUNNING'; readonly daysLeft: number; readonly endsAt: string }
     | { readonly kind: 'UNKNOWN' };
 
+/** Tourist VIP return consequence resolved before the signup confirmation. */
+export type SignupTouristVipNotice =
+    | { readonly kind: 'CANCELLED_ON_RETURN' }
+    | { readonly kind: 'UNKNOWN' };
+
 /** Resolve a protected signup notice, failing toward the conditional warning. */
 export function resolveSignupTrialNotice({
     result
@@ -32,6 +37,22 @@ export function resolveSignupTrialNotice({
         daysLeft: parsed.data.trial.daysLeft,
         endsAt: parsed.data.trial.endsAt
     };
+}
+
+/** Resolve the Tourist VIP warning, failing toward a visible notice when unreadable. */
+export function resolveSignupTouristVipNotice({
+    result
+}: {
+    readonly result: unknown;
+}): SignupTouristVipNotice | null {
+    if (!result || typeof result !== 'object' || !('ok' in result) || result.ok !== true) {
+        return { kind: 'UNKNOWN' };
+    }
+    if (!('data' in result)) return { kind: 'UNKNOWN' };
+    const parsed = SignupNoticeResponseSchema.safeParse(result.data);
+    if (!parsed.success) return { kind: 'UNKNOWN' };
+    if (parsed.data.touristVip.status === 'NOT_AFFECTED') return null;
+    return { kind: 'CANCELLED_ON_RETURN' };
 }
 
 /** Query parameter that identifies the billing option selected for signup. */

@@ -143,6 +143,9 @@ const ENQUEUE_SITES: Readonly<
     'packages/service-core/src/services/billing/subscription/grace-started-notice.ts': [
         'billing.grace-started'
     ],
+    'packages/service-core/src/services/billing/subscription/paid-after-cancellation-notice.ts': [
+        'billing.paid-after-cancellation'
+    ],
     'packages/service-core/src/services/billing/payment/credit-payment.service.ts': [
         'billing.payment-credited'
     ],
@@ -310,6 +313,16 @@ describe('TEST:1675:2 AC:1675:1 the four pending templates render through the pr
                 graceEndsAt: '2026-10-20T02:00:00.000Z'
             },
             'Tu servicio sigue activo'
+        ],
+        [
+            'billing.paid-after-cancellation',
+            {
+                subscriptionId: 'private-paid-subscription',
+                vertical: 'gastronomy',
+                serviceEndsAt: '2026-10-20T02:00:00.000Z',
+                recurringAddonsCut: true
+            },
+            'El cobro de tus complementos recurrentes'
         ],
         [
             'billing.payment-credited',

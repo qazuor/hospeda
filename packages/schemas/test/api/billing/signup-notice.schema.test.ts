@@ -7,6 +7,7 @@ describe('TEST:B13a:21b AC:B13a:5 the signup notice contract', () => {
             'running trial',
             {
                 vertical: 'accommodation',
+                touristVip: { status: 'NOT_AFFECTED' },
                 trial: {
                     status: 'RUNNING',
                     endsAt: '2026-10-20T08:00:00.000Z',
@@ -14,7 +15,14 @@ describe('TEST:B13a:21b AC:B13a:5 the signup notice contract', () => {
                 }
             }
         ],
-        ['no running trial', { vertical: 'gastronomy', trial: { status: 'NOT_RUNNING' } }]
+        [
+            'no running trial',
+            {
+                vertical: 'gastronomy',
+                touristVip: { status: 'CANCELLED_ON_RETURN' },
+                trial: { status: 'NOT_RUNNING' }
+            }
+        ]
     ])('accepts %s', (_label, value) => {
         expect(SignupNoticeResponseSchema.parse(value)).toEqual(value);
     });
@@ -38,7 +46,16 @@ describe('TEST:B13a:21b AC:B13a:5 the signup notice contract', () => {
                 }
             }
         ],
-        ['unknown vertical', { vertical: 'unknown', trial: { status: 'NOT_RUNNING' } }]
+        ['unknown vertical', { vertical: 'unknown', trial: { status: 'NOT_RUNNING' } }],
+        ['missing Tourist VIP status', { vertical: 'tourist', trial: { status: 'NOT_RUNNING' } }],
+        [
+            'unknown Tourist VIP status',
+            {
+                vertical: 'tourist',
+                touristVip: { status: 'ACTIVE' },
+                trial: { status: 'NOT_RUNNING' }
+            }
+        ]
     ])('rejects %s', (_label, value) => {
         expect(() => SignupNoticeResponseSchema.parse(value)).toThrow();
     });

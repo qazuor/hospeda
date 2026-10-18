@@ -9,6 +9,11 @@ import { VerticalEnumSchema } from '../../enums/vertical.schema.js';
 export const SignupNoticeResponseSchema = z.object({
     /** Vertical selected by the billing option. */
     vertical: VerticalEnumSchema,
+    /** Tourist VIP status after a suspended plan holder returns to service. */
+    touristVip: z.discriminatedUnion('status', [
+        z.object({ status: z.literal('CANCELLED_ON_RETURN') }),
+        z.object({ status: z.literal('NOT_AFFECTED') })
+    ]),
     /** Trial state for this user in the selected vertical. */
     trial: z.discriminatedUnion('status', [
         z.object({

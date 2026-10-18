@@ -5,6 +5,7 @@ import {
     formatSignupWindowEnd,
     resolveSignupRejection,
     SIGNUP_VERTICAL_LABEL_KEY,
+    type SignupTouristVipNotice,
     type SignupTrialNotice
 } from '@/lib/billing/signup-checkout';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
@@ -17,7 +18,13 @@ export interface SignupCheckoutProps {
     readonly billingOptionId: string;
     readonly plansHref: string;
     readonly trialNotice: SignupTrialNotice | null;
+    readonly touristVipNotice: SignupTouristVipNotice | null;
 }
+
+const TOURIST_VIP_NOTICE_KEY: Record<SignupTouristVipNotice['kind'], string> = {
+    CANCELLED_ON_RETURN: 'billing.checkout.signup.touristVipNotice.cancelledOnReturn',
+    UNKNOWN: 'billing.checkout.signup.touristVipNotice.unknown'
+};
 
 type CheckoutView =
     | { readonly state: 'idle' | 'submitting' }
@@ -29,7 +36,8 @@ export function SignupCheckout({
     locale,
     billingOptionId,
     plansHref,
-    trialNotice
+    trialNotice,
+    touristVipNotice
 }: SignupCheckoutProps) {
     const [view, setView] = useState<CheckoutView>({ state: 'idle' });
     const { t, tPlural } = useMemo(() => createTranslations(locale), [locale]);
@@ -62,6 +70,7 @@ export function SignupCheckout({
             className={styles.container}
             data-testid="signup-checkout"
             data-state={view.state}
+            data-tourist-vip={touristVipNotice?.kind ?? 'NOT_AFFECTED'}
         >
             {view.state !== 'pending' && (
                 <>
@@ -99,6 +108,15 @@ export function SignupCheckout({
                             ) : (
                                 <p>{t('billing.checkout.signup.trialNotice.unknown')}</p>
                             )}
+                        </div>
+                    )}
+                    {touristVipNotice && (
+                        <div
+                            className={styles.trialNotice}
+                            data-testid="signup-checkout-tourist-vip-notice"
+                            role="note"
+                        >
+                            <p>{t(TOURIST_VIP_NOTICE_KEY[touristVipNotice.kind])}</p>
                         </div>
                     )}
                     <button

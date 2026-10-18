@@ -10,7 +10,8 @@ const props = {
     locale: 'es' as const,
     billingOptionId: '123e4567-e89b-42d3-a456-426614174000',
     plansHref: '/es/planes/turistas/',
-    trialNotice: null
+    trialNotice: null,
+    touristVipNotice: null
 };
 const success = {
     ok: true,
@@ -212,5 +213,55 @@ describe('TEST:B13a:21c AC:B13a:5 the checkout says both trial halves before con
         fireEvent.click(screen.getByTestId('signup-checkout-confirm'));
         await screen.findByTestId('signup-checkout-pending');
         expect(screen.queryByTestId('signup-checkout-trial-notice')).not.toBeInTheDocument();
+    });
+});
+
+describe('TEST:1623:6 Tourist VIP return warning', () => {
+    it('shows the cancellation and no-refund warning before confirm with a positive marker', () => {
+        render(
+            <SignupCheckout
+                {...props}
+                touristVipNotice={{ kind: 'CANCELLED_ON_RETURN' }}
+            />
+        );
+        const section = screen.getByTestId('signup-checkout');
+        const notice = screen.getByTestId('signup-checkout-tourist-vip-notice');
+        const confirm = screen.getByTestId('signup-checkout-confirm');
+        expect(section).toHaveAttribute('data-tourist-vip', 'CANCELLED_ON_RETURN');
+        expect(notice).toHaveAttribute('role', 'note');
+        expect(notice).toHaveTextContent('se cancela en el momento');
+        expect(notice).toHaveTextContent('no se reembolsa');
+        expect(
+            notice.compareDocumentPosition(confirm) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+    });
+
+    it('shows the conditional warning for an unknown lookup and marks the result', () => {
+        render(
+            <SignupCheckout
+                {...props}
+                touristVipNotice={{ kind: 'UNKNOWN' }}
+            />
+        );
+        expect(screen.getByTestId('signup-checkout')).toHaveAttribute(
+            'data-tourist-vip',
+            'UNKNOWN'
+        );
+        expect(screen.getByTestId('signup-checkout-tourist-vip-notice')).toHaveTextContent(
+            'Si tenés una suscripción suspendida cuyo plan te daba los beneficios de Turista VIP'
+        );
+    });
+
+    it('marks the checkout unaffected when the API resolved no warning', () => {
+        render(
+            <SignupCheckout
+                {...props}
+                touristVipNotice={null}
+            />
+        );
+        expect(screen.getByTestId('signup-checkout')).toHaveAttribute(
+            'data-tourist-vip',
+            'NOT_AFFECTED'
+        );
     });
 });

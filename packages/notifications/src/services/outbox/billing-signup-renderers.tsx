@@ -15,7 +15,9 @@ import {
     FirstChargeDeclinedCancel,
     GRACE_STARTED_SUBJECT,
     GraceStarted,
+    PAID_AFTER_CANCELLATION_SUBJECT,
     PAYMENT_CREDITED_SUBJECT,
+    PaidAfterCancellation,
     PaymentCredited,
     PERMANENT_GRANT_ADDON_CANCEL_SUBJECT,
     PERMANENT_GRANT_CANCEL_SUBJECT,
@@ -291,6 +293,36 @@ function graceStarted(row: EmailOutboxRow, subscriptionUrl: string) {
     };
 }
 
+function paidAfterCancellation(row: EmailOutboxRow, subscriptionUrl: string) {
+    const data = objectPayload(row);
+    const instant =
+        typeof data.serviceEndsAt === 'string' && ISO_INSTANT.test(data.serviceEndsAt)
+            ? new Date(data.serviceEndsAt)
+            : null;
+    if (
+        typeof data.subscriptionId !== 'string' ||
+        data.subscriptionId.trim() === '' ||
+        typeof data.vertical !== 'string' ||
+        data.vertical.trim() === '' ||
+        !instant ||
+        Number.isNaN(instant.getTime()) ||
+        typeof data.recurringAddonsCut !== 'boolean'
+    )
+        throw new TypeError('Faltan datos requeridos del aviso de pago tras la cancelación');
+    const serviceEndDate = formatDate({ dateString: getLocalDateString({ instant }) });
+    return {
+        subject: PAID_AFTER_CANCELLATION_SUBJECT,
+        react: (
+            <PaidAfterCancellation
+                vertical={data.vertical}
+                serviceEndDate={serviceEndDate}
+                recurringAddonsCut={data.recurringAddonsCut}
+                subscriptionUrl={subscriptionUrl}
+            />
+        )
+    };
+}
+
 function paymentCredited(row: EmailOutboxRow) {
     const data = objectPayload(row);
     const hasSubscription =
@@ -339,7 +371,8 @@ function paymentCredited(row: EmailOutboxRow) {
  * notice that precedes cancelling an orphaned addon's preapproval (A5, AC:B5:27), and the
  * before-cancel notices of HOS-1683, plus S16 signup decline, S4 grace start and P1 credited payment (HOS-1675); HOS-1618 adds AC:B13a:5 branches to signup-declined. Each kind has no default: a declined first charge
  * (S16/S1), a revocation (S36), a live authorization on a closed row (REJECTION_REVIVED) and
- * a scheduled cancellation (S11/S12). `billing.before-cancel` is S3's alone.
+ * a scheduled cancellation (S11/S12) and the paid-after-cancellation notice (AC:B13a:17).
+ * `billing.before-cancel` is S3's alone.
  */
 export function createBillingSignupRenderers(input: {
     readonly siteUrl: string;
@@ -348,6 +381,7 @@ export function createBillingSignupRenderers(input: {
     return {
         'billing.signup-declined': ({ row }) => signupDeclined(row, subscriptionUrl),
         'billing.grace-started': ({ row }) => graceStarted(row, subscriptionUrl),
+        'billing.paid-after-cancellation': ({ row }) => paidAfterCancellation(row, subscriptionUrl),
         'billing.payment-credited': ({ row }) => paymentCredited(row),
         'billing.signup-confirmed': ({ row }) => confirmed(row),
         'billing.before-cancel': ({ row }) => beforeCancel(row),
