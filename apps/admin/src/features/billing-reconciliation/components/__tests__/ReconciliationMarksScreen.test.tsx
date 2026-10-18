@@ -6,10 +6,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { ReconciliationMarksScreen } from '../ReconciliationMarksScreen';
 
 const query = vi.hoisted(() => ({
-    current: { isLoading: false, isError: false, data: undefined as any, refetch: vi.fn() }
+    current: { isLoading: false, isError: false, data: undefined as any, refetch: vi.fn() },
+    permissions: ['billing.subscription.inspect'] as string[]
 }));
 vi.mock('../../hooks/useReconciliationMarks', () => ({
     useReconciliationMarks: () => query.current
+}));
+vi.mock('../../hooks/useSettleExternal', () => ({
+    useSettleExternalRefund: () => ({ mutateAsync: vi.fn(), isPending: false }),
+    useSettleExternalCharge: () => ({ mutateAsync: vi.fn(), isPending: false })
 }));
 vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({
@@ -22,7 +27,8 @@ vi.mock('@/hooks/use-translations', () => ({
     })
 }));
 vi.mock('@/hooks/use-user-permissions', () => ({
-    useUserPermissions: () => [PermissionEnum.BILLING_SUBSCRIPTION_INSPECT]
+    useUserPermissions: () => query.permissions,
+    useHasPermission: (permission: PermissionEnum) => query.permissions.includes(permission)
 }));
 vi.mock('@/hooks/use-auth-context', () => ({ useAuthContext: () => ({ isLoading: false }) }));
 
@@ -117,6 +123,8 @@ describe('TEST:1620:9 actionable reconciliation marks screen', () => {
             marks.map((mark) => mark.markId)
         );
         const reasonSeven = within(articles[0]!);
+        expect(articles[0]).toBeInTheDocument();
+        expect(reasonSeven.queryByTestId('reconciliation-mark-action14')).not.toBeInTheDocument();
         expect(reasonSeven.getByTestId('reconciliation-mark-event-link')).toHaveAttribute(
             'href',
             `/billing/reconciliation/${marks[0]!.markId}/events`
@@ -153,5 +161,55 @@ describe('TEST:1620:9 actionable reconciliation marks screen', () => {
             'No se pudieron cargar las marcas abiertas.'
         );
         expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+    });
+
+    it('renders action 14 inside an eligible mark article when permitted', () => {
+        query.permissions = [
+            PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
+            PermissionEnum.BILLING_SETTLE_EXTERNAL
+        ];
+        const eligible = {
+            ...marks[0]!,
+            reason: 'REEMBOLSO_FUERA_DEL_FLUJO',
+            reasonNumber: 18,
+            payments: [payment('99999999-9999-4999-8999-999999999999')],
+            paymentCount: 1
+        };
+        query.current = {
+            isLoading: false,
+            isError: false,
+            refetch: vi.fn(),
+            data: {
+                items: [eligible],
+                pagination: { page: 1, pageSize: 50, total: 1, totalPages: 1 }
+            }
+        };
+        render(<ReconciliationMarksScreen />);
+        const article = screen.getByTestId('reconciliation-mark');
+        expect(article).toBeInTheDocument();
+        expect(within(article).getByTestId('reconciliation-mark-action14')).toHaveAttribute(
+            'data-reason',
+            'REEMBOLSO_FUERA_DEL_FLUJO'
+        );
+    });
+
+    it('b) keeps the seeded mark article visible while hiding action 14 without its permission', () => {
+        query.permissions = [PermissionEnum.BILLING_SUBSCRIPTION_INSPECT];
+        const eligible = { ...marks[0]!, reason: 'REEMBOLSO_FUERA_DEL_FLUJO', reasonNumber: 18 };
+        query.current = {
+            isLoading: false,
+            isError: false,
+            refetch: vi.fn(),
+            data: {
+                items: [eligible],
+                pagination: { page: 1, pageSize: 50, total: 1, totalPages: 1 }
+            }
+        };
+        render(<ReconciliationMarksScreen />);
+        const article = screen.getByTestId('reconciliation-mark');
+        expect(article).toBeInTheDocument();
+        expect(
+            within(article).queryByTestId('reconciliation-mark-action14')
+        ).not.toBeInTheDocument();
     });
 });
