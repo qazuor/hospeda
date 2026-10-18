@@ -104,6 +104,7 @@ describe('TEST:1697:10 AC:1697:1 AC:1697:2 action 7 lift route', () => {
             .from(reconciliationMarks)
             .where(eq(reconciliationMarks.id, mark.id));
         expect(stored?.liftedAt).not.toBeNull();
+        expect(parsed.liftedAt).toBe(stored?.liftedAt?.toISOString());
         expect(stored?.liftedBy).toBe(actorId);
         expect(stored?.version).toBe(mark.version + 1);
         expect(audit).toHaveBeenCalledTimes(1);
