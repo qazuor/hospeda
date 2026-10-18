@@ -209,12 +209,12 @@ function collectTestRoots(): readonly string[] {
     if (existsSync(scriptsTests)) roots.push(scriptsTests);
     return roots;
 }
-function collectTestFiles(dir: string, out: string[]): void {
+function collectTestFiles({ dir, out }: { readonly dir: string; readonly out: string[] }): void {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
         if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.turbo')
             continue;
         const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) collectTestFiles(full, out);
+        if (entry.isDirectory()) collectTestFiles({ dir: full, out });
         else if (entry.isFile() && /\.(test|spec)\.tsx?$/.test(entry.name)) out.push(full);
     }
 }
@@ -228,7 +228,7 @@ function namesId({ text, id }: { readonly text: string; readonly id: string }): 
 }
 function collectSources(): readonly { readonly file: string; readonly source: string }[] {
     const files: string[] = [];
-    for (const root of collectTestRoots()) collectTestFiles(root, files);
+    for (const root of collectTestRoots()) collectTestFiles({ dir: root, out: files });
     return files
         .filter((file) => path.resolve(file) !== path.resolve(selfPath))
         .map((file) => ({ file, source: readFileSync(file, 'utf8') }));
