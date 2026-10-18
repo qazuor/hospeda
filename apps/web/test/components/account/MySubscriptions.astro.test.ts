@@ -20,6 +20,15 @@ describe('MySubscriptions SSR block', () => {
         expect(source).toContain('account.subscription.mine.empty');
         expect(source).toContain("row.status === 'CANCEL_SCHEDULED'");
     });
+    it('offers promo redemption only through the status and payment-method eligibility record (AC:B9b:12 HOS-1591 TEST:B9b:12 (support))', () => {
+        expect(source).toContain('PROMO_REDEEM_OFFERED[row.status][row.paymentMethod]');
+        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        expect(article).toContain('PROMO_REDEEM_OFFERED[row.status][row.paymentMethod]');
+        expect(article).toContain(
+            '<PromoCodeRedeem client:visible vertical={row.vertical as PublishVerticalSlug} locale={locale} offer="SUBSCRIPTION" />'
+        );
+    });
+
     it('shows the unavailable plan-change notice through its status record', () => {
         expect(source).toContain('PLAN_CHANGE_UNAVAILABLE[row.status]');
         expect(source).toContain('data-testid="my-subscription-plan-change-unavailable"');

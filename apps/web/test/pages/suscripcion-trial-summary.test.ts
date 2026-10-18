@@ -44,6 +44,20 @@ describe('mi-cuenta/suscripcion — row 4 trial summary (HOS-1492)', () => {
         expect(summary).toBeGreaterThan(header);
     });
 
+    it('offers trial extensions only for active trials below TrialSummary (AC:B9b:12 HOS-1591 TEST:B9b:12 (support))', () => {
+        expect(source).toContain('TrialStatusEnum.TRIAL_ACTIVE');
+        expect(source).toContain(
+            'trialSummaries.filter(({ summary }) => summary.status === TrialStatusEnum.TRIAL_ACTIVE)'
+        );
+        const summary = source.indexOf('<TrialSummary locale={locale} entries={trialSummaries} />');
+        const offer = source.indexOf('data-testid="trial-promo-redeem"');
+        expect(summary).toBeGreaterThan(-1);
+        expect(offer).toBeGreaterThan(summary);
+        expect(source).toContain(
+            '<PromoCodeRedeem client:visible vertical={vertical} locale={locale} offer="TRIAL" />'
+        );
+    });
+
     // HOS-1617 (AC:B13a:1) made this page read the caller's own subscriptions
     // through `billingSubscriptionApi`; the retired billing client stays out.
     it('never uses the retired billing client', () => {
