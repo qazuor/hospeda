@@ -270,6 +270,18 @@
             "symbol": "countOpenUnconfirmedCancellationMarks",
             "row": 12,
             "why": "AC:B4:5 (HOS-1534): la respuesta de puedeCobrarle, su mitad de la marca: cuenta las marcas CANCELACION_SIN_CONFIRMAR con lifted_at vacío sobre las suscripciones de la cuenta y, si hay una, contesta sí."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/actionable-marks.ts",
+            "symbol": "listActionableReconciliationMarks",
+            "row": 6,
+            "why": "El listado accionable (B/19 §6, AC:B13a:9): una entrada por marca abierta, con su motivo, desde cuándo, todos sus pagos colgados con cantidad y total, y la propuesta del catálogo, con los nueve que devuelven plata adelante."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/actionable-mark-events.ts",
+            "symbol": "readReconciliationMarkEvents",
+            "row": 6,
+            "why": "Resuelve los eventos críticos de una marca con el intervalo de apertura y cierre guardado por la marca (DEC-RF-005)."
         }
     ],
     "cortesia_diferida": [
