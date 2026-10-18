@@ -26,6 +26,7 @@ import type { ReconciliationComparisonInput } from '../../../src/services/billin
 import type { UnresolvedPeriodCharges } from '../../../src/services/billing/reconciliation/sweep/unresolved-period-charge.port.js';
 import type { BeforeCancelNotice } from '../../../src/services/billing/subscription/start-subscription.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
+import { liftOpenMarkAsAdmin } from './support/admin-lift-fixtures.js';
 import { graceFixture, graceWithFailedCycle } from './support/grace-fixtures.js';
 
 afterAll(closeServiceTestPool);
@@ -437,7 +438,7 @@ describe('TEST:B7:4 — the grace clock ran out: charged, unknown and mark 21 (A
     );
 
     it.skipIf(!isServiceTestDbAvailable())(
-        'f — with reason 21 open, a later "did not charge" still does not run S6',
+        'TEST:1697:9 AC:1697:4 f — with reason 21 open, a later "did not charge" still does not run S6',
         async () => {
             const e = await expiryFixture();
             await openReconciliationMark({
@@ -461,11 +462,11 @@ describe('TEST:B7:4 — the grace clock ran out: charged, unknown and mark 21 (A
             expect(e.beforeCancel).not.toHaveBeenCalled();
             expect((await subscriptionRow(e.subscriptionId)).status).toBe('GRACE_PERIOD');
 
-            // Once a person resolves it (lifted here directly), the next run suspends.
-            await getServiceTestDb()
-                .update(reconciliationMarks)
-                .set({ liftedAt: new Date(), liftedBy: e.fixture.user.id })
-                .where(eq(reconciliationMarks.subscriptionId, e.subscriptionId));
+            // A person lifts reason 21 through action 7 (S15), not by hand.
+            await liftOpenMarkAsAdmin({
+                subscriptionId: e.subscriptionId,
+                reason: 'COBRO_DEL_PERIODO_SIN_RESOLVER'
+            });
             await e.runCheck();
             expect((await subscriptionRow(e.subscriptionId)).status).toBe('SUSPENDED');
         }
