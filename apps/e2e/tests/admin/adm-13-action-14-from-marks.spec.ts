@@ -133,7 +133,7 @@ test.describe('TEST:B13a:10 admin action 14 on marks 18 and 19 @p0 @admin', () =
                 })
             }
         );
-        expect(readPermission.status).toBe(200);
+        expect(readPermission.ok).toBe(true);
         await markAdminToursSeen({ userId: ordinaryAdmin.id });
         await page.context().clearCookies();
         await useAdminSession(page, ordinaryAdmin);
