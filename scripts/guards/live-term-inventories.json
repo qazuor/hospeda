@@ -304,6 +304,12 @@
             "why": "S3 cierra el saldo diferido de la cortesía."
         },
         {
+            "file": "packages/schemas/src/api/billing/subscription-self-cancel.schema.ts",
+            "symbol": "balanceMonths",
+            "row": 21,
+            "why": "El contrato de respuesta incluye el saldo en meses de la cortesía diferida para mostrarlo en Mi Suscripción (AC:B13a:8); no decide nada con el término."
+        },
+        {
             "file": "apps/api/src/routes/billing-subscription/read-own-subscriptions.ts",
             "symbol": "readOwnDeferredCourtesies",
             "row": 10,
