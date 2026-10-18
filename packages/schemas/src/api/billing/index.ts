@@ -23,6 +23,7 @@ export * from './payment-reconciliation.schema.js';
 export * from './permanent-grant.schema.js';
 export * from './plan-change.schema.js';
 export * from './promo-code.schema.js';
+export * from './promo-code-admin.schema.js';
 export * from './promo-redemption.schema.js';
 export * from './protected-effective-set.schema.js';
 export * from './reconciliation-marks.schema.js';
