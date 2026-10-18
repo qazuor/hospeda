@@ -9,21 +9,19 @@ import {
 } from '../../fixtures/api-helpers.ts';
 import {
     activateCardSubscription,
+    cleanupArrearsRows,
     createApiCardSubscription,
     type FakeWorld
 } from '../../fixtures/arrears-cycle.ts';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { execSQL } from '../../fixtures/db-helpers.ts';
 import { startE2eFakeProvider } from '../../fixtures/fake-provider-server.ts';
 import { startE2eMailCapture } from '../../fixtures/mail-capture-server.ts';
 import { monthlyOptionForSlug } from '../../fixtures/signup-checkout.ts';
-import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const ADMIN_URL = process.env.HOSPEDA_E2E_ADMIN_URL ?? 'http://localhost:18300';
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
 const ownedUsers = new Set<string>();
 const ownedPromoIds = new Set<string>();
-const ownedRedemptionIds = new Set<string>();
-const ownedSubscriptionIds = new Set<string>();
 
 async function useAdminSession(page: Page, cookie: string): Promise<void> {
     await page.context().addCookies(
@@ -62,23 +60,15 @@ test.describe('TEST:B9b:9 AC:B9b:9 promo code editor creates and closes a code @
     });
 
     test.afterAll(async () => {
-        if (ownedRedemptionIds.size)
-            await execSQL('DELETE FROM promo_redemption WHERE id = ANY($1::uuid[])', [
-                [...ownedRedemptionIds]
+        if (ownedPromoIds.size)
+            await execSQL('DELETE FROM promo_redemption WHERE promo_code_id = ANY($1::uuid[])', [
+                [...ownedPromoIds]
             ]);
         if (ownedPromoIds.size)
             await execSQL('DELETE FROM promo_code WHERE id = ANY($1::uuid[])', [
                 [...ownedPromoIds]
             ]);
-        if (ownedSubscriptionIds.size)
-            await execSQL('DELETE FROM provider_link WHERE subscription_id = ANY($1::uuid[])', [
-                [...ownedSubscriptionIds]
-            ]);
-        if (ownedSubscriptionIds.size)
-            await execSQL('DELETE FROM subscription WHERE id = ANY($1::uuid[])', [
-                [...ownedSubscriptionIds]
-            ]);
-        if (ownedUsers.size) await cleanupTestUsers(getDbPool(), [...ownedUsers]);
+        if (ownedUsers.size) await cleanupArrearsRows({ userIds: [...ownedUsers] });
         await world?.fakeServer.close().catch(() => undefined);
     });
 
@@ -98,7 +88,6 @@ test.describe('TEST:B9b:9 AC:B9b:9 promo code editor creates and closes a code @
         const optionId = await monthlyOptionForSlug('owner-basico');
         const card = await createApiCardSubscription({ user: owner, billingOptionId: optionId });
         const subscriptionId = card.subscriptionId;
-        ownedSubscriptionIds.add(subscriptionId);
         await activateCardSubscription({ fakeServer: world.fakeServer, subscriptionId });
         const code = `E2E${randomUUID().replaceAll('-', '').slice(0, 12).toUpperCase()}`;
         await useAdminSession(page, superAdmin.sessionCookie);
@@ -137,7 +126,6 @@ test.describe('TEST:B9b:9 AC:B9b:9 promo code editor creates and closes a code @
         );
         const redemptionId = redemptionRows[0]?.id;
         if (!redemptionId) throw new Error('Expected a prior redemption.');
-        ownedRedemptionIds.add(redemptionId);
         await page.reload();
         const row = page.locator(
             `[data-testid="promo-code-row"][data-promo-code="${existingCode}"]`

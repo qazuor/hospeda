@@ -4,6 +4,7 @@ import { FakePaymentProvider } from '@repo/payments/fake';
 import { createAdjustableClock } from '@repo/test-clock';
 import {
     activateCardSubscription,
+    cleanupArrearsRows,
     createApiCardSubscription,
     createSubscriber,
     type FakeWorld,
@@ -11,19 +12,16 @@ import {
 } from '../../fixtures/arrears-cycle.ts';
 import { seedManualPendingSubscription } from '../../fixtures/billing-signup-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { execSQL } from '../../fixtures/db-helpers.ts';
 import { startE2eFakeProvider } from '../../fixtures/fake-provider-server.ts';
 import {
     attachSession,
     type CatalogSlug,
     monthlyOptionForSlug
 } from '../../fixtures/signup-checkout.ts';
-import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const ownedUserIds = new Set<string>();
 const ownedPromoIds = new Set<string>();
-const ownedSubscriptionIds = new Set<string>();
-const ownedRedemptionIds = new Set<string>();
 
 async function createPromo(options: {
     readonly code: string;
@@ -63,7 +61,6 @@ async function activeCardSubscription(
         user: subscriber.user,
         billingOptionId
     });
-    ownedSubscriptionIds.add(subscription.subscriptionId);
     await activateCardSubscription({ fakeServer, subscriptionId: subscription.subscriptionId });
     return { user: subscriber.user, subscriptionId: subscription.subscriptionId };
 }
@@ -120,23 +117,15 @@ test.describe('TEST:B9b:12 TEST:B9b:2 AC:B9b:12 AC:B9b:2 promo redemption notice
     });
 
     test.afterAll(async () => {
-        if (ownedRedemptionIds.size)
-            await execSQL('DELETE FROM promo_redemption WHERE id = ANY($1::uuid[])', [
-                [...ownedRedemptionIds]
+        if (ownedPromoIds.size)
+            await execSQL('DELETE FROM promo_redemption WHERE promo_code_id = ANY($1::uuid[])', [
+                [...ownedPromoIds]
             ]);
         if (ownedPromoIds.size)
             await execSQL('DELETE FROM promo_code WHERE id = ANY($1::uuid[])', [
                 [...ownedPromoIds]
             ]);
-        if (ownedSubscriptionIds.size)
-            await execSQL('DELETE FROM provider_link WHERE subscription_id = ANY($1::uuid[])', [
-                [...ownedSubscriptionIds]
-            ]);
-        if (ownedSubscriptionIds.size)
-            await execSQL('DELETE FROM subscription WHERE id = ANY($1::uuid[])', [
-                [...ownedSubscriptionIds]
-            ]);
-        if (ownedUserIds.size) await cleanupTestUsers(getDbPool(), [...ownedUserIds]);
+        if (ownedUserIds.size) await cleanupArrearsRows({ userIds: [...ownedUserIds] });
         await world?.mailCapture.close().catch(() => undefined);
         await world?.fakeServer.close().catch(() => undefined);
     });
@@ -162,7 +151,6 @@ test.describe('TEST:B9b:12 TEST:B9b:2 AC:B9b:12 AC:B9b:2 promo redemption notice
         );
         expect(rows).toHaveLength(1);
         expect(rows[0]?.remaining_charges).toBe(3);
-        ownedRedemptionIds.add(rows[0]!.id);
         await expect(article.getByTestId('promo-redeem')).toBeVisible();
     });
 
@@ -176,14 +164,6 @@ test.describe('TEST:B9b:12 TEST:B9b:2 AC:B9b:12 AC:B9b:2 promo redemption notice
         await expect(notice).toContainText('Tu próximo cobro');
         await expect(notice).toContainText('Después pagás');
         await expect(notice).toContainText('promo termina');
-        const promo = await execSQL<{ id: string }>('SELECT id FROM promo_code WHERE code = $1', [
-            firstCode
-        ]);
-        const rows = await execSQL<{ id: string }>(
-            'SELECT id FROM promo_redemption WHERE promo_code_id = $1 AND user_id = $2',
-            [promo[0]?.id, user.id]
-        );
-        if (rows[0]) ownedRedemptionIds.add(rows[0].id);
     });
 
     test('offers amount redemption only within the CARD article, not the MANUAL article', async ({
@@ -203,7 +183,6 @@ test.describe('TEST:B9b:12 TEST:B9b:2 AC:B9b:12 AC:B9b:2 promo redemption notice
             billingOptionId: manualOptionId,
             windowEndsAt: new Date(Date.now() + 7 * 86400000)
         });
-        ownedSubscriptionIds.add(manualId);
         await execSQL("UPDATE subscription SET status = 'ACTIVE' WHERE id = $1", [manualId]);
         const card = await activeCardSubscriptionForExistingUser(subscriber.user);
         await seedCookieConsent(page);
@@ -275,6 +254,5 @@ async function activeCardSubscriptionForExistingUser(user: { id: string }): Prom
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('Expected active CARD subscription.');
-    ownedSubscriptionIds.add(id);
     return id;
 }
