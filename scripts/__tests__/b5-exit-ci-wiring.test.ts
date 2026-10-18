@@ -307,6 +307,19 @@ describe('TEST:B5:17 AC:B5:33 - B5 exit: LISTA:B5 evidence in the tree, manual h
                     missingFiles,
                     `evidence files without the title: ${missingFiles.join(', ')}`
                 ).toEqual([]);
+                if (entry.clause === 1 || entry.clause === 3) {
+                    const file = CLAUSE_FILES[entry.clause]?.[0] ?? '';
+                    const evidenceTitles = existsSync(path.join(repoRoot, file))
+                        ? testTitles({ source: read(file) })
+                        : [];
+                    const matchingTitles = evidenceTitles.filter((title) =>
+                        namesId({ text: title, id: 'TEST:B5:2' })
+                    );
+                    expect(
+                        matchingTitles.length,
+                        `clause ${entry.clause} needs three TEST:B5:2 titles in ${file}`
+                    ).toBeGreaterThanOrEqual(3);
+                }
                 if (entry.clause === 6) {
                     const missingAC = (CLAUSE_FILES[6] ?? []).filter(
                         (file) =>
