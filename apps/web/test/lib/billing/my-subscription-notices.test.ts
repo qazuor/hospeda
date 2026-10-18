@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { PLAN_CHANGE_UNAVAILABLE } from '../../../src/lib/billing/my-subscription-notices';
+import {
+    PLAN_CHANGE_UNAVAILABLE,
+    PLAN_CHANGE_UNAVAILABLE_KEY
+} from '../../../src/lib/billing/my-subscription-notices';
 
 describe('PLAN_CHANGE_UNAVAILABLE', () => {
+    it('uses the exact shared translation key for the unavailable plan-change notice', () => {
+        expect(PLAN_CHANGE_UNAVAILABLE_KEY).toBe('account.subscription.mine.planChangeUnavailable');
+    });
+
     it.each([
         { status: 'ACTIVE', expected: true },
         { status: 'GRACE_PERIOD', expected: false },
