@@ -239,10 +239,10 @@ export async function listActionableReconciliationMarks(input: {
             const metadata = actionableReconciliationMarkMetadata(reason, row.markId);
             const markPayments = paymentByMark.get(row.markId) ?? [];
             const totals = new Map<string, number>();
-            let unknownAmountCount = 0;
+            let unknownCount = 0;
             for (const payment of markPayments) {
                 if (payment.amountMinor === null || payment.currency === null) {
-                    unknownAmountCount++;
+                    unknownCount++;
                     continue;
                 }
                 totals.set(
@@ -269,7 +269,7 @@ export async function listActionableReconciliationMarks(input: {
                         currency,
                         amountMinor
                     })),
-                    unknownAmountCount,
+                    unknownAmountCount: unknownCount,
                     eventLink: metadata.eventLink
                 };
             return {
@@ -290,7 +290,7 @@ export async function listActionableReconciliationMarks(input: {
                     currency,
                     amountMinor
                 })),
-                unknownAmountCount,
+                unknownAmountCount: unknownCount,
                 eventLink: metadata.eventLink
             };
         });
