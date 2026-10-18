@@ -129,11 +129,13 @@ describe('TEST:B13a:21a AC:B13a:5 the checkout reads the trial of the option ver
         expect(accommodation.response.status).toBe(200);
         expect(accommodation.body.data).toEqual({
             vertical: 'accommodation',
+            touristVip: { status: 'NOT_AFFECTED' },
             trial: { status: 'RUNNING', endsAt: endsAt.toISOString(), daysLeft: 11 }
         });
         expect(gastronomy.response.status).toBe(200);
         expect(gastronomy.body.data).toEqual({
             vertical: 'gastronomy',
+            touristVip: { status: 'NOT_AFFECTED' },
             trial: { status: 'NOT_RUNNING' }
         });
         expect(before).toHaveLength(0);
