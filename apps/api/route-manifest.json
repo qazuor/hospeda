@@ -3759,6 +3759,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/public/plan-catalog"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/public/poi-categories"
         },
         {

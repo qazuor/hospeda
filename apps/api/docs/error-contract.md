@@ -632,3 +632,7 @@ request before writing `owner_reported_fixed_at`.
 A repeat answers 200 with the instant of the first report and rewrites
 nothing. The report writes no domain event, does not close the request and
 does not move `inactive_since`.
+
+## Public sellable plan catalog (B13a.5, HOS-1621)
+
+`GET /api/v1/public/plan-catalog?vertical=` does not require a session. A `vertical` outside `accommodation | gastronomy | experience | tourist` is a shape-validation 400. The route has no business rejections and reads only `current AND sellable` plan versions in its `plans` list (AC:B13a:11).
