@@ -23,6 +23,7 @@
  */
 
 import PricingCardItemLine from '@/components/billing/PricingCardItem.astro';
+import { PlanCardCta } from '@/components/billing/PlanCardCta.client';
 import { SubscribeButton } from '@/components/billing/SubscribeButton.client';
 import { buildPricingCardViews } from '@/components/billing/pricing-card-view';
 import { resolvePlanWatermarkIcon } from '@/components/billing/plan-watermark-icon';
@@ -33,6 +34,7 @@ import type { PricingAudience } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { SUBSCRIBE_VERTICAL_BY_AUDIENCE } from '@/lib/publish/subscribe-button';
+import { PRICING_VERTICAL_BY_AUDIENCE } from '@/lib/billing/pricing-situation';
 
 export type { PricingPlan };
 
@@ -133,6 +135,7 @@ if (ctaMode === 'link' && !ctaHref) {
 
 const { t, tPlural } = createTranslations(locale);
 const hasPlans = plans.length > 0;
+const pricingVertical = PRICING_VERTICAL_BY_AUDIENCE[audience];
 const subscribeVertical = SUBSCRIBE_VERTICAL_BY_AUDIENCE[audience];
 
 // Annual toggle: only render the UI when at least one plan in the grid has
@@ -545,6 +548,9 @@ const selectGroupName = `pricing-select-${audience}`;
 								icon="true"
 							/>
 						</div>
+					)}
+					{ctaMode === 'checkout' && pricingVertical !== null && card.plan.planVersionId && card.plan.billingOptions && (
+						<PlanCardCta client:idle locale={locale} vertical={pricingVertical} planVersionId={card.plan.planVersionId} billingOptions={card.plan.billingOptions} />
 					)}
 				</div>
 				);
