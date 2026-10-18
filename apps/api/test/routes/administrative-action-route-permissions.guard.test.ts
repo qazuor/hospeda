@@ -203,6 +203,16 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
                 kind: 'required',
                 file: 'apps/api/src/routes/billing-subscription/admin/revocation.ts',
                 route: 'adminRevokeSubscriptionRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-subscription/admin/cancellation.ts',
+                route: 'adminSubscriptionCancellationPreviewRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-subscription/admin/cancellation.ts',
+                route: 'adminCancelSubscriptionRoute'
             }
         ]
     },
@@ -407,16 +417,16 @@ const UNBOUND_ROWS: readonly { readonly action: AdministrativeAction; readonly r
         return 'unbound' in entry ? [{ action, reason: entry.unbound }] : [];
     });
 
-describe('HOS-1689 — each administrative action row agrees with its route gate', () => {
+describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row agrees with its route gate', () => {
     it('a. covers exactly the 25 catalog actions, in order', () => {
         expect(Object.keys(ROUTE_BINDINGS)).toEqual(ADMINISTRATIVE_ACTIONS);
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
 
-    it('b. checks exactly 30 bindings across 13 bound rows', () => {
+    it('b. checks exactly 32 bindings across 13 bound rows', () => {
         expect(BOUND_ACTIONS).toHaveLength(13);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(30);
+        expect(total).toBe(32);
     });
 
     it.each(

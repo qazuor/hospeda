@@ -1750,5 +1750,80 @@
                 "MARK_PAYMENT_NOT_HUNG": "A selected payment is no longer an unresolved hung payment on this mark."
             }
         }
+    },
+    "subscriptionCancellation": {
+        "title": "Cancel a subscription (no refund)",
+        "loading": "Checking the subscription…",
+        "loadError": "We could not check the subscription. Try again.",
+        "retry": "Retry",
+        "noRefund": "This cancellation refunds nothing. To refund the last charge within 10 days, use the revocation.",
+        "origin": {
+            "label": "Current state: {state}",
+            "ACTIVE": "Active",
+            "GRACE_PERIOD": "In grace period",
+            "SUSPENDED": "Suspended",
+            "CANCEL_SCHEDULED": "Cancellation scheduled"
+        },
+        "effects": {
+            "ACTIVE": "They will not be charged again, and the service continues until {date}, the end of the period already paid.",
+            "GRACE_PERIOD": "The service ends today: they lose the service the grace period was giving them until {date}. In exchange, the installment we could not charge is not claimed.",
+            "SUSPENDED": "The subscription ends today. The service was already cut by the suspension, and they are free to subscribe again.",
+            "CANCEL_SCHEDULED": "Cancellation is already requested: the service continues until {date}. There is nothing to confirm."
+        },
+        "authorization": {
+            "CARD": "If their automatic debit on Mercado Pago is still alive, it is cancelled today. We email them first; then Mercado Pago may email them about the cancellation.",
+            "MANUAL": "They pay manually: there is no automatic debit on Mercado Pago to cancel."
+        },
+        "addons": {
+            "title": "These recurring add-ons are cancelled with the subscription:",
+            "CHARGE_CUT_TODAY": "{name}: {price} {cycle}. Its charge stops today and stays visible until {date}.",
+            "AT_SERVICE_END": "{name}: {price} {cycle}. It is awaiting authorization or has a pending charge: it turns off on {date}, when the service ends.",
+            "TODAY": "{name}: {price} {cycle}. It turns off today with the subscription.",
+            "comeBack": "If they come back, they buy them again: they do not resume."
+        },
+        "cycle": {
+            "monthly": "per month",
+            "quarterly": "per quarter",
+            "semiannual": "per semester",
+            "annual": "per year"
+        },
+        "noteLabel": "Note (optional)",
+        "noteHelp": "It is kept in the record, together with who cancelled.",
+        "confirm": {
+            "ACTIVE": "Cancel: stop the debit; the service continues until {date}",
+            "GRACE_PERIOD": "Cancel: end the service today",
+            "SUSPENDED": "Cancel: end the subscription today"
+        },
+        "pending": "Cancelling…",
+        "result": {
+            "SCHEDULED": "Done: the cancellation is requested. The service continues until {date}.",
+            "ALREADY_SCHEDULED": "Cancellation was already requested: the service continues until {date}. Nothing changed.",
+            "CANCELLED": "Done: the subscription is cancelled, without service since {date}.",
+            "ALREADY_CANCELLED": "It was already cancelled. Nothing changed."
+        },
+        "cancelCall": {
+            "SENT": "Mercado Pago: the debit cancellation was sent.",
+            "NOT_NEEDED": "Mercado Pago: the debit was already cancelled.",
+            "NOTICE_PENDING": "Mercado Pago: the cancellation goes out once our email is sent; the sweep retries it.",
+            "FAILED": "Mercado Pago: the cancellation could not be sent; the sweep retries it.",
+            "NOT_APPLICABLE": "Mercado Pago: there was no debit to cancel."
+        },
+        "escalated": {
+            "NO_RECIPIENT": "There is no email to notify: it was cancelled anyway and escalated.",
+            "DELIVERY_EXHAUSTED": "Our email could not be delivered: it was cancelled anyway and escalated."
+        },
+        "blocked": {
+            "intro": "It cannot be cancelled. Nothing was cancelled.",
+            "SUBSCRIPTION_NOT_FOUND": "This subscription does not exist.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "It is your own subscription: another team member with the permission cancels it, or you do from My Subscription.",
+            "CANCELLATION_FORBIDDEN": "A system account cannot cancel a subscription.",
+            "CANCELLATION_NOT_PRINCIPAL": "Only a main subscription is cancelled, not an add-on's.",
+            "CANCELLATION_STATE_NOT_ALLOWED": "The subscription is not active, in grace, suspended or scheduled for cancellation (for example, it is already cancelled, paused or awaiting authorization).",
+            "unknown": "It could not be cancelled ({reason}). Nothing was cancelled."
+        },
+        "notice": {
+            "CANCELLATION_ORIGIN_CHANGED": "The subscription changed since you opened this screen, and it was not cancelled. Review what would happen now and confirm again."
+        },
+        "successToast": "Cancellation recorded."
     }
 }

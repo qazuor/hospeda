@@ -495,6 +495,21 @@ The POST declares `CLOSE_ACCOUNT` for the unverified-email step; both GET routes
 States without self-service cancellation at this cut, including `PAUSED` and `PENDING_AUTHORIZATION`, answer
 409 `ALREADY_EXISTS` with `CANCELLATION_STATE_NOT_ALLOWED`.
 
+## Action 8 cancellation without refund (B13a, HOS-1696)
+
+`GET` and `POST /api/v1/admin/billing-subscription/{subscriptionId}/cancellation` preview and execute action 8 without a refund. Both require `billing.cancelSubscription` as the route scope. Rejections follow this order: 401 unauthenticated, 403 without route permission, 400 malformed params or body, 404 `SUBSCRIPTION_NOT_FOUND`, 403 `ADMINISTRATIVE_ACTION_FORBIDDEN` when actor equals subject (case-insensitively), then 409 state, principal, or confirmation conflict.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `SUBSCRIPTION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `CANCELLATION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `CANCELLATION_NOT_PRINCIPAL` | 409 | `ALREADY_EXISTS` |
+| `CANCELLATION_STATE_NOT_ALLOWED` | 409 | `ALREADY_EXISTS` |
+| `CANCELLATION_ORIGIN_CHANGED` | 409 | `ALREADY_EXISTS` |
+
+`ACTIVE` and `CANCEL_SCHEDULED` use S11; `SUSPENDED` uses S23; `GRACE_PERIOD` uses S24. `CANCELLED` is idempotently handled by the direct cancellation act. `PAUSED`, `PENDING_AUTHORIZATION`, `ABANDONED`, and `CHARGE_DECLINED` do not admit this action. `CANCELLATION_ORIGIN_CHANGED` means the confirmation no longer describes the current subscription; review it again before confirming. This route issues no refund; use the S36 revocation route when a refund is intended.
+
 ## Actionable reconciliation list (B13a.4, HOS-1620)
 
 `GET /api/v1/admin/billing-reconciliation/marks` lists open marks; `GET

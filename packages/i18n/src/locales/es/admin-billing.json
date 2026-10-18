@@ -1750,5 +1750,80 @@
                 "MARK_PAYMENT_NOT_HUNG": "Un pago marcado ya no está colgado sin resolver de esta marca."
             }
         }
+    },
+    "subscriptionCancellation": {
+        "title": "Dar de baja una suscripción (sin devolución)",
+        "loading": "Revisando la suscripción…",
+        "loadError": "No pudimos revisar la suscripción. Volvé a intentar.",
+        "retry": "Reintentar",
+        "noRefund": "Esta baja no devuelve plata. Para devolver el último cobro dentro de los 10 días está la revocación.",
+        "origin": {
+            "label": "Estado actual: {state}",
+            "ACTIVE": "Activa",
+            "GRACE_PERIOD": "En período de gracia",
+            "SUSPENDED": "Suspendida",
+            "CANCEL_SCHEDULED": "Con baja programada"
+        },
+        "effects": {
+            "ACTIVE": "No se le vuelve a cobrar, y el servicio sigue hasta el {date}, el fin del período que ya pagó.",
+            "GRACE_PERIOD": "El servicio se corta hoy: pierde el servicio que el período de gracia le daba hasta el {date}. A cambio, no se le reclama la cuota que no se pudo cobrar.",
+            "SUSPENDED": "La suscripción termina hoy. El servicio ya estaba cortado por la suspensión, y queda libre para volver a suscribirse.",
+            "CANCEL_SCHEDULED": "Ya tiene la baja pedida: el servicio sigue hasta el {date}. No hay nada que confirmar."
+        },
+        "authorization": {
+            "CARD": "Si su débito automático en Mercado Pago sigue vivo, se cancela hoy. Antes le mandamos un correo; después puede llegarle uno de Mercado Pago avisando la cancelación.",
+            "MANUAL": "Paga a mano: no tiene débito automático en Mercado Pago, así que no hay nada que cancelar ahí."
+        },
+        "addons": {
+            "title": "Estos complementos recurrentes se cancelan con la suscripción:",
+            "CHARGE_CUT_TODAY": "{name}: {price} {cycle}. Su cobro se corta hoy y lo sigue viendo hasta el {date}.",
+            "AT_SERVICE_END": "{name}: {price} {cycle}. Espera autorización o tiene un cobro pendiente: se apaga el {date}, con el fin del servicio.",
+            "TODAY": "{name}: {price} {cycle}. Se apaga hoy con la suscripción.",
+            "comeBack": "Si vuelve, los contrata de nuevo: no se reanudan."
+        },
+        "cycle": {
+            "monthly": "por mes",
+            "quarterly": "por trimestre",
+            "semiannual": "por semestre",
+            "annual": "por año"
+        },
+        "noteLabel": "Nota (opcional)",
+        "noteHelp": "Queda en el registro, junto con quién dio la baja.",
+        "confirm": {
+            "ACTIVE": "Dar de baja: cancelar el débito; el servicio sigue hasta el {date}",
+            "GRACE_PERIOD": "Dar de baja: cortar el servicio hoy",
+            "SUSPENDED": "Dar de baja: terminar la suscripción hoy"
+        },
+        "pending": "Dando de baja…",
+        "result": {
+            "SCHEDULED": "Listo: la baja quedó pedida. El servicio sigue hasta el {date}.",
+            "ALREADY_SCHEDULED": "Ya tenía la baja pedida: el servicio sigue hasta el {date}. No se cambió nada.",
+            "CANCELLED": "Listo: la suscripción quedó cancelada y sin servicio desde el {date}.",
+            "ALREADY_CANCELLED": "Ya estaba cancelada. No se cambió nada."
+        },
+        "cancelCall": {
+            "SENT": "Mercado Pago: se mandó la cancelación del débito.",
+            "NOT_NEEDED": "Mercado Pago: el débito ya estaba cancelado.",
+            "NOTICE_PENDING": "Mercado Pago: la cancelación sale cuando se mande nuestro correo; el barrido la reintenta.",
+            "FAILED": "Mercado Pago: no se pudo mandar la cancelación; el barrido la reintenta.",
+            "NOT_APPLICABLE": "Mercado Pago: no había débito que cancelar."
+        },
+        "escalated": {
+            "NO_RECIPIENT": "No tiene correo al que avisarle: se canceló igual y quedó escalado.",
+            "DELIVERY_EXHAUSTED": "Nuestro correo no se pudo entregar: se canceló igual y quedó escalado."
+        },
+        "blocked": {
+            "intro": "No se puede dar de baja. No se canceló nada.",
+            "SUBSCRIPTION_NOT_FOUND": "Esta suscripción no existe.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "Es tu propia suscripción: la da de baja otra persona del equipo con el permiso, o vos desde Mi Suscripción.",
+            "CANCELLATION_FORBIDDEN": "Una cuenta del sistema no puede dar de baja una suscripción.",
+            "CANCELLATION_NOT_PRINCIPAL": "Sólo se da de baja una suscripción principal, no la de un complemento.",
+            "CANCELLATION_STATE_NOT_ALLOWED": "La suscripción no está activa, en gracia, suspendida ni con baja programada (por ejemplo, ya está cancelada, pausada o esperando autorización).",
+            "unknown": "No se pudo dar de baja ({reason}). No se canceló nada."
+        },
+        "notice": {
+            "CANCELLATION_ORIGIN_CHANGED": "La suscripción cambió desde que abriste esta pantalla, y no se dio de baja. Revisá lo que pasaría ahora y confirmá otra vez."
+        },
+        "successToast": "Baja registrada."
     }
 }
