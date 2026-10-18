@@ -80,7 +80,7 @@ test.describe('TEST:B13a:10 admin action 14 on marks 18 and 19 @p0 @admin', () =
             `WITH moment AS (SELECT now() - interval '3650 days' AS at),
              m18 AS (INSERT INTO reconciliation_mark (subscription_id, reason, placed_at, deadlines_version)
                      SELECT $1, 'REEMBOLSO_FUERA_DEL_FLUJO', at,
-                            (SELECT max(version) FROM billing_deadline_version) FROM moment RETURNING id, placed_at),
+                            (SELECT max(version) FROM billing_deadline_version) FROM moment RETURNING id, placed_at, reason),
              m19 AS (INSERT INTO reconciliation_mark (subscription_id, reason, placed_at, deadlines_version)
                      SELECT $1, 'COBRO_SIN_REGISTRAR', at + interval '1 second',
                             (SELECT max(version) FROM billing_deadline_version) FROM moment RETURNING id, placed_at),
