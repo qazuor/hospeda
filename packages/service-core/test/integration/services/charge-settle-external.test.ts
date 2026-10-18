@@ -59,6 +59,7 @@ describe('TEST:B5:6 AC:B5:11 admin action 14 settles an unrecorded charge (motiv
                 coverage: 'WRITTEN',
                 reception: 'P1'
             });
+            expect(result.subjectId).toBe(seeded.fixture.user.id);
             const facts = await paymentFactsOf(seeded.chargeId);
             expect(facts).toHaveLength(1);
             expect(facts[0]).toMatchObject({ id: result.paymentId, status: 'SUCCEEDED' });
