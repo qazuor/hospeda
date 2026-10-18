@@ -14,6 +14,7 @@ export type PublicPlanCatalogVertical = z.infer<typeof PublicPlanCatalogVertical
 export const PublicPlanCatalogQuerySchema = z.object({
     vertical: PublicPlanCatalogVerticalSchema
 });
+export type PublicPlanCatalogQuery = z.infer<typeof PublicPlanCatalogQuerySchema>;
 
 /** A public billing choice, with amount expressed in minor currency units. */
 export const PublicPlanCatalogBillingOptionSchema = z.object({

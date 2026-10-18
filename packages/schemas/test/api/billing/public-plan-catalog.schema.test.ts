@@ -48,7 +48,14 @@ describe('PublicPlanCatalogResponseSchema', () => {
         ).toBe(true);
     });
 
-    it('accepts empty plans and billing options', () => {
+    it('accepts empty plans and empty billing options', () => {
+        expect(
+            PublicPlanCatalogResponseSchema.safeParse({
+                vertical: 'tourist',
+                plans: [],
+                floor: null
+            }).success
+        ).toBe(true);
         expect(
             PublicPlanCatalogResponseSchema.safeParse({
                 vertical: 'tourist',
