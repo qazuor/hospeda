@@ -123,6 +123,14 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   Sentry monitors: see [Cutover smoke: the Sentry cron monitors](../../scripts/cutover/README.md#cutover-smoke-the-sentry-cron-monitors).
 - **Covers:** Cron schedule correctness on staging.
 
+### S7 — Promo redemption: Mercado Pago amount-change email (CT-3)
+
+- **Preconditions:** A «N cobros» code created from the editor at `/billing/promo-codes`; a card subscription in the Mercado Pago sandbox.
+- **Steps:** Redeem the code in My Subscription and reread the Mercado Pago preapproval.
+- **Expected:** The 7-bis notice appears on screen, `transaction_amount` is mutated, and Mercado Pago's “El vendedor Hospeda cambió el monto” email reaches the payer (not us).
+- **Evidence:** Screenshot of the notice, the preapproval, and the email.
+- **Covers:** AC:B9b:12; TEST:B9b:12; CT-3 (`B/14` §2.4).
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |
@@ -208,6 +216,7 @@ and seven days of clean daily sweeps) — is what retires `status-needs-smoke-pr
 Each later phase extends this checklist with its own items ([GATE:FP.2](../../scripts/cutover/README.md#gate-fp-2)):
 the staging part, executed before merging the phase branch to `staging`, and a production 5c
 own to the phase, with the owner's card and an approved amount, after the phase reaches production.
+The B9b slice that went to cut (HOS-1588, HOS-1589, HOS-1591) added its item to Part 1; B9b phase 2 (temporary courtesy: pause and resumption, HOS-1590/HOS-1592) adds its own.
 
 ## Related
 
