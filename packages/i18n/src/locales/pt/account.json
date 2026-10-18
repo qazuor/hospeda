@@ -463,6 +463,9 @@
         "mine": {
             "title": "Suas assinaturas",
             "empty": "Você não tem assinaturas vigentes.",
+            "planChangeUnavailable": "Ainda não é possível mudar de plano: cancele no fim do período e assine de novo.",
+            "deferredCourtesy_one": "Você tem 1 mês restante, que começa a contar quando você concluir o pagamento.",
+            "deferredCourtesy_other": "Você tem {{count}} meses restantes, que começam a contar quando você concluir o pagamento.",
             "status": {
                 "ACTIVE": "Ativa",
                 "GRACE_PERIOD": "Pagamento pendente",

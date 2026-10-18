@@ -270,6 +270,24 @@
             "symbol": "countOpenUnconfirmedCancellationMarks",
             "row": 12,
             "why": "AC:B4:5 (HOS-1534): la respuesta de puedeCobrarle, su mitad de la marca: cuenta las marcas CANCELACION_SIN_CONFIRMAR con lifted_at vacío sobre las suscripciones de la cuenta y, si hay una, contesta sí."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/actionable-marks.ts",
+            "symbol": "listActionableReconciliationMarks",
+            "row": 6,
+            "why": "El listado accionable (B/19 §6, AC:B13a:9): una entrada por marca abierta, con su motivo, desde cuándo, todos sus pagos colgados con cantidad y total, y la propuesta del catálogo, con los nueve que devuelven plata adelante."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/actionable-mark-events.ts",
+            "symbol": "readReconciliationMarkEvents",
+            "row": 6,
+            "why": "Resuelve los eventos críticos de una marca con el intervalo de apertura y cierre guardado por la marca (DEC-RF-005)."
+        },
+        {
+            "file": "apps/api/src/routes/billing-reconciliation/admin/mark-events.ts",
+            "symbol": "readReconciliationMarkEventsRoute",
+            "row": 6,
+            "why": "La ruta admin del vínculo (AC:B13a:9) serializa levantada_en de la marca que lee readReconciliationMarkEvents, para que el panel muestre si la marca sigue abierta."
         }
     ],
     "cortesia_diferida": [
@@ -302,6 +320,18 @@
             "symbol": "abandonPendingAuthorization",
             "row": 9,
             "why": "S3 cierra el saldo diferido de la cortesía."
+        },
+        {
+            "file": "packages/schemas/src/api/billing/subscription-self-cancel.schema.ts",
+            "symbol": "balanceMonths",
+            "row": 21,
+            "why": "El contrato de respuesta incluye el saldo en meses de la cortesía diferida para mostrarlo en Mi Suscripción (AC:B13a:8); no decide nada con el término."
+        },
+        {
+            "file": "apps/api/src/routes/billing-subscription/read-own-subscriptions.ts",
+            "symbol": "readOwnDeferredCourtesies",
+            "row": 10,
+            "why": "Mi Suscripción muestra la cortesía diferida del beneficiario con su condición, en la vertical de la suscripción que la firmó (AC:B13a:8, DEC-GRANT-012); no decide nada con el término."
         }
     ]
 }

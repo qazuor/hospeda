@@ -15,6 +15,7 @@ import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
 import type { CreditPaymentResult } from '../payment/credit-payment.service.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
+import { lateRejectionDetail } from '../subscription/late-payment-conditions.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import {
     type CancelOurAuthorizationOutcome,
@@ -119,6 +120,9 @@ async function mark(
             payment: input.arrival.kind === 'CHARGE' ? input.arrival.payment : undefined,
             actor: { type: input.actor },
             correlationId: input.correlationId,
+            ...(reason === 'PAGO_TARDIO_RECHAZADO'
+                ? { detail: lateRejectionDetail({ failedCondition: null }) }
+                : {}),
             tx: input.tx
         },
         markPayments ? { markPayments } : {}

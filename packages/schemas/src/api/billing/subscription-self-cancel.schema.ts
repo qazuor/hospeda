@@ -12,6 +12,14 @@ export const OwnSubscriptionsResponseSchema = z.object({
             graceEndsAt: z.string().datetime().nullable(),
             createdAt: z.string().datetime()
         })
+    ),
+    /** Deferred courtesy terms from glossary §2.6, for display only. */
+    deferredCourtesies: z.array(
+        z.object({
+            courtesyGrantId: z.string().uuid(),
+            vertical: z.string(),
+            balanceMonths: z.number().int().nonnegative()
+        })
     )
 });
 

@@ -479,6 +479,7 @@ The permission is the route's scope (`billing.cancelSubscription`); the subject,
 ## Self-service cancellation (B13a.1, HOS-1617)
 
 `GET /api/v1/protected/billing-subscription/` lists the caller's principal subscriptions.
+The list also returns `deferredCourtesies` for AC:B13a:8 (HOS-1620); this adds no new rejections.
 `GET /api/v1/protected/billing-subscription/{subscriptionId}/cancellation-preview` previews the cancellation, and
 `POST /api/v1/protected/billing-subscription/{subscriptionId}/cancellation` performs it. Both resource routes are owner-only: another person's subscription is
 404, including for staff holding `billing.cancelSubscription`, because these routes are in the protected tier.
@@ -493,6 +494,16 @@ The POST declares `CLOSE_ACCOUNT` for the unverified-email step; both GET routes
 
 States without self-service cancellation at this cut, including `PAUSED` and `PENDING_AUTHORIZATION`, answer
 409 `ALREADY_EXISTS` with `CANCELLATION_STATE_NOT_ALLOWED`.
+
+## Actionable reconciliation list (B13a.4, HOS-1620)
+
+`GET /api/v1/admin/billing-reconciliation/marks` lists open marks; `GET
+/api/v1/admin/billing-reconciliation/marks/{markId}/events` reads the critical
+events for a mark. Both require `BILLING_SUBSCRIPTION_INSPECT` at the route
+factory. Rejections follow the standard order: 401 unauthenticated, 403 without
+permission, 400 for malformed pagination or `markId`, and 404 `NOT_FOUND` for
+an unknown mark. The list is read-only: it neither writes nor executes a
+proposal (DEC-RF-002).
 
 ## Action 24 (V8a.3, HOS-1494)
 

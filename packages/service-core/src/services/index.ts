@@ -116,6 +116,8 @@ export * from './billing/promo/redeem-promo-code.service.js';
 export * from './billing/promo/redeem-trial-extension-code.service.js';
 export * from './billing/promo/send-promo-ending-notices.service.js';
 export * from './billing/read-anchored-billing-option.js';
+export * from './billing/reconciliation/actionable-mark-events.js';
+export * from './billing/reconciliation/actionable-marks.js';
 export * from './billing/reconciliation/cancel-our-authorization.js';
 export * from './billing/reconciliation/chargeback/chargeback-detection.js';
 export * from './billing/reconciliation/creations/creations-sweep.service.js';
