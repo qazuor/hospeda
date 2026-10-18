@@ -6,10 +6,27 @@ import {
     formatSelfCancelDate,
     GRACE_NOTICE,
     parseCancellationPreview,
-    parseOwnSubscriptions
+    parseOwnSubscriptions,
+    resolveScheduledRenewal
 } from '@/lib/billing/self-cancel';
 
 describe('self-cancel helpers', () => {
+    it('resolves owner cancellation and paid-after-cancellation rows with addon gating', () => {
+        const owner = resolveScheduledRenewal({ row: { paidAfterCancellation: null } });
+        expect(owner.kind).toBe('SCHEDULED_BY_OWNER');
+        const paidNoAddons = resolveScheduledRenewal({
+            row: { paidAfterCancellation: { recurringAddonsCut: false } }
+        });
+        expect(paidNoAddons.kind).toBe('NOT_RENEWING_AFTER_PAYMENT');
+        expect(paidNoAddons.addonsLineKey).toBeNull();
+        const paidAddons = resolveScheduledRenewal({
+            row: { paidAfterCancellation: { recurringAddonsCut: true } }
+        });
+        expect(paidAddons.kind).toBe('NOT_RENEWING_AFTER_PAYMENT');
+        expect(paidAddons.addonsLineKey).toBe(
+            'account.subscription.mine.paidAfterCancellationAddons'
+        );
+    });
     it('maps all supported states and addon effects', () => {
         expect(CANCELLATION_OFFERED).toEqual({
             ACTIVE: true,

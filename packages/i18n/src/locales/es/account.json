@@ -464,13 +464,16 @@
             "title": "Tus suscripciones",
             "empty": "No tenés suscripciones vigentes.",
             "planChangeUnavailable": "Todavía no se puede cambiar de plan: date de baja al fin del período y volvé a suscribirte.",
+            "paidAfterCancellation": "Tu pago entró y tenés servicio hasta el {{date}}; tu suscripción ya estaba cancelada, así que no se renueva: si querés seguir, volvé a suscribirte.",
+            "paidAfterCancellationAddons": "El cobro de tus complementos recurrentes de esta suscripción también se cortó: los seguís viendo hasta el {{date}}.",
             "deferredCourtesy_one": "Te queda 1 mes, que empieza a correr cuando completes el pago.",
             "deferredCourtesy_other": "Te quedan {{count}} meses, que empiezan a correr cuando completes el pago.",
             "status": {
                 "ACTIVE": "Activa",
                 "GRACE_PERIOD": "Pago pendiente",
                 "SUSPENDED": "Suspendida",
-                "CANCEL_SCHEDULED": "Baja pedida"
+                "CANCEL_SCHEDULED": "Baja pedida",
+                "NOT_RENEWING": "No se renueva"
             },
             "loadError": "No pudimos leer tus suscripciones. Recargá la página.",
             "scheduledUntil": "Diste de baja esta suscripción: seguís hasta el {{date}}.",

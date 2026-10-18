@@ -34,4 +34,10 @@ describe('MySubscriptions SSR block', () => {
             'result.subscriptions.length === 0 && result.deferredCourtesies.length === 0'
         );
     });
+    it('uses the scheduled-renewal resolver and the live service end for the row 22 copy', () => {
+        expect(source).toContain('resolveScheduledRenewal({ row })');
+        expect(source).toContain('data-renewal=');
+        expect(source).toContain('date: date(row.serviceEndsAt)');
+        expect(source).toContain('paidAfterCancellationAddons');
+    });
 });

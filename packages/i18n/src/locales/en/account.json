@@ -464,13 +464,16 @@
             "title": "Your subscriptions",
             "empty": "You have no current subscriptions.",
             "planChangeUnavailable": "You can't change plans yet: cancel at the end of the period and subscribe again.",
+            "paidAfterCancellation": "Your payment went through and you have service until {{date}}; your subscription was already cancelled, so it does not renew: if you want to continue, subscribe again.",
+            "paidAfterCancellationAddons": "The charge for this subscription's recurring add-ons was stopped too: you keep seeing them until {{date}}.",
             "deferredCourtesy_one": "You have 1 month left, which starts running when you complete the payment.",
             "deferredCourtesy_other": "You have {{count}} months left, which start running when you complete the payment.",
             "status": {
                 "ACTIVE": "Active",
                 "GRACE_PERIOD": "Payment pending",
                 "SUSPENDED": "Suspended",
-                "CANCEL_SCHEDULED": "Cancellation requested"
+                "CANCEL_SCHEDULED": "Cancellation requested",
+                "NOT_RENEWING": "Not renewing"
             },
             "loadError": "We could not read your subscriptions. Reload the page.",
             "scheduledUntil": "You cancelled this subscription: you keep it until {{date}}.",

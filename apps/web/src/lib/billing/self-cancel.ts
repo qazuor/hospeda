@@ -25,6 +25,51 @@ export const ADDON_LINE_KEY: Record<'CHARGE_CUT_TODAY' | 'AT_SERVICE_END' | 'TOD
     TODAY: 'account.subscription.cancel.addon.TODAY'
 };
 export const GRACE_NOTICE: Record<'CARD' | 'MANUAL', boolean> = { CARD: true, MANUAL: false };
+export type ScheduledRenewalKind = 'SCHEDULED_BY_OWNER' | 'NOT_RENEWING_AFTER_PAYMENT';
+const SCHEDULED_RENEWAL_COPY: Record<
+    ScheduledRenewalKind,
+    {
+        readonly statusKey: string;
+        readonly lineKey: string;
+        readonly addonsLineKey: string | null;
+    }
+> = {
+    SCHEDULED_BY_OWNER: {
+        statusKey: 'account.subscription.mine.status.CANCEL_SCHEDULED',
+        lineKey: 'account.subscription.mine.scheduledUntil',
+        addonsLineKey: null
+    },
+    NOT_RENEWING_AFTER_PAYMENT: {
+        statusKey: 'account.subscription.mine.status.NOT_RENEWING',
+        lineKey: 'account.subscription.mine.paidAfterCancellation',
+        addonsLineKey: 'account.subscription.mine.paidAfterCancellationAddons'
+    }
+};
+
+/** Resolve the scheduled-renewal copy from the outbox mark attached to a row. */
+export function resolveScheduledRenewal({
+    row
+}: {
+    readonly row: {
+        readonly paidAfterCancellation: { readonly recurringAddonsCut: boolean } | null;
+    };
+}): {
+    readonly kind: ScheduledRenewalKind;
+    readonly statusKey: string;
+    readonly lineKey: string;
+    readonly addonsLineKey: string | null;
+} {
+    const kind: ScheduledRenewalKind = row.paidAfterCancellation
+        ? 'NOT_RENEWING_AFTER_PAYMENT'
+        : 'SCHEDULED_BY_OWNER';
+    const copy = SCHEDULED_RENEWAL_COPY[kind];
+    return {
+        kind,
+        statusKey: copy.statusKey,
+        lineKey: copy.lineKey,
+        addonsLineKey: row.paidAfterCancellation?.recurringAddonsCut ? copy.addonsLineKey : null
+    };
+}
 
 /** Parse a successful cancellation preview; every malformed or failed result is closed. */
 export function parseCancellationPreview({
