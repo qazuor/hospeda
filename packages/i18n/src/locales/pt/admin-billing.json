@@ -1729,7 +1729,27 @@
         },
         "conditionNotEvaluated": "Este caminho não avalia as quatro condições.",
         "conditionNotRecorded": "Este evento não registra a condição (anterior a esta alteração).",
-        "markNotFound": "A marca não existe."
+        "markNotFound": "A marca não existe.",
+        "lift": {
+            "button": "Levantar a marca",
+            "title": "Levantar esta marca",
+            "description": "Somente esta marca será encerrada. As outras marcas da mesma linha continuam abertas, e o estado da assinatura não muda.",
+            "withoutRefund": "Resolver sem reembolso",
+            "unresolvedNotice": "Há pagamentos pendentes sem resolução. Para reembolsá-los, registre o reembolso com a ação 14; se não forem reembolsados, marque-os como resolvidos sem reembolso.",
+            "note": "Nota para auditoria (opcional)",
+            "confirm": "Levantar",
+            "cancel": "Cancelar",
+            "success": "Marca levantada",
+            "error": "Não foi possível levantar a marca.",
+            "reasons": {
+                "MARK_NOT_FOUND": "A marca não existe.",
+                "ADMINISTRATIVE_ACTION_FORBIDDEN": "Você não tem permissão para levantar esta marca, ou ela pertence à sua própria conta.",
+                "MARK_ALREADY_LIFTED": "A marca já foi levantada.",
+                "MARK_VERSION_CONFLICT": "A marca mudou desde que você a abriu. Revise-a e confirme novamente.",
+                "MARK_HAS_UNRESOLVED_PAYMENTS": "Ainda há pagamentos pendentes sem resolução.",
+                "MARK_PAYMENT_NOT_HUNG": "Um pagamento selecionado já não está pendente sem resolução nesta marca."
+            }
+        }
     },
     "subscriptionCancellation": {
         "title": "Cancelar uma assinatura (sem reembolso)",

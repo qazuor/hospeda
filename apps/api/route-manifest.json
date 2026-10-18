@@ -383,6 +383,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/billing-reconciliation/marks/:markId/lift"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/billing-refunds/external"
         },
         {

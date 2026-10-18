@@ -10,6 +10,7 @@ import {
     providerLinks,
     reconciliationMarkModel,
     reconciliationMarkPayments,
+    reconciliationMarks,
     refunds,
     subscriptions,
     successionRetainedPayments
@@ -202,6 +203,16 @@ export async function retireExitGameRows(): Promise<void> {
                     liftedBy: row?.userId ?? userIds[0]!,
                     now: new Date()
                 });
+            }
+            const allMarks = await db
+                .select({ id: reconciliationMarks.id })
+                .from(reconciliationMarks)
+                .where(eq(reconciliationMarks.subscriptionId, subscriptionId));
+            for (const mark of allMarks) {
+                await db
+                    .delete(reconciliationMarkPayments)
+                    .where(eq(reconciliationMarkPayments.markId, mark.id));
+                await db.delete(reconciliationMarks).where(eq(reconciliationMarks.id, mark.id));
             }
             const paymentRows = await db
                 .select({ id: payments.id })

@@ -38,6 +38,7 @@ export type ReconciliationMarkHungPayment = {
 /** One open reconciliation mark and the evidence needed to act on its catalog proposal. */
 export type ActionableReconciliationMark = {
     readonly markId: string;
+    readonly version: number;
     readonly reason: ReconciliationMarkReason;
     readonly reasonNumber: number;
     readonly refundConfirmation: boolean;
@@ -130,6 +131,7 @@ export async function listActionableReconciliationMarks(input: {
         const pageRows = await tx
             .select({
                 markId: reconciliationMarks.id,
+                version: reconciliationMarks.version,
                 reason: reconciliationMarks.reason,
                 openedAt: reconciliationMarks.placedAt,
                 subscriptionId: reconciliationMarks.subscriptionId,
@@ -253,6 +255,7 @@ export async function listActionableReconciliationMarks(input: {
             if (row.subscriptionId)
                 return {
                     markId: row.markId,
+                    version: row.version,
                     reason,
                     reasonNumber: metadata.reasonNumber,
                     refundConfirmation: metadata.refundConfirmation,
@@ -274,6 +277,7 @@ export async function listActionableReconciliationMarks(input: {
                 };
             return {
                 markId: row.markId,
+                version: row.version,
                 reason,
                 reasonNumber: metadata.reasonNumber,
                 refundConfirmation: metadata.refundConfirmation,

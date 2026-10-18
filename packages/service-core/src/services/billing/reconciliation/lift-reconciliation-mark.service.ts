@@ -2,10 +2,8 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import { type DrizzleClient, getDb, reconciliationMarkModel } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
-import {
-    type ReconciliationMarkPayments,
-    unimplementedReconciliationMarkPayments
-} from './reconciliation-mark-payments.port';
+import { createPaymentReconciliationMarkPayments } from '../payment/payment-ledger.js';
+import type { ReconciliationMarkPayments } from './reconciliation-mark-payments.port';
 
 export interface LiftReconciliationMarkInput {
     readonly markId: string;
@@ -22,7 +20,10 @@ function conflict(message: string, code: string): ServiceError {
     return new ServiceError(ServiceErrorCode.ALREADY_EXISTS, message, undefined, code);
 }
 
-/** S15 lifts exactly one mark, after checking unresolved attached payments and the version read by the caller. */
+/**
+ * S15 lifts exactly one mark, after checking unresolved attached payments and the version read by the caller.
+ * Without an injected port it counts with B5's ledger implementation, never the empty default (HOS-1697, X-1 of HOS-1548).
+ */
 export async function liftReconciliationMark(
     input: LiftReconciliationMarkInput,
     ports: LiftReconciliationMarkPorts
@@ -40,7 +41,7 @@ export async function liftReconciliationMark(
         if (mark.liftedAt !== null)
             throw conflict('Reconciliation mark is already lifted', 'MARK_ALREADY_LIFTED');
         const unresolved = await (
-            ports.markPayments ?? unimplementedReconciliationMarkPayments
+            ports.markPayments ?? createPaymentReconciliationMarkPayments(ports.clock)
         ).countUnresolved({ markId: input.markId, tx });
         if (unresolved > 0)
             throw conflict(

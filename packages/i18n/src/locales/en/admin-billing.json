@@ -1729,7 +1729,27 @@
         },
         "conditionNotEvaluated": "This path does not evaluate the four conditions.",
         "conditionNotRecorded": "This event does not record the condition (before this change).",
-        "markNotFound": "The mark does not exist."
+        "markNotFound": "The mark does not exist.",
+        "lift": {
+            "button": "Lift mark",
+            "title": "Lift this mark",
+            "description": "Only this mark will be closed. Other marks on the same row remain open, and the subscription status will not change.",
+            "withoutRefund": "Resolve without refund",
+            "unresolvedNotice": "Some hung payments remain unresolved. To refund them, record the refund with action 14; if they are not refunded, mark them as resolved without refund.",
+            "note": "Audit note (optional)",
+            "confirm": "Lift",
+            "cancel": "Cancel",
+            "success": "Mark lifted",
+            "error": "Could not lift the mark.",
+            "reasons": {
+                "MARK_NOT_FOUND": "The mark does not exist.",
+                "ADMINISTRATIVE_ACTION_FORBIDDEN": "You do not have permission to lift this mark, or it belongs to your own account.",
+                "MARK_ALREADY_LIFTED": "The mark was already lifted.",
+                "MARK_VERSION_CONFLICT": "The mark changed since you opened it. Review it and confirm again.",
+                "MARK_HAS_UNRESOLVED_PAYMENTS": "Some hung payments remain unresolved.",
+                "MARK_PAYMENT_NOT_HUNG": "A selected payment is no longer an unresolved hung payment on this mark."
+            }
+        }
     },
     "subscriptionCancellation": {
         "title": "Cancel a subscription (no refund)",

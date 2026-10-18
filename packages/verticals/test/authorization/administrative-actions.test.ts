@@ -142,6 +142,39 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(true);
     });
 
+    it('TEST:1697:4 AC:1697:1 assigns ACC_7 only its own lift-reconciliation-mark permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_7).toEqual({
+            permissions: [PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK],
+            pendingOwnPermission: null
+        });
+        expect(
+            ADMINISTRATIVE_ACTION_PERMISSION_SET.has(
+                PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK
+            )
+        ).toBe(true);
+        expect(
+            SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(
+                PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK
+            )
+        ).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_7',
+                actorPermissions: [
+                    PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
+                    PermissionEnum.BILLING_SETTLE_EXTERNAL,
+                    PermissionEnum.BILLING_CANCEL_SUBSCRIPTION
+                ]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_7',
+                actorPermissions: [PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK]
+            })
+        ).toBe(true);
+    });
+
     it('HOS-1543 assigns ACC_8 only its own cancel-subscription permission (base of S36)', () => {
         expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_8).toEqual({
             permissions: [PermissionEnum.BILLING_CANCEL_SUBSCRIPTION],
