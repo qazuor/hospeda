@@ -31,6 +31,7 @@ import type {
     PriceAlertResponse,
     ProtectedEffectiveSetResponse,
     PublicationStatusEnum,
+    RedeemPromoCodeResponseSchema,
     ReportFixedResponse,
     SignupNoticeResponse,
     StartSubscriptionResponseSchema,
@@ -5500,6 +5501,23 @@ export const effectiveSetApi = {
 export type StartSubscriptionResponse = z.infer<typeof StartSubscriptionResponseSchema>;
 
 /** Protected S1 endpoint for starting a signup checkout. */
+/** Protected promo-code redemption endpoint for the current user. */
+export const promoCodeApi = {
+    /** Redeem a promo code for the selected vertical. */
+    redeem({
+        code,
+        vertical
+    }: {
+        readonly code: string;
+        readonly vertical: PublishVerticalSlug;
+    }): Promise<ApiResult<z.infer<typeof RedeemPromoCodeResponseSchema>>> {
+        return apiClient.postProtected<z.infer<typeof RedeemPromoCodeResponseSchema>>({
+            path: `${PROTECTED}/billing/promo-codes/redeem`,
+            body: { code, vertical }
+        });
+    }
+};
+
 export const billingSubscriptionApi = {
     /** Read the authenticated user's own principal subscriptions. */
     listMine({

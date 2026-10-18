@@ -22,6 +22,7 @@ import {
     accommodationCalendarSyncApi,
     accommodationFaqApi,
     effectiveSetApi,
+    promoCodeApi,
     publishApi
 } from '../../../src/lib/api/endpoints-protected';
 
@@ -198,6 +199,21 @@ describe('HOS-1646 · cliente web de capacidades · effective set endpoint', () 
             path: '/api/v1/protected/users/me/effective-set',
             params: { vertical: 'tourist' },
             cookieHeader: 'session=abc'
+        });
+    });
+});
+
+describe('promoCodeApi (AC:B9b:12 HOS-1591 TEST:B9b:12 (support))', () => {
+    beforeEach(() => {
+        postProtected.mockReset();
+        postProtected.mockResolvedValue({ ok: true, data: {} });
+    });
+
+    it('redeem posts the code and vertical to the protected endpoint', async () => {
+        await promoCodeApi.redeem({ code: 'SAVE20', vertical: 'accommodation' });
+        expect(postProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/billing/promo-codes/redeem',
+            body: { code: 'SAVE20', vertical: 'accommodation' }
         });
     });
 });
