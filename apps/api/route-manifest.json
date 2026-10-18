@@ -374,6 +374,14 @@
             "path": "/api/v1/admin/billing-permanent-grants/:permanentGrantId/anchors"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-reconciliation/marks"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-reconciliation/marks/:markId/events"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/admin/billing-refunds/external"
         },
