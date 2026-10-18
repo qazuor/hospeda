@@ -126,7 +126,7 @@ test.describe('TEST:B13a:18 AC:B13a:17 paid after cancellation does not renew @b
             const html = decodeHtmlEntities(mail.html);
             expect(html).toContain('Tu pago entró y tenés servicio hasta');
             expect(html).toContain(marketDate);
-            expect(html).toContain('no se renueva');
+            expect(html).toContain('tu suscripción ya estaba cancelada, así que no se renueva');
             expect(html).toContain('El cobro de tus complementos recurrentes');
             await attachSession(page, user.sessionCookie);
             await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
