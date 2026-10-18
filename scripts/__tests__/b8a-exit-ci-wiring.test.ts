@@ -204,12 +204,14 @@ describe('AC:B8a:14 - B8a exit: LISTA:B8a evidence in the tree, B8 split to B8b,
     });
     it('(g) the subscription transition corpus has no prohibited exits and the catalog names both rules', () => {
         const corpus = JSON.parse(read('scripts/guards/transition-tables.json')) as {
-            machines: Record<
-                string,
-                { transitions: { id: string; from: string[]; to: string[] | string }[] }
-            >;
+            transitions: {
+                id: string;
+                machine: string;
+                from: string[];
+                to: string[] | string;
+            }[];
         };
-        const subscription = corpus.machines.subscription?.transitions ?? [];
+        const subscription = corpus.transitions.filter((row) => row.machine === 'subscription');
         const conflicts = subscription
             .filter((row) => {
                 const to = Array.isArray(row.to) ? row.to : [row.to];
