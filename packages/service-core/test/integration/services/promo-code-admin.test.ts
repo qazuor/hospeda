@@ -150,15 +150,32 @@ describe('TEST:B9b:9 (support) AC:B9b:9 HOS-1591 admin action 21 creates and clo
             } as Actor;
             const deniedCreateCode = `DENY-${crypto.randomUUID()}`;
             const systemCreateCode = `SYS-${crypto.randomUUID()}`;
-            await expect(
-                createPromoCode(
-                    { actor: neighbors, input: createInput(deniedCreateCode) },
-                    { clock }
-                )
-            ).rejects.toMatchObject({ reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' });
-            await expect(
-                createPromoCode({ actor: system, input: createInput(systemCreateCode) }, { clock })
-            ).rejects.toMatchObject({ reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' });
+            const neighborCreateResult = await createPromoCode(
+                { actor: neighbors, input: createInput(deniedCreateCode) },
+                { clock }
+            ).then(
+                (value) => ({ value }),
+                (error: unknown) => ({ error })
+            );
+            expect(
+                await getDb().select().from(promoCodes).where(eq(promoCodes.code, deniedCreateCode))
+            ).toHaveLength(0);
+            expect(neighborCreateResult).toMatchObject({
+                error: { reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' }
+            });
+            const systemCreateResult = await createPromoCode(
+                { actor: system, input: createInput(systemCreateCode) },
+                { clock }
+            ).then(
+                (value) => ({ value }),
+                (error: unknown) => ({ error })
+            );
+            expect(
+                await getDb().select().from(promoCodes).where(eq(promoCodes.code, systemCreateCode))
+            ).toHaveLength(0);
+            expect(systemCreateResult).toMatchObject({
+                error: { reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' }
+            });
             const closable = await create(createInput(`CLOSE-${crypto.randomUUID()}`));
             await expect(
                 closePromoCode({ actor: neighbors, promoCodeId: closable.id }, { clock })
