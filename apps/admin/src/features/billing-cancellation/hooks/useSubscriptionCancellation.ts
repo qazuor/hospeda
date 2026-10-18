@@ -9,6 +9,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 import { isApiError } from '@/lib/errors';
 
+/** Builds the admin API path shared by cancellation preview and submission.
+ * @param input - Subscription identifier for the path.
+ * @returns The administrative cancellation endpoint path.
+ */
 export function buildSubscriptionCancellationPath({
     subscriptionId
 }: {
@@ -17,6 +21,10 @@ export function buildSubscriptionCancellationPath({
     return `/api/v1/admin/billing-subscription/${subscriptionId}/cancellation`;
 }
 
+/** Builds the cache key for a subscription's administrative cancellation preview.
+ * @param input - Subscription identifier for the cache entry.
+ * @returns A stable query key scoped to the subscription cancellation preview.
+ */
 export function subscriptionCancellationPreviewQueryKey({
     subscriptionId
 }: {
@@ -25,11 +33,16 @@ export function subscriptionCancellationPreviewQueryKey({
     return ['billing-subscription', 'cancellation', subscriptionId] as const;
 }
 
+/** Options for loading a subscription cancellation preview. */
 export interface UseSubscriptionCancellationPreviewInput {
     readonly subscriptionId: string;
     readonly enabled: boolean;
 }
 
+/** Loads the cancellation preview when the subscription identifier is valid and enabled.
+ * @param input - Subscription identifier and query enablement flag.
+ * @returns TanStack Query state for the cancellation preview request.
+ */
 export function useSubscriptionCancellationPreview({
     subscriptionId,
     enabled
@@ -50,12 +63,16 @@ export function useSubscriptionCancellationPreview({
     });
 }
 
+/** Payload required to submit an administrative subscription cancellation. */
 export interface CancelSubscriptionInput {
     readonly subscriptionId: string;
     readonly expectedOrigin: 'ACTIVE' | 'GRACE_PERIOD' | 'SUSPENDED';
     readonly note?: string;
 }
 
+/** Creates the mutation that submits cancellation and refreshes its preview when needed.
+ * @returns TanStack Query mutation state for cancellation submission.
+ */
 export function useCancelSubscriptionMutation() {
     const queryClient = useQueryClient();
 

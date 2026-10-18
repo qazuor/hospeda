@@ -55,8 +55,8 @@ describe('TEST:1696:3 AC:1696:3 cancellation reasons', () => {
         expect(Object.keys(CANCELLATION_CYCLE_KEYS)).toHaveLength(4);
     });
     it('recognizes only known reasons and reads ApiError reason', () => {
-        expect(isKnownCancellationReason('CANCELLATION_ORIGIN_CHANGED')).toBe(true);
-        expect(isKnownCancellationReason('OTHER')).toBe(false);
+        expect(isKnownCancellationReason({ reason: 'CANCELLATION_ORIGIN_CHANGED' })).toBe(true);
+        expect(isKnownCancellationReason({ reason: 'OTHER' })).toBe(false);
         expect(
             readCancellationReason({
                 error: new ApiError('x', {

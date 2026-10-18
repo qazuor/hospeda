@@ -7,6 +7,10 @@ import {
     CANCELLATION_ORIGIN_KEYS
 } from '../cancellation-reasons';
 
+/** Renders the cancellation origin, service impact, authorization, and add-on effects.
+ * @param props - Preview response used to describe cancellation effects.
+ * @returns The localized cancellation preview details.
+ */
 export function CancellationPreviewDetails({
     preview
 }: {

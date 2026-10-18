@@ -7,6 +7,10 @@ const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     timeZone: MARKET_TIMEZONE
 };
+/** Formats a cancellation-related ISO date using the requested locale and market timezone.
+ * @param input - ISO date and locale used for formatting.
+ * @returns The localized date string.
+ */
 export function formatCancellationDate({
     iso,
     locale
@@ -16,6 +20,10 @@ export function formatCancellationDate({
 }): string {
     return formatDate({ date: iso, locale, options: DATE_OPTIONS });
 }
+/** Formats a price stored as integer cents using the requested locale and currency.
+ * @param input - Amount in cents, locale, and currency code.
+ * @returns The localized currency string.
+ */
 export function formatCancellationAmount({
     cents,
     locale,

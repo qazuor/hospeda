@@ -33,10 +33,15 @@ import { CancellationPreviewRefusal } from './CancellationPreviewRefusal';
 import { CancellationResultDetails } from './CancellationResultDetails';
 
 const NOTE_MAX_LENGTH = 2000;
+/** Props for the URL-addressable administrative cancellation screen. */
 export interface SubscriptionCancellationScreenProps {
     readonly subscriptionId: string;
 }
 
+/** Renders the permission-gated preview and confirmation flow for a subscription cancellation.
+ * @param props - Subscription identifier displayed and acted on by the screen.
+ * @returns The permission-gated cancellation screen.
+ */
 export function SubscriptionCancellationScreen({
     subscriptionId
 }: SubscriptionCancellationScreenProps) {
@@ -71,6 +76,7 @@ function CancellationBody({ subscriptionId }: SubscriptionCancellationScreenProp
             </p>
         );
     if (result) return <CancellationResultDetails result={result} />;
+    const actRefusalInput = { reason: actRefusal ?? '' };
     if (actRefusal)
         return (
             <div
@@ -82,11 +88,13 @@ function CancellationBody({ subscriptionId }: SubscriptionCancellationScreenProp
                     {t('admin-billing.subscriptionCancellation.blocked.intro')}
                 </p>
                 <p>
-                    {isKnownCancellationReason(actRefusal) &&
-                    actRefusal !== 'CANCELLATION_ORIGIN_CHANGED'
-                        ? t(`admin-billing.subscriptionCancellation.blocked.${actRefusal}` as const)
+                    {isKnownCancellationReason(actRefusalInput) &&
+                    actRefusalInput.reason !== 'CANCELLATION_ORIGIN_CHANGED'
+                        ? t(
+                              `admin-billing.subscriptionCancellation.blocked.${actRefusalInput.reason}` as const
+                          )
                         : t('admin-billing.subscriptionCancellation.blocked.unknown', {
-                              reason: actRefusal
+                              reason: actRefusalInput.reason
                           })}
                 </p>
             </div>

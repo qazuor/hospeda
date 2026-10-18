@@ -8,6 +8,10 @@ import {
     readCancellationReason
 } from '../cancellation-reasons';
 
+/** Renders a typed preview refusal or a retryable loading error.
+ * @param props - API error and callback used to retry the preview.
+ * @returns The refusal details or a retry action.
+ */
 export function CancellationPreviewRefusal({
     error,
     onRetry
@@ -18,6 +22,7 @@ export function CancellationPreviewRefusal({
     const { t } = useTranslations();
     const status = isApiError(error) ? error.status : undefined;
     const reason = readCancellationReason({ error });
+    const reasonInput = { reason: reason ?? '' };
     const unavailableKey: TranslationKey =
         status === 404
             ? 'admin-billing.subscriptionCancellation.blocked.SUBSCRIPTION_NOT_FOUND'
@@ -52,12 +57,12 @@ export function CancellationPreviewRefusal({
                 <span>{t('admin-billing.subscriptionCancellation.blocked.intro')}</span>
             </p>
             <p>
-                {isKnownCancellationReason(reason)
-                    ? reason === 'CANCELLATION_ORIGIN_CHANGED'
+                {isKnownCancellationReason(reasonInput)
+                    ? reasonInput.reason === 'CANCELLATION_ORIGIN_CHANGED'
                         ? t(
                               'admin-billing.subscriptionCancellation.notice.CANCELLATION_ORIGIN_CHANGED'
                           )
-                        : t(CANCELLATION_REASON_KEYS[reason])
+                        : t(CANCELLATION_REASON_KEYS[reasonInput.reason])
                     : t('admin-billing.subscriptionCancellation.blocked.unknown', { reason })}
             </p>
         </div>

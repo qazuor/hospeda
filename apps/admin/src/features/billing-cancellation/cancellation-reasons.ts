@@ -7,6 +7,7 @@ import type {
 } from '@repo/schemas';
 import { isApiError } from '@/lib/errors';
 
+/** Cancellation refusal reasons that the admin screen can explain explicitly. */
 export const KNOWN_CANCELLATION_REASONS = [
     'SUBSCRIPTION_NOT_FOUND',
     'ADMINISTRATIVE_ACTION_FORBIDDEN',
@@ -15,8 +16,10 @@ export const KNOWN_CANCELLATION_REASONS = [
     'CANCELLATION_STATE_NOT_ALLOWED',
     'CANCELLATION_ORIGIN_CHANGED'
 ] as const;
+/** A refusal reason with a dedicated translation in the cancellation screen. */
 export type KnownCancellationReason = (typeof KNOWN_CANCELLATION_REASONS)[number];
 
+/** Translation keys for known refusals other than the origin-change notice. */
 export const CANCELLATION_REASON_KEYS: Readonly<
     Record<Exclude<KnownCancellationReason, 'CANCELLATION_ORIGIN_CHANGED'>, TranslationKey>
 > = {
@@ -29,6 +32,7 @@ export const CANCELLATION_REASON_KEYS: Readonly<
     CANCELLATION_STATE_NOT_ALLOWED:
         'admin-billing.subscriptionCancellation.blocked.CANCELLATION_STATE_NOT_ALLOWED'
 };
+/** Translation keys for transient notices returned by the cancellation API. */
 export const CANCELLATION_NOTICE_KEYS: Readonly<
     Record<'CANCELLATION_ORIGIN_CHANGED', TranslationKey>
 > = {
@@ -36,14 +40,18 @@ export const CANCELLATION_NOTICE_KEYS: Readonly<
         'admin-billing.subscriptionCancellation.notice.CANCELLATION_ORIGIN_CHANGED'
 };
 
+/** Subscription states from which the admin cancellation preview can be opened. */
 export type CancellationOrigin = AdminSubscriptionCancellationPreviewResponse['origin'];
+/** Translation keys for the subscription state shown in the preview. */
 export const CANCELLATION_ORIGIN_KEYS: Readonly<Record<CancellationOrigin, TranslationKey>> = {
     ACTIVE: 'admin-billing.subscriptionCancellation.origin.ACTIVE',
     GRACE_PERIOD: 'admin-billing.subscriptionCancellation.origin.GRACE_PERIOD',
     SUSPENDED: 'admin-billing.subscriptionCancellation.origin.SUSPENDED',
     CANCEL_SCHEDULED: 'admin-billing.subscriptionCancellation.origin.CANCEL_SCHEDULED'
 };
+/** Origins from which an admin can confirm a new cancellation. */
 export type ConfirmableCancellationOrigin = Exclude<CancellationOrigin, 'CANCEL_SCHEDULED'>;
+/** Confirmation copy keys for origins where cancellation is still actionable. */
 export const CANCELLATION_CONFIRM_KEYS: Readonly<
     Record<ConfirmableCancellationOrigin, TranslationKey>
 > = {
@@ -52,16 +60,20 @@ export const CANCELLATION_CONFIRM_KEYS: Readonly<
     SUSPENDED: 'admin-billing.subscriptionCancellation.confirm.SUSPENDED'
 };
 
+/** Outcomes returned after the cancellation request is processed. */
 export type CancellationOutcome = AdminSubscriptionCancellationResponse['outcome'];
+/** Translation keys describing each cancellation outcome. */
 export const CANCELLATION_OUTCOME_KEYS: Readonly<Record<CancellationOutcome, TranslationKey>> = {
     SCHEDULED: 'admin-billing.subscriptionCancellation.result.SCHEDULED',
     ALREADY_SCHEDULED: 'admin-billing.subscriptionCancellation.result.ALREADY_SCHEDULED',
     CANCELLED: 'admin-billing.subscriptionCancellation.result.CANCELLED',
     ALREADY_CANCELLED: 'admin-billing.subscriptionCancellation.result.ALREADY_CANCELLED'
 };
+/** Mercado Pago cancellation call statuses included in a result. */
 export type CancellationCancelCall = NonNullable<
     AdminSubscriptionCancellationResponse['cancelCall']
 >;
+/** Translation keys for Mercado Pago cancellation call statuses. */
 export const CANCELLATION_CANCEL_CALL_KEYS: Readonly<
     Record<CancellationCancelCall, TranslationKey>
 > = {
@@ -71,14 +83,18 @@ export const CANCELLATION_CANCEL_CALL_KEYS: Readonly<
     FAILED: 'admin-billing.subscriptionCancellation.cancelCall.FAILED',
     NOT_APPLICABLE: 'admin-billing.subscriptionCancellation.cancelCall.NOT_APPLICABLE'
 };
+/** Reasons a cancellation result may have been escalated for follow-up. */
 export type CancellationEscalated = NonNullable<AdminSubscriptionCancellationResponse['escalated']>;
+/** Translation keys for cancellation escalation reasons. */
 export const CANCELLATION_ESCALATED_KEYS: Readonly<Record<CancellationEscalated, TranslationKey>> =
     {
         NO_RECIPIENT: 'admin-billing.subscriptionCancellation.escalated.NO_RECIPIENT',
         DELIVERY_EXHAUSTED: 'admin-billing.subscriptionCancellation.escalated.DELIVERY_EXHAUSTED'
     };
+/** Preview timing categories for recurring add-ons being turned off. */
 export type CancellationAddonWhenOff =
     AdminSubscriptionCancellationPreviewResponse['addons'][number]['whenOff'];
+/** Translation keys describing when each recurring add-on is turned off. */
 export const CANCELLATION_ADDON_WHEN_OFF_KEYS: Readonly<
     Record<CancellationAddonWhenOff, TranslationKey>
 > = {
@@ -86,8 +102,10 @@ export const CANCELLATION_ADDON_WHEN_OFF_KEYS: Readonly<
     AT_SERVICE_END: 'admin-billing.subscriptionCancellation.addons.AT_SERVICE_END',
     TODAY: 'admin-billing.subscriptionCancellation.addons.TODAY'
 };
+/** Billing cycles used to describe recurring add-on prices. */
 export type CancellationCycle =
     AdminSubscriptionCancellationPreviewResponse['addons'][number]['cycle'];
+/** Translation keys for recurring add-on billing cycles. */
 export const CANCELLATION_CYCLE_KEYS: Readonly<Record<CancellationCycle, TranslationKey>> = {
     monthly: 'admin-billing.subscriptionCancellation.cycle.monthly',
     quarterly: 'admin-billing.subscriptionCancellation.cycle.quarterly',
@@ -95,10 +113,20 @@ export const CANCELLATION_CYCLE_KEYS: Readonly<Record<CancellationCycle, Transla
     annual: 'admin-billing.subscriptionCancellation.cycle.annual'
 };
 
-export function isKnownCancellationReason(reason: string): reason is KnownCancellationReason {
-    return (KNOWN_CANCELLATION_REASONS as readonly string[]).includes(reason);
+/** Checks whether an API refusal reason has a dedicated cancellation translation.
+ * @param input - Object containing the reason to check.
+ * @returns Whether the reason is known; narrows `reason` to `KnownCancellationReason`.
+ */
+export function isKnownCancellationReason(input: {
+    readonly reason: string;
+}): input is { readonly reason: KnownCancellationReason } {
+    return (KNOWN_CANCELLATION_REASONS as readonly string[]).includes(input.reason);
 }
 
+/** Extracts a non-empty refusal reason from an API error, when present.
+ * @param input - Object containing the error to inspect.
+ * @returns The refusal reason, or `null` when the error has none.
+ */
 export function readCancellationReason({ error }: { readonly error: unknown }): string | null {
     if (!isApiError(error)) return null;
     const reason = (error.body as { error?: { reason?: unknown } } | undefined)?.error?.reason;

@@ -7,6 +7,10 @@ import {
     CANCELLATION_ESCALATED_KEYS,
     CANCELLATION_OUTCOME_KEYS
 } from '../cancellation-reasons';
+/** Renders the cancellation outcome and any payment cancellation or escalation details.
+ * @param props - Response returned by the cancellation endpoint.
+ * @returns The localized cancellation result details.
+ */
 export function CancellationResultDetails({
     result
 }: {
