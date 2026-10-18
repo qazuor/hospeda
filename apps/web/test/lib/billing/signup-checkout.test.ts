@@ -8,6 +8,7 @@ import {
     isDisplayableCheckoutUrl,
     parseSignupOptionId,
     resolveSignupRejection,
+    resolveSignupTouristVipNotice,
     resolveSignupTrialNotice,
     SIGNUP_VERTICAL_LABEL_KEY
 } from '@/lib/billing/signup-checkout';
@@ -110,6 +111,7 @@ describe('TEST:B13a:21c AC:B13a:5 resolveSignupTrialNotice', () => {
                     ok: true,
                     data: {
                         vertical: 'accommodation',
+                        touristVip: { status: 'NOT_AFFECTED' },
                         trial: {
                             status: 'RUNNING',
                             endsAt: '2026-10-20T08:00:00.000Z',
@@ -130,7 +132,11 @@ describe('TEST:B13a:21c AC:B13a:5 resolveSignupTrialNotice', () => {
             resolveSignupTrialNotice({
                 result: {
                     ok: true,
-                    data: { vertical: 'gastronomy', trial: { status: 'NOT_RUNNING' } }
+                    data: {
+                        vertical: 'gastronomy',
+                        touristVip: { status: 'NOT_AFFECTED' },
+                        trial: { status: 'NOT_RUNNING' }
+                    }
                 }
             })
         ).toBeNull();
@@ -142,5 +148,59 @@ describe('TEST:B13a:21c AC:B13a:5 resolveSignupTrialNotice', () => {
         ['invalid response body', { ok: true, data: { vertical: 'unknown', trial: {} } }]
     ])('shows the conditional notice for %s', (_label, result) => {
         expect(resolveSignupTrialNotice({ result })).toEqual({ kind: 'UNKNOWN' });
+    });
+});
+
+describe('TEST:1623:6 resolveSignupTouristVipNotice', () => {
+    it.each([
+        [
+            'affected',
+            {
+                ok: true,
+                data: {
+                    vertical: 'tourist',
+                    touristVip: { status: 'CANCELLED_ON_RETURN' },
+                    trial: { status: 'NOT_RUNNING' }
+                }
+            },
+            { kind: 'CANCELLED_ON_RETURN' }
+        ],
+        [
+            'unaffected',
+            {
+                ok: true,
+                data: {
+                    vertical: 'tourist',
+                    touristVip: { status: 'NOT_AFFECTED' },
+                    trial: { status: 'NOT_RUNNING' }
+                }
+            },
+            null
+        ],
+        [
+            'failed closed toward warning',
+            { ok: false, error: { status: 503 } },
+            { kind: 'UNKNOWN' }
+        ],
+        [
+            'malformed response',
+            {
+                ok: true,
+                data: {
+                    vertical: 'tourist',
+                    touristVip: { status: 'ACTIVE' },
+                    trial: { status: 'NOT_RUNNING' }
+                }
+            },
+            { kind: 'UNKNOWN' }
+        ]
+    ] as const)('resolves %s', (_label, result, expected) => {
+        expect(resolveSignupTouristVipNotice({ result })).toEqual(expected);
+    });
+
+    it('fails toward a warning when data is missing', () => {
+        expect(resolveSignupTouristVipNotice({ result: { ok: true } })).toEqual({
+            kind: 'UNKNOWN'
+        });
     });
 });
