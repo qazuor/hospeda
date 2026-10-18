@@ -116,6 +116,19 @@ test.describe('TEST:B13a:10 admin action 14 on marks 18 and 19 @p0 @admin', () =
         await expect(mark18).toBeVisible();
         const action18 = mark18.getByTestId('reconciliation-mark-action14');
         await expect(action18).toBeVisible();
+        const ordinaryAdmin = await createUser({ role: 'ADMIN' }, { apiBaseUrl: API_URL });
+        ownedUserIds.push(ordinaryAdmin.id);
+        await markAdminToursSeen({ userId: ordinaryAdmin.id });
+        await page.context().clearCookies();
+        await useAdminSession(page, ordinaryAdmin);
+        await page.goto(`${ADMIN_URL}/billing/reconciliation`, { waitUntil: 'domcontentloaded' });
+        const stillVisibleMark18 = await findMarkOnAnyPage(page, mark18Id);
+        await expect(stillVisibleMark18).toBeVisible();
+        await expect(stillVisibleMark18.getByTestId('reconciliation-mark-action14')).toHaveCount(0);
+
+        await page.context().clearCookies();
+        await useAdminSession(page, superAdmin);
+        await page.goto(`${ADMIN_URL}/billing/reconciliation`, { waitUntil: 'domcontentloaded' });
         await action18.getByLabel('Monto en pesos').fill('50.00');
         await action18.getByLabel('Canal de devolución').selectOption('BANK_TRANSFER');
         await action18.getByLabel('Comprobante o referencia').fill(`adm13-receipt-${mark18Id}`);
@@ -132,19 +145,6 @@ test.describe('TEST:B13a:10 admin action 14 on marks 18 and 19 @p0 @admin', () =
         expect(refunds).toHaveLength(1);
         ownedRefunds.push(refunds[0]!.id);
 
-        const ordinaryAdmin = await createUser({ role: 'ADMIN' }, { apiBaseUrl: API_URL });
-        ownedUserIds.push(ordinaryAdmin.id);
-        await markAdminToursSeen({ userId: ordinaryAdmin.id });
-        await page.context().clearCookies();
-        await useAdminSession(page, ordinaryAdmin);
-        await page.goto(`${ADMIN_URL}/billing/reconciliation`, { waitUntil: 'domcontentloaded' });
-        const stillVisibleMark18 = await findMarkOnAnyPage(page, mark18Id);
-        await expect(stillVisibleMark18).toBeVisible();
-        await expect(stillVisibleMark18.getByTestId('reconciliation-mark-action14')).toHaveCount(0);
-
-        await page.context().clearCookies();
-        await useAdminSession(page, superAdmin);
-        await page.goto(`${ADMIN_URL}/billing/reconciliation`, { waitUntil: 'domcontentloaded' });
         const mark19 = await findMarkOnAnyPage(page, mark19Id);
         await expect(mark19).toBeVisible();
         const action19 = mark19.getByTestId('reconciliation-mark-action14');
