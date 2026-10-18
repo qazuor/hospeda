@@ -395,6 +395,14 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/cancellation"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/cancellation"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/billing-subscription/:subscriptionId/revocation"
         },
         {
