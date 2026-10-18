@@ -239,6 +239,10 @@
                 "keepsOnDecline": "If the charge is declined, you stay on your trial with those days.",
                 "unknown": "If you are on a trial in this category: when the first charge goes through it ends and you lose the days you had left; if the charge is declined, you stay on your trial with those days."
             },
+            "touristVipNotice": {
+                "cancelledOnReturn": "You have a suspended subscription whose plan gave you the Tourist VIP benefits. If you bring it up to date, this Tourist VIP subscription is cancelled right away and what you paid is not refunded, because your plan gives you those benefits again.",
+                "unknown": "If you have a suspended subscription whose plan gave you the Tourist VIP benefits and you bring it up to date, a Tourist VIP subscription you buy is cancelled right away, with no refund."
+            },
             "retry": "Try again",
             "vertical": {
                 "accommodation": "accommodation",

@@ -239,6 +239,10 @@
                 "keepsOnDecline": "Si el cobro se rechaza, seguís en tu prueba con esos días.",
                 "unknown": "Si estás en tu período de prueba en esta vertical: al acreditarse el primer cobro termina y perdés los días que te quedaban; si el cobro se rechaza, seguís en tu prueba con esos días."
             },
+            "touristVipNotice": {
+                "cancelledOnReturn": "Tenés una suscripción suspendida cuyo plan te daba los beneficios de Turista VIP. Si la regularizás, esta suscripción a Turista VIP se cancela en el momento y lo que hayas pagado no se reembolsa, porque tu plan te los vuelve a dar.",
+                "unknown": "Si tenés una suscripción suspendida cuyo plan te daba los beneficios de Turista VIP y la regularizás, una suscripción a Turista VIP que compres se cancela en el momento, sin reembolso."
+            },
             "retry": "Intentar de nuevo",
             "vertical": {
                 "accommodation": "alojamiento",
