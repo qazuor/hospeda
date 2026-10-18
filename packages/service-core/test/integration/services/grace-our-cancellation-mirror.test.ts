@@ -175,12 +175,14 @@ describe('TEST:B7:9 — the R18 mirror keeps the period an S6 that lost to S5 ha
                     })
                 })
                 .where(eq(emailOutbox.id, notice.id));
-            const outboxCount = (
+            const outboxTemplatesBefore = (
                 await getServiceTestDb()
-                    .select({ id: emailOutbox.id })
+                    .select({ template: emailOutbox.template })
                     .from(emailOutbox)
                     .where(eq(emailOutbox.recipientUserId, fixture.user.id))
-            ).length;
+            )
+                .map(({ template }) => template)
+                .sort();
             const period = await getServiceTestDb()
                 .select()
                 .from(coveredPeriods)
@@ -260,14 +262,18 @@ describe('TEST:B7:9 — the R18 mirror keeps the period an S6 that lost to S5 ha
             expect(scheduled?.serviceEndsAt).toEqual(
                 billingPeriodEnd({ periodStart: period[0].periodStart, everyMonths: 1 }).periodEnd
             );
-            expect(
-                (
-                    await getServiceTestDb()
-                        .select({ id: emailOutbox.id })
-                        .from(emailOutbox)
-                        .where(eq(emailOutbox.recipientUserId, fixture.user.id))
-                ).length
-            ).toBe(outboxCount);
+            // AC:B13a:17 adds exactly the paid-after-cancellation notice to R18's outbox delta.
+            const outboxTemplatesAfter = (
+                await getServiceTestDb()
+                    .select({ template: emailOutbox.template })
+                    .from(emailOutbox)
+                    .where(eq(emailOutbox.recipientUserId, fixture.user.id))
+            )
+                .map(({ template }) => template)
+                .sort();
+            expect(outboxTemplatesAfter).toEqual(
+                [...outboxTemplatesBefore, 'billing.paid-after-cancellation'].sort()
+            );
 
             const secondDeliveryData = encodeFakeNotice({
                 notice: {

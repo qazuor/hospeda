@@ -26,6 +26,7 @@ import {
     cancelDecidedComplementsAtProvider,
     type DecidedComplementCancellation
 } from '../subscription/complement-s11-rule.js';
+import { enqueuePaidAfterCancellationNotice } from '../subscription/paid-after-cancellation-notice.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 
 const logger = createLogger('mirror-our-cancellation-on-active');
@@ -86,7 +87,8 @@ export type MirrorOurCancellationResult =
  * computes the service end from the newest open paid period, writes
  * `CANCEL_SCHEDULED` with the computed end, and emits a post-commit `CHANGED`
  * coverage notice. It never opens a `coverage_loss` record, calls the
- * payment provider, enqueues email, or touches grace-clock columns.
+ * payment provider, enqueues only the paid-after-cancellation notice required by
+ * AC:B13a:17 in the same transaction, or touches grace-clock columns.
  *
  * Accepted residuals (`04-catalogos.md:2317-2327`): stale queued notice;
  * subscriber-initiated MP cancellation indistinguishable from provider's;
@@ -161,6 +163,12 @@ export async function mirrorOurCancellationOnActive(
                       ports.complements
                   )
                 : undefined;
+        await enqueuePaidAfterCancellationNotice({
+            tx,
+            subscription: row,
+            serviceEndsAt,
+            recurringAddonsCut: (complements?.decided.length ?? 0) > 0
+        });
         return {
             outcome: 'SCHEDULED' as const,
             serviceEndsAt,
