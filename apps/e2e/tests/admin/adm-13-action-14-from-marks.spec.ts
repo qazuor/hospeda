@@ -118,6 +118,22 @@ test.describe('TEST:B13a:10 admin action 14 on marks 18 and 19 @p0 @admin', () =
         await expect(action18).toBeVisible();
         const ordinaryAdmin = await createUser({ role: 'ADMIN' }, { apiBaseUrl: API_URL });
         ownedUserIds.push(ordinaryAdmin.id);
+        // Allow the mark list to load while leaving action 14's permission absent.
+        const readPermission = await fetch(
+            `${API_URL}/api/v1/admin/users/${ordinaryAdmin.id}/permissions`,
+            {
+                method: 'POST',
+                headers: {
+                    cookie: superAdmin.sessionCookie,
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    permission: 'billing.subscription.inspect',
+                    effect: 'grant'
+                })
+            }
+        );
+        expect(readPermission.status).toBe(200);
         await markAdminToursSeen({ userId: ordinaryAdmin.id });
         await page.context().clearCookies();
         await useAdminSession(page, ordinaryAdmin);
