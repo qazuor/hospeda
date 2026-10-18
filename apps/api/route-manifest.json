@@ -2454,6 +2454,10 @@
             "path": "/api/v1/protected/billing-subscription/:subscriptionId/cancellation-preview"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/billing-subscription/pricing-situation/:vertical"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/billing/promo-codes/redeem"
         },
