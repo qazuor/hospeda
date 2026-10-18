@@ -183,7 +183,15 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
     ACC_4: { unbound: 'B7 builds it' },
     ACC_5: { unbound: 'legacy HOS-278 alliance approval; V7 (HOS-1484) builds it' },
     ACC_6: { unbound: 'legacy HOS-278 partner routes; V7 (HOS-1489) builds it' },
-    ACC_7: { unbound: 'B11 builds it' },
+    ACC_7: {
+        bindings: [
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-reconciliation/admin/lift-mark.ts',
+                route: 'adminLiftReconciliationMarkRoute'
+            }
+        ]
+    },
     ACC_8: {
         bindings: [
             {
@@ -405,10 +413,10 @@ describe('HOS-1689 — each administrative action row agrees with its route gate
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
 
-    it('b. checks exactly 29 bindings across 12 bound rows', () => {
-        expect(BOUND_ACTIONS).toHaveLength(12);
+    it('b. checks exactly 30 bindings across 13 bound rows', () => {
+        expect(BOUND_ACTIONS).toHaveLength(13);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(29);
+        expect(total).toBe(30);
     });
 
     it.each(

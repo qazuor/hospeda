@@ -294,6 +294,12 @@
             "symbol": "readReconciliationMarkEventsRoute",
             "row": 6,
             "why": "La ruta admin del vínculo (AC:B13a:9) serializa levantada_en de la marca que lee readReconciliationMarkEvents, para que el panel muestre si la marca sigue abierta."
+        },
+        {
+            "file": "apps/api/src/routes/billing-reconciliation/admin/lift-mark.ts",
+            "symbol": "adminLiftReconciliationMarkRoute",
+            "row": null,
+            "why": "La ruta serializa levantada_en recién escrita por S15 para responder qué marca se levantó; no la relee como estado de origen y no corresponde a una fila del glosario."
         }
     ],
     "cortesia_diferida": [
