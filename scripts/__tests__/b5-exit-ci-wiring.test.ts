@@ -292,11 +292,15 @@ describe('TEST:B5:17 AC:B5:33 - B5 exit: LISTA:B5 evidence in the tree, manual h
                         continue;
                     }
                     const titles = testTitles({ source: read(file) });
-                    if (
-                        !entry.tests.some((id) =>
-                            titles.some((title) => namesId({ text: title, id }))
-                        )
-                    )
+                    const evidenceTitle =
+                        entry.clause === 13 && file === FROM_EMPTY.file ? (titles[0] ?? '') : '';
+                    const hasEvidenceTitle =
+                        entry.clause === 13 && file === FROM_EMPTY.file
+                            ? namesId({ text: evidenceTitle, id: FROM_EMPTY.test })
+                            : entry.tests.some((id) =>
+                                  titles.some((title) => namesId({ text: title, id }))
+                              );
+                    if (!hasEvidenceTitle)
                         missingFiles.push(`${file} (no title names ${entry.tests.join(', ')})`);
                 }
                 expect(
@@ -341,9 +345,7 @@ describe('TEST:B5:17 AC:B5:33 - B5 exit: LISTA:B5 evidence in the tree, manual h
             const exists = existsSync(path.join(repoRoot, FROM_EMPTY.file));
             const titles = exists ? testTitles({ source: read(FROM_EMPTY.file) }) : [];
             expect(exists).toBe(true);
-            expect(titles.some((title) => namesId({ text: title, id: FROM_EMPTY.test }))).toBe(
-                true
-            );
+            expect(namesId({ text: titles[0] ?? '', id: FROM_EMPTY.test })).toBe(true);
         });
     });
 
@@ -401,6 +403,7 @@ describe('TEST:B5:17 AC:B5:33 - B5 exit: LISTA:B5 evidence in the tree, manual h
         for (const guard of GUARDS) {
             it(`${guard.guard} has a script and mutation test`, () => {
                 expect(rootPkg.scripts[guard.checkName]).toBeTruthy();
+                expect(rootPkg.scripts['check:guards']).toContain(guard.checkName);
                 expect(guardsRuns.some((run) => run.includes(guard.checkName))).toBe(true);
                 expect(existsSync(path.join(repoRoot, guard.checkScript))).toBe(true);
                 expect(existsSync(path.join(repoRoot, guard.mutationTest))).toBe(true);
