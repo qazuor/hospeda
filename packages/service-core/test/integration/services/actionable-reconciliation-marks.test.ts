@@ -207,6 +207,7 @@ describe('TEST:1620:6 — actionable reconciliation mark reads', () => {
     it('a-g/i: lists mark units and resolves only the current reason-7 events from placed_at', async () => {
         const subject = await seedFixture({ status: 'GRACE_PERIOD' });
         const otherSubject = await seedFixture();
+        const orderingSubject = await seedFixture();
         const oldReasonFive = await open(subject, 'DIVERGENCIA_DE_MONTO');
         await liftReconciliationMark(
             {
@@ -231,7 +232,8 @@ describe('TEST:1620:6 — actionable reconciliation mark reads', () => {
                 markPayments: createPaymentReconciliationMarkPayments({ now: () => new Date() })
             }
         );
-        const olderRefund = await open(subject, 'COBRO_DUPLICADO');
+        const olderNonRefund = await open(orderingSubject, 'DIVERGENCIA_DE_MONTO');
+        const laterRefund = await open(orderingSubject, 'COBRO_DUPLICADO');
         const firstPayment = await seedProviderPayment(subject.subscriptionId, 1200);
         const secondPayment = await seedProviderPayment(subject.subscriptionId, 2500);
         const currentReasonSeven = await open(
@@ -247,7 +249,8 @@ describe('TEST:1620:6 — actionable reconciliation mark reads', () => {
         const items = await allActionableMarks();
         const ours = items.filter((item) =>
             [
-                olderRefund.mark.id,
+                laterRefund.mark.id,
+                olderNonRefund.mark.id,
                 currentReasonSeven.mark.id,
                 newerReasonFive.mark.id,
                 previousReasonSeven.mark.id
@@ -256,7 +259,7 @@ describe('TEST:1620:6 — actionable reconciliation mark reads', () => {
         const ids = items.map((item) => item.markId);
         expect(ours.map((item) => item.markId)).toContain(currentReasonSeven.mark.id);
         expect(ids).not.toContain(previousReasonSeven.mark.id);
-        expect(ours).toHaveLength(3);
+        expect(ours).toHaveLength(4);
         expect(ours.find((item) => item.markId === currentReasonSeven.mark.id)).toMatchObject({
             reason: 'PAGO_TARDIO_RECHAZADO',
             reasonNumber: 7,
@@ -269,9 +272,7 @@ describe('TEST:1620:6 — actionable reconciliation mark reads', () => {
             unknownAmountCount: 0
         });
         expect(ours.find((item) => item.markId === newerReasonFive.mark.id)?.eventLink).toBeNull();
-        expect(ids.indexOf(olderRefund.mark.id)).toBeLessThan(
-            ids.indexOf(currentReasonSeven.mark.id)
-        );
+        expect(ids.indexOf(laterRefund.mark.id)).toBeLessThan(ids.indexOf(olderNonRefund.mark.id));
         expect(ids.indexOf(currentReasonSeven.mark.id)).toBeLessThan(
             ids.indexOf(newerReasonFive.mark.id)
         );
