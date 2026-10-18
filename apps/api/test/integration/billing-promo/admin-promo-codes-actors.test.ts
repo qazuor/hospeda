@@ -11,7 +11,8 @@ import {
     promoCreateBody,
     promoRowsByCode,
     seedOpenPromoCode,
-    seedPromoAdminUser
+    seedPromoAdminUser,
+    trackPromoCode
 } from './admin-promo-codes-fixtures';
 
 describe('TEST:B9b:9 (support) AC:B9b:9 HOS-1591 only SUPER_ADMIN may create, close or list codes', () => {
@@ -24,6 +25,48 @@ describe('TEST:B9b:9 (support) AC:B9b:9 HOS-1591 only SUPER_ADMIN may create, cl
     afterAll(async () => {
         await cleanupAdminPromoFixtures();
         await testDb.teardown();
+    });
+
+    it('does not create a valid promo code for an admin without the action permission', async () => {
+        const app = createAdminPromoApp();
+        const actorId = await seedPromoAdminUser('create-forbidden');
+        const code = `DEN-${crypto.randomUUID().replaceAll('-', '').slice(0, 20).toUpperCase()}`;
+        const response = await app.request(adminPromoPath, {
+            method: 'POST',
+            headers: adminPromoHeaders({
+                id: actorId,
+                role: 'ADMIN',
+                permissions: [PermissionEnum.ACCESS_PANEL_ADMIN]
+            }),
+            body: JSON.stringify(promoCreateBody(code))
+        });
+
+        const rows = await promoRowsByCode(code);
+        for (const row of rows) trackPromoCode(row.id);
+        expect(rows).toHaveLength(0);
+        expect(response.status).toBe(403);
+    });
+
+    it('does not close an open promo code for an admin without the action permission', async () => {
+        const app = createAdminPromoApp();
+        const actorId = await seedPromoAdminUser('close-forbidden');
+        const code = `OPEN-${crypto.randomUUID().replaceAll('-', '').slice(0, 20)}`;
+        const promoCodeId = await seedOpenPromoCode(code);
+        const response = await app.request(`${adminPromoPath}/${promoCodeId}/close`, {
+            method: 'POST',
+            headers: adminPromoHeaders({
+                id: actorId,
+                role: 'ADMIN',
+                permissions: [PermissionEnum.ACCESS_PANEL_ADMIN]
+            })
+        });
+
+        const [stillOpen] = await getDb()
+            .select({ closedAt: promoCodes.closedAt })
+            .from(promoCodes)
+            .where(eq(promoCodes.code, code));
+        expect(stillOpen?.closedAt).toBeNull();
+        expect(response.status).toBe(403);
     });
 
     it('returns 403 to admins with no action permission or neighboring permissions, and 401 to a guest', async () => {
