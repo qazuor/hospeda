@@ -1,13 +1,25 @@
 // @vitest-environment jsdom
 import es from '@repo/i18n/locales/es/admin-billing.json';
 import { PermissionEnum } from '@repo/schemas';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ReconciliationMarksScreen } from '../ReconciliationMarksScreen';
 
+function renderScreen() {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(
+        <QueryClientProvider client={client}>
+            <ReconciliationMarksScreen />
+        </QueryClientProvider>
+    );
+}
+
 const query = vi.hoisted(() => ({
-    current: { isLoading: false, isError: false, data: undefined as any, refetch: vi.fn() },
-    permissions: ['billing.subscription.inspect'] as string[]
+    current: { isLoading: false, isError: false, data: undefined as any, refetch: vi.fn() }
+}));
+vi.mock('../../hooks/useLiftReconciliationMark', () => ({
+    useLiftReconciliationMarkMutation: () => ({ mutateAsync: vi.fn(), isPending: false })
 }));
 vi.mock('../../hooks/useReconciliationMarks', () => ({
     useReconciliationMarks: () => query.current
@@ -26,11 +38,13 @@ vi.mock('@/hooks/use-translations', () => ({
         locale: 'es'
     })
 }));
+const permissions = vi.hoisted(() => ({ current: ['billing.subscription.inspect'] as string[] }));
 vi.mock('@/hooks/use-user-permissions', () => ({
-    useUserPermissions: () => query.permissions,
-    useHasPermission: (permission: PermissionEnum) => query.permissions.includes(permission)
+    useUserPermissions: () => permissions.current,
+    useHasPermission: (permission: PermissionEnum) => permissions.current.includes(permission)
 }));
 vi.mock('@/hooks/use-auth-context', () => ({ useAuthContext: () => ({ isLoading: false }) }));
+vi.mock('@/components/ui/ToastProvider', () => ({ useToast: () => ({ addToast: vi.fn() }) }));
 
 const subject = {
     kind: 'SUBSCRIPTION',
@@ -49,6 +63,7 @@ const payment = (id: string) => ({
 const marks = [
     {
         markId: '11111111-1111-4111-8111-111111111111',
+        version: 3,
         reason: 'PAGO_TARDIO_RECHAZADO',
         reasonNumber: 7,
         refundConfirmation: true,
@@ -66,6 +81,7 @@ const marks = [
     },
     {
         markId: '44444444-4444-4444-8444-444444444444',
+        version: 3,
         reason: 'DIVERGENCIA_DE_MONTO',
         reasonNumber: 5,
         refundConfirmation: false,
@@ -80,6 +96,7 @@ const marks = [
     },
     {
         markId: '55555555-5555-4555-8555-555555555555',
+        version: 3,
         reason: 'REEMBOLSO_POR_CONFIRMAR',
         reasonNumber: 2,
         refundConfirmation: true,
@@ -94,6 +111,7 @@ const marks = [
     },
     {
         markId: '77777777-7777-4777-8777-777777777777',
+        version: 3,
         reason: 'TRANSICION_NO_DECLARADA',
         reasonNumber: 9,
         refundConfirmation: false,
@@ -116,7 +134,7 @@ describe('TEST:1620:9 actionable reconciliation marks screen', () => {
             refetch: vi.fn(),
             data: { items: marks, pagination: { page: 1, pageSize: 50, total: 4, totalPages: 1 } }
         };
-        render(<ReconciliationMarksScreen />);
+        renderScreen();
         const articles = screen.getAllByTestId('reconciliation-mark');
         expect(articles).toHaveLength(4);
         expect(articles.map((article) => article.getAttribute('data-mark-id'))).toEqual(
@@ -143,6 +161,31 @@ describe('TEST:1620:9 actionable reconciliation marks screen', () => {
         ).toHaveTextContent('Estado de la fila: Sujeto no resuelto');
     });
 
+    describe('TEST:1697:13 AC:1697:5 screen integration', () => {
+        it('renders the lift action inside each article when the actor has its permission', () => {
+            permissions.current = [
+                PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
+                PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK
+            ];
+            query.current = {
+                isLoading: false,
+                isError: false,
+                refetch: vi.fn(),
+                data: {
+                    items: marks,
+                    pagination: { page: 1, pageSize: 50, total: 4, totalPages: 1 }
+                }
+            };
+            renderScreen();
+            const articles = screen.getAllByTestId('reconciliation-mark');
+            expect(articles).toHaveLength(4);
+            for (const article of articles) {
+                expect(within(article).getByTestId('reconciliation-mark-lift')).toBeInTheDocument();
+            }
+            permissions.current = [PermissionEnum.BILLING_SUBSCRIPTION_INSPECT];
+        });
+    });
+
     it('shows the empty state', () => {
         query.current = {
             isLoading: false,
@@ -150,13 +193,13 @@ describe('TEST:1620:9 actionable reconciliation marks screen', () => {
             refetch: vi.fn(),
             data: { items: [], pagination: { page: 1, pageSize: 50, total: 0, totalPages: 0 } }
         };
-        render(<ReconciliationMarksScreen />);
+        renderScreen();
         expect(screen.getByText('No hay marcas abiertas.')).toBeInTheDocument();
     });
 
     it('shows an error and lets staff retry', () => {
         query.current = { isLoading: false, isError: true, refetch: vi.fn(), data: undefined };
-        render(<ReconciliationMarksScreen />);
+        renderScreen();
         expect(screen.getByRole('alert')).toHaveTextContent(
             'No se pudieron cargar las marcas abiertas.'
         );
@@ -164,7 +207,7 @@ describe('TEST:1620:9 actionable reconciliation marks screen', () => {
     });
 
     it('renders action 14 inside an eligible mark article when permitted', () => {
-        query.permissions = [
+        permissions.current = [
             PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
             PermissionEnum.BILLING_SETTLE_EXTERNAL
         ];
@@ -194,7 +237,7 @@ describe('TEST:1620:9 actionable reconciliation marks screen', () => {
     });
 
     it('b) keeps the seeded mark article visible while hiding action 14 without its permission', () => {
-        query.permissions = [PermissionEnum.BILLING_SUBSCRIPTION_INSPECT];
+        permissions.current = [PermissionEnum.BILLING_SUBSCRIPTION_INSPECT];
         const eligible = { ...marks[0]!, reason: 'REEMBOLSO_FUERA_DEL_FLUJO', reasonNumber: 18 };
         query.current = {
             isLoading: false,

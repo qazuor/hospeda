@@ -7,6 +7,10 @@ import { createRouter } from '../../../utils/create-app';
 import { createAdminRoute } from '../../../utils/route-factory';
 import { readSubscription } from '../read-subscription';
 import {
+    adminCancelSubscriptionRoute,
+    adminSubscriptionCancellationPreviewRoute
+} from './cancellation';
+import {
     adminRevokeSubscriptionRoute,
     adminSubscriptionRevocationPreviewRoute
 } from './revocation';
@@ -42,5 +46,7 @@ const router = createRouter();
 router.route('/', adminInspectSubscriptionRoute);
 router.route('/', adminSubscriptionRevocationPreviewRoute);
 router.route('/', adminRevokeSubscriptionRoute);
+router.route('/', adminSubscriptionCancellationPreviewRoute);
+router.route('/', adminCancelSubscriptionRoute);
 
 export { router as adminBillingSubscriptionRoutes };

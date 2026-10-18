@@ -20,6 +20,7 @@ import {
     type ApplyExecutedRefundResult,
     applyExecutedRefund
 } from '../payment/apply-executed-refund.service';
+import { resolveHungPaymentsBySettlement } from '../reconciliation/hung-payment-resolution.js';
 import { canRefundTransition, type RefundStatus, type Rf4Reason } from './refund-machine';
 import {
     assertRefundAmount,
@@ -358,7 +359,8 @@ async function applyEffects(
  * Side effects: on a `payment`, `applyExecutedRefund` (P3/P4/P5; releases
  * `covered_period` on a full refund; it emits no notice, revalidation or
  * email). On a `manual_payment` with `TOTAL` scope, its open `covered_period`
- * is released. Nothing else.
+ * is released. Every unresolved payment hung on a reconciliation mark for
+ * this source is resolved with this refund (`resolved_at`, `refund_id`; HOS-1697).
  *
  * @param input - The settlement.
  * @param ports - The clock.
@@ -395,6 +397,12 @@ export async function settleExternalRefund(
                 excludeRefundId: closing?.id
             });
             const refundId = await writeExecuted(tx, input, closing, ports.clock.now());
+            await resolveHungPaymentsBySettlement({
+                tx,
+                payment: { source: input.source.kind, id: input.source.id },
+                refundId,
+                at: ports.clock.now()
+            });
             const effects = await applyEffects(tx, input, refundId, ports.clock);
             return {
                 refundId,

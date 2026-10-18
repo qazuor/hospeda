@@ -236,6 +236,12 @@
             "why": "S15 relee levantada_en para decidir el desde."
         },
         {
+            "file": "packages/service-core/src/services/billing/reconciliation/lift-reconciliation-mark-by-admin.service.ts",
+            "symbol": "liftReconciliationMarkByAdmin",
+            "row": null,
+            "why": "La acción 7 devuelve lifted_at recién escrito por S15 para auditar qué marca se levantó; no lo relee como estado de origen y no corresponde a una fila del glosario."
+        },
+        {
             "file": "packages/service-core/src/services/billing/subscription/succession-target-guard.ts",
             "symbol": "checkSuccessionTarget",
             "row": 2,
@@ -288,6 +294,12 @@
             "symbol": "readReconciliationMarkEventsRoute",
             "row": 6,
             "why": "La ruta admin del vínculo (AC:B13a:9) serializa levantada_en de la marca que lee readReconciliationMarkEvents, para que el panel muestre si la marca sigue abierta."
+        },
+        {
+            "file": "apps/api/src/routes/billing-reconciliation/admin/lift-mark.ts",
+            "symbol": "adminLiftReconciliationMarkRoute",
+            "row": null,
+            "why": "La ruta serializa levantada_en recién escrita por S15 para responder qué marca se levantó; no la relee como estado de origen y no corresponde a una fila del glosario."
         }
     ],
     "cortesia_diferida": [
