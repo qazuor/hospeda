@@ -47,6 +47,10 @@ export const AdminSubscriptionCancellationResponseSchema = z
 export type AdminSubscriptionCancellationRequest = z.infer<
     typeof AdminSubscriptionCancellationRequestSchema
 >;
+/** Origin the admin confirmed before cancellation. */
+export type AdminSubscriptionCancellationExpectedOrigin = z.infer<
+    typeof AdminSubscriptionCancellationExpectedOriginSchema
+>;
 /** Parsed response for administrative cancellation without a refund. */
 export type AdminSubscriptionCancellationResponse = z.infer<
     typeof AdminSubscriptionCancellationResponseSchema
