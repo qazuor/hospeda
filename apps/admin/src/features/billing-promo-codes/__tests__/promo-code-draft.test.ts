@@ -4,6 +4,7 @@ import {
     describePromoCodeDraft,
     fromMinorUnits,
     type PromoCodeDraft,
+    promoCodeRejectionLabel,
     toMinorUnits
 } from '../promo-code-draft';
 
@@ -140,5 +141,14 @@ describe('AC:B9b:9 HOS-1591 promo code draft and TEST:B9b:9 (support)', () => {
             describePromoCodeDraft({ draft: draft({ validUntil: null }), locale: 'es-AR', t })
                 .validity
         ).toBe('desde ahora, sin fecha de fin');
+    });
+
+    it('maps known rejections and falls back safely for an unknown reason', () => {
+        expect(promoCodeRejectionLabel({ reason: 'PROMO_CODE_ALREADY_EXISTS', t })).toBe(
+            'admin-billing.promoCodes.editor.rejections.alreadyExists'
+        );
+        expect(promoCodeRejectionLabel({ reason: 'UNRECOGNIZED_REASON', t })).toBe(
+            'admin-billing.promoCodes.editor.rejections.generic'
+        );
     });
 });
