@@ -505,6 +505,21 @@ permission, 400 for malformed pagination or `markId`, and 404 `NOT_FOUND` for
 an unknown mark. The list is read-only: it neither writes nor executes a
 proposal (DEC-RF-002).
 
+## Action 7: lift one reconciliation mark (B13a, HOS-1697)
+
+`POST /api/v1/admin/billing-reconciliation/marks/{markId}/lift` performs ACC:7 (S15). The route maps service rejections with an exhaustive `Record` in `src/routes/billing-reconciliation/admin/lift-mark.ts`, keyed by `LIFT_RECONCILIATION_MARK_REJECTIONS` from `@repo/service-core`.
+
+| Service rejection | Status | `error.code` |
+|---|---:|---|
+| `MARK_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `MARK_ALREADY_LIFTED` | 409 | `ALREADY_EXISTS` |
+| `MARK_VERSION_CONFLICT` | 409 | `ALREADY_EXISTS` |
+| `MARK_HAS_UNRESOLVED_PAYMENTS` | 409 | `ALREADY_EXISTS` |
+| `MARK_PAYMENT_NOT_HUNG` | 422 | `VALIDATION_ERROR` |
+
+A non-uuid `markId`, a body without an integer `expectedVersion` ≥ 1, an extra key, a repeated payment pair, or an empty or over-2000-character note is a 400 from the schema. The mark is read before the subject, so an unknown mark is 404 for an actor with the permission, as in actions 8 and 14; 403 can come from the route factory (permission) or the service (system actor, actor = subject). `MARK_HAS_UNRESOLVED_PAYMENTS` is a hung payment attached to the mark, unresolved, and not named in the request; `MARK_PAYMENT_NOT_HUNG` is a named payment that is not an unresolved hung payment on that mark; `MARK_VERSION_CONFLICT` means the mark changed since the person read it (for example, a new hung payment arrived): reread and confirm again. No rejection writes anything.
+
 ## Action 24 (V8a.3, HOS-1494)
 
 `GET` and `POST /api/v1/admin/users/{id}/close-on-request`: administrative
