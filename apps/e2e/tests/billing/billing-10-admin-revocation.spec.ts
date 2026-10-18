@@ -32,7 +32,7 @@ const MAIL_TIMEOUT_MS = 30_000;
 const TIMESTAMP_TOLERANCE_MS = 2_000;
 const REVOCATION_SUBJECT = 'Registramos la revocación de tu suscripción';
 
-test.describe('TEST:B5:22 admin revocation (S36) end to end @p0 @billing @clock', () => {
+test.describe('TEST:B5:22 AC:B5:39 admin revocation (S36) end to end @p0 @billing @clock', () => {
     test.describe.configure({ mode: 'serial' });
     test.setTimeout(300_000);
     let world: FakeWorld | null = null;
