@@ -282,6 +282,12 @@
             "symbol": "readReconciliationMarkEvents",
             "row": 6,
             "why": "Resuelve los eventos críticos de una marca con el intervalo de apertura y cierre guardado por la marca (DEC-RF-005)."
+        },
+        {
+            "file": "apps/api/src/routes/billing-reconciliation/admin/mark-events.ts",
+            "symbol": "readReconciliationMarkEventsRoute",
+            "row": 6,
+            "why": "La ruta admin del vínculo (AC:B13a:9) serializa levantada_en de la marca que lee readReconciliationMarkEvents, para que el panel muestre si la marca sigue abierta."
         }
     ],
     "cortesia_diferida": [
