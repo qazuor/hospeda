@@ -302,6 +302,12 @@
             "symbol": "abandonPendingAuthorization",
             "row": 9,
             "why": "S3 cierra el saldo diferido de la cortesía."
+        },
+        {
+            "file": "apps/api/src/routes/billing-subscription/read-own-subscriptions.ts",
+            "symbol": "readOwnDeferredCourtesies",
+            "row": 10,
+            "why": "Mi Suscripción muestra la cortesía diferida del beneficiario con su condición, en la vertical de la suscripción que la firmó (AC:B13a:8, DEC-GRANT-012); no decide nada con el término."
         }
     ]
 }

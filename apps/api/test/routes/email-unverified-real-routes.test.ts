@@ -21,10 +21,12 @@ import type { AppBindings } from '../../src/types';
 
 const cancellationRouteMocks = vi.hoisted(() => ({
     readOwnSubscriptions: vi.fn(async () => []),
+    readOwnDeferredCourtesies: vi.fn(async () => []),
     readSubscription: vi.fn(async () => null)
 }));
 vi.mock('../../src/routes/billing-subscription/read-own-subscriptions', () => ({
-    readOwnSubscriptions: cancellationRouteMocks.readOwnSubscriptions
+    readOwnSubscriptions: cancellationRouteMocks.readOwnSubscriptions,
+    readOwnDeferredCourtesies: cancellationRouteMocks.readOwnDeferredCourtesies
 }));
 vi.mock('../../src/routes/billing-subscription/read-subscription', () => ({
     readSubscription: cancellationRouteMocks.readSubscription

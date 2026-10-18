@@ -464,6 +464,7 @@ The permission is the route's scope (`billing.cancelSubscription`); the subject,
 ## Self-service cancellation (B13a.1, HOS-1617)
 
 `GET /api/v1/protected/billing-subscription/` lists the caller's principal subscriptions.
+The list also returns `deferredCourtesies` for AC:B13a:8 (HOS-1620); this adds no new rejections.
 `GET /api/v1/protected/billing-subscription/{subscriptionId}/cancellation-preview` previews the cancellation, and
 `POST /api/v1/protected/billing-subscription/{subscriptionId}/cancellation` performs it. Both resource routes are owner-only: another person's subscription is
 404, including for staff holding `billing.cancelSubscription`, because these routes are in the protected tier.

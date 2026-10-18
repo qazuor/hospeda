@@ -1,7 +1,7 @@
 import { OwnSubscriptionsResponseSchema, PermissionEnum } from '@repo/schemas';
 import { getActorFromContext } from '../../utils/actor';
 import { createProtectedRoute } from '../../utils/route-factory';
-import { readOwnSubscriptions } from './read-own-subscriptions';
+import { readOwnDeferredCourtesies, readOwnSubscriptions } from './read-own-subscriptions';
 
 /** List only the authenticated owner's cancellable principal subscriptions. */
 export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
@@ -13,12 +13,20 @@ export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
     requiredPermissions: [PermissionEnum.BILLING_VIEW_OWN],
     emailUnverifiedOperation: 'READ_OWN',
     responseSchema: OwnSubscriptionsResponseSchema,
-    handler: async (ctx) => ({
-        subscriptions: (await readOwnSubscriptions(getActorFromContext(ctx).id)).map((row) => ({
-            ...row,
-            serviceEndsAt: row.serviceEndsAt?.toISOString() ?? null,
-            graceEndsAt: row.graceEndsAt?.toISOString() ?? null,
-            createdAt: row.createdAt.toISOString()
-        }))
-    })
+    handler: async (ctx) => {
+        const userId = getActorFromContext(ctx).id;
+        const [subscriptions, deferredCourtesies] = await Promise.all([
+            readOwnSubscriptions(userId),
+            readOwnDeferredCourtesies(userId)
+        ]);
+        return {
+            subscriptions: subscriptions.map((row) => ({
+                ...row,
+                serviceEndsAt: row.serviceEndsAt?.toISOString() ?? null,
+                graceEndsAt: row.graceEndsAt?.toISOString() ?? null,
+                createdAt: row.createdAt.toISOString()
+            })),
+            deferredCourtesies
+        };
+    }
 });
