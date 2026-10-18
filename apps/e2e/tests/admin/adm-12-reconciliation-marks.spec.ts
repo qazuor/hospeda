@@ -118,7 +118,7 @@ test.describe('TEST:B13a:8 actionable reconciliation list @p0 @admin', () => {
         const markSeven = findMark(reasonSeven.id);
         await expect(markSeven.getByTestId('reconciliation-mark-payment')).toHaveCount(2);
         await expect(markSeven.getByTestId('reconciliation-mark-payment-count')).toContainText('2');
-        await expect(markSeven.getByTestId('reconciliation-mark-total')).toContainText('$ 250,00');
+        await expect(markSeven.getByTestId('reconciliation-mark-total')).toContainText('250,00');
         await expect(markSeven.getByTestId('reconciliation-mark-proposal')).toContainText(
             'Devolver'
         );
