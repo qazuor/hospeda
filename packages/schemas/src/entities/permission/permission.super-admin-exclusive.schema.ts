@@ -12,7 +12,8 @@ export const SUPER_ADMIN_ONLY_PERMISSION_REASON = 'SUPER_ADMIN_ONLY_PERMISSION';
 export const SUPER_ADMIN_EXCLUSIVE_PERMISSIONS = [
     PermissionEnum.MAINTENANCE_MODE_WRITE,
     PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE,
-    PermissionEnum.BILLING_GRANT_COMPLIMENTARY
+    PermissionEnum.BILLING_GRANT_COMPLIMENTARY,
+    PermissionEnum.BILLING_MANAGE_PROMO_CODES
 ] as const;
 
 /** A permission that can be held only through the `SUPER_ADMIN` role. */
