@@ -150,13 +150,9 @@ export const CARD_ID_BY_PRICING_AUDIENCE: Readonly<
  * One request, not the four {@link fetchAudienceOffers} issues: a pricing page
  * renders a single audience and has no use for the other four catalogues.
  *
- * The SELECTION, though, goes through {@link selectAudiencePlans} rather than
- * being re-derived — which is the whole point of this function existing instead
- * of each page calling `fetchPublicPlans` and filtering. Two of that function's
- * rules are load-bearing and neither is obvious at a call site: `complex` plans
- * are never selected for the host audience, and partner is narrowed to the
- * sellable tiers, dropping the still-active pre-tier `partner-listing`. A page
- * that filtered by hand would advertise a legacy plan nobody can subscribe to.
+ * Selection goes through {@link selectAudiencePlans} so each audience reads
+ * only the plans from its own vertical catalog. The catalog already contains
+ * only current sellable plans, so this layer does not recreate catalog rules.
  *
  * The result is sorted cheapest-first (`sortOrder` ascending), which
  * `PricingCardsGrid` REQUIRES: it diffs each card against the one before it.
