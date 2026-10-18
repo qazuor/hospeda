@@ -3,7 +3,8 @@ import {
     getDb,
     manualPayments,
     reconciliationMarkPayments,
-    reconciliationMarks
+    reconciliationMarks,
+    subscriptions
 } from '@repo/db';
 import {
     ActionableReconciliationMarkSchema,
@@ -102,6 +103,10 @@ describe('TEST:1620:7 actionable reconciliation mark routes', () => {
                 hungAt: new Date('2026-10-01T03:00:00.000Z')
             });
         const unknown = await seedPaidSubscription();
+        await getDb()
+            .update(subscriptions)
+            .set({ class: 'COMPLEMENTO', planVersionId: null, billingOptionId: null })
+            .where(eq(subscriptions.id, unknown.subscriptionId));
         const [manual] = await getDb()
             .insert(manualPayments)
             .values({
@@ -168,12 +173,12 @@ describe('TEST:1620:7 actionable reconciliation mark routes', () => {
         expect(manualItem).toMatchObject({
             eventLink: null,
             paymentCount: 1,
-            unknownAmountCount: 0,
+            unknownAmountCount: 1,
             payments: [
                 expect.objectContaining({
                     source: 'MANUAL_PAYMENT',
-                    amountMinor: 10000,
-                    currency: 'ARS'
+                    amountMinor: null,
+                    currency: null
                 })
             ]
         });
