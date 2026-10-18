@@ -47,6 +47,7 @@ describe('TEST:B9b:9 (support) AC:B9b:9 HOS-1591 only SUPER_ADMIN may create, cl
             },
             { role: '', permissions: [], expectedStatus: 401 }
         ] as const;
+        const statuses: number[][] = [];
 
         for (const [index, actor] of actors.entries()) {
             const code = `DEN-${index}-${crypto.randomUUID().replaceAll('-', '').slice(0, 12)}`;
@@ -67,11 +68,7 @@ describe('TEST:B9b:9 (support) AC:B9b:9 HOS-1591 only SUPER_ADMIN may create, cl
                 headers
             });
             const listed = await app.request(adminPromoPath, { headers });
-            expect([created.status, closed.status, listed.status]).toEqual([
-                actor.expectedStatus,
-                actor.expectedStatus,
-                actor.expectedStatus
-            ]);
+            statuses.push([created.status, closed.status, listed.status]);
             expect(await promoRowsByCode(code)).toHaveLength(0);
             const [stillOpen] = await getDb()
                 .select({ closedAt: promoCodes.closedAt })
@@ -79,6 +76,9 @@ describe('TEST:B9b:9 (support) AC:B9b:9 HOS-1591 only SUPER_ADMIN may create, cl
                 .where(eq(promoCodes.id, closableId));
             expect(stillOpen?.closedAt).toBeNull();
         }
+        expect(statuses).toEqual(
+            actors.map(({ expectedStatus }) => [expectedStatus, expectedStatus, expectedStatus])
+        );
     });
 
     it('returns the factory 403 before parsing an invalid admin body', async () => {
