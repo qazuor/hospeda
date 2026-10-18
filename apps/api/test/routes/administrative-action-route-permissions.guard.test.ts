@@ -294,7 +294,25 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
     },
     ACC_19: { unbound: 'B2 (HOS-1515) builds it' },
     ACC_20: { unbound: 'B10 (HOS-1595) builds it' },
-    ACC_21: { unbound: 'B9b (HOS-1591) builds it' },
+    ACC_21: {
+        bindings: [
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-promo/admin/list.ts',
+                route: 'adminListPromoCodesRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-promo/admin/create.ts',
+                route: 'adminCreatePromoCodeRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-promo/admin/close.ts',
+                route: 'adminClosePromoCodeRoute'
+            }
+        ]
+    },
     ACC_22: {
         bindings: [
             {
@@ -405,10 +423,10 @@ describe('HOS-1689 — each administrative action row agrees with its route gate
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
 
-    it('b. checks exactly 29 bindings across 12 bound rows', () => {
-        expect(BOUND_ACTIONS).toHaveLength(12);
+    it('b. checks exactly 32 bindings across 13 bound rows', () => {
+        expect(BOUND_ACTIONS).toHaveLength(13);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(29);
+        expect(total).toBe(32);
     });
 
     it.each(

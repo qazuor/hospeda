@@ -632,3 +632,23 @@ request before writing `owner_reported_fixed_at`.
 A repeat answers 200 with the instant of the first report and rewrites
 nothing. The report writes no domain event, does not close the request and
 does not move `inactive_since`.
+
+## Action 21 promo code rejections (B9b.4)
+
+`GET /api/v1/admin/billing-promo-codes`, `POST /api/v1/admin/billing-promo-codes`, and
+`POST /api/v1/admin/billing-promo-codes/{promoCodeId}/close` require
+`BILLING_MANAGE_PROMO_CODES` in the route factory. The factory order is 401 → 403 → 400, so
+an unauthenticated request is rejected before permission checks, and a signed-in actor without
+the permission is rejected before query, params, or body validation.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `PROMO_CODE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `PROMO_CODE_ALREADY_EXISTS` | 409 | `ALREADY_EXISTS` |
+| `PROMO_CODE_ALREADY_CLOSED` | 409 | `ALREADY_EXISTS` |
+| `INVALID_PROMO_CODE_INPUT` | 422 | `VALIDATION_ERROR` |
+
+The exhaustive `Record` lives in `src/routes/billing-promo/admin/rejections.ts`. A redemption
+attempt for a closed code returns the existing `PROMO_CODE_NOT_AVAILABLE` response documented
+under [Promo code redemption](#promo-code-redemption); closing a code adds no redemption reason.
