@@ -149,6 +149,7 @@ describe('TEST:B9b:9 (support) AC:B9b:9 HOS-1591 admin action 21 creates and clo
                 permissions: [PermissionEnum.BILLING_MANAGE_PROMO_CODES]
             } as Actor;
             const deniedCreateCode = `DENY-${crypto.randomUUID()}`;
+            const systemCreateCode = `SYS-${crypto.randomUUID()}`;
             await expect(
                 createPromoCode(
                     { actor: neighbors, input: createInput(deniedCreateCode) },
@@ -156,10 +157,7 @@ describe('TEST:B9b:9 (support) AC:B9b:9 HOS-1591 admin action 21 creates and clo
                 )
             ).rejects.toMatchObject({ reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' });
             await expect(
-                createPromoCode(
-                    { actor: system, input: createInput(`SYS-${crypto.randomUUID()}`) },
-                    { clock }
-                )
+                createPromoCode({ actor: system, input: createInput(systemCreateCode) }, { clock })
             ).rejects.toMatchObject({ reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' });
             const closable = await create(createInput(`CLOSE-${crypto.randomUUID()}`));
             await expect(
@@ -176,6 +174,9 @@ describe('TEST:B9b:9 (support) AC:B9b:9 HOS-1591 admin action 21 creates and clo
             ).rejects.toMatchObject({ reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' });
             expect(
                 await getDb().select().from(promoCodes).where(eq(promoCodes.code, deniedCreateCode))
+            ).toHaveLength(0);
+            expect(
+                await getDb().select().from(promoCodes).where(eq(promoCodes.code, systemCreateCode))
             ).toHaveLength(0);
             const [stillOpen] = await getDb()
                 .select()

@@ -1,4 +1,4 @@
-import { eq, getDb, promoRedemptions, providerLinks, subscriptions } from '@repo/db';
+import { and, eq, getDb, promoRedemptions, providerLinks, subscriptions } from '@repo/db';
 import { PermissionEnum, VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
@@ -129,7 +129,12 @@ describe('TEST:B9b:9 (support) AC:B9b:9 HOS-1591 closing a code rejects the next
                 await getDb()
                     .select()
                     .from(promoRedemptions)
-                    .where(eq(promoRedemptions.userId, second.seeded.subscription.userId!))
+                    .where(
+                        and(
+                            eq(promoRedemptions.promoCodeId, promo.id),
+                            eq(promoRedemptions.userId, second.seeded.subscription.userId!)
+                        )
+                    )
             ).toHaveLength(0);
         }
     );
