@@ -20,8 +20,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     AUDIENCE_CARD_ORDER,
     AUDIENCE_CARD_PATHS,
-    fetchAudienceOffers,
-    formatStartingPriceArs,
     resolveAudienceStartingPrices,
     resolveAudienceTrialDays,
     resolveStartingPrice,
@@ -38,23 +36,20 @@ vi.mock('@/lib/env', () => ({
 // ---------------------------------------------------------------------------
 
 const makePlan = (overrides: Partial<PublicPlanData> = {}): PublicPlanData => ({
-    id: '00000000-0000-0000-0000-000000000001',
+    id: '10000000-0000-4000-8000-000000000001',
     slug: 'owner-basico',
     name: 'Básico',
     description: 'Plan básico',
     category: 'owner',
+    vertical: 'accommodation',
     monthlyPriceArs: 1_800_000,
     annualPriceArs: null,
-    monthlyPriceUsdRef: 18,
     hasTrial: false,
     trialDays: 0,
-    isDefault: false,
     sortOrder: 1,
     isActive: true,
     entitlements: [],
     limits: {},
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
     ...overrides
 });
 
@@ -77,9 +72,7 @@ const GASTRONOMY_TRIAL = 7;
 const EXPERIENCE_TRIAL = 3;
 
 /**
- * The accommodation-domain payload: owner tiers + tourist tiers in one list.
- *
- * `tourist-free` carries `hasTrial: false` exactly as the real catalogue does —
+ * Each vertical owns a separate response; the free tourist floor has no trial —
  * a plan that never expires has no trial to offer — and it is the case that
  * separates "the minimum of the plans that HAVE a trial" from "the minimum of
  * `trialDays`", which would answer 0 and take the line off the tourist card.
@@ -100,10 +93,16 @@ const ACCOMMODATION_PLANS = [
         hasTrial: true,
         trialDays: OWNER_TRIAL
     }),
-    makePlan({ slug: 'tourist-free', category: 'tourist', monthlyPriceArs: 0 }),
+    makePlan({
+        slug: 'tourist-free',
+        category: 'tourist',
+        vertical: 'tourist',
+        monthlyPriceArs: 0
+    }),
     makePlan({
         slug: 'tourist-vip',
         category: 'tourist',
+        vertical: 'tourist',
         monthlyPriceArs: 1_500_000,
         sortOrder: 3,
         hasTrial: true,
@@ -114,6 +113,7 @@ const ACCOMMODATION_PLANS = [
 const GASTRONOMY_PLANS = [
     makePlan({
         slug: 'gastronomy-basico',
+        vertical: 'gastronomy',
         monthlyPriceArs: 1_000_000,
         hasTrial: true,
         trialDays: GASTRONOMY_TRIAL
@@ -122,6 +122,7 @@ const GASTRONOMY_PLANS = [
     // stopped being checked, gastronomy would advertise 1 day.
     makePlan({
         slug: 'gastronomy-pro',
+        vertical: 'gastronomy',
         monthlyPriceArs: 0,
         isActive: false,
         hasTrial: true,
@@ -132,14 +133,18 @@ const GASTRONOMY_PLANS = [
 const EXPERIENCE_PLANS = [
     makePlan({
         slug: 'experience-basico',
+        vertical: 'experience',
         monthlyPriceArs: 1_000_000,
         hasTrial: true,
         trialDays: EXPERIENCE_TRIAL
     })
 ];
 
+const TOURIST_PLANS = ACCOMMODATION_PLANS.filter((plan) => plan.vertical === 'tourist');
+const HOST_PLANS = ACCOMMODATION_PLANS.filter((plan) => plan.vertical === 'accommodation');
 const ALL_OK = {
-    accommodation: ok(ACCOMMODATION_PLANS),
+    accommodation: ok(HOST_PLANS),
+    tourist: ok(TOURIST_PLANS),
     gastronomy: ok(GASTRONOMY_PLANS),
     experience: ok(EXPERIENCE_PLANS)
 } as const;
@@ -270,7 +275,7 @@ describe('resolveStartingPrice', () => {
 });
 
 describe('resolveAudienceStartingPrices', () => {
-    it('resolves a price for every audience when every domain loads', () => {
+    it('resolves a price for every audience when every vertical loads', () => {
         const prices = resolveAudienceStartingPrices(ALL_OK);
 
         expect(prices.host).toEqual({ kind: 'from', monthlyPriceArs: 1_800_000 });
@@ -279,13 +284,11 @@ describe('resolveAudienceStartingPrices', () => {
         expect(prices.experience).toEqual({ kind: 'from', monthlyPriceArs: 1_000_000 });
     });
 
-    it('never surfaces a complex-tier price on the host card', () => {
+    it('keeps tourist catalog prices out of the host card (AC:B13a:11)', () => {
         const prices = resolveAudienceStartingPrices({
             ...ALL_OK,
-            accommodation: ok([
-                ...ACCOMMODATION_PLANS,
-                // Cheaper than every owner tier, and must still not be picked.
-                makePlan({ slug: 'complex-basico', category: 'complex', monthlyPriceArs: 1 })
+            tourist: ok([
+                makePlan({ slug: 'tourist-unrelated', vertical: 'tourist', monthlyPriceArs: 1 })
             ])
         });
 
@@ -301,9 +304,10 @@ describe('resolveAudienceStartingPrices', () => {
         expect(prices.experience).not.toBeNull();
     });
 
-    it('still answers for all four audiences when EVERY domain fails', () => {
+    it('still answers for all four audiences when EVERY vertical fails', () => {
         const prices = resolveAudienceStartingPrices({
             accommodation: failed(),
+            tourist: failed(),
             gastronomy: failed(),
             experience: failed()
         });
@@ -415,15 +419,13 @@ describe('resolveAudienceTrialDays', () => {
         expect(resolveAudienceTrialDays(ALL_OK).gastronomy).toBe(GASTRONOMY_TRIAL);
     });
 
-    it('never surfaces a complex-tier trial on the host card', () => {
+    it('keeps tourist catalog trials out of the host card (AC:B13a:11)', () => {
         const trials = resolveAudienceTrialDays({
             ...ALL_OK,
-            accommodation: ok([
-                ...ACCOMMODATION_PLANS,
-                // Shorter than every owner tier, and must still not be picked.
+            tourist: ok([
                 makePlan({
-                    slug: 'complex-basico',
-                    category: 'complex',
+                    slug: 'tourist-unrelated',
+                    vertical: 'tourist',
                     hasTrial: true,
                     trialDays: 2
                 })
@@ -442,9 +444,10 @@ describe('resolveAudienceTrialDays', () => {
         expect(trials.experience).toBe(EXPERIENCE_TRIAL);
     });
 
-    it('still answers for all four audiences when EVERY domain fails', () => {
+    it('still answers for all four audiences when EVERY vertical fails', () => {
         const trials = resolveAudienceTrialDays({
             accommodation: failed(),
+            tourist: failed(),
             gastronomy: failed(),
             experience: failed()
         });
@@ -463,8 +466,8 @@ describe('selectAudiencePlans', () => {
         // made of.
         const selected = selectAudiencePlans(ALL_OK);
 
-        expect(selected.host.every((plan) => plan.category === 'owner')).toBe(true);
-        expect(selected.tourist.every((plan) => plan.category === 'tourist')).toBe(true);
+        expect(selected.host.every((plan) => plan.vertical === 'accommodation')).toBe(true);
+        expect(selected.tourist.every((plan) => plan.vertical === 'tourist')).toBe(true);
         expect(Object.keys(selected).sort()).toEqual([...AUDIENCE_CARD_ORDER].sort());
     });
 
@@ -484,110 +487,3 @@ describe('selectAudiencePlans', () => {
 // ---------------------------------------------------------------------------
 // The three fetches (AC-8)
 // ---------------------------------------------------------------------------
-
-describe('fetchAudienceOffers', () => {
-    /** Answer each `?domain=` (and the bare accommodation call) from a map. */
-    const stubFetchByDomain = (byDomain: Record<string, readonly PublicPlanData[] | 'fail'>) => {
-        global.fetch = vi.fn(async (url: unknown) => {
-            const domain = new URL(String(url)).searchParams.get('domain') ?? 'accommodation';
-            const payload = byDomain[domain];
-            if (payload === undefined || payload === 'fail') {
-                return { ok: false, status: 500 } as unknown as Response;
-            }
-            return {
-                ok: true,
-                json: async () => ({ success: true, data: payload })
-            } as unknown as Response;
-        }) as unknown as typeof fetch;
-    };
-
-    it('queries the accommodation, gastronomy and experience domains — not partner', async () => {
-        stubFetchByDomain({
-            accommodation: ACCOMMODATION_PLANS,
-            gastronomy: GASTRONOMY_PLANS,
-            experience: EXPERIENCE_PLANS
-        });
-
-        const { startingPrices: prices } = await fetchAudienceOffers();
-
-        // THREE, not six: price and trial are two readings of one catalogue,
-        // so asking for both must not double the request count.
-        expect(global.fetch).toHaveBeenCalledTimes(3);
-        const requested = (global.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls
-            .map((call) => String(call[0]))
-            .sort();
-        expect(requested).toEqual([
-            'http://api.test/api/v1/public/plans',
-            'http://api.test/api/v1/public/plans?domain=experience',
-            'http://api.test/api/v1/public/plans?domain=gastronomy'
-        ]);
-        expect(prices.host).toEqual({ kind: 'from', monthlyPriceArs: 1_800_000 });
-    });
-
-    it('keeps the other audiences priced when one domain 500s', async () => {
-        stubFetchByDomain({
-            accommodation: ACCOMMODATION_PLANS,
-            gastronomy: 'fail',
-            experience: EXPERIENCE_PLANS
-        });
-
-        const { startingPrices: prices } = await fetchAudienceOffers();
-
-        expect(prices.gastronomy).toBeNull();
-        expect(prices.experience).toEqual({ kind: 'from', monthlyPriceArs: 1_000_000 });
-    });
-
-    it('resolves the trial from the SAME payload as the price', async () => {
-        stubFetchByDomain({
-            accommodation: ACCOMMODATION_PLANS,
-            gastronomy: GASTRONOMY_PLANS,
-            experience: EXPERIENCE_PLANS
-        });
-
-        const { startingPrices, trialDays } = await fetchAudienceOffers();
-
-        // Host: priced AND trialled, both off the accommodation response.
-        expect(startingPrices.host).toEqual({ kind: 'from', monthlyPriceArs: 1_800_000 });
-        expect(trialDays.host).toBe(OWNER_TRIAL);
-        // Gastronomy: priced and trialled off its own domain's response.
-        expect(startingPrices.gastronomy).toEqual({ kind: 'from', monthlyPriceArs: 1_000_000 });
-        expect(trialDays.gastronomy).toBe(GASTRONOMY_TRIAL);
-    });
-
-    it('never rejects when the network itself throws', async () => {
-        global.fetch = vi.fn().mockRejectedValue(new Error('ECONNREFUSED'));
-
-        await expect(fetchAudienceOffers()).resolves.toEqual({
-            startingPrices: {
-                host: null,
-                tourist: null,
-                gastronomy: null,
-                experience: null
-            },
-            trialDays: {
-                host: null,
-                tourist: null,
-                gastronomy: null,
-                experience: null
-            }
-        });
-    });
-});
-
-// ---------------------------------------------------------------------------
-// Formatting
-// ---------------------------------------------------------------------------
-
-describe('formatStartingPriceArs', () => {
-    it('renders cents as whole pesos with a currency symbol', () => {
-        const formatted = formatStartingPriceArs({ cents: 1_800_000, intlLocale: 'es-AR' });
-
-        expect(formatted).toContain('$');
-        expect(formatted).toContain('18');
-        expect(formatted).not.toContain(',00');
-    });
-
-    it('falls back to a plain peso string on an invalid locale tag', () => {
-        expect(formatStartingPriceArs({ cents: 500_000, intlLocale: 'not a tag' })).toContain('$');
-    });
-});
