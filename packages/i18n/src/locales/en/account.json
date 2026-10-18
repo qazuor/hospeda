@@ -463,6 +463,9 @@
         "mine": {
             "title": "Your subscriptions",
             "empty": "You have no current subscriptions.",
+            "planChangeUnavailable": "You can't change plans yet: cancel at the end of the period and subscribe again.",
+            "deferredCourtesy_one": "You have 1 month left, which starts running when you complete the payment.",
+            "deferredCourtesy_other": "You have {{count}} months left, which start running when you complete the payment.",
             "status": {
                 "ACTIVE": "Active",
                 "GRACE_PERIOD": "Payment pending",
