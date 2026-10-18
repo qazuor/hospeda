@@ -113,7 +113,8 @@ function MarkArticle({
                 {formatDateWithTime({ date: mark.openedAt, locale })}
             </p>
             <p data-testid="reconciliation-mark-subject-status">
-                {t('admin-billing.reconciliationMarks.subjectStatus')}: {mark.subject.status}
+                {t('admin-billing.reconciliationMarks.subjectStatus')}:{' '}
+                {mark.subject.status ?? t('admin-billing.reconciliationMarks.subjectUnresolved')}
             </p>
             <p data-testid="reconciliation-mark-proposal">
                 {t('admin-billing.reconciliationMarks.proposal')}:{' '}

@@ -26,6 +26,12 @@ describe('reconciliation mark schemas', () => {
             ActionableReconciliationMarkSchema.safeParse(mark(7, { markId: uuid })).success
         ).toBe(true);
         expect(ActionableReconciliationMarkSchema.safeParse(mark(5, null)).success).toBe(true);
+        expect(
+            ActionableReconciliationMarkSchema.safeParse({
+                ...mark(5, null),
+                subject: { kind: 'SUBSCRIPTION', id: uuid, status: null }
+            }).success
+        ).toBe(true);
     });
 
     it('rejects unknown proposals, non-uuid ids, and out-of-range conditions', () => {

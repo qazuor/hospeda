@@ -85,6 +85,20 @@ const marks = [
         totalAmount: [{ currency: 'ARS', amountMinor: 12500 }],
         unknownAmountCount: 0,
         eventLink: null
+    },
+    {
+        markId: '77777777-7777-4777-8777-777777777777',
+        reason: 'TRANSICION_NO_DECLARADA',
+        reasonNumber: 9,
+        refundConfirmation: false,
+        defaultProposal: 'NONE',
+        openedAt: '2026-01-04T00:00:00.000Z',
+        subject: { ...subject, status: null },
+        payments: [],
+        paymentCount: 0,
+        totalAmount: [],
+        unknownAmountCount: 0,
+        eventLink: null
     }
 ];
 
@@ -94,11 +108,11 @@ describe('TEST:1620:9 actionable reconciliation marks screen', () => {
             isLoading: false,
             isError: false,
             refetch: vi.fn(),
-            data: { items: marks, pagination: { page: 1, pageSize: 50, total: 3, totalPages: 1 } }
+            data: { items: marks, pagination: { page: 1, pageSize: 50, total: 4, totalPages: 1 } }
         };
         render(<ReconciliationMarksScreen />);
         const articles = screen.getAllByTestId('reconciliation-mark');
-        expect(articles).toHaveLength(3);
+        expect(articles).toHaveLength(4);
         expect(articles.map((article) => article.getAttribute('data-mark-id'))).toEqual(
             marks.map((mark) => mark.markId)
         );
@@ -116,6 +130,9 @@ describe('TEST:1620:9 actionable reconciliation marks screen', () => {
         expect(reasonSeven.getByText('Hay plata del cliente que devolver')).toBeInTheDocument();
         const reasonFive = within(articles[1]!);
         expect(reasonFive.queryByTestId('reconciliation-mark-event-link')).not.toBeInTheDocument();
+        expect(
+            within(articles[3]!).getByTestId('reconciliation-mark-subject-status')
+        ).toHaveTextContent('Estado de la fila: Sujeto no resuelto');
     });
 
     it('shows the empty state', () => {

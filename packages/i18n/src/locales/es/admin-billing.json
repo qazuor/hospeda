@@ -1694,6 +1694,7 @@
         "empty": "No hay marcas abiertas.",
         "openedAt": "Abierta desde",
         "subjectStatus": "Estado de la fila",
+        "subjectUnresolved": "Sujeto no resuelto",
         "proposal": "Propuesta del sistema",
         "proposals": {
             "refund": "Devolver",

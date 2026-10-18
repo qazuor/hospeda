@@ -1694,6 +1694,7 @@
         "empty": "There are no open marks.",
         "openedAt": "Open since",
         "subjectStatus": "Row status",
+        "subjectUnresolved": "Subject could not be resolved",
         "proposal": "System proposal",
         "proposals": {
             "refund": "Refund",

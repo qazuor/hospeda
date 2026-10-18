@@ -22,7 +22,7 @@ export const ActionableReconciliationMarkSchema = z.object({
     subject: z.object({
         kind: z.enum(['SUBSCRIPTION', 'ADDON_INSTANCE']),
         id: z.string().uuid(),
-        status: z.string()
+        status: z.string().nullable()
     }),
     payments: z.array(ReconciliationMarkHungPaymentSchema),
     paymentCount: z.number().int().nonnegative(),

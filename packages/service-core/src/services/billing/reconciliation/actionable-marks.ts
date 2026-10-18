@@ -46,7 +46,7 @@ export type ActionableReconciliationMark = {
     readonly subject: {
         readonly kind: 'SUBSCRIPTION' | 'ADDON_INSTANCE';
         readonly id: string;
-        readonly status: string;
+        readonly status: string | null;
     };
     readonly payments: readonly ReconciliationMarkHungPayment[];
     readonly paymentCount: number;
@@ -261,7 +261,7 @@ export async function listActionableReconciliationMarks(input: {
                     subject: {
                         kind: 'SUBSCRIPTION',
                         id: row.subscriptionId,
-                        status: row.subscriptionStatus as string
+                        status: row.subscriptionStatus
                     },
                     payments: markPayments,
                     paymentCount: markPayments.length,
@@ -282,7 +282,7 @@ export async function listActionableReconciliationMarks(input: {
                 subject: {
                     kind: 'ADDON_INSTANCE',
                     id: row.addonInstanceId as string,
-                    status: row.addonStatus as string
+                    status: row.addonStatus
                 },
                 payments: markPayments,
                 paymentCount: markPayments.length,
