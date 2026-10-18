@@ -17,7 +17,10 @@ import { actStartInstant, assertFreshForAct } from '@repo/payments';
 import {
     evaluateLatePaymentConditions,
     hasOtherLivePrincipal,
-    isLiveSuccessionPredecessor
+    isLiveSuccessionPredecessor,
+    type LatePaymentConditionsVerdict,
+    type LatePaymentFailedCondition,
+    lateRejectionDetail
 } from '../../../subscription/late-payment-conditions.js';
 import type { ReconciliationComparison } from '../reconciliation-divergence.js';
 import { compareCreditedChargeAmount } from './credited-charge-amount.js';
@@ -27,6 +30,14 @@ import { readListedCharges } from './listed-charges.js';
 import type { ReconciliationDailySummary } from './reconciliation-daily-summary.port.js';
 import { loggedReconciliationDailySummary } from './reconciliation-daily-summary.port.js';
 import { reasonForUnregisteredCharge } from './unregistered-charge-reason.js';
+
+function rejectedLatePaymentCondition(
+    verdict: LatePaymentConditionsVerdict | null
+): LatePaymentFailedCondition | null {
+    if (verdict === null) return 1;
+    if ('retainedForS19' in verdict || verdict.ok) return null;
+    return verdict.failedCondition;
+}
 
 async function findPayment(input: { readonly provider: string; readonly chargeId: string }) {
     const [payment] = await getDb()
@@ -208,13 +219,22 @@ export function createPeriodChargesComparison(ports: {
                     latePaymentVerdict
                 }
             });
+            const detail = [
+                { field: 'provider.charge_id', new: charge.chargeId },
+                { field: 'provider.charge_amount_minor', new: amountMinor }
+            ];
             divergences.push({
                 reason,
                 ...(payment ? { payment: { source: 'PAYMENT' as const, id: payment.id } } : {}),
-                detail: [
-                    { field: 'provider.charge_id', new: charge.chargeId },
-                    { field: 'provider.charge_amount_minor', new: amountMinor }
-                ]
+                detail:
+                    reason === 'PAGO_TARDIO_RECHAZADO'
+                        ? [
+                              ...detail,
+                              ...lateRejectionDetail({
+                                  failedCondition: rejectedLatePaymentCondition(latePaymentVerdict)
+                              })
+                          ]
+                        : detail
             });
         }
         return divergences;

@@ -9,7 +9,8 @@ import type { ReconciliationMarkPayments } from '../reconciliation/reconciliatio
 import {
     checkLatePaymentConditions,
     isLiveSuccessionPredecessor,
-    type LatePaymentFailedCondition
+    type LatePaymentFailedCondition,
+    lateRejectionDetail
 } from './late-payment-conditions';
 import { releaseRetainedPayment, retainPaymentForSuccession } from './succession-retained-payment';
 
@@ -235,7 +236,8 @@ export async function exitGraceOnCreditedPayment(
                     reason: 'PAGO_TARDIO_RECHAZADO',
                     payment: { source: 'PAYMENT', id: payment.id },
                     actor: { type: ports.actorType ?? 'provider' },
-                    correlationId: payment.id
+                    correlationId: payment.id,
+                    detail: lateRejectionDetail({ failedCondition })
                 },
                 {
                     markPayments:

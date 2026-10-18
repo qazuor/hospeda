@@ -4,6 +4,7 @@ import { ServiceError } from '../../../types';
 import { createPaymentReconciliationMarkPayments } from '../payment/payment-ledger';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
+import { type LatePaymentFailedCondition, lateRejectionDetail } from './late-payment-conditions';
 
 const logger = createLogger('reactivate-suspended');
 /** HOS-1548: hanging the same payment twice on the same mark is refused; a replay must not fail S7. */
@@ -23,11 +24,13 @@ export interface LatePaymentRejectedMarkPorts {
  *
  * @param input.subscriptionId - The suspended row the late payment belongs to
  * @param input.paymentId - The credited payment that could not reactivate it
+ * @param input.failedCondition - The failed condition recorded on the event
  * @param input.ports - Clock, mark payment port and actor type of S7
  */
 export async function openLatePaymentRejectedMark(input: {
     readonly subscriptionId: string;
     readonly paymentId: string;
+    readonly failedCondition: LatePaymentFailedCondition;
     readonly ports: LatePaymentRejectedMarkPorts;
 }): Promise<void> {
     const { ports } = input;
@@ -38,7 +41,8 @@ export async function openLatePaymentRejectedMark(input: {
                 reason: 'PAGO_TARDIO_RECHAZADO',
                 payment: { source: 'PAYMENT', id: input.paymentId },
                 actor: { type: ports.actorType ?? 'provider' },
-                correlationId: input.paymentId
+                correlationId: input.paymentId,
+                detail: lateRejectionDetail({ failedCondition: input.failedCondition })
             },
             {
                 markPayments:
