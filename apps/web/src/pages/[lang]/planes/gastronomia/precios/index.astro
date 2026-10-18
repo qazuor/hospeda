@@ -62,7 +62,6 @@ import {
     resolvePricingPageContent
 } from '@/lib/billing/pricing-page-content';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { buildListingStartUrl } from '@/lib/listing/start-url';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
@@ -110,7 +109,6 @@ const jsonLdPlans = plans.map((plan) => ({
     url: `${siteOrigin}${pagePath}`
 }));
 
-const ctaHref = buildListingStartUrl({ locale, vertical: 'gastronomy' });
 
 const title = t(`${copyRoot}.pageTitle`);
 const description = t(`${copyRoot}.pageDescription`);
@@ -164,8 +162,7 @@ const headingMain = headingWords.join(' ');
         copyRoot={copyRoot}
         faqs={faqs}
         hasComparison={hasComparison}
-        ctaMode="link"
-        ctaHref={ctaHref}
+        ctaMode="checkout"
         priceMode={priceMode}
     />
 </MarketingLayout>

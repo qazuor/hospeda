@@ -70,42 +70,18 @@ describe('HOS-810 — gastronomy/experience landing CTA wiring', () => {
         expect(LANDINGS).toHaveLength(2);
     });
 
-    for (const { label, src, vertical } of LANDINGS) {
-        describe(label, () => {
-            it('imports the shared CTA builder', () => {
-                expect(src).toContain(
-                    "import { buildListingStartUrl } from '@/lib/listing/start-url';"
-                );
-            });
-
-            it(`builds its CTA for the ${vertical} vertical`, () => {
-                expect(src).toContain(`buildListingStartUrl({ locale, vertical: '${vertical}' })`);
-            });
-
-            it('no longer links straight at the bare signup page', () => {
-                // The exact expression the fix replaced. Its return would restore
-                // the loop verbatim, so it is worth naming.
-                expect(src).not.toContain("buildUrl({ locale, path: 'auth/signup' })");
-            });
-
-            it('feeds that value to the shared pricing sections component', () => {
-                // Narrow on purpose: the assignment and the `ctaHref={ctaHref}`
-                // binding into `AudiencePricingSections`, which fans it out to
-                // every card's CTA and the closing section — not a span across
-                // the file, and not the old landing's single hero button.
-                expect(src).toContain('const ctaHref = buildListingStartUrl(');
-                expect(src).toContain('ctaHref={ctaHref}');
-                expect(src).toContain('ctaMode="link"');
-            });
-
-            it('still parses no session — it stays edge-cacheable (HOS-690 AC-37)', () => {
-                // The obvious alternative fix (branch on Astro.locals.user here)
-                // would break `cacheable-routes-parse-no-session.guard.test.ts`
-                // and personalise a shared-cache page. Keep it impossible.
-                expect(src).not.toContain('Astro.locals.user');
-            });
-        });
-    }
+    it('gastronomy and experience pricing use checkout with the shared banner and per-card CTA (AC:B13a:10/11)', () => {
+        for (const { label, src } of LANDINGS) {
+            expect(src, label).toContain('ctaMode="checkout"');
+            expect(src, label).toContain('<AudiencePricingSections');
+        }
+        const grid = readFileSync(
+            resolve(PAGES, '../..', 'components/billing/PricingCardsGrid.astro'),
+            'utf8'
+        );
+        expect(grid).toContain('<SubscribeButton client:idle');
+        expect(grid).toContain('<PlanCardCta client:idle');
+    });
 });
 
 describe('HOS-810 — signup.astro honours the return destination', () => {
