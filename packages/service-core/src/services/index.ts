@@ -102,6 +102,7 @@ export * from './billing/payment/issue-receipt.js';
 export * from './billing/payment/payment-ledger.js';
 export * from './billing/payment/payment-ports.js';
 export * from './billing/payment/record-charge-fact.service.js';
+export * from './billing/payment/settle-external-charge.service.js';
 export * from './billing/promo/live-promos.js';
 export * from './billing/promo/promo-availability.js';
 export * from './billing/promo/promo-charge-policy.js';

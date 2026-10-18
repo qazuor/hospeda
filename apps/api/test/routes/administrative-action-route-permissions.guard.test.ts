@@ -235,6 +235,11 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
                 kind: 'required',
                 file: 'apps/api/src/routes/billing-refund/admin/settle-external.ts',
                 route: 'adminSettleExternalRefundRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-refund/admin/settle-external-charge.ts',
+                route: 'adminSettleExternalChargeRoute'
             }
         ]
     },
@@ -400,10 +405,10 @@ describe('HOS-1689 — each administrative action row agrees with its route gate
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
 
-    it('b. checks exactly 28 bindings across 12 bound rows', () => {
+    it('b. checks exactly 29 bindings across 12 bound rows', () => {
         expect(BOUND_ACTIONS).toHaveLength(12);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(28);
+        expect(total).toBe(29);
     });
 
     it.each(
