@@ -1,4 +1,15 @@
-import { and, billingOptions, eq, getDb, planCatalogModel, plans } from '@repo/db';
+import {
+    and,
+    billingOptions,
+    eq,
+    getDb,
+    inArray,
+    planCatalogModel,
+    plans,
+    planVersionEntitlements,
+    planVersionLimits,
+    planVersions
+} from '@repo/db';
 import type { BillingCycle, PublicPlanCatalogVertical } from '@repo/schemas';
 
 const BILLING_CYCLE_ORDER: Record<BillingCycle, number> = {
@@ -14,42 +25,68 @@ export async function readSellablePlanCatalog(args: { vertical: PublicPlanCatalo
     const summaries = await planCatalogModel.findSellableCurrentVersions({
         vertical: args.vertical
     });
-    const sellablePlans = await Promise.all(
-        summaries.map(async (version) => {
-            const [plan] = await db
-                .select()
-                .from(plans)
-                .where(eq(plans.id, version.planId))
-                .limit(1);
-            if (!plan) throw new Error(`Plan ${version.planId} is missing`);
-            const [content, options] = await Promise.all([
-                planCatalogModel.findPlanVersion({ id: version.id }),
-                db.select().from(billingOptions).where(eq(billingOptions.planVersionId, version.id))
-            ]);
-            if (!content) throw new Error(`Plan version ${version.id} is missing`);
-            const effects = await planCatalogModel.findPlanVersionEffects({ id: version.id });
-            return {
-                planId: plan.id,
-                planVersionId: version.id,
-                slug: plan.slug,
-                name: plan.name,
-                description: plan.description,
-                pricingOrder: plan.pricingOrder,
-                rank: version.rank,
-                trialDays: content.trialDays,
-                inheritsTouristVip: content.inheritsTouristVip,
-                entitlements: effects.entitlements.map(({ key }) => key),
-                limits: Object.fromEntries(effects.limits.map(({ key, value }) => [key, value])),
-                billingOptions: options
-                    .map(({ id, cycle, amount, currency }) => ({ id, cycle, amount, currency }))
-                    .sort(
-                        (left, right) =>
-                            BILLING_CYCLE_ORDER[left.cycle as BillingCycle] -
-                            BILLING_CYCLE_ORDER[right.cycle as BillingCycle]
-                    )
-            };
-        })
-    );
+    const ids = summaries.map(({ id }) => id);
+    const planIds = summaries.map(({ planId }) => planId);
+    const [planRows, versionRows, entitlementRows, limitRows, optionRows] = ids.length
+        ? await Promise.all([
+              db.select().from(plans).where(inArray(plans.id, planIds)),
+              db.select().from(planVersions).where(inArray(planVersions.id, ids)),
+              db
+                  .select({
+                      planVersionId: planVersionEntitlements.planVersionId,
+                      key: planVersionEntitlements.key
+                  })
+                  .from(planVersionEntitlements)
+                  .where(inArray(planVersionEntitlements.planVersionId, ids)),
+              db
+                  .select({
+                      planVersionId: planVersionLimits.planVersionId,
+                      key: planVersionLimits.key,
+                      value: planVersionLimits.value
+                  })
+                  .from(planVersionLimits)
+                  .where(inArray(planVersionLimits.planVersionId, ids)),
+              db.select().from(billingOptions).where(inArray(billingOptions.planVersionId, ids))
+          ])
+        : [[], [], [], [], []];
+    const plansById = new Map(planRows.map((plan) => [plan.id, plan]));
+    const versionsById = new Map(versionRows.map((version) => [version.id, version]));
+    const sellablePlans = summaries.map((summary) => {
+        const plan = plansById.get(summary.planId);
+        const content = versionsById.get(summary.id);
+        if (!plan) throw new Error(`Plan ${summary.planId} is missing`);
+        if (!content) throw new Error(`Plan version ${summary.id} is missing`);
+        const billingOptionRows = optionRows.filter(
+            (option) => option.planVersionId === summary.id
+        );
+        return {
+            planId: plan.id,
+            planVersionId: summary.id,
+            slug: plan.slug,
+            name: plan.name,
+            description: plan.description,
+            pricingOrder: plan.pricingOrder,
+            rank: summary.rank,
+            trialDays: content.trialDays,
+            inheritsTouristVip: content.inheritsTouristVip,
+            entitlements: entitlementRows
+                .filter((effect) => effect.planVersionId === summary.id)
+                .map(({ key }) => key)
+                .sort(),
+            limits: Object.fromEntries(
+                limitRows
+                    .filter((effect) => effect.planVersionId === summary.id)
+                    .map(({ key, value }) => [key, value])
+            ),
+            billingOptions: billingOptionRows
+                .map(({ id, cycle, amount, currency }) => ({ id, cycle, amount, currency }))
+                .sort(
+                    (left, right) =>
+                        BILLING_CYCLE_ORDER[left.cycle as BillingCycle] -
+                        BILLING_CYCLE_ORDER[right.cycle as BillingCycle]
+                )
+        };
+    });
     sellablePlans.sort(
         (left, right) => left.pricingOrder - right.pricingOrder || left.rank - right.rank
     );
@@ -77,7 +114,7 @@ export async function readSellablePlanCatalog(args: { vertical: PublicPlanCatalo
                 pricingOrder: floorPlan.pricingOrder,
                 rank: version.rank,
                 trialDays: content.trialDays,
-                entitlements: effects.entitlements.map(({ key }) => key),
+                entitlements: effects.entitlements.map(({ key }) => key).sort(),
                 limits: Object.fromEntries(effects.limits.map(({ key, value }) => [key, value]))
             };
         }
