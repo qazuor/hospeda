@@ -94,7 +94,7 @@ test.describe('TEST:B13a:10 TEST:B13a:11 pricing per vertical @p0 @billing', () 
         expect((await page.request.get(`${WEB_URL}/es/planes/turistas/precios/`)).status()).toBe(
             200
         );
-        const articles = page.locator('#pricing-cards article[data-pricing-card]');
+        const articles = page.locator('#pricing-cards-grid [data-pricing-card]');
         await expect(articles.nth(0)).toContainText('Gratis');
         await expect(articles.nth(1)).toContainText(/VIP/i);
         const vip = card(page, await versionFor('tourist-vip'));
@@ -190,10 +190,10 @@ test.describe('TEST:B13a:11 retired plan @billing', () => {
             await page.goto(`${WEB_URL}/es/planes/anfitriones/precios/`);
             await expect(
                 page
-                    .locator('#pricing-cards article[data-pricing-card]')
+                    .locator('#pricing-cards-grid [data-pricing-card]')
                     .filter({ hasText: 'Básico' })
             ).toHaveCount(1);
-            await expect(page.locator('#pricing-cards article[data-pricing-card]')).toHaveCount(1);
+            await expect(page.locator('#pricing-cards-grid [data-pricing-card]')).toHaveCount(1);
         } finally {
             await execSQL('UPDATE plan_version SET current = true WHERE id = $1', [premiumId]);
         }
