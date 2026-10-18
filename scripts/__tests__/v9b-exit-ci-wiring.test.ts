@@ -21,7 +21,6 @@ const ciYml = readFileSync(path.join(repoRoot, '.github/workflows/ci.yml'), 'utf
 const rootPkg = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8')) as {
     readonly scripts: Readonly<Record<string, string>>;
 };
-/** Resolves each pnpm script in check:guards to its shell command. */
 function checkGuardsCommands(): readonly string[] {
     const chain = rootPkg.scripts['check:guards'] ?? '';
     return chain.split('&&').map((part) => {
@@ -30,7 +29,6 @@ function checkGuardsCommands(): readonly string[] {
         return script ? (rootPkg.scripts[script] ?? step) : step;
     });
 }
-
 // LISTA:V9b clauses and their AC/test mapping, inferred per .hoja/notas.md §4 H-9.
 const LISTA_MAP = [
     { clause: 1, acs: ['AC:V9b:1', 'AC:V9b:2'], tests: ['TEST:V9b:1', 'TEST:V9b:2'] },
@@ -41,77 +39,39 @@ const LISTA_MAP = [
     { clause: 6, acs: ['AC:V9b:14'], tests: ['TEST:V9b:13', 'TEST:V9b:14'] }
 ] as const;
 // Clause files and required title ids, from .hoja/notas.md §1.
+const API_LISTING = 'apps/api/test/integration/listing-publication/';
+const VERTICALS_INTEGRATION = 'packages/verticals/test/integration/';
 const CLAUSE_FILES = [
-    {
-        clause: 1,
-        file: 'packages/verticals/test/integration/publication-purge-inactive.integration.test.ts',
-        tests: ['TEST:V9b:1']
-    },
-    {
-        clause: 1,
-        file: 'apps/api/test/integration/listing-publication/purge-inactive-events.test.ts',
-        tests: ['TEST:V9b:2']
-    },
-    {
-        clause: 2,
-        file: 'packages/verticals/test/integration/publication-purge-inactive-remote.integration.test.ts',
-        tests: ['TEST:V9b:3']
-    },
-    {
-        clause: 2,
-        file: 'apps/api/test/integration/listing-publication/purge-inactive-remote-deletion.test.ts',
-        tests: ['TEST:V9b:3']
-    },
-    {
-        clause: 3,
-        file: 'apps/api/test/integration/listing-publication/purge-inactive-dependents.test.ts',
-        tests: ['TEST:V9b:4']
-    },
-    {
-        clause: 3,
-        file: 'packages/verticals/test/integration/publication-purge-inactive-lock.integration.test.ts',
-        tests: ['TEST:V9b:5']
-    },
-    {
-        clause: 4,
-        file: 'packages/verticals/test/publication/inactivity-clock.test.ts',
-        tests: ['TEST:V9b:9']
-    },
-    {
-        clause: 4,
-        file: 'packages/verticals/test/integration/publication-purge-inactive-owner-act.integration.test.ts',
-        tests: ['TEST:V9b:9']
-    },
-    {
-        clause: 4,
-        file: 'packages/db/test/integration/listing-retention-schedule.integration.test.ts',
-        tests: ['TEST:V9b:9']
-    },
-    {
-        clause: 5,
-        file: 'packages/verticals/test/integration/publication-purge-inactive.integration.test.ts',
-        tests: ['TEST:V9b:7']
-    },
-    {
-        clause: 5,
-        file: 'packages/verticals/test/publication/purge-inactive-listing.test.ts',
-        tests: ['TEST:V9b:7']
-    },
-    {
-        clause: 6,
-        file: 'apps/api/test/integration/listing-publication/retention-pass.test.ts',
-        tests: ['TEST:V9b:13']
-    },
-    {
-        clause: 6,
-        file: 'packages/verticals/test/integration/publication-retention-pass.integration.test.ts',
-        tests: ['TEST:V9b:13']
-    },
-    {
-        clause: 6,
-        file: 'scripts/__tests__/check-retention-archive-untouched.test.ts',
-        tests: ['TEST:V9b:14']
-    }
+    [1, `${VERTICALS_INTEGRATION}publication-purge-inactive.integration.test.ts`, 'TEST:V9b:1'],
+    [1, `${API_LISTING}purge-inactive-events.test.ts`, 'TEST:V9b:2'],
+    [
+        2,
+        `${VERTICALS_INTEGRATION}publication-purge-inactive-remote.integration.test.ts`,
+        'TEST:V9b:3'
+    ],
+    [2, `${API_LISTING}purge-inactive-remote-deletion.test.ts`, 'TEST:V9b:3'],
+    [3, `${API_LISTING}purge-inactive-dependents.test.ts`, 'TEST:V9b:4'],
+    [
+        3,
+        `${VERTICALS_INTEGRATION}publication-purge-inactive-lock.integration.test.ts`,
+        'TEST:V9b:5'
+    ],
+    [4, 'packages/verticals/test/publication/inactivity-clock.test.ts', 'TEST:V9b:9'],
+    [
+        4,
+        `${VERTICALS_INTEGRATION}publication-purge-inactive-owner-act.integration.test.ts`,
+        'TEST:V9b:9'
+    ],
+    [
+        4,
+        'packages/db/test/integration/listing-retention-schedule.integration.test.ts',
+        'TEST:V9b:9'
+    ],
+    [5, `${VERTICALS_INTEGRATION}publication-purge-inactive.integration.test.ts`, 'TEST:V9b:7'],
+    [5, 'packages/verticals/test/publication/purge-inactive-listing.test.ts', 'TEST:V9b:7'],
+    [6, `${API_LISTING}retention-pass.test.ts`, 'TEST:V9b:13'],
+    [6, `${VERTICALS_INTEGRATION}publication-retention-pass.integration.test.ts`, 'TEST:V9b:13'],
+    [6, 'scripts/__tests__/check-retention-archive-untouched.test.ts', 'TEST:V9b:14']
 ] as const;
 // AC-to-TEST mapping, V9b.md:658-764.
 const CASE_ACS = {
@@ -200,8 +160,6 @@ const NEIGHBOR_TESTS = [
         tests: ['TEST:1686:6']
     }
 ] as const;
-
-/** Returns the lines of one named job under `jobs:` up to the next job header. */
 function jobBlock({ source, job }: { readonly source: string; readonly job: string }): string {
     const lines = source.split('\n');
     const jobsAt = lines.findIndex((line) => /^jobs:\s*$/.test(line));
@@ -215,7 +173,6 @@ function jobBlock({ source, job }: { readonly source: string; readonly job: stri
     }
     return body.join('\n');
 }
-/** Returns job names listed in `needs:` in list or single-value form. */
 function needsOf({ block }: { readonly block: string }): readonly string[] {
     const inline = /^ {4}needs:\s*([A-Za-z0-9_-]+)\s*$/m.exec(block);
     if (inline?.[1]) return [inline[1]];
@@ -252,7 +209,6 @@ function collectTestRoots(): readonly string[] {
     if (existsSync(scriptsTests)) roots.push(scriptsTests);
     return roots;
 }
-/** Recursively collects test files, skipping dependencies and build output. */
 function collectTestFiles(dir: string, out: string[]): void {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
         if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.turbo')
@@ -262,7 +218,6 @@ function collectTestFiles(dir: string, out: string[]): void {
         else if (entry.isFile() && /\.(test|spec)\.tsx?$/.test(entry.name)) out.push(full);
     }
 }
-/** Extracts literal titles from test calls, including conditional and each calls. */
 function testTitles({ source }: { readonly source: string }): readonly string[] {
     const call =
         /(?<![\w.$])(?:describe|it|test(?:\.describe)?)(?:(?:\.(?:only|skip|concurrent|sequential|serial|parallel|fixme))|(?:\.(?:skipIf|runIf|each)\((?:[^()]|\([^()]*\))*\)))*\s*\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/g;
@@ -271,7 +226,6 @@ function testTitles({ source }: { readonly source: string }): readonly string[] 
 function namesId({ text, id }: { readonly text: string; readonly id: string }): boolean {
     return new RegExp(`${id}(?![0-9])`).test(text);
 }
-/** Reads all test sources except this file, retaining each source's path. */
 function collectSources(): readonly { readonly file: string; readonly source: string }[] {
     const files: string[] = [];
     for (const root of collectTestRoots()) collectTestFiles(root, files);
@@ -279,7 +233,6 @@ function collectSources(): readonly { readonly file: string; readonly source: st
         .filter((file) => path.resolve(file) !== path.resolve(selfPath))
         .map((file) => ({ file, source: readFileSync(file, 'utf8') }));
 }
-
 // Static evidence for AC:V9b:13. This exit test has no TEST id by spec (H-10).
 describe('AC:V9b:13 - V9b exit: LISTA:V9b evidence in the tree, from-empty base and PB4/PB5 freeze wired, suite collected (HOS-1505)', () => {
     const sources = collectSources();
@@ -289,25 +242,28 @@ describe('AC:V9b:13 - V9b exit: LISTA:V9b evidence in the tree, from-empty base 
         titles: testTitles({ source })
     }));
     const allTitles = titledSources.flatMap(({ titles }) => titles);
-
     describe('(a) the scanner finds V9b test titles in required roots', () => {
-        for (const root of [
-            'apps/api/test',
-            'packages/verticals/test',
-            'packages/db/test',
-            'packages/notifications/test',
-            'scripts/__tests__'
-        ]) {
-            it(`finds TEST:V9b titles under ${root}`, () => {
-                expect(
-                    titledSources.some(
+        it('finds titles under every required root', () => {
+            // Arrange
+            const roots = [
+                'apps/api/test',
+                'packages/verticals/test',
+                'packages/db/test',
+                'packages/notifications/test',
+                'scripts/__tests__'
+            ];
+            // Act
+            const missing = roots.filter(
+                (root) =>
+                    !titledSources.some(
                         ({ file, titles }) =>
                             file.includes(root) &&
                             titles.some((title) => title.includes('TEST:V9b:'))
                     )
-                ).toBe(true);
-            });
-        }
+            );
+            // Assert
+            expect(missing, `roots without TEST:V9b titles: ${missing.join(', ')}`).toEqual([]);
+        });
     });
     describe('(b) each LISTA clause has its mapped title and named file evidence', () => {
         for (const entry of LISTA_MAP) {
@@ -317,15 +273,13 @@ describe('AC:V9b:13 - V9b exit: LISTA:V9b evidence in the tree, from-empty base 
                     (id) => !allTitles.some((title) => namesId({ text: title, id }))
                 );
                 const missingFiles = CLAUSE_FILES.filter(
-                    (item) => item.clause === entry.clause
-                ).flatMap((item) => {
-                    const source = titledSources.find(({ file }) => file.endsWith(item.file));
-                    if (!source) return [`${item.file} (file missing)`];
-                    return item.tests
-                        .filter(
-                            (id) => !source.titles.some((title) => namesId({ text: title, id }))
-                        )
-                        .map((id) => `${item.file} (${id} title missing)`);
+                    ([clause]) => clause === entry.clause
+                ).flatMap(([, file, id]) => {
+                    const source = titledSources.find((item) => item.file.endsWith(file));
+                    if (!source) return [`${file} (file missing)`];
+                    return source.titles.some((title) => namesId({ text: title, id }))
+                        ? []
+                        : [`${file} (${id} title missing)`];
                 });
                 // Act
                 const missing = [
@@ -370,33 +324,27 @@ describe('AC:V9b:13 - V9b exit: LISTA:V9b evidence in the tree, from-empty base 
         });
     });
     describe('(d) the AC cases, cut ids, and manual smoke mapping close', () => {
-        it('maps LISTA clauses exactly once from 1 to 6', () => {
-            expect(LISTA_MAP.map(({ clause }) => clause).sort((a, b) => a - b)).toEqual([
-                1, 2, 3, 4, 5, 6
-            ]);
-        });
-        it('maps exactly AC:V9b:1 through :11 and :14', () => {
-            expect(Object.keys(CASE_ACS).sort()).toEqual(
-                [...Array.from({ length: 11 }, (_, i) => `AC:V9b:${i + 1}`), 'AC:V9b:14'].sort()
-            );
-        });
-        it('keeps mapped tests in CUT_TESTS and every cut title present', () => {
+        it('maps the clauses, AC cases, cut ids, and titles', () => {
+            // Arrange
+            const clauses = LISTA_MAP.map(({ clause }) => clause).sort((a, b) => a - b);
+            const acs = Object.keys(CASE_ACS).sort();
             const mapped = [
                 ...LISTA_MAP.flatMap(({ tests }) => tests),
                 ...Object.values(CASE_ACS).flat()
             ];
             const outside = mapped.filter((id) => !CUT_TESTS.includes(id));
-            const missing = CUT_TESTS.filter(
+            const missingTitles = CUT_TESTS.filter(
                 (id) => !allTitles.some((title) => namesId({ text: title, id }))
             );
-            expect([
-                ...outside.map((id) => `${id} outside CUT_TESTS`),
-                ...missing.map((id) => `${id} title missing`)
-            ]).toEqual([]);
-        });
-        it('keeps manual smoke ids separate from cut ids', () => {
             const overlap = Object.keys(MANUAL_SMOKES).filter((id) => CUT_TESTS.includes(id));
-            expect(overlap).toEqual([]);
+            // Act
+            const missing = [...outside, ...missingTitles, ...overlap];
+            // Assert
+            expect(clauses).toEqual([1, 2, 3, 4, 5, 6]);
+            expect(acs).toEqual(
+                [...Array.from({ length: 11 }, (_, i) => `AC:V9b:${i + 1}`), 'AC:V9b:14'].sort()
+            );
+            expect(missing, `mapping problems: ${missing.join(', ')}`).toEqual([]);
         });
     });
     describe('(e) TEST:V9b:14 is written and wired to guard CI', () => {
@@ -477,17 +425,25 @@ describe('AC:V9b:13 - V9b exit: LISTA:V9b evidence in the tree, from-empty base 
         });
     });
     describe('(h) HOS-1686 neighbor evidence is present in its named titles', () => {
-        for (const item of NEIGHBOR_TESTS) {
-            it(`${item.file} names ${item.tests.join(', ')}`, () => {
+        it('finds every required neighbor title in its named file', () => {
+            // Arrange
+            const missing = NEIGHBOR_TESTS.flatMap((item) => {
                 const source = titledSources.find(({ file }) => file.endsWith(item.file));
-                const missing = item.tests.filter(
-                    (id) => !source?.titles.some((title) => namesId({ text: title, id }))
-                );
-                expect(existsSync(path.join(repoRoot, item.file)), `${item.file} exists`).toBe(
-                    true
-                );
-                expect(missing, `${item.file} missing title(s): ${missing.join(', ')}`).toEqual([]);
+                return [
+                    ...(existsSync(path.join(repoRoot, item.file))
+                        ? []
+                        : [`${item.file} (file missing)`]),
+                    ...item.tests
+                        .filter(
+                            (id) => !source?.titles.some((title) => namesId({ text: title, id }))
+                        )
+                        .map((id) => `${item.file} (${id} title missing)`)
+                ];
             });
-        }
+            // Act
+            const result = missing;
+            // Assert
+            expect(result, `neighbor evidence missing: ${result.join('; ')}`).toEqual([]);
+        });
     });
 });
