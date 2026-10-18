@@ -409,7 +409,7 @@ const UNBOUND_ROWS: readonly { readonly action: AdministrativeAction; readonly r
         return 'unbound' in entry ? [{ action, reason: entry.unbound }] : [];
     });
 
-describe('HOS-1689 — each administrative action row agrees with its route gate', () => {
+describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row agrees with its route gate', () => {
     it('a. covers exactly the 25 catalog actions, in order', () => {
         expect(Object.keys(ROUTE_BINDINGS)).toEqual(ADMINISTRATIVE_ACTIONS);
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
