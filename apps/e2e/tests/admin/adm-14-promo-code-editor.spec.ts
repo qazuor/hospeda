@@ -102,7 +102,7 @@ test.describe('TEST:B9b:9 AC:B9b:9 promo code editor creates and closes a code @
         await page.getByLabel('Válido hasta').fill('2030-12-31');
         await page.getByRole('button', { name: 'Revisar' }).click();
         const confirmation = page.getByTestId('promo-code-confirmation');
-        await expect(confirmation).toContainText('20 % por 3 cobros');
+        await expect(confirmation).toContainText('20% por 3 cobros');
         await expect(confirmation).toContainText('Todas las verticales, también las futuras');
         await expect(confirmation).toContainText('Sin tope de canjes, uno por persona');
         await expect(confirmation).toContainText('hasta');
