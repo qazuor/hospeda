@@ -2,7 +2,12 @@
     "subscribe": {
         "publishCta": "Publicar meu anúncio",
         "trialNote_one": "O período grátis de {{trialDays}} dia começa quando você publicar.",
-        "trialNote_other": "O período grátis de {{trialDays}} dias começa quando você publicar."
+        "trialNote_other": "O período grátis de {{trialDays}} dias começa quando você publicar.",
+        "checkoutMonthly": "Assinar com pagamento mensal",
+        "checkoutAnnual": "Assinar com pagamento anual",
+        "continuePayment": "Continuar o pagamento",
+        "currentPlan": "Seu plano atual em {{vertical}}",
+        "touristVipInherited": "Seu plano já inclui Turista VIP: não é necessário comprá-lo."
     },
     "noPlans": {
         "title": "Esta categoria não tem planos disponíveis",
