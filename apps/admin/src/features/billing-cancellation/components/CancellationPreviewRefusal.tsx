@@ -52,8 +52,12 @@ export function CancellationPreviewRefusal({
                 <span>{t('admin-billing.subscriptionCancellation.blocked.intro')}</span>
             </p>
             <p>
-                {isKnownCancellationReason(reason) && reason !== 'CANCELLATION_ORIGIN_CHANGED'
-                    ? t(CANCELLATION_REASON_KEYS[reason])
+                {isKnownCancellationReason(reason)
+                    ? reason === 'CANCELLATION_ORIGIN_CHANGED'
+                        ? t(
+                              'admin-billing.subscriptionCancellation.notice.CANCELLATION_ORIGIN_CHANGED'
+                          )
+                        : t(CANCELLATION_REASON_KEYS[reason])
                     : t('admin-billing.subscriptionCancellation.blocked.unknown', { reason })}
             </p>
         </div>

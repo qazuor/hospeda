@@ -97,12 +97,13 @@ const previewState: {
 const refetch = vi.fn();
 const previewInputs = vi.fn();
 const mutateAsync = vi.fn();
+let mutationPending = false;
 vi.mock('../../hooks/useSubscriptionCancellation', () => ({
     useSubscriptionCancellationPreview: (input: { subscriptionId: string; enabled: boolean }) => {
         previewInputs(input);
         return { ...previewState, refetch };
     },
-    useCancelSubscriptionMutation: () => ({ mutateAsync, isPending: false })
+    useCancelSubscriptionMutation: () => ({ mutateAsync, isPending: mutationPending })
 }));
 function refusal(status: number, reason?: string) {
     return new ApiError('refused', {
@@ -129,6 +130,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     setPreview('ACTIVE');
     mutateAsync.mockResolvedValue(RESULT);
+    mutationPending = false;
     refetch.mockResolvedValue({});
     permissions.mockReturnValue([PermissionEnum.BILLING_CANCEL_SUBSCRIPTION]);
 });
@@ -191,6 +193,23 @@ describe('TEST:1696:3 AC:1696:3 cancellation screen', () => {
             card().getByTestId('subscription-cancellation-effect-CANCEL_SCHEDULED')
         ).toHaveTextContent(
             'Ya tiene la baja pedida: el servicio sigue hasta el 04/11/2026. No hay nada que confirmar.'
+        );
+        noConfirm();
+    });
+    it('confirming disables the button and shows pending copy', () => {
+        mutationPending = true;
+        renderScreen();
+        expect(card().getByTestId('subscription-cancellation-confirm')).toBeDisabled();
+        expect(card().getByTestId('subscription-cancellation-confirm')).toHaveTextContent(
+            'Dando de baja…'
+        );
+    });
+    it('a known preview origin conflict shows its notice copy and no confirm', () => {
+        previewState.data = undefined;
+        previewState.error = refusal(409, 'CANCELLATION_ORIGIN_CHANGED');
+        renderScreen();
+        expect(card().getByTestId('subscription-cancellation-blocked')).toHaveTextContent(
+            'La suscripción cambió desde que abriste esta pantalla'
         );
         noConfirm();
     });
