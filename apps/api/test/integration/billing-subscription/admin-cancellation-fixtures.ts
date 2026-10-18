@@ -21,6 +21,7 @@ import { type BillingDeadlineValues, VerticalEnum } from '@repo/schemas';
 import {
     BEFORE_CANCEL_TEMPLATE_BY_KIND,
     createChargebackDetection,
+    createPaymentReconciliationMarkPayments,
     startSubscription
 } from '@repo/service-core';
 import {
@@ -234,7 +235,9 @@ export async function seedAdminChargebackActive(input: {
         periodStart: new Date('2026-09-08T12:00:00.000Z'),
         creditedAt: CHARGED_12_DAYS_AGO
     });
-    const result = await createChargebackDetection({}).detect({
+    const result = await createChargebackDetection({
+        markPayments: createPaymentReconciliationMarkPayments(input.clock)
+    }).detect({
         payment: { id: paymentId, subscriptionId, status: 'SUCCEEDED' },
         actor: 'job',
         correlationId: crypto.randomUUID()
