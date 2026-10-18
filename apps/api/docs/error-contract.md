@@ -411,6 +411,21 @@ The `message` of `REQUESTED_AMOUNT_MISMATCH` carries the requested amount: it is
 
 The permission is the route's scope (`billing.settleExternal`); the subject, the system actor and `actor = subject` are decided inside the settlement transaction, so a 403 can come from either.
 
+## Action 14 charge settlement rejections (B5.9)
+
+`POST /api/v1/admin/billing-refunds/external-charge` settles an approved provider charge that was never recorded (ACC:14, motive 19). The route maps `settleExternalCharge` rejections exhaustively in `src/routes/billing-refund/admin/settle-external-charge.ts`.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `CHARGE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `CHARGE_NOT_LINKED` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `CHARGE_NOT_SETTLEABLE` | 422 | `VALIDATION_ERROR` |
+| `CHARGE_NOT_APPROVED` | 409 | `ALREADY_EXISTS` |
+| `CHARGE_ALREADY_RECORDED` | 409 | `ALREADY_EXISTS` |
+
+`CHARGE_NOT_FOUND` is only the provider's typed “does not exist” result; any other read error is a 500. The 403 may come from the factory permission check or the service (system actor or actor equal to subject).
+
 ## Permanent grant rejections (B9a.2, ACC:2)
 
 `POST /api/v1/admin/billing-permanent-grants` and

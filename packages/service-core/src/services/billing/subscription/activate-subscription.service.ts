@@ -9,8 +9,10 @@ import {
     cancelInheritedTouristVips,
     type TouristVipInheritancePort
 } from './cancel-inherited-tourist-vip.service';
+import { refuseUndeclaredSubscriptionTransition } from './refuse-undeclared-transition.js';
 import type { BeforeCancelNotice } from './start-subscription.service';
 import type { SuccessionCloser } from './subscription-billing-ports';
+import { findSubscriptionProhibition } from './subscription-prohibited-transitions.js';
 
 const logger = createLogger('subscription-activation');
 
@@ -34,7 +36,7 @@ export interface ActivateSubscriptionResult {
     readonly subscriptionId: string;
 }
 
-/** S2: only a fresh by-id provider read can authorize a still-pending row. */
+/** S2: only a fresh by-id provider read can authorize a still-pending row. On CANCEL_SCHEDULED/CANCELLED, the attempt falls under core rule 1 (PROH:B:1/2). */
 export async function activateSubscription(
     subscriptionId: string,
     ports: ActivateSubscriptionPorts
@@ -45,6 +47,19 @@ export async function activateSubscription(
         .leftJoin(providerLinks, eq(providerLinks.subscriptionId, subscriptions.id))
         .where(eq(subscriptions.id, subscriptionId))
         .limit(1);
+
+    if (
+        row &&
+        findSubscriptionProhibition({ from: row.subscription.status, to: 'ACTIVE' }) !== null
+    ) {
+        await refuseUndeclaredSubscriptionTransition({
+            subscriptionId,
+            to: 'ACTIVE',
+            attemptedBy: 'S2',
+            actor: { type: 'provider' }
+        });
+        return { activated: false, subscriptionId };
+    }
 
     if (row?.subscription.status !== 'PENDING_AUTHORIZATION' || !row.providerLink) {
         return { activated: false, subscriptionId };
