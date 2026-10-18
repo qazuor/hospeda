@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
     evaluateLatePaymentConditions,
-    type LatePaymentFacts
+    LATE_PAYMENT_FAILED_CONDITION_FIELD,
+    type LatePaymentFacts,
+    lateRejectionDetail
 } from '../../../../src/services/billing/subscription/late-payment-conditions';
 
 const healthy: LatePaymentFacts = {
@@ -96,5 +98,20 @@ describe('TEST:B7:4 — the four conditions of 05 §3 (AC:B7:6)', () => {
                 authorizationAmount: { amountMinor: 1, currency: 'ARS' }
             })
         ).toEqual({ ok: false, failedCondition: 2 });
+    });
+});
+
+describe('TEST:1620:5 lateRejectionDetail (AC:B13a:9, V-3)', () => {
+    it.each([
+        1,
+        2,
+        3,
+        4,
+        null
+    ] as const)('records failed condition %s on the event', (failedCondition) => {
+        expect(lateRejectionDetail({ failedCondition })).toEqual([
+            { field: 'late_payment.failed_condition', new: failedCondition }
+        ]);
+        expect(LATE_PAYMENT_FAILED_CONDITION_FIELD).toBe('late_payment.failed_condition');
     });
 });
