@@ -1,0 +1,36 @@
+.root {
+    display: grid;
+    gap: var(--space-2, 0.5rem);
+    color: var(--core-foreground);
+}
+.root h3,
+.root p {
+    margin: 0;
+}
+.root form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-2, 0.5rem);
+}
+.root label {
+    width: 100%;
+}
+.root input {
+    min-width: min(16rem, 100%);
+    padding: var(--space-2, 0.5rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--core-foreground);
+    background: var(--core-background);
+}
+.root button {
+    composes: primary from "./AccountButton.module.css";
+}
+.result {
+    display: grid;
+    gap: var(--space-1, 0.25rem);
+}
+.result p {
+    line-height: 1.5;
+}
