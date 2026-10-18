@@ -8,7 +8,12 @@ import type { FakeProviderRequest } from '@repo/payments/fake-server';
 import { createAdjustableClock } from '@repo/test-clock';
 import { z } from 'zod';
 import { cleanupTestUsers } from '../support/test-cleanup.ts';
-import { type CreatedUser, createUser, markProfileCompleted } from './api-helpers.ts';
+import {
+    type CreatedUser,
+    createUser,
+    markAdminToursSeen,
+    markProfileCompleted
+} from './api-helpers.ts';
 import { execSQL, getDbPool } from './db-helpers.ts';
 import {
     E2E_RECEIVER_PATH,
@@ -65,6 +70,7 @@ export async function createSubscriber(): Promise<ArrearsSubscriber> {
     const user = await createUser({}, { apiBaseUrl: API_URL });
     await markProfileCompleted({ userId: user.id });
     const admin = await createUser({ role: 'SUPER_ADMIN' }, { apiBaseUrl: API_URL });
+    await markAdminToursSeen({ userId: admin.id });
     return { user, admin };
 }
 

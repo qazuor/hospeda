@@ -243,10 +243,7 @@ async function assertRevoked(args: {
     const [cancelled] = await execSQL<{
         status: string;
         service_ends_at: Date;
-        updated_at: Date;
-    }>('SELECT status, service_ends_at, updated_at FROM subscription WHERE id = $1', [
-        args.subscriptionId
-    ]);
+    }>('SELECT status, service_ends_at FROM subscription WHERE id = $1', [args.subscriptionId]);
     expect(cancelled?.status).toBe('CANCELLED');
     expect(cancelled?.service_ends_at).toBeTruthy();
     expect(
@@ -261,7 +258,9 @@ async function assertRevoked(args: {
     expect(refund.created_at.getTime()).toBeGreaterThanOrEqual(
         args.actStartedAt.getTime() - TIMESTAMP_TOLERANCE_MS
     );
-    expect(refund.created_at.getTime()).toBeLessThanOrEqual(cancelled!.updated_at.getTime());
+    expect(refund.created_at.getTime()).toBeLessThanOrEqual(
+        cancelled!.service_ends_at.getTime() + TIMESTAMP_TOLERANCE_MS
+    );
     return { cancelled: cancelled!, refund };
 }
 

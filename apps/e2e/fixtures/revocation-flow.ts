@@ -23,10 +23,15 @@ export async function openRevocationScreen(args: {
     readonly subscriptionId: string;
     readonly adminUrl: string;
 }): Promise<void> {
-    await args.page.goto(
+    const response = await args.page.goto(
         `${args.adminUrl}/billing/subscriptions/${args.subscriptionId}/revocation`,
         { waitUntil: 'domcontentloaded' }
     );
+    if (response && response.status() >= 500) {
+        throw new Error(
+            `Admin SSR returned HTTP ${response.status()} for the revocation route:\n${await response.text()}`
+        );
+    }
     await args.page.getByTestId('subscription-revocation-ready').waitFor({ state: 'visible' });
 }
 
