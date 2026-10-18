@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PermissionCategoryEnum, PermissionEnum } from '../../src/enums/permission.enum.js';
 import { PERMISSION_TO_CATEGORY } from '../../src/utils/permission-grouping.js';
 
-describe('HOS-1697 lift-reconciliation-mark permission (administrative action 7)', () => {
+describe('TEST:1697:1 AC:1697:1 HOS-1697 lift-reconciliation-mark permission', () => {
     it('defines the exact action 7 permission value', () => {
         // Arrange / Act
         const value = PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK;
