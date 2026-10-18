@@ -1685,5 +1685,47 @@
         },
         "successTitle": "Suscripción revocada",
         "errorTitle": "No se pudo revocar la suscripción"
+    },
+    "reconciliationMarks": {
+        "title": "Conciliación de pagos",
+        "loading": "Cargando marcas abiertas...",
+        "error": "No se pudieron cargar las marcas abiertas.",
+        "retry": "Reintentar",
+        "empty": "No hay marcas abiertas.",
+        "openedAt": "Abierta desde",
+        "subjectStatus": "Estado de la fila",
+        "subjectUnresolved": "Sujeto no resuelto",
+        "proposal": "Propuesta del sistema",
+        "proposals": {
+            "refund": "Devolver",
+            "refundDifference": "Devolver la diferencia",
+            "noRefund": "No devolver",
+            "none": "Sin propuesta"
+        },
+        "refundNotice": "Hay plata del cliente que devolver",
+        "sources": { "card": "Pago con tarjeta", "manual": "Pago manual" },
+        "unknownAmount": "monto desconocido",
+        "paymentCount": "Cantidad de pagos colgados",
+        "total": "Total",
+        "eventLink": "Ver qué condición falló",
+        "pagination": "Paginación de marcas",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "eventsTitle": "Evento de conciliación",
+        "liftedAt": "Levantada desde",
+        "notLifted": "La marca sigue abierta.",
+        "actor": "Actor",
+        "correlation": "Correlación",
+        "outcome": "Resultado",
+        "condition": "Condición",
+        "conditions": {
+            "one": "La suscripción existe y está en GRACE_PERIOD o SUSPENDED.",
+            "two": "El monto coincide con el esperado para el período que cubre.",
+            "three": "No hay otra fila viva principal del mismo usuario y vertical, ni una sucesora que ya autorizó.",
+            "four": "No hay otro pago acreditado para el mismo período."
+        },
+        "conditionNotEvaluated": "Este camino no evalúa las cuatro condiciones.",
+        "conditionNotRecorded": "Este evento no registra la condición (anterior a este cambio).",
+        "markNotFound": "La marca no existe."
     }
 }

@@ -1,3 +1,4 @@
+import type { DomainEventChange } from '@repo/db';
 import {
     and,
     coveredPeriods,
@@ -29,6 +30,16 @@ export interface LatePaymentAmount {
 
 /** Which of the four conditions of `05` §3 failed (the event names it, not the reason). */
 export type LatePaymentFailedCondition = 1 | 2 | 3 | 4;
+
+/** Domain-event field that records which late-payment condition failed. */
+export const LATE_PAYMENT_FAILED_CONDITION_FIELD = 'late_payment.failed_condition' as const;
+
+/** Builds the event detail for a rejected late payment; null means the path did not evaluate the conditions. */
+export function lateRejectionDetail(input: {
+    readonly failedCondition: LatePaymentFailedCondition | null;
+}): readonly DomainEventChange[] {
+    return [{ field: LATE_PAYMENT_FAILED_CONDITION_FIELD, new: input.failedCondition }];
+}
 
 /**
  * Verdict of the four conditions of `05` §3 for one credited late payment.

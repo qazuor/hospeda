@@ -79,9 +79,8 @@ describe('TEST:B3:27 GUARD:G-R1-F', () => {
     it('is green over the real tree', () => {
         const result = run();
         expect(result.exitCode).toBe(0);
-        expect(result.output).toContain(
-            '(c) not evaluated: no ActionableReconciliationMark* declaration in the tree yet'
-        );
+        // AC:B13a:9 (HOS-1620) declared the actionable listing, so (c) is evaluated on the real tree.
+        expect(result.output).toMatch(/\(c\) [1-9]\d* listings? checked/);
         expect(result.output).toContain('mark consumers registered');
     }, 30000);
     it('is green on the minimum valid source tree', () => {

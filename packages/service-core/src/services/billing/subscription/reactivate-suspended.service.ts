@@ -383,7 +383,12 @@ export async function reactivateSuspendedOnCreditedPayment(
                 { subscriptionId, paymentId: payment.id },
                 'SUSPENDED row has no unpaid-period anchor; S7 does not run (reason 7)'
             );
-            await openLatePaymentRejectedMark({ subscriptionId, paymentId: payment.id, ports });
+            await openLatePaymentRejectedMark({
+                subscriptionId,
+                paymentId: payment.id,
+                failedCondition: 4,
+                ports
+            });
             return { outcome: 'NOT_APPLICABLE', reason: 'NO_UNPAID_ANCHOR', subscriptionId };
         case 'FAILED': {
             const { failedCondition } = verdict;
@@ -393,7 +398,12 @@ export async function reactivateSuspendedOnCreditedPayment(
             );
             // Condition 4 (a duplicate or an already paid period) is not reason 7 (D-3).
             if (failedCondition === 2 || failedCondition === 3)
-                await openLatePaymentRejectedMark({ subscriptionId, paymentId: payment.id, ports });
+                await openLatePaymentRejectedMark({
+                    subscriptionId,
+                    paymentId: payment.id,
+                    failedCondition,
+                    ports
+                });
             return { outcome: 'CONDITION_FAILED', subscriptionId, failedCondition };
         }
         case 'WRITTEN': {

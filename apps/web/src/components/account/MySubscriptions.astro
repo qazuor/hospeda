@@ -3,26 +3,40 @@ import { OwnSubscriptionsResponseSchema } from '@repo/schemas';
 import type { z } from 'zod';
 import { SubscriptionCancel } from './SubscriptionCancel.client';
 import { CANCELLATION_OFFERED, formatSelfCancelDate, GRACE_NOTICE } from '@/lib/billing/self-cancel';
+import {
+    DEFERRED_COURTESY_KEY,
+    PLAN_CHANGE_UNAVAILABLE,
+    PLAN_CHANGE_UNAVAILABLE_KEY
+} from '@/lib/billing/my-subscription-notices';
 import { SIGNUP_VERTICAL_LABEL_KEY } from '@/lib/billing/signup-checkout';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './MySubscriptions.module.css';
 
-type SubscriptionList = z.infer<typeof OwnSubscriptionsResponseSchema>['subscriptions'];
-interface Props { readonly locale: SupportedLocale; readonly result: { readonly subscriptions: SubscriptionList } | null; }
+type OwnSubscriptionsResult = z.infer<typeof OwnSubscriptionsResponseSchema>;
+interface Props { readonly locale: SupportedLocale; readonly result: OwnSubscriptionsResult | null; }
 const { locale, result } = Astro.props;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 const date = (iso: string) => formatSelfCancelDate({ iso, locale }) ?? '';
 const STATUS_KEY = { ACTIVE: 'account.subscription.mine.status.ACTIVE', GRACE_PERIOD: 'account.subscription.mine.status.GRACE_PERIOD', SUSPENDED: 'account.subscription.mine.status.SUSPENDED', CANCEL_SCHEDULED: 'account.subscription.mine.status.CANCEL_SCHEDULED' } as const;
 ---
 <section class={styles.list} aria-label={t('account.subscription.mine.title')}>
     <h2 class={styles.title}>{t('account.subscription.mine.title')}</h2>
-    {!result ? <p class={styles.line}>{t('account.subscription.mine.loadError')}</p> : result.subscriptions.length === 0 ? <p class={styles.line}>{t('account.subscription.mine.empty')}</p> : result.subscriptions.map((row) => (
+    {!result && <p class={styles.line}>{t('account.subscription.mine.loadError')}</p>}
+    {result && result.subscriptions.length === 0 && result.deferredCourtesies.length === 0 && <p class={styles.line}>{t('account.subscription.mine.empty')}</p>}
+    {result?.subscriptions.map((row) => (
         <article class={styles.item} data-testid="my-subscription" data-subscription-id={row.id}>
             <h3 class={styles.title}>{t(SIGNUP_VERTICAL_LABEL_KEY[row.vertical as keyof typeof SIGNUP_VERTICAL_LABEL_KEY])}</h3>
             <p class={styles.line}>{t(STATUS_KEY[row.status])}</p>
+            {PLAN_CHANGE_UNAVAILABLE[row.status] && <p class={styles.line} data-testid="my-subscription-plan-change-unavailable">{t(PLAN_CHANGE_UNAVAILABLE_KEY)}</p>}
             {row.status === 'CANCEL_SCHEDULED' && row.serviceEndsAt && <p class={styles.line}>{t('account.subscription.mine.scheduledUntil', undefined, { date: date(row.serviceEndsAt) })}</p>}
             {row.status === 'GRACE_PERIOD' && GRACE_NOTICE[row.paymentMethod] && row.graceEndsAt && <p class={styles.line} data-testid="my-subscription-grace">{t('account.subscription.mine.grace', undefined, { date: date(row.graceEndsAt) })}</p>}
             {CANCELLATION_OFFERED[row.status] && <SubscriptionCancel client:visible subscriptionId={row.id} locale={locale} />}
+        </article>
+    ))}
+    {result?.deferredCourtesies.map((c) => (
+        <article class={styles.item} data-testid="my-subscription-deferred-courtesy" data-courtesy-grant-id={c.courtesyGrantId}>
+            <h3 class={styles.title}>{t(SIGNUP_VERTICAL_LABEL_KEY[c.vertical as keyof typeof SIGNUP_VERTICAL_LABEL_KEY])}</h3>
+            <p class={styles.line}>{tPlural(DEFERRED_COURTESY_KEY, c.balanceMonths, { count: c.balanceMonths })}</p>
         </article>
     ))}
 </section>

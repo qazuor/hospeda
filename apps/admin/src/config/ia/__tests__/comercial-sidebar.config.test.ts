@@ -73,6 +73,19 @@ describe('comercialSidebar IA config (SPEC-164 T-005)', () => {
         expect(comercialItems).toBeDefined();
     });
 
+    it('links to actionable reconciliation marks with billing inspection permission (AC:B13a:9, I-8)', () => {
+        if (!comercialItems) throw new Error('comercialSidebar items not found');
+        const link = collectPermissionedItems(comercialItems).find(
+            (item) => item.id === 'reconciliation-marks'
+        );
+        expect(link).toBeDefined();
+        expect(link).toMatchObject({
+            route: '/billing/reconciliation',
+            permissions: ['BILLING_SUBSCRIPTION_INSPECT'],
+            onMissing: 'hide'
+        });
+    });
+
     // ── 1 & 2. All permissioned items carry onMissing: 'hide' ────────────────
 
     it('every group and link item carries onMissing: "hide" (AC-6)', () => {

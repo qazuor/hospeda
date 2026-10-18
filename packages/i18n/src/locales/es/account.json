@@ -463,6 +463,9 @@
         "mine": {
             "title": "Tus suscripciones",
             "empty": "No tenés suscripciones vigentes.",
+            "planChangeUnavailable": "Todavía no se puede cambiar de plan: date de baja al fin del período y volvé a suscribirte.",
+            "deferredCourtesy_one": "Te queda 1 mes, que empieza a correr cuando completes el pago.",
+            "deferredCourtesy_other": "Te quedan {{count}} meses, que empiezan a correr cuando completes el pago.",
             "status": {
                 "ACTIVE": "Activa",
                 "GRACE_PERIOD": "Pago pendiente",

@@ -30,7 +30,7 @@ describe('self-cancel helpers', () => {
         expect(GRACE_NOTICE).toEqual({ CARD: true, MANUAL: false });
     });
     it('parses valid reads and fails closed for errors or malformed bodies', () => {
-        const valid = { ok: true, data: { subscriptions: [] } };
+        const valid = { ok: true, data: { subscriptions: [], deferredCourtesies: [] } };
         const validPreview = {
             ok: true,
             data: {

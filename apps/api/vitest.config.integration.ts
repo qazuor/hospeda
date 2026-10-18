@@ -83,6 +83,7 @@ export default defineConfig({
             'test/integration/super-admin/**/*.test.ts',
             // TEST:B5:6 route half (HOS-1540): admin action 14.
             'test/integration/billing-refund/**/*.test.ts',
+            'test/integration/billing-reconciliation/**/*.test.ts',
             // TEST:B9a:9 route half (HOS-1584): admin action 2.
             'test/integration/billing-permanent-grant/**/*.test.ts',
             // HOS-1687: orphan until now (no config ran it).

@@ -411,6 +411,21 @@ The `message` of `REQUESTED_AMOUNT_MISMATCH` carries the requested amount: it is
 
 The permission is the route's scope (`billing.settleExternal`); the subject, the system actor and `actor = subject` are decided inside the settlement transaction, so a 403 can come from either.
 
+## Action 14 charge settlement rejections (B5.9)
+
+`POST /api/v1/admin/billing-refunds/external-charge` settles an approved provider charge that was never recorded (ACC:14, motive 19). The route maps `settleExternalCharge` rejections exhaustively in `src/routes/billing-refund/admin/settle-external-charge.ts`.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `CHARGE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `CHARGE_NOT_LINKED` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `CHARGE_NOT_SETTLEABLE` | 422 | `VALIDATION_ERROR` |
+| `CHARGE_NOT_APPROVED` | 409 | `ALREADY_EXISTS` |
+| `CHARGE_ALREADY_RECORDED` | 409 | `ALREADY_EXISTS` |
+
+`CHARGE_NOT_FOUND` is only the provider's typed “does not exist” result; any other read error is a 500. The 403 may come from the factory permission check or the service (system actor or actor equal to subject).
+
 ## Permanent grant rejections (B9a.2, ACC:2)
 
 `POST /api/v1/admin/billing-permanent-grants` and
@@ -464,6 +479,7 @@ The permission is the route's scope (`billing.cancelSubscription`); the subject,
 ## Self-service cancellation (B13a.1, HOS-1617)
 
 `GET /api/v1/protected/billing-subscription/` lists the caller's principal subscriptions.
+The list also returns `deferredCourtesies` for AC:B13a:8 (HOS-1620); this adds no new rejections.
 `GET /api/v1/protected/billing-subscription/{subscriptionId}/cancellation-preview` previews the cancellation, and
 `POST /api/v1/protected/billing-subscription/{subscriptionId}/cancellation` performs it. Both resource routes are owner-only: another person's subscription is
 404, including for staff holding `billing.cancelSubscription`, because these routes are in the protected tier.
@@ -478,6 +494,16 @@ The POST declares `CLOSE_ACCOUNT` for the unverified-email step; both GET routes
 
 States without self-service cancellation at this cut, including `PAUSED` and `PENDING_AUTHORIZATION`, answer
 409 `ALREADY_EXISTS` with `CANCELLATION_STATE_NOT_ALLOWED`.
+
+## Actionable reconciliation list (B13a.4, HOS-1620)
+
+`GET /api/v1/admin/billing-reconciliation/marks` lists open marks; `GET
+/api/v1/admin/billing-reconciliation/marks/{markId}/events` reads the critical
+events for a mark. Both require `BILLING_SUBSCRIPTION_INSPECT` at the route
+factory. Rejections follow the standard order: 401 unauthenticated, 403 without
+permission, 400 for malformed pagination or `markId`, and 404 `NOT_FOUND` for
+an unknown mark. The list is read-only: it neither writes nor executes a
+proposal (DEC-RF-002).
 
 ## Action 24 (V8a.3, HOS-1494)
 

@@ -592,6 +592,15 @@ const comercialSidebar: SidebarInput = {
             route: '/billing/exchange-rates',
             permissions: ['EXCHANGE_RATE_VIEW'],
             onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'reconciliation-marks',
+            label: { es: 'Conciliación', en: 'Reconciliation', pt: 'Conciliação' },
+            icon: 'DollarSignIcon',
+            route: '/billing/reconciliation',
+            permissions: ['BILLING_SUBSCRIPTION_INSPECT'],
+            onMissing: 'hide'
         }
     ]
 };

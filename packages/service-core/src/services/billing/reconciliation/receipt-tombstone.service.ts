@@ -8,6 +8,7 @@ import { extractPostgresErrorCause } from '../../../utils';
 import { type CreditPaymentResult, creditPayment } from '../payment/credit-payment.service.js';
 import { createPaymentReconciliationMarkPayments } from '../payment/payment-ledger.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
+import { lateRejectionDetail } from '../subscription/late-payment-conditions.js';
 import { openReconciliationMark } from './open-reconciliation-mark.service.js';
 import { recordProviderCancellationDecided } from './provider-cancellation-decision.js';
 import type { ReconciliationMarkPayments } from './reconciliation-mark-payments.port.js';
@@ -154,6 +155,7 @@ export async function writeChargeTombstone(
                     payment: { source: 'PAYMENT', id: payment.id },
                     actor: { type: 'provider' },
                     correlationId: input.correlationId,
+                    detail: lateRejectionDetail({ failedCondition: 1 }),
                     tx
                 },
                 { markPayments }
