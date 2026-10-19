@@ -17,7 +17,8 @@ describe('SUPER_ADMIN_EXCLUSIVE_PERMISSIONS', () => {
         expect([...SUPER_ADMIN_EXCLUSIVE_PERMISSIONS]).toEqual([
             PermissionEnum.MAINTENANCE_MODE_WRITE,
             PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE,
-            PermissionEnum.BILLING_GRANT_COMPLIMENTARY
+            PermissionEnum.BILLING_GRANT_COMPLIMENTARY,
+            PermissionEnum.BILLING_MANAGE_PROMO_CODES
         ]);
     });
 

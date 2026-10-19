@@ -1613,6 +1613,112 @@
             "toggleError": "Error al cambiar estado",
             "deleted": "Código promocional eliminado correctamente",
             "deleteError": "Error al eliminar código"
+        },
+        "editor": {
+            "title": "Códigos promocionales",
+            "newCode": "Nuevo código",
+            "loading": "Cargando códigos…",
+            "loadError": "No se pudieron cargar los códigos promocionales.",
+            "retry": "Reintentar",
+            "empty": "Todavía no hay códigos promocionales.",
+            "pagination": "Paginación de códigos promocionales",
+            "previous": "Anterior",
+            "next": "Siguiente",
+            "unlimited": "Sin tope",
+            "noEndDate": "Sin fecha de fin",
+            "reviewTitle": "Revisar código promocional",
+            "create": "Crear",
+            "review": "Revisar",
+            "back": "Volver a editar",
+            "cancel": "Cancelar",
+            "close": "Cerrar código",
+            "closeTitle": "Cerrar código promocional",
+            "closeNow": "El código {{code}} deja de aceptar canjes desde ahora.",
+            "closeRedemptions": "Las {{count}} redenciones ya hechas siguen igual.",
+            "columns": {
+                "code": "Código",
+                "effect": "Efecto",
+                "reach": "A quién alcanza",
+                "uses": "Usos",
+                "validity": "Vigencia",
+                "status": "Estado",
+                "actions": "Acciones"
+            },
+            "availability": {
+                "open": "Abierto",
+                "closed": "Cerrado",
+                "notYetValid": "Aún no vigente",
+                "expired": "Vencido",
+                "exhausted": "Agotado"
+            },
+            "effects": {
+                "firstCharge": "{{value}} en el primer cobro",
+                "nCharges_one": "{{value}} por {{count}} cobro",
+                "nCharges_other": "{{value}} por {{count}} cobros",
+                "forever": "{{value}} para siempre",
+                "trialExtension_one": "{{count}} día más de prueba",
+                "trialExtension_other": "{{count}} días más de prueba"
+            },
+            "reach": { "allFuture": "Todas las verticales, también las futuras" },
+            "verticals": {
+                "accommodation": "Alojamientos",
+                "gastronomy": "Gastronomía",
+                "experience": "Experiencias",
+                "tourist": "Turismo",
+                "partner": "Partners"
+            },
+            "uses": {
+                "quota": "Hasta {{count}} canjes en total, uno por persona",
+                "unlimited": "Sin tope de canjes, uno por persona"
+            },
+            "validity": {
+                "now": "ahora",
+                "range": "Desde {{from}} hasta {{until}}",
+                "noEnd": "Desde {{from}}, sin fecha de fin"
+            },
+            "form": {
+                "title": "Crear código promocional",
+                "description": "Definí el efecto, alcance, cupo y vigencia.",
+                "invalid": "Revisá los datos del código y sus fechas.",
+                "code": "Código (mayúsculas)",
+                "effectKind": "Efecto",
+                "discount": "Descuento",
+                "trialExtension": "Extensión de prueba",
+                "discountKind": "Tipo de descuento",
+                "percentage": "Porcentaje",
+                "fixed": "Monto fijo (ARS)",
+                "value": "Valor",
+                "duration": "Duración",
+                "firstCharge": "Primer cobro",
+                "nCharges": "Cantidad de cobros",
+                "forever": "Para siempre",
+                "chargeCount": "Cantidad de cobros",
+                "extensionDays": "Días de extensión",
+                "allVerticals": "Todas las verticales, incluidas las futuras",
+                "verticals": "Verticales incluidas",
+                "totalQuota": "Cupo total de canjes",
+                "onePerPerson": "Cada persona puede canjear este código una vez.",
+                "validFrom": "Válido desde (opcional)",
+                "validUntil": "Válido hasta",
+                "noEndDate": "Dejalo vacío para no fijar fecha de fin.",
+                "stackable": "Se puede apilar con otra promo activa",
+                "usableWithAnother": "Usable con otra promo activa",
+                "stackableHelp": "Estas opciones rigen sólo entre promos; no configuran combinaciones con cortesías o grants."
+            },
+            "rejections": {
+                "forbidden": "Sólo una persona SUPER_ADMIN puede crear o cerrar códigos.",
+                "notFound": "No se encontró el código promocional.",
+                "alreadyExists": "Ese código ya existe. Elegí otro código.",
+                "alreadyClosed": "El código ya está cerrado.",
+                "invalidInput": "Los datos del código no cumplen las reglas permitidas.",
+                "generic": "No se pudo completar la operación del código promocional."
+            },
+            "toasts": {
+                "created": "Código promocional creado.",
+                "createError": "No se pudo crear el código promocional.",
+                "closed": "Código promocional cerrado.",
+                "closeError": "No se pudo cerrar el código promocional."
+            }
         }
     },
     "subscriptionRevocation": {

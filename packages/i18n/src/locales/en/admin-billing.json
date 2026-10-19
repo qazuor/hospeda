@@ -1613,6 +1613,112 @@
             "toggleError": "Error changing status",
             "deleted": "Promo code deleted successfully",
             "deleteError": "Error deleting promo code"
+        },
+        "editor": {
+            "title": "Promo codes",
+            "newCode": "New code",
+            "loading": "Loading promo codes…",
+            "loadError": "Could not load promo codes.",
+            "retry": "Retry",
+            "empty": "There are no promo codes yet.",
+            "pagination": "Promo code pagination",
+            "previous": "Previous",
+            "next": "Next",
+            "unlimited": "No limit",
+            "noEndDate": "No end date",
+            "reviewTitle": "Review promo code",
+            "create": "Create",
+            "review": "Review",
+            "back": "Back to editing",
+            "cancel": "Cancel",
+            "close": "Close code",
+            "closeTitle": "Close promo code",
+            "closeNow": "Code {{code}} stops accepting redemptions now.",
+            "closeRedemptions": "The {{count}} redemptions already made stay as they are.",
+            "columns": {
+                "code": "Code",
+                "effect": "Effect",
+                "reach": "Who it reaches",
+                "uses": "Uses",
+                "validity": "Validity",
+                "status": "Status",
+                "actions": "Actions"
+            },
+            "availability": {
+                "open": "Open",
+                "closed": "Closed",
+                "notYetValid": "Not yet valid",
+                "expired": "Expired",
+                "exhausted": "Exhausted"
+            },
+            "effects": {
+                "firstCharge": "{{value}} on the first charge",
+                "nCharges_one": "{{value}} for {{count}} charge",
+                "nCharges_other": "{{value}} for {{count}} charges",
+                "forever": "{{value}} forever",
+                "trialExtension_one": "{{count}} extra trial day",
+                "trialExtension_other": "{{count}} extra trial days"
+            },
+            "reach": { "allFuture": "All verticals, including future ones" },
+            "verticals": {
+                "accommodation": "Accommodation",
+                "gastronomy": "Gastronomy",
+                "experience": "Experiences",
+                "tourist": "Tourism",
+                "partner": "Partners"
+            },
+            "uses": {
+                "quota": "Up to {{count}} redemptions in total, one per person",
+                "unlimited": "No redemption limit, one per person"
+            },
+            "validity": {
+                "now": "now",
+                "range": "From {{from}} until {{until}}",
+                "noEnd": "From {{from}}, no end date"
+            },
+            "form": {
+                "title": "Create promo code",
+                "description": "Set the effect, reach, quota, and validity.",
+                "invalid": "Check the code details and dates.",
+                "code": "Code (uppercase)",
+                "effectKind": "Effect",
+                "discount": "Discount",
+                "trialExtension": "Trial extension",
+                "discountKind": "Discount type",
+                "percentage": "Percentage",
+                "fixed": "Fixed amount (ARS)",
+                "value": "Value",
+                "duration": "Duration",
+                "firstCharge": "First charge",
+                "nCharges": "Number of charges",
+                "forever": "Forever",
+                "chargeCount": "Number of charges",
+                "extensionDays": "Extension days",
+                "allVerticals": "All verticals, including future ones",
+                "verticals": "Included verticals",
+                "totalQuota": "Total redemption quota",
+                "onePerPerson": "Each person can redeem this code once.",
+                "validFrom": "Valid from (optional)",
+                "validUntil": "Valid until",
+                "noEndDate": "Leave empty for no end date.",
+                "stackable": "Can stack with another active promo",
+                "usableWithAnother": "Usable with another active promo",
+                "stackableHelp": "These options apply only between promos; they do not configure combinations with courtesy grants."
+            },
+            "rejections": {
+                "forbidden": "Only a SUPER_ADMIN can create or close codes.",
+                "notFound": "Promo code not found.",
+                "alreadyExists": "That code already exists. Choose another code.",
+                "alreadyClosed": "This code is already closed.",
+                "invalidInput": "The code details do not meet the allowed rules.",
+                "generic": "The promo code operation could not be completed."
+            },
+            "toasts": {
+                "created": "Promo code created.",
+                "createError": "Could not create the promo code.",
+                "closed": "Promo code closed.",
+                "closeError": "Could not close the promo code."
+            }
         }
     },
     "subscriptionRevocation": {

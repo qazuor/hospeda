@@ -1613,6 +1613,112 @@
             "toggleError": "Erro ao alterar status",
             "deleted": "Código promocional excluído com sucesso",
             "deleteError": "Erro ao excluir código"
+        },
+        "editor": {
+            "title": "Códigos promocionais",
+            "newCode": "Novo código",
+            "loading": "Carregando códigos…",
+            "loadError": "Não foi possível carregar os códigos promocionais.",
+            "retry": "Tentar novamente",
+            "empty": "Ainda não há códigos promocionais.",
+            "pagination": "Paginação dos códigos promocionais",
+            "previous": "Anterior",
+            "next": "Próximo",
+            "unlimited": "Sem limite",
+            "noEndDate": "Sem data final",
+            "reviewTitle": "Revisar código promocional",
+            "create": "Criar",
+            "review": "Revisar",
+            "back": "Voltar à edição",
+            "cancel": "Cancelar",
+            "close": "Fechar código",
+            "closeTitle": "Fechar código promocional",
+            "closeNow": "O código {{code}} deixa de aceitar resgates agora.",
+            "closeRedemptions": "Os {{count}} resgates já feitos continuam iguais.",
+            "columns": {
+                "code": "Código",
+                "effect": "Efeito",
+                "reach": "Quem alcança",
+                "uses": "Usos",
+                "validity": "Validade",
+                "status": "Status",
+                "actions": "Ações"
+            },
+            "availability": {
+                "open": "Aberto",
+                "closed": "Fechado",
+                "notYetValid": "Ainda não vigente",
+                "expired": "Expirado",
+                "exhausted": "Esgotado"
+            },
+            "effects": {
+                "firstCharge": "{{value}} na primeira cobrança",
+                "nCharges_one": "{{value}} por {{count}} cobrança",
+                "nCharges_other": "{{value}} por {{count}} cobranças",
+                "forever": "{{value}} para sempre",
+                "trialExtension_one": "{{count}} dia extra de teste",
+                "trialExtension_other": "{{count}} dias extras de teste"
+            },
+            "reach": { "allFuture": "Todas as verticais, inclusive as futuras" },
+            "verticals": {
+                "accommodation": "Hospedagens",
+                "gastronomy": "Gastronomia",
+                "experience": "Experiências",
+                "tourist": "Turismo",
+                "partner": "Parceiros"
+            },
+            "uses": {
+                "quota": "Até {{count}} resgates no total, um por pessoa",
+                "unlimited": "Sem limite de resgates, um por pessoa"
+            },
+            "validity": {
+                "now": "agora",
+                "range": "De {{from}} até {{until}}",
+                "noEnd": "Desde {{from}}, sem data final"
+            },
+            "form": {
+                "title": "Criar código promocional",
+                "description": "Defina o efeito, alcance, limite e validade.",
+                "invalid": "Revise os dados do código e as datas.",
+                "code": "Código (maiúsculas)",
+                "effectKind": "Efeito",
+                "discount": "Desconto",
+                "trialExtension": "Extensão de teste",
+                "discountKind": "Tipo de desconto",
+                "percentage": "Porcentagem",
+                "fixed": "Valor fixo (ARS)",
+                "value": "Valor",
+                "duration": "Duração",
+                "firstCharge": "Primeira cobrança",
+                "nCharges": "Quantidade de cobranças",
+                "forever": "Para sempre",
+                "chargeCount": "Quantidade de cobranças",
+                "extensionDays": "Dias de extensão",
+                "allVerticals": "Todas as verticais, inclusive as futuras",
+                "verticals": "Verticais incluídas",
+                "totalQuota": "Limite total de resgates",
+                "onePerPerson": "Cada pessoa pode resgatar este código uma vez.",
+                "validFrom": "Válido desde (opcional)",
+                "validUntil": "Válido até",
+                "noEndDate": "Deixe vazio para não definir uma data final.",
+                "stackable": "Pode acumular com outra promo ativa",
+                "usableWithAnother": "Usável com outra promo ativa",
+                "stackableHelp": "Estas opções valem somente entre promos; não configuram combinações com cortesias ou grants."
+            },
+            "rejections": {
+                "forbidden": "Somente uma pessoa SUPER_ADMIN pode criar ou fechar códigos.",
+                "notFound": "Código promocional não encontrado.",
+                "alreadyExists": "Esse código já existe. Escolha outro código.",
+                "alreadyClosed": "Este código já está fechado.",
+                "invalidInput": "Os dados do código não seguem as regras permitidas.",
+                "generic": "Não foi possível concluir a operação do código promocional."
+            },
+            "toasts": {
+                "created": "Código promocional criado.",
+                "createError": "Não foi possível criar o código promocional.",
+                "closed": "Código promocional fechado.",
+                "closeError": "Não foi possível fechar o código promocional."
+            }
         }
     },
     "subscriptionRevocation": {

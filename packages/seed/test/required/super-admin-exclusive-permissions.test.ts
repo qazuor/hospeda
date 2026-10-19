@@ -20,6 +20,10 @@ describe('SUPER_ADMIN-exclusive required role permissions', () => {
         expect(ROLE_PERMISSIONS[RoleEnum.SUPER_ADMIN]).toContain('billing.grantComplimentary');
     });
 
+    it('AC:B9b:9 HOS-1591 gives SUPER_ADMIN the action 21 permission', () => {
+        expect(ROLE_PERMISSIONS[RoleEnum.SUPER_ADMIN]).toContain('billing.managePromoCodes');
+    });
+
     it('checks a non-empty instrument and a known ADMIN permission', () => {
         expect(SUPER_ADMIN_EXCLUSIVE_PERMISSIONS.length).toBeGreaterThan(0);
         expect(ROLE_PERMISSIONS[RoleEnum.ADMIN]).toContain('user.update.roles');

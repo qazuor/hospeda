@@ -501,6 +501,24 @@
             "stateChanged": "Your subscription changed while you were looking at it. Reload the page to see its state.",
             "doneScheduled": "Done: you cancelled your subscription. You keep it until {{date}}.",
             "doneEnded": "Done: you cancelled your subscription. The service ended today."
+        },
+        "promoRedeem": {
+            "trialTitle": "Have a code to extend your trial?",
+            "subscriptionTitle": "Have a promo code?",
+            "trialSectionTitle": "Have an active trial?",
+            "label": "Promo code",
+            "submit": "Redeem code",
+            "pending": "Redeeming…",
+            "error": "We could not redeem the code. Try again.",
+            "firstCharge": "Your next charge will be discounted: {{amount}}.",
+            "after": "After that, you will pay {{amount}}.",
+            "providerEmail": "When it ends, Mercado Pago will email you to say the seller changed the amount.",
+            "promoEnds": "This also tells you that your promo ends.",
+            "nCharges_one": "The discount applies to your next {{count}} charge: {{amount}}.",
+            "nCharges_other": "The discount applies to your next {{count}} charges: {{amount}}.",
+            "forever": "Your subscription price changes to {{amount}}, with no end date.",
+            "trialExtension_one": "You added {{count}} trial day.",
+            "trialExtension_other": "You added {{count}} trial days."
         }
     },
     "favorites": {

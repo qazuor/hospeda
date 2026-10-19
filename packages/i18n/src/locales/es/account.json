@@ -501,6 +501,24 @@
             "stateChanged": "Tu suscripción cambió mientras la mirabas. Recargá la página para ver cómo quedó.",
             "doneScheduled": "Listo: diste de baja tu suscripción. Seguís hasta el {{date}}.",
             "doneEnded": "Listo: diste de baja tu suscripción. El servicio terminó hoy."
+        },
+        "promoRedeem": {
+            "trialTitle": "¿Tenés un código para extender tu prueba?",
+            "subscriptionTitle": "¿Tenés un código promocional?",
+            "trialSectionTitle": "¿Tenés una prueba activa?",
+            "label": "Código promocional",
+            "submit": "Canjear código",
+            "pending": "Canjeando…",
+            "error": "No pudimos canjear el código. Probá de nuevo.",
+            "firstCharge": "Tu próximo cobro va con descuento: {{amount}}.",
+            "after": "Después pagás {{amount}}.",
+            "providerEmail": "Cuando termine, Mercado Pago te va a mandar un correo avisando que el vendedor cambió el monto.",
+            "promoEnds": "Este es también el aviso de que tu promo termina.",
+            "nCharges_one": "El descuento va en tu próximo {{count}} cobro: {{amount}}.",
+            "nCharges_other": "El descuento va en tus próximos {{count}} cobros: {{amount}}.",
+            "forever": "Tu cuota pasa a {{amount}}, sin fecha de fin.",
+            "trialExtension_one": "Sumaste {{count}} día de prueba.",
+            "trialExtension_other": "Sumaste {{count}} días de prueba."
         }
     },
     "favorites": {

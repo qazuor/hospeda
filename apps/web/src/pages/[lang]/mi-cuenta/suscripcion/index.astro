@@ -26,6 +26,8 @@ import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import TrialSummary from '@/components/account/TrialSummary.astro';
 import MySubscriptions from '@/components/account/MySubscriptions.astro';
+import { PromoCodeRedeem } from '@/components/account/PromoCodeRedeem.client';
+import { TrialStatusEnum } from '@repo/schemas';
 import { billingSubscriptionApi, publishApi, type PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 import { parseOwnSubscriptions } from '@/lib/billing/self-cancel';
 import { createTranslations } from '@/lib/i18n';
@@ -72,4 +74,10 @@ try {
 	<AccountPageHeader title={title} />
 	<MySubscriptions locale={locale} result={ownSubscriptions} />
 	<TrialSummary locale={locale} entries={trialSummaries} />
+	{trialSummaries.some(({ summary }) => summary.status === TrialStatusEnum.TRIAL_ACTIVE) && <section data-testid="trial-promo-redeem">
+		<h2>{t('account.subscription.promoRedeem.trialSectionTitle')}</h2>
+		{trialSummaries.filter(({ summary }) => summary.status === TrialStatusEnum.TRIAL_ACTIVE).map(({ vertical }) =>
+			<PromoCodeRedeem client:visible vertical={vertical} locale={locale} offer="TRIAL" />
+		)}
+	</section>}
 </AccountLayout>

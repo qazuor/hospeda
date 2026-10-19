@@ -117,7 +117,9 @@ function isOldBillingPermission(value: string): boolean {
         value === 'billing.settleExternal' ||
         value === 'billing.cancelSubscription' ||
         value === 'billing.liftReconciliationMark' ||
-        value === 'billing.grantComplimentary'
+        value === 'billing.grantComplimentary' ||
+        // HOS-1591 action 21 is new billing, not a legacy billing permission.
+        value === 'billing.managePromoCodes'
     )
         return false;
     return (

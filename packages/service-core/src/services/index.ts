@@ -106,6 +106,8 @@ export * from './billing/payment/settle-external-charge.service.js';
 export * from './billing/promo/live-promos.js';
 export * from './billing/promo/promo-availability.js';
 export * from './billing/promo/promo-charge-policy.js';
+export * from './billing/promo/promo-code-admin.service.js';
+export * from './billing/promo/promo-code-admin-authorization.js';
 export * from './billing/promo/promo-composition.js';
 export * from './billing/promo/promo-ending-notice.js';
 export * from './billing/promo/promo-exhaustion.service.js';

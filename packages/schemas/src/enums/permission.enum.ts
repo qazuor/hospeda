@@ -881,6 +881,7 @@ export enum PermissionEnum {
     TRIAL_EXTEND = 'trial.extend', // Allows extending another person's running trial past the ceiling with a mandatory reason (action 11, HOS-1445). SUPER_ADMIN-only.
     USER_MANAGE_SUPER_ADMIN_ROLE = 'user.manageSuperAdminRole', // Allows assigning or removing the SUPER_ADMIN role with administrative action 26 (NUCLEO/08 §3). SUPER_ADMIN-only.
     BILLING_GRANT_COMPLIMENTARY = 'billing.grantComplimentary', // Allows granting or revoking a temporary courtesy (action 1) and granting, anchoring or revoking a permanent grant (action 2): one permission for both (DEC-GRANT-002). SUPER_ADMIN-only.
+    BILLING_MANAGE_PROMO_CODES = 'billing.managePromoCodes', // Allows creating or closing a promotional code (administrative action 21, NUCLEO/08 §3). SUPER_ADMIN-only.
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
     FEATURE_FLAG_MANAGE = 'platform.featureFlag.manage', // Allows managing feature flags (create, edit, toggle kill-switch, view audit). SUPER_ADMIN-only (SPEC-276).

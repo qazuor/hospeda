@@ -5,34 +5,70 @@ import { eq, sql } from 'drizzle-orm';
 import { ServiceError } from '../../../types/index.js';
 import { PromoRedemptionReason } from './promo-redemption-reasons.js';
 
+/** Possible availability states for a promotional code. */
+export const PROMO_CODE_AVAILABILITIES = [
+    'OPEN',
+    'CLOSED',
+    'NOT_YET_VALID',
+    'EXPIRED',
+    'EXHAUSTED'
+] as const;
+
+/** Availability state resolved for a promotional code. */
+export type PromoCodeAvailability = (typeof PROMO_CODE_AVAILABILITIES)[number];
+
 /**
- * Enforces AC:B9b:3 and DEC-PROMO-001 while the caller holds the promo-code lock.
- * The window is semi-open; NULL quota and end date mean no cap (H1/H2/H3).
- * @throws ServiceError VALIDATION_ERROR `PROMO_CODE_NOT_AVAILABLE` when outside
- *   the validity window or the total redemption quota has been reached.
+ * Resolve promotional code availability in the single place shared by redemption and the admin editor (B/19 §1).
+ * @param input Code state, redemption count and evaluation time.
+ * @returns The state using the canonical precedence.
  */
+export function resolvePromoCodeAvailability(input: {
+    readonly promo: {
+        readonly closedAt: Date | null;
+        readonly validFrom: Date;
+        readonly validUntil: Date | null;
+        readonly totalQuota: number | null;
+    };
+    readonly redemptionCount: number;
+    readonly now: Date;
+}): PromoCodeAvailability {
+    if (input.promo.closedAt !== null) return 'CLOSED';
+    if (input.now < input.promo.validFrom) return 'NOT_YET_VALID';
+    if (input.promo.validUntil !== null && input.now >= input.promo.validUntil) return 'EXPIRED';
+    if (input.promo.totalQuota !== null && input.redemptionCount >= input.promo.totalQuota)
+        return 'EXHAUSTED';
+    return 'OPEN';
+}
+
+/** Enforces promo availability while the caller holds the promo-code lock. */
 export async function assertPromoCodeAvailable(input: {
     readonly tx: DrizzleClient;
     readonly promo: {
         readonly id: string;
+        readonly closedAt: Date | null;
         readonly totalQuota: number | null;
         readonly validFrom: Date;
         readonly validUntil: Date | null;
     };
     readonly now: Date;
 }): Promise<void> {
+    let redemptionCount = 0;
+    if (input.promo.totalQuota !== null) {
+        const [redemptions] = await input.tx
+            .select({ count: sql<number>`count(*)::int` })
+            .from(promoRedemptions)
+            .where(eq(promoRedemptions.promoCodeId, input.promo.id));
+        redemptionCount = redemptions?.count ?? 0;
+    }
     if (
-        input.now < input.promo.validFrom ||
-        (input.promo.validUntil !== null && input.now >= input.promo.validUntil)
+        resolvePromoCodeAvailability({
+            promo: input.promo,
+            redemptionCount,
+            now: input.now
+        }) !== 'OPEN'
     ) {
         unavailable();
     }
-    if (input.promo.totalQuota === null) return;
-    const [redemptions] = await input.tx
-        .select({ count: sql<number>`count(*)::int` })
-        .from(promoRedemptions)
-        .where(eq(promoRedemptions.promoCodeId, input.promo.id));
-    if ((redemptions?.count ?? 0) >= input.promo.totalQuota) unavailable();
 }
 
 function unavailable(): never {

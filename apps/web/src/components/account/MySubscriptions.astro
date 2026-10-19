@@ -2,6 +2,9 @@
 import { OwnSubscriptionsResponseSchema } from '@repo/schemas';
 import type { z } from 'zod';
 import { SubscriptionCancel } from './SubscriptionCancel.client';
+import { PromoCodeRedeem } from './PromoCodeRedeem.client';
+import { PROMO_REDEEM_OFFERED } from '@/lib/billing/promo-redeem';
+import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 import { CANCELLATION_OFFERED, formatSelfCancelDate, GRACE_NOTICE, resolveScheduledRenewal } from '@/lib/billing/self-cancel';
 import {
     DEFERRED_COURTESY_KEY,
@@ -42,6 +45,7 @@ const renewalKind = (row: OwnSubscriptionsResult['subscriptions'][number]) => {
             </>}
             {row.status === 'GRACE_PERIOD' && GRACE_NOTICE[row.paymentMethod] && row.graceEndsAt && <p class={styles.line} data-testid="my-subscription-grace">{t('account.subscription.mine.grace', undefined, { date: date(row.graceEndsAt) })}</p>}
             {CANCELLATION_OFFERED[row.status] && <SubscriptionCancel client:visible subscriptionId={row.id} locale={locale} />}
+            {PROMO_REDEEM_OFFERED[row.status][row.paymentMethod] && <PromoCodeRedeem client:visible vertical={row.vertical as PublishVerticalSlug} locale={locale} offer="SUBSCRIPTION" />}
         </article>
     ))}
     {result?.deferredCourtesies.map((c) => (

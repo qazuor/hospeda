@@ -86,6 +86,19 @@ describe('comercialSidebar IA config (SPEC-164 T-005)', () => {
         });
     });
 
+    it('links to the action 21 promo code editor with its management permission (AC:B9b:9 HOS-1591)', () => {
+        if (!comercialItems) throw new Error('comercialSidebar items not found');
+        const link = collectPermissionedItems(comercialItems).find(
+            (item) => item.id === 'promo-codes'
+        );
+        expect(link).toBeDefined();
+        expect(link).toMatchObject({
+            route: '/billing/promo-codes',
+            permissions: ['BILLING_MANAGE_PROMO_CODES'],
+            onMissing: 'hide'
+        });
+    });
+
     // ── 1 & 2. All permissioned items carry onMissing: 'hide' ────────────────
 
     it('every group and link item carries onMissing: "hide" (AC-6)', () => {
