@@ -15,11 +15,12 @@ export const CANCELLED_STATUS = 'cancelled';
 /** Preapproval statuses that still bind a payer and must be cancelled (step 1b). */
 export const LIVE_PREAPPROVAL_STATUSES: readonly string[] = ['pending', 'authorized', 'paused'];
 
-/** One provider object as read by id. Only the id and status are ever kept. */
+/** One provider object as read by id: id, status and a preapproval's plan id. */
 export interface ProviderObject {
     readonly kind: ObjectKind;
     readonly id: string;
     readonly status: string;
+    readonly planId?: string | null;
 }
 
 /** One page of the unfiltered provider search. */
@@ -142,6 +143,7 @@ export type FailureCode =
     | 'KNOWN_ID_MISSING'
     | 'UNEXPECTED_STATUS'
     | 'NOT_CANCELLED'
+    | 'PROBE_PLAN_BOUND'
     | 'REFUND_NOT_CONFIRMED'
     | 'MANIFEST_WRITE_FAILED'
     | 'PROVIDER_ERROR'

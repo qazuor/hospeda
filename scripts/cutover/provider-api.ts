@@ -43,6 +43,7 @@ type JsonValue =
 
 const idSchema = z.union([z.string(), z.number()]).transform((value) => String(value));
 const objectSchema = z.object({ id: idSchema, status: z.string() });
+const preapprovalSchema = objectSchema.extend({ preapproval_plan_id: idSchema.nullish() });
 const createdSchema = z.object({ id: idSchema });
 const paymentSchema = z.object({
     id: idSchema,
@@ -204,6 +205,21 @@ export function createProviderApi({
             assertSafeId({ id });
             const path = `${KIND_PATH[kind]}/${id}`;
             const { httpStatus, json } = await request({ method: 'GET', path });
+            if (kind === 'preapproval') {
+                const parsed = preapprovalSchema.safeParse(json);
+                if (httpStatus !== 200 || !parsed.success) {
+                    throw new ProviderError({
+                        message: `unusable answer from GET ${KIND_PATH[kind]}/${id}`,
+                        httpStatus
+                    });
+                }
+                return {
+                    kind,
+                    id: parsed.data.id,
+                    status: parsed.data.status,
+                    planId: parsed.data.preapproval_plan_id ?? null
+                };
+            }
             const parsed = objectSchema.safeParse(json);
             if (httpStatus !== 200 || !parsed.success) {
                 throw new ProviderError({

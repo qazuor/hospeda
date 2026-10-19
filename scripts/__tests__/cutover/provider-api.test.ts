@@ -36,6 +36,53 @@ function fakeFetch({
 
 const noSleep = async () => {};
 
+describe('TEST:1402:3 preapproval plan id (AC:1402:2)', () => {
+    it.each([
+        [{ preapproval_plan_id: 'plan-1' }, 'plan-1'],
+        [{ preapproval_plan_id: 42 }, '42'],
+        [{}, null],
+        [{ preapproval_plan_id: null }, null]
+    ])('reads only a preapproval plan id by id', async (fields, expected) => {
+        // Arrange
+        const { seen, impl } = fakeFetch({
+            answer: () => ({ status: 200, json: { id: 'pre-1', status: 'authorized', ...fields } })
+        });
+        const api = createProviderApi({
+            accessToken: TOKEN,
+            baseUrl: BASE,
+            fetchImpl: impl,
+            sleep: noSleep
+        });
+        // Act
+        const result = await api.getById({ kind: 'preapproval', id: 'pre-1' });
+        // Assert
+        expect(result.planId).toBe(expected);
+        expect(seen).toEqual([
+            { method: 'GET', url: `${BASE}/preapproval/pre-1`, body: undefined }
+        ]);
+    });
+
+    it('does not read a plan id from a plan response', async () => {
+        // Arrange
+        const { impl } = fakeFetch({
+            answer: () => ({
+                status: 200,
+                json: { id: 'plan-1', status: 'active', preapproval_plan_id: 'other' }
+            })
+        });
+        const api = createProviderApi({
+            accessToken: TOKEN,
+            baseUrl: BASE,
+            fetchImpl: impl,
+            sleep: noSleep
+        });
+        // Act
+        const result = await api.getById({ kind: 'plan', id: 'plan-1' });
+        // Assert
+        expect(result.planId).toBeUndefined();
+    });
+});
+
 describe('provider client over fetch', () => {
     it('walks the search without any filter, paginated, and never leaks person data into results', async () => {
         // Arrange: 3 rows over pages of 100 via a fake that serves 2 then 1
