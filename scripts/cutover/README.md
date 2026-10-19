@@ -165,6 +165,7 @@ inverses ended clean, 1 otherwise, 2 on a usage error.
 | `WALK_COUNT_MISMATCH` | Distinct ids walked differ from the provider `total`, rows repeated across pages, or `total` changed while walking. |
 | `KNOWN_ID_MISSING` | An id from the old DB or the probe manifest is absent from the unfiltered walk. |
 | `UNEXPECTED_STATUS` | A preapproval is in a status other than pending, authorized, paused or cancelled. |
+| `PROBE_PLAN_BOUND` | A probe in the probe manifest hangs from a plan that step 1a would cancel; nothing was cancelled. Remove the probe from the manifest or return to the owner. |
 | `NOT_CANCELLED` | An id is still not `cancelled` after the 3 retries. |
 | `REFUND_NOT_CONFIRMED` | Abort inverse (c): the refund never read `approved`, or the refund call got no refund. |
 | `MANIFEST_WRITE_FAILED` | The first manifest checkpoint could not be written; nothing was called. |
@@ -235,14 +236,10 @@ the staging old DB. Never against production.
 3. Dry run first: `corepack pnpm exec tsx scripts/cutover/cli.ts --dry-run`. Check that the
    walked counts equal the totals, that `unknownLiveIds` makes sense, and that the
    manifest has only ids.
-3b. Pending measurement from HOS-1426, BEFORE the real run (by hand, not with this script):
-    1. Create a plan in the test account.
-    2. Subscribe a test user to it.
-    3. Cancel the plan (what step 1a does).
-    4. Re-read the preapproval by id.
-
-    If the preapproval drops or stops charging, STOP and return to the owner: it changes AC:U3:2
-    (step 1a would have to exclude the probes' plans).
+3b. The measurement is no longer required before the real run. If the run (or `--dry-run`) stops
+    with `PROBE_PLAN_BOUND`, remove that probe from `packages/payments/src/probes/probes.json` (it
+    will be cancelled with the rest) or return to the owner. NEVER exclude its plan from step 1a:
+    that would leave its public link selling (AC:U3:2).
 4. Real run: `corepack pnpm exec tsx scripts/cutover/cli.ts --confirm-cancel-all`.
 5. Expect exit 0 and `outcome: ok`. Then confirm in the provider dashboard (or by
    `GET /preapproval/{id}` on a few ids from the manifest) that all of
