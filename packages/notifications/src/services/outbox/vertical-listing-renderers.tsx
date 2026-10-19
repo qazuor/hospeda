@@ -3,8 +3,10 @@ import { getLocalDateString } from '@repo/utils';
 import { formatDate } from '../../templates/utils/index.js';
 import {
     LISTING_CONTENT_EDITED_BY_SUPPORT_SUBJECT,
+    LISTING_FIX_REPORTED_SUBJECT,
     LISTING_RETURNED_TO_COPY,
     ListingContentEditedBySupport,
+    ListingFixReported,
     ListingFixRequested,
     ListingModerated,
     ListingModerationLevelChanged,
@@ -50,6 +52,11 @@ const ACCOUNT_LISTINGS_PATH: Readonly<Record<ListingNoticeVertical, string>> = {
 };
 
 const SUBSCRIPTION_PATH = '/es/mi-cuenta/suscripcion/';
+const VERTICAL_LABELS: Readonly<Record<ListingNoticeVertical, string>> = {
+    accommodation: 'alojamiento',
+    gastronomy: 'gastronomía',
+    experience: 'experiencia'
+};
 
 function objectPayload(row: EmailOutboxRow): Record<string, unknown> {
     const payload: unknown = row.payload;
@@ -98,6 +105,18 @@ function readSuggestedDate(value: unknown): string | null {
     return value;
 }
 
+function readIsoInstant(data: Record<string, unknown>, key: string, label: string): string {
+    const value = data[key];
+    if (
+        typeof value !== 'string' ||
+        !ISO_INSTANT.test(value) ||
+        Number.isNaN(new Date(value).getTime())
+    ) {
+        throw new TypeError(`La fecha de ${label} del aviso de ficha no es válida`);
+    }
+    return value;
+}
+
 function readBoolean(data: Record<string, unknown>, key: string): boolean {
     const value = data[key];
     if (typeof value !== 'boolean') {
@@ -113,7 +132,8 @@ function readBoolean(data: Record<string, unknown>, key: string): boolean {
  * an id without a name throws, so the mail retries instead of going out with
  * a gap (H9 of HOS-1492).
  *
- * Also renders action 15 support content edits (V/19 §4 row 26, HOS-1675).
+ * Also renders action 15 support content edits (V/19 §4 row 26, HOS-1675)
+ * and the owner-reported fix notice to staff.
  * @param input - Site URL for links, and the listing names reader.
  * @returns The renderers keyed by outbox template.
  */
@@ -250,6 +270,36 @@ export function createVerticalListingRenderers(input: {
                         reason={reason}
                         suggestedDate={suggestedDate}
                         accountUrl={accountUrl(vertical)}
+                    />
+                )
+            };
+        },
+        'verticals.listing-fix-reported': async ({ row }) => {
+            const data = objectPayload(row);
+            const vertical = readVertical(data);
+            const listingId = readText(data, 'listingId');
+            const ownerId = readText(data, 'ownerId');
+            const fixRequestId = readText(data, 'fixRequestId');
+            const reason = readText(data, 'reason');
+            if (!Object.hasOwn(data, 'suggestedDate')) {
+                throw new TypeError('Falta el dato requerido «suggestedDate» del aviso de ficha');
+            }
+            const suggestedDate = readSuggestedDate(data.suggestedDate);
+            const requestedAt = readIsoInstant(data, 'requestedAt', 'apertura');
+            const reportedAt = readIsoInstant(data, 'reportedAt', 'aviso');
+            return {
+                subject: LISTING_FIX_REPORTED_SUBJECT,
+                react: (
+                    <ListingFixReported
+                        listingName={await listingName(data)}
+                        verticalLabel={VERTICAL_LABELS[vertical]}
+                        listingId={listingId}
+                        ownerId={ownerId}
+                        fixRequestId={fixRequestId}
+                        reason={reason}
+                        suggestedDate={suggestedDate}
+                        requestedAt={requestedAt}
+                        reportedAt={reportedAt}
                     />
                 )
             };

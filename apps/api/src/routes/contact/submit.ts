@@ -49,7 +49,8 @@ export const CONTACT_TYPE_LABELS: Record<string, string> = {
     accommodation: 'Consulta sobre alojamiento',
     report_destination_info: 'Reporte de información de destino',
     photo_submission: 'Aporte de fotos',
-    editor_application: 'Postulación de editor'
+    editor_application: 'Postulación de editor',
+    revocation: 'Revocación de compra (botón de arrepentimiento)'
 };
 
 /**

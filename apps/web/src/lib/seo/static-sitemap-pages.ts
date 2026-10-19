@@ -130,7 +130,8 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // Legal.
     { path: '/legal/terminos/', changefreq: 'yearly', priority: 0.3 },
     { path: '/legal/privacidad/', changefreq: 'yearly', priority: 0.3 },
-    { path: '/legal/cookies/', changefreq: 'yearly', priority: 0.3 }
+    { path: '/legal/cookies/', changefreq: 'yearly', priority: 0.3 },
+    { path: '/legal/arrepentimiento/', changefreq: 'yearly', priority: 0.3 }
 ] as const;
 
 /** Why a parameter-free page is kept out of the static sitemap. */

@@ -6,10 +6,10 @@
  * `CollectionDetailActions.client.tsx` mounted from the collection detail
  * page so the wiring is covered in CI.
  *
- * Actors: Authenticated USER seeded with Tourist VIP; collection coverage is conditionally
- * deferred while the bootstrap reader does not expose subscriptions (HOS-1352, follow-up HOS-1665).
+ * Actors: Authenticated USER seeded as a Tourist VIP (an ACTIVE PRINCIPAL tourist-vip
+ * subscription, read by billing coverage since HOS-1532). No deferral: a VIP answered 403 fails the spec (HOS-1665, TEST:1665:3).
  *
- * Tags: @p1 @favorites @collections @ui @spec-098
+ * Tags: @p0 @favorites @collections @ui @spec-098
  *
  * Preconditions:
  *   - At least one ACTIVE/PUBLIC accommodation in seed.
@@ -26,12 +26,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import {
-    createUser,
-    makeTouristVip,
-    markProfileCompleted,
-    touristVipNotYetGranted
-} from '../../fixtures/api-helpers.ts';
+import { createUser, makeTouristVip, markProfileCompleted } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -71,7 +66,7 @@ async function attachSessionCookie(
     await context.addCookies(cookies);
 }
 
-test.describe('E2E-04c: collection actions via UI @p1 @favorites @collections @ui @spec-098', () => {
+test.describe('E2E-04c: collection actions via UI @p0 @favorites @collections @ui @spec-098', () => {
     const userIds: string[] = [];
 
     test.beforeEach(async ({ page }) => {
@@ -110,11 +105,6 @@ test.describe('E2E-04c: collection actions via UI @p1 @favorites @collections @u
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
         await makeTouristVip(user.id);
-        // Bootstrap coverage does not read subscriptions yet; HOS-1665 removes this guard.
-        test.fixme(
-            await touristVipNotYetGranted(user),
-            'HOS-1352: tourist coverage reads no subscriptions yet (bootstrap reader); VIP gates answer 403 until the B units wire it — HOS-1665'
-        );
         // SPEC-113 bounces users with profile_completed = false to the completion
         // form, so a UI spec never reaches the account page it asserts on.
         await markProfileCompleted({ userId: user.id });
@@ -155,24 +145,18 @@ test.describe('E2E-04c: collection actions via UI @p1 @favorites @collections @u
         // Inject the session cookie into the browser
         await attachSessionCookie(context, user.sessionCookie);
 
-        // Auto-accept the window.confirm() dialog raised by the island
-        page.on('dialog', (dialog) => {
-            void dialog.accept();
-        });
-
         // Act: navigate to the collection detail page and click the Delete action
         await page.goto(`${WEB_BASE_URL}/es/mi-cuenta/favoritos/colecciones/${collectionId}/`);
         await page.waitForLoadState('networkidle');
 
         const deleteBtn = page.locator('[data-testid="collection-actions-delete"]');
-        if ((await deleteBtn.count()) === 0) {
-            test.skip(
-                true,
-                'Delete action not found — CollectionDetailActions island is not mounted on the detail page'
-            );
-            return;
-        }
+        // The detail page redirects to the listing on 403/404 ([id].astro:98-107), so a missing button is a regression (including a VIP receiving 403), never a reason to skip.
+        await expect(deleteBtn, `delete action not rendered on ${page.url()}`).toHaveCount(1);
         await deleteBtn.first().click();
+        await page
+            .getByRole('dialog')
+            .getByRole('button', { name: 'Borrar colección', exact: true })
+            .click();
 
         // Assert: the user is redirected back to the favorites index
         await page.waitForURL(/\/mi-cuenta\/favoritos\/?$/, { timeout: 10_000 });

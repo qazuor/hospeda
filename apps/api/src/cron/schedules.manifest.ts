@@ -123,6 +123,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Expire subscription authorization windows after provider re-read and prior notice (HOS-1521, AC:B3:9-10).'
     },
     {
+        name: 'payment-window-expiry',
+        displayName: 'Vencimiento de ventanas de cobro',
+        category: 'billing',
+        schedule: '20 * * * *',
+        description:
+            'Fail pending payments whose provider collection window closed without collection, re-read by id (HOS-1709, AC:B5:5).'
+    },
+    {
         name: 'subscription-service-end',
         displayName: 'Fin de servicio de bajas programadas',
         category: 'billing',

@@ -5,7 +5,7 @@
  *   vertical, and whether the owner's trial there is running (row 2).
  * - `readTrialSummary` (H3, row 4): the accumulated trial days and their origin.
  * - `reportFixed` (H4, row 30): the owner says they fixed what a fix request
- *   asked, under the owner's publication lock.
+ *   asked, under the owner's publication lock, and queues a staff notice.
  *
  * The reads decide nothing (AC:V8a:1). A failing read throws: the web shows the
  * card without a notice, never an invented one.
@@ -34,6 +34,7 @@ import { type ListingVertical, trialMachineLockKey } from '@repo/verticals';
 import { and, eq } from 'drizzle-orm';
 import { getClock } from '../../utils/clock';
 import { getListingAccessPorts } from '../../utils/listing-access/ports';
+import { enqueueFixReportedNotice } from './fix-reported-notice';
 import {
     buildListingNoticeItems,
     buildTrialSummary,
@@ -137,7 +138,8 @@ export async function readTrialSummary(input: {
  * H4 (row 30): the owner reports the open fix request as fixed. Runs under the
  * owner's publication lock (the `trial-start:` key every PB transition takes),
  * re-reads the listing locked, and writes `owner_reported_fixed_at` once. No
- * event, no close, no `inactive_since`.
+ * event, no close, no `inactive_since`. A successful report queues a staff
+ * notice in a savepoint; notice failure does not roll back the report.
  *
  * @param input.vertical - The listing vertical.
  * @param input.listingId - The listing the route already authorized.
@@ -170,12 +172,34 @@ export async function reportFixed(input: {
         });
         if (!listing || listing.ownerId !== owner.ownerId)
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');
-        return listingModerationModel.reportFixed({
+        const result = await listingModerationModel.reportFixed({
             tx,
             vertical: input.vertical,
             listingId: input.listingId,
             at
         });
+        if (result.status === 'REPORTED') {
+            const fixRequest = await listingModerationModel.readOpenFixRequest({
+                tx,
+                vertical: input.vertical,
+                listingId: input.listingId
+            });
+            if (!fixRequest) throw new Error('Reported listing fix request could not be re-read');
+            await enqueueFixReportedNotice({
+                tx,
+                vertical: input.vertical,
+                listingId: input.listingId,
+                ownerId: owner.ownerId,
+                fixRequest: {
+                    id: fixRequest.id,
+                    reason: fixRequest.reason,
+                    suggestedDate: fixRequest.suggestedDate,
+                    openedAt: fixRequest.openedAt
+                },
+                reportedAt: result.at
+            });
+        }
+        return result;
     });
     switch (result.status) {
         case 'NO_OPEN':

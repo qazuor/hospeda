@@ -40,8 +40,8 @@
  *
  * Not repo-wide, deliberately. Other locale files carry day counts that are
  * genuinely fixed and belong in the copy — `account.json`'s 7/30-day visibility
- * boost addon names, `common.json`'s `window.7d`, the 16-day weather forecast,
- * the 30-day data-deletion window in the FAQ. A repo-wide version of this rule
+ * boost addon names, `common.json`'s `window.7d`, the 16-day weather forecast.
+ * A repo-wide version of this rule
  * would fail on all of them, and the pressure to add an exemption list is
  * exactly how a guard turns into a fail-open one. `pricing.json`, `listing.json` and the `landing` subtree of
  * `gastronomy.json` / `experience.json` are the files that describe what a subscription costs and
