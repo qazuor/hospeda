@@ -27,6 +27,15 @@ const captured = JSON.parse(
         'utf8'
     )
 ) as Payment;
+const firstRecord = JSON.parse(
+    readFileSync(
+        new URL(
+            './fixtures/mercadopago-authorized-payments-first-record-2026-09-15.json',
+            import.meta.url
+        ),
+        'utf8'
+    )
+) as Record<string, unknown>;
 const clock = createAdjustableClock({ start: new Date('2026-10-01T00:00:00.000Z') });
 function adapterFor(payment: Payment) {
     const paths: string[] = [];
@@ -34,11 +43,17 @@ function adapterFor(payment: Payment) {
         clock,
         accessToken: 'test-token',
         fetch: async (input) => {
-            paths.push(new URL(String(input)).pathname);
-            return new Response(JSON.stringify(payment), {
-                status: 200,
-                headers: { 'content-type': 'application/json' }
-            });
+            const url = new URL(String(input));
+            paths.push(url.pathname);
+            return new Response(
+                JSON.stringify(
+                    url.pathname === '/authorized_payments/search' ? firstRecord : payment
+                ),
+                {
+                    status: 200,
+                    headers: { 'content-type': 'application/json' }
+                }
+            );
         }
     });
     return { adapter, paths };
@@ -51,7 +66,7 @@ describe('TEST:1710:1 AC:1710:1 AC:1710:2 captured payment read', () => {
     it('TEST:1710:1 AC:1710:1 AC:1710:2 reads the captured payment into the complete snapshot', async () => {
         const { adapter, paths } = adapterFor(clonePayment());
         const { snapshot } = await adapter.readCharge({ chargeId: '178164117729' });
-        expect(paths).toEqual(['/v1/payments/178164117729']);
+        expect(paths).toEqual(['/v1/payments/178164117729', '/authorized_payments/search']);
         expect(snapshot).toEqual({
             chargeId: '178164117729',
             createdAt: '2026-09-15T11:28:02.000-04:00',

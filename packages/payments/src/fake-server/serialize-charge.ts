@@ -9,7 +9,6 @@ export function serializeCharge({
     return {
         id: snapshot.chargeId,
         date_created: snapshot.createdAt,
-        expiration_date: snapshot.expiresAt,
         external_reference: snapshot.reference,
         status: wireStatus({ snapshot }),
         status_detail: snapshot.declineReason,

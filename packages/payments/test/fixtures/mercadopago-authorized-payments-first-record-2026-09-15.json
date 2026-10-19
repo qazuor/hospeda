@@ -1,0 +1,29 @@
+{
+  "results": [
+    {
+      "preapproval_id": "747cc456534d495b8705027b96785387",
+      "id": 7031963977,
+      "type": "recurring",
+      "status": "processed",
+      "date_created": "2026-09-15T11:28:02.000-04:00",
+      "last_modified": "2026-09-15T11:28:43.000-04:00",
+      "transaction_amount": 2000.0,
+      "currency_id": "ARS",
+      "reason": "HOS1352 reloj pausa-real",
+      "external_reference": "HOS-1352-reloj-20260915T152756Z-pausa-real",
+      "payment": {
+        "id": 178164117729,
+        "status": "approved",
+        "status_detail": "accredited"
+      },
+      "retry_attempt": 1,
+      "debit_date": "2026-09-15T11:28:02.000-04:00",
+      "payment_method_id": "card"
+    }
+  ],
+  "paging": {
+    "offset": 0,
+    "limit": 12,
+    "total": 1
+  }
+}
