@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import type { ChargeSnapshot } from '../../provider/payment-provider';
+import { readMercadoPagoChargeWindow } from './mercadopago-charge-window';
 import { type MercadoPagoSend, parseResponse, providerError } from './mercadopago-http';
 
 const ReadChargeResponseSchema = z.object({
     id: z.union([z.string(), z.number()]).transform(String),
     date_created: z.string().datetime({ offset: true }),
-    expiration_date: z.string().datetime({ offset: true }).nullable().optional(),
     external_reference: z.string().nullable().optional(),
     metadata: z.object({ preapproval_id: z.unknown().optional() }).nullable().optional(),
     point_of_interaction: z
@@ -74,7 +74,14 @@ export async function readMercadoPagoCharge(args: {
     return {
         chargeId: parsed.id,
         createdAt: parsed.date_created,
-        expiresAt: parsed.expiration_date ?? null,
+        expiresAt:
+            authorizationId === null
+                ? null
+                : await readMercadoPagoChargeWindow({
+                      authorizationId,
+                      payment: { id: parsed.id, createdAt: parsed.date_created },
+                      send: args.send
+                  }),
         purpose:
             authorizationId === null &&
             parsed.external_reference == null &&

@@ -1,0 +1,255 @@
+{
+  "accounts_info": null,
+  "acquirer_reconciliation": [],
+  "additional_info": {
+    "tracking_id": "platform:v1-blacklabel,so:ALL,type:N/A,security:none"
+  },
+  "authorization_code": "<redactado>",
+  "binary_mode": false,
+  "brand_id": null,
+  "build_version": "3.163.0-rc-1",
+  "call_for_authorize_id": null,
+  "captured": true,
+  "card": {
+    "bin": "<redactado>",
+    "cardholder": "<redactado>",
+    "country": "ARG",
+    "date_created": "2026-07-12T13:01:56.000-04:00",
+    "date_last_updated": "2026-07-12T13:01:56.000-04:00",
+    "expiration_month": null,
+    "expiration_year": null,
+    "first_six_digits": "<redactado>",
+    "id": "9630614559",
+    "last_four_digits": "<redactado>",
+    "tags": [
+      "credit"
+    ]
+  },
+  "charges_details": [
+    {
+      "accounts": {
+        "from": "collector",
+        "to": "mp"
+      },
+      "amounts": {
+        "original": 1.2,
+        "refunded": 1.2
+      },
+      "base_amount": 15,
+      "client_id": 0,
+      "date_created": "2026-07-12T13:01:56.000-04:00",
+      "external_charge_id": "01KXBMEHM73T5BN5EWJQCWPCHF",
+      "id": "168470636028-001",
+      "last_updated": "2026-09-15T17:20:02.000-04:00",
+      "metadata": {
+        "reason": "AR-E_increment",
+        "source": "proc-svc-charges",
+        "source_detail": "processing_fee_charge"
+      },
+      "name": "<redactado>",
+      "rate": 7.986695,
+      "refund_charges": [
+        {
+          "amount": 1.2,
+          "client_id": 1890101689209057,
+          "currency_id": "ARS",
+          "date_created": "2026-09-15T17:20:02.000-04:00",
+          "operation": {
+            "id": 3269585727,
+            "type": "refund_payment"
+          },
+          "reserve_id": null
+        }
+      ],
+      "reserve_id": null,
+      "type": "fee",
+      "update_charges": []
+    }
+  ],
+  "charges_execution_info": {
+    "internal_execution": {
+      "date": "2026-07-12T13:01:56.754-04:00",
+      "execution_id": "01KXBMEHK9EXFPFX6YWCRT7FFP"
+    }
+  },
+  "collector_id": "<redactado>",
+  "corporation_id": null,
+  "counter_currency": null,
+  "coupon_amount": 0,
+  "currency_id": "ARS",
+  "date_approved": "2026-07-12T13:01:57.000-04:00",
+  "date_created": "2026-07-12T13:01:56.000-04:00",
+  "date_last_updated": "2026-09-15T17:22:04.000-04:00",
+  "date_of_expiration": null,
+  "deduction_schema": null,
+  "description": "owner-test-daily - Mensual",
+  "differential_pricing_id": null,
+  "external_reference": "3e890bee-bbc5-4a30-ac8a-1457b680948c",
+  "fee_details": [
+    {
+      "amount": 1.2,
+      "fee_payer": "collector",
+      "type": "mercadopago_fee"
+    }
+  ],
+  "financing_group": null,
+  "id": 168470636028,
+  "idempotency_key": "idempotencyKeyPostPay_automatic_payments_b4ef90394f394fc27599bb8c13673df1//<redactado>",
+  "installments": 1,
+  "integrator_id": null,
+  "issuer_id": "279",
+  "live_mode": true,
+  "marketplace_owner": null,
+  "merchant_account_id": null,
+  "merchant_number": null,
+  "metadata": {
+    "user_type": "guest",
+    "preapproval_id": "eebf948419bb4cdfaf8f5f3d73fe05ed",
+    "available_tries": 3
+  },
+  "money_release_date": "2026-07-12T13:01:57.000-04:00",
+  "money_release_schema": null,
+  "money_release_status": "released",
+  "notification_url": null,
+  "operation_type": "recurring_payment",
+  "order": {},
+  "payer": {
+    "email": "<redactado>",
+    "entity_type": null,
+    "first_name": null,
+    "id": "<redactado>",
+    "identification": "<redactado>",
+    "last_name": null,
+    "operator_id": null,
+    "phone": "<redactado>",
+    "type": null
+  },
+  "payment_method": {
+    "data": {
+      "routing_data": {
+        "merchant_account_id": "1001"
+      }
+    },
+    "id": "visa",
+    "issuer_id": "279",
+    "type": "credit_card"
+  },
+  "payment_method_id": "visa",
+  "payment_type_id": "credit_card",
+  "platform_id": null,
+  "point_of_interaction": {
+    "application_data": {
+      "name": null,
+      "operating_system": null,
+      "version": null
+    },
+    "business_info": {
+      "branch": "Merchant Services",
+      "sub_unit": "recurring",
+      "unit": "online_payments"
+    },
+    "location": {
+      "source": "payer",
+      "state_id": "AR-E"
+    },
+    "references": [
+      {
+        "id": "d3ff24b11f81428d819a412955060a16",
+        "type": "RECURRING_INVOICE"
+      },
+      {
+        "id": "57686ff646234fa9acc934c1121bf88f",
+        "type": "AUTOMATIC_PAYMENTS_ATTEMPT"
+      }
+    ],
+    "transaction_data": {
+      "billing_date": "2026-07-12",
+      "first_time_use": false,
+      "invoice_id": "d3ff24b11f81428d819a412955060a16",
+      "invoice_period": {
+        "period": 1,
+        "type": "daily"
+      },
+      "payment_reference": {
+        "acquirer": null,
+        "id": "168329109416"
+      },
+      "plan_id": null,
+      "processor": null,
+      "subscription_id": "eebf948419bb4cdfaf8f5f3d73fe05ed",
+      "subscription_sequence": {
+        "number": "<redactado>",
+        "total": null
+      },
+      "ticket_id": "60985629400_7773673f7677737b7176_P",
+      "user_present": false
+    },
+    "type": "SUBSCRIPTIONS"
+  },
+  "pos_id": null,
+  "processing_mode": "aggregator",
+  "refunds": [
+    {
+      "additional_data": null,
+      "adjustment_amount": 0,
+      "alternative_refund_mode": null,
+      "amount": 15,
+      "amount_refunded_to_other_user": null,
+      "amount_refunded_to_payer": 15,
+      "charges_details": [
+        {
+          "amount": 1.2,
+          "external_charge_id": "01KXBMEHM73T5BN5EWJQCWPCHF",
+          "id": "168470636028-001"
+        }
+      ],
+      "date_created": "2026-09-15T17:20:02.000-04:00",
+      "e2e_id": null,
+      "expiration_date": null,
+      "external_operations": [],
+      "external_refund_id": null,
+      "funder": null,
+      "id": 3269585727,
+      "labels": [],
+      "metadata": {
+        "status_detail": null
+      },
+      "partition_details": [],
+      "payment_id": 168470636028,
+      "reason": null,
+      "refund_mode": "standard",
+      "request_id": "ce958812-61f3-42fd-af98-f364b94a0685",
+      "source": {
+        "id": "3497516165",
+        "name": "<redactado>",
+        "type": "collector"
+      },
+      "status": "approved",
+      "transaction_references": [],
+      "unique_sequence_number": "null"
+    }
+  ],
+  "release_info": null,
+  "shipping_amount": 0,
+  "sponsor_id": null,
+  "statement_descriptor": "MERPAGO*LEANDROMARTINASRI",
+  "status": "refunded",
+  "status_detail": "refunded",
+  "store_id": null,
+  "tags": null,
+  "taxes_amount": 0,
+  "tenant_context": "mp",
+  "transaction_amount": 15,
+  "transaction_amount_refunded": 15,
+  "transaction_details": {
+    "acquirer_reference": null,
+    "external_resource_url": null,
+    "financial_institution": null,
+    "installment_amount": 15,
+    "net_received_amount": 13.8,
+    "overpaid_amount": 0,
+    "payable_deferral_period": null,
+    "payment_method_reference_id": null,
+    "total_paid_amount": 15
+  }
+}

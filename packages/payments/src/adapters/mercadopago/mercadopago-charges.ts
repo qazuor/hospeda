@@ -8,6 +8,7 @@ const ChargeSearchResponseSchema = z.object({
         z.object({
             id: z.union([z.string(), z.number()]),
             date_created: z.string().optional(),
+            expire_date: z.string().nullable().optional(),
             payment: z
                 .object({ id: z.union([z.string(), z.number()]).optional() })
                 .nullable()
@@ -16,14 +17,15 @@ const ChargeSearchResponseSchema = z.object({
     )
 });
 
-type ChargeRecord = z.infer<typeof ChargeSearchResponseSchema>['results'][number];
+/** A parsed Mercado Pago authorized payment record. */
+export type MercadoPagoChargeRecord = z.infer<typeof ChargeSearchResponseSchema>['results'][number];
 
-/** Lists payment identifiers from every measured charge record for an authorization. */
-export async function listMercadoPagoCharges(input: {
+/** Reads every paginated charge record for an authorization using the measured page size. */
+export async function readMercadoPagoChargeRecords(input: {
     readonly authorizationId: string;
     readonly send: MercadoPagoSend;
-}): Promise<ChargeListResult> {
-    const records: ChargeRecord[] = [];
+}): Promise<readonly MercadoPagoChargeRecord[]> {
+    const records: MercadoPagoChargeRecord[] = [];
     let total = 0;
     for (let page = 0; page < 50; page += 1) {
         const offset = page * 10;
@@ -49,7 +51,15 @@ export async function listMercadoPagoCharges(input: {
                 'Mercado Pago charge list exceeded the page limit'
             );
     }
+    return records;
+}
 
+/** Lists payment identifiers from every measured charge record for an authorization. */
+export async function listMercadoPagoCharges(input: {
+    readonly authorizationId: string;
+    readonly send: MercadoPagoSend;
+}): Promise<ChargeListResult> {
+    const records = await readMercadoPagoChargeRecords(input);
     const withPayment = records.filter((record) => record.payment?.id !== undefined);
     if (
         withPayment.some(
