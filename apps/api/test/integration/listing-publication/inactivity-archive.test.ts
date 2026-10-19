@@ -1,4 +1,5 @@
-import { accommodations, eq, getDb } from '@repo/db';
+import { randomUUID } from 'node:crypto';
+import { accommodations, domainEventModel, eq, getDb } from '@repo/db';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { listingInactivityArchiveJob } from '../../../src/cron/jobs/listing-inactivity-archive.job';
@@ -64,6 +65,20 @@ async function archivedFixture(
     return id;
 }
 
+async function ownerActFixture() {
+    const owner = await createOwner();
+    const id = await createListing({
+        ownerId: owner.id,
+        destinationId: await createVerticalDestination(),
+        status: PublicationStatusEnum.PUBLISHED
+    });
+    await getDb()
+        .update(accommodations)
+        .set({ inactiveSince: new Date(MATRIX_NOW.getTime() - 100 * 86_400_000) })
+        .where(eq(accommodations.id, id));
+    return { id, ownerId: owner.id };
+}
+
 function jobContext() {
     return {
         logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
@@ -89,6 +104,35 @@ beforeEach(async () => {
 afterAll(async () => testDb.teardown());
 
 describe('TEST:V6:8/9 production inactivity archive job', () => {
+    it('TEST:1694:3 AC:1694:1 the production job reads the owner act through the real port', async () => {
+        const recentAct = await ownerActFixture();
+        const noAct = await ownerActFixture();
+        await domainEventModel.insert({
+            eventType: 'listing.edited',
+            entityType: 'accommodation',
+            entityId: recentAct.id,
+            actorType: 'owner',
+            actorId: recentAct.ownerId,
+            correlationId: randomUUID(),
+            occurredAt: new Date(MATRIX_NOW.getTime() - 10 * 86_400_000),
+            tx: getDb()
+        });
+        const result = await listingInactivityArchiveJob.handler(jobContext());
+        const [recentRow] = await getDb()
+            .select()
+            .from(accommodations)
+            .where(eq(accommodations.id, recentAct.id));
+        const [noActRow] = await getDb()
+            .select()
+            .from(accommodations)
+            .where(eq(accommodations.id, noAct.id));
+        expect(result.success).toBe(true);
+        expect(recentRow?.publicationStatus).toBe(PublicationStatusEnum.PUBLISHED);
+        expect(recentRow?.deletionAnnouncedAt).toBeNull();
+        expect(recentRow?.inactiveSince?.getTime()).toBe(MATRIX_NOW.getTime() - 100 * 86_400_000);
+        expect(noActRow?.publicationStatus).toBe(PublicationStatusEnum.ARCHIVED);
+    });
+
     it('TEST:V6:8 archives overdue PB4 and preserves its clock with a 90 day deletion distance', async () => {
         const id = await archivedFixture(PublicationStatusEnum.PUBLISHED);
         const result = await listingInactivityArchiveJob.handler(jobContext());
