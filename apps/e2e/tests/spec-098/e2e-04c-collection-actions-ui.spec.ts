@@ -145,11 +145,6 @@ test.describe('E2E-04c: collection actions via UI @p0 @favorites @collections @u
         // Inject the session cookie into the browser
         await attachSessionCookie(context, user.sessionCookie);
 
-        // Auto-accept the window.confirm() dialog raised by the island
-        page.on('dialog', (dialog) => {
-            void dialog.accept();
-        });
-
         // Act: navigate to the collection detail page and click the Delete action
         await page.goto(`${WEB_BASE_URL}/es/mi-cuenta/favoritos/colecciones/${collectionId}/`);
         await page.waitForLoadState('networkidle');
@@ -158,6 +153,10 @@ test.describe('E2E-04c: collection actions via UI @p0 @favorites @collections @u
         // The detail page redirects to the listing on 403/404 ([id].astro:98-107), so a missing button is a regression (including a VIP receiving 403), never a reason to skip.
         await expect(deleteBtn, `delete action not rendered on ${page.url()}`).toHaveCount(1);
         await deleteBtn.first().click();
+        await page
+            .getByRole('dialog')
+            .getByRole('button', { name: 'Borrar colección', exact: true })
+            .click();
 
         // Assert: the user is redirected back to the favorites index
         await page.waitForURL(/\/mi-cuenta\/favoritos\/?$/, { timeout: 10_000 });
