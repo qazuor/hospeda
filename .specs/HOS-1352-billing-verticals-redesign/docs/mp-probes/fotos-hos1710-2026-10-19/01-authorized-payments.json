@@ -1,0 +1,137 @@
+{
+  "results": [
+    {
+      "preapproval_id": "6b293a9499d946f6ac159da7f8f4804e",
+      "id": 7032113610,
+      "type": "recurring",
+      "status": "processed",
+      "date_created": "2026-09-20T20:01:41.000-04:00",
+      "last_modified": "2026-09-21T20:00:20.000-04:00",
+      "transaction_amount": 15.00,
+      "currency_id": "ARS",
+      "reason": "HOS1352 reloj renov-ok",
+      "external_reference": "HOS-1352-relojprod-renov-ok",
+      "payment": {
+        "status": "rejected",
+        "status_detail": "payment_method_not_ready"
+      },
+      "rejection_code": "payment_method_not_ready",
+      "retry_attempt": 4,
+      "next_retry_date": "2026-09-21T14:04:01.000-04:00",
+      "last_retry_date": "2026-09-21T14:07:04.000-04:00",
+      "expire_date": "2026-09-21T20:01:41.000-04:00",
+      "debit_date": "2026-09-20T20:01:41.000-04:00",
+      "payment_method_id": "card"
+    },
+    {
+      "preapproval_id": "6b293a9499d946f6ac159da7f8f4804e",
+      "id": 7032086953,
+      "type": "recurring",
+      "status": "processed",
+      "date_created": "2026-09-19T20:01:50.000-04:00",
+      "last_modified": "2026-09-19T20:03:26.000-04:00",
+      "transaction_amount": 15.00,
+      "currency_id": "ARS",
+      "reason": "HOS1352 reloj renov-ok",
+      "external_reference": "HOS-1352-relojprod-renov-ok",
+      "payment": {
+        "id": 179941738878,
+        "status": "approved",
+        "status_detail": "accredited"
+      },
+      "retry_attempt": 1,
+      "expire_date": "2026-09-20T20:01:50.000-04:00",
+      "debit_date": "2026-09-19T20:01:50.000-04:00",
+      "payment_method_id": "card"
+    },
+    {
+      "preapproval_id": "6b293a9499d946f6ac159da7f8f4804e",
+      "id": 7032061947,
+      "type": "recurring",
+      "status": "processed",
+      "date_created": "2026-09-18T20:02:00.000-04:00",
+      "last_modified": "2026-09-18T20:03:38.000-04:00",
+      "transaction_amount": 15.00,
+      "currency_id": "ARS",
+      "reason": "HOS1352 reloj renov-ok",
+      "external_reference": "HOS-1352-relojprod-renov-ok",
+      "payment": {
+        "id": 179775870602,
+        "status": "approved",
+        "status_detail": "accredited"
+      },
+      "retry_attempt": 1,
+      "expire_date": "2026-09-19T20:02:00.000-04:00",
+      "debit_date": "2026-09-18T20:02:00.000-04:00",
+      "payment_method_id": "card"
+    },
+    {
+      "preapproval_id": "6b293a9499d946f6ac159da7f8f4804e",
+      "id": 7032035430,
+      "type": "recurring",
+      "status": "processed",
+      "date_created": "2026-09-17T20:01:56.000-04:00",
+      "last_modified": "2026-09-17T20:03:32.000-04:00",
+      "transaction_amount": 15.00,
+      "currency_id": "ARS",
+      "reason": "HOS1352 reloj renov-ok",
+      "external_reference": "HOS-1352-relojprod-renov-ok",
+      "payment": {
+        "id": 179587345822,
+        "status": "approved",
+        "status_detail": "accredited"
+      },
+      "retry_attempt": 1,
+      "expire_date": "2026-09-18T20:01:56.000-04:00",
+      "debit_date": "2026-09-17T20:01:56.000-04:00",
+      "payment_method_id": "card"
+    },
+    {
+      "preapproval_id": "6b293a9499d946f6ac159da7f8f4804e",
+      "id": 7032008564,
+      "type": "recurring",
+      "status": "processed",
+      "date_created": "2026-09-16T20:01:47.000-04:00",
+      "last_modified": "2026-09-16T20:03:19.000-04:00",
+      "transaction_amount": 15.00,
+      "currency_id": "ARS",
+      "reason": "HOS1352 reloj renov-ok",
+      "external_reference": "HOS-1352-relojprod-renov-ok",
+      "payment": {
+        "id": 178425488475,
+        "status": "approved",
+        "status_detail": "accredited"
+      },
+      "retry_attempt": 1,
+      "expire_date": "2026-09-17T20:01:47.000-04:00",
+      "debit_date": "2026-09-16T20:01:47.000-04:00",
+      "payment_method_id": "card"
+    },
+    {
+      "preapproval_id": "6b293a9499d946f6ac159da7f8f4804e",
+      "id": 7031980958,
+      "type": "recurring",
+      "status": "processed",
+      "date_created": "2026-09-15T20:01:42.000-04:00",
+      "last_modified": "2026-09-15T20:03:15.000-04:00",
+      "transaction_amount": 15.00,
+      "currency_id": "ARS",
+      "reason": "HOS1352 reloj renov-ok",
+      "external_reference": "HOS-1352-relojprod-renov-ok",
+      "payment": {
+        "id": 178259523769,
+        "status": "approved",
+        "status_detail": "accredited"
+      },
+      "retry_attempt": 1,
+      "expire_date": "2026-09-16T20:01:42.000-04:00",
+      "debit_date": "2026-09-15T20:01:42.000-04:00",
+      "payment_method_id": "card"
+    }
+  ],
+  "paging": {
+    "offset": 0,
+    "limit": 12,
+    "total": 6
+  }
+}
