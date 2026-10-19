@@ -20,7 +20,8 @@ const e2ePackage = JSON.parse(
 ) as {
     scripts: Record<string, string>;
 };
-const read = (file: string) => readFileSync(path.join(repoRoot, file), 'utf8');
+const read = ({ file }: { readonly file: string }) =>
+    readFileSync(path.join(repoRoot, file), 'utf8');
 interface CorteEntry {
     readonly clause: 'A' | 'B' | 'D' | 'E';
     readonly b13Clause?: number;
@@ -187,12 +188,12 @@ function needsOf({ block }: { readonly block: string }): readonly string[] {
 function stepRuns({ block }: { readonly block: string }): readonly string[] {
     return [...block.matchAll(/^\s+run:\s*(.+)$/gm)].map((match) => (match[1] ?? '').trim());
 }
-function collectTestFiles(dir: string, out: string[]): void {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+function collectTestFiles(args: { readonly dir: string; readonly out: string[] }): void {
+    for (const entry of readdirSync(args.dir, { withFileTypes: true })) {
         if (['node_modules', 'dist', '.turbo'].includes(entry.name)) continue;
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) collectTestFiles(full, out);
-        else if (entry.isFile() && /\.(test|spec)\.tsx?$/.test(entry.name)) out.push(full);
+        const full = path.join(args.dir, entry.name);
+        if (entry.isDirectory()) collectTestFiles({ dir: full, out: args.out });
+        else if (entry.isFile() && /\.(test|spec)\.tsx?$/.test(entry.name)) args.out.push(full);
     }
 }
 function testTitles({ source }: { readonly source: string }): readonly string[] {
@@ -207,19 +208,19 @@ function titlesInRoot({ root }: { readonly root: string }): readonly string[] {
     const full = path.join(repoRoot, root);
     if (!existsSync(full) || !statSync(full).isDirectory()) return [];
     const files: string[] = [];
-    collectTestFiles(full, files);
+    collectTestFiles({ dir: full, out: files });
     return files
         .filter((file) => path.resolve(file) !== path.resolve(selfPath))
         .flatMap((file) => testTitles({ source: readFileSync(file, 'utf8') }));
 }
 function titlesInFile({ file }: { readonly file: string }): readonly string[] {
-    return existsSync(path.join(repoRoot, file)) ? testTitles({ source: read(file) }) : [];
+    return existsSync(path.join(repoRoot, file)) ? testTitles({ source: read({ file }) }) : [];
 }
 function allTitles(): readonly string[] {
     return SCAN_ROOTS.flatMap((root) => titlesInRoot({ root }));
 }
 function firstDescribeTitle({ file }: { readonly file: string }): string {
-    const match = /test\.describe\s*\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/.exec(read(file));
+    const match = /test\.describe\s*\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/.exec(read({ file }));
     return match?.[2] ?? '';
 }
 
@@ -293,8 +294,8 @@ describe('AC:B13a:15 - B13a exit: LISTA:B13a evidence in the tree, phase 2 and 4
         const file =
             'apps/api/test/integration/billing-subscription/b13a-surfaces-from-empty.test.ts';
         const titles = titlesInFile({ file });
-        const include = read('apps/api/vitest.config.integration.ts');
-        const setup = read('apps/api/test/integration/global-setup.ts');
+        const include = read({ file: 'apps/api/vitest.config.integration.ts' });
+        const setup = read({ file: 'apps/api/test/integration/global-setup.ts' });
         expect(existsSync(path.join(repoRoot, file))).toBe(true);
         expect(titles.some((title) => namesId({ text: title, id: 'TEST:B13a:16' }))).toBe(true);
         expect(include).toContain('test/integration/billing-subscription/**/*.test.ts');
@@ -345,7 +346,7 @@ describe('AC:B13a:15 - B13a exit: LISTA:B13a evidence in the tree, phase 2 and 4
     });
 
     it('(i) the staging checklist includes TEST:B13a:14 and its full-path cancellation step', () => {
-        const checklist = read('docs/billing/smoke-checklist.md');
+        const checklist = read({ file: 'docs/billing/smoke-checklist.md' });
         expect(checklist).toContain('## Part 1 — Staging (cutover rehearsal)');
         expect(checklist).toContain('TEST:B13a:14');
         expect(checklist).toContain('### S3 — Self-service cancellation (full path)');

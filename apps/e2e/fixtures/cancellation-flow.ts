@@ -173,10 +173,14 @@ export async function selfCancelFromMySubscription(args: {
     return { preview, endLine: article.getByTestId('self-cancel-end') };
 }
 
-/** Confirm the currently open self-service cancellation flow. */
-export async function confirmSelfCancel(args: { readonly page: Page }) {
-    await args.page.getByTestId('self-cancel-confirm').click();
-    return args.page.getByTestId('self-cancel-done');
+/** Confirm the self-service cancellation flow for one subscription. */
+export async function confirmSelfCancel(args: {
+    readonly page: Page;
+    readonly subscriptionId: string;
+}) {
+    const article = subscriptionArticle({ page: args.page, subscriptionId: args.subscriptionId });
+    await article.getByTestId('self-cancel-confirm').click();
+    return article.getByTestId('self-cancel-done');
 }
 
 /** Read the subscription state and cancellation linkage from its own database row. */

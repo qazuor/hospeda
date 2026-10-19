@@ -93,7 +93,7 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
         const marketEnd = formatMarketDate(serviceEndsAt);
         await expect(endLine).toContainText('seguís con el servicio hasta el');
         await expect(endLine).toContainText(marketEnd);
-        await expect(await confirmSelfCancel({ page })).toContainText(marketEnd);
+        await expect(await confirmSelfCancel({ page, subscriptionId })).toContainText(marketEnd);
         const scheduled = await readSubscriptionRow({ subscriptionId });
         expect(scheduled.status).toBe('CANCEL_SCHEDULED');
         expect(formatMarketDate(new Date(scheduled.service_ends_at ?? ''))).toBe(marketEnd);
@@ -191,7 +191,9 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
         await expect(endLine).toContainText('el servicio termina hoy');
         await expect(endLine).toContainText('perdés el servicio');
         await expect(endLine).toContainText(formatMarketDate(graceEndsAt));
-        await expect(await confirmSelfCancel({ page })).toContainText('El servicio terminó hoy.');
+        await expect(await confirmSelfCancel({ page, subscriptionId })).toContainText(
+            'El servicio terminó hoy.'
+        );
         expect((await readSubscriptionRow({ subscriptionId })).status).toBe('CANCELLED');
         expect(
             (
@@ -278,7 +280,9 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
         await expect(endLine).toContainText('la suscripción termina hoy');
         await expect(endLine).toContainText('estaba suspendida');
         const cancellationRequestedAt = new Date();
-        await expect(await confirmSelfCancel({ page })).toContainText('El servicio terminó hoy.');
+        await expect(await confirmSelfCancel({ page, subscriptionId })).toContainText(
+            'El servicio terminó hoy.'
+        );
         expect((await readSubscriptionRow({ subscriptionId })).status).toBe('CANCELLED');
         // S23 mails only when it cancels a live preapproval; a real suspension already cancelled it (S23).
         expect(

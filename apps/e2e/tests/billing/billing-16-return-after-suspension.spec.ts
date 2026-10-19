@@ -138,9 +138,9 @@ test.describe('TEST:1624:1 a suspended card subscriber comes back: S23, a new S1
             });
             expect(preview.origin).toBe('SUSPENDED');
             const cancellationRequestedAt = new Date();
-            await expect(await confirmSelfCancel({ page })).toContainText(
-                'El servicio terminó hoy.'
-            );
+            await expect(
+                await confirmSelfCancel({ page, subscriptionId: oldSubscriptionId })
+            ).toContainText('El servicio terminó hoy.');
             expect((await readSubscriptionRow({ subscriptionId: oldSubscriptionId })).status).toBe(
                 'CANCELLED'
             );
