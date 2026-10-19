@@ -1,0 +1,527 @@
+{
+  "id": 174625958196,
+  "date_created": "2026-08-19T13:14:43.000-04:00",
+  "date_approved": "2026-08-19T13:14:43.000-04:00",
+  "date_last_updated": "2026-09-15T18:33:45.000-04:00",
+  "date_of_expiration": null,
+  "money_release_date": "2026-08-19T13:14:43.000-04:00",
+  "money_release_status": "released",
+  "operation_type": "regular_payment",
+  "issuer_id": "2005",
+  "payment_method_id": "account_money",
+  "payment_type_id": "account_money",
+  "payment_method": {
+    "id": "account_money",
+    "type": "account_money",
+    "issuer_id": "2005"
+  },
+  "status": "refunded",
+  "status_detail": "refunded",
+  "currency_id": "ARS",
+  "description": "Visibility Boost (7 days)",
+  "live_mode": true,
+  "sponsor_id": null,
+  "authorization_code": null,
+  "money_release_schema": null,
+  "taxes_amount": 0,
+  "counter_currency": null,
+  "brand_id": null,
+  "shipping_amount": 0,
+  "build_version": "3.169.0-rc-2",
+  "idempotency_key": "idempotencyKeyPostPay_fa0dd5d9-2a32-4980-8e72-3a4e25261709account_money_1890101689209057",
+  "pos_id": null,
+  "store_id": null,
+  "integrator_id": null,
+  "platform_id": null,
+  "corporation_id": null,
+  "charges_execution_info": {
+    "internal_execution": {
+      "date": "2026-08-19T13:14:43.000-04:00",
+      "execution_id": "01M0DG97WGVRX1BWJCXDR2TNTX"
+    }
+  },
+  "payer": {
+    "type": null,
+    "id": "<redactado>",
+    "operator_id": null,
+    "email": "<redactado>",
+    "identification": "<redactado>",
+    "phone": "<redactado>",
+    "first_name": null,
+    "last_name": null,
+    "entity_type": null
+  },
+  "collector_id": "<redactado>",
+  "marketplace_owner": "<redactado>",
+  "metadata": {
+    "original_price": 500000,
+    "accommodation_id": "<redactado>",
+    "discount_amount": 0,
+    "type": "addon_purchase",
+    "user_id": "<redactado>",
+    "qzpay_mode": "payment",
+    "addon_slug": "visibility-boost-7d",
+    "customer_id": "<redactado>",
+    "order_id": "<redactado>",
+    "qzpay_customer_id": "<redactado>"
+  },
+  "additional_info": {
+    "ip_address": "<redactado>",
+    "items": [
+      {
+        "quantity": "1",
+        "category_id": "services",
+        "id": "item_1",
+        "title": "Visibility Boost (7 days)",
+        "unit_price": "5000"
+      }
+    ],
+    "tracking_id": "platform:v1-blacklabel,so:ALL,type:N/A,security:none"
+  },
+  "order": {
+    "type": "mercadopago",
+    "id": "43771508792"
+  },
+  "external_reference": "0dd833b8-d92b-4641-bcbe-0180261ea94a",
+  "transaction_amount": 5000,
+  "transaction_amount_refunded": 5000,
+  "coupon_amount": 0,
+  "differential_pricing_id": null,
+  "financing_group": null,
+  "deduction_schema": null,
+  "installments": 1,
+  "transaction_details": {
+    "payment_method_reference_id": null,
+    "acquirer_reference": null,
+    "net_received_amount": 4600.67,
+    "total_paid_amount": 5000,
+    "overpaid_amount": 0,
+    "external_resource_url": null,
+    "installment_amount": 0,
+    "financial_institution": null,
+    "payable_deferral_period": null
+  },
+  "fee_details": [
+    {
+      "type": "mercadopago_fee",
+      "amount": 399.33,
+      "fee_payer": "collector"
+    }
+  ],
+  "charges_details": [
+    {
+      "id": "174625958196-001",
+      "name": "<redactado>",
+      "type": "fee",
+      "accounts": {
+        "from": "collector",
+        "to": "mp"
+      },
+      "client_id": 0,
+      "date_created": "2026-08-19T13:14:43.000-04:00",
+      "last_updated": "2026-09-15T18:33:12.000-04:00",
+      "amounts": {
+        "original": 399.33,
+        "refunded": 399.33
+      },
+      "metadata": {
+        "reason": "AR-E_increment",
+        "source": "proc-svc-charges",
+        "source_detail": "processing_fee_charge"
+      },
+      "reserve_id": null,
+      "refund_charges": [
+        {
+          "date_created": "2026-09-15T17:30:55.000-04:00",
+          "reserve_id": null,
+          "operation": {
+            "type": "refund_payment",
+            "id": 3269653245
+          },
+          "amount": 7.99,
+          "currency_id": "ARS",
+          "client_id": 1890101689209057
+        },
+        {
+          "date_created": "2026-09-15T18:22:23.000-04:00",
+          "reserve_id": null,
+          "operation": {
+            "type": "refund_payment",
+            "id": 3328745602
+          },
+          "amount": 0.4,
+          "currency_id": "ARS",
+          "client_id": 1890101689209057
+        },
+        {
+          "date_created": "2026-09-15T18:22:57.000-04:00",
+          "reserve_id": null,
+          "operation": {
+            "type": "refund_payment",
+            "id": 3328745626
+          },
+          "amount": 0.4,
+          "currency_id": "ARS",
+          "client_id": 1890101689209057
+        },
+        {
+          "date_created": "2026-09-15T18:22:59.000-04:00",
+          "reserve_id": null,
+          "operation": {
+            "type": "refund_payment",
+            "id": 3328707782
+          },
+          "amount": 0.4,
+          "currency_id": "ARS",
+          "client_id": 1890101689209057
+        },
+        {
+          "date_created": "2026-09-15T18:33:08.000-04:00",
+          "reserve_id": null,
+          "operation": {
+            "type": "refund_payment",
+            "id": 3269876107
+          },
+          "amount": 389.35,
+          "currency_id": "ARS",
+          "client_id": 1890101689209057
+        },
+        {
+          "date_created": "2026-09-15T18:33:10.000-04:00",
+          "reserve_id": null,
+          "operation": {
+            "type": "refund_payment",
+            "id": 3328819104
+          },
+          "amount": 0.4,
+          "currency_id": "ARS",
+          "client_id": 1890101689209057
+        },
+        {
+          "date_created": "2026-09-15T18:33:12.000-04:00",
+          "reserve_id": null,
+          "operation": {
+            "type": "refund_payment",
+            "id": 3269876115
+          },
+          "amount": 0.39,
+          "currency_id": "ARS",
+          "client_id": 1890101689209057
+        }
+      ],
+      "external_charge_id": "01M0DG97XD9Z2T2NYMX3PR4RDR",
+      "rate": 7.986695,
+      "base_amount": 5000,
+      "update_charges": []
+    }
+  ],
+  "captured": true,
+  "binary_mode": false,
+  "call_for_authorize_id": null,
+  "statement_descriptor": null,
+  "card": {},
+  "notification_url": "https://api.hospeda.com.ar/api/v1/webhooks/mercadopago",
+  "refunds": [
+    {
+      "id": 3269653245,
+      "payment_id": 174625958196,
+      "amount": 100,
+      "metadata": {
+        "status_detail": null
+      },
+      "source": {
+        "name": "<redactado>",
+        "id": "<redactado>",
+        "type": "collector"
+      },
+      "date_created": "2026-09-15T17:30:55.000-04:00",
+      "expiration_date": null,
+      "unique_sequence_number": null,
+      "refund_mode": "standard",
+      "adjustment_amount": 0,
+      "status": "approved",
+      "reason": null,
+      "labels": [],
+      "amount_refunded_to_payer": 100,
+      "additional_data": null,
+      "e2e_id": null,
+      "request_id": "802b9589-0419-4df0-96b9-18018b3fcbef",
+      "charges_details": [
+        {
+          "id": "174625958196-001",
+          "amount": 7.99,
+          "external_charge_id": "01M0DG97XD9Z2T2NYMX3PR4RDR"
+        }
+      ],
+      "partition_details": [],
+      "transaction_references": [],
+      "external_refund_id": null,
+      "funder": null,
+      "external_operations": [],
+      "amount_refunded_to_other_user": null,
+      "alternative_refund_mode": null
+    },
+    {
+      "id": 3328745602,
+      "payment_id": 174625958196,
+      "amount": 5,
+      "metadata": {
+        "status_detail": null
+      },
+      "source": {
+        "name": "<redactado>",
+        "id": "<redactado>",
+        "type": "collector"
+      },
+      "date_created": "2026-09-15T18:22:23.000-04:00",
+      "expiration_date": null,
+      "unique_sequence_number": null,
+      "refund_mode": "standard",
+      "adjustment_amount": 0,
+      "status": "approved",
+      "reason": null,
+      "labels": [],
+      "amount_refunded_to_payer": 5,
+      "additional_data": null,
+      "e2e_id": null,
+      "request_id": "1b57697f-6be4-4d1d-a6d1-89af9091ce7c",
+      "charges_details": [
+        {
+          "id": "174625958196-001",
+          "amount": 0.4,
+          "external_charge_id": "01M0DG97XD9Z2T2NYMX3PR4RDR"
+        }
+      ],
+      "partition_details": [],
+      "transaction_references": [],
+      "external_refund_id": null,
+      "funder": null,
+      "external_operations": [],
+      "amount_refunded_to_other_user": null,
+      "alternative_refund_mode": null
+    },
+    {
+      "id": 3328745626,
+      "payment_id": 174625958196,
+      "amount": 5,
+      "metadata": {
+        "status_detail": null
+      },
+      "source": {
+        "name": "<redactado>",
+        "id": "<redactado>",
+        "type": "collector"
+      },
+      "date_created": "2026-09-15T18:22:57.000-04:00",
+      "expiration_date": null,
+      "unique_sequence_number": null,
+      "refund_mode": "standard",
+      "adjustment_amount": 0,
+      "status": "approved",
+      "reason": null,
+      "labels": [],
+      "amount_refunded_to_payer": 5,
+      "additional_data": null,
+      "e2e_id": null,
+      "request_id": "39d133eb-3600-49ae-b7b8-3517b23bce44",
+      "charges_details": [
+        {
+          "id": "174625958196-001",
+          "amount": 0.4,
+          "external_charge_id": "01M0DG97XD9Z2T2NYMX3PR4RDR"
+        }
+      ],
+      "partition_details": [],
+      "transaction_references": [],
+      "external_refund_id": null,
+      "funder": null,
+      "external_operations": [],
+      "amount_refunded_to_other_user": null,
+      "alternative_refund_mode": null
+    },
+    {
+      "id": 3328707782,
+      "payment_id": 174625958196,
+      "amount": 5,
+      "metadata": {
+        "status_detail": null
+      },
+      "source": {
+        "name": "<redactado>",
+        "id": "<redactado>",
+        "type": "collector"
+      },
+      "date_created": "2026-09-15T18:22:59.000-04:00",
+      "expiration_date": null,
+      "unique_sequence_number": null,
+      "refund_mode": "standard",
+      "adjustment_amount": 0,
+      "status": "approved",
+      "reason": null,
+      "labels": [],
+      "amount_refunded_to_payer": 5,
+      "additional_data": null,
+      "e2e_id": null,
+      "request_id": "f7e4d4c1-8bd1-4877-8e90-9784f2006c7f",
+      "charges_details": [
+        {
+          "id": "174625958196-001",
+          "amount": 0.4,
+          "external_charge_id": "01M0DG97XD9Z2T2NYMX3PR4RDR"
+        }
+      ],
+      "partition_details": [],
+      "transaction_references": [],
+      "external_refund_id": null,
+      "funder": null,
+      "external_operations": [],
+      "amount_refunded_to_other_user": null,
+      "alternative_refund_mode": null
+    },
+    {
+      "id": 3269876107,
+      "payment_id": 174625958196,
+      "amount": 4875,
+      "metadata": {
+        "status_detail": null
+      },
+      "source": {
+        "name": "<redactado>",
+        "id": "<redactado>",
+        "type": "collector"
+      },
+      "date_created": "2026-09-15T18:33:08.000-04:00",
+      "expiration_date": null,
+      "unique_sequence_number": null,
+      "refund_mode": "standard",
+      "adjustment_amount": 0,
+      "status": "approved",
+      "reason": null,
+      "labels": [],
+      "amount_refunded_to_payer": 4875,
+      "additional_data": null,
+      "e2e_id": null,
+      "request_id": "f82a09bc-963f-4c3a-95e5-14f4c70d4b41",
+      "charges_details": [
+        {
+          "id": "174625958196-001",
+          "amount": 389.35,
+          "external_charge_id": "01M0DG97XD9Z2T2NYMX3PR4RDR"
+        }
+      ],
+      "partition_details": [],
+      "transaction_references": [],
+      "external_refund_id": null,
+      "funder": null,
+      "external_operations": [],
+      "amount_refunded_to_other_user": null,
+      "alternative_refund_mode": null
+    },
+    {
+      "id": 3328819104,
+      "payment_id": 174625958196,
+      "amount": 5,
+      "metadata": {
+        "status_detail": null
+      },
+      "source": {
+        "name": "<redactado>",
+        "id": "<redactado>",
+        "type": "collector"
+      },
+      "date_created": "2026-09-15T18:33:10.000-04:00",
+      "expiration_date": null,
+      "unique_sequence_number": null,
+      "refund_mode": "standard",
+      "adjustment_amount": 0,
+      "status": "approved",
+      "reason": null,
+      "labels": [],
+      "amount_refunded_to_payer": 5,
+      "additional_data": null,
+      "e2e_id": null,
+      "request_id": "c80f19cb-4e78-454e-8ea2-8c9c0f5b483e",
+      "charges_details": [
+        {
+          "id": "174625958196-001",
+          "amount": 0.4,
+          "external_charge_id": "01M0DG97XD9Z2T2NYMX3PR4RDR"
+        }
+      ],
+      "partition_details": [],
+      "transaction_references": [],
+      "external_refund_id": null,
+      "funder": null,
+      "external_operations": [],
+      "amount_refunded_to_other_user": null,
+      "alternative_refund_mode": null
+    },
+    {
+      "id": 3269876115,
+      "payment_id": 174625958196,
+      "amount": 5,
+      "metadata": {
+        "status_detail": null
+      },
+      "source": {
+        "name": "<redactado>",
+        "id": "<redactado>",
+        "type": "collector"
+      },
+      "date_created": "2026-09-15T18:33:12.000-04:00",
+      "expiration_date": null,
+      "unique_sequence_number": null,
+      "refund_mode": "standard",
+      "adjustment_amount": 0,
+      "status": "approved",
+      "reason": null,
+      "labels": [],
+      "amount_refunded_to_payer": 5,
+      "additional_data": null,
+      "e2e_id": null,
+      "request_id": "2c2e6abf-0f0f-4deb-bf2f-6037481aa1f2",
+      "charges_details": [
+        {
+          "id": "174625958196-001",
+          "amount": 0.39,
+          "external_charge_id": "01M0DG97XD9Z2T2NYMX3PR4RDR"
+        }
+      ],
+      "partition_details": [],
+      "transaction_references": [],
+      "external_refund_id": null,
+      "funder": null,
+      "external_operations": [],
+      "amount_refunded_to_other_user": null,
+      "alternative_refund_mode": null
+    }
+  ],
+  "processing_mode": "aggregator",
+  "merchant_account_id": null,
+  "merchant_number": null,
+  "acquirer_reconciliation": [],
+  "point_of_interaction": {
+    "type": "CHECKOUT",
+    "business_info": {
+      "unit": "online_payments",
+      "sub_unit": "checkout_pro",
+      "branch": "Merchant Services"
+    },
+    "location": {
+      "state_id": "AR-E",
+      "source": "Payer"
+    },
+    "application_data": {
+      "name": "<redactado>",
+      "operating_system": null,
+      "version": "v2"
+    },
+    "transaction_data": {
+      "e2e_id": null
+    }
+  },
+  "accounts_info": null,
+  "release_info": null,
+  "tags": null,
+  "tenant_context": "mp"
+}
