@@ -288,7 +288,7 @@ export function getListingPublicationPorts(options?: {
     const afterCommit: PublicationAfterCommit = {
         emitCoverageChanged: (event) => access.billing.emitCoverageChanged(event),
         async invalidateUser({ userId }) {
-            invalidateEffectiveSetsForUser(userId);
+            await invalidateEffectiveSetsForUser(userId);
         },
         async revalidate({ vertical, listingIds }) {
             for (const id of listingIds) {
