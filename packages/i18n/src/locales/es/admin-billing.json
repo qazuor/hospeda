@@ -1659,7 +1659,9 @@
                 "trialExtension_one": "{{count}} día más de prueba",
                 "trialExtension_other": "{{count}} días más de prueba"
             },
-            "reach": { "allFuture": "Todas las verticales, también las futuras" },
+            "reach": {
+                "allFuture": "Todas las verticales, también las futuras"
+            },
             "verticals": {
                 "accommodation": "Alojamientos",
                 "gastronomy": "Gastronomía",
@@ -1790,7 +1792,21 @@
             }
         },
         "successTitle": "Suscripción revocada",
-        "errorTitle": "No se pudo revocar la suscripción"
+        "errorTitle": "No se pudo revocar la suscripción",
+        "settlement": {
+            "title": "Asentar la devolución (acción 14)",
+            "intro": "Primero devolvé el pago desde el panel de Mercado Pago. Después asentalo acá con la referencia de esa devolución: así se cierra el pedido {{refundId}} y no nace otra devolución.",
+            "noPermission": "Asentar la devolución lo hace otra persona del equipo con el permiso para asentar lo que pasó por fuera.",
+            "mismatch": {
+                "notice": "El monto a asentar ({{amount}}) no es el del pedido ({{requested}}). Elegí qué hacer antes de confirmar.",
+                "CLOSE_WITH_SETTLED_AMOUNT": "Cerrar el pedido por el monto asentado",
+                "SETTLE_SEPARATELY": "Asentarla aparte y dejar el pedido abierto"
+            },
+            "success": {
+                "closed": "Devolución asentada: el pedido {{refundId}} quedó ejecutado ({{status}}).",
+                "separate": "Devolución asentada aparte como {{refundId}} ({{status}}). El pedido {{requestedRefundId}} sigue abierto."
+            }
+        }
     },
     "reconciliationMarks": {
         "title": "Conciliación de pagos",

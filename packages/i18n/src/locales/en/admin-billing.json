@@ -1659,7 +1659,9 @@
                 "trialExtension_one": "{{count}} extra trial day",
                 "trialExtension_other": "{{count}} extra trial days"
             },
-            "reach": { "allFuture": "All verticals, including future ones" },
+            "reach": {
+                "allFuture": "All verticals, including future ones"
+            },
             "verticals": {
                 "accommodation": "Accommodation",
                 "gastronomy": "Gastronomy",
@@ -1790,7 +1792,21 @@
             }
         },
         "successTitle": "Subscription revoked",
-        "errorTitle": "The subscription could not be revoked"
+        "errorTitle": "The subscription could not be revoked",
+        "settlement": {
+            "title": "Record the refund (action 14)",
+            "intro": "First refund the payment from the Mercado Pago panel. Then record it here with that refund's reference: this closes request {{refundId}} and no second refund is created.",
+            "noPermission": "Another team member with the permission to record out-of-flow settlements records this refund.",
+            "mismatch": {
+                "notice": "The amount to record ({{amount}}) is not the requested one ({{requested}}). Choose what to do before confirming.",
+                "CLOSE_WITH_SETTLED_AMOUNT": "Close the request with the recorded amount",
+                "SETTLE_SEPARATELY": "Record it separately and keep the request open"
+            },
+            "success": {
+                "closed": "Refund recorded: request {{refundId}} is now executed ({{status}}).",
+                "separate": "Refund recorded separately as {{refundId}} ({{status}}). Request {{requestedRefundId}} stays open."
+            }
+        }
     },
     "reconciliationMarks": {
         "title": "Payment reconciliation",
@@ -1826,7 +1842,10 @@
             "amount": "Amount in pesos",
             "scope": "Manual payment scope",
             "channel": "Refund channel",
-            "channels": { "BANK_TRANSFER": "bank transfer", "PROVIDER_PANEL": "provider panel" },
+            "channels": {
+                "BANK_TRANSFER": "bank transfer",
+                "PROVIDER_PANEL": "provider panel"
+            },
             "reference": "Receipt or reference",
             "chargeId": "Approved provider charge ID",
             "note": "Optional note",
