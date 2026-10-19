@@ -16,6 +16,8 @@ import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const email = t('footer.contactEmail');
+const mailAlternative = t('terms.withdrawal.mailAlternative', undefined, { email });
+const [mailLead = '', mailTail = ''] = mailAlternative.split(email);
 
 applyCacheHeaders({
     locals: Astro.locals,
@@ -45,8 +47,9 @@ applyCacheHeaders({
             </a>
         </p>
         <p>
-            {t('terms.withdrawal.mailAlternative', undefined, { email: '' }).replace(/\s*\.$/, '')}
-            <a href={`mailto:${email}?subject=${encodeURIComponent(t('terms.withdrawal.mailSubject'))}`}>{email}</a>.
+            {mailLead}
+            <a href={`mailto:${email}?subject=${encodeURIComponent(t('terms.withdrawal.mailSubject'))}`}>{email}</a>
+            {mailTail}
         </p>
     </section>
 </LegalLayout>

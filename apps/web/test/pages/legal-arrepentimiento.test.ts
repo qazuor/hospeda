@@ -48,6 +48,9 @@ describe('TEST:1700:2 AC:1700:1 AC:1700:2 AC:1700:3 withdrawal page source and c
         );
         expect(PAGE_SOURCE).toMatch(/href=\{`mailto:\$\{email\}\?subject=/);
         expect(PAGE_SOURCE).toContain("t('footer.contactEmail')");
+        expect(PAGE_SOURCE).toContain(
+            "t('terms.withdrawal.mailAlternative', undefined, { email })"
+        );
     });
 
     it('TEST:1700:2 AC:1700:1 AC:1700:2 AC:1700:3 has every new catalog value in es, en, and pt', () => {
