@@ -89,7 +89,7 @@ const BLANK_CONTENT: Record<ListingVertical, SQL> = {
         name_i18n = NULL, summary_i18n = NULL, description_i18n = NULL, rich_description_i18n = NULL,
         menu_url = NULL, menu_file_url = NULL, menu_file_public_id = NULL,
         menu_file_kind = NULL, contact_info = NULL, social_networks = NULL, opening_hours = NULL,
-        price_range = NULL, seo = NULL`,
+        price_range = NULL, videos = NULL, seo = NULL`,
     experience: sql`summary = '', description = '', rich_description = NULL,
         name_i18n = NULL, summary_i18n = NULL, description_i18n = NULL, rich_description_i18n = NULL,
         price_from = 0, price_unit = NULL, is_price_on_request = true,
@@ -125,6 +125,31 @@ const MARK_CALENDAR: Record<
     experience: async () => []
 };
 
+/**
+ * Carries each uploaded menu file and dish photo into gastronomy_media before the purge
+ * transaction deletes the rows that named them. The existing mark and post-commit deletion
+ * path then handles them like gallery photos, with the daily retry covering any failure.
+ */
+const CARRY_REMOTE_ASSETS: Record<
+    ListingVertical,
+    (args: { readonly tx: DrizzleClient; readonly listingId: string }) => Promise<void>
+> = {
+    accommodation: async () => {},
+    gastronomy: async ({ tx, listingId }) => {
+        await tx.execute(sql`
+            INSERT INTO gastronomy_media (gastronomy_id, url, public_id, is_featured, sort_order)
+            SELECT id, COALESCE(menu_file_url, ''), menu_file_public_id, false, 0
+            FROM gastronomies
+            WHERE id = ${listingId} AND menu_file_public_id IS NOT NULL`);
+        await tx.execute(sql`
+            INSERT INTO gastronomy_media (gastronomy_id, url, public_id, is_featured, sort_order)
+            SELECT gastronomy_id, COALESCE(photo_url, ''), photo_public_id, false, 0
+            FROM gastronomy_menu_items
+            WHERE gastronomy_id = ${listingId} AND photo_public_id IS NOT NULL`);
+    },
+    experience: async () => {}
+};
+
 const CLOSE_PRICE_ALERTS: Record<
     ListingVertical,
     (args: {
@@ -149,7 +174,10 @@ function toDate(value: unknown): Date {
 
 /** Transaction-bound closed-list purge persistence for PB12. */
 export const listingPurgeModel = {
-    /** Deletes listing-only rows, blanks listing content, and marks remote rows for post-commit work. */
+    /**
+     * Deletes listing-only rows, blanks listing content, and marks remote rows for post-commit work.
+     * Uploaded gastronomy menu files and dish photos are carried into marked media rows first.
+     */
     async purgeListingContent(args: {
         readonly tx: DrizzleClient;
         readonly vertical: ListingVertical;
@@ -157,6 +185,7 @@ export const listingPurgeModel = {
         readonly at: Date;
     }): Promise<PurgeListingContentResult> {
         const { tx, vertical, listingId, at } = args;
+        await CARRY_REMOTE_ASSETS[vertical]({ tx, listingId });
         for (const item of CONTENT_TABLES[vertical]) {
             const entityPredicate =
                 item.fk === 'entity_id'
