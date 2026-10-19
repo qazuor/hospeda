@@ -249,39 +249,20 @@ test.describe('E2E-04b: move bookmark via UI @p0 @favorites @collections @move @
         await page.goto(`${WEB_BASE_URL}/es/mi-cuenta/favoritos/colecciones/${collectionId}/`);
         await page.waitForLoadState('networkidle');
 
-        // CollectionBookmarkRemoveBtn asks for confirmation with window.confirm().
-        // Playwright DISMISSES dialogs unless a handler accepts them, so without this
-        // the confirm returns false and handleRemove() returns before issuing the
-        // DELETE — the click looks successful and nothing happens. e2e-04c already
-        // does this for the same reason.
-        page.on('dialog', (dialog) => {
-            void dialog.accept();
-        });
-
         const removeBtn = page.locator('[data-testid="collection-bookmark-remove-btn"]').first();
         await expect(
             removeBtn,
             `remove-from-collection button not rendered on ${page.url()}`
         ).toBeVisible();
 
-        // CollectionBookmarkRemoveBtn is mounted `client:visible`, so the button is
-        // server-rendered before React attaches its onClick. A single click plus
-        // `networkidle` silently did nothing when it landed pre-hydration: no request
-        // was ever sent, and the spec then blamed the DELETE for not clearing
-        // collection_id. Retry the click until the DELETE actually goes out — the
-        // request is the evidence that the handler ran.
+        // The component uses the product confirmation dialog; accept it explicitly
+        // before asserting the DELETE request.
         const deleteUrlFragment = `/user-bookmark-collections/${collectionId}/bookmarks/${bookmarkId}`;
-        await expect(async () => {
-            await Promise.all([
-                page.waitForResponse(
-                    (res) =>
-                        res.url().includes(deleteUrlFragment) &&
-                        res.request().method() === 'DELETE',
-                    { timeout: 3_000 }
-                ),
-                removeBtn.click()
-            ]);
-        }).toPass({ timeout: 20_000 });
+        await removeBtn.click();
+        await page.getByRole('dialog').getByRole('button', { name: 'Quitar', exact: true }).click();
+        await page.waitForResponse(
+            (res) => res.url().includes(deleteUrlFragment) && res.request().method() === 'DELETE'
+        );
 
         // The island reloads the page after a successful DELETE.
         await page.waitForLoadState('networkidle');
