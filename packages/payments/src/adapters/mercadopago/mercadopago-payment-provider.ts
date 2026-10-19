@@ -53,6 +53,7 @@ import {
     RefundInputSchema
 } from '../../provider/schemas';
 import { MERCADOPAGO_CAPABILITY_SUPPORT } from './mercadopago-capability-support';
+import { readMercadoPagoCharge } from './mercadopago-charge-read';
 import { listMercadoPagoCharges } from './mercadopago-charges';
 import { assertResponseOk, parseResponse, providerError } from './mercadopago-http';
 import {
@@ -105,37 +106,6 @@ function toIsoInstant({ value }: { readonly value: string | null | undefined }):
     if (value == null || Number.isNaN(Date.parse(value))) return null;
     return new Date(value).toISOString();
 }
-const ReadChargeResponseSchema = z.object({
-    id: z.union([z.string(), z.number()]).transform(String),
-    date_created: z.string().datetime({ offset: true }),
-    expiration_date: z.string().datetime({ offset: true }).nullable().optional(),
-    external_reference: z.string().nullable().optional(),
-    preapproval_id: z
-        .union([z.string(), z.number()])
-        .nullable()
-        .optional()
-        .transform((value) => (value == null ? null : String(value))),
-    status: z.enum(['pending', 'in_process', 'approved', 'rejected', 'refunded', 'charged_back']),
-    status_detail: z.string().nullable().optional(),
-    transaction_amount: z.number().nonnegative(),
-    currency_id: z.string().min(1),
-    amount_refunded: z.number().nonnegative().optional().default(0)
-});
-
-/**
- * A refunded or charged-back payment did collect, so it reads `approved`: the
- * refund travels in `refundedAmount` and the chargeback in `chargedBack` (RC-8).
- */
-function toChargeStatus({
-    status
-}: {
-    readonly status: z.infer<typeof ReadChargeResponseSchema>['status'];
-}): ChargeSnapshot['status'] {
-    if (status === 'in_process') return 'pending';
-    if (status === 'refunded' || status === 'charged_back') return 'approved';
-    return status;
-}
-
 /** The Mercado Pago payment provider adapter. */
 export class MercadoPagoPaymentProvider implements PaymentProvider {
     readonly capabilitySupport: CapabilitySupportMap = MERCADOPAGO_CAPABILITY_SUPPORT;
@@ -345,39 +315,12 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     /** Capability 7 · read a charge by id. */
     async readCharge(input: ChargeRef): Promise<ProviderRead<ChargeSnapshot>> {
         parseProviderInput({ schema: ChargeRefSchema, input, capability: 'read' });
-        const response = await this.send({
-            capability: 'read',
-            path: `/v1/payments/${encodeURIComponent(input.chargeId)}`,
-            method: 'GET'
-        });
-        const parsed = await parseResponse(ReadChargeResponseSchema, response, 'read');
-        const status = toChargeStatus({ status: parsed.status });
         return stampProviderRead({
             clock: this.clock,
-            snapshot: {
-                chargeId: parsed.id,
-                createdAt: parsed.date_created,
-                expiresAt: parsed.expiration_date ?? null,
-                purpose:
-                    parsed.preapproval_id === null &&
-                    parsed.external_reference == null &&
-                    parsed.transaction_amount === 0
-                        ? 'cardValidation'
-                        : 'charge',
-                authorizationId: parsed.preapproval_id ?? null,
-                reference: parsed.external_reference ?? null,
-                status,
-                declineReason: status === 'rejected' ? (parsed.status_detail ?? null) : null,
-                amount: {
-                    amountMinor: Math.round(parsed.transaction_amount * 100),
-                    currency: parsed.currency_id
-                },
-                refundedAmount: {
-                    amountMinor: Math.round(parsed.amount_refunded * 100),
-                    currency: parsed.currency_id
-                },
-                chargedBack: parsed.status === 'charged_back'
-            }
+            snapshot: await readMercadoPagoCharge({
+                chargeId: input.chargeId,
+                send: (args) => this.send(args)
+            })
         });
     }
 
