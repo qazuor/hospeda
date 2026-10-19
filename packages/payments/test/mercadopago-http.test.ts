@@ -214,15 +214,19 @@ describe('TEST:B11:27 (support) the adapter reads a chargeback and a refunded ch
         expect(snapshot.chargedBack).toBe(false);
     });
 
-    it('(h) any other provider status still fails closed: the read throws, nothing reads approved', async () => {
+    it('TEST:1710:1 AC:1710:1 (h) any other provider status still fails closed', async () => {
         const body = {
             id: 'charge-x',
             date_created: '2026-10-01T03:00:00.000Z',
-            preapproval_id: 'auth-x',
+            metadata: {},
+            point_of_interaction: {
+                type: 'SUBSCRIPTIONS',
+                transaction_data: { subscription_id: 'auth-x' }
+            },
             external_reference: 'sub-x',
             transaction_amount: 15,
             currency_id: 'ARS',
-            amount_refunded: 0
+            transaction_amount_refunded: 0
         };
         for (const status of ['cancelled', 'in_mediation', 'authorized', 'refunded_partially']) {
             const adapter = new MercadoPagoPaymentProvider({
