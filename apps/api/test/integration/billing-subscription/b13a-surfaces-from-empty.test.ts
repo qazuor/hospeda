@@ -54,8 +54,8 @@ const ensureBillingDeadlineVersion1 = async () => {
         .values({ version: 1, values: deadlines })
         .onConflictDoNothing();
 };
-const userHeaders = (id: string) =>
-    actorHeaders({ id, role: 'USER', permissions: [PermissionEnum.BILLING_VIEW_OWN] });
+const userHeaders = (args: { readonly id: string }) =>
+    actorHeaders({ id: args.id, role: 'USER', permissions: [PermissionEnum.BILLING_VIEW_OWN] });
 let app: ReturnType<typeof initApp>;
 
 beforeAll(async () => {
@@ -106,13 +106,13 @@ describe('TEST:B13a:16 — the B13a surfaces read on a database built from empty
 
     it('(b) first use reads empty Mi Suscripción and pricing through their protected routes', async () => {
         const ownerId = await seedUser('b13a-empty-first-use');
-        const mine = await app.request(minePath, { headers: userHeaders(ownerId) });
+        const mine = await app.request(minePath, { headers: userHeaders({ id: ownerId }) });
         expect(mine.status).toBe(200);
         const mineBody = OwnSubscriptionsResponseSchema.parse((await mine.json()).data);
         expect(mineBody.subscriptions).toEqual([]);
         expect(mineBody.deferredCourtesies).toEqual([]);
 
-        const pricing = await app.request(pricingPath, { headers: userHeaders(ownerId) });
+        const pricing = await app.request(pricingPath, { headers: userHeaders({ id: ownerId }) });
         expect(pricing.status).toBe(200);
         expect(PricingSituationResponseSchema.parse((await pricing.json()).data)).toEqual({
             situation: 'FIRST_USE',
@@ -154,7 +154,7 @@ describe('TEST:B13a:16 — the B13a surfaces read on a database built from empty
             { table: 'promo_redemption', count: 0 }
         ]);
 
-        const mine = await app.request(minePath, { headers: userHeaders(seeded.ownerId) });
+        const mine = await app.request(minePath, { headers: userHeaders({ id: seeded.ownerId }) });
         expect(mine.status).toBe(200);
         const mineBody = OwnSubscriptionsResponseSchema.parse((await mine.json()).data);
         expect(mineBody.subscriptions.map(({ id }) => id)).toEqual([seeded.subscriptionId]);
@@ -163,7 +163,7 @@ describe('TEST:B13a:16 — the B13a surfaces read on a database built from empty
         const preview = await app.request(
             `${minePath}/${seeded.subscriptionId}/cancellation-preview`,
             {
-                headers: userHeaders(seeded.ownerId)
+                headers: userHeaders({ id: seeded.ownerId })
             }
         );
         expect(preview.status).toBe(200);
@@ -173,7 +173,9 @@ describe('TEST:B13a:16 — the B13a surfaces read on a database built from empty
         expect(previewBody.origin).toBe('ACTIVE');
         expect(previewBody.addons).toEqual([]);
 
-        const pricing = await app.request(pricingPath, { headers: userHeaders(seeded.ownerId) });
+        const pricing = await app.request(pricingPath, {
+            headers: userHeaders({ id: seeded.ownerId })
+        });
         expect(pricing.status).toBe(200);
         expect(PricingSituationResponseSchema.parse((await pricing.json()).data)).toMatchObject({
             situation: 'SUBSCRIBED',
@@ -217,14 +219,14 @@ describe('TEST:B13a:16 — the B13a surfaces read on a database built from empty
         expect(body.items.filter(({ subject }) => subject.id === seeded.subscriptionId)).toEqual(
             []
         );
-        expect(await dbSubscriptionExists(seeded.subscriptionId)).toBe(true);
+        expect(await dbSubscriptionExists({ subscriptionId: seeded.subscriptionId })).toBe(true);
     });
 });
 
-async function dbSubscriptionExists(subscriptionId: string): Promise<boolean> {
+async function dbSubscriptionExists(args: { readonly subscriptionId: string }): Promise<boolean> {
     const [row] = await getDb()
         .select({ id: subscriptions.id })
         .from(subscriptions)
-        .where(eq(subscriptions.id, subscriptionId));
-    return row?.id === subscriptionId;
+        .where(eq(subscriptions.id, args.subscriptionId));
+    return row?.id === args.subscriptionId;
 }

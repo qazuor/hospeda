@@ -163,7 +163,7 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         const island = page.locator('section[aria-label="Tus suscripciones"]');
         await expect(island).toContainText('No tenés suscripciones vigentes.');
-        await expect(subscriptionArticle(page, subscriptionId)).toHaveCount(0);
+        await expect(subscriptionArticle({ page, subscriptionId })).toHaveCount(0);
     });
 
     test('GRACE_PERIOD: S24 ends service today, our email before the provider cancellation', async ({
@@ -181,7 +181,7 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
         });
         const { graceEndsAt } = await driveToGrace({ world, subscriptionId, authorizationId });
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
-        const article = subscriptionArticle(page, subscriptionId);
+        const article = subscriptionArticle({ page, subscriptionId });
         await expect(article.getByTestId('my-subscription-grace')).toContainText(
             formatMarketDate(graceEndsAt)
         );
@@ -269,7 +269,7 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
         const suspensionHtml = decodeHtmlEntities(suspension.suspensionMail.html);
         expect(suspensionHtml).toContain('volvé a suscribirte con una tarjeta que funcione');
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
-        const article = subscriptionArticle(page, subscriptionId);
+        const article = subscriptionArticle({ page, subscriptionId });
         await expect(article.getByTestId('self-cancel-open')).toBeVisible();
         await expect(article.getByTestId('my-subscription-grace')).toHaveCount(0);
         const { preview, endLine } = await selfCancelFromMySubscription({ page, subscriptionId });

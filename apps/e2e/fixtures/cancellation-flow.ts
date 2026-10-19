@@ -156,7 +156,7 @@ export async function selfCancelFromMySubscription(args: {
     readonly endLine: ReturnType<Page['getByTestId']>;
 }> {
     await args.page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
-    const article = subscriptionArticle(args.page, args.subscriptionId);
+    const article = subscriptionArticle({ page: args.page, subscriptionId: args.subscriptionId });
     const response = args.page.waitForResponse(
         (candidate) =>
             candidate.request().method() === 'GET' &&
@@ -252,9 +252,12 @@ export async function waitForPublicationStatus(args: {
         .toBe(args.status);
 }
 
-export function subscriptionArticle(page: Page, subscriptionId: string) {
-    return page.locator(
-        `article[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
+export function subscriptionArticle(args: {
+    readonly page: Page;
+    readonly subscriptionId: string;
+}) {
+    return args.page.locator(
+        `article[data-testid="my-subscription"][data-subscription-id="${args.subscriptionId}"]`
     );
 }
 
