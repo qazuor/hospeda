@@ -293,7 +293,7 @@ describe('TEST:V9b:10 AC:V9b:10 retention notices integration', () => {
         expect(await rows(covered.userId, LISTING_RETENTION_BEFORE_DELETION_TEMPLATE)).toEqual([]);
     });
 
-    it('keeps archive notice anchored to inactive_since while owner edits move deletion notice', async () => {
+    it('TEST:1694:5 AC:1694:2 owner edits move both the archive notice and the deletion notice', async () => {
         const inactiveSince = new Date(now.getTime() - 110 * day);
         const f = await fixture({ status: Status.PUBLISHED, inactiveSince });
         await db.insert(domainEvent).values({
@@ -311,10 +311,24 @@ describe('TEST:V9b:10 AC:V9b:10 retention notices integration', () => {
             listingId: f.listing.id,
             vertical: f.vertical
         });
-        expect(archive).toMatchObject({
+        expect(archive).toEqual({ sent: false, reason: 'NOT_DUE' });
+        expect(await rows(f.userId, LISTING_RETENTION_BEFORE_ARCHIVE_TEMPLATE)).toEqual([]);
+        const archiveTargetAt = new Date(now.getTime() - 10 * day + 90 * day);
+        const archiveAt = retentionNoticeAt({ targetAt: archiveTargetAt, daysBefore: 15 });
+        expect(
+            await decide({
+                userId: f.userId,
+                listingId: f.listing.id,
+                vertical: f.vertical,
+                at: archiveAt
+            })
+        ).toMatchObject({
             sent: true,
-            targetAt: new Date(inactiveSince.getTime() + 90 * day)
+            notice: 'BEFORE_ARCHIVE',
+            targetAt: archiveTargetAt,
+            enqueued: true
         });
+        expect(await rows(f.userId, LISTING_RETENTION_BEFORE_ARCHIVE_TEMPLATE)).toHaveLength(1);
         await db.execute(
             sql`UPDATE accommodations SET publication_status = 'ARCHIVED', deletion_announced_at = NULL WHERE id = ${f.listing.id}`
         );

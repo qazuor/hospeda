@@ -123,19 +123,56 @@ describe('TEST:V9b:10 AC:V9b:10 sendRetentionNotice', () => {
         });
     });
 
-    it('does not read the owner act for a pre-archive notice (D1)', async () => {
+    it('TEST:1694:4 AC:1694:2 counts the owner act for a pre-archive notice like PB4 and PB5', async () => {
+        const act = new Date(at.getTime() - day);
         const harness = makeHarness({
             status: Status.PUBLISHED,
             covered: false,
             inactiveSince: overdueStart,
-            lastOwnerActAt: new Date(at.getTime() - day)
+            lastOwnerActAt: act
         });
-        expect(await send(harness)).toMatchObject({
-            sent: true,
-            notice: 'BEFORE_ARCHIVE',
-            targetAt: new Date(overdueStart.getTime() + 90 * day)
+        expect(await send(harness)).toEqual({ sent: false, reason: 'NOT_DUE' });
+        expect(harness.retentionNotices).toEqual([]);
+        const targetAt = new Date(act.getTime() + 90 * day);
+        const due = makeHarness({
+            status: Status.PUBLISHED,
+            covered: false,
+            inactiveSince: overdueStart,
+            lastOwnerActAt: act
         });
-        expect(harness.ownerActReads).toEqual([]);
+        expect(
+            await sendRetentionNotice({
+                ...due,
+                clock: { now: () => retentionNoticeAt({ targetAt, daysBefore: 15 }) },
+                vertical,
+                listingId,
+                ownerId: userId,
+                correlationId: 'retention-test'
+            })
+        ).toEqual({ sent: true, notice: 'BEFORE_ARCHIVE', targetAt, enqueued: true });
+        expect(due.ownerActReads).toEqual([{ vertical, listingId }]);
+    });
+
+    it('TEST:1694:4 AC:1694:2 counts the owner act for a PB5 pre-archive notice', async () => {
+        const act = new Date(at.getTime() - day);
+        const targetAt = addCalendarMonthsUtc({ at: act, months: 3 });
+        const due = makeHarness({
+            status: Status.DRAFT,
+            covered: false,
+            inactiveSince: overdueStart,
+            lastOwnerActAt: act
+        });
+        expect(
+            await sendRetentionNotice({
+                ...due,
+                clock: { now: () => retentionNoticeAt({ targetAt, daysBefore: 15 }) },
+                vertical,
+                listingId,
+                ownerId: userId,
+                correlationId: 'retention-test'
+            })
+        ).toEqual({ sent: true, notice: 'BEFORE_ARCHIVE', targetAt, enqueued: true });
+        expect(due.ownerActReads).toEqual([{ vertical, listingId }]);
     });
 
     it.each([
