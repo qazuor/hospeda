@@ -49,6 +49,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                     key: 'write_reviews'
                 },
                 {
+                    key: 'read_reviews'
+                },
+                {
                     key: 'price_alerts'
                 },
                 {
@@ -203,6 +206,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                 },
                 {
                     key: 'write_reviews'
+                },
+                {
+                    key: 'read_reviews'
                 },
                 {
                     key: 'price_alerts'
@@ -374,6 +380,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                 },
                 {
                     key: 'write_reviews'
+                },
+                {
+                    key: 'read_reviews'
                 },
                 {
                     key: 'price_alerts'
@@ -556,6 +565,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                     key: 'write_reviews'
                 },
                 {
+                    key: 'read_reviews'
+                },
+                {
                     key: 'price_alerts'
                 },
                 {
@@ -665,6 +677,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                 },
                 {
                     key: 'write_reviews'
+                },
+                {
+                    key: 'read_reviews'
                 },
                 {
                     key: 'price_alerts'
@@ -785,6 +800,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                 },
                 {
                     key: 'write_reviews'
+                },
+                {
+                    key: 'read_reviews'
                 },
                 {
                     key: 'price_alerts'
@@ -924,6 +942,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                     key: 'write_reviews'
                 },
                 {
+                    key: 'read_reviews'
+                },
+                {
                     key: 'price_alerts'
                 },
                 {
@@ -1033,6 +1054,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                 },
                 {
                     key: 'write_reviews'
+                },
+                {
+                    key: 'read_reviews'
                 },
                 {
                     key: 'price_alerts'
@@ -1150,6 +1174,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                 },
                 {
                     key: 'write_reviews'
+                },
+                {
+                    key: 'read_reviews'
                 },
                 {
                     key: 'price_alerts'
@@ -1278,6 +1305,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                 },
                 {
                     key: 'write_reviews'
+                },
+                {
+                    key: 'read_reviews'
                 },
                 {
                     key: 'price_alerts'
@@ -1693,6 +1723,9 @@ export const PRODUCTION_PLAN_CATALOG = [
                 },
                 {
                     key: 'write_reviews'
+                },
+                {
+                    key: 'read_reviews'
                 },
                 {
                     key: 'ai_search',
