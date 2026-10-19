@@ -8,7 +8,7 @@
  * Actors: Authenticated USER seeded as a Tourist VIP (an ACTIVE PRINCIPAL tourist-vip
  * subscription, read by billing coverage since HOS-1532). No deferral: a VIP answered 403 fails the spec (HOS-1665, TEST:1665:2).
  *
- * Tags: @p1 @favorites @collections @move @ui @spec-098
+ * Tags: @p0 @favorites @collections @move @ui @spec-098
  *
  * Preconditions:
  *   - At least one ACTIVE/PUBLIC accommodation in seed.
@@ -67,7 +67,7 @@ async function attachSessionCookie(
     await context.addCookies(cookies);
 }
 
-test.describe('E2E-04b: move bookmark via UI @p1 @favorites @collections @move @ui @spec-098', () => {
+test.describe('E2E-04b: move bookmark via UI @p0 @favorites @collections @move @ui @spec-098', () => {
     const userIds: string[] = [];
 
     test.beforeEach(async ({ page }) => {
