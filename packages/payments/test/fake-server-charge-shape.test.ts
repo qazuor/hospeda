@@ -49,7 +49,7 @@ async function setup() {
             headers: { Authorization: 'Bearer test-token' }
         });
         if (!response.ok) throw new Error(`Fake payment read failed (${response.status})`);
-        return (await response.json()) as Record<string, any>;
+        return (await response.json()) as Record<string, unknown>;
     }
     return { provider, server, adapter, raw };
 }

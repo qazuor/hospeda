@@ -7,7 +7,20 @@ import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it } from 'vitest';
 import { MercadoPagoPaymentProvider } from '../src/adapters/mercadopago/mercadopago-payment-provider';
 
-type Payment = Record<string, any>;
+type Payment = {
+    [key: string]: unknown;
+    external_reference: string | null;
+    metadata: { preapproval_id?: string };
+    operation_type: string;
+    point_of_interaction: {
+        type: string;
+        transaction_data: { subscription_id: string };
+    };
+    status: string;
+    status_detail: string;
+    transaction_amount: number;
+    transaction_amount_refunded?: number;
+};
 const captured = JSON.parse(
     readFileSync(
         new URL('./fixtures/mercadopago-recurring-payment-2026-09-15.json', import.meta.url),
@@ -59,7 +72,10 @@ describe('TEST:1710:2 AC:1710:1 authorization-link variants', () => {
     it('TEST:1710:2 AC:1710:1 resolves metadata, interaction, conflict, and absent links', async () => {
         const metadata = clonePayment();
         metadata.metadata = { preapproval_id: '6b293a9499d946f6ac159da7f8f4804e' };
-        metadata.point_of_interaction = { type: 'SUBSCRIPTIONS' };
+        metadata.point_of_interaction = {
+            type: 'SUBSCRIPTIONS',
+            transaction_data: { subscription_id: '' }
+        };
         expect(
             (await adapterFor(metadata).adapter.readCharge({ chargeId: 'x' })).snapshot
                 .authorizationId
@@ -89,6 +105,34 @@ describe('TEST:1710:2 AC:1710:1 authorization-link variants', () => {
         expect(card.purpose).toBe('cardValidation');
         expect(card.authorizationId).toBeNull();
         expect(card.reference).toBeNull();
+
+        const zeroWithMetadataLink = clonePayment();
+        zeroWithMetadataLink.transaction_amount = 0;
+        zeroWithMetadataLink.metadata = { preapproval_id: 'auth-zero' };
+        zeroWithMetadataLink.point_of_interaction.transaction_data.subscription_id = '';
+        expect(
+            (await adapterFor(zeroWithMetadataLink).adapter.readCharge({ chargeId: 'x' })).snapshot
+                .purpose
+        ).toBe('charge');
+
+        const zeroWithPoiLink = clonePayment();
+        zeroWithPoiLink.transaction_amount = 0;
+        zeroWithPoiLink.metadata = {};
+        zeroWithPoiLink.point_of_interaction.transaction_data.subscription_id = 'auth-zero';
+        expect(
+            (await adapterFor(zeroWithPoiLink).adapter.readCharge({ chargeId: 'x' })).snapshot
+                .purpose
+        ).toBe('charge');
+
+        const zeroWithReference = clonePayment();
+        zeroWithReference.transaction_amount = 0;
+        zeroWithReference.metadata = {};
+        zeroWithReference.point_of_interaction.transaction_data.subscription_id = '';
+        zeroWithReference.external_reference = 'zero-payment-reference';
+        expect(
+            (await adapterFor(zeroWithReference).adapter.readCharge({ chargeId: 'x' })).snapshot
+                .purpose
+        ).toBe('charge');
         const oldFake = clonePayment();
         Object.assign(oldFake, {
             preapproval_id: 'auth-x',
