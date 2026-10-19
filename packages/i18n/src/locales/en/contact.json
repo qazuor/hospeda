@@ -72,7 +72,8 @@
         "typeReport": "Report a problem",
         "typePress": "Press & media",
         "typePartnerships": "Commercial partnerships",
-        "typeEventSubmission": "Submit an event"
+        "typeEventSubmission": "Submit an event",
+        "typeRevocation": "Withdrawal (revoke a purchase)"
     },
     "info": {
         "title": "Contact information",
