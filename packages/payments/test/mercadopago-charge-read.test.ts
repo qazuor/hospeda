@@ -35,7 +35,7 @@ function clonePayment(): Payment {
 }
 
 describe('TEST:1710:1 AC:1710:1 AC:1710:2 captured payment read', () => {
-    it('reads the captured real payment by id into the complete snapshot', async () => {
+    it('TEST:1710:1 AC:1710:1 AC:1710:2 reads the captured payment into the complete snapshot', async () => {
         const { adapter, paths } = adapterFor(clonePayment());
         const { snapshot } = await adapter.readCharge({ chargeId: '178164117729' });
         expect(paths).toEqual(['/v1/payments/178164117729']);
@@ -56,7 +56,7 @@ describe('TEST:1710:1 AC:1710:1 AC:1710:2 captured payment read', () => {
 });
 
 describe('TEST:1710:2 AC:1710:1 authorization-link variants', () => {
-    it('prefers metadata, accepts matching ids, rejects conflicting ids, and handles absent links', async () => {
+    it('TEST:1710:2 AC:1710:1 resolves metadata, interaction, conflict, and absent links', async () => {
         const metadata = clonePayment();
         metadata.metadata = { preapproval_id: '6b293a9499d946f6ac159da7f8f4804e' };
         metadata.point_of_interaction = { type: 'SUBSCRIPTIONS' };
@@ -109,7 +109,7 @@ describe('TEST:1710:2 AC:1710:1 authorization-link variants', () => {
 });
 
 describe('TEST:1710:3 AC:1710:2 refunded amount variants', () => {
-    it('maps full and partial refunds and fails closed only for money-moving statuses', async () => {
+    it('TEST:1710:3 AC:1710:2 maps refunds and fails closed for money-moving statuses', async () => {
         const full = clonePayment();
         Object.assign(full, {
             status: 'refunded',
