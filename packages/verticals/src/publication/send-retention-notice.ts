@@ -60,7 +60,7 @@ export async function sendRetentionNotice(args: {
             if (!listing) return { sent: false, reason: 'LISTING_NOT_FOUND' } as const;
             if (listing.ownerId !== args.ownerId)
                 return { sent: false, reason: 'STATE_CHANGED' } as const;
-            let transition: 'PB4' | 'PB5' | null = null;
+            let transition: 'PB4' | 'PB5' = 'PB4';
             let notice: 'BEFORE_ARCHIVE' | 'BEFORE_DELETION';
             switch (listing.publicationStatus) {
                 case Status.PUBLISHED:
@@ -107,7 +107,7 @@ export async function sendRetentionNotice(args: {
             let targetAt: Date;
             if (notice === 'BEFORE_ARCHIVE')
                 targetAt = archiveDueAt({
-                    transition: transition!,
+                    transition,
                     clockStart,
                     deadlines: listing.deadlines
                 });
@@ -146,7 +146,7 @@ export async function sendRetentionNotice(args: {
                           payload: buildListingRetentionBeforeArchivePayload({
                               vertical: args.vertical,
                               listingId: listing.id,
-                              transition: transition!,
+                              transition,
                               archiveAt: targetAt
                           })
                       })
