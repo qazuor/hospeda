@@ -67,3 +67,102 @@ describe('listing coverage listener', () => {
         stop();
     });
 });
+
+describe('TEST:1698:1 AC:1698:2 in-flight recalculations', () => {
+    function deferred<T>() {
+        let resolve!: (value: T) => void;
+        const promise = new Promise<T>((done) => {
+            resolve = done;
+        });
+        return { promise, resolve };
+    }
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.listener = undefined;
+        mocks.ports.mockReturnValue({ unitOfWork: {}, afterCommit: {}, billing: {}, clock: {} });
+    });
+
+    it('drains a pending recalculation', async () => {
+        const pending = deferred<void>();
+        mocks.recalculate.mockReturnValue(pending.promise);
+        const stop = subscribeListingCoverageRecalculation();
+        mocks.listener?.({ userId: 'u1', vertical: VerticalEnum.ACCOMMODATION });
+        let drained = false;
+        const drain = import('../../../src/utils/listing-publication/coverage-listener').then(
+            ({ drainListingCoverageRecalculations }) =>
+                drainListingCoverageRecalculations().then(() => {
+                    drained = true;
+                })
+        );
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(drained).toBe(false);
+        pending.resolve(undefined);
+        await drain;
+        expect(drained).toBe(true);
+        stop();
+    });
+
+    it('drains recalculations that start while waiting', async () => {
+        const first = deferred<void>();
+        const second = deferred<void>();
+        mocks.recalculate
+            .mockImplementationOnce(async () => {
+                await first.promise;
+                mocks.listener?.({ userId: 'u2', vertical: VerticalEnum.GASTRONOMY });
+                await second.promise;
+            })
+            .mockReturnValueOnce(second.promise);
+        const stop = subscribeListingCoverageRecalculation();
+        mocks.listener?.({ userId: 'u1', vertical: VerticalEnum.ACCOMMODATION });
+        const { drainListingCoverageRecalculations } = await import(
+            '../../../src/utils/listing-publication/coverage-listener'
+        );
+        let drained = false;
+        const drain = drainListingCoverageRecalculations().then(() => {
+            drained = true;
+        });
+        first.resolve(undefined);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(drained).toBe(false);
+        second.resolve(undefined);
+        await drain;
+        expect(drained).toBe(true);
+        expect(mocks.recalculate).toHaveBeenNthCalledWith(
+            1,
+            expect.objectContaining({ userId: 'u1' })
+        );
+        expect(mocks.recalculate).toHaveBeenNthCalledWith(
+            2,
+            expect.objectContaining({ userId: 'u2' })
+        );
+        stop();
+    });
+
+    it('resolves after a failed recalculation and logs it once', async () => {
+        mocks.recalculate.mockRejectedValueOnce(new Error('expected test failure'));
+        const stop = subscribeListingCoverageRecalculation();
+        mocks.listener?.({ userId: 'u1', vertical: VerticalEnum.ACCOMMODATION });
+        const { drainListingCoverageRecalculations } = await import(
+            '../../../src/utils/listing-publication/coverage-listener'
+        );
+        await expect(drainListingCoverageRecalculations()).resolves.toBeUndefined();
+        expect(mocks.error).toHaveBeenCalledTimes(1);
+        stop();
+    });
+
+    it('returns undefined while the recalculation remains pending', async () => {
+        const pending = deferred<void>();
+        mocks.recalculate.mockReturnValue(pending.promise);
+        const stop = subscribeListingCoverageRecalculation();
+        const result = mocks.listener?.({ userId: 'u1', vertical: VerticalEnum.ACCOMMODATION });
+        expect(result).toBe(undefined);
+        expect(mocks.recalculate).toHaveBeenCalledTimes(1);
+        pending.resolve(undefined);
+        const { drainListingCoverageRecalculations } = await import(
+            '../../../src/utils/listing-publication/coverage-listener'
+        );
+        await drainListingCoverageRecalculations();
+        stop();
+    });
+});
