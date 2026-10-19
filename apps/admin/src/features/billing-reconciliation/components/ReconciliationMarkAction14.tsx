@@ -3,6 +3,7 @@
  * Offers administrative action 14 for refund and unrecorded-charge marks.
  */
 
+import type { TranslationKey } from '@repo/i18n';
 import { PermissionEnum, type ReconciliationMarkListResponseSchema } from '@repo/schemas';
 import { useState } from 'react';
 import type { z } from 'zod';
