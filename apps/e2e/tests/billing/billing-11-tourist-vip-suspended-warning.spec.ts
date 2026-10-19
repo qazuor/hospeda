@@ -15,7 +15,7 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
 const userIds: string[] = [];
 
-test.describe('TEST:B13a:17 AC:B13a:16 suspended Tourist VIP checkout warning @billing', () => {
+test.describe('TEST:B13a:17 AC:B13a:16 suspended Tourist VIP checkout warning @p0 @billing', () => {
     test.afterAll(async () => cleanupTestUsers(getDbPool(), userIds));
 
     test('warns on return cancellation and marks a non-inheriting active plan unaffected', async ({
