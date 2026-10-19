@@ -2,6 +2,7 @@ import type { Target } from './cancel.ts';
 import { cancelTargets, verifyCancelled } from './cancel.ts';
 import type { WalkResult } from './census.ts';
 import { rereadAll, walkAll } from './census.ts';
+import { findProbePlanBindings } from './probe-plan-gate.ts';
 import { ProviderError } from './provider-api.ts';
 import type {
     CutoverFailure,
@@ -209,7 +210,14 @@ export async function runCutover({
             ...preapprovalsToCancel.map((t) => t.id)
         ].filter((id) => !knownSet.has(id) && !probeSet.has(id));
 
-        if (!dryRun) {
+        const probePlanFailures = findProbePlanBindings({
+            preapprovals,
+            probeIds: probeSet,
+            plansToCancel: plansToCancel.map(({ id }) => id)
+        });
+        failures.push(...probePlanFailures);
+
+        if (probePlanFailures.length === 0 && !dryRun) {
             checkpoint();
             const onSent = (target: Target): void => {
                 (target.kind === 'plan' ? sentPlanIds : sentPreapprovalIds).push(target.id);
