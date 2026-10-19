@@ -8,10 +8,21 @@ import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it } from 'vitest';
 import { MercadoPagoPaymentProvider } from '../src/adapters/mercadopago/mercadopago-payment-provider';
 
-type Json = Record<string, any>;
+type Json = {
+    readonly [key: string]: unknown;
+    results?: Json[];
+    paging?: { readonly [key: string]: unknown; total?: number };
+    id?: string | number;
+    payment?: Json | null;
+    date_created?: string;
+    expire_date?: string | null;
+    status?: number;
+};
 const load = (name: string) =>
     JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8')) as Json;
-const records = load('mercadopago-authorized-payments-renewals-2026-10-19.json');
+const records = load('mercadopago-authorized-payments-renewals-2026-10-19.json') as Json & {
+    results: Json[];
+};
 const rejected = load('mercadopago-renewal-payment-rejected-2026-10-19.json');
 const approved = load('mercadopago-renewal-payment-approved-2026-10-19.json');
 const refunded = load('mercadopago-recurring-payment-refunded-2026-10-19.json');
@@ -28,12 +39,18 @@ function adapterFor(payment: Json, chargeRecords: Json = records) {
             const url = new URL(String(input));
             paths.push(url.pathname);
             queries.push(url);
-            return new Response(
-                JSON.stringify(
-                    url.pathname === '/authorized_payments/search' ? chargeRecords : payment
-                ),
-                { status: 200, headers: { 'content-type': 'application/json' } }
-            );
+            const isChargeSearch = url.pathname === '/authorized_payments/search';
+            const incompleteNextPage =
+                url.searchParams.get('offset') === '10' && chargeRecords.paging?.total === 7;
+            const payload = incompleteNextPage
+                ? { results: [], paging: { offset: 10, limit: 10, total: 7 } }
+                : isChargeSearch
+                  ? chargeRecords
+                  : payment;
+            return new Response(JSON.stringify(payload), {
+                status: isChargeSearch && chargeRecords.status === 500 ? 500 : 200,
+                headers: { 'content-type': 'application/json' }
+            });
         }
     });
     return { adapter, paths, queries };
@@ -116,7 +133,7 @@ describe('TEST:1710:6 AC:1710:5-6 measured charge window reads', () => {
 describe('TEST:1710:7 AC:1710:5-6 boundary and failure variants', () => {
     it('TEST:1710:7 AC:1710:5 prioritizes a matching payment when its record date is later', async () => {
         const variant = structuredClone(records);
-        variant.results.find((r: Json) => r.id === 7032086953).date_created =
+        variant.results.find((r: Json) => r.id === 7032086953)!.date_created =
             '2026-09-19T20:01:55.000-04:00';
         expect(
             (await adapterFor(approved, variant).adapter.readCharge({ chargeId: '179941738878' }))
@@ -131,11 +148,11 @@ describe('TEST:1710:7 AC:1710:5-6 boundary and failure variants', () => {
                 .expiresAt
         ).toBeNull();
         const noExpiry = structuredClone(records);
-        delete noExpiry.results[0].expire_date;
+        delete noExpiry.results[0]!.expire_date;
         expect(
             (
                 await adapterFor(rejected, {
-                    results: [noExpiry.results[0]],
+                    results: [noExpiry.results[0]!],
                     paging: { total: 1 }
                 }).adapter.readCharge({ chargeId: String(rejected.id) })
             ).snapshot.expiresAt
@@ -180,10 +197,10 @@ describe('TEST:1710:7 AC:1710:5-6 boundary and failure variants', () => {
         duplicate.results.push(
             structuredClone(
                 duplicate.results.find((r: Json) => r.payment?.id === Number(rejected.id)) ??
-                    duplicate.results[0]
+                    duplicate.results[0]!
             )
         );
-        duplicate.results.at(-1).payment = { id: Number(rejected.id) };
+        duplicate.results.at(-1)!.payment = { id: Number(rejected.id) };
         duplicate.results.push({
             id: 998,
             date_created: '2026-09-20T20:01:40.000-04:00',
@@ -201,7 +218,7 @@ describe('TEST:1710:7 AC:1710:5-6 boundary and failure variants', () => {
         const incomplete = { results: records.results, paging: { offset: 0, limit: 10, total: 7 } };
         await fail(incomplete);
         const badExpiry = structuredClone(records);
-        badExpiry.results[0].expire_date = 'not-a-date';
-        await fail({ results: [badExpiry.results[0]], paging: { total: 1 } });
+        badExpiry.results[0]!.expire_date = 'not-a-date';
+        await fail({ results: [badExpiry.results[0]!], paging: { total: 1 } });
     });
 });
