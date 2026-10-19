@@ -15,6 +15,7 @@ export interface FakeObject {
     readonly kind: ObjectKind;
     readonly id: string;
     readonly status: string;
+    readonly planId?: string;
 }
 
 /** One seeded payment (the step-4b small payment). */
@@ -112,7 +113,12 @@ export function createFakeProvider({
             calls.push(`GET ${kind} ${id}`);
             const found = state.get(id);
             if (!found) throw new Error('not found');
-            return { kind, id, status: found.status };
+            return {
+                kind,
+                id,
+                status: found.status,
+                ...(kind === 'preapproval' ? { planId: found.planId ?? null } : {})
+            };
         },
         cancel: async ({ kind, id }): Promise<CancelCallResult> => {
             calls.push(`CANCEL ${kind} ${id}`);
