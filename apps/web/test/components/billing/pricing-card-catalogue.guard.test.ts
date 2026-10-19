@@ -46,18 +46,15 @@ function apiPlan(input: Partial<PublicPlanData> & Pick<PublicPlanData, 'slug'>):
         name: input.slug,
         description: '',
         category: 'owner',
+        vertical: 'accommodation',
         monthlyPriceArs: 1000,
         annualPriceArs: null,
-        monthlyPriceUsdRef: 1,
         hasTrial: false,
         trialDays: 0,
-        isDefault: false,
         sortOrder: 1,
         isActive: true,
         entitlements: [],
         limits: {},
-        createdAt: '',
-        updatedAt: '',
         ...input
     };
 }
@@ -76,20 +73,16 @@ describe('what reaches the pricing grid', () => {
         expect(filterPlansByCategory(plans, 'owner').map((p) => p.slug)).toEqual(['owner-basico']);
     });
 
-    it('drops the complex tier from the owner grid', () => {
-        // The complex plans are `category: 'complex'` AND inactive; either
-        // alone excludes them. Asserted so a future change to one of the two
-        // does not silently surface them on the owner pricing page.
+    it('keeps tourist plans out of accommodation pricing (AC:B13a:11)', () => {
         const plans = [
-            apiPlan({ slug: 'owner-basico', category: 'owner', sortOrder: 1 }),
-            apiPlan({ slug: 'complex-basico', category: 'complex', isActive: false, sortOrder: 2 }),
-            apiPlan({ slug: 'complex-pro', category: 'complex', isActive: true, sortOrder: 3 })
+            apiPlan({ slug: 'host-standard', vertical: 'accommodation', sortOrder: 1 }),
+            apiPlan({ slug: 'tourist-vip', category: 'tourist', vertical: 'tourist', sortOrder: 2 })
         ];
 
         const owner = filterPlansByCategory(plans, 'owner');
 
-        expect(owner.map((p) => p.slug)).toEqual(['owner-basico']);
-        expect(owner.some((p) => p.slug.startsWith('complex-'))).toBe(false);
+        expect(owner.map((plan) => plan.slug)).toEqual(['host-standard']);
+        expect(owner.some((plan) => plan.vertical === 'tourist')).toBe(false);
     });
 
     it('returns tiers ordered by sortOrder, which is what makes the delta cumulative', () => {

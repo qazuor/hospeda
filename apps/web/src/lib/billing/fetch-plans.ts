@@ -1,138 +1,174 @@
 /**
  * @file billing/fetch-plans.ts
- * @description Runtime helper for fetching active billing plans from the
- * public API endpoint. Replaces the build-time ALL_PLANS import so that
- * operator price edits are reflected without a redeploy (SPEC-168 D3, T-016).
- *
- * The public endpoint (`GET /api/v1/public/plans`) returns a ResponseFactory
- * envelope `{ success, data: [...] }` whose `data` array is backwards-compatible
- * with the previous ALL_PLANS config. We unwrap `data` and map it to a type that
- * PricingCardsGrid can consume without modification.
- *
- * NOTE: `limits` in the API response is `Record<string, number>` (key → value
- * pairs). `PlanDefinition.limits` in @repo/billing is `LimitDefinition[]`
- * (array of objects with key/value/name/description). Because PricingCardsGrid
- * never reads the `limits` field directly — it only uses entitlements for the
- * feature bullets — we model `limits` as `Record<string, number>` in the local
- * type and satisfy the component Props with a compatible override type defined
- * in this module (see `PublicPlanData`).
+ * @description Runtime reader for the current, sellable public plan catalog.
  */
 
 import type { PlanCategory } from '@repo/billing';
-import type { ProductDomainValue } from '@repo/schemas';
+import { PublicPlanCatalogResponseSchema, type PublicPlanCatalogVertical } from '@repo/schemas';
+import { z } from 'zod';
 import { getApiUrl } from '@/lib/env';
 
-/**
- * Shape of a single plan returned by `GET /api/v1/public/plans`.
- *
- * Mirrors the `PlanPublicSchema` defined in
- * `apps/api/src/routes/billing/public/listPlans.ts` (T-011).
- * `limits` is `Record<string, number>` in the API response (QZPay storage
- * format); `entitlements` is `string[]` (EntitlementKey values as strings).
- */
+/** Pricing card data mapped from the public sellable catalog. */
 export interface PublicPlanData {
     readonly id: string;
+    readonly planVersionId?: string;
+    readonly vertical: PublicPlanCatalogVertical;
     readonly slug: string;
     readonly name: string;
     readonly description: string;
     readonly category: PlanCategory;
     readonly monthlyPriceArs: number;
     readonly annualPriceArs: number | null;
-    readonly monthlyPriceUsdRef: number;
     readonly hasTrial: boolean;
     readonly trialDays: number;
-    readonly isDefault: boolean;
     readonly sortOrder: number;
     readonly isActive: boolean;
-    /** Entitlement keys as plain strings (compatible with EntitlementKey). */
     readonly entitlements: readonly string[];
-    /** Limits as a key → numeric-value map (QZPay storage format). */
     readonly limits: Readonly<Record<string, number>>;
-    readonly createdAt: string;
-    readonly updatedAt: string;
+    readonly billingOptions?: { readonly monthly: string; readonly annual: string | null };
 }
 
-/**
- * Result of `fetchPublicPlans`. Either a successful payload or a graceful
- * error that allows the pricing page to render an empty state.
- */
 export type FetchPlansResult =
     | { readonly ok: true; readonly plans: readonly PublicPlanData[] }
     | { readonly ok: false; readonly error: string };
 
-/**
- * Fetch all active billing plans from the public API endpoint at runtime.
- *
- * Used by the SSR pricing pages (`/suscriptores/planes/anfitriones/` and
- * `/suscriptores/planes/turistas/`) so that price changes made via the admin panel
- * are reflected without a site redeploy (SPEC-168 D3).
- *
- * @param params.domain - The product domain to scope the response to
- *   (HOS-685 widened `GET /api/v1/public/plans` to accept `?domain=`).
- *   Omitted entirely when absent, which the endpoint defaults to
- *   `'accommodation'` — the byte-for-byte behaviour every existing caller
- *   still gets. Pass `'gastronomy'` / `'experience'` to fetch a gastronomy/experience
- *   vertical's plan instead (HOS-690).
- *
- * The function never throws; network or parse errors are returned as
- * `{ ok: false, error }` so callers can degrade gracefully (empty state).
- *
- * @returns A result object with `ok: true, plans` on success, or
- *   `ok: false, error` when the API is unreachable or returns a non-OK status.
- */
-export async function fetchPublicPlans(
-    params: { readonly domain?: ProductDomainValue } = {}
-): Promise<FetchPlansResult> {
-    const { domain } = params;
-    const url = domain
-        ? `${getApiUrl()}/api/v1/public/plans?domain=${encodeURIComponent(domain)}`
-        : `${getApiUrl()}/api/v1/public/plans`;
-    try {
-        const response = await fetch(url, {
-            headers: { Accept: 'application/json' }
-            // No credentials needed — this is a public, unauthenticated endpoint.
-        });
+const CATEGORY_BY_VERTICAL: Record<PublicPlanCatalogVertical, PlanCategory> = {
+    accommodation: 'owner',
+    tourist: 'tourist',
+    gastronomy: 'owner',
+    experience: 'owner'
+};
 
-        if (!response.ok) {
-            return {
-                ok: false,
-                error: `Public plans endpoint returned HTTP ${response.status}`
-            };
-        }
+/** Named predicate shared by sellable plan cards and the free floor card. */
+function hasTrialDays(days: number): boolean {
+    return days > 0;
+}
 
-        const body: unknown = await response.json();
+/** Map a catalog plan when it has a monthly billing choice. */
+function mapSellablePlan(
+    plan: {
+        planId: string;
+        planVersionId: string;
+        slug: string;
+        name: string;
+        description: string | null;
+        pricingOrder: number;
+        rank: number;
+        trialDays: number;
+        entitlements: string[];
+        limits: Record<string, number>;
+        billingOptions: { id: string; cycle: string; amount: number }[];
+    },
+    vertical: PublicPlanCatalogVertical
+): PublicPlanData | null {
+    const monthly = plan.billingOptions.find((option) => option.cycle === 'monthly');
+    if (!monthly) return null;
+    const annual = plan.billingOptions.find((option) => option.cycle === 'annual');
+    return {
+        id: plan.planId,
+        planVersionId: plan.planVersionId,
+        vertical,
+        slug: plan.slug,
+        name: plan.name,
+        description: plan.description ?? '',
+        category: CATEGORY_BY_VERTICAL[vertical],
+        monthlyPriceArs: monthly.amount,
+        annualPriceArs: annual?.amount ?? null,
+        hasTrial: hasTrialDays(plan.trialDays),
+        trialDays: plan.trialDays,
+        sortOrder: plan.pricingOrder,
+        isActive: true,
+        entitlements: plan.entitlements,
+        limits: plan.limits,
+        billingOptions: { monthly: monthly.id, annual: annual?.id ?? null }
+    };
+}
 
-        // The public endpoint wraps its payload via ResponseFactory:
-        // `{ success: true, data: [...] }`. Accept the wrapped shape and, as a
-        // fallback, a bare array.
-        const plans = Array.isArray(body) ? body : (body as { data?: unknown } | null)?.data;
+export const FREE_TIER_CARD_SLUG: Partial<Record<PublicPlanCatalogVertical, string>> = {
+    tourist: 'tourist-free'
+};
 
-        if (!Array.isArray(plans)) {
-            return { ok: false, error: 'Unexpected response shape: expected { data: [...] }' };
-        }
-
-        return { ok: true, plans: plans as readonly PublicPlanData[] };
-    } catch (err) {
-        const message = err instanceof Error ? err.message : 'Network error';
-        return { ok: false, error: message };
-    }
+function mapFloor(
+    floor: {
+        planId: string;
+        slug: string;
+        name: string;
+        description: string | null;
+        pricingOrder: number;
+        rank: number;
+        trialDays: number;
+        entitlements: string[];
+        limits: Record<string, number>;
+    },
+    vertical: PublicPlanCatalogVertical
+): PublicPlanData | null {
+    const slug = FREE_TIER_CARD_SLUG[vertical];
+    if (!slug) return null;
+    return {
+        id: floor.planId,
+        vertical,
+        slug,
+        name: floor.name,
+        description: floor.description ?? '',
+        category: CATEGORY_BY_VERTICAL[vertical],
+        monthlyPriceArs: 0,
+        annualPriceArs: null,
+        hasTrial: false,
+        trialDays: 0,
+        sortOrder: Number.NEGATIVE_INFINITY,
+        isActive: true,
+        entitlements: floor.entitlements,
+        limits: floor.limits
+    };
 }
 
 /**
- * Filter and sort a raw plan list for a given category, keeping only active
- * plans ordered by `sortOrder` ascending. Mirrors the filtering that the old
- * `ALL_PLANS`-based pages applied at build time.
- *
- * @param plans - Full plan list returned by the endpoint.
- * @param category - Target category to filter on (`owner`, `tourist`, etc.).
- * @returns Active plans for the given category, sorted by `sortOrder`.
+ * Read one vertical's current, sellable catalog. Plans without a monthly
+ * billing option are omitted because the pricing surface cannot sell them.
+ * This reader never throws; transport, envelope, and schema failures degrade
+ * to `ok: false`.
  */
+export async function fetchPublicPlans({
+    vertical
+}: {
+    readonly vertical: PublicPlanCatalogVertical;
+}): Promise<FetchPlansResult> {
+    const url = `${getApiUrl()}/api/v1/public/plan-catalog?vertical=${encodeURIComponent(vertical)}`;
+    try {
+        const response = await fetch(url, { headers: { Accept: 'application/json' } });
+        if (!response.ok) {
+            return { ok: false, error: `Public plan catalog returned HTTP ${response.status}` };
+        }
+        const envelope = z
+            .object({ success: z.literal(true), data: z.unknown() })
+            .safeParse(await response.json());
+        if (!envelope.success) {
+            return { ok: false, error: 'Unexpected public plan catalog response envelope' };
+        }
+        const parsed = PublicPlanCatalogResponseSchema.safeParse(envelope.data.data);
+        if (!parsed.success || parsed.data.vertical !== vertical) {
+            return { ok: false, error: 'Invalid public plan catalog response' };
+        }
+
+        const plans = parsed.data.plans
+            .slice()
+            .sort((left, right) => left.pricingOrder - right.pricingOrder || left.rank - right.rank)
+            .map((plan) => mapSellablePlan(plan, vertical))
+            .filter((plan): plan is PublicPlanData => plan !== null);
+        const floor = parsed.data.floor ? mapFloor(parsed.data.floor, vertical) : null;
+        return { ok: true, plans: floor ? [floor, ...plans] : plans };
+    } catch (error) {
+        return { ok: false, error: error instanceof Error ? error.message : 'Network error' };
+    }
+}
+
+/** Keep remaining category-based comparison consumers active-only and ordered. */
 export function filterPlansByCategory(
     plans: readonly PublicPlanData[],
     category: PlanCategory
 ): readonly PublicPlanData[] {
     return plans
-        .filter((plan) => plan.category === category && plan.isActive)
+        .filter((plan) => plan.isActive && plan.category === category)
         .slice()
-        .sort((a, b) => a.sortOrder - b.sortOrder);
+        .sort((left, right) => left.sortOrder - right.sortOrder);
 }

@@ -152,6 +152,7 @@ import {
     publicPartnersRoutes
 } from './partners';
 import { adminPlanCatalogRoutes } from './plan-catalog/admin/index.js';
+import { publicPlanCatalogRoutes } from './plan-catalog/public/index.js';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
 // POI category catalog: admin list/search (HOS-144 NG-1) + public catalog (HOS-147)
@@ -401,6 +402,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Owner promotions (SPEC-285 — tourist-facing read-only display)
         // Unregistered until SPEC-285 wired the public path. Requires no auth.
         app.route('/api/v1/public/owner-promotions', publicOwnerPromotionRoutes);
+        app.route('/api/v1/public/plan-catalog', publicPlanCatalogRoutes);
 
         // Cross-entity view tracking capture (SPEC-159 T-008)
         // Fire-and-forget; always 202. No auth required.

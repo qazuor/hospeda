@@ -19,8 +19,6 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { buildListingStartUrl } from '../../src/lib/listing/start-url';
-
 const SRC_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../src');
 
 /** The four pricing pages, by audience. */
@@ -32,7 +30,7 @@ const PRICING_PAGES = {
 } as const;
 
 /** The two whose CTA links out instead of charging (F-1 / D-1). */
-const LINK_AUDIENCES = ['gastronomy', 'experience'] as const;
+const SHARED_SUBSCRIBE_AUDIENCES = ['gastronomy', 'experience'] as const;
 
 /** The two whose card CTA is the (future) in-page checkout (F-1). */
 const CHECKOUT_AUDIENCES = ['owner', 'tourist'] as const;
@@ -61,49 +59,23 @@ describe('HOS-1233 — every pricing page renders the shared sections', () => {
     });
 });
 
-describe('HOS-1233 T-026 / AC-12 — the two link pages still link to signup → create form', () => {
-    it('gastronomia and experiencias point at their own vertical create form', () => {
-        // The real builder, not a copy of its output: this asserts the href a
-        // visitor actually gets, through the function the page calls.
-        expect(buildListingStartUrl({ locale: 'es', vertical: 'gastronomy' })).toBe(
-            '/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fgastronomia%2F'
+describe('AC:B13a:10/11 — gastronomy and experience use the shared subscribe action', () => {
+    it('both declare checkout and retain the subscribe banner', () => {
+        for (const audience of SHARED_SUBSCRIBE_AUDIENCES) {
+            expect(readSrc(PRICING_PAGES[audience]), audience).toContain('ctaMode="checkout"');
+        }
+        const grid = readSrc('components/billing/PricingCardsGrid.astro');
+        expect(grid).toContain('<SubscribeButton client:idle');
+        expect(grid).toContain('<PlanCardCta client:idle');
+    });
+
+    it('all four pricing pages render checkout, explicitly or through the shared default', () => {
+        for (const audience of SHARED_SUBSCRIBE_AUDIENCES)
+            expect(readSrc(PRICING_PAGES[audience])).toContain('ctaMode="checkout"');
+        for (const audience of CHECKOUT_AUDIENCES)
+            expect(readSrc(PRICING_PAGES[audience])).toContain('<AudiencePricingSections');
+        expect(readSrc('components/billing/AudiencePricingSections.astro')).toContain(
+            "ctaMode = 'checkout'"
         );
-        expect(buildListingStartUrl({ locale: 'es', vertical: 'experience' })).toBe(
-            '/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fexperiencias%2F'
-        );
-
-        for (const [audience, vertical] of [
-            ['gastronomy', 'gastronomy'],
-            ['experience', 'experience']
-        ] as const) {
-            const source = readSrc(PRICING_PAGES[audience]);
-            expect(source, audience).toContain(
-                `buildListingStartUrl({ locale, vertical: '${vertical}' })`
-            );
-            expect(source, audience).toContain('ctaHref={ctaHref}');
-        }
-    });
-
-    it('both declare ctaMode="link"', () => {
-        for (const audience of LINK_AUDIENCES) {
-            expect(readSrc(PRICING_PAGES[audience]), audience).toContain('ctaMode="link"');
-        }
-    });
-
-    it('no checkout path was added to any of them', () => {
-        // The positive sibling of this negative is the test above: the same
-        // literal is asserted PRESENT on both, so a typo here cannot pass.
-        for (const audience of LINK_AUDIENCES) {
-            const source = readSrc(PRICING_PAGES[audience]);
-            expect(source, audience).not.toContain('ctaMode="checkout"');
-        }
-    });
-
-    it('the two checkout pages declare no link mode — the sibling of the above', () => {
-        for (const audience of CHECKOUT_AUDIENCES) {
-            const source = readSrc(PRICING_PAGES[audience]);
-            expect(source, audience).not.toContain('ctaMode="link"');
-            expect(source, audience).not.toContain('ctaHref=');
-        }
     });
 });

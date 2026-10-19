@@ -11,6 +11,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { formatDateWithTime } from '@/lib/format-helpers';
 import { useReconciliationMarks } from '../hooks/useReconciliationMarks';
 import { LiftReconciliationMarkAction } from './LiftReconciliationMarkAction';
+import { ReconciliationMarkAction14 } from './ReconciliationMarkAction14';
 
 type Mark = z.infer<typeof ReconciliationMarkListResponseSchema>['items'][number];
 const PAGE_SIZE = 50;
@@ -168,6 +169,7 @@ function MarkArticle({
                     {t('admin-billing.reconciliationMarks.eventLink')}
                 </a>
             )}
+            <ReconciliationMarkAction14 mark={mark} />
             <LiftReconciliationMarkAction
                 mark={mark}
                 locale={locale}

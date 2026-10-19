@@ -662,3 +662,11 @@ request before writing `owner_reported_fixed_at`.
 A repeat answers 200 with the instant of the first report and rewrites
 nothing. The report writes no domain event, does not close the request and
 does not move `inactive_since`.
+
+## Public sellable plan catalog (B13a.5, HOS-1621)
+
+`GET /api/v1/public/plan-catalog?vertical=` does not require a session. A `vertical` outside `accommodation | gastronomy | experience | tourist` is a shape-validation 400. The route has no business rejections and reads only `current AND sellable` plan versions in its `plans` list (AC:B13a:11).
+
+## Pricing situation (B13a.5, HOS-1621)
+
+`GET /api/v1/protected/billing-subscription/pricing-situation/{vertical}` requires a session and returns 401 without one. A `vertical` outside `accommodation | gastronomy | experience | tourist` is a shape-validation 400. It has no business rejections: it reads the same tourist VIP inheritance and live commitment gates as S1, and the same publication destination as PB1, without making a purchase decision. Its `TOURIST_VIP_INHERITED` and live commitment results mirror the S1 rejections `TOURIST_VIP_INHERITED` and `COMMITMENT_TAKEN` (AC:B13a:12).

@@ -41,18 +41,15 @@ const makePlan = (
     name: overrides.slug,
     description: '',
     category: 'owner',
+    vertical: 'accommodation',
     monthlyPriceArs: 1000,
     annualPriceArs: null,
-    monthlyPriceUsdRef: 1,
     hasTrial: true,
     trialDays: 14,
-    isDefault: false,
     sortOrder: 0,
     isActive: true,
     entitlements: [],
     limits: {},
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
     ...overrides
 });
 
@@ -134,7 +131,14 @@ describe('computeMinimumTrialDays', () => {
         // partner plans, none of which are the `owner` category this function
         // used to be hardwired to. Narrowing here would make it unusable for
         // four of the five audiences.
-        const plans = [makePlan({ slug: 'tourist-vip', category: 'tourist', trialDays: 45 })];
+        const plans = [
+            makePlan({
+                slug: 'tourist-vip',
+                category: 'tourist',
+                vertical: 'tourist',
+                trialDays: 45
+            })
+        ];
 
         expect(computeMinimumTrialDays({ plans })).toBe(45);
     });

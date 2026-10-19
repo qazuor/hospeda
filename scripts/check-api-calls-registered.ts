@@ -30,12 +30,6 @@ const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const WILDCARD = '${*}';
 export const KNOWN_UNREGISTERED_CALLS: readonly KnownCall[] = [
     {
-        file: 'apps/web/src/lib/billing/fetch-plans.ts',
-        route: '/api/v1/public/plans',
-        owner: 'HOS-1621 B13a.5',
-        reason: 'New pricing reader is owned by B13a.5.'
-    },
-    {
         file: 'apps/admin/src/components/entity-form/fields/entity-selects/utils/post-sponsorship-api.utils.ts',
         route: '/api/v1/admin/post-sponsorships',
         owner: 'unknown',

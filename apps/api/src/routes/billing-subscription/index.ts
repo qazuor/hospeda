@@ -22,6 +22,7 @@ import {
     protectedCancellationPreviewRoute,
     protectedCancelSubscriptionRoute
 } from './cancellation';
+import { protectedPricingSituationRoute } from './pricing-situation';
 import { protectedReadSubscriptionRoute } from './read';
 import { protectedReadOwnSubscriptionsRoute } from './read-mine';
 import { readSignupNotice } from './read-signup-notice';
@@ -129,6 +130,7 @@ router.route('/', protectedSignupNoticeRoute);
 export const protectedBillingSubscriptionRoutes = router;
 
 const readRouter = createRouter();
+readRouter.route('/', protectedPricingSituationRoute);
 readRouter.route('/', protectedReadOwnSubscriptionsRoute);
 readRouter.route('/', protectedReadSubscriptionRoute);
 readRouter.route('/', protectedCancellationPreviewRoute);
