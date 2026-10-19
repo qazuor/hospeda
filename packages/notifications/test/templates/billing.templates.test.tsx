@@ -10,7 +10,6 @@
  * @module test/templates/billing.templates.test
  */
 
-import { asMajor } from '@repo/billing';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import {
@@ -33,6 +32,7 @@ import {
     RenewalReminder,
     type RenewalReminderProps
 } from '../../src/templates/billing/renewal-reminder';
+import { asMajor } from '../../src/types/money.js';
 
 describe('Billing Email Templates', () => {
     describe('PaymentSuccess', () => {

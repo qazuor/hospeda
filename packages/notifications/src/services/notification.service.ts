@@ -1,4 +1,3 @@
-import { asMajor } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { notificationLog } from '@repo/db';
 import type { ILogger } from '@repo/logger';
@@ -55,6 +54,7 @@ import {
 import { formatDate } from '../templates/utils/index.js';
 import type { EmailTransport } from '../transports/email/email-transport.interface.js';
 import type { DeliveryResult, DeliveryStatus } from '../types/delivery.types.js';
+import { asMajor } from '../types/money.js';
 import type {
     AccommodationCalendarFeedBrokenPayload,
     AdminLeadReceivedPayload,

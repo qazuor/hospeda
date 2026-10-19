@@ -1,5 +1,8 @@
 import { Text } from '@react-email/components';
-import type { SignupDeclinedCause, SignupDeclinedRetry } from '@repo/billing';
+import type {
+    SignupDeclinedCause,
+    SignupDeclinedRetry
+} from '../../services/outbox/signup-declined-reason.js';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
