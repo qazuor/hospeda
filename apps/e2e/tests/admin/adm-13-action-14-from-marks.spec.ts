@@ -37,13 +37,14 @@ async function findMarkOnAnyPage(page: Page, markId: string) {
 
 test.describe('TEST:B13a:10 admin action 14 on marks 18 and 19 @p0 @admin', () => {
     test.afterAll(async () => {
-        if (ownedRefunds.length)
-            await execSQL('DELETE FROM refund WHERE id = ANY($1::uuid[])', [ownedRefunds]);
+        // Hung payments first: since HOS-1697 the settlement writes their refund_id.
         if (ownedMarks.length)
             await execSQL(
                 'DELETE FROM reconciliation_mark_payment WHERE mark_id = ANY($1::uuid[])',
                 [ownedMarks]
             );
+        if (ownedRefunds.length)
+            await execSQL('DELETE FROM refund WHERE id = ANY($1::uuid[])', [ownedRefunds]);
         if (ownedMarks.length)
             await execSQL('DELETE FROM reconciliation_mark WHERE id = ANY($1::uuid[])', [
                 ownedMarks
