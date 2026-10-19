@@ -32,6 +32,7 @@ const segments: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const createdOwners: string[] = [];
+const createdListings: string[] = [];
 
 async function owner(): Promise<string> {
     const created = await createOwner();
@@ -44,15 +45,24 @@ async function publishedListing(vertical: Vertical, ownerId: string) {
     const status = PublicationStatusEnum.PUBLISHED;
     switch (vertical) {
         case VerticalEnum.ACCOMMODATION:
-            return createListing({ ownerId, destinationId, status, complete: false });
+            return trackListing(
+                await createListing({ ownerId, destinationId, status, complete: false })
+            );
         case VerticalEnum.GASTRONOMY:
         case VerticalEnum.EXPERIENCE:
-            return createVerticalListing({ vertical, ownerId, destinationId, status });
+            return trackListing(
+                await createVerticalListing({ vertical, ownerId, destinationId, status })
+            );
         default: {
             const exhaustive: never = vertical;
             throw new Error(`Unsupported vertical ${String(exhaustive)}`);
         }
     }
+}
+
+function trackListing(id: string): string {
+    createdListings.push(id);
+    return id;
 }
 
 async function requestFix(vertical: Vertical, id: string) {
@@ -125,6 +135,12 @@ beforeAll(async () => {
     validateApiEnv();
 });
 afterEach(async () => {
+    const listingIds = createdListings.splice(0);
+    if (listingIds.length > 0) {
+        await getDb().execute(
+            sql`DELETE FROM email_outbox WHERE template = 'verticals.listing-fix-reported' AND payload->>'listingId' = ANY(${sql.param(listingIds)}::text[])`
+        );
+    }
     const ids = createdOwners.splice(0);
     if (ids.length === 0) return;
     const list = sql.param(ids);
