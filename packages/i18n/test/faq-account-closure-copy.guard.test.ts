@@ -67,7 +67,7 @@ function findFalsePromises({
     return [...foundPhrases, ...foundDayCounts];
 }
 
-describe('HOS-1699 account-closure FAQ copy guard', () => {
+describe('TEST:1699:1 AC:1699:2 / TEST:1699:2 AC:1699:1 AC:1699:2 AC:1699:3 account-closure FAQ copy guard', () => {
     for (const row of ROWS) {
         it(`TEST:1699:1 AC:1699:2 the deleteAccount answer names the support mailbox the Contact page shows (${row.locale})`, () => {
             expect(row.answer).toContain(row.email);
