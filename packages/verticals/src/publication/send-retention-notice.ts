@@ -19,7 +19,7 @@ import {
     retentionNoticeTargetDay
 } from './retention-notices';
 
-/** AC:V9b:10; retention row of outbox §6; D1 excludes owner acts for archive; H7 sends late notices. */
+/** AC:V9b:10; retention row of outbox §6; both pre-notices count V9a owner acts like their reader (HOS-1694); H7 sends late notices. */
 export type SendRetentionNoticeResult =
     | {
           readonly sent: true;
@@ -60,7 +60,7 @@ export async function sendRetentionNotice(args: {
             if (!listing) return { sent: false, reason: 'LISTING_NOT_FOUND' } as const;
             if (listing.ownerId !== args.ownerId)
                 return { sent: false, reason: 'STATE_CHANGED' } as const;
-            let transition: 'PB4' | 'PB5' | null = null;
+            let transition: 'PB4' | 'PB5' = 'PB4';
             let notice: 'BEFORE_ARCHIVE' | 'BEFORE_DELETION';
             switch (listing.publicationStatus) {
                 case Status.PUBLISHED:
@@ -93,24 +93,27 @@ export async function sendRetentionNotice(args: {
                 vertical: args.vertical
             });
             if (coverage.covered) return { sent: false, reason: 'COVERED' } as const;
-            const clockStart = retentionClockStart({
-                inactiveSince: listing.inactiveSince,
-                pauseEndedAt: pause.pauseEndedAt
+            const lastOwnerActAt = await tx.readLastOwnerActAt({
+                vertical: args.vertical,
+                listingId: listing.id
+            });
+            const clockStart = inactivityClockStart({
+                clockStart: retentionClockStart({
+                    inactiveSince: listing.inactiveSince,
+                    pauseEndedAt: pause.pauseEndedAt
+                }),
+                lastOwnerActAt
             });
             let targetAt: Date;
             if (notice === 'BEFORE_ARCHIVE')
                 targetAt = archiveDueAt({
-                    transition: transition!,
+                    transition,
                     clockStart,
                     deadlines: listing.deadlines
                 });
             else {
-                const lastOwnerActAt = await tx.readLastOwnerActAt({
-                    vertical: args.vertical,
-                    listingId: listing.id
-                });
                 targetAt = purgeDueAt({
-                    clockStart: inactivityClockStart({ clockStart, lastOwnerActAt }),
+                    clockStart,
                     coverageLostAt: pause.coverageLostAt,
                     deletionAfterDays: listing.deadlines.deletionAfterDays,
                     deletionAnnouncedAt: listing.deletionAnnouncedAt
@@ -143,7 +146,7 @@ export async function sendRetentionNotice(args: {
                           payload: buildListingRetentionBeforeArchivePayload({
                               vertical: args.vertical,
                               listingId: listing.id,
-                              transition: transition!,
+                              transition,
                               archiveAt: targetAt
                           })
                       })
