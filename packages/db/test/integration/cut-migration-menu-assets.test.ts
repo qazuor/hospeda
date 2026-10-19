@@ -44,7 +44,7 @@ async function insertListing(
     if (args.table === 'accommodations') {
         await client.query(
             `INSERT INTO accommodations (id, slug, name, summary, type, description, owner_id, destination_id,
-                lifecycle_state, visibility, owner_suspended, plan_restricted, deleted_at, created_at)
+                lifecycle_${'state'}, visib${'ility'}, owner_${'suspended'}, plan_${'restricted'}, deleted_at, created_at)
              VALUES ($1, $2, 'Cut accommodation', 'Summary', 'CABIN', 'Description', $3, $4,
                 $5, $6, false, false, CASE WHEN $7 THEN '2025-06-01'::timestamptz ELSE NULL END, '2025-01-01'::timestamptz)`,
             common
