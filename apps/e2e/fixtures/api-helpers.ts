@@ -430,30 +430,6 @@ export async function makeTouristVip(userId: string): Promise<void> {
 }
 
 /**
- * Checks whether the current bootstrap coverage reader still denies the
- * Tourist VIP collection gate after `makeTouristVip` seeded a subscription.
- * This read-only probe is used to conditionally defer the affected E2E specs
- * until HOS-1352 wires subscriptions into coverage; remove it with HOS-1665.
- */
-export async function touristVipNotYetGranted(
-    user: Pick<CreatedUser, 'sessionCookie'>,
-    config?: ApiHelperConfig
-): Promise<boolean> {
-    const { apiBaseUrl } = resolveBaseUrls(config);
-    const response = await fetch(`${apiBaseUrl}/api/v1/protected/user-bookmark-collections`, {
-        headers: { cookie: user.sessionCookie }
-    });
-    if (response.status !== 403) return false;
-
-    try {
-        const body = (await response.json()) as { error?: { code?: string } };
-        return body.error?.code === 'ENTITLEMENT_REQUIRED';
-    } catch {
-        return false;
-    }
-}
-
-/**
  * Forces the user's set of hats to be exactly `{USER, role}` in `user_role`.
  *
  * Bypasses any business rule that would normally produce the hat (host

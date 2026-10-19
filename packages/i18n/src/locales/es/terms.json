@@ -109,5 +109,16 @@
     "page": {
         "title": "Términos y Condiciones",
         "description": "Términos y condiciones de uso de la plataforma Hospeda"
+    },
+    "withdrawal": {
+        "title": "Botón de arrepentimiento",
+        "description": "Cómo revocar la contratación de una suscripción de Hospeda dentro de los 10 días corridos desde el cobro.",
+        "intro": "Si contrataste una suscripción en Hospeda, podés revocar la contratación dentro de los 10 días corridos desde el día del cobro que querés revocar (Resolución 424/2020).",
+        "effects": "Cuando registramos tu pedido, la suscripción se cancela, el servicio se corta en ese momento y pedimos la devolución del total de ese cobro.",
+        "howTo": "Mandanos el pedido con el formulario de contacto: no hace falta iniciar sesión. Indicá el email de tu cuenta de Hospeda.",
+        "cta": "Pedir la revocación",
+        "mailAlternative": "También podés escribirnos a {{email}}.",
+        "mailSubject": "Revocación de compra (botón de arrepentimiento)",
+        "messageTemplate": "Quiero revocar la contratación de mi suscripción (botón de arrepentimiento). Email de mi cuenta:"
     }
 }

@@ -56,6 +56,35 @@ describe('POST /api/v1/public/contact (T-033)', () => {
         loggerInfo.mockClear();
     });
 
+    describe('TEST:1700:5 AC:1700:2 public revocation requests', () => {
+        it('accepts an unauthenticated request and logs its named contactType', async () => {
+            const res = await app.request(URL, {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'user-agent': 'vitest',
+                    accept: 'application/json'
+                },
+                body: JSON.stringify({ ...VALID_BODY, type: 'revocation' })
+            });
+
+            expect(res.status).toBe(200);
+            const receivedCall = loggerInfo.mock.calls.find(
+                (call) => call[1] === 'Contact form submission received'
+            );
+            expect(receivedCall).toBeDefined();
+            expect(receivedCall?.[0]).toEqual(
+                expect.objectContaining({ contactType: 'revocation' })
+            );
+        });
+
+        it('uses the exact support inbox label', () => {
+            expect(CONTACT_TYPE_LABELS.revocation).toBe(
+                'Revocación de compra (botón de arrepentimiento)'
+            );
+        });
+    });
+
     // ----------------------------------------------------------------------
     // Happy path
     // ----------------------------------------------------------------------

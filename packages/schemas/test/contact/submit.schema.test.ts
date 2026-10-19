@@ -277,8 +277,14 @@ describe('ContactSubmitSchema', () => {
                 ...PRE_EXISTING_TYPES
             ]);
             expect(ContactTypeEnumSchema.options.slice(PRE_EXISTING_TYPES.length)).toEqual([
-                ...CONTRIBUTION_TYPES
+                ...CONTRIBUTION_TYPES,
+                'revocation'
             ]);
+        });
+
+        it('TEST:1700:4 AC:1700:2 accepts the revocation contact type', () => {
+            const result = ContactSubmitSchema.safeParse({ ...VALID_GENERAL, type: 'revocation' });
+            expect(result.success).toBe(true);
         });
     });
 

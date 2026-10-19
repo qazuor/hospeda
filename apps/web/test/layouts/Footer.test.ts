@@ -241,6 +241,13 @@ describe('Footer.astro', () => {
             expect(src).toContain('/legal/cookies/');
         });
 
+        it('TEST:1700:1 AC:1700:1 renders the withdrawal link in the legal row', () => {
+            const legalLinksBlock = src.match(/const legalLinks = \[[\s\S]*?\] as const;/)?.[0];
+            expect(legalLinksBlock).toBeDefined();
+            expect(legalLinksBlock).toContain('/legal/arrepentimiento/');
+            expect(legalLinksBlock).toMatch(/label:\s*t\("footer\.withdrawal"\),/);
+        });
+
         it('renders the cookie preferences button', () => {
             expect(src).toContain('data-cookie-consent-reopen');
         });
