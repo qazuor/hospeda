@@ -2,21 +2,16 @@ import { z } from 'zod';
 import type { ChargeSnapshot } from '../../provider/payment-provider';
 import { readMercadoPagoChargeWindow } from './mercadopago-charge-window';
 import { type MercadoPagoSend, parseResponse, providerError } from './mercadopago-http';
+import {
+    MercadoPagoPaymentLinkFieldsSchema,
+    readMercadoPagoAuthorizationLink
+} from './mercadopago-payment-link';
 
 const ReadChargeResponseSchema = z.object({
     id: z.union([z.string(), z.number()]).transform(String),
     date_created: z.string().datetime({ offset: true }),
     external_reference: z.string().nullable().optional(),
-    metadata: z.object({ preapproval_id: z.unknown().optional() }).nullable().optional(),
-    point_of_interaction: z
-        .object({
-            transaction_data: z
-                .object({ subscription_id: z.unknown().optional() })
-                .nullable()
-                .optional()
-        })
-        .nullable()
-        .optional(),
+    ...MercadoPagoPaymentLinkFieldsSchema.shape,
     status: z.enum(['pending', 'in_process', 'approved', 'rejected', 'refunded', 'charged_back']),
     status_detail: z.string().nullable().optional(),
     transaction_amount: z.number().nonnegative(),
@@ -34,24 +29,6 @@ function toChargeStatus({
     return status;
 }
 
-function nonEmptyString(value: unknown): string | null {
-    return typeof value === 'string' && value.length > 0 ? value : null;
-}
-
-function readAuthorizationLink(parsed: z.infer<typeof ReadChargeResponseSchema>): string | null {
-    const metadataId = nonEmptyString(parsed.metadata?.preapproval_id);
-    const interactionId = nonEmptyString(
-        parsed.point_of_interaction?.transaction_data?.subscription_id
-    );
-    if (metadataId !== null && interactionId !== null && metadataId !== interactionId)
-        throw providerError(
-            'UNAVAILABLE',
-            'read',
-            'Mercado Pago returned conflicting authorization links'
-        );
-    return metadataId ?? interactionId;
-}
-
 /** Reads a Mercado Pago payment by id into the domain charge snapshot. */
 export async function readMercadoPagoCharge(args: {
     readonly chargeId: string;
@@ -63,7 +40,7 @@ export async function readMercadoPagoCharge(args: {
         method: 'GET'
     });
     const parsed = await parseResponse(ReadChargeResponseSchema, response, 'read');
-    const authorizationId = readAuthorizationLink(parsed);
+    const authorizationId = readMercadoPagoAuthorizationLink(parsed);
     const status = toChargeStatus({ status: parsed.status });
     const refundedAmount = parsed.transaction_amount_refunded;
     if (
