@@ -19,7 +19,7 @@
     "expiration_month": null,
     "expiration_year": null,
     "first_six_digits": "<redactado>",
-    "id": "9630614559",
+    "id": "<redactado>",
     "last_four_digits": "<redactado>",
     "tags": [
       "credit"
@@ -220,7 +220,7 @@
       "refund_mode": "standard",
       "request_id": "ce958812-61f3-42fd-af98-f364b94a0685",
       "source": {
-        "id": "3497516165",
+        "id": "<redactado>",
         "name": "<redactado>",
         "type": "collector"
       },
@@ -232,7 +232,7 @@
   "release_info": null,
   "shipping_amount": 0,
   "sponsor_id": null,
-  "statement_descriptor": "MERPAGO*LEANDROMARTINASRI",
+  "statement_descriptor": "<redactado>",
   "status": "refunded",
   "status_detail": "refunded",
   "store_id": null,
