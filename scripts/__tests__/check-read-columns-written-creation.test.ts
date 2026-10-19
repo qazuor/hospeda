@@ -93,17 +93,23 @@ function tempTree(): string {
     return root;
 }
 
-function read(root: string): TransitionCorpus {
+function read({ root }: { readonly root: string }): TransitionCorpus {
     return JSON.parse(readFileSync(path.join(root, CORPUS_PATH), 'utf8')) as TransitionCorpus;
 }
 
-function save(root: string, corpus: TransitionCorpus): void {
+function save({
+    root,
+    corpus
+}: {
+    readonly root: string;
+    readonly corpus: TransitionCorpus;
+}): void {
     writeFileSync(path.join(root, CORPUS_PATH), JSON.stringify(corpus, null, 2));
 }
 
 describe('TEST:1667:1 AC:1667:1 — S1 creation writes', () => {
     it('declares S1 as the sole corpus writer for every creation column', () => {
-        const corpus = read(ROOT);
+        const corpus = read({ root: ROOT });
         for (const column of CREATION_WRITES) {
             expect(
                 corpus.transitions.filter((row) => row.writes.includes(column)).map((row) => row.id)
@@ -123,7 +129,7 @@ describe('TEST:1667:1 AC:1667:1 — S1 creation writes', () => {
 
 describe('TEST:1667:2 AC:1667:2 — restored reads', () => {
     it('restores the twenty retired reads in their catalog order', () => {
-        const corpus = read(ROOT);
+        const corpus = read({ root: ROOT });
         expect(
             corpus.transitions.flatMap((row) =>
                 row.reads
@@ -144,11 +150,11 @@ describe('TEST:1667:2 AC:1667:2 — restored reads', () => {
 describe('TEST:1667:3 AC:1667:4 — each S1 write is required', () => {
     it.each(CREATION_WRITES)('reports exact violations when S1 stops writing %s', (column) => {
         const root = tempTree();
-        const corpus = read(root);
+        const corpus = read({ root });
         const row = corpus.transitions.find((item) => item.id === 'TRANS:B:S1');
         if (!row) throw new Error('TRANS:B:S1 is missing from the corpus');
         (row.writes as string[]) = row.writes.filter((written) => written !== column);
-        save(root, corpus);
+        save({ root, corpus });
         expect(run({ root })).toEqual({
             exitCode: 1,
             output: ['FAIL GUARD:G-R6:', ...EXPECTED[column]].join('\n')
