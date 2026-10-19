@@ -1,9 +1,10 @@
 /**
  * E2E-04 (SPEC-098 T-059b) — Move bookmark between collections.
  *
- * Actors: Authenticated regular user.
+ * Actors: Authenticated USERs seeded as Tourist VIPs (an ACTIVE PRINCIPAL tourist-vip subscription;
+ * collections are VIP-only since HOS-1645, AC:V5:28). A VIP answered 403 fails the spec (HOS-1713, TEST:1713:1-3).
  *
- * Tags: @p1 @favorites @collections @move @spec-098
+ * Tags: @p0 @favorites @collections @move @spec-098
  *
  * Preconditions:
  *   - At least one ACTIVE/PUBLIC accommodation in seed (needed for bookmark creation).
@@ -19,7 +20,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { createUser } from '../../fixtures/api-helpers.ts';
+import { createUser, makeTouristVip } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -61,7 +62,7 @@ interface UpdatedBookmarkResponse {
     readonly data?: { readonly id: string; readonly collectionId?: string | null };
 }
 
-test.describe('E2E-04: move bookmark between collections @p1 @favorites @collections @move @spec-098', () => {
+test.describe('E2E-04: move bookmark between collections @p0 @favorites @collections @move @spec-098', () => {
     const userIds: string[] = [];
 
     test.afterEach(async () => {
@@ -94,6 +95,7 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
 
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
+        await makeTouristVip(user.id);
         // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
         const headers = { cookie: user.sessionCookie };
 
@@ -157,6 +159,7 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
 
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
+        await makeTouristVip(user.id);
         // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
         const headers = { cookie: user.sessionCookie };
 
@@ -217,10 +220,12 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
         const userA = await createUser({ role: 'USER' });
         const userB = await createUser({ role: 'USER' });
         userIds.push(userA.id, userB.id);
-        // BOTH users need the collections entitlement. If userB were left on the
-        // tourist-free tier, gateCollections() would reject it with 403 before the
-        // ownership check ever ran — the assertion below would pass for the wrong
-        // reason and stop testing ownership at all.
+        await makeTouristVip(userA.id);
+        await makeTouristVip(userB.id);
+        // BOTH users are Tourist VIPs (collections are VIP-only, AC:V5:28). If userB lacked
+        // can_use_collections, a 403 from the plan gate (enforceUserGate) could stand in for
+        // the ownership answer and the assertion below would pass for the wrong reason. A
+        // foreign collection answers 404 (HOS-600, canAccessCollection).
 
         const colRes = await page.request.post(
             `${API_URL}/api/v1/protected/user-bookmark-collections`,
