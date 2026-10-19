@@ -20,6 +20,18 @@ const capturedSearch = JSON.parse(
         'utf8'
     )
 ) as { paging: Record<string, unknown> };
+const capturedAuthorizedPayments = JSON.parse(
+    readFileSync(
+        new URL(
+            './fixtures/mercadopago-authorized-payments-renewals-2026-10-19.json',
+            import.meta.url
+        ),
+        'utf8'
+    )
+) as { results: Array<Record<string, any>> };
+const capturedFailedRecord = capturedAuthorizedPayments.results.find(
+    (record) => String(record.id) === '7032113610'
+)!;
 let server: Awaited<ReturnType<typeof startFakeProviderServer>> | undefined;
 afterEach(async () => {
     if (server) await server.close();
@@ -61,6 +73,7 @@ describe('TEST:1714:3 AC:1714:3 failed cycle server behavior', () => {
         const recordForFailed = (body: Awaited<ReturnType<typeof failedRecords>>) =>
             body.results.find((record) => record.date_created === failedRead.snapshot.createdAt)!;
         clock.set({ at: new Date(Date.parse(failedRead.snapshot.expiresAt!) - 60_000) });
+        // The captured failed cycle is already expired; there is no raw pre-expiry equivalent.
         expect(Object.keys(recordForFailed(await failedRecords()).payment).sort()).toEqual([
             'id',
             'status',
@@ -68,7 +81,9 @@ describe('TEST:1714:3 AC:1714:3 failed cycle server behavior', () => {
         ]);
         clock.set({ at: new Date(Date.parse(failedRead.snapshot.expiresAt!) + 60_000) });
         const expiredRecord = recordForFailed(await failedRecords());
-        expect(Object.keys(expiredRecord.payment).sort()).toEqual(['status', 'status_detail']);
+        expect(Object.keys(expiredRecord.payment).sort()).toEqual(
+            Object.keys(capturedFailedRecord.payment).sort()
+        );
         expect(expiredRecord.external_reference).toBe(AUTHORIZATION.reference);
         const searchResponse = await direct(
             `/v1/payments/search?external_reference=${encodeURIComponent(AUTHORIZATION.reference)}`

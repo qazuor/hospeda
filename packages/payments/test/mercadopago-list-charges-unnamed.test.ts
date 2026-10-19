@@ -218,6 +218,50 @@ describe('TEST:1714:2 AC:1714:1-2 fail-closed and absence variants', () => {
         ]);
     });
 
+    it('TEST:1714:2 AC:1714:1-2 s leaves a mixed-reference record absent', async () => {
+        const mixedRecords = structuredClone(records);
+        mixedRecords.results = [
+            structuredClone(records.results.find((record) => String(record.id) === '7032086953')!),
+            structuredClone(failedRecord())
+        ];
+        mixedRecords.results[0]!.date_created = '2026-09-19T20:01:50.000-04:00';
+        mixedRecords.results[0]!.payment = {};
+        mixedRecords.results[1]!.date_created = '2026-09-19T20:01:53.000-04:00';
+        mixedRecords.results[1]!.external_reference = undefined;
+        mixedRecords.results[1]!.payment = {};
+        mixedRecords.paging.total = 2;
+
+        const searchResults = [structuredClone(failedPayment()), structuredClone(failedPayment())];
+        searchResults[0]!.id = 179087989628;
+        searchResults[0]!.date_created = '2026-09-19T20:01:51.000-04:00';
+        searchResults[1]!.id = 179087989629;
+        searchResults[1]!.date_created = '2026-09-19T20:01:54.000-04:00';
+        const searchPayload = {
+            results: searchResults,
+            paging: { total: 2, offset: 0, limit: 50 }
+        };
+        const send = async ({ path }: { path: string }) =>
+            new Response(
+                JSON.stringify(
+                    path.startsWith('/authorized_payments') ? mixedRecords : searchPayload
+                )
+            );
+
+        const resolved = await resolveUnnamedChargeRecords({
+            authorizationId: AUTH,
+            records: mixedRecords.results as MercadoPagoChargeRecord[],
+            send
+        });
+        expect([...resolved].map(([record, paymentId]) => [String(record.id), paymentId])).toEqual([
+            ['7032086953', '179087989628']
+        ]);
+
+        const listed = await harness(mixedRecords, searchPayload).adapter.listCharges({
+            authorizationId: AUTH
+        });
+        expect(listed).toEqual({ chargeIds: ['179087989628'] });
+    });
+
     it('TEST:1714:2 AC:1714:2 r2 ignores a payment assigned to a record naming another payment', async () => {
         const k = structuredClone(payments);
         failedPayment(k).date_created = '2026-09-20T20:01:40.000-04:00';
