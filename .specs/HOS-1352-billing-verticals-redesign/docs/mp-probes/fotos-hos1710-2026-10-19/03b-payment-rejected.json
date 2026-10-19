@@ -1,0 +1,194 @@
+{
+  "accounts_info": null,
+  "acquirer_reconciliation": [],
+  "additional_info": {
+    "tracking_id": "platform:v1-blacklabel,so:ALL,type:N/A,security:none"
+  },
+  "authorization_code": null,
+  "binary_mode": false,
+  "brand_id": null,
+  "build_version": "3.174.0-rc-4",
+  "call_for_authorize_id": null,
+  "captured": true,
+  "card": {
+    "bin": null,
+    "cardholder": "<redactado>",
+    "country": null,
+    "date_created": null,
+    "date_last_updated": null,
+    "expiration_month": null,
+    "expiration_year": null,
+    "first_six_digits": null,
+    "id": "9854458375",
+    "last_four_digits": "<redactado>",
+    "tags": []
+  },
+  "charges_details": [
+    {
+      "accounts": {
+        "from": "collector",
+        "to": "mp"
+      },
+      "amounts": {
+        "original": 1.2,
+        "refunded": 0
+      },
+      "base_amount": 15,
+      "client_id": 0,
+      "date_created": "2026-09-20T20:01:44.000-04:00",
+      "external_charge_id": "01M30M9GWAKJS1DFF0GFZQRBMP",
+      "id": "179087989627-001",
+      "last_updated": "2026-09-20T20:01:44.000-04:00",
+      "metadata": {
+        "reason": "AR-E_increment",
+        "source": "proc-svc-charges",
+        "source_detail": "processing_fee_charge"
+      },
+      "name": "<redactado>",
+      "rate": 7.986695,
+      "refund_charges": [],
+      "reserve_id": null,
+      "type": "fee",
+      "update_charges": []
+    }
+  ],
+  "charges_execution_info": {
+    "internal_execution": {
+      "date": "2026-09-20T20:01:44.342-04:00",
+      "execution_id": "01M30M9GVDYM3SN4A5S9FCDYB4"
+    }
+  },
+  "collector_id": "<redactado>",
+  "corporation_id": null,
+  "counter_currency": null,
+  "coupon_amount": 0,
+  "currency_id": "ARS",
+  "date_approved": null,
+  "date_created": "2026-09-20T20:01:44.000-04:00",
+  "date_last_updated": "2026-09-20T20:01:48.000-04:00",
+  "date_of_expiration": null,
+  "deduction_schema": null,
+  "description": "HOS1352 reloj renov-ok",
+  "differential_pricing_id": null,
+  "external_reference": "HOS-1352-relojprod-renov-ok",
+  "fee_details": [],
+  "financing_group": null,
+  "id": 179087989627,
+  "idempotency_key": "idempotencyKeyPostPay_automatic_payments_c1cb2f3a6ee25ea9ea851c294266ab7c//<redactado>",
+  "installments": 1,
+  "integrator_id": null,
+  "issuer_id": "279",
+  "live_mode": true,
+  "marketplace_owner": null,
+  "merchant_account_id": null,
+  "merchant_number": null,
+  "metadata": {
+    "user_type": "guest",
+    "preapproval_id": "6b293a9499d946f6ac159da7f8f4804e",
+    "available_tries": 3
+  },
+  "money_release_date": null,
+  "money_release_schema": null,
+  "money_release_status": "released",
+  "notification_url": null,
+  "operation_type": "recurring_payment",
+  "order": {},
+  "payer": {
+    "email": null,
+    "entity_type": null,
+    "first_name": null,
+    "id": "<redactado>",
+    "identification": "<redactado>",
+    "last_name": null,
+    "operator_id": null,
+    "phone": "<redactado>",
+    "type": null
+  },
+  "payment_method": {
+    "data": {
+      "routing_data": {
+        "merchant_account_id": "1196"
+      }
+    },
+    "id": "visa",
+    "issuer_id": "279",
+    "type": "credit_card"
+  },
+  "payment_method_id": "visa",
+  "payment_type_id": "credit_card",
+  "platform_id": null,
+  "point_of_interaction": {
+    "application_data": {
+      "name": null,
+      "operating_system": null,
+      "version": null
+    },
+    "business_info": {
+      "branch": "Merchant Services",
+      "sub_unit": "recurring",
+      "unit": "online_payments"
+    },
+    "location": {
+      "source": "payer",
+      "state_id": "NN"
+    },
+    "references": [
+      {
+        "id": "a4598e1546e1410491375bdea6454c42",
+        "type": "RECURRING_INVOICE"
+      },
+      {
+        "id": "8c5b86c025ac4a5d882309daa78d368a",
+        "type": "AUTOMATIC_PAYMENTS_ATTEMPT"
+      }
+    ],
+    "transaction_data": {
+      "billing_date": "2026-09-20",
+      "first_time_use": false,
+      "invoice_id": "a4598e1546e1410491375bdea6454c42",
+      "invoice_period": {
+        "period": 1,
+        "type": "daily"
+      },
+      "payment_reference": {
+        "acquirer": null,
+        "id": "178259523769"
+      },
+      "plan_id": null,
+      "processor": null,
+      "subscription_id": "6b293a9499d946f6ac159da7f8f4804e",
+      "subscription_sequence": {
+        "number": "<redactado>",
+        "total": null
+      },
+      "user_present": false
+    },
+    "type": "SUBSCRIPTIONS"
+  },
+  "pos_id": null,
+  "processing_mode": "aggregator",
+  "refunds": [],
+  "release_info": null,
+  "shipping_amount": 0,
+  "sponsor_id": null,
+  "statement_descriptor": null,
+  "status": "rejected",
+  "status_detail": "cc_rejected_high_risk",
+  "store_id": null,
+  "tags": null,
+  "taxes_amount": 0,
+  "tenant_context": "mp",
+  "transaction_amount": 15,
+  "transaction_amount_refunded": 0,
+  "transaction_details": {
+    "acquirer_reference": null,
+    "external_resource_url": null,
+    "financial_institution": null,
+    "installment_amount": 15,
+    "net_received_amount": 0,
+    "overpaid_amount": 0,
+    "payable_deferral_period": null,
+    "payment_method_reference_id": null,
+    "total_paid_amount": 15
+  }
+}
