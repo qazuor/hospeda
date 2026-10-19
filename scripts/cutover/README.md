@@ -289,9 +289,15 @@ Measured notices:
   all (neither creating a payment nor refunding one); in production the same authorization passes
   (a refund with an invalid amount got `400`, not `401`). Staging uses the same token as the
   sandbox probes.
-- Creating a payment through `POST /v1/payments` is **not measured as successful in ANY
-  environment**. The provider warned that Orders replaces that path, and orders do not notify through
-  any channel.
+- Creating a payment through `POST /v1/payments` **is measured as successful in production** (owner,
+  2026-10-19, HOS-1402 D-1a): with the exact body this script sends, ARS 15 answered `201` and
+  `approved`/`accredited` (payment `184995919950`); the full refund answered `201` and `approved`
+  (refund `3395845463`); re-reading the refund by id (`GET /v1/payments/{id}/refunds/{rid}`) answered
+  `200` and `approved`; and the payment then read `refunded` for 15. The old production system got
+  that payment's notices and ignored them: every delivery was answered `200` and the only trace was a
+  `WARN` («local payment not found»). It is still not measured in sandbox, where the `401` above
+  applies, so the rehearsal on staging can still end in outcome 2. The provider warned that Orders
+  replaces that path, and orders do not notify through any channel.
 - The `WEBHOOKS` delivery of a `pending` probe is **not measured**. If the run does not see it, step
   4b fails with `DELIVERY_NOT_SEEN`.
 
