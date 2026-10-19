@@ -6,8 +6,8 @@
  * `CollectionDetailActions.client.tsx` mounted from the collection detail
  * page so the wiring is covered in CI.
  *
- * Actors: Authenticated USER seeded with Tourist VIP; collection coverage is conditionally
- * deferred while the bootstrap reader does not expose subscriptions (HOS-1352, follow-up HOS-1665).
+ * Actors: Authenticated USER seeded as a Tourist VIP (an ACTIVE PRINCIPAL tourist-vip
+ * subscription, read by billing coverage since HOS-1532). No deferral: a VIP answered 403 fails the spec (HOS-1665, TEST:1665:3).
  *
  * Tags: @p1 @favorites @collections @ui @spec-098
  *
@@ -26,12 +26,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import {
-    createUser,
-    makeTouristVip,
-    markProfileCompleted,
-    touristVipNotYetGranted
-} from '../../fixtures/api-helpers.ts';
+import { createUser, makeTouristVip, markProfileCompleted } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -110,11 +105,6 @@ test.describe('E2E-04c: collection actions via UI @p1 @favorites @collections @u
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
         await makeTouristVip(user.id);
-        // Bootstrap coverage does not read subscriptions yet; HOS-1665 removes this guard.
-        test.fixme(
-            await touristVipNotYetGranted(user),
-            'HOS-1352: tourist coverage reads no subscriptions yet (bootstrap reader); VIP gates answer 403 until the B units wire it — HOS-1665'
-        );
         // SPEC-113 bounces users with profile_completed = false to the completion
         // form, so a UI spec never reaches the account page it asserts on.
         await markProfileCompleted({ userId: user.id });

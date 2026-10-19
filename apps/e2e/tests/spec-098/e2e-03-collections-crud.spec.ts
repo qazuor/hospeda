@@ -1,8 +1,8 @@
 /**
  * E2E-03 (SPEC-098 T-059b) — Collections CRUD: create, edit, delete.
  *
- * Actors: Authenticated USER seeded with Tourist VIP; collection coverage is conditionally
- * deferred while the bootstrap reader does not expose subscriptions (HOS-1352, follow-up HOS-1665).
+ * Actors: Authenticated USER seeded as a Tourist VIP (an ACTIVE PRINCIPAL tourist-vip
+ * subscription, read by billing coverage since HOS-1532). No deferral: a VIP answered 403 fails the spec (HOS-1665, TEST:1665:1).
  *
  * Tags: @p0 @favorites @collections @crud @spec-098
  *
@@ -23,7 +23,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { createUser, makeTouristVip, touristVipNotYetGranted } from '../../fixtures/api-helpers.ts';
+import { createUser, makeTouristVip } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -88,11 +88,6 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
         const user = await createUser({ role: 'USER' });
         userId = user.id;
         await makeTouristVip(user.id);
-        // Bootstrap coverage does not read subscriptions yet; HOS-1665 removes this guard.
-        test.fixme(
-            await touristVipNotYetGranted(user),
-            'HOS-1352: tourist coverage reads no subscriptions yet (bootstrap reader); VIP gates answer 403 until the B units wire it — HOS-1665'
-        );
         const headers = { cookie: user.sessionCookie };
 
         // Act: create collection
@@ -138,11 +133,6 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
         const user = await createUser({ role: 'USER' });
         userId = user.id;
         await makeTouristVip(user.id);
-        // Bootstrap coverage does not read subscriptions yet; HOS-1665 removes this guard.
-        test.fixme(
-            await touristVipNotYetGranted(user),
-            'HOS-1352: tourist coverage reads no subscriptions yet (bootstrap reader); VIP gates answer 403 until the B units wire it — HOS-1665'
-        );
         const headers = { cookie: user.sessionCookie };
 
         const createRes = await page.request.post(
@@ -192,11 +182,6 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
         const user = await createUser({ role: 'USER' });
         userId = user.id;
         await makeTouristVip(user.id);
-        // Bootstrap coverage does not read subscriptions yet; HOS-1665 removes this guard.
-        test.fixme(
-            await touristVipNotYetGranted(user),
-            'HOS-1352: tourist coverage reads no subscriptions yet (bootstrap reader); VIP gates answer 403 until the B units wire it — HOS-1665'
-        );
         const headers = { cookie: user.sessionCookie };
 
         // Create a collection
@@ -264,11 +249,6 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
         const user = await createUser({ role: 'USER' });
         userId = user.id;
         await makeTouristVip(user.id);
-        // Bootstrap coverage does not read subscriptions yet; HOS-1665 removes this guard.
-        test.fixme(
-            await touristVipNotYetGranted(user),
-            'HOS-1352: tourist coverage reads no subscriptions yet (bootstrap reader); VIP gates answer 403 until the B units wire it — HOS-1665'
-        );
         const headers = { cookie: user.sessionCookie };
 
         await page.request.post(`${API_URL}/api/v1/protected/user-bookmark-collections`, {
