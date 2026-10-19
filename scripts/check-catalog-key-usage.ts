@@ -38,11 +38,8 @@
  * - `packages/billing/` is not scanned: it is the legacy package that DECLARES
  *   the old enums, still with `read_reviews` (owner decision 7, 2026-10-07). It
  *   leaves the repository with HOS-1626.
- * - {@link ALLOWLIST} lets exactly one file use exactly one out-of-catalog key:
- *   `apps/web/src/components/billing/plan-comparison-rows.ts` and its
- *   `reviews` row (`read_reviews`), kept on purpose (no intermediate UX
- *   patches) until HOS-1626. An entry that stops matching (the file no longer
- *   uses that key) FAILS, so the allowlist cannot outlive its reason.
+ * - {@link ALLOWLIST} is empty: `read_reviews` is back in the catalog, HOS-1626
+ *   D-1, so the reviews row needs no exception.
  *
  * ## Positive control
  *
@@ -73,13 +70,8 @@ const SCAN_ROOT = /^(?:apps|packages)\//;
 /** Not scanned: the legacy package that declares the old enums (until HOS-1626). */
 export const EXCLUDED_PREFIX = 'packages/billing/';
 
-/** Exact path → the out-of-catalog keys it may use, each with its reason. */
-export const ALLOWLIST: Readonly<Record<string, Readonly<Record<string, string>>>> = {
-    'apps/web/src/components/billing/plan-comparison-rows.ts': {
-        read_reviews:
-            'the plan comparison table keeps its `reviews` row until the legacy package leaves (HOS-1626)'
-    }
-};
+/** `read_reviews` is back in the catalog, HOS-1626 D-1, so the reviews row needs no exception. */
+export const ALLOWLIST: Readonly<Record<string, Readonly<Record<string, string>>>> = {};
 
 /** Fewer scanned files than this means the scan is broken, not that the tree is clean. */
 export const MIN_SCANNED_FILES = 1000;

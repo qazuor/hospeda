@@ -144,12 +144,8 @@ describe('TEST:V1:4 — GUARD:G3', () => {
         expect(result.output).toContain("apps/web/src/rows.ts: 'read_reviews'");
     });
 
-    it('allowlists exactly one file and one key, pointing at HOS-1626', () => {
-        expect(ALLOWLIST).toEqual({
-            'apps/web/src/components/billing/plan-comparison-rows.ts': {
-                read_reviews: expect.stringContaining('HOS-1626')
-            }
-        });
+    it('keeps no exception now that read_reviews is in the catalog', () => {
+        expect(ALLOWLIST).toEqual({});
     });
 
     it('refuses to run when it cannot read the legacy enums', () => {
