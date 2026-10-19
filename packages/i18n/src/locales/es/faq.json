@@ -221,8 +221,8 @@
                     "answer": "No para buscar y consultar. Sí si querés guardar favoritos, dejar reseñas, recibir novedades por mail o publicar como propietario o organizador. Crear cuenta es gratis y rápido."
                 },
                 "deleteAccount": {
-                    "question": "¿Cómo elimino mi cuenta?",
-                    "answer": "Desde Mi Cuenta > Configuración > Eliminar cuenta. Eliminamos tus datos personales en un plazo máximo de 30 días según nuestra política de privacidad. Las reseñas que dejaste pueden permanecer de forma anónima."
+                    "question": "¿Cómo doy de baja mi cuenta?",
+                    "answer": "Por ahora la baja de la cuenta la hace nuestro equipo de soporte: escribinos a info@hospeda.com.ar o desde la página de Contacto y pedinos la baja. Si tenés una suscripción, primero la cancelamos; si publicaste fichas, las borramos; y al final damos de baja la cuenta: reemplazamos tu nombre, tu correo y tus teléfonos, y cerramos tu acceso. Si Mercado Pago todavía no confirmó la cancelación de tu suscripción, la baja de la cuenta espera esa confirmación. Conservamos los comprobantes de pago, porque la ley nos obliga a guardarlos. Las reseñas que dejaste pueden quedar publicadas, sin tu nombre."
                 },
                 "dataStored": {
                     "question": "¿Qué datos guardan sobre mí?",

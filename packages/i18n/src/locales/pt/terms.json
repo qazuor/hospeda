@@ -109,5 +109,16 @@
     "page": {
         "title": "Termos e Condições",
         "description": "Termos e condições de uso da plataforma Hospeda"
+    },
+    "withdrawal": {
+        "title": "Botão de arrependimento",
+        "description": "Como revogar a contratação de uma assinatura da Hospeda em até 10 dias corridos a partir da cobrança.",
+        "intro": "Se você contratou uma assinatura da Hospeda, pode revogar a contratação em até 10 dias corridos a partir do dia da cobrança que deseja revogar (Resolução 424/2020, Argentina).",
+        "effects": "Quando registramos seu pedido, a assinatura é cancelada, o serviço é encerrado nesse momento e solicitamos a devolução do valor total dessa cobrança.",
+        "howTo": "Envie seu pedido pelo formulário de contato: não é preciso entrar na sua conta. Informe o e-mail da sua conta da Hospeda.",
+        "cta": "Pedir a revogação",
+        "mailAlternative": "Você também pode nos escrever em {{email}}.",
+        "mailSubject": "Pedido de revogação (botão de arrependimento)",
+        "messageTemplate": "Quero revogar a contratação da minha assinatura (botão de arrependimento). E-mail da minha conta:"
     }
 }

@@ -1,0 +1,89 @@
+---
+/**
+ * @file legal/arrepentimiento/index.astro
+ * @description Public channel for the right of withdrawal that ends in S36 (DEC-RF-001 📌3).
+ * @route /{lang}/legal/arrepentimiento/
+ * @rendering SSR + Cloudflare cache
+ */
+
+import LegalLayout from '@/layouts/LegalLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const email = t('footer.contactEmail');
+const mailAlternative = t('terms.withdrawal.mailAlternative', undefined, { email });
+const [mailLead = '', mailTail = ''] = mailAlternative.split(email);
+
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: true,
+    cacheClass: 'static',
+    tags: [CACHE_TAG_SITE_CONFIG]
+});
+---
+
+<LegalLayout
+    locale={locale}
+    title={t('terms.withdrawal.title')}
+    description={t('terms.withdrawal.description')}
+    showToc={false}
+>
+    <section class="withdrawal-copy">
+        <p>{t('terms.withdrawal.intro')}</p>
+        <p>{t('terms.withdrawal.effects')}</p>
+        <p>{t('terms.withdrawal.howTo')}</p>
+        <p>
+            <a
+                class="withdrawal-cta"
+                href={`${buildUrl({ locale, path: '/contacto/' })}?type=revocation&message=${encodeURIComponent(t('terms.withdrawal.messageTemplate'))}`}
+            >
+                {t('terms.withdrawal.cta')}
+            </a>
+        </p>
+        <p>
+            {mailLead}
+            <a href={`mailto:${email}?subject=${encodeURIComponent(t('terms.withdrawal.mailSubject'))}`}>{email}</a>
+            {mailTail}
+        </p>
+    </section>
+</LegalLayout>
+
+<style>
+    .withdrawal-copy {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    .withdrawal-copy p {
+        margin: 0;
+    }
+
+    .withdrawal-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-3) var(--space-5);
+        border-radius: var(--radius-md);
+        background: var(--brand-accent);
+        color: var(--brand-accent-text);
+        font-family: var(--font-sans);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .withdrawal-cta:hover {
+        filter: brightness(0.94);
+    }
+
+    .withdrawal-cta:focus-visible {
+        outline: 3px solid var(--core-foreground);
+        outline-offset: 3px;
+    }
+</style>

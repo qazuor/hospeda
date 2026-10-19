@@ -6,7 +6,7 @@
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContactForm } from '../../src/components/ContactForm.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
@@ -57,8 +57,15 @@ async function fillForm(
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('ContactForm', () => {
+    let originalUrl = '/';
+
     beforeEach(() => {
+        originalUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
         global.fetch = vi.fn();
+    });
+
+    afterEach(() => {
+        window.history.pushState({}, '', originalUrl);
     });
 
     describe('Initial render', () => {
@@ -125,7 +132,7 @@ describe('ContactForm', () => {
             }
         });
 
-        it('renders the 9 expected contact-type options', () => {
+        it('renders the 10 expected contact-type options', () => {
             renderContactForm();
             const typeSelect = screen.getByLabelText(/tipo de consulta/i) as HTMLSelectElement;
             const values = Array.from(typeSelect.options).map((o) => o.value);
@@ -138,8 +145,23 @@ describe('ContactForm', () => {
                 'report',
                 'press',
                 'partnerships',
-                'event_submission'
+                'event_submission',
+                'revocation'
             ]);
+        });
+    });
+
+    describe('TEST:1700:3 AC:1700:2 revocation URL prefill', () => {
+        it('prefills the revocation type and request message from the URL', () => {
+            window.history.pushState(
+                {},
+                '',
+                '/es/contacto/?type=revocation&message=Quiero%20revocar'
+            );
+            renderContactForm();
+
+            expect(screen.getByLabelText(/tipo de consulta/i)).toHaveValue('revocation');
+            expect(screen.getByLabelText(/mensaje/i)).toHaveValue('Quiero revocar');
         });
     });
 

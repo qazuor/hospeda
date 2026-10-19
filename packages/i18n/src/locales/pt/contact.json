@@ -72,7 +72,8 @@
         "typeReport": "Reportar um problema",
         "typePress": "Imprensa e mídia",
         "typePartnerships": "Parcerias comerciais",
-        "typeEventSubmission": "Enviar meu evento"
+        "typeEventSubmission": "Enviar meu evento",
+        "typeRevocation": "Arrependimento de compra (revogação)"
     },
     "info": {
         "title": "Informações de contato",
