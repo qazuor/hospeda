@@ -83,7 +83,7 @@ describe('TEST:1698:1 AC:1698:2 in-flight recalculations', () => {
         mocks.ports.mockReturnValue({ unitOfWork: {}, afterCommit: {}, billing: {}, clock: {} });
     });
 
-    it('drains a pending recalculation', async () => {
+    it('TEST:1698:1 AC:1698:2 drains a pending recalculation', async () => {
         const pending = deferred<void>();
         mocks.recalculate.mockReturnValue(pending.promise);
         const stop = subscribeListingCoverageRecalculation();
@@ -103,7 +103,7 @@ describe('TEST:1698:1 AC:1698:2 in-flight recalculations', () => {
         stop();
     });
 
-    it('drains recalculations that start while waiting', async () => {
+    it('TEST:1698:1 AC:1698:2 drains recalculations that start while waiting', async () => {
         const first = deferred<void>();
         const second = deferred<void>();
         mocks.recalculate
@@ -139,7 +139,7 @@ describe('TEST:1698:1 AC:1698:2 in-flight recalculations', () => {
         stop();
     });
 
-    it('resolves after a failed recalculation and logs it once', async () => {
+    it('TEST:1698:1 AC:1698:2 resolves after a failed recalculation and logs it once', async () => {
         mocks.recalculate.mockRejectedValueOnce(new Error('expected test failure'));
         const stop = subscribeListingCoverageRecalculation();
         mocks.listener?.({ userId: 'u1', vertical: VerticalEnum.ACCOMMODATION });
@@ -151,7 +151,7 @@ describe('TEST:1698:1 AC:1698:2 in-flight recalculations', () => {
         stop();
     });
 
-    it('returns undefined while the recalculation remains pending', async () => {
+    it('TEST:1698:1 AC:1698:4 returns undefined while the recalculation remains pending', async () => {
         const pending = deferred<void>();
         mocks.recalculate.mockReturnValue(pending.promise);
         const stop = subscribeListingCoverageRecalculation();

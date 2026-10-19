@@ -114,7 +114,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-    composition?.stop();
+    await composition?.stop();
     const rows = await getDb()
         .select({ id: permanentGrants.id })
         .from(permanentGrants)
