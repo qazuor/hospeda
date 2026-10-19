@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const SEED_DATA_DIR = join(__dirname, '..', '..', 'seed', 'src', 'data');
+const SEED_DATA_DIR = join(__dirname, '..', 'src', 'data');
 const LEVEL_DIR = join(SEED_DATA_DIR, 'sponsorshipLevel');
 const PACKAGE_DIR = join(SEED_DATA_DIR, 'sponsorshipPackage');
 
@@ -19,7 +19,7 @@ function loadJsonSeedFiles(
     }));
 }
 
-describe('Sponsorship Level Seeds', () => {
+describe('TEST:1626:7 Sponsorship Level Seeds', () => {
     const levels = loadJsonSeedFiles(LEVEL_DIR);
 
     it('should have at least one sponsorship level seed file', () => {
@@ -100,7 +100,7 @@ describe('Sponsorship Level Seeds', () => {
     });
 });
 
-describe('Sponsorship Package Seeds', () => {
+describe('TEST:1626:7 Sponsorship Package Seeds', () => {
     const packages = loadJsonSeedFiles(PACKAGE_DIR);
 
     it('should have at least one sponsorship package seed file', () => {
