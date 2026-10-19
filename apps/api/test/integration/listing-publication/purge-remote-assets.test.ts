@@ -68,7 +68,7 @@ describe('TEST:1702:2 AC:1702:1 AC:1702:3 AC:1702:4 PB12 deletes every remote fi
             VerticalEnum.GASTRONOMY,
             VerticalEnum.EXPERIENCE,
             VerticalEnum.ACCOMMODATION
-        ]) {
+        ] as const) {
             const fixture = await createPurgeAssetFixture(vertical, PublicationStatusEnum.DRAFT);
             fixtures.push(fixture);
             for (const publicId of fixture.publicIds) storage.stored.add(publicId);

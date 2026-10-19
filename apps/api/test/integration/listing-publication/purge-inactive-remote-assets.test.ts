@@ -66,7 +66,7 @@ describe('TEST:1702:4 AC:1702:1 PB9 deletes the menu file and dish photos after 
             afterCommit: getPurgeAfterCommit(),
             clock: { now: () => now },
             previousPassStartedAt: now,
-            vertical: 'gastronomy',
+            vertical: VerticalEnum.GASTRONOMY,
             listingId: fixture.listingId,
             ownerId: fixture.ownerId,
             correlationId: randomUUID()

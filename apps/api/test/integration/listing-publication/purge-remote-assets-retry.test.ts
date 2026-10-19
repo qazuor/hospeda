@@ -127,7 +127,7 @@ describe('TEST:1702:3 AC:1702:2 a failed remote deletion of the menu file and di
         const failed = await runOwnRetry(ids);
         expect(
             failed.failures
-                .map(({ kind, id, vertical }) => ({ kind, id, vertical }))
+                .map(({ kind, id, vertical }) => ({ kind, id: String(id), vertical }))
                 .sort((a, b) => a.id.localeCompare(b.id))
         ).toEqual(
             rows.rows
