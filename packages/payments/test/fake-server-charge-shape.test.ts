@@ -1,4 +1,4 @@
-/** TEST:1710:4 AC:1710:3 compares the fake HTTP payload with the captured payment shape. */
+/** TEST:1710:4 AC:1710:3 compares fake HTTP payloads with the captured payment shape. */
 import { readFileSync } from 'node:fs';
 import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it } from 'vitest';
@@ -32,10 +32,11 @@ const capture = JSON.parse(
         'utf8'
     )
 ) as Record<string, unknown>;
+
 async function setup() {
     const provider = new FakePaymentProvider({
         clock,
-        honestAbout: [{ lie: 'M13', why: 'the shape round trip needs a partial refund' }]
+        honestAbout: [{ lie: 'M13', why: 'the round trip includes a partial refund' }]
     });
     const server = await startFakeProviderServer({ provider, clock });
     const adapter = new MercadoPagoPaymentProvider({
@@ -52,6 +53,7 @@ async function setup() {
     }
     return { provider, server, adapter, raw };
 }
+
 async function approvedCharge(context: Awaited<ReturnType<typeof setup>>) {
     const { authorizationId } = await context.provider.authorize(AUTHORIZATION);
     await context.provider.approve({ authorizationId });
@@ -64,8 +66,14 @@ async function approvedCharge(context: Awaited<ReturnType<typeof setup>>) {
     return { authorizationId, chargeId };
 }
 
+async function expectRoundTrip(context: Awaited<ReturnType<typeof setup>>, chargeId: string) {
+    expect((await context.adapter.readCharge({ chargeId })).snapshot).toEqual(
+        (await context.provider.readCharge({ chargeId })).snapshot
+    );
+}
+
 describe('TEST:1710:4 AC:1710:3 fake Mercado Pago charge shape', () => {
-    it('emits every captured link/refund path and a round-trip snapshot for charge states', async () => {
+    it('TEST:1710:4 AC:1710:3 emits every captured link and refund path', async () => {
         const context = await setup();
         try {
             const { chargeId } = await approvedCharge(context);
@@ -79,7 +87,29 @@ describe('TEST:1710:4 AC:1710:3 fake Mercado Pago charge shape', () => {
                 type: 'SUBSCRIPTIONS',
                 transaction_data: { subscription_id: expect.any(String) }
             });
-            const cases: string[] = [chargeId];
+        } finally {
+            await context.server.close();
+        }
+    });
+
+    it('TEST:1710:4 AC:1710:3 emits the measured card-validation shape over HTTP', async () => {
+        const context = await setup();
+        try {
+            const { authorizationId } = await context.provider.authorize(AUTHORIZATION);
+            const validation = await context.provider.changeCard({ authorizationId, passes: true });
+            if (!validation) throw new Error('Expected card validation');
+            const body = await context.raw(validation.chargeId);
+            expect(body.point_of_interaction).toEqual({ type: 'UNSPECIFIED' });
+            expect(body.metadata).toEqual({});
+        } finally {
+            await context.server.close();
+        }
+    });
+
+    it('TEST:1710:4 AC:1710:3 preserves complete snapshots over adapter-to-fake HTTP round trips', async () => {
+        const context = await setup();
+        try {
+            const { chargeId } = await approvedCharge(context);
             const partialAuth = await context.provider.authorize({
                 ...AUTHORIZATION,
                 reference: 'partial-sub'
@@ -91,7 +121,6 @@ describe('TEST:1710:4 AC:1710:3 fake Mercado Pago charge shape', () => {
                 reference: 'partial-cycle'
             });
             await context.server.advanceClock({ ms: 60 * 60 * 1000 });
-            cases.push(partial.chargeId);
             await context.provider.refund({
                 chargeId: partial.chargeId,
                 amount: { amountMinor: 500, currency: 'ARS' },
@@ -102,7 +131,6 @@ describe('TEST:1710:4 AC:1710:3 fake Mercado Pago charge shape', () => {
                 amount: AUTHORIZATION.amount,
                 reference: 'full-refund'
             });
-            cases.push(chargeId);
             const { authorizationId: rejectedAuth } = await context.provider.authorize({
                 ...AUTHORIZATION,
                 reference: 'rejected-sub'
@@ -111,21 +139,13 @@ describe('TEST:1710:4 AC:1710:3 fake Mercado Pago charge shape', () => {
                 authorizationId: rejectedAuth,
                 declineReason: 'declined'
             });
-            cases.push(rejected.chargeId);
             const validation = await context.provider.changeCard({
                 authorizationId: rejectedAuth,
                 passes: true
             });
             if (!validation) throw new Error('Expected card validation');
-            const validationBody = await context.raw(validation.chargeId);
-            expect(validationBody.point_of_interaction).toEqual({ type: 'UNSPECIFIED' });
-            expect(validationBody.metadata).toEqual({});
-            cases.push(validation.chargeId);
-            for (const id of cases) {
-                expect((await context.adapter.readCharge({ chargeId: id })).snapshot).toEqual(
-                    (await context.provider.readCharge({ chargeId: id })).snapshot
-                );
-            }
+            for (const id of [chargeId, partial.chargeId, rejected.chargeId, validation.chargeId])
+                await expectRoundTrip(context, id);
         } finally {
             await context.server.close();
         }
