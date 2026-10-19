@@ -95,9 +95,7 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
         await expect(await confirmSelfCancel({ page })).toContainText(marketEnd);
         const scheduled = await readSubscriptionRow({ subscriptionId });
         expect(scheduled.status).toBe('CANCEL_SCHEDULED');
-        expect(new Date(scheduled.service_ends_at ?? '').toISOString().slice(0, 10)).toBe(
-            serviceEndsAt.toISOString().slice(0, 10)
-        );
+        expect(formatMarketDate(new Date(scheduled.service_ends_at ?? ''))).toBe(marketEnd);
         expect(
             (
                 await latestOutbox({
@@ -128,6 +126,10 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
             )?.status
         ).toBe('sent');
         const sweepStartedAt = new Date();
+        expect(
+            mail.receivedAt.getTime(),
+            'Expected our mail before the reconciliation sweep started.'
+        ).toBeLessThan(sweepStartedAt.getTime());
         await runCron({
             jobName: 'billing-reconciliation-sweep',
             adminCookie: subscriber.admin.sessionCookie
@@ -219,6 +221,10 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
             )?.status
         ).toBe('sent');
         const sweepStartedAt = new Date();
+        expect(
+            mail.receivedAt.getTime(),
+            'Expected our mail before the reconciliation sweep started.'
+        ).toBeLessThan(sweepStartedAt.getTime());
         await runCron({
             jobName: 'billing-reconciliation-sweep',
             adminCookie: subscriber.admin.sessionCookie
