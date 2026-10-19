@@ -4,8 +4,8 @@
  * Displays and manages reviews for a specific accommodation.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { formatNumber } from '@repo/i18n';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
@@ -167,7 +167,7 @@ function AccommodationReviewsPage() {
                             </CardHeader>
                             <CardContent>
                                 <PlanEntitlementGate
-                                    entitlementKey={EntitlementKey.RESPOND_REVIEWS}
+                                    entitlementKey={EntitlementKeyEnum.RESPOND_REVIEWS}
                                     fallback={
                                         <div className="rounded-md border border-warning/30 bg-warning/10 p-4">
                                             <p className="font-medium text-foreground">

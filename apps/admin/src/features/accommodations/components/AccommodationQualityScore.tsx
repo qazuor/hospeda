@@ -1,4 +1,4 @@
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { useStore } from '@tanstack/react-form';
 import * as React from 'react';
 import { useEntityFormContext } from '@/components/entity-form/context/EntityFormContext';
@@ -52,7 +52,7 @@ export const AccommodationQualityScore = React.memo(function AccommodationQualit
     // (SPEC-171): staff receive every entitlement (`has` → true) so they are
     // never gated, HOSTs depend on their plan. While entitlements are loading
     // we fail-open to avoid flashing the gated state.
-    const hasVideoGalleryFeature = entitlementsLoading || has(EntitlementKey.CAN_EMBED_VIDEO);
+    const hasVideoGalleryFeature = entitlementsLoading || has(EntitlementKeyEnum.CAN_EMBED_VIDEO);
 
     const signals = React.useMemo(
         () => createAccommodationSignals({ hasVideoGalleryFeature }),

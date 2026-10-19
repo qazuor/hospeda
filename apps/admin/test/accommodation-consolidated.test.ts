@@ -1,4 +1,4 @@
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import {
     FieldTypeEnum,
@@ -245,7 +245,9 @@ describe('AccommodationConsolidatedConfig', () => {
 
             expect(richDescription?.type).toBe(FieldTypeEnum.RICH_TEXT);
             expect(richDescription?.required).toBe(false);
-            expect(richDescription?.entitlementKey).toBe(EntitlementKey.CAN_USE_RICH_DESCRIPTION);
+            expect(richDescription?.entitlementKey).toBe(
+                EntitlementKeyEnum.CAN_USE_RICH_DESCRIPTION
+            );
             const typeConfig = richDescription?.typeConfig as { maxLength?: number } | undefined;
             expect(typeConfig?.maxLength).toBe(5000);
         });

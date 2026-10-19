@@ -16,7 +16,7 @@
  * other accommodation sub-tab in this project.
  */
 
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { FaqManager } from '@/components/faqs/FaqManager';
 import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
@@ -49,7 +49,7 @@ function AccommodationFaqManager({ id }: { readonly id: string }) {
         <FaqManager
             entityType="accommodations"
             parentId={id}
-            canUseAiTextImprove={has(EntitlementKey.AI_TEXT_IMPROVE)}
+            canUseAiTextImprove={has(EntitlementKeyEnum.AI_TEXT_IMPROVE)}
         />
     );
 }

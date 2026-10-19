@@ -1,6 +1,5 @@
-import { EntitlementKey } from '@repo/billing';
 import type { useTranslations } from '@repo/i18n';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { EntitlementKeyEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import {
     FieldTypeEnum,
     LayoutTypeEnum,
@@ -96,7 +95,7 @@ export const createBasicInfoConsolidatedSection = (
                 view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                 edit: [PermissionEnum.ACCOMMODATION_BASIC_INFO_EDIT]
             },
-            entitlementKey: EntitlementKey.CAN_USE_RICH_DESCRIPTION, // T-G-007: Gate rich description
+            entitlementKey: EntitlementKeyEnum.CAN_USE_RICH_DESCRIPTION, // T-G-007: Gate rich description
             typeConfig: {
                 minRows: 6,
                 maxLength: 5000,

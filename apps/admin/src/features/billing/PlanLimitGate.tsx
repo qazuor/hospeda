@@ -3,8 +3,8 @@
  *
  * (HOS-1416: replaced the retired qzpay-react `LimitGate` for fields and
  * pages whose availability depends on the **currently-logged-in user's**
- * plan limits — e.g. `LimitKey.MAX_ACCOMMODATIONS`,
- * `LimitKey.MAX_ACTIVE_PROMOTIONS`.)
+ * plan limits — e.g. `LimitKeyEnum.MAX_ACCOMMODATIONS`,
+ * `LimitKeyEnum.MAX_ACTIVE_PROMOTIONS`.)
  *
  * Unlike `LimitGate`, this component does NOT require a `customerId` prop or
  * a customer wired into the `QZPayContext`. It reads limit values from
@@ -14,14 +14,14 @@
  * @module features/billing/PlanLimitGate
  */
 
-import type { LimitKey } from '@repo/billing';
+import type { LimitKeyEnum } from '@repo/schemas';
 import type * as React from 'react';
 import { useEffectiveSet } from '@/features/billing/use-effective-set';
 import { useTranslations } from '@/hooks/use-translations';
 
 export interface PlanLimitGateProps {
-    /** The plan limit key to gate on (e.g., LimitKey.MAX_ACCOMMODATIONS). */
-    readonly limitKey: LimitKey | string;
+    /** The plan limit key to gate on (e.g., LimitKeyEnum.MAX_ACCOMMODATIONS). */
+    readonly limitKey: LimitKeyEnum | string;
     /** Caller-provided current usage count for this limit. */
     readonly currentCount: number;
     /** Rendered when under the limit. */
@@ -55,7 +55,7 @@ export interface PlanLimitGateProps {
  * ```tsx
  * const { count } = useAccommodationCount();
  * <PlanLimitGate
- *   limitKey={LimitKey.MAX_ACCOMMODATIONS}
+ *   limitKey={LimitKeyEnum.MAX_ACCOMMODATIONS}
  *   currentCount={count}
  *   fieldLabel="Alojamientos"
  * >
@@ -143,7 +143,7 @@ export function PlanLimitGate({
 // ---------------------------------------------------------------------------
 
 interface DefaultFallbackProps {
-    readonly limitKey: LimitKey | string;
+    readonly limitKey: LimitKeyEnum | string;
     readonly currentCount: number;
     readonly maxAllowed: number;
     readonly fieldLabel?: string;
