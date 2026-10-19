@@ -9,6 +9,14 @@ import { RevocationRefundSettlement } from '../RevocationRefundSettlement';
 import { RevocationResultDetails } from '../RevocationResultDetails';
 
 const state = vi.hoisted(() => ({ permissions: [] as PermissionEnum[], fetchApi: vi.fn() }));
+type TranslationTree = string | { readonly [key: string]: TranslationTree };
+const readTranslation = (root: TranslationTree, path: string): TranslationTree | undefined =>
+    path
+        .split('.')
+        .reduce<TranslationTree | undefined>(
+            (node, part) => (typeof node === 'string' ? undefined : node[part]),
+            root
+        );
 vi.mock('@/hooks/use-user-permissions', () => ({
     useUserPermissions: () => state.permissions,
     useHasPermission: (permission: PermissionEnum) => state.permissions.includes(permission)
@@ -17,10 +25,7 @@ vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({
         locale: 'es',
         t: (key: string, values?: Record<string, string>) => {
-            const value = key
-                .replace(/^admin-billing\./, '')
-                .split('.')
-                .reduce((node: any, part) => node?.[part], es);
+            const value = readTranslation(es, key.replace(/^admin-billing\./, ''));
             return typeof value === 'string'
                 ? value.replace(
                       /\{\{?(\w+)\}?\}/g,
@@ -45,8 +50,7 @@ const RESULT: SubscriptionRevocationResponse = {
     cancelCall: 'NOT_NEEDED'
 };
 const MANUAL = { ...RESULT, payment: { source: 'MANUAL_PAYMENT' as const, id: PAYMENT_ID } };
-const copy = (path: string) =>
-    path.split('.').reduce((value: any, part) => value?.[part], es.subscriptionRevocation);
+const copy = (path: string) => readTranslation(es.subscriptionRevocation, path);
 const renderSettlement = (result = RESULT) => {
     const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
     return render(
@@ -284,7 +288,10 @@ describe('TEST:1711:4 AC:1711:4 rejection messages', () => {
         const alert = await screen.findByRole('alert');
         const translated = path
             .split('.')
-            .reduce((value: any, part) => value?.[part], es.reconciliationMarks);
+            .reduce<TranslationTree | undefined>(
+                (value, part) => (typeof value === 'string' ? undefined : value[part]),
+                es.reconciliationMarks
+            );
         expect(alert).toHaveTextContent(translated);
         expect(section().getByRole('button', { name: 'Revisar asiento' })).toBeInTheDocument();
         expect(state.fetchApi).toHaveBeenCalledTimes(1);
