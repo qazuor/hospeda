@@ -32,7 +32,7 @@ describe('TEST:1714:4 AC:1714:4 reconciliation over fake Mercado Pago HTTP', () 
         server = undefined;
     });
 
-    it('TEST:1714:4 returns NOT_CHARGED while open and closes the period after expiry', async () => {
+    it('TEST:1714:4 AC:1714:4 returns NOT_CHARGED while open and closes the period after expiry', async () => {
         const { clock, instance } = fixture();
         server = await startFakeProviderServer({ provider: instance, clock });
         const adapter = new MercadoPagoPaymentProvider({

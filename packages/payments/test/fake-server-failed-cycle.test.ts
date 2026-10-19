@@ -27,7 +27,7 @@ afterEach(async () => {
 });
 
 describe('TEST:1714:3 AC:1714:3 failed cycle server behavior', () => {
-    it('TEST:1714:3 serves the failed record without payment.id only after its expiry and round-trips inventory', async () => {
+    it('TEST:1714:3 AC:1714:3 serves the failed record without payment.id only after its expiry and round-trips inventory', async () => {
         const instance = new FakePaymentProvider({ clock });
         server = await startFakeProviderServer({ provider: instance, clock });
         const adapter = new MercadoPagoPaymentProvider({
