@@ -83,6 +83,11 @@ const CONTACT_TYPE_OPTIONS = [
         value: 'event_submission',
         i18nKey: 'contact.form.typeEventSubmission',
         fallback: 'Sumar mi evento'
+    },
+    {
+        value: 'revocation',
+        i18nKey: 'contact.form.typeRevocation',
+        fallback: 'Arrepentimiento de compra (revocación)'
     }
 ] as const;
 
