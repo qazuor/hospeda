@@ -41,10 +41,10 @@ function makeTree(
 }
 
 describe('TEST:V9b:14 PB4/PB5 freeze guard', () => {
-    it('accepts the repository tree', () => {
+    it('accepts the repository tree (TEST:1694:6 AC:1694:3: archive-inactive-listing.ts re-measured)', () => {
         const result = run();
         expect(result.exitCode).toBe(0);
-        expect(result.output).toBe('OK TEST:V9b:14: 9 PB4/PB5 files unchanged since 9c81cf562c');
+        expect(result.output).toBe('OK TEST:V9b:14: 9 PB4/PB5 files unchanged since HOS-1694');
     });
 
     it.each([

@@ -1,10 +1,10 @@
 {
     "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:244-254; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:758-764",
-    "measuredAt": "9c81cf562c",
+    "measuredAt": "HOS-1694",
     "files": [
         {
             "file": "packages/verticals/src/publication/archive-inactive-listing.ts",
-            "sha256": "7a6e0b82a65457d0013fd0de93bc4d95928b3bb50a713716aa0993081abd2331"
+            "sha256": "3c8b219d2a5ddb6132cfe29df40d7ff3ca4130ca85be41d34865c6f2a1281c0e"
         },
         {
             "file": "packages/verticals/src/publication/archive-notices.ts",

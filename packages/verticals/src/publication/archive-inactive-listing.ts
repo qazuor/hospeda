@@ -1,6 +1,7 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { buildListingArchivedPayload, LISTING_ARCHIVED_TEMPLATE } from './archive-notices';
+import { inactivityClockStart } from './inactivity-clock';
 import { publicationAfterCommit, withPublicationLock } from './publication-lock';
 import type {
     PostCommitWarning,
@@ -85,9 +86,16 @@ export async function archiveInactiveListing(args: {
                 });
                 return { archived: false, reason: 'COVERED' } as const;
             }
-            const clockStart = retentionClockStart({
-                inactiveSince: listing.inactiveSince,
-                pauseEndedAt: pause.pauseEndedAt
+            const lastOwnerActAt = await tx.readLastOwnerActAt({
+                vertical: args.vertical,
+                listingId: listing.id
+            });
+            const clockStart = inactivityClockStart({
+                clockStart: retentionClockStart({
+                    inactiveSince: listing.inactiveSince,
+                    pauseEndedAt: pause.pauseEndedAt
+                }),
+                lastOwnerActAt
             });
             const dueAt = archiveDueAt({ transition, clockStart, deadlines: listing.deadlines });
             const archivedAt = args.clock.now();
