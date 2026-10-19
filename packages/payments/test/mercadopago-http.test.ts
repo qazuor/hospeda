@@ -215,6 +215,7 @@ describe('TEST:B11:27 (support) the adapter reads a chargeback and a refunded ch
     });
 
     it('TEST:1710:1 AC:1710:1 (h) any other provider status still fails closed', async () => {
+        // AC:1710:1 keeps fail-closed status handling while using the measured payment fields.
         const body = {
             id: 'charge-x',
             date_created: '2026-10-01T03:00:00.000Z',
