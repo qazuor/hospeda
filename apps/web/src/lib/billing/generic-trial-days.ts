@@ -38,7 +38,7 @@
  *   already fetched plans for another reason on the same page (e.g. the plan
  *   comparison table) should call this directly instead of fetching again.
  * - {@link resolveGenericOwnerTrialDays} is the convenience wrapper for
- *   callers with no existing plan fetch: it calls `fetchPublicPlans()` itself
+ *   callers with no existing plan fetch: it calls `fetchPublicPlans({ vertical: 'accommodation' })` itself
  *   and falls back to `OWNER_TRIAL_DAYS` when the fetch fails or no plan
  *   qualifies.
  *
@@ -100,7 +100,7 @@ export function computeMinimumTrialDays({ plans }: ComputeMinimumTrialDaysParams
 
 /** Input for {@link computeGenericOwnerTrialDays}. */
 export interface ComputeGenericOwnerTrialDaysParams {
-    /** Full plan list, as returned by `fetchPublicPlans()` (any category). */
+    /** Plans returned by the accommodation catalog. */
     readonly plans: readonly PublicPlanData[];
 }
 
@@ -127,14 +127,14 @@ export function computeGenericOwnerTrialDays({
  * active owner plan currently offers a trial.
  *
  * Use this in pages that have no other reason to fetch plans. A page that
- * already calls `fetchPublicPlans()` for another purpose (e.g. to render the
+ * already reads the catalog for another purpose (e.g. to render the
  * plan comparison table) should call {@link computeGenericOwnerTrialDays}
  * directly on its own result instead, to avoid a redundant request.
  *
  * @returns The resolved generic trial length in days. Never throws.
  */
 export async function resolveGenericOwnerTrialDays(): Promise<number> {
-    const result = await fetchPublicPlans();
+    const result = await fetchPublicPlans({ vertical: 'accommodation' });
 
     if (!result.ok) {
         return OWNER_TRIAL_DAYS;

@@ -44,7 +44,7 @@
  *
  * ## Prices AND trial lengths are fetched, never written down
  *
- * Each "from $X" comes from `GET /api/v1/public/plans` at request time (AC-8),
+ * Each "from $X" comes from `GET /api/v1/public/plan-catalog?vertical=` at request time (AC-8),
  * so an operator's price edit in admin shows up here without a redeploy — same
  * contract the two pricing pages have had since SPEC-168 D3. When a domain's
  * fetch fails, `fetchAudienceOffers` yields `null` for that audience and the

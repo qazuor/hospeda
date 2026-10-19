@@ -57,7 +57,7 @@ export const PLAN_WATERMARK_ICONS: Readonly<Record<string, ComponentType<IconPro
  * unconditionally and no tier can be the one that breaks the page.
  *
  * @param input - Wrapper object.
- * @param input.slug - The plan's slug, as returned by `GET /public/plans`.
+ * @param input.slug - The plan's slug, as returned by `GET /api/v1/public/plan-catalog`.
  * @returns The mapped glyph, or {@link PLAN_WATERMARK_FALLBACK_ICON}.
  *
  * @example

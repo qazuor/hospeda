@@ -48,7 +48,7 @@ import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
+import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
 import { computeMinimumTrialDays } from '@/lib/billing/generic-trial-days';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -66,8 +66,8 @@ applyCacheHeaders({
     tags: [CACHE_TAG_PRICING]
 });
 
-const fetchResult = await fetchPublicPlans();
-const touristPlans = fetchResult.ok ? filterPlansByCategory(fetchResult.plans, 'tourist') : [];
+const fetchResult = await fetchPublicPlans({ vertical: 'tourist' });
+const touristPlans = fetchResult.ok ? fetchResult.plans : [];
 const trialDays = computeMinimumTrialDays({ plans: touristPlans });
 
 const benefits = [

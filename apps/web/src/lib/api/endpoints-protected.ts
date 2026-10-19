@@ -29,6 +29,8 @@ import type {
     ListingSupportEditsResponse,
     OccupancySourceEnum,
     PriceAlertResponse,
+    PricingSituationResponse,
+    PricingSituationVertical,
     ProtectedEffectiveSetResponse,
     PublicationStatusEnum,
     RedeemPromoCodeResponseSchema,
@@ -5519,6 +5521,19 @@ export const promoCodeApi = {
 };
 
 export const billingSubscriptionApi = {
+    /** Read the backend-resolved pricing situation for one vertical. */
+    pricingSituation({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: PricingSituationVertical;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<PricingSituationResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing-subscription/pricing-situation/${vertical}`,
+            cookieHeader
+        });
+    },
     /** Read the authenticated user's own principal subscriptions. */
     listMine({
         cookieHeader

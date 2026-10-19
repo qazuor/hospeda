@@ -30,7 +30,7 @@
  *
  * `gastronomy-basico`, `-pro` and `-premium` are all `isActive` since HOS-975,
  * so this renders three cards today. It reads them off
- * `GET /api/v1/public/plans?domain=gastronomy` rather than a list in this file
+ * `GET /api/v1/public/plan-catalog?vertical=gastronomy` rather than a list in this file
  * (AC-45): the day the owner deactivates one — or activates a fourth — the page
  * follows with no edit here. The card layout centres whatever count it gets,
  * which is HOS-891 fixed for this audience by construction rather than by a
@@ -62,7 +62,6 @@ import {
     resolvePricingPageContent
 } from '@/lib/billing/pricing-page-content';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { buildListingStartUrl } from '@/lib/listing/start-url';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
@@ -110,7 +109,6 @@ const jsonLdPlans = plans.map((plan) => ({
     url: `${siteOrigin}${pagePath}`
 }));
 
-const ctaHref = buildListingStartUrl({ locale, vertical: 'gastronomy' });
 
 const title = t(`${copyRoot}.pageTitle`);
 const description = t(`${copyRoot}.pageDescription`);
@@ -164,8 +162,7 @@ const headingMain = headingWords.join(' ');
         copyRoot={copyRoot}
         faqs={faqs}
         hasComparison={hasComparison}
-        ctaMode="link"
-        ctaHref={ctaHref}
+        ctaMode="checkout"
         priceMode={priceMode}
     />
 </MarketingLayout>

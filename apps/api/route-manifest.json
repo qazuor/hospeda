@@ -2478,6 +2478,10 @@
             "path": "/api/v1/protected/billing-subscription/:subscriptionId/cancellation-preview"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/billing-subscription/pricing-situation/:vertical"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/billing/promo-codes/redeem"
         },
@@ -3780,6 +3784,10 @@
         {
             "method": "GET",
             "path": "/api/v1/public/partners/:slug"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/plan-catalog"
         },
         {
             "method": "GET",
