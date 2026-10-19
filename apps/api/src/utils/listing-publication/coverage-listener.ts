@@ -6,6 +6,14 @@ import { apiLogger } from '../logger';
 import { getListingPublicationPorts } from './ports';
 
 let unsubscribe: (() => void) | undefined;
+const inFlightRecalculations = new Set<Promise<void>>();
+
+/** Waits for all listing coverage recalculations, including ones started while draining. */
+export async function drainListingCoverageRecalculations(): Promise<void> {
+    while (inFlightRecalculations.size > 0) {
+        await Promise.allSettled([...inFlightRecalculations]);
+    }
+}
 
 /** Registers the process-wide billing notice consumer once; the returned closure tears it down. */
 export function subscribeListingCoverageRecalculation(): () => void {
@@ -17,7 +25,7 @@ export function subscribeListingCoverageRecalculation(): () => void {
             event.vertical !== VerticalEnum.EXPERIENCE
         )
             return;
-        void (async () => {
+        const recalculation = (async () => {
             try {
                 await recalculateCoverage({
                     ...getListingPublicationPorts(),
@@ -33,6 +41,8 @@ export function subscribeListingCoverageRecalculation(): () => void {
                 );
             }
         })();
+        inFlightRecalculations.add(recalculation);
+        void recalculation.finally(() => inFlightRecalculations.delete(recalculation));
     });
     return () => {
         unsubscribe?.();

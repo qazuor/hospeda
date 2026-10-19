@@ -4,7 +4,10 @@ import { type Actor, getUserRoles } from '@repo/service-core';
 import { resolveEffectivePermissions } from '../../middlewares/actor.js';
 import { buildPermanentGrantPorts } from '../../routes/billing-permanent-grant/admin/ports.js';
 import { injectClock, systemClock } from '../../utils/clock.js';
-import { subscribeListingCoverageRecalculation } from '../../utils/listing-publication/coverage-listener.js';
+import {
+    drainListingCoverageRecalculations,
+    subscribeListingCoverageRecalculation
+} from '../../utils/listing-publication/coverage-listener.js';
 import { defaultPaymentProvider, injectPaymentProvider } from '../../utils/payment-provider.js';
 import { subscribeTrialCoverageConversion } from '../../utils/trial/trial-coverage-listener.js';
 
@@ -22,10 +25,10 @@ export class Step3bOperatorUnresolvedError extends Error {
     }
 }
 
-/** Injects process dependencies, subscribes cutover coverage consumers, and builds grant ports. */
+/** Injects process dependencies and builds grant ports; stop waits for in-flight listing recalculations. */
 export function composeStep3bProcess(options: ComposeStep3bOptions = {}): {
     readonly ports: ReturnType<typeof buildPermanentGrantPorts>;
-    readonly stop: () => void;
+    readonly stop: () => Promise<void>;
 } {
     const clock = options.clock ?? systemClock;
     injectClock({ clock });
@@ -34,9 +37,10 @@ export function composeStep3bProcess(options: ComposeStep3bOptions = {}): {
     const stopTrial = subscribeTrialCoverageConversion();
     return {
         ports: buildPermanentGrantPorts(),
-        stop() {
+        async stop() {
             stopTrial();
             stopListing();
+            await drainListingCoverageRecalculations();
         }
     };
 }

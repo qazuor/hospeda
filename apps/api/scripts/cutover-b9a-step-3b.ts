@@ -57,7 +57,7 @@ async function main(): Promise<void> {
         );
         process.exitCode = 1;
     } finally {
-        processComposition?.stop();
+        await processComposition?.stop();
         await pool.end();
     }
 }
