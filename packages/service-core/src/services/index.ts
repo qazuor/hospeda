@@ -97,6 +97,7 @@ export {
 } from './billing/notification/notification-retention.service.js';
 export * from './billing/payment/apply-executed-refund.service.js';
 export * from './billing/payment/credit-payment.service.js';
+export * from './billing/payment/expire-lapsed-payments.service.js';
 export * from './billing/payment/fail-payment.service.js';
 export * from './billing/payment/issue-receipt.js';
 export * from './billing/payment/payment-ledger.js';
