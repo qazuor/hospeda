@@ -58,6 +58,7 @@ describe('TEST:1701:4 AC:1701:4 AC:1701:1 the fix-reported staff notice renders 
         ).map((key) => ({ ...payload, [key]: undefined })),
         { ...payload, vertical: 'unknown' },
         { ...payload, reportedAt: 'yesterday' },
+        Object.fromEntries(Object.entries(payload).filter(([key]) => key !== 'suggestedDate')),
         { ...payload, suggestedDate: '20/10/2026' }
     ])('rejects malformed payload %#', async (invalid) => {
         await expect(render(invalid)).rejects.toBeInstanceOf(TypeError);

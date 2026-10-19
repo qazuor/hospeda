@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
     reportFixed: vi.fn(),
     readOpenFixRequest: vi.fn(),
     enqueueNotice: vi.fn(),
+    transactionTx: undefined as unknown,
     coverage: vi.fn(),
     trialRows: [] as unknown[]
 }));
@@ -27,6 +28,7 @@ vi.mock('@repo/db', () => {
         ...chain,
         transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db)
     };
+    mocks.transactionTx = db;
     return {
         getDb: () => db,
         domainEvent: {},
@@ -188,19 +190,23 @@ describe('TEST:V8a:7 reportFixed (row 30, H4)', () => {
             });
             expect(result).toEqual({ ownerReportedFixedAt: at.toISOString() });
             expect(mocks.enqueueNotice).toHaveBeenCalledTimes(1);
-            expect(mocks.enqueueNotice).toHaveBeenCalledWith({
-                tx: expect.anything(),
-                vertical: VerticalEnum.EXPERIENCE,
-                listingId: LISTING,
-                ownerId: OWNER,
-                fixRequest: {
-                    id: '99999999-9999-4999-8999-999999999999',
-                    reason: 'Falta horario',
-                    suggestedDate: '2026-10-20',
-                    openedAt: new Date('2026-10-10T10:00:00.000Z')
-                },
-                reportedAt: at
-            });
+            expect(mocks.enqueueNotice.mock.calls).toEqual([
+                [
+                    {
+                        tx: mocks.transactionTx,
+                        vertical: VerticalEnum.EXPERIENCE,
+                        listingId: LISTING,
+                        ownerId: OWNER,
+                        fixRequest: {
+                            id: '99999999-9999-4999-8999-999999999999',
+                            reason: 'Falta horario',
+                            suggestedDate: '2026-10-20',
+                            openedAt: new Date('2026-10-10T10:00:00.000Z')
+                        },
+                        reportedAt: at
+                    }
+                ]
+            ]);
         });
 
         it('does not notify on ALREADY', async () => {
