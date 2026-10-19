@@ -36,6 +36,7 @@ export enum EntitlementKeyEnum {
     STAFF_MANAGEMENT = 'staff_management',
     SAVE_FAVORITES = 'save_favorites',
     WRITE_REVIEWS = 'write_reviews',
+    READ_REVIEWS = 'read_reviews',
     PRICE_ALERTS = 'price_alerts',
     EXCLUSIVE_DEALS = 'exclusive_deals',
     VIP_SUPPORT = 'vip_support',

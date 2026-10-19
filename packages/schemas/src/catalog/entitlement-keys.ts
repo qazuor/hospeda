@@ -46,6 +46,8 @@ const ROWS: readonly KeyRow[] = [
     ['staff_management', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['save_favorites', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['write_reviews', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
+    // Back in the catalog by owner decision (HOS-1626 D-1, 2026-10-19) so the comparison table's reviews row tells the truth.
+    ['read_reviews', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['price_alerts', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['exclusive_deals', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['vip_support', 'global', 'MAX', 'NONE', 'COMMERCIAL'],

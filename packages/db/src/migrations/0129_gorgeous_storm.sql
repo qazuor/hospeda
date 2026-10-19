@@ -75,6 +75,7 @@ INSERT INTO "catalog_key" ("key", "kind", "scope", "aggregation_strategy", "enfo
 	('publish_accommodations', 'entitlement', 'vertical', 'MAX', 'UNPUBLISH', 'COMMERCIAL'),
 	('publish_experience', 'entitlement', 'vertical', 'MAX', 'UNPUBLISH', 'COMMERCIAL'),
 	('publish_gastronomy', 'entitlement', 'vertical', 'MAX', 'UNPUBLISH', 'COMMERCIAL'),
+	('read_reviews', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('recover_own_listing', 'entitlement', 'vertical', 'MAX', 'NONE', 'BASE'),
 	('respond_reviews', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('save_favorites', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),

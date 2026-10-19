@@ -131,14 +131,14 @@ describe('TEST:V1:3 — catalog_key table after db:migrate from empty', () => {
 });
 
 describe('reference rows survive the integration clean slate', () => {
-    it('keeps the 5 verticals and the 79 keys after withCleanSlate', async () => {
+    it('keeps the 5 verticals and the 80 keys after withCleanSlate', async () => {
         await withCleanSlate(async () => {
             const verticals = await getTestPool().query('SELECT 1 FROM vertical');
             const keys = await getTestPool().query('SELECT 1 FROM catalog_key');
 
             expect(verticals.rowCount).toBe(Object.values(VerticalEnum).length);
             expect(keys.rowCount).toBe(CATALOG_KEY_DEFINITIONS.length);
-            expect(keys.rowCount).toBe(79);
+            expect(keys.rowCount).toBe(80);
         });
     });
 });
