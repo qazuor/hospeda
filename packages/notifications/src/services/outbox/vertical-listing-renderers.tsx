@@ -281,6 +281,9 @@ export function createVerticalListingRenderers(input: {
             const ownerId = readText(data, 'ownerId');
             const fixRequestId = readText(data, 'fixRequestId');
             const reason = readText(data, 'reason');
+            if (!Object.hasOwn(data, 'suggestedDate')) {
+                throw new TypeError('Falta el dato requerido «suggestedDate» del aviso de ficha');
+            }
             const suggestedDate = readSuggestedDate(data.suggestedDate);
             const requestedAt = readIsoInstant(data, 'requestedAt', 'apertura');
             const reportedAt = readIsoInstant(data, 'reportedAt', 'aviso');
