@@ -575,8 +575,8 @@ vi.mock('../../../src/utils/logger', () => ({
 // ---------------------------------------------------------------------------
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { EntitlementKey, LimitKey } from '@repo/billing';
-import { type PermissionEnum, RoleEnum } from '@repo/schemas';
+
+import { EntitlementKeyEnum, LimitKeyEnum, type PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorMiddleware } from '../../../src/middlewares/actor';
 import { createErrorHandler } from '../../../src/middlewares/response';
@@ -796,8 +796,8 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/search-chat — integration gates
         // but it is subject to a graduated per-plan monthly quota (MAX_AI_SEARCH_PER_MONTH).
         // Default to empty set + empty limits Map so base-flow tests run under the
         // "key absent → unlimited" semantics (getRemainingLimit returns -1).
-        currentEntitlementsForTest.current = new Set<EntitlementKey>();
-        currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 200]]);
+        currentEntitlementsForTest.current = new Set<EntitlementKeyEnum>();
+        currentLimitsForTest.current = new Map([[LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH, 200]]);
         // SPEC-283: reset the per-test search call count so quota tests are isolated.
         nextSearchCallCount.current = 0;
         nextAmenityDbRows.current = [];
@@ -975,8 +975,8 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/search-chat — integration gates
 
         it('serves a USER without AI entitlements when the search quota is present', async () => {
             // Search is quota-only, including for a tourist-free user.
-            currentEntitlementsForTest.current = new Set<EntitlementKey>();
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 10]]);
+            currentEntitlementsForTest.current = new Set<EntitlementKeyEnum>();
+            currentLimitsForTest.current = new Map([[LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH, 10]]);
 
             const res = await app.request(ENDPOINT, {
                 method: 'POST',
@@ -991,8 +991,8 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/search-chat — integration gates
         it('succeeds for a HOST with AI_CHAT entitlement but NOT AI_SEARCH', async () => {
             // HOST user with chat but no explicit search entitlement.
             // Confirms the route does not gate on AI_SEARCH (SPEC-211 §7.7).
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_CHAT]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 20]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_CHAT]);
+            currentLimitsForTest.current = new Map([[LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH, 20]]);
 
             const res = await app.request(ENDPOINT, {
                 method: 'POST',
@@ -1614,7 +1614,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/search-chat — integration gates
     describe('Gate 7 — SPEC-283: per-plan search quota', () => {
         it('(a) under quota: returns 200 SSE stream when call count is below the limit', async () => {
             // Arrange: plan allows 50 searches/month; user has used 0.
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 50]]);
+            currentLimitsForTest.current = new Map([[LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH, 50]]);
             nextSearchCallCount.current = 0;
 
             const res = await app.request(ENDPOINT, {
@@ -1632,7 +1632,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/search-chat — integration gates
 
         it('(b) rejects when the monthly count reaches the effective limit', async () => {
             // Arrange: plan allows 50 searches/month; user has used all 50.
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 50]]);
+            currentLimitsForTest.current = new Map([[LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH, 50]]);
             nextSearchCallCount.current = 50;
 
             const res = await app.request(ENDPOINT, {
@@ -1651,7 +1651,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/search-chat — integration gates
         });
 
         it('(c) rejects a zero monthly limit', async () => {
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 0]]);
+            currentLimitsForTest.current = new Map([[LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH, 0]]);
             nextSearchCallCount.current = 999; // detect if middleware reads count unnecessarily
 
             const res = await app.request(ENDPOINT, {
@@ -1671,8 +1671,8 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/search-chat — integration gates
             // skipEntitlementGate=true — the entitlement check is SKIPPED entirely;
             // only the monthly quota applies. A tourist-free user with calls remaining must
             // succeed, which is the core semantics of SPEC-283 OQ-1 (auth-baseline).
-            currentEntitlementsForTest.current = new Set<EntitlementKey>(); // NO AI_SEARCH
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 50]]);
+            currentEntitlementsForTest.current = new Set<EntitlementKeyEnum>(); // NO AI_SEARCH
+            currentLimitsForTest.current = new Map([[LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH, 50]]);
             nextSearchCallCount.current = 0;
 
             const res = await app.request(ENDPOINT, {
@@ -1685,7 +1685,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/search-chat — integration gates
         });
 
         it('(e) treats an absent monthly limit as zero', async () => {
-            currentLimitsForTest.current = new Map<LimitKey, number>(); // key absent
+            currentLimitsForTest.current = new Map<LimitKeyEnum, number>(); // key absent
             nextSearchCallCount.current = 999; // high value to expose any accidental limit check
 
             const res = await app.request(ENDPOINT, {
@@ -3465,7 +3465,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/search-chat — integration gates
 
     describe('HOS-328 — records AI usage', () => {
         it('writes one ai_usage row per request, summing both provider calls', async () => {
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 50]]);
+            currentLimitsForTest.current = new Map([[LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH, 50]]);
             nextSearchCallCount.current = 0;
 
             const res = await app.request(ENDPOINT, {
@@ -3504,7 +3504,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/search-chat — integration gates
 
         it('still records success usage after the former quota is reached', async () => {
             currentLimitsForTest.current = new Map([
-                [LimitKey.MAX_AI_SEARCH_PER_MONTH, 2147483647]
+                [LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH, 2147483647]
             ]);
             nextSearchCallCount.current = 50;
 
@@ -3523,7 +3523,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/search-chat — integration gates
         });
 
         it('still emits the done frame when metering fails (metering is never fatal)', async () => {
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 50]]);
+            currentLimitsForTest.current = new Map([[LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH, 50]]);
             nextSearchCallCount.current = 0;
             mockRecordAiUsage.mockRejectedValueOnce(new Error('ai_usage insert failed'));
 

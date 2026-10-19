@@ -16,10 +16,11 @@
  *
  * @see apps/api/src/routes/recommendations/protected/get.ts
  */
-import { EntitlementKey } from '@repo/billing';
+
 import type { RecommendationFeedResponse } from '@repo/schemas';
 import {
     AccommodationTypeEnum,
+    EntitlementKeyEnum,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode,
@@ -189,7 +190,7 @@ function injectActor(
  * Middleware order: error handler → actor → entitlements → route (which itself
  * runs `protectedAuthMiddleware()` then `gateRecommendations()` before the handler).
  */
-function buildApp(entitlementKeys: EntitlementKey[]): Hono<AppBindings> {
+function buildApp(entitlementKeys: EntitlementKeyEnum[]): Hono<AppBindings> {
     effectiveSetMock.mockImplementation(
         async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
             rehydrateEffectiveSet({
@@ -229,7 +230,7 @@ describe('GET /api/v1/protected/recommendations (SPEC-284 T-015)', () => {
     describe('happy path', () => {
         it('returns 200 with the RecommendationFeedResponse shape when the actor has the entitlement', async () => {
             // Arrange
-            const app = buildApp([EntitlementKey.CAN_VIEW_RECOMMENDATIONS]);
+            const app = buildApp([EntitlementKeyEnum.CAN_VIEW_RECOMMENDATIONS]);
 
             // Act
             const res = await app.request('/');
@@ -275,7 +276,7 @@ describe('GET /api/v1/protected/recommendations (SPEC-284 T-015)', () => {
                         'Permission denied: RECOMMENDATION_VIEW required to view the recommendations feed'
                 }
             });
-            const app = buildApp([EntitlementKey.CAN_VIEW_RECOMMENDATIONS]);
+            const app = buildApp([EntitlementKeyEnum.CAN_VIEW_RECOMMENDATIONS]);
 
             // Act
             const res = await app.request('/');
@@ -313,7 +314,7 @@ describe('GET /api/v1/protected/recommendations (SPEC-284 T-015)', () => {
                     message: 'Unexpected failure computing the feed'
                 }
             });
-            const app = buildApp([EntitlementKey.CAN_VIEW_RECOMMENDATIONS]);
+            const app = buildApp([EntitlementKeyEnum.CAN_VIEW_RECOMMENDATIONS]);
 
             // Act
             const res = await app.request('/');
@@ -336,7 +337,7 @@ describe('GET /api/v1/protected/recommendations (SPEC-284 T-015)', () => {
                     })
                 )
             );
-            const app = buildApp([EntitlementKey.CAN_VIEW_RECOMMENDATIONS]);
+            const app = buildApp([EntitlementKeyEnum.CAN_VIEW_RECOMMENDATIONS]);
 
             // Act
             const res = await app.request('/');
