@@ -10,6 +10,7 @@ import {
     adminCancelSubscriptionRoute,
     adminSubscriptionCancellationPreviewRoute
 } from './cancellation';
+import { adminSubscriptionOpenRefundsRoute } from './open-refunds';
 import {
     adminRevokeSubscriptionRoute,
     adminSubscriptionRevocationPreviewRoute
@@ -44,6 +45,7 @@ export const adminInspectSubscriptionRoute = createAdminRoute({
 
 const router = createRouter();
 router.route('/', adminInspectSubscriptionRoute);
+router.route('/', adminSubscriptionOpenRefundsRoute);
 router.route('/', adminSubscriptionRevocationPreviewRoute);
 router.route('/', adminRevokeSubscriptionRoute);
 router.route('/', adminSubscriptionCancellationPreviewRoute);

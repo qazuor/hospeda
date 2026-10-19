@@ -476,6 +476,15 @@ A non-uuid `subscriptionId`, or a body without a uuid `expectedPaymentId`, with 
 
 The permission is the route's scope (`billing.cancelSubscription`); the subject, the system actor and `actor = subject` are decided inside the revocation transaction, so a 403 can come from either. The row is read before the subject, so a missing subscription answers 404 to an actor holding the permission, as in action 14.
 
+## Open refund requests of a subscription (HOS-1711)
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/open-refunds` requires
+`BILLING_SUBSCRIPTION_INSPECT` at the route factory. Rejections follow this
+order: 401 unauthenticated, 403 without permission, 400 for a malformed
+`subscriptionId`, and 404 `NOT_FOUND` for an unknown subscription. The read is
+read-only and lists only `REQUESTED` refund requests attached to payments of
+that subscription; requests for complements and one-time add-ons are excluded.
+
 ## Self-service cancellation (B13a.1, HOS-1617)
 
 `GET /api/v1/protected/billing-subscription/` lists the caller's principal subscriptions.
