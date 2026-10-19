@@ -86,6 +86,9 @@ const ENQUEUE_SITES: Readonly<
         'BEFORE_CANCEL_TEMPLATE_BY_KIND',
     'apps/api/src/utils/trial/trial-campaign-outbox.ts': 'TRIAL_CAMPAIGN_TEMPLATES',
     'apps/api/src/utils/listing-publication/ports.ts': ['verticals.listing-restitution'],
+    'apps/api/src/services/listing-notices/fix-reported-notice.ts': [
+        'verticals.listing-fix-reported'
+    ],
     'packages/verticals/src/publication/archive-inactive-listing.ts': [
         'verticals.listing-archived'
     ],
