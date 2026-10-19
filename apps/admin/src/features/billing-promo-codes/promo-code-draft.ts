@@ -28,6 +28,11 @@ export type PromoCodeSummary = {
 };
 
 export type PromoCodeTranslator = (key: TranslationKey) => string;
+export type PromoCodePluralTranslator = (
+    key: TranslationKey,
+    count: number,
+    params?: Record<string, unknown>
+) => string;
 
 /** Converts a peso amount with at most two decimal places to integer centavos. */
 export function toMinorUnits({ pesos }: { readonly pesos: string | number }): number {
@@ -98,11 +103,13 @@ function dateLabel(value: string | Date, locale: string): string {
 export function describePromoCodeDraft({
     draft,
     locale,
-    t
+    t,
+    tPlural
 }: {
     readonly draft: PromoCodeDraft;
     readonly locale: string;
     readonly t: PromoCodeTranslator;
+    readonly tPlural: PromoCodePluralTranslator;
 }): PromoCodeSummary {
     const { effect } = draft;
     let effectText: string;
@@ -121,10 +128,11 @@ export function describePromoCodeDraft({
                     });
                     break;
                 case 'N_CHARGES':
-                    effectText = fill(t('admin-billing.promoCodes.editor.effects.nCharges'), {
-                        value,
-                        count: effect.durationCharges ?? 0
-                    });
+                    effectText = tPlural(
+                        'admin-billing.promoCodes.editor.effects.nCharges' as TranslationKey,
+                        effect.durationCharges ?? 0,
+                        { value }
+                    );
                     break;
                 case 'FOREVER':
                     effectText = fill(t('admin-billing.promoCodes.editor.effects.forever'), {
@@ -135,9 +143,10 @@ export function describePromoCodeDraft({
             break;
         }
         case 'TRIAL_EXTENSION':
-            effectText = fill(t('admin-billing.promoCodes.editor.effects.trialExtension'), {
-                days: effect.extensionDays
-            });
+            effectText = tPlural(
+                'admin-billing.promoCodes.editor.effects.trialExtension' as TranslationKey,
+                effect.extensionDays
+            );
             break;
     }
 

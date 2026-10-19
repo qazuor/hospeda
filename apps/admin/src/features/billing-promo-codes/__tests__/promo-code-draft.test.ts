@@ -10,9 +10,11 @@ import {
 
 const messages: Record<string, string> = {
     'admin-billing.promoCodes.editor.effects.firstCharge': '{{value}} en el primer cobro',
-    'admin-billing.promoCodes.editor.effects.nCharges': '{{value}} por {{count}} cobros',
+    'admin-billing.promoCodes.editor.effects.nCharges_one': '{{value}} por {{count}} cobro',
+    'admin-billing.promoCodes.editor.effects.nCharges_other': '{{value}} por {{count}} cobros',
     'admin-billing.promoCodes.editor.effects.forever': '{{value}} para siempre',
-    'admin-billing.promoCodes.editor.effects.trialExtension': '{{days}} días más de prueba',
+    'admin-billing.promoCodes.editor.effects.trialExtension_one': '{{count}} día más de prueba',
+    'admin-billing.promoCodes.editor.effects.trialExtension_other': '{{count}} días más de prueba',
     'admin-billing.promoCodes.editor.reach.allFuture': 'todas las verticales, también las futuras',
     'admin-billing.promoCodes.editor.reach.selected': 'verticales seleccionadas',
     'admin-billing.promoCodes.editor.verticals.accommodation': 'alojamientos',
@@ -28,6 +30,13 @@ const messages: Record<string, string> = {
     'admin-billing.promoCodes.editor.validity.noEnd': 'desde {{from}}, sin fecha de fin'
 };
 const t = (key: string) => messages[key] ?? key;
+const tPlural = (key: string, count: number, params: Record<string, unknown> = {}) => {
+    const template = messages[`${key}_${count === 1 ? 'one' : 'other'}`] ?? key;
+    return Object.entries({ ...params, count }).reduce(
+        (result, [name, value]) => result.replaceAll(`{{${name}}}`, String(value)),
+        template
+    );
+};
 
 const draft = (overrides: Partial<PromoCodeDraft> = {}): PromoCodeDraft => ({
     code: 'PROMO_20',
@@ -62,9 +71,25 @@ describe('AC:B9b:9 HOS-1591 promo code draft and TEST:B9b:9 (support)', () => {
     });
 
     it('describes percentage durations and fixed first-charge effects', () => {
-        expect(describePromoCodeDraft({ draft: draft(), locale: 'es-AR', t }).effect).toBe(
+        expect(describePromoCodeDraft({ draft: draft(), locale: 'es-AR', t, tPlural }).effect).toBe(
             '20% por 3 cobros'
         );
+        expect(
+            describePromoCodeDraft({
+                draft: draft({
+                    effect: {
+                        kind: 'DISCOUNT',
+                        discountKind: 'PERCENTAGE',
+                        value: 20,
+                        durationKind: 'N_CHARGES',
+                        durationCharges: 1
+                    }
+                }),
+                locale: 'es-AR',
+                t,
+                tPlural
+            }).effect
+        ).toBe('20% por 1 cobro');
         expect(
             describePromoCodeDraft({
                 draft: draft({
@@ -78,7 +103,8 @@ describe('AC:B9b:9 HOS-1591 promo code draft and TEST:B9b:9 (support)', () => {
                     }
                 }),
                 locale: 'es-AR',
-                t
+                t,
+                tPlural
             }).effect
         ).toContain('100');
     });
@@ -96,23 +122,34 @@ describe('AC:B9b:9 HOS-1591 promo code draft and TEST:B9b:9 (support)', () => {
                     }
                 }),
                 locale: 'es-AR',
-                t
+                t,
+                tPlural
             }).effect
         ).toBe('20% para siempre');
         expect(
             describePromoCodeDraft({
                 draft: draft({ effect: { kind: 'TRIAL_EXTENSION', extensionDays: 30 } }),
                 locale: 'es-AR',
-                t
+                t,
+                tPlural
             }).effect
         ).toBe('30 días más de prueba');
+        expect(
+            describePromoCodeDraft({
+                draft: draft({ effect: { kind: 'TRIAL_EXTENSION', extensionDays: 1 } }),
+                locale: 'es-AR',
+                t,
+                tPlural
+            }).effect
+        ).toBe('1 día más de prueba');
     });
 
     it('describes all-future or selected verticals and bounded or unlimited uses', () => {
         const all = describePromoCodeDraft({
             draft: draft({ totalQuota: 10 }),
             locale: 'es-AR',
-            t
+            t,
+            tPlural
         });
         expect(all.reach).toBe('todas las verticales, también las futuras');
         expect(all.uses).toBe('hasta 10 canjes en total, uno por persona');
@@ -123,7 +160,8 @@ describe('AC:B9b:9 HOS-1591 promo code draft and TEST:B9b:9 (support)', () => {
                 totalQuota: null
             }),
             locale: 'es-AR',
-            t
+            t,
+            tPlural
         });
         expect(selected.reach).toBe('alojamientos, experiencias');
         expect(selected.uses).toBe('sin tope de canjes, uno por persona');
@@ -134,12 +172,17 @@ describe('AC:B9b:9 HOS-1591 promo code draft and TEST:B9b:9 (support)', () => {
             describePromoCodeDraft({
                 draft: draft({ validFrom: '2026-01-01', validUntil: '2026-12-31' }),
                 locale: 'en-US',
-                t
+                t,
+                tPlural
             }).validity
         ).toMatch(/desde Jan 1, 2026 hasta Dec 31, 2026/);
         expect(
-            describePromoCodeDraft({ draft: draft({ validUntil: null }), locale: 'es-AR', t })
-                .validity
+            describePromoCodeDraft({
+                draft: draft({ validUntil: null }),
+                locale: 'es-AR',
+                t,
+                tPlural
+            }).validity
         ).toBe('desde ahora, sin fecha de fin');
     });
 

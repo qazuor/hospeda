@@ -16,7 +16,17 @@ vi.mock('@/hooks/use-translations', () => ({
             key
                 .split('.')
                 .slice(1)
-                .reduce((value: any, part) => value?.[part], es)
+                .reduce((value: any, part) => value?.[part], es),
+        tPlural: (key: string, count: number, params?: Record<string, unknown>) => {
+            const parts = key.split('.').slice(1);
+            const leaf = parts.pop();
+            const parent = parts.reduce((value: any, part) => value?.[part], es);
+            const template = parent?.[`${leaf}_${count === 1 ? 'one' : 'other'}`] ?? key;
+            return Object.entries({ ...params, count }).reduce(
+                (result: string, [name, value]) => result.replaceAll(`{{${name}}}`, String(value)),
+                template
+            );
+        }
     })
 }));
 vi.mock('@/components/ui/ToastProvider', () => ({ useToast: () => ({ addToast }) }));

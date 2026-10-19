@@ -1653,9 +1653,11 @@
             },
             "effects": {
                 "firstCharge": "{{value}} en el primer cobro",
-                "nCharges": "{{value}} por {{count}} cobros",
+                "nCharges_one": "{{value}} por {{count}} cobro",
+                "nCharges_other": "{{value}} por {{count}} cobros",
                 "forever": "{{value}} para siempre",
-                "trialExtension": "{{days}} días más de prueba"
+                "trialExtension_one": "{{count}} día más de prueba",
+                "trialExtension_other": "{{count}} días más de prueba"
             },
             "reach": { "allFuture": "Todas las verticales, también las futuras" },
             "verticals": {

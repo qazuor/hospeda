@@ -37,7 +37,7 @@ export function PromoCodeCreateDialog({
     readonly open: boolean;
     readonly onOpenChange: (open: boolean) => void;
 }) {
-    const { t, locale } = useTranslations();
+    const { t, tPlural, locale } = useTranslations();
     const { addToast } = useToast();
     const mutation = useCreatePromoCodeMutation();
     const [candidate, setCandidate] = useState<AdminPromoCodeCreateRequest | null>(null);
@@ -69,7 +69,7 @@ export function PromoCodeCreateDialog({
                             : parsed.data.effect
                 };
                 setCandidate(parsed.data);
-                setSummary(describePromoCodeDraft({ draft, locale, t: key }));
+                setSummary(describePromoCodeDraft({ draft, locale, t: key, tPlural }));
             } catch {
                 setValidationError(key('admin-billing.promoCodes.editor.form.invalid'));
                 setCandidate(null);

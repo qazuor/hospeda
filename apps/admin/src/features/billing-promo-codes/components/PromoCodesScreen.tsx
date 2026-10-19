@@ -28,7 +28,7 @@ export function PromoCodesScreen() {
 }
 
 function PromoCodesBody() {
-    const { t, locale } = useTranslations();
+    const { t, tPlural, locale } = useTranslations();
     const [page, setPage] = useState(1);
     const [creating, setCreating] = useState(false);
     const [closing, setClosing] = useState<AdminPromoCode | null>(null);
@@ -101,6 +101,7 @@ function PromoCodesBody() {
                                         promoCode={promoCode}
                                         locale={locale}
                                         t={key}
+                                        tPlural={tPlural}
                                         onClose={() => setClosing(promoCode)}
                                     />
                                 ))}
@@ -147,11 +148,13 @@ function PromoCodeRow({
     promoCode,
     locale,
     t,
+    tPlural,
     onClose
 }: {
     readonly promoCode: AdminPromoCode;
     readonly locale: string;
     readonly t: (key: string) => string;
+    readonly tPlural: (key: string, count: number, params?: Record<string, unknown>) => string;
     readonly onClose: () => void;
 }) {
     const draft = {
@@ -171,7 +174,12 @@ function PromoCodeRow({
     const summary = describePromoCodeDraft({
         draft,
         locale,
-        t: t as (key: TranslationKey) => string
+        t: t as (key: TranslationKey) => string,
+        tPlural: tPlural as (
+            key: TranslationKey,
+            count: number,
+            params?: Record<string, unknown>
+        ) => string
     });
     const availabilityKey = PROMO_CODE_AVAILABILITY_KEY[promoCode.availability];
     return (
