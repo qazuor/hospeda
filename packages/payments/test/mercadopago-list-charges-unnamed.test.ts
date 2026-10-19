@@ -186,7 +186,7 @@ describe('TEST:1714:2 AC:1714:1-2 fail-closed and absence variants', () => {
         ).toEqual({ chargeIds: ALL6 });
     });
 
-    it('TEST:1714:2 AC:1714:1-2 p-r verifies named-record protection and direct unnamed resolution', async () => {
+    it('TEST:1714:2 AC:1714:1 p verifies named-record protection', async () => {
         const recordsVariant = structuredClone(records);
         recordsVariant.results.find((r) => String(r.id) === '7032061947')!.payment = {};
         const extra = structuredClone(
@@ -202,7 +202,9 @@ describe('TEST:1714:2 AC:1714:1-2 fail-closed and absence variants', () => {
                 authorizationId: AUTH
             })
         ).toEqual({ chargeIds: ALL6 });
-        const h = harness();
+    });
+
+    it('TEST:1714:2 AC:1714:1 r resolves the unnamed record directly', async () => {
         const map = await resolveUnnamedChargeRecords({
             authorizationId: AUTH,
             records: records.results as MercadoPagoChargeRecord[],
@@ -214,6 +216,9 @@ describe('TEST:1714:2 AC:1714:1-2 fail-closed and absence variants', () => {
         expect([...map].map(([record, paymentId]) => [String(record.id), paymentId])).toEqual([
             ['7032113610', '179087989627']
         ]);
+    });
+
+    it('TEST:1714:2 AC:1714:2 r2 ignores a payment assigned to a record naming another payment', async () => {
         const k = structuredClone(payments);
         failedPayment(k).date_created = '2026-09-20T20:01:40.000-04:00';
         const emptyMap = await resolveUnnamedChargeRecords({
@@ -224,6 +229,5 @@ describe('TEST:1714:2 AC:1714:1-2 fail-closed and absence variants', () => {
         expect([...emptyMap].map(([record, paymentId]) => [String(record.id), paymentId])).toEqual(
             []
         );
-        expect(h.paths).toEqual([]);
     });
 });
