@@ -110,7 +110,6 @@ describe('TEST:1698:1 AC:1698:2 in-flight recalculations', () => {
             .mockImplementationOnce(async () => {
                 await first.promise;
                 mocks.listener?.({ userId: 'u2', vertical: VerticalEnum.GASTRONOMY });
-                await second.promise;
             })
             .mockReturnValueOnce(second.promise);
         const stop = subscribeListingCoverageRecalculation();
