@@ -76,6 +76,13 @@ Runbooks are operational documentation that provide:
    - Log analysis procedures
    - Daily/weekly/monthly reviews
 
+### Billing
+
+1. **[Billing Revocation Requests (S36)](./billing-revocation-requests.md)**
+   - Processing public right-of-withdrawal requests
+   - Recording a revocation through S36
+   - Handling the manual provider refund cutover
+
 ### Integrations & External Providers
 
 1. **[Import Provider Mitigation](./import-provider-mitigation.md)**
