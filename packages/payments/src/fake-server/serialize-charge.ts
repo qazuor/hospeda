@@ -11,12 +11,19 @@ export function serializeCharge({
         date_created: snapshot.createdAt,
         expiration_date: snapshot.expiresAt,
         external_reference: snapshot.reference,
-        preapproval_id: snapshot.authorizationId,
         status: wireStatus({ snapshot }),
         status_detail: snapshot.declineReason,
         transaction_amount: snapshot.amount.amountMinor / 100,
         currency_id: snapshot.amount.currency,
-        amount_refunded: snapshot.refundedAmount.amountMinor / 100
+        transaction_amount_refunded: snapshot.refundedAmount.amountMinor / 100,
+        metadata: {},
+        point_of_interaction:
+            snapshot.authorizationId === null
+                ? { type: 'UNSPECIFIED' }
+                : {
+                      type: 'SUBSCRIPTIONS',
+                      transaction_data: { subscription_id: snapshot.authorizationId }
+                  }
     };
 }
 
