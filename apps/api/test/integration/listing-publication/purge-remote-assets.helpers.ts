@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { getDb, sql } from '@repo/db';
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import {
@@ -9,6 +8,7 @@ import {
     ensurePublicationCatalog
 } from './publication-routes.helpers';
 
+/** Identifies a listing and remote assets created for a purge integration test. */
 export type PurgeAssetFixture = {
     ownerId: string;
     listingId: string;
@@ -133,9 +133,4 @@ export async function cleanupPurgeAssetFixtures(
             sql`UPDATE users SET deleted_at = now() WHERE id = ${fixture.ownerId}::uuid AND deleted_at IS NULL`
         );
     }
-}
-
-/** Supplies collision-resistant ids to test cases that need an independent fixture label. */
-export function fixtureSuffix(): string {
-    return randomUUID();
 }

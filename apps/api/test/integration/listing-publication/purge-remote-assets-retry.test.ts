@@ -58,8 +58,8 @@ function ownPopulation(ids: ReadonlySet<string>): RemoteDeletionRetryPorts['pend
             }
             throw new Error('Marked media population never ended');
         },
-        listMarkedCalendarConnections: async ({ after, limit }) =>
-            production.listMarkedCalendarConnections({ after, limit })
+        // This test seeds no calendars; isolate marked connections from other suites.
+        listMarkedCalendarConnections: async () => ({ items: [], next: null })
     };
 }
 
