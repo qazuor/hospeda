@@ -155,13 +155,8 @@ test.describe('E2E-04c: collection actions via UI @p0 @favorites @collections @u
         await page.waitForLoadState('networkidle');
 
         const deleteBtn = page.locator('[data-testid="collection-actions-delete"]');
-        if ((await deleteBtn.count()) === 0) {
-            test.skip(
-                true,
-                'Delete action not found — CollectionDetailActions island is not mounted on the detail page'
-            );
-            return;
-        }
+        // The detail page redirects to the listing on 403/404 ([id].astro:98-107), so a missing button is a regression (including a VIP receiving 403), never a reason to skip.
+        await expect(deleteBtn, `delete action not rendered on ${page.url()}`).toHaveCount(1);
         await deleteBtn.first().click();
 
         // Assert: the user is redirected back to the favorites index
