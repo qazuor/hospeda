@@ -81,11 +81,11 @@ describe('TEST:1698:3 AC:1698:2 step 3b composition drain', () => {
         expect(mocks.stopTrial).toHaveBeenCalledTimes(1);
         expect(mocks.stopListing).toHaveBeenCalledTimes(1);
         expect(mocks.drain).toHaveBeenCalledTimes(1);
-        expect(mocks.stopTrial.mock.invocationCallOrder[0]).toBeLessThan(
-            mocks.drain.mock.invocationCallOrder[0]
+        expect(mocks.stopTrial.mock.invocationCallOrder[0]!).toBeLessThan(
+            mocks.drain.mock.invocationCallOrder[0]!
         );
-        expect(mocks.stopListing.mock.invocationCallOrder[0]).toBeLessThan(
-            mocks.drain.mock.invocationCallOrder[0]
+        expect(mocks.stopListing.mock.invocationCallOrder[0]!).toBeLessThan(
+            mocks.drain.mock.invocationCallOrder[0]!
         );
     });
 });
