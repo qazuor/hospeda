@@ -427,6 +427,10 @@
             "guard": {},
             "reads": [
                 "subscription.status",
+                "subscription.user_id",
+                "subscription.vertical",
+                "subscription.class",
+                "subscription.payment_method",
                 "subscription.succeeds_id",
                 "subscription.succeeded_by_id"
             ],
@@ -439,7 +443,13 @@
             "writes": [
                 "subscription.status",
                 "domain_event.changes",
-                "subscription.first_charge_at"
+                "subscription.first_charge_at",
+                "subscription.user_id",
+                "subscription.vertical",
+                "subscription.class",
+                "subscription.payment_method",
+                "subscription.authorization_window_ends_at",
+                "subscription.authorization_window_deadline_version"
             ]
         },
         {
@@ -449,7 +459,7 @@
             "events": ["authorization_confirmed"],
             "to": ["ACTIVE"],
             "guard": {},
-            "reads": ["subscription.status"],
+            "reads": ["subscription.status", "subscription.payment_method"],
             "inputs": ["provider:read_by_id", "contract:subscription_period"],
             "writes": ["subscription.status", "domain_event.changes"]
         },
@@ -460,7 +470,11 @@
             "events": ["authorization_window_expired"],
             "to": ["ABANDONED"],
             "guard": {},
-            "reads": [],
+            "reads": [
+                "subscription.authorization_window_ends_at",
+                "subscription.authorization_window_deadline_version",
+                "subscription.payment_method"
+            ],
             "inputs": ["catalog:authorization_window", "provider:read_by_id"],
             "writes": [
                 "subscription.status",
@@ -480,6 +494,7 @@
             "guard": {},
             "reads": [
                 "subscription.status",
+                "subscription.payment_method",
                 "subscription.succeeds_id",
                 "subscription.succeeded_by_id"
             ],
@@ -531,6 +546,7 @@
             "guard": {},
             "reads": [
                 "subscription.status",
+                "subscription.payment_method",
                 "subscription.succeeds_id",
                 "subscription.succeeded_by_id",
                 "payment.status",
@@ -562,6 +578,7 @@
             },
             "reads": [
                 "subscription.status",
+                "subscription.payment_method",
                 "payment.status",
                 "subscription.succeeds_id",
                 "subscription.succeeded_by_id"
@@ -666,7 +683,7 @@
             "events": ["permanent_grant_awarded"],
             "to": ["CANCELLED"],
             "guard": {},
-            "reads": ["subscription.status", "subscription.succeeds_id"],
+            "reads": ["subscription.status", "subscription.class", "subscription.succeeds_id"],
             "inputs": [],
             "writes": [
                 "subscription.status",
@@ -705,7 +722,12 @@
             "events": ["first_charge_declined"],
             "to": ["CHARGE_DECLINED"],
             "guard": {},
-            "reads": ["subscription.status", "subscription.succeeds_id", "payment.status"],
+            "reads": [
+                "subscription.status",
+                "subscription.payment_method",
+                "subscription.succeeds_id",
+                "payment.status"
+            ],
             "inputs": ["provider:read_by_id", "provider:payment_by_id"],
             "writes": ["subscription.status", "domain_event.changes"]
         },
@@ -779,7 +801,7 @@
             "events": ["permanent_grant_awarded"],
             "to": ["CANCELLED"],
             "guard": {},
-            "reads": ["subscription.status", "subscription.succeeds_id"],
+            "reads": ["subscription.status", "subscription.class", "subscription.succeeds_id"],
             "inputs": [],
             "writes": ["subscription.status", "subscription_pause.fin_real", "domain_event.changes"]
         },
@@ -790,7 +812,7 @@
             "events": ["addon_instance_cancelled"],
             "to": ["CANCELLED"],
             "guard": {},
-            "reads": ["subscription.status", "subscription.succeeds_id"],
+            "reads": ["subscription.status", "subscription.class", "subscription.succeeds_id"],
             "inputs": [],
             "writes": [
                 "subscription.status",
@@ -852,7 +874,7 @@
             "events": ["first_manual_payment_registered"],
             "to": ["ACTIVE"],
             "guard": {},
-            "reads": ["subscription.status"],
+            "reads": ["subscription.status", "subscription.payment_method"],
             "inputs": [],
             "writes": ["subscription.status", "domain_event.changes"]
         },
@@ -1152,6 +1174,7 @@
             "reads": [
                 "manual_payment.status",
                 "subscription.status",
+                "subscription.payment_method",
                 "subscription.next_charge_at"
             ],
             "inputs": [],
@@ -1172,7 +1195,11 @@
             "events": ["manual_payment_declared_unpaid"],
             "to": ["DECLARED_UNPAID"],
             "guard": {},
-            "reads": ["manual_payment.status", "subscription.status"],
+            "reads": [
+                "manual_payment.status",
+                "subscription.status",
+                "subscription.payment_method"
+            ],
             "inputs": [],
             "writes": ["manual_payment.status", "domain_event.changes"]
         },
@@ -1183,7 +1210,11 @@
             "events": ["manual_payment_window_elapsed"],
             "to": ["DECLARED_UNPAID"],
             "guard": {},
-            "reads": ["manual_payment.status", "subscription.status"],
+            "reads": [
+                "manual_payment.status",
+                "subscription.status",
+                "subscription.payment_method"
+            ],
             "inputs": ["clock:now"],
             "writes": ["manual_payment.status", "domain_event.changes"]
         },
@@ -1220,6 +1251,7 @@
             "reads": [
                 "subscription.next_charge_at",
                 "subscription.status",
+                "subscription.payment_method",
                 "manual_payment.period_start"
             ],
             "inputs": ["clock:now"],
