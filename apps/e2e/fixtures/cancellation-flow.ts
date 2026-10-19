@@ -225,6 +225,20 @@ export async function latestOutbox(args: { readonly userId: string; readonly tem
     return rows[0];
 }
 
+/** Read cancellation notices created at or after a self-cancellation request. */
+export async function cancellationOutboxSince(args: {
+    readonly userId: string;
+    readonly createdAt: Date;
+}) {
+    return execSQL<{ status: string; created_at: Date }>(
+        `SELECT status, created_at FROM email_outbox
+          WHERE recipient_user_id = $1 AND template = 'billing.direct-cancellation'
+            AND created_at >= $2
+          ORDER BY created_at`,
+        [args.userId, args.createdAt]
+    );
+}
+
 /** Wait until asynchronous coverage recalculation writes the requested listing state. */
 export async function waitForPublicationStatus(args: {
     readonly listingId: string;

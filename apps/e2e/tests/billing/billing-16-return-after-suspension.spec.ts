@@ -6,15 +6,16 @@ import { createAdjustableClock } from '@repo/test-clock';
 import { createAccommodation } from '../../fixtures/api-helpers.ts';
 import {
     activateCardSubscription,
+    cancelRequestsFor,
     cleanupArrearsRows,
     createSubscriber,
     ensureDeadlineVersion,
     type FakeWorld,
-    runCron,
     WEB_URL
 } from '../../fixtures/arrears-cycle.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import {
+    cancellationOutboxSince,
     confirmSelfCancel,
     driveToGrace,
     driveToSuspended,
@@ -136,37 +137,26 @@ test.describe('TEST:1624:1 a suspended card subscriber comes back: S23, a new S1
                 subscriptionId: oldSubscriptionId
             });
             expect(preview.origin).toBe('SUSPENDED');
+            const cancellationRequestedAt = new Date();
             await expect(await confirmSelfCancel({ page })).toContainText(
                 'El servicio terminó hoy.'
             );
             expect((await readSubscriptionRow({ subscriptionId: oldSubscriptionId })).status).toBe(
                 'CANCELLED'
             );
+            // S23 mails only when it cancels a live preapproval; a real suspension already cancelled it (S23).
             expect(
-                (
-                    await latestOutbox({
-                        userId: subscriber.user.id,
-                        template: 'billing.direct-cancellation'
-                    })
-                )?.status
-            ).toBe('pending');
-            await runCron({
-                jobName: 'email-outbox-sender',
-                adminCookie: subscriber.admin.sessionCookie
-            });
-            await fakeWorld.mailCapture.waitForMail({
-                to: subscriber.user.email,
-                subject: 'Tu suscripción quedó cancelada',
-                timeoutMs: MAIL_TIMEOUT_MS
-            });
+                await cancellationOutboxSince({
+                    userId: subscriber.user.id,
+                    createdAt: cancellationRequestedAt
+                })
+            ).toHaveLength(0);
             expect(
-                (
-                    await latestOutbox({
-                        userId: subscriber.user.id,
-                        template: 'billing.direct-cancellation'
-                    })
-                )?.status
-            ).toBe('sent');
+                cancelRequestsFor({
+                    requests: fakeWorld.fakeServer.requests(),
+                    authorizationId: oldAuthorizationId
+                })
+            ).toHaveLength(1);
         });
 
         await test.step('Step 4: checkout creates a distinct pending S1 row without a succession', async () => {

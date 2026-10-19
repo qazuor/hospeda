@@ -15,6 +15,7 @@ import {
 } from '../../fixtures/arrears-cycle.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import {
+    cancellationOutboxSince,
     confirmSelfCancel,
     driveToGrace,
     driveToSuspended,
@@ -276,33 +277,19 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
         expect(preview.addons).toEqual([]);
         await expect(endLine).toContainText('la suscripción termina hoy');
         await expect(endLine).toContainText('estaba suspendida');
+        const cancellationRequestedAt = new Date();
         await expect(await confirmSelfCancel({ page })).toContainText('El servicio terminó hoy.');
         expect((await readSubscriptionRow({ subscriptionId })).status).toBe('CANCELLED');
+        // S23 mails only when it cancels a live preapproval; a real suspension already cancelled it (S23).
         expect(
-            (
-                await latestOutbox({
-                    userId: subscriber.user.id,
-                    template: 'billing.direct-cancellation'
-                })
-            )?.status
-        ).toBe('pending');
-        await runCron({
-            jobName: 'email-outbox-sender',
-            adminCookie: subscriber.admin.sessionCookie
-        });
-        await world.mailCapture.waitForMail({
-            to: subscriber.user.email,
-            subject: 'Tu suscripción quedó cancelada',
-            timeoutMs: MAIL_TIMEOUT_MS
-        });
+            await cancellationOutboxSince({
+                userId: subscriber.user.id,
+                createdAt: cancellationRequestedAt
+            })
+        ).toHaveLength(0);
         expect(
-            (
-                await latestOutbox({
-                    userId: subscriber.user.id,
-                    template: 'billing.direct-cancellation'
-                })
-            )?.status
-        ).toBe('sent');
+            cancelRequestsFor({ requests: world.fakeServer.requests(), authorizationId })
+        ).toHaveLength(1);
         await runCron({
             jobName: 'billing-reconciliation-sweep',
             adminCookie: subscriber.admin.sessionCookie
