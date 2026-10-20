@@ -121,7 +121,7 @@ overrides:
   #
   # Current wave (2026-09-08): core 6.0.0 · mercadopago 2.11.1 · drizzle 3.0.0 ·
   # hono 2.0.0 · react 2.0.0. Declared as `^` ranges in apps/api, apps/admin,
-  # packages/billing, packages/db and packages/service-core.
+  # packages/db and packages/service-core.
   #
   # This line was stale for two waves before anyone noticed (it still named the
   # 2026-09-01 wave while the workspace had moved twice). It is prose, so no
