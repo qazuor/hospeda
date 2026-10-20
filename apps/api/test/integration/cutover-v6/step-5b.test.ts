@@ -137,6 +137,59 @@ describe('TEST:V6:22 step 5b', () => {
         validateApiEnv();
     });
 
+    it('TEST:1712:2 AC:1712:2 deletes the menu file and dish photos the paso-3 migration carries', async () => {
+        resetCalls();
+        await inRollbackTransaction(
+            [
+                {
+                    entityType: 'gastronomy',
+                    entityId: '00000000-0000-4000-8000-000000000561',
+                    slug: 'menu',
+                    photos: [
+                        { publicId: 'cloud/food', url: 'https://x.test/food' },
+                        { publicId: 'cloud/menu', url: 'https://x.test/menu.pdf' },
+                        { publicId: 'cloud/dish-one', url: 'https://x.test/dish-one' },
+                        { publicId: 'cloud/dish-three', url: '' }
+                    ]
+                }
+            ],
+            async (tx) => {
+                const result = await runStep5b({
+                    db: tx,
+                    photoStorage: storage(),
+                    grantRevoker: revoker(),
+                    decryptSecret,
+                    dryRun: false
+                });
+                expect(result).toEqual({
+                    status: 'completed',
+                    deleted: 4,
+                    alreadyAbsent: 0,
+                    unmanaged: 0,
+                    revoked: 0,
+                    alreadyInvalid: 0,
+                    notRevocable: 0,
+                    providerFallback: 0,
+                    failures: [],
+                    listings: [
+                        {
+                            entityType: 'gastronomy',
+                            entityId: '00000000-0000-4000-8000-000000000561'
+                        }
+                    ]
+                });
+                expect(calls.photos).toEqual([
+                    'cloud/food',
+                    'cloud/menu',
+                    'cloud/dish-one',
+                    'cloud/dish-three'
+                ]);
+                expect(calls.tokens).toEqual([]);
+                expect(await tableExists(tx)).toBe(false);
+            }
+        );
+    });
+
     it('cleans passage resources, drops the table, and makes the next run a no-op', async () => {
         resetCalls();
         await inRollbackTransaction(
