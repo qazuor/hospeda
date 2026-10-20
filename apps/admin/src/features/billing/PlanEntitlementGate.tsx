@@ -13,14 +13,14 @@
  * @module features/billing/PlanEntitlementGate
  */
 
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import type * as React from 'react';
 import { useEffectiveSet } from '@/features/billing/use-effective-set';
 import { useTranslations } from '@/hooks/use-translations';
 
 export interface PlanEntitlementGateProps {
     /** The entitlement flag that must be present to render `children`. */
-    readonly entitlementKey: EntitlementKey | string;
+    readonly entitlementKey: EntitlementKeyEnum | string;
     /** Rendered when the entitlement is present. */
     // biome-ignore lint/suspicious/noExplicitAny: React 19 ReactNode type compatibility
     readonly children: any;
@@ -56,7 +56,7 @@ export interface PlanEntitlementGateProps {
  * @example
  * ```tsx
  * <PlanEntitlementGate
- *   entitlementKey={EntitlementKey.CAN_USE_RICH_DESCRIPTION}
+ *   entitlementKey={EntitlementKeyEnum.CAN_USE_RICH_DESCRIPTION}
  *   nudgeVariant="rich-description"
  *   fieldLabel="Descripción Enriquecida"
  * >
@@ -69,12 +69,12 @@ export interface PlanEntitlementGateProps {
  * provided by the caller.
  */
 function deriveNudgeVariant(
-    key: EntitlementKey | string,
+    key: EntitlementKeyEnum | string,
     explicit: PlanEntitlementGateProps['nudgeVariant']
 ): PlanEntitlementGateProps['nudgeVariant'] {
     if (explicit !== undefined) return explicit;
-    if (key === EntitlementKey.CAN_USE_RICH_DESCRIPTION) return 'rich-description';
-    if (key === EntitlementKey.CAN_EMBED_VIDEO) return 'video';
+    if (key === EntitlementKeyEnum.CAN_USE_RICH_DESCRIPTION) return 'rich-description';
+    if (key === EntitlementKeyEnum.CAN_EMBED_VIDEO) return 'video';
     return 'generic';
 }
 

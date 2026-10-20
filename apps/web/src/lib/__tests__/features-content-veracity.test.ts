@@ -9,7 +9,7 @@
  * honesty of the catalog.
  */
 
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { OWNER_ROWS } from '../../components/billing/plan-comparison-rows';
 import { ANFITRIONES_TABLE_ROWS } from '../features-content';
@@ -62,7 +62,7 @@ describe('plan-comparison-rows catalog veracity — comparison table (HOS-213)',
         // while the test name claimed a catalog fact: dropping the entitlement
         // from a tier left this green with the table still showing a check.
         const row = ownerRow('calendar');
-        expect(row.cell).toEqual({ kind: 'entitlement', key: EntitlementKey.CAN_USE_CALENDAR });
+        expect(row.cell).toEqual({ kind: 'entitlement', key: EntitlementKeyEnum.CAN_USE_CALENDAR });
         expect(row.status).toBe('available');
     });
 
@@ -71,14 +71,14 @@ describe('plan-comparison-rows catalog veracity — comparison table (HOS-213)',
         expect(row.status).toBe('available');
         expect(row.cell).toEqual({
             kind: 'entitlement',
-            key: EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR
+            key: EntitlementKeyEnum.CAN_SYNC_EXTERNAL_CALENDAR
         });
     });
 
     it('featured (FEATURED_LISTING, shipped SPEC-309) is available', () => {
         const row = ownerRow('featured');
         expect(row.status).toBe('available');
-        expect(row.cell).toEqual({ kind: 'entitlement', key: EntitlementKey.FEATURED_LISTING });
+        expect(row.cell).toEqual({ kind: 'entitlement', key: EntitlementKeyEnum.FEATURED_LISTING });
     });
 
     // HOS-1416: the "stay Premium-only in the real catalog" baseline test was

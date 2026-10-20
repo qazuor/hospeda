@@ -543,7 +543,12 @@
         "manage_gastronomy_events": "Eventos del local, con fecha o semanales",
         "multilingual_gastronomy_menu": "Carta en varios idiomas",
         "menu_qr_scan_metrics": "QR de la carta con panel de escaneos",
-        "manage_experience_private_galleries": "Galerías privadas para tus clientes"
+        "manage_experience_private_galleries": "Galerías privadas para tus clientes",
+        "partner_public_page": "Página propia dentro de Hospeda",
+        "partner_carousel_presence": "Logo en el carrusel de aliados",
+        "recover_own_listing": "Ver, exportar, reactivar o borrar tus fichas",
+        "subscribe_to_plan": "Suscribirse a un plan",
+        "activate_trial": "Activar el período de prueba"
     },
     "comparison": {
         "unlimited": "Ilimitado",

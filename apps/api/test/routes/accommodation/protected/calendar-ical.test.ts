@@ -18,8 +18,8 @@
  * modules fully mocked.
  */
 
-import type { EntitlementKey } from '@repo/billing';
 import {
+    type EntitlementKeyEnum,
     PermissionEnum,
     PublicationStatusEnum,
     RoleEnum,
@@ -201,7 +201,7 @@ type ActorOptions = { id: string; roles: readonly RoleEnum[]; permissions: Permi
 function buildApp(
     actor: ActorOptions,
     routes: ReturnType<typeof import('../../../../src/utils/create-app.js').createRouter>[],
-    options?: { entitlements?: EntitlementKey[] }
+    options?: { entitlements?: EntitlementKeyEnum[] }
 ): Hono<AppBindings> {
     const app = new Hono<AppBindings>();
     attachTestErrorHandler(app);

@@ -201,10 +201,10 @@ vi.mock('@repo/ai-core', () => {
 const { currentEntitlementsForTest, currentLimitsForTest, currentBillingLoadFailedForTest } =
     vi.hoisted(() => ({
         currentEntitlementsForTest: {
-            current: new Set<EntitlementKey>()
+            current: new Set<EntitlementKeyEnum>()
         },
         currentLimitsForTest: {
-            current: new Map<LimitKey, number>()
+            current: new Map<LimitKeyEnum, number>()
         },
         currentBillingLoadFailedForTest: { current: false }
     }));
@@ -214,10 +214,13 @@ vi.mock('../../../src/utils/listing-access/ports', () => ({
         effectiveSet: async () => ({
             entitlements: {
                 get: ({ key }: { key: string }) =>
-                    currentEntitlementsForTest.current.has(key as EntitlementKey) ? 1 : undefined
+                    currentEntitlementsForTest.current.has(key as EntitlementKeyEnum)
+                        ? 1
+                        : undefined
             },
             limits: {
-                get: ({ key }: { key: string }) => currentLimitsForTest.current.get(key as LimitKey)
+                get: ({ key }: { key: string }) =>
+                    currentLimitsForTest.current.get(key as LimitKeyEnum)
             }
         })
     })
@@ -228,8 +231,8 @@ vi.mock('../../../src/utils/listing-access/ports', () => ({
 // ---------------------------------------------------------------------------
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { EntitlementKey, LimitKey } from '@repo/billing';
-import { type PermissionEnum, RoleEnum } from '@repo/schemas';
+
+import { EntitlementKeyEnum, LimitKeyEnum, type PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { actorMiddleware } from '../../../src/middlewares/actor';
 import { createErrorHandler } from '../../../src/middlewares/response';
@@ -356,8 +359,8 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
         // a test forgets (and the assertion will fail loudly).
         getMonthlyCallCountReturn.current = 0;
         currentBillingLoadFailedForTest.current = false;
-        currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-        currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+        currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+        currentLimitsForTest.current = new Map([[LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
         nextStreamDeltas.current = ['Hola', ' mundo', '!'];
         nextMeta.current = Promise.resolve({
             usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
@@ -402,8 +405,8 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
     describe('effective entitlement gate', () => {
         it('rejects an authenticated user without ai_text_improve', async () => {
             // Tourist plan: no AI entitlements at all
-            currentEntitlementsForTest.current = new Set<EntitlementKey>();
-            currentLimitsForTest.current = new Map<LimitKey, number>();
+            currentEntitlementsForTest.current = new Set<EntitlementKeyEnum>();
+            currentLimitsForTest.current = new Map<LimitKeyEnum, number>();
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',
@@ -444,8 +447,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
 
     describe('HOS-1075 — entityType routes the entitlement gate to the right vertical', () => {
         it('streams a gastronomy request without consulting the retired accommodation plan', async () => {
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]
+            ]);
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',
@@ -464,8 +469,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
         });
 
         it('streams an experience request without consulting the retired accommodation plan', async () => {
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]
+            ]);
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',
@@ -484,8 +491,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
         });
 
         it('still grants access for an explicit accommodation request under the same actor state', async () => {
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]
+            ]);
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',
@@ -505,8 +514,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
             // Every caller in production today (web host editor, admin
             // accommodation/FAQ panels) omits entityType entirely. This proves
             // the fix does not require them to change.
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]
+            ]);
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',
@@ -532,8 +543,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
     describe('temporary access without the retired monthly quota', () => {
         it('streams when the old monthly count reaches its former limit', async () => {
             // Entitled with headroom beyond the formerly asserted count.
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 50]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 50]
+            ]);
             // Mocked getMonthlyCallCount returns 20 (= limit) → at quota
             getMonthlyCallCountReturn.current = 20;
 
@@ -561,8 +574,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
     describe('temporary access during retired billing outages', () => {
         it('streams when the old billing loader is unavailable', async () => {
             // Even entitled + under quota — the billing-load guard fires first.
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 50]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 50]
+            ]);
             currentBillingLoadFailedForTest.current = true;
 
             const res = await app.request(STREAM_PATH, {
@@ -587,8 +602,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
     describe('400 — missing fieldValue', () => {
         it('returns 400 with VALIDATION_ERROR when fieldValue is absent', async () => {
             // Entitled + under quota + healthy billing so we reach validation
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]
+            ]);
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',
@@ -622,8 +639,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
 
     describe('400 — unknown fieldType', () => {
         it('returns 400 with VALIDATION_ERROR when fieldType is not in the enum', async () => {
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]
+            ]);
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',
@@ -654,8 +673,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
 
     describe('400 — exceeds per-type max', () => {
         it('returns 400 when a description fieldValue exceeds 5000 chars', async () => {
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]
+            ]);
 
             // 5001 chars is one over the description cap
             const oversized = 'a'.repeat(5001);
@@ -688,8 +709,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
 
     describe('200 — entitled HOST streams tokens', () => {
         it('returns 200 with text/event-stream for a valid request', async () => {
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]
+            ]);
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',
@@ -716,8 +739,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
         });
 
         it('emits a token event for each delta and a final done event', async () => {
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]
+            ]);
 
             // 3 deltas configured by default in the hoisted stub
             const res = await app.request(STREAM_PATH, {
@@ -751,8 +776,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
         });
 
         it('sets the Content-Type response header to text/event-stream', async () => {
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]
+            ]);
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',
@@ -782,8 +809,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
 
     describe('HOS-328 — records AI usage on the success path', () => {
         it('writes exactly one ai_usage row keyed to the caller with real token counts', async () => {
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]
+            ]);
             nextMeta.current = Promise.resolve({
                 usage: { promptTokens: 41, completionTokens: 17, totalTokens: 58 },
                 provider: 'stub',
@@ -822,8 +851,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
         it('records successful usage even when the old monthly quota is exhausted', async () => {
             // At quota → the middleware rejects. The only row it may write is
             // its own `quota_exceeded` bookkeeping row, never a success row.
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 50]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 50]
+            ]);
             getMonthlyCallCountReturn.current = 20;
 
             const res = await app.request(STREAM_PATH, {
@@ -844,8 +875,10 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
         });
 
         it('still streams the reply when metering fails (metering is never fatal)', async () => {
-            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]
+            ]);
             mockRecordAiUsage.mockRejectedValueOnce(new Error('ai_usage insert failed'));
 
             const res = await app.request(STREAM_PATH, {

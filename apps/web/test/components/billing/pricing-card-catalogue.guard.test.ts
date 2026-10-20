@@ -14,7 +14,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { LimitKey } from '@repo/billing';
+import { LimitKeyEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { filterPlansByCategory } from '@/lib/billing/fetch-plans';
@@ -123,9 +123,9 @@ describe('plan-card copy (AC-12, AC-13, AC-15, AC-16)', () => {
     });
 
     it('explains every limit key in the catalogue, in all three locales', () => {
-        // AC-13. Keyed off the LimitKey enum, so a new limit fails here rather
+        // AC-13. Keyed off the LimitKeyEnum enum, so a new limit fails here rather
         // than degrading to an English catalogue description on a Spanish page.
-        const keys = Object.values(LimitKey);
+        const keys = Object.values(LimitKeyEnum);
         expect(keys.length).toBeGreaterThan(0);
 
         for (const locale of LOCALES) {
@@ -141,7 +141,7 @@ describe('plan-card copy (AC-12, AC-13, AC-15, AC-16)', () => {
     it('gives every limit a label as well as an explanation', () => {
         for (const locale of LOCALES) {
             const billing = readLocaleJson(locale, 'billing.json');
-            for (const key of Object.values(LimitKey)) {
+            for (const key of Object.values(LimitKeyEnum)) {
                 expect(typeof at(billing, `comparison.limitLabel.${key}`), `${locale}/${key}`).toBe(
                     'string'
                 );

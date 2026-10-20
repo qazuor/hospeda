@@ -1,5 +1,5 @@
 import { Section, Text } from '@react-email/components';
-import type { Major } from '@repo/billing';
+import type { Major } from '../../types/money.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';

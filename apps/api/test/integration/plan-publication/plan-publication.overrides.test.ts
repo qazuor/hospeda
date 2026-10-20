@@ -115,6 +115,7 @@ describe('HOS-1655 V2.4a — trial overrides and Tourist floor DO exception', ()
         );
     });
 
+    // D-4 (HOS-1626, 2026-10-19): the published Tourist floor includes read_reviews.
     /* ------------------------------------------------------------------ */
     /*  (iii) Tourist floor publishes the DO exception list                 */
     /* ------------------------------------------------------------------ */
@@ -135,6 +136,7 @@ describe('HOS-1655 V2.4a — trial overrides and Tourist floor DO exception', ()
                     entitlements: [
                         { key: 'save_favorites' },
                         { key: 'write_reviews' },
+                        { key: 'read_reviews' },
                         { key: 'ai_search', planQuota: 10, trialQuota: 10 },
                         { key: 'ai_chat', planQuota: 10, trialQuota: 10 },
                         { key: 'subscribe_to_plan' },
@@ -155,11 +157,12 @@ describe('HOS-1655 V2.4a — trial overrides and Tourist floor DO exception', ()
         // straight from the DB. Any `+1` on a value or quota in the service
         // must break these exact assertions.
         const effects = await readStoredEffects(published.id);
-        expect(effects.entitlements).toHaveLength(6);
+        expect(effects.entitlements).toHaveLength(7);
         expect(effects.entitlements).toEqual(
             expect.arrayContaining([
                 { key: 'save_favorites', planQuota: null, trialQuota: null },
                 { key: 'write_reviews', planQuota: null, trialQuota: null },
+                { key: 'read_reviews', planQuota: null, trialQuota: null },
                 { key: 'ai_search', planQuota: 10, trialQuota: 10 },
                 { key: 'ai_chat', planQuota: 10, trialQuota: 10 },
                 { key: 'subscribe_to_plan', planQuota: null, trialQuota: null },
@@ -196,6 +199,7 @@ describe('HOS-1655 V2.4a — trial overrides and Tourist floor DO exception', ()
                     entitlements: [
                         { key: 'save_favorites' },
                         { key: 'write_reviews' },
+                        { key: 'read_reviews' },
                         { key: 'ai_search', planQuota: 10, trialQuota: 10 },
                         { key: 'ai_chat', planQuota: 10, trialQuota: 10 },
                         { key: 'subscribe_to_plan' },

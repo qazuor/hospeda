@@ -20,7 +20,7 @@
  * @module test/routes/destination/public/getAccommodations.badge-gate
  */
 
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../../src/types';
@@ -188,7 +188,7 @@ describe('publicGetDestinationAccommodationsRoute — HOS-341 isVerified owner g
 
     it('hides isVerified=true even when the owner HAS HAS_VERIFICATION_BADGE', async () => {
         mockResolveBatch.mockResolvedValue(
-            new Map([[OWNER_WITH_BADGE, [EntitlementKey.HAS_VERIFICATION_BADGE]]])
+            new Map([[OWNER_WITH_BADGE, [EntitlementKeyEnum.HAS_VERIFICATION_BADGE]]])
         );
         mockGetAccommodations.mockResolvedValue({
             data: {
@@ -212,7 +212,7 @@ describe('publicGetDestinationAccommodationsRoute — HOS-341 isVerified owner g
     it('gates each item independently on a mixed page', async () => {
         mockResolveBatch.mockResolvedValue(
             new Map([
-                [OWNER_WITH_BADGE, [EntitlementKey.HAS_VERIFICATION_BADGE]],
+                [OWNER_WITH_BADGE, [EntitlementKeyEnum.HAS_VERIFICATION_BADGE]],
                 [OWNER_WITHOUT_BADGE, []]
             ])
         );
@@ -268,7 +268,7 @@ describe('publicGetDestinationAccommodationsRoute — HOS-341 isVerified owner g
         // No ownerId means no owner to attribute the badge to. The handler must not
         // pass it to the resolver, and the gate must not let it through unchanged.
         mockResolveBatch.mockResolvedValue(
-            new Map([[OWNER_WITH_BADGE, [EntitlementKey.HAS_VERIFICATION_BADGE]]])
+            new Map([[OWNER_WITH_BADGE, [EntitlementKeyEnum.HAS_VERIFICATION_BADGE]]])
         );
         mockGetAccommodations.mockResolvedValue({
             data: {

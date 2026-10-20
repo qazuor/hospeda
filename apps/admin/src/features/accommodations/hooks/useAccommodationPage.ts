@@ -1,6 +1,5 @@
-import { EntitlementKey } from '@repo/billing';
 import { useTranslations } from '@repo/i18n';
-import { AccommodationTypeEnum, PermissionEnum } from '@repo/schemas';
+import { AccommodationTypeEnum, EntitlementKeyEnum, PermissionEnum } from '@repo/schemas';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
@@ -32,7 +31,7 @@ export const useAccommodationPage = (entityId: string) => {
 
     // SPEC-198: AI text-improve entitlement gate
     const { has: hasEntitlement } = useEffectiveSet();
-    const canUseAiTextImprove = hasEntitlement(EntitlementKey.AI_TEXT_IMPROVE);
+    const canUseAiTextImprove = hasEntitlement(EntitlementKeyEnum.AI_TEXT_IMPROVE);
 
     // ✅ CONFIGURACIÓN CONSOLIDADA
     const entityConfig = useMemo(() => {

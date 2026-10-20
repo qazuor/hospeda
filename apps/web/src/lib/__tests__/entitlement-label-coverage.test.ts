@@ -1,34 +1,14 @@
 /**
  * @file entitlement-label-coverage.test.ts
- * @description Regression guard for H-49 — entitlement labels rendering in
- * English regardless of locale.
- *
- * `getEntitlementName()` (`@/lib/billing-i18n`) resolves
- * `billing.entitlement.<key>`, falling back to the English `name` field from
- * `packages/billing/src/config/entitlements.config.ts` when the key is
- * missing. That fallback is what shipped for 9 of the 39 `EntitlementKey`
- * values — `multi_property_management`, `consolidated_analytics`,
- * `centralized_booking`, `staff_management`, `can_use_collections`,
- * `vip_promotions_access`, `ai_support`, `ai_translate`, and
- * `ai_accommodation_import` had no `billing.entitlement.*` entry in ANY
- * locale, so `/es/` and `/pt/` pricing surfaces rendered the English label
- * verbatim. The failure is invisible by construction: `t()` never throws,
- * the fallback is well-formed English prose, and the existing
- * `check-locales` / key-coverage guards only audit that es/en/pt stay in
- * sync WITH EACH OTHER — they cannot see a key that is absent from all
- * three at once.
- *
- * This guard asks the one question those guards do not: does every
- * `EntitlementKey` enum value have a `billing.entitlement.<key>` translation
- * in es, en, AND pt? It is deliberately narrower than
- * `plan-copy-veracity.test.ts` (which asks whether FREE-FORM marketing prose
- * honestly claims entitlements plans grant) — this one only asks whether the
- * structured per-entitlement LABEL exists, for every locale, for every key.
+ * @description Regression guard for H-49: every catalog entitlement has a
+ * localized label in each supported locale. `EntitlementKeyEnum` from
+ * `@repo/schemas` enumerates the catalog keys; this test catches labels missing
+ * from every locale, which parity checks cannot detect.
  */
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
 const LOCALES = ['es', 'en', 'pt'] as const;
@@ -36,8 +16,8 @@ type Locale = (typeof LOCALES)[number];
 
 const LOCALES_DIR = resolve(__dirname, '../../../../../packages/i18n/src/locales');
 
-/** Every value the `EntitlementKey` enum actually defines. */
-const ALL_ENTITLEMENT_KEYS = Object.values(EntitlementKey) as readonly string[];
+/** Every value the `EntitlementKeyEnum` enum actually defines. */
+const ALL_ENTITLEMENT_KEYS = Object.values(EntitlementKeyEnum) as readonly string[];
 
 function readEntitlementLabels(locale: Locale): Record<string, string> {
     const raw = readFileSync(resolve(LOCALES_DIR, locale, 'billing.json'), 'utf8');
@@ -45,11 +25,11 @@ function readEntitlementLabels(locale: Locale): Record<string, string> {
     return parsed.entitlement ?? {};
 }
 
-describe('H-49 — every EntitlementKey has a billing.entitlement label in all locales', () => {
+describe('H-49 — every EntitlementKeyEnum has a billing.entitlement label in all locales', () => {
     it('reads a non-empty entitlement enum and a non-empty locale dictionary', () => {
         // A silent empty read looks exactly like "nothing missing". Guard the
         // instrument before trusting what it reports.
-        expect(ALL_ENTITLEMENT_KEYS.length).toBeGreaterThan(30);
+        expect(ALL_ENTITLEMENT_KEYS.length).toBeGreaterThan(50);
         for (const locale of LOCALES) {
             expect(Object.keys(readEntitlementLabels(locale)).length).toBeGreaterThan(20);
         }
@@ -57,18 +37,32 @@ describe('H-49 — every EntitlementKey has a billing.entitlement label in all l
 
     it.each(
         LOCALES
-    )('names a billing.entitlement.<key> label for every EntitlementKey (%s)', (locale) => {
+    )('names a billing.entitlement.<key> label for every EntitlementKeyEnum (%s)', (locale) => {
         const labels = readEntitlementLabels(locale);
         const missing = ALL_ENTITLEMENT_KEYS.filter((key) => !(key in labels));
 
         expect(
             missing,
-            `These EntitlementKey values have no billing.entitlement.<key> label in ` +
+            `These EntitlementKeyEnum values have no billing.entitlement.<key> label in ` +
                 `locales/${locale}/billing.json, so getEntitlementName() falls back to ` +
                 `the English config name for EVERY locale (H-49):\n` +
                 `${missing.map((key) => `  ${key}`).join('\n')}\n` +
                 'Add a real translation under "entitlement" in ' +
                 `packages/i18n/src/locales/${locale}/billing.json.`
         ).toEqual([]);
+    });
+});
+
+describe('TEST:1626:5 — catalog entitlement label coverage', () => {
+    it('includes all five owner-approved D-3 keys in the enum instrument', () => {
+        const d3Keys = [
+            'partner_public_page',
+            'partner_carousel_presence',
+            'recover_own_listing',
+            'subscribe_to_plan',
+            'activate_trial'
+        ];
+
+        expect(d3Keys.filter((key) => !ALL_ENTITLEMENT_KEYS.includes(key))).toEqual([]);
     });
 });
