@@ -171,7 +171,8 @@ export async function startFakeProviderServer(
                 url: new URL(path, 'http://fake.invalid'),
                 headers: request.headers,
                 body,
-                refundAmounts
+                refundAmounts,
+                now: options.clock.now()
             });
             if (extra !== null) {
                 if (extra.body === undefined) response.writeHead(extra.status).end();
