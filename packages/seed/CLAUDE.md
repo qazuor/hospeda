@@ -74,7 +74,7 @@ the [author guide](../../docs/guides/seed-data-migrations.md#the-contentonly-fla
 ### The dual-write rule (MANDATORY)
 
 Editing baseline seed data that already lives on a deployed environment (a `required`
-catalog fixture, a billing plan/limit/entitlement config, or a deterministic-id `example`
+catalog fixture, a billing plan/limit/entitlement row, or a deterministic-id `example`
 fixture — every fixture in this package has a deterministic UUIDv5 id, so there is no
 "non-deterministic example data" that is exempt by nature) requires adding a numbered
 migration in the **same PR** — see the root
@@ -82,7 +82,7 @@ migration in the **same PR** — see the root
 rule. `scripts/check-seed-dual-write.sh` enforces it in CI. Since HOS-173 the guard is
 **fail-closed**: everything under `packages/seed/src/data/**` is guarded by default (plus
 nine inline-constant seeders — `example/{experiences,entityTagAssignments,userTags}.seed.ts`
-and the six `required/*.seed.ts` inline ones — and the billing config files), MINUS a short,
+and the six `required/*.seed.ts` inline ones), MINUS a short,
 explicit exemption list of demo-only sources (accommodations, events, posts, reviews,
 bookmarks and their join/aux tables, plus `data/user/example/**`, non-`internal`/`system`
 files under `data/tag/`, and three demo-only inline seeders that touch only exempt entities:
@@ -130,11 +130,13 @@ proves it (two CLI runs on one database, second must exit 0 and change no row co
   step is recorded and the next still runs; the failed steps are listed at the end and the
   process exits non-zero after the other groups ran. Without the flag the first failure
   aborts, as before.
-- Steps that write on every re-run BY DESIGN (not duplicates): `billing_plans` and
-  `exchange_rate_config` are synced to the code, and the super admin's credential is re-hashed
+- Steps that write on every re-run BY DESIGN (not duplicates): `exchange_rate_config` is synced
+  to the code, and the super admin's credential is re-hashed
   when `HOSPEDA_SEED_SUPER_ADMIN_PASSWORD` is set.
 
 ## Test Users for Billing (SPEC-143 Block 1)
+
+> **Stale counts below:** after HOS-1416 the group seeds 13 users with no billing state (`packages/seed/src/test-users/testUsers.seed.ts`); the plan/billing-state tables in this section describe the retired matrix and are kept as history.
 
 A separate `--test-users` seed group creates 42 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration. 17 pre-date HOS-1268; the other 25 close the gap that issue exists for — see [Billing-state matrix](#billing-state-matrix-hos-1268) below.
 
@@ -262,12 +264,13 @@ already had (HOS-1268 closes a parity gap, not just adds new states):
 | `experience-owner-plus-addon@local.test` | EXPERIENCE_OWNER | `experience-basico` + `extra-experiences-1` addon | ditto |
 | `experience-owner-at-cap@local.test` | EXPERIENCE_OWNER | `experience-basico`, `ownsExperienceAtCap: true` | Experiences had no at-cap fixture at all before this; mirrors `gastronomy-owner-at-cap@local.test` via `ensureExperienceAtCapListing` in the test-users seed |
 
-Fixing this also surfaced a real bug in the seed's own addon helper:
-`ensureAddonPurchase` resolved its base plan against `ALL_PLANS`, which only
-ever held the accommodation + tourist tiers — a gastronomy/experience addon
-fixture would have thrown `Plan "gastronomy-basico" not found in ALL_PLANS
-catalog`. Fixed by resolving against `ALL_PLANS` + `ALL_GASTRONOMY_PLANS` +
-`ALL_EXPERIENCE_PLANS` combined (`ALL_SEED_ADDON_BASE_PLANS`).
+> Historical: this paragraph described a bug in `ensureAddonPurchase`, which resolved plans
+> against the `ALL_PLANS` catalog of `@repo/billing`. Both were retired with HOS-1626
+> (`packages/billing` is deleted) and HOS-1416 removed the plan/subscription/addon fixtures:
+> `packages/seed/src/test-users/testUsers.seed.ts` now seeds 13 users and no billing state.
+> The seed no longer reads plan values from code; the only plan data it writes is the
+> example-only catalog in `packages/seed/src/example/billingCatalog.seed.ts`, and only when
+> the `plans` table is empty.
 
 ### HOST accommodation fixture (HOS-30)
 
