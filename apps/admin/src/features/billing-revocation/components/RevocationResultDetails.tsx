@@ -3,7 +3,7 @@
  * What the revocation did (HOS-1678, H9): the row is cancelled and without
  * service, the refund that was requested (money only goes out once a person
  * confirms it, INV:D11), what the provider call ended in and, when present,
- * why the prior notice was escalated. Nothing here can be confirmed again.
+ * why the prior notice was escalated. It also offers RF4 for the S36 refund.
  */
 
 import { CheckCircleIcon } from '@repo/icons';
@@ -11,6 +11,7 @@ import type { SubscriptionRevocationResponse } from '@repo/schemas';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatRevocationAmount, formatRevocationInstant } from '../revocation-format';
 import { REVOCATION_CANCEL_CALL_KEYS, REVOCATION_ESCALATED_KEYS } from '../revocation-reasons';
+import { RevocationRefundSettlement } from './RevocationRefundSettlement';
 
 /** Props of {@link RevocationResultDetails}. RO-RO. */
 export interface RevocationResultDetailsProps {
@@ -66,6 +67,7 @@ export function RevocationResultDetails({ result, currency }: RevocationResultDe
                     {t(REVOCATION_ESCALATED_KEYS[result.escalated])}
                 </p>
             ) : null}
+            <RevocationRefundSettlement result={result} />
         </div>
     );
 }

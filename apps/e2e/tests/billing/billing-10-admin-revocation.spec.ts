@@ -21,8 +21,10 @@ import {
     cleanupRevocationRows,
     openRevocationScreen,
     pauseForSubscription,
+    paymentStatus,
     refundsForPayment,
     seedPausedSubscription,
+    settledRefundsForPayment,
     useAdminSession
 } from '../../fixtures/revocation-flow.ts';
 import { monthlyOptionForSlug } from '../../fixtures/signup-checkout.ts';
@@ -189,6 +191,120 @@ test.describe('TEST:B5:22 AC:B5:39 admin revocation (S36) end to end @p0 @billin
             authorizationId,
             world
         });
+    });
+
+    test('TEST:1711:7 AC:1711:7 AC:B5:41 ACTIVE revocation settles its own refund request from the result', async ({
+        page
+    }) => {
+        const settlementSubscriber = await createSubscriber();
+        userIds.push(settlementSubscriber.user.id, settlementSubscriber.admin.id);
+        const { subscriptionId } = await prepareCardSubscription({
+            user: settlementSubscriber.user,
+            fakeServer: world!.fakeServer
+        });
+        subscriptionIds.push(subscriptionId);
+        await seedCookieConsent(page);
+        await useAdminSession({ page, admin: settlementSubscriber.admin, adminUrl: ADMIN_URL });
+        await openRevocationScreen({ page, subscriptionId, adminUrl: ADMIN_URL });
+        const screen = page.getByTestId('subscription-revocation-screen');
+        const payment = await readCreditedPayment(subscriptionId, world!.fakeServer.now());
+
+        await screen.getByTestId('subscription-revocation-confirm').click();
+        await expect(screen.getByTestId('subscription-revocation-result')).toBeVisible();
+        const [requested] = await refundsForPayment(payment.id);
+        expect(await refundsForPayment(payment.id)).toHaveLength(1);
+        expect(requested?.status).toBe('REQUESTED');
+
+        const settlement = screen.getByTestId('subscription-revocation-settlement');
+        await expect(settlement.getByLabel('Monto en pesos')).toHaveValue(
+            (payment.amount / 100).toFixed(2)
+        );
+        await expect(settlement.getByLabel('Canal de devolución')).toHaveValue('PROVIDER_PANEL');
+        const reference = `e2e-1711-${randomUUID()}`;
+        await settlement.getByLabel('Comprobante o referencia').fill(reference);
+        await settlement.getByRole('button', { name: 'Revisar asiento' }).click();
+        await expect(
+            settlement.getByTestId('subscription-revocation-settlement-form-confirmation')
+        ).toBeVisible();
+        await settlement.getByRole('button', { name: 'Asentar ahora' }).click();
+        await expect(settlement.getByRole('status')).toContainText(requested!.id);
+
+        expect(await settledRefundsForPayment(payment.id)).toEqual([
+            {
+                id: requested!.id,
+                amount: payment.amount,
+                reason: 'REVOCATION',
+                status: 'EXECUTED',
+                executed_via: 'EXTERNAL',
+                external_channel: 'PROVIDER_PANEL',
+                external_ref: reference,
+                settled_by: settlementSubscriber.admin.id
+            }
+        ]);
+        expect(await paymentStatus(payment.id)).toEqual([{ status: 'REFUNDED' }]);
+    });
+
+    test('TEST:1711:13 AC:1711:13 AC:B5:41 ACTIVE revocation settles its refund request after a reload', async ({
+        page
+    }) => {
+        const reloadSubscriber = await createSubscriber();
+        userIds.push(reloadSubscriber.user.id, reloadSubscriber.admin.id);
+        const { subscriptionId } = await prepareCardSubscription({
+            user: reloadSubscriber.user,
+            fakeServer: world!.fakeServer
+        });
+        subscriptionIds.push(subscriptionId);
+        await seedCookieConsent(page);
+        await useAdminSession({ page, admin: reloadSubscriber.admin, adminUrl: ADMIN_URL });
+        await openRevocationScreen({ page, subscriptionId, adminUrl: ADMIN_URL });
+        const screen = page.getByTestId('subscription-revocation-screen');
+        const payment = await readCreditedPayment(subscriptionId, world!.fakeServer.now());
+
+        await screen.getByTestId('subscription-revocation-confirm').click();
+        await expect(screen.getByTestId('subscription-revocation-result')).toBeVisible();
+        const [requested] = await refundsForPayment(payment.id);
+        expect(await refundsForPayment(payment.id)).toHaveLength(1);
+        expect(requested?.status).toBe('REQUESTED');
+
+        await page.reload();
+        const openRefunds = screen.getByTestId('subscription-revocation-open-refunds');
+        await expect(openRefunds).toBeVisible();
+        const item = openRefunds.locator(
+            `[data-testid="subscription-revocation-open-refund"][data-refund-id="${requested!.id}"]`
+        );
+        await expect(openRefunds.getByTestId('subscription-revocation-open-refund')).toHaveCount(1);
+        const settlement = item.getByTestId('subscription-revocation-settlement');
+        await expect(settlement.getByLabel('Monto en pesos')).toHaveValue(
+            (payment.amount / 100).toFixed(2)
+        );
+        await expect(settlement.getByLabel('Canal de devolución')).toHaveValue('PROVIDER_PANEL');
+        const reference = `e2e-1711-${randomUUID()}`;
+        await settlement.getByLabel('Comprobante o referencia').fill(reference);
+        await settlement.getByRole('button', { name: 'Revisar asiento' }).click();
+        await expect(
+            settlement.getByTestId('subscription-revocation-settlement-form-confirmation')
+        ).toBeVisible();
+        await settlement.getByRole('button', { name: 'Asentar ahora' }).click();
+        await expect(settlement.getByRole('status')).toContainText(requested!.id);
+
+        expect(await settledRefundsForPayment(payment.id)).toEqual([
+            {
+                id: requested!.id,
+                amount: payment.amount,
+                reason: 'REVOCATION',
+                status: 'EXECUTED',
+                executed_via: 'EXTERNAL',
+                external_channel: 'PROVIDER_PANEL',
+                external_ref: reference,
+                settled_by: reloadSubscriber.admin.id
+            }
+        ]);
+        expect(await paymentStatus(payment.id)).toEqual([{ status: 'REFUNDED' }]);
+
+        await page.reload();
+        await expect(
+            screen.getByText('Esta suscripción no tiene pedidos de devolución abiertos.')
+        ).toBeVisible();
     });
 });
 

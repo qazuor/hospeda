@@ -1659,7 +1659,9 @@
                 "trialExtension_one": "{{count}} dia extra de teste",
                 "trialExtension_other": "{{count}} dias extras de teste"
             },
-            "reach": { "allFuture": "Todas as verticais, inclusive as futuras" },
+            "reach": {
+                "allFuture": "Todas as verticais, inclusive as futuras"
+            },
             "verticals": {
                 "accommodation": "Hospedagens",
                 "gastronomy": "Gastronomia",
@@ -1790,7 +1792,29 @@
             }
         },
         "successTitle": "Assinatura revogada",
-        "errorTitle": "Não foi possível revogar a assinatura"
+        "errorTitle": "Não foi possível revogar a assinatura",
+        "settlement": {
+            "title": "Registrar a devolução (ação 14)",
+            "intro": "Primeiro devolva o pagamento pelo painel do Mercado Pago. Depois registre-a aqui com a referência dessa devolução: assim o pedido {{refundId}} é encerrado e não nasce outra devolução.",
+            "noPermission": "Outra pessoa da equipe com a permissão para registrar o que aconteceu por fora registra esta devolução.",
+            "mismatch": {
+                "notice": "O valor a registrar ({{amount}}) não é o do pedido ({{requested}}). Escolha o que fazer antes de confirmar.",
+                "CLOSE_WITH_SETTLED_AMOUNT": "Encerrar o pedido pelo valor registrado",
+                "SETTLE_SEPARATELY": "Registrá-la à parte e manter o pedido aberto"
+            },
+            "success": {
+                "closed": "Devolução registrada: o pedido {{refundId}} ficou executado ({{status}}).",
+                "separate": "Devolução registrada à parte como {{refundId}} ({{status}}). O pedido {{requestedRefundId}} continua aberto."
+            }
+        },
+        "openRefunds": {
+            "title": "Pedidos de devolução abertos",
+            "intro": "Pedidos de devolução ainda abertos sobre os pagamentos desta assinatura. Devolva cada um pelo painel do Mercado Pago e registre-o aqui com a referência dessa devolução.",
+            "loading": "Buscando pedidos de devolução abertos…",
+            "empty": "Esta assinatura não tem pedidos de devolução abertos.",
+            "loadError": "Não conseguimos ler os pedidos de devolução abertos. Recarregue a página para tentar de novo.",
+            "noPermission": "Outra pessoa da equipe com as permissões para inspecionar assinaturas e registrar o que aconteceu por fora vê e registra estes pedidos de devolução."
+        }
     },
     "reconciliationMarks": {
         "title": "Conciliação de pagamentos",

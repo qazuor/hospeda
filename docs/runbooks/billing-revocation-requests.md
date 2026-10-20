@@ -58,7 +58,38 @@ The preview and action report the following twelve reasons (source: `apps/api/do
 
 ## 6. Getting the money out (cutover state)
 
-RF2/RF3 (confirming and executing through the provider) belong to B6 and do not exist yet (`packages/service-core/src/services/billing/refund/refund-machine.ts:29-41`). Refund the payment manually from the Mercado Pago panel, then record that completed refund with administrative action 14:
+RF2/RF3 (confirming and executing through the provider) belong to B6 and do not exist yet (`packages/service-core/src/services/billing/refund/refund-machine.ts:29-41`). First refund the payment manually from the Mercado Pago panel.
+
+### Record it from the revocation result (panel)
+
+Immediately after confirming S36, the result offers **Settle the refund (action 14)**. It requires `billing.settleExternal`; if you do not have that permission, another team member records it. Nobody settles a refund on their own account. The payment, requested amount, and RF1 request are prefilled. For a card payment, the default channel is **Provider panel**. Enter the refund ID from Mercado Pago as the reference.
+
+If the refunded amount differs from the request, the review step explains the difference before confirmation. Choose whether to close the request for that amount or record the refund separately (AC:B5:41). Closing it updates the existing RF1 instead of creating another refund.
+
+### If the result screen was closed
+
+Return to `/billing/subscriptions/<subscriptionId>/revocation` for that subscription. Its **Open refund requests** section lists each `REQUESTED` refund for that subscription's payments and offers the same settlement form for each request (D-1, option 2). Reading the list requires `billing.subscription.inspect`; settling requires `billing.settleExternal`. If you do not have either permission, another team member can do it.
+
+### API fallback
+
+If the panel is unavailable, find open requests with this read-only query:
+
+```bash
+hops --target=prod psql --stdin <<'SQL'
+select r.id as refund_id, r.amount, r.reason, r.payment_id, r.manual_payment_id, r.created_at
+from refund r
+left join payment p on p.id = r.payment_id
+left join manual_payment m on m.id = r.manual_payment_id
+left join subscription s on s.id = coalesce(p.subscription_id, m.subscription_id)
+left join addon_instance ai on ai.id = p.addon_instance_id
+join users u on u.id = coalesce(s.user_id, ai.owner_id)
+where r.status = 'REQUESTED'
+  and lower(u.email) = lower('<customer email>')
+order by r.created_at desc;
+SQL
+```
+
+An empty output can mean a swallowed command error; it does not prove there are zero matching rows. Use the API call below to record the completed refund:
 
 ```http
 POST /api/v1/admin/billing-refunds/external
@@ -76,9 +107,13 @@ Content-Type: application/json
 }
 ```
 
-Use `paymentId` or `manualPaymentId`, according to the payment source. This closes the open RF1 instead of creating a second refund (AC:B5:41). The admin panel offers action 14 only from reconciliation marks 18/19, so recording a revocation refund is an API call today. A follow-up is tracked by the coordinator.
+Use `paymentId` or `manualPaymentId`, according to the payment source. Set `refundId` to the request being settled.
 
 `amount` is a positive integer in cents. Replace the example with the amount actually refunded.
+
+### Add-on refunds of the same revocation
+
+S36 can also open RF1 requests for add-ons (`ADDON_ORPHAN`) and one-time add-ons (`ONE_TIME_ADDON_REVOCATION`). These requests belong to payments on another row—the add-on subscription or add-on instance—so they do not appear in the panel's open-request list (D-2). They appear in the query above, which filters by the owner's email, and must be settled through the API, one request at a time with its own `refundId`.
 
 ## 7. Close the loop
 

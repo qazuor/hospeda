@@ -52,6 +52,8 @@ function translateEs(key: string, params?: Readonly<Record<string, unknown>>): s
 vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({ t: translateEs, locale: 'es' })
 }));
+vi.mock('../RevocationRefundSettlement', () => ({ RevocationRefundSettlement: () => null }));
+vi.mock('../RevocationOpenRefunds', () => ({ RevocationOpenRefunds: () => null }));
 
 const permissions = vi.fn<() => PermissionEnum[]>(() => []);
 
