@@ -14,32 +14,29 @@
  * In every production code file under `apps/` and `packages/` (`.ts .tsx .mts
  * .cts .js .jsx .mjs .cjs .astro`, tests excluded, comments ignored):
  *
- * 1. A member of the legacy key enums, `EntitlementKey.X` or `LimitKey.X`
- *    (`@repo/billing`), resolved to its string value by reading the enum
- *    declarations in `packages/billing/src/types/`. The value must be a
- *    catalog key. A member the enums do not declare fails too: it cannot be
- *    resolved, so it cannot be proved to be in the catalog.
- * 2. A string literal equal to a value of those legacy enums (`'read_reviews'`).
- *    It must be a catalog key.
- * 3. A string literal passed as `key:` to the catalog accessors
+ * 1. A member of `EntitlementKeyEnum.X` or `LimitKeyEnum.X`, resolved to its
+ *    string value by reading `packages/schemas/src/catalog/key-enums.ts`. The
+ *    value must be a catalog key. A member the enums do not declare fails too:
+ *    it cannot be resolved, so it cannot be proved to be in the catalog.
+ * 2. A string literal passed as `key:` to the catalog accessors
  *    (`getCatalogKey({ key: '...' })`, `isCatalogKey({ key: '...' })`). It must
  *    be a catalog key.
  *
  * ## What it does NOT see, so a green run is not read as more
  *
- * - A key-shaped literal that is neither a legacy enum value nor an accessor
- *   argument (`const k = 'brand_new_key'`): nothing distinguishes it from any
- *   other snake_case string, so a NEW key invented outside both forms is
- *   invisible until it reaches the enum or the accessor.
+ * - A key-shaped literal that is not an accessor argument (`const k =
+ *   'brand_new_key'`): nothing distinguishes it from any other snake_case
+ *   string, so a NEW key invented outside both forms is invisible until it
+ *   reaches an enum member or the accessor. If a key leaves the catalog, a
+ *   standalone literal stops being visible here; an `EntitlementKeyEnum.X` or
+ *   `LimitKeyEnum.X` use still fails because the member disappears and
+ *   TypeScript reports that use too.
  * - A key built at runtime (concatenation, template, a variable).
  *
- * ## The one exclusion and the one allowlist entry
+ * ## The allowlist
  *
- * - `packages/billing/` is not scanned: it is the legacy package that DECLARES
- *   the old enums, still with `read_reviews` (owner decision 7, 2026-10-07). It
- *   leaves the repository with HOS-1626.
- * - {@link ALLOWLIST} is empty: `read_reviews` is back in the catalog, HOS-1626
- *   D-1, so the reviews row needs no exception.
+ * - {@link ALLOWLIST} stays as an exact-path exception mechanism. It is empty
+ *   because every current use is in the catalog.
  *
  * ## Positive control
  *
@@ -58,19 +55,16 @@ import { fileURLToPath } from 'node:url';
 import { CATALOG_KEY_NAMES } from '../packages/schemas/src/catalog/key-catalog.js';
 import { stripComments } from './check-vertical-axis-items.js';
 
-/** The legacy enum declarations, repo-relative, by enum name. */
-export const LEGACY_ENUM_FILES = {
-    EntitlementKey: 'packages/billing/src/types/entitlement.types.ts',
-    LimitKey: 'packages/billing/src/types/plan.types.ts'
+/** The catalog enum declarations, repo-relative, by enum name. */
+export const CATALOG_ENUM_FILES = {
+    EntitlementKeyEnum: 'packages/schemas/src/catalog/key-enums.ts',
+    LimitKeyEnum: 'packages/schemas/src/catalog/key-enums.ts'
 } as const;
 
 /** The scanned tree is production code under these roots. */
 const SCAN_ROOT = /^(?:apps|packages)\//;
 
-/** Not scanned: the legacy package that declares the old enums (until HOS-1626). */
-export const EXCLUDED_PREFIX = 'packages/billing/';
-
-/** `read_reviews` is back in the catalog, HOS-1626 D-1, so the reviews row needs no exception. */
+/** Exact path → explicitly allowed out-of-catalog key; currently no exceptions. */
 export const ALLOWLIST: Readonly<Record<string, Readonly<Record<string, string>>>> = {};
 
 /** Fewer scanned files than this means the scan is broken, not that the tree is clean. */
@@ -88,7 +82,7 @@ export interface G3Violation {
 }
 
 /**
- * Reads the members of one legacy enum declaration.
+ * Reads the members of one catalog enum declaration.
  *
  * @param input - Parse input.
  * @param input.source - The declaring file's text.
@@ -119,7 +113,7 @@ export function parseEnumMembers({
  * @param input - Scan input.
  * @param input.file - Repo-relative path, for the report.
  * @param input.source - The file's text.
- * @param input.enums - Legacy enum name → (member → value).
+ * @param input.enums - Catalog enum name → (member → value).
  * @param input.catalogKeys - The catalog's key names.
  * @returns One violation per out-of-catalog use, with its line.
  */
@@ -136,7 +130,6 @@ export function findOutOfCatalogKeys({
 }): readonly G3Violation[] {
     const code = stripComments({ source });
     const lineOf = (index: number) => code.slice(0, index).split('\n').length;
-    const legacyValues = new Set(Object.values(enums).flatMap((members) => [...members.values()]));
     const violations: G3Violation[] = [];
 
     const enumNames = Object.keys(enums).join('|');
@@ -151,7 +144,7 @@ export function findOutOfCatalogKeys({
                 file,
                 line: lineOf(match.index),
                 key: `${enumName}.${member}`,
-                detail: `${enumName}.${member} is not declared by the legacy enum, so it cannot be resolved to a catalog key.`
+                detail: `${enumName}.${member} is not declared by the catalog enum, so it cannot be resolved to a catalog key.`
             });
         } else if (!catalogKeys.has(value)) {
             violations.push({
@@ -159,18 +152,6 @@ export function findOutOfCatalogKeys({
                 line: lineOf(match.index),
                 key: value,
                 detail: `${enumName}.${member} is '${value}', which is not in the key catalog.`
-            });
-        }
-    }
-
-    for (const match of code.matchAll(/(['"`])([a-z][a-z0-9_]*)\1/g)) {
-        const value = match[2] as string;
-        if (legacyValues.has(value) && !catalogKeys.has(value)) {
-            violations.push({
-                file,
-                line: lineOf(match.index),
-                key: value,
-                detail: `the literal '${value}' is a legacy key that is not in the key catalog.`
             });
         }
     }
@@ -200,7 +181,7 @@ function listScannedFiles({ root }: { readonly root: string }): readonly string[
     return out
         .split('\0')
         .filter(Boolean)
-        .filter((file) => SCAN_ROOT.test(file) && !file.startsWith(EXCLUDED_PREFIX))
+        .filter((file) => SCAN_ROOT.test(file))
         .filter((file) => CODE_FILE.test(file) && !TEST_FILE.test(file));
 }
 
@@ -229,7 +210,7 @@ export function run(
     const lines = ['=== GUARD:G3 - every key used in production code is in the key catalog ==='];
 
     const enums: Record<string, ReadonlyMap<string, string>> = {};
-    for (const [enumName, file] of Object.entries(LEGACY_ENUM_FILES)) {
+    for (const [enumName, file] of Object.entries(CATALOG_ENUM_FILES)) {
         let members: ReadonlyMap<string, string> = new Map();
         try {
             members = parseEnumMembers({
@@ -241,8 +222,8 @@ export function run(
         }
         if (members.size === 0) {
             lines.push(
-                `ERROR: could not read enum ${enumName} from ${file}. Form 1 and 2 cannot be enforced; ` +
-                    'fix LEGACY_ENUM_FILES (or retire them with HOS-1626).'
+                `ERROR: could not read catalog enum ${enumName} from ${file}. ` +
+                    'Fix CATALOG_ENUM_FILES or restore the enum declaration.'
             );
             return { exitCode: 1, output: lines.join('\n') };
         }
@@ -277,9 +258,7 @@ export function run(
         lines.push(
             '',
             'FAIL G3: production code uses a key that is not in the key catalog (packages/schemas/src/catalog).',
-            'Seen forms only: legacy enum members (EntitlementKey.X / LimitKey.X), legacy key literals and',
-            'getCatalogKey/isCatalogKey arguments. Add the key to the catalog (and regenerate its SQL,',
-            'GUARD:G18) or stop using it.'
+            'Seen forms only: catalog enum members (EntitlementKeyEnum.X / LimitKeyEnum.X) and getCatalogKey/isCatalogKey arguments.'
         );
         for (const v of violations) lines.push(`  ${v.file}:${v.line}  ${v.detail}`);
     }
@@ -294,8 +273,7 @@ export function run(
 
     const allowed = found.length;
     lines.push(
-        `OK: ${files.length} code file(s) under apps/ and packages/ (minus ${EXCLUDED_PREFIX}) use only catalog keys` +
-            `${allowed > 0 ? `; ${allowed} allowlisted use(s) until HOS-1626` : ''}.`
+        `OK: ${files.length} code file(s) under apps/ and packages/ use only catalog keys${allowed > 0 ? `; ${allowed} allowlisted use(s)` : ''}.`
     );
     return { exitCode: 0, output: lines.join('\n') };
 }
