@@ -16,10 +16,13 @@ import {
     effectiveSetSnapshotCodec,
     type ListingAccessFacts,
     type ListingVertical,
+    type PreTrialDraftLimitsPort,
     readEffectiveSet,
-    readListingAccessFacts
+    readListingAccessFacts,
+    resolvePreTrialDraftLimits
 } from '@repo/verticals';
 import { createApiEffectiveSetCache } from '../effective-set-cache';
+import { buildTrialStartReader } from '../listing-publication/trial-start-reader';
 import {
     createApiBillingCanCharge,
     createApiBillingCoverage,
@@ -36,6 +39,11 @@ export interface ListingAccessPorts {
      */
     readonly billing: BillingForVerticals & Pick<CoverageNoticeRegistry, 'emitCoverageChanged'>;
     readonly effectiveSet: EffectiveSetPort;
+    /**
+     * The photo caps a pre-trial owner may use on a DRAFT: what the trial will
+     * grant at first publish (HOS-1721). Empty for anyone who is not pre-trial.
+     */
+    readonly preTrialDraftLimits: PreTrialDraftLimitsPort;
     readonly loadFacts: (args: {
         readonly vertical: ListingVertical;
         readonly listingId: string;
@@ -72,6 +80,15 @@ export function getListingAccessPorts(): ListingAccessPorts {
             vertical,
             cache
         });
+    const trialPlans = buildTrialStartReader({ client: getDb() });
+    const preTrialDraftLimits: PreTrialDraftLimitsPort = ({ userId, vertical }) =>
+        resolvePreTrialDraftLimits({
+            billing,
+            reader: planCatalogModel,
+            trialPlans,
+            userId,
+            vertical
+        });
     const loadFacts: ListingAccessPorts['loadFacts'] = async ({ vertical, listingId }) => {
         const db = getDb();
         let entity: unknown;
@@ -101,6 +118,6 @@ export function getListingAccessPorts(): ListingAccessPorts {
         const facts = readListingAccessFacts({ entity });
         return { facts, ownerId: facts?.ownerId ?? null };
     };
-    ports = { billing, effectiveSet, loadFacts };
+    ports = { billing, effectiveSet, preTrialDraftLimits, loadFacts };
     return ports;
 }

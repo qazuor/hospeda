@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
     loadFacts: vi.fn(),
     coverage: vi.fn(),
     effectiveSet: vi.fn(),
+    preTrialDraftLimits: vi.fn(),
     subscribeDestination: vi.fn()
 }));
 vi.mock('../../src/services/listing-publication/subscribe-destination.service', () => ({
@@ -33,7 +34,8 @@ vi.mock('../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
         loadFacts: mocks.loadFacts,
         billing: { coverage: mocks.coverage },
-        effectiveSet: mocks.effectiveSet
+        effectiveSet: mocks.effectiveSet,
+        preTrialDraftLimits: mocks.preTrialDraftLimits
     })
 }));
 
@@ -104,6 +106,7 @@ beforeEach(() => {
         ownerId: OWNER
     });
     mocks.coverage.mockResolvedValue({ covered: false, sources: [{ type: 'BASE' }] });
+    mocks.preTrialDraftLimits.mockResolvedValue(new Map());
     mocks.subscribeDestination.mockResolvedValue({
         destination: 'CHECKOUT',
         reason: 'USER_ALREADY_HAS_TRIAL_ROW'
@@ -268,6 +271,60 @@ describe('AC:V5:9 listing access HTTP mapping', () => {
         expect(result.body.error).toMatchObject({
             code: ServiceErrorCode.LIMIT_REACHED,
             details: { limitKey: 'max_photos_per_accommodation', currentCount: 10, maxAllowed: 10 }
+        });
+    });
+});
+
+describe('HOS-1721 pre-trial host adds photos to their own DRAFT', () => {
+    it('lets a pre-trial owner with empty limits upload the main photo of their DRAFT', async () => {
+        // Arrange: the staging floor set — no limits at all.
+        mocks.loadFacts.mockResolvedValue({
+            facts: { ownerId: OWNER, publicationStatus: PublicationStatusEnum.DRAFT },
+            ownerId: OWNER
+        });
+        mocks.preTrialDraftLimits.mockResolvedValue(
+            new Map([['max_photos_per_accommodation', 15]])
+        );
+        // Act
+        const result = await probe(appFor({ limit: 1 }));
+        // Assert
+        expect(result.status).toBe(200);
+        expect(result.body).toEqual({ subjectId: OWNER, evaluatedSteps: [4, 5, 7] });
+        expect(mocks.preTrialDraftLimits).toHaveBeenCalledWith({ userId: OWNER, vertical });
+    });
+
+    it('caps the DRAFT gallery at what the trial will grant', async () => {
+        // Arrange
+        mocks.loadFacts.mockResolvedValue({
+            facts: { ownerId: OWNER, publicationStatus: PublicationStatusEnum.DRAFT },
+            ownerId: OWNER
+        });
+        mocks.preTrialDraftLimits.mockResolvedValue(
+            new Map([['max_photos_per_accommodation', 15]])
+        );
+        // Act
+        const result = await probe(appFor({ limit: 16 }));
+        // Assert
+        expect(result.status).toBe(403);
+        expect(result.body.error).toMatchObject({
+            code: ServiceErrorCode.LIMIT_REACHED,
+            details: { limitKey: 'max_photos_per_accommodation', currentCount: 15, maxAllowed: 15 }
+        });
+    });
+
+    it('keeps the photo limit at 0 for a DRAFT owner who is not pre-trial', async () => {
+        // Arrange: the port answers nothing (expired trial, no title).
+        mocks.loadFacts.mockResolvedValue({
+            facts: { ownerId: OWNER, publicationStatus: PublicationStatusEnum.DRAFT },
+            ownerId: OWNER
+        });
+        // Act
+        const result = await probe(appFor({ limit: 1 }));
+        // Assert
+        expect(result.status).toBe(403);
+        expect(result.body.error).toMatchObject({
+            code: ServiceErrorCode.LIMIT_REACHED,
+            details: { limitKey: 'max_photos_per_accommodation', currentCount: 0, maxAllowed: 0 }
         });
     });
 });
