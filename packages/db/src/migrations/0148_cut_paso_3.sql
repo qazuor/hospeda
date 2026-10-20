@@ -130,10 +130,19 @@ BEGIN
         FROM accommodations a
         WHERE NOT EXISTS (SELECT 1 FROM jsonb_array_elements(cut_list) item
             WHERE item ->> 'entityType' = 'accommodation' AND (item ->> 'entityId')::uuid = a.id);
+        -- Gastronomy also carries its uploaded menu and dish photos because the DELETE below cascades their rows (HOS-1712; same criterion as the HOS-1702 purge).
         INSERT INTO cutover_v6_deleted_listing (entity_type, entity_id, slug, photos, calendar_tokens)
         SELECT 'gastronomy', g.id, g.slug,
             COALESCE((SELECT jsonb_agg(jsonb_build_object('publicId', m.public_id, 'url', m.url))
-                FROM gastronomy_media m WHERE m.gastronomy_id = g.id), '[]'::jsonb), '[]'::jsonb
+                FROM gastronomy_media m WHERE m.gastronomy_id = g.id), '[]'::jsonb)
+            || CASE WHEN g.menu_file_public_id IS NOT NULL
+                THEN jsonb_build_array(jsonb_build_object('publicId', g.menu_file_public_id,
+                    'url', COALESCE(g.menu_file_url, '')))
+                ELSE '[]'::jsonb END
+            || COALESCE((SELECT jsonb_agg(jsonb_build_object('publicId', i.photo_public_id,
+                    'url', COALESCE(i.photo_url, '')) ORDER BY i.id)
+                FROM gastronomy_menu_items i
+                WHERE i.gastronomy_id = g.id AND i.photo_public_id IS NOT NULL), '[]'::jsonb), '[]'::jsonb
         FROM gastronomies g
         WHERE NOT EXISTS (SELECT 1 FROM jsonb_array_elements(cut_list) item
             WHERE item ->> 'entityType' = 'gastronomy' AND (item ->> 'entityId')::uuid = g.id);
