@@ -14,7 +14,8 @@ const readTranslation = (root: TranslationTree, path: string): TranslationTree |
     path
         .split('.')
         .reduce<TranslationTree | undefined>(
-            (node, part) => (typeof node === 'string' ? undefined : node[part]),
+            (node, part) =>
+                node === undefined || typeof node === 'string' ? undefined : node[part],
             root
         );
 vi.mock('@/hooks/use-user-permissions', () => ({
@@ -50,7 +51,10 @@ const RESULT: SubscriptionRevocationResponse = {
     cancelCall: 'NOT_NEEDED'
 };
 const MANUAL = { ...RESULT, payment: { source: 'MANUAL_PAYMENT' as const, id: PAYMENT_ID } };
-const copy = (path: string) => readTranslation(es.subscriptionRevocation, path);
+const copy = (path: string): string => {
+    const value = readTranslation(es.subscriptionRevocation, path);
+    return typeof value === 'string' ? value : path;
+};
 const renderSettlement = (result = RESULT) => {
     const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
     return render(
@@ -286,12 +290,8 @@ describe('TEST:1711:4 AC:1711:4 rejection messages', () => {
         review();
         settle();
         const alert = await screen.findByRole('alert');
-        const translated = path
-            .split('.')
-            .reduce<TranslationTree | undefined>(
-                (value, part) => (typeof value === 'string' ? undefined : value[part]),
-                es.reconciliationMarks
-            );
+        const translated = readTranslation(es.reconciliationMarks, path);
+        if (typeof translated !== 'string') throw new Error(`Missing test translation: ${path}`);
         expect(alert).toHaveTextContent(translated);
         expect(section().getByRole('button', { name: 'Revisar asiento' })).toBeInTheDocument();
         expect(state.fetchApi).toHaveBeenCalledTimes(1);
