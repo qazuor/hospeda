@@ -3,8 +3,11 @@
  * @description Runtime reader for the current, sellable public plan catalog.
  */
 
-import type { PlanCategory } from '@repo/billing';
-import { PublicPlanCatalogResponseSchema, type PublicPlanCatalogVertical } from '@repo/schemas';
+import {
+    type BillingPlanCategory,
+    PublicPlanCatalogResponseSchema,
+    type PublicPlanCatalogVertical
+} from '@repo/schemas';
 import { z } from 'zod';
 import { getApiUrl } from '@/lib/env';
 
@@ -16,7 +19,7 @@ export interface PublicPlanData {
     readonly slug: string;
     readonly name: string;
     readonly description: string;
-    readonly category: PlanCategory;
+    readonly category: BillingPlanCategory;
     readonly monthlyPriceArs: number;
     readonly annualPriceArs: number | null;
     readonly hasTrial: boolean;
@@ -32,7 +35,7 @@ export type FetchPlansResult =
     | { readonly ok: true; readonly plans: readonly PublicPlanData[] }
     | { readonly ok: false; readonly error: string };
 
-const CATEGORY_BY_VERTICAL: Record<PublicPlanCatalogVertical, PlanCategory> = {
+const CATEGORY_BY_VERTICAL: Record<PublicPlanCatalogVertical, BillingPlanCategory> = {
     accommodation: 'owner',
     tourist: 'tourist',
     gastronomy: 'owner',
@@ -165,7 +168,7 @@ export async function fetchPublicPlans({
 /** Keep remaining category-based comparison consumers active-only and ordered. */
 export function filterPlansByCategory(
     plans: readonly PublicPlanData[],
-    category: PlanCategory
+    category: BillingPlanCategory
 ): readonly PublicPlanData[] {
     return plans
         .filter((plan) => plan.isActive && plan.category === category)

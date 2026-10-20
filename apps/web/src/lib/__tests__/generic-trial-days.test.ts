@@ -12,9 +12,9 @@
  * without hitting the network.
  */
 
-import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
+import { OWNER_TRIAL_DAYS } from '../billing/owner-trial-days';
 
 vi.mock('@/lib/billing/fetch-plans', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@/lib/billing/fetch-plans')>();
@@ -32,6 +32,12 @@ import {
 } from '@/lib/billing/generic-trial-days';
 
 const mockFetchPublicPlans = vi.mocked(fetchPublicPlans);
+
+describe('TEST:1626:5 — static owner trial length', () => {
+    it('keeps the cached marketing promise at 30 days until HOS-528 reads plans', () => {
+        expect(OWNER_TRIAL_DAYS).toBe(30);
+    });
+});
 
 /** Builds a fully-populated {@link PublicPlanData} fixture with overrides. */
 const makePlan = (

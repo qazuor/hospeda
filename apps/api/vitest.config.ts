@@ -106,7 +106,6 @@ export default defineConfig({
             '@repo/verticals': resolve(import.meta.dirname, '../../packages/verticals/src'),
             // Test-only package (the adjustable clock): devDependency, never src.
             '@repo/test-clock': resolve(import.meta.dirname, '../../packages/test-clock/src'),
-            '@repo/billing': resolve(import.meta.dirname, '../../packages/billing/src'),
             '@repo/notifications': resolve(import.meta.dirname, '../../packages/notifications/src'),
             '@repo/email': resolve(import.meta.dirname, '../../packages/email/src'),
             // SPEC-187: alias content-moderation so unit tests of files in the

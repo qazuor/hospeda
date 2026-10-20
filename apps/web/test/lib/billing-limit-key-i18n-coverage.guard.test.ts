@@ -1,24 +1,24 @@
 /**
  * @file billing-limit-key-i18n-coverage.guard.test.ts
- * @description Static guard for HOS-690 AC-23: every `LimitKey` must ship with
+ * @description Static guard for HOS-690 AC-23: every `LimitKeyEnum` must ship with
  * dedicated i18n coverage, not just a TypeScript metadata entry.
  *
  * ## The gap this closes
  *
  * `packages/billing/test/limits.test.ts` enforces that `LIMIT_METADATA` is
- * exhaustive over `LimitKey` — but that record holds English strings compiled
+ * exhaustive over `LimitKeyEnum` — but that record holds English strings compiled
  * into the bundle, not locale files, so it is satisfied the moment a key has
  * ANY name/description, translated or not.
  *
  * `packages/i18n/test/key-coverage.test.ts` enforces es↔en↔pt parity — it
  * catches a key added to one locale and forgotten in the others, but it never
- * opens `plan.types.ts` and has no notion of `LimitKey` at all. A limit key
+ * opens `plan.types.ts` and has no notion of `LimitKeyEnum` at all. A limit key
  * that was never given ANY `billing.limit.<key>.*` entry, in any locale,
  * passes both existing guards while degrading silently to
  * `billing.limit.generic.*` in production (see
  * `apps/web/src/lib/billing-limit-error.ts`).
  *
- * This guard is the missing link: for every `LimitKey`, in the `es` baseline
+ * This guard is the missing link: for every `LimitKeyEnum`, in the `es` baseline
  * locale (the cross-locale guard above covers `en`/`pt` for free once `es`
  * exists):
  *
@@ -39,7 +39,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join, resolve as resolvePath } from 'node:path';
-import { LimitKey } from '@repo/billing';
+import { LimitKeyEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { KNOWN_LIMIT_KEYS } from '@/lib/billing-limit-error';
 
@@ -60,17 +60,17 @@ function readEsBilling(): Record<string, unknown> {
     return JSON.parse(readFileSync(ES_BILLING_JSON_PATH, 'utf8')) as Record<string, unknown>;
 }
 
-describe('HOS-690 AC-23 — every LimitKey has dedicated i18n coverage', () => {
-    const allLimitKeys = Object.values(LimitKey);
+describe('HOS-690 AC-23 — every LimitKeyEnum has dedicated i18n coverage', () => {
+    const allLimitKeyEnums = Object.values(LimitKeyEnum);
 
     it('has limit keys to check at all', () => {
-        // Non-vacuity: an empty LimitKey enum would satisfy every assertion below.
-        expect(allLimitKeys.length).toBeGreaterThan(0);
+        // Non-vacuity: an empty LimitKeyEnum enum would satisfy every assertion below.
+        expect(allLimitKeyEnums.length).toBeGreaterThan(0);
     });
 
-    it('every LimitKey has billing.limit.<key>.title in es', () => {
+    it('every LimitKeyEnum has billing.limit.<key>.title in es', () => {
         const esBilling = readEsBilling();
-        const missing = allLimitKeys.filter((key) => {
+        const missing = allLimitKeyEnums.filter((key) => {
             const value = resolveKey({ obj: esBilling, key: `limit.${key}.title` });
             return typeof value !== 'string' || value.length === 0;
         });
@@ -81,9 +81,9 @@ describe('HOS-690 AC-23 — every LimitKey has dedicated i18n coverage', () => {
         ).toEqual([]);
     });
 
-    it('every LimitKey has billing.comparison.limitLabel.<key> in es', () => {
+    it('every LimitKeyEnum has billing.comparison.limitLabel.<key> in es', () => {
         const esBilling = readEsBilling();
-        const missing = allLimitKeys.filter((key) => {
+        const missing = allLimitKeyEnums.filter((key) => {
             const value = resolveKey({ obj: esBilling, key: `comparison.limitLabel.${key}` });
             return typeof value !== 'string' || value.length === 0;
         });
@@ -94,12 +94,12 @@ describe('HOS-690 AC-23 — every LimitKey has dedicated i18n coverage', () => {
         ).toEqual([]);
     });
 
-    it('every LimitKey is registered in KNOWN_LIMIT_KEYS', () => {
-        const missing = allLimitKeys.filter((key) => !KNOWN_LIMIT_KEYS.has(key));
+    it('every LimitKeyEnum is registered in KNOWN_LIMIT_KEYS', () => {
+        const missing = allLimitKeyEnums.filter((key) => !KNOWN_LIMIT_KEYS.has(key));
 
         expect(
             missing,
-            `LimitKey(s) missing from KNOWN_LIMIT_KEYS — they will silently render ` +
+            `LimitKeyEnum(s) missing from KNOWN_LIMIT_KEYS — they will silently render ` +
                 `billing.limit.generic.* instead of their own copy: ${missing.join(', ')}`
         ).toEqual([]);
     });

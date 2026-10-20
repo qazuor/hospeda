@@ -5,10 +5,13 @@
  * resolve-reason.ts maps checkout UI translation keys and is a separate concern
  * that this map does not reuse or modify.
  */
+/** Cause category for a declined signup. */
 export type SignupDeclinedCause = 'PROVIDER_RISK' | 'PAYMENT_METHOD' | 'UNKNOWN';
 
+/** Retry path offered after a declined signup. */
 export type SignupDeclinedRetry = 'NEW_SIGNUP' | 'FINISH_SUCCESSOR_CHECKOUT';
 
+/** Maps measured provider status details to signup decline causes. */
 export const SIGNUP_DECLINED_CAUSE_BY_STATUS_DETAIL: Readonly<
     Record<string, Exclude<SignupDeclinedCause, 'UNKNOWN'>>
 > = Object.freeze({
@@ -22,6 +25,7 @@ export const SIGNUP_DECLINED_CAUSE_BY_STATUS_DETAIL: Readonly<
     cc_rejected_bad_filled_date: 'PAYMENT_METHOD'
 });
 
+/** Resolves the customer-facing cause and retry path for a declined signup. */
 export function resolveSignupDeclinedMessage({
     declineReason,
     successionPredecessor

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     resolveSignupDeclinedMessage,
     SIGNUP_DECLINED_CAUSE_BY_STATUS_DETAIL
-} from '../src/utils/signup-declined-reason.js';
+} from '../../../src/services/outbox/signup-declined-reason.js';
 
 describe('TEST:B13a:4 AC:B13a:5 the status_detail map of a declined signup', () => {
     it.each([

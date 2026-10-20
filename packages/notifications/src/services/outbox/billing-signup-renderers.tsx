@@ -1,4 +1,3 @@
-import { resolveSignupDeclinedMessage } from '@repo/billing';
 import type { EmailOutboxRow } from '@repo/db';
 import { getLocalDateString } from '@repo/utils';
 import {
@@ -37,6 +36,7 @@ import {
 } from '../../templates/billing/index.js';
 import { formatCurrency, formatDate } from '../../templates/utils/index.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
+import { resolveSignupDeclinedMessage } from './signup-declined-reason.js';
 
 const SUBSCRIPTION_PATH = '/es/mi-cuenta/suscripcion/';
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;

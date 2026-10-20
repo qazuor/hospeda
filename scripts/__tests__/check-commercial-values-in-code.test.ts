@@ -9,7 +9,7 @@ afterEach(() => {
     for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
-describe('TEST:B2:3 — G7 rejects a commercial value in code', () => {
+describe('TEST:B2:3 TEST:1626:6 — G7 rejects a commercial value in code', () => {
     it.each([
         ['parentheses', 'const MONTHLY_PRICE = (12345);', 'MONTHLY_PRICE'],
         ['numeric separator', 'const MONTHLY_PRICE = 12_345;', 'MONTHLY_PRICE'],
@@ -30,7 +30,6 @@ describe('TEST:B2:3 — G7 rejects a commercial value in code', () => {
         const root = mkdtempSync(join(tmpdir(), 'g7-'));
         roots.push(root);
         for (const folder of [
-            'packages/billing/src',
             'packages/payments/src',
             'packages/service-core/src/services/billing'
         ]) {
@@ -54,7 +53,6 @@ describe('TEST:B2:3 — G7 rejects a commercial value in code', () => {
         const root = mkdtempSync(join(tmpdir(), 'g7-'));
         roots.push(root);
         for (const folder of [
-            'packages/billing/src',
             'packages/payments/src',
             'packages/service-core/src/services/billing'
         ]) {

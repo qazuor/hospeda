@@ -18,8 +18,8 @@
  * concern, not a re-test of the gate logic.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
+    EntitlementKeyEnum,
     PermissionEnum,
     PublicationStatusEnum,
     RoleEnum,
@@ -134,7 +134,7 @@ type ActorOptions = { id: string; roles: readonly RoleEnum[]; permissions: Permi
  */
 function buildApp(
     actor: ActorOptions,
-    options?: { entitlements?: EntitlementKey[] }
+    options?: { entitlements?: EntitlementKeyEnum[] }
 ): Hono<AppBindings> {
     const app = new Hono<AppBindings>();
     attachTestErrorHandler(app);
@@ -346,7 +346,7 @@ describe('PATCH /:id/occupancy/event (protected)', () => {
     });
 
     it('preserves calendar editing for a previously entitled owner', async () => {
-        const app = buildApp(ownerActor, { entitlements: [EntitlementKey.CAN_USE_CALENDAR] });
+        const app = buildApp(ownerActor, { entitlements: [EntitlementKeyEnum.CAN_USE_CALENDAR] });
         const res = await app.request(`/${ACCOMMODATION_ID}/occupancy/event`, {
             method: 'PATCH',
             headers: { 'content-type': 'application/json' },

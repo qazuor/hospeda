@@ -2,8 +2,8 @@
  * @fileoverview
  * TEST:V1:4 (AC:V1:3): GUARD:G3 is green over the branch, and red on purpose
  * when production code uses a key that is not in the catalog: through the
- * legacy enums, as a legacy literal, or through the catalog accessors. The one
- * allowlisted use (HOS-1626) stays green only while it is still used.
+ * catalog enums or the catalog accessors. Synthetic allowlist cases remain
+ * covered while the production allowlist is empty.
  */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -30,30 +30,26 @@ function makeTree({ files }: { readonly files: Readonly<Record<string, string>> 
     return root;
 }
 
-const ENTITLEMENT_ENUM = `export enum EntitlementKey {
+const ENTITLEMENT_ENUM = `export enum EntitlementKeyEnum {
     /** Owner entitlements {@link X} */
     PUBLISH_ACCOMMODATIONS = 'publish_accommodations',
     READ_REVIEWS = 'read_reviews'
 }
 `;
-const LIMIT_ENUM = `export enum LimitKey {
+const LIMIT_ENUM = `export enum LimitKeyEnum {
     MAX_ACCOMMODATIONS = 'max_accommodations'
 }
 `;
 
-/** A green tree: the legacy enums and a consumer that only uses catalog keys. */
+/** A green tree: catalog enums and a consumer that only uses catalog keys. */
 const GREEN: Readonly<Record<string, string>> = {
-    'packages/billing/src/types/entitlement.types.ts': ENTITLEMENT_ENUM,
-    'packages/billing/src/types/plan.types.ts': LIMIT_ENUM,
-    // The legacy package itself is not scanned, even though it names read_reviews.
-    'packages/billing/src/config/plans.ts':
-        "export const k = EntitlementKey.READ_REVIEWS; export const l = 'read_reviews';\n",
+    'packages/schemas/src/catalog/key-enums.ts': `${ENTITLEMENT_ENUM}${LIMIT_ENUM}`,
     'apps/api/src/gate.ts':
-        "import { EntitlementKey, LimitKey } from '@repo/billing';\nexport const keys = [EntitlementKey.PUBLISH_ACCOMMODATIONS, LimitKey.MAX_ACCOMMODATIONS, 'publish_accommodations'];\n",
+        "import { EntitlementKeyEnum, LimitKeyEnum } from '@repo/schemas';\nexport const keys = [EntitlementKeyEnum.PUBLISH_ACCOMMODATIONS, LimitKeyEnum.MAX_ACCOMMODATIONS];\n",
     // Tests and comments are not scanned.
-    'apps/api/test/gate.test.ts': 'export const t = EntitlementKey.READ_REVIEWS;\n',
+    'apps/api/test/gate.test.ts': 'export const t = EntitlementKeyEnum.READ_REVIEWS;\n',
     'apps/api/src/note.ts':
-        '// EntitlementKey.READ_REVIEWS used to live here\nexport const n = 1;\n'
+        '// EntitlementKeyEnum.READ_REVIEWS used to live here\nexport const n = 1;\n'
 };
 
 const CATALOG = ['publish_accommodations', 'max_accommodations'];
@@ -73,7 +69,7 @@ function guardOver({
     });
 }
 
-describe('TEST:V1:4 — GUARD:G3', () => {
+describe('TEST:V1:4 TEST:1626:4 — GUARD:G3', () => {
     it('is green over the branch', () => {
         const result = run();
 
@@ -87,19 +83,14 @@ describe('TEST:V1:4 — GUARD:G3', () => {
 
     it.each([
         [
-            'an enum member whose value is not in the catalog',
-            'export const k = EntitlementKey.READ_REVIEWS;\n',
-            'read_reviews'
+            'a member whose value is not in the catalog',
+            'export const k = EntitlementKeyEnum.NOT_IN_CATALOG;\n',
+            'NOT_IN_CATALOG'
         ],
         [
-            'a legacy literal not in the catalog',
-            "export const k = { key: 'read_reviews' };\n",
-            'read_reviews'
-        ],
-        [
-            'an enum member the enum does not declare',
-            'export const k = LimitKey.MAX_UNICORNS;\n',
-            'LimitKey.MAX_UNICORNS'
+            'a member the enum does not declare',
+            'export const k = LimitKeyEnum.MAX_UNICORNS;\n',
+            'LimitKeyEnum.MAX_UNICORNS'
         ],
         [
             'the catalog asked for a key it lacks',
@@ -107,20 +98,28 @@ describe('TEST:V1:4 — GUARD:G3', () => {
             'brand_new_key'
         ]
     ])('mutation: %s is red, naming the file and the line', (_label, source, key) => {
-        const result = guardOver({ overrides: { 'apps/web/src/new.ts': `\n${source}` } });
+        const enumSource = `${ENTITLEMENT_ENUM.replace("    READ_REVIEWS = 'read_reviews'", "    READ_REVIEWS = 'read_reviews',\n    NOT_IN_CATALOG = 'not_in_catalog'")}${LIMIT_ENUM}`;
+        const result = guardOver({
+            overrides: {
+                'packages/schemas/src/catalog/key-enums.ts': enumSource,
+                'apps/web/src/new.ts': `\n${source}`
+            }
+        });
 
         expect(result.exitCode).toBe(1);
         expect(result.output).toContain(
             'FAIL G3: production code uses a key that is not in the key catalog'
         );
         expect(result.output).toContain('apps/web/src/new.ts:2');
-        expect(result.output).toContain('Seen forms only: legacy enum members');
+        expect(result.output).toContain(
+            'Seen forms only: catalog enum members (EntitlementKeyEnum.X / LimitKeyEnum.X)'
+        );
         expect(result.output).toContain(key);
     });
 
     it('keeps the allowlisted use green, but only in its exact file', () => {
         const allowlist = { 'apps/web/src/rows.ts': { read_reviews: 'HOS-1626' } };
-        const use = 'export const k = EntitlementKey.READ_REVIEWS;\n';
+        const use = 'export const k = EntitlementKeyEnum.READ_REVIEWS;\n';
 
         expect(guardOver({ overrides: { 'apps/web/src/rows.ts': use }, allowlist }).exitCode).toBe(
             0
@@ -144,15 +143,11 @@ describe('TEST:V1:4 — GUARD:G3', () => {
         expect(result.output).toContain("apps/web/src/rows.ts: 'read_reviews'");
     });
 
-    it('allowlists exactly one file and one key, pointing at HOS-1626', () => {
-        expect(ALLOWLIST).toEqual({
-            'apps/web/src/components/billing/plan-comparison-rows.ts': {
-                read_reviews: expect.stringContaining('HOS-1626')
-            }
-        });
+    it('keeps no exception now that read_reviews is in the catalog', () => {
+        expect(ALLOWLIST).toEqual({});
     });
 
-    it('refuses to run when it cannot read the legacy enums', () => {
+    it('refuses to run when it cannot read the catalog enums', () => {
         const result = run({
             root: makeTree({ files: { 'apps/api/src/a.ts': 'export const a = 1;\n' } }),
             minScannedFiles: 0,
@@ -161,12 +156,15 @@ describe('TEST:V1:4 — GUARD:G3', () => {
         });
 
         expect(result.exitCode).toBe(1);
-        expect(result.output).toContain('could not read enum EntitlementKey');
+        expect(result.output).toContain('could not read catalog enum EntitlementKeyEnum');
     });
 
     it('parses enum members past a JSDoc that contains braces', () => {
         expect([
-            ...parseEnumMembers({ source: ENTITLEMENT_ENUM, enumName: 'EntitlementKey' }).values()
+            ...parseEnumMembers({
+                source: ENTITLEMENT_ENUM,
+                enumName: 'EntitlementKeyEnum'
+            }).values()
         ]).toEqual(['publish_accommodations', 'read_reviews']);
     });
 });

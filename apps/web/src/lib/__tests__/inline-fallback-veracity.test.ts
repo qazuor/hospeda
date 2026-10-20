@@ -43,7 +43,7 @@
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, relative, resolve } from 'node:path';
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
 const LOCALES = ['es', 'en', 'pt'] as const;
@@ -376,7 +376,7 @@ describe('inline fallback veracity (HOS-331)', () => {
         // Non-vacuity for the support half of BANNED_PHRASES: if a dedicated
         // support entitlement is ever added, this fails and the phrases must
         // move out of the ban list rather than staying banned by inertia.
-        const keys = new Set<string>(Object.values(EntitlementKey));
+        const keys = new Set<string>(Object.values(EntitlementKeyEnum));
         expect(keys.has('dedicated_manager')).toBe(false);
         expect(keys.has('dedicated_support')).toBe(false);
     });

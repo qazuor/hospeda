@@ -16,7 +16,7 @@
  * @module test/routes/accommodation/public/list.badge-gate
  */
 
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../../src/types';
@@ -191,7 +191,7 @@ describe('publicListAccommodationsRoute — SPEC-291 Phase 3b isVerified badge g
 
     it('hides isVerified=true even when owner HAS HAS_VERIFICATION_BADGE', async () => {
         mockResolveBatch.mockResolvedValue(
-            new Map([[OWNER_WITH_BADGE, [EntitlementKey.HAS_VERIFICATION_BADGE]]])
+            new Map([[OWNER_WITH_BADGE, [EntitlementKeyEnum.HAS_VERIFICATION_BADGE]]])
         );
         mockSearch.mockResolvedValue({
             data: {
@@ -241,7 +241,7 @@ describe('publicListAccommodationsRoute — SPEC-291 Phase 3b isVerified badge g
 
     it('keeps isVerified=false for un-verified accommodation even if owner HAS the badge', async () => {
         mockResolveBatch.mockResolvedValue(
-            new Map([[OWNER_WITH_BADGE, [EntitlementKey.HAS_VERIFICATION_BADGE]]])
+            new Map([[OWNER_WITH_BADGE, [EntitlementKeyEnum.HAS_VERIFICATION_BADGE]]])
         );
         mockSearch.mockResolvedValue({
             data: {
@@ -266,7 +266,7 @@ describe('publicListAccommodationsRoute — SPEC-291 Phase 3b isVerified badge g
     it('gates each item independently on a mixed page', async () => {
         mockResolveBatch.mockResolvedValue(
             new Map([
-                [OWNER_WITH_BADGE, [EntitlementKey.HAS_VERIFICATION_BADGE]],
+                [OWNER_WITH_BADGE, [EntitlementKeyEnum.HAS_VERIFICATION_BADGE]],
                 [OWNER_WITHOUT_BADGE, []]
             ])
         );

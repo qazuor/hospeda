@@ -27,6 +27,7 @@ const ALL_TEST_KEYS = [
     'max_experiences',
     'save_favorites',
     'write_reviews',
+    'read_reviews',
     'subscribe_to_plan',
     'recover_own_listing',
     'ai_search',
@@ -78,6 +79,7 @@ function contextOf(input: {
     };
 }
 
+// D-4 (HOS-1626, 2026-10-19): the Tourist floor DO list now includes read_reviews.
 /* ------------------------------------------------------------------ */
 /*  DO exception · Tourist floor                                       */
 /* ------------------------------------------------------------------ */
@@ -90,6 +92,7 @@ describe('TEST:V2:10 (a) Tourist floor accepts the DO list', () => {
             entitlements: [
                 { key: 'save_favorites' },
                 { key: 'write_reviews' },
+                { key: 'read_reviews' },
                 { key: 'ai_search', planQuota: 10, trialQuota: 10 },
                 { key: 'ai_chat', planQuota: 10, trialQuota: 10 },
                 { key: 'subscribe_to_plan' },
@@ -113,6 +116,7 @@ describe('TEST:V2:10 (a) Tourist floor rejects missing DO keys', () => {
             role: 'floor',
             entitlements: [
                 { key: 'write_reviews' },
+                { key: 'read_reviews' },
                 { key: 'ai_search', planQuota: 10, trialQuota: 10 },
                 { key: 'ai_chat', planQuota: 10, trialQuota: 10 },
                 { key: 'subscribe_to_plan' },
@@ -137,6 +141,7 @@ describe('TEST:V2:10 (a) Tourist floor rejects missing DO keys', () => {
             entitlements: [
                 { key: 'save_favorites' },
                 { key: 'write_reviews' },
+                { key: 'read_reviews' },
                 { key: 'ai_search', planQuota: 10, trialQuota: 10 },
                 { key: 'subscribe_to_plan' },
                 { key: 'recover_own_listing' }
@@ -160,6 +165,7 @@ describe('TEST:V2:10 (a) Tourist floor rejects missing DO keys', () => {
             entitlements: [
                 { key: 'save_favorites' },
                 { key: 'write_reviews' },
+                { key: 'read_reviews' },
                 { key: 'ai_search', planQuota: 10, trialQuota: 10 },
                 { key: 'ai_chat', planQuota: 10, trialQuota: 10 },
                 { key: 'subscribe_to_plan' },
@@ -184,6 +190,10 @@ describe('TEST:V2:10 (a) Tourist floor rejects deviations from the DO list', () 
             role: 'floor',
             entitlements: [
                 { key: 'save_favorites' },
+                { key: 'write_reviews' },
+                { key: 'read_reviews' },
+                { key: 'ai_search', planQuota: 10, trialQuota: 10 },
+                { key: 'ai_chat', planQuota: 10, trialQuota: 10 },
                 { key: 'view_basic_stats' },
                 { key: 'subscribe_to_plan' },
                 { key: 'recover_own_listing' }
@@ -207,6 +217,7 @@ describe('TEST:V2:10 (a) Tourist floor rejects deviations from the DO list', () 
             entitlements: [
                 { key: 'save_favorites' },
                 { key: 'write_reviews' },
+                { key: 'read_reviews' },
                 { key: 'ai_search', planQuota: 10, trialQuota: 10 },
                 { key: 'ai_chat', planQuota: 10, trialQuota: 10 },
                 { key: 'subscribe_to_plan' },
@@ -231,6 +242,7 @@ describe('TEST:V2:10 (a) Tourist floor rejects deviations from the DO list', () 
             entitlements: [
                 { key: 'save_favorites' },
                 { key: 'write_reviews' },
+                { key: 'read_reviews' },
                 { key: 'ai_search', planQuota: 10, trialQuota: 10 },
                 { key: 'ai_chat', planQuota: 10, trialQuota: 10 },
                 { key: 'subscribe_to_plan' },
@@ -255,6 +267,7 @@ describe('TEST:V2:10 (a) Tourist floor rejects deviations from the DO list', () 
             entitlements: [
                 { key: 'save_favorites' },
                 { key: 'write_reviews' },
+                { key: 'read_reviews' },
                 { key: 'ai_search', planQuota: 10, trialQuota: 10 },
                 { key: 'ai_chat', planQuota: 10, trialQuota: 10 },
                 { key: 'subscribe_to_plan' },
@@ -279,6 +292,7 @@ describe('TEST:V2:10 (a) Tourist floor rejects deviations from the DO list', () 
             entitlements: [
                 { key: 'save_favorites' },
                 { key: 'write_reviews' },
+                { key: 'read_reviews' },
                 { key: 'ai_search', planQuota: 11, trialQuota: 10 },
                 { key: 'ai_chat', planQuota: 10, trialQuota: 10 },
                 { key: 'subscribe_to_plan' },
@@ -303,6 +317,7 @@ describe('TEST:V2:10 (a) Tourist floor rejects deviations from the DO list', () 
             entitlements: [
                 { key: 'save_favorites' },
                 { key: 'write_reviews' },
+                { key: 'read_reviews' },
                 { key: 'ai_search', planQuota: 10, trialQuota: 10 },
                 { key: 'ai_chat', planQuota: 10, trialQuota: 5 },
                 { key: 'subscribe_to_plan' },
@@ -328,6 +343,7 @@ describe('TEST:V2:10 (a) Tourist floor rejects deviations from the DO list', () 
                 { key: 'save_favorites' },
                 { key: 'save_favorites', planQuota: 5, trialQuota: 5 },
                 { key: 'write_reviews' },
+                { key: 'read_reviews' },
                 { key: 'ai_search', planQuota: 10, trialQuota: 10 },
                 { key: 'ai_chat', planQuota: 10, trialQuota: 10 },
                 { key: 'subscribe_to_plan' },
@@ -362,6 +378,7 @@ const OTHER_FLOOR_CONTEXTS: { label: string; vertical: string; role: PlanRole }[
 const DO_ENTITLEMENT_SAMPLES: PlanVersionContentInput['entitlements'] = [
     { key: 'save_favorites' },
     { key: 'write_reviews' },
+    { key: 'read_reviews' },
     { key: 'ai_search', planQuota: 10, trialQuota: 10 },
     { key: 'ai_chat', planQuota: 10, trialQuota: 10 }
 ];
