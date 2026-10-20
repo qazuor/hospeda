@@ -6,8 +6,8 @@ import { useHasPermission } from '@/hooks/use-user-permissions';
 
 /** Props for {@link RevocationRefundSettlement}. RO-RO. */
 export interface RevocationRefundSettlementProps {
-    /** The successful S36 result held in screen memory. */
-    readonly result: SubscriptionRevocationResponse;
+    /** The S36 result in memory, or one open request read back after a reload. */
+    readonly result: Pick<SubscriptionRevocationResponse, 'refundId' | 'refundAmount' | 'payment'>;
 }
 
 /**

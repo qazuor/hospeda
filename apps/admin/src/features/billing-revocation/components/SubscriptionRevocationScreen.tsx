@@ -11,6 +11,7 @@
  *  - a confirmable preview: what the act does (the three things, AC:B5:20),
  *    an optional note and the confirm button;
  *  - after a successful act: the result, with nothing left to confirm.
+ *  - the open refund requests of the subscription, to settle them after a reload (HOS-1711).
  *
  * The screen never decides whether the row can be revoked: the act re-reads
  * everything under its own locks. It always sends the `payment.id` of the
@@ -47,6 +48,7 @@ import {
     type RevocationNoticeReason,
     readRevocationReason
 } from '../revocation-reasons';
+import { RevocationOpenRefunds } from './RevocationOpenRefunds';
 import { RevocationPreviewDetails } from './RevocationPreviewDetails';
 import { RevocationPreviewRefusal, RevocationUnavailable } from './RevocationPreviewRefusal';
 import { RevocationResultDetails } from './RevocationResultDetails';
@@ -239,6 +241,7 @@ function RevocationBody({ subscriptionId }: SubscriptionRevocationScreenProps) {
                     </Button>
                 </div>
             ) : null}
+            <RevocationOpenRefunds subscriptionId={subscriptionId} />
         </>
     );
 }
