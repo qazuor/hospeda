@@ -1,5 +1,5 @@
-import type { LimitKey } from '@repo/billing';
 import { CrownIcon } from '@repo/icons';
+import type { LimitKeyEnum } from '@repo/schemas';
 import * as React from 'react';
 import { useEffectiveSet } from '@/features/billing/use-effective-set';
 import { useTranslations } from '@/hooks/use-translations';
@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 
 export interface LimitProgressIndicatorProps {
     /** Plan limit key to read from the user's entitlements. */
-    readonly limitKey: LimitKey | string;
+    readonly limitKey: LimitKeyEnum | string;
     /** Live count of the resource (typically array length from form state). */
     readonly currentCount: number;
     /** Human-readable label used in the warning copy (e.g. "fotos"). */
@@ -45,7 +45,7 @@ export interface LimitProgressIndicatorProps {
  * @example
  * ```tsx
  * <LimitProgressIndicator
- *   limitKey={LimitKey.MAX_PHOTOS_PER_ACCOMMODATION}
+ *   limitKey={LimitKeyEnum.MAX_PHOTOS_PER_ACCOMMODATION}
  *   currentCount={gallery.length}
  *   resourceLabel={t('admin-entities.fields.media.gallery.label')}
  * />

@@ -5,8 +5,8 @@
  * using Argentine Spanish locale conventions.
  */
 
-import type { Major } from '@repo/billing';
 import { formatCalendarDate } from '@repo/utils';
+import type { Major } from '../../types/money.js';
 
 /**
  * Input parameters for {@link formatCurrency}.

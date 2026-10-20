@@ -292,6 +292,10 @@ jobs:
       # `pnpm check:guards` is NOT what makes a guard run in this job.
       - name: Check no code reads a table the old billing dropped (HOS-1638)
         run: pnpm check:no-legacy-billing-tables
+      # HOS-1626. Its own step, like every guard here: being listed in
+      # `pnpm check:guards` is NOT what makes a guard run in this job.
+      - name: Check the legacy billing package stays retired (HOS-1626)
+        run: pnpm check:no-legacy-billing-package
 
       # Compare client paths with the committed live API route manifest.
       - name: Check no client calls a route the API does not register (HOS-1638, AC:B13a:24)
@@ -381,8 +385,7 @@ jobs:
       - name: Check migration reference rows match the code catalog (GUARD:G18)
         run: pnpm check:catalog-sql
       # GUARD:G3 (HOS-1431, AC:V1:3). Its own step. Every key production code uses
-      # (legacy enum members, legacy literals, catalog accessors) is in the key
-      # catalog; packages/billing and one allowlisted file wait for HOS-1626.
+      # (catalog enum members and catalog accessor arguments) is in the key catalog.
       - name: Check every key used in code is in the key catalog (GUARD:G3)
         run: pnpm check:catalog-key-usage
       # GUARD:G1 (HOS-1431, AC:V1:5). Its own step. Retires the HOS-1079 shell

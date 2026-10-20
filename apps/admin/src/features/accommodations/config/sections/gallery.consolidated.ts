@@ -1,6 +1,5 @@
-import { EntitlementKey } from '@repo/billing';
 import type { useTranslations } from '@repo/i18n';
-import { PermissionEnum } from '@repo/schemas';
+import { EntitlementKeyEnum, PermissionEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
 
@@ -21,7 +20,7 @@ import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.
  * reach the DB. `videos` is its own column and its own top-level field.
  *
  * `videos` is wired via the `VIDEO_GALLERY` field (URL + caption +
- * description per entry). Gated by `EntitlementKey.CAN_EMBED_VIDEO` — for
+ * description per entry). Gated by `EntitlementKeyEnum.CAN_EMBED_VIDEO` — for
  * unlocked hosts the quality-score `video-gallery` signal flips from
  * "pending" to "done" once at least one entry is added.
  */
@@ -56,7 +55,7 @@ export const createGalleryConsolidatedSection = (
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_GALLERY_MANAGE]
                 },
-                entitlementKey: EntitlementKey.CAN_EMBED_VIDEO,
+                entitlementKey: EntitlementKeyEnum.CAN_EMBED_VIDEO,
                 typeConfig: {
                     type: 'VIDEO_GALLERY'
                 }

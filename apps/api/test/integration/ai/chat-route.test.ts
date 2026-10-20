@@ -301,8 +301,14 @@ vi.mock('../../../src/utils/logger', () => ({
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { recordAiUsage } from '@repo/ai-core';
-import { EntitlementKey, LimitKey } from '@repo/billing';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+
+import {
+    EntitlementKeyEnum,
+    LimitKeyEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorMiddleware } from '../../../src/middlewares/actor';
@@ -414,14 +420,14 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         // Tourist entitlements — still loaded by entitlementMiddleware; AI_CHAT gate is
         // now owner-keyed (SPEC-211), but keeping this populated avoids surprises if any
         // future middleware reads `c.get('userEntitlements')`.
-        currentEntitlementsForTest.current = new Set([EntitlementKey.AI_CHAT]);
+        currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_CHAT]);
         currentLimitsForTest.current = new Map([
-            [LimitKey.MAX_AI_CHAT_PER_MONTH, 20],
-            [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
+            [LimitKeyEnum.MAX_AI_CHAT_PER_MONTH, 20],
+            [LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
         ]);
         // Owner billing state defaults (SPEC-211 Phase 1 §7.3 — pass-through for most tests).
-        mockOwnerEntitlements.current = [EntitlementKey.AI_CHAT];
-        mockOwnerLimits.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 20]]);
+        mockOwnerEntitlements.current = [EntitlementKeyEnum.AI_CHAT];
+        mockOwnerLimits.current = new Map([[LimitKeyEnum.MAX_AI_CHAT_PER_MONTH, 20]]);
         mockOwnerQueryResult.current = [{ ownerId: '11111111-1111-1111-1111-111111111111' }];
         resolvedPromptForTest.current = 'Resolved prompt from admin/default.';
         nextContextResult.current = {
@@ -491,7 +497,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
             entityName: 'test listing'
         });
         mockOwnerEntitlements.current = [
-            EntitlementKey.AI_CHAT,
+            EntitlementKeyEnum.AI_CHAT,
             ...(testCase.enabled ? [testCase.key] : [])
         ];
         mockOwnerLimits.current = new Map([
@@ -552,7 +558,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
     it("rejects the owner's chat when the monthly count reaches the effective limit", async () => {
         // SPEC-211 Phase 1: quota counted against the OWNER, not the tourist.
         // Owner limit is 20 and has already used 20 calls this month.
-        mockOwnerLimits.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 20]]);
+        mockOwnerLimits.current = new Map([[LimitKeyEnum.MAX_AI_CHAT_PER_MONTH, 20]]);
         getMonthlyCallCountReturn.current = 20;
 
         const res = await app.request(STREAM_PATH, {
@@ -946,7 +952,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
             mockOwnerEntitlements.current = [];
             // Consumer has headroom — irrelevant; owner gate fires first.
             currentLimitsForTest.current = new Map([
-                [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
+                [LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
             ]);
 
             const res = await app.request(STREAM_PATH, {
@@ -967,11 +973,11 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
 
         it('rejects when the consumer monthly count reaches the effective limit', async () => {
             // Owner passes: limit 300, usage 200 (200 < 300 → passes).
-            mockOwnerLimits.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 300]]);
+            mockOwnerLimits.current = new Map([[LimitKeyEnum.MAX_AI_CHAT_PER_MONTH, 300]]);
             getMonthlyCallCountReturn.current = 200;
             // Consumer limit 200, usage 200 → 200 >= 200 → blocked.
             currentLimitsForTest.current = new Map([
-                [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
+                [LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
             ]);
 
             // Explicit actorId so the assertion below can prove the consumer gate
@@ -1001,7 +1007,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
             getMonthlyCallCountReturn.current = 10;
             // Consumer: limit 200, usage 10 (10 < 200 → passes).
             currentLimitsForTest.current = new Map([
-                [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
+                [LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
             ]);
 
             const res = await app.request(STREAM_PATH, {
@@ -1019,7 +1025,9 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         });
 
         it('rejects when the consumer limit is zero', async () => {
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 0]]);
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH, 0]
+            ]);
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',
@@ -1041,7 +1049,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         });
 
         it('treats an absent consumer limit as zero', async () => {
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 20]]);
+            currentLimitsForTest.current = new Map([[LimitKeyEnum.MAX_AI_CHAT_PER_MONTH, 20]]);
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',
@@ -1061,7 +1069,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         it('successful chat records usage for BOTH owner (ownerId) AND consumer (actor.id) — SPEC-283', async () => {
             // Both owner and consumer have explicit headroom; usage remains double-metered.
             currentLimitsForTest.current = new Map([
-                [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
+                [LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
             ]);
 
             const res = await app.request(STREAM_PATH, {

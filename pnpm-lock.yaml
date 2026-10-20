@@ -222,9 +222,6 @@ importers:
       '@repo/auth-ui':
         specifier: workspace:*
         version: link:../../packages/auth-ui
-      '@repo/billing':
-        specifier: workspace:*
-        version: link:../../packages/billing
       '@repo/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -457,9 +454,6 @@ importers:
       '@repo/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
-      '@repo/billing':
-        specifier: workspace:*
-        version: link:../../packages/billing
       '@repo/billing-verticals-contract':
         specifier: workspace:*
         version: link:../../packages/billing-verticals-contract
@@ -827,9 +821,6 @@ importers:
       '@repo/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
-      '@repo/billing':
-        specifier: workspace:*
-        version: link:../../packages/billing
       '@repo/cache-tags':
         specifier: workspace:*
         version: link:../../packages/cache-tags
@@ -1123,34 +1114,6 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.2)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.9)(jsdom@26.0.0(supports-color@8.1.1))(msw@2.15.0(@types/node@26.6.2)(typescript@6.0.3))(vite@8.2.1(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.15)(yaml@2.9.0))
 
-  packages/billing:
-    dependencies:
-      '@repo/config':
-        specifier: workspace:*
-        version: link:../config
-      '@repo/logger':
-        specifier: workspace:*
-        version: link:../logger
-      '@repo/schemas':
-        specifier: workspace:*
-        version: link:../schemas
-    devDependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      '@vitest/coverage-v8':
-        specifier: 4.1.10
-        version: 4.1.10(vitest@4.1.10)
-      tsup:
-        specifier: ^8.5.1
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.28)(supports-color@8.1.1)(tsx@4.23.15)(typescript@6.0.3)(yaml@2.9.0)
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: 4.1.10
-        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.2)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.9)(jsdom@26.0.0(supports-color@8.1.1))(msw@2.15.0(@types/node@26.6.2)(typescript@6.0.3))(vite@8.2.1(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.15)(yaml@2.9.0))
-
   packages/billing-verticals-contract:
     dependencies:
       '@repo/schemas':
@@ -1261,9 +1224,6 @@ importers:
 
   packages/db:
     dependencies:
-      '@repo/billing':
-        specifier: workspace:*
-        version: link:../billing
       '@repo/config':
         specifier: workspace:*
         version: link:../config
@@ -1634,9 +1594,6 @@ importers:
       '@react-email/render':
         specifier: ^2.1.0
         version: 2.1.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@repo/billing':
-        specifier: workspace:*
-        version: link:../billing
       '@repo/config':
         specifier: workspace:*
         version: link:../config
@@ -1830,9 +1787,6 @@ importers:
 
   packages/service-core:
     dependencies:
-      '@repo/billing':
-        specifier: workspace:*
-        version: link:../billing
       '@repo/billing-verticals-contract':
         specifier: workspace:*
         version: link:../billing-verticals-contract

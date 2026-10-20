@@ -33,8 +33,8 @@
  * override this explicitly.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
+    EntitlementKeyEnum,
     PermissionEnum,
     PublicationStatusEnum,
     RoleEnum,
@@ -178,7 +178,7 @@ type ActorOptions = { id: string; roles: readonly RoleEnum[]; permissions: Permi
 function buildApp(
     actor: ActorOptions,
     routes: ReturnType<typeof import('../../../../src/utils/create-app.js').createRouter>[],
-    options?: { entitlements?: EntitlementKey[] }
+    options?: { entitlements?: EntitlementKeyEnum[] }
 ): Hono<AppBindings> {
     const app = new Hono<AppBindings>();
     attachTestErrorHandler(app);
@@ -349,7 +349,7 @@ describe('POST /:id/occupancy (protected)', () => {
 
     it('succeeds when the owner holds the effective calendar capability', async () => {
         const app = buildApp(ownerActor, [protectedAddOccupancyRoute], {
-            entitlements: [EntitlementKey.CAN_USE_CALENDAR]
+            entitlements: [EntitlementKeyEnum.CAN_USE_CALENDAR]
         });
         const res = await app.request(`/${ACCOMMODATION_ID}/occupancy`, {
             method: 'POST',
@@ -450,7 +450,7 @@ describe('PATCH /:id/occupancy/batch (protected)', () => {
 
     it('succeeds when the owner holds CAN_USE_CALENDAR (real route-level gate)', async () => {
         const app = buildApp(ownerActor, [protectedBatchOccupancyRoute], {
-            entitlements: [EntitlementKey.CAN_USE_CALENDAR]
+            entitlements: [EntitlementKeyEnum.CAN_USE_CALENDAR]
         });
         const res = await app.request(`/${ACCOMMODATION_ID}/occupancy/batch`, {
             method: 'PATCH',
@@ -530,7 +530,7 @@ describe('DELETE /:id/occupancy/:date (protected)', () => {
 
     it('succeeds when the owner holds CAN_USE_CALENDAR (real route-level gate)', async () => {
         const app = buildApp(ownerActor, [protectedRemoveOccupancyRoute], {
-            entitlements: [EntitlementKey.CAN_USE_CALENDAR]
+            entitlements: [EntitlementKeyEnum.CAN_USE_CALENDAR]
         });
         const res = await app.request(`/${ACCOMMODATION_ID}/occupancy/2026-07-10`, {
             method: 'DELETE'

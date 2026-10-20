@@ -54,12 +54,14 @@ export const FLOOR_REQUIRED_KEYS = ['subscribe_to_plan', 'recover_own_listing'] 
  * `ai_chat` as measured entitlement keys; their limit counterparts are
  * `max_ai_search_per_month` and `max_ai_chat_consumer_per_month` respectively.
  * The coordinator must confirm these mappings before V2.4b.
+ * `read_reviews` joined the DO list by owner decision (HOS-1626 D-1/D-4, 2026-10-19).
  * Limits (COMMERCIAL keys with fixed values).
  */
 export const TOURIST_FLOOR_EXCEPTION = {
     entitlements: [
         { key: 'save_favorites' as const },
         { key: 'write_reviews' as const },
+        { key: 'read_reviews' as const },
         { key: 'ai_search' as const, planQuota: 10, trialQuota: 10 },
         { key: 'ai_chat' as const, planQuota: 10, trialQuota: 10 }
     ],

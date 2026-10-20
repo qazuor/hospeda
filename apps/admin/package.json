@@ -46,7 +46,6 @@
         "@radix-ui/react-tabs": "^1.1.21",
         "@repo/analytics": "workspace:*",
         "@repo/auth-ui": "workspace:*",
-        "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/design-tokens": "workspace:*",
         "@repo/feedback": "workspace:*",

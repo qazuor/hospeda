@@ -47,7 +47,7 @@ PASS_COUNT=0
 
 echo "=== Checking for local-timezone calendar arithmetic on server code (HOS-1010) ==="
 
-SCAN_DIRS="packages/service-core/src packages/db/src packages/schemas/src packages/utils/src packages/billing/src packages/seed/src packages/notifications/src apps/api/src"
+SCAN_DIRS="packages/service-core/src packages/db/src packages/schemas/src packages/utils/src packages/seed/src packages/notifications/src apps/api/src"
 
 # ---------------------------------------------------------------------------
 # Check 1: local-timezone month/year mutators
