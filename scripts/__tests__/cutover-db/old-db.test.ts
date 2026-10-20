@@ -36,7 +36,13 @@ const PERSON_EMAIL = 'person.example@example.invalid';
  * cutover side imports no code from the new system.
  */
 const MIGRATION_REFERENCE_TABLES: readonly string[] = [
+    'addon',
+    'addon_product',
+    'addon_version',
+    'addon_version_entitlement',
+    'addon_version_limit',
     'billing_deadline_version',
+    'billing_option',
     'catalog_key',
     'plan',
     'plan_version',
