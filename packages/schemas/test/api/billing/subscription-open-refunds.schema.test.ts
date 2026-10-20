@@ -10,7 +10,7 @@ const item = {
 } as const;
 
 describe('TEST:1711:8 AC:1711:10 SubscriptionOpenRefundsResponseSchema', () => {
-    it('accepts payment and manual payment requests and an empty list', () => {
+    it('TEST:1711:8 AC:1711:10 accepts payment and manual payment requests and an empty list', () => {
         expect(
             SubscriptionOpenRefundsResponseSchema.safeParse({
                 items: [item, { ...item, payment: { ...item.payment, source: 'MANUAL_PAYMENT' } }]
@@ -19,7 +19,7 @@ describe('TEST:1711:8 AC:1711:10 SubscriptionOpenRefundsResponseSchema', () => {
         expect(SubscriptionOpenRefundsResponseSchema.safeParse({ items: [] }).success).toBe(true);
     });
 
-    it('rejects invalid amount, source, requested time, and refund id', () => {
+    it('TEST:1711:8 AC:1711:10 rejects invalid amount, source, requested time, and refund id', () => {
         for (const invalid of [
             { ...item, refundAmount: 0 },
             { ...item, payment: { ...item.payment, source: 'ADDON' } },
