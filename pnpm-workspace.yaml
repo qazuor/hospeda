@@ -280,7 +280,8 @@ overrides:
   # brace-expansion, js-yaml y fast-uri más arriba. Un piso no absorbe un
   # advisory posterior por sí solo: hay que subirlo cada vez que se amplía.
   "nanoid@<3.3.18": ">=3.3.18 <4"
-  markdown-it: ">=14.1.1"
+  # GHSA-r7fv-28h4-cvq7 (2026-10-20): smartquotes quadratic complexity, fixed in 14.3.2.
+  markdown-it: ">=14.3.2 <15"
   diff: ">=8.0.3"
   defu: ">=6.1.5"
   flatted: ">=3.4.2"

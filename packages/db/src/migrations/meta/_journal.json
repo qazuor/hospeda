@@ -1233,6 +1233,13 @@
       "when": 1792365218815,
       "tag": "0175_b9b4_promo_code_permission",
       "breakpoints": true
+    },
+    {
+      "idx": 176,
+      "version": "7",
+      "when": 1792515546394,
+      "tag": "0176_production_catalog_prices_addons",
+      "breakpoints": true
     }
   ]
 }

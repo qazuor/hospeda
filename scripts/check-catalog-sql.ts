@@ -11,7 +11,8 @@
  *
  * ## The predicate
  *
- * For each load (`catalog_key`, `vertical`, and the four plan catalog tables):
+ * For each load (`catalog_key`, `vertical`, the four plan catalog tables, and
+ * the six commercial tables: `billing_option` and the five add-on tables):
  * the CUMULATIVE set of rows inserted into that table by every versioned
  * migration (`packages/db/src/migrations/NNNN_*.sql`, in file order, keyed by
  * the primary key, the first column) equals, row by row and column by column,
@@ -35,7 +36,8 @@
  * - It does not read the database. That the migration actually applies, and
  *   that the FK rejects an unknown key, is TEST:V1:6
  *   (`packages/db/test/integration/catalog-key-fk-from-empty.test.ts`).
- * - V2.4b's production catalog loads are included in the default migration scan.
+ * - V2.4b's production catalog loads, and the prices and add-ons of migration
+ *   0176, are included in the default migration scan.
  * - The extras carril (`migrations/extras/`) is not read: reference rows never
  *   go there.
  *

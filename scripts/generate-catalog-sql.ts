@@ -5,7 +5,7 @@
  *
  * A migration cannot call code, so the reference rows the code catalog declares
  * travel inside a migration as generated SQL. This file is the ONE place that
- * turns the code catalog into that SQL. Six loads:
+ * turns the code catalog into that SQL. Twelve loads:
  *
  * - `catalog_key` (the key table): one row per entitlement and limit key of
  *   `packages/schemas/src/catalog`, with its four declared attributes.
@@ -13,6 +13,9 @@
  *   event (`VERTICAL_ACTIVATION_EVENT_BY_VERTICAL`).
  * - `plan`, `plan_version`, `plan_version_entitlement`, `plan_version_limit`:
  *   the production plan catalog from `production-catalog/catalog.ts`.
+ * - `billing_option`, `addon`, `addon_version`, `addon_version_entitlement`,
+ *   `addon_version_limit`, `addon_product`: the prices and the add-ons from
+ *   `production-catalog/commercial-catalog.ts`.
  *
  * The first two loads remain byte-identical to the `INSERT` statements of
  * `packages/db/src/migrations/0129_gorgeous_storm.sql` (`scripts/__tests__/check-catalog-sql.test.ts`
@@ -21,7 +24,7 @@
  *
  * ## Usage
  *
- *     pnpm gen:catalog-sql                    # all six loads
+ *     pnpm gen:catalog-sql                    # all twelve loads
  *     pnpm gen:catalog-sql --load=catalog_key # one load
  *
  * Paste the output into a NEW migration (never edit an applied one). GUARD:G18
@@ -33,6 +36,7 @@ import type { CatalogKeyDefinition } from '../packages/schemas/src/catalog/key-a
 import { CATALOG_KEY_DEFINITIONS } from '../packages/schemas/src/catalog/key-catalog.js';
 import { VERTICAL_ACTIVATION_EVENT_BY_VERTICAL } from '../packages/schemas/src/catalog/vertical-activation-event.js';
 import { VerticalEnum } from '../packages/schemas/src/enums/vertical.enum.js';
+import { buildCommercialCatalogLoads } from './production-catalog/commercial-loads.js';
 import { buildPlanCatalogLoads } from './production-catalog/loads.js';
 
 /** A generated SQL value: a string literal or SQL `NULL`. */
@@ -57,7 +61,13 @@ export const LOAD_NAMES = [
     'plan',
     'plan_version',
     'plan_version_entitlement',
-    'plan_version_limit'
+    'plan_version_limit',
+    'billing_option',
+    'addon',
+    'addon_version',
+    'addon_version_entitlement',
+    'addon_version_limit',
+    'addon_product'
 ] as const;
 export type LoadName = (typeof LOAD_NAMES)[number];
 
@@ -132,7 +142,8 @@ export function buildLoads(): Readonly<Record<LoadName, CatalogLoad>> {
         plan,
         plan_version,
         plan_version_entitlement,
-        plan_version_limit
+        plan_version_limit,
+        ...buildCommercialCatalogLoads()
     };
 }
 

@@ -218,19 +218,39 @@ export async function truncatePlanCatalog(): Promise<void> {
 }
 
 /**
+ * Reads the statements of one versioned migration.
+ * @param args - File name of the migration under `packages/db/src/migrations`.
+ * @returns Its statements, trimmed, in file order.
+ */
+function readMigrationStatements(args: { file: string }): string[] {
+    const migrationPath = resolve(
+        dirname(fileURLToPath(import.meta.url)),
+        `../../../../../packages/db/src/migrations/${args.file}`
+    );
+    return readFileSync(migrationPath, 'utf8')
+        .split('--> statement-breakpoint')
+        .map((statement) => statement.trim());
+}
+
+/** Comment lines a migration statement may start with (the file header). */
+const LEADING_COMMENTS = /^(?:--[^\n]*\n)*/;
+
+/**
  * Restores the production catalog after these suites truncate it for isolated
- * fixtures, so later integration suites see the catalog seeded by migration 0144.
+ * fixtures, so later integration suites see the catalog seeded by migration 0144
+ * and the plan prices seeded by migration 0176. Only the `billing_option`
+ * statements of 0176 are replayed: the TRUNCATE below does not touch the
+ * add-on tables, so their rows are left as they are.
  * @returns A promise that resolves after every migration statement has run.
  */
 export async function restoreProductionPlanCatalog(): Promise<void> {
-    const migrationPath = resolve(
-        dirname(fileURLToPath(import.meta.url)),
-        '../../../../../packages/db/src/migrations/0144_production_plan_catalog.sql'
-    );
-    const migration = readFileSync(migrationPath, 'utf8');
-    const statements = migration
-        .split('--> statement-breakpoint')
-        .map((statement) => statement.trim());
+    const statements = [
+        ...readMigrationStatements({ file: '0144_production_plan_catalog.sql' }),
+        ...readMigrationStatements({ file: '0176_production_catalog_prices_addons.sql' }).filter(
+            (statement) =>
+                statement.replace(LEADING_COMMENTS, '').startsWith('INSERT INTO "billing_option"')
+        )
+    ];
 
     await getDb().transaction(async (tx) => {
         await tx.execute(
