@@ -195,7 +195,7 @@ Hospeda billing is built on **QZPay** (`@qazuor/qzpay-core`) with a MercadoPago 
 - **Routes**: `apps/api/src/routes/billing/` (start-paid, plan-change, subscription-cancel, addons, webhooks, etc.)
 - **Services**: `packages/service-core/src/services/billing/` (subscription, addon, promo-code, settings — deliberately outside `BaseCrudService`)
 - **Cron jobs**: `apps/api/src/cron/jobs/` (dunning, webhook-retry, finalize-cancelled-subs, trial-reconcile, addon-expiry, apply-scheduled-plan-changes, subscription-poll, abandoned-pending-subs, exchange-rate-fetch — **a partial list**; `preapproval-less-expiry`, `entity-subscription-cache-reconcile`, `addon-subscription-reconcile`, `courtesy-expiry`, `partner-expiry`, `partner-unpaid-reaper`, `propagate-plan-price-changes` and `reactivation-supersession-reconcile` are billing-side too). These are JOB NAMES, not filenames — `trial-reconcile` lives in `trial-expiry.ts`, so `ls` will not find it. `apps/api/src/cron/schedules.manifest.ts` is the authoritative name → schedule list.
-- **Config**: `packages/billing/` (plan definitions, entitlement keys, limits, MP adapter factory)
+- **Catalog and providers** (`packages/billing/` was deleted by HOS-1626): plan, price and limit VALUES live in the database catalog (`billing_plans`, `billing_prices`), not in code; entitlement and limit KEYS live in `packages/schemas/src/catalog/` (`entitlement-keys.ts`, `limit-keys.ts`, `key-enums.ts`); the payment provider interface and the Mercado Pago adapter live in `packages/payments/`; the vertical rules (effective set, publication, quota, trial) in `packages/verticals/`; their shared contracts in `packages/billing-verticals-contract/`
 - **DB adapter**: `packages/db/src/billing/drizzle-adapter.ts` (QZPay Drizzle storage adapter)
 
 Key DB columns: `billing_subscriptions.mp_subscription_id` stores the MercadoPago preapproval ID for EVERY subscription — monthly and annual alike since HOS-171 (see below). `billing_customers.segment` (not `category`). `billing_plans.id` is UUID; `billing_subscriptions.plan_id` is varchar but stores the plan UUID.
@@ -494,17 +494,15 @@ scans `src/pages` in full against a prefix allowlist. It is **not**
 eight route families omits `planes` entirely; the spec's AC-10 named that one and
 was therefore satisfiable by construction (witness case on HOS-1311).
 
-AC-16's claim — "you already hold the VIP benefits" — rests on every
-accommodation and gastronomy/experience tier spreading `TOURIST_VIP_ENTITLEMENTS` and
-`TOURIST_VIP_LIMITS` whole (HOS-975 D-A). That invariant is already guarded, in
-two places, so do not write a third: `packages/billing/test/owner-inherits-tourist.test.ts`
-(the six accommodation tiers) and the billing plan tests for gastronomy and experience
-(all six gastronomy and experience tiers, plus the limit VALUES — the entitlement engine reads an
-absent key as UNLIMITED, so keys alone would not prove it). The six gastronomy and experience
-tiers receive that spread from **one** factory, the shared vertical tier factory in
-`packages/billing/src/config/plans.config.ts` — a single point of failure worth
-knowing before editing it. Partner plans spread neither, which is why `partner`
-is absent from `TOURIST_VIP_BLOCKING_DOMAINS`.
+AC-16's claim — "you already hold the VIP benefits" — used to rest on every
+accommodation and gastronomy/experience tier spreading `TOURIST_VIP_ENTITLEMENTS`
+and `TOURIST_VIP_LIMITS` whole (HOS-975 D-A), guarded by
+`packages/billing/test/owner-inherits-tourist.test.ts` and a shared vertical tier
+factory in `packages/billing/src/config/plans.config.ts`. All of that was deleted
+with `packages/billing/` (HOS-1626): plan contents are now rows in the database
+catalog, so those symbols and that guard no longer exist, and no replacement
+guard of the inheritance was found on this branch. Do not cite the old guard as
+current; whether a catalog-level check is wanted is an open question.
 
 #### Featured-listing entitlement (SPEC-292 → SPEC-309)
 
