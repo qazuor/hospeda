@@ -137,12 +137,19 @@ export function PhotoSection({
     // HOS-1024: the effective cap is the host's PLAN limit (+ addons), not
     // the flat entity ceiling. See `resolveEffectiveGalleryCap`'s JSDoc for
     // the pending-window contract this drives below.
-    const { limit: getEntitlementLimit, isLoading: isEntitlementsLoading } = useMyEntitlements({
+    // HOS-1721: a pre-trial owner's plan grants no photo cap; on a DRAFT the
+    // cap is what the trial will grant at first publish, as the API enforces.
+    const {
+        limit: getEntitlementLimit,
+        draftLimit: getDraftLimit,
+        isLoading: isEntitlementsLoading
+    } = useMyEntitlements({
         vertical: 'accommodation'
     });
     const { cap: galleryCap, isResolved: isGalleryCapResolved } = resolveEffectiveGalleryCap({
         planLimit: getEntitlementLimit(MAX_PHOTOS_LIMIT_KEY),
-        isEntitlementsLoading
+        isEntitlementsLoading,
+        draftLimit: publishContext?.isDraft ? getDraftLimit(MAX_PHOTOS_LIMIT_KEY) : 0
     });
 
     const {

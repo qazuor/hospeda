@@ -19,4 +19,17 @@ describe('HOS-1646 · cliente web de capacidades · effective set transform', ()
             limits: { unlimited: Number.POSITIVE_INFINITY, cap: 5 }
         });
     });
+
+    it('HOS-1721 decodes the pre-trial DRAFT caps only when present', () => {
+        expect(
+            transformProtectedEffectiveSet({
+                userId: 'u',
+                vertical: 'accommodation',
+                hasLiveNonTrialTitle: false,
+                entitlements: {},
+                limits: {},
+                preTrialDraftLimits: { max_photos_per_accommodation: 15 }
+            }).preTrialDraftLimits
+        ).toEqual({ max_photos_per_accommodation: 15 });
+    });
 });

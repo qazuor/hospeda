@@ -24,15 +24,21 @@ import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { createTranslations } from '@/lib/i18n';
 import { clearToasts } from '@/store/toast-store';
 
-const { mockListMedia, mockAddMedia, mockUploadEntityImage, mockLimit, mockIsLoading } = vi.hoisted(
-    () => ({
-        mockListMedia: vi.fn(),
-        mockAddMedia: vi.fn(),
-        mockUploadEntityImage: vi.fn(),
-        mockLimit: vi.fn(),
-        mockIsLoading: vi.fn()
-    })
-);
+const {
+    mockListMedia,
+    mockAddMedia,
+    mockUploadEntityImage,
+    mockLimit,
+    mockDraftLimit,
+    mockIsLoading
+} = vi.hoisted(() => ({
+    mockListMedia: vi.fn(),
+    mockAddMedia: vi.fn(),
+    mockUploadEntityImage: vi.fn(),
+    mockLimit: vi.fn(),
+    mockDraftLimit: vi.fn(),
+    mockIsLoading: vi.fn()
+}));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     accommodationMediaApi: {
@@ -54,6 +60,7 @@ vi.mock('@/hooks/useMyEntitlements', () => ({
     useMyEntitlements: () => ({
         has: () => false,
         limit: mockLimit,
+        draftLimit: mockDraftLimit,
         plan: null,
         isLoading: mockIsLoading(),
         error: null
@@ -116,6 +123,7 @@ beforeEach(() => {
     mockListMedia.mockReturnValue(makeListOk());
     mockIsLoading.mockReturnValue(false);
     mockLimit.mockReturnValue(15); // Owner Básico
+    mockDraftLimit.mockReturnValue(0);
 });
 
 afterEach(() => {
@@ -340,5 +348,53 @@ describe('HOS-1024 — sober upsell when the gallery is full at the plan cap', (
         expect(
             screen.queryByRole('link', { name: t('account.subscription.usage.buyAddon') })
         ).not.toBeInTheDocument();
+    });
+});
+
+describe('HOS-1721 — a pre-trial owner can fill the photos of their DRAFT', () => {
+    const publishContext = {
+        capacity: 2,
+        minNights: 1,
+        bedrooms: 1,
+        bathrooms: 1,
+        isDraft: true,
+        trialDays: 30
+    } as const;
+
+    it('shows the trial cap and enables uploads on a DRAFT when the plan grants no cap', async () => {
+        mockLimit.mockReturnValue(0);
+        mockDraftLimit.mockReturnValue(15);
+
+        render(
+            <PhotoSection
+                {...defaultProps}
+                publishContext={publishContext}
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('Galería de fotos (máx. 15)')).toBeInTheDocument();
+        });
+        expect(screen.queryByText('Cargando tu límite de fotos…')).not.toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: 'Agregar fotos a la galería' })
+        ).not.toBeDisabled();
+        expect(mockDraftLimit).toHaveBeenCalledWith('max_photos_per_accommodation');
+    });
+
+    it('ignores the draft allowance on a listing that is not a DRAFT', async () => {
+        mockLimit.mockReturnValue(0);
+        mockDraftLimit.mockReturnValue(15);
+
+        render(
+            <PhotoSection
+                {...defaultProps}
+                publishContext={{ ...publishContext, isDraft: false }}
+            />
+        );
+        await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+        expect(screen.queryByText('Galería de fotos (máx. 15)')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Agregar fotos a la galería' })).toBeDisabled();
     });
 });

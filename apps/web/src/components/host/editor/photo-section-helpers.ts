@@ -93,6 +93,11 @@ export const GALLERY_CAP_PENDING_PLACEHOLDER = Number.MAX_SAFE_INTEGER;
  *   catalogue grants `0` or a negative cap, so any non-positive value is
  *   treated the same way — not actually resolved yet.
  * @param params.isEntitlementsLoading - The hook's own `isLoading` flag.
+ * @param params.draftLimit - HOS-1721: the cap a pre-trial owner's DRAFT
+ *   accepts (`useMyEntitlements().draftLimit(MAX_PHOTOS_LIMIT_KEY)`), i.e.
+ *   what the trial will grant at first publish. Pass it only for a DRAFT; it
+ *   applies only when the plan grants no cap at all, which is exactly the
+ *   pre-trial floor. Defaults to `0` (no draft allowance).
  * @returns `cap` — pass this to `usePhotoSection`'s `galleryCap` prop, and
  *   display it only when `isResolved` is `true`.
  *
@@ -107,14 +112,17 @@ export const GALLERY_CAP_PENDING_PLACEHOLDER = Number.MAX_SAFE_INTEGER;
  */
 export function resolveEffectiveGalleryCap({
     planLimit,
-    isEntitlementsLoading
+    isEntitlementsLoading,
+    draftLimit = 0
 }: {
     readonly planLimit: number;
     readonly isEntitlementsLoading: boolean;
+    readonly draftLimit?: number;
 }): { readonly cap: number; readonly isResolved: boolean } {
-    const isResolved = !isEntitlementsLoading && planLimit > 0;
+    const limit = planLimit > 0 ? planLimit : draftLimit;
+    const isResolved = !isEntitlementsLoading && limit > 0;
     return {
-        cap: isResolved ? planLimit : GALLERY_CAP_PENDING_PLACEHOLDER,
+        cap: isResolved ? limit : GALLERY_CAP_PENDING_PLACEHOLDER,
         isResolved
     };
 }

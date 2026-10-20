@@ -3362,13 +3362,17 @@ export function toPartnerData({ item }: { readonly item: Record<string, unknown>
     };
 }
 
-/** Converts the JSON-safe effective-set response to numeric client values. */
+/**
+ * Converts the JSON-safe effective-set response to numeric client values,
+ * including the optional pre-trial DRAFT photo caps (HOS-1721).
+ */
 export function transformProtectedEffectiveSet(raw: ProtectedEffectiveSetResponse): Omit<
     ProtectedEffectiveSetResponse,
-    'entitlements' | 'limits'
+    'entitlements' | 'limits' | 'preTrialDraftLimits'
 > & {
     readonly entitlements: Readonly<Record<string, number>>;
     readonly limits: Readonly<Record<string, number>>;
+    readonly preTrialDraftLimits?: Readonly<Record<string, number>>;
 } {
     const decode = (values: Readonly<Record<string, number | 'Infinity'>>) =>
         Object.fromEntries(
@@ -3377,5 +3381,11 @@ export function transformProtectedEffectiveSet(raw: ProtectedEffectiveSetRespons
                 value === 'Infinity' ? Number.POSITIVE_INFINITY : value
             ])
         );
-    return { ...raw, entitlements: decode(raw.entitlements), limits: decode(raw.limits) };
+    const { preTrialDraftLimits, ...rest } = raw;
+    return {
+        ...rest,
+        entitlements: decode(raw.entitlements),
+        limits: decode(raw.limits),
+        ...(preTrialDraftLimits ? { preTrialDraftLimits: decode(preTrialDraftLimits) } : {})
+    };
 }

@@ -50,4 +50,22 @@ describe('HOS-1646 · cliente web de capacidades · useMyEntitlements', () => {
         expect(result.current.has('paid')).toBe(false);
         expect(effectiveSetApi.get).not.toHaveBeenCalled();
     });
+    it('HOS-1721 exposes the pre-trial DRAFT cap, 0 when absent', async () => {
+        vi.mocked(effectiveSetApi.get).mockResolvedValue({
+            ok: true,
+            data: {
+                entitlements: {},
+                limits: {},
+                preTrialDraftLimits: { max_photos_per_accommodation: 15 },
+                hasLiveNonTrialTitle: false,
+                userId: 'u',
+                vertical: 'accommodation'
+            }
+        } as never);
+        const { result } = renderHook(() => useMyEntitlements({ vertical: 'accommodation' }));
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        expect(result.current.draftLimit('max_photos_per_accommodation')).toBe(15);
+        expect(result.current.limit('max_photos_per_accommodation')).toBe(0);
+        expect(result.current.draftLimit('max_ai_text_improve_per_month')).toBe(0);
+    });
 });
