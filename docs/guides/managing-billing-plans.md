@@ -15,8 +15,8 @@ change a price, an entitlement, or a limit.
 
 - The catalog of plans is the source of truth in the database (the qzpay
   `billing_plans` table, with prices in `billing_prices`).
-- The `@repo/billing` source-code config is read **once, to seed** an empty
-  database with the initial plans. After that first seed, every change is made
+- There is no source-code plan config any more: `@repo/billing`, which was read
+  once to seed an empty database, was deleted by HOS-1626. Every change is made
   from the admin panel and is never overwritten by a re-seed.
 - The web pricing pages and the checkout both read from this same database
   catalog, so what a visitor sees is always what they are charged.

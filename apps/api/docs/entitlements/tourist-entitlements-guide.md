@@ -79,7 +79,7 @@ app.post(
 **Entitlement**: `PRICE_ALERTS`
 **Limit**: `max_active_alerts` (Plus: 3, VIP: unlimited)
 
-**Note**: Requires new limit key `max_active_alerts` to be added to `@repo/billing`.
+**Note**: The limit key `max_active_alerts` is already in the key catalog (`packages/schemas/src/catalog/limit-keys.ts`).
 
 **Usage Requirements**:
 
@@ -125,7 +125,7 @@ app.post(
 **Entitlement**: `can_compare_accommodations` (NEW - needs to be added)
 **Limit**: `max_compare_items` (Plus: 3, VIP: unlimited)
 
-**Note**: Requires new entitlement `can_compare_accommodations` and limit `max_compare_items` to be added to `@repo/billing`.
+**Note**: The entitlement `can_compare_accommodations` and the limit `max_compare_items` are already in the key catalog (`packages/schemas/src/catalog/`).
 
 **Usage Requirements**:
 
@@ -167,7 +167,7 @@ app.post(
 **Feature**: Attach photos to reviews
 **Entitlement**: `can_attach_review_photos` (NEW - VIP only)
 
-**Note**: Requires new entitlement `can_attach_review_photos` to be added to `@repo/billing`.
+**Note**: The entitlement `can_attach_review_photos` is already in the key catalog (`packages/schemas/src/catalog/entitlement-keys.ts`).
 
 **Example**:
 
@@ -201,7 +201,7 @@ app.post(
 **Feature**: View search history
 **Entitlement**: `can_view_search_history` (NEW - Plus/VIP)
 
-**Note**: Requires new entitlement `can_view_search_history` to be added to `@repo/billing`.
+**Note**: The entitlement `can_view_search_history` is already in the key catalog (`packages/schemas/src/catalog/entitlement-keys.ts`).
 
 **Example**:
 
@@ -233,7 +233,7 @@ app.get(
 **Feature**: Personalized accommodation recommendations
 **Entitlement**: `can_view_recommendations` (NEW - VIP only)
 
-**Note**: Requires new entitlement `can_view_recommendations` to be added to `@repo/billing`.
+**Note**: The entitlement `can_view_recommendations` is already in the key catalog (`packages/schemas/src/catalog/entitlement-keys.ts`).
 
 **Example**:
 
@@ -340,7 +340,7 @@ app.post(
 **Feature**: View direct contact information (email/phone)
 **Entitlement**: `can_contact_email_direct` (NEW - Plus/VIP)
 
-**Note**: Requires new entitlement `can_contact_email_direct` to be added to `@repo/billing`.
+**Note**: The entitlement `can_contact_email_direct` is NOT in the key catalog (`packages/schemas/src/catalog/entitlement-keys.ts`); add it there before gating on it.
 
 **Example**:
 
@@ -527,141 +527,31 @@ app.get('/accommodations/:id', entitlementMiddleware(), async (c) => {
 
 ---
 
-## Required Updates to @repo/billing
+## Where the keys live now
 
-The following entitlement keys and limit keys need to be added to the billing package:
+`@repo/billing` and its `EntitlementKey` / `LimitKey` enums, `plans.config.ts`,
+`limits.config.ts` and `entitlements.config.ts` were deleted by HOS-1626. The
+proposals that used to be listed here (edit those files) no longer apply:
 
-### New Entitlement Keys
+- **Keys** are declared in `packages/schemas/src/catalog/entitlement-keys.ts` and
+  `packages/schemas/src/catalog/limit-keys.ts` as compact rows
+  `[key, scope, aggregation, enforcement, class]`, with their named enums in
+  `packages/schemas/src/catalog/key-enums.ts` (`EntitlementKeyEnum`, `LimitKeyEnum`).
+  Status of the keys this guide needs: `can_compare_accommodations`,
+  `can_attach_review_photos`, `can_view_search_history`, `can_view_recommendations`,
+  `max_active_alerts` and `max_compare_items` are already declared;
+  `can_contact_email_direct` is not.
+- **Plan contents and values** (which plan holds which key, and the numbers such as
+  3 alerts or unlimited) are not code. They are rows in the database catalog
+  (`billing_plans`, `billing_prices`), edited from the admin panel.
+- **Display names and descriptions** are no longer kept in an
+  `ENTITLEMENT_DEFINITIONS` / `LIMIT_METADATA` config; no replacement location was
+  verified for this guide.
+- `apps/api/src/utils/limit-check.ts`, referenced by the old "resource names"
+  step, no longer exists at that path.
 
-Add to `packages/billing/src/types/entitlement.types.ts`:
-
-```typescript
-export enum EntitlementKey {
-  // ... existing keys ...
-
-  /** NEW: Tourist feature entitlements */
-  COMPARE_ACCOMMODATIONS = 'can_compare_accommodations',
-  ATTACH_REVIEW_PHOTOS = 'can_attach_review_photos',
-  VIEW_SEARCH_HISTORY = 'can_view_search_history',
-  VIEW_RECOMMENDATIONS = 'can_view_recommendations',
-  CONTACT_DIRECT = 'can_contact_email_direct',
-}
-```
-
-### New Limit Keys
-
-Add to `packages/billing/src/types/plan.types.ts`:
-
-```typescript
-export enum LimitKey {
-  // ... existing keys ...
-
-  /** NEW: Tourist feature limits */
-  MAX_ACTIVE_ALERTS = 'max_active_alerts',
-  MAX_COMPARE_ITEMS = 'max_compare_items',
-}
-```
-
-### Update Plan Configurations
-
-Add to `packages/billing/src/config/plans.config.ts`:
-
-```typescript
-// TOURIST_PLUS_PLAN
-entitlements: [
-  // ... existing ...
-  EntitlementKey.COMPARE_ACCOMMODATIONS,
-  EntitlementKey.VIEW_SEARCH_HISTORY,
-  EntitlementKey.CONTACT_DIRECT,
-],
-limits: [
-  limit(LimitKey.MAX_FAVORITES, 20),
-  limit(LimitKey.MAX_ACTIVE_ALERTS, 3),
-  limit(LimitKey.MAX_COMPARE_ITEMS, 3),
-]
-
-// TOURIST_VIP_PLAN
-entitlements: [
-  // ... existing ...
-  EntitlementKey.COMPARE_ACCOMMODATIONS,
-  EntitlementKey.ATTACH_REVIEW_PHOTOS,
-  EntitlementKey.VIEW_SEARCH_HISTORY,
-  EntitlementKey.VIEW_RECOMMENDATIONS,
-  EntitlementKey.CONTACT_DIRECT,
-],
-limits: [
-  limit(LimitKey.MAX_FAVORITES, -1),      // unlimited
-  limit(LimitKey.MAX_ACTIVE_ALERTS, -1),  // unlimited
-  limit(LimitKey.MAX_COMPARE_ITEMS, -1),  // unlimited
-]
-```
-
-### Update Limit Metadata
-
-Add to `packages/billing/src/config/limits.config.ts`:
-
-```typescript
-export const LIMIT_METADATA: Record<LimitKey, { name: string; description: string }> = {
-  // ... existing ...
-
-  [LimitKey.MAX_ACTIVE_ALERTS]: {
-    name: 'Alertas activas',
-    description: 'Numero maximo de alertas de precio activas simultaneamente'
-  },
-  [LimitKey.MAX_COMPARE_ITEMS]: {
-    name: 'Items en comparador',
-    description: 'Numero maximo de alojamientos en el comparador'
-  },
-};
-```
-
-### Update Entitlement Definitions
-
-Add to `packages/billing/src/config/entitlements.config.ts`:
-
-```typescript
-export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
-  // ... existing ...
-
-  {
-    key: EntitlementKey.COMPARE_ACCOMMODATIONS,
-    name: 'Comparador de alojamientos',
-    description: 'Permite comparar multiples alojamientos lado a lado'
-  },
-  {
-    key: EntitlementKey.ATTACH_REVIEW_PHOTOS,
-    name: 'Adjuntar fotos a resenas',
-    description: 'Permite adjuntar fotos a las resenas de alojamientos'
-  },
-  {
-    key: EntitlementKey.VIEW_SEARCH_HISTORY,
-    name: 'Historial de busqueda',
-    description: 'Acceso al historial de busquedas realizadas'
-  },
-  {
-    key: EntitlementKey.VIEW_RECOMMENDATIONS,
-    name: 'Recomendaciones personalizadas',
-    description: 'Acceso a recomendaciones de alojamientos personalizadas'
-  },
-  {
-    key: EntitlementKey.CONTACT_DIRECT,
-    name: 'Contacto directo',
-    description: 'Acceso a informacion de contacto directo de alojamientos'
-  },
-];
-```
-
-### Update Resource Names in limit-check.ts
-
-Add to `apps/api/src/utils/limit-check.ts`:
-
-```typescript
-const RESOURCE_NAMES: Record<LimitKey, string> = {
-  // ... existing ...
-  max_active_alerts: 'alertas activas',
-  max_compare_items: 'items en el comparador',
-};
-```
+The plan examples (Plus / VIP) in the sections above describe the intended
+packaging, not code to copy.
 
 ---
 
@@ -760,7 +650,7 @@ This implementation provides comprehensive entitlement gating for all tourist fe
 
 **Next Steps**:
 
-1. Add missing entitlement and limit keys to `@repo/billing`
+1. Add the missing entitlement key (`can_contact_email_direct`) to `packages/schemas/src/catalog/entitlement-keys.ts` and `key-enums.ts`
 2. Apply middleware to appropriate routes
 3. Implement content filtering in list/detail endpoints
 4. Write comprehensive tests

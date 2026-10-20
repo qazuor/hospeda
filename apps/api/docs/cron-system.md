@@ -934,7 +934,8 @@ await sendMetrics(metrics);
 
 **Dependencies:**
 
-- `@repo/billing` - QZPay Billing instance
+- `@repo/payments` - payment provider interface (the former `@repo/billing` QZPay instance was deleted by HOS-1626)
+- Note: `apps/api/src/cron/jobs/trial-expiry.ts` no longer exists on this branch; the closest job today is `trial-machine-expiry.job.ts`, so this section describes the retired behaviour
 - `TrialService` - Trial management logic
 
 **Example Output:**
