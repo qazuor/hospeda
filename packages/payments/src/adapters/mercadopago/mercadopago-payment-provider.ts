@@ -296,7 +296,8 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
                     currency: parsed.auto_recurring.currency_id
                 },
                 cadence: { everyMonths: parsed.auto_recurring.frequency },
-                firstChargeAt: parsed.auto_recurring.start_date ?? null,
+                // Mercado Pago echoes start_date in its own offset; normalize like nextChargeAt.
+                firstChargeAt: toIsoInstant({ value: parsed.auto_recurring.start_date }),
                 nextChargeAt: toIsoInstant({ value: parsed.next_payment_date }),
                 freePeriodDays: parsed.auto_recurring.free_trial?.frequency ?? null,
                 chargeRecordCount: parsed.summarized?.charged_quantity ?? null,
