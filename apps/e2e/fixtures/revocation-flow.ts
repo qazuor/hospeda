@@ -70,6 +70,29 @@ export function refundsForPayment(paymentId: string) {
     ]);
 }
 
+/** Read settlement fields for every refund tied to a payment. */
+export function settledRefundsForPayment(paymentId: string) {
+    return execSQL<{
+        id: string;
+        amount: number;
+        reason: string;
+        status: string;
+        executed_via: string | null;
+        external_channel: string | null;
+        external_ref: string | null;
+        settled_by: string | null;
+    }>(
+        `SELECT id, amount, reason, status, executed_via, external_channel, external_ref, settled_by
+         FROM refund WHERE payment_id = $1 ORDER BY created_at, id`,
+        [paymentId]
+    );
+}
+
+/** Read the current status for a payment. */
+export function paymentStatus(paymentId: string) {
+    return execSQL<{ status: string }>('SELECT status FROM payment WHERE id = $1', [paymentId]);
+}
+
 /** Read the pause row for a subscription. */
 export function pauseForSubscription(subscriptionId: string) {
     return execSQL<{ actual_end_at: Date | null }>(
