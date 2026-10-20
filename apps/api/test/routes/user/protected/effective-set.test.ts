@@ -105,6 +105,50 @@ describe('TEST:B13a:24 AC:B13a:26 protected effective set route', () => {
         expect(data).not.toHaveProperty('preTrialDraftLimits');
         expect(preTrialDraftLimits).not.toHaveBeenCalled();
     });
+    it('HOS-1721 answers 200 without the draft cap when its resolution throws', async () => {
+        // Arrange: e.g. CatalogVersionNotFoundError from the trial ratchet.
+        preTrialDraftLimits.mockRejectedValue(new Error('trial plan has no current version'));
+        // Act
+        const response = await app.request(`${base}?vertical=accommodation`, {
+            headers: headers()
+        });
+        // Assert
+        expect(response.status).toBe(200);
+        expect(((await response.json()) as { data: unknown }).data).toStrictEqual({
+            userId: USER_ID,
+            vertical: 'accommodation',
+            hasLiveNonTrialTitle: false,
+            entitlements: { view_basic_stats: 1 },
+            limits: { max_accommodations: 'Infinity' }
+        });
+        expect(preTrialDraftLimits).toHaveBeenCalledOnce();
+    });
+    it('HOS-1721 skips the draft cap when the effective set already carries the photo limit (active trial)', async () => {
+        // Arrange
+        effectiveSet.mockResolvedValue(
+            snapshot(VerticalEnum.ACCOMMODATION, [
+                { key: 'max_photos_per_accommodation', value: 15 }
+            ])
+        );
+        // Act
+        const response = await app.request(`${base}?vertical=accommodation`, {
+            headers: headers()
+        });
+        // Assert
+        const data = ((await response.json()) as { data: Record<string, unknown> }).data;
+        expect(data.limits).toEqual({ max_photos_per_accommodation: 15 });
+        expect(data).not.toHaveProperty('preTrialDraftLimits');
+        expect(preTrialDraftLimits).not.toHaveBeenCalled();
+    });
+    it('HOS-1721 never asks for a draft cap on a vertical without draft keys', async () => {
+        // Arrange
+        effectiveSet.mockResolvedValue(snapshot(VerticalEnum.TOURIST, []));
+        // Act
+        const response = await app.request(`${base}?vertical=tourist`, { headers: headers() });
+        // Assert
+        expect(response.status).toBe(200);
+        expect(preTrialDraftLimits).not.toHaveBeenCalled();
+    });
     it('resolves distinct verticals for the session user', async () => {
         effectiveSet.mockImplementation(({ vertical }) =>
             Promise.resolve(
