@@ -40,7 +40,7 @@ Manage the 9 subscription plans (3 owner tiers, 3 complex tiers, 3 tourist tiers
 - Configure pricing (monthly/annual rates)
 - Set trial periods per plan
 - Toggle plan visibility
-- Plans are seeded from `@repo/billing` configuration
+- Plans live in the database catalog (`billing_plans` / `billing_prices`); the old `@repo/billing` seed configuration was deleted by HOS-1626
 
 **Plan Structure:**
 

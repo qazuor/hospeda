@@ -1199,7 +1199,7 @@ would otherwise re-derive wrongly:
   protected — `test/lib/public-redirect-paths.guard.test.ts` is what fails then.
 
 The per-vertical cap, the six-cell decision matrix and the delete-draft action
-are shared with the API: see `LIMIT_KEY_BY_PUBLISH_VERTICAL` (`@repo/billing`),
+are shared with the API: see `PUBLICATION_LIMIT_KEYS` (`packages/verticals/src/publication/publication-types.ts`; `LIMIT_KEY_BY_PUBLISH_VERTICAL` was retired with `@repo/billing`, HOS-1626),
 `GET /api/v1/protected/publish/precheck/{vertical}` and
 `POST /api/v1/protected/{accommodations,gastronomies,experiences}/{id}/purge`.
 The owner's delete button runs PB12 on the three verticals (HOS-1477): the

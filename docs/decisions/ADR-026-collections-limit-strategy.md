@@ -1,5 +1,7 @@
 # ADR-026: Collections Limit Strategy
 
+> **Note (HOS-1626, 2026-10):** `@repo/billing` was retired (the package was deleted). Limit and entitlement KEYS now live in `packages/schemas/src/catalog/` (`limit-keys.ts`, `key-enums.ts`); plan quotas are values in the database catalog, not in `plans.config.ts`.
+
 ## Status
 
 Accepted (2026-05-02). **Superseded by SPEC-287 (2026-07-01)** — see the

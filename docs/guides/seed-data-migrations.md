@@ -304,11 +304,10 @@ Everything else under `data/**` is guarded — the required catalogs (amenity, a
 destination, exchangeRate(+Config), feature, revalidationConfig, sponsorshipLevel,
 sponsorshipPackage, postTag, pointOfInterest, poiCategory, user/required,
 tag/{internal,system}-*.json) **and** the curated prod-content sources that used to escape
-(partner, gastronomy, hostTrade, postSponsor, postSponsorship). Additionally guarded:
-
-```
-packages/billing/src/config/{plans,limits,entitlements,addons,promo-codes}.config.ts
-```
+(partner, gastronomy, hostTrade, postSponsor, postSponsorship). The billing
+config files (`packages/billing/src/config/*.config.ts`) used to be guarded too; they
+were deleted with `@repo/billing` (HOS-1626) and `scripts/check-seed-dual-write.sh` no
+longer names them.
 
 Plus nine **inline-constant seeders** whose fixtures live in a TS constant (no `data/`
 folder to path-match), guarded on any diff to the whole file:

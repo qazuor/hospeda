@@ -160,10 +160,12 @@ auto-detect which models a stored credential has access to.
   immediately without a restart.
 - **`embed` is a V2 stub.** All V1 adapters throw `NotImplementedError` from their
   `embed` method. The interface is stable so child specs can reference it now.
-- **`@repo/billing` owns the entitlement keys.** AI quota gates
+- **`@repo/schemas` owns the entitlement keys.** AI quota gates
   (`ai_text_improve`, `ai_chat`, `ai_search`, `ai_support`) and limit keys
-  (`max_ai_*_per_month`) live in `packages/billing/src/types/`. They do NOT live
-  in `@repo/schemas` and are NOT uppercase.
+  (`max_ai_*_per_month`) live in `packages/schemas/src/catalog/`
+  (`entitlement-keys.ts`, `limit-keys.ts`, `key-enums.ts`), still lowercase
+  `snake_case` strings. `@repo/billing` (which held them before) was deleted by
+  HOS-1626.
 
 ---
 

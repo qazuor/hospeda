@@ -1,5 +1,7 @@
 # ADR-005: MercadoPago as Payment Processor
 
+> **Note (HOS-1626, 2026-10):** `@repo/billing` was retired (the package was deleted). The Mercado Pago adapter and the provider interface now live in `packages/payments/` (`src/adapters/mercadopago/`).
+
 ## Status
 
 Accepted

@@ -172,7 +172,7 @@ describe('enforceAccommodationLimit', () => {
 
 ### Additional Limits to Implement
 
-Based on `LimitKey` enum in `packages/billing/src/types/plan.types.ts`:
+Based on the `LimitKeyEnum` in `packages/schemas/src/catalog/key-enums.ts`:
 
 - ⏳ `max_favorites` - For tourist favorite lists
 - ⏳ `max_properties` - For complex property management
@@ -288,5 +288,5 @@ const currentCount = 0;
 
 - `apps/api/src/utils/limit-check.ts` - Core limit checking logic
 - `apps/api/src/middlewares/entitlement.ts` - Loads user entitlements and limits
-- `packages/billing/src/config/limits.config.ts` - Limit definitions
-- `packages/billing/src/types/plan.types.ts` - LimitKey enum
+- `packages/schemas/src/catalog/limit-keys.ts` - Limit key definitions (scope, aggregation, enforcement)
+- `packages/schemas/src/catalog/key-enums.ts` - `LimitKeyEnum`

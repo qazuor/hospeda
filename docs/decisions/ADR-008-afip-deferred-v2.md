@@ -1,5 +1,7 @@
 # ADR-008: Defer AFIP Integration to v2
 
+> **Note (HOS-1626, 2026-10):** `@repo/billing` was retired (the package was deleted). Transaction details are stored in the billing database tables, and the payment provider integration lives in `packages/payments/`.
+
 ## Status
 
 Accepted
