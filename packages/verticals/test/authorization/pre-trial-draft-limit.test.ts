@@ -18,6 +18,7 @@ import {
 } from '../../src/authorization/pre-trial-draft-limit';
 import { resolveListingAccess } from '../../src/authorization/resolve-listing-access';
 import { rehydrateEffectiveSet } from '../../src/effective-set-cache/snapshot';
+import { CatalogVersionNotFoundError } from '../../src/plan-catalog/errors';
 import { createInMemoryCatalog, planVersionRow } from '../plan-catalog/in-memory-catalog-reader';
 
 const OWNER = 'owner-1';
@@ -61,6 +62,7 @@ const PRE_TRIAL: CoverageResponse = { covered: false, sources: [preTrialSource, 
 /** Ports for an actor whose effective set holds `limits` and nothing else. */
 function accessPorts(args: {
     readonly limits?: readonly { readonly key: string; readonly value: number }[];
+    readonly entitlements?: readonly { readonly key: string; readonly value: number }[];
     readonly draftLimits?: ReadonlyMap<string, number>;
 }) {
     const coverage = vi.fn(async () => PRE_TRIAL);
@@ -71,11 +73,18 @@ function accessPorts(args: {
             vertical: VERTICAL,
             hasLiveNonTrialTitle: false,
             inheritsTouristVip: false,
-            entries: (args.limits ?? []).map(({ key, value }) => ({
-                key,
-                value,
-                strategy: 'SUM' as const
-            }))
+            entries: [
+                ...(args.limits ?? []).map(({ key, value }) => ({
+                    key,
+                    value,
+                    strategy: 'SUM' as const
+                })),
+                ...(args.entitlements ?? []).map(({ key, value }) => ({
+                    key,
+                    value,
+                    strategy: 'MAX' as const
+                }))
+            ]
         })
     );
     const preTrialDraftLimits = vi.fn(
@@ -134,15 +143,24 @@ describe('HOS-1721 pre-trial photo limit on a DRAFT (step 7)', () => {
     });
 
     it('keeps a PUBLISHED listing of a pre-trial actor at the effective limit (0)', async () => {
-        // Arrange
-        const ports = accessPorts({});
+        // Arrange: the edit capability lets the request pass step 6 and reach step 7.
+        const ports = accessPorts({
+            limits: [],
+            entitlements: [{ key: 'edit_accommodation_info', value: 1 }]
+        });
         // Act
         const result = await resolveListingAccess({
             ...draftEdit({ requested: 1, status: PublicationStatusEnum.PUBLISHED }),
             ...ports
         });
         // Assert
-        expect(result).toMatchObject({ allowed: false, reason: 'NO_CAPABILITY' });
+        expect(result).toEqual({
+            allowed: false,
+            reason: 'LIMIT_REACHED',
+            key: PHOTOS,
+            max: 0,
+            requested: 1
+        });
         expect(ports.preTrialDraftLimits).not.toHaveBeenCalled();
     });
 
@@ -336,6 +354,66 @@ describe('resolvePreTrialDraftLimits', () => {
         // Assert
         expect(limits.size).toBe(0);
         expect(coverage).not.toHaveBeenCalled();
+    });
+
+    it('resolves nothing when the vertical has no trial plan', async () => {
+        // Arrange
+        const { reader } = catalogWithTrial();
+        // Act
+        const limits = await resolvePreTrialDraftLimits({
+            billing: { coverage: async () => PRE_TRIAL },
+            reader,
+            trialPlans: { findTrialPlan: async () => null },
+            userId: OWNER,
+            vertical: VERTICAL
+        });
+        // Assert
+        expect(limits.size).toBe(0);
+    });
+
+    it('resolves nothing when no version is sellable', async () => {
+        // Arrange
+        const catalog = createInMemoryCatalog();
+        const trialVersionId = catalog.addPlanVersion(
+            planVersionRow({ planId: 'trial-plan', sellable: false, limits: [] })
+        );
+        // Act
+        const limits = await resolvePreTrialDraftLimits({
+            billing: { coverage: async () => PRE_TRIAL },
+            reader: catalog.reader,
+            trialPlans: {
+                findTrialPlan: async () => ({
+                    planId: 'trial-plan',
+                    planVersionId: trialVersionId,
+                    trialDays: 14
+                })
+            },
+            userId: OWNER,
+            vertical: VERTICAL
+        });
+        // Assert
+        expect(limits.size).toBe(0);
+    });
+
+    it('propagates the trial resolution error (the trial plan has no current version)', async () => {
+        // Arrange: the trial plan id names no current version in the catalog.
+        const { reader } = catalogWithTrial();
+        // Act
+        const resolving = resolvePreTrialDraftLimits({
+            billing: { coverage: async () => PRE_TRIAL },
+            reader,
+            trialPlans: {
+                findTrialPlan: async () => ({
+                    planId: 'retired-trial-plan',
+                    planVersionId: 'retired-version',
+                    trialDays: 14
+                })
+            },
+            userId: OWNER,
+            vertical: VERTICAL
+        });
+        // Assert
+        await expect(resolving).rejects.toBeInstanceOf(CatalogVersionNotFoundError);
     });
 
     it('resolves nothing when the vertical grants no trial', async () => {

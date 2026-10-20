@@ -12,9 +12,19 @@
  * cap is the value the trial WILL grant once it starts: the same derivation
  * `evaluateTrialStart` stores as the trial's floor (limits from the
  * lowest-rank sellable current version, overridden by the trial plan's current
- * version), resolved through {@link resolveTrialValues}. A draft therefore
- * never holds more photos than its first publish allows. Every other limit key
+ * version), resolved through {@link resolveTrialValues}. Every other limit key
  * keeps the `?? 0` reading of step 7.
+ *
+ * The invariant is "a pre-trial draft holds no more photos than the trial the
+ * catalog offers TODAY would grant", not "no more than its first publish
+ * allows". Only the catalog guards of `evaluateTrialStart` (trial plan, days
+ * > 0, a sellable version) are replicated; its per-account guards are not. An
+ * account whose email pseudonym already consumed a trial
+ * (`EMAIL_PSEUDONYM_ALREADY_USED`) still gets this allowance on its drafts,
+ * yet its first publish starts no trial and goes to the subscription path, so
+ * the draft may then hold more photos than the plan it subscribes to. A later
+ * catalog change to the lowest-rank plan's photo limit has the same effect.
+ * Neither case is pruned at publish.
  */
 import type { BillingForVerticals, CoverageResponse } from '@repo/billing-verticals-contract';
 import { VerticalEnum } from '@repo/schemas';
@@ -86,6 +96,10 @@ export function isPreTrialCoverage({ coverage }: { readonly coverage: CoverageRe
  * {@link PRE_TRIAL_DRAFT_LIMIT_KEYS_BY_VERTICAL} the trial will grant; empty
  * when the vertical has no such key, the account is not pre-trial, the
  * vertical has no trial plan, its trial grants no days, or nothing is sellable.
+ * @throws Whatever {@link resolveTrialValues} throws (e.g.
+ * `CatalogVersionNotFoundError` when the trial plan has no current version).
+ * Callers decide: step 7 lets it propagate (fail-closed: nothing is allowed),
+ * the effective-set read drops the field.
  */
 export async function resolvePreTrialDraftLimits(input: {
     readonly billing: Pick<BillingForVerticals, 'coverage'>;
