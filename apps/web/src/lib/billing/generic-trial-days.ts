@@ -5,7 +5,7 @@
  * (the FAQ, the `/funcionalidades` hero, the `/publicar` callout, the plan
  * comparison CTA, the new-property form, the property list's
  * "necesitás un plan" message). Those surfaces used to hardcode
- * `OWNER_TRIAL_DAYS` from `@repo/billing/constants`, which is independent of
+ * `OWNER_TRIAL_DAYS` from the web static trial-days module, which is independent of
  * `billing_plans.metadata.trialDays` in the database — the number the
  * checkout actually grants. If the owner changes a plan's trial length, the
  * constant silently goes stale and the web keeps promising the old number
@@ -42,17 +42,17 @@
  *   and falls back to `OWNER_TRIAL_DAYS` when the fetch fails or no plan
  *   qualifies.
  *
- * Both are SSR-only (they end up importing `@repo/billing`), so they must
+ * Both are SSR-only (they end up importing the public plan fetcher), so they must
  * only be called from `.astro` frontmatter — never from a client island. See
  * `apps/web/test/static-guards/billing-barrel-client-isolation.test.ts`.
  */
 
-import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import {
     fetchPublicPlans,
     filterPlansByCategory,
     type PublicPlanData
 } from '@/lib/billing/fetch-plans';
+import { OWNER_TRIAL_DAYS } from '@/lib/billing/owner-trial-days';
 
 /** Input for {@link computeMinimumTrialDays}. */
 export interface ComputeMinimumTrialDaysParams {
