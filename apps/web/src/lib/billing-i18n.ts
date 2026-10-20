@@ -1,14 +1,14 @@
 /**
  * @file billing-i18n.ts
  * @description Locale-aware lookups for billing config values that the billing
- * package stores in English. The billing package is the single source of truth
+ * catalog stores in English. The plan catalog is the source of truth
  * for plans, entitlements and limits, but its strings are config-language only
  * (config values are not localised at the source). This module wraps each lookup with i18n
  * keys that translators can override per locale; falls back to the config value
  * when no translation is provided.
  */
 
-import { EntitlementKey as EK } from '@repo/billing';
+import { EntitlementKeyEnum as EK } from '@repo/schemas';
 
 export type EntitlementKey = EK;
 type Translator = (key: string, fallback?: string) => string;
@@ -40,7 +40,7 @@ export interface DisplayFeature {
 /**
  * Owner-specific AI entitlements collapsed into one "AI suite" bullet on owner
  * cards. Defined here (no grouping metadata exists on the entitlement config)
- * but anchored to the real `EntitlementKey` enum so it can't drift from the keys.
+ * but anchored to the real `EntitlementKeyEnum` enum so it can't drift from the keys.
  */
 const AI_OWNER_ENTITLEMENTS: readonly string[] = [
     EK.AI_TEXT_IMPROVE,
@@ -51,7 +51,7 @@ const AI_OWNER_ENTITLEMENTS: readonly string[] = [
 
 /**
  * Minimal plan shape required by i18n helpers. Accepts both the static
- * `PlanDefinition` from @repo/billing and the runtime `PublicPlanData` from
+ * `PlanDefinition` from the billing catalog and the runtime `PublicPlanData` from
  * @/lib/billing/fetch-plans — both provide slug, name, and description.
  */
 interface PlanLike {
@@ -75,7 +75,7 @@ export function getPlanName(input: { plan: PlanLike; t: Translator }): string {
  * Get the localized description for a plan.
  *
  * Tries `billing.plan.<slug>.description`. Falls back to the English
- * description from the billing config.
+ * description from the plan catalog.
  */
 export function getPlanDescription(input: { plan: PlanLike; t: Translator }): string {
     const { plan, t } = input;

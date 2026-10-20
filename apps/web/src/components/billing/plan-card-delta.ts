@@ -34,7 +34,7 @@
  * every value side by side.
  */
 
-import { LimitKey } from '@repo/billing';
+import { LimitKeyEnum } from '@repo/schemas';
 
 /**
  * The catalogue's "no cap" sentinel. Stored as `-1` in `billing_plans.limits`
@@ -53,25 +53,25 @@ export const UNLIMITED_LIMIT_VALUE = -1;
  * accommodations" on an owner card.
  */
 export const LIMIT_DISPLAY_ORDER: readonly string[] = [
-    LimitKey.MAX_ACCOMMODATIONS,
-    LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-    LimitKey.MAX_ACTIVE_PROMOTIONS,
-    LimitKey.MAX_PROPERTIES,
-    LimitKey.MAX_STAFF_ACCOUNTS,
-    LimitKey.MAX_GASTRONOMIES,
-    LimitKey.MAX_EXPERIENCES,
-    LimitKey.MAX_FAVORITES,
-    LimitKey.MAX_COLLECTIONS,
-    LimitKey.MAX_SEARCH_HISTORY_ENTRIES,
-    LimitKey.MAX_COMPARE_ITEMS,
-    LimitKey.MAX_ACTIVE_ALERTS,
-    LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
-    LimitKey.MAX_AI_TRANSLATE_PER_MONTH,
-    LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH,
-    LimitKey.MAX_AI_CHAT_PER_MONTH,
-    LimitKey.MAX_AI_SEARCH_PER_MONTH,
-    LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH,
-    LimitKey.MAX_AI_SUPPORT_PER_MONTH
+    LimitKeyEnum.MAX_ACCOMMODATIONS,
+    LimitKeyEnum.MAX_PHOTOS_PER_ACCOMMODATION,
+    LimitKeyEnum.MAX_ACTIVE_PROMOTIONS,
+    LimitKeyEnum.MAX_PROPERTIES,
+    LimitKeyEnum.MAX_STAFF_ACCOUNTS,
+    LimitKeyEnum.MAX_GASTRONOMIES,
+    LimitKeyEnum.MAX_EXPERIENCES,
+    LimitKeyEnum.MAX_FAVORITES,
+    LimitKeyEnum.MAX_COLLECTIONS,
+    LimitKeyEnum.MAX_SEARCH_HISTORY_ENTRIES,
+    LimitKeyEnum.MAX_COMPARE_ITEMS,
+    LimitKeyEnum.MAX_ACTIVE_ALERTS,
+    LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH,
+    LimitKeyEnum.MAX_AI_TRANSLATE_PER_MONTH,
+    LimitKeyEnum.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH,
+    LimitKeyEnum.MAX_AI_CHAT_PER_MONTH,
+    LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH,
+    LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH,
+    LimitKeyEnum.MAX_AI_SUPPORT_PER_MONTH
 ];
 
 /**
