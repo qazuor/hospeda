@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { ChargeListResult } from '../../provider/payment-provider';
 import { type MercadoPagoSend, parseResponse, providerError } from './mercadopago-http';
+import { nullAsAbsent } from './mercadopago-null-as-absent';
 import { resolveUnnamedChargeRecords } from './mercadopago-unnamed-charges';
 
 const ChargeSearchResponseSchema = z.object({
@@ -8,13 +9,13 @@ const ChargeSearchResponseSchema = z.object({
     results: z.array(
         z.object({
             id: z.union([z.string(), z.number()]),
-            date_created: z.string().optional(),
-            expire_date: z.string().nullable().optional(),
-            external_reference: z.string().nullable().optional(),
+            date_created: nullAsAbsent({ schema: z.string() }),
+            expire_date: z.string().nullish(),
+            external_reference: z.string().nullish(),
+            // A null payment id is an unnamed record, exactly like an absent one.
             payment: z
-                .object({ id: z.union([z.string(), z.number()]).optional() })
-                .nullable()
-                .optional()
+                .object({ id: nullAsAbsent({ schema: z.union([z.string(), z.number()]) }) })
+                .nullish()
         })
     )
 });

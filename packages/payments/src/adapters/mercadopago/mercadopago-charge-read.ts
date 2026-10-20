@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { ChargeSnapshot } from '../../provider/payment-provider';
 import { readMercadoPagoChargeWindow } from './mercadopago-charge-window';
 import { type MercadoPagoSend, parseResponse, providerError } from './mercadopago-http';
+import { nullAsAbsent } from './mercadopago-null-as-absent';
 import {
     MercadoPagoPaymentLinkFieldsSchema,
     readMercadoPagoAuthorizationLink
@@ -16,7 +17,8 @@ const ReadChargeResponseSchema = z.object({
     status_detail: z.string().nullable().optional(),
     transaction_amount: z.number().nonnegative(),
     currency_id: z.string().min(1),
-    transaction_amount_refunded: z.number().nonnegative().optional()
+    // null is read as absent, so an approved payment without it still fails closed below.
+    transaction_amount_refunded: nullAsAbsent({ schema: z.number().nonnegative() })
 });
 
 function toChargeStatus({
