@@ -16,11 +16,12 @@ import {
     ExperienceMediaListOutputSchema,
     type ExperienceMediaReorderPayload,
     ExperienceMediaReorderPayloadSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, reorderExperienceMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -31,19 +32,19 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * PATCH /api/v1/admin/experiences/:id/media/reorder
  * Reorder experience listing gallery photos — Admin endpoint.
  *
- * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
+ * Requires EXPERIENCE_EDIT_ALL permission. The service helper
  * `reorderExperienceMedia` enforces the same gate via `checkExperienceCanEditMedia`.
  */
 export const adminReorderExperienceMediaRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/reorder',
     summary: 'Reorder experience listing gallery photos (admin)',
     description:
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +
-        'exactly. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+        'exactly. Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'Media'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -60,9 +61,13 @@ export const adminReorderExperienceMediaRoute = createAdminRoute({
         const model = (
             experienceService as unknown as { model: Parameters<typeof reorderExperienceMedia>[0] }
         ).model;
-        const result = await reorderExperienceMedia(model, actor, {
-            experienceId: params.id as string,
-            orderedIds: (body as ExperienceMediaReorderPayload).orderedIds
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                reorderExperienceMedia(model, actor, {
+                    experienceId: params.id as string,
+                    orderedIds: (body as ExperienceMediaReorderPayload).orderedIds
+                })
         });
 
         if (result.error) {

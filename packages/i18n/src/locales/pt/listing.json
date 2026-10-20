@@ -1,0 +1,400 @@
+{
+    "brochure": {
+        "qrHint": "Escaneie o código para ver a ficha completa, com fotos e avaliações.",
+        "footer": "Ficha gerada por Hospeda — hospeda.com.ar",
+        "download": "Baixar ficha em PDF",
+        "downloading": "Gerando a ficha…",
+        "error": "Não conseguimos gerar a ficha. Tente novamente em instantes.",
+        "locked": "A ficha em PDF está disponível no plano Premium do seu ramo."
+    },
+    "owner": {
+        "nav": "Meu comércio",
+        "purgeAddons": {
+            "title": "Estes complementos se perdem com o anúncio, sem reembolso:",
+            "clockRuns": "O complemento não passa para outro anúncio e o prazo continua correndo.",
+            "cycle": {
+                "monthly": "por mês",
+                "quarterly": "por trimestre",
+                "semiannual": "por semestre",
+                "annual": "por ano"
+            },
+            "until": "até {{date}}",
+            "pending": "(autorização pendente)",
+            "loadError": "Não conseguimos ler os complementos deste anúncio. Tente de novo antes de excluí-lo.",
+            "retry": "Tentar de novo"
+        },
+        "list": {
+            "title": "Meu comércio",
+            "subtitle": "Gerencie as informações dos seus comércios publicados.",
+            "empty": "Você ainda não tem comércios. Crie sua primeira ficha para começar.",
+            "edit": "Editar",
+            "badge": {
+                "gastronomy": "Gastronomia",
+                "experience": "Experiência"
+            },
+            "emptyCta": "Criar meu primeiro comércio",
+            "createCta": "+ Novo comércio",
+            "state": {
+                "published": "Publicado",
+                "viewPublic": "Ver ficha pública",
+                "pendingPayment": "Pagamento em processamento",
+                "suspended": "Suspenso",
+                "suspendedHint": "Seu pagamento não pôde ser processado. Verifique seu método de pagamento para reativar a publicação.",
+                "recoverCta": "Revisar minha assinatura",
+                "unknown": "Status indisponível",
+                "draftComplete": "Rascunho — pronto para publicar",
+                "draftIncomplete": "Rascunho — incompleto"
+            },
+            "usage": {
+                "gastronomy": {
+                    "label_one": "{{current}} de {{max}} gastronomia",
+                    "label_other": "{{current}} de {{max}} gastronomias"
+                },
+                "experience": {
+                    "label_one": "{{current}} de {{max}} experiência",
+                    "label_other": "{{current}} de {{max}} experiências"
+                },
+                "upgrade": "Ampliar cota"
+            },
+            "views": {
+                "title": "Visualizações",
+                "unique": "únicos",
+                "total": "totais",
+                "error": "Não foi possível carregar suas visualizações. Tente novamente mais tarde."
+            },
+            "menuQr": {
+                "title": "QR do cardápio",
+                "scans": "leituras",
+                "device": "Dispositivo",
+                "os": "Sistema operacional",
+                "language": "Idioma",
+                "unknown": "Desconhecido",
+                "download": "Baixar QR (PNG)",
+                "downloaded": "Pronto, baixamos.",
+                "qrAlt": "Código QR que leva ao cardápio de {{name}}",
+                "encodes": "Leva a: {{url}}",
+                "locked": "O QR do cardápio e suas estatísticas de leitura estão disponíveis no plano Premium de gastronomia.",
+                "error": "Não foi possível carregar as leituras do QR. Tente novamente mais tarde.",
+                "empty": "Ainda não houve leituras neste período."
+            }
+        },
+        "editor": {
+            "sectionNav": {
+                "basicInfo": "Informações básicas",
+                "contactInfo": "Contato",
+                "socialNetworks": "Redes sociais",
+                "openingHours": "Horários",
+                "media": "Fotos",
+                "translations": "Traduções",
+                "amenities": "Serviços",
+                "price": "Preço",
+                "faqs": "Perguntas frequentes",
+                "meetingPoint": "Ponto de encontro",
+                "practicalInfo": "Dados práticos",
+                "contactSocial": "Contato e redes",
+                "menu": "Cardápio",
+                "dailySpecials": "Menu do dia",
+                "venueEvents": "Eventos"
+            },
+            "sections": {
+                "type": "Categoria",
+                "summary": "Resumo",
+                "openingHours": "Horário de atendimento",
+                "contactInfo": "Informações de contato",
+                "socialNetworks": "Redes sociais",
+                "media": "Fotos",
+                "menuUrl": "Link do cardápio",
+                "priceRange": "Faixa de preço",
+                "isPriceOnRequest": "Preço sob consulta",
+                "priceFrom": "Preço a partir de",
+                "priceUnit": "Unidade de preço",
+                "richDescription": "Descrição ampliada",
+                "amenities": "Comodidades",
+                "features": "Características",
+                "translations": "Traduções",
+                "faqs": "Perguntas frequentes",
+                "name": "Nome do comércio",
+                "destination": "Cidade / Destino",
+                "description": "Descrição",
+                "destinationLoadError": "Não conseguimos carregar a lista de cidades / destinos. Recarregue a página para tentar novamente.",
+                "destinationEmpty": "Ainda não há cidades / destinos cadastrados. Entre em contato para que possamos ajudar a preencher este campo.",
+                "meetingPoint": "Ponto de encontro",
+                "meetingPointPlaceholder": "Ex.: Píer 3 do porto, em frente à cabine azul",
+                "meetingPointHint": "Onde a experiência começa. Pode ser um endereço ou uma referência do lugar.",
+                "meetingPointLat": "Latitude (opcional)",
+                "meetingPointLong": "Longitude (opcional)",
+                "meetingPointCoordsHint": "Se você informar as coordenadas, mostramos o ponto num mapa. Pode deixá-las vazias.",
+                "meetingPointDirections": "Como chegar",
+                "meetingPointDirectionsPlaceholder": "Estacione na descida municipal, na beira do rio\nO ônibus 4 deixa você na rotatória\nSão 300 m por estrada de saibro, procure o píer de madeira",
+                "meetingPointDirectionsHint": "Uma indicação por linha. Onde estacionar, qual ônibus, quanto se caminha desde a estrada, que referência procurar.",
+                "meetingPointDirectionsLocked": "O mapa e as indicações de como chegar não estão incluídos no seu plano. O ponto de encontro está, e continua publicado.",
+                "durationHours": "Duração — horas",
+                "durationMinutes": "Duração — minutos",
+                "durationHint": "Quanto dura a experiência. Deixe os dois campos vazios se preferir não publicar.",
+                "whatToBring": "O que levar",
+                "whatToBringPlaceholder": "Repelente\nCalçado fechado\nTraje de banho",
+                "whatToBringHint": "Um item por linha. O que a pessoa que se inscreve precisa levar.",
+                "requirements": "Requisitos",
+                "requirementsPlaceholder": "Idade mínima 12 anos\nSaber nadar\nNão indicado para gestantes",
+                "requirementsHint": "Um requisito por linha. Idade, condição física, saúde — o que for necessário para participar.",
+                "cancellationPolicy": "Política de cancelamento",
+                "cancellationPolicyPlaceholder": "Se houver alerta meteorológico ou o rio baixar, avisamos com 12 horas de antecedência e remarcamos sem custo.",
+                "cancellationPolicyHint": "O que acontece se o passeio não sair: chuva, vento, rio baixo, ou se não houver o mínimo de pessoas.",
+                "acceptsPrivateGroups": "Faço preço especial para grupos privados",
+                "acceptsPrivateGroupsHint": "Se ativar, a ficha convida a escrever para você sobre grupos. Não publicamos nenhuma tabela de preços."
+            },
+            "contactField": {
+                "mobilePhone": "Telefone",
+                "workEmail": "E-mail"
+            },
+            "validation": {
+                "summaryMin": "Mínimo 10 caracteres.",
+                "summaryMax": "Máximo 300 caracteres.",
+                "summaryHint": "{{count}}/300",
+                "priceMustBePositive": "O preço deve ser um número positivo."
+            },
+            "priceRangeOption": {
+                "BUDGET": "Econômico",
+                "MID": "Moderado",
+                "HIGH": "Elevado",
+                "PREMIUM": "Premium"
+            },
+            "priceUnitOption": {
+                "per_day": "Por dia",
+                "per_hour": "Por hora",
+                "per_person": "Por pessoa",
+                "per_group": "Por grupo"
+            },
+            "translationPanel": {
+                "sectionTitle": "Traduções",
+                "sectionDescription": "Edite as traduções dos campos principais do seu estabelecimento nos três idiomas disponíveis.",
+                "fieldName": "Nome",
+                "fieldSummary": "Resumo",
+                "fieldDescription": "Descrição",
+                "fieldRichDescription": "Descrição ampliada",
+                "localePlaceholder": "Digite o texto em {{locale}}...",
+                "saveSuccess": "Traduções salvas.",
+                "saveError": "Não foi possível salvar as traduções.",
+                "generating": "Gerando traduções...",
+                "generateButton": "Gerar traduções ausentes"
+            },
+            "faqManager": {
+                "sectionTitle": "Perguntas frequentes",
+                "emptyState": "Ainda não há perguntas. Adicione a primeira.",
+                "addButton": "Adicionar pergunta",
+                "editButton": "Editar",
+                "deleteButton": "Excluir",
+                "saveButton": "Salvar",
+                "cancelButton": "Cancelar",
+                "questionLabel": "Pergunta",
+                "answerLabel": "Resposta",
+                "questionPlaceholder": "Escreva a pergunta...",
+                "answerPlaceholder": "Escreva a resposta...",
+                "questionRequired": "Escreva a pergunta antes de salvar.",
+                "answerRequired": "Escreva a resposta antes de salvar.",
+                "moveUp": "Mover para cima",
+                "moveDown": "Mover para baixo",
+                "deleteConfirm": "Excluir esta pergunta?",
+                "deleteDialogTitle": "Excluir pergunta",
+                "deleteConfirmButton": "Excluir pergunta",
+                "deleting": "Excluindo...",
+                "saveError": "Não foi possível salvar a pergunta.",
+                "deleteError": "Não foi possível excluir a pergunta.",
+                "reorderError": "Não foi possível reordenar.",
+                "channelIntro": {
+                    "title": "Por que ocultar ou restringir uma pergunta?",
+                    "body1": "\"Visível na página do local\" exibe a pergunta na página do estabelecimento e nos dados estruturados (JSON-LD) que os buscadores leem. \"Utilizável pela IA\" permite que o assistente de chat use esta pergunta para responder consultas.",
+                    "body2": "Desmarque \"Visível na página do local\" para informações úteis, mas que você não quer publicar: algo temporário, uma margem que prefere não prometer por escrito, ou uma dica que soa melhor numa conversa do que na vitrine.",
+                    "body3": "Desmarque \"Utilizável pela IA\" para conteúdo que você prefere mostrar exatamente como escrito, sem que o assistente o reformule.",
+                    "body4": "Importante: uma pergunta não visível na página, mas utilizável pela IA, não é privada. O assistente pode dizê-la a qualquer pessoa que perguntar pelo chat; ela só não aparece publicada na página."
+                },
+                "visibleOnListingLabel": "Visível na página do local",
+                "usableByAiLabel": "Utilizável pela IA",
+                "notVisibleBadge": "Não visível na página",
+                "notAiUsableBadge": "Não utilizável pela IA"
+            },
+            "noChanges": "Não há alterações para salvar",
+            "success": "Alterações salvas.",
+            "error": "Não foi possível salvar as alterações. Tente novamente.",
+            "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
+            "media": {
+                "featured": "Imagem principal",
+                "gallery": "Galeria de fotos",
+                "add": "Adicionar foto",
+                "remove": "Remover",
+                "uploadHint": "JPG, PNG, WebP ou HEIC — máx. {{maxSize}}MB",
+                "invalidType": "Apenas arquivos JPG, PNG, WebP ou HEIC são permitidos",
+                "tooLarge": "O arquivo não pode exceder {{maxSize}}MB",
+                "uploadFailed": "Erro ao enviar a imagem",
+                "uploadTimeout": "O envio demorou demais. Tente novamente.",
+                "uploadingBatch": "Enviando foto {{current}} de {{total}}…",
+                "processingImage": "Otimizando imagem…",
+                "compressionUnsupportedTooLarge": "Não conseguimos otimizar esta imagem automaticamente (seu navegador não consegue processar este formato) e ela ultrapassa o limite de {{maxSize}}MB. Tente convertê-la para JPG antes de enviar, ou escolha uma foto mais leve.",
+                "capReached_one": "Limite da galeria atingido (máx. {{cap}} foto)",
+                "capReached_other": "Limite da galeria atingido (máx. {{cap}} fotos)",
+                "featuredFailed": "No se pudo marcar la imagen como principal",
+                "persistFailed": "No se pudo guardar la imagen en la base de datos",
+                "metadataSaveFailed": "Não foi possível salvar os dados da foto",
+                "removeFailed": "No se pudo eliminar la imagen"
+            },
+            "slugFollowsNameNotice": "O endereço web da sua ficha (a URL dela) vai acompanhar o nome até você publicá-la.",
+            "slugFixedNotice": "O endereço web da sua ficha (a URL dela) já está fixo: mudar o nome não o altera.",
+            "slugRefresh": {
+                "notice": "Esta ficha já está publicada. Por padrão, o endereço web atual é mantido mesmo que você mude o nome.",
+                "warning": "Se você mudar o endereço web, isso pode afetar como ele aparece hoje no Google ou em links que você já compartilhou.",
+                "checkbox": "Mudar também o endereço web para que ele siga este novo nome"
+            },
+            "group": {
+                "listing": "Sua ficha",
+                "content": "Conteúdo",
+                "management": "Gestão"
+            },
+            "breadcrumb": {
+                "listings": "Meus comércios"
+            },
+            "pageDescription": "Editar as informações da sua ficha",
+            "hub": {
+                "subtitle": "Escolha o que você quer editar",
+                "status": {
+                    "photos_one": "{{count}} foto",
+                    "photos_other": "{{count}} fotos",
+                    "faqs_one": "{{count}} pergunta",
+                    "faqs_other": "{{count}} perguntas",
+                    "selected_one": "{{count}} selecionado",
+                    "selected_other": "{{count}} selecionados",
+                    "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}"
+                }
+            },
+            "amenities": {
+                "catalogUnavailable": "Não conseguimos carregar a lista de serviços e características. Recarregue a página para tentar novamente."
+            }
+        },
+        "checklist": {
+            "field": {
+                "name": "Nome",
+                "summary": "Resumo",
+                "description": "Descrição",
+                "destinationId": "Cidade / Destino",
+                "ownerId": "Proprietário",
+                "type": "Categoria",
+                "featuredImage": "Foto principal",
+                "contactInfo": "Um dado de contato (telefone ou email)",
+                "openingHours": "Horários de funcionamento",
+                "priceRange": "Faixa de preço",
+                "priceFrom": "Preço"
+            },
+            "publishCta": "Publicar e pagar",
+            "publishing": "Iniciando pagamento...",
+            "incompleteError": "Ainda faltam dados para publicar.",
+            "alreadySubscribedError": "Este comércio já tem uma assinatura ativa.",
+            "checkoutError": "Não conseguimos iniciar o pagamento. Tente novamente.",
+            "invalidPlanError": "O plano escolhido não está mais disponível. Recarregue a página e tente novamente.",
+            "publishCtaFree": "Publicar",
+            "publishingFree": "Publicando...",
+            "publishCtaTrial_one": "Publicar grátis por {{count}} dia",
+            "publishCtaTrial_other": "Publicar grátis por {{count}} dias",
+            "publishCtaTrialNoCount": "Publicar grátis"
+        },
+        "create": {
+            "fields": {
+                "name": {
+                    "gastronomy": "Nome do comércio",
+                    "experience": "Nome da experiência"
+                },
+                "type": "Categoria",
+                "summary": "Resumo",
+                "description": "Descrição",
+                "destination": "Cidade / Destino",
+                "destinationLoadError": "Não conseguimos carregar a lista de cidades / destinos. Recarregue a página para tentar novamente.",
+                "destinationEmpty": "Ainda não há cidades / destinos cadastrados. Entre em contato para que possamos ajudar a preencher este campo."
+            },
+            "submit": {
+                "gastronomy": "Criar comércio",
+                "experience": "Criar experiência"
+            },
+            "submitting": "Criando...",
+            "error": {
+                "gastronomy": "Não conseguimos criar o comércio. Tente novamente.",
+                "experience": "Não conseguimos criar a experiência. Tente novamente."
+            }
+        },
+        "supportEdit": {
+            "title": "O suporte editou este anúncio",
+            "edited": "O suporte editou o conteúdo deste anúncio em {{date}}: {{parts}}.",
+            "unchanged": "Por isso, ele não foi publicado, destacado nem excluído.",
+            "contact": "Se você não pediu, fale com a gente.",
+            "parts": {
+                "texts": "os textos",
+                "photos": "as fotos",
+                "faq": "as perguntas frequentes",
+                "hours": "os horários",
+                "other": "outros dados"
+            }
+        }
+    },
+    "notices": {
+        "surplus": {
+            "criterion": "Os anúncios publicados mais recentemente são despublicados primeiro, até respeitar o limite do seu plano. Nada é apagado.",
+            "recurringFeatured": "Os destaques recorrentes dos anúncios que saíram continuam sendo cobrados até você cancelá-los.",
+            "noWindowDone": "Não houve período de carência: os anúncios mais recentes foram despublicados primeiro; nenhum período foi simulado."
+        },
+        "restitution": {
+            "restored": "Estes anúncios voltaram: {{listings}}.",
+            "notRestored": "Estes anúncios não puderam voltar: {{listings}}.",
+            "criterion": "Volta primeiro o anúncio que caiu por último, até preencher as vagas. Anúncios do sistema antigo que nunca foram publicados aqui vêm primeiro, pela data de criação mais antiga.",
+            "nothingDeleted": "Os anúncios que não voltaram continuam aqui; nenhum é apagado."
+        },
+        "reason": "Motivo: {{reason}}",
+        "purgedByInactivity": {
+            "title": "Anúncio apagado por inatividade",
+            "body": "Este anúncio existiu, e o seu conteúdo foi apagado por inatividade."
+        },
+        "purgedFromModeration": {
+            "title": "Anúncio apagado",
+            "body": "Este anúncio foi apagado enquanto estava moderado.",
+            "what": "Foram apagados os textos, as fotos, as perguntas frequentes e os horários."
+        },
+        "purged": {
+            "title": "Anúncio apagado",
+            "body": "Este anúncio foi apagado."
+        },
+        "neverReturns": "Ele não volta: a exclusão é definitiva.",
+        "archived": {
+            "title": "Anúncio arquivado",
+            "nothingDeleted": "Nada foi apagado: o anúncio está arquivado e não aparece no site.",
+            "recurring_one": "Você tem {{count}} destaque recorrente neste anúncio: ele continua sendo cobrado mesmo arquivado, até você cancelá-lo.",
+            "recurring_other": "Você tem {{count}} destaques recorrentes neste anúncio: eles continuam sendo cobrados mesmo arquivado, até você cancelá-los.",
+            "canSeeAndExport": "Você continua vendo o anúncio e pode exportá-lo.",
+            "returnsOnItsOwn": "Ele volta sozinho quando você recuperar a cobertura, ou quando as vagas voltarem a ser suficientes, se houver lugar para ele.",
+            "backToDraft": "Você pode trazê-lo de volta para rascunho quando quiser, sem pagar.",
+            "deletionDate": "Se continuar arquivado, o seu conteúdo será apagado a partir de {{date}}."
+        },
+        "moderated": {
+            "title": "Anúncio moderado",
+            "hidden": "Não aparece no site até que um admin retire a moderação.",
+            "canDo": "Enquanto isso você pode vê-lo, exportá-lo, editá-lo e apagá-lo, mas não publicá-lo.",
+            "recurring_one": "Você tem {{count}} destaque recorrente neste anúncio: ele continua sendo cobrado até você cancelá-lo.",
+            "recurring_other": "Você tem {{count}} destaques recorrentes neste anúncio: eles continuam sendo cobrados até você cancelá-los."
+        },
+        "fixRequest": {
+            "title": "Pediram uma correção neste anúncio",
+            "suggestedDate": "Data sugerida para corrigir: {{date}}.",
+            "stillVisible": "O seu anúncio continua visível enquanto isso.",
+            "button": "Já corrigi",
+            "reported": "Você avisou que corrigiu em {{date}}.",
+            "error": "Não foi possível registrar o seu aviso. Tente novamente."
+        },
+        "lifted": {
+            "title": "A moderação foi retirada",
+            "returnedTo": {
+                "PUBLISHED": "Voltou a estar publicado.",
+                "DRAFT": "Voltou para rascunho.",
+                "UNPUBLISHED_BY_BILLING": "Ficou sem publicar, porque hoje a sua assinatura não tem lugar para ele. Nada foi apagado.",
+                "ARCHIVED": "Continua arquivado, como estava."
+            },
+            "draftIsYours": "Publicá-lo é decisão sua.",
+            "fixRequestOpen": "O pedido de correção continua aberto."
+        },
+        "surplusTitle": "Anúncio despublicado pelo limite do seu plano"
+    }
+}

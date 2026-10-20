@@ -1,17 +1,10 @@
-import { asMajor } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
-import { billingNotificationLog } from '@repo/db';
+import { notificationLog } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import type { ReactElement } from 'react';
 import { NOTIFICATION_CATEGORY_MAP } from '../config/notification-categories.js';
 import {
     AccommodationCalendarFeedBroken,
-    AddonCancellation,
-    AddonExpirationWarning,
-    AddonExpired,
-    AddonPurchaseConfirmation,
-    AddonRenewalConfirmation,
-    AddonSubscriptionStarted,
     AdminLeadReceived,
     AdminPaymentFailure,
     AdminSystemEvent,
@@ -27,7 +20,6 @@ import {
     HostTradeRevoked,
     PartnerMentionsLogged,
     PartnerRevoked,
-    PartnerUnpaidNotice,
     PaymentFailure,
     PaymentRetryWarning,
     PaymentSuccess,
@@ -62,12 +54,9 @@ import {
 import { formatDate } from '../templates/utils/index.js';
 import type { EmailTransport } from '../transports/email/email-transport.interface.js';
 import type { DeliveryResult, DeliveryStatus } from '../types/delivery.types.js';
+import { asMajor } from '../types/money.js';
 import type {
     AccommodationCalendarFeedBrokenPayload,
-    AddonCancellationPayload,
-    AddonEventPayload,
-    AddonPurchaseConfirmationPayload,
-    AddonSubscriptionStartedPayload,
     AdminLeadReceivedPayload,
     AdminNotificationPayload,
     AiCostThresholdAlertPayload,
@@ -87,7 +76,6 @@ import type {
     NotificationPayload,
     PartnerMentionsLoggedPayload,
     PartnerRevokedPayload,
-    PartnerUnpaidNoticePayload,
     PaymentNotificationPayload,
     PaymentRetryWarningPayload,
     PlanBeingRetiredPayload,
@@ -102,7 +90,6 @@ import type {
     TrialEventPayload,
     TrialSeriesPayload
 } from '../types/notification.types.js';
-import { buildAddonLinkMetadata } from '../utils/addon-link-metadata.js';
 import { buildCompGrantMetadata } from '../utils/comp-grant-metadata.js';
 import {
     findUnresolvedPlaceholders,
@@ -377,51 +364,6 @@ export class NotificationService {
                 });
             }
 
-            // HOS-722: `'addon_purchase'` used to fall through to
-            // `PurchaseConfirmation` above. That made `AddonPurchaseConfirmation`
-            // — the add-on-specific template, with the locale-aware CTA that
-            // points at the add-ons page — unreachable dead code, so the receipt
-            // an add-on buyer actually received was the subscription email:
-            // locale-blind, and linking to `/es/mi-cuenta` instead of
-            // `/{locale}/mi-cuenta/addons/?focus=<slug>`.
-            case 'addon_purchase': {
-                const p = payload as AddonPurchaseConfirmationPayload;
-                return AddonPurchaseConfirmation({
-                    customerName: recipientName,
-                    addonName: p.addonName,
-                    addonDescription: p.addonDescription,
-                    expiresAt: p.expiresAt ?? null,
-                    orderId: p.orderId,
-                    amount: p.amount,
-                    currency: p.currency,
-                    baseUrl: this.deps.siteUrl,
-                    addonSlug: p.addonSlug,
-                    locale: p.locale
-                });
-            }
-
-            // HOS-847 PR 5: a RECURRING add-on's first charge. Its own template
-            // because the one above says a purchase "has been processed", which
-            // is the opposite of what a subscriber needs to read. The cadence,
-            // the next charge date and how to cancel are REQUIRED on this
-            // payload rather than optional, so the template cannot render the
-            // one-time message by omission.
-            case 'addon_subscription_started': {
-                const p = payload as AddonSubscriptionStartedPayload;
-                return AddonSubscriptionStarted({
-                    customerName: recipientName,
-                    addonName: p.addonName,
-                    addonDescription: p.addonDescription,
-                    amount: p.amount,
-                    currency: p.currency,
-                    billingInterval: p.billingInterval,
-                    nextChargeAt: p.nextChargeAt,
-                    baseUrl: this.deps.siteUrl,
-                    addonSlug: p.addonSlug,
-                    locale: p.locale
-                });
-            }
-
             case 'payment_success': {
                 const p = payload as PaymentNotificationPayload;
                 return PaymentSuccess({
@@ -475,44 +417,6 @@ export class NotificationService {
                     newPlanName: p.newPlanName || '',
                     amount: p.amount,
                     currency: p.currency
-                });
-            }
-
-            case 'addon_expiration_warning': {
-                const p = payload as AddonEventPayload;
-                return AddonExpirationWarning({
-                    recipientName,
-                    addonName: p.addonName,
-                    baseUrl: this.deps.siteUrl,
-                    daysRemaining: p.daysRemaining,
-                    expirationDate: p.expirationDate,
-                    addonSlug: p.addonSlug,
-                    locale: p.locale
-                });
-            }
-
-            case 'addon_expired': {
-                const p = payload as AddonEventPayload;
-                return AddonExpired({
-                    recipientName,
-                    addonName: p.addonName,
-                    baseUrl: this.deps.siteUrl,
-                    expirationDate: p.expirationDate || '',
-                    addonSlug: p.addonSlug,
-                    locale: p.locale
-                });
-            }
-
-            case 'addon_renewal_confirmation': {
-                const p = payload as AddonEventPayload;
-                return AddonRenewalConfirmation({
-                    recipientName,
-                    addonName: p.addonName,
-                    baseUrl: this.deps.siteUrl,
-                    amount: p.amount || 0,
-                    currency: p.currency || 'ARS',
-                    addonSlug: p.addonSlug,
-                    locale: p.locale
                 });
             }
 
@@ -803,22 +707,6 @@ export class NotificationService {
                 });
             }
 
-            case 'addon_cancellation': {
-                const p = payload as AddonCancellationPayload;
-                return AddonCancellation({
-                    recipientName,
-                    addonName: p.addonName,
-                    canceledAt: p.canceledAt,
-                    baseUrl: this.deps.siteUrl,
-                    addonSlug: p.addonSlug,
-                    locale: p.locale,
-                    // Undefined for every immediate cancellation, which is what
-                    // keeps the template from promising access the customer no
-                    // longer has (HOS-847 PR 7c).
-                    accessUntil: p.accessUntil
-                });
-            }
-
             case 'ai_cost_threshold_alert': {
                 const p = payload as AiCostThresholdAlertPayload;
                 return AiCostThresholdAlert({
@@ -972,15 +860,6 @@ export class NotificationService {
                 });
             }
 
-            case 'partner_unpaid_notice': {
-                const p = payload as PartnerUnpaidNoticePayload;
-                return PartnerUnpaidNotice({
-                    recipientName,
-                    partnerName: p.partnerName,
-                    daysUntilArchive: p.daysUntilArchive
-                });
-            }
-
             case 'accommodation_calendar_feed_broken': {
                 const p = payload as AccommodationCalendarFeedBrokenPayload;
                 return AccommodationCalendarFeedBroken({
@@ -1060,8 +939,7 @@ export class NotificationService {
         const { payload, status, messageId, error } = params;
 
         try {
-            await db.insert(billingNotificationLog).values({
-                customerId: payload.customerId ?? null,
+            await db.insert(notificationLog).values({
                 type: payload.type,
                 channel: 'email',
                 recipient: payload.recipientEmail,
@@ -1076,8 +954,7 @@ export class NotificationService {
                     messageId: messageId || null,
                     category: NOTIFICATION_CATEGORY_MAP[payload.type],
                     idempotencyKey: payload.idempotencyKey || null,
-                    ...buildAddonLinkMetadata(payload),
-                    // HOS-1171: same reason as the add-on fields above. A comp
+                    // HOS-1171: a comp
                     // email rebuilt on retry without `hadActiveBilling` reverts
                     // to the "you never gave us a card" variant and drops the
                     // only notice that we cancelled the customer's preapproval.

@@ -211,8 +211,10 @@
             "status": {
                 "DRAFT": "Draft",
                 "PUBLISHED": "Published",
-                "SUSPENDED": "Suspended",
-                "INACTIVE": "Paused"
+                "UNPUBLISHED_BY_BILLING": "Unpublished by your plan",
+                "ARCHIVED": "Archived",
+                "MODERATED": "Moderated",
+                "PURGED": "Deleted"
             },
             "actions": {
                 "edit": "Edit",
@@ -238,10 +240,23 @@
             "deleteError": "Could not delete. Please try again.",
             "publishError": "Could not publish. Please try again.",
             "publishSubscriptionRequiredMessage": "You need an active plan to publish.",
+            "publishCheckFailed": "We couldn't check whether you can publish. Reload the page to try again.",
             "publishSubscriptionRequiredCta": "View plans",
             "priceOnRequest": "Price on request",
             "publishMissingRequirementsMessage": "To publish, you still need: {{fields}}.",
-            "publishMissingRequirementsCta": "Complete in the editor"
+            "publishMissingRequirementsCta": "Complete in the editor",
+            "subscribeToPublish": {
+                "title": "Subscribe to publish",
+                "body": "Your listing is still unpublished. To publish it you need a {{vertical}} subscription.",
+                "vertical": {
+                    "accommodation": "accommodation",
+                    "gastronomy": "gastronomy",
+                    "experience": "experiences"
+                }
+            },
+            "unpublishTrialNote": "The free trial keeps running: unpublishing does not stop the trial clock.",
+            "unpublishRecurringNote_one": "You have {{count}} recurring featured placement on this listing: it keeps being charged while unpublished, until you cancel it.",
+            "unpublishRecurringNote_other": "You have {{count}} recurring featured placements on this listing: they keep being charged while unpublished, until you cancel them."
         },
         "editor": {
             "section": {
@@ -456,8 +471,7 @@
                 "title": "Your listing is ready",
                 "body": "You have completed everything that was missing. If you publish now, it will appear on the site, visible to travellers.",
                 "publishNow": "Publish now",
-                "keepEditing": "Keep editing",
-                "blockedTitle": "You need an active plan"
+                "keepEditing": "Keep editing"
             },
             "toast": {
                 "saveSuccess": "Changes saved",
@@ -914,18 +928,15 @@
             "properties": "Properties",
             "promotions": "Promotions",
             "messages": "Messages",
-            "subscription": "Subscription",
-            "addons": "Add-ons"
+            "subscription": "Subscription"
         }
     },
     "pages": {
         "nueva": {
             "trialCalloutTitle_one": "{{trialDays}} free day, no card — only one for accommodation",
             "trialCalloutTitle_other": "{{trialDays}} free days, no card — only one for accommodation",
-            "trialCalloutTitleIneligible": "Set up your property",
             "trialNote_one": "You can build your property now, at your own pace and with no card. The {{trialDays}}-day free trial starts on its own when you publish; there is only one for accommodation, and when it ends, you pick a plan to stay online.",
             "trialNote_other": "You can build your property now, at your own pace and with no card. The {{trialDays}}-day free trial starts on its own when you publish; there is only one for accommodation, and when it ends, you pick a plan to stay online.",
-            "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan.",
             "subtitle": "We'll create the draft with this information. Photos, pricing and the rest go in step 2, from the panel.",
             "precheck": {
                 "pickDraftDeleteOrUpgrade": {

@@ -31,7 +31,7 @@
  * For the `'host'` variant, when the resolver returns `{ locked: true }`:
  *  - Lock icon (`@repo/icons`)
  *  - `admin-dashboard.dashboard.host.views.locked.description` i18n copy
- *  - Focusable CTA `<a>` linking to `/billing/plans`
+ *  - (HOS-1416) the upsell CTA to `/billing/plans` was removed with the billing surface
  *
  * 403 from the views endpoint is already converted to `{ locked: true }` by the
  * resolver — it surfaces here as locked data, NOT as an error state.
@@ -45,6 +45,7 @@
  */
 
 import { LockIcon } from '@repo/icons';
+import { AdminEffectiveSetResponseSchema, VerticalEnum } from '@repo/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { Widget } from '@/config/ia/schema';
@@ -172,16 +173,13 @@ export interface ViewsWidgetProps {
  * Shows:
  * - Lock icon (from `@repo/icons`)
  * - `admin-dashboard.dashboard.host.views.locked.description` copy
- * - CTA anchor linking to `/billing/plans` (focusable, `aria-label`)
+ * - (HOS-1416) the CTA anchor to `/billing/plans` was removed with the billing surface
  */
 function LockedStateBody() {
     const { t } = useTranslations();
 
     const description = t(
         'admin-dashboard.dashboard.host.views.locked.description' as Parameters<typeof t>[0]
-    );
-    const ctaLabel = t(
-        'admin-dashboard.dashboard.host.views.locked.cta' as Parameters<typeof t>[0]
     );
 
     return (
@@ -199,14 +197,9 @@ function LockedStateBody() {
                 />
             </span>
             <p className="font-medium text-foreground text-sm">{description}</p>
-            <a
-                href="/billing/plans"
-                className="mt-1 rounded-md border px-3 py-1.5 text-xs hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                data-testid="views-widget-locked-cta"
-                aria-label={ctaLabel}
-            >
-                {ctaLabel}
-            </a>
+            {/* HOS-1416: the locked-state CTA linked to the deleted
+                /billing/plans page and was removed with the legacy billing
+                surface. An upsell CTA can return with the new billing. */}
         </div>
     );
 }
@@ -328,21 +321,6 @@ interface RawAccommodationViewsResponse {
     }>;
 }
 
-/** Response shape from GET /api/v1/protected/users/me/entitlements. */
-interface RawEntitlementsResponse {
-    readonly success: boolean;
-    readonly data?: {
-        readonly entitlements: ReadonlyArray<string>;
-        readonly limits: Record<string, number>;
-        readonly plan: {
-            readonly slug: string;
-            readonly name: string;
-            readonly status: string;
-        } | null;
-        readonly asOf: string;
-    };
-}
-
 /** Response shape from GET /api/v1/admin/posts (list). */
 interface RawPostsListResponse {
     readonly success: boolean;
@@ -390,19 +368,19 @@ interface RawAdminViewsSummaryResponse {
  * @param window - Time window to fetch (`'7d'` or `'30d'`).
  * @returns HostViewsData payload.
  */
-async function fetchHostViews(window: TimeWindow): Promise<HostViewsData> {
+async function fetchHostViews(window: TimeWindow, userId: string): Promise<HostViewsData> {
     // Proactive entitlement check (mirrors host.stats.views resolver logic).
-    let hasViewBasicStats = true;
+    if (!userId) return { locked: true };
+    let hasViewBasicStats = false;
     try {
-        const entResult = await fetchApi<RawEntitlementsResponse>({
-            path: '/api/v1/protected/users/me/entitlements'
+        const entResult = await fetchApi<{ data: unknown }>({
+            path: `/api/v1/admin/users/${userId}/effective-set?vertical=${VerticalEnum.ACCOMMODATION}`
         });
-        const entitlements = entResult.data.data?.entitlements ?? [];
-        hasViewBasicStats = entitlements.includes('view_basic_stats');
+        const effective = AdminEffectiveSetResponseSchema.parse(entResult.data.data);
+        const value = effective.entitlements.view_basic_stats;
+        hasViewBasicStats = value === 'Infinity' || (typeof value === 'number' && value > 0);
     } catch (_err) {
-        // Both 503 (billing unavailable) and unknown errors fall through
-        // optimistically: try the views endpoint and let the 403 guard below
-        // handle the locked state if needed.
+        return { locked: true };
     }
 
     if (!hasViewBasicStats) {
@@ -620,7 +598,7 @@ export function ViewsWidget({ widget }: ViewsWidgetProps) {
     const windowAwareFn = async () => {
         switch (variant) {
             case 'host':
-                return fetchHostViews(currentWindow);
+                return fetchHostViews(currentWindow, userId);
             case 'editor-posts':
                 return fetchEditorPostViews(currentWindow);
             case 'editor-events':

@@ -15,7 +15,7 @@
  * offering accommodation, gastronomy, and experience — the same options the
  * desktop header's `PublishMenu.client.tsx` renders, sourced from the same
  * `PUBLISH_CTA_OPTIONS` (AC-38). It renders unconditionally, for every
- * visitor including an existing HOST or COMMERCE_OWNER (AC-12) — the old
+ * visitor including an existing HOST or GASTRONOMY_OWNER (AC-12) — the old
  * host-mode shortcut to `/mi-cuenta/propiedades/` is gone; a HOST reaches
  * their properties list via the curated account accordion below instead.
  * A11y molde copied from `UserMenu.client.tsx` (`aria-haspopup="menu"`,
@@ -125,7 +125,7 @@ export function MobileMenuAccountSection({
             {/* "Publicar" submenu — three-way chooser (HOS-691 AC-12/AC-38),
                 same PUBLISH_CTA_OPTIONS source as the desktop header's
                 PublishMenu.client.tsx. Renders unconditionally, including
-                for an existing HOST or COMMERCE_OWNER. */}
+                for an existing HOST or GASTRONOMY_OWNER. */}
             <button
                 ref={publishTriggerRef}
                 type="button"

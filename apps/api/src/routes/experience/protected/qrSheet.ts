@@ -9,15 +9,15 @@
  * the full reasoning for the order of the checks, for why there is NO
  * entitlement gate, for why the code is minted once and reused, and for why the
  * minted destination ignores the downloader's language. As in gastronomy, the
- * staff bypass is `COMMERCE_VIEW_ALL`.
+ * staff bypass is `EXPERIENCE_VIEW_ALL`.
  *
- * ## The publicity check is BOTH clauses, as in accommodation
+ * ## The publicity check is the publication state, as in accommodation
  *
- * `ExperienceService._canView` answers NOT_FOUND to every non-owner on a
- * `lifecycleState !== ACTIVE` row, so `visibility === PUBLIC` alone is not
- * "published". A listing PATCHed to INACTIVE with its visibility untouched would
- * otherwise mint a code and be printed, and every scan of that paper would 404
- * permanently. The gastronomy twin carries the same clause and the same reason.
+ * `ExperienceService._canView` answers NOT_FOUND to every non-owner on a listing
+ * that is not `publicationStatus === PUBLISHED` (V6.9b, HOS-1641). A listing in
+ * any other state would otherwise mint a code and be printed, and every scan of
+ * that paper would 404 permanently. The gastronomy twin carries the same clause
+ * and the same reason.
  *
  * An experience now carries three codes at once, and none of them is a
  * duplicate: `CERTIFICATE` (printed on the certificate), `BROCHURE` (printed on
@@ -30,11 +30,10 @@
 
 import {
     EntityTypeEnum,
-    LifecycleStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     QrCodePurposeEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    ServiceErrorCode
 } from '@repo/schemas';
 import { ExperienceService, entityNotFoundError } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
@@ -50,8 +49,8 @@ import { getActorFromContext } from '../../../utils/actor';
 import { resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import { resolveReturnUrlLocale } from '../../../utils/return-url-locale';
 import { createProtectedRoute } from '../../../utils/route-factory';
-import { resolveReturnUrlLocale } from '../../billing/checkout-return-urls';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -79,17 +78,14 @@ export async function handleGetExperienceQrSheet(
 
     const entity = result.data;
 
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.COMMERCE_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.EXPERIENCE_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
     }
 
-    // BOTH clauses — see the docblock. A row that is PUBLIC but not ACTIVE has
-    // no public page, and a code printed for it 404s on every scan, forever.
-    if (
-        entity.lifecycleState !== LifecycleStatusEnum.ACTIVE ||
-        entity.visibility !== VisibilityEnum.PUBLIC
-    ) {
+    // Only PUBLISHED has a public page (V6.9b, HOS-1641). A code printed for
+    // any other state 404s on every scan, forever.
+    if (entity.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
         // Same canonical message as the branch above, deliberately (HOS-600).
         throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
     }

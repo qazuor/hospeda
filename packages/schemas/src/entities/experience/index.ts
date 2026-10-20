@@ -1,5 +1,5 @@
 /**
- * Experience entity schemas — all schema files for the Experiencias commerce listing.
+ * Experience entity schemas — all schema files for the Experiencias listing.
  *
  * Mirrors the gastronomy barrel: each sub-file has a single responsibility.
  */

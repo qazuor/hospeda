@@ -8,7 +8,8 @@ import { configDefaults, defineConfig } from 'vitest/config';
  * Run with: `pnpm test:integration`.
  *
  * Scope is deliberately narrow: `test/integration/ai/**`, minus the flaky
- * `vault-roundtrip.test.ts` (see the `exclude` below).
+ * `vault-roundtrip.test.ts` (see the `exclude` below), plus
+ * `test/integration/webhooks/**` (HOS-1627).
  *
  * CORRECTION (HOS-715, 2026-08-21): this comment used to claim the other
  * ~243 files under `test/integration/**` (everything outside `ai/**`)
@@ -59,7 +60,38 @@ export default defineConfig({
             './test/e2e/setup/env-setup.ts', // Load env vars FIRST
             './test/e2e/setup/test-database.ts'
         ],
-        include: ['test/integration/ai/**/*.test.ts'],
+        // `webhooks/**` (HOS-1627, TEST:U2:14): the Brevo hard-bounce route
+        // against real rows. It cleans only its own rows, never TRUNCATE.
+        // `outbox/**` (HOS-1425, TEST:U2:2): the outbox sender end to end against
+        // real rows. It cleans only its own rows, never TRUNCATE.
+        include: [
+            'test/integration/ai/**/*.test.ts',
+            'test/integration/webhooks/**/*.test.ts',
+            'test/integration/outbox/**/*.test.ts',
+            'test/integration/billing-deadlines/**/*.test.ts',
+            'test/integration/vertical-deadlines/**/*.test.ts',
+            'test/integration/cutover-v6/**/*.test.ts',
+            'test/integration/plan-publication/**/*.test.ts',
+            'test/integration/billing-subscription/**/*.test.ts',
+            'test/integration/billing-promo/**/*.test.ts',
+            'test/integration/trial/**/*.test.ts',
+            'test/integration/listing-publication/**/*.test.ts',
+            'test/integration/partners/**/*.test.ts',
+            // TEST:V8a:12 and TEST:V8a:13 (HOS-1494): admin action 24.
+            'test/integration/account-closure/**/*.test.ts',
+            // TEST:V5:16 / TEST:V5:17 (HOS-1460): the SUPER_ADMIN-exclusive permissions and action 26.
+            'test/integration/super-admin/**/*.test.ts',
+            // TEST:B5:6 route half (HOS-1540): admin action 14.
+            'test/integration/billing-refund/**/*.test.ts',
+            'test/integration/billing-reconciliation/**/*.test.ts',
+            // TEST:B9a:9 route half (HOS-1584): admin action 2.
+            'test/integration/billing-permanent-grant/**/*.test.ts',
+            // HOS-1687: orphan until now (no config ran it).
+            'test/integration/cross-cutting/lifecycle-public-endpoints.test.ts',
+            // TEST:V5:13 (HOS-1458): the ban gate is the one job the Better
+            // Auth admin plugin keeps. Only this file, not auth/**.
+            'test/integration/auth/banned-user-signin.test.ts'
+        ],
         // `vault-roundtrip.test.ts` is non-deterministically flaky: the
         // credential-create route triggers a fire-and-forget `syncAiProviderModels`
         // (HOS-94 auto-sync on create) that touches the DB asynchronously after
@@ -103,7 +135,7 @@ export default defineConfig({
             '@repo/utils': resolve(__dirname, '../../packages/utils/src'),
             '@repo/config': resolve(__dirname, '../../packages/config/src'),
             '@repo/service-core': resolve(__dirname, '../../packages/service-core/src'),
-            '@repo/billing': resolve(__dirname, '../../packages/billing/src'),
+            '@repo/verticals': resolve(__dirname, '../../packages/verticals/src'),
             '@repo/email': resolve(__dirname, '../../packages/email/src'),
             '@repo/notifications': resolve(__dirname, '../../packages/notifications/src'),
             '@repo/ai-core': resolve(__dirname, '../../packages/ai-core/src'),

@@ -5,16 +5,16 @@
  *
  * No declarative `ownership:` config — MANAGE permission + ownership are
  * enforced inside `removeOccupancy`. Only removes a `source=MANUAL` row; a
- * sync-sourced row for the same date is untouched. The `CAN_USE_CALENDAR`
- * entitlement is enforced HERE at the route via `requireEntitlement` — see
- * the module doc in `addOccupancy.ts` for the full rationale.
+ * sync-sourced row for the same date is untouched. Calendar operations run without the former
+ * `can_use_calendar` on the listing owner through listing access.
+ * The listing access resolver requires the route capability on the owner.
  */
-import { EntitlementKey } from '@repo/billing';
-import { AccommodationIdSchema, OccupancyDateSchema } from '@repo/schemas';
+
+import { AccommodationIdSchema, OccupancyDateSchema, VerticalEnum } from '@repo/schemas';
 import { removeOccupancy } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -29,6 +29,12 @@ const RemoveOccupancyResponseSchema = z.object({ deleted: z.boolean() });
 export const protectedRemoveOccupancyRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/occupancy/{date}',
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        capabilities: ['can_use_calendar'],
+        idParam: 'id'
+    },
     summary: 'Unblock a single day on the occupancy calendar (owner)',
     description:
         'Deletes the source=MANUAL occupancy row for a single date, if any. A ' +
@@ -47,8 +53,5 @@ export const protectedRemoveOccupancyRoute = createProtectedRoute({
         const date = params.date as string;
 
         return await removeOccupancy({ actor, accommodationId, date });
-    },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_USE_CALENDAR)]
     }
 });

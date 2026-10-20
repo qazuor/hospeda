@@ -4,7 +4,7 @@ This package contains the cross-app E2E test suite for the Hospeda platform. Tes
 
 **Dedicated ports / SSOT (SPEC-261).** The suite runs the apps on a dedicated HIGH port block — API `18001`, web `18321`, admin `18000`, Postgres `15433`, Redis `16380`, Mailpit `11025`/`18025` — chosen to sit ABOVE the worktree dev-server range (`wt-ports.sh` starts at `defaultPort+100` → 31xx/44xx) and BELOW the Linux ephemeral range (32768+), so a running worktree never collides with an E2E run. The single source of truth for all of these is [`apps/e2e/.env.e2e`](./.env.e2e); the `e2e:build` / `e2e:test*` scripts source it automatically (`set -a && . ./.env.e2e`), and CI loads the same file into `$GITHUB_ENV`. If you change a port, change it in `.env.e2e` (the `playwright.config.ts` fallbacks and the `docker-compose.e2e.yml` service mappings must be kept in sync — those cannot be sourced at evaluation time).
 
-> **Philosophy.** Every test exercises the real system as close to production as possible. Mocks exist only where real behaviour is impossible to reproduce in CI (e.g. inbound MercadoPago webhook callbacks without ngrok, deterministic QZPay failures via the `qzpay-test-control` flag).
+> **Philosophy.** Every test exercises the real system as close to production as possible. Mocks exist only where real behaviour is impossible to reproduce in CI (e.g. inbound MercadoPago webhook callbacks without ngrok).
 
 ## Quick start (local)
 
@@ -70,7 +70,6 @@ apps/e2e/
 │   ├── mailpit-client.ts         Wait for / read / clear emails via Mailpit API
 │   ├── mp-webhook-helper.ts      Sign + post simulated MP webhooks
 │   ├── cloudinary-client.ts      Verify asset existence/absence in Cloudinary
-│   ├── qzpay-test-control.ts     HTTP client for the QZPay test-only adapter flag
 │   └── revalidation-spy.ts       Assert which paths the system scheduled for revalidation
 ├── seeds/
 │   └── e2e-seed.ts               CLI: reset + seed E2E DB via @repo/seed
@@ -122,7 +121,6 @@ Cleanup uses `SET LOCAL session_replication_role='replica'` to bypass the pre-ex
 | `mailpit-client.ts` | Wait for verification / reset / notification emails | Polls `http://localhost:8025/api/v1/messages`. |
 | `mp-webhook-helper.ts` | Simulated MP webhook POSTs (HMAC-signed) | Used by HOST-02/04/05, RES-04. Real MP sandbox checkout in HOST-02 nightly. |
 | `cloudinary-client.ts` | `assetExists` / `getFolderContents` / `deleteFolder` | Used by ACC-01/04 (real Cloudinary uploads under `hospeda/e2e/{run-id}/`). |
-| `qzpay-test-control.ts` | Inject deterministic QZPay failures (`failNext`, `delayNext`) | Requires `HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true` on the API. Used by HOST-07c/d, RES-01/04. |
 | `revalidation-spy.ts` | Assert which paths the RevalidationService scheduled | Reads from `revalidation_log`. Used by ACC-02 and E2E-10. |
 
 ## Modes
@@ -134,6 +132,41 @@ Cleanup uses `SET LOCAL session_replication_role='replica'` to bypass the pre-ex
 | (unset) | 1 | 0 | Local dev — fast feedback |
 | `pr` | 4 | 1 | PR CI — `e2e-pr.yml` |
 | `nightly` | 2 | 2 | Nightly CI — `e2e-nightly.yml` (rate-limited externals) |
+
+### Fake payment provider server (HOS-1511)
+
+`@repo/payments/fake-server` is a test-only HTTP shell around a `FakePaymentProvider`.
+The Playwright helper in `fixtures/fake-provider-server.ts` owns its lifecycle on
+`127.0.0.1:18090`; the API build points at it through
+`HOSPEDA_MERCADO_PAGO_API_BASE_URL` in `playwright.config.ts`. The server exposes
+the Mercado Pago-shaped authorization routes and records each received request
+with the fake clock's timestamp. Tests construct the provider themselves and can
+switch it with `useProvider`, so the same default lies and named `honestAbout`
+exceptions apply over HTTP.
+
+The helper's adjustable clock writes to
+`apps/e2e/test-results/fake-provider-clock.json`; the API reads that path through
+`HOSPEDA_E2E_CLOCK_FILE`. Moving the clock changes API time reads, including
+persisted authorization windows. The API jobs still run on their real schedule,
+and web/admin have no independent clock: their displayed dates come from API
+responses. Tests that exercise this fixed port must run serially and close the
+server in `afterAll`. Closing the E2E fake provider also removes the clock file,
+so a later API read falls back to system time.
+
+### Clock-moving specs (`@clock`) and the mail capture server (HOS-1449)
+
+Specs tagged `@clock` move the one file-backed clock used by the built API. The
+`e2e:test` and `e2e:test:p0` scripts run other specs first, then run clock-moving
+specs alone with one worker. This prevents one test's clock from expiring data
+owned by another concurrently running test.
+
+The local Brevo-shaped capture server listens on port `18091` and accepts only
+`POST /smtp/email`. `fixtures/mail-capture-server.ts` exports `mailsTo({ to })`
+and `waitForMail({ to, subject, timeoutMs })` for querying captured messages.
+The outbox sender has no E2E cron of its own because `HOSPEDA_CRON_ADAPTER` is
+`manual`; trigger it as `SUPER_ADMIN` with
+`POST /api/v1/admin/cron/email-outbox-sender`, just like
+`trial-machine-expiry`. Closing the fake provider removes its file-backed clock.
 
 ## Concrete fixture usage
 
@@ -156,9 +189,10 @@ if (!planId) {
 }
 await createSubscription({ userId: host.id, planId, status: 'active' });
 
+// import { PublicationStatusEnum } from '@repo/schemas';
 const accommodation = await createAccommodation({
     ownerId: host.id,
-    lifecycleState: 'ACTIVE',
+    publicationStatus: PublicationStatusEnum.PUBLISHED,
     slugPrefix: '<test-id>'
 });
 ```
@@ -181,18 +215,10 @@ await page.context().addCookies(
 ### Conditional skip when an external is not configured
 
 ```ts
-const qzpayControl = createQZPayTestControl(API_URL);
-try {
-    await qzpayControl.snapshot();          // any method — first 404 reveals the gate
-} catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    test.fixme(
-        /qzpay-test-control endpoint not mounted/.test(msg),
-        'qzpay-test-control disabled — set HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true on API'
-    );
-    return;
-}
-await qzpayControl.reset();                 // clear queues + recorded calls between tests
+test.fixme(
+    !process.env.HOSPEDA_CLOUDINARY_CLOUD_NAME,
+    'Cloudinary not configured — set the HOSPEDA_CLOUDINARY_* variables for the E2E run'
+);
 ```
 
 ### Revalidation assertion (audit-log driven)
@@ -243,11 +269,11 @@ const rows = await execSQL<AddonPurchaseRow>(`SELECT id, status, customer_id FRO
 ## Common pitfalls (discovered during authoring)
 
 1. **`interface` rejected by `execSQL<T>`.** Use `type X = { ... } & Record<string, unknown>` instead. TS 5 does not auto-widen interfaces to satisfy the index-signature constraint.
-2. **Snake-case columns vs camelCase fields.** DB columns are snake_case (`first_name`, `lifecycle_state`); request bodies / API responses are camelCase (`firstName`, `lifecycleState`). Don't mix them in `execSQL` projections.
+2. **Snake-case columns vs camelCase fields.** DB columns are snake_case (`first_name`, `publication_status`); request bodies / API responses are camelCase (`firstName`, `publicationStatus`). Don't mix them in `execSQL` projections.
 3. **`createSubscription` requires a real plan id.** The fixture inserts a `billing_subscriptions` row; the FK to `billing_plans.id` is enforced at the DB level. Always pull the plan id from a `SELECT id FROM billing_plans WHERE is_active = true` first; do NOT pass a hard-coded UUID.
 4. **`drizzle-kit push` is not enough.** Triggers, materialized views, and JSONB CHECK constraints on `billing_addon_purchases` are invisible to Drizzle. After any push, run `packages/db/scripts/apply-postgres-extras.sh`. The E2E seed step does this automatically; manual runs must too.
 5. **Cancellation has TWO bits to flip.** `status='cancelled'` AND `current_period_end` (preserved during grace, forced past for expired). HOST-04 / E2E-8 both exercise this; copy that pattern rather than rolling your own.
-6. **`test.fixme(condition, reason)` accepts a runtime check.** Use it for env-gated test legs (no MP secret, no Cloudinary creds, no qzpay-test-control mount) — the test reports `fixme` in the HTML report rather than `skip`, which is a contract requirement (rule #7).
+6. **`test.fixme(condition, reason)` accepts a runtime check.** Use it for env-gated test legs (no MP secret, no Cloudinary creds) — the test reports `fixme` in the HTML report rather than `skip`, which is a contract requirement (rule #7).
 7. **Webhook endpoint dispatch by URL segment.** `payment.*` events go to `/api/v1/webhooks/mercadopago/payment`; everything else to `/notifications`. The `mp-webhook-helper.ts` routes correctly — don't override `routeForEvent`.
 8. **Soft delete may keep the row visible to admin.** The protected DELETE on accommodations sets `deleted_at`; the public surface returns `404`/`null` but the admin surface may still expose the row (with the deleted flag). When asserting "gone", target the public endpoint, not the admin one.
 9. **Rate limits hit during burst tests.** `createSimpleRoute({customRateLimit: ...})` is enforced before middleware-level pool exhaustion. RES-02's 100-concurrent-burst may saturate the rate limit window before the pool. Both 429 and 503 are accepted — explicitly avoid asserting "exactly 503".
@@ -286,9 +312,8 @@ const rows = await execSQL<AddonPurchaseRow>(`SELECT id, status, customer_id FRO
 | `500` from `/admin/billing/...` for super_admin | Permission check missing the right `PermissionEnum` | Confirm `createUser({role:'SUPER_ADMIN'})` was used; `setUserRole` writes the hat to `user_role` and leaves the set at exactly `{USER, <requested>}` |
 | `column "role" does not exist` from any `execSQL` | Query still targets the `users.role` scalar, dropped by HOS-296 | Read hats with `getUserRoles(userId)` (fixtures/db-helpers.ts); write them with `setUserRole` / `demoteHostToUser`. Never `SELECT`/`UPDATE` `users.role` |
 | Mailpit timeout | SMTP transport not wired OR the email subject regex doesn't match locale | Check Mailpit web UI at :8025 for the actual subject line |
-| `qzpay-test-control endpoint not mounted` | Env gate missing on the API process | Restart API with `HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true` |
 | Webhook returns 401 | HMAC signature mismatch | Confirm `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` is set in BOTH the API process and this test process |
-| `lifecycle_state` returns `'DRAFT'` after PATCH `lifecycleState:'ACTIVE'` | Subscription gate blocked publish — paywall returned 402/403 | Inspect the response status; look for HOST-07b / HOST-04 expected behavior |
+| `publication_status` returns `'DRAFT'` after `POST .../publish` | Subscription gate blocked publish — paywall returned 402/403 | Inspect the response status; look for HOST-07b / HOST-04 expected behavior |
 | Save button enabled + clicked but `waitForResponse(PATCH)` times out, no request in the network log | Cookie-consent banner backdrop intercepting the click (pitfall #11) | Add `seedCookieConsent(page)` in a `test.beforeEach` (fixtures/browser-helpers.ts) |
 
 ## CI scripts (`scripts/ci/`)

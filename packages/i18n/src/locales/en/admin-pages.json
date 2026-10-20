@@ -628,7 +628,6 @@
                 "POST_COMMENT": "Post Comments",
                 "RECOMMENDATION": "Recommendations",
                 "MODERATION": "Moderation",
-                "COMMERCE": "Commerce",
                 "GASTRONOMY": "Gastronomy",
                 "EXPERIENCE": "Experiences",
                 "HOST_TRADE": "Host Trade",
@@ -656,7 +655,7 @@
             "permissionModel": "Permission model",
             "groupContentManagement": "Content Management",
             "groupUserAccess": "User & Access",
-            "groupCommerceBilling": "Commerce & Billing",
+            "groupListingsBilling": "Listings & Billing",
             "groupMarketingAdvertising": "Marketing & Advertising",
             "groupServicesListings": "Services & Listings",
             "groupSystemConfiguration": "System & Configuration",
@@ -743,17 +742,6 @@
                         "cap5": "Contact hosts"
                     }
                 },
-                "COMMERCE_OWNER": {
-                    "name": "Commerce Owner",
-                    "description": "Owner of a commerce listing who manages their own business profile",
-                    "capabilities": {
-                        "cap1": "Manage their commerce listing",
-                        "cap2": "Update opening hours and contact details",
-                        "cap3": "Upload photos",
-                        "cap4": "Reply to reviews",
-                        "cap5": "View their commerce analytics"
-                    }
-                },
                 "GASTRONOMY_OWNER": {
                     "name": "Gastronomy Owner",
                     "description": "Owner of a restaurant, bar or café who manages their own listing (no access to experiences)",
@@ -774,6 +762,13 @@
                         "cap3": "Upload photos",
                         "cap4": "Reply to reviews",
                         "cap5": "View their experience analytics"
+                    }
+                },
+                "PARTNER_OWNER": {
+                    "name": "Partner",
+                    "description": "Owner of a Partner's public presence (page and carousel). Granted when they claim their presence",
+                    "capabilities": {
+                        "cap1": "Manage their Partner presence"
                     }
                 },
                 "SPONSOR": {
@@ -826,6 +821,37 @@
                 "count_other": "{{count}} accommodations",
                 "empty": "This user has no linked accommodations.",
                 "error": "We couldn't load this user's accommodations."
+            },
+            "trialSummary": {
+                "title": "Free trial",
+                "description": "Accumulated trial days by vertical and where they came from.",
+                "none": "No free trial in this vertical.",
+                "consumedWithoutClock": "The trial was already used; it has no clock or days.",
+                "error": "We couldn't read this vertical's trial.",
+                "vertical": {
+                    "accommodation": "Accommodation",
+                    "gastronomy": "Gastronomy",
+                    "experience": "Experiences"
+                },
+                "status": {
+                    "TRIAL_ACTIVE": "Active",
+                    "TRIAL_EXPIRED": "Expired",
+                    "TRIAL_CONVERTED": "Converted"
+                },
+                "total_one": "{{count}} trial day in total",
+                "total_other": "{{count}} trial days in total",
+                "totalWithCeiling_one": "{{total}} of {{count}} day max.",
+                "totalWithCeiling_other": "{{total}} of {{count}} days max.",
+                "ceilingReached": "The trial day limit has been reached: only a SUPER_ADMIN extension can exceed it.",
+                "origins": {
+                    "base_one": "{{count}} from the plan",
+                    "base_other": "{{count}} from the plan",
+                    "promo_one": "{{count}} from promotions",
+                    "promo_other": "{{count}} from promotions",
+                    "support_one": "{{count}} granted by support",
+                    "support_other": "{{count}} granted by support"
+                },
+                "dates": "From {{start}} to {{end}}"
             },
             "publications": {
                 "title": "User publications",
@@ -910,7 +936,30 @@
                 "selectRolePlaceholder": "Select a role to grant",
                 "reasonPlaceholder": "Reason for this grant (optional, recorded in the audit trail)",
                 "revokeReasonPlaceholder": "Reason for this revoke (optional, recorded in the audit trail)",
-                "changesTakeEffectNextRequest": "Changes take effect on the user's next request"
+                "changesTakeEffectNextRequest": "Changes take effect on the user's next request",
+                "superAdmin": {
+                    "title": {
+                        "assign": "Grant the SUPER_ADMIN role",
+                        "remove": "Remove the SUPER_ADMIN role"
+                    },
+                    "description": {
+                        "assign": "You are granting the SUPER_ADMIN role to {{name}} ({{email}}). With this role, they will be able to perform these actions:",
+                        "remove": "You are removing the SUPER_ADMIN role from {{name}} ({{email}}). They will no longer be able to perform these actions:"
+                    },
+                    "reasonLabel": "Reason (required)",
+                    "reasonPlaceholder": "Enter the reason that will be recorded in the audit log",
+                    "confirm": { "assign": "Grant role", "remove": "Remove role" },
+                    "cancel": "Cancel",
+                    "rows": {
+                        "ACC_17": "Migrate customers from a retired plan",
+                        "ACC_18": "Publish a plan version",
+                        "ACC_19": "Set a billing cycle price",
+                        "ACC_20": "Publish an add-on version",
+                        "ACC_21": "Create or close a promotional code",
+                        "ACC_22": "Change a deadline",
+                        "ACC_26": "Assign or remove the SUPER_ADMIN role"
+                    }
+                }
             }
         }
     },

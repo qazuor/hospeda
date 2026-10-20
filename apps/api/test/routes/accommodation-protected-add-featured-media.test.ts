@@ -21,17 +21,16 @@
  * @module test/routes/accommodation-protected-add-featured-media
  */
 
-import { LimitKey } from '@repo/billing';
-import { ModerationStatusEnum } from '@repo/schemas';
+import { ModerationStatusEnum, PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Hoist mocks
 // ---------------------------------------------------------------------------
 
-const { mockAddFeaturedMedia, mockGetRemainingLimit } = vi.hoisted(() => ({
-    mockAddFeaturedMedia: vi.fn(),
-    mockGetRemainingLimit: vi.fn()
+const { mockAddFeaturedMedia } = vi.hoisted(() => ({
+    mockAddFeaturedMedia: vi.fn()
 }));
 
 vi.mock('@repo/service-core', async () => {
@@ -46,16 +45,6 @@ vi.mock('@repo/service-core', async () => {
     };
 });
 
-// Only `getRemainingLimit` is replaced — `requireEntitlement` must stay real,
-// or the test would prove the route works with its own gate removed.
-vi.mock('../../src/middlewares/entitlement.js', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../src/middlewares/entitlement.js')>();
-    return {
-        ...actual,
-        getRemainingLimit: mockGetRemainingLimit
-    };
-});
-
 vi.mock('../../src/utils/logger.js', () => ({
     apiLogger: {
         debug: vi.fn(),
@@ -63,6 +52,28 @@ vi.mock('../../src/utils/logger.js', () => ({
         warn: vi.fn(),
         error: vi.fn()
     }
+}));
+
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: { ownerId: ACTOR_ID, publicationStatus: PublicationStatusEnum.PUBLISHED },
+            ownerId: ACTOR_ID
+        }),
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [
+                    { key: 'edit_accommodation_info', value: 1, strategy: 'MAX' },
+                    { key: 'max_photos_per_accommodation', value: 15, strategy: 'SUM' }
+                ]
+            })
+    })
 }));
 
 const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -161,7 +172,6 @@ describe('POST /:id/media/featured — cover upload (HOS-803)', () => {
         app = initApp();
 
         // A 15-photo plan, which is what the reported bug was about.
-        mockGetRemainingLimit.mockReturnValue(15);
         mockAddFeaturedMedia.mockResolvedValue({
             data: { media: CREATED_COVER, previousFeatured: null },
             error: undefined
@@ -201,7 +211,6 @@ describe('POST /:id/media/featured — cover upload (HOS-803)', () => {
         // The plan allows 15 and the owner is at 15. The old flow answered
         // LIMIT_REACHED here; this route must not. The swap deletes the cover
         // it replaces, so it moves the gallery by zero either way.
-        mockGetRemainingLimit.mockReturnValue(15);
 
         const res = await app.request(URL, requestCover());
 
@@ -211,26 +220,12 @@ describe('POST /:id/media/featured — cover upload (HOS-803)', () => {
 
     // ── The evasion boundary ───────────────────────────────────────────────
 
-    it('takes the plan cap from the entitlement context, not the request', async () => {
-        mockGetRemainingLimit.mockReturnValue(15);
-
-        await app.request(URL, requestCover());
-
-        expect(mockGetRemainingLimit).toHaveBeenCalledWith(
-            expect.anything(),
-            LimitKey.MAX_PHOTOS_PER_ACCOMMODATION
-        );
-        expect(serviceInput()?.planGalleryCap).toBe(15);
-    });
-
     it('ignores a planGalleryCap smuggled into the body', async () => {
-        mockGetRemainingLimit.mockReturnValue(15);
-
         await app.request(URL, requestCover({ ...VALID_BODY, planGalleryCap: 9999 }));
 
         const input = serviceInput();
         // The server's number, never the caller's.
-        expect(input?.planGalleryCap).toBe(15);
+        expect(input?.planGalleryCap).toBeUndefined();
         expect((input?.media as Record<string, unknown>).planGalleryCap).toBeUndefined();
     });
 
@@ -241,14 +236,6 @@ describe('POST /:id/media/featured — cover upload (HOS-803)', () => {
         // any more than the gallery endpoint can ask for a cover.
         const media = serviceInput()?.media as Record<string, unknown>;
         expect(media.isFeatured).toBeUndefined();
-    });
-
-    it('passes an unlimited plan through as -1 rather than inventing a cap', async () => {
-        mockGetRemainingLimit.mockReturnValue(-1);
-
-        await app.request(URL, requestCover());
-
-        expect(serviceInput()?.planGalleryCap).toBe(-1);
     });
 
     // ── Error mapping ──────────────────────────────────────────────────────

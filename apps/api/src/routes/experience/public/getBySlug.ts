@@ -4,11 +4,7 @@
  * Returns null (404) when the listing is not found or not publicly visible.
  */
 import { ExperiencePublicSchema } from '@repo/schemas';
-import {
-    ExperienceService,
-    resolveOwnerGrantsExperienceDirections,
-    ServiceError
-} from '@repo/service-core';
+import { ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
@@ -16,8 +12,8 @@ import { getActorFromContext } from '../../../utils/actor';
 import {
     fetchExperienceAmenities,
     fetchExperienceFeatures
-} from '../../../utils/commerce-catalog-relations';
-import { withPublicVisibleFaqs } from '../../../utils/commerce-faq-visibility';
+} from '../../../utils/listing-catalog-relations';
+import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 import { applyExperienceDirectionsGate } from './directions-projection';
@@ -65,17 +61,11 @@ export const publicGetExperienceBySlugRoute = createPublicRoute({
         // renders nothing for either, and an empty array on the wire would read
         // as "loaded, and there are none" from a payload that never joined.
         //
-        // HOS-1049: the how-to-get-there half is resolved in the same parallel
-        // batch and gated by a LIVE check —
-        // `resolveOwnerGrantsExperienceDirections` reads the provider's CURRENT
-        // experience subscription, not whatever plan was active when the
-        // instructions were typed. See the resolver's own doc for why this is a
-        // live read rather than a synced column, and note that the meeting point
-        // and its coordinates are NOT part of the gate: they ship on every tier.
-        const [amenitiesData, featuresData, ownerGrantsDirections] = await Promise.all([
+        // HOS-1049: keep directions hidden until replacement coverage exists;
+        // the meeting point and coordinates remain public.
+        const [amenitiesData, featuresData] = await Promise.all([
             fetchExperienceAmenities(experience.id),
-            fetchExperienceFeatures(experience.id),
-            resolveOwnerGrantsExperienceDirections({ ownerId: experience.ownerId })
+            fetchExperienceFeatures(experience.id)
         ]);
 
         // The gate wraps the WHOLE object rather than being spread into it: it
@@ -85,12 +75,12 @@ export const publicGetExperienceBySlugRoute = createPublicRoute({
         return applyExperienceDirectionsGate({
             experience: {
                 ...withPublicVisibleFaqs(experience),
-                // HOS-1286: PUBLIC tier ORs the two featuring sources.
+                // HOS-1286: PUBLIC tier derives `isFeatured` from `featuredByEntitlement`.
                 isFeatured: resolvePublicIsFeatured(experience),
                 amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
                 features: featuresData.length > 0 ? featuresData : undefined
             },
-            ownerGrantsDirections
+            ownerGrantsDirections: false
         });
     },
     options: {

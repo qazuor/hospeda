@@ -2,26 +2,24 @@
  * POST /api/v1/protected/gastronomies/:id/faqs
  * Add a new FAQ to a gastronomy listing (T-044)
  *
- * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
+ * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).
  * displayOrder is auto-assigned by addGastronomyFaq() as max(existing)+1.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     FaqWithChannelVisibilityCreatePayloadSchema,
     type FaqWithChannelVisibilityCreatePayloadType,
     type GastronomyFaqAddInput,
     GastronomyFaqSingleOutputSchema,
-    ProductDomainEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { addGastronomyFaq, GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -31,12 +29,14 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone FAQ helper without requiring a public accessor.
  */
-export const protectedAddGastronomyFaqRoute = createCRUDRoute({
+export const protectedAddGastronomyFaqRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/faqs',
     summary: 'Add FAQ to gastronomy listing',
     description: 'Adds a new frequently asked question to a gastronomy listing',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy FAQs'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -65,18 +65,5 @@ export const protectedAddGastronomyFaqRoute = createCRUDRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // HOS-1275: mirrors the gate `patch.ts` mounted under HOS-1074. The
-        // vertical loader MUST come first — the global `entitlementMiddleware`
-        // has already put the ACCOMMODATION set in the context, and that set
-        // never carries a gastronomy key, so a gate mounted without this ahead
-        // of it refuses every caller, including the ones whose plan grants
-        // exactly this.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO),
-            requireLiveSubscription(ProductDomainEnum.GASTRONOMY)
-        ]
     }
 });

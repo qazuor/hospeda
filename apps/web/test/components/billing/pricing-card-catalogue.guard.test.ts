@@ -14,7 +14,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ALL_PLANS, LimitKey } from '@repo/billing';
+import { LimitKeyEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { filterPlansByCategory } from '@/lib/billing/fetch-plans';
@@ -46,18 +46,15 @@ function apiPlan(input: Partial<PublicPlanData> & Pick<PublicPlanData, 'slug'>):
         name: input.slug,
         description: '',
         category: 'owner',
+        vertical: 'accommodation',
         monthlyPriceArs: 1000,
         annualPriceArs: null,
-        monthlyPriceUsdRef: 1,
         hasTrial: false,
         trialDays: 0,
-        isDefault: false,
         sortOrder: 1,
         isActive: true,
         entitlements: [],
         limits: {},
-        createdAt: '',
-        updatedAt: '',
         ...input
     };
 }
@@ -76,20 +73,16 @@ describe('what reaches the pricing grid', () => {
         expect(filterPlansByCategory(plans, 'owner').map((p) => p.slug)).toEqual(['owner-basico']);
     });
 
-    it('drops the complex tier from the owner grid', () => {
-        // The complex plans are `category: 'complex'` AND inactive; either
-        // alone excludes them. Asserted so a future change to one of the two
-        // does not silently surface them on the owner pricing page.
+    it('keeps tourist plans out of accommodation pricing (AC:B13a:11)', () => {
         const plans = [
-            apiPlan({ slug: 'owner-basico', category: 'owner', sortOrder: 1 }),
-            apiPlan({ slug: 'complex-basico', category: 'complex', isActive: false, sortOrder: 2 }),
-            apiPlan({ slug: 'complex-pro', category: 'complex', isActive: true, sortOrder: 3 })
+            apiPlan({ slug: 'host-standard', vertical: 'accommodation', sortOrder: 1 }),
+            apiPlan({ slug: 'tourist-vip', category: 'tourist', vertical: 'tourist', sortOrder: 2 })
         ];
 
         const owner = filterPlansByCategory(plans, 'owner');
 
-        expect(owner.map((p) => p.slug)).toEqual(['owner-basico']);
-        expect(owner.some((p) => p.slug.startsWith('complex-'))).toBe(false);
+        expect(owner.map((plan) => plan.slug)).toEqual(['host-standard']);
+        expect(owner.some((plan) => plan.vertical === 'tourist')).toBe(false);
     });
 
     it('returns tiers ordered by sortOrder, which is what makes the delta cumulative', () => {
@@ -113,25 +106,10 @@ describe('what reaches the pricing grid', () => {
 });
 
 describe('plan-card copy (AC-12, AC-13, AC-15, AC-16)', () => {
-    const ownerAndTouristSlugs = ALL_PLANS.filter(
-        (plan) => plan.category === 'owner' || plan.category === 'tourist'
-    ).map((plan) => plan.slug);
-
-    it('covers every owner and tourist plan with a "recommended for" profile', () => {
-        // AC-12: no card without a profile. The key is resolved from a template
-        // literal (`pricing.recommendedFor.plan.${slug}`), which the repo's
-        // i18n key-coverage guard cannot see — so it is asserted here.
-        expect(ownerAndTouristSlugs.length).toBeGreaterThan(0);
-
-        for (const locale of LOCALES) {
-            const pricing = readLocaleJson(locale, 'pricing.json');
-            for (const slug of ownerAndTouristSlugs) {
-                const value = at(pricing, `recommendedFor.plan.${slug}`);
-                expect(typeof value, `${locale} / ${slug}`).toBe('string');
-                expect((value as string).length, `${locale} / ${slug}`).toBeGreaterThan(0);
-            }
-        }
-    });
+    // HOS-1416: the per-plan "recommended for" coverage sweep over ALL_PLANS
+    // was retired with the static plan catalog it enumerated — the plan source
+    // of truth is now the database. The generic-profile, limit-copy and
+    // trial-copy guards below still hold.
 
     it('provides a generic profile per audience, so an uncurated slug still gets one', () => {
         for (const locale of LOCALES) {
@@ -145,9 +123,9 @@ describe('plan-card copy (AC-12, AC-13, AC-15, AC-16)', () => {
     });
 
     it('explains every limit key in the catalogue, in all three locales', () => {
-        // AC-13. Keyed off the LimitKey enum, so a new limit fails here rather
+        // AC-13. Keyed off the LimitKeyEnum enum, so a new limit fails here rather
         // than degrading to an English catalogue description on a Spanish page.
-        const keys = Object.values(LimitKey);
+        const keys = Object.values(LimitKeyEnum);
         expect(keys.length).toBeGreaterThan(0);
 
         for (const locale of LOCALES) {
@@ -163,7 +141,7 @@ describe('plan-card copy (AC-12, AC-13, AC-15, AC-16)', () => {
     it('gives every limit a label as well as an explanation', () => {
         for (const locale of LOCALES) {
             const billing = readLocaleJson(locale, 'billing.json');
-            for (const key of Object.values(LimitKey)) {
+            for (const key of Object.values(LimitKeyEnum)) {
                 expect(typeof at(billing, `comparison.limitLabel.${key}`), `${locale}/${key}`).toBe(
                     'string'
                 );
@@ -191,7 +169,7 @@ describe('plan-card copy (AC-12, AC-13, AC-15, AC-16)', () => {
         // reading the catalogue.
         //
         // This covers the two subtrees HOS-943 added. The generalised version —
-        // the whole of `pricing.json` and `commerce.json`, in all three locales,
+        // the whole of `pricing.json`, `gastronomy.json` and `experience.json`, in all three locales,
         // anchored on the digit-next-to-a-day-unit token rather than on any key
         // — lives in `packages/i18n/test/trial-days-not-hardcoded.guard.test.ts`
         // (HOS-941 R-2). Keep both: this one runs in apps/web's suite over the

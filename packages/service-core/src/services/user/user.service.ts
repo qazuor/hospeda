@@ -51,6 +51,7 @@ import {
     UserUpdateAvatarInputSchema,
     UserUpdateInputSchema
 } from '@repo/schemas';
+import { resolveRoleAssignmentAction } from '@repo/verticals';
 import { inArray, type SQL, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -626,6 +627,11 @@ export class UserService extends BaseCrudService<
             ctx,
             execute: async ({ userId, role }, actor, execCtx) => {
                 canAssignRole(actor);
+                if (resolveRoleAssignmentAction({ role }) !== null)
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'SUPER_ADMIN uses action 26'
+                    );
                 const user = await this.model.findById(userId, execCtx?.tx);
                 if (!user) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');

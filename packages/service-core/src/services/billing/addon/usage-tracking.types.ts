@@ -2,7 +2,7 @@
  * Usage Tracking Types and Pure Functions
  *
  * Shared types and pure utility functions for the usage tracking system.
- * These track resource usage against plan limits with threshold warnings.
+ * These threshold helpers remain available during the billing transition.
  *
  * @module services/billing/addon/usage-tracking.types
  */

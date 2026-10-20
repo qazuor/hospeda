@@ -12,6 +12,7 @@
  * @module routes/cron-admin
  */
 
+import { randomUUID } from 'node:crypto';
 import {
     type CronCategory,
     CronJobsAdminListSchema,
@@ -20,6 +21,7 @@ import {
     PermissionEnum
 } from '@repo/schemas';
 import { CronRunService } from '@repo/service-core';
+import { MARKET_TIMEZONE } from '@repo/utils';
 import { CronExpressionParser } from 'cron-parser';
 import cronstrue from 'cronstrue/i18n.js';
 import type { Context } from 'hono';
@@ -63,11 +65,18 @@ const humanizeSchedule = (expr: string): string => {
     }
 };
 
-/** Computes the next run for an enabled job; null when disabled or unparseable. */
+/**
+ * Computes the next run for an enabled job; null when disabled or unparseable.
+ * Read on the market wall clock, the zone the scheduler registers every job in
+ * (HOS-1424).
+ */
 const computeNextRun = (expr: string, enabled: boolean): string | null => {
     if (!enabled) return null;
     try {
-        return CronExpressionParser.parse(expr).next().toDate().toISOString();
+        return CronExpressionParser.parse(expr, { tz: MARKET_TIMEZONE })
+            .next()
+            .toDate()
+            .toISOString();
     } catch {
         return null;
     }
@@ -175,23 +184,32 @@ export const triggerCronJobHandler = async (
 
     const startTime = Date.now();
     const startedAt = new Date();
+    // HOS-1424 (AC:U2:9): every run carries its own run id AND its own run
+    // correlation, minted here like on a scheduled tick. It is NOT the admin
+    // request's correlation (still echoed on the HTTP response by the edge
+    // middleware): two triggers sent with the same header are two runs.
+    const runId = randomUUID();
+    const correlationId = randomUUID();
+    const ids = { runId, correlationId };
 
     const jobContext: CronJobContext = {
         logger: {
             info: (message: string, data?: Record<string, unknown>) => {
-                apiLogger.info({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...data });
+                apiLogger.info({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...ids, ...data });
             },
             warn: (message: string, data?: Record<string, unknown>) => {
-                apiLogger.warn({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...data });
+                apiLogger.warn({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...ids, ...data });
             },
             error: (message: string, data?: Record<string, unknown>) => {
-                apiLogger.error({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...data });
+                apiLogger.error({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...ids, ...data });
             },
             debug: (message: string, data?: Record<string, unknown>) => {
-                apiLogger.debug({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...data });
+                apiLogger.debug({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...ids, ...data });
             }
         },
         startedAt,
+        runId,
+        correlationId,
         dryRun
     };
 

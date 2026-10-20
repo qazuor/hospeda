@@ -224,10 +224,9 @@ export class OwnerPromotionService extends BaseCrudService<
         // _executeAdminSearch) is unaffected and honors caller filters.
         const filterParams = { ...params };
         filterParams.lifecycleState = LifecycleStatusEnum.ACTIVE;
-        // SPEC-167 T-004: plan-restricted promotions are excluded from all public reads.
         // SPEC-285 FIX 2: deletedAt: null guards against soft-deleted promos leaking
         // through the generic path (the D-4 path already filters these in the model).
-        const publicFilter = { ...filterParams, planRestricted: false, deletedAt: null };
+        const publicFilter = { ...filterParams, deletedAt: null };
 
         // G-3 active-window: only return promos that are currently valid.
         // Added in SPEC-285 T-003a — previously the service did not filter by date.
@@ -261,11 +260,9 @@ export class OwnerPromotionService extends BaseCrudService<
         // and items never diverge even if a caller injects a lifecycleState.
         const filterParams = { ...params };
         filterParams.lifecycleState = LifecycleStatusEnum.ACTIVE;
-        // SPEC-167 T-004: plan-restricted promotions must NOT count toward the
-        // MAX_ACTIVE_PROMOTIONS cap.
         // SPEC-285 FIX 2: mirror deletedAt: null from _executeSearch so counts
         // and items never diverge on soft-deleted rows.
-        const publicFilter = { ...filterParams, planRestricted: false, deletedAt: null };
+        const publicFilter = { ...filterParams, deletedAt: null };
 
         // G-3 active-window: mirror _executeSearch so count and items never diverge.
         const now = new Date();
@@ -406,7 +403,7 @@ export class OwnerPromotionService extends BaseCrudService<
      * request VIP-tier deals by supplying a query parameter — passing an
      * untrusted scope here would be a broken-access-control bug.
      *
-     * Reuses the same active-window / planRestricted / deletedAt / ACTIVE
+     * Reuses the same active-window / deletedAt / ACTIVE
      * filtering as the generic public search path, plus the audience scope.
      *
      * @param actor - The actor performing the read (public-view permission).
@@ -440,7 +437,6 @@ export class OwnerPromotionService extends BaseCrudService<
 
                 const publicFilter: Record<string, unknown> = {
                     lifecycleState: LifecycleStatusEnum.ACTIVE,
-                    planRestricted: false,
                     deletedAt: null
                 };
                 if (validated.accommodationId) {

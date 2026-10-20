@@ -5,17 +5,17 @@
  * @route POST /api/v1/protected/user-bookmarks
  */
 import {
+    ServiceErrorCode,
     type UserBookmarkCreateInput,
     UserBookmarkCreateInputSchema,
-    UserBookmarkSchema
+    UserBookmarkSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { ServiceError, UserBookmarkService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { assertFavoritesLimitOrThrow } from '../../../middlewares/limit-enforcement';
-import { gateFavorites } from '../../../middlewares/tourist-entitlements';
-import type { AppBindings } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -50,6 +50,12 @@ export const createUserBookmarkRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const input = body as Omit<UserBookmarkCreateInput, 'userId'>;
 
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['save_favorites']
+        });
+
         // Check if bookmark already exists for this user + entity + entityType
         const existingResult = await bookmarkService.findExistingBookmark(actor, {
             userId: actor.id,
@@ -66,12 +72,22 @@ export const createUserBookmarkRoute = createProtectedRoute({
             return { toggled: false, bookmark: null };
         }
 
-        // Bookmark does not exist: this is a toggle-ON (adding a new favorite).
-        // Enforce the plan's MAX_FAVORITES limit HERE, not as a route middleware,
-        // so that the toggle-OFF branch above is never blocked — a user at their
-        // cap must still be able to remove favorites to free up space (BETA-42).
-        await assertFavoritesLimitOrThrow({ context: ctx as Context<AppBindings>, actor });
-
+        const countResult = await bookmarkService
+            .countBookmarksForUser(actor, { userId: actor.id })
+            .catch(() => {
+                throw new ServiceError(
+                    ServiceErrorCode.SERVICE_UNAVAILABLE,
+                    'Usage count unavailable'
+                );
+            });
+        if (countResult.error || !countResult.data) {
+            throw new ServiceError(ServiceErrorCode.SERVICE_UNAVAILABLE, 'Usage count unavailable');
+        }
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            limit: async () => ({ key: 'max_favorites', requested: countResult.data.count + 1 })
+        });
         const result = await bookmarkService.create(actor, {
             ...input,
             userId: actor.id
@@ -82,18 +98,5 @@ export const createUserBookmarkRoute = createProtectedRoute({
         }
 
         return { toggled: true, bookmark: result.data };
-    },
-    options: {
-        // gateFavorites — entitlement check (SAVE_FAVORITES). Tourist plans
-        // (free/plus/vip) all include it; owner/complex plans also include it
-        // via tourist-VIP inheritance (SPEC-216). Throws 403 ENTITLEMENT_REQUIRED
-        // if missing (e.g. an unauthenticated or free-role actor).
-        //
-        // The MAX_FAVORITES limit (free=3, plus=20, vip=-1 unlimited) is NOT
-        // enforced as a middleware here: a toggle can either ADD or REMOVE a
-        // favorite, and removing must never be blocked at the cap. The limit is
-        // asserted inside the handler's toggle-ON branch only, via
-        // assertFavoritesLimitOrThrow (BETA-42).
-        middlewares: [gateFavorites()]
     }
 });

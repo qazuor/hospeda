@@ -197,7 +197,7 @@ test.describe('E2E-08: entity smoke tests (DESTINATION, EVENT, POST) @p1 @favori
             getActivePostId(),
             execSQL<{ id: string }>(
                 `SELECT id FROM accommodations
-                 WHERE lifecycle_state = 'ACTIVE' AND visibility = 'PUBLIC'
+                 WHERE publication_status = 'PUBLISHED'
                    AND deleted_at IS NULL
                  ORDER BY created_at ASC LIMIT 1`
             ).then((rows) => rows[0]?.id ?? null)

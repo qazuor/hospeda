@@ -14,7 +14,7 @@
  * insertion order. Verified by mutation on the post/event twin of these routes
  * (registering the DELETE first leaves
  * `test/routes/post-protected-media.test.ts` green). There is no equivalent
- * commerce-side route test to re-run that mutation against here, but it is the
+ * gastronomy/experience-side route test to re-run that mutation against here, but it is the
  * same Hono router. The other two entries are very likely the same, but were
  * not verified — do not read them as proven.
  */
@@ -28,24 +28,36 @@ import {
     protectedIssueExperienceCertificateRoute,
     protectedListExperienceCertificatesRoute
 } from './certificates';
+import { protectedCreateExperienceListingRoute } from './create';
 import { protectedCreateExperienceReviewRoute } from './createReview';
 import { protectedGetExperienceByIdRoute } from './getById';
 import { protectedGetExperienceMediaRoute } from './getMedia';
 import { protectedListMyExperienceRoute } from './listMine';
 import { protectedPatchExperienceRoute } from './patch';
+import { protectedPublishExperienceRoute } from './publish';
+import { protectedPurgeExperienceRoute } from './purge';
+import { protectedExperiencePurgePreviewRoute } from './purgePreview';
 import { protectedGetExperienceQrCodeRoute } from './qrCode';
 import { protectedGetExperienceQrSheetRoute } from './qrSheet';
+import { protectedReactivateExperienceRoute } from './reactivate';
 import { protectedRemoveExperienceFaqRoute } from './removeFaq';
 import { protectedRemoveExperienceMediaRoute } from './removeMedia';
 import { protectedReorderExperienceFaqsRoute } from './reorderFaqs';
 import { protectedReorderExperienceMediaRoute } from './reorderMedia';
+import { protectedExperienceReportFixedRoute } from './reportFixed';
 import { protectedSetFeaturedExperienceMediaRoute } from './setFeaturedMedia';
+import { protectedExperienceSupportEditsRoute } from './supportEdits';
+import { protectedUnpublishExperienceRoute } from './unpublish';
 import { protectedUpdateExperienceFaqRoute } from './updateFaq';
 import { protectedUpdateExperienceMediaRoute } from './updateMedia';
 import { protectedExperienceViewStatsRoute } from './viewStats';
 import { protectedExperienceViewStatsDailySeriesRoute } from './viewStatsDailySeries';
 
 const app = createRouter();
+
+// POST / — Owner self-service create (HOS-166 §7.2). Root path, so it cannot
+// collide with any /{id}/... route.
+app.route('/', protectedCreateExperienceListingRoute);
 
 // PUT /{id}/faqs/reorder — Must be before /{id}/faqs/{faqId} (PUT).
 app.route('/', protectedReorderExperienceFaqsRoute);
@@ -81,6 +93,13 @@ app.route('/', protectedIssueExperienceCertificateRoute);
 app.route('/', protectedListExperienceCertificatesRoute);
 
 // GET /{id} — Owner view (protected projection).
+app.route('/', protectedPublishExperienceRoute);
+app.route('/', protectedUnpublishExperienceRoute);
+app.route('/', protectedReactivateExperienceRoute);
+app.route('/', protectedPurgeExperienceRoute);
+app.route('/', protectedExperiencePurgePreviewRoute);
+app.route('/', protectedExperienceSupportEditsRoute);
+app.route('/', protectedExperienceReportFixedRoute);
 app.route('/', protectedGetExperienceByIdRoute);
 
 // PATCH /{id} — Owner operational update.
@@ -98,7 +117,7 @@ app.route('/', protectedRemoveExperienceFaqRoute);
 // POST /{experienceId}/reviews — Tourist creates a review.
 app.route('/', protectedCreateExperienceReviewRoute);
 
-// Media management (HOS-372) — gated on COMMERCE_EDIT_OWN/COMMERCE_EDIT_ALL
+// Media management (HOS-372) — gated on EXPERIENCE_EDIT_OWN/EXPERIENCE_EDIT_ALL
 // inside the service layer via checkExperienceCanEditMedia.
 
 // PATCH /{id}/media/reorder — Must be before /{id}/media/{mediaId} (DELETE).

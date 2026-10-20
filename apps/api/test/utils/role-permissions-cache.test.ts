@@ -37,7 +37,7 @@ import {
 const PERMISSIONS_BY_ROLE: Record<string, PermissionEnum[]> = {
     [RoleEnum.USER]: [PermissionEnum.ACCESS_API_PUBLIC, PermissionEnum.USER_UPDATE_PROFILE],
     [RoleEnum.HOST]: [PermissionEnum.ACCESS_API_PUBLIC, PermissionEnum.ACCOMMODATION_CREATE],
-    [RoleEnum.COMMERCE_OWNER]: [PermissionEnum.COMMERCE_EDIT_OWN]
+    [RoleEnum.GASTRONOMY_OWNER]: [PermissionEnum.GASTRONOMY_EDIT_OWN]
 };
 
 describe('role-permissions-cache — getPermissionsForRoles (HOS-296)', () => {
@@ -51,7 +51,7 @@ describe('role-permissions-cache — getPermissionsForRoles (HOS-296)', () => {
 
     it('returns the union of every held role, de-duplicated', async () => {
         const permissions = await getPermissionsForRoles({
-            roles: [RoleEnum.USER, RoleEnum.HOST, RoleEnum.COMMERCE_OWNER]
+            roles: [RoleEnum.USER, RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER]
         });
 
         expect([...permissions].sort()).toEqual(
@@ -59,7 +59,7 @@ describe('role-permissions-cache — getPermissionsForRoles (HOS-296)', () => {
                 PermissionEnum.ACCESS_API_PUBLIC,
                 PermissionEnum.USER_UPDATE_PROFILE,
                 PermissionEnum.ACCOMMODATION_CREATE,
-                PermissionEnum.COMMERCE_EDIT_OWN
+                PermissionEnum.GASTRONOMY_EDIT_OWN
             ].sort()
         );
         // ACCESS_API_PUBLIC comes from two roles and must appear exactly once.

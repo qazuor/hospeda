@@ -20,13 +20,13 @@
  * `PERMISSION_ROLE_MAP` is the ONLY place that maps a permission to the
  * roles that grant it for account-nav gating purposes. HOS-296 completed the
  * migration HOS-131 deferred: the scattered `isHostRole` /
- * `isCommerceOwnerRole` predicates are gone and every `/mi-cuenta` page gate
+ * `isOwnerRole` predicates are gone and every `/mi-cuenta` page gate
  * now evaluates through {@link hasAccommodationsNavAccess} /
- * {@link hasCommerceNavAccess}, so `apps/web` has ONE gating mechanism.
+ * {@link hasListingNavAccess}, so `apps/web` has ONE gating mechanism.
  *
  * HOS-296: the SSR evaluator takes the actor's whole role SET, not a scalar.
  * A node is visible when ANY held role grants the permission — that is what
- * makes a user who is both HOST and COMMERCE_OWNER see both nav groups
+ * makes a user who is both HOST and GASTRONOMY_OWNER or EXPERIENCE_OWNER see both nav groups
  * (AC-1).
  */
 
@@ -39,6 +39,7 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
  */
 export interface GatedNavNode {
     readonly requiredPermission?: PermissionEnum;
+    readonly requiredPermissions?: readonly PermissionEnum[];
 }
 
 /**
@@ -49,8 +50,8 @@ export interface GatedNavNode {
  * Derived from `apps/web/src/lib/account-roles.ts`:
  * - `ACCOMMODATION_CREATE` ← `ROLES_WITH_ACCOMMODATIONS_NAV`
  *   (HOST, ADMIN, SUPER_ADMIN).
- * - `COMMERCE_EDIT_OWN` ← `ROLES_WITH_COMMERCE_NAV`
- *   (COMMERCE_OWNER, ADMIN, SUPER_ADMIN).
+ * - `GASTRONOMY_EDIT_OWN` and `EXPERIENCE_EDIT_OWN` together mirror
+ *   `ROLES_WITH_LISTING_NAV`.
  *
  * These sets APPROXIMATE the seed, so an entry that names a role the seed does
  * not actually grant is a silent divergence between the two surfaces — the SSR
@@ -90,19 +91,17 @@ export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<Rol
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
     ]),
-    // HOS-1077: the two vertical owner roles reach the same commerce area.
-    // They do NOT hold `commerce.editOwn` — the SSR evaluator asks "does any
-    // held ROLE plausibly carry this permission", and for nav purposes the
-    // answer is yes: each holds its own vertical's `editOwn`. The per-listing
-    // authority is decided by the API, never by this map.
-    [PermissionEnum.COMMERCE_EDIT_OWN]: new Set<RoleEnum>([
-        RoleEnum.COMMERCE_OWNER,
+    [PermissionEnum.GASTRONOMY_EDIT_OWN]: new Set<RoleEnum>([
         RoleEnum.GASTRONOMY_OWNER,
+        RoleEnum.ADMIN,
+        RoleEnum.SUPER_ADMIN
+    ]),
+    [PermissionEnum.EXPERIENCE_EDIT_OWN]: new Set<RoleEnum>([
         RoleEnum.EXPERIENCE_OWNER,
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
     ]),
-    // Editors + admins hold POST_CREATE; hosts/tourists/commerce-owners do
+    // Editors + admins hold POST_CREATE; hosts/tourists/gastronomy/experience-owners do
     // not. This is the editor discovery-door "acquired" signal (HOS-134
     // §5.3/§5.4) — it drives both the "Ya lo tenés" state on the aliados hub
     // and the stateful partner-door label.
@@ -120,33 +119,6 @@ export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<Rol
     // listing gate (HOS-374 Phase 2 2C-1).
     [PermissionEnum.EVENT_CREATE]: new Set<RoleEnum>([
         RoleEnum.EDITOR,
-        RoleEnum.ADMIN,
-        RoleEnum.SUPER_ADMIN
-    ]),
-    // The only entry here whose permission was created FOR the nav rather than
-    // borrowed from an existing domain (HOS-726). The add-on catalog gates per
-    // product domain — accommodation, gastronomy or experience — so its audience
-    // is the union of the host and commerce tiers, and `requiredPermission` holds
-    // exactly one permission with no OR. `ACCOMMODATION_CREATE` would have left
-    // out the COMMERCE_OWNER who buys `extra-gastronomies-1`; the two
-    // billing-shaped permissions that read like a fit (`SUBSCRIPTION_VIEW_OWN`,
-    // `BILLING_VIEW_OWN`) are granted to plain `USER` by the seed, which would
-    // have shown the catalog to every tourist.
-    //
-    // HOST, COMMERCE_OWNER, ADMIN, SUPER_ADMIN — verified against
-    // `packages/seed/src/required/rolePermissions.seed.ts`, which is also where
-    // the grant is written (baseline) alongside the
-    // `0067-hos-726-addon-purchase-permission` data-migration for live
-    // environments.
-    [PermissionEnum.BILLING_ADDON_PURCHASE]: new Set<RoleEnum>([
-        RoleEnum.HOST,
-        RoleEnum.COMMERCE_OWNER,
-        // HOS-1077: the vertical owner roles hold BILLING_ADDON_PURCHASE too
-        // (verified against `packages/seed/src/required/rolePermissions.seed.ts`,
-        // where their blocks carry it). Omitting them here would hide the add-on
-        // catalog from the very owners who buy `extra-gastronomies-1`.
-        RoleEnum.GASTRONOMY_OWNER,
-        RoleEnum.EXPERIENCE_OWNER,
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
     ])
@@ -173,10 +145,10 @@ export function isVisibleByPermissions(
     node: GatedNavNode,
     permissions: readonly string[]
 ): boolean {
-    if (!node.requiredPermission) {
-        return true;
+    if (node.requiredPermissions) {
+        return node.requiredPermissions.some((permission) => permissions.includes(permission));
     }
-    return permissions.includes(node.requiredPermission);
+    return !node.requiredPermission || permissions.includes(node.requiredPermission);
 }
 
 /**
@@ -188,7 +160,7 @@ export function isVisibleByPermissions(
  * HOS-296: the second argument is the actor's whole role SET. Visibility is a
  * union — a node is visible as soon as ONE held role grants the permission, so
  * accumulating hats can only ever ADD nav, never remove it. A user holding
- * both `HOST` and `COMMERCE_OWNER` therefore sees both groups (AC-1).
+ * both `HOST` and `GASTRONOMY_OWNER or EXPERIENCE_OWNER` therefore sees both groups (AC-1).
  *
  * @param node - A `NavGroup` or `NavItem` (or any object shaped like one).
  * @param roles - Every role the user holds, from `Astro.locals.user.roles`.
@@ -200,17 +172,18 @@ export function isVisibleByPermissions(
  *   that shares no member with the mapped role set.
  */
 export function isVisibleByRoles(node: GatedNavNode, roles: readonly string[] | null): boolean {
-    if (!node.requiredPermission) {
+    const requiredPermissions =
+        node.requiredPermissions ?? (node.requiredPermission ? [node.requiredPermission] : []);
+    if (requiredPermissions.length === 0) {
         return true;
     }
     if (roles === null || roles.length === 0) {
         return false;
     }
-    const rolesForPermission = PERMISSION_ROLE_MAP[node.requiredPermission];
-    if (!rolesForPermission) {
-        return false;
-    }
-    return roles.some((role) => rolesForPermission.has(role as RoleEnum));
+    return requiredPermissions.some((permission) => {
+        const rolesForPermission = PERMISSION_ROLE_MAP[permission];
+        return rolesForPermission && roles.some((role) => rolesForPermission.has(role as RoleEnum));
+    });
 }
 
 /**
@@ -236,25 +209,32 @@ export function hasAccommodationsNavAccess({
 }
 
 /**
- * Does the user hold a role that grants the commerce-owner self-service area
+ * Does the user hold a role that grants the gastronomy/experience-owner self-service area
  * (`/mi-cuenta/comercio/*`)?
  *
  * Companion to {@link hasAccommodationsNavAccess}, keyed on
- * `COMMERCE_EDIT_OWN`. The two sets are deliberately distinct: a plain
- * accommodation HOST does not get the commerce area, and a plain
- * COMMERCE_OWNER does not get the host nav. A user holding BOTH hats gets
- * both — which is the whole point of HOS-296.
+ * on either vertical EDIT_OWN permission. A plain accommodation HOST does not
+ * get the listing area, while a vertical owner also holding HOST sees both
+ * navigation groups.
  *
  * @param params - `{ roles }` (RO-RO): every role the user holds, or `null`
  *   for unauthenticated visitors.
- * @returns `true` when at least one held role carries commerce-owner access.
+ * @returns `true` when at least one held role carries gastronomy/experience-owner access.
  */
-export function hasCommerceNavAccess({
+export function hasListingNavAccess({
     roles
 }: {
     readonly roles: readonly string[] | null;
 }): boolean {
-    return isVisibleByRoles({ requiredPermission: PermissionEnum.COMMERCE_EDIT_OWN }, roles);
+    return isVisibleByRoles(
+        {
+            requiredPermissions: [
+                PermissionEnum.GASTRONOMY_EDIT_OWN,
+                PermissionEnum.EXPERIENCE_EDIT_OWN
+            ]
+        },
+        roles
+    );
 }
 
 /**

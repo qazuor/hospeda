@@ -58,7 +58,10 @@ vi.mock('node-cron', () => ({
 // Test helpers
 // ---------------------------------------------------------------------------
 
-import type { CronJobDefinition, CronJobResult } from '../../src/cron/types';
+import type { CronJobContext, CronJobDefinition, CronJobResult } from '../../src/cron/types';
+
+/** HOS-1424: every schedule is registered on the Buenos Aires wall clock, never via TZ. */
+const BA_TIMEZONE = { timezone: 'America/Argentina/Buenos_Aires' };
 
 function makeJob(name: string, handler: () => Promise<CronJobResult>): CronJobDefinition {
     return {
@@ -203,7 +206,7 @@ describe('startCronScheduler — resolveSchedule (HOS-64 T-013)', () => {
         const { startCronScheduler } = await import('../../src/cron/bootstrap');
         await startCronScheduler();
 
-        expect(mockSchedule).toHaveBeenCalledWith('* * * * *', expect.any(Function));
+        expect(mockSchedule).toHaveBeenCalledWith('* * * * *', expect.any(Function), BA_TIMEZONE);
     });
 
     it('registers with the resolveSchedule output when present', async () => {
@@ -216,7 +219,11 @@ describe('startCronScheduler — resolveSchedule (HOS-64 T-013)', () => {
         const { startCronScheduler } = await import('../../src/cron/bootstrap');
         await startCronScheduler();
 
-        expect(mockSchedule).toHaveBeenCalledWith('*/10 * * * *', expect.any(Function));
+        expect(mockSchedule).toHaveBeenCalledWith(
+            '*/10 * * * *',
+            expect.any(Function),
+            BA_TIMEZONE
+        );
     });
 
     it('falls back to the static schedule when resolveSchedule throws', async () => {
@@ -229,6 +236,70 @@ describe('startCronScheduler — resolveSchedule (HOS-64 T-013)', () => {
         const { startCronScheduler } = await import('../../src/cron/bootstrap');
         await startCronScheduler();
 
-        expect(mockSchedule).toHaveBeenCalledWith('* * * * *', expect.any(Function));
+        expect(mockSchedule).toHaveBeenCalledWith('* * * * *', expect.any(Function), BA_TIMEZONE);
+    });
+});
+
+describe('startCronScheduler — market time zone and run ids (HOS-1424)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockEnv.HOSPEDA_CRON_ADAPTER = 'node-cron';
+        mockRecordCronRun.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('TEST:U2:6 registers every job with the Buenos Aires timezone option', async () => {
+        // Arrange
+        const jobs = [
+            {
+                ...makeJob('daily', () => Promise.resolve(makeSuccessResult())),
+                schedule: '0 8 * * *'
+            },
+            makeJob('minutely', () => Promise.resolve(makeSuccessResult()))
+        ];
+        mockGetEnabledCronJobs.mockReturnValue(jobs);
+
+        // Act
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+
+        // Assert
+        expect(mockSchedule).toHaveBeenCalledTimes(2);
+        for (const call of mockSchedule.mock.calls) {
+            expect(call[2]).toEqual(BA_TIMEZONE);
+        }
+    });
+
+    it('TEST:U2:9 every tick hands the job a fresh run id and run correlation', async () => {
+        // Arrange
+        const seen: CronJobContext[] = [];
+        const job: CronJobDefinition = {
+            ...makeJob('dunning', () => Promise.resolve(makeSuccessResult())),
+            handler: async (ctx) => {
+                seen.push(ctx);
+                return makeSuccessResult();
+            }
+        };
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+
+        // Act: two ticks of the same job
+        await fireTick();
+        await fireTick();
+
+        // Assert
+        const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+        expect(seen).toHaveLength(2);
+        for (const ctx of seen) {
+            expect(ctx.runId).toMatch(uuid);
+            expect(ctx.correlationId).toMatch(uuid);
+            expect(ctx.runId).not.toBe(ctx.correlationId);
+        }
+        expect(seen[0]?.runId).not.toBe(seen[1]?.runId);
+        expect(seen[0]?.correlationId).not.toBe(seen[1]?.correlationId);
     });
 });

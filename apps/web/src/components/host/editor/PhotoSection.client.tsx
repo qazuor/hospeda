@@ -8,7 +8,7 @@
  * parent PATCH payload.
  *
  * HOS-1024: the gallery cap shown/enforced here is the host's EFFECTIVE plan
- * cap (`useMyEntitlements().limit(MAX_PHOTOS_LIMIT_KEY)`, plan + addons —
+ * cap (`useMyEntitlements({ vertical: 'accommodation' }).limit(MAX_PHOTOS_LIMIT_KEY)`, plan + addons —
  * see `addon-limit-recalculation.service.ts`), not the flat entity ceiling
  * every host used to see regardless of plan. `ENTITY_GALLERY_CAPS.accommodation`
  * still exists and is still enforced server-side
@@ -137,7 +137,9 @@ export function PhotoSection({
     // HOS-1024: the effective cap is the host's PLAN limit (+ addons), not
     // the flat entity ceiling. See `resolveEffectiveGalleryCap`'s JSDoc for
     // the pending-window contract this drives below.
-    const { limit: getEntitlementLimit, isLoading: isEntitlementsLoading } = useMyEntitlements();
+    const { limit: getEntitlementLimit, isLoading: isEntitlementsLoading } = useMyEntitlements({
+        vertical: 'accommodation'
+    });
     const { cap: galleryCap, isResolved: isGalleryCapResolved } = resolveEffectiveGalleryCap({
         planLimit: getEntitlementLimit(MAX_PHOTOS_LIMIT_KEY),
         isEntitlementsLoading

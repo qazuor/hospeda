@@ -3,8 +3,8 @@
  *
  * Mirrors `AccommodationModel.findIdsByOwnerId`: resolves the IDs of every
  * non-deleted gastronomy listing owned by a given user, used by
- * `EntityViewService.getStatsForOwnCommerceListings` /
- * `getDailySeriesForOwnCommerceListings` to scope the owner's view stats
+ * `EntityViewService.getStatsForOwnListings` /
+ * `getDailySeriesForOwnListings` to scope the owner's view stats
  * without accepting a caller-supplied ownerId (anti-peeking).
  *
  * Uses a mocked Drizzle client (`vi.spyOn(dbUtils, 'getDb')`) per the project

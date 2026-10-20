@@ -153,7 +153,19 @@ export default defineConfig({
                 API_RATE_LIMIT_ENABLED: '',
                 API_RATE_LIMIT_AUTH_ENABLED: '',
                 API_RATE_LIMIT_PUBLIC_ENABLED: '',
-                API_RATE_LIMIT_ADMIN_ENABLED: ''
+                API_RATE_LIMIT_ADMIN_ENABLED: '',
+                // TEST:B3:43 (HOS-1511): the built API must use the fake provider
+                // server and its file-backed adjustable clock from the spec helper.
+                HOSPEDA_MERCADO_PAGO_API_BASE_URL: 'http://127.0.0.1:18090',
+                // TEST:B3:35 (HOS-1526): align receiver signature verification with the fake provider.
+                HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET:
+                    process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET ?? 'e2e-webhook-secret',
+                HOSPEDA_E2E_CLOCK_FILE: path.join(
+                    REPO_ROOT,
+                    'apps/e2e/test-results/fake-provider-clock.json'
+                ),
+                // TEST:V4:23 (HOS-1449): only the outbox sender uses this local capture URL.
+                HOSPEDA_E2E_MAIL_CAPTURE_URL: 'http://127.0.0.1:18091'
             }
         },
         {
@@ -199,7 +211,7 @@ export default defineConfig({
      *
      * That was not merely wasteful, it was corrupting. The duplicate runs hit
      * the SAME e2e database concurrently (`fullyParallel` + 4 workers), so a
-     * spec raced ITSELF on the same rows. `commerce-03` is the worked example:
+     * spec raced ITSELF on the same rows. `listing-owner-03` is the worked example:
      * `beforeAll` reads the current gastronomy type as "the original", the test
      * switches it to a hardcoded `BAR`, `afterAll` restores. Interleaved, copy B
      * reads copy A's `BAR` as its original, then tries to set `BAR` on a row

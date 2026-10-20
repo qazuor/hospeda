@@ -709,7 +709,7 @@ const PARSE_STRIP_CONFIGS: readonly ParseStripConfig[] = [
             // (PublicSchema uses z.string().optional() for createdAt via .extend())
             createdAt: '2024-01-01T00:00:00Z',
             adminInfo: ADMIN_INFO_MOCK,
-            lifecycleState: LIFECYCLE_MOCK,
+            publicationStatus: 'PUBLISHED',
             id: UUID1,
             slug: 'test-accommodation',
             name: 'Test Accommodation',
@@ -720,8 +720,6 @@ const PARSE_STRIP_CONFIGS: readonly ParseStripConfig[] = [
             type: 'APARTMENT',
             destinationId: UUID2,
             ownerId: UUID3,
-            moderationState: 'PENDING',
-            visibility: 'PUBLIC',
             averageRating: 0,
             reviewsCount: 0
         },

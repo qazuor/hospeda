@@ -154,7 +154,7 @@ export interface UseCompareGuardReturn {
  */
 export function useCompareGuard(): UseCompareGuardReturn {
     const { ids } = useCompareStore();
-    const { has, limit, isLoading } = useMyEntitlements();
+    const { has, limit, isLoading } = useMyEntitlements({ vertical: 'tourist' });
 
     const canCompare = has(COMPARE_ENTITLEMENT_KEY);
     const maxItems = limit(COMPARE_LIMIT_KEY);

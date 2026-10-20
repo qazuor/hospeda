@@ -31,7 +31,6 @@
         "test:integration:watch": "vitest --config vitest.integration.config.ts"
     },
     "devDependencies": {
-        "@qazuor/qzpay-core": "^7.0.0",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^26.6.1",
         "@types/pg": "^8.21.0",
@@ -44,14 +43,16 @@
         "vitest": "^4.1.11"
     },
     "dependencies": {
-        "@repo/billing": "workspace:*",
+        "@repo/billing-verticals-contract": "workspace:*",
         "@repo/cache-tags": "workspace:*",
         "@repo/content-moderation": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/media": "workspace:*",
+        "@repo/payments": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
+        "@repo/verticals": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "jose": "^6.2.8",
         "parse5": "^8.0.1",

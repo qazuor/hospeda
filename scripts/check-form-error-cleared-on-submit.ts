@@ -8,7 +8,7 @@
  * problem, saves successfully, and reads a red banner telling them it failed.
  * No error, no warning — just a message that outlived what it was about.
  *
- * PR #3041 added the missing `setFormError(null)` to the two commerce forms;
+ * PR #3041 added the missing `setFormError(null)` to the two listing create forms;
  * HOS-837 added it to `EventCreateForm` and `PostCreateForm`, the last two
  * consumers still missing it. This guard is what stops the next one from being
  * born without it.
@@ -669,7 +669,7 @@ export function run(root: string): number {
             '\n  `handleApiError` only ever SETS the banner — nothing in `useZodForm` clears ' +
                 'it. Open the submit handler with `setFormError(null)`, before any early ' +
                 'return, so a submit that only fails client-side validation retires the ' +
-                'previous attempt’s message too. `CommerceCreateForm.client.tsx` is the ' +
+                'previous attempt’s message too. The gastronomy listing create form is the ' +
                 'reference shape. HOS-816 is what happens without it: the user saves ' +
                 'successfully and reads a red banner telling them it failed.'
         );

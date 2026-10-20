@@ -1,4 +1,3 @@
-import { qzpaySchema } from '@qazuor/qzpay-drizzle';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import type { Pool } from 'pg';
 import * as hospedaSchema from './schemas/index.ts';
@@ -7,16 +6,12 @@ import { DbError, TransactionRollbackError } from './utils/error.ts';
 import { dbLogger } from './utils/logger.ts';
 
 /**
- * Combined schema including both Hospeda application schemas
- * and QZPay billing schemas for complete database access.
+ * Combined Hospeda application schema for complete database access.
  *
  * The explicit type annotation prevents TS7056 ("inferred type exceeds the
- * maximum length the compiler will serialize") as the combined schema grows.
+ * maximum length the compiler will serialize") as the schema grows.
  */
-const schema: typeof hospedaSchema & typeof qzpaySchema = {
-    ...hospedaSchema,
-    ...qzpaySchema
-};
+const schema: typeof hospedaSchema = { ...hospedaSchema };
 
 /**
  * Database client instance. Set via initializeDb() at app startup

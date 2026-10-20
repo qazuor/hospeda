@@ -71,8 +71,7 @@ async function seedPartner(tx: DrizzleClient): Promise<string> {
         id,
         slug: `rollup-partner-${uid}`,
         name: `Rollup Partner ${uid}`,
-        type: 'commerce' as const,
-        tier: 'gold' as const
+        type: 'business' as const
     });
     return id;
 }

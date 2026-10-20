@@ -29,13 +29,13 @@ const alliance: AdminLeadReceivedProps = {
     submittedAtLabel: '15 de agosto de 2026, 18:30'
 };
 
-/** The commerce funnel collects no phone and often no message. */
-const commerceMinimal: AdminLeadReceivedProps = {
+/** The gastronomy funnel collects no phone and often no message. */
+const gastronomyMinimal: AdminLeadReceivedProps = {
     funnelLabel: 'Comercios',
     programLabel: 'Gastronomía',
     contactName: 'María García',
     contactEmail: 'maria@example.com',
-    adminUrl: 'https://admin.hospeda.com.ar/platform/commerce-leads',
+    adminUrl: 'https://admin.hospeda.com.ar/platform/gastronomy-leads',
     submittedAtLabel: '15 de agosto de 2026, 19:05'
 };
 
@@ -72,15 +72,15 @@ describe('AdminLeadReceived email template (H-62 / H-148)', () => {
         expect(html).toContain('https://admin.hospeda.com.ar/platform/alliance-leads');
     });
 
-    it('points a commerce lead at the commerce queue, not the alliance one', () => {
-        const html = renderToStaticMarkup(AdminLeadReceived(commerceMinimal));
+    it('points a gastronomy lead at the gastronomy queue, not the alliance one', () => {
+        const html = renderToStaticMarkup(AdminLeadReceived(gastronomyMinimal));
 
-        expect(html).toContain('/platform/commerce-leads');
+        expect(html).toContain('/platform/gastronomy-leads');
         expect(html).not.toContain('/platform/alliance-leads');
     });
 
     it('omits the optional rows rather than rendering empty labels', () => {
-        const html = renderToStaticMarkup(AdminLeadReceived(commerceMinimal));
+        const html = renderToStaticMarkup(AdminLeadReceived(gastronomyMinimal));
 
         expect(html).toContain('maria@example.com');
         expect(html).not.toContain('Teléfono');

@@ -10,7 +10,7 @@ import { CommonHttpFields } from './http-field.factory.js';
  */
 export const HttpFieldSets = {
     /**
-     * Price-related fields for commerce entities
+     * Price-related fields for priced entities
      */
     price: {
         minPrice: CommonHttpFields.minPrice(),

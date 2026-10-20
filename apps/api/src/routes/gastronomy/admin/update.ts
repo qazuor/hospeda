@@ -6,11 +6,12 @@ import {
     GastronomyAdminSchema,
     type GastronomyUpdateInput,
     GastronomyUpdateInputSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -21,17 +22,16 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * PUT /api/v1/admin/gastronomies/:id
  * Update gastronomy listing — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service layer (`_canUpdate`)
+ * Requires GASTRONOMY_EDIT_ALL permission. The service layer (`_canUpdate`)
  * enforces the same gate, providing defense in depth.
  */
 export const adminUpdateGastronomyRoute = createAdminRoute({
     method: 'put',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}',
     summary: 'Update gastronomy listing (admin)',
-    description:
-        'Updates a gastronomy listing. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.',
+    description: 'Updates a gastronomy listing. Requires GASTRONOMY_EDIT_ALL permission.',
     tags: ['Gastronomy'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -46,7 +46,10 @@ export const adminUpdateGastronomyRoute = createAdminRoute({
         const { id } = params;
         const data = body as GastronomyUpdateInput;
 
-        const result = await gastronomyService.update(actor, id as string, data);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => gastronomyService.update(actor, id as string, data)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

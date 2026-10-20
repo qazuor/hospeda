@@ -51,7 +51,6 @@ export interface AuthContextValue extends AuthState {
     refreshSession: () => Promise<void>;
     clearSession: () => void;
     signOut: () => Promise<void>;
-    impersonatedBy?: string;
 }
 
 const HospedaAuthContext = createContext<AuthContextValue | null>(null);
@@ -209,7 +208,6 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children, initialAuthState }: AuthProviderProps) {
     const { data: session, isPending: isSessionLoading } = useSession();
-    const [impersonatedBy, setImpersonatedBy] = useState<string | undefined>();
 
     const [authState, setAuthState] = useState<AuthState>(() => {
         // When server auth state is provided and authenticated, hydrate immediately (zero-flash)
@@ -337,13 +335,6 @@ export function AuthProvider({ children, initialAuthState }: AuthProviderProps) 
 
         const isSignedIn = !!session?.user;
 
-        // Capture impersonation state from Better Auth session
-        const sessionImpersonatedBy = (session?.session as { impersonatedBy?: string } | undefined)
-            ?.impersonatedBy;
-        if (sessionImpersonatedBy) {
-            setImpersonatedBy(sessionImpersonatedBy);
-        }
-
         if (isSignedIn && authState.user) {
             // Already hydrated from server.. enrich with Better Auth display data if missing
             const needsEnrich =
@@ -450,8 +441,7 @@ export function AuthProvider({ children, initialAuthState }: AuthProviderProps) 
         ...authState,
         refreshSession,
         clearSession,
-        signOut: handleSignOut,
-        impersonatedBy
+        signOut: handleSignOut
     };
 
     return (

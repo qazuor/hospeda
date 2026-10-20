@@ -59,9 +59,9 @@ describe('GastronomyProtectedSchema', () => {
         expect(keys).toContain('ownerId');
     });
 
-    it('should include lifecycleState in protected response', () => {
+    it('should include publicationStatus in protected response', () => {
         const keys = Object.keys(GastronomyProtectedSchema.shape ?? {});
-        expect(keys).toContain('lifecycleState');
+        expect(keys).toContain('publicationStatus');
     });
 });
 
@@ -74,8 +74,7 @@ describe('GastronomyAdminSchema', () => {
     it('should include all fields in admin response', () => {
         const keys = Object.keys(GastronomyAdminSchema.shape ?? {});
         expect(keys).toContain('ownerId');
-        expect(keys).toContain('lifecycleState');
-        expect(keys).toContain('moderationState');
+        expect(keys).toContain('publicationStatus');
     });
 });
 

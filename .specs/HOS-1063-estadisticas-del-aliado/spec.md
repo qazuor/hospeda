@@ -971,7 +971,7 @@ question is what happens at day 95.
 
 The panel must show a number, so the count has to reach **our** database — the
 same reasoning HOS-734 recorded when it wired the beacon and deliberately skipped
-PostHog for commerce: the beacon *"feeds the real owner-facing stat"*, PostHog
+PostHog for gastronomy and experience: the beacon *"feeds the real owner-facing stat"*, PostHog
 feeds funnels.
 
 1. **A second `entity_views` row.** *Pros:* zero new anything. *Cons:* corrupts

@@ -45,8 +45,8 @@ describe('OwnerPromotionService.getById', () => {
     });
 
     it('should return FORBIDDEN if actor lacks permission for a non-public (DRAFT) promotion', async () => {
-        // SPEC-285 T-001: the public read path is permissive only for ACTIVE,
-        // non-plan-restricted promos. A DRAFT promo is not publicly visible, so an
+        // SPEC-285 T-001: the public read path is permissive only for ACTIVE
+        // promos. A DRAFT promo is not publicly visible, so an
         // actor without view permission must still be FORBIDDEN.
         actor = createActor({ permissions: [] });
         const draftPromo = createMockOwnerPromotion({
@@ -62,14 +62,13 @@ describe('OwnerPromotionService.getById', () => {
         expect(result.data).toBeUndefined();
     });
 
-    it('should allow a permissionless actor to view an ACTIVE, non-plan-restricted promotion', async () => {
+    it('should allow a permissionless actor to view an ACTIVE promotion', async () => {
         // SPEC-285 T-001: tourist-facing public read path — a guest/permissionless
-        // actor can view an ACTIVE, non-plan-restricted promotion.
+        // actor can view an ACTIVE promotion.
         actor = createActor({ permissions: [] });
         const activePublicPromo = createMockOwnerPromotion({
             id,
-            lifecycleState: LifecycleStatusEnum.ACTIVE,
-            planRestricted: false
+            lifecycleState: LifecycleStatusEnum.ACTIVE
         });
         modelMock.findOneWithRelations.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? activePublicPromo : null

@@ -4,13 +4,13 @@
  *  - FAQs sub-tab (FaqManager, gastronomies entity type)
  *  - Reviews moderation sub-tab (pending reviews + approve/reject actions)
  *  - Assign-owner action (OwnerSelect + useAssignGastronomyOwnerMutation)
- *  - Delete action
+ *  - Purge action at the owner's request (action 23, ListingPurgeOnRequestCard);
+ *    the panel has no other listing delete or restore (HOS-1477, AC:V6:25)
  */
 
-import { PermissionEnum } from '@repo/schemas';
+import type { PublicationStatusEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { FaqManager } from '@/components/faqs/FaqManager';
@@ -19,15 +19,14 @@ import { OwnerSelect } from '@/components/selects/OwnerSelect';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
-import { CommerceListingModerationCard } from '@/features/commerce/components/CommerceListingModerationCard';
 import {
     useAssignGastronomyOwnerMutation,
-    useDeleteGastronomyMutation,
     useGastronomyPage,
     useGastronomyPendingReviewsQuery,
-    useModerateGastronomyMutation,
     useModerateGastronomyReviewMutation
 } from '@/features/gastronomy';
+import { ListingModerationCard } from '@/features/listing/components/ListingModerationCard';
+import { ListingPurgeOnRequestCard } from '@/features/listing/components/ListingPurgeOnRequestCard';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
@@ -221,7 +220,11 @@ function GastronomyViewPage() {
     const entityData = useGastronomyPage(id);
 
     const gastronomy = entityData.entity as
-        | { name?: string; ownerId?: string | null; moderationState?: string | null }
+        | {
+              name?: string;
+              ownerId?: string | null;
+              publicationStatus?: PublicationStatusEnum | null;
+          }
         | undefined;
 
     return (
@@ -235,28 +238,23 @@ function GastronomyViewPage() {
                 and assign-owner card align with the entity card below instead of
                 sitting full-bleed against the page edges. */}
             <div className="space-y-4 px-6 pt-6">
-                <div className="flex justify-end">
-                    <DeleteRowButton
+                <div className="flex justify-end gap-2">
+                    {/* HOS-1493 action 23: purge at the owner's request, with reason. */}
+                    <ListingPurgeOnRequestCard
+                        vertical="gastronomy"
                         entityId={id}
                         entityName={gastronomy?.name ?? id}
-                        entityLabel={t('admin-entities.entities.gastronomy.singular')}
-                        permission={PermissionEnum.COMMERCE_DELETE}
-                        useDeleteMutation={useDeleteGastronomyMutation}
-                        variant="full"
-                        entityGender="f"
-                        onDeleted={() => navigate({ to: '/gastronomies' })}
+                        onPurged={() => navigate({ to: '/gastronomies' })}
                     />
                 </div>
 
-                {/* HOS-686 AC-26: the reject action, where an admin can reach
-                    it. `POST /:id/moderate` without this control would only be
-                    callable by hand. */}
-                <CommerceListingModerationCard
+                {/* HOS-686 AC-26 + HOS-1684: the listing's publication state and its
+                    moderation by action, with reason (`POST /:id/moderate`). */}
+                <ListingModerationCard
+                    vertical="gastronomy"
                     entityId={id}
                     entityName={gastronomy?.name ?? id}
-                    entityLabelKey="admin-entities.entities.gastronomy.singular"
-                    currentValue={gastronomy?.moderationState}
-                    useModerateMutation={useModerateGastronomyMutation}
+                    publicationStatus={gastronomy?.publicationStatus}
                 />
 
                 <GastronomyAssignOwner

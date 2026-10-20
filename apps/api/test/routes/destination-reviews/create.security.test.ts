@@ -48,7 +48,6 @@ vi.mock('../../../src/utils/logger', () => ({
 // Imports after mocks.
 // ---------------------------------------------------------------------------
 
-import { EntitlementKey, type LimitKey } from '@repo/billing';
 import {
     DestinationReviewCreateBodySchema,
     PermissionEnum,
@@ -95,21 +94,14 @@ function attachTestErrorHandler(app: Hono<AppBindings>): void {
     });
 }
 
-/** Inject actor + billing context so the route handler can run without auth middleware. */
-function injectActorAndEntitlements(
-    app: Hono<AppBindings>,
-    actorId: string,
-    keys: EntitlementKey[]
-): void {
+/** Inject the actor so the route handler can run without auth middleware. */
+function injectActor(app: Hono<AppBindings>, actorId: string): void {
     app.use((c, next) => {
         c.set('actor', {
             id: actorId,
             roles: [RoleEnum.USER],
             permissions: [PermissionEnum.DESTINATION_REVIEW_CREATE]
         });
-        c.set('userEntitlements', new Set(keys));
-        c.set('userLimits', new Map<LimitKey, number>());
-        c.set('billingLoadFailed', false);
         return next();
     });
 }
@@ -142,7 +134,7 @@ const DESTINATION_ID = '22222222-2222-4222-8222-222222222222';
 /** Build a minimal Hono app that mimics the protected create destination review route. */
 function buildApp(): Hono<AppBindings> {
     const app = new Hono<AppBindings>();
-    injectActorAndEntitlements(app, ACTOR_ID, [EntitlementKey.WRITE_REVIEWS]);
+    injectActor(app, ACTOR_ID);
     attachTestErrorHandler(app);
 
     app.post('/destinations/:destinationId/reviews', async (c) => {

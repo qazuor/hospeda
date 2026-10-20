@@ -3,7 +3,7 @@
  * @description Static guard against the two ways the video gate died before
  * (NOSPEC:gate-video-inerte).
  *
- * `CAN_EMBED_VIDEO` shipped as a plan gate that enforced nothing for months, and
+ * The old video plan gate once enforced nothing for months, and
  * no behaviour test could see it, because the failure was not a wrong result —
  * it was code inspecting data shapes that no longer existed:
  *
@@ -64,7 +64,7 @@ describe('video gate — dead shapes cannot come back', () => {
         expect(stripped).not.toContain(COMMENT_ONLY_PROBE);
         // And the code itself survived — a stripper that ate everything would
         // satisfy every `not.toMatch` below.
-        expect(stripped).toContain('export function filterAccommodationByEntitlements');
+        expect(stripped).toContain('export function filterPublicPaidFields');
         expect(stripped.length).toBeGreaterThan(1000);
     });
 
@@ -114,16 +114,19 @@ describe('video gate — dead shapes cannot come back', () => {
         // already document.
         expect(src).toMatch(/delete\s+filtered\.videos/);
         expect(src).toMatch(/videos:\s*\[\]/);
-        expect(src).toMatch(/stripVideoUrls\s*\(/);
+        expect(src).toMatch(/stripVideoEmbeds\s*\(/);
     });
 
-    it('re-applies the video gate in the fail-closed catch', () => {
+    it('applies the video grant in the current owner-grant filter', () => {
         const src = executableSource();
-        const catchBlock = src.slice(src.indexOf('} catch'));
-
-        // Every OWNER-gated field is re-applied after a throw, so the gate does
-        // not depend on statement order. Video became owner-gated, so it joins.
-        expect(catchBlock).toMatch(/CAN_EMBED_VIDEO/);
-        expect(catchBlock).toMatch(/stripVideoContent\s*\(/);
+        const filterStart = src.indexOf('export function filterPublicPaidFields');
+        const filterEnd = src.indexOf(
+            'export function filterPublicPaidFieldsForOwner',
+            filterStart
+        );
+        const paidFilter = src.slice(filterStart, filterEnd);
+        expect(paidFilter).toMatch(/grants\.video/);
+        expect(paidFilter).toMatch(/delete\s+filtered\.videos/);
+        expect(paidFilter).not.toMatch(/hasEntitlement\s*\(/);
     });
 });

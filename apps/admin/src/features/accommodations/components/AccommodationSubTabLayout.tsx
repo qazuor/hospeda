@@ -1,6 +1,9 @@
+import { VerticalEnum } from '@repo/schemas';
 import type { ReactNode } from 'react';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { accommodationTabs, PageTabs } from '@/components/layout/PageTabs';
+import { EffectiveSetSubjectProvider } from '@/features/billing/effective-set-subject';
+import { useAccommodationQuery } from '../hooks/useAccommodationQuery';
 
 /**
  * Props for AccommodationSubTabLayout.
@@ -34,6 +37,7 @@ export function AccommodationSubTabLayout({
     children
 }: AccommodationSubTabLayoutProps) {
     const displayName = entityName?.trim() ? entityName : accommodationId;
+    const { data: accommodation, isLoading } = useAccommodationQuery(accommodationId);
 
     return (
         <div className="space-y-4">
@@ -46,7 +50,15 @@ export function AccommodationSubTabLayout({
                 basePath={`/accommodations/${accommodationId}`}
             />
 
-            {children}
+            {isLoading ? (
+                <div className="h-32 animate-pulse rounded-md bg-muted" />
+            ) : accommodation ? (
+                <EffectiveSetSubjectProvider
+                    value={{ userId: accommodation.ownerId, vertical: VerticalEnum.ACCOMMODATION }}
+                >
+                    {children}
+                </EffectiveSetSubjectProvider>
+            ) : null}
         </div>
     );
 }

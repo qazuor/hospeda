@@ -96,6 +96,9 @@ Fuente: [DEC-GRANT-004](../01-decisiones-vigentes.md#dec-grant-004) · [TRANS:B:
 
 ### Criterios de aceptación
 
+<a id="corte-mvp-b9b"></a>
+**Corte del MVP, ajuste del 2026-10-07** ([DB](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#lote-cr-a-dd-2026-10-07)): **una rebanada básica de esta pieza sale al corte**, la que la spec ya diseña y que no necesita `B8b`: [AC:B9b:1](#ac-b9b-1) a [AC:B9b:6](#ac-b9b-6), [AC:B9b:9](#ac-b9b-9) y [AC:B9b:12](#ac-b9b-12) (la fila 7-bis), en las hojas `B9b.1`, `B9b.2` y `B9b.4`. El canje es el que diseña la spec: **sobre una suscripción viva, mutando el monto**; no se agrega un canje en el checkout. **Limitación declarada**: como el checkout cobra en minutos, una promo de «primer cobro» canjeada después del alta ya no alcanza al primer cobro ([AC:B9b:4](#ac-b9b-4) ya lo cubre); al lanzamiento se usan promos de «N cobros». La cortesía básica del corte es la extensión de trial (la acción 11 de `V4`) más su canje por código ([AC:B9b:6](#ac-b9b-6)). Siguen en la **Fase 2**, con `B8b`: la cortesía temporal y sus cruces ([AC:B9b:7](#ac-b9b-7), [AC:B9b:8](#ac-b9b-8), [AC:B9b:10](#ac-b9b-10), [AC:B9b:11](#ac-b9b-11), [AC:B9b:13](#ac-b9b-13), [AC:B9b:14](#ac-b9b-14)). Las dependencias de la rebanada son las del corte (`B5`, `B11`, `V4`, `V5` y `B13a`), no `B8b`.
+
 <a id="ac-b9b-1"></a>
 **AC:B9b:1** — la composición: porcentuales primero, un redondeo al final
 
@@ -243,18 +246,14 @@ Fuente: [ACC:1](../02-nucleo.md#acc-1)
 Fuente: [LISTA:B9b](#lista-b9b) · [FILA:B9b](#fila-b9b) · [GATE:FP.F2](../30-el-corte.md#gate-fp-f2)
 
 <a id="ac-b9b-12"></a>
-**AC:B9b:12** — lo que hay que decir en los actos de esta pieza (filas 7-bis, 13-ter y 13-quinquies)
+**AC:B9b:12** — lo que hay que decir al canjear una promo (fila 7-bis)
 
 - **Dado** las filas 7-bis y 13-ter del `B/19` §4, que van con su acto a esta pieza (BH; reparto por
   fila inferido en la fuente), y la 13-quinquies, que construye esta pieza (BO)
-- **Cuando** la persona canjea una promo de «primer cobro» o de «N cobros», o `SUPER_ADMIN` otorga o
-  revoca una cortesía temporal
+- **Cuando** la persona canjea una promo de «primer cobro» o de «N cobros»
 - **Entonces** cada superficie dice lo que su fila exige (fila por fila, en la sección *UI web y
   admin, e i18n*): el canje dice cuántos cobros lleva el descuento, qué monto paga después y que va a
-  recibir un correo del proveedor; otorgar dice que es en meses enteros y sólo sobre un plan mensual
-  y, si ya hay una vigente, que se suman meses con la fecha de fin nueva; y la confirmación de revocar
-  dice que pierde la cortesía que le quedaba, sin reembolso, que vuelve a `ACTIVE` y qué día se le va
-  a cobrar.
+  recibir un correo del proveedor; y lo que dicen otorgar y revocar una cortesía temporal es [AC:B9b:14](#ac-b9b-14), Fase 2.
 
 Fuente: [PIEZA:B9b](#pieza-b9b) · [FILA:B9b](#fila-b9b) · [ACC:1](../02-nucleo.md#acc-1) · [OWN:41-corte-del-mvp:t7:BH](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t7-bh) · [DEC-GRANT-003](../01-decisiones-vigentes.md#dec-grant-003)
 
@@ -272,6 +271,15 @@ Fuente: [PIEZA:B9b](#pieza-b9b) · [FILA:B9b](#fila-b9b) · [ACC:1](../02-nucleo
   su auditoría y pide confirmación explícita, porque mueve plata.
 
 Fuente: [ACC:1](../02-nucleo.md#acc-1) · [TRANS:B:S10](../04-catalogos.md#trans-b-s10) · [TPZ:S10](B8b.md#tpz-s10) · [OWN:41-corte-del-mvp:t9:BO](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bo) · [DEC-ARCH-017#📌6](../01-decisiones-vigentes.md#dec-arch-017-p6) · [LISTA:B9b](#lista-b9b)
+
+<a id="ac-b9b-14"></a>
+**AC:B9b:14** — lo que dicen otorgar y revocar una cortesía temporal (filas 13-ter y 13-quinquies; antes la mitad de `AC:B9b:12`)
+
+- **Dado** las filas 13-ter y 13-quinquies del `B/19` §4
+- **Cuando** `SUPER_ADMIN` otorga o revoca una cortesía temporal
+- **Entonces** otorgar dice que es en meses enteros y sólo sobre un plan mensual y, si ya hay una vigente, que se suman meses con la fecha de fin nueva; y la confirmación de revocar dice que pierde la cortesía que le quedaba, sin reembolso, que vuelve a `ACTIVE` y qué día se le va a cobrar.
+
+Fuente: [ACC:1](../02-nucleo.md#acc-1) · [DEC-GRANT-003](../01-decisiones-vigentes.md#dec-grant-003) · [DB](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#lote-cr-a-dd-2026-10-07)
 
 ### El criterio de terminación
 
@@ -433,7 +441,8 @@ aunque la UI oculte la operación (`B/19` §1).
 | [AC:B9b:9](#ac-b9b-9) | [TEST:B9b:9](#test-b9b-9) | e2e admin |
 | [AC:B9b:10](#ac-b9b-10) | [TEST:B9b:10](#test-b9b-10) | ruta API |
 | [AC:B9b:11](#ac-b9b-11) | [TEST:B9b:11](#test-b9b-11), [TEST:B9b:14](#test-b9b-14) | migración desde cero, integración con DB |
-| [AC:B9b:12](#ac-b9b-12) | [TEST:B9b:12](#test-b9b-12), [TEST:B9b:13](#test-b9b-13) | e2e web, e2e admin |
+| [AC:B9b:12](#ac-b9b-12) | [TEST:B9b:12](#test-b9b-12) | e2e web |
+| [AC:B9b:14](#ac-b9b-14) | [TEST:B9b:13](#test-b9b-13) | e2e admin |
 | [AC:B9b:13](#ac-b9b-13) | [TEST:B9b:14](#test-b9b-14), [TEST:B9b:15](#test-b9b-15) | integración con DB, ruta API |
 
 <a id="test-b9b-1"></a>
@@ -589,7 +598,7 @@ termina; a un pagador manual el canje de monto no se le ofrece.
 
 Tipo: e2e admin
 
-Cubre: [AC:B9b:12](#ac-b9b-12)
+Cubre: [AC:B9b:14](#ac-b9b-14)
 
 Fuente: [ACC:1](../02-nucleo.md#acc-1) · [DEC-GRANT-003](../01-decisiones-vigentes.md#dec-grant-003)
 

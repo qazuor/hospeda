@@ -1,18 +1,15 @@
 import type { Accommodation, AccommodationCreateInput } from '@repo/schemas';
-import {
-    LifecycleStatusEnum,
-    PermissionEnum,
-    ServiceErrorCode,
-    VisibilityEnum
-} from '@repo/schemas';
+import { PermissionEnum, PublicationStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import {
+    assertListingReadable,
     checkGenericPermission,
     entityNotFoundError,
     getOwnershipDescriptor,
     hasPermission
 } from '../../utils';
+import { isAction15AuthorizedFor } from '../../utils/administrative-authorization';
 import { ACCOMMODATION_ENTITY_NAME } from '../entity-names';
 
 /**
@@ -28,13 +25,19 @@ const isOwner = (actor: Actor, entity: { ownerId?: string | null }) => {
 
 /**
  * Checks if an actor has permission to create an accommodation.
- * Requires the `ACCOMMODATION_CREATE` permission.
+ * Requires the `ACCOMMODATION_CREATE` permission, or — inside a scope where a
+ * route's listing-access chain authorized action 15 for the owner named in
+ * `data.ownerId` — action 15's own permission (ACC:15, HOS-1493, H12). The
+ * permission alone never opens the create: the explicit authorization does.
  * Ownership checks (`ownerId` matching `actor.id`) are assumed to be handled separately.
  * @param actor The actor performing the action.
- * @param _data The data for the accommodation to be created (unused in this check).
+ * @param data The data for the accommodation to be created (its `ownerId` decides action 15).
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanCreate(actor: Actor, _data: AccommodationCreateInput): void {
+export function checkCanCreate(actor: Actor, data: AccommodationCreateInput): void {
+    if (isAction15AuthorizedFor({ actor, ownerId: data.ownerId })) {
+        return;
+    }
     if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_CREATE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -47,6 +50,13 @@ export function checkCanCreate(actor: Actor, _data: AccommodationCreateInput): v
  * Checks if an actor has permission to update an accommodation.
  * Requires `ACCOMMODATION_UPDATE_ANY` or `ACCOMMODATION_UPDATE_OWN`.
  * If `_OWN` is used, it verifies that the actor is the owner of the accommodation.
+ * Action 15 never passes here: see {@link checkAction15CanUpdate}, which only
+ * the content-write hook `_canUpdate` consults (never the visibility hook).
+ *
+ * The owner-pause edit lock that read the per-listing suspension flag was
+ * retired with that column (V6.9b, HOS-1641): suspension lives in the owner's
+ * coverage and in the listing-access chain of V5, not in a per-listing flag.
+ *
  * @param actor The actor performing the action.
  * @param entity The accommodation entity to be updated.
  * @throws {ServiceError} If the permission check fails.
@@ -59,16 +69,20 @@ export function checkCanUpdate(actor: Actor, entity: Accommodation): void {
         isOwner(actor, entity),
         'Permission denied to update accommodation'
     );
+}
 
-    // SPEC-143 #29: while the owner is service-suspended (full pause) their
-    // accommodations are edit-locked. Staff holding ACCOMMODATION_UPDATE_ANY are
-    // exempt (admin management); the owner editing via UPDATE_OWN is blocked.
-    if (entity.ownerSuspended && !hasPermission(actor, PermissionEnum.ACCOMMODATION_UPDATE_ANY)) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Cannot edit this accommodation while the owner subscription is paused'
-        );
-    }
+/**
+ * Whether a CONTENT write on an accommodation is authorized as action 15
+ * (ACC:15, HOS-1493): only inside a scope where a route's listing-access chain
+ * authorized action 15 for this accommodation's owner — the actor's permission
+ * alone never opens it.
+ *
+ * @param actor The actor performing the action.
+ * @param entity The accommodation entity to be written.
+ * @returns `true` when action 15 authorizes the write; `false` to fall back to {@link checkCanUpdate}.
+ */
+export function checkAction15CanUpdate(actor: Actor, entity: Accommodation): boolean {
+    return isAction15AuthorizedFor({ actor, ownerId: entity.ownerId });
 }
 
 /**
@@ -126,9 +140,7 @@ export function checkCanRestore(actor: Actor, entity: Accommodation): void {
 
 /**
  * Checks if an actor has permission to view an accommodation.
- * Public accommodations are always viewable. Private ones require specific permissions.
- * Restricted accommodations require VIP access or special permissions.
- * The owner of an accommodation can always view it, regardless of other permissions.
+ * Step 4 admits owned listings and published foreign listings.
  * @param actor The actor performing the action.
  * @param entity The accommodation entity to be viewed.
  * @throws {ServiceError} If the permission check fails.
@@ -137,90 +149,20 @@ export function checkCanView(actor: Actor, entity: Accommodation): void {
     // Soft-deleted accommodations existed but are permanently gone. The base
     // model's findOneWithRelations does not filter deleted_at IS NULL, so we
     // enforce it here to prevent ghost rows from leaking on public reads. Only
-    // entities that were PUBLIC (indexable) surface as GONE (410) so crawlers/
-    // LLM fetchers deindex the URL fast; deleted PRIVATE/RESTRICTED content that
-    // was never public returns NOT_FOUND (404, uniform) to preserve the
-    // anti-enumeration contract (SPEC-092 T-087) — its past existence is not
-    // disclosed. HOS-117 T-022.
+    // entities that were PUBLISHED (indexable) surface as GONE (410) so crawlers/
+    // LLM fetchers deindex the URL fast; deleted content that was never public
+    // returns NOT_FOUND (404, uniform) to preserve the anti-enumeration
+    // contract (SPEC-092 T-087) — its past existence is not disclosed.
+    // HOS-117 T-022; `publicationStatus` replaced `visibility` in V6.9b.
     if (entity.deletedAt !== null && entity.deletedAt !== undefined) {
-        if (entity.visibility === VisibilityEnum.PUBLIC) {
+        if (entity.publicationStatus === PublicationStatusEnum.PUBLISHED) {
             throw new ServiceError(ServiceErrorCode.GONE, 'Accommodation is gone');
         }
         throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
     }
 
-    // Draft/inactive/archived accommodations are not visible to the public.
-    // Only the owner or staff with ACCOMMODATION_VIEW_ALL can see non-ACTIVE
-    // accommodations. This prevents DRAFT content from leaking to anonymous
-    // readers when lifecycle_state is set to a non-ACTIVE value via SQL or API.
-    if (
-        entity.lifecycleState !== LifecycleStatusEnum.ACTIVE &&
-        !isOwner(actor, entity) &&
-        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
-    ) {
-        throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
-    }
-
-    // SPEC-143 #29: a service-suspended owner's accommodations are hidden from
-    // public reads and behave as if they do not exist (NOT_FOUND, not FORBIDDEN,
-    // so existence is not leaked). The owner themselves and staff holding
-    // ACCOMMODATION_VIEW_ALL are exempt so they can still see the listing while
-    // the subscription is paused.
-    if (
-        entity.ownerSuspended &&
-        !isOwner(actor, entity) &&
-        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
-    ) {
-        throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
-    }
-
-    // SPEC-167 T-004: plan-restricted accommodations behave identically to
-    // ownerSuspended for public reads — they do not exist (NOT_FOUND, not
-    // FORBIDDEN, so existence is not leaked).
-    // DIVERGENCE NOTE: for ownerSuspended, list queries use isOwnScope to let
-    // the owner see their suspended items; for planRestricted we do the same
-    // (owner is ALWAYS exempt). The host MUST see their own restricted
-    // accommodations to choose which to keep active / restore on re-upgrade.
-    if (
-        entity.planRestricted &&
-        !isOwner(actor, entity) &&
-        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
-    ) {
-        throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
-    }
-
-    if (
-        entity.visibility === 'PUBLIC' ||
-        (entity.visibility === 'PRIVATE' &&
-            hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_PRIVATE)) ||
-        hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL) ||
-        isOwner(actor, entity)
-    ) {
-        return;
-    }
-
-    // The ONE deliberate exception to "a foreign resource answers 404" (HOS-706,
-    // owner decision). A RESTRICTED listing is a commercial hook: telling the
-    // visitor "this exists and it is for VIPs" is the product. Every other
-    // refusal in this function answers 404 precisely so this one reads as a
-    // choice rather than an oversight — do NOT unify it. It is documented as an
-    // exception in `apps/api/docs/error-contract.md`; change it there first.
-    if (entity.visibility === 'RESTRICTED') {
-        if (
-            actor.entitlements?.has('vip_visibility_access') ||
-            hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL) ||
-            isOwner(actor, entity)
-        ) {
-            return;
-        }
-        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'VIP access required');
-    }
-
-    // Everything that reaches here is a foreign PRIVATE listing (HOS-706). It
-    // used to answer `403 'Permission denied to view accommodation'`, which sold
-    // nothing and confirmed the id was real — the deleted/non-active/suspended/
-    // plan-restricted branches above already answer 404 for exactly that reason.
-    throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
+    if (hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)) return;
+    assertListingReadable({ actor, entity, entityName: ACCOMMODATION_ENTITY_NAME });
 }
 
 /**
@@ -304,33 +246,6 @@ export function checkCanVerify(actor: Actor): void {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied to verify accommodation'
-        );
-    }
-}
-
-/**
- * Checks if an actor may apply the platform's moderation verdict to a listing
- * (H-102).
- *
- * `ACCOMMODATION_MODERATION_CHANGE` has been in the enum, and granted to roles
- * in the seed, since long before anything read it: no service method and no
- * route ever checked it. Meanwhile `ModerationAggregationService` counted
- * pending accommodations for the admin panel with no action capable of clearing
- * one, so that queue could only grow — every accommodation row in production
- * sits at `PENDING`, the published ones included.
- *
- * Mirrors `checkCanModeratePost` / `checkCanModerateEvent`. The verdict belongs
- * to the platform, so there is no owner path: an owner moves `lifecycleState`
- * through publish/unpublish instead.
- *
- * @param actor The actor performing the action.
- * @throws {ServiceError} FORBIDDEN if the actor lacks the permission.
- */
-export function checkCanModerate(actor: Actor): void {
-    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_MODERATION_CHANGE)) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Permission denied to moderate accommodation'
         );
     }
 }

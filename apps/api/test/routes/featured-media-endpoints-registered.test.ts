@@ -31,8 +31,27 @@
  * @module test/routes/featured-media-endpoints-registered
  */
 
-import { describe, expect, it } from 'vitest';
+import { PublicationStatusEnum, type VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
+import { describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../src/app.js';
+
+const { loadFacts } = vi.hoisted(() => ({ loadFacts: vi.fn() }));
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts,
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: `edit_${vertical}_info`, value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
 
 const ID = '00000000-0000-4000-8000-000000000001';
 
@@ -50,7 +69,6 @@ const HEADERS = {
         'accommodation.update.any',
         'gastronomy.editAll',
         'experience.editAll',
-        'commerce.editAll',
         'access.panelAdmin'
     ])
 };
@@ -81,7 +99,7 @@ const COVER_ENDPOINTS: ReadonlyArray<{
     },
     {
         path: `/api/v1/admin/gastronomies/${ID}/media/featured`,
-        caller: 'apps/admin — useCommerceMediaAddFeatured, vertical gastronomy'
+        caller: 'apps/admin — useListingMediaAddFeatured, vertical gastronomy'
     },
     {
         path: `/api/v1/protected/experiences/${ID}/media/featured`,
@@ -89,7 +107,7 @@ const COVER_ENDPOINTS: ReadonlyArray<{
     },
     {
         path: `/api/v1/admin/experiences/${ID}/media/featured`,
-        caller: 'apps/admin — useCommerceMediaAddFeatured, vertical experience'
+        caller: 'apps/admin — useListingMediaAddFeatured, vertical experience'
     }
 ];
 
@@ -97,9 +115,21 @@ describe('HOS-803 — the cover endpoints exist where their clients call them', 
     it.each(COVER_ENDPOINTS)('POST $path is mounted (called by: $caller)', async ({ path }) => {
         const app = initApp();
 
+        loadFacts.mockResolvedValue({
+            facts: {
+                ownerId: HEADERS['x-mock-actor-id'],
+                publicationStatus: PublicationStatusEnum.PUBLISHED
+            },
+            ownerId: HEADERS['x-mock-actor-id']
+        });
+        loadFacts.mockClear();
+
         const res = await app.request(path, { method: 'POST', headers: HEADERS, body: BODY });
 
         expect(res.status).not.toBe(404);
+        if (path.includes('/protected/')) {
+            expect(loadFacts).toHaveBeenCalledTimes(1);
+        }
     });
 
     it('resolves "featured" as a fixed suffix, not as a media id', async () => {

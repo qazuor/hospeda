@@ -63,9 +63,8 @@ import {
     GetDestinationPointsOfInterestInputSchema,
     GetDestinationStatsInputSchema,
     GetDestinationSummaryInputSchema,
-    LifecycleStatusEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    PublicationStatusEnum,
+    ServiceErrorCode
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -604,28 +603,21 @@ export class DestinationService extends BaseCrudService<
                 // HOS-288: this is a genuinely PUBLIC read path
                 // (GET /public/destinations/:id/accommodations — `checkCanViewDestination`
                 // lets a guest through for PUBLIC destinations), so it must be restricted
-                // to publicly visible, live listings on its own merits: PUBLIC visibility
-                // and ACTIVE lifecycle are what an anonymous caller may see at all, and
-                // `ownerSuspended`/`planRestricted` are the two entitlement gates that
-                // withdraw an otherwise-public listing from public surfaces.
-                // The predicates are stated HERE rather than defaulted in
-                // `AccommodationModel` on purpose — the admin panel must still see
-                // `PRIVATE` rows and an owner their own `DRAFT`.
-                // KNOWN FOLLOW-UP: {@link DestinationService.updateAccommodationsCount}
-                // maintains `accommodationsCount` for this very destination WITHOUT any
-                // `visibility` predicate, so this list and that count still disagree for
-                // ACTIVE + PRIVATE rows (the count includes them, this list does not).
-                // Reconciling the two is deliberately out of scope for HOS-288.
+                // to publicly visible listings on its own merits: `PUBLISHED` is the
+                // only publication status an anonymous caller may see (AC:V5:5; V6.9b
+                // replaced the old visibility/lifecycle/suspension/restriction
+                // predicates, HOS-1641). The predicate is stated HERE rather than
+                // defaulted in `AccommodationModel` on purpose — the admin panel must
+                // still see every state and an owner their own `DRAFT`.
+                // {@link DestinationService.updateAccommodationsCount} counts with the
+                // same predicate, so this list and that count agree.
                 // `deletedAt` is deliberately NOT passed: `AccommodationModel` excludes
                 // soft-deleted rows by default (see `AccommodationModel#softDeleteCondition`),
                 // and passing it here would trip that default's explicit-intent escape hatch.
                 const { items } = await this.accommodationModel.findAll(
                     {
                         destinationId,
-                        visibility: VisibilityEnum.PUBLIC,
-                        lifecycleState: LifecycleStatusEnum.ACTIVE,
-                        ownerSuspended: false,
-                        planRestricted: false
+                        publicationStatus: PublicationStatusEnum.PUBLISHED
                     },
                     undefined,
                     undefined,
@@ -1311,8 +1303,8 @@ export class DestinationService extends BaseCrudService<
 
     /**
      * Updates accommodationsCount for a destination by counting publicly-visible
-     * accommodations (mirrors the public-list predicate: ACTIVE lifecycle,
-     * not owner-suspended, not plan-restricted).
+     * accommodations (mirrors the public-list predicate: `publicationStatus`
+     * `PUBLISHED`, HOS-1641).
      *
      * Pre-existing behaviour counted `deletedAt: null` only — that inflated
      * the counter with restricted/suspended accommodations (SPEC-167 §1 fix).
@@ -1333,9 +1325,7 @@ export class DestinationService extends BaseCrudService<
         const accommodationCount = await this.accommodationModel.count({
             destinationId,
             deletedAt: null,
-            lifecycleState: 'ACTIVE',
-            ownerSuspended: false,
-            planRestricted: false
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
         await this.model.updateById(
             destinationId,

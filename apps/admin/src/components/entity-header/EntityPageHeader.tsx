@@ -117,7 +117,7 @@ export interface EntityPageHeaderProps {
     /**
      * Extra actions rendered between the quality score slot and the mode-specific
      * action set. Use for entity-level actions that are not Edit/Save/Cancel
-     * (e.g. user impersonate + delete in the access/users routes).
+     * (e.g. user delete in the access/users routes).
      *
      * A vertical divider is inserted automatically between the extras and the
      * mode actions when both are present.
@@ -522,7 +522,7 @@ export function EntityPageHeader({
                             </div>
                         )}
 
-                        {/* Entity-level extra actions (e.g. impersonate, delete) */}
+                        {/* Entity-level extra actions (e.g. delete) */}
                         {extraActions && (
                             <div
                                 className="flex items-center gap-2"

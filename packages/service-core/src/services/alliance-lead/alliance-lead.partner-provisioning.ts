@@ -1,11 +1,6 @@
 import type { PartnerModel, SelectAllianceLead } from '@repo/db';
 import type { ILogger } from '@repo/logger';
-import {
-    LifecycleStatusEnum,
-    type PartnerTierEnum,
-    type PartnerTypeEnum,
-    PartnerTypeEnumSchema
-} from '@repo/schemas';
+import { LifecycleStatusEnum, type PartnerTypeEnum, PartnerTypeEnumSchema } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 
 /**
@@ -28,14 +23,6 @@ export interface ProvisionPartnerInput {
     readonly lead: SelectAllianceLead;
     /** Model used to look up slugs and insert the partner. */
     readonly partnerModel: PartnerModel;
-    /**
-     * The commercial tier the admin is granting.
-     *
-     * Supplied by the admin at provisioning time, never by the applicant: the
-     * tier is a commercial decision about what Hospeda is offering, not a fact
-     * about the organization that a form could ask for.
-     */
-    readonly tier: PartnerTierEnum;
     /** The admin performing the action — recorded as the row's creator. */
     readonly actorId: string;
     /** Logger for the skip paths, which are silent by design but not invisible. */
@@ -146,15 +133,10 @@ export type ProvisionPartnerResult =
  *   behavior: the admin creates the partner by hand. Refusing outright would
  *   strand every partner lead already sitting in the inbox.
  *
- * The row is created DORMANT — `lifecycleState: DRAFT`, and
- * `subscriptionStatus` left at its `pending` column default. Public visibility
- * requires `ACTIVE` **and** `active` together, so a provisioned partner is
- * invisible until it actually pays; provisioning grants an account something to
- * fill in, not a published listing.
- *
- * `startsAt` is deliberately NOT set. It is the date the alliance began, and at
- * this point it has not — writing "today" here is exactly the invented date
- * that made the column nullable (HOS-278 D1).
+ * The row is created DORMANT — `lifecycleState: DRAFT`. Public visibility
+ * requires `ACTIVE`, so a provisioned partner is invisible until an admin
+ * activates it; provisioning grants an account something to fill in, not a
+ * published listing.
  *
  * @param input - See {@link ProvisionPartnerInput}.
  * @returns Whether a partner was created, and its id when one was.
@@ -162,7 +144,6 @@ export type ProvisionPartnerResult =
 export const provisionPartnerFromLead = async ({
     lead,
     partnerModel,
-    tier,
     actorId,
     logger,
     tx
@@ -195,7 +176,6 @@ export const provisionPartnerFromLead = async ({
             slug,
             name: plan.organizationName,
             type: plan.type,
-            tier,
             lifecycleState: LifecycleStatusEnum.DRAFT,
             // The applicant may be null: an anonymous submission whose email
             // already had an account stays unlinked until the owner redeems the
@@ -210,7 +190,7 @@ export const provisionPartnerFromLead = async ({
     );
 
     logger.info(
-        { leadId: lead.id, partnerId: created.id, ownerUserId: lead.applicantUserId, tier },
+        { leadId: lead.id, partnerId: created.id, ownerUserId: lead.applicantUserId },
         '[alliance-lead] provisioned partner from approved lead'
     );
 

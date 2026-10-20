@@ -3,13 +3,10 @@ import type { Context, MiddlewareHandler, Schema } from 'hono';
 import { requestId } from 'hono/request-id';
 import { actorMiddleware } from '../middlewares/actor';
 import { authMiddleware } from '../middlewares/auth';
-import { billingMiddleware } from '../middlewares/billing';
-import { billingCustomerMiddleware } from '../middlewares/billing-customer';
 import { bodyLimitMiddleware } from '../middlewares/body-limit';
 import { cacheMiddleware } from '../middlewares/cache';
 import { compressionMiddleware } from '../middlewares/compression';
 import { corsMiddleware } from '../middlewares/cors';
-import { entitlementMiddleware } from '../middlewares/entitlement';
 import { loggerMiddleware } from '../middlewares/logger';
 import { metricsMiddleware } from '../middlewares/metrics';
 import { rateLimitMiddleware } from '../middlewares/rate-limit';
@@ -18,7 +15,6 @@ import { createErrorHandler, responseFormattingMiddleware } from '../middlewares
 import { responseValidatorMiddleware } from '../middlewares/response-validator';
 import { originVerificationMiddleware, securityHeadersMiddleware } from '../middlewares/security';
 import { sentryMiddleware } from '../middlewares/sentry';
-import { trialMiddleware } from '../middlewares/trial';
 import { validationMiddleware } from '../middlewares/validation';
 import { visitorIdMiddleware } from '../middlewares/visitor-id';
 import type { AppBindings, AppMiddleware, AppOpenAPI } from '../types';
@@ -175,19 +171,6 @@ export function createApp() {
 
     // Authentication and authorization
     app.use(wrapMiddleware(authMiddleware())).use(wrapMiddleware(actorMiddleware()));
-
-    // Billing context (after authentication)
-    app.use(wrapMiddleware(billingMiddleware));
-
-    // Billing customer sync (after billing middleware)
-    app.use(wrapMiddleware(billingCustomerMiddleware()));
-
-    // Entitlement checking (after billing customer middleware)
-    app.use(wrapMiddleware(entitlementMiddleware()));
-
-    // Trial expiry checking (after entitlement middleware)
-    // Blocks access with 402 when trial has expired, allows billing/export/docs routes
-    app.use(wrapMiddleware(trialMiddleware()));
 
     app.notFound(notFound);
 

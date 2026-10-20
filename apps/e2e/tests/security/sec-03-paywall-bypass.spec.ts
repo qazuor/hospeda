@@ -13,7 +13,7 @@
 
 import { expect, test } from '@playwright/test';
 import { createSubscription, createUser, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { execSQL, getDbPool, hasOldBillingSchema } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -31,6 +31,11 @@ test.describe('SEC-03: trial host paywall bypass attempts @p0 @security @billing
     test('paid-only endpoints reject trial host with 402/403, no side effects', async ({
         request
     }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         // ── Setup: trial host ──────────────────────────────────────────────
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         await forceVerifyEmail(host.id);

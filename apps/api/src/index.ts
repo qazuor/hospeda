@@ -4,7 +4,6 @@
  */
 import { serve } from '@hono/node-server';
 import { resolveConfig } from '@repo/ai-core';
-import { validateBillingConfigOrThrow } from '@repo/billing';
 import {
     initializeModerationEngine,
     registerModerationMonitoringHooks
@@ -12,13 +11,13 @@ import {
 import { ContentModerationTermModel, getDb, rolePermission } from '@repo/db';
 import { configureLogger, LogFormat, LogLevel, registerCaptureHook } from '@repo/logger';
 import {
-    ensureDefaultPromoCodes,
     getIndexNowService,
     initializeIndexNowService,
     initializeRevalidationService,
     initializeTranslationService,
     PlatformSettingsService,
     setCalendarConnectionRevocationPort,
+    setCorrelationIdResolver,
     setPermissionChangeAuditEmitter,
     setUserPermissionsCacheInvalidator
 } from '@repo/service-core';
@@ -32,7 +31,7 @@ import { registerAuditLogPersistence } from './lib/audit-log-sink';
 import { createEntityResolver } from './lib/entity-resolver';
 import { isEntityPubliclyVisible } from './lib/indexnow-visibility';
 import { shutdownPostHog } from './lib/posthog';
-import { getRequestContext } from './lib/request-context';
+import { getRequestContext, getRequestCorrelationId } from './lib/request-context';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { getDecryptedAiProviderCredential } from './services/ai-credential-vault.service';
 import { calendarConnectionRevocationAdapter } from './services/calendar-sync/calendar-connection-revocation.adapter';
@@ -47,9 +46,11 @@ import { AuditEventType, auditLog } from './utils/audit-logger';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
+import { subscribeListingCoverageRecalculation } from './utils/listing-publication/coverage-listener';
 import { apiLogger } from './utils/logger';
 import { disconnectRedis } from './utils/redis';
 import { resolveLogFormat } from './utils/resolve-log-format';
+import { subscribeTrialCoverageConversion } from './utils/trial/trial-coverage-listener';
 import {
     destroyUserPermissionsCache,
     invalidateUserPermissionsCache
@@ -291,25 +292,6 @@ const startServer = async (): Promise<void> => {
             );
         }
 
-        // Validate billing configuration
-        validateBillingConfigOrThrow();
-
-        // Mount qzpay-hono admin tier under /api/v1/admin/billing/*.
-        // Deferred until after initializeDatabase() because the mount calls
-        // getQZPayBilling() which needs the DB pool ready. See the comment on
-        // mountQZPayAdminTier() in routes/billing/admin/index.ts for the
-        // ESM-hoisting reason this cannot live at module-load time.
-        const { mountQZPayAdminTier } = await import('./routes/billing/admin');
-        mountQZPayAdminTier();
-
-        // Ensure default promo codes exist. HOS-1171 emptied that list: its one
-        // entry was HOSPEDA_FREE, and this call was the THIRD place that created
-        // it — the one that would have restored an active, uncapped comp code on
-        // every fresh database after the seed baseline and the seeded row both
-        // retired it. Kept as the seam for a future default, not as a no-op to
-        // delete.
-        await ensureDefaultPromoCodes();
-
         // Initialize ISR revalidation service (optional — only if secret is configured)
         if (env.HOSPEDA_REVALIDATION_SECRET) {
             // HOS-585 G-1: search-engine notification rides the same write hook
@@ -364,7 +346,14 @@ const startServer = async (): Promise<void> => {
         setCalendarConnectionRevocationPort(calendarConnectionRevocationAdapter);
         apiLogger.info('Calendar connection revocation adapter registered');
 
+        // HOS-1499: the domain events service-core writes (the owner acts on a
+        // listing, V9a) carry the correlation U2 minted at the edge. The service
+        // cannot read the API's request context, so it is wired here.
+        setCorrelationIdResolver(getRequestCorrelationId);
+
         const app = initApp();
+        const unsubscribeCoverage = subscribeListingCoverageRecalculation();
+        const unsubscribeTrialConversion = subscribeTrialCoverageConversion();
 
         // Newsletter dispatch worker handle — populated below after serve() resolves.
         // Hoisted here so gracefulShutdown can await its drain.
@@ -467,6 +456,8 @@ const startServer = async (): Promise<void> => {
         // Graceful shutdown
         const gracefulShutdown = async (signal: string) => {
             apiLogger.info(`Received ${signal}, shutting down gracefully...`);
+            unsubscribeCoverage?.();
+            unsubscribeTrialConversion?.();
 
             try {
                 // Drain in-flight BullMQ jobs first — must complete BEFORE Redis

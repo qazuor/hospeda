@@ -61,8 +61,7 @@ test.describe('E2E-06: public save counter @p1 @favorites @counter @spec-098', (
     } | null> {
         const rows = await execSQL<{ id: string; slug: string }>(
             `SELECT id, slug FROM accommodations
-             WHERE lifecycle_state = 'ACTIVE'
-               AND visibility = 'PUBLIC'
+             WHERE publication_status = 'PUBLISHED'
                AND deleted_at IS NULL
              ORDER BY created_at ASC
              LIMIT 1`

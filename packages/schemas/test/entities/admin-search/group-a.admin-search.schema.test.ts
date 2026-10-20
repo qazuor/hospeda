@@ -23,14 +23,12 @@ describe('Group A Admin Search Schemas', () => {
                 type: 'HOTEL',
                 destinationId: '550e8400-e29b-41d4-a716-446655440000',
                 ownerId: '550e8400-e29b-41d4-a716-446655440001',
-                isFeatured: true,
                 minPrice: 50,
                 maxPrice: 500
             });
             expect(result.type).toBe('HOTEL');
             expect(result.destinationId).toBe('550e8400-e29b-41d4-a716-446655440000');
             expect(result.ownerId).toBe('550e8400-e29b-41d4-a716-446655440001');
-            expect(result.isFeatured).toBe(true);
             expect(result.minPrice).toBe(50);
             expect(result.maxPrice).toBe(500);
         });

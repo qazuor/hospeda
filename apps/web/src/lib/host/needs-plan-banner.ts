@@ -26,15 +26,15 @@
 export interface NeedsPlanBannerParams {
     /** Whether the owner has zero accommodations at all (empty state renders instead). */
     readonly isEmpty: boolean;
-    /** Whether the SSR fetch for accommodations/entitlements failed. */
+    /** Whether the SSR fetch for accommodations failed. */
     readonly fetchError: boolean;
+    /** Whether the protected effective-set read succeeded. */
+    readonly effectiveSetReadOk: boolean;
     /** Whether at least one of the owner's accommodations is a DRAFT. */
     readonly hasDraftProperty: boolean;
     /**
      * Whether the owner currently holds a real owner/complex-category
-     * subscription (i.e. can actually publish). Resolved server-side from
-     * `GET /api/v1/protected/users/me/entitlements` — `plan !== null` after
-     * the HOS-217 category-aware fallback in that endpoint.
+     * live non-trial title, resolved from the accommodation effective set.
      */
     readonly hasOwnerPlan: boolean;
 }
@@ -46,12 +46,8 @@ export interface NeedsPlanBannerParams {
 /**
  * Decides whether to render the proactive "anfitrión en preparación" banner.
  *
- * Fail-safe by construction: any caller that cannot determine `hasOwnerPlan`
- * or `fetchError` reliably should pass `hasOwnerPlan: true` (fail-open) so a
- * transient API failure never falsely nags a paying host — this function
- * itself stays a pure boolean AND of its inputs and does not apply that
- * default; the fail-open behavior lives in the caller (see
- * `mi-cuenta/propiedades/index.astro`).
+ * A failed effective-set read suppresses the banner because plan absence is
+ * unknown; the pure AND includes that read status.
  *
  * The banner is shown only when there is something concrete for it to
  * describe (at least one DRAFT property) and nothing else is already
@@ -66,7 +62,7 @@ export interface NeedsPlanBannerParams {
  * const showNeedsPlanBanner = shouldShowNeedsPlanBanner({
  *   isEmpty: properties.length === 0,
  *   fetchError,
- *   hasDraftProperty: properties.some((p) => p.lifecycleState === LifecycleStatusEnum.DRAFT),
+ *   hasDraftProperty: properties.some((p) => p.publicationStatus === PublicationStatusEnum.DRAFT),
  *   hasOwnerPlan
  * });
  * ```
@@ -74,8 +70,9 @@ export interface NeedsPlanBannerParams {
 export function shouldShowNeedsPlanBanner({
     isEmpty,
     fetchError,
+    effectiveSetReadOk,
     hasDraftProperty,
     hasOwnerPlan
 }: NeedsPlanBannerParams): boolean {
-    return !isEmpty && !fetchError && hasDraftProperty && !hasOwnerPlan;
+    return !isEmpty && !fetchError && effectiveSetReadOk && hasDraftProperty && !hasOwnerPlan;
 }

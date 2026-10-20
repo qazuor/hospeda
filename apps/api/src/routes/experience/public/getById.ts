@@ -4,16 +4,12 @@
  * Returns 404 when the listing is not visible (non-existent, soft-deleted, or non-public).
  */
 import { ExperiencePublicSchema } from '@repo/schemas';
-import {
-    ExperienceService,
-    resolveOwnerGrantsExperienceDirections,
-    ServiceError
-} from '@repo/service-core';
+import { ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { withPublicIsFeatured } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
-import { withPublicVisibleFaqs } from '../../../utils/commerce-faq-visibility';
+import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 import { applyExperienceDirectionsGate } from './directions-projection';
@@ -50,18 +46,10 @@ export const publicGetExperienceByIdRoute = createPublicRoute({
             return null;
         }
 
-        // HOS-1049. This route gates too, and that is not belt-and-braces:
-        // `meetingPointDirections` is named on `ExperiencePublicSchema`, so
-        // without this the response strip would happily pass the stored column
-        // straight through here while `getBySlug` withheld it — the same value,
-        // paid on one URL and free on the other.
-        const ownerGrantsDirections = await resolveOwnerGrantsExperienceDirections({
-            ownerId: experience.ownerId
-        });
-
+        // Keep formerly plan-gated directions hidden until replacement coverage exists.
         return applyExperienceDirectionsGate({
             experience: withPublicIsFeatured(withPublicVisibleFaqs(experience)),
-            ownerGrantsDirections
+            ownerGrantsDirections: false
         });
     },
     options: {

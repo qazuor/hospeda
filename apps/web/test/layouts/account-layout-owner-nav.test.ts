@@ -45,7 +45,7 @@ describe('AccountLayout — sidebar wiring (HOS-131 T-007)', () => {
             "import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';"
         );
         expect(source).not.toContain('isHostRole');
-        expect(source).not.toContain('isCommerceOwnerRole');
+        expect(source).not.toContain('isOwnerRole');
     });
 
     it('wires data-tour from the config item, not a local getTourTarget mapping', () => {

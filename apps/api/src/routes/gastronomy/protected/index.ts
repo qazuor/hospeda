@@ -14,7 +14,7 @@
  * insertion order. Verified by mutation on the post/event twin of these routes
  * (registering the DELETE first leaves
  * `test/routes/post-protected-media.test.ts` green). There is no equivalent
- * commerce-side route test to re-run that mutation against here, but it is the
+ * gastronomy/experience-side route test to re-run that mutation against here, but it is the
  * same Hono router. The other two entries are very likely the same, but were
  * not verified — do not read them as proven.
  */
@@ -23,6 +23,7 @@ import { protectedAddGastronomyFaqRoute } from './addFaq';
 import { protectedAddGastronomyFeaturedMediaRoute } from './addFeaturedMedia';
 import { protectedAddGastronomyMediaRoute } from './addMedia';
 import { protectedGetGastronomyBrochureRoute } from './brochure';
+import { protectedCreateGastronomyListingRoute } from './create';
 import { protectedCreateGastronomyReviewRoute } from './createReview';
 import { protectedDeleteGastronomyMenuFileRoute } from './deleteMenuFile';
 import { protectedGetGastronomyByIdRoute } from './getById';
@@ -34,16 +35,23 @@ import { protectedListMyGastronomyRoute } from './listMine';
 import { protectedGetGastronomyMenuQrRoute } from './menuQr';
 import { protectedGetGastronomyMenuQrScansRoute } from './menuQrScans';
 import { protectedPatchGastronomyRoute } from './patch';
+import { protectedPublishGastronomyRoute } from './publish';
+import { protectedPurgeGastronomyRoute } from './purge';
+import { protectedGastronomyPurgePreviewRoute } from './purgePreview';
 import { protectedPutGastronomyDailySpecialsRoute } from './putDailySpecials';
 import { protectedPutGastronomyEventsRoute } from './putEvents';
 import { protectedPutGastronomyMenuRoute } from './putMenu';
 import { protectedGetGastronomyQrCodeRoute } from './qrCode';
 import { protectedGetGastronomyQrSheetRoute } from './qrSheet';
+import { protectedReactivateGastronomyRoute } from './reactivate';
 import { protectedRemoveGastronomyFaqRoute } from './removeFaq';
 import { protectedRemoveGastronomyMediaRoute } from './removeMedia';
 import { protectedReorderGastronomyFaqsRoute } from './reorderFaqs';
 import { protectedReorderGastronomyMediaRoute } from './reorderMedia';
+import { protectedGastronomyReportFixedRoute } from './reportFixed';
 import { protectedSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
+import { protectedGastronomySupportEditsRoute } from './supportEdits';
+import { protectedUnpublishGastronomyRoute } from './unpublish';
 import { protectedUpdateGastronomyFaqRoute } from './updateFaq';
 import { protectedUpdateGastronomyMediaRoute } from './updateMedia';
 import { protectedUploadGastronomyMenuFileRoute } from './uploadMenuFile';
@@ -52,6 +60,10 @@ import { protectedGastronomyViewStatsRoute } from './viewStats';
 import { protectedGastronomyViewStatsDailySeriesRoute } from './viewStatsDailySeries';
 
 const app = createRouter();
+
+// POST / — Owner self-service create (HOS-166 §7.2). Root path, so it cannot
+// collide with any /{id}/... route.
+app.route('/', protectedCreateGastronomyListingRoute);
 
 // PUT /{id}/faqs/reorder — Must be before /{id}/faqs/{faqId} (PUT).
 app.route('/', protectedReorderGastronomyFaqsRoute);
@@ -144,6 +156,13 @@ app.route('/', protectedGetGastronomyEventsRoute);
 app.route('/', protectedPutGastronomyEventsRoute);
 
 // GET /{id} — Owner view (protected projection).
+app.route('/', protectedPublishGastronomyRoute);
+app.route('/', protectedUnpublishGastronomyRoute);
+app.route('/', protectedReactivateGastronomyRoute);
+app.route('/', protectedPurgeGastronomyRoute);
+app.route('/', protectedGastronomyPurgePreviewRoute);
+app.route('/', protectedGastronomySupportEditsRoute);
+app.route('/', protectedGastronomyReportFixedRoute);
 app.route('/', protectedGetGastronomyByIdRoute);
 
 // PATCH /{id} — Owner operational update.
@@ -161,7 +180,7 @@ app.route('/', protectedRemoveGastronomyFaqRoute);
 // POST /{gastronomyId}/reviews — Tourist creates a review.
 app.route('/', protectedCreateGastronomyReviewRoute);
 
-// Media management (HOS-372) — gated on COMMERCE_EDIT_OWN/COMMERCE_EDIT_ALL
+// Media management (HOS-372) — gated on GASTRONOMY_EDIT_OWN/GASTRONOMY_EDIT_ALL
 // inside the service layer via checkGastronomyCanEditMedia.
 
 // PATCH /{id}/media/reorder — Must be before /{id}/media/{mediaId} (DELETE).

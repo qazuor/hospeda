@@ -39,7 +39,7 @@ describe('aiChatCopyKey', () => {
         });
     });
 
-    describe('for a commerce vertical', () => {
+    describe('for a gastronomy or experience vertical', () => {
         it.each([
             ['gastronomy', 'gastronomy'],
             ['experience', 'experience']

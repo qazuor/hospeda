@@ -8,12 +8,14 @@
  *
  * @route GET /api/v1/protected/accommodations/my/market-comparison
  */
-import { EntitlementKey } from '@repo/billing';
+
+import { VerticalEnum } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -49,7 +51,7 @@ const HostMarketComparisonSchema = z.object({
  *
  * For each accommodation owned by the authenticated host, returns the
  * comparison row used by HOST card J. Scoped to `ownerId = actor.id`.
- * Requires `ACCOMMODATION_VIEW_OWN`.
+ * Reads the owner's effective view_advanced_stats capability before returning statistics.
  */
 export const hostMarketComparisonRoute = createProtectedRoute({
     method: 'get',
@@ -63,6 +65,11 @@ export const hostMarketComparisonRoute = createProtectedRoute({
     responseSchema: HostMarketComparisonSchema,
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            keys: ['view_advanced_stats']
+        });
 
         const result = await accommodationService.getHostMarketComparison(actor);
 
@@ -73,10 +80,6 @@ export const hostMarketComparisonRoute = createProtectedRoute({
         return { comparisons: result.data ?? [] };
     },
     options: {
-        // SPEC-145 T-006: VIEW_ADVANCED_STATS gate — market comparison analytics
-        // are an advanced stats feature gated behind owner-pro / owner-premium
-        // / complex-pro / complex-premium plans.
-        middlewares: [requireEntitlement(EntitlementKey.VIEW_ADVANCED_STATS)],
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

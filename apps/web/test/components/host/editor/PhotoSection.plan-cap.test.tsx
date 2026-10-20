@@ -63,8 +63,12 @@ vi.mock('@/hooks/useMyEntitlements', () => ({
 const ACC_ID = 'acc-uuid-plan-cap';
 const defaultProps: PhotoSectionProps = { locale: 'es', accommodationId: ACC_ID };
 
-/** The exact href `resolveLimitAddonOffer` resolves for the photos add-on. */
-const ADDON_HREF = '/es/mi-cuenta/addons/?focus=extra-photos-20#addon-extra-photos-20';
+/**
+ * Where the cap upsell points. It used to be the photos add-on
+ * (`/mi-cuenta/addons/?focus=extra-photos-20`); that page was removed with the
+ * old billing (HOS-1637, AC:B13a:20), so it is the plan upgrade.
+ */
+const PLAN_HREF = '/es/mi-cuenta/suscripcion/';
 
 /** Build N gallery-only rows (never featured) for `listMedia`. */
 function buildGalleryRows(count: number) {
@@ -292,7 +296,7 @@ describe('HOS-1024 — the selector never accepts more than the PLAN allows', ()
 });
 
 describe('HOS-1024 — sober upsell when the gallery is full at the plan cap', () => {
-    it('shows the cap-reached message plus a one-line add-on upsell link', async () => {
+    it('shows the cap-reached message plus a one-line plan upsell link', async () => {
         mockListMedia.mockReturnValue(makeListOk(buildGalleryRows(15)));
 
         render(<PhotoSection {...defaultProps} />);
@@ -301,9 +305,10 @@ describe('HOS-1024 — sober upsell when the gallery is full at the plan cap', (
         expect(screen.getByText('Límite de galería alcanzado (máx 15 fotos)')).toBeInTheDocument();
 
         const { t } = createTranslations('es');
-        const upsellLabel = t('account.subscription.usage.buyAddon');
+        const upsellLabel = t('billing.limit.max_photos_per_accommodation.cta');
         const upsellLink = screen.getByRole('link', { name: upsellLabel });
-        expect(upsellLink).toHaveAttribute('href', ADDON_HREF);
+        expect(upsellLink).toHaveAttribute('href', PLAN_HREF);
+        expect(document.body.innerHTML).not.toContain('mi-cuenta/addons');
 
         // Sober: exactly one link in the cap-reached message, no second CTA,
         // no headline/banner copy beyond the existing cap-reached sentence.

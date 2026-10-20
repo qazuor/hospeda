@@ -2,7 +2,7 @@
  * @file index.test.ts
  * @description Source-string tests for the public `/[lang]/funcionalidades/`
  * marketing page (HOS-119). Mirrors the lightweight `readFileSync`-based
- * pattern used by `apps/web/test/pages/suscriptores/plan1.test.ts` — this
+ * pattern used by the other page tests under `apps/web/test/pages/` — this
  * page is SSR (no static build artifact to inspect), so assertions target
  * the `.astro` source directly rather than a rendered DOM.
  *

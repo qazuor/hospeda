@@ -25,14 +25,14 @@
  *   no partner) look like a broken page.
  *
  * Actor-dependent, therefore NOT cacheable. No `cacheTTL`, and it may never move
- * to the public tier.
+ * to a public route.
  *
  * ## What this route does NOT do
  *
  * Decide which cards render. It ships the numbers and the three partner fields
  * `resolvePartnerLogoLink` reads, and the web component calls that function.
- * Gating here — on `tier`, say — would be a second source of truth about what
- * the home carousel actually renders (spec §7.2).
+ * Gating here would be a second source of truth about what the home carousel
+ * actually renders (spec §7.2).
  *
  * @module routes/partners/protected/mine-stats
  */

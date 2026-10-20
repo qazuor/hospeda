@@ -1,7 +1,9 @@
 /**
  * HOS-929 regression — the public getById endpoint must feature an
  * accommodation whose owner holds a FEATURED_LISTING entitlement (plan or
- * addon), even when the admin-curated `isFeatured` column is still `false`.
+ * addon). Since HOS-1419 dropped the admin-curated `is_featured` column, the
+ * public `isFeatured` is `featuredByEntitlement` alone: a stray `isFeatured`
+ * on the service row must NOT feature the listing.
  *
  * Before the fix, this route echoed the raw `isFeatured` column verbatim, so
  * an addon-purchased "visibility boost" never made the accommodation appear
@@ -44,11 +46,6 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         }
     };
 });
-
-vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    ownerEntitlementMiddleware: vi.fn(),
-    resolveOwnerEntitlementsForOwnerId: mockResolveOwnerEntitlementsForOwnerId
-}));
 
 vi.mock('../../../../src/utils/actor', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../../../src/utils/actor')>();
@@ -113,12 +110,9 @@ const BASE_ACCOMMODATION = {
     extraInfo: null,
     destinationId: 'dddddddd-0000-4000-8000-000000000004',
     ownerId: OWNER_ID,
-    visibility: 'PUBLIC',
-    lifecycleState: 'ACTIVE',
+    publicationStatus: 'PUBLISHED',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-    ownerSuspended: false,
-    planRestricted: false,
     contactInfo: null,
     socialNetworks: null
 };
@@ -137,16 +131,16 @@ async function buildApp() {
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe('publicGetAccommodationByIdRoute — HOS-929 featured entitlement OR', () => {
+describe('publicGetAccommodationByIdRoute — HOS-929 featured from the entitlement', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockResolveOwnerEntitlementsForOwnerId.mockResolvedValue([]);
     });
 
     it('reports isFeatured=true when only featuredByEntitlement is true (the reported bug)', async () => {
-        // Arrange — staging's exact repro shape: is_featured=false, featured_by_entitlement=true.
+        // Arrange — staging's repro shape: featured_by_entitlement=true.
         mockGetById.mockResolvedValue({
-            data: { ...BASE_ACCOMMODATION, isFeatured: false, featuredByEntitlement: true },
+            data: { ...BASE_ACCOMMODATION, featuredByEntitlement: true },
             error: null
         });
 
@@ -167,7 +161,7 @@ describe('publicGetAccommodationByIdRoute — HOS-929 featured entitlement OR', 
         // — "AccommodationPublicSchema — featuredByEntitlement strip (HOS-929)".
     });
 
-    it('reports isFeatured=true when only the admin-curated flag is true', async () => {
+    it('ignores a stray isFeatured on the row: the entitlement is the only source', async () => {
         mockGetById.mockResolvedValue({
             data: { ...BASE_ACCOMMODATION, isFeatured: true, featuredByEntitlement: false },
             error: null
@@ -178,12 +172,12 @@ describe('publicGetAccommodationByIdRoute — HOS-929 featured entitlement OR', 
 
         expect(res.status).toBe(200);
         const body = await res.json();
-        expect(body.data.isFeatured).toBe(true);
+        expect(body.data.isFeatured).toBe(false);
     });
 
-    it('reports isFeatured=false when neither flag is true', async () => {
+    it('reports isFeatured=false when the entitlement flag is false', async () => {
         mockGetById.mockResolvedValue({
-            data: { ...BASE_ACCOMMODATION, isFeatured: false, featuredByEntitlement: false },
+            data: { ...BASE_ACCOMMODATION, featuredByEntitlement: false },
             error: null
         });
 

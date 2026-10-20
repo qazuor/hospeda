@@ -1,6 +1,6 @@
 {
     "id": "003-gastronomy-gualeguaychu-la-cerveceria-del-rio",
-    "ownerId": "042-user-commerce-owner-rodrigo",
+    "ownerId": "042-user-gastronomy-owner-rodrigo",
     "destinationId": "005-destination-gualeguaychu",
     "slug": "la-cerveceria-del-rio",
     "name": "La Cervecería del Río",
@@ -9,10 +9,7 @@
     "type": "CERVECERIA",
     "priceRange": "MID",
     "menuUrl": "https://lacerveceridelrio.com.ar/carta",
-    "visibility": "PUBLIC",
-    "lifecycleState": "ACTIVE",
-    "moderationState": "APPROVED",
-    "isFeatured": false,
+    "publicationStatus": "PUBLISHED",
     "contactInfo": {
         "personalEmail": "hola@lacerveceridelrio.com.ar",
         "mobilePhone": "+54 9 3446 500003",

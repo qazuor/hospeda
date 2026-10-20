@@ -28,6 +28,7 @@ import {
 } from '@/components/shared/ui/Dialog.client';
 import { accommodationEditApi } from '@/lib/api/endpoints-protected';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { buildSubscribeToPublishCopy } from '@/lib/listing/listing-notices';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import styles from './PublishReadyDialog.module.css';
@@ -71,6 +72,8 @@ export function PublishReadyDialog({
 }: PublishReadyDialogProps): JSX.Element | null {
     const { t, tPlural } = createTranslations(locale);
     const [state, setState] = useState<DialogState>('offering');
+    /** Row 21 (HOS-1492): shown only after the server's `subscription_required`. */
+    const subscribeToPublish = buildSubscribeToPublishCopy({ t, vertical: 'accommodation' });
 
     if (!isOpen) {
         return null;
@@ -118,10 +121,7 @@ export function PublishReadyDialog({
                 closeLabel={t('common.close', 'Cerrar')}
             >
                 {state === 'subscriptionRequired'
-                    ? t(
-                          'host.properties.editor.publishReady.blockedTitle',
-                          'Necesitás un plan activo'
-                      )
+                    ? subscribeToPublish.title
                     : t('host.properties.editor.publishReady.title', 'Tu ficha ya está lista')}
             </DialogHeader>
 
@@ -133,11 +133,11 @@ export function PublishReadyDialog({
                         testId="publish-ready-paused-notice"
                     />
                 ) : state === 'subscriptionRequired' ? (
-                    <p className={styles.text}>
-                        {t(
-                            'host.properties.card.publishSubscriptionRequiredMessage',
-                            'Necesitás un plan activo para publicar.'
-                        )}
+                    <p
+                        className={styles.text}
+                        data-testid="publish-ready-subscribe-to-publish"
+                    >
+                        {subscribeToPublish.body}
                     </p>
                 ) : (
                     <>

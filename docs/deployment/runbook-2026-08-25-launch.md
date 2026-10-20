@@ -28,12 +28,12 @@ data-migrations applied (`0057-staff-email-domain-to-com-ar` is the last one).
 
 ```
 0058-purge-seed-example-data                          destructive
-0059-purge-test-and-commerce-example                  destructive
+0059-purge-test-and-example-listings                  destructive
 0060-social-formats-feed-ratio-4x5
-0061-hos-688-commerce-vertical-catalogue
-0062-hos686-commerce-listing-moderation-permission
-0064-hos-590-commerce-vertical-trial-30-days
-0065-hos-692-purge-orphaned-commerce-fixtures         destructive
+0061-hos-688-vertical-catalogue
+0062-hos686-listing-moderation-permission
+0064-hos-590-vertical-trial-30-days
+0065-hos-692-purge-orphaned-fixtures                  destructive
 0066-hos-692-domain-rewrite-and-plan-cleanup          destructive
 0067-hos-726-addon-purchase-permission
 0068-hos-749-prod-billing-cleanup                     destructive
@@ -54,7 +54,7 @@ the declared purpose of the migration (start the first real customer from a clea
 slate), decided by the owner on 2026-08-23. If it is not announced beforehand,
 somebody will report it as a launch-day bug.
 
-`0098` also drops `commerce_leads` with `CASCADE`, destroying the **3 rows** it holds
+`0098` also drops the retired owner-lead table with `CASCADE`, destroying the **3 rows** it holds
 in production. Irreversible outside the backup.
 
 ---
@@ -63,21 +63,21 @@ in production. Irreversible outside the backup.
 
 **Redeploy the apps FIRST, then run the migrations.**
 
-`0098_graceful_tarantula.sql` is `DROP TABLE "commerce_leads" CASCADE`. The API image
+`0098_graceful_tarantula.sql` is `DROP TABLE "<owner-lead table>" CASCADE`. The API image
 running in production **today** still queries that table — verified by reading its live
 bundle:
 
 ```js
-await db.update(commerceLeads).set({ opsNotifi…
-const rows = await db.select().from(commerceLeads).where(…
+await db.update(ownerLeads).set({ opsNotifi…
+const rows = await db.select().from(ownerLeads).where(…
 ```
 
-That is the `lead-intake-backstop` cron plus the commerce funnel. Dropping the table
+That is the `lead-intake-backstop` cron plus the owner-lead funnel. Dropping the table
 while that container is still serving breaks it the instant the migration applies —
 the same failure mode that caused the 8-minute `accommodations` outage on 2026-08-18
 (HOS-601).
 
-`main`'s code no longer defines or queries `commerce_leads`, so once the new image is
+`main`'s code no longer defines or queries the retired owner-lead table, so once the new image is
 live the drop is a no-op for the application.
 
 > The CI guard `check-drop-column-release-gap.sh` matches `DROP COLUMN` only, so a
@@ -89,13 +89,13 @@ by one, by whom each pending migration can hurt:
 
 | Migration | What it does | Hurts the OLD image | Hurts the NEW image if applied after it |
 | --- | --- | --- | --- |
-| `0092` | adds enum value `commerce.moderationChange` | no | no |
+| `0092` | adds enum value the listing moderation-change notification value | no | no |
 | `0093` | stricter unique index on polling jobs | marginally | no |
 | `0094` | `DROP DEFAULT` on `product_domain` | **yes** | no |
 | `0095` | creates `billing_orphan_payments` | no | narrowly |
 | `0096` | adds enum value `billing.addon.purchase` | no | no |
 | `0097` | unique index on refunds | no | no |
-| `0098` | `DROP TABLE commerce_leads` | **yes, seriously** | no |
+| `0098` | `DROP TABLE` of the owner-lead table | **yes, seriously** | no |
 
 Redeploying first therefore avoids **three** hazards against the still-running old
 image (`0093`, `0094`, `0098`) and pays exactly one narrow cost: between the deploy and
@@ -203,7 +203,7 @@ ledger partway through the batch.
 - [ ] Smoke the public site: home, a destination, an accommodation detail
 - [ ] The experiences section renders its empty state cleanly (it will be empty — see
       [above](#announce-this-before-you-start))
-- [ ] Commerce: the catalogue exists and the free trial is offered
+- [ ] Gastronomy and experience: the catalogue exists and the free trial is offered
 
 ### 6 — Purge the edge cache
 

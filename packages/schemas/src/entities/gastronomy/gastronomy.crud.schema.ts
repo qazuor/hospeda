@@ -43,9 +43,11 @@ export const GastronomyAdminCreateInputSchema = GastronomySchema.omit({
     deletedById: true,
     // HOS-1286: server-managed billing flag. Written ONLY by the
     // featured-by-entitlement sync primitives — never from a request body, not
-    // even an admin's. `isFeatured`, the admin-curated flag beside it, stays
-    // accepted. Same treatment as `accommodations.featuredByEntitlement`.
+    // even an admin's. Same treatment as `accommodations.featuredByEntitlement`.
     featuredByEntitlement: true,
+    // HOS-1641: server-managed. Only the PB publication transitions write the
+    // publication state — never a request body, not even an admin's.
+    publicationStatus: true,
     // HOS-895: the uploaded menu photo/PDF. Written ONLY by
     // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
     // request that stores or destroys the Cloudinary asset — never
@@ -63,8 +65,8 @@ export const GastronomyAdminCreateInputSchema = GastronomySchema.omit({
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
         .string()
-        .min(2, { message: 'zodError.commerce.slug.min' })
-        .max(100, { message: 'zodError.commerce.slug.max' })
+        .min(2, { message: 'zodError.listing.slug.min' })
+        .max(100, { message: 'zodError.listing.slug.max' })
         .optional(),
     /**
      * Owning user UUID. REQUIRED (H-88): `gastronomies.owner_id` is NOT NULL
@@ -76,7 +78,7 @@ export const GastronomyAdminCreateInputSchema = GastronomySchema.omit({
      * Deliberately NOT defaulted to the acting admin: the documented flow is
      * "admins create the listing and provision the owner", so the owner is a
      * real merchant account rather than whoever filled in the form. The owner
-     * self-create route (`routes/commerce/protected/create.ts`) already supplies
+     * self-create route (`routes/gastronomy/protected/create.ts`) already supplies
      * `ownerId: actor.id` explicitly and is unaffected.
      */
     ownerId: UserIdSchema,
@@ -141,8 +143,8 @@ export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOu
  * enable slug-squatting and break indexed links. Any `slug` key in an owner
  * PATCH body is silently stripped (Zod's default unknown-key behaviour).
  *
- * **Control fields stay admin-only (HOS-166 §6.2 / AC-19):** `lifecycleState`,
- * `visibility`, `moderationState`, `isFeatured`, `ownerId` are **intentionally
+ * **Control fields stay out (HOS-166 §6.2 / AC-19, HOS-1641):** `publicationStatus`
+ * and `ownerId` are **intentionally
  * absent** from this schema — these are the *control* fields (as opposed to
  * *identity*), and the reversal above is scoped to identity only. Any of these
  * keys in an owner PATCH body is silently stripped.
@@ -157,20 +159,20 @@ export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOu
  * - `richDescriptionI18n` — localized rich-text translations
  *
  * Previously-permitted operational sections (unchanged):
- * - `openingHours`   — schedule (gated by `COMMERCE_EDIT_OWN`)
- * - `contactInfo`    — contact details (gated by `COMMERCE_EDIT_OWN`)
- * - `socialNetworks` — social links (gated by `COMMERCE_EDIT_OWN`)
- * - `media`          — featured image, gallery, videos (gated by `COMMERCE_EDIT_OWN`)
- * - `menuUrl`        — online menu URL (gated by `COMMERCE_EDIT_OWN`)
- * - `priceRange`     — price-range tier (gated by `COMMERCE_EDIT_OWN`)
- * - `richDescription`— rich-text description (gated by `COMMERCE_EDIT_OWN`)
- * - `amenityIds`     — junction sync (gated by `COMMERCE_EDIT_OWN`)
- * - `featureIds`     — junction sync (gated by `COMMERCE_EDIT_OWN`)
+ * - `openingHours`   — schedule (gated by `the vertical's EDIT_OWN`)
+ * - `contactInfo`    — contact details (gated by `the vertical's EDIT_OWN`)
+ * - `socialNetworks` — social links (gated by `the vertical's EDIT_OWN`)
+ * - `media`          — featured image, gallery, videos (gated by `the vertical's EDIT_OWN`)
+ * - `menuUrl`        — online menu URL (gated by `the vertical's EDIT_OWN`)
+ * - `priceRange`     — price-range tier (gated by `the vertical's EDIT_OWN`)
+ * - `richDescription`— rich-text description (gated by `the vertical's EDIT_OWN`)
+ * - `amenityIds`     — junction sync (gated by `the vertical's EDIT_OWN`)
+ * - `featureIds`     — junction sync (gated by `the vertical's EDIT_OWN`)
  *
  * NOT permitted for owner (admin-only — control fields + immutable identity):
  * - `slug` (not owner-editable directly — HOS-166 OQ-3)
- * - `lifecycleState`, `visibility`, `moderationState`, `isFeatured`, `ownerId`
- *   (control fields — HOS-166 §6.2)
+ * - `publicationStatus` (written only by the PB publication transitions —
+ *   HOS-1641), `ownerId` (control fields — HOS-166 §6.2)
  * - `priceFrom`, `priceUnit` (gastronomy uses `priceRange` + `menuUrl` instead)
  */
 export const GastronomyOwnerUpdateInputSchema = GastronomySchema.pick({
@@ -224,22 +226,21 @@ export type GastronomyOwnerUpdateInput = z.infer<typeof GastronomyOwnerUpdateInp
 // ============================================================================
 
 /**
- * Schema for a `COMMERCE_OWNER` self-service listing create
- * (`POST /api/v1/protected/commerce/listings/:entityType`, HOS-166 §7.2).
+ * Schema for a `GASTRONOMY_OWNER` self-service listing create
+ * (`POST /api/v1/protected/gastronomies/`, HOS-166 §7.2).
  *
  * Unlike {@link GastronomyAdminCreateInputSchema} (which trusts the caller for
- * `ownerId`/`slug`/lifecycle/visibility because only staff can reach it), this
+ * `ownerId`/`slug` because only staff can reach it), this
  * schema **omits every server-forced or control field** so the route handler
  * is the only place those values can come from:
  *
  * - `ownerId` — never accepted from the body; the route always sets it to
  *   `actor.id` (D-3 — an owner can only ever create a listing for themselves).
  * - `slug` — never accepted from the body; derived server-side from `name` at
- *   create time by `BaseCommerceListingService._beforeCreate` (HOS-166 OQ-3).
- * - `lifecycleState`, `visibility`, `isFeatured`, `moderationState` — control
- *   fields; the route always forces `visibility: PRIVATE` and
- *   `lifecycleState: DRAFT` on create (HOS-166 D-3 — complete first, pay
- *   after). `isFeatured`/`moderationState` are left to their schema defaults.
+ *   create time by `BaseListingService._beforeCreate` (HOS-166 OQ-3).
+ * - `publicationStatus` — control field; a listing is born `DRAFT` and only
+ *   the PB publication transitions move it (HOS-166 D-3 — complete first, pay
+ *   after; HOS-1641).
  * - `reviewsCount`, `averageRating`, `rating` — server-computed aggregates;
  *   nonsensical on a brand-new listing with no reviews yet.
  *
@@ -295,15 +296,11 @@ export const GastronomyOwnerCreateInputSchema = GastronomySchema.omit({
     // Server-forced — never accepted from the owner's request body.
     ownerId: true,
     slug: true,
-    lifecycleState: true,
-    visibility: true,
-    isFeatured: true,
+    publicationStatus: true,
     // HOS-1286: server-managed. Written ONLY by the featured-by-entitlement sync
     // primitives, never through create/update — the same treatment
-    // `accommodation.crud.schema.ts` gives its twin, and unlike `isFeatured`,
-    // which admin still controls manually.
+    // `accommodation.crud.schema.ts` gives its twin.
     featuredByEntitlement: true,
-    moderationState: true,
     // Server-computed aggregates — nonsensical on create.
     reviewsCount: true,
     averageRating: true,
@@ -353,14 +350,15 @@ export type GastronomyOwnerCreateInput = z.infer<typeof GastronomyOwnerCreateInp
  *   the review subsystem, not by the admin CRUD path.
  *
  * Explicitly omitting them here enforces that constraint at the schema boundary,
- * matching the spirit of accommodation's omit of `ownerSuspended`/`planRestricted`.
+ * matching the spirit of accommodation's omit of its server-managed flags.
+ * `publicationStatus` is omitted for the same reason: only the PB publication
+ * transitions write it (HOS-1641).
  */
 export const GastronomyUpdateInputSchema = z
     .object(
         // Zod 4's `.partial()` does NOT strip `.default()` (unlike Zod 3): without
-        // this, a PATCH like `{ lifecycleState: 'ACTIVE' }` would arrive at the
-        // service carrying injected defaults (`visibility:'PUBLIC'`,
-        // `moderationState:'PENDING'`, `isFeatured:false`, review stats, etc.),
+        // this, a PATCH like `{ name: 'x' }` would arrive at the service carrying
+        // injected defaults (`featuredByEntitlement:false`, review stats, etc.),
         // silently overwriting server state. Stripping the top-level defaults
         // restores correct "absent key = no change" PATCH semantics. See `stripShapeDefaults`.
         stripShapeDefaults(
@@ -380,10 +378,12 @@ export const GastronomyUpdateInputSchema = z
                 // it in would let an owner send `featuredByEntitlement: true` in
                 // their own update and feature their listing without buying the
                 // add-on, which is the exact product HOS-1286 exists to sell.
-                // `isFeatured`, the admin-curated flag beside it, stays writable.
                 featuredByEntitlement: true,
+                // Server-managed (HOS-1641): only the PB publication transitions
+                // write the publication state.
+                publicationStatus: true,
                 // Server-managed: ownership change requires a dedicated admin action,
-                // not a generic PATCH body (mirrors accommodation's ownerSuspended omit).
+                // not a generic PATCH body.
                 ownerId: true,
                 // Server-computed aggregates — updated by the review subsystem only.
                 reviewsCount: true,

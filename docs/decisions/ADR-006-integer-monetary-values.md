@@ -1,5 +1,7 @@
 # ADR-006: Integer Storage for Monetary Values
 
+> **Note (HOS-1626, 2026-10):** `@repo/billing` was retired (the package was deleted). The integer-centavo rule is unchanged, but the package and its conversion helpers no longer exist; plan and price values live in the database catalog (`billing_plans`, `billing_prices`). No replacement for the display helpers was verified.
+
 ## Status
 
 Accepted

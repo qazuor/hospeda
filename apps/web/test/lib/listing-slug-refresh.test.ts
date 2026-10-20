@@ -12,7 +12,7 @@ describe('listing-slug-refresh', () => {
     it('offers the opt-in only for published listings whose name changed', () => {
         expect(
             shouldOfferPublishedSlugRefresh({
-                currentLifecycleState: 'ACTIVE',
+                currentPublicationStatus: 'PUBLISHED',
                 initialName: 'Nombre original',
                 currentName: 'Nombre nuevo'
             })
@@ -20,7 +20,7 @@ describe('listing-slug-refresh', () => {
 
         expect(
             shouldOfferPublishedSlugRefresh({
-                currentLifecycleState: 'DRAFT',
+                currentPublicationStatus: 'DRAFT',
                 initialName: 'Nombre original',
                 currentName: 'Nombre nuevo'
             })
@@ -28,7 +28,7 @@ describe('listing-slug-refresh', () => {
 
         expect(
             shouldOfferPublishedSlugRefresh({
-                currentLifecycleState: 'ACTIVE',
+                currentPublicationStatus: 'PUBLISHED',
                 initialName: 'Nombre original',
                 currentName: 'Nombre original'
             })
@@ -38,12 +38,12 @@ describe('listing-slug-refresh', () => {
     // HOS-879: the slug is generated from `type` + `name`, so a type-only
     // change needs the same opt-in as a rename does — but ONLY for callers
     // that actually pass `initialType`/`currentType`. A caller that omits
-    // them (e.g. commerce, whose slug is name-only) must keep its exact
+    // them (e.g. gastronomy/experience, whose slug is name-only) must keep its exact
     // pre-HOS-879 behavior.
     it('offers the opt-in for a published listing whose type changed, name untouched', () => {
         expect(
             shouldOfferPublishedSlugRefresh({
-                currentLifecycleState: 'ACTIVE',
+                currentPublicationStatus: 'PUBLISHED',
                 initialName: 'Casa del Río',
                 currentName: 'Casa del Río',
                 initialType: 'COUNTRY_HOUSE',
@@ -55,7 +55,7 @@ describe('listing-slug-refresh', () => {
     it('does not offer the opt-in for a DRAFT listing whose type changed — no address to protect', () => {
         expect(
             shouldOfferPublishedSlugRefresh({
-                currentLifecycleState: 'DRAFT',
+                currentPublicationStatus: 'DRAFT',
                 initialName: 'Casa del Río',
                 currentName: 'Casa del Río',
                 initialType: 'COUNTRY_HOUSE',
@@ -67,7 +67,7 @@ describe('listing-slug-refresh', () => {
     it('does not offer the opt-in when neither name nor type actually changed', () => {
         expect(
             shouldOfferPublishedSlugRefresh({
-                currentLifecycleState: 'ACTIVE',
+                currentPublicationStatus: 'PUBLISHED',
                 initialName: 'Casa del Río',
                 currentName: 'Casa del Río',
                 initialType: 'CABIN',
@@ -76,12 +76,12 @@ describe('listing-slug-refresh', () => {
         ).toBe(false);
     });
 
-    it('ignores type entirely when the caller omits initialType/currentType (commerce parity)', () => {
-        // Simulates the commerce call site, which never passes these two
+    it('ignores type entirely when the caller omits initialType/currentType (gastronomy/experience parity)', () => {
+        // Simulates the gastronomy/experience call site, which never passes these two
         // fields because its slug does not depend on `type` at all.
         expect(
             shouldOfferPublishedSlugRefresh({
-                currentLifecycleState: 'ACTIVE',
+                currentPublicationStatus: 'PUBLISHED',
                 initialName: 'Casa del Río',
                 currentName: 'Casa del Río'
             })
@@ -91,7 +91,7 @@ describe('listing-slug-refresh', () => {
     it('builds the opt-in payload only when the published rename was explicitly requested', () => {
         expect(
             buildSlugRefreshPayload({
-                currentLifecycleState: 'ACTIVE',
+                currentPublicationStatus: 'PUBLISHED',
                 initialName: 'Nombre original',
                 currentName: 'Nombre nuevo',
                 refreshSlugFromName: true
@@ -100,7 +100,7 @@ describe('listing-slug-refresh', () => {
 
         expect(
             buildSlugRefreshPayload({
-                currentLifecycleState: 'ACTIVE',
+                currentPublicationStatus: 'PUBLISHED',
                 initialName: 'Nombre original',
                 currentName: 'Nombre nuevo',
                 refreshSlugFromName: false
@@ -111,7 +111,7 @@ describe('listing-slug-refresh', () => {
     it('builds the opt-in payload for a type-only change when explicitly requested (HOS-879)', () => {
         expect(
             buildSlugRefreshPayload({
-                currentLifecycleState: 'ACTIVE',
+                currentPublicationStatus: 'PUBLISHED',
                 initialName: 'Casa del Río',
                 currentName: 'Casa del Río',
                 initialType: 'COUNTRY_HOUSE',
@@ -134,14 +134,16 @@ describe('listing-slug-refresh', () => {
 describe('shouldOfferPublishedSlugRefresh: every non-DRAFT state is published (HOS-879 gap fix)', () => {
     it.each([
         ['DRAFT', false],
-        ['ACTIVE', true],
-        ['INACTIVE', true],
+        ['PUBLISHED', true],
+        ['UNPUBLISHED_BY_BILLING', true],
         ['ARCHIVED', true],
+        ['MODERATED', true],
+        ['PURGED', true],
         [undefined, true]
-    ] as const)('currentLifecycleState=%s -> offered=%s', (currentLifecycleState, expected) => {
+    ] as const)('currentPublicationStatus=%s -> offered=%s', (currentPublicationStatus, expected) => {
         expect(
             shouldOfferPublishedSlugRefresh({
-                currentLifecycleState,
+                currentPublicationStatus,
                 initialName: 'Nombre original',
                 currentName: 'Nombre nuevo'
             })
@@ -160,7 +162,7 @@ describe('getSlugRefreshOptInPlacement (HOS-879 UX follow-up)', () => {
     it('offers it only near name when only the name changed', () => {
         expect(
             getSlugRefreshOptInPlacement({
-                currentLifecycleState: 'ACTIVE',
+                currentPublicationStatus: 'PUBLISHED',
                 initialName: 'Nombre original',
                 currentName: 'Nombre nuevo',
                 initialType: 'HOTEL',
@@ -172,7 +174,7 @@ describe('getSlugRefreshOptInPlacement (HOS-879 UX follow-up)', () => {
     it('offers it only near type when only the type changed', () => {
         expect(
             getSlugRefreshOptInPlacement({
-                currentLifecycleState: 'ACTIVE',
+                currentPublicationStatus: 'PUBLISHED',
                 initialName: 'Casa del Río',
                 currentName: 'Casa del Río',
                 initialType: 'COUNTRY_HOUSE',
@@ -184,7 +186,7 @@ describe('getSlugRefreshOptInPlacement (HOS-879 UX follow-up)', () => {
     it('offers it in BOTH positions when both name and type changed', () => {
         expect(
             getSlugRefreshOptInPlacement({
-                currentLifecycleState: 'ACTIVE',
+                currentPublicationStatus: 'PUBLISHED',
                 initialName: 'Casa del Río',
                 currentName: 'Casa Renombrada',
                 initialType: 'COUNTRY_HOUSE',
@@ -196,7 +198,7 @@ describe('getSlugRefreshOptInPlacement (HOS-879 UX follow-up)', () => {
     it('offers it in neither position when nothing changed', () => {
         expect(
             getSlugRefreshOptInPlacement({
-                currentLifecycleState: 'ACTIVE',
+                currentPublicationStatus: 'PUBLISHED',
                 initialName: 'Casa del Río',
                 currentName: 'Casa del Río',
                 initialType: 'CABIN',
@@ -208,7 +210,7 @@ describe('getSlugRefreshOptInPlacement (HOS-879 UX follow-up)', () => {
     it('offers it in neither position on a DRAFT listing, even if both changed', () => {
         expect(
             getSlugRefreshOptInPlacement({
-                currentLifecycleState: 'DRAFT',
+                currentPublicationStatus: 'DRAFT',
                 initialName: 'Casa del Río',
                 currentName: 'Casa Renombrada',
                 initialType: 'COUNTRY_HOUSE',
@@ -227,7 +229,7 @@ describe('getSlugRefreshOptInPlacement (HOS-879 UX follow-up)', () => {
 
         for (const { name, type } of cases) {
             const input = {
-                currentLifecycleState: 'ACTIVE',
+                currentPublicationStatus: 'PUBLISHED',
                 initialName: 'Casa del Río',
                 currentName: name === 'changed' ? 'Casa Renombrada' : 'Casa del Río',
                 initialType: 'COUNTRY_HOUSE',
@@ -254,7 +256,7 @@ describe('getSlugRefreshOptInPlacement (HOS-879 UX follow-up)', () => {
  */
 describe('isListingPublished (HOS-834)', () => {
     it('treats DRAFT as not published — the only state that is not', () => {
-        expect(isListingPublished({ lifecycleState: 'DRAFT' })).toBe(false);
+        expect(isListingPublished({ publicationStatus: 'DRAFT' })).toBe(false);
     });
 
     // HOS-879 UI gap fix: the backend policy (`listing-slug-policy.ts`) treats
@@ -263,39 +265,46 @@ describe('isListingPublished (HOS-834)', () => {
     // `=== 'ACTIVE'`, so a paused or archived listing never saw the slug-refresh
     // opt-in even though the backend would have honored the flag had it arrived.
     it.each([
-        'ACTIVE',
-        'INACTIVE',
+        'PUBLISHED',
+        'UNPUBLISHED_BY_BILLING',
         'ARCHIVED',
+        'MODERATED',
+        'PURGED',
         'PENDING_REVIEW'
-    ])('treats %s as published', (lifecycleState) => {
-        expect(isListingPublished({ lifecycleState })).toBe(true);
+    ])('treats %s as published', (publicationStatus) => {
+        expect(isListingPublished({ publicationStatus })).toBe(true);
     });
 
     it.each([
         null,
         undefined,
         ''
-    ])('treats a missing/unknown state (%s) as published — cannot prove it was never published', (lifecycleState) => {
-        expect(isListingPublished({ lifecycleState })).toBe(true);
+    ])('treats a missing/unknown state (%s) as published — cannot prove it was never published', (publicationStatus) => {
+        expect(isListingPublished({ publicationStatus })).toBe(true);
     });
 
     it('is the SAME predicate the slug-refresh opt-in gates on', () => {
         // Pinned as an equivalence rather than two independent truths: a second
         // definition of "published" that drifted from this one is exactly the
         // failure the notice is supposed to stop being an example of.
-        for (const lifecycleState of ['ACTIVE', 'DRAFT', 'INACTIVE', 'ARCHIVED']) {
+        for (const publicationStatus of [
+            'PUBLISHED',
+            'DRAFT',
+            'UNPUBLISHED_BY_BILLING',
+            'ARCHIVED'
+        ]) {
             const offered = shouldOfferPublishedSlugRefresh({
-                currentLifecycleState: lifecycleState,
+                currentPublicationStatus: publicationStatus,
                 initialName: 'Nombre original',
                 currentName: 'Nombre nuevo'
             });
 
-            expect(offered).toBe(isListingPublished({ lifecycleState }));
+            expect(offered).toBe(isListingPublished({ publicationStatus }));
         }
     });
 });
 
-describe('the commerce editor states ONE address rule (HOS-834)', () => {
+describe('the gastronomy/experience editor states ONE address rule (HOS-834)', () => {
     // HOS-1080: the notice moved with the name field, onto the basic-info
     // section's own route. It belongs wherever renaming happens and nowhere
     // else — a page that cannot change the name has nothing to say about what
@@ -328,8 +337,8 @@ describe('the commerce editor states ONE address rule (HOS-834)', () => {
     it('renders a distinct key for each state', () => {
         const notice = readNoticeElement();
 
-        expect(notice).toContain('commerce.owner.editor.slugFixedNotice');
-        expect(notice).toContain('commerce.owner.editor.slugFollowsNameNotice');
+        expect(notice).toContain('listing.owner.editor.slugFixedNotice');
+        expect(notice).toContain('listing.owner.editor.slugFollowsNameNotice');
     });
 
     it('no longer renders the both-states-at-once key', () => {
@@ -340,8 +349,9 @@ describe('the commerce editor states ONE address rule (HOS-834)', () => {
         const source = readFileSync(EDITOR_PAGE, 'utf-8');
 
         expect(source).toContain("import { isListingPublished } from '@/lib/listing-slug-refresh'");
-        // A hand-rolled `=== 'ACTIVE'` here would be the second definition this
+        // A hand-rolled `=== 'PUBLISHED'` here would be the second definition this
         // whole approach exists to avoid.
-        expect(source).not.toMatch(/lifecycleState\s*===\s*['"]ACTIVE['"]/);
+        expect(source).not.toMatch(/publicationStatus\s*===\s*['"]PUBLISHED['"]/);
+        expect(source).not.toMatch(/lifecycleState/);
     });
 });

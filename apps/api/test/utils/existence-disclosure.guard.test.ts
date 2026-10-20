@@ -18,7 +18,7 @@
  *
  *   1. STATUS — a branch that compares an entity's owner field to `actor.id`
  *      may not construct a 403. That is the visible half of the leak (users,
- *      media upload/delete, commerce start-subscription).
+ *      media upload/delete, owner start-subscription).
  *
  *   2. MESSAGE — a route that ALSO delegates existence to `service.getById`
  *      may not hand-write its own not-found string. That is the invisible half:

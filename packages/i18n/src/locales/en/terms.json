@@ -109,5 +109,16 @@
     "page": {
         "title": "Terms and Conditions",
         "description": "Terms and conditions of use for the Hospeda platform"
+    },
+    "withdrawal": {
+        "title": "Right of withdrawal",
+        "description": "How to withdraw from a Hospeda subscription within 10 calendar days of the charge.",
+        "intro": "If you bought a Hospeda subscription, you can withdraw from it within 10 calendar days of the day of the charge you want to revoke (Resolution 424/2020, Argentina).",
+        "effects": "Once we record your request, the subscription is cancelled, the service ends at that moment and we request a refund of that charge in full.",
+        "howTo": "Send us your request through the contact form: you do not need to sign in. Include the email of your Hospeda account.",
+        "cta": "Request withdrawal",
+        "mailAlternative": "You can also write to us at {{email}}.",
+        "mailSubject": "Withdrawal request (botón de arrepentimiento)",
+        "messageTemplate": "I want to withdraw from my subscription (right of withdrawal). My account email:"
     }
 }

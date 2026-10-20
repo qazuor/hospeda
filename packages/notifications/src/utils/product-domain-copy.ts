@@ -65,7 +65,7 @@ const ACCOMMODATION_TRIAL_COPY: TrialSeriesVerticalCopy = {
     expiredSavedLine: 'fotos, descripción, servicios, ubicación y datos de contacto'
 };
 
-/** Vocabulary matches the gastronomy landing page (`commerce.json`'s `landing.gastronomy`). */
+/** Vocabulary matches the gastronomy landing page (`gastronomy.json`'s `landing`). */
 const GASTRONOMY_TRIAL_COPY: TrialSeriesVerticalCopy = {
     possessive: 'tu local',
     searchIntent: 'dónde comer',
@@ -77,7 +77,7 @@ const GASTRONOMY_TRIAL_COPY: TrialSeriesVerticalCopy = {
     expiredSavedLine: 'fotos, menú, horarios, ubicación y datos de contacto'
 };
 
-/** Vocabulary matches the experience landing page (`commerce.json`'s `landing.experience`). */
+/** Vocabulary matches the experience landing page (`experience.json`'s `landing`). */
 const EXPERIENCE_TRIAL_COPY: TrialSeriesVerticalCopy = {
     possessive: 'tu experiencia',
     searchIntent: 'qué experiencias hacer',
@@ -130,4 +130,29 @@ export function resolveRenewalReminderFooter(productDomain: string | null | unde
         default:
             return 'Gracias por confiar en Hospeda para tus necesidades de alojamiento turístico.';
     }
+}
+
+/** Etiquetas en español para verticales en un correo consolidado. */
+type TrialCampaignVertical = 'accommodation' | 'gastronomy' | 'experience' | 'tourist';
+
+export const TRIAL_VERTICAL_LABELS: Readonly<Record<TrialCampaignVertical, string>> = {
+    accommodation: 'Alojamiento',
+    gastronomy: 'Gastronomía',
+    experience: 'Experiencias',
+    tourist: 'Turismo'
+};
+
+/** Nombra las verticales de una pieza consolidada.
+ * @param input - Verticales del usuario.
+ * @returns Etiquetas separadas por coma y conjunción.
+ */
+export function formatTrialVerticals(input: { readonly verticals: readonly string[] }): string {
+    const labels = input.verticals.map((vertical) => {
+        const label = Object.hasOwn(TRIAL_VERTICAL_LABELS, vertical)
+            ? TRIAL_VERTICAL_LABELS[vertical as TrialCampaignVertical]
+            : undefined;
+        return label ?? vertical;
+    });
+    if (labels.length < 2) return labels[0] ?? '';
+    return `${labels.slice(0, -1).join(', ')} y ${labels.at(-1)}`;
 }

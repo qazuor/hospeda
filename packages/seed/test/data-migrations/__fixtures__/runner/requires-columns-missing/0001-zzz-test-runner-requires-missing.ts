@@ -2,7 +2,7 @@
  * Fixture data-migration for `runner.integration.test.ts` (HOS-433).
  *
  * Declares a dependency on a column that does not exist, reproducing the
- * shape of `0034-hos-372-commerce-media-to-relational` running AFTER the
+ * shape of migration 0034 (the listing media backfill) running AFTER the
  * structural migration that dropped its source column.
  *
  * `up()` inserts a scratch row unconditionally, so the test can assert the

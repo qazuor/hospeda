@@ -30,8 +30,6 @@
  *     `var(--event-cat-bg, ...)`, a CSS var injected at runtime per event category.
  *   - components/account/CollectionCard.tsx (3): base is a JS template `${color}`
  *     where `color` is arbitrary user-chosen collection color from the API.
- *   - components/account/SubscriptionDashboard.module.css (2): base is
- *     `var(--primary, <fallback>)`, same undefined-alias case as ShareButtons.
  *   - pages/500.astro (1): SVG fill is `oklch(from ${destructiveColor} ...)` with
  *     destructiveColor interpolated in the Astro frontmatter at runtime.
  *
@@ -116,13 +114,6 @@ const ALLOWLIST = Object.freeze({
     // `color-contrast` debt in the a11y baseline — so the sweep will not flag it.
     'src/pages/[lang]/suscriptores/planes/index.astro': 2,
     'src/components/account/CollectionCard.tsx': 3,
-    // SPEC-203: subtle primary/accent tints + a modal overlay on the plan-management
-    // surface. No precomputed alpha tokens exist (only --ring-a50), so these follow
-    // the same theme-adaptive oklch(from var(--token) ...) residual pattern as the
-    // other allowlisted account components.
-    'src/components/account/SubscriptionDashboard.module.css': 4,
-    'src/components/account/PlanChangeFlow.module.css': 1,
-    'src/components/account/PlanPicker.module.css': 4,
     // 500 error page: SVG fill uses `oklch(from ${destructiveColor} ...)` where
     // destructiveColor is interpolated in the Astro frontmatter at runtime.
     'src/pages/500.astro': 1,

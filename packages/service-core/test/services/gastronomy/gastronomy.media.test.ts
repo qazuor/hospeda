@@ -37,8 +37,12 @@ const mockMediaModel = {
 
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
+    // HOS-1642: these writes now record an owner-act event; the double keeps
+    // the write off the (nonexistent) test database.
+    const doubles = await import('../../helpers/owner-act-doubles');
     return {
         ...actual,
+        domainEventModel: doubles.domainEventModelDouble,
         GastronomyMediaModel: vi.fn(function () {
             return mockMediaModel;
         }),
@@ -58,12 +62,11 @@ import type {
 } from '@repo/schemas';
 import {
     getGalleryCap,
-    LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     RoleEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    ServiceErrorCode
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -101,8 +104,8 @@ function makeMediaRow(overrides: Partial<GastronomyMedia> = {}): GastronomyMedia
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.GASTRONOMY_OWNER],
+    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
 };
 
 const touristActor: Actor = {
@@ -163,7 +166,7 @@ describe('addGastronomyMedia', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should return FORBIDDEN when actor lacks COMMERCE_EDIT_OWN', async () => {
+    it('should return FORBIDDEN when actor lacks GASTRONOMY_EDIT_OWN', async () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         const input: GastronomyMediaAddInput = {
             gastronomyId: GASTRONOMY_ID,
@@ -197,7 +200,7 @@ describe('addGastronomyMedia', () => {
         expect(result.error).toBeUndefined();
         expect(mockMediaModel.create).toHaveBeenCalledWith(
             expect.objectContaining({ sortOrder: 0, isFeatured: false, state: 'visible' }),
-            undefined
+            {}
         );
     });
 
@@ -221,7 +224,7 @@ describe('addGastronomyMedia', () => {
 
         expect(mockMediaModel.create).toHaveBeenCalledWith(
             expect.objectContaining({ sortOrder: 4 }),
-            undefined
+            {}
         );
     });
 
@@ -241,7 +244,7 @@ describe('addGastronomyMedia', () => {
 
         expect(mockMediaModel.create).toHaveBeenCalledWith(
             expect.objectContaining({ moderationState: ModerationStatusEnum.PENDING }),
-            undefined
+            {}
         );
     });
 });
@@ -793,7 +796,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
 });
 
 // ---------------------------------------------------------------------------
-// HOS-389 §2 + §4 — the commerce half
+// HOS-389 §2 + §4 — the gastronomy and experience half
 // ---------------------------------------------------------------------------
 
 describe('addGastronomyMedia — gallery cap (HOS-389 §2)', () => {
@@ -889,8 +892,7 @@ describe('gastronomy media — public-page revalidation (HOS-389 §4)', () => {
             ownerId: OWNER_ID,
             slug: 'la-parrilla',
             destinationId: undefined,
-            lifecycleState: LifecycleStatusEnum.ACTIVE,
-            visibility: VisibilityEnum.PUBLIC
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         };
     }
 
@@ -924,8 +926,7 @@ describe('gastronomy media — public-page revalidation (HOS-389 §4)', () => {
         // — and produced logged 404s in production under HOS-203.
         const model = makeGastronomyModel({
             ...publicListing(),
-            lifecycleState: LifecycleStatusEnum.DRAFT,
-            visibility: VisibilityEnum.PRIVATE
+            publicationStatus: PublicationStatusEnum.DRAFT
         });
 
         const result = await addGastronomyMedia(

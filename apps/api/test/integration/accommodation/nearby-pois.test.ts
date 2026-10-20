@@ -104,8 +104,9 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
             description: 'Accommodation seeded for the HOS-145 T-005 nearby-POIs integration test.',
             ownerId,
             destinationId: destId,
-            lifecycleState: 'ACTIVE',
-            visibility: 'PUBLIC',
+            publicationStatus: 'PUBLISHED',
+            inactiveSince: new Date(),
+            deadlinesVersion: 1,
             location: { coordinates: { lat: accLat, long: accLong } }
         } as typeof accommodations.$inferInsert);
 
@@ -118,8 +119,9 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
             description: 'Accommodation seeded for the HOS-145 T-005 nearby-POIs integration test.',
             ownerId,
             destinationId: destId,
-            lifecycleState: 'ACTIVE',
-            visibility: 'PUBLIC'
+            publicationStatus: 'PUBLISHED',
+            inactiveSince: new Date(),
+            deadlinesVersion: 1
         } as typeof accommodations.$inferInsert);
 
         // DRAFT + coords + nearby POIs — must NOT leak proximity data to an
@@ -136,8 +138,9 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
             description: 'Accommodation seeded for the HOS-145 T-005 nearby-POIs integration test.',
             ownerId,
             destinationId: destId,
-            lifecycleState: 'DRAFT',
-            visibility: 'PUBLIC',
+            publicationStatus: 'DRAFT',
+            inactiveSince: new Date(),
+            deadlinesVersion: 1,
             location: { coordinates: { lat: accLat, long: accLong } }
         } as typeof accommodations.$inferInsert);
 

@@ -42,14 +42,6 @@ describe('ExperienceSearchSchema', () => {
         }
     });
 
-    it('should accept hasActiveSubscription filter', () => {
-        const result = ExperienceSearchSchema.safeParse({ hasActiveSubscription: true });
-        expect(result.success).toBe(true);
-        if (result.success) {
-            expect(result.data.hasActiveSubscription).toBe(true);
-        }
-    });
-
     it('should accept rating range filter', () => {
         const result = ExperienceSearchSchema.safeParse({ minRating: 3, maxRating: 5 });
         expect(result.success).toBe(true);
@@ -110,16 +102,6 @@ describe('ExperienceAdminSearchSchema', () => {
     it('should accept ownerId UUID filter', () => {
         const uuid = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
         const result = ExperienceAdminSearchSchema.safeParse({ ownerId: uuid });
-        expect(result.success).toBe(true);
-    });
-
-    it('should accept isFeatured filter', () => {
-        const result = ExperienceAdminSearchSchema.safeParse({ isFeatured: 'true' });
-        expect(result.success).toBe(true);
-    });
-
-    it('should accept hasActiveSubscription filter', () => {
-        const result = ExperienceAdminSearchSchema.safeParse({ hasActiveSubscription: 'false' });
         expect(result.success).toBe(true);
     });
 

@@ -20,39 +20,32 @@
  * a dish photo and then abandons the editor without saving leaves one orphaned
  * Cloudinary asset. The same window already exists for the listing gallery,
  * where the shared upload endpoint runs before `POST .../media` persists the
- * row. It is narrowed here the same way that path narrows it — an ownership
- * check and an entitlement check BEFORE a single byte is read, plus a small
- * per-user rate limit — and `photo_public_id` is round-tripped into the row so
+ * row. It is narrowed here by an ownership check and a small per-user rate
+ * limit before a byte is read; the former plan entitlement is disabled during
+ * the billing transition. `photo_public_id` is round-tripped into the row so
  * a sweeper can destroy what it finds instead of merely forgetting it.
  *
  * ## Order of refusals
  *
  * 1. **Authentication** — `createProtectedRoute`.
- * 2. **The plan's terms** — `commerceVerticalEntitlementMiddleware('gastronomy')`
- *    loads the caller's GASTRONOMY grants and `requireEntitlement` refuses a
- *    caller whose plan does not carry `MENU_ITEM_PHOTOS`. The loader MUST stay
- *    ahead of the gate: the global `entitlementMiddleware` has already put the
- *    ACCOMMODATION set in the context, and that set never carries a commerce key
- *    (HOS-1074).
+ * 2. **Billing transition** — dish-photo uploads run without the former plan
+ *    entitlement.
  * 3. **Ownership**, as a 404 — before the body is parsed, so a caller who does
  *    not own the listing cannot spend our Cloudinary quota, and so no 403 ever
  *    confirms that the id exists.
  *
- * Only `MENU_ITEM_PHOTOS` is required, not `MANAGE_GASTRONOMY_MENU` alongside
- * it, even though today the one plan granting the first also grants the second.
- * Stacking both would make this route dead the day a plan is defined that
- * grants photos without the carta — a catalogue decision this route has no
- * business pre-empting.
- *
  * @module routes/gastronomy/protected/uploadMenuItemPhoto
  */
-import { EntitlementKey } from '@repo/billing';
-import { GastronomyMenuItemPhotoUploadOutputSchema, PermissionEnum } from '@repo/schemas';
+
+import {
+    GastronomyMenuItemPhotoUploadOutputSchema,
+    PermissionEnum,
+    VerticalEnum
+} from '@repo/schemas';
 import { GastronomyService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
 import {
@@ -81,6 +74,12 @@ const MENU_ITEM_PHOTO_UPLOAD_RATE_LIMIT_MAX = 40;
 export const protectedUploadGastronomyMenuItemPhotoRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/menu-item-photo',
+    listingAccess: {
+        vertical: VerticalEnum.GASTRONOMY,
+        operation: 'EDIT',
+        idParam: 'id',
+        capabilities: ['menu_item_photos']
+    },
     summary: 'Upload a photo for one dish of the menu',
     description:
         'Uploads a single dish photo and returns its delivery URL and Cloudinary public id. The caller attaches them to a dish in the next PUT /{id}/menu. Owner-only, and requires the menu_item_photos entitlement granted by the premium gastronomy plan.',
@@ -116,13 +115,13 @@ export const protectedUploadGastronomyMenuItemPhotoRoute = createProtectedRoute(
         const actor = getActorFromContext(ctx);
         const gastronomyId = params.id as string;
         const listing = await gastronomyService.getById(actor, gastronomyId);
-        const hasEditAll = actor.permissions?.includes(PermissionEnum.COMMERCE_EDIT_ALL);
+        const hasEditAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_ALL);
 
         if (
             listing.error ||
             !listing.data ||
             (!hasEditAll && listing.data.ownerId !== actor.id) ||
-            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.COMMERCE_EDIT_OWN))
+            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_OWN))
         ) {
             return createErrorResponse(
                 { code: 'NOT_FOUND', message: 'Gastronomy listing not found' },
@@ -209,13 +208,7 @@ export const protectedUploadGastronomyMenuItemPhotoRoute = createProtectedRoute(
                 windowMs: 60_000,
                 max: MENU_ITEM_PHOTO_UPLOAD_RATE_LIMIT_MAX,
                 keyPrefix: 'upload:gastronomy-menu-item-photo'
-            }),
-            // Loader before checker (HOS-1074) — the global entitlement
-            // middleware resolves the ACCOMMODATION set, which never carries a
-            // commerce key, so `commerceVerticalEntitlementMiddleware` MUST run
-            // before `requireEntitlement` on every commerce route.
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MENU_ITEM_PHOTOS)
+            })
         ]
     }
 });

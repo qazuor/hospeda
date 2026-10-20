@@ -1,0 +1,45 @@
+/**
+ * TrialSummary.module.css
+ *
+ * Row 4 of Mi Suscripción (HOS-1492): the accumulated free-trial days per
+ * vertical and their origin. Informative block under the page header.
+ */
+
+.summary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    margin: 0 0 var(--space-5, 1.5rem);
+}
+
+.item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card, 16px);
+    font-family: var(--font-sans);
+}
+
+.title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    line-height: 1.35;
+}
+
+.total {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    line-height: 1.45;
+}
+
+.dates {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}

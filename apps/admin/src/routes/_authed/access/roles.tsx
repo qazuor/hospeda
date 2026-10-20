@@ -43,11 +43,11 @@ const ROLE_VISUALS: Record<RoleEnum, RoleVisual> = {
     [RoleEnum.CLIENT_MANAGER]: { level: 'high', icon: UsersIcon },
     [RoleEnum.EDITOR]: { level: 'medium', icon: EditIcon },
     [RoleEnum.HOST]: { level: 'medium', icon: HomeIcon },
-    [RoleEnum.COMMERCE_OWNER]: { level: 'medium', icon: HomeIcon },
     // HOS-1077: the per-vertical owners. Same level and icon as the role they
     // replace — each carries strictly LESS authority than it, never more.
     [RoleEnum.GASTRONOMY_OWNER]: { level: 'medium', icon: HomeIcon },
     [RoleEnum.EXPERIENCE_OWNER]: { level: 'medium', icon: HomeIcon },
+    [RoleEnum.PARTNER_OWNER]: { level: 'medium', icon: HomeIcon },
     [RoleEnum.USER]: { level: 'low', icon: UserIcon },
     [RoleEnum.SPONSOR]: { level: 'low', icon: UserIcon },
     [RoleEnum.GUEST]: { level: 'low', icon: GlobeIcon },

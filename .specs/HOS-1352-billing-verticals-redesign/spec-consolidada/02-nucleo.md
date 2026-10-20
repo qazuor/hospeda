@@ -1695,9 +1695,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-dato
 
 <a id="plazo-19"></a>
 **PLAZO:19** — **La ventana `N` del resumen de conciliación.**
-Mitad: billing · valor inicial: **sin valor escrito: lo fija el owner antes del merge de
-[B2](10-corte/B2.md#pieza-b2)** (corte del MVP, owner 2026-10-02, BU; corte del MVP, owner
-2026-10-02, BX: la versión 1 falla con un plazo vacío, sin excepciones) · qué decide: cada cuántos
+Mitad: billing · valor inicial: ~~sin valor escrito: lo fija el owner antes del merge de [B2](10-corte/B2.md#pieza-b2)~~ **60 minutos** (corte del MVP, owner 2026-10-08, [DF](01-decisiones-vigentes.md#own-41-corte-del-mvp-t19-df); BU y BX: la versión 1 falla con un plazo vacío, sin excepciones) · qué decide: cada cuántos
 minutos sale el resumen agregado de `RECONCILIATION_REQUIRED`
 ([DEC-OBS-001](01-decisiones-vigentes.md#dec-obs-001): *«`N` es configuración (§9)»*) · qué reloj
 guarda la versión: ninguno: el resumen usa la versión vigente al abrir su ventana (inferido de BU,
@@ -1711,15 +1709,13 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-dato
 ### 4.2 Los valores, cuándo se fijan y dónde nacen
 
 **Son diecinueve** (el 19, la ventana del resumen de conciliación, desde el lote BK a BV del corte
-del MVP, owner 2026-10-02, BU: **su valor lo fija el owner antes del merge de
-[B2](10-corte/B2.md#pieza-b2)**, y no de `B11`; corte del MVP, owner 2026-10-02, BX: así la regla de
+del MVP, owner 2026-10-02, BU: ~~su valor lo fija el owner antes del merge de [B2](10-corte/B2.md#pieza-b2), y no de `B11`~~ **su valor es 60 minutos** (corte del MVP, owner 2026-10-08, [DF](01-decisiones-vigentes.md#own-41-corte-del-mvp-t19-df)); corte del MVP, owner 2026-10-02, BX: así la regla de
 que la versión 1 falla con un plazo vacío vale sin excepciones) (FASE 9 vuelta 3: el 16 por el lote
 K, owner 2026-09-30; el 17 y el 18 por `F-8V3B3-003`, que eran *«configuración»* sin valor, pantalla
 ni unidad; recontados sobre la tabla). **Los cinco sin valor
 escrito de verticales —[PLAZO:3](#plazo-3), [PLAZO:4](#plazo-4), [PLAZO:7](#plazo-7),
 [PLAZO:8](#plazo-8) y [PLAZO:9](#plazo-9)— los fija el owner antes del merge de
-[V6](10-corte/V6.md#pieza-v6)**, y el [PLAZO:19](#plazo-19), de billing, también sin valor escrito,
-**antes del merge de [B2](10-corte/B2.md#pieza-b2)** (BU, BX) (FASE 5,
+[V6](10-corte/V6.md#pieza-v6)**, y el [PLAZO:19](#plazo-19), de billing, ~~también sin valor escrito, antes del merge de [B2](10-corte/B2.md#pieza-b2)~~ **fijado en 60 minutos** (corte del MVP, owner 2026-10-08, [DF](01-decisiones-vigentes.md#own-41-corte-del-mvp-t19-df)) (FASE 5,
 owner 2026-09-30, lote 3 D; [DEC-DATA-008#📌5](01-decisiones-vigentes.md#dec-data-008-p5): la
 migración que los necesita corre en el e2e de cada PR desde que se mergea, no desde el ensayo), **y la
 migración estructural del corte falla si alguno está vacío** (revisión del owner, casos vecinos,

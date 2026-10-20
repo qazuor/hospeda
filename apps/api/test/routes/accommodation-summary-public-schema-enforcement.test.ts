@@ -9,7 +9,7 @@
  * (the reduced projection the handler was written for), which both:
  *   1. accepts the handler-built summary shape (no 500), and
  *   2. strips internal-only fields the handler happens to include
- *      (lifecycleState, createdAt, updatedAt, visibility, destinationId, audit).
+ *      (createdAt, updatedAt, destinationId, publicationStatus, audit).
  *
  * These unit tests run unconditionally (no DB required) so a schema swap is
  * caught even in the DB-less CI environment.
@@ -27,16 +27,14 @@ import { describe, expect, it } from 'vitest';
  * NOT pick — they MUST be stripped from the public response.
  */
 const FORBIDDEN_FIELDS = [
-    'lifecycleState',
     'createdAt',
     'updatedAt',
-    'visibility',
     'destinationId',
     'createdById',
     'updatedById',
     'deletedAt',
     'deletedById',
-    'moderationState',
+    'publicationStatus',
     'adminInfo'
 ] as const;
 
@@ -59,8 +57,6 @@ const HANDLER_SUMMARY_SHAPE = {
     isFeatured: true,
     ownerId: '423e4567-e89b-12d3-a456-000000000001',
     // Fields the handler attaches but that are NOT in the summary projection
-    visibility: 'PUBLIC',
-    lifecycleState: 'ACTIVE',
     createdAt: new Date('2024-05-01'),
     updatedAt: new Date('2025-05-01'),
     destinationId: '423e4567-e89b-12d3-a456-426614174999',
@@ -69,7 +65,7 @@ const HANDLER_SUMMARY_SHAPE = {
     updatedById: null,
     deletedAt: null,
     deletedById: null,
-    moderationState: 'APPROVED',
+    publicationStatus: 'PUBLISHED',
     adminInfo: { notes: 'internal' }
 };
 

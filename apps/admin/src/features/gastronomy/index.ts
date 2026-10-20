@@ -34,8 +34,6 @@ export { createGastronomySignals } from './config/score-signals';
 // Canonical hooks re-export (T-059 manifest)
 export {
     useCreateGastronomyMutation as useGastronomyCreate,
-    useDeleteGastronomyMutation as useGastronomyDelete,
-    useRestoreGastronomyMutation as useGastronomyRestore,
     useUpdateGastronomyMutation as useGastronomyUpdate
 } from './hooks/useGastronomies';
 export { useGastronomyPage } from './hooks/useGastronomyPage';
@@ -44,11 +42,8 @@ export {
     gastronomyHooks,
     useAssignGastronomyOwnerMutation,
     useCreateGastronomyMutation,
-    useDeleteGastronomyMutation,
     useGastronomyPendingReviewsQuery,
     useGastronomyQuery,
-    useModerateGastronomyMutation,
     useModerateGastronomyReviewMutation,
-    useRestoreGastronomyMutation,
     useUpdateGastronomyMutation
 } from './hooks/useGastronomyQuery';

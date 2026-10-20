@@ -3,7 +3,6 @@
  * Update an existing FAQ for an accommodation
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationFaqIdSchema,
     AccommodationFaqSingleOutputSchema,
@@ -11,15 +10,14 @@ import {
     AccommodationIdSchema,
     FaqWithChannelVisibilityUpdatePayloadSchema,
     type FaqWithChannelVisibilityUpdatePayloadType,
-    ProductDomainEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 // Initialize service once
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -27,12 +25,14 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 /**
  * Route definition using createCRUDRoute factory
  */
-export const updateFaqRoute = createCRUDRoute({
+export const updateFaqRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/faqs/{faqId}',
     summary: 'Update FAQ in accommodation',
     description: 'Update an existing FAQ in a specific accommodation',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     tags: ['Accommodations', 'FAQs'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema,
         faqId: AccommodationFaqIdSchema
@@ -58,14 +58,6 @@ export const updateFaqRoute = createCRUDRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // SPEC-145 T-004: FAQ mutation is accommodation content; same entitlement
-        // gate as update/patch (EDIT_ACCOMMODATION_INFO — granted on all host plans).
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });
 

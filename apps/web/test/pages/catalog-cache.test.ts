@@ -11,7 +11,7 @@
  *
  * **W2-4** covers the six pages W2-3 deliberately left uncached
  * (`/destinos/atraccion/`, `/destinos/lugar/`, `/gastronomia/`,
- * `/experiencias/` and the two commerce detail pages). They were excluded
+ * `/experiencias/` and the two gastronomy/experience detail pages). They were excluded
  * because `attraction`, `pointOfInterest`, `gastronomy` and `experience` had no
  * tag vocabulary, no `entity-tag-mapper` case, and their services never called
  * the revalidation service — caching them would have manufactured the exact
@@ -157,7 +157,7 @@ const CATALOG_PAGES: readonly CatalogPage[] = [
  * done its job and is replaced by real coverage below.
  *
  * `attraction` and `pointOfInterest` have NO collection tag on purpose —
- * nothing lists them — so they are checked separately from the two commerce
+ * nothing lists them — so they are checked separately from the two gastronomy/experience
  * families.
  */
 const W2_4_PAGES = [
@@ -331,16 +331,17 @@ describe('W2-4 pages — cacheable now that their purge chain exists (HOS-369)',
         expect(source).not.toMatch(/locals\s+as\s+\{[^}]*user/);
     });
 
-    it('the commerce detail pages cache only AFTER their visibility gate', () => {
-        // A PRIVATE or RESTRICTED listing 404s before reaching
-        // `applyCacheHeaders`. If the call ever moves above that gate, a
+    it('the gastronomy/experience detail pages cache only AFTER their publication gate', () => {
+        // A non-PUBLISHED listing 404s before reaching `applyCacheHeaders`:
+        // since HOS-1641 the public read answers only PUBLISHED, so the gate
+        // is the `!result.ok` 404. If the call ever moves above that gate, a
         // non-public listing becomes shareable from the edge — the worst
         // possible cache bug, and one no page would visibly fail on.
         for (const path of ['gastronomia/[slug].astro', 'experiencias/[slug].astro']) {
             const source = readPage(path);
-            const gate = source.indexOf("visibility !== 'PUBLIC'");
+            const gate = source.indexOf('if (!result.ok)');
             const call = source.indexOf('applyCacheHeaders({');
-            expect(gate, `${path}: visibility gate not found`).toBeGreaterThan(-1);
+            expect(gate, `${path}: publication gate not found`).toBeGreaterThan(-1);
             expect(call, `${path}: cache call must come after the gate`).toBeGreaterThan(gate);
         }
     });

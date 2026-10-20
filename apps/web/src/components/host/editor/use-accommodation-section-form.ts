@@ -232,8 +232,8 @@ export function useAccommodationSectionForm<TValues extends object>({
      * happened to arrive from (a bookmark, a direct link, another section) —
      * not necessarily this accommodation's hub. The hub is the page every
      * section is reached from, so it's always the right destination, matching
-     * the pattern the commerce editor already uses
-     * (`CommerceListingEditor.client.tsx`'s `handleCancel`).
+     * the pattern the listing editor already uses
+     * (`ListingEditor.client.tsx`'s `handleCancel`).
      */
     const handleCancel = useCallback(() => {
         if (typeof window === 'undefined') return;

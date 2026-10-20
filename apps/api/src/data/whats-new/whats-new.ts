@@ -59,7 +59,7 @@ import { z } from 'zod';
  * Approved CDN / image origins for What's New entry images (SPEC-175 §9 / T-018).
  *
  * **TBD-2 resolved (HOS-964)**: `https://res.cloudinary.com` is Hospeda's one
- * media CDN — every accommodation/commerce photo and every uploaded avatar
+ * media CDN — every accommodation/gastronomy/experience photo and every uploaded avatar
  * already goes through it (`@repo/media`'s `getMediaUrl`,
  * `apps/web/src/lib/media.ts`'s `ALLOWED_REMOTE_HOSTS`). It is ALREADY in both
  * apps' CSP `img-src` directive:
@@ -691,7 +691,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
-        id: '2026-09-08-features-on-commerce-pages',
+        id: '2026-09-08-features-on-listing-pages',
         publishedAt: '2026-09-22T10:25:19Z',
         highlight: false,
         roles: ['USER'],
@@ -725,7 +725,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
-        id: '2026-09-08-commerce-editor-by-sections',
+        id: '2026-09-08-listing-editor-by-sections',
         publishedAt: '2026-09-22T08:25:19Z',
         highlight: true,
         roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
@@ -809,7 +809,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
-        id: '2026-09-05-commerce-publish-free-trial',
+        id: '2026-09-05-gastronomy-experience-publish-free-trial',
         publishedAt: '2026-09-07T12:00:00Z',
         highlight: true,
         roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],

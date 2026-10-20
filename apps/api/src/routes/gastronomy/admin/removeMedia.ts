@@ -9,10 +9,11 @@
  * so the asset is removed BEFORE the row, aborting the whole operation if
  * storage fails rather than leaving a permanently-billed orphan.
  */
-import { PermissionEnum, SuccessSchema } from '@repo/schemas';
+import { SuccessSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService, removeGastronomyMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -24,17 +25,17 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * DELETE /api/v1/admin/gastronomies/:id/media/:mediaId
  * Remove photo from gastronomy listing gallery — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
+ * Requires GASTRONOMY_EDIT_ALL permission. The service helper
  * `removeGastronomyMedia` enforces the same gate via `checkGastronomyCanEditMedia`.
  */
 export const adminRemoveGastronomyMediaRoute = createAdminRoute({
     method: 'delete',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}',
     summary: 'Remove photo from gastronomy listing gallery (admin)',
     description:
-        'Soft-deletes a media row and resequences the remaining visible photos. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+        'Soft-deletes a media row and resequences the remaining visible photos. Requires GASTRONOMY_EDIT_ALL.',
     tags: ['Gastronomy', 'Media'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -47,15 +48,19 @@ export const adminRemoveGastronomyMediaRoute = createAdminRoute({
         const model = (
             gastronomyService as unknown as { model: Parameters<typeof removeGastronomyMedia>[0] }
         ).model;
-        const result = await removeGastronomyMedia(
-            model,
-            actor,
-            {
-                gastronomyId: params.id as string,
-                mediaId: params.mediaId as string
-            },
-            getMediaProvider()
-        );
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                removeGastronomyMedia(
+                    model,
+                    actor,
+                    {
+                        gastronomyId: params.id as string,
+                        mediaId: params.mediaId as string
+                    },
+                    getMediaProvider()
+                )
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

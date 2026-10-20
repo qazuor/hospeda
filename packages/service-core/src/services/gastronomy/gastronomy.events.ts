@@ -28,8 +28,8 @@
  *
  * ## Permissions vs. entitlements
  *
- * This module answers PERMISSION only — `COMMERCE_EDIT_OWN` on your own
- * listing, `COMMERCE_EDIT_ALL` for staff, via the same
+ * This module answers PERMISSION only — `GASTRONOMY_EDIT_OWN` on your own
+ * listing, `GASTRONOMY_EDIT_ALL` for staff, via the same
  * {@link checkGastronomyCanEditFaqs} gate every sibling helper uses. Whether the
  * caller's PLAN includes an agenda is an entitlement
  * (`MANAGE_GASTRONOMY_EVENTS`) and is checked at the route, before this is
@@ -49,6 +49,7 @@ import {
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
 import { checkGastronomyCanEditFaqs } from './gastronomy.permissions';
 
 /**
@@ -187,7 +188,7 @@ export async function getGastronomyEvents(
 /**
  * Replaces a listing's agenda with the submitted document.
  *
- * Permission: `COMMERCE_EDIT_OWN` (listing owner) or `COMMERCE_EDIT_ALL`
+ * Permission: `GASTRONOMY_EDIT_OWN` (listing owner) or `GASTRONOMY_EDIT_ALL`
  * (staff). The `MANAGE_GASTRONOMY_EVENTS` entitlement is the route's gate, not
  * this one's.
  *
@@ -269,6 +270,14 @@ export async function replaceGastronomyEvents(
                     tx
                 );
             }
+            // AC:V9a:7 — the owner act commits with the whole events document.
+            await recordListingSubEntityEdit({
+                entityType: 'gastronomy',
+                listing: gastronomy,
+                actor,
+                field: 'events',
+                ctx: { ...ctx, tx }
+            });
         };
 
         if (ctx?.tx) {

@@ -3,7 +3,6 @@ import {
     AccommodationTypeEnum,
     AmenitiesTypeEnum,
     AuthProviderEnum,
-    BillingIntervalEnum,
     CalendarSyncStatusEnum,
     ClientTypeEnum,
     ConversationStatusEnum,
@@ -22,7 +21,6 @@ import {
     HostTradeUsageChannelEnum,
     HostTradeUsageDeclaredByEnum,
     HostTradeUsageStatusEnum,
-    InvoiceStatusEnum,
     LifecycleStatusEnum,
     MessageSenderTypeEnum,
     MessageStatusEnum,
@@ -40,11 +38,7 @@ import {
     PartnerContentReviewStateEnum,
     PartnerLogoClickDestinationEnum,
     PartnerMentionChannelEnum,
-    PartnerPaymentReviewStateEnum,
-    PartnerSubscriptionStatusEnum,
-    PartnerTierEnum,
     PartnerTypeEnum,
-    PaymentStatusEnum,
     PermissionCategoryEnum,
     PermissionEffectEnum,
     PermissionEnum,
@@ -60,7 +54,6 @@ import {
     QrScanDeviceTypeEnum,
     QrScanOsEnum,
     RecurrenceTypeEnum,
-    RefundStatusEnum,
     RoleEnum,
     RoleGrantActionEnum,
     SocialApprovalStatusEnum,
@@ -75,7 +68,6 @@ import {
     SponsorshipStatusEnum,
     SponsorshipTargetTypeEnum,
     SponsorshipTierEnum,
-    SubscriptionStatusEnum,
     TagColorEnum,
     TagTypeEnum,
     TouristAudienceEnum,
@@ -293,21 +285,9 @@ export const TouristAudiencePgEnum = pgEnum(
     enumToTuple(TouristAudienceEnum)
 );
 
-export const BillingIntervalPgEnum = pgEnum(
-    'billing_interval_enum',
-    enumToTuple(BillingIntervalEnum)
-);
-
-export const SubscriptionStatusPgEnum = pgEnum(
-    'subscription_status_enum',
-    enumToTuple(SubscriptionStatusEnum)
-);
-
-export const PaymentStatusPgEnum = pgEnum('payment_status_enum', enumToTuple(PaymentStatusEnum));
-
-export const InvoiceStatusPgEnum = pgEnum('invoice_status_enum', enumToTuple(InvoiceStatusEnum));
-
-export const RefundStatusPgEnum = pgEnum('refund_status_enum', enumToTuple(RefundStatusEnum));
+// HOS-1416: the legacy qzpay billing pg enums (billing_interval_enum,
+// subscription_status_enum, payment_status_enum, invoice_status_enum,
+// refund_status_enum) were removed together with the billing tables they typed.
 
 export const ConversationStatusPgEnum = pgEnum(
     'conversation_status_enum',
@@ -421,13 +401,6 @@ export const SocialSourcePgEnum = pgEnum('social_source_enum', enumToTuple(Socia
 // Partner enums (SPEC-271)
 export const PartnerTypePgEnum = pgEnum('partner_type_enum', enumToTuple(PartnerTypeEnum));
 
-export const PartnerTierPgEnum = pgEnum('partner_tier_enum', enumToTuple(PartnerTierEnum));
-
-export const PartnerSubscriptionStatusPgEnum = pgEnum(
-    'partner_subscription_status_enum',
-    enumToTuple(PartnerSubscriptionStatusEnum)
-);
-
 /**
  * Channels a manual partner promotion can be logged against (HOS-377).
  *
@@ -463,19 +436,6 @@ export const PartnerLogoClickDestinationPgEnum = pgEnum(
 export const PartnerContentReviewStatePgEnum = pgEnum(
     'partner_content_review_state_enum',
     enumToTuple(PartnerContentReviewStateEnum)
-);
-
-/**
- * Whether an admin has been asked to confirm a partner's payment (HOS-1299).
- *
- * A SEPARATE type from `partner_subscription_status_enum`, not a fifth value of
- * it: every visibility surface in the platform reads that column, so suspecting
- * a partner of not having paid would, by itself, take them down. See
- * `PartnerPaymentReviewStateEnum` for the full list of what would have moved.
- */
-export const PartnerPaymentReviewStatePgEnum = pgEnum(
-    'partner_payment_review_state_enum',
-    enumToTuple(PartnerPaymentReviewStateEnum)
 );
 
 /**

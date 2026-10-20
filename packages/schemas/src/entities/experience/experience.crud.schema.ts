@@ -38,7 +38,7 @@ import { ExperienceSchema } from './experience.schema.js';
  * TypeScript does not catch it (`.superRefine()` returns `this`, so `.pick()`
  * still type-checks), so attaching this rule directly to
  * {@link ExperienceOwnerCreateInputSchema} compiles cleanly and then blows up on
- * module load in `CommerceCreateForm.client.tsx`, which picks a subset of it.
+ * module load in `ListingCreateForm.client.tsx`, which picks a subset of it.
  *
  * So the plain create schemas stay slice-able and the rule lives in the
  * `*CheckedSchema` variants, which the API routes validate against. Do NOT move
@@ -94,15 +94,17 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
     deletedById: true,
     // HOS-1286: server-managed billing flag. Written ONLY by the
     // featured-by-entitlement sync primitives — never from a request body, not
-    // even an admin's. `isFeatured`, the admin-curated flag beside it, stays
-    // accepted. Same treatment as `accommodations.featuredByEntitlement`.
-    featuredByEntitlement: true
+    // even an admin's. Same treatment as `accommodations.featuredByEntitlement`.
+    featuredByEntitlement: true,
+    // HOS-1641: server-managed. Only the PB publication transitions write the
+    // publication state — never a request body, not even an admin's.
+    publicationStatus: true
 }).extend({
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
         .string()
-        .min(2, { message: 'zodError.commerce.slug.min' })
-        .max(100, { message: 'zodError.commerce.slug.max' })
+        .min(2, { message: 'zodError.listing.slug.min' })
+        .max(100, { message: 'zodError.listing.slug.max' })
         .optional(),
     /**
      * Owning user UUID. REQUIRED (H-88): `experiences.owner_id` is NOT NULL with
@@ -114,7 +116,7 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
      * Deliberately NOT defaulted to the acting admin: the documented flow is
      * "admins create the listing and provision the owner", so the owner is a
      * real merchant account rather than whoever filled in the form. The owner
-     * self-create route (`routes/commerce/protected/create.ts`) already supplies
+     * self-create route (`routes/experience/protected/create.ts`) already supplies
      * `ownerId: actor.id` explicitly and is unaffected.
      */
     ownerId: UserIdSchema,
@@ -189,8 +191,8 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * enable slug-squatting and break indexed links. Any `slug` key in an owner
  * PATCH body is silently stripped (Zod's default unknown-key behaviour).
  *
- * **Control fields stay admin-only (HOS-166 §6.2 / AC-19):** `lifecycleState`,
- * `visibility`, `moderationState`, `isFeatured`, `ownerId` are **intentionally
+ * **Control fields stay out (HOS-166 §6.2 / AC-19, HOS-1641):** `publicationStatus`
+ * and `ownerId` are **intentionally
  * absent** from this schema — the reversal above is scoped to identity only.
  * Any of these keys in an owner PATCH body is silently stripped.
  *
@@ -207,12 +209,12 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * - `richDescriptionI18n` — localized rich-text translations
  *
  * Previously-permitted operational sections (unchanged):
- * - `openingHours`    — schedule (gated by `COMMERCE_EDIT_OWN`)
- * - `contactInfo`     — contact details (gated by `COMMERCE_EDIT_OWN`)
- * - `socialNetworks`  — social links (gated by `COMMERCE_EDIT_OWN`)
- * - `media`           — featured image, gallery, videos (gated by `COMMERCE_EDIT_OWN`)
- * - `isPriceOnRequest`— price-on-request toggle (gated by `COMMERCE_EDIT_OWN`)
- * - `richDescription` — rich-text description (gated by `COMMERCE_EDIT_OWN`)
+ * - `openingHours`    — schedule (gated by `the vertical's EDIT_OWN`)
+ * - `contactInfo`     — contact details (gated by `the vertical's EDIT_OWN`)
+ * - `socialNetworks`  — social links (gated by `the vertical's EDIT_OWN`)
+ * - `media`           — featured image, gallery, videos (gated by `the vertical's EDIT_OWN`)
+ * - `isPriceOnRequest`— price-on-request toggle (gated by `the vertical's EDIT_OWN`)
+ * - `richDescription` — rich-text description (gated by `the vertical's EDIT_OWN`)
  * - `meetingPoint` / `meetingPointLat` / `meetingPointLong` — where the
  *   experience starts (HOS-1048; ficha data, no entitlement)
  * - `meetingPointDirections` — how to GET there (HOS-1049). Accepted by the
@@ -222,14 +224,13 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * - `whatToBring` / `requirements` — the two practical checklists (HOS-1046)
  * - `cancellationPolicy` — free-text "what if it does not run" (HOS-1047)
  * - `acceptsPrivateGroups` — the group-enquiry toggle (HOS-1056)
- * - `amenityIds`      — junction sync (gated by `COMMERCE_EDIT_OWN`)
- * - `featureIds`      — junction sync (gated by `COMMERCE_EDIT_OWN`)
+ * - `amenityIds`      — junction sync (gated by `the vertical's EDIT_OWN`)
+ * - `featureIds`      — junction sync (gated by `the vertical's EDIT_OWN`)
  *
  * NOT permitted for owner (admin-only — control fields + immutable identity):
  * - `slug` (not owner-editable directly — HOS-166 OQ-3)
- * - `lifecycleState`, `visibility`, `moderationState`, `isFeatured`, `ownerId`
- *   (control fields — HOS-166 §6.2)
- * - `hasActiveSubscription` (subscription lifecycle, admin-only toggle)
+ * - `publicationStatus` (written only by the PB publication transitions —
+ *   HOS-1641), `ownerId` (control fields — HOS-166 §6.2)
  */
 export const ExperienceOwnerUpdateInputSchema = z
     .object(
@@ -315,16 +316,15 @@ export type ExperienceOwnerUpdateInput = z.infer<typeof ExperienceOwnerUpdateInp
 // ============================================================================
 
 /**
- * Schema for a `COMMERCE_OWNER` self-service listing create
- * (`POST /api/v1/protected/commerce/listings/:entityType`, HOS-166 §7.2).
+ * Schema for a `EXPERIENCE_OWNER` self-service listing create
+ * (`POST /api/v1/protected/experiences/`, HOS-166 §7.2).
  * Mirrors {@link GastronomyOwnerCreateInputSchema} — see that schema's JSDoc
  * for the full rationale on why each field is omitted.
  *
  * - `ownerId` — never accepted; the route forces `actor.id`.
  * - `slug` — never accepted; derived server-side from `name` (HOS-166 OQ-3).
- * - `lifecycleState`, `visibility`, `isFeatured`, `moderationState` — control
- *   fields; the route forces `visibility: PRIVATE` + `lifecycleState: DRAFT`.
- * - `hasActiveSubscription` — subscription-lifecycle only, never client input.
+ * - `publicationStatus` — control field; a listing is born `DRAFT` and only
+ *   the PB publication transitions move it (HOS-1641).
  * - `reviewsCount`, `averageRating`, `rating` — server-computed aggregates.
  *
  * `destinationId` stays `.optional()` (mirrors the admin create schema) —
@@ -341,16 +341,11 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
     // Server-forced — never accepted from the owner's request body.
     ownerId: true,
     slug: true,
-    lifecycleState: true,
-    visibility: true,
-    isFeatured: true,
+    publicationStatus: true,
     // HOS-1286: server-managed. Written ONLY by the featured-by-entitlement sync
     // primitives, never through create/update — the same treatment
-    // `accommodation.crud.schema.ts` gives its twin, and unlike `isFeatured`,
-    // which admin still controls manually.
+    // `accommodation.crud.schema.ts` gives its twin.
     featuredByEntitlement: true,
-    moderationState: true,
-    hasActiveSubscription: true,
     // Server-computed aggregates — nonsensical on create.
     reviewsCount: true,
     averageRating: true,
@@ -377,7 +372,7 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
     //   this entity, and create is the one write path that cannot check the
     //   entitlement honestly: a listing is created `PRIVATE`/`DRAFT` BEFORE the
     //   owner has any subscription at all (the normal mid-funnel state
-    //   `commerce-entitlement.ts` is written around), so a gate here would
+    //   the per-vertical entitlement middleware is written around), so a gate here would
     //   refuse every legitimate provider, while no gate at all would let an
     //   unentitled one write the field through this schema's `.omit()`
     //   inheritance, in silence. Omitting removes the dilemma: the field is
@@ -410,7 +405,7 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
  * (see {@link requirePriceUnitUnlessOnRequest}). The owner create route
  * validates against THIS one.
  *
- * The plain schema above must stay refinement-free: `CommerceCreateForm`
+ * The plain schema above must stay refinement-free: `ListingCreateForm`
  * `.pick()`s a subset of it, and Zod 4 throws on `.pick()` over a refined
  * object schema.
  */
@@ -435,21 +430,19 @@ export type ExperienceOwnerCreateInput = z.infer<typeof ExperienceOwnerCreateInp
  * ### Why server-managed fields are explicitly omitted
  *
  * Even though `stripShapeDefaults` removes `.default()` wrappers, fields like
- * `ownerId`, `reviewsCount`, `averageRating`, and `hasActiveSubscription` must
+ * `ownerId`, `publicationStatus`, `reviewsCount` and `averageRating` must
  * never arrive at the service from a generic PATCH body:
  *
  * - `ownerId` — immutable after creation; ownership change requires a dedicated
  *   admin action, not a generic update payload.
  * - `reviewsCount` / `averageRating` — server-computed aggregates updated by
  *   the review subsystem, not by the admin CRUD path.
- * - `hasActiveSubscription` — driven by the subscription lifecycle hook; toggled
- *   via the dedicated `toggleSubscription` admin action, not a generic PATCH.
  */
 export const ExperienceUpdateInputSchema = z
     .object(
         // Zod 4's `.partial()` does NOT strip `.default()` (unlike Zod 3): without
-        // this, a PATCH like `{ lifecycleState: 'ACTIVE' }` would arrive at the
-        // service carrying injected defaults, silently overwriting server state.
+        // this, a PATCH like `{ name: 'x' }` would arrive at the service carrying
+        // injected defaults, silently overwriting server state.
         // Stripping the top-level defaults restores correct "absent key = no change"
         // PATCH semantics. See `stripShapeDefaults`.
         stripShapeDefaults(
@@ -469,15 +462,16 @@ export const ExperienceUpdateInputSchema = z
                 // it in would let an owner send `featuredByEntitlement: true` in
                 // their own update and feature their listing without buying the
                 // add-on, which is the exact product HOS-1286 exists to sell.
-                // `isFeatured`, the admin-curated flag beside it, stays writable.
                 featuredByEntitlement: true,
+                // Server-managed (HOS-1641): only the PB publication transitions
+                // write the publication state.
+                publicationStatus: true,
                 // Server-managed: ownership change requires a dedicated admin action.
                 ownerId: true,
                 // Server-computed aggregates — updated by the review subsystem only.
                 reviewsCount: true,
                 averageRating: true,
                 // Subscription lifecycle hook — use toggleSubscription route instead.
-                hasActiveSubscription: true,
                 // HOS-372: the `media` JSONB column was dropped. Photos live in
                 // `experience_media` and are written through the relational media
                 // endpoints; videos travel as the top-level `videos` column, which

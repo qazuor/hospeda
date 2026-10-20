@@ -265,7 +265,178 @@ jobs:
       - name: A branch cut from the umbrella may not target staging or main (DEC-ARCH-007)
         if: github.base_ref == 'staging' || github.base_ref == 'main'
         run: bash scripts/check-umbrella-branch-target.sh
+      # GUARD:G8 (AC:U1:5 / AC:U1:6). HOSPEDA_PRODUCTION_BUILD tells its step-6
+      # rule whether this run guards a build destined for production: the same
+      # condition as the coverage run further down (push to main, or a PR whose
+      # base is main). The Coolify Docker build has no `.git`, so the guard
+      # cannot run there and takes this signal from CI instead.
+      - name: Check retired grouping word across the repository (GUARD:G8)
+        env:
+          HOSPEDA_PRODUCTION_BUILD: ${{ ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main')) && '1' || '0' }}
+        run: bash scripts/check-old-grouping-word.sh
       - uses: ./.github/actions/setup
+      - name: Reject commercial values in billing code (GUARD:G7)
+        run: pnpm check:commercial-values
+      # GUARD:G16 (HOS-1506, AC:B1:10). Its own step, like every guard here:
+      # being listed in `pnpm check:guards` is NOT what makes a guard run in this
+      # job. Replaces the retired qzpay shell guard (TEST:U1:1, HOS-1416), whose rule
+      # P-3 it carries. Runs on tsx, so after setup.
+      - name: Check the payments boundary and no legacy billing library (GUARD:G16)
+        run: pnpm check:payments-boundary
+      # GUARD:G14 (HOS-1432, AC:V1:7). Its own step, like every guard here. One
+      # half (billing, verticals) never imports the other outside
+      # @repo/billing-verticals-contract; the halves are the table in the script.
+      - name: Check neither half imports the other outside the contract (GUARD:G14)
+        run: pnpm check:billing-verticals-boundary
+      # HOS-1638 (B13a.10). Its own step, like every guard here: being listed in
+      # `pnpm check:guards` is NOT what makes a guard run in this job.
+      - name: Check no code reads a table the old billing dropped (HOS-1638)
+        run: pnpm check:no-legacy-billing-tables
+      # HOS-1626. Its own step, like every guard here: being listed in
+      # `pnpm check:guards` is NOT what makes a guard run in this job.
+      - name: Check the legacy billing package stays retired (HOS-1626)
+        run: pnpm check:no-legacy-billing-package
+
+      # Compare client paths with the committed live API route manifest.
+      - name: Check no client calls a route the API does not register (HOS-1638, AC:B13a:24)
+        run: pnpm check:api-calls-registered
+      # GUARD:G13 (HOS-1447, AC:V4:12). Production builds must not link bootstrap billing answers.
+      - name: Check bootstrap billing answers never reach production (GUARD:G13)
+        env:
+          HOSPEDA_PRODUCTION_BUILD: ${{ ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main')) && '1' || '0' }}
+        run: pnpm check:bootstrap-answers-never-in-production
+      # GUARD:G-R4 (HOS-1448, AC:V4:13). Its own step, like every guard here.
+      - name: Check transition guards are disjoint (GUARD:G-R4)
+        run: pnpm check:transition-guards-disjoint
+      # GUARD:G-R4-B (HOS-1448, AC:V4:13). Its own step, like every guard here.
+      - name: Check vertical machine vocabulary (GUARD:G-R4-B)
+        run: pnpm check:verticals-machines-vocabulary
+      # GUARD:G-R6 (HOS-1448, AC:V4:13). Its own step, like every guard here.
+      - name: Check read columns have writers (GUARD:G-R6)
+        run: pnpm check:read-columns-written
+      # GUARD:G4 (HOS-1462, AC:V5:19). Its own step, like every guard here.
+      - name: Check no subscription or trial transition writes roles (GUARD:G4)
+        run: pnpm check:transitions-never-write-roles
+      # GUARD:G6 (HOS-1462, AC:V5:17, AC:V5:18). Its own step, like every guard here. Half (a): no authorization decides only by role; half (b): no role enters the effective set.
+      - name: Check no authorization decides only by role and no role enters the effective set (GUARD:G6)
+        run: pnpm check:role-never-decides
+      # GUARD:G-R3-B (HOS-1463, AC:V5:20). Its own step, like every guard here.
+      - name: Check no clock-triggered transition grants (GUARD:G-R3-B)
+        run: pnpm check:clock-transitions-never-grant
+      # GUARD:G-R3-C (HOS-1463, AC:V5:21). Its own step, like every guard here.
+      - name: Check every domain operation declares whether it passes step 5 (GUARD:G-R3-C)
+        run: pnpm check:step5-declared
+      # TEST:V2:8 (HOS-1435, AC:V2:5). Its own step, like every guard here. No
+      # code of the verticals half (G14's HALVES.verticals) writes
+      # addon_product.version_id: re-pointing it is an act of billing.
+      - name: Check verticals never writes addon_product.version_id (TEST:V2:8)
+        run: pnpm check:verticals-no-addon-product-write
+      # GUARD:G9, G10, G11 (HOS-1508, AC:B1:5/6/7). One step each, like every
+      # guard here. G9: the reason sent to the provider is copy, not an id.
+      # G10: the approval link is read only through sanitizeApprovalUrl (EX-37).
+      # G11: no trial-request field where an authorization is built (INV:D12).
+      - name: Check the provider reason is copy, not an identifier (GUARD:G9)
+        run: pnpm check:reason-is-copy
+      - name: Check the approval link is shown only sanitized (GUARD:G10)
+        run: pnpm check:approval-url-sanitized
+      - name: Check no trial is asked of the provider (GUARD:G11)
+        run: pnpm check:no-provider-trial
+      # GUARD:G12, G17 (HOS-1509, AC:B1:8/11). G12: the gateway's SDK is imported
+      # or declared only under packages/payments/src/adapters/. G17: no decision
+      # comes out of a notice without re-reading by id; its message names which
+      # of its three predicates failed.
+      - name: Check the gateway SDK is used only inside the adapter (GUARD:G12)
+        run: pnpm check:sdk-outside-adapter
+      - name: Check no decision comes out of a notice without re-reading by id (GUARD:G17)
+        run: pnpm check:decision-rereads-by-id
+      # GUARD:G5 (HOS-1473, AC:V6:6)
+      - name: Check coverage sources reach surplus reconciliation (GUARD:G5)
+        run: pnpm check:surplus-reconciler
+      # GUARD:G-R9 (HOS-1476, AC:V6:14). Its own step, like every guard here.
+      - name: Check every table hanging from a listing has a PURGED row (GUARD:G-R9)
+        run: pnpm check:purged-closed-list
+      # GUARD:G-R6-B (HOS-1476, AC:V6:15). Its own step, like every guard here.
+      - name: Check the closed lists of listing.inactive_since (GUARD:G-R6-B)
+        run: pnpm check:listing-clock
+      # AC:V6:25 (HOS-1477). Its own step, like every guard here.
+      - name: Check no listing delete or restore door outside PB12 and action 23 (AC:V6:25)
+        run: pnpm check:listing-delete-doors
+      # TEST:V6:18 (HOS-1641, AC:V6:32). Its own step, like every guard here.
+      - name: Check no file reads the six old listing columns (TEST:V6:18)
+        run: pnpm check:listing-old-columns
+      # TEST:V9b:14 (HOS-1504, AC:V9b:14). Its own step, like every guard here.
+      - name: Check PB4 and PB5 code is untouched by V9b (TEST:V9b:14)
+        run: pnpm check:retention-archive-untouched
+      # TEST:V6:31 (HOS-1481, AC:V6:23). Its own step, like every guard here.
+      - name: Check partners has no tier and no start or end dates (TEST:V6:31)
+        run: pnpm check:partner-no-tier-and-dates
+      # GUARD:G15 (HOS-1510, AC:B1:9). Its own step, like every guard here. The fake
+      # payment provider lies only from its closed list, each lie in one place and
+      # each row whole (a); a test turns a lie off only by naming it and saying
+      # why (b). Its message names which predicate failed.
+      - name: Check the fake provider lies only from its closed list (GUARD:G15)
+        run: pnpm check:fake-lies
+      # AC:V5:29 requires an independent CI step for the API exit guard.
+      - name: Check no transitional gate markers remain in apps/api/src (AC:V5:29)
+        run: pnpm check:no-transitional-gate-markers
+      # GUARD:G18 (HOS-1431, AC:V1:4). Its own step, like every guard here. The
+      # reference rows every migration inserts (catalog_key, vertical) are the
+      # rows scripts/generate-catalog-sql.ts regenerates from the code catalog.
+      - name: Check migration reference rows match the code catalog (GUARD:G18)
+        run: pnpm check:catalog-sql
+      # GUARD:G3 (HOS-1431, AC:V1:3). Its own step. Every key production code uses
+      # (catalog enum members and catalog accessor arguments) is in the key catalog.
+      - name: Check every key used in code is in the key catalog (GUARD:G3)
+        run: pnpm check:catalog-key-usage
+      # GUARD:G1 (HOS-1431, AC:V1:5). Its own step. Retires the HOS-1079 shell
+      # guard on binary vertical ternaries, whose rule it widens.
+      - name: Check every vertical carries its Axis-2 item and no binary vertical ternary (GUARD:G1)
+        run: pnpm check:vertical-axis-items
+      - name: Check listing vertical is immutable (GUARD:G2 c)
+        run: pnpm check:vertical-immutable
+      # GUARD:G2 halves (a) and (b) (HOS-1463, AC:V5:22). Its own step, like every guard here.
+      - name: Check every domain operation declares its vertical and reads it from the resource (GUARD:G2 a, b)
+        run: pnpm check:vertical-context
+      # GUARD:G19 (HOS-1459, AC:V5:13). Its own step, like every guard here.
+      # A system actor must be built by createSystemActor in @repo/service-core.
+      - name: Check system actors are built only by the factory (GUARD:G19)
+        run: pnpm check:system-actor-factory
+      # GUARD:G-R1-F (HOS-1527, AC:B3:26). Its own step, like every guard here.
+      # Opening, lifting, payment attachment and courtesy close keep their catalog rules.
+      - name: Check reconciliation mark discipline (GUARD:G-R1-F)
+        run: pnpm check:reconciliation-mark-discipline
+      # GUARD:G-R1-A (HOS-1527, AC:B3:23). Its own step, like every guard here. The
+      # successor writer must pass through the predecessor admission gate.
+      - name: Check succession predecessor admission (GUARD:G-R1-A)
+        run: pnpm check:succession-predecessor
+      # GUARD:G-R1-B (HOS-1527, AC:B3:24). Its own step, like every guard here. The
+      # first charge follows the authorization window, except confirmed suspension.
+      - name: Check successor first charge after its window (GUARD:G-R1-B)
+        run: pnpm check:succession-first-charge
+      # GUARD:G-R1-D (HOS-1561, AC:B7:17). Its own step, like every guard here. No path
+      # reactivates a succession predecessor nor refunds its S19-retained payment early.
+      - name: Check no path reactivates or refunds a retained succession payment (GUARD:G-R1-D)
+        run: pnpm check:succession-retention
+      # GUARD:G-R1-E (HOS-1527, AC:B3:25). Its own step, like every guard here. The
+      # live term must be queried completely and with the correct subject's status set.
+      - name: Check live succession terms and subject sets (GUARD:G-R1-E)
+        run: pnpm check:live-term-inventories
+      # GUARD:G-R2 (HOS-1439, AC:V3:2). Its own step, like every guard here. The
+      # effective set's fold must discard complements when no live non-TRIAL title
+      # exists; its message names which half of the condition is missing.
+      - name: Check the effective set discards complements without a live non-TRIAL title (GUARD:G-R2)
+        run: pnpm check:plegable-discard
+      # GUARD:G-R2-B (HOS-1440, AC:V3:5). Its own step, like every guard here. The
+      # resolution must take the GRANT source of the vertical and read its floor
+      # from the source's `floor` field, comparing the plan vertical; its message
+      # names which half is missing.
+      - name: Check the grant floor is read by vertical from the source (GUARD:G-R2-B)
+        run: pnpm check:grant-floor-by-vertical
+      # GUARD:G-R2-C (HOS-1532, AC:B4:8). Its own step, like every guard here. The
+      # real ADDON coverage source must emit a USER/GLOBAL addon only in the verticals
+      # its product declares compatible; its message names the watched source.
+      - name: Check USER/GLOBAL addon sources stay in their compatible verticals (GUARD:G-R2-C)
+        run: pnpm check:addon-compatible-verticals
       - name: Check package layering (HOS-380)
         run: bash scripts/check-circular-deps.sh
       - name: Check CSP-incompatible patterns
@@ -297,63 +468,25 @@ jobs:
       # that npm script would never execute in CI. It is in both on purpose.
       - name: Check soft deletes record their actor (HOS-556 / HOS-559)
         run: pnpm check:soft-delete-actor
-      - name: Check product-domain vocabulary is not narrowed back (HOS-685)
-        run: bash scripts/check-product-domain-vocabulary.sh
-      - name: Check raw-SQL/seed-file product_domain is not hardcoded to 'commerce' (HOS-692 AC-33)
-        run: bash scripts/check-product-domain-raw-sql.sh
-      # Its own step, like every guard here. The third of the product-domain
-      # family and the only one that polices an ABSENCE: the two above ask what
-      # a write says, this one asks whether it says anything at all. The column
-      # is NOT NULL with a default, so an omitted create does not fail — it
-      # files the row under the default's vertical, which is how every tourist
-      # plan came to report `accommodation` in prod and staging alike without a
-      # single line of code being wrong (HOS-1233 F-4b).
-      - name: Check every billing plan/subscription create states its domain (HOS-1233 AC-15d)
-        run: pnpm check:product-domain-on-writes
-      - name: Check commerce plan resolution stays single-sited (HOS-688 AC-35)
-        run: bash scripts/check-commerce-plan-resolution.sh
-      - name: Check subscription domain comparisons are hydrated (HOS-1176)
-        run: bash scripts/check-subscription-domain-hydration.sh
+      # The HOS-1233 write-site guard (check-product-domain-on-writes) was
+      # retired with HOS-1416: the billing_plans/billing_subscriptions creates
+      # it policed died with the legacy billing tables, and the guard's own
+      # fail-loud branch (never pass over zero sites) is what made the
+      # retirement mandatory rather than optional.
       - name: Check locale resolution has a single source of truth (HOS-605 / HOS-609 / HOS-617)
         run: pnpm check:locale-resolution-single-source
       # HOS-936's read-direction guard (the trial window must not be derived
       # from `free_trial`) was retired with the module it protected — HOS-1012
-      # T-026. Not believing a reported trial stopped mattering once we stopped
-      # asking for one; the guard below is what enforces that.
-      - name: Check no checkout sends a trial to MercadoPago (HOS-1012 G-1)
-        run: bash scripts/check-no-trial-to-mercadopago.sh
-      # Its own step for the same reason as every guard in this job. The sibling
-      # of G-1: that one bans a trial in the preapproval payload, this one bans
-      # the `preapproval_plan_id` that made MercadoPago answer "card_token_id is
-      # required" and turned every own-preapproval checkout into a 500.
-      - name: Check no plan id reaches an own-preapproval create (HOS-1221 G-2)
-        run: bash scripts/check-no-plan-id-to-own-preapproval.sh
-      # The third of this family, and its own step for the same reason. The two
-      # above police what LEAVES for MercadoPago; this one polices what arrives
-      # in OUR subscription row through the back door: qzpay-core inherits
-      # `billing_prices.trial_days` whenever a caller omits `trialDays`, which is
-      # how a PAID subscription was born marked `trialing` for 30 days with the
-      # customer already charged (HOS-1221 bug D3). HOS-1221 states `trialDays: 0`
-      # at the call sites; this stops the column that feeds them from holding a
-      # value at all, so a future call site that forgets inherits nothing.
-      - name: Check billing_prices.trial_days is never written a value (HOS-1224 G-2)
-        run: pnpm check:no-price-trial-days
-      - name: Check no binary vertical ternary remains (HOS-1079)
-        run: bash scripts/check-no-binary-vertical-ternary.sh
-      # Its own step, like every guard here: being listed in `pnpm check:guards`
-      # is NOT what makes a guard run in this job (see the note above).
-      - name: Check the add-on purchase route reads the declared domain (HOS-1178)
-        run: bash scripts/check-addon-product-domain.sh
-      # Its own step for the same reason as every guard in this job. This one
-      # enumerates by EVENT rather than by symbol, which is the whole point:
-      # enumerating the callers of one function is how a second implementation
-      # of the authorized-payment handler went unrouted in the first place.
-      - name: Check every authorized-payment processor routes add-ons first (HOS-847)
-        run: bash scripts/check-addon-webhook-routing.sh
+      # T-026. The MercadoPago checkout guards of the HOS-1012/1221/1224 family
+      # (no-trial-to-mercadopago, no-plan-id-to-own-preapproval,
+      # no-price-trial-days) were retired with HOS-1416: the qzpay/MP checkout
+      # surface they policed no longer exists.
+      # The add-on checkout guards of this family (HOS-1178 domain-on-route,
+      # HOS-847 webhook routing) were retired with HOS-1416: the add-on
+      # checkout route and the MercadoPago webhook handlers they anchored on
+      # were demolished with the legacy billing system.
       - name: Check server code does no local-timezone date math (HOS-1010)
         run: bash scripts/check-local-date-math.sh
-      - name: Check the qzpay wave converges on one core (HOS-232)
-        run: bash scripts/check-qzpay-wave-convergence.sh
       # Its own step, like every guard here: being listed in `pnpm check:guards`
       # is NOT what makes a guard run in this job (see the note above). Fails
       # when admin's dependency tree resolves two copies of a Radix primitive
@@ -369,13 +502,11 @@ jobs:
       # never executes here.
       - name: Check 'qrcode' has exactly one importer (HOS-1129)
         run: bash scripts/check-qrcode-engine-isolation.sh
-      # Its own step for the same reason as the two above: `pnpm check:guards`
-      # listing it is not what makes it run here. A guard that only lived in that
-      # npm script would never execute in CI, and this one watches both doors
-      # between a negotiated price and the people who may not see it — the public
-      # plans endpoint and the protected one.
-      - name: Check unlisted plans cannot reach either plan listing (HOS-1062 AC-14)
-        run: bash scripts/check-unlisted-plan-filter.sh
+      # The HOS-1062 unlisted-plan-filter guard was retired with HOS-1416: the
+      # plan-listing routes it watched (apps/api/src/routes/billing/) were
+      # demolished with the legacy billing system.
+      - name: Check published contact addresses use hospeda.com.ar (HOS-928)
+        run: bash scripts/check-hospeda-email-domain.sh
       # Its own step, like every guard here: being listed in `pnpm check:guards`
       # is NOT what makes a guard run in this job (see the note above).
       - name: Check every contact_info column declares mergeableJsonbColumns
@@ -456,6 +587,7 @@ jobs:
         env:
           BASE_SHA: ${{ env.CI_BASELINE_SHA }}
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_BASE_REF: ${{ github.base_ref }}
         run: bash scripts/check-drop-column-release-gap.sh
       - name: Check seed dual-write rule (HOS-25 T-024)
         # PR_BODY is passed via env (never inlined into `run:`) — it is
@@ -703,7 +835,11 @@ jobs:
   test-integration:
     name: Integration Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 20 was the ceiling until the HOS-1352 wave 18: the job ran 14.6-19.6 min
+    # and was cut five times in one night with every test already passed.
+    # 30 held until wave 23, when green runs took 20-29 min and two runs in a
+    # row were cut at exactly 30 in the last step (cutover DB tests). 45 now.
+    timeout-minutes: 45
     needs: build
 
     services:
@@ -728,8 +864,32 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: build-outputs
+      # The migration chain runs in ONE transaction and takes ~3.5k locks; the four
+      # global setups (db, service-core, api, seed) run it concurrently. With the
+      # default max_locks_per_transaction (64) the shared lock table overflows and
+      # `drizzle-kit migrate` fails with "out of shared memory", intermittently and
+      # worse with every new table. A service container takes no server flags, so
+      # the setting is applied with ALTER SYSTEM and a restart.
+      - name: Raise max_locks_per_transaction on the integration Postgres
+        run: |
+          docker exec ${{ job.services.postgres.id }} psql -U hospeda_user -d postgres -c "ALTER SYSTEM SET max_locks_per_transaction = 1024"
+          docker restart ${{ job.services.postgres.id }}
+          for i in $(seq 1 30); do
+            docker exec ${{ job.services.postgres.id }} pg_isready -U hospeda_user && break
+            sleep 1
+          done
+          docker exec ${{ job.services.postgres.id }} psql -U hospeda_user -d postgres -tAc "SHOW max_locks_per_transaction" | grep -qx 1024
       - name: Run integration tests (SPEC-061 db + SPEC-080 service-core)
         run: pnpm test:integration
+        env:
+          HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
+      # U3 (HOS-1426): the cutover script's database tests build the OLD schema from
+      # `main`'s migrations, so that ref must exist in this shallow checkout. They
+      # create and drop their own scratch databases on the same service.
+      - name: Fetch main for the old-schema migration chain (cutover tests)
+        run: git fetch --depth=1 origin main:refs/remotes/origin/main
+      - name: Cutover script database tests (U3)
+        run: pnpm test:cutover-db
         env:
           HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
 

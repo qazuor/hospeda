@@ -1,6 +1,6 @@
 import type { PartnerModel, SelectAllianceLead } from '@repo/db';
 import type { ILogger } from '@repo/logger';
-import { LifecycleStatusEnum, PartnerTierEnum, PartnerTypeEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PartnerTypeEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import {
     provisionPartnerFromLead,
@@ -148,7 +148,7 @@ describe('resolvePartnerProvisionPlan', () => {
 });
 
 describe('provisionPartnerFromLead', () => {
-    it('should create the partner DORMANT and without a start date', async () => {
+    it('creates the partner DORMANT without removed commercial fields', async () => {
         // Arrange
         const partnerModel = partnerModelStub();
 
@@ -156,7 +156,6 @@ describe('provisionPartnerFromLead', () => {
         const result = await provisionPartnerFromLead({
             lead: partnerLead(),
             partnerModel,
-            tier: PartnerTierEnum.SILVER,
             actorId: '00000000-0000-4000-a000-00000000000a',
             logger: silentLogger()
         });
@@ -176,30 +175,19 @@ describe('provisionPartnerFromLead', () => {
         // The whole point of making the column nullable (HOS-278 D1). Asserted
         // as absent rather than "not today", because writing ANY date here is
         // the invented value the change exists to stop.
-        expect(inserted).not.toHaveProperty('startsAt');
+        expect(Object.keys(inserted).sort()).toEqual([
+            'createdById',
+            'lifecycleState',
+            'name',
+            'ownerUserId',
+            'slug',
+            'type',
+            'updatedById'
+        ]);
 
         expect(inserted.name).toBe('Fundación Acme');
         expect(inserted.type).toBe(PartnerTypeEnum.NGO);
         expect(inserted.createdById).toBe('00000000-0000-4000-a000-00000000000a');
-    });
-
-    it('should take the tier from the admin, never from the lead', async () => {
-        // Arrange — the tier is a commercial decision about what Hospeda is
-        // granting; no public form asks for it and no applicant can assert it.
-        const partnerModel = partnerModelStub();
-
-        // Act
-        await provisionPartnerFromLead({
-            lead: partnerLead(),
-            partnerModel,
-            tier: PartnerTierEnum.GOLD,
-            actorId: '00000000-0000-4000-a000-00000000000a',
-            logger: silentLogger()
-        });
-
-        // Assert
-        const inserted = partnerModel.create.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(inserted.tier).toBe(PartnerTierEnum.GOLD);
     });
 
     it('should carry the applicant across as the owner', async () => {
@@ -210,7 +198,6 @@ describe('provisionPartnerFromLead', () => {
         await provisionPartnerFromLead({
             lead: partnerLead(),
             partnerModel,
-            tier: PartnerTierEnum.SILVER,
             actorId: '00000000-0000-4000-a000-00000000000a',
             logger: silentLogger()
         });
@@ -230,7 +217,6 @@ describe('provisionPartnerFromLead', () => {
         const result = await provisionPartnerFromLead({
             lead: partnerLead({ applicantUserId: null }),
             partnerModel,
-            tier: PartnerTierEnum.SILVER,
             actorId: '00000000-0000-4000-a000-00000000000a',
             logger: silentLogger()
         });
@@ -249,7 +235,6 @@ describe('provisionPartnerFromLead', () => {
         await provisionPartnerFromLead({
             lead: partnerLead(),
             partnerModel,
-            tier: PartnerTierEnum.SILVER,
             actorId: '00000000-0000-4000-a000-00000000000a',
             logger: silentLogger()
         });
@@ -271,7 +256,6 @@ describe('provisionPartnerFromLead', () => {
         const result = await provisionPartnerFromLead({
             lead,
             partnerModel,
-            tier: PartnerTierEnum.SILVER,
             actorId: '00000000-0000-4000-a000-00000000000a',
             logger: silentLogger()
         });
@@ -292,7 +276,6 @@ describe('provisionPartnerFromLead', () => {
         const result = await provisionPartnerFromLead({
             lead,
             partnerModel,
-            tier: PartnerTierEnum.SILVER,
             actorId: '00000000-0000-4000-a000-00000000000a',
             logger: silentLogger()
         });

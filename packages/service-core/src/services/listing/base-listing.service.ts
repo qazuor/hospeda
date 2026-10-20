@@ -1,0 +1,1263 @@
+/**
+ * base-listing.service.ts
+ *
+ * Abstract base class for all listing services (SPEC-239 T-029).
+ *
+ * Provides shared lifecycle hooks and behaviors so that GastronomyService and
+ * future experience services reuse this logic without re-deriving it:
+ *
+ *  (a) Destination CITY-type validation in `_beforeCreate` / `_beforeUpdate`.
+ *  (b) Slug auto-generation from `name` when absent (`_beforeCreate`).
+ *  (c) Junction IDs capture into `hookState` (`_beforeCreate`, `_beforeUpdate`);
+ *      transactional junction sync (`_afterCreate`, `_afterUpdate`).
+ *  (d) Denormalized rating recompute exposed as a public helper method
+ *      (`recomputeRating`) called by the entity's review sub-service.
+ *  (e) Owner-scoping in `_executeAdminSearch` (forces `ownerId` filter for
+ *      actors that only hold the VIEW_OWN permission, not VIEW_ALL).
+ *  (f) Public-tier projections via overrideable `_projectPublicEntity`.
+ *
+ * Concrete subclasses supply: model/schemas (inherited abstract members from
+ * `BaseCrudService`), junction + catalog model accessors, FK column name, and
+ * the permission-check abstract methods.
+ *
+ * @module base-listing.service
+ */
+
+import type { DrizzleClient } from '@repo/db';
+import { DestinationModel } from '@repo/db';
+import {
+    DestinationTypeEnum,
+    type PermissionEnum,
+    RoleGrantReason,
+    ServiceErrorCode
+} from '@repo/schemas';
+import { createUniqueSlug } from '@repo/utils';
+import type { ZodObject, ZodRawShape, z } from 'zod';
+import { BaseCrudService } from '../../base/base.crud.service';
+import type {
+    Actor,
+    AdminSearchExecuteParams,
+    BaseModel,
+    PaginatedListOutput,
+    ServiceConfig,
+    ServiceContext,
+    ServiceOutput
+} from '../../types';
+import { ServiceError } from '../../types';
+import { shouldRegenerateSlugOnListingChange } from '../../utils/listing-slug-policy';
+import { hasPermission } from '../../utils/permission';
+import { withServiceTransaction } from '../../utils/transaction';
+import { grantRole } from '../user-role/user-role.service';
+import { syncListingAmenityJunction, syncListingFeatureJunction } from './listing.junction-sync';
+import {
+    hasListingPermission,
+    VERTICAL_OWNER_ROLES,
+    verticalPermission
+} from './listing.permissions';
+import type { ListingHookState } from './listing.types';
+import { buildListingOwnerActChanges, recordListingOwnerAct } from './listing-owner-act';
+import { scheduleListingRevalidation } from './listing-revalidation.js';
+import {
+    assertOutsideAction15Scope,
+    assertSupportCreateIsDraft,
+    assertSupportEditContentOnly
+} from './listing-support-edit';
+
+// ---------------------------------------------------------------------------
+// Minimal catalog/junction interfaces (injected by concrete services)
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimal amenity/feature catalog model interface required by the base class.
+ * Concrete services inject their own catalog model which must satisfy this
+ * interface; it is intentionally minimal to keep the abstraction decoupled
+ * from the full model type.
+ */
+export interface ListingCatalogModel {
+    /** HOS-321: batch lookup — one query for the whole set, not one per id. */
+    findByIds: (ids: readonly string[], tx?: DrizzleClient) => Promise<readonly { id: string }[]>;
+}
+
+/**
+ * Minimal junction table model interface required by the base class.
+ * Only the three operations needed by the diff-sync algorithm are declared.
+ */
+export interface ListingJunctionModel<TRow extends Record<string, unknown>> {
+    /**
+     * HOS-321: `options` and `total` are part of the contract now — the sync
+     * pages through the CURRENT set explicitly instead of accepting the
+     * model's silently-truncating 20-row default.
+     */
+    findAll: (
+        where: Record<string, unknown>,
+        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+        additionalConditions?: undefined,
+        tx?: DrizzleClient
+    ) => Promise<{ items: TRow[]; total: number }>;
+    hardDelete: (where: Record<string, unknown>, tx?: DrizzleClient) => Promise<unknown>;
+    create: (data: Record<string, unknown>, tx?: DrizzleClient) => Promise<unknown>;
+}
+
+// ---------------------------------------------------------------------------
+// Minimum entity shape
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimum shape a listing entity must satisfy to work with
+ * `BaseListingService`.  Adds listing-specific fields on top of the
+ * `{ id; deletedAt? }` constraint from `BaseCrudService`.
+ *
+ * The index signature `[key: string]: unknown` satisfies the `BaseModel<T>`
+ * constraint which requires `T extends Record<string, unknown>`.
+ */
+export interface ListingEntity extends Record<string, unknown> {
+    id: string;
+    name: string;
+    slug: string;
+    deletedAt?: Date | null;
+    ownerId?: string | null;
+    destinationId?: string | null;
+    publicationStatus?: string | null;
+    reviewsCount?: number | null;
+    averageRating?: number | null;
+    rating?: unknown | null;
+}
+
+// ---------------------------------------------------------------------------
+// Abstract base service
+// ---------------------------------------------------------------------------
+
+/**
+ * Abstract base class for listing services (gastronomy, experience, …).
+ *
+ * ## What this class provides
+ *
+ * - **Destination validation** (`_beforeCreate` / `_beforeUpdate`): asserts
+ *   that any `destinationId` in the payload refers to a CITY-type destination.
+ * - **Slug generation** (`_beforeCreate`): auto-generates a unique slug from
+ *   `name` when the payload omits one; delegates to `createUniqueSlug` from
+ *   `@repo/utils`.
+ * - **Junction capture** (`_beforeCreate` / `_beforeUpdate`): extracts
+ *   `amenityIds` / `featureIds` from the payload into `ctx.hookState` and
+ *   strips them from the DB write.
+ * - **Junction sync** (`_afterCreate` / `_afterUpdate`): calls
+ *   `syncListingAmenityJunction` / `syncListingFeatureJunction` inside the
+ *   caller's `ctx.tx` when hookState carries IDs.
+ * - **Owner-scoping** (`_executeAdminSearch`): forces `ownerId = actor.id`
+ *   when the actor holds only the VIEW_OWN permission.
+ * - **Public projection** (`_projectPublicEntity` / `_projectPublicEntityList`):
+ *   no-op by default; subclasses override to strip private fields.
+ * - **Rating recompute** (`recomputeRating`): helper for review sub-services.
+ *
+ * ## What subclasses must supply
+ *
+ * Abstract members from `BaseCrudService`:
+ * - `model`, `createSchema`, `updateSchema`, `searchSchema`
+ * - `_canCreate`, `_canUpdate`, `_canSoftDelete`, `_canHardDelete`, `_canRestore`
+ * - `_canView`, `_canList`, `_canSearch`, `_canCount`, `_canUpdateVisibility`
+ * - `_executeSearch`, `_executeCount`
+ *
+ * Listing-specific abstract getters (new in this class):
+ * - `_entityFkColumn` — FK column name on the junction table (e.g. `'gastronomyId'`)
+ * - `_amenityJunctionModel` — junction model for amenities
+ * - `_featureJunctionModel` — junction model for features
+ * - `_amenityModel` — catalog model for amenities (validates IDs)
+ * - `_featureModel` — catalog model for features (validates IDs)
+ *
+ * @template TEntity - The listing domain entity type.
+ * @template TModel - The Drizzle ORM model type for the entity.
+ * @template TCreateSchema - Zod schema for create input.
+ * @template TUpdateSchema - Zod schema for update input.
+ * @template TSearchSchema - Zod schema for search input.
+ */
+export abstract class BaseListingService<
+    TEntity extends ListingEntity,
+    TModel extends BaseModel<TEntity>,
+    TCreateSchema extends ZodObject<ZodRawShape>,
+    TUpdateSchema extends ZodObject<ZodRawShape>,
+    TSearchSchema extends ZodObject<ZodRawShape>
+> extends BaseCrudService<TEntity, TModel, TCreateSchema, TUpdateSchema, TSearchSchema> {
+    /**
+     * Destination model used for city-type validation.
+     * Overrideable in tests by assigning a mock after construction.
+     */
+    protected _destinationModel: DestinationModel;
+
+    constructor(config: ServiceConfig, entityName: string) {
+        super(config, entityName);
+        this._destinationModel = new DestinationModel();
+    }
+
+    // -----------------------------------------------------------------------
+    // Abstract listing-specific getters — subclasses must implement
+    // -----------------------------------------------------------------------
+
+    /**
+     * Name of the FK column on the junction table that references this entity.
+     *
+     * @example `'gastronomyId'` for the gastronomy service.
+     */
+    protected abstract get _entityFkColumn(): string;
+
+    /**
+     * Entity kind this service reports to the cache-revalidation pipeline
+     * (HOS-369 W2-4).
+     *
+     * Abstract rather than derived from `entityName` on purpose: the value has
+     * to match the `EntityChangeData` discriminant and the `@repo/cache-tags`
+     * vocabulary EXACTLY, and a mismatch is invisible — the purge still reports
+     * success, it just evicts nothing. Making each subclass state it means the
+     * compiler checks it against the union instead of a string coincidence.
+     *
+     * @example `'gastronomy'` for the gastronomy service.
+     */
+    protected abstract get _revalidationEntityType(): 'gastronomy' | 'experience';
+
+    /**
+     * Amenity junction table model (injectable for testing).
+     */
+    protected abstract get _amenityJunctionModel(): ListingJunctionModel<Record<string, unknown>>;
+
+    /**
+     * Feature junction table model (injectable for testing).
+     */
+    protected abstract get _featureJunctionModel(): ListingJunctionModel<Record<string, unknown>>;
+
+    /**
+     * Amenity catalog model used to validate supplied amenity IDs before sync.
+     */
+    protected abstract get _amenityModel(): ListingCatalogModel;
+
+    /**
+     * Feature catalog model used to validate supplied feature IDs before sync.
+     */
+    protected abstract get _featureModel(): ListingCatalogModel;
+
+    /**
+     * The VIEW_ALL permission that grants unscoped listing access.
+     *
+     * Resolves VIEW_ALL for this listing's vertical.
+     */
+    protected get _viewAllPermission(): PermissionEnum {
+        return verticalPermission(this._revalidationEntityType, 'viewAll');
+    }
+
+    /**
+     * The VIEW_OWN permission that grants owner-scoped listing access.
+     *
+     * Defaults to {@link _viewAllPermission} so that, until a dedicated
+     * owner-scoped permission exists, the owner-scoping predicate is a safe
+     * no-op (an actor only reaches `_executeAdminSearch` after the admin-list
+     * gate has already required VIEW_ALL). Override in subclasses once a
+     * dedicated `per-vertical VIEW_OWN` permission is introduced — the scoping
+     * predicate then becomes correct by construction with no further changes.
+     */
+    protected get _viewOwnPermission(): PermissionEnum {
+        return this._viewAllPermission;
+    }
+
+    /**
+     * Runs a write inside its own transaction boundary and converts a thrown
+     * `ServiceError` back into the `ServiceOutput` envelope (HOS-808).
+     *
+     * Every create and update opens one when the caller brought none
+     * (HOS-1499): the owner-act event `_afterCreate` / `_afterUpdate` writes to
+     * `domain_event` must commit or roll back WITH the change it describes —
+     * an event for a rolled-back edit, or an edit without its event, would feed
+     * the retention clock a false "fact 1".
+     *
+     * The conversion is not cosmetic. `runWithLoggingAndValidation` RE-THROWS
+     * instead of returning `{ error }` whenever `ctx.tx` is set — that is what
+     * makes a failed junction sync roll the row write back. Without catching it
+     * here, opening a boundary would silently change this method's contract from
+     * "resolves with an error envelope" to "rejects", and every caller that
+     * checks `result.error` (including `updateOwn`, whose `return this.update(…)`
+     * inside a `try` does NOT catch a rejection) would turn a 400-class refusal —
+     * an unknown amenity ID, a non-CITY destination — into an unhandled 500.
+     *
+     * @param params.ctx - Base context to merge into the transaction context.
+     * @param params.run - The write to execute with the transactional context.
+     * @returns The write's `ServiceOutput`, or the rolled-back error as an envelope.
+     */
+    private async _runInWriteTransaction({
+        ctx,
+        run
+    }: {
+        readonly ctx: ServiceContext<ListingHookState>;
+        readonly run: (
+            execCtx: ServiceContext<ListingHookState>
+        ) => Promise<ServiceOutput<TEntity>>;
+    }): Promise<ServiceOutput<TEntity>> {
+        try {
+            return await withServiceTransaction(
+                async (txCtx) => run(txCtx as ServiceContext<ListingHookState>),
+                ctx,
+                { timeoutMs: 10_000 }
+            );
+        } catch (error) {
+            if (error instanceof ServiceError) {
+                return { error };
+            }
+            return {
+                error: new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    `Failed to write ${this.entityName}: ${
+                        error instanceof Error ? error.message : String(error)
+                    }`,
+                    error
+                )
+            };
+        }
+    }
+
+    /**
+     * Creates a listing inside a transaction (HOS-808, HOS-1499).
+     *
+     * `_afterCreate` syncs the junction tables (which hard-refuses to run
+     * without `ctx.tx`) and writes the owner-act event, both of which must be
+     * atomic with the row. Enlists in the caller's `tx` when there is one
+     * (`createForOwner` does — `withServiceTransaction` always opens a NEW
+     * boundary, so re-entering here would split one unit of work in two).
+     *
+     * @param actor - The actor performing the create.
+     * @param data - Create payload, optionally carrying `amenityIds` / `featureIds`.
+     * @param ctx - Optional context; when it carries a `tx`, this enlists in it.
+     * @returns The created listing, or a `ServiceError` envelope.
+     */
+    public override async create(
+        actor: Actor,
+        data: z.infer<TCreateSchema>,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<TEntity>> {
+        if (ctx?.tx) {
+            return super.create(actor, data, ctx);
+        }
+
+        return this._runInWriteTransaction({
+            ctx: (ctx ?? {}) as ServiceContext<ListingHookState>,
+            run: (txCtx) => super.create(actor, data, txCtx)
+        });
+    }
+
+    /**
+     * Updates a listing inside a transaction (HOS-808, HOS-1499): the junction
+     * sync and the owner-act event `_afterUpdate` writes are atomic with the row.
+     *
+     * Without this, ticking ANY service or feature checkbox in the owner editor
+     * answered 500: `_afterUpdate` throws `INTERNAL_ERROR` ("Junction sync
+     * requires an active transaction") when `ctx.tx` is absent, and no caller on
+     * the owner path — `updateOwn` ← `PATCH /protected/{gastronomies,experiences}/:id`
+     * — ever opened one. The junction tables stayed empty, so no listing could
+     * ever record a service.
+     *
+     * @param actor - The actor performing the update.
+     * @param id - UUID of the listing to update.
+     * @param data - Update payload, optionally carrying `amenityIds` / `featureIds`.
+     * @param ctx - Optional context; when it carries a `tx`, this enlists in it.
+     * @returns The updated listing, or a `ServiceError` envelope.
+     */
+    public override async update(
+        actor: Actor,
+        id: string,
+        data: z.infer<TUpdateSchema>,
+        ctx?: ServiceContext<ListingHookState>
+    ): Promise<ServiceOutput<TEntity>> {
+        const resolvedCtx: ServiceContext<ListingHookState> = { hookState: {}, ...ctx };
+        if (resolvedCtx.hookState) {
+            resolvedCtx.hookState.updateId = id;
+        }
+
+        if (!resolvedCtx.tx) {
+            return this._runInWriteTransaction({
+                ctx: resolvedCtx,
+                run: (txCtx) => super.update(actor, id, data, txCtx)
+            });
+        }
+
+        return super.update(actor, id, data, resolvedCtx);
+    }
+
+    // -----------------------------------------------------------------------
+    // Junction read — current amenity/feature associations
+    // -----------------------------------------------------------------------
+
+    /**
+     * Reads the currently-associated amenity and feature IDs for a listing.
+     *
+     * The listing read schemas (public/protected) do NOT carry the
+     * junction relations, so the owner editor needs this to seed its
+     * multi-select with the current selection. Returns plain ID arrays
+     * (symmetric with the `amenityIds` / `featureIds` write inputs).
+     *
+     * This is a standalone read (no transaction): it is meant to be called
+     * by single-entity read paths (e.g. the protected getById route) rather
+     * than on every getById, to avoid two extra queries on hot paths.
+     *
+     * @param entityId - The listing ID.
+     * @returns `{ amenityIds, featureIds }` — sorted arrays of catalog UUIDs.
+     */
+    public async loadJunctionIds(
+        entityId: string
+    ): Promise<{ amenityIds: string[]; featureIds: string[] }> {
+        const fk = this._entityFkColumn;
+        const [amenityRows, featureRows] = await Promise.all([
+            this._amenityJunctionModel.findAll({ [fk]: entityId }),
+            this._featureJunctionModel.findAll({ [fk]: entityId })
+        ]);
+        return {
+            amenityIds: amenityRows.items.map((row) => row.amenityId as string),
+            featureIds: featureRows.items.map((row) => row.featureId as string)
+        };
+    }
+
+    // -----------------------------------------------------------------------
+    // Owner self-service create — the listing IS the role grant
+    // -----------------------------------------------------------------------
+
+    /**
+     * Creates a listing on behalf of its own owner and grants that
+     * owner the vertical's role in the SAME transaction (HOS-687 / HOS-589 §6.1).
+     *
+     * The exact mirror of `AccommodationService.createForOnboarding`: creating
+     * the listing is what makes somebody a listing owner, so there is no
+     * admin approval, no provisioning step, and no pre-existing listing
+     * permission required to get here.
+     *
+     * Two properties matter and are easy to lose:
+     *
+     * 1. **Atomicity** — the row insert, the junction sync (`_afterCreate`)
+     *    and the role grant share one transaction. A grant that outlives a
+     *    rolled-back listing would hand out a hat for a listing that does not
+     *    exist; a listing without the grant leaves the owner locked out of the
+     *    surface that manages it.
+     * 2. **Idempotence** — `grantRole` rides the `(user_id, role)` primary key,
+     *    so the owner's SECOND listing is a silent no-op on the role rather
+     *    than an error or a duplicate row, and any other hat they already wear
+     *    (e.g. `HOST`) is untouched: granting is additive, never a replace.
+     *
+     * This is deliberately NOT `_afterCreate`. That hook also runs on the ADMIN
+     * create path, where the actor is a staff member creating a listing for
+     * somebody else — granting there would hand the owner role to the admin.
+     *
+     * @param actor - The authenticated account creating (and owning) the listing.
+     * @param data - Create payload, already carrying `ownerId = actor.id`.
+     * @param ctx - Optional caller context; when it carries a `tx`, this method
+     *   enlists in it instead of opening its own boundary.
+     * @returns `ServiceOutput<TEntity>` — the created listing, or the error.
+     */
+    public async createForOwner(
+        actor: Actor,
+        data: z.infer<TCreateSchema>,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<TEntity>> {
+        const run = async (txCtx: ServiceContext): Promise<TEntity> => {
+            const created = await this.create(actor, data, txCtx);
+            // `create()` re-throws inside a transaction for every failure it
+            // raises itself, but its input-validation branch still returns the
+            // envelope — so the error has to be checked here as well, or a
+            // rejected payload would silently reach `grantRole`.
+            if (created.error) {
+                throw created.error;
+            }
+            if (!created.data) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    `Failed to create ${this.entityName}. The operation returned no result.`
+                );
+            }
+
+            // Grant the listing's vertical role in the listing transaction.
+            for (const role of [VERTICAL_OWNER_ROLES[this._revalidationEntityType]]) {
+                const granted = await grantRole({
+                    userId: actor.id,
+                    role,
+                    grantedBy: null,
+                    reason: RoleGrantReason.LISTING_CREATED,
+                    ctx: txCtx
+                });
+                if (granted.error) {
+                    throw granted.error;
+                }
+            }
+
+            return created.data;
+        };
+
+        try {
+            const entity = ctx?.tx
+                ? await run(ctx)
+                : await withServiceTransaction(run, undefined, { timeoutMs: 10_000 });
+            return { data: entity };
+        } catch (error) {
+            const serviceError =
+                error instanceof ServiceError
+                    ? error
+                    : new ServiceError(
+                          ServiceErrorCode.INTERNAL_ERROR,
+                          `Failed to create ${this.entityName} for its owner: ${
+                              error instanceof Error ? error.message : String(error)
+                          }`,
+                          error
+                      );
+            // Inside a caller-owned transaction the error MUST propagate,
+            // otherwise the caller commits a partially-applied unit of work.
+            // Same rule as `BaseService.runWithLoggingAndValidation`.
+            if (ctx?.tx) {
+                throw serviceError;
+            }
+            return { error: serviceError };
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Public-tier projections — override in subclasses when needed
+    // -----------------------------------------------------------------------
+
+    /**
+     * Applies public-tier projections to a single entity.
+     *
+     * Default implementation is a no-op (returns the entity unchanged).
+     * Subclasses override to strip private fields, normalise owner avatars, etc.
+     *
+     * @param entity - The raw entity from the database.
+     * @returns The projected entity suitable for public consumption.
+     */
+    protected _projectPublicEntity(entity: TEntity): TEntity {
+        return entity;
+    }
+
+    /**
+     * Applies public-tier projections to a list of entities.
+     * Delegates to `_projectPublicEntity` for each item.
+     *
+     * @param entities - Array of raw entities from the database.
+     * @returns Array of projected entities suitable for public consumption.
+     */
+    protected _projectPublicEntityList(entities: TEntity[]): TEntity[] {
+        return entities.map((e) => this._projectPublicEntity(e));
+    }
+
+    // -----------------------------------------------------------------------
+    // (a) + (b) + (c): _beforeCreate
+    // -----------------------------------------------------------------------
+
+    /**
+     * Admin metadata is never listing content: inside an action-15 scope it is
+     * refused before the base check, whose `_canUpdate` would otherwise accept
+     * the scope (ACC:15, HOS-1493).
+     *
+     * @param actor - The actor setting the admin info.
+     * @param entity - The listing whose admin info is set.
+     * @throws {ServiceError} FORBIDDEN inside an ACC_15 scope, or per the base check.
+     */
+    protected override _canAdminSetInfo(actor: Actor, entity: TEntity): Promise<void> | void {
+        assertOutsideAction15Scope({ operation: 'adminInfo' });
+        return super._canAdminSetInfo(actor, entity);
+    }
+
+    /**
+     * Pre-insert lifecycle hook shared by all listing types.
+     *
+     * Performs three tasks (in order):
+     * 1. **Destination validation**: asserts `destinationId` (when provided)
+     *    refers to an existing CITY-type destination.
+     * 2. **Junction capture**: copies `amenityIds` / `featureIds` from the
+     *    payload into `ctx.hookState` for the sync call in `_afterCreate`.
+     * 3. **Slug generation**: when `slug` is absent, generates a unique slug
+     *    from `name` via `createUniqueSlug` and returns it as the patch.
+     *
+     * @param data - Validated create input from the schema.
+     * @param _actor - The actor performing the action.
+     * @param ctx - Service execution context (carries `tx` and `hookState`).
+     * @returns Partial entity patch: `{ slug }` when generated, `{}` otherwise.
+     */
+    protected override async _beforeCreate(
+        data: z.infer<TCreateSchema>,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Partial<TEntity>> {
+        const payload = data as Record<string, unknown>;
+        // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
+        assertSupportCreateIsDraft({ data: payload });
+        const typedCtx = ctx as ServiceContext<ListingHookState>;
+
+        // (a) Destination CITY-type validation
+        if (payload.destinationId) {
+            await this._assertDestinationIsCity(payload.destinationId as string, ctx.tx);
+        }
+
+        // (c) Capture junction IDs into hookState BEFORE the DB write
+        if (typedCtx.hookState !== undefined) {
+            typedCtx.hookState.pendingAmenityIds = payload.amenityIds as
+                | readonly string[]
+                | undefined;
+            typedCtx.hookState.pendingFeatureIds = payload.featureIds as
+                | readonly string[]
+                | undefined;
+            // HOS-1499: what the owner wrote, for the owner-act event.
+            typedCtx.hookState.ownerActPayload = payload;
+        }
+
+        // (b) Slug auto-generation from name when absent
+        if (!payload.slug && payload.name) {
+            const name = payload.name as string;
+            const model = this.model;
+            const slug = await createUniqueSlug(name, async (candidate) => {
+                const existing = await model.findOne({ slug: candidate });
+                return !!existing;
+            });
+            return { slug } as Partial<TEntity>;
+        }
+
+        return {} as Partial<TEntity>;
+    }
+
+    // -----------------------------------------------------------------------
+    // (c) Junction sync: _afterCreate
+    // -----------------------------------------------------------------------
+
+    /**
+     * Post-insert lifecycle hook: syncs amenity and feature junction tables
+     * inside `ctx.tx` when `hookState` carries pending IDs.
+     *
+     * **Transaction requirement**: if `pendingAmenityIds` or `pendingFeatureIds`
+     * are defined but `ctx.tx` is absent, the hook throws `INTERNAL_ERROR`.
+     * Callers must wrap the `create()` call inside `withServiceTransaction`.
+     *
+     * @param entity - The newly created entity.
+     * @param actor - The actor; when it is the owner, the create is recorded as an owner act (HOS-1499).
+     * @param ctx - Service execution context (must carry `tx` when junction IDs are present).
+     * @returns The entity unchanged (side-effects only).
+     */
+    protected override async _afterCreate(
+        entity: TEntity,
+        actor: Actor,
+        ctx: ServiceContext
+    ): Promise<TEntity> {
+        const typedCtx = ctx as ServiceContext<ListingHookState>;
+
+        if (typedCtx.hookState?.pendingAmenityIds !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Junction sync requires an active transaction; wrap create() in withServiceTransaction'
+                );
+            }
+            await syncListingAmenityJunction({
+                entityId: entity.id,
+                entityFkColumn: this._entityFkColumn,
+                amenityIds: typedCtx.hookState.pendingAmenityIds,
+                junctionModel: this._amenityJunctionModel,
+                amenityModel: this._amenityModel,
+                tx: ctx.tx
+            });
+        }
+
+        if (typedCtx.hookState?.pendingFeatureIds !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Junction sync requires an active transaction; wrap create() in withServiceTransaction'
+                );
+            }
+            await syncListingFeatureJunction({
+                entityId: entity.id,
+                entityFkColumn: this._entityFkColumn,
+                featureIds: typedCtx.hookState.pendingFeatureIds,
+                junctionModel: this._featureJunctionModel,
+                featureModel: this._featureModel,
+                tx: ctx.tx
+            });
+        }
+
+        // --- Owner act: listing.created (HOS-1499, AC:V9a:1) ---
+        await recordListingOwnerAct({
+            eventType: 'listing.created',
+            entityType: this._revalidationEntityType,
+            listing: entity,
+            actor,
+            ctx,
+            changes: buildListingOwnerActChanges({
+                payload: typedCtx.hookState?.ownerActPayload ?? {}
+            }).changes
+        });
+
+        // --- Edge cache revalidation (HOS-369 W2-4) ---
+        // Appended to the existing junction-sync body rather than overriding
+        // the hook: this class already owns `_afterCreate`/`_afterUpdate`, so
+        // there is no `super` to delegate to.
+        await this._scheduleListingRevalidation(entity);
+
+        return entity;
+    }
+
+    // -----------------------------------------------------------------------
+    // (c) Junction capture: _beforeUpdate
+    // -----------------------------------------------------------------------
+
+    /**
+     * Pre-update lifecycle hook: captures `amenityIds` / `featureIds` from the
+     * update payload into `ctx.hookState` and strips them from the returned
+     * data so they are never passed as DB column values.
+     *
+     * Also re-validates `destinationId` when it is being changed.
+     *
+     * @param data - Validated update input from the schema.
+     * @param _actor - The actor performing the action.
+     * @param ctx - Service execution context.
+     * @returns Payload with `amenityIds` / `featureIds` stripped.
+     */
+    protected override async _beforeUpdate(
+        data: z.infer<TUpdateSchema>,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Partial<TEntity>> {
+        const payload = data as Record<string, unknown>;
+        // ACC:15 (HOS-1493): an action-15 update writes content and nothing else.
+        assertSupportEditContentOnly({ data: payload });
+        const typedCtx = ctx as ServiceContext<ListingHookState>;
+        const slugWasProvided = Object.hasOwn(payload, 'slug');
+
+        // (a) Destination CITY-type validation on re-assignment
+        if (payload.destinationId) {
+            await this._assertDestinationIsCity(payload.destinationId as string, ctx.tx);
+        }
+
+        const updateId = typedCtx.hookState?.updateId;
+        if (updateId) {
+            const current = await this.model.findById(updateId, ctx.tx);
+            if (typedCtx.hookState !== undefined) {
+                // HOS-1499: the row before the edit, for the event's old values.
+                typedCtx.hookState.ownerActBefore = current ?? null;
+            }
+            if (
+                current &&
+                shouldRegenerateSlugOnListingChange({
+                    currentPublicationStatus: current.publicationStatus as
+                        | string
+                        | null
+                        | undefined,
+                    currentName: current.name as string | null | undefined,
+                    nextName: typeof payload.name === 'string' ? payload.name : undefined,
+                    slugWasProvided,
+                    refreshSlugFromName: payload.refreshSlugFromName === true
+                })
+            ) {
+                typedCtx.hookState = typedCtx.hookState ?? {};
+                typedCtx.hookState.regeneratedSlug = await createUniqueSlug(
+                    payload.name as string,
+                    async (candidate) => {
+                        const existing = await this.model.findOne({ slug: candidate });
+                        return !!existing && existing.id !== current.id;
+                    }
+                );
+            }
+        }
+
+        // (c) Capture junction IDs into hookState
+        if (typedCtx.hookState !== undefined) {
+            typedCtx.hookState.pendingAmenityIds = payload.amenityIds as
+                | readonly string[]
+                | undefined;
+            typedCtx.hookState.pendingFeatureIds = payload.featureIds as
+                | readonly string[]
+                | undefined;
+            // HOS-1499: what the owner wrote, for the owner-act event.
+            typedCtx.hookState.ownerActPayload = payload;
+        }
+
+        // Strip write-only junction fields from the DB write payload
+        const {
+            amenityIds: _a,
+            featureIds: _f,
+            refreshSlugFromName: _refreshSlugFromName,
+            ...rest
+        } = payload;
+        if (typedCtx.hookState?.regeneratedSlug) {
+            rest.slug = typedCtx.hookState.regeneratedSlug;
+        }
+        return rest as Partial<TEntity>;
+    }
+
+    // -----------------------------------------------------------------------
+    // (c) Junction sync: _afterUpdate
+    // -----------------------------------------------------------------------
+
+    /**
+     * Post-update lifecycle hook: syncs amenity and feature junction tables
+     * inside `ctx.tx` when `hookState` carries pending IDs.
+     *
+     * Same transaction requirement as `_afterCreate`.
+     *
+     * @param entity - The updated entity.
+     * @param actor - The actor; when it is the owner, the edit is recorded as an owner act (HOS-1499).
+     * @param ctx - Service execution context (must carry `tx` when junction IDs are present).
+     * @returns The entity unchanged (side-effects only).
+     */
+    protected override async _afterUpdate(
+        entity: TEntity,
+        actor: Actor,
+        ctx: ServiceContext
+    ): Promise<TEntity> {
+        const typedCtx = ctx as ServiceContext<ListingHookState>;
+
+        if (typedCtx.hookState?.pendingAmenityIds !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Junction sync requires an active transaction; wrap update() in withServiceTransaction'
+                );
+            }
+            await syncListingAmenityJunction({
+                entityId: entity.id,
+                entityFkColumn: this._entityFkColumn,
+                amenityIds: typedCtx.hookState.pendingAmenityIds,
+                junctionModel: this._amenityJunctionModel,
+                amenityModel: this._amenityModel,
+                tx: ctx.tx
+            });
+        }
+
+        if (typedCtx.hookState?.pendingFeatureIds !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Junction sync requires an active transaction; wrap update() in withServiceTransaction'
+                );
+            }
+            await syncListingFeatureJunction({
+                entityId: entity.id,
+                entityFkColumn: this._entityFkColumn,
+                featureIds: typedCtx.hookState.pendingFeatureIds,
+                junctionModel: this._featureJunctionModel,
+                featureModel: this._featureModel,
+                tx: ctx.tx
+            });
+        }
+
+        // --- Owner act: listing.edited (HOS-1499, AC:V9a:1-3) ---
+        // Ownership is read off the row BEFORE the edit when there is one.
+        const before = typedCtx.hookState?.ownerActBefore;
+        await recordListingOwnerAct({
+            eventType: 'listing.edited',
+            entityType: this._revalidationEntityType,
+            listing: {
+                id: entity.id,
+                ownerId: (before?.ownerId as string | null | undefined) ?? entity.ownerId,
+                // The support-edit email names the listing (ACC:15, HOS-1493).
+                name: entity.name
+            },
+            actor,
+            ctx,
+            changes: buildListingOwnerActChanges({
+                before: before ?? null,
+                payload: typedCtx.hookState?.ownerActPayload ?? {}
+            }).changes
+        });
+
+        // --- Edge cache revalidation (HOS-369 W2-4) ---
+        // Appended to the existing junction-sync body rather than overriding
+        // the hook: this class already owns `_afterCreate`/`_afterUpdate`, so
+        // there is no `super` to delegate to.
+        await this._scheduleListingRevalidation(entity);
+
+        return entity;
+    }
+
+    // -----------------------------------------------------------------------
+    // (d) Edge cache revalidation (HOS-369 W2-4)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Schedule a cache purge for this listing after a write.
+     *
+     * Mirrors the accommodation service's two established rules:
+     *
+     * 1. **Only when publicly visible.** A listing that is not PUBLISHED has no
+     *    public footprint, so purging its (nonexistent) pages is pure waste and
+     *    produced spurious 404s in production under HOS-203.
+     * 2. **Never blocking.** Revalidation is a side effect of a content write;
+     *    a Cloudflare outage must not fail the write that triggered it.
+     *
+     * The parent destination is resolved to a slug because the destination
+     * detail page surfaces its listings, so it goes stale too.
+     * Resolution failure degrades to purging the listing's own tags rather than
+     * throwing — a partial purge beats a failed write.
+     *
+     * @param entity - The listing as it now stands after the write.
+     */
+    private async _scheduleListingRevalidation(entity: TEntity): Promise<void> {
+        // HOS-389: the mechanism moved to `listing-revalidation.ts` so the
+        // gallery mutations — standalone modules that never see this service —
+        // share ONE implementation with it instead of carrying a copy.
+        await scheduleListingRevalidation({
+            entityType: this._revalidationEntityType,
+            entity,
+            resolveDestinationSlug: (destinationId) =>
+                this._resolveDestinationSlugForRevalidation(destinationId),
+            logger: this.logger
+        });
+    }
+
+    /**
+     * Resolve a destination id to its slug for the purge payload.
+     *
+     * @param destinationId - The listing's parent destination id.
+     * @returns The slug, or `undefined` when it cannot be resolved.
+     */
+    private async _resolveDestinationSlugForRevalidation(
+        destinationId: string
+    ): Promise<string | undefined> {
+        const destination = await this._destinationModel.findById(destinationId);
+        const slug = (destination as { slug?: unknown } | null)?.slug;
+        return typeof slug === 'string' && slug.length > 0 ? slug : undefined;
+    }
+
+    // -----------------------------------------------------------------------
+    // (e) Owner-scoping: _executeAdminSearch
+    // -----------------------------------------------------------------------
+
+    /**
+     * Admin search override that applies owner-scoping when the actor holds
+     * only the VIEW_OWN permission (not the full VIEW_ALL).
+     *
+     * When scoped, any client-supplied `ownerId` is **overwritten** with
+     * `actor.id`, preventing the "drop the filter to list everything" bypass.
+     *
+     * After scoping, delegates to `super._executeAdminSearch` for the actual
+     * query. The admin tier returns FULL entities (including `ownerId` and
+     * `adminInfo`): the public-tier projection (`_projectPublicEntityList`) is
+     * applied ONLY on the public search path (`_executeSearch`), never here.
+     * Stripping `ownerId` from the admin payload makes every row fail the admin
+     * response schema (which requires `ownerId`) and 500s the admin list.
+     *
+     * Subclasses that need entity-specific extra conditions (e.g., JSONB
+     * price-range filters) should override this method, apply their conditions,
+     * and call `super._executeAdminSearch(scopedParams)`.
+     *
+     * @param params - Assembled admin search parameters from `adminList`.
+     * @returns Paginated list of matching entities with full admin-tier fields.
+     */
+    protected override async _executeAdminSearch(
+        params: AdminSearchExecuteParams<Record<string, unknown>>
+    ): Promise<PaginatedListOutput<TEntity>> {
+        // Force owner-scoping for actors that hold VIEW_OWN but NOT VIEW_ALL.
+        // Correct by construction: an actor with the all-listings permission is
+        // never scoped; one that only holds the owner-scoped permission is forced
+        // to its own `ownerId`. Until a dedicated owner-scoped permission exists
+        // `_viewOwnPermission` defaults to `_viewAllPermission`, making this a safe
+        // no-op (the admin-list gate already requires VIEW_ALL upstream).
+        const ownerScoped =
+            !hasPermission(params.actor, this._viewAllPermission) &&
+            hasPermission(params.actor, this._viewOwnPermission);
+
+        const scopedParams: AdminSearchExecuteParams<Record<string, unknown>> = ownerScoped
+            ? {
+                  ...params,
+                  entityFilters: { ...params.entityFilters, ownerId: params.actor.id }
+              }
+            : params;
+
+        // No public projection here — the admin tier intentionally exposes
+        // ownerId / adminInfo (see method doc). Projection lives on the public
+        // search path only.
+        return super._executeAdminSearch(scopedParams);
+    }
+
+    // -----------------------------------------------------------------------
+    // (d) Denormalized rating recompute helper
+    // -----------------------------------------------------------------------
+
+    /**
+     * Recomputes and persists the denormalized `rating`, `averageRating`, and
+     * `reviewsCount` fields after a review is created, updated, or deleted.
+     *
+     * This is a service-layer helper, not a DB trigger.  The entity's review
+     * sub-service (e.g. `GastronomyReviewService`) is responsible for calling
+     * this method whenever the approved review set changes.
+     *
+     * **Caller responsibility**: pass only APPROVED, non-deleted review rows.
+     * Filtering by `moderationState = APPROVED AND deletedAt IS NULL` should
+     * happen before calling this method.
+     *
+     * @param listingId - UUID of the listing whose rating should be refreshed.
+     * @param ratingRows - Approved review ratings for this listing.
+     * @param tx - Optional Drizzle transaction client.
+     * @returns `ServiceOutput<TEntity | null>` wrapping the updated entity.
+     *
+     * @example
+     * ```ts
+     * // In GastronomyReviewService._afterCreate:
+     * const approved = await reviewModel.findAll({
+     *   gastronomyId: listing.id,
+     *   moderationState: ModerationStateEnum.APPROVED,
+     *   deletedAt: null,
+     * }, undefined, undefined, ctx?.tx);
+     * await gastronomyService.recomputeRating(listing.id, approved.items, ctx?.tx);
+     * ```
+     */
+    public async recomputeRating(
+        listingId: string,
+        ratingRows: readonly {
+            readonly food?: number | null;
+            readonly service?: number | null;
+            readonly ambiance?: number | null;
+            readonly value?: number | null;
+        }[],
+        tx?: DrizzleClient
+    ): Promise<ServiceOutput<TEntity | null>> {
+        try {
+            const count = ratingRows.length;
+
+            if (count === 0) {
+                const updated = await this.model.update(
+                    { id: listingId },
+                    { reviewsCount: 0, averageRating: 0, rating: null } as Partial<TEntity>,
+                    tx
+                );
+                return { data: updated as TEntity };
+            }
+
+            const sum = { food: 0, service: 0, ambiance: 0, value: 0 };
+            for (const row of ratingRows) {
+                sum.food += row.food ?? 0;
+                sum.service += row.service ?? 0;
+                sum.ambiance += row.ambiance ?? 0;
+                sum.value += row.value ?? 0;
+            }
+
+            const granular = {
+                food: Math.round((sum.food / count) * 100) / 100,
+                service: Math.round((sum.service / count) * 100) / 100,
+                ambiance: Math.round((sum.ambiance / count) * 100) / 100,
+                value: Math.round((sum.value / count) * 100) / 100
+            };
+
+            const averageRating =
+                Math.round(
+                    ((granular.food + granular.service + granular.ambiance + granular.value) / 4) *
+                        100
+                ) / 100;
+
+            const updated = await this.model.update(
+                { id: listingId },
+                { reviewsCount: count, averageRating, rating: granular } as Partial<TEntity>,
+                tx
+            );
+            return { data: updated as TEntity };
+        } catch (err) {
+            const error = new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                `Failed to recompute rating for ${this.entityName} ${listingId}: ${err instanceof Error ? err.message : String(err)}`,
+                err
+            );
+            return { error };
+        }
+    }
+
+    /**
+     * Assigns (or reassigns) the owner of a listing.
+     *
+     * `ownerId` is intentionally excluded from the entity update schema
+     * (ownership is immutable through the generic `update()` path), so ownership
+     * changes must go through this dedicated action. Routing them through
+     * `update()` silently strips `ownerId` and the change is lost — this method
+     * writes the FK column directly instead.
+     *
+     * Staff-only: requires the listing vertical's EDIT_ALL permission. A listing owner cannot reassign
+     * their own listing away.
+     *
+     * @param actor - The actor performing the assignment.
+     * @param listingId - UUID of the listing.
+     * @param ownerId - UUID of the user to set as owner.
+     * @param tx - Optional transaction client.
+     * @returns `ServiceOutput<TEntity>` with the updated listing, or an error.
+     */
+    public async assignOwner(
+        actor: Actor,
+        listingId: string,
+        ownerId: string,
+        tx?: DrizzleClient
+    ): Promise<ServiceOutput<TEntity>> {
+        try {
+            // Check the listing vertical's editAll permission.
+            if (!hasListingPermission(actor, 'editAll', this._revalidationEntityType)) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        `Permission denied: ${verticalPermission(this._revalidationEntityType, 'editAll')} required to assign a ${this.entityName} owner`
+                    )
+                };
+            }
+
+            const existing = await this.model.findById(listingId, tx);
+            if (!existing) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `${this.entityName} ${listingId} not found`
+                    )
+                };
+            }
+
+            const updated = await this.model.update(
+                { id: listingId },
+                // TYPE-WORKAROUND: `ownerId` / `updatedById` are concrete columns on
+                // every listing table but are not provable members of the
+                // generic `TEntity`; the partial-update payload is structurally safe.
+                { ownerId, updatedById: actor.id } as unknown as Partial<TEntity>,
+                tx
+            );
+            return { data: updated as TEntity };
+        } catch (err) {
+            const error = new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                `Failed to assign owner for ${this.entityName} ${listingId}: ${err instanceof Error ? err.message : String(err)}`,
+                err
+            );
+            return { error };
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Owner-tier read: listOwn
+    // -----------------------------------------------------------------------
+
+    /**
+     * Lists every non-deleted listing owned by the given actor.
+     *
+     * Owner-tier read backing the web self-service area (SPEC-249). Ownership IS
+     * the gate: the query is hard-scoped to `ownerId = actor.id`, so an actor
+     * only ever sees their own listings regardless of role, and across any
+     * publication status (owners manage unpublished and draft listings too,
+     * unlike the public `_executeSearch` which forces PUBLISHED).
+     *
+     * A page size of 100 comfortably covers the admin-sells model, where an
+     * owner holds a handful of listings; pagination can move to the route layer
+     * if that assumption ever changes.
+     *
+     * @param actor - The authenticated actor whose listings to return.
+     * @param tx - Optional Drizzle transaction client.
+     * @returns `ServiceOutput<{ listings: TEntity[] }>` with the owner's listings.
+     */
+    public async listOwn(
+        actor: Actor,
+        tx?: DrizzleClient
+    ): Promise<ServiceOutput<{ listings: TEntity[] }>> {
+        try {
+            if (!actor?.id) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'listOwn requires an authenticated actor'
+                    )
+                };
+            }
+
+            const result = await this.model.findAll(
+                { ownerId: actor.id, deletedAt: null },
+                { page: 1, pageSize: 100 },
+                undefined,
+                tx
+            );
+
+            return { data: { listings: result.items as TEntity[] } };
+        } catch (err) {
+            const error = new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                `Failed to list own ${this.entityName} listings: ${err instanceof Error ? err.message : String(err)}`,
+                err
+            );
+            return { error };
+        }
+    }
+
+    /**
+     * Counts every non-deleted listing owned by the given actor.
+     *
+     * The counting twin of {@link listOwn}, and it exists for the same reason
+     * that method does: **the public `count()` inherited from `BaseCrudRead`
+     * cannot answer this question.** Both verticals' `_executeCount` mirror
+     * their `_executeSearch` and force `publicationStatus: PUBLISHED`
+     * (`gastronomy.service.ts` / `experience.service.ts`),
+     * because a public-search total has to match the page it paginates. A
+     * listing created through the owner self-service route starts
+     * `DRAFT` by construction (the owner self-service create routes D-3), so
+     * `count(actor, { ownerId })` reports ZERO for exactly the listings a quota
+     * has to count — which is HOS-1247: three listings created on a plan of one,
+     * every gate reading a count of zero and raising nothing.
+     *
+     * Accommodation never had this hole: its `_executeCount` drops `publishedOnly`
+     * when `params.ownerId === actor.id` (`accommodation.service.ts`), so its cap
+     * always counted drafts. This method gives the two listing verticals the
+     * same guarantee WITHOUT touching either vertical's public search/count
+     * pair — those still agree with each other, exactly as their own tests
+     * require.
+     *
+     * Ownership IS the gate, as in {@link listOwn}: the query is hard-scoped to
+     * `ownerId = actor.id`, so no permission is required and no actor can count
+     * anybody else's listings.
+     *
+     * @param actor - The authenticated actor whose listings to count.
+     * @param tx - Optional Drizzle transaction client.
+     * @returns `ServiceOutput<{ count: number }>` with the owner's listing count.
+     */
+    public async countOwn(
+        actor: Actor,
+        tx?: DrizzleClient
+    ): Promise<ServiceOutput<{ count: number }>> {
+        try {
+            if (!actor?.id) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'countOwn requires an authenticated actor'
+                    )
+                };
+            }
+
+            const count = await this.model.count({ ownerId: actor.id, deletedAt: null }, { tx });
+
+            return { data: { count } };
+        } catch (err) {
+            const error = new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                `Failed to count own ${this.entityName} listings: ${err instanceof Error ? err.message : String(err)}`,
+                err
+            );
+            return { error };
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Private helpers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Asserts that the destination identified by `destinationId` exists and
+     * has `destinationType === CITY`.
+     *
+     * @param destinationId - UUID to look up.
+     * @param tx - Optional transaction client.
+     * @throws {ServiceError} VALIDATION_ERROR when not found or not a CITY.
+     */
+    private async _assertDestinationIsCity(
+        destinationId: string,
+        tx?: DrizzleClient
+    ): Promise<void> {
+        const dest = await this._destinationModel.findById(destinationId, tx);
+        if (!dest) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                `Destination not found: ${destinationId}`
+            );
+        }
+        const destinationType = (dest as Record<string, unknown>).destinationType;
+        if (destinationType !== DestinationTypeEnum.CITY) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'Listings must be linked to a CITY-type destination'
+            );
+        }
+    }
+}

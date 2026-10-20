@@ -257,7 +257,7 @@ describe('HOS-803 — one implementation of the born-featured cover path', () =>
         // setFeatured must reject them explicitly — `updateMedia` always did,
         // these three did not. Behaviour is covered by
         // `accommodation/featured-media-deleted-row-revival.test.ts`; this
-        // pins the two commerce twins, which have no equivalent suite.
+        // pins the gastronomy and experience twins, which have no equivalent suite.
         const SET_FEATURED_SITES: ReadonlyArray<{ file: string; fn: string }> = [
             {
                 file: 'services/accommodation/accommodation.service.ts',

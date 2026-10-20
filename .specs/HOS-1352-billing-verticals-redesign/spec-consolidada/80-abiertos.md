@@ -22,13 +22,9 @@ abierto:
    deja el número en el PR; si da cero no hay nada que decidir, y si no, vuelve al owner con el
    número antes del merge. Una salida vacía de `hops psql` no es un cero: se repite. Lo que sigue
    abierto es el número. (línea 145)
-2. La duración del trial y los plazos de retención, que fija el owner antes del merge de `V6`.
+2. ~~La duración del trial~~ **Cerrada por [DM](../docs/41-corte-del-mvp/10-decisiones-del-owner.md#lote-dk-a-do-2026-10-08): 30 días en Alojamiento, Gastronomía, Experiencias y Turista; Partner en 0.** Los plazos de retención, que fija el owner antes del merge de `V6`.
    (línea 243; ver el [paso 3](30-el-corte.md#paso-3): la migración falla si alguno de los plazos
-   sin valor escrito está vacío) **Y el plazo 19**, la ventana `N` del resumen de conciliación
-   ([BU](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bu)): **cerrado por
-   [BX](01-decisiones-vigentes.md#own-41-corte-del-mvp-t10-bx) cuándo se fija**, antes del merge
-   de `B2` y no de `B11`, porque la versión 1 de los plazos falla con una clave vacía sin
-   excepciones; lo que sigue abierto es el valor. (líneas 146 y 157)
+   sin valor escrito está vacío) ~~**Y el plazo 19**, la ventana `N` del resumen de conciliación: lo que sigue abierto es el valor~~ **Cerrado por [DF](01-decisiones-vigentes.md#own-41-corte-del-mvp-t19-df): 60 minutos.** [BU](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bu) y [BX](01-decisiones-vigentes.md#own-41-corte-del-mvp-t10-bx) fijaron la clave y el momento; DF fija su valor. (líneas 146 y 157)
 3. Dependencias internas ocultas en las mitades *a* más allá de la de `S1`. (línea 244) **Lo que se
    hace cuando una pieza anterior llama a algo que construye una posterior lo cerró
    [BL](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl)** (la anterior escribe su rama
@@ -93,6 +89,26 @@ AW** (la fuente lo marca; `D/16-fase-7-del-paraguas.md:1175`;
 posterior** (*«cómo se enciende sobre una rama `epic/**` lo fija `DEC-CI-001`»*): la fuente lo marca
 como lo que falta escribir al abrir la primera fase (`D/16-fase-7-del-paraguas.md:1023`;
 [GATE:FP.3](30-el-corte.md#gate-fp-3)).
+
+## 4-bis. Pendientes del owner agregados el 2026-10-07
+
+1. **El orden de `MIN` y `BEST_DECLARED`.** Cuando aparezca la primera clave del catálogo que declare
+   la estrategia `MÍNIMO` (`MIN`) o `MEJOR_DECLARADO` (`BEST_DECLARED`), el owner confirma el orden que
+   la clave declara —qué valor es «mejor» para el cliente— antes del merge de la hoja que la agrega
+   ([AC:V3:1](10-corte/V3.md#ac-v3-1), [AC:V2:4](10-corte/V2.md#ac-v2-4)).
+2. **Qué es exportar una ficha y qué pieza lo construye** (Coord-4,
+   `docs/41-corte-del-mvp/10-decisiones-del-owner.md`): la pieza natural es `V8a`. **Contestado el
+   2026-10-08 (DE)**: se difiere fuera del MVP; lo que sigue abierto está en §4-ter.
+
+## 4-ter. Pendientes del owner agregados el 2026-10-08
+
+1. **Definir si exportar una ficha se queda en la spec y en qué fase** (DE,
+   `docs/41-corte-del-mvp/10-decisiones-del-owner.md`). El owner no recuerda haber acordado la
+   funcionalidad y la difirió fuera del MVP. La spec la nombra en `10-corte/V5.md:531-553` (el paso 4
+   y la versión de piso autorizan al dueño a «verla, exportarla, reactivarla y borrarla») y en
+   `10-corte/V9a.md:215-216` (exportar como acto del dueño que reinicia el reloj de inactividad).
+   Si se queda, hace falta la pieza que construya la operación; el registro de `V9a` le suma el
+   evento en forma aditiva. Si sale, hay que limpiar esas dos menciones y la de [AC:V9a:1](10-corte/V9a.md#ac-v9a-1).
 
 ## 5. Lo que cada capítulo declara que NO cierra
 
@@ -623,20 +639,20 @@ Los abiertos que dejó la segunda pasada de redacción (`_trabajo/abiertos/pasad
 
 <!-- abiertos-pasada2 -->
 
-**Vivos: tres datos operativos, con su dueño y su momento** (triage, vuelta 2, *«Datos operativos
+**Vivos: ~~tres~~ dos datos operativos, con su dueño y su momento** (triage, vuelta 2, *«Datos operativos
 con dueño y momento»*). No son preguntas de diseño: la regla de cada uno ya está escrita, y falta el
 número.
 
 | dato | dueño | antes de | dónde está la regla |
 |---|---|---|---|
 | los valores de [PLAZO:3](02-nucleo.md#plazo-3), [PLAZO:4](02-nucleo.md#plazo-4), [PLAZO:7](02-nucleo.md#plazo-7), [PLAZO:8](02-nucleo.md#plazo-8) y [PLAZO:9](02-nucleo.md#plazo-9), de verticales | el owner | el merge de [V6](10-corte/V6.md#pieza-v6) | `02-nucleo.md` §4.2: la migración estructural del corte falla si alguno está vacío; §1, punto 2 |
-| el valor de [PLAZO:19](02-nucleo.md#plazo-19), la ventana `N` del resumen de conciliación, de billing | el owner | el merge de [B2](10-corte/B2.md#pieza-b2) | [BU](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bu), [BX](01-decisiones-vigentes.md#own-41-corte-del-mvp-t10-bx): la versión 1 de los plazos falla con una clave vacía, sin excepciones |
 | el monto del pago chico del [paso 4b](30-el-corte.md#paso-4b) | el owner | el ensayo del corte | [BS](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs) con su default ([DEC-METH-019#📌5](01-decisiones-vigentes.md#dec-meth-019-p5)), como el del 5c |
 
-**Cerrados por el lote BY a CB, o por las fuentes**:
+**Cerrados por el lote BY a CB, [DF](01-decisiones-vigentes.md#own-41-corte-del-mvp-t19-df), o por las fuentes**:
 
 | abierto | archivo | cómo se cerró |
 |---|---|---|
+| el valor de [PLAZO:19](02-nucleo.md#plazo-19), la ventana `N` del resumen de conciliación | `02-nucleo.md` §4.2 | [DF](01-decisiones-vigentes.md#own-41-corte-del-mvp-t19-df): 60 minutos; cambiar el plazo publica una versión nueva |
 | AB2-g7-1 · la guarda de `S15` (`B3`) lee `reconciliation_mark_payment`, que nace en `B5` | `pasada2-g7.md` §1 | [BY](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-by): `B3` la escribe, con el predicado (f) de `G-R1-F`, contra una interfaz interna; `B5` trae la implementación y prueba el rechazo con filas sembradas, en su *«Lista cuando»* |
 | AB2-g9-1 · por qué camino llega el aumento a los anclados en `B12` | `pasada2-g9.md` | [BZ](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-bz): una migración a la versión nueva por `S37` y `S38`, con el motivo *«aumento»* y el plazo 11, sin la cohorte `PARA_RESOLVER` y conservando la promo viva |
 | AB2-g5-1 · qué pieza construye las dos superficies de la suspensión de `V/15` §6.3 | `pasada2-g5-u-v1-v4.md` §1 | [CA](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-ca): el aviso de suspensión y la cláusula espejo de `S7`, `B7`; la advertencia en la compra de Turista VIP, `B13a` |

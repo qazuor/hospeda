@@ -110,12 +110,12 @@ export function checkCanRestore(actor: Actor, entity: OwnerPromotion): void {
 /**
  * Checks if an actor has permission to view an owner promotion.
  *
- * Public read path: ACTIVE and non-plan-restricted promotions are visible to
+ * Public read path: ACTIVE promotions are visible to
  * any actor (including guests), mirroring accommodation's PUBLIC-visibility
  * pass-through in `checkCanView`. This lets the public `getById` endpoint serve
  * any guest without a permission gate.
  *
- * Non-public promotions (DRAFT / ARCHIVED / plan-restricted) still require
+ * Non-public promotions (DRAFT / ARCHIVED) still require
  * `OWNER_PROMOTION_VIEW_ANY` (admin/staff) or `OWNER_PROMOTION_VIEW_OWN`
  * (owner) to prevent UUID-probing of non-public entities.
  *
@@ -124,8 +124,8 @@ export function checkCanRestore(actor: Actor, entity: OwnerPromotion): void {
  * @throws {ServiceError} With `FORBIDDEN` code if permission is denied.
  */
 export function checkCanView(actor: Actor, entity: OwnerPromotion): void {
-    // ACTIVE + non-plan-restricted promotions are publicly visible (no auth needed).
-    if (entity.lifecycleState === LifecycleStatusEnum.ACTIVE && !entity.planRestricted) {
+    // ACTIVE promotions are publicly visible (no auth needed).
+    if (entity.lifecycleState === LifecycleStatusEnum.ACTIVE) {
         return;
     }
     // Non-public states require ownership or admin access.
@@ -162,7 +162,7 @@ export function checkCanList(actor: Actor): void {
  *
  * The public search path is open to any actor (including guests).
  * Security is enforced at the model layer: `_executeSearch` forces
- * `lifecycleState=ACTIVE`, `planRestricted=false`, and the valid-from/until
+ * `lifecycleState=ACTIVE` and the valid-from/until
  * date window, so no sensitive data leaks regardless of actor permissions.
  *
  * Mirrors accommodation's `checkCanList` no-op pattern.

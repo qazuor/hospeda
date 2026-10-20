@@ -23,13 +23,8 @@
         },
         "type": {
             "type": "string",
-            "enum": ["commerce", "ngo", "institution"],
+            "enum": ["business", "ngo", "institution"],
             "description": "Partner type (PartnerTypeEnum)"
-        },
-        "tier": {
-            "type": "string",
-            "enum": ["silver", "gold"],
-            "description": "Partner tier (PartnerTierEnum)"
         },
         "logoUrl": {
             "type": "string",
@@ -45,36 +40,12 @@
             "type": "string",
             "description": "Short description of the partner"
         },
-        "subscriptionStatus": {
-            "type": "string",
-            "enum": ["pending", "active", "past_due", "cancelled"],
-            "description": "Partner billing subscription status (PartnerSubscriptionStatusEnum)"
-        },
         "lifecycleState": {
             "type": "string",
             "enum": ["ACTIVE", "INACTIVE", "ARCHIVED", "SUSPENDED"],
             "description": "Lifecycle state (LifecycleStatusEnum)"
-        },
-        "startsAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Date the partnership started"
-        },
-        "endsAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Date the partnership ends (omit for ongoing)"
         }
     },
-    "required": [
-        "id",
-        "slug",
-        "name",
-        "type",
-        "tier",
-        "subscriptionStatus",
-        "lifecycleState",
-        "startsAt"
-    ],
+    "required": ["id", "slug", "name", "type", "lifecycleState"],
     "additionalProperties": false
 }

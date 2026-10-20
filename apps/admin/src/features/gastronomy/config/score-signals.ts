@@ -64,7 +64,7 @@ export function createGastronomySignals(): readonly SignalConfig<Record<string, 
             id: 'featured-image',
             labelKey: 'admin-entities.qualityScore.signals.featuredImage.label',
             weight: 16,
-            sectionId: 'commerce-operational',
+            sectionId: 'listing-operational',
             check: (entity) => {
                 const url = readPath(entity, 'media.featuredImage.url');
                 return isNonEmptyString(url) ? { status: 'done' } : { status: 'pending' };
@@ -77,7 +77,7 @@ export function createGastronomySignals(): readonly SignalConfig<Record<string, 
             id: 'gallery-photos',
             labelKey: 'admin-entities.qualityScore.signals.galleryPhotos.label',
             weight: 12,
-            sectionId: 'commerce-operational',
+            sectionId: 'listing-operational',
             check: (entity) => {
                 const gallery = readPath(entity, 'media.gallery');
                 const count = Array.isArray(gallery) ? gallery.length : 0;
@@ -99,7 +99,7 @@ export function createGastronomySignals(): readonly SignalConfig<Record<string, 
             id: 'photos-alt',
             labelKey: 'admin-entities.qualityScore.signals.photosAlt.label',
             weight: 4,
-            sectionId: 'commerce-operational',
+            sectionId: 'listing-operational',
             check: (entity) => {
                 const featured = readPath(entity, 'media.featuredImage') as
                     | Record<string, unknown>
@@ -140,7 +140,7 @@ export function createGastronomySignals(): readonly SignalConfig<Record<string, 
             id: 'description',
             labelKey: 'admin-entities.qualityScore.signals.description.label',
             weight: 18,
-            sectionId: 'commerce-identity',
+            sectionId: 'listing-identity',
             check: (entity) => {
                 const desc = entity.description;
                 if (!isNonEmptyString(desc)) return { status: 'pending', progress: 0 };
@@ -163,7 +163,7 @@ export function createGastronomySignals(): readonly SignalConfig<Record<string, 
             id: 'summary',
             labelKey: 'admin-entities.qualityScore.signals.summary.label',
             weight: 6,
-            sectionId: 'commerce-identity',
+            sectionId: 'listing-identity',
             check: (entity) =>
                 isNonEmptyString(entity.summary) ? { status: 'done' } : { status: 'pending' }
         },
@@ -174,7 +174,7 @@ export function createGastronomySignals(): readonly SignalConfig<Record<string, 
             id: 'contact',
             labelKey: 'admin-entities.qualityScore.signals.contact.label',
             weight: 8,
-            sectionId: 'commerce-operational',
+            sectionId: 'listing-operational',
             check: (entity) => {
                 const channels = [
                     'contactInfo.personalEmail',
@@ -203,7 +203,7 @@ export function createGastronomySignals(): readonly SignalConfig<Record<string, 
             id: 'operatingHours',
             labelKey: 'admin-entities.qualityScore.signals.operatingHours.label',
             weight: 14,
-            sectionId: 'commerce-operational',
+            sectionId: 'listing-operational',
             check: (entity) => {
                 const hours = entity.openingHours;
                 if (!hours || typeof hours !== 'object') return { status: 'pending' };

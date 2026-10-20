@@ -9,11 +9,11 @@
  * cache-refreshing request (anonymous or VIP/staff) determines what every
  * OTHER caller reads for the full 1h TTL.
  *
- * `AccommodationService._executeCount` derives `excludeOwnerSuspended` /
- * `excludePlanRestricted` / `activeOnly` from the actor's VIP/staff
- * entitlements. If a privileged visitor's request is the one that repopulates
- * the cache, the resulting `accommodations` count — including DRAFT,
- * owner-suspended and plan-restricted rows — gets replayed to every visitor
+ * `AccommodationService._executeCount` derived its visibility filters from the
+ * actor's VIP/staff entitlements when this was written (since V6.9b it derives
+ * only `publishedOnly`). If a privileged visitor's request is the one that
+ * repopulates the cache, the resulting `accommodations` count — including
+ * unpublished rows — gets replayed to every visitor
  * for the TTL. The fix hands `AccommodationService.count()` a
  * `createGuestActor()` instead of the real request actor; the other five
  * `count()` calls in this handler are left untouched, since only

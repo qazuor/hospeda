@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 /**
  * Vitest project for top-level scripts (scripts/*.ts) and their
@@ -12,7 +12,11 @@ export default defineConfig({
     test: {
         root: import.meta.dirname,
         include: ['__tests__/**/*.test.ts'],
+        // Needs a real Postgres: run by `pnpm test:cutover-db` (scripts/vitest.cutover-db.config.ts).
+        exclude: [...configDefaults.exclude, '__tests__/cutover-db/**'],
         environment: 'node',
-        testTimeout: 10_000
+        // Many guard tests walk the real repository tree; 10s timed out on loaded CI
+        // runners for three different suites (HOS-1681), so the default is 30s.
+        testTimeout: 30_000
     }
 });

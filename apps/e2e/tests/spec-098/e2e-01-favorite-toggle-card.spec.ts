@@ -69,8 +69,7 @@ test.describe('E2E-01: favorite toggle on listing card @p0 @favorites @card @spe
     } | null> {
         const rows = await execSQL<{ id: string; slug: string }>(
             `SELECT id, slug FROM accommodations
-             WHERE lifecycle_state = 'ACTIVE'
-               AND visibility = 'PUBLIC'
+             WHERE publication_status = 'PUBLISHED'
                AND deleted_at IS NULL
              ORDER BY created_at ASC
              LIMIT 1`

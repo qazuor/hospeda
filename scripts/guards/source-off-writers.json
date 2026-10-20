@@ -1,0 +1,276 @@
+[
+    {
+        "file": "apps/api/src/utils/trial/trial-machine-ports.ts",
+        "symbol": "markConverted",
+        "table": "trials",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "This transition ends trial coverage and the trial-machine adapter emits the post-commit coverage notice."
+    },
+    {
+        "file": "apps/api/src/utils/trial/trial-machine-ports.ts",
+        "symbol": "markExpired",
+        "table": "trials",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "This transition ends trial coverage and the trial-machine adapter emits the post-commit coverage notice."
+    },
+    {
+        "file": "apps/api/src/utils/trial/trial-machine-ports.ts",
+        "symbol": "moveEndsAt",
+        "table": "trials",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "Extending the trial preserves or increases coverage."
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "activatePendingAuthorization",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "Activates newly authorized coverage."
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "abandonPendingAuthorization",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S3 moves PENDING_AUTHORIZATION to ABANDONED; neither emits a coverage source (03-contrato-de-cobertura.md:466-467; I-6)."
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "abandonPendingAuthorization",
+        "table": "courtesyGrants",
+        "effect": "turns-off",
+        "via": "pending",
+        "owner": "Courtesy grant unit",
+        "reason": "Closes the deferred courtesy balance in the same transaction."
+    },
+    {
+        "file": "packages/db/src/models/subscription/tourist-vip.model.ts",
+        "symbol": "closeCancelledVip",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/cancel-inherited-tourist-vip.service.ts",
+        "reason": "Cancellation and service end remove the VIP coverage source; the caller cancelInheritedTouristVips emits the coverage notice after its commit (TEST:B4:2, census)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/decline-first-charge.service.ts",
+        "symbol": "declineFirstCharge",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S16 moves ACTIVE to CHARGE_DECLINED, which emits no source (03-contrato-de-cobertura.md:475); the coverage notice is emitted after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/enter-grace.service.ts",
+        "symbol": "enterGraceOnRejectedCharge",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S4 keeps the same SUSCRIPCIÓN coverage source in GRACE_PERIOD as ACTIVE (03-contrato-de-cobertura.md:567-571; D-9)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/exit-grace.service.ts",
+        "symbol": "reactivateFromGrace",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S5 moves GRACE_PERIOD to ACTIVE; both emit the same SUSCRIPCIÓN source (03-contrato-de-cobertura.md:468-469)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/suspend-for-arrears.service.ts",
+        "symbol": "writeArrearsSuspension",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S6 moves GRACE_PERIOD or ACTIVE (second event) to SUSPENDED, which emits no source (03-contrato-de-cobertura.md:472); the coverage notice is emitted after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/cancel-direct-subscription.service.ts",
+        "symbol": "writeDirectCancellation",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S23/S24 move SUSPENDED/GRACE_PERIOD to CANCELLED with service ended today; GRACE_PERIOD emits a source and CANCELLED does not (03-contrato-de-cobertura.md:469,474); the coverage notice is emitted after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/revoke-subscription.service.ts",
+        "symbol": "writeRevocation",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S36 moves ACTIVE/GRACE_PERIOD/CANCEL_SCHEDULED/PAUSED to CANCELLED and ends service now (AC:B5:20); the coverage notice is emitted after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/reactivate-suspended.service.ts",
+        "symbol": "reactivateSuspendedOnCreditedPayment",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "S7 moves SUSPENDED, which emits no source, to ACTIVE or CANCEL_SCHEDULED, which emit one (03-contrato-de-cobertura.md:468, 472-473, the nine states); the coverage notice ADDED is emitted after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/notice/process-provider-notice.service.ts",
+        "symbol": "processProviderNotice",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "The provider cancellation mirror moves ACTIVE to CANCELLED, which emits no source (03-contrato-de-cobertura.md:474); the coverage notice is emitted after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/notice/mirror-cancelled-on-grace.ts",
+        "symbol": "mirrorProviderCancellationOnGrace",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "The provider cancellation mirror of the CANCELLED_ON_GRACE pair moves GRACE_PERIOD to CANCELLED, which emits no source (03-contrato-de-cobertura.md:474); the coverage notice is emitted after commit (HOS-1561 H7)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/start-succession.service.ts",
+        "symbol": "startSuccession",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "Only links the predecessor to its successor (succeededById); the predecessor keeps its status and its coverage until the successor activates, so no coverage source turns off here (HOS-1530, inventoried at merge by HOS-1491)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a5.ts",
+        "symbol": "applyA5",
+        "table": "addonInstances",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "A5 moves a PENDING_AUTHORIZATION/ACTIVE addon instance to CANCELLED (AC:B5:25); an ACTIVE instance stops emitting its ADDON source and emitAddonCoverageRemoved sends the coverage notice after the caller's commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/complement-s21.ts",
+        "symbol": "applyS21",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S21 cancels a COMPLEMENTO row, which emits no coverage source (subscription-sources.ts filters PRINCIPAL)"
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/complement-pause-s32.ts",
+        "symbol": "writeComplementPause",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S32 pauses only a COMPLEMENTO row: subscription-sources.ts filters PRINCIPAL and addon-sources.ts reads addon_instance.status, which remains ACTIVE."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/service-end-s12.ts",
+        "symbol": "applyS12ToPrincipal",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S12 moves a PRINCIPAL CANCEL_SCHEDULED whose service_ends_at passed to CANCELLED (AC:B8a:5); the coverage notice is emitted after commit by emitServiceEndRemoved."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/service-end-s12.ts",
+        "symbol": "applyS12ToComplement",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S12 closes a COMPLEMENTO row, which emits no coverage source (subscription-sources.ts filters PRINCIPAL); its instance turns off through applyA5."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/grant/permanent-grant-s13.ts",
+        "symbol": "writeS13Cancellation",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S13 moves every live PRINCIPAL row of an anchored vertical to CANCELLED (TRANS:B:S13, AC:B9a:1); the coverage notice is emitted after commit in the same file."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/grant/permanent-grant-courtesy.ts",
+        "symbol": "closeDeferredCourtesyBalances",
+        "table": "courtesyGrants",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A deferred courtesy emits no coverage source (B9a.md:461-464); S13 only closes its balance (DEC-GRANT-013)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/renewal-notice.ts",
+        "symbol": "stampRenewalNoticeClock",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "Stamps the PLAZO:13 deadline version and the charge date it applies to on an ACTIVE row (AC:B13a:13); coverage does not change."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/notice/mirror-our-cancellation-on-active.ts",
+        "symbol": "mirrorOurCancellationOnActive",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "The R18 mirror (AC:B7:15) moves ACTIVE to CANCEL_SCHEDULED; both emit a SUBSCRIPTION source (03-contrato-de-cobertura.md:468, 473), only its end gets a date; the CHANGED notice is emitted after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/complement-resume-s33.ts",
+        "symbol": "writeComplementResume",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S33 reactivates only a COMPLEMENTO row; subscription-sources.ts filters PRINCIPAL and addon-sources.ts reads the unchanged ACTIVE addon instance."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/complement-s11-rule.ts",
+        "symbol": "writeComplementCancelScheduled",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S11 schedules cancellation only for a COMPLEMENTO row; the principal sources and unchanged addon instance determine coverage."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/grant/permanent-grant-s20.ts",
+        "symbol": "writeS20ComplementCancellation",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S20 cancels a COMPLEMENTO row, which emits no coverage source (subscription-sources.ts filters PRINCIPAL); its instance stays ACTIVE and keeps its ADDON source"
+    },
+    {
+        "file": "packages/service-core/src/services/billing/grant/permanent-grant-s20.ts",
+        "symbol": "writeS20TitleAnchor",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S20 hangs an ACTIVE instance from the grant anchor as its title; the instance stays ACTIVE, so its ADDON source does not turn off"
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "syncNextChargeAt",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-1685 copies the provider's next payment date onto an ACTIVE row (B11.md:250); coverage does not change."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/cancel-active-subscription.service.ts",
+        "symbol": "writeS11Cancellation",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S11 moves ACTIVE to CANCEL_SCHEDULED, and both states emit the same SUBSCRIPCIÓN source; only the scheduled row receives an end date and S12 records the cutoff."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/cancellation-crossing-charge.ts",
+        "symbol": "writeCrossingExtensionOnPrincipal",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "C2 extends service_ends_at with max on a PRINCIPAL CANCEL_SCHEDULED row. That row emits its subscription source through subscription-sources.ts:69-76; the CHANGED coverage notice is sent after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/cancellation-crossing-charge.ts",
+        "symbol": "writeCrossingExtensionOnComplement",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A COMPLEMENTO emits no subscription source and its addon instance does not change; S12 orphanhood on the principal turns it off."
+    }
+]

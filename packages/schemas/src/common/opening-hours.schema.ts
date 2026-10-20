@@ -156,7 +156,7 @@ export type DaySchedule = z.infer<typeof DayScheduleSchema>;
 // ============================================================================
 
 /**
- * Full weekly opening-hours schema for a commerce listing.
+ * Full weekly opening-hours schema for a gastronomy or experience listing.
  *
  * Contains a schedule object with seven day keys (`mon` through `sun`),
  * each following {@link DayScheduleSchema}. Optional timezone, notes, and
@@ -233,7 +233,7 @@ export type OpeningHours = z.infer<typeof OpeningHoursSchema>;
  */
 export const OpeningHoursFields = {
     /**
-     * Weekly operating hours for this commerce listing.
+     * Weekly operating hours for this listing.
      * Uses `.nullish()` (not just `.optional()`) because Drizzle/pg returns
      * `null` for unset JSONB columns — Zod `.optional()` only accepts `undefined`.
      * SPEC-240: discovered via smoke test (T-039) when public endpoint returned 500.

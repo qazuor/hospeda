@@ -193,7 +193,7 @@ export const handler = async (c: Context) => {
 
   // Check permissions — NEVER check roles directly, even for admin-only
   // routes. `actor.roles` (HOS-296) holds every role the actor wears at
-  // once (a user can be HOST and COMMERCE_OWNER simultaneously); routing
+  // once (a user can be HOST and GASTRONOMY_OWNER / EXPERIENCE_OWNER simultaneously); routing
   // logic must always ask "does the actor hold permission X".
   if (!actor.permissions.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY)) {
     return c.json({ error: 'Insufficient permissions' }, 403);
@@ -551,9 +551,14 @@ Route files are in `routes/destination/public/`. The `by-path` route is register
 9. **Validate all inputs** with Zod schemas
 10. **Use TypeScript strict mode** - no `any` types
 
-## Entitlement & Limit Enforcement (SPEC-145)
+## Entitlement & Limit Enforcement (SPEC-145) — REMOVED (HOS-1416)
 
-### Middleware chain order
+> The legacy billing system was demolished (HOS-1416): the entitlement/limit
+> gates, the billing middleware chain, and the whole qzpay surface are gone.
+> This section survives only for the invariants that still apply to the
+> remaining pieces (`createErrorHandler` mapping, guard harness).
+
+### Middleware chain order (historical)
 
 Every protected route runs middleware in this order:
 
@@ -614,7 +619,7 @@ drops the call.
 `// PHANTOM-GATE (SPEC-145)`: a gate function exists in
 `middlewares/tourist-entitlements.ts` or `middlewares/accommodation-entitlements.ts`
 but the route it protects has not been built yet. Do not delete these;
-do not build the route without a spec. The snapshot guard excepts them.
+do not build the route without a spec.
 
 **An unmounted gate helper does NOT prove the feature is unprotected.** A route
 may call the generic `requireEntitlement` directly instead of the named helper,
@@ -627,27 +632,7 @@ the routes that require the entitlement KEY, never the call sites of the helper.
 
 `// RESERVED-LIMIT`: a `LimitKey` is wired via `requireLimit` but the
 `currentCount` implementation is a hardcoded `0` stub (the counter service
-does not exist yet). See the "Reserved — Limit Stubs" section in
-`docs/billing/endpoint-gate-matrix.md`.
-
-### Gate matrix + snapshot guard
-
-`docs/billing/endpoint-gate-matrix.md` is the single source of truth for
-gate decisions on every protected and admin route. The snapshot guard
-(`apps/api/test/middlewares/endpoint-gate-matrix.guard.test.ts`, T-145-22)
-parses the table on every CI run:
-
-- A new handler file without a matrix row → CI fails.
-- A matrix row pointing at a deleted file → CI fails.
-
-When adding a new protected/admin route:
-
-1. Add a matrix row with the correct Decision and Status.
-2. If Decision = `none`, write a clear Reason.
-3. If gating an existing previously-ungated route, document the behavior
-   change in `docs/billing/spec-145-behavior-changes.md`.
-
-See `docs/billing/adding-an-entitlement.md` for the full end-to-end workflow.
+does not exist yet).
 
 ### DELETE-body factory gotcha
 
@@ -771,11 +756,15 @@ anything else.
 - Always use `PermissionEnum` for auth checks, never check roles directly
 - `ResponseFactory` must be used for all responses - no raw `c.json()`
 
-## Billing: key files and operational pointers
+## Billing: key files and operational pointers — REMOVED (HOS-1416)
 
-Routes live in `src/routes/billing/`: `start-paid.ts`, `plan-change.ts`,
-`subscription-cancel.ts`, `subscription-pause.ts`, `addons.ts`, `promo-codes.ts`,
-`trial.ts`, `settings.ts`, `usage.ts`, `metrics.ts`, `notifications.ts`.
+> The legacy billing routes, crons, services and MercadoPago webhooks were
+> demolished (HOS-1416). The lists below are kept as historical pointers only.
+
+The billing routes used to live in `src/routes/billing/`: `start-paid.ts`,
+`plan-change.ts`, `subscription-cancel.ts`, `subscription-pause.ts`,
+`addons.ts`, `promo-codes.ts`, `trial.ts`, `settings.ts`, `usage.ts`,
+`metrics.ts`, `notifications.ts`.
 
 Cron jobs for billing: `src/cron/jobs/dunning.job.ts`, `webhook-retry.job.ts`,
 `finalize-cancelled-subs.ts`, `trial-expiry.ts`, `addon-expiry.job.ts`,
@@ -812,14 +801,8 @@ is the authoritative name → schedule mapping. And the last two belong to the
 `reconcileSubscriptionLinkedEntities` at all — its bridge is
 `services/partner-reconcile.service.ts`.
 
-For MP sandbox setup and operator procedures:
-[`docs/migration/mercadopago-sandbox-runbook.md`](../../docs/migration/mercadopago-sandbox-runbook.md)
-
-For incident response:
-[`docs/billing/billing-runbooks.md`](../../docs/billing/billing-runbooks.md)
-
 For the deferred SPEC-193 staging smoke batch (pre-promotion gate):
-[`SPEC-193 pending-staging-smoke`](../../.qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md)
+`SPEC-193 pending-staging-smoke` (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`)
 
 ## AI Social routes — Custom GPT integration (`/api/v1/ai/social/*`)
 
@@ -877,8 +860,7 @@ only on the hardcoded `KNOWN_PROVIDERS` catalog in `apps/admin`.
 ### `POST /api/v1/admin/ai/credentials/{providerId}/sync-models`
 
 Gated by `adminAuthMiddleware([AI_SETTINGS_MANAGE])` only — staff bypass
-entitlements (INV-6), so there is no billing gate; see the row in
-[`docs/billing/endpoint-gate-matrix.md`](../../docs/billing/endpoint-gate-matrix.md).
+entitlements (INV-6), so there is no billing gate.
 Orchestrated by `ai-sync-models.service.ts::syncAiProviderModels()`: decrypt
 (`getDecryptedAiProviderCredential` plus a direct `metadata.baseURL` read,
 since the vault's decrypt result omits metadata) → fetch

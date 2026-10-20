@@ -21,11 +21,11 @@ import { PartnerTypeEnumSchema } from '../../enums/partner-type.schema.js';
 /**
  * Kind of alliance a lead is applying for.
  *
- * Closed set (unlike commerce leads' open `domain` string): the four alliance
+ * Closed set (unlike the retired lead-intake table's open `domain` string): the four alliance
  * programs are fully known and acotados, so a Zod enum is used instead of an
  * open string field (HOS-277 §7.1).
  *
- * - `partner` — tourism agencies / commerce partnerships.
+ * - `partner` — tourism agencies / business partnerships.
  * - `sponsor` — brand sponsorship program.
  * - `editor` — content editor / collaborator program.
  * - `service_provider` — a prospective HostTrade directory entry.
@@ -37,7 +37,7 @@ export type AllianceLeadKind = z.infer<typeof AllianceLeadKindEnum>;
 
 /**
  * Status enum for an alliance lead.
- * Mirrors the same workflow vocabulary as `CommerceLeadStatusEnum`:
+ * Mirrors the same workflow vocabulary as the retired lead-intake status enum:
  * submitted → reviewed → approved (admin provisions manually) or rejected.
  */
 export const AllianceLeadStatusEnum = z.enum(['pending', 'reviewing', 'approved', 'rejected'], {

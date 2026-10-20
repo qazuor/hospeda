@@ -49,7 +49,7 @@ const capturedWhere: unknown[] = [];
  * Stubs the drizzle query chain, returning `rows` for each successive call.
  *
  * The job runs a single alliance-leads query per tick (HOS-693 dropped the
- * commerce-leads half), so the queue is drained in call order.
+ * gastronomy/experience-leads half), so the queue is drained in call order.
  */
 function stubQueries(batches: readonly (readonly Record<string, unknown>[])[]): void {
     const queue = [...batches];
@@ -71,6 +71,8 @@ function makeCronContext(overrides: Partial<CronJobContext> = {}): CronJobContex
     return {
         logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
         startedAt: new Date('2026-08-16T00:20:00.000Z'),
+        runId: 'run-00000000-test',
+        correlationId: '00000000-0000-4000-8000-00000000c0de',
         dryRun: false,
         ...overrides
     };

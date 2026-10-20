@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { PartnerSearchHttpSchema } from '../partner.http.schema.js';
+import {
+    adminPartnerResponseSchema,
+    PartnerSearchHttpSchema,
+    publicPartnerResponseSchema
+} from '../partner.http.schema.js';
 
 /**
  * The four query params the retired directory used to filter by (HOS-294 D-5).
@@ -8,7 +12,7 @@ import { PartnerSearchHttpSchema } from '../partner.http.schema.js';
  * and leaving the params accepted means anyone can rebuild it with a `curl`
  * even after the page is deleted.
  */
-const DIRECTORY_FILTER_PARAMS = ['q', 'type', 'tier', 'subscriptionStatus'] as const;
+const DIRECTORY_FILTER_PARAMS = ['q', 'type', 'subscriptionStatus'] as const;
 
 describe('PartnerSearchHttpSchema — the directory filters are gone (HOS-294 AC-9)', () => {
     it.each(DIRECTORY_FILTER_PARAMS)('no longer declares the %s param', (param) => {
@@ -28,7 +32,6 @@ describe('PartnerSearchHttpSchema — the directory filters are gone (HOS-294 AC
             pageSize: '20',
             q: 'panaderia',
             type: 'ngo',
-            tier: 'gold',
             subscriptionStatus: 'active'
         };
 
@@ -55,5 +58,16 @@ describe('PartnerSearchHttpSchema — the directory filters are gone (HOS-294 AC
         if (result.success) {
             expect(result.data.pageSize).toBe(20);
         }
+    });
+});
+
+describe('Partner HTTP response schemas — claim hash stays private', () => {
+    it('omits claimSecretHash from public and admin output', () => {
+        expect(Object.keys(publicPartnerResponseSchema.shape.data.shape)).not.toContain(
+            'claimSecretHash'
+        );
+        expect(Object.keys(adminPartnerResponseSchema.shape.data.shape)).not.toContain(
+            'claimSecretHash'
+        );
     });
 });

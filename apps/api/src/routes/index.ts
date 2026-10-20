@@ -8,7 +8,6 @@
 
 import { ApiInfoSchema } from '@repo/schemas';
 import { mustChangePasswordGate } from '../middlewares/must-change-password';
-import { pastDueGraceMiddleware } from '../middlewares/past-due-grace.middleware';
 import { createSlidingWindowPerUserRateLimit } from '../middlewares/rate-limit';
 import { socialFeatureTagMiddleware } from '../middlewares/social-feature-tag';
 import type { AppOpenAPI } from '../types';
@@ -55,12 +54,18 @@ import { adminAuditLogRoutes, adminSecurityLogRoutes } from './audit-logs';
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { publicAuthorRoutes } from './author/public/index.js';
-import { createBillingRoutesHandler } from './billing';
-import { adminBillingRoutes } from './billing/admin';
-import { publicBillingRoutes } from './billing/public';
-import { publicGetCheckoutConfigRoute } from './billing/public/getCheckoutConfig.js';
+import { adminBillingDeadlineRoutes } from './billing-deadlines/admin/index.js';
+import { adminBillingPermanentGrantRoutes } from './billing-permanent-grant/admin/index.js';
+import { adminBillingPromoCodeRoutes } from './billing-promo/admin/index.js';
+import { protectedBillingPromoRoutes } from './billing-promo/index.js';
+import { adminBillingReconciliationRoutes } from './billing-reconciliation/admin/index.js';
+import { adminBillingRefundRoutes } from './billing-refund/admin/index.js';
+import { adminBillingSubscriptionRoutes } from './billing-subscription/admin/inspect.js';
+import {
+    protectedBillingSubscriptionReadRoutes,
+    protectedBillingSubscriptionRoutes
+} from './billing-subscription/index.js';
 import { adminCommentRoutes, protectedCommentRoutes } from './comment';
-import { adminCommerceRoutes, protectedCommerceRoutes, publicCommerceRoutes } from './commerce';
 import { contactRoutes } from './contact';
 import { adminContentModerationRoutes } from './content-moderation/admin';
 import {
@@ -129,6 +134,7 @@ import {
     protectedOwnerPromotionRoutes,
     publicOwnerPromotionRoutes
 } from './owner-promotion';
+import { adminPartnerApplicationRoutes } from './partner-application';
 import { partnerLogoClickRoutes } from './partner-logo-clicks';
 import {
     adminCreatePartnerMentionsRoute,
@@ -137,18 +143,17 @@ import {
     adminDeletePartnerRoute,
     adminGetPartnerRoute,
     adminListPartnerMentionsRoute,
-    adminListPartnerPlansRoute,
     adminListPartnersRoute,
     adminManualPaymentRoute,
     adminReviewPartnerContentRoute,
-    adminReviewPartnerPaymentRoute,
     adminRevokePartnerRoute,
-    adminSendPaymentLinkRoute,
     adminUpdatePartnerMentionRoute,
     adminUpdatePartnerRoute,
     protectedPartnerRoutes,
     publicPartnersRoutes
 } from './partners';
+import { adminPlanCatalogRoutes } from './plan-catalog/admin/index.js';
+import { publicPlanCatalogRoutes } from './plan-catalog/public/index.js';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
 // POI category catalog: admin list/search (HOS-144 NG-1) + public catalog (HOS-147)
@@ -201,22 +206,14 @@ import {
     adminSystemTagRoutes,
     adminUserTagModerationRoutes
 } from './tag/user-tag/index.js';
-// SPEC-217: static import (NOT require) so tsup inlines qzpay-control once and it
-// shares the single @repo/billing test-control `state` singleton with applyTestControl.
-// A dynamic require() here produced a second module instance under the ESM bundle,
-// so the failNext queue written by the HTTP handler was invisible to applyTestControl.
-// The module is inert in production (every entry point is gated by isTestControlEnabled()).
-import { createQZPayTestControlRoutes } from './test/qzpay-control.js';
 import { publicTestimonialRoutes } from './testimonials/public';
+import { adminTrialRoutes } from './trial/admin/extend.js';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bookmark';
 import { protectedUserBookmarkCollectionRoutes } from './user-bookmark-collection';
+import { adminVerticalDeadlineRoutes } from './vertical-deadlines/admin/index.js';
 import { adminViewsRoutes, protectedViewsRoutes, viewsRoutes } from './views';
-import {
-    brevoWebhookRoutes,
-    createMercadoPagoWebhookRoutes,
-    webhookHealthRoutes
-} from './webhooks';
+import { brevoWebhookRoutes, mercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
 import { protectedWhatsNewRoutes } from './whats-new';
 
@@ -331,14 +328,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Mounted at /api/v1/public/accommodations so routes resolve as:
         //   GET /api/v1/public/accommodations/:id/external-reputation
         app.route('/api/v1/public/accommodations', publicExternalReputationRoutes);
-        // Commerce listings: gastronomy (SPEC-239 T-042)
+        // Gastronomy listings (SPEC-239 T-042)
         app.route('/api/v1/public/gastronomies', publicGastronomyRoutes);
-        // Commerce listings: experience (SPEC-240 T-019)
+        // Experience listings (SPEC-240 T-019)
         app.route('/api/v1/public/experiences', publicExperienceRoutes);
         // Partners program public listing (SPEC-271)
         app.route('/api/v1/public/partners', publicPartnersRoutes);
-        // Commerce lead intake — public acquisition form (SPEC-239 T-047 US-1)
-        app.route('/api/v1/public/commerce', publicCommerceRoutes);
         // Alliance lead intake — public "aliados" acquisition forms (HOS-277)
         app.route('/api/v1/public/alliance', publicAllianceRoutes);
         app.route('/api/v1/public/destinations', publicDestinationRoutes);
@@ -374,13 +369,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/exchange-rates', publicExchangeRateRoutes);
 
         // Other public routes (read-only)
-        app.route('/api/v1/public/plans', publicBillingRoutes);
-        // HOS-937 review fix: read-only checkout-behavior flags (currently just
-        // `ownPreapprovalEnabled`) the web pricing pages need to decide
-        // whether to render the payer-email confirm dialog. Mounted separately
-        // from `/api/v1/public/plans` rather than nested under it — the flag is
-        // a checkout-behavior concern, not plan data.
-        app.route('/api/v1/public/billing/checkout-config', publicGetCheckoutConfigRoute);
         app.route('/api/v1/public', contactRoutes);
         // SPEC-101 public newsletter — token-gated verify + unsubscribe redirects.
         app.route('/api/v1/public/newsletter', newsletterPublicRoutes);
@@ -415,6 +403,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Owner promotions (SPEC-285 — tourist-facing read-only display)
         // Unregistered until SPEC-285 wired the public path. Requires no auth.
         app.route('/api/v1/public/owner-promotions', publicOwnerPromotionRoutes);
+        app.route('/api/v1/public/plan-catalog', publicPlanCatalogRoutes);
 
         // Cross-entity view tracking capture (SPEC-159 T-008)
         // Fire-and-forget; always 202. No auth required.
@@ -433,14 +422,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // PROTECTED ROUTES - Authentication required, own resources
         // ═══════════════════════════════════════════════════════════════════════
 
-        // Enforce past-due grace period on ALL protected routes.
-        // Users whose subscription grace period has expired get 402.
-        // Exempt paths (payment-methods, checkout, reactivate) are handled
-        // inside the middleware itself.
-        app.use('/api/v1/protected/*', pastDueGraceMiddleware());
-
         // SPEC-239 T-041: Force-password-change gate on ALL protected routes.
-        // Commerce owner accounts are provisioned with mustChangePassword=true.
+        // Gastronomy and experience owner accounts are provisioned with mustChangePassword=true.
         // Any protected request from such a user returns 403 PASSWORD_CHANGE_REQUIRED
         // until they change their password via /api/v1/protected/auth/change-password.
         // The exempt path list is maintained inside the middleware itself.
@@ -492,12 +475,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         //   PATCH    /api/v1/protected/accommodations/:id/external-reputation/master-toggle
         //   POST     /api/v1/protected/accommodations/:id/external-reputation/refresh
         app.route('/api/v1/protected/accommodations', protectedExternalReputationRoutes);
-        // Commerce listings: gastronomy (SPEC-239 T-043 / T-044)
+        // Gastronomy listings (SPEC-239 T-043 / T-044)
         app.route('/api/v1/protected/gastronomies', protectedGastronomyRoutes);
-        // Commerce listings: experience (SPEC-240 T-020)
+        // Experience listings (SPEC-240 T-020)
         app.route('/api/v1/protected/experiences', protectedExperienceRoutes);
-        // Commerce owner self-checkout: create + start-subscription (HOS-166 §6.3, §7.2)
-        app.route('/api/v1/protected/commerce', protectedCommerceRoutes);
         // Alliance applicant self-service: my own applications (HOS-278 AC-5)
         app.route('/api/v1/protected/alliance', protectedAllianceRoutes);
         app.route('/api/v1/protected/host', protectedHostRoutes);
@@ -538,6 +519,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // SPEC-199 search-intent and SPEC-200 chat will be added as
         // sibling spec handlers land; see ai/protected/index.ts for slots).
         app.route('/api/v1/protected/ai', protectedAiRoutes);
+        app.route('/api/v1/protected/billing/subscriptions', protectedBillingSubscriptionRoutes);
+        app.route('/api/v1/protected/billing/promo-codes', protectedBillingPromoRoutes);
+        app.route('/api/v1/protected/billing-subscription', protectedBillingSubscriptionReadRoutes);
 
         // Newsletter (SPEC-101 — subscribe / status / resend / unsubscribe live
         // under /api/v1/protected/newsletter/*, the routes mount themselves at
@@ -561,6 +545,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Users
         app.route('/api/v1/admin/users', adminUserRoutes);
+        // ACC:24 on an application made without an account (HOS-1494); V8b adds the applications panel here
+        app.route('/api/v1/admin/partner-applications', adminPartnerApplicationRoutes);
 
         // Core entities
         app.route('/api/v1/admin/accommodations', adminAccommodationRoutes);
@@ -569,21 +555,18 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Mounted at /api/v1/admin/accommodations so routes resolve as:
         //   POST /api/v1/admin/accommodations/:id/external-reputation/disable
         app.route('/api/v1/admin/accommodations', adminExternalReputationRoutes);
-        // Commerce listings: gastronomy (SPEC-239 T-045 / T-046)
+        // Gastronomy listings (SPEC-239 T-045 / T-046)
         app.route('/api/v1/admin/gastronomies', adminGastronomyRoutes);
-        // Commerce listings: experience (SPEC-240 T-021)
+        // Experience listings (SPEC-240 T-021)
         app.route('/api/v1/admin/experiences', adminExperienceRoutes);
         // Partners program admin management (SPEC-271)
         app.route('/api/v1/admin/partners', adminListPartnersRoute);
-        app.route('/api/v1/admin/partners', adminListPartnerPlansRoute);
         app.route('/api/v1/admin/partners', adminGetPartnerRoute);
         app.route('/api/v1/admin/partners', adminCreatePartnerRoute);
         app.route('/api/v1/admin/partners', adminUpdatePartnerRoute);
         app.route('/api/v1/admin/partners', adminDeletePartnerRoute);
-        app.route('/api/v1/admin/partners', adminSendPaymentLinkRoute);
         app.route('/api/v1/admin/partners', adminManualPaymentRoute);
         app.route('/api/v1/admin/partners', adminReviewPartnerContentRoute);
-        app.route('/api/v1/admin/partners', adminReviewPartnerPaymentRoute);
         app.route('/api/v1/admin/partners', adminRevokePartnerRoute);
         // Partner mentions log (HOS-377) — sub-resource of a partner, so it mounts
         // on the same prefix and takes the partner from its own path segment.
@@ -591,8 +574,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/partners', adminCreatePartnerMentionsRoute);
         app.route('/api/v1/admin/partners', adminUpdatePartnerMentionRoute);
         app.route('/api/v1/admin/partners', adminDeletePartnerMentionRoute);
-        // Commerce leads admin management (SPEC-239 T-047)
-        app.route('/api/v1/admin/commerce', adminCommerceRoutes);
         // Alliance leads admin inbox (HOS-277)
         app.route('/api/v1/admin/alliance', adminAllianceRoutes);
         app.route('/api/v1/admin/destinations', adminDestinationRoutes);
@@ -671,8 +652,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Exchange rates admin (admin-only management routes)
         app.route('/api/v1/admin/exchange-rates', adminExchangeRateRoutes);
 
-        // Admin billing, webhooks, and auth monitoring
-        app.route('/api/v1/admin/billing', adminBillingRoutes);
+        // Admin webhooks and auth monitoring
         app.route('/api/v1/admin/webhooks', adminWebhookRouter);
         app.route('/api/v1/admin/auth', adminAuthRoutes);
 
@@ -688,6 +668,15 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Platform settings admin (SPEC-156 PR-1: SEO defaults, maintenance mode, announcements)
         app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes);
+        app.route('/api/v1/admin/billing-deadlines', adminBillingDeadlineRoutes);
+        app.route('/api/v1/admin/vertical-deadlines', adminVerticalDeadlineRoutes);
+        app.route('/api/v1/admin/billing-subscription', adminBillingSubscriptionRoutes);
+        app.route('/api/v1/admin/billing-refunds', adminBillingRefundRoutes);
+        app.route('/api/v1/admin/billing-reconciliation', adminBillingReconciliationRoutes);
+        app.route('/api/v1/admin/billing-permanent-grants', adminBillingPermanentGrantRoutes);
+        app.route('/api/v1/admin/billing-promo-codes', adminBillingPromoCodeRoutes);
+        app.route('/api/v1/admin/trials', adminTrialRoutes);
+        app.route('/api/v1/admin/plan-catalog', adminPlanCatalogRoutes);
 
         // AI admin (SPEC-173: credential vault, settings, prompt versions, usage reporting — AI_SETTINGS_MANAGE)
         app.route('/api/v1/admin/ai/credentials', adminAiCredentialsRoutes);
@@ -769,39 +758,15 @@ export const setupRoutes = (app: AppOpenAPI) => {
         apiLogger.debug('✅ Admin routes registered successfully');
 
         // ═══════════════════════════════════════════════════════════════════════
-        // PROTECTED TIER - Billing and Reports
+        // WEBHOOKS
         // ═══════════════════════════════════════════════════════════════════════
 
-        // Billing routes (user-facing: trial, addons, promo-codes, subscriptions, etc.)
-        app.route('/api/v1/protected/billing', createBillingRoutesHandler());
-
-        // Webhook routes (public endpoints with signature verification)
-        const mercadoPagoWebhookRoutes = createMercadoPagoWebhookRoutes();
-        if (mercadoPagoWebhookRoutes) {
-            app.route('/api/v1/webhooks/mercadopago', mercadoPagoWebhookRoutes);
-        } else {
-            apiLogger.warn('⚠️ MercadoPago webhook routes not registered - billing not configured');
-        }
+        app.route('/api/v1/webhooks/mercadopago', mercadoPagoWebhookRoutes);
         app.route('/api/v1/webhooks', webhookHealthRoutes);
 
         // SPEC-101 T-101-32: Brevo email-event webhook. Public + token-gated
         // (X-Sib-Webhook-Token matched against HOSPEDA_BREVO_WEBHOOK_SECRET).
         app.route('/api/v1/public/webhooks', brevoWebhookRoutes);
-
-        // SPEC-092 T-036: QZPay test-only control endpoint.
-        // Mounted ONLY when both env gates are open. Accidental enablement
-        // in prod would still hit no-ops because the underlying control
-        // module checks the same gate, but we double-gate at the router
-        // for defense in depth.
-        if (
-            env.NODE_ENV !== 'production' &&
-            process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED === 'true'
-        ) {
-            app.route('/api/v1/test/qzpay-control', createQZPayTestControlRoutes());
-            apiLogger.warn(
-                '⚠️ QZPay test-control endpoint mounted at /api/v1/test/qzpay-control (test-only)'
-            );
-        }
     } catch (error) {
         apiLogger.debug('❌ Failed to register routes:', String(error));
         throw error;

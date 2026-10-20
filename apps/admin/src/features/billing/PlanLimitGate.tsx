@@ -1,26 +1,27 @@
 /**
  * PlanLimitGate — plan-aware numeric limit gate for the admin app.
  *
- * Replaces the `@qazuor/qzpay-react` `LimitGate` for fields and pages whose
- * availability depends on the **currently-logged-in user's** plan limits
- * (e.g. `LimitKey.MAX_ACCOMMODATIONS`, `LimitKey.MAX_ACTIVE_PROMOTIONS`).
+ * (HOS-1416: replaced the retired qzpay-react `LimitGate` for fields and
+ * pages whose availability depends on the **currently-logged-in user's**
+ * plan limits — e.g. `LimitKeyEnum.MAX_ACCOMMODATIONS`,
+ * `LimitKeyEnum.MAX_ACTIVE_PROMOTIONS`.)
  *
  * Unlike `LimitGate`, this component does NOT require a `customerId` prop or
  * a customer wired into the `QZPayContext`. It reads limit values from
- * `GET /api/v1/protected/users/me/entitlements` via `useMyEntitlements` and
+ * `GET /api/v1/admin/users/{id}/effective-set` via `useEffectiveSet` and
  * compares them against the caller-supplied `currentCount`.
  *
  * @module features/billing/PlanLimitGate
  */
 
-import type { LimitKey } from '@repo/billing';
+import type { LimitKeyEnum } from '@repo/schemas';
 import type * as React from 'react';
-import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useEffectiveSet } from '@/features/billing/use-effective-set';
 import { useTranslations } from '@/hooks/use-translations';
 
 export interface PlanLimitGateProps {
-    /** The plan limit key to gate on (e.g., LimitKey.MAX_ACCOMMODATIONS). */
-    readonly limitKey: LimitKey | string;
+    /** The plan limit key to gate on (e.g., LimitKeyEnum.MAX_ACCOMMODATIONS). */
+    readonly limitKey: LimitKeyEnum | string;
     /** Caller-provided current usage count for this limit. */
     readonly currentCount: number;
     /** Rendered when under the limit. */
@@ -54,7 +55,7 @@ export interface PlanLimitGateProps {
  * ```tsx
  * const { count } = useAccommodationCount();
  * <PlanLimitGate
- *   limitKey={LimitKey.MAX_ACCOMMODATIONS}
+ *   limitKey={LimitKeyEnum.MAX_ACCOMMODATIONS}
  *   currentCount={count}
  *   fieldLabel="Alojamientos"
  * >
@@ -70,7 +71,7 @@ export function PlanLimitGate({
     fieldLabel,
     upgradeUrl
 }: PlanLimitGateProps): React.ReactNode {
-    const { limit, isLoading, error } = useMyEntitlements();
+    const { limit, isLoading, error } = useEffectiveSet();
     const { t } = useTranslations();
 
     // While loading — show children to avoid layout flash (fail-open during load).
@@ -96,13 +97,8 @@ export function PlanLimitGate({
 
     const maxAllowed = limit(limitKey);
 
-    // Unknown limit key (not in plan data yet) — fail-open.
-    if (maxAllowed === undefined) {
-        return children;
-    }
-
-    // -1 means unlimited — always allow.
-    if (maxAllowed === -1) {
+    // Positive infinity means unlimited.
+    if (maxAllowed === Number.POSITIVE_INFINITY) {
         return children;
     }
 
@@ -147,7 +143,7 @@ export function PlanLimitGate({
 // ---------------------------------------------------------------------------
 
 interface DefaultFallbackProps {
-    readonly limitKey: LimitKey | string;
+    readonly limitKey: LimitKeyEnum | string;
     readonly currentCount: number;
     readonly maxAllowed: number;
     readonly fieldLabel?: string;
@@ -173,18 +169,19 @@ function DefaultFallback({
     });
 
     const upgradeLinkText = t('admin-entities.limitGate.upgradeLink');
-    const resolvedUpgradeUrl = upgradeUrl ?? '/billing/my-plan';
 
     return (
         <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
             <p className="font-medium text-foreground text-sm">{title}</p>
             <p className="mt-1 text-muted-foreground text-xs">{description}</p>
-            <a
-                href={resolvedUpgradeUrl}
-                className="mt-2 inline-block text-primary text-xs underline hover:no-underline"
-            >
-                {upgradeLinkText}
-            </a>
+            {upgradeUrl && (
+                <a
+                    href={upgradeUrl}
+                    className="mt-2 inline-block text-primary text-xs underline hover:no-underline"
+                >
+                    {upgradeLinkText}
+                </a>
+            )}
         </div>
     );
 }

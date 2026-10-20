@@ -1,0 +1,241 @@
+{
+    "writers": [
+        {
+            "file": "packages/verticals/src/publication/publish-listing.ts",
+            "symbol": "publishListing",
+            "count": 1,
+            "facts": [3],
+            "executors": "PB1",
+            "kind": "transition",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-glosario.md:52"
+        },
+        {
+            "file": "packages/verticals/src/publication/unpublish-listing.ts",
+            "symbol": "unpublishListing",
+            "count": 1,
+            "facts": [1],
+            "executors": "PB6 (owner act: unpublish it)",
+            "kind": "transition",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-glosario.md:50"
+        },
+        {
+            "file": "packages/verticals/src/publication/reactivate-listing.ts",
+            "symbol": "reactivateListing",
+            "count": 1,
+            "facts": [1],
+            "executors": "PB8 (owner act: reactivate it)",
+            "kind": "transition",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-glosario.md:50"
+        },
+        {
+            "file": "packages/verticals/src/publication/coverage-recalculation.ts",
+            "symbol": "recalculateCoverage",
+            "count": 4,
+            "facts": [2, 3, 5],
+            "executors": "PB2 first branch (fact 5); the recalculation the coverage notice wakes and the daily coverage reconciler, which runs this function (facts 2 and 5); PB3/PB7 (fact 3). The surplus branch of PB2 writes no clock and is not counted.",
+            "kind": "recalculation",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-glosario.md:51-54; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:840-847"
+        },
+        {
+            "file": "packages/verticals/src/publication/archive-inactive-listing.ts",
+            "symbol": "archiveInactiveListing",
+            "count": 1,
+            "facts": [2],
+            "executors": "the coverage re-read of PB4/PB5",
+            "kind": "recalculation",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:874-878"
+        },
+        {
+            "file": "packages/verticals/src/publication/purge-inactive-listing.ts",
+            "symbol": "purgeInactiveListing",
+            "count": 1,
+            "facts": [2],
+            "executors": "the coverage re-read of PB9 (the last of the four moments)",
+            "kind": "recalculation",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:497-503; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:609-612"
+        },
+        {
+            "file": "packages/verticals/src/publication/lift-moderation.ts",
+            "symbol": "liftModeration",
+            "count": 2,
+            "facts": [3, 6],
+            "executors": "PB11 and PB13 (fact 6); PB3 inside PB13 (fact 3). The surplus branch inside PB13 writes no clock and is not counted.",
+            "kind": "transition",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-glosario.md:55; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md:1509"
+        },
+        {
+            "file": "packages/db/src/models/listing/listing-publication.model.ts",
+            "symbol": "setPublicationStatus",
+            "count": 2,
+            "facts": [1, 2, 3, 5, 6],
+            "executors": "the mechanism the transitions of @repo/verticals call (HOS-1476 H10)",
+            "kind": "port",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:810-814"
+        },
+        {
+            "file": "packages/db/src/models/listing/listing-publication.model.ts",
+            "symbol": "stampInactiveSince",
+            "count": 2,
+            "facts": [2, 5],
+            "executors": "the mechanism the recalculation and the PB4/PB5 re-read call (HOS-1476 H10)",
+            "kind": "port",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:810-814"
+        },
+        {
+            "file": "apps/api/src/utils/listing-publication/ports.ts",
+            "symbol": "stampInactiveSince",
+            "count": 1,
+            "facts": [2, 5],
+            "executors": "the production adapter of the stampInactiveSince port (HOS-1476 H10)",
+            "kind": "port",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:810-814"
+        },
+        {
+            "file": "packages/db/src/models/listing/listing-birth.ts",
+            "symbol": "withListingBirthColumns",
+            "count": 1,
+            "facts": [1],
+            "executors": "creating the listing (HOS-1476 H10)",
+            "kind": "birth",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:742-743"
+        },
+        {
+            "file": "packages/seed/src/example/gastronomies.seed.ts",
+            "symbol": "seedGastronomies",
+            "count": 2,
+            "facts": [1],
+            "executors": "creating an example listing (HOS-1476 H10)",
+            "kind": "seed",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:742-743"
+        },
+        {
+            "file": "packages/seed/src/example/experiences.seed.ts",
+            "symbol": "seedExperiences",
+            "count": 2,
+            "facts": [1],
+            "executors": "creating an example listing (HOS-1476 H10)",
+            "kind": "seed",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:742-743"
+        },
+        {
+            "file": "packages/db/src/migrations/0148_cut_paso_3.sql",
+            "symbol": "<module>",
+            "count": 12,
+            "facts": ["C"],
+            "executors": "the structural cutover migration, admitted by its place",
+            "kind": "cut",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-glosario.md:56; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:748-750"
+        }
+    ],
+    "readers": [
+        {
+            "file": "packages/verticals/src/publication/archive-inactive-listing.ts",
+            "symbol": "archiveInactiveListing",
+            "count": 1,
+            "consumers": ["PB4", "PB5", "ARCHIVE_NOTICE_DATE"],
+            "role": "decision",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:860-867"
+        },
+        {
+            "file": "packages/verticals/src/publication/retention-clock.ts",
+            "symbol": "retentionClockStart",
+            "count": 2,
+            "consumers": ["PB4", "PB5", "PB9"],
+            "role": "helper",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:455-456"
+        },
+        {
+            "file": "packages/verticals/src/publication/purge-inactive-listing.ts",
+            "symbol": "purgeInactiveListing",
+            "count": 1,
+            "consumers": ["PB9"],
+            "role": "decision",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:863-864; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:196-204"
+        },
+        {
+            "file": "packages/verticals/src/publication/send-retention-notice.ts",
+            "symbol": "sendRetentionNotice",
+            "count": 1,
+            "consumers": ["NOTICE_BEFORE_DAY_90", "NOTICE_BEFORE_DAY_180"],
+            "role": "decision",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:228-242; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-outbox.md:302"
+        },
+        {
+            "file": "packages/db/src/models/listing/listing-retention.model.ts",
+            "symbol": "listRetentionCandidates",
+            "count": 2,
+            "consumers": ["PB4", "PB5"],
+            "role": "prefilter",
+            "note": "A superset of the due listings: it decides which listings are looked at, never which are archived (HOS-1476 H8).",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:860-862"
+        },
+        {
+            "file": "packages/db/src/models/listing/listing-retention-schedule.model.ts",
+            "symbol": "listRetentionNoticeCandidates",
+            "count": 2,
+            "consumers": ["NOTICE_BEFORE_DAY_90", "NOTICE_BEFORE_DAY_180"],
+            "role": "prefilter",
+            "note": "A superset of the due listings: it decides which listings are looked at, never which are notified or purged.",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:631-640"
+        },
+        {
+            "file": "packages/db/src/models/listing/listing-retention-schedule.model.ts",
+            "symbol": "listPurgeCandidates",
+            "count": 1,
+            "consumers": ["PB9"],
+            "role": "prefilter",
+            "note": "A superset of the due listings: it decides which listings are looked at, never which are notified or purged.",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:633-636"
+        }
+    ],
+    "transport": [
+        {
+            "file": "packages/db/src/models/listing/listing-publication.model.ts",
+            "symbol": "setPublicationStatus",
+            "count": 2,
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:810-814"
+        },
+        {
+            "file": "packages/db/src/models/listing/listing-publication.model.ts",
+            "symbol": "insertStatusChangedEvent",
+            "count": 2,
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:810-814"
+        }
+    ],
+    "cutTool": [
+        {
+            "file": "packages/service-core/src/services/trial/cutover-v6-trials.ts",
+            "symbol": "writeCutoverTrials",
+            "count": 3,
+            "note": "The cutover tool reads the clock as the startedAt of the five trials; admitted by the place of the C write (HOS-1476 H5).",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-glosario.md:58-73"
+        }
+    ],
+    "pendingConsumers": [],
+    "implementedConsumers": [
+        {
+            "id": "NOTICE_BEFORE_DAY_90",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:228-242; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-outbox.md:302"
+        },
+        {
+            "id": "NOTICE_BEFORE_DAY_180",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:228-242; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-outbox.md:302"
+        },
+        {
+            "id": "PB4",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:861"
+        },
+        {
+            "id": "PB5",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:861-862"
+        },
+        {
+            "id": "ARCHIVE_NOTICE_DATE",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:865-867"
+        },
+        {
+            "id": "PB9",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:196-204"
+        }
+    ]
+}

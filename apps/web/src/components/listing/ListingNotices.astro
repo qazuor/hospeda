@@ -1,0 +1,61 @@
+---
+/**
+ * @file ListingNotices.astro
+ * @description The notices of one of the owner's listings in Mi Cuenta
+ * (HOS-1492, V8a.1b): rows 8/9 (surplus), 18 (archived), 20 (deleted for
+ * inactivity), 24 (moderated), 30 (fix request, lifted moderation) and 31
+ * (deleted while moderated) of `V/19` §4.
+ *
+ * Server-rendered and without a fetch: the list page reads
+ * `GET /api/v1/protected/publish/listing-notices/{vertical}` once and hands each
+ * card its entry. The copy comes verbatim from `buildListingNoticeViews`; this
+ * component decides nothing. Without an entry (a failed read) it renders
+ * nothing. The only island is the row 30 "I fixed it" button.
+ */
+import type { ListingNoticesItem } from '@repo/schemas';
+import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { buildListingNoticeViews } from '@/lib/listing/listing-notices';
+import { ReportFixedButton } from './ReportFixedButton.client';
+import styles from './ListingNotices.module.css';
+
+interface Props {
+	/** Page locale. */
+	readonly locale: SupportedLocale;
+	/** The listing's vertical. */
+	readonly vertical: PublishVerticalSlug;
+	/** The listing id. */
+	readonly listingId: string;
+	/** The listing's entry of the read; `undefined` renders nothing. */
+	readonly item: ListingNoticesItem | undefined;
+}
+
+const { locale, vertical, listingId, item } = Astro.props;
+const { t, tPlural } = createTranslations(locale);
+const views = buildListingNoticeViews({ locale, t, tPlural, item });
+---
+
+{
+	views.map((view) => (
+		<aside
+			class:list={[styles.notice, styles[view.tone]]}
+			aria-label={view.title}
+			data-testid="listing-notice"
+			data-notice-kind={view.kind}
+		>
+			<p class={styles.title}>{view.title}</p>
+			{view.lines.map((line) => (
+				<p class={styles.body}>{line}</p>
+			))}
+			{view.reportFixed && (
+				<ReportFixedButton
+					client:idle
+					vertical={vertical}
+					listingId={listingId}
+					locale={locale}
+					reportedAt={view.reportFixed.reportedAt}
+				/>
+			)}
+		</aside>
+	))
+}

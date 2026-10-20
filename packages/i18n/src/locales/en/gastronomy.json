@@ -109,5 +109,187 @@
     },
     "typeChips": {
         "ariaLabel": "Filter by establishment type"
+    },
+    "landing": {
+        "benefits": {
+            "tagline": "Why Hospeda?",
+            "title": "Benefits for your food business",
+            "item1": {
+                "title": "Regional visibility",
+                "desc": "Show up where thousands of travelers search for places to eat in Concepción del Uruguay and the Litoral region."
+            },
+            "item2": {
+                "title": "Publish in minutes",
+                "desc": "Upload photos, menu and hours from a simple dashboard. Edit anytime."
+            },
+            "item3": {
+                "title": "Flat price, no commissions",
+                "desc": "Pay one fixed monthly amount. No booking or inquiry is charged a separate commission."
+            }
+        },
+        "howItWorks": {
+            "tagline": "It's that easy",
+            "title": "How does it work?",
+            "step1": {
+                "title": "Sign up",
+                "desc": "Create your account in under 2 minutes."
+            },
+            "step2": {
+                "title": "Publish your venue",
+                "desc": "Add photos, menu, hours and location."
+            },
+            "step3": {
+                "title": "Get discovered",
+                "desc": "Diners find you while searching for gastronomy in the area."
+            }
+        },
+        "price": {
+            "tagline": "One simple plan",
+            "taglineMulti": "Choose the plan that fits your business",
+            "title": "Gastronomy Premium",
+            "priceSuffix": "/month",
+            "fromPrefix": "From ",
+            "tiersTitle": "Choose your plan",
+            "trial_one": "{{count}} day free trial on your first subscription",
+            "trial_other": "{{count}} days free trial on your first subscription",
+            "feature1": "1 published gastronomy listing",
+            "feature2": "Presence in the Hospeda catalog",
+            "feature3": "No commission on bookings or inquiries",
+            "cta": "Get started",
+            "unavailable": "We couldn't load the price right now. Please try again later."
+        },
+        "faq": {
+            "tagline": "Have questions?",
+            "title": "Frequently asked questions",
+            "q1": "How much does it cost to list my food business on Hospeda?",
+            "a1_one": "One fixed monthly payment, with a {{count}}-day free trial on your first subscription. No commission on bookings or inquiries.",
+            "a1_other": "One fixed monthly payment, with a {{count}}-day free trial on your first subscription. No commission on bookings or inquiries.",
+            "a1NoTrial": "One fixed monthly payment. No commission on bookings or inquiries.",
+            "q2": "Is there a minimum commitment?",
+            "a2": "No. You can cancel your subscription anytime from your account.",
+            "q3": "How many listings can I publish?",
+            "a3": "The plan includes one gastronomy listing per account."
+        },
+        "lead": {
+            "title": "Add your business",
+            "subtitle": "Create your account, publish your venue and start reaching diners looking for somewhere to eat in the area."
+        }
+    },
+    "owner": {
+        "editor": {
+            "menuManager": {
+                "title": "Menu",
+                "intro": "Enter your menu dish by dish, or upload a photo or a PDF of it. You can use both, and neither is required.",
+                "fileTitle": "Menu photo or PDF",
+                "filePdf": "View the PDF",
+                "fileImage": "View the photo",
+                "fileUnavailable": "This file cannot be opened. Remove it and upload it again.",
+                "addFile": "Upload photo or PDF",
+                "replaceFile": "Replace the file",
+                "removeFile": "Remove",
+                "uploaded": "Menu file uploaded.",
+                "fileRemoved": "Menu file removed.",
+                "uploadError": "The menu file could not be uploaded.",
+                "deleteError": "The menu file could not be removed.",
+                "sectionsTitle": "Dishes by course",
+                "newSection": "New course",
+                "sectionName": "Course name",
+                "sectionNamePlaceholder": "Starters, Mains, Desserts…",
+                "addSection": "Add course",
+                "removeSection": "Remove",
+                "moveSectionUp": "Move course up",
+                "moveSectionDown": "Move course down",
+                "itemName": "Dish name",
+                "itemNamePlaceholder": "Dish name",
+                "itemDescription": "Dish description",
+                "itemDescriptionPlaceholder": "Ingredients, portion…",
+                "itemPrice": "Dish price",
+                "itemPricePlaceholder": "On request",
+                "itemAvailable": "Available",
+                "addItem": "Add dish",
+                "removeItem": "Remove",
+                "save": "Save menu",
+                "saving": "Saving…",
+                "saved": "Menu saved.",
+                "saveError": "The menu could not be saved.",
+                "locked": "Entering the menu dish by dish is available from the Professional plan onwards. In the meantime you can upload a photo or a PDF of the menu, or leave the link.",
+                "addPhoto": "Add photo",
+                "replacePhoto": "Change the photo",
+                "removePhoto": "Remove the photo",
+                "photoPreview": "Dish photo",
+                "photoAlt": "Alt text for the photo",
+                "photoAltPlaceholder": "Describe the photo (optional)",
+                "photoAttached": "Photo added. Remember to save the menu.",
+                "photoUploadError": "The dish photo could not be uploaded.",
+                "photoLocked": "Photos per dish are available on the Premium plan. You can remove the photos and save the menu anyway.",
+                "translations": "Translations (EN/PT)",
+                "nameEn": "English name",
+                "nameEnPlaceholder": "English name",
+                "namePt": "Portuguese name",
+                "namePtPlaceholder": "Portuguese name",
+                "descriptionEn": "English description",
+                "descriptionEnPlaceholder": "English description",
+                "descriptionPt": "Portuguese description",
+                "descriptionPtPlaceholder": "Portuguese description",
+                "translationLocked": "Translating the menu is available on the Premium plan. You can clear the translations and save the menu in Spanish only.",
+                "translationLockedHint": "Available on the Premium plan. Clear the English and Portuguese fields to save the menu in Spanish only."
+            },
+            "dailySpecials": {
+                "title": "Today's menu",
+                "intro": "The dish of the day or the chef's suggestion. Each one runs until the date you set and then stops showing on its own — you never have to take it down.",
+                "newSpecial": "New daily special",
+                "titleLabel": "Dish",
+                "titlePlaceholder": "Milanesa napolitana with mashed potato",
+                "descriptionLabel": "Details",
+                "descriptionPlaceholder": "With a side and dessert",
+                "priceLabel": "Price in pesos",
+                "pricePlaceholder": "Price",
+                "from": "From",
+                "until": "Until",
+                "moveUp": "Move up",
+                "moveDown": "Move down",
+                "remove": "Remove",
+                "add": "Add daily special",
+                "save": "Save today's menu",
+                "saving": "Saving…",
+                "saved": "Today's menu saved.",
+                "saveError": "Today's menu could not be saved.",
+                "locked": "Today's menu is available from the Professional plan.",
+                "expired": "Expired — not being shown.",
+                "scheduled": "Scheduled — not shown yet."
+            },
+            "venueEventsManager": {
+                "title": "Venue schedule",
+                "intro": "Let your diners know when something happens at your venue: live music, happy hour, the Tuesday deal.",
+                "newEntry": "New event",
+                "entryTitle": "Title",
+                "titlePlaceholder": "Live music, Happy hour…",
+                "entryDescription": "Description",
+                "descriptionPlaceholder": "Optional detail",
+                "moveUp": "Move event up",
+                "moveDown": "Move event down",
+                "removeEntry": "Remove",
+                "recurrenceWeekly": "Every week",
+                "recurrenceOnce": "One day only",
+                "weekday": "Day of the week",
+                "date": "Date",
+                "startTime": "Start time",
+                "endTime": "End time (optional)",
+                "active": "Active",
+                "addEntry": "Add event",
+                "maxReached": "You reached the limit of {{max}} events.",
+                "maxReached_one": "You reached the limit of {{max}} event.",
+                "maxReached_other": "You reached the limit of {{max}} events.",
+                "save": "Save schedule",
+                "saving": "Saving…",
+                "saved": "Schedule saved.",
+                "saveError": "The schedule could not be saved.",
+                "locked": "Keeping a venue schedule is available from the Professional plan onwards."
+            },
+            "acceptsEvents": {
+                "label": "We accept events (birthdays, corporate, weddings)",
+                "hint": "We show a contact button on your listing so people can reach out for this kind of request."
+            }
+        }
     }
 }

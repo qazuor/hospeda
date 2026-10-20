@@ -1242,10 +1242,6 @@
         "002-package-professional.json",
         "003-package-unlimited.json"
     ],
-    "billingEntitlements": [],
-    "billingLimits": [],
-    "billingPlans": [],
-    "billingAddons": [],
     "exchangeRateConfig": ["001-exchange-rate-config-default.json"],
     "exchangeRates": [
         "001-rate-usd-ars-oficial.json",

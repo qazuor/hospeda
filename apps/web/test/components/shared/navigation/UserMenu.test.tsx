@@ -10,7 +10,6 @@ import type {
     UserMenuUser
 } from '../../../../src/components/shared/navigation/UserMenu.client';
 import { UserMenu } from '../../../../src/components/shared/navigation/UserMenu.client';
-import { syncPlanPersonProperties } from '../../../../src/lib/analytics/plan-properties';
 import {
     identifyUser,
     resetUser,
@@ -31,9 +30,6 @@ vi.mock('../../../../src/lib/analytics/posthog-client', () => ({
 
 // The plan/tier sync fires its own protected fetch on mount; mock it so it
 // doesn't interfere with the /auth/me fetch assertions in this suite.
-vi.mock('../../../../src/lib/analytics/plan-properties', () => ({
-    syncPlanPersonProperties: vi.fn().mockResolvedValue(undefined)
-}));
 
 vi.mock('../../../../src/lib/env', () => ({
     getApiUrl: () => 'https://api.test'
@@ -218,14 +214,14 @@ describe('UserMenu — permission-gated items', () => {
         });
     });
 
-    it('shows the "Mi comercio" business shortcut for users with only commerce.editOwn permission', async () => {
+    it('shows the "Mi comercio" business shortcut for users with only gastronomy.editOwn permission', async () => {
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
-                permissions: ['commerce.editOwn'],
-                roles: ['USER', 'COMMERCE_OWNER'],
+                permissions: ['gastronomy.editOwn'],
+                roles: ['USER', 'GASTRONOMY_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -245,8 +241,8 @@ describe('UserMenu — permission-gated items', () => {
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
-                permissions: ['accommodation.create', 'commerce.editOwn'],
-                roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
+                permissions: ['accommodation.create', 'gastronomy.editOwn'],
+                roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -629,8 +625,8 @@ describe('UserMenu — PostHog identify/reset', () => {
                 data: {
                     actor: {
                         id: 'user-1',
-                        roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
-                        permissions: ['accommodation.create', 'commerce.editOwn']
+                        roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
+                        permissions: ['accommodation.create', 'gastronomy.editOwn']
                     },
                     isAuthenticated: true
                 }
@@ -644,12 +640,41 @@ describe('UserMenu — PostHog identify/reset', () => {
                 // HOS-296: an ARRAY person property, sorted for stability.
                 // A multi-hat user reports every hat AND both segment
                 // booleans — under the old scalar only one could be true.
-                roles: ['COMMERCE_OWNER', 'HOST', 'USER'],
+                roles: ['GASTRONOMY_OWNER', 'HOST', 'USER'],
                 user_type: 'owner',
                 is_host: true,
-                is_commerce_owner: true,
+                is_gastronomy_owner: true,
+                is_experience_owner: false,
                 is_staff: false
             });
+        });
+    });
+
+    it('marks an experience-only owner via is_experience_owner', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: {
+                    actor: {
+                        id: 'user-1',
+                        roles: ['USER', 'EXPERIENCE_OWNER'],
+                        permissions: ['experience.editOwn']
+                    },
+                    isAuthenticated: true
+                }
+            })
+        }) as unknown as typeof fetch;
+
+        renderMenu();
+        await waitFor(() => {
+            expect(identifyUser).toHaveBeenLastCalledWith(
+                'user-1',
+                expect.objectContaining({
+                    is_gastronomy_owner: false,
+                    is_experience_owner: true,
+                    user_type: 'owner'
+                })
+            );
         });
     });
 
@@ -675,7 +700,8 @@ describe('UserMenu — PostHog identify/reset', () => {
                 roles: ['ADMIN', 'USER'],
                 user_type: 'staff',
                 is_host: false,
-                is_commerce_owner: false,
+                is_gastronomy_owner: false,
+                is_experience_owner: false,
                 is_staff: true
             });
         });
@@ -700,11 +726,12 @@ describe('UserMenu — PostHog identify/reset', () => {
         });
     });
 
-    it('syncs the plan person property from the entitlements endpoint for an authenticated visitor', async () => {
+    it('does not sync removed plan person properties', async () => {
         renderMenu();
-        await waitFor(() => {
-            expect(syncPlanPersonProperties).toHaveBeenCalledWith({ apiUrl: 'https://api.test' });
-        });
+        await waitFor(() => expect(setPersonProperties).toHaveBeenCalled());
+        expect(setPersonProperties).not.toHaveBeenCalledWith(
+            expect.objectContaining({ plan: expect.anything() })
+        );
     });
 
     it('does NOT set person properties for a guest', () => {

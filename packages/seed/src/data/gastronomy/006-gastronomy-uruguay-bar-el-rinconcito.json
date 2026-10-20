@@ -1,6 +1,6 @@
 {
     "id": "006-gastronomy-uruguay-bar-el-rinconcito",
-    "ownerId": "043-user-commerce-owner-valentina",
+    "ownerId": "043-user-gastronomy-owner-valentina",
     "destinationId": "011-destination-concepcion-del-uruguay",
     "slug": "bar-el-rinconcito",
     "name": "Bar El Rinconcito",
@@ -9,10 +9,7 @@
     "type": "BAR",
     "priceRange": "MID",
     "menuUrl": null,
-    "visibility": "PRIVATE",
-    "lifecycleState": "DRAFT",
-    "moderationState": "PENDING",
-    "isFeatured": false,
+    "publicationStatus": "DRAFT",
     "contactInfo": {
         "personalEmail": "barelrinconcito@hotmail.com",
         "mobilePhone": "+54 9 3442 500006",

@@ -50,7 +50,7 @@ import { z } from 'zod';
  *    PROPERTY's contact section, not a person's profile, so the shared
  *    person-profile wording ("El telefono celular...", "El email
  *    personal...") read as a mismatch. The shared keys are untouched: every
- *    other consumer (user profile, commerce, experience, event organizer)
+ *    other consumer (user profile, gastronomy, experience, event organizer)
  *    keeps using them. `whatsapp`/`website` are NOT touched here: their
  *    existing messages ("El numero de WhatsApp...", "El sitio web...")
  *    already match their labels.

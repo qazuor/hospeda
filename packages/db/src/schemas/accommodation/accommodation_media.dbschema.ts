@@ -132,7 +132,9 @@ export const accommodationMedia = pgTable(
         // -------------------------------------------------------------------------
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-        deletedAt: timestamp('deleted_at', { withTimezone: true })
+        deletedAt: timestamp('deleted_at', { withTimezone: true }),
+        /** Set by PB12 (and PB9) in the purge transaction: the remote copy (storage asset / provider grant) is deleted after the commit and the row is removed once the remote side confirms; a marked row is never shown (its listing is PURGED). Retried daily by the V6.6 run (AC:V6:30). */
+        remoteDeletionPendingAt: timestamp('remote_deletion_pending_at', { withTimezone: true })
     },
     (table) => ({
         /** Index for fetching all media belonging to one accommodation (the dominant query). */

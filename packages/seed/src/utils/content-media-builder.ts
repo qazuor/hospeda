@@ -4,8 +4,8 @@
  * (HOS-390).
  *
  * Thin per-entity wrappers over {@link buildMediaRows}, exactly like
- * `commerce-media-builder.ts`: the ordering and defaulting rules are shared with
- * accommodations and commerce listings, and only the owning foreign key differs.
+ * `listing-media-builder.ts`: the ordering and defaulting rules are shared with
+ * accommodations and gastronomy/experience listings, and only the owning foreign key differs.
  *
  * @module utils/content-media-builder
  */

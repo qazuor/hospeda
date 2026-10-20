@@ -9,10 +9,9 @@ import {
     ArchiveConversationSchema,
     ConversationSchema,
     PermissionEnum,
-    RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import { ConversationService } from '@repo/service-core';
+import { ConversationService, createSystemActor } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
 import { env } from '../../../utils/env';
@@ -24,11 +23,8 @@ import {
 } from '../../../utils/response-helpers';
 
 /** System-level actor used for service permission checks. */
-const SYSTEM_ACTOR = {
-    id: '00000000-0000-0000-0000-000000000001',
-    // HOS-296: the actor carries a SET of hats. This synthetic system actor
-    // wears exactly one, ADMIN, which is all the conversation service checks.
-    roles: [RoleEnum.ADMIN],
+const SYSTEM_ACTOR = createSystemActor({
+    jobId: 'conversations.protected.archive',
     permissions: [
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_VIEW_ANY,
@@ -36,9 +32,8 @@ const SYSTEM_ACTOR = {
         PermissionEnum.CONVERSATION_REPLY_ANY,
         PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
         PermissionEnum.CONVERSATION_UPDATE_STATUS_ANY
-    ] as readonly PermissionEnum[],
-    _isSystemActor: true
-} as const;
+    ]
+});
 
 const router = createRouter();
 

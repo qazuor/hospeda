@@ -114,11 +114,6 @@ vi.mock('../../../../src/utils/logger', () => ({
     }
 }));
 
-vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    ownerEntitlementMiddleware: vi.fn(),
-    resolveOwnerEntitlementsForOwnerId: mockResolveOwnerEntitlementsForOwnerId
-}));
-
 function queueSelectResults(...rowsByCall: unknown[][]) {
     mockSelect.mockImplementation(function () {
         const rows = rowsByCall.shift() ?? [];
@@ -183,9 +178,7 @@ const ACCOMMODATION_WITH_FULL_CONTACT_INFO = {
     location: { street: 'Av. Costanera', number: '123' },
     averageRating: 4.5,
     reviewsCount: 42,
-    visibility: 'PUBLIC',
-    moderationState: 'APPROVED',
-    lifecycleState: 'ACTIVE',
+    publicationStatus: 'PUBLISHED',
     seo: VALID_SEO,
     price: { price: 150, currency: 'ARS' },
     tags: [],

@@ -122,22 +122,31 @@ export const getCorsConfig = () => {
             //   list doesn't just degrade locale resolution — since it is a
             //   NON-simple header, ANY absent entry here fails the whole
             //   preflight for EVERY mutating cross-origin request, not just
-            //   the ones that read it (verified against the E2E commerce
+            //   the ones that read it (verified against the E2E listing-owner
             //   editor suite, which broke entirely until this was added).
+            // - X-Correlation-ID: a client that already holds the correlation
+            //   of a business intention sends it back (HOS-1424, NUCLEO/08 §2.1).
             const parsed = parseCommaSeparated(
                 _safe.get(
                     'API_CORS_ALLOW_HEADERS',
                     'Content-Type,Authorization,X-Requested-With,X-Idempotency-Key,X-Client-Locale'
                 )
             );
-            const REQUIRED_HEADERS = ['X-Idempotency-Key', 'X-Client-Locale'];
+            const REQUIRED_HEADERS = ['X-Idempotency-Key', 'X-Client-Locale', 'X-Correlation-ID'];
             const lowerParsed = new Set(parsed.map((h) => h.toLowerCase()));
             const missing = REQUIRED_HEADERS.filter((h) => !lowerParsed.has(h.toLowerCase()));
             return [...parsed, ...missing];
         })(),
-        exposeHeaders: parseCommaSeparated(
-            _safe.get('API_CORS_EXPOSE_HEADERS', 'Content-Length,X-Request-ID')
-        )
+        exposeHeaders: (() => {
+            // X-Correlation-ID is enforced like the required allow headers: a
+            // browser can only read the correlation minted for its intention
+            // (HOS-1424) when the header is exposed, whatever an env override says.
+            const parsed = parseCommaSeparated(
+                _safe.get('API_CORS_EXPOSE_HEADERS', 'Content-Length,X-Request-ID')
+            );
+            const lowerParsed = new Set(parsed.map((h) => h.toLowerCase()));
+            return lowerParsed.has('x-correlation-id') ? parsed : [...parsed, 'X-Correlation-ID'];
+        })()
     };
 };
 
@@ -260,13 +269,6 @@ export const getRateLimitConfig = () => ({
     protectedMessage: _safe.get(
         'API_RATE_LIMIT_PROTECTED_MESSAGE',
         'Too many requests, please try again later.'
-    ),
-    billingEnabled: _safe.getBoolean('API_RATE_LIMIT_BILLING_ENABLED', true),
-    billingWindowMs: _safe.getNumber('API_RATE_LIMIT_BILLING_WINDOW_MS', 900000),
-    billingMaxRequests: _safe.getNumber('API_RATE_LIMIT_BILLING_MAX_REQUESTS', 10),
-    billingMessage: _safe.get(
-        'API_RATE_LIMIT_BILLING_MESSAGE',
-        'Too many billing requests, please try again later.'
     ),
     webhookEnabled: _safe.getBoolean('API_RATE_LIMIT_WEBHOOK_ENABLED', true),
     webhookWindowMs: _safe.getNumber('API_RATE_LIMIT_WEBHOOK_WINDOW_MS', 60000),

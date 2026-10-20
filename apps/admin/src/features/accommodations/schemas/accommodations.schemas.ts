@@ -3,9 +3,7 @@ import {
     AccommodationListItemSchema as BaseAccommodationListItemSchema,
     CityDestinationRefSchema,
     createAverageRatingField,
-    LifecycleStatusEnumSchema,
-    ModerationStatusEnumSchema,
-    VisibilityEnumSchema
+    PublicationStatusEnumSchema
 } from '@repo/schemas';
 import type { z } from 'zod';
 import { DestinationExtensionSchema, OwnerExtensionSchema } from '@/shared/schemas';
@@ -19,7 +17,8 @@ export { AccommodationSchema };
  * Extensions:
  * - destination: Uses DestinationExtensionSchema for consistency
  * - owner: Uses OwnerExtensionSchema for consistency
- * - visibility, lifecycleState, moderationState: Admin-only status fields (BUG-005)
+ * - publicationStatus: the listing's state, admin-only (BUG-005; replaces the
+ *   old lifecycle/visibility/moderation trio since HOS-1641)
  */
 export const AccommodationListItemSchema = BaseAccommodationListItemSchema.extend(
     DestinationExtensionSchema.shape
@@ -29,9 +28,7 @@ export const AccommodationListItemSchema = BaseAccommodationListItemSchema.exten
         // Proper averageRating field handling for database numeric values
         averageRating: createAverageRatingField({ optional: true }),
         // Admin status fields not included in public list schema
-        visibility: VisibilityEnumSchema.optional(),
-        lifecycleState: LifecycleStatusEnumSchema.optional(),
-        moderationState: ModerationStatusEnumSchema.optional(),
+        publicationStatus: PublicationStatusEnumSchema.optional(),
         // Admin-verified flag (SPEC-291) — not in the public list-item pick.
         isVerified: AccommodationSchema.shape.isVerified.optional(),
         // The admin list API exposes the linked destination as the SPEC-095

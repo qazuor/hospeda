@@ -2,17 +2,19 @@
  * Protected update owner promotion endpoint
  * Requires authentication
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     OwnerPromotionIdSchema,
     OwnerPromotionProtectedSchema,
     OwnerPromotionUpdateInputSchema,
-    PermissionEnum
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -44,6 +46,15 @@ export const protectedUpdateOwnerPromotionRoute = createProtectedRoute({
     ) => {
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
+        const existing = await ownerPromotionService.getById(actor, id);
+        if (existing.error) {
+            throw new ServiceError(existing.error.code, existing.error.message);
+        }
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            keys: ['create_promotions']
+        });
         // Strip ownerId from the update body so a client cannot reassign ownership.
         // The service layer does not guard against this field, so we drop it at the
         // route boundary before it reaches the service.
@@ -58,9 +69,5 @@ export const protectedUpdateOwnerPromotionRoute = createProtectedRoute({
 
         return result.data;
     },
-    options: {
-        // SPEC-145 T-005: CREATE_PROMOTIONS gate on full-replace mutation —
-        // same plan requirement as create.
-        middlewares: [requireEntitlement(EntitlementKey.CREATE_PROMOTIONS)]
-    }
+    options: {}
 });

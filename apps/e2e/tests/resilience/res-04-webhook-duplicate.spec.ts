@@ -29,13 +29,18 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { execSQL, getDbPool, hasOldBillingSchema } from '../../fixtures/db-helpers.ts';
 import { postPaymentApprovedWebhook } from '../../fixtures/mp-webhook-helper.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 
 test.describe('RES-04: webhook duplicate is idempotent @p0 @resilience @billing @cross-app', () => {
     test('two identical signed POSTs return 2xx, no duplicated side effects', async () => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         if (!process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET) {
             test.fixme(
                 true,

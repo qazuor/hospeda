@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { type PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
@@ -7,6 +8,10 @@ import { accommodationTabs, PageTabs } from '@/components/layout/PageTabs';
 import { AccommodationQualityScore } from '@/features/accommodations/components/AccommodationQualityScore';
 import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/useAccommodationHeaderProps';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
+import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
+import { EffectiveSetSubjectProvider } from '@/features/billing/effective-set-subject';
+import { ListingModerationCard } from '@/features/listing/components/ListingModerationCard';
+import { ListingPurgeOnRequestCard } from '@/features/listing/components/ListingPurgeOnRequestCard';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 /**
@@ -24,7 +29,35 @@ export const Route = createFileRoute('/_authed/accommodations/$id')({
  */
 function AccommodationViewPage() {
     const { id } = Route.useParams();
+    const { data: accommodation, isLoading, error } = useAccommodationQuery(id);
+    if (isLoading) return <AccommodationPending />;
+    if (error) throw error;
+    if (!accommodation) throw new Error('accommodation not found');
+    return (
+        <EffectiveSetSubjectProvider
+            value={{ userId: accommodation.ownerId, vertical: VerticalEnum.ACCOMMODATION }}
+        >
+            <AccommodationViewContent
+                id={id}
+                name={accommodation.name ?? id}
+                publicationStatus={accommodation.publicationStatus}
+            />
+        </EffectiveSetSubjectProvider>
+    );
+}
 
+const AccommodationPending = createPendingComponent();
+
+function AccommodationViewContent({
+    id,
+    name,
+    publicationStatus
+}: {
+    readonly id: string;
+    readonly name: string;
+    readonly publicationStatus: PublicationStatusEnum | null | undefined;
+}) {
+    const navigate = useNavigate();
     const entityData = useAccommodationPage(id);
 
     // Determine section anchor order based on user permissions (spec §4.4):
@@ -43,6 +76,29 @@ function AccommodationViewPage() {
                 tabs={accommodationTabs}
                 basePath={`/accommodations/${id}`}
             />
+
+            {/* HOS-1493 action 23: the same action row as gastronomy and
+                experience, with the px-6 inset of the entity card below. */}
+            <div className="space-y-4 px-6 pt-6">
+                <div className="flex justify-end">
+                    <ListingPurgeOnRequestCard
+                        vertical="accommodation"
+                        entityId={id}
+                        entityName={name}
+                        onPurged={() => navigate({ to: '/accommodations' })}
+                    />
+                </div>
+
+                {/* HOS-1684: the listing's publication state and its moderation
+                    by action, with reason (`POST /:id/moderate`), as on
+                    gastronomy and experience. */}
+                <ListingModerationCard
+                    vertical="accommodation"
+                    entityId={id}
+                    entityName={name}
+                    publicationStatus={publicationStatus}
+                />
+            </div>
 
             <EntityPageBase
                 entityType="accommodation"

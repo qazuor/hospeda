@@ -1,3 +1,4 @@
+import type { ProtectedEffectiveSetResponse } from '@repo/schemas';
 /**
  * Centralized API response to card component prop transformations.
  *
@@ -1953,7 +1954,7 @@ export function transformAccommodationEdit({
     return {
         id: String(item.id ?? ''),
         slug: String(item.slug ?? ''),
-        lifecycleState: String(item.lifecycleState ?? 'DRAFT'),
+        publicationStatus: String(item.publicationStatus ?? 'DRAFT'),
         name: String(item.name ?? ''),
         summary: String(item.summary ?? ''),
         description: String(item.description ?? ''),
@@ -2755,7 +2756,7 @@ export function toGastronomyCardProps({
 }
 
 /**
- * Maps the catalog-joined `amenities` array a commerce detail payload carries
+ * Maps the catalog-joined `amenities` array a gastronomy/experience detail payload carries
  * into the item shape `AmenitiesGrid.astro` renders (HOS-1072).
  *
  * Two deliberate coercions, both matching what the accommodation transform
@@ -2765,11 +2766,11 @@ export function toGastronomyCardProps({
  *   (`accommodations.amenityNames.<slug>`). SPEC-266 dropped the catalog's
  *   `name` column, so a slug is the only identifier there is.
  * - `isOptional` / `additionalCost` / `displayWeight` are filled with inert
- *   values. The commerce junction tables have no such columns (see
- *   `CommerceListingAmenityPublicSchema`), so there is nothing to read; the
+ *   values. The gastronomy/experience junction tables have no such columns (see
+ *   `ListingAmenityPublicSchema`), so there is nothing to read; the
  *   constants keep one grid component serving three verticals instead of
  *   forking it. `additionalCost: null` is what stops the grid from printing a
- *   "(costo adicional)" tag no commerce owner could have set.
+ *   "(costo adicional)" tag no gastronomy/experience owner could have set.
  *
  * Server order is PRESERVED — the API already sorts by the catalog's
  * `displayWeight` — so the flat `50` here re-sorts nothing.
@@ -2777,7 +2778,7 @@ export function toGastronomyCardProps({
  * @param raw - The payload's `amenities` value, of unknown shape.
  * @returns Grid-ready amenity items; empty when absent or malformed.
  */
-function mapCommerceAmenities(raw: unknown): readonly DetailAmenity[] {
+function mapListingAmenities(raw: unknown): readonly DetailAmenity[] {
     if (!Array.isArray(raw)) return [];
     return (raw as Array<Record<string, unknown>>)
         .map((item) => ({
@@ -2792,18 +2793,18 @@ function mapCommerceAmenities(raw: unknown): readonly DetailAmenity[] {
 }
 
 /**
- * Maps the catalog-joined `features` array a commerce detail payload carries
+ * Maps the catalog-joined `features` array a gastronomy/experience detail payload carries
  * into the item shape `FeaturesGrid.astro` renders (HOS-1072).
  *
  * Unlike the amenity twin, `hostReWriteName` and `comments` are REAL here: the
- * commerce feature junction tables carry both columns and the owner writes
+ * gastronomy/experience feature junction tables carry both columns and the owner writes
  * them, so they are read straight through. `name` holds the slug for the same
  * i18n reason as above.
  *
  * @param raw - The payload's `features` value, of unknown shape.
  * @returns Grid-ready feature items; empty when absent or malformed.
  */
-function mapCommerceFeatures(raw: unknown): readonly DetailFeature[] {
+function mapListingFeatures(raw: unknown): readonly DetailFeature[] {
     if (!Array.isArray(raw)) return [];
     return (raw as Array<Record<string, unknown>>)
         .map((item) => ({
@@ -3009,8 +3010,8 @@ export function toGastronomyDetailPageProps({
             : null,
         tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
         faqs,
-        amenities: mapCommerceAmenities(item.amenities),
-        features: mapCommerceFeatures(item.features),
+        amenities: mapListingAmenities(item.amenities),
+        features: mapListingFeatures(item.features),
         owner: ownerObj
             ? {
                   id: String(ownerObj.id || ''),
@@ -3047,7 +3048,7 @@ function normalizeExperienceSocialNetworks(raw: unknown): ExperienceSocialNetwor
 /**
  * Normalize the contact info an experience listing publishes.
  *
- * NO LONGER DORMANT (HOS-815). The public tier now exposes a NARROWED
+ * NO LONGER DORMANT (HOS-815). The public route now exposes a NARROWED
  * `contactInfo` — `workEmail`, `workPhone`, `mobilePhone`, `website` — because
  * the listing form blocks publication without a phone or an email and then the
  * page showed neither, leaving the traveller with no way to reach the provider.
@@ -3269,8 +3270,8 @@ export function toExperienceDetailPageProps({
             : null,
         tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
         faqs,
-        amenities: mapCommerceAmenities(item.amenities),
-        features: mapCommerceFeatures(item.features),
+        amenities: mapListingAmenities(item.amenities),
+        features: mapListingFeatures(item.features),
         owner: ownerObj
             ? {
                   id: String(ownerObj.id || ''),
@@ -3283,15 +3284,8 @@ export function toExperienceDetailPageProps({
 }
 
 /**
- * Transforms a raw API partner item into the gold partner's detail props.
- *
- * Written fresh rather than adapted from the directory's card transform
- * (HOS-294 D-7): that one carried the tier, `isFeatured` and a clamped
- * description, all of which belonged to the retired listing.
- *
- * `tier` is deliberately not mapped. It decides whether this page exists at
- * all — a decision already made by the API before the payload gets here — and
- * is never shown to a reader.
+ * Transforms a raw API partner item into detail props. V7 restores this page
+ * on the public key; V6 keeps its public route dark.
  *
  * @param item - Raw partner object from the public API
  * @param locale - Active locale for i18n field resolution
@@ -3362,11 +3356,26 @@ export function toPartnerData({ item }: { readonly item: Record<string, unknown>
         name: String(item.name || ''),
         logoPath: String(item.logoUrl || ''),
         url: item.websiteUrl == null ? undefined : String(item.websiteUrl),
-        // Both carried for the tier branch in `PartnersSection` (HOS-294 D-1):
-        // a gold logo links to `/partners/<slug>/`, a silver one to its own
-        // site. Neither is ever rendered as text.
+        // Retained for the internal page link V7 restores on the public key.
         slug: item.slug == null ? undefined : String(item.slug),
-        tier: item.tier == null ? undefined : String(item.tier),
         aspectRatio: DEFAULT_PARTNER_LOGO_ASPECT_RATIO
     };
+}
+
+/** Converts the JSON-safe effective-set response to numeric client values. */
+export function transformProtectedEffectiveSet(raw: ProtectedEffectiveSetResponse): Omit<
+    ProtectedEffectiveSetResponse,
+    'entitlements' | 'limits'
+> & {
+    readonly entitlements: Readonly<Record<string, number>>;
+    readonly limits: Readonly<Record<string, number>>;
+} {
+    const decode = (values: Readonly<Record<string, number | 'Infinity'>>) =>
+        Object.fromEntries(
+            Object.entries(values).map(([key, value]) => [
+                key,
+                value === 'Infinity' ? Number.POSITIVE_INFINITY : value
+            ])
+        );
+    return { ...raw, entitlements: decode(raw.entitlements), limits: decode(raw.limits) };
 }

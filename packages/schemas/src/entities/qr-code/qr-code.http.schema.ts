@@ -233,7 +233,7 @@ export type QrCodeDownloadResponse = z.infer<typeof QrCodeDownloadResponseSchema
 /**
  * Rolling window accepted by the scan-aggregate read.
  *
- * Deliberately the same two values `hostAnalyticsApi`/`commerceAnalyticsApi`
+ * Deliberately the same two values `hostAnalyticsApi`/`listingAnalyticsApi`
  * already expose for view stats (`apps/web/.../endpoints-protected.ts`,
  * `AnalyticsWindow`), per HOS-1044 §11 OQ-1 — a third window here would be a
  * UI convention this panel invented alone. Declared as its own schema rather

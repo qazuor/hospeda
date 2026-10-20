@@ -6,26 +6,24 @@
  * Cloudinary via `POST /api/v1/admin/media/upload`. This endpoint registers the
  * returned URL + metadata as a new `gastronomy_media` row.
  *
- * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff) —
+ * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
  * enforced inside `addGastronomyMedia` via `checkGastronomyCanEditMedia`.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     type GastronomyMediaAddInput,
     type GastronomyMediaAddPayload,
     GastronomyMediaAddPayloadSchema,
     GastronomyMediaSingleOutputSchema,
-    ProductDomainEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { addGastronomyMedia, GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -35,14 +33,16 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.
  */
-export const protectedAddGastronomyMediaRoute = createCRUDRoute({
+export const protectedAddGastronomyMediaRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/media',
     summary: 'Add photo to gastronomy listing gallery',
     description:
         'Registers an already-uploaded URL as a new gastronomy_media row. ' +
-        'Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2.',
+        'Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -71,14 +71,5 @@ export const protectedAddGastronomyMediaRoute = createCRUDRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // HOS-1275: mirrors the gate `patch.ts` mounted under HOS-1074. See
-        // `addFaq.ts` for why the vertical loader must be first.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO),
-            requireLiveSubscription(ProductDomainEnum.GASTRONOMY)
-        ]
     }
 });

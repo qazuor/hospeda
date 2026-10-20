@@ -7,13 +7,12 @@
  */
 
 import { EditIcon } from '@repo/icons';
-import { GastronomyTypeEnum, PermissionEnum, PriceRangeEnum } from '@repo/schemas';
+import { GastronomyTypeEnum, PriceRangeEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { createElement, Fragment } from 'react';
-import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import { useDeleteGastronomyMutation } from '../hooks/useGastronomyQuery';
+import { getPublicationStatusBadgeOptions } from '@/features/listing/config/publication-status-options';
 import type { GastronomyListItem } from './gastronomy.config';
 
 // ---------------------------------------------------------------------------
@@ -113,9 +112,11 @@ export const createGastronomyColumns = (
         columnType: ColumnType.STRING
     },
     {
-        id: 'isFeatured',
+        // Read-only: `featuredByEntitlement` is the only featuring source since
+        // HOS-1419 dropped the admin-curated `is_featured` column.
+        id: 'featuredByEntitlement',
         header: t('admin-entities.columns.featured'),
-        accessorKey: 'isFeatured',
+        accessorKey: 'featuredByEntitlement',
         enableSorting: true,
         columnType: ColumnType.BOOLEAN
     },
@@ -124,7 +125,7 @@ export const createGastronomyColumns = (
         header: t('admin-entities.columns.owner'),
         // Show a readable owner label from the eager-loaded relation, not the raw
         // FK UUID. The users table has no single `name` column, so compose from
-        // displayName → firstName+lastName → email (an admin-provisioned commerce
+        // displayName → firstName+lastName → email (an admin-provisioned listing
         // owner may only have an email until they complete their profile).
         accessorKey: 'ownerId',
         enableSorting: false,
@@ -150,11 +151,13 @@ export const createGastronomyColumns = (
         }
     },
     {
-        id: 'lifecycleStatus',
+        // HOS-1641: the listing's single, read-only publication state.
+        id: 'publicationStatus',
         header: t('admin-entities.columns.status'),
-        accessorKey: 'lifecycleStatus',
+        accessorKey: 'publicationStatus',
         enableSorting: true,
-        columnType: ColumnType.STRING
+        columnType: ColumnType.BADGE,
+        badgeOptions: getPublicationStatusBadgeOptions({ t })
     },
     {
         id: 'createdAt',
@@ -183,16 +186,7 @@ export const createGastronomyColumns = (
                         'aria-label': t('admin-entities.actions.edit')
                     } as never,
                     createElement(EditIcon, { size: 16 })
-                ),
-                createElement(DeleteRowButton, {
-                    entityId: row.id,
-                    entityName: row.name,
-                    entityLabel: t('admin-entities.entities.gastronomy.singular'),
-                    permission: PermissionEnum.COMMERCE_DELETE,
-                    useDeleteMutation: useDeleteGastronomyMutation,
-                    variant: 'icon',
-                    entityGender: 'f'
-                })
+                )
             )
     }
 ];

@@ -16,7 +16,7 @@
             "title": "Phase 1: reproduce each failure category locally",
             "status": "completed",
             "completedAt": "2026-06-25",
-            "notes": "Static drift analysis confirmed Phase 0 root causes plus 4 schema/API drifts in test assertions. All drifts fixed (T-105-04). Commerce @p0 selectors validated — clean. host-07e guarded by test.fixme. No credential drift (T-105-03 N/A)."
+            "notes": "Static drift analysis confirmed Phase 0 root causes plus 4 schema/API drifts in test assertions. All drifts fixed (T-105-04). Gastronomy and experience @p0 selectors validated — clean. host-07e guarded by test.fixme. No credential drift (T-105-03 N/A)."
         },
         {
             "id": "T-105-03",

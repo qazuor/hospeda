@@ -34,11 +34,10 @@ import { compare, hash } from 'bcryptjs';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError } from 'better-auth/api';
-import { admin, createAccessControl } from 'better-auth/plugins';
-import { getQZPayBilling } from '../middlewares/billing';
-import { BillingCustomerSyncService } from '../services/billing-customer-sync';
+import { admin } from 'better-auth/plugins';
 import { sendAppEmail } from '../utils/email-sender';
 import { env } from '../utils/env';
+import { adminPluginRoles } from './auth-admin-access';
 import { resolveCookieDomain } from './auth-cookie-domain';
 import { isUserSoftDeleted } from './auth-deleted-user-guard';
 import { captureSignupCompleted } from './auth-signup-analytics';
@@ -48,51 +47,6 @@ import { captureServerAnalyticsEvent } from './posthog';
 import { resolveVerificationUrl } from './verification-callback';
 
 const logger = createLogger('auth');
-
-/**
- * Better Auth access control configuration.
- * Defines what each role can do within Better Auth's admin plugin.
- * These are Better Auth-level permissions (user CRUD, session management),
- * separate from Hospeda's application-level PermissionEnum.
- */
-const statements = {
-    user: [
-        'create',
-        'list',
-        'set-role',
-        'ban',
-        'impersonate',
-        'delete',
-        'set-password',
-        'get',
-        'update'
-    ],
-    session: ['list', 'revoke', 'delete']
-} as const;
-
-const ac = createAccessControl(statements);
-
-/** Full admin access for SUPER_ADMIN and ADMIN roles */
-const fullAdminRole = ac.newRole({
-    user: [
-        'create',
-        'list',
-        'set-role',
-        'ban',
-        'impersonate',
-        'delete',
-        'set-password',
-        'get',
-        'update'
-    ],
-    session: ['list', 'revoke', 'delete']
-});
-
-/** No admin access for regular roles */
-const noAdminRole = ac.newRole({
-    user: [],
-    session: []
-});
 
 /** Bcrypt salt rounds for password hashing */
 const BCRYPT_SALT_ROUNDS = 12;
@@ -132,8 +86,6 @@ function resolveAnalyticsUserType(
     }
     if (
         roles.includes(RoleEnum.HOST) ||
-        roles.includes(RoleEnum.COMMERCE_OWNER) ||
-        // HOS-1077: the per-vertical owner roles are owners too.
         roles.includes(RoleEnum.GASTRONOMY_OWNER) ||
         roles.includes(RoleEnum.EXPERIENCE_OWNER)
     ) {
@@ -281,7 +233,7 @@ function buildAuth() {
                 },
                 /**
                  * SPEC-239 T-041: Force-password-change flag.
-                 * Set to true when a commerce owner account is provisioned so the
+                 * Set to true when a gastronomy or experience owner account is provisioned so the
                  * owner must choose a personal password on first login. Cleared by
                  * the change-password endpoint once the new password is accepted.
                  * Exposed here as an additionalField so the session user object
@@ -548,18 +500,19 @@ function buildAuth() {
              * **What this costs, deliberately.** `session.user.role` is now
              * always `undefined`, so the plugin's own `hasPermission()` falls
              * back to `defaultRole` → `noAdminRole` and every
-             * `/api/auth/admin/*` endpoint returns 403. In practice Hospeda only
-             * uses ONE of them — `impersonateUser`, from the admin panel's
-             * ImpersonateButton — so impersonation stops working until it is
-             * re-homed on a Hospeda-owned, `PermissionEnum`-gated route. That is
-             * a follow-up, and it FAILS CLOSED, which is the right direction for
-             * an unresolved gate.
+             * `/api/auth/admin/*` endpoint returns 403. Since HOS-1352 V5 that
+             * is also the declared design, not only the fallback: no plugin
+             * role grants any plugin action (`fullAdminRole` is empty, and
+             * `impersonate` / `set-role` are gone), so the outcome no longer
+             * depends on whether the plugin can resolve a role. See
+             * `./auth-admin-access.ts`.
              *
-             * **Why not remove the plugin instead.** It also owns the ban gate:
+             * **Why not remove the plugin instead.** It owns the ban gate:
              * its `databaseHooks.session.create.before` rejects a session for a
              * banned user (`users.banned`/`ban_expires`, both real columns that
              * survive this change). Dropping the plugin would silently disable
-             * that security control — strictly worse than losing impersonation.
+             * that security control. That gate is the only job the plugin
+             * keeps.
              *
              * **Why not keep a role column for it.** That is the scalar AC-7
              * deletes, and it would immediately become a second source of truth
@@ -588,16 +541,7 @@ function buildAuth() {
                 // privileged value.
                 defaultRole: RoleEnum.USER,
                 adminRoles: [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN],
-                roles: {
-                    SUPER_ADMIN: fullAdminRole,
-                    ADMIN: fullAdminRole,
-                    CLIENT_MANAGER: noAdminRole,
-                    EDITOR: noAdminRole,
-                    HOST: noAdminRole,
-                    SPONSOR: noAdminRole,
-                    USER: noAdminRole,
-                    GUEST: noAdminRole
-                }
+                roles: adminPluginRoles
             }),
             /**
              * Expo plugin for React Native / Expo mobile client support (SPEC-243 T-003).
@@ -849,35 +793,6 @@ function buildAuth() {
                         // Non-blocking — see captureSignupCompleted.
                         captureSignupCompleted({ userId: user.id, context });
 
-                        // Billing customer sync (non-blocking).
-                        // We create the billing_customers row eagerly here so
-                        // the first-publish flow has a customer record ready
-                        // when it queries eligibility. We DO NOT auto-start a
-                        // trial here anymore: the trial is created atomically
-                        // by AccommodationService.publish() on the user's first
-                        // publish. Role promotion to HOST already happened in
-                        // the onboarding draft flow.
-                        try {
-                            // HOS-596: the customer-sync facade, never the strict
-                            // one — a MercadoPago failure must not roll back the
-                            // local billing_customers row.
-                            const customerSyncBilling = getQZPayBilling({ forCustomerSync: true });
-                            const syncService = new BillingCustomerSyncService(customerSyncBilling);
-                            await syncService.ensureCustomerExists({
-                                userId: user.id,
-                                email: user.email,
-                                name: user.name || undefined
-                            });
-                        } catch (error) {
-                            logger.error(
-                                {
-                                    userId: user.id,
-                                    error: error instanceof Error ? error.message : String(error)
-                                },
-                                'Failed to sync billing customer on user creation'
-                            );
-                        }
-
                         // Anonymous conversation linking (non-blocking)
                         // Links all verified anonymous conversations where anonymousEmail matches
                         // the newly registered user's email, setting userId on each unlinked row.
@@ -983,31 +898,6 @@ function buildAuth() {
                                     userId: user.id
                                 },
                                 'Failed to link anonymous newsletter subscribers on user registration'
-                            );
-                        }
-                    }
-                },
-                update: {
-                    after: async (user) => {
-                        // Sync billing customer data when user is updated
-                        try {
-                            // HOS-596: the customer-sync facade, never the strict
-                            // one — a MercadoPago failure must not roll back the
-                            // local billing_customers row.
-                            const customerSyncBilling = getQZPayBilling({ forCustomerSync: true });
-                            const syncService = new BillingCustomerSyncService(customerSyncBilling);
-                            await syncService.syncCustomerData({
-                                userId: user.id,
-                                email: user.email,
-                                name: user.name || undefined
-                            });
-                        } catch (error) {
-                            logger.error(
-                                {
-                                    userId: user.id,
-                                    error: error instanceof Error ? error.message : String(error)
-                                },
-                                'Failed to sync billing customer on user update'
                             );
                         }
                     }

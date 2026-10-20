@@ -40,12 +40,12 @@
 export enum QrCodePurposeEnum {
     /** The provider's usage-registration sticker (HOS-376 §6.2a). */
     HOST_TRADE_USAGE = 'HOST_TRADE_USAGE',
-    /** The entity's public listing page — all three commerce verticals (HOS-982). */
+    /** The entity's public listing page — all three listing verticals (HOS-982). */
     LISTING = 'LISTING',
     /** A gastronomy listing's menu, printed on the table (HOS-1044). */
     MENU = 'MENU',
     /** The code printed on an experience's certificate (already live; HOS-1129). */
     CERTIFICATE = 'CERTIFICATE',
-    /** The code printed on a commerce brochure (already live; HOS-1129). */
+    /** The code printed on a listing brochure (already live; HOS-1129). */
     BROCHURE = 'BROCHURE'
 }

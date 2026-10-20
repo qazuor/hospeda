@@ -30,7 +30,8 @@
  * @module test/routes/accommodation/public/actor-blind-cache
  */
 
-import { EntitlementKey } from '@repo/billing';
+import type { VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../../src/types';
@@ -51,6 +52,7 @@ const PRIVILEGED_ACTOR = {
 
 // ── Mock handles ──────────────────────────────────────────────────────────────
 
+const mockEffectiveSet = vi.hoisted(() => vi.fn());
 const mockSearch = vi.fn();
 const mockGetById = vi.fn();
 const mockGetBySlug = vi.fn();
@@ -103,6 +105,10 @@ vi.mock('../../../../src/utils/actor', async (importOriginal) => {
         isGuestActor: vi.fn(() => false)
     };
 });
+
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: mockEffectiveSet })
+}));
 
 vi.mock('../../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
@@ -184,6 +190,17 @@ describe('HOS-353 — the six cached public accommodation handlers resolve as a 
         mockResolveSingle.mockResolvedValue([]);
         mockResolveBatch.mockResolvedValue(new Map());
         mockRecord.mockResolvedValue(undefined);
+        mockEffectiveSet.mockImplementation(
+            async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+                rehydrateEffectiveSet({
+                    version: 1,
+                    userId,
+                    vertical,
+                    hasLiveNonTrialTitle: false,
+                    inheritsTouristVip: false,
+                    entries: [{ key: 'can_view_search_history', value: 1, strategy: 'MAX' }]
+                })
+        );
     });
 
     it('list: hands a guest actor to search, for a VIP/staff caller', async () => {
@@ -228,8 +245,8 @@ describe('HOS-353 — the six cached public accommodation handlers resolve as a 
     });
 
     it('getSummary: hands a guest actor to the service, for a VIP/staff caller', async () => {
-        // The heaviest disclosure of the six: this payload names `visibility`,
-        // `lifecycleState`, `ownerId` and `slug`.
+        // The heaviest disclosure of the six: this payload names `ownerId` and
+        // `slug`.
         mockGetById.mockResolvedValue({ data: null, error: null });
 
         const app = await buildApp(
@@ -287,6 +304,17 @@ describe('HOS-353 — the per-caller side effect keeps the REAL actor', () => {
         vi.clearAllMocks();
         mockResolveBatch.mockResolvedValue(new Map());
         mockRecord.mockResolvedValue(undefined);
+        mockEffectiveSet.mockImplementation(
+            async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+                rehydrateEffectiveSet({
+                    version: 1,
+                    userId,
+                    vertical,
+                    hasLiveNonTrialTitle: false,
+                    inheritsTouristVip: false,
+                    entries: [{ key: 'can_view_search_history', value: 1, strategy: 'MAX' }]
+                })
+        );
     });
 
     it('list records search history against the request actor, not the guest one', async () => {
@@ -307,17 +335,12 @@ describe('HOS-353 — the per-caller side effect keeps the REAL actor', () => {
             '../../../../src/routes/accommodation/public/list'
         );
         const app = new Hono<AppBindings>();
-        // The recording branch also requires the viewer entitlement, which the real
-        // `hasEntitlement` reads off the context — so it has to be set here.
-        app.use('*', async (c, next) => {
-            c.set('userEntitlements', new Set([EntitlementKey.CAN_VIEW_SEARCH_HISTORY]));
-            await next();
-        });
         app.route('/', publicListAccommodationsRoute);
 
         expect((await app.request('/')).status).toBe(200);
 
         expectGuestActor((mockSearch.mock.calls[0] as [unknown])[0]);
+        await new Promise((resolve) => setTimeout(resolve, 0));
         expect(mockRecord).toHaveBeenCalledTimes(1);
         const recordArg = mockRecord.mock.calls[0]?.[0] as { id?: string } | undefined;
         // Whatever shape `record` takes, the privileged caller's id must reach it.

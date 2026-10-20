@@ -4,15 +4,15 @@
  *  - FAQs sub-tab (FaqManager, experiences entity type)
  *  - Reviews moderation sub-tab (pending reviews + approve/reject actions)
  *  - Assign-owner action (OwnerSelect + useAssignExperienceOwnerMutation)
- *  - Delete action
+ *  - Purge action at the owner's request (action 23, ListingPurgeOnRequestCard);
+ *    the panel has no other listing delete or restore (HOS-1477, AC:V6:25)
  *
  * Mirrors the gastronomy view page pattern (SPEC-240 T-028).
  */
 
-import { PermissionEnum } from '@repo/schemas';
+import type { PublicationStatusEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { FaqManager } from '@/components/faqs/FaqManager';
@@ -21,15 +21,14 @@ import { OwnerSelect } from '@/components/selects/OwnerSelect';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
-import { CommerceListingModerationCard } from '@/features/commerce/components/CommerceListingModerationCard';
 import {
     useAssignExperienceOwnerMutation,
-    useDeleteExperienceMutation,
     useExperiencePage,
     useExperiencePendingReviewsQuery,
-    useModerateExperienceMutation,
     useModerateExperienceReviewMutation
 } from '@/features/experience';
+import { ListingModerationCard } from '@/features/listing/components/ListingModerationCard';
+import { ListingPurgeOnRequestCard } from '@/features/listing/components/ListingPurgeOnRequestCard';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
@@ -213,7 +212,11 @@ function ExperienceViewPage() {
     const entityData = useExperiencePage(id);
 
     const experience = entityData.entity as
-        | { name?: string; ownerId?: string | null; moderationState?: string | null }
+        | {
+              name?: string;
+              ownerId?: string | null;
+              publicationStatus?: PublicationStatusEnum | null;
+          }
         | undefined;
 
     return (
@@ -223,28 +226,23 @@ function ExperienceViewPage() {
                 basePath={`/experiences/${id}`}
             />
 
-            <div className="flex justify-end">
-                <DeleteRowButton
+            <div className="flex justify-end gap-2">
+                {/* HOS-1493 action 23: purge at the owner's request, with reason. */}
+                <ListingPurgeOnRequestCard
+                    vertical="experience"
                     entityId={id}
                     entityName={experience?.name ?? id}
-                    entityLabel={t('admin-entities.entities.experience.singular')}
-                    permission={PermissionEnum.COMMERCE_DELETE}
-                    useDeleteMutation={useDeleteExperienceMutation}
-                    variant="full"
-                    entityGender="f"
-                    onDeleted={() => navigate({ to: '/experiences' })}
+                    onPurged={() => navigate({ to: '/experiences' })}
                 />
             </div>
 
-            {/* HOS-686 AC-26: the reject action, where an admin can reach it.
-                `POST /:id/moderate` without this control would only be callable
-                by hand. */}
-            <CommerceListingModerationCard
+            {/* HOS-686 AC-26 + HOS-1684: the listing's publication state and its
+                moderation by action, with reason (`POST /:id/moderate`). */}
+            <ListingModerationCard
+                vertical="experience"
                 entityId={id}
                 entityName={experience?.name ?? id}
-                entityLabelKey="admin-entities.entities.experience.singular"
-                currentValue={experience?.moderationState}
-                useModerateMutation={useModerateExperienceMutation}
+                publicationStatus={experience?.publicationStatus}
             />
 
             <ExperienceAssignOwner

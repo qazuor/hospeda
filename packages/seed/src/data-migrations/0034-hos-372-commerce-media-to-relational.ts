@@ -54,7 +54,7 @@ import { experienceMedia, gastronomyMedia, inArray, sql } from '@repo/db';
 import {
     buildExperienceMediaRows,
     buildGastronomyMediaRows
-} from '../utils/commerce-media-builder.js';
+} from '../utils/listing-media-builder.js';
 import type { FixtureMediaBlock } from '../utils/media-rows-builder.js';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 

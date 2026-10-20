@@ -269,7 +269,7 @@
                 "complex": "Complejo",
                 "tourist": "Turista",
                 "ai": "Inteligencia artificial",
-                "commerce": "Comercio"
+                "listing": "Comercio"
             },
             "cancelButton": "Cancelar",
             "saveButton": "Guardar cambios",
@@ -1346,7 +1346,7 @@
         "planDomainFilter": "Producto",
         "productDomainLabels": {
             "accommodation": "Alojamiento",
-            "commerce": "Comercio",
+            "listing": "Comercio",
             "gastronomy": "Gastronomía",
             "experience": "Experiencia",
             "partner": "Partner",
@@ -1613,6 +1613,392 @@
             "toggleError": "Error al cambiar estado",
             "deleted": "Código promocional eliminado correctamente",
             "deleteError": "Error al eliminar código"
+        },
+        "editor": {
+            "title": "Códigos promocionales",
+            "newCode": "Nuevo código",
+            "loading": "Cargando códigos…",
+            "loadError": "No se pudieron cargar los códigos promocionales.",
+            "retry": "Reintentar",
+            "empty": "Todavía no hay códigos promocionales.",
+            "pagination": "Paginación de códigos promocionales",
+            "previous": "Anterior",
+            "next": "Siguiente",
+            "unlimited": "Sin tope",
+            "noEndDate": "Sin fecha de fin",
+            "reviewTitle": "Revisar código promocional",
+            "create": "Crear",
+            "review": "Revisar",
+            "back": "Volver a editar",
+            "cancel": "Cancelar",
+            "close": "Cerrar código",
+            "closeTitle": "Cerrar código promocional",
+            "closeNow": "El código {{code}} deja de aceptar canjes desde ahora.",
+            "closeRedemptions": "Las {{count}} redenciones ya hechas siguen igual.",
+            "columns": {
+                "code": "Código",
+                "effect": "Efecto",
+                "reach": "A quién alcanza",
+                "uses": "Usos",
+                "validity": "Vigencia",
+                "status": "Estado",
+                "actions": "Acciones"
+            },
+            "availability": {
+                "open": "Abierto",
+                "closed": "Cerrado",
+                "notYetValid": "Aún no vigente",
+                "expired": "Vencido",
+                "exhausted": "Agotado"
+            },
+            "effects": {
+                "firstCharge": "{{value}} en el primer cobro",
+                "nCharges_one": "{{value}} por {{count}} cobro",
+                "nCharges_other": "{{value}} por {{count}} cobros",
+                "forever": "{{value}} para siempre",
+                "trialExtension_one": "{{count}} día más de prueba",
+                "trialExtension_other": "{{count}} días más de prueba"
+            },
+            "reach": {
+                "allFuture": "Todas las verticales, también las futuras"
+            },
+            "verticals": {
+                "accommodation": "Alojamientos",
+                "gastronomy": "Gastronomía",
+                "experience": "Experiencias",
+                "tourist": "Turismo",
+                "partner": "Partners"
+            },
+            "uses": {
+                "quota": "Hasta {{count}} canjes en total, uno por persona",
+                "unlimited": "Sin tope de canjes, uno por persona"
+            },
+            "validity": {
+                "now": "ahora",
+                "range": "Desde {{from}} hasta {{until}}",
+                "noEnd": "Desde {{from}}, sin fecha de fin"
+            },
+            "form": {
+                "title": "Crear código promocional",
+                "description": "Definí el efecto, alcance, cupo y vigencia.",
+                "invalid": "Revisá los datos del código y sus fechas.",
+                "code": "Código (mayúsculas)",
+                "effectKind": "Efecto",
+                "discount": "Descuento",
+                "trialExtension": "Extensión de prueba",
+                "discountKind": "Tipo de descuento",
+                "percentage": "Porcentaje",
+                "fixed": "Monto fijo (ARS)",
+                "value": "Valor",
+                "duration": "Duración",
+                "firstCharge": "Primer cobro",
+                "nCharges": "Cantidad de cobros",
+                "forever": "Para siempre",
+                "chargeCount": "Cantidad de cobros",
+                "extensionDays": "Días de extensión",
+                "allVerticals": "Todas las verticales, incluidas las futuras",
+                "verticals": "Verticales incluidas",
+                "totalQuota": "Cupo total de canjes",
+                "onePerPerson": "Cada persona puede canjear este código una vez.",
+                "validFrom": "Válido desde (opcional)",
+                "validUntil": "Válido hasta",
+                "noEndDate": "Dejalo vacío para no fijar fecha de fin.",
+                "stackable": "Se puede apilar con otra promo activa",
+                "usableWithAnother": "Usable con otra promo activa",
+                "stackableHelp": "Estas opciones rigen sólo entre promos; no configuran combinaciones con cortesías o grants."
+            },
+            "rejections": {
+                "forbidden": "Sólo una persona SUPER_ADMIN puede crear o cerrar códigos.",
+                "notFound": "No se encontró el código promocional.",
+                "alreadyExists": "Ese código ya existe. Elegí otro código.",
+                "alreadyClosed": "El código ya está cerrado.",
+                "invalidInput": "Los datos del código no cumplen las reglas permitidas.",
+                "generic": "No se pudo completar la operación del código promocional."
+            },
+            "toasts": {
+                "created": "Código promocional creado.",
+                "createError": "No se pudo crear el código promocional.",
+                "closed": "Código promocional cerrado.",
+                "closeError": "No se pudo cerrar el código promocional."
+            }
         }
+    },
+    "subscriptionRevocation": {
+        "title": "Revocar una suscripción (derecho de arrepentimiento)",
+        "motive": "Motivo: revocación del derecho de arrepentimiento.",
+        "loading": "Revisando el último cobro de la suscripción…",
+        "notFound": "Esta suscripción no existe.",
+        "forbidden": "No podés revocar esta suscripción: es tuya o es de una cuenta del sistema. La revoca otra persona del equipo con el permiso.",
+        "loadError": "No pudimos revisar la suscripción. Volvé a intentar.",
+        "ready": {
+            "intro": "Vas a registrar la revocación. En un solo acto:"
+        },
+        "origin": {
+            "label": "Estado actual: {state}",
+            "ACTIVE": "Activa",
+            "GRACE_PERIOD": "En período de gracia",
+            "CANCEL_SCHEDULED": "Con baja programada",
+            "PAUSED": "Pausada"
+        },
+        "originExtra": {
+            "GRACE_PERIOD": "Se apaga el reloj del período de gracia.",
+            "PAUSED": "Se cierra la pausa."
+        },
+        "effects": {
+            "authorization": "Se cancela su débito automático en Mercado Pago. Antes le mandamos un correo avisándole.",
+            "noAuthorization": "No tiene débito automático en Mercado Pago: no hay nada que cancelar ahí.",
+            "service": "Se corta el servicio ahora mismo, sin esperar al fin del período.",
+            "refund": "Se pide la devolución de {amount}: todo lo que queda por devolver del cobro del {chargedAt}. La plata sale recién cuando una persona confirme esa devolución."
+        },
+        "predecessor": "Ese cobro es de la suscripción anterior, de la que ésta es sucesora: la devolución sale de ese cobro.",
+        "window": "Está dentro del plazo: se puede revocar hasta el {lastDay} inclusive (10 días corridos desde el cobro).",
+        "noteLabel": "Nota (opcional)",
+        "noteHelp": "Queda en el registro, junto con quién la revocó.",
+        "confirm": "Revocar: cancelar, cortar el servicio y pedir la devolución",
+        "blocked": {
+            "intro": "No se puede revocar. No se canceló nada.",
+            "REFUND_EXCEEDS_BALANCE": "Ese cobro ya tiene devoluciones pedidas o hechas por todo su monto. La revocación no se registra: no se cancela la suscripción ni se corta el servicio. Resolvé primero esa devolución.",
+            "PAYMENT_NOT_REFUNDABLE": "El último cobro ya se devolvió o tiene un contracargo: no se puede devolver otra vez.",
+            "REVOCATION_WINDOW_CLOSED": "Pasaron más de 10 días corridos desde el último cobro: venció el plazo para revocar.",
+            "REVOCATION_NO_CREDITED_PAYMENT": "No hay ningún cobro acreditado para devolver.",
+            "REVOCATION_AMOUNT_UNAVAILABLE": "No sabemos cuánto se pagó en el último pago manual: no tiene un precio anclado.",
+            "REVOCATION_NOT_PRINCIPAL": "Sólo se revoca una suscripción principal, no la de un complemento.",
+            "REVOCATION_STATE_NOT_ALLOWED": "La suscripción no está activa, en gracia, con baja programada ni pausada (por ejemplo, ya está cancelada).",
+            "REFUND_AMOUNT_INVALID": "El monto a devolver no es válido.",
+            "REVOCATION_PAYMENT_CHANGED": "El último cobro cambió desde que abriste esta pantalla, y no se revocó nada. Revisá el cobro nuevo y confirmá otra vez.",
+            "REVOCATION_STATE_CHANGED": "La suscripción cambió mientras tanto, y no se revocó nada. La volvimos a revisar.",
+            "SUBSCRIPTION_NOT_FOUND": "Esta suscripción no existe.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "No podés revocar esta suscripción: es tuya o es de una cuenta del sistema. La revoca otra persona del equipo con el permiso.",
+            "unknown": "No se puede revocar ahora (código {reason})."
+        },
+        "notice": {
+            "REVOCATION_PAYMENT_CHANGED": "El último cobro cambió desde que abriste esta pantalla, y no se revocó nada. Revisá el cobro nuevo y confirmá otra vez.",
+            "REVOCATION_STATE_CHANGED": "La suscripción cambió mientras tanto, y no se revocó nada. La volvimos a revisar."
+        },
+        "result": {
+            "title": "Suscripción revocada",
+            "cancelled": "Quedó cancelada y sin servicio desde el {serviceEndedAt}.",
+            "refund": "Se pidió la devolución de {amount} (pedido {refundId}). La plata sale cuando una persona la confirme.",
+            "cancelCall": {
+                "SENT": "Se mandó la cancelación a Mercado Pago.",
+                "NOT_NEEDED": "Mercado Pago ya la tenía cancelada.",
+                "NOTICE_PENDING": "La cancelación en Mercado Pago espera a que salga nuestro correo. La manda el barrido.",
+                "FAILED": "La llamada a Mercado Pago falló. La suscripción igual quedó cancelada: el barrido reintenta la cancelación.",
+                "NOT_APPLICABLE": "No había nada que cancelar en Mercado Pago."
+            },
+            "escalated": {
+                "NO_RECIPIENT": "No había a quién mandarle el aviso previo; la cancelación salió igual.",
+                "DELIVERY_EXHAUSTED": "El aviso previo no se pudo entregar después de los reintentos; la cancelación salió igual."
+            }
+        },
+        "successTitle": "Suscripción revocada",
+        "errorTitle": "No se pudo revocar la suscripción",
+        "settlement": {
+            "title": "Asentar la devolución (acción 14)",
+            "intro": "Primero devolvé el pago desde el panel de Mercado Pago. Después asentalo acá con la referencia de esa devolución: así se cierra el pedido {{refundId}} y no nace otra devolución.",
+            "noPermission": "Asentar la devolución lo hace otra persona del equipo con el permiso para asentar lo que pasó por fuera.",
+            "mismatch": {
+                "notice": "El monto a asentar ({{amount}}) no es el del pedido ({{requested}}). Elegí qué hacer antes de confirmar.",
+                "CLOSE_WITH_SETTLED_AMOUNT": "Cerrar el pedido por el monto asentado",
+                "SETTLE_SEPARATELY": "Asentarla aparte y dejar el pedido abierto"
+            },
+            "success": {
+                "closed": "Devolución asentada: el pedido {{refundId}} quedó ejecutado ({{status}}).",
+                "separate": "Devolución asentada aparte como {{refundId}} ({{status}}). El pedido {{requestedRefundId}} sigue abierto."
+            }
+        },
+        "openRefunds": {
+            "title": "Pedidos de devolución abiertos",
+            "intro": "Pedidos de devolución que siguen abiertos sobre los pagos de esta suscripción. Devolvé cada uno desde el panel de Mercado Pago y asentalo acá con la referencia de esa devolución.",
+            "loading": "Buscando pedidos de devolución abiertos…",
+            "empty": "Esta suscripción no tiene pedidos de devolución abiertos.",
+            "loadError": "No pudimos leer los pedidos de devolución abiertos. Recargá la página para volver a intentar.",
+            "noPermission": "Ver y asentar los pedidos de devolución abiertos lo hace otra persona del equipo con los permisos para inspeccionar suscripciones y asentar lo que pasó por fuera."
+        }
+    },
+    "reconciliationMarks": {
+        "title": "Conciliación de pagos",
+        "loading": "Cargando marcas abiertas...",
+        "error": "No se pudieron cargar las marcas abiertas.",
+        "retry": "Reintentar",
+        "empty": "No hay marcas abiertas.",
+        "openedAt": "Abierta desde",
+        "subjectStatus": "Estado de la fila",
+        "subjectUnresolved": "Sujeto no resuelto",
+        "proposal": "Propuesta del sistema",
+        "proposals": {
+            "refund": "Devolver",
+            "refundDifference": "Devolver la diferencia",
+            "noRefund": "No devolver",
+            "none": "Sin propuesta"
+        },
+        "refundNotice": "Hay plata del cliente que devolver",
+        "sources": {
+            "card": "Pago con tarjeta",
+            "manual": "Pago manual"
+        },
+        "unknownAmount": "monto desconocido",
+        "paymentCount": "Cantidad de pagos colgados",
+        "total": "Total",
+        "eventLink": "Ver qué condición falló",
+        "pagination": "Paginación de marcas",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "action14": {
+            "title": "Asentar lo que ya pasó por fuera (acción 14)",
+            "payment": "Pago colgado",
+            "amount": "Monto en pesos",
+            "scope": "Alcance del pago manual",
+            "channel": "Canal de devolución",
+            "channels": {
+                "BANK_TRANSFER": "transferencia bancaria",
+                "PROVIDER_PANEL": "panel del proveedor"
+            },
+            "reference": "Comprobante o referencia",
+            "chargeId": "ID del cobro aprobado en el proveedor",
+            "note": "Nota opcional",
+            "review": "Revisar asiento",
+            "confirm": "Asentar ahora",
+            "back": "Volver al formulario",
+            "confirmRefund": "Se va a registrar una devolución de {{amount}} ya hecha por {{channel}}, con el comprobante {{reference}}. Queda a tu nombre y no se devuelve plata.",
+            "confirmCharge": "Se va a registrar el cobro {{chargeId}} que el proveedor ya aprobó y correr la regla que lo recibe. Queda a tu nombre.",
+            "refundSuccess": "Devolución {{refundId}} asentada con estado {{status}}. La marca sigue para revisión.",
+            "chargeSuccess": "Cobro asentado como pago {{paymentId}}; recepción: {{reception}}. La marca sigue para revisión.",
+            "genericError": "No se pudo asentar la acción. Revisá los datos e intentá de nuevo.",
+            "serverError": "El servidor no pudo completar el asiento. Intentá de nuevo más tarde.",
+            "rejections": {
+                "REFUND_AMOUNT_INVALID": "El monto de la devolución no es válido.",
+                "EXTERNAL_REFERENCE_INVALID": "La referencia externa no es válida.",
+                "REFUND_EXCEEDS_BALANCE": "La devolución supera el saldo disponible.",
+                "MANUAL_PAYMENT_SCOPE_REQUIRED": "Indicá el alcance del pago manual.",
+                "MANUAL_PAYMENT_SCOPE_NOT_ALLOWED": "El alcance indicado no corresponde a este pago.",
+                "REFUND_SOURCE_NOT_FOUND": "No se encontró el pago indicado.",
+                "REFUND_NOT_FOUND": "No se encontró la devolución indicada.",
+                "ADMINISTRATIVE_ACTION_FORBIDDEN": "No tenés permiso para esta acción.",
+                "PAYMENT_NOT_REFUNDABLE": "Este pago no admite una devolución.",
+                "REQUESTED_AMOUNT_MISMATCH": "El monto no coincide con la solicitud abierta.",
+                "OPEN_REQUESTS_AMBIGUOUS": "Hay varias solicitudes abiertas y no se puede elegir una.",
+                "REFUND_NOT_OPEN": "La solicitud de devolución ya no está abierta.",
+                "REFUND_STATE_CHANGED": "La solicitud cambió. Revisá la marca e intentá otra vez.",
+                "EXTERNAL_REFERENCE_ALREADY_SETTLED": "Esa referencia ya fue asentada.",
+                "RETAINED_PAYMENT_SUCCESSION_OPEN": "Hay una sucesión de pagos retenidos todavía abierta.",
+                "CHARGE_NOT_FOUND": "No se encontró el cobro del proveedor.",
+                "CHARGE_NOT_LINKED": "El cobro no está vinculado a esta cuenta.",
+                "CHARGE_NOT_SETTLEABLE": "El cobro no se puede asentar.",
+                "CHARGE_NOT_APPROVED": "El proveedor todavía no aprobó el cobro.",
+                "CHARGE_ALREADY_RECORDED": "Ese cobro ya está registrado."
+            }
+        },
+        "eventsTitle": "Evento de conciliación",
+        "liftedAt": "Levantada desde",
+        "notLifted": "La marca sigue abierta.",
+        "actor": "Actor",
+        "correlation": "Correlación",
+        "outcome": "Resultado",
+        "condition": "Condición",
+        "conditions": {
+            "one": "La suscripción existe y está en GRACE_PERIOD o SUSPENDED.",
+            "two": "El monto coincide con el esperado para el período que cubre.",
+            "three": "No hay otra fila viva principal del mismo usuario y vertical, ni una sucesora que ya autorizó.",
+            "four": "No hay otro pago acreditado para el mismo período."
+        },
+        "conditionNotEvaluated": "Este camino no evalúa las cuatro condiciones.",
+        "conditionNotRecorded": "Este evento no registra la condición (anterior a este cambio).",
+        "markNotFound": "La marca no existe.",
+        "lift": {
+            "button": "Levantar la marca",
+            "title": "Levantar esta marca",
+            "description": "Se cierra sólo esta marca. Las otras marcas de la misma fila siguen abiertas y no cambia el estado de la suscripción.",
+            "withoutRefund": "Resolver sin devolver",
+            "unresolvedNotice": "Hay pagos colgados sin resolver. Para devolverlos, asentá la devolución con la acción 14; si no se devuelven, marcalos como resueltos sin devolver.",
+            "note": "Nota para la auditoría (opcional)",
+            "confirm": "Levantar",
+            "cancel": "Cancelar",
+            "success": "Marca levantada",
+            "error": "No se pudo levantar la marca.",
+            "reasons": {
+                "MARK_NOT_FOUND": "La marca no existe.",
+                "ADMINISTRATIVE_ACTION_FORBIDDEN": "No tenés permiso para levantar esta marca, o la marca es de tu propia cuenta.",
+                "MARK_ALREADY_LIFTED": "La marca ya estaba levantada.",
+                "MARK_VERSION_CONFLICT": "La marca cambió desde que la abriste. Revisala y confirmá otra vez.",
+                "MARK_HAS_UNRESOLVED_PAYMENTS": "Quedan pagos colgados sin resolver.",
+                "MARK_PAYMENT_NOT_HUNG": "Un pago marcado ya no está colgado sin resolver de esta marca."
+            }
+        }
+    },
+    "subscriptionCancellation": {
+        "title": "Dar de baja una suscripción (sin devolución)",
+        "loading": "Revisando la suscripción…",
+        "loadError": "No pudimos revisar la suscripción. Volvé a intentar.",
+        "retry": "Reintentar",
+        "noRefund": "Esta baja no devuelve plata. Para devolver el último cobro dentro de los 10 días está la revocación.",
+        "origin": {
+            "label": "Estado actual: {state}",
+            "ACTIVE": "Activa",
+            "GRACE_PERIOD": "En período de gracia",
+            "SUSPENDED": "Suspendida",
+            "CANCEL_SCHEDULED": "Con baja programada"
+        },
+        "effects": {
+            "ACTIVE": "No se le vuelve a cobrar, y el servicio sigue hasta el {date}, el fin del período que ya pagó.",
+            "GRACE_PERIOD": "El servicio se corta hoy: pierde el servicio que el período de gracia le daba hasta el {date}. A cambio, no se le reclama la cuota que no se pudo cobrar.",
+            "SUSPENDED": "La suscripción termina hoy. El servicio ya estaba cortado por la suspensión, y queda libre para volver a suscribirse.",
+            "CANCEL_SCHEDULED": "Ya tiene la baja pedida: el servicio sigue hasta el {date}. No hay nada que confirmar."
+        },
+        "authorization": {
+            "CARD": "Si su débito automático en Mercado Pago sigue vivo, se cancela hoy. Antes le mandamos un correo; después puede llegarle uno de Mercado Pago avisando la cancelación.",
+            "MANUAL": "Paga a mano: no tiene débito automático en Mercado Pago, así que no hay nada que cancelar ahí."
+        },
+        "addons": {
+            "title": "Estos complementos recurrentes se cancelan con la suscripción:",
+            "CHARGE_CUT_TODAY": "{name}: {price} {cycle}. Su cobro se corta hoy y lo sigue viendo hasta el {date}.",
+            "AT_SERVICE_END": "{name}: {price} {cycle}. Espera autorización o tiene un cobro pendiente: se apaga el {date}, con el fin del servicio.",
+            "TODAY": "{name}: {price} {cycle}. Se apaga hoy con la suscripción.",
+            "comeBack": "Si vuelve, los contrata de nuevo: no se reanudan."
+        },
+        "cycle": {
+            "monthly": "por mes",
+            "quarterly": "por trimestre",
+            "semiannual": "por semestre",
+            "annual": "por año"
+        },
+        "noteLabel": "Nota (opcional)",
+        "noteHelp": "Queda en el registro, junto con quién dio la baja.",
+        "confirm": {
+            "ACTIVE": "Dar de baja: cancelar el débito; el servicio sigue hasta el {date}",
+            "GRACE_PERIOD": "Dar de baja: cortar el servicio hoy",
+            "SUSPENDED": "Dar de baja: terminar la suscripción hoy"
+        },
+        "pending": "Dando de baja…",
+        "result": {
+            "SCHEDULED": "Listo: la baja quedó pedida. El servicio sigue hasta el {date}.",
+            "ALREADY_SCHEDULED": "Ya tenía la baja pedida: el servicio sigue hasta el {date}. No se cambió nada.",
+            "CANCELLED": "Listo: la suscripción quedó cancelada y sin servicio desde el {date}.",
+            "ALREADY_CANCELLED": "Ya estaba cancelada. No se cambió nada."
+        },
+        "cancelCall": {
+            "SENT": "Mercado Pago: se mandó la cancelación del débito.",
+            "NOT_NEEDED": "Mercado Pago: el débito ya estaba cancelado.",
+            "NOTICE_PENDING": "Mercado Pago: la cancelación sale cuando se mande nuestro correo; el barrido la reintenta.",
+            "FAILED": "Mercado Pago: no se pudo mandar la cancelación; el barrido la reintenta.",
+            "NOT_APPLICABLE": "Mercado Pago: no había débito que cancelar."
+        },
+        "escalated": {
+            "NO_RECIPIENT": "No tiene correo al que avisarle: se canceló igual y quedó escalado.",
+            "DELIVERY_EXHAUSTED": "Nuestro correo no se pudo entregar: se canceló igual y quedó escalado."
+        },
+        "blocked": {
+            "intro": "No se puede dar de baja. No se canceló nada.",
+            "SUBSCRIPTION_NOT_FOUND": "Esta suscripción no existe.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "Es tu propia suscripción: la da de baja otra persona del equipo con el permiso, o vos desde Mi Suscripción.",
+            "CANCELLATION_FORBIDDEN": "Una cuenta del sistema no puede dar de baja una suscripción.",
+            "CANCELLATION_NOT_PRINCIPAL": "Sólo se da de baja una suscripción principal, no la de un complemento.",
+            "CANCELLATION_STATE_NOT_ALLOWED": "La suscripción no está activa, en gracia, suspendida ni con baja programada (por ejemplo, ya está cancelada, pausada o esperando autorización).",
+            "unknown": "No se pudo dar de baja ({reason}). No se canceló nada."
+        },
+        "notice": {
+            "CANCELLATION_ORIGIN_CHANGED": "La suscripción cambió desde que abriste esta pantalla, y no se dio de baja. Revisá lo que pasaría ahora y confirmá otra vez."
+        },
+        "successToast": "Baja registrada."
     }
 }

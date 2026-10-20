@@ -9,7 +9,7 @@
  * `502 UPSTREAM_ERROR`. Shrinking the file IN THE BROWSER before it leaves the
  * device is the only way to accept those originals reliably — this module is
  * that shrink step, decoupled from any specific upload surface so the three
- * editors that upload images (accommodation gallery, commerce listings,
+ * editors that upload images (accommodation gallery, listings,
  * avatar) share one implementation.
  *
  * Compression is always an OPTIMIZATION, never a requirement: every failure
@@ -48,7 +48,7 @@ export const DEFAULT_COMPRESSION_MAX_DIMENSION_PX = 2560;
  *
  * 0.85 is the conventional "visually lossless" floor for photographic
  * content — below it, compression artifacts start showing in skies and flat
- * walls, exactly the content that dominates accommodation/commerce photos.
+ * walls, exactly the content that dominates accommodation/gastronomy/experience photos.
  */
 export const DEFAULT_COMPRESSION_QUALITY = 0.85;
 

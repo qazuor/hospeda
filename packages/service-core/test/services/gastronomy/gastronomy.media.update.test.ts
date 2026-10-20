@@ -39,8 +39,12 @@ const mockMediaModel = {
 
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
+    // HOS-1642: these writes now record an owner-act event; the double keeps
+    // the write off the (nonexistent) test database.
+    const doubles = await import('../../helpers/owner-act-doubles');
     return {
         ...actual,
+        domainEventModel: doubles.domainEventModelDouble,
         GastronomyMediaModel: vi.fn(function () {
             return mockMediaModel;
         }),
@@ -96,14 +100,14 @@ function makeGastronomy(overrides: Record<string, unknown> = {}) {
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.GASTRONOMY_OWNER],
+    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
 };
 
 const strangerActor: Actor = {
     id: 'stranger-id',
     roles: [RoleEnum.USER],
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
 };
 
 function makeGastronomyModel(entity: Record<string, unknown> | null = null) {

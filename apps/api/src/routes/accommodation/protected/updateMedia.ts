@@ -16,22 +16,20 @@
  * present — an empty body is rejected as `VALIDATION_ERROR`, not a silent 200.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
     AccommodationMediaIdSchema,
     AccommodationMediaSingleOutputSchema,
     type AccommodationMediaUpdatePayload,
     AccommodationMediaUpdatePayloadSchema,
-    ProductDomainEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -49,7 +47,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * soft-deleted row all answer `NOT_FOUND` (404) — never `FORBIDDEN` (403),
  * so a foreign id cannot be confirmed to exist.
  */
-export const protectedUpdateMediaRoute = createCRUDRoute({
+export const protectedUpdateMediaRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/media/{mediaId}',
     summary: 'Correct photo text metadata in accommodation gallery (owner)',
@@ -59,7 +57,9 @@ export const protectedUpdateMediaRoute = createCRUDRoute({
         'to replace. At least one field must be present. Requires ' +
         'EDIT_ACCOMMODATION_INFO entitlement; the service layer enforces ' +
         'UPDATE_OWN + ownership.',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     tags: ['Accommodations', 'Media'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema,
         mediaId: AccommodationMediaIdSchema
@@ -92,9 +92,5 @@ export const protectedUpdateMediaRoute = createCRUDRoute({
     options: {
         // HOS-388: gallery mutation requires EDIT_ACCOMMODATION_INFO (mirrors
         // reorderMedia / setFeaturedMedia).
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });

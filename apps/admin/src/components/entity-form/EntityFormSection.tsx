@@ -63,7 +63,7 @@ import * as React from 'react';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { LimitProgressIndicator } from '@/features/billing/LimitProgressIndicator';
 import { PremiumBlock, type PremiumBlockItem } from '@/features/billing/PremiumBlock';
-import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useEffectiveSet } from '@/features/billing/use-effective-set';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 
@@ -139,7 +139,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
         // every entitlement so `hasEntitlement` → true and nothing locks;
         // HOSTs depend on their plan. We fail-open while loading to avoid
         // flashing the locked state.
-        const { has: hasEntitlement, isLoading: entitlementsLoading } = useMyEntitlements();
+        const { has: hasEntitlement, isLoading: entitlementsLoading } = useEffectiveSet();
         const isFieldPremiumLocked = React.useCallback(
             (entitlementKey: string | undefined): boolean => {
                 if (!entitlementKey) return false;

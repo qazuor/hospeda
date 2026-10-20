@@ -35,6 +35,7 @@ import { z } from 'zod';
  *   (SPEC-191, /colaborar/fotos).
  * - `'editor_application'` — blog/events volunteer editor application
  *   (SPEC-191, /colaborar/editores).
+ * - `'revocation'` — right-of-withdrawal request (Res. 424/2020); support processes it with S36 (HOS-1700).
  */
 export const ContactTypeEnumSchema = z.enum([
     'general',
@@ -49,7 +50,8 @@ export const ContactTypeEnumSchema = z.enum([
     'accommodation',
     'report_destination_info',
     'photo_submission',
-    'editor_application'
+    'editor_application',
+    'revocation'
 ]);
 
 /** Inferred TypeScript type for {@link ContactTypeEnumSchema}. */

@@ -35,7 +35,14 @@
  * @module test/routes/media-update-text
  */
 
-import { ModerationStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    ModerationStatusEnum,
+    PermissionEnum,
+    PublicationStatusEnum,
+    ServiceErrorCode,
+    type VerticalEnum
+} from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -81,6 +88,25 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         removeExperienceMedia: mockRemoveExperience
     };
 });
+
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: { ownerId: ACTOR_ID, publicationStatus: PublicationStatusEnum.PUBLISHED },
+            ownerId: ACTOR_ID
+        }),
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: `edit_${vertical.toLowerCase()}_info`, value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
 
 // ---------------------------------------------------------------------------
 // Import app AFTER mocks are set up
@@ -165,8 +191,8 @@ const CASES: readonly RouteCase[] = [
         fk: 'gastronomyId',
         mock: mockUpdateGastronomy,
         removeMock: mockRemoveGastronomy,
-        permissions: [PermissionEnum.COMMERCE_EDIT_OWN],
-        role: 'COMMERCE_OWNER'
+        permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN],
+        role: 'GASTRONOMY_OWNER'
     },
     {
         name: 'admin gastronomy',
@@ -185,8 +211,8 @@ const CASES: readonly RouteCase[] = [
         fk: 'experienceId',
         mock: mockUpdateExperience,
         removeMock: mockRemoveExperience,
-        permissions: [PermissionEnum.COMMERCE_EDIT_OWN],
-        role: 'COMMERCE_OWNER'
+        permissions: [PermissionEnum.EXPERIENCE_EDIT_OWN],
+        role: 'EXPERIENCE_OWNER'
     },
     {
         name: 'admin experience',
@@ -320,6 +346,7 @@ describe('PATCH media text metadata (HOS-1036)', () => {
             });
 
             expect(res.status).toBe(404);
+            expect(c.mock).toHaveBeenCalledTimes(1);
             const body = (await res.json()) as { error?: { code?: string } };
             expect(body.error?.code).not.toBe('INTERNAL_ERROR');
         });

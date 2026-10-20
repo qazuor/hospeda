@@ -2,7 +2,7 @@
  * @file gastronomy-consolidated.config.ts
  * Consolidated section configuration for the gastronomy entity.
  *
- * Assembles the shared commerce sections (identity + operational) and injects
+ * Assembles the shared listing sections (identity + operational) and injects
  * a gastronomy-specific section in between that covers:
  *   - type (GastronomyTypeEnum SELECT)
  *   - priceRange (PriceRangeEnum SELECT, optional)
@@ -19,10 +19,7 @@ import type {
     ConsolidatedEntityConfig,
     ConsolidatedSectionConfig
 } from '@/features/accommodations/types/consolidated-config.types';
-import {
-    createCommerceIdentitySection,
-    createCommerceOperationalSection
-} from '@/features/commerce';
+import { createListingIdentitySection, createListingOperationalSection } from '@/features/listing';
 
 // ---------------------------------------------------------------------------
 // Gastronomy-specific field options
@@ -72,8 +69,8 @@ function createGastronomySpecificSection(): ConsolidatedSectionConfig {
         layout: LayoutTypeEnum.GRID,
         modes: ['view', 'edit', 'create'],
         permissions: {
-            view: [PermissionEnum.COMMERCE_VIEW_ALL],
-            edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+            view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
+            edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
         },
         fields: [
             {
@@ -85,8 +82,8 @@ function createGastronomySpecificSection(): ConsolidatedSectionConfig {
                 description: 'Categoría gastronómica del comercio',
                 placeholder: 'Seleccioná el tipo…',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
+                    edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
@@ -105,8 +102,8 @@ function createGastronomySpecificSection(): ConsolidatedSectionConfig {
                 description: 'Nivel de precios del establecimiento',
                 placeholder: 'Seleccioná el rango…',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
+                    edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
@@ -125,8 +122,8 @@ function createGastronomySpecificSection(): ConsolidatedSectionConfig {
                 description: 'Enlace al menú digital del establecimiento (https://…)',
                 placeholder: 'https://tu-restaurante.com/menu',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
+                    edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
                 },
                 typeConfig: {
                     maxLength: 500
@@ -144,9 +141,9 @@ function createGastronomySpecificSection(): ConsolidatedSectionConfig {
  * Creates the complete consolidated configuration for the gastronomy entity.
  *
  * Section order:
- *  1. Commerce identity section (shared — name, slug, summary, description, …)
+ *  1. Listing identity section (shared — name, slug, summary, description, …)
  *  2. Gastronomy-specific section (type, priceRange, menuUrl)
- *  3. Commerce operational section (shared — contact, social, media, hours, …)
+ *  3. Listing operational section (shared — contact, social, media, hours, …)
  *
  * Used by `EntityCreatePageBase` (create flow) and `EntityPageBase`
  * (view/edit flow).
@@ -158,9 +155,9 @@ export const createGastronomyConsolidatedConfig = (
     t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedEntityConfig => ({
     sections: [
-        createCommerceIdentitySection(),
+        createListingIdentitySection('gastronomy'),
         createGastronomySpecificSection(),
-        createCommerceOperationalSection()
+        createListingOperationalSection('gastronomy')
     ],
     metadata: {
         title: t('admin-entities.entities.gastronomy.singular'),

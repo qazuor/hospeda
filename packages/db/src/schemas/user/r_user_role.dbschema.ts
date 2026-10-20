@@ -9,7 +9,7 @@ import { users } from './user.dbschema.ts';
  *
  * Replaces the single `users.role` column, which was dropped in the same
  * migration that created this table. One account can hold several roles at
- * once (host AND commerce owner, say), and effective permissions are the union
+ * once (host AND gastronomy owner, say), and effective permissions are the union
  * over the held roles then the per-user overrides in `user_permission`:
  * `(⋃ perms(role_i) ∪ grants) \ denies`.
  *

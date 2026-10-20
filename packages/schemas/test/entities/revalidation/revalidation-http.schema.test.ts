@@ -184,7 +184,7 @@ describe('RevalidateEntityRequestSchema', () => {
             }
         });
 
-        it('should accept the commerce listing types (HOS-389 §4b regression)', () => {
+        it('should accept the gastronomy and experience listing types (HOS-389 §4b regression)', () => {
             // The admin "revalidate" button on a gastronomy/experience edit page
             // posts exactly this body. While these two were missing from the
             // enum the request failed validation, which is what made the button

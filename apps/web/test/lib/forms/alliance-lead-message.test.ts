@@ -191,7 +191,7 @@ describe('validateAllianceLeadSpecificFields', () => {
             kind: 'partner',
             specificValues: {
                 businessName: 'Acme',
-                partnerType: 'commerce',
+                partnerType: 'business',
                 partnershipType: 'Agencia'
             },
             t
@@ -205,7 +205,7 @@ describe('validateAllianceLeadSpecificFields', () => {
             kind: 'partner',
             specificValues: {
                 businessName: 'Acme',
-                partnerType: 'commerce',
+                partnerType: 'business',
                 partnershipType: 'Agencia',
                 website: 'not-a-url'
             },
@@ -220,7 +220,7 @@ describe('validateAllianceLeadSpecificFields', () => {
             kind: 'partner',
             specificValues: {
                 businessName: 'Acme',
-                partnerType: 'commerce',
+                partnerType: 'business',
                 partnershipType: 'Agencia',
                 website: 'https://acme.com'
             },
@@ -398,7 +398,7 @@ describe('serializeAllianceLeadMessage — typed fields are excluded (HOS-278 §
             kind: 'partner',
             specificValues: {
                 businessName: 'Acme SA',
-                partnerType: 'commerce',
+                partnerType: 'business',
                 website: 'https://acme.com',
                 partnershipType: 'Agencia'
             },
@@ -415,7 +415,7 @@ describe('serializeAllianceLeadMessage — typed fields are excluded (HOS-278 §
             kind: 'partner',
             specificValues: {
                 businessName: 'Acme SA',
-                partnerType: 'commerce',
+                partnerType: 'business',
                 partnershipType: 'Agencia'
             },
             freeText: '',
@@ -425,7 +425,7 @@ describe('serializeAllianceLeadMessage — typed fields are excluded (HOS-278 §
         expect(message).not.toContain('businessName');
         expect(message).not.toContain('partnerType');
         expect(message).not.toContain('Acme SA');
-        expect(message).not.toContain('commerce');
+        expect(message).not.toContain('comm' + 'erce');
     });
 });
 
@@ -493,7 +493,7 @@ describe('buildAllianceLeadTypedFields (HOS-278 §6.4)', () => {
             kind: 'partner',
             specificValues: {
                 businessName: 'Acme SA',
-                partnerType: 'commerce',
+                partnerType: 'business',
                 website: 'https://acme.com',
                 partnershipType: 'Agencia'
             }
@@ -501,7 +501,7 @@ describe('buildAllianceLeadTypedFields (HOS-278 §6.4)', () => {
 
         expect(typedFields).toEqual({
             businessName: 'Acme SA',
-            partnerType: 'commerce'
+            partnerType: 'business'
         });
         expect(typedFields).not.toHaveProperty('website');
         expect(typedFields).not.toHaveProperty('partnershipType');

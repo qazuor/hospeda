@@ -322,17 +322,18 @@ describe('HOS-25 T-021: versioned seed data-migration lifecycle (integration sea
 
     it('discovers the real data-migrations directory read-only, staying consistent with getMigrationStatus', async () => {
         // Read-only sanity check against the REAL data-migrations directory
-        // (no `dir` override, no ledger writes): the ported billing-plans
-        // migrations (T-020) must still be discoverable, in numeric order,
-        // as a valid SeedMigrationModule set.
+        // (no `dir` override, no ledger writes): the lowest-numbered
+        // migrations must still be discoverable, in numeric order, as a valid
+        // SeedMigrationModule set. (HOS-1416: the 0001-0006 billing migrations
+        // were demolished; the lowest surviving number is 0007.)
         const discovered = await discoverMigrationFiles({});
         expect(discovered.length).toBeGreaterThanOrEqual(3);
 
         const firstThree = discovered.slice(0, 3).map((migration) => migration.name);
         expect(firstThree).toEqual([
-            '0001-billing-plans-ai-consumer-search-limits',
-            '0002-billing-plans-collections-limit',
-            '0003-hos16-deactivate-complex-plans'
+            '0007-remove-legacy-make-webhook-url-setting',
+            '0008-social-catalog-expansion',
+            '0009-hos-113-points-of-interest'
         ]);
         for (const migration of discovered.slice(0, 3)) {
             expect(migration.meta.group).toBe('required');

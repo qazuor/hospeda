@@ -137,7 +137,6 @@ describe('NotificationService', () => {
             const insertCall = (mockDb.insert as Mock).mock.results[0].value;
             expect(insertCall.values).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    customerId: 'cus_456',
                     type: NotificationType.PAYMENT_SUCCESS,
                     channel: 'email',
                     recipient: 'user@example.com',
@@ -397,11 +396,11 @@ describe('NotificationService', () => {
                     paymentMethod: 'Credit Card'
                 },
                 {
-                    type: NotificationType.ADDON_EXPIRATION_WARNING,
+                    type: NotificationType.RENEWAL_REMINDER,
                     ...basePayload,
-                    addonName: 'Priority Support',
+                    planName: 'Priority',
                     daysRemaining: 5,
-                    expirationDate: '2024-12-31'
+                    renewalDate: '2024-12-31'
                 },
                 {
                     type: NotificationType.TRIAL_ENDING_REMINDER,

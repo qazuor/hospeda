@@ -13,10 +13,10 @@ describe('getLimitName', () => {
         expect(result).toBe('Favoritos');
     });
 
-    it('should fall back to LIMIT_METADATA name when no translation exists', () => {
+    it('should fall back to a readable key when no translation exists', () => {
         const t = makeTranslator({});
         const result = getLimitName({ key: 'max_favorites', t });
-        expect(result).toBe('Favorites');
+        expect(result).toBe('Max Favorites');
     });
 
     it('should fall back to humanized key when metadata is missing', () => {
@@ -79,6 +79,6 @@ describe('getEntitlementName (existing, regression check)', () => {
     it('should still work for known entitlement keys', () => {
         const t = makeTranslator({});
         const result = getEntitlementName({ key: 'save_favorites' as EntitlementKey, t });
-        expect(result).toBe('Save favorites');
+        expect(result).toBe('Save Favorites');
     });
 });

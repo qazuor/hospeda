@@ -7,11 +7,12 @@ import {
     type FaqWithChannelVisibilityUpdatePayloadType,
     GastronomyFaqSingleOutputSchema,
     type GastronomyFaqUpdateInput,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError, updateGastronomyFaq } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -22,17 +23,16 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * PUT /api/v1/admin/gastronomies/:id/faqs/:faqId
  * Update FAQ in gastronomy listing — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
+ * Requires GASTRONOMY_EDIT_ALL permission. The service helper
  * `updateGastronomyFaq` enforces the same gate via `checkGastronomyCanEditFaqs`.
  */
 export const adminUpdateGastronomyFaqRoute = createAdminRoute({
     method: 'put',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
     summary: 'Update FAQ in gastronomy listing (admin)',
-    description:
-        'Updates an existing FAQ in a gastronomy listing. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+    description: 'Updates an existing FAQ in a gastronomy listing. Requires GASTRONOMY_EDIT_ALL.',
     tags: ['Gastronomy', 'FAQs'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -56,7 +56,10 @@ export const adminUpdateGastronomyFaqRoute = createAdminRoute({
         const model = (
             gastronomyService as unknown as { model: Parameters<typeof updateGastronomyFaq>[0] }
         ).model;
-        const result = await updateGastronomyFaq(model, actor, input);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => updateGastronomyFaq(model, actor, input)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

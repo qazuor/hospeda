@@ -16,11 +16,12 @@ import {
     GastronomyMediaListOutputSchema,
     type GastronomyMediaReorderPayload,
     GastronomyMediaReorderPayloadSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, reorderGastronomyMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -31,19 +32,19 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * PATCH /api/v1/admin/gastronomies/:id/media/reorder
  * Reorder gastronomy listing gallery photos — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
+ * Requires GASTRONOMY_EDIT_ALL permission. The service helper
  * `reorderGastronomyMedia` enforces the same gate via `checkGastronomyCanEditMedia`.
  */
 export const adminReorderGastronomyMediaRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/reorder',
     summary: 'Reorder gastronomy listing gallery photos (admin)',
     description:
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +
-        'exactly. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+        'exactly. Requires GASTRONOMY_EDIT_ALL.',
     tags: ['Gastronomy', 'Media'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -60,9 +61,13 @@ export const adminReorderGastronomyMediaRoute = createAdminRoute({
         const model = (
             gastronomyService as unknown as { model: Parameters<typeof reorderGastronomyMedia>[0] }
         ).model;
-        const result = await reorderGastronomyMedia(model, actor, {
-            gastronomyId: params.id as string,
-            orderedIds: (body as GastronomyMediaReorderPayload).orderedIds
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                reorderGastronomyMedia(model, actor, {
+                    gastronomyId: params.id as string,
+                    orderedIds: (body as GastronomyMediaReorderPayload).orderedIds
+                })
         });
 
         if (result.error) {

@@ -7,7 +7,7 @@
  * funnel and a "Modo anfitrión" shortcut).
  *
  * HOS-691 AC-12: the submenu renders unconditionally — for a guest, an
- * authenticated non-host, an existing HOST, AND an existing COMMERCE_OWNER
+ * authenticated non-host, an existing HOST, AND an existing GASTRONOMY_OWNER
  * alike. There is no more per-role hiding or per-role destination swapping
  * to test here; that is the whole point of the rewrite (see the issue's
  * "Tests that break" section).
@@ -123,6 +123,7 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
     });
 
     afterEach(() => {
+        vi.useRealTimers();
         vi.restoreAllMocks();
         sessionStorage.clear();
     });
@@ -164,8 +165,8 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
             '/es/publicar/experiencias/'
         );
 
-        // HOS-1156: the two commerce entries used to read `/es/planes/…/` here,
-        // and that was the defect — a "Publicar" menu whose two commerce options
+        // HOS-1156: the two gastronomy and experience entries used to read `/es/planes/…/` here,
+        // and that was the defect — a "Publicar" menu whose two gastronomy and experience options
         // opened SALES pages. The literals above are deliberately spelled out
         // rather than derived from `PUBLISH_CTA_OPTIONS`: deriving them would
         // make this case pass for any value the config happened to hold, which
@@ -201,10 +202,10 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
         expect(screen.queryByRole('link', { name: /modo anfitrión/i })).not.toBeInTheDocument();
     });
 
-    it('renders the submenu for an existing COMMERCE_OWNER (HOS-691 AC-12)', () => {
+    it('renders the submenu for an existing GASTRONOMY_OWNER (HOS-691 AC-12)', () => {
         renderMenu({
-            initialUser: { id: 'u1', name: 'Commerce Owner', email: 'owner@example.com' },
-            initialRoles: ['USER', 'COMMERCE_OWNER']
+            initialUser: { id: 'u1', name: 'Listing Owner', email: 'owner@example.com' },
+            initialRoles: ['USER', 'GASTRONOMY_OWNER']
         });
         openMenu();
         openPublishSubmenu();
@@ -212,10 +213,10 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
         expect(screen.getAllByRole('menuitem')).toHaveLength(3);
     });
 
-    it('renders the submenu for a user who is BOTH HOST and COMMERCE_OWNER', () => {
+    it('renders the submenu for a user who is BOTH HOST and GASTRONOMY_OWNER', () => {
         renderMenu({
             initialUser: { id: 'u1', name: 'Host Merchant', email: 'both@example.com' },
-            initialRoles: ['USER', 'COMMERCE_OWNER', 'HOST']
+            initialRoles: ['USER', 'GASTRONOMY_OWNER', 'HOST']
         });
         openMenu();
         openPublishSubmenu();
@@ -224,6 +225,8 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
     });
 
     it('clicking an option closes the submenu AND the whole overlay (same `onLinkClick` navigation path every other menu link uses)', () => {
+        // handleLinkClick arms a 160 ms navigation timer; drop it so it cannot fire after teardown.
+        vi.useFakeTimers();
         const { container } = renderMenu();
         openMenu();
         const trigger = openPublishSubmenu();
@@ -236,6 +239,7 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
         // computation for a hidden subtree is unreliable to assert on.
         const overlay = container.querySelector('[role="dialog"]');
         expect(overlay).toHaveAttribute('aria-hidden', 'true');
+        vi.clearAllTimers();
     });
 
     it('closes the submenu when clicking outside it (still inside the overlay)', () => {

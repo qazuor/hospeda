@@ -85,8 +85,8 @@ describe('GastronomyReviewSchema', () => {
         expect(() => GastronomyReviewSchema.parse(data)).toThrow(ZodError);
     });
 
-    it('should reject a rating with an out-of-range dimension (CommerceRatingSchema enforced on entity schema)', () => {
-        // GastronomyReviewSchema.rating is CommerceRatingSchema.nullish() — invalid dimensions
+    it('should reject a rating with an out-of-range dimension (GastronomyRatingSchema enforced on entity schema)', () => {
+        // GastronomyReviewSchema.rating is GastronomyRatingSchema.nullish() — invalid dimensions
         // are rejected directly on the entity schema (food max is 5).
         const data = {
             ...validReviewBase(),

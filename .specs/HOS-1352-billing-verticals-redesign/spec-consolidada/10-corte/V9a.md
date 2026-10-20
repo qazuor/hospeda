@@ -148,6 +148,8 @@ Fuente: [DEC-DATA-005#📌1](../01-decisiones-vigentes.md#dec-data-005-p1), [LIS
   correlación (`NUCLEO/08` §1.2), aunque ninguno sea una transición de la máquina.
 Fuente: [FILA:V9a](#fila-v9a), [LISTA:V9a](#lista-v9a), [DEC-DATA-005#📌1](../01-decisiones-vigentes.md#dec-data-005-p1)
 
+> **Corte del MVP, 2026-10-07 ([Coord-4](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#decisiones-del-coordinador-2026-10-07))**: **exportar una ficha no existe en el epic.** El PDF de hoy (`listing-brochure`) no sirve: es premium, sólo cubre gastronomía y experiencias y exige la ficha publicada. Exportar está especificado (`V5.md` §3, precisión 1; [04-catalogos](../04-catalogos.md)) pero ninguna pieza del corte lo construye. **Abierto para el owner: qué es exportar y qué pieza lo construye.** Hasta que conteste, `V9a.1` registra **crear y editar**; el evento de exportar entra con la pieza que construya la operación. Decisiones del coordinador aplicadas en la hoja: la correlación (`correlationId`) viaja en `ServiceContext` y el evento se escribe en los hooks, dentro de la misma transacción del acto; **editar incluye las subentidades** de la ficha; de cada campo que no está en la lista cerrada de no-contenido se guarda sólo el nombre; y el actor es sólo el dueño. **Decisión del owner DE (2026-10-08):** exportar queda fuera del MVP y se difiere; el acto «exportar» de esta AC no se implementa al corte y el registro lo suma en forma aditiva cuando la operación exista (si sale de la spec o en qué fase entra sigue abierto en [80-abiertos §4-ter](../80-abiertos.md)).
+
 <a id="ac-v9a-2"></a>
 **AC:V9a:2** — De los campos de contenido, sólo el nombre.
 
@@ -181,11 +183,30 @@ Fuente: [FILA:V9a](#fila-v9a), [FILA:V9](#fila-v9), [LISTA:V9a](#lista-v9a)
 **AC:V9a:5** — Salida: la pieza está lista.
 
 - **Dado** la rama con `V9a` mergeada
-- **Cuando** se corren los casos de [AC:V9a:1](#ac-v9a-1) a [AC:V9a:4](#ac-v9a-4)
+- **Cuando** se corren los casos de [AC:V9a:1](#ac-v9a-1) a [AC:V9a:4](#ac-v9a-4), [AC:V9a:6](#ac-v9a-6) y [AC:V9a:7](#ac-v9a-7)
 - **Entonces** un acto del dueño sobre su ficha —crearla, editarla, exportarla— deja su registro con
   el nombre de los campos de contenido y nunca su texto, desde el día del corte, y la pieza cumple el
   momento 1 ([GATE:M1](../30-el-corte.md#gate-m1)).
 Fuente: [LISTA:V9a](#lista-v9a)
+
+<a id="ac-v9a-6"></a>
+**AC:V9a:6** — Editar las FAQ y las fotos o media de una ficha es un acto del dueño.
+
+- **Dado** una ficha de cada vertical —alojamiento, gastronomía y experiencia— de su dueño
+- **Cuando** el dueño agrega, edita, borra o reordena una FAQ (`addFaq`, `updateFaq`, `removeFaq`, `reorderFaqs`, en alojamiento, `gastronomy.faq.ts` y `experience.faq.ts`) o agrega, cambia, borra o reordena una foto o un medio, en cualquiera de las tres verticales
+- **Entonces** cada operación escribe su evento con `recordListingOwnerAct` **dentro de la transacción de la operación**, y el evento guarda sólo el nombre del campo —`faqs` o `media`—, nunca su contenido; así una edición de FAQ o de fotos reinicia el reloj de inactividad como cualquier edición.
+
+Fuente: [V9b](../20-fase-1/V9b.md) (tabla de lo que cuelga de una ficha, «el contenido de la ficha») · [DEC-DATA-005#📌1](../01-decisiones-vigentes.md#dec-data-005-p1) · [Coord-11](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#decisiones-del-coordinador-2026-10-07)
+
+<a id="ac-v9a-7"></a>
+**AC:V9a:7** — Editar la carta, los especiales, los eventos, los certificados o las etiquetas es un acto del dueño.
+
+- **Dado** una ficha de gastronomía con carta, especiales y eventos, una de experiencia con certificados, y
+  una ficha de cada vertical con etiquetas (`r_entity_tag`, por las operaciones propias de `TagService`)
+- **Cuando** el dueño edita cualquiera de esas subentidades
+- **Entonces** cada operación escribe su evento con `recordListingOwnerAct` dentro de su transacción, con sólo el nombre del campo, como en [AC:V9a:6](#ac-v9a-6). La spec los nombra como contenido de la ficha junto con las fotos y la FAQ (`V9b.md:367`). Los horarios y las amenities/features de esa misma fila no van acá: viajan en el `update` de la fila principal y ya los registra [AC:V9a:1](#ac-v9a-1).
+
+Fuente: [V9b](../20-fase-1/V9b.md) (tabla de lo que cuelga de una ficha, «el contenido de la ficha») · [Coord-11](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#decisiones-del-coordinador-2026-10-07)
 
 ## Reglas
 
@@ -244,6 +265,22 @@ deja copias en un registro que la retención no toca ([DEC-DATA-005#📌1](../01
 mostrar *«qué decía antes»* una ficha, que ningún capítulo pide.
 
 ## Testing esperado
+
+<a id="test-v9a-6"></a>
+**TEST:V9a:6** — Integración, uno por subentidad y vertical: agregar, editar, borrar y reordenar una FAQ
+y una foto o medio en alojamiento, gastronomía y experiencia dejan cada uno su evento con el nombre del
+campo (`faqs` o `media`) y sin contenido; si la operación falla y su transacción se revierte, no queda
+evento.
+Tipo: integración con DB
+Cubre: [AC:V9a:6](#ac-v9a-6)
+Fuente: [DEC-DATA-005#📌1](../01-decisiones-vigentes.md#dec-data-005-p1)
+
+<a id="test-v9a-7"></a>
+**TEST:V9a:7** — Integración, uno por subentidad: editar la carta, un especial y un evento de una
+gastronomía, un certificado de una experiencia y agregar o quitar una etiqueta en cada vertical, deja su evento con sólo el nombre del campo.
+Tipo: integración con DB
+Cubre: [AC:V9a:7](#ac-v9a-7)
+Fuente: [DEC-DATA-005#📌1](../01-decisiones-vigentes.md#dec-data-005-p1)
 
 <a id="test-v9a-1"></a>
 **TEST:V9a:1** — Integración: crear, editar y exportar una ficha escriben un evento cada uno, con los

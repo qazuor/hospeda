@@ -24,7 +24,7 @@ const VALID_LEAD_PAYLOAD = {
     contactName: 'Juan Pérez',
     email: 'juan@example.com',
     message: 'Quiero sumar mi negocio como partner de la plataforma.',
-    partnerType: 'commerce'
+    partnerType: 'business'
 };
 
 describe('POST /api/v1/public/alliance/leads (HOS-277)', () => {

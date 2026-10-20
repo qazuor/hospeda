@@ -76,11 +76,6 @@ describe('EntityFilters<TSchema>', () => {
             expectTypeOf<AccommodationFilters['ownerId']>().toEqualTypeOf<string | undefined>();
         });
 
-        it('should have "isFeatured" as boolean | undefined', () => {
-            expectTypeOf<AccommodationFilters>().toHaveProperty('isFeatured');
-            expectTypeOf<AccommodationFilters['isFeatured']>().toEqualTypeOf<boolean | undefined>();
-        });
-
         it('should have "minPrice" as number | undefined', () => {
             expectTypeOf<AccommodationFilters>().toHaveProperty('minPrice');
             expectTypeOf<AccommodationFilters['minPrice']>().toEqualTypeOf<number | undefined>();

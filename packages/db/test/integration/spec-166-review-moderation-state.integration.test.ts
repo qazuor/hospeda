@@ -18,6 +18,8 @@
  * covered here (the backfill UPDATE in the migration handles those; see
  * 0003_chemical_sharon_carter.sql).
  */
+
+import { PublicationStatusEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { accommodations } from '../../src/schemas/accommodation/accommodation.dbschema.ts';
@@ -167,7 +169,10 @@ describe('SPEC-166 — review moderation_state columns', () => {
                     type: 'HOTEL' as const,
                     description: 'A test description',
                     ownerId: user.id,
-                    destinationId: dest.id
+                    destinationId: dest.id,
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1
                 };
                 await tx.insert(accommodations).values(accommodation);
 
@@ -204,7 +209,10 @@ describe('SPEC-166 — review moderation_state columns', () => {
                     type: 'HOTEL' as const,
                     description: 'A test description',
                     ownerId: user.id,
-                    destinationId: dest.id
+                    destinationId: dest.id,
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1
                 };
                 await tx.insert(accommodations).values(accommodation);
 
@@ -242,7 +250,10 @@ describe('SPEC-166 — review moderation_state columns', () => {
                         type: 'HOTEL' as const,
                         description: 'A test description',
                         ownerId: user.id,
-                        destinationId: dest.id
+                        destinationId: dest.id,
+                        publicationStatus: PublicationStatusEnum.PUBLISHED,
+                        inactiveSince: new Date(),
+                        deadlinesVersion: 1
                     };
                     await tx.insert(accommodations).values(accommodation);
 

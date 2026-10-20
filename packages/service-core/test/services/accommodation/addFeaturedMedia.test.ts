@@ -58,8 +58,12 @@ const writeLog: string[] = [];
 
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
+    // HOS-1642: these writes now record an owner-act event; the double keeps
+    // the write off the (nonexistent) test database.
+    const doubles = await import('../../helpers/owner-act-doubles');
     return {
         ...actual,
+        domainEventModel: doubles.domainEventModelDouble,
         AccommodationMediaModel: vi.fn(function () {
             return mockMediaModel;
         }),
@@ -143,8 +147,7 @@ function buildService(ownerId: string = OWNER_ID) {
         findById: vi.fn().mockResolvedValue({
             id: ACCOMMODATION_ID,
             ownerId,
-            visibility: 'PRIVATE',
-            lifecycleState: 'DRAFT'
+            publicationStatus: 'DRAFT'
         })
     };
     return new AccommodationService({} as ServiceConfig, accommodationModel as never);

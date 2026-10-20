@@ -993,5 +993,111 @@
             "errorTitle": "Error al crear el oficio",
             "errorMessage": "No pudimos crear el oficio. Probá de nuevo."
         }
+    },
+    "listingPurgeOnRequest": {
+        "action": "Borrar a pedido del dueño",
+        "title": "Borrar la ficha a pedido de su dueño",
+        "whatHappens": {
+            "listing": "Vas a borrar la ficha {name} a pedido de su dueño.",
+            "content": "Su contenido (textos, fotos, preguntas, horarios) se borra y no vuelve.",
+            "featured": "Si tiene un destaque que apunta a esta ficha, se cancela."
+        },
+        "reasonLabel": "Por qué",
+        "reasonHelp": "Queda en el registro, junto con quién la borró y de quién era.",
+        "cancel": "Cancelar",
+        "confirm": "Borrar la ficha",
+        "successTitle": "Ficha borrada",
+        "successMessage": "La ficha {name} se borró a pedido de su dueño.",
+        "errorTitle": "No se pudo borrar la ficha",
+        "stateChanged": "La ficha cambió mientras tanto (por ejemplo, cambió de dueño) y no se borró. Recargá la página y revisala antes de volver a intentar."
+    },
+    "accountCloseOnRequest": {
+        "action": "Dar de baja la cuenta a pedido de su dueño",
+        "title": "Dar de baja la cuenta a pedido de su dueño",
+        "loading": "Revisando qué le queda a la cuenta…",
+        "notFound": "Esta cuenta ya no existe o ya se dio de baja.",
+        "forbidden": "No podés darte de baja a vos mismo ni a una cuenta del sistema: lo hace otra cuenta del equipo con el permiso.",
+        "loadError": "No pudimos revisar la cuenta. Cerrá y volvé a intentar.",
+        "blocked": {
+            "intro": "Todavía no se puede dar de baja. Falta:",
+            "canCharge": "Le queda una suscripción que todavía puede cobrar: cancelala primero (y esperá a que Mercado Pago confirme la cancelación).",
+            "listings": "Le quedan fichas sin borrar ({count}): borralas con «Borrar a pedido del dueño».",
+            "partnerPresence": "Tiene una presencia de Partner con contenido: hay que vaciarla primero."
+        },
+        "whatHappens": {
+            "account": "Vas a dar de baja la cuenta de {name} ({email}) a pedido de su dueño.",
+            "nothingLeft": "No le queda cobro, ficha ni presencia de Partner.",
+            "pseudonymised": "La cuenta no se borra: se seudonimiza y queda sin acceso para siempre. Su nombre, correo y teléfono se reemplazan, se borran su contraseña y sus accesos con Google, y se cierran sus sesiones.",
+            "untouched": "Los comprobantes y el registro no se tocan."
+        },
+        "reasonLabel": "Por qué",
+        "reasonHelp": "Queda en el registro, junto con quién la dio de baja y de quién era.",
+        "cancel": "Cancelar",
+        "close": "Cerrar",
+        "confirm": "Dar de baja la cuenta",
+        "successTitle": "Cuenta dada de baja",
+        "successMessage": "La cuenta se dio de baja a pedido de su dueño.",
+        "errorTitle": "No se pudo dar de baja la cuenta",
+        "stateChanged": "La cuenta cambió desde que abriste esta confirmación y no se dio de baja. Volvimos a revisar qué le queda."
+    },
+    "listingModeration": {
+        "title": "Moderación de la ficha",
+        "statusLabel": "Estado",
+        "fixRequestOpen": "Pedido de arreglo: abierto",
+        "fixRequestClosed": "Pedido de arreglo: cerrado",
+        "resultLabel": "Última acción",
+        "reasonLabel": "Por qué",
+        "reasonHelp": "Le llega al dueño en el aviso y queda en el registro.",
+        "cancel": "Cancelar",
+        "actions": {
+            "requestFix": "Pedir un arreglo",
+            "takeDown": "Bajar la ficha",
+            "lift": "Levantar la moderación",
+            "closeFixRequest": "Cerrar el pedido de arreglo"
+        },
+        "dialog": {
+            "requestFix": {
+                "title": "Pedir un arreglo",
+                "description": "Le vas a pedir al dueño de «{name}» que corrija la ficha. La ficha sigue donde está y el dueño recibe el aviso con el motivo.",
+                "suggestedDateLabel": "Fecha sugerida (opcional)"
+            },
+            "takeDown": {
+                "title": "Bajar la ficha",
+                "description": "Vas a bajar «{name}». La ficha sale del sitio público hasta que la levantes.",
+                "ownerNotice": "El dueño recibe el aviso con el motivo. Puede verla, editarla y borrarla, pero no publicarla.",
+                "featured": "Si tiene destaques recurrentes, se le siguen cobrando hasta que los dé de baja."
+            },
+            "lift": {
+                "title": "Levantar la moderación",
+                "description": "Vas a levantar la moderación de «{name}». La ficha vuelve a donde estaba antes de bajarla y el dueño recibe el aviso.",
+                "keepFixRequestLabel": "Dejarla con pedido de arreglo",
+                "keepFixRequestHelp": "La ficha vuelve a donde estaba y el pedido sigue abierto."
+            },
+            "closeFixRequest": {
+                "title": "Cerrar el pedido de arreglo",
+                "description": "Vas a cerrar el pedido de arreglo de «{name}». La ficha no cambia de estado."
+            }
+        },
+        "confirm": {
+            "requestFix": "Pedir el arreglo",
+            "takeDown": "Bajar la ficha",
+            "lift": "Levantar la moderación",
+            "closeFixRequest": "Cerrar el pedido"
+        },
+        "successTitle": "Listo",
+        "successMessage": "La ficha quedó en: {status}.",
+        "errors": {
+            "title": "No se pudo moderar la ficha",
+            "invalid": "Revisá el motivo: no puede estar vacío ni pasar de 2000 caracteres.",
+            "forbidden": "No tenés permiso para moderar fichas.",
+            "notFound": "La ficha ya no existe.",
+            "generic": "No se pudo moderar la ficha.",
+            "conflict": {
+                "requestFix": "La ficha ya tiene un pedido de arreglo abierto, o cambió de estado. Recargá la página.",
+                "takeDown": "La ficha cambió de estado y no se bajó. Recargá la página.",
+                "lift": "La ficha ya no está moderada. Recargá la página.",
+                "closeFixRequest": "La ficha no tiene un pedido de arreglo abierto."
+            }
+        }
     }
 }

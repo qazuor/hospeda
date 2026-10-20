@@ -1,5 +1,5 @@
 /**
- * Gastronomy type enum — specific sub-categories for gastronomy commerce listings.
+ * Gastronomy type enum — specific sub-categories for gastronomy listings.
  *
  * - RESTAURANT: Full-service sit-down restaurant.
  * - BAR: Bar or pub with primary focus on beverages.

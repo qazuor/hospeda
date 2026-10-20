@@ -993,5 +993,111 @@
             "errorTitle": "Error creating trade",
             "errorMessage": "We could not create the trade. Please try again."
         }
+    },
+    "listingPurgeOnRequest": {
+        "action": "Delete at the owner's request",
+        "title": "Delete the listing at its owner's request",
+        "whatHappens": {
+            "listing": "You are about to delete the listing {name} at its owner's request.",
+            "content": "Its content (texts, photos, questions, opening hours) is deleted and does not come back.",
+            "featured": "If it has a featured placement pointing to this listing, it is cancelled."
+        },
+        "reasonLabel": "Why",
+        "reasonHelp": "It is kept in the log, together with who deleted it and whose it was.",
+        "cancel": "Cancel",
+        "confirm": "Delete the listing",
+        "successTitle": "Listing deleted",
+        "successMessage": "The listing {name} was deleted at its owner's request.",
+        "errorTitle": "The listing could not be deleted",
+        "stateChanged": "The listing changed in the meantime (for example, its owner changed) and was not deleted. Reload the page and check it before trying again."
+    },
+    "accountCloseOnRequest": {
+        "action": "Close the account at its owner's request",
+        "title": "Close the account at its owner's request",
+        "loading": "Checking what the account still has…",
+        "notFound": "This account no longer exists or has already been closed.",
+        "forbidden": "You cannot close your own account or a system account: another team account with the permission does it.",
+        "loadError": "We could not check the account. Close this and try again.",
+        "blocked": {
+            "intro": "It cannot be closed yet. Missing:",
+            "canCharge": "It still has a subscription that can charge: cancel it first (and wait for Mercado Pago to confirm the cancellation).",
+            "listings": "It still has listings that were not deleted ({count}): delete them with \"Delete at the owner's request\".",
+            "partnerPresence": "It has a Partner presence with content: it has to be emptied first."
+        },
+        "whatHappens": {
+            "account": "You are about to close the account of {name} ({email}) at its owner's request.",
+            "nothingLeft": "Nothing is left to charge, and it has no listing or Partner presence.",
+            "pseudonymised": "The account is not deleted: it is pseudonymised and loses access for good. Its name, email and phone are replaced, its password and Google sign-ins are deleted, and its sessions are closed.",
+            "untouched": "Receipts and the log are not touched."
+        },
+        "reasonLabel": "Why",
+        "reasonHelp": "It is kept in the log, together with who closed it and whose it was.",
+        "cancel": "Cancel",
+        "close": "Close",
+        "confirm": "Close the account",
+        "successTitle": "Account closed",
+        "successMessage": "The account was closed at its owner's request.",
+        "errorTitle": "The account could not be closed",
+        "stateChanged": "The account changed since you opened this confirmation and was not closed. We checked again what it still has."
+    },
+    "listingModeration": {
+        "title": "Listing moderation",
+        "statusLabel": "Status",
+        "fixRequestOpen": "Fix request: open",
+        "fixRequestClosed": "Fix request: closed",
+        "resultLabel": "Last action",
+        "reasonLabel": "Why",
+        "reasonHelp": "The owner gets it in the notice and it is kept in the audit log.",
+        "cancel": "Cancel",
+        "actions": {
+            "requestFix": "Request a fix",
+            "takeDown": "Take the listing down",
+            "lift": "Lift the moderation",
+            "closeFixRequest": "Close the fix request"
+        },
+        "dialog": {
+            "requestFix": {
+                "title": "Request a fix",
+                "description": "You are asking the owner of \"{name}\" to fix the listing. The listing stays where it is and the owner gets a notice with the reason.",
+                "suggestedDateLabel": "Suggested date (optional)"
+            },
+            "takeDown": {
+                "title": "Take the listing down",
+                "description": "You are taking \"{name}\" down. The listing leaves the public site until you lift the moderation.",
+                "ownerNotice": "The owner gets a notice with the reason. They can view, edit and delete it, but not publish it.",
+                "featured": "If it has recurring featured placements, they keep being charged until the owner cancels them."
+            },
+            "lift": {
+                "title": "Lift the moderation",
+                "description": "You are lifting the moderation of \"{name}\". The listing goes back to where it was before it was taken down and the owner gets a notice.",
+                "keepFixRequestLabel": "Keep it with a fix request",
+                "keepFixRequestHelp": "The listing goes back to where it was and the request stays open."
+            },
+            "closeFixRequest": {
+                "title": "Close the fix request",
+                "description": "You are closing the fix request of \"{name}\". The listing does not change state."
+            }
+        },
+        "confirm": {
+            "requestFix": "Request the fix",
+            "takeDown": "Take the listing down",
+            "lift": "Lift the moderation",
+            "closeFixRequest": "Close the request"
+        },
+        "successTitle": "Done",
+        "successMessage": "The listing is now: {status}.",
+        "errors": {
+            "title": "The listing could not be moderated",
+            "invalid": "Check the reason: it cannot be empty or longer than 2000 characters.",
+            "forbidden": "You do not have permission to moderate listings.",
+            "notFound": "The listing no longer exists.",
+            "generic": "The listing could not be moderated.",
+            "conflict": {
+                "requestFix": "The listing already has an open fix request, or its state changed. Reload the page.",
+                "takeDown": "The listing changed state and was not taken down. Reload the page.",
+                "lift": "The listing is no longer moderated. Reload the page.",
+                "closeFixRequest": "The listing has no open fix request."
+            }
+        }
     }
 }

@@ -288,7 +288,7 @@ export const AdminSubscriptionViewSearchSchema = z.object({
     status: AdminSubscriptionViewStatusSchema.optional(),
     /** Filter by plan slug, e.g. `owner-basico` */
     planSlug: z.string().optional(),
-    /** Filter by product line (SPEC-239), e.g. `accommodation` or `commerce` */
+    /** Filter by product line (SPEC-239), e.g. `accommodation` or `gastronomy` */
     productDomain: z.string().optional(),
     /** Free-text search over the subscriber's name and email */
     search: z.string().optional(),

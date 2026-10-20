@@ -108,16 +108,12 @@ const AUDIT_COLUMNS: Readonly<Record<string, string>> = {
 
 /**
  * Ownership, control and aggregate fields no merchant-reachable schema may take
- * from a body. Shared by the two commerce verticals, which run the same
+ * from a body. Shared by the two verticals, which run the same
  * owner-create / owner-patch pair.
  */
-const COMMERCE_OWNER_DENIED: Readonly<Record<string, string>> = {
+const LISTING_OWNER_DENIED: Readonly<Record<string, string>> = {
     ownerId: 'the owner-create route forces actor.id (HOS-166 D-3)',
     slug: 'derived server-side from name; a free rename enables slug-squatting',
-    lifecycleState: 'control field — the route forces DRAFT on owner create',
-    visibility: 'control field — the route forces PRIVATE on owner create',
-    isFeatured: 'control field — admin-curated placement',
-    moderationState: 'control field — moderation decides it, not the moderated',
     reviewsCount: 'aggregate, written by the review subsystem',
     averageRating: 'aggregate, written by the review subsystem',
     rating: 'aggregate, written by the review subsystem',
@@ -138,8 +134,8 @@ export const ENTITIES: readonly EntityEntry[] = [
             isVerified: 'set by the admin verify endpoint',
             verifiedAt: 'set by the admin verify endpoint',
             verifiedById: 'set by the admin verify endpoint',
-            ownerSuspended: 'derived from the owner account state',
-            planRestricted: 'derived from the owner billing plan',
+            publicationStatus:
+                'written only by the PB publication transitions; a listing is born DRAFT (HOS-1641)',
             showExternalReputation: 'driven by the external-reputation subsystem'
         },
         neverFromOwnerBody: {},
@@ -150,10 +146,9 @@ export const ENTITIES: readonly EntityEntry[] = [
                 tier: 'admin',
                 accepts: fields(`
                     adminInfo averageRating contactInfo description descriptionI18n destinationId
-                    extraInfo faqs iaData isFeatured lastWarnedAt lifecycleState location media
-                    moderationState name nameI18n ownerId price rating reviewsCount richDescription
-                    richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
-                    translationMeta type videos visibility
+                    extraInfo faqs iaData lastWarnedAt location media name nameI18n ownerId price rating
+                    reviewsCount richDescription richDescriptionI18n seo slug socialNetworks summary
+                    summaryI18n tags translationMeta type videos
                 `)
             },
             {
@@ -162,10 +157,9 @@ export const ENTITIES: readonly EntityEntry[] = [
                 tier: 'admin',
                 accepts: fields(`
                     adminInfo averageRating contactInfo description descriptionI18n destinationId
-                    extraInfo faqs iaData isFeatured lastWarnedAt lifecycleState location
-                    moderationState name nameI18n ownerId price rating reviewsCount richDescription
-                    richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
-                    translationMeta type videos visibility
+                    extraInfo faqs iaData lastWarnedAt location name nameI18n ownerId price rating
+                    reviewsCount richDescription richDescriptionI18n seo slug socialNetworks summary
+                    summaryI18n tags translationMeta type videos
                 `)
             }
         ]
@@ -241,11 +235,12 @@ export const ENTITIES: readonly EntityEntry[] = [
         entity: 'experience',
         base: ExperienceSchema as unknown as Shaped,
         writableProbe: 'name',
-        neverFromBody: { ...AUDIT_COLUMNS },
-        neverFromOwnerBody: {
-            ...COMMERCE_OWNER_DENIED,
-            hasActiveSubscription: 'mirrors the billing subscription state; never client input'
+        neverFromBody: {
+            ...AUDIT_COLUMNS,
+            publicationStatus:
+                'written only by the PB publication transitions; a listing is born DRAFT (HOS-1641)'
         },
+        neverFromOwnerBody: { ...LISTING_OWNER_DENIED },
         writeSchemas: [
             {
                 name: 'ExperienceAdminCreateInputSchema',
@@ -253,13 +248,11 @@ export const ENTITIES: readonly EntityEntry[] = [
                 tier: 'admin',
                 accepts: fields(`
                     acceptsPrivateGroups adminInfo averageRating cancellationPolicy contactInfo
-                    description descriptionI18n destinationId durationMinutes faqs
-                    hasActiveSubscription isFeatured isPriceOnRequest lifecycleState media
-                    meetingPoint meetingPointDirections meetingPointLat meetingPointLong
-                    moderationState name nameI18n openingHours ownerId priceFrom priceUnit rating
-                    requirements reviewsCount richDescription richDescriptionI18n seo slug
-                    socialNetworks summary summaryI18n tags translationMeta type videos visibility
-                    whatToBring
+                    description descriptionI18n destinationId durationMinutes faqs isPriceOnRequest
+                    media meetingPoint meetingPointDirections meetingPointLat meetingPointLong name
+                    nameI18n openingHours ownerId priceFrom priceUnit rating requirements reviewsCount
+                    richDescription richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
+                    translationMeta type videos whatToBring
                 `)
             },
             {
@@ -268,11 +261,10 @@ export const ENTITIES: readonly EntityEntry[] = [
                 tier: 'admin',
                 accepts: fields(`
                     acceptsPrivateGroups adminInfo cancellationPolicy contactInfo description
-                    descriptionI18n destinationId durationMinutes faqs isFeatured isPriceOnRequest
-                    lifecycleState meetingPoint meetingPointDirections meetingPointLat
-                    meetingPointLong moderationState name nameI18n openingHours priceFrom priceUnit
-                    rating requirements richDescription richDescriptionI18n seo slug socialNetworks
-                    summary summaryI18n tags translationMeta type videos visibility whatToBring
+                    descriptionI18n destinationId durationMinutes faqs isPriceOnRequest meetingPoint
+                    meetingPointDirections meetingPointLat meetingPointLong name nameI18n openingHours
+                    priceFrom priceUnit rating requirements richDescription richDescriptionI18n seo slug
+                    socialNetworks summary summaryI18n tags translationMeta type videos whatToBring
                 `)
             },
             {
@@ -317,20 +309,21 @@ export const ENTITIES: readonly EntityEntry[] = [
                 'written only by POST/DELETE /gastronomies/{id}/menu-file, in the same request that stores or destroys the asset (HOS-895)',
             menuFilePublicId:
                 'the provider-side asset handle the delete route destroys — a body-writable value deletes another venue’s file (HOS-895)',
-            menuFileKind: 'derived from the uploaded file, alongside menuFileUrl (HOS-895)'
+            menuFileKind: 'derived from the uploaded file, alongside menuFileUrl (HOS-895)',
+            publicationStatus:
+                'written only by the PB publication transitions; a listing is born DRAFT (HOS-1641)'
         },
-        neverFromOwnerBody: { ...COMMERCE_OWNER_DENIED },
+        neverFromOwnerBody: { ...LISTING_OWNER_DENIED },
         writeSchemas: [
             {
                 name: 'GastronomyAdminCreateInputSchema',
                 schema: GastronomyAdminCreateInputSchema as unknown as Parseable,
                 tier: 'admin',
                 accepts: fields(`
-                    adminInfo averageRating contactInfo description descriptionI18n destinationId
-                    faqs isFeatured lifecycleState media menuUrl moderationState name nameI18n
-                    openingHours ownerId priceRange rating reviewsCount richDescription
-                    richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
-                    translationMeta type videos visibility
+                    adminInfo averageRating contactInfo description descriptionI18n destinationId faqs
+                    media menuUrl name nameI18n openingHours ownerId priceRange rating reviewsCount
+                    richDescription richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
+                    translationMeta type videos
                 `)
             },
             {
@@ -338,10 +331,9 @@ export const ENTITIES: readonly EntityEntry[] = [
                 schema: GastronomyUpdateInputSchema as unknown as Parseable,
                 tier: 'admin',
                 accepts: fields(`
-                    adminInfo contactInfo description descriptionI18n destinationId faqs isFeatured
-                    lifecycleState menuUrl moderationState name nameI18n openingHours priceRange
-                    rating richDescription richDescriptionI18n seo slug socialNetworks summary
-                    summaryI18n tags translationMeta type videos visibility
+                    adminInfo contactInfo description descriptionI18n destinationId faqs menuUrl name
+                    nameI18n openingHours priceRange rating richDescription richDescriptionI18n seo slug
+                    socialNetworks summary summaryI18n tags translationMeta type videos
                 `)
             },
             {

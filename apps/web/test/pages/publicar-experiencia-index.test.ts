@@ -10,7 +10,7 @@
  *
  * See that file's docblock: `test/pages/sales-pages-family.guard.test.ts`
  * covers `/planes/experiencias/index.astro`'s content, and
- * `test/pages/commerce-landing-cta.guard.test.ts` /
+ * `test/pages/listing-landing-cta.guard.test.ts` /
  * `test/pages/pricing-ssr-runtime.test.ts` cover its CTA and pricing pages.
  */
 

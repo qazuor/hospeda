@@ -3,7 +3,7 @@
  * @description Shared inline field-error primitive (HOS-190 slice 2). Drop-in
  * replacement for the `{errors.field && <p id="..." role="alert">{msg}</p>}`
  * block every hand-rolled form in `apps/web` repeats (ContactForm,
- * ContributionForm, ChangePasswordForm, CommerceLead, PromotionForm...).
+ * ContributionForm, ChangePasswordForm, PromotionForm...).
  *
  * Renders nothing when `message` is falsy, so it is safe to always mount:
  * `<FieldError id={fieldErrorId('email')} message={fieldErrors.email} />`.

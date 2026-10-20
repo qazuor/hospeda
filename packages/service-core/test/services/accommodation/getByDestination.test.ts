@@ -4,10 +4,10 @@
  * Ensures robust, type-safe, and homogeneous handling of accommodation retrieval by destination,
  * validation, permission, and error propagation logic.
  *
- * SPEC-167 T-026 regression: getByDestination must exclude ownerSuspended=true and
- * planRestricted=true accommodations for public actors (bug: previously used findAll
- * which has no visibility filters). VIP actors (vip_visibility_access entitlement or
- * ACCOMMODATION_VIEW_ALL permission) bypass both filters.
+ * SPEC-167 T-026 regression: getByDestination must return only PUBLISHED
+ * accommodations (bug: previously used findAll which has no visibility filters).
+ * Since V6.9b (HOS-1641) the filter is `publishedOnly` and nobody bypasses it:
+ * not a VIP entitlement, not ACCOMMODATION_VIEW_ALL (AC:V5:5).
  *
  * All test data, comments, and documentation are in English, following project guidelines.
  */
@@ -40,8 +40,8 @@ import {
  *
  * This suite verifies:
  * - Correct accommodation retrieval by destination via searchWithRelations (not raw findAll)
- * - Public visibility predicates: ownerSuspended=true and planRestricted=true are excluded
- * - VIP / ACCOMMODATION_VIEW_ALL actors bypass both visibility filters
+ * - Public visibility predicate: only PUBLISHED accommodations (`publishedOnly: true`)
+ * - VIP / ACCOMMODATION_VIEW_ALL actors get the same predicate
  * - Validation and error codes for forbidden, validation, and internal errors
  * - Robustness against errors in hooks and database operations
  *
@@ -92,7 +92,7 @@ describe('AccommodationService.getByDestination', () => {
 
     /**
      * Bug regression: getByDestination previously called model.findAll() which has no
-     * ownerSuspended or planRestricted filters. It must now call searchWithRelations() so
+     * visibility filter. It must now call searchWithRelations() so
      * the public visibility predicate is enforced at the DB query level.
      *
      * This test will FAIL before the fix (findAll is called instead of searchWithRelations).
@@ -112,82 +112,28 @@ describe('AccommodationService.getByDestination', () => {
     });
 
     /**
-     * Bug regression: a suspended-owner accommodation must NOT appear in destination results
-     * for a public actor.
-     *
-     * Before the fix, findAll returned it because it lacks the ownerSuspended filter.
-     * After the fix, searchWithRelations is called with excludeOwnerSuspended=true.
+     * A non-PUBLISHED accommodation must NOT appear in destination results: the
+     * model is always asked for PUBLISHED rows only, whoever the actor is.
      */
-    it('SPEC-167 T-026: excludes ownerSuspended accommodations for public actor', async () => {
+    it.each([
+        ['a public actor', () => new ActorFactoryBuilder().host().build()],
+        [
+            'a VIP entitlement holder',
+            () =>
+                new ActorFactoryBuilder()
+                    .host()
+                    .with({ entitlements: new Set(['vip_visibility_access']) })
+                    .build()
+        ],
+        ['an ACCOMMODATION_VIEW_ALL admin', () => new ActorFactoryBuilder().admin().build()]
+    ])('asks the model for PUBLISHED listings only for %s (HOS-1641)', async (_label, makeActor) => {
         vi.spyOn(permissionHelpers, 'checkCanList').mockReturnValue();
         modelMock.searchWithRelations.mockResolvedValue({ items: [], total: 0 });
 
-        await service.getByDestination(actor, { page: 1, pageSize: 10, destinationId });
+        await service.getByDestination(makeActor(), { page: 1, pageSize: 10, destinationId });
 
         expect(modelMock.searchWithRelations).toHaveBeenCalledWith(
-            expect.objectContaining({ excludeOwnerSuspended: true }),
-            undefined
-        );
-    });
-
-    /**
-     * Bug regression: a plan-restricted accommodation must NOT appear in destination results
-     * for a public actor.
-     *
-     * Before the fix, findAll returned it because it lacks the planRestricted filter.
-     * After the fix, searchWithRelations is called with excludePlanRestricted=true.
-     */
-    it('SPEC-167 T-026: excludes planRestricted accommodations for public actor', async () => {
-        vi.spyOn(permissionHelpers, 'checkCanList').mockReturnValue();
-        modelMock.searchWithRelations.mockResolvedValue({ items: [], total: 0 });
-
-        await service.getByDestination(actor, { page: 1, pageSize: 10, destinationId });
-
-        expect(modelMock.searchWithRelations).toHaveBeenCalledWith(
-            expect.objectContaining({ excludePlanRestricted: true }),
-            undefined
-        );
-    });
-
-    /**
-     * VIP actors (vip_visibility_access entitlement) bypass both visibility filters.
-     */
-    it('SPEC-167 T-026: VIP actor bypasses ownerSuspended and planRestricted filters', async () => {
-        const vipActor = new ActorFactoryBuilder()
-            .host()
-            .with({
-                entitlements: new Set(['vip_visibility_access'])
-            })
-            .build();
-        vi.spyOn(permissionHelpers, 'checkCanList').mockReturnValue();
-        modelMock.searchWithRelations.mockResolvedValue({ items: [], total: 0 });
-
-        await service.getByDestination(vipActor, { page: 1, pageSize: 10, destinationId });
-
-        expect(modelMock.searchWithRelations).toHaveBeenCalledWith(
-            expect.objectContaining({
-                excludeOwnerSuspended: false,
-                excludePlanRestricted: false
-            }),
-            undefined
-        );
-    });
-
-    /**
-     * Actors with ACCOMMODATION_VIEW_ALL also bypass both visibility filters.
-     */
-    it('SPEC-167 T-026: ACCOMMODATION_VIEW_ALL actor bypasses ownerSuspended and planRestricted filters', async () => {
-        const adminActor = new ActorFactoryBuilder().admin().build();
-        vi.spyOn(permissionHelpers, 'checkCanList').mockReturnValue();
-        modelMock.searchWithRelations.mockResolvedValue({ items: [], total: 0 });
-
-        await service.getByDestination(adminActor, { page: 1, pageSize: 10, destinationId });
-
-        expect(modelMock.searchWithRelations).toHaveBeenCalledWith(
-            expect.objectContaining({
-                excludeOwnerSuspended: false,
-                excludePlanRestricted: false
-            }),
+            expect.objectContaining({ publishedOnly: true }),
             undefined
         );
     });

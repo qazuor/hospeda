@@ -403,7 +403,7 @@ describe('AiChatRequestSchema — polymorphic target (HOS-400)', () => {
         });
     });
 
-    describe('when the request targets a commerce vertical', () => {
+    describe('when the request targets a gastronomy or experience vertical', () => {
         it.each([
             'gastronomy',
             'experience'
@@ -428,7 +428,7 @@ describe('AiChatRequestSchema — polymorphic target (HOS-400)', () => {
             expect(resolveAiChatTarget(parsed)).toEqual({ entityType, entityId: VALID_UUID });
         });
 
-        it('should reject a commerce request that also carries accommodationId', () => {
+        it('should reject a gastronomy or experience request that also carries accommodationId', () => {
             // A body naming a restaurant in entityId and an accommodation in
             // accommodationId is a client bug; answering about either is worse
             // than refusing.
@@ -441,7 +441,7 @@ describe('AiChatRequestSchema — polymorphic target (HOS-400)', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should reject a commerce request with no entityId at all', () => {
+        it('should reject a gastronomy or experience request with no entityId at all', () => {
             const result = AiChatRequestSchema.safeParse({
                 entityType: 'gastronomy',
                 messages: [USER_MESSAGE]

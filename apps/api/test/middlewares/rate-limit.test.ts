@@ -60,12 +60,6 @@ vi.mock('../../src/utils/env', () => {
         API_RATE_LIMIT_PROTECTED_MAX_REQUESTS: 12,
         API_RATE_LIMIT_PROTECTED_MESSAGE: 'Too many requests, please try again later.',
 
-        // Billing rate limiting
-        API_RATE_LIMIT_BILLING_ENABLED: true,
-        API_RATE_LIMIT_BILLING_WINDOW_MS: 1000,
-        API_RATE_LIMIT_BILLING_MAX_REQUESTS: 2, // Low limit for billing POST
-        API_RATE_LIMIT_BILLING_MESSAGE: 'Too many billing requests, please try again later.',
-
         // Webhook rate limiting
         API_RATE_LIMIT_WEBHOOK_ENABLED: true,
         API_RATE_LIMIT_WEBHOOK_WINDOW_MS: 1000,
@@ -117,12 +111,6 @@ vi.mock('../../src/utils/env', () => {
         protectedWindowMs: mockEnv.API_RATE_LIMIT_PROTECTED_WINDOW_MS,
         protectedMaxRequests: mockEnv.API_RATE_LIMIT_PROTECTED_MAX_REQUESTS,
         protectedMessage: mockEnv.API_RATE_LIMIT_PROTECTED_MESSAGE,
-
-        // Billing-specific
-        billingEnabled: mockEnv.API_RATE_LIMIT_BILLING_ENABLED,
-        billingWindowMs: mockEnv.API_RATE_LIMIT_BILLING_WINDOW_MS,
-        billingMaxRequests: mockEnv.API_RATE_LIMIT_BILLING_MAX_REQUESTS,
-        billingMessage: mockEnv.API_RATE_LIMIT_BILLING_MESSAGE,
 
         // Webhook-specific
         webhookEnabled: mockEnv.API_RATE_LIMIT_WEBHOOK_ENABLED,
@@ -606,8 +594,6 @@ describe('Rate Limit Middleware', () => {
             app.get('/api/v1/auth/login', (c) => c.json({ success: true })); // auth (5 requests)
             app.get('/api/v1/public/data', (c) => c.json({ success: true })); // public (10 requests)
             app.get('/api/v1/admin/users', (c) => c.json({ success: true })); // admin (2 requests)
-            app.post('/api/v1/admin/billing/subscribe', (c) => c.json({ success: true })); // billing POST (2 requests)
-            app.get('/api/v1/admin/billing/plans', (c) => c.json({ success: true })); // billing GET -> admin (2 requests)
             app.post('/api/v1/public/webhooks/mercadopago', (c) => c.json({ success: true })); // webhook (8 requests)
         });
 
@@ -661,32 +647,6 @@ describe('Rate Limit Middleware', () => {
             expect(data.error.message).toBe('Too many admin requests, please try again later.');
         });
 
-        it('should apply billing limits only to POST requests on billing paths', async () => {
-            // POST to billing endpoint should use billing limits (2 requests)
-            for (let i = 0; i < 2; i++) {
-                const res = await app.request('/api/v1/admin/billing/subscribe', {
-                    method: 'POST'
-                });
-                expect(res.status).toBe(200);
-            }
-
-            // 3rd POST should be rate limited
-            const res = await app.request('/api/v1/admin/billing/subscribe', {
-                method: 'POST'
-            });
-            expect(res.status).toBe(429);
-
-            const data = await res.json();
-            expect(data.error.message).toBe('Too many billing requests, please try again later.');
-        });
-
-        it('should apply admin limits to GET requests on billing paths', async () => {
-            // GET on billing path should fall through to admin (not billing)
-            const res = await app.request('/api/v1/admin/billing/plans');
-            expect(res.status).toBe(200);
-            expect(res.headers.get('X-RateLimit-Type')).toBe('admin');
-        });
-
         it('should apply webhook limits to webhook endpoints', async () => {
             // Webhook endpoints should allow 8 requests
             for (let i = 0; i < 8; i++) {
@@ -711,15 +671,6 @@ describe('Rate Limit Middleware', () => {
             expect(res.status).toBe(200);
             expect(res.headers.get('X-RateLimit-Type')).toBe('auth');
             expect(res.headers.get('X-RateLimit-Limit')).toBe('5');
-        });
-
-        it('should include billing endpoint type in rate limit headers', async () => {
-            const res = await app.request('/api/v1/admin/billing/subscribe', {
-                method: 'POST'
-            });
-            expect(res.status).toBe(200);
-            expect(res.headers.get('X-RateLimit-Type')).toBe('billing');
-            expect(res.headers.get('X-RateLimit-Limit')).toBe('2');
         });
 
         it('should include webhook endpoint type in rate limit headers', async () => {
@@ -1111,18 +1062,6 @@ describe('Rate Limit Middleware', () => {
 
                 // Assert
                 expect(result).toBe('auth');
-            });
-
-            it('should still return billing for a POST to a protected billing path (billing check wins)', () => {
-                // Arrange: financial POSTs keep their restrictive bucket.
-                const path = '/api/v1/protected/billing/subscriptions/start-paid';
-                const method = 'POST';
-
-                // Act
-                const result = getEndpointType(path, method);
-
-                // Assert
-                expect(result).toBe('billing');
             });
         });
 

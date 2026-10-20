@@ -23,13 +23,19 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { PublicationStatusEnum } from '@repo/schemas';
 import {
     createAccommodation,
     createSubscription,
     createUser,
     forceVerifyEmail
 } from '../../fixtures/api-helpers.ts';
-import { execSQL, forcePeriodEndPast, getDbPool } from '../../fixtures/db-helpers.ts';
+import {
+    execSQL,
+    forcePeriodEndPast,
+    getDbPool,
+    hasOldBillingSchema
+} from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -47,6 +53,11 @@ test.describe('HOST-07b: subscription_required on republish @p0 @host @billing @
     test('cancelled+expired host: publish rejected, accommodation stays DRAFT', async ({
         page
     }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         // Paywall here is enforced by the date-aware publish gate (checkEligibility
         // + isSubscriptionLive, SPEC-217): a cancelled+expired sub returns
         // subscription_required. Deterministic against the local DB — no MercadoPago
@@ -85,7 +96,7 @@ test.describe('HOST-07b: subscription_required on republish @p0 @host @billing @
 
         const accommodation = await createAccommodation({
             ownerId: host.id,
-            lifecycleState: 'DRAFT',
+            publicationStatus: PublicationStatusEnum.DRAFT,
             slugPrefix: 'host-07b-acc'
         });
 
@@ -121,10 +132,10 @@ test.describe('HOST-07b: subscription_required on republish @p0 @host @billing @
         ).toBe(true);
 
         // ── 3. DB invariant: accommodation remained DRAFT ─────────────────
-        const accAfter = await execSQL<{ lifecycle_state: string }>(
-            'SELECT lifecycle_state FROM accommodations WHERE id = $1',
+        const accAfter = await execSQL<{ publication_status: string }>(
+            'SELECT publication_status FROM accommodations WHERE id = $1',
             [accommodation.id]
         );
-        expect(accAfter[0]?.lifecycle_state).toBe('DRAFT');
+        expect(accAfter[0]?.publication_status).toBe('DRAFT');
     });
 });

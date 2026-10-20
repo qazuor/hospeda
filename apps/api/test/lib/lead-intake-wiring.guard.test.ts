@@ -5,8 +5,8 @@
  * ## Why a guard and not a behaviour test
  *
  * The alert was not missing code — the code was there, complete, with a
- * `TODO` beside it (on the commerce funnel, which HOS-695 has since retired
- * along with `commerce_leads`; this guard's remaining subject is alliance).
+ * `TODO` beside it (on the gastronomy/experience funnel, which HOS-695 has since retired
+ * along with the retired gastronomy/experience leads table; this guard's remaining subject is alliance).
  * What was missing was the ARGUMENT, at multiple construction sites, none of
  * which looked wrong on its own: `new SomeLeadService({ logger: apiLogger })`
  * type-checks, runs, and quietly takes the branch where nobody is told. That

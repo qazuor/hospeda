@@ -8,7 +8,7 @@
  * Before SPEC-210 the route used `AccommodationListWrapperSchema` which wraps
  * `z.array(AccommodationSchema)` — the full entity schema including
  * `createdById`, `updatedById`, `deletedAt`, `deletedById`, `adminInfo`,
- * `moderationState`, `lastWarnedAt`, `translationMeta`, etc.
+ * `publicationStatus`, `lastWarnedAt`, `translationMeta`, etc.
  *
  * Endpoint: GET /api/v1/public/accommodations/destination/{destinationId}
  */
@@ -94,7 +94,7 @@ describe('GET /api/v1/public/accommodations/destination/:id — schema enforceme
                         'deletedAt',
                         'deletedById',
                         'adminInfo',
-                        'moderationState',
+                        'publicationStatus',
                         'lastWarnedAt',
                         'translationMeta'
                         // NOTE: `scheduleData` is NOT in AccommodationSchema (Zod).
@@ -226,7 +226,7 @@ describe('GET /api/v1/public/accommodations/destination/:id — schema enforceme
             }
         });
 
-        it('AccommodationPublicSchema.safeParse() strips adminInfo, moderationState, lastWarnedAt, translationMeta', () => {
+        it('AccommodationPublicSchema.safeParse() strips adminInfo, publicationStatus, lastWarnedAt, translationMeta', () => {
             const raw = {
                 id: TEST_UUID,
                 slug: 'by-destination-test',
@@ -238,7 +238,7 @@ describe('GET /api/v1/public/accommodations/destination/:id — schema enforceme
                 isFeatured: false,
                 destinationId: TEST_UUID_2,
                 adminInfo: { notes: 'Private admin note', favorite: true },
-                moderationState: 'PENDING',
+                publicationStatus: 'MODERATED',
                 lastWarnedAt: new Date(),
                 translationMeta: { en: { name: { status: 'approved' } } }
             };
@@ -248,7 +248,7 @@ describe('GET /api/v1/public/accommodations/destination/:id — schema enforceme
             if (result.success) {
                 const data = result.data as Record<string, unknown>;
                 expect(data).not.toHaveProperty('adminInfo');
-                expect(data).not.toHaveProperty('moderationState');
+                expect(data).not.toHaveProperty('publicationStatus');
                 expect(data).not.toHaveProperty('lastWarnedAt');
                 expect(data).not.toHaveProperty('translationMeta');
             }

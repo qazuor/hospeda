@@ -43,3 +43,22 @@ export const PriceAlertResponseSchema = PriceAlertSchema.extend({
  * {@link PriceAlertResponseSchema}.
  */
 export type PriceAlertResponse = z.infer<typeof PriceAlertResponseSchema>;
+
+/**
+ * One item of `GET /api/v1/protected/price-alerts` (HOS-1492, V8a row 27).
+ *
+ * Adds `closedBecauseListingGone`: `true` when the alert is no longer active
+ * AND its listing reached `PURGED`. It says only that the listing no longer
+ * exists, never why (that belongs to the owner, row 20). Kept off
+ * {@link PriceAlertResponseSchema} because the create route answers a fresh,
+ * active alert with that schema.
+ */
+export const PriceAlertListItemSchema = PriceAlertResponseSchema.extend({
+    closedBecauseListingGone: z.boolean()
+});
+
+/**
+ * TypeScript type for one list item, inferred from
+ * {@link PriceAlertListItemSchema}.
+ */
+export type PriceAlertListItem = z.infer<typeof PriceAlertListItemSchema>;

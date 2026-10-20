@@ -15,8 +15,8 @@
  *    not also a paying host and admit a host who is not a partner.
  *
  * 2. **§7.2 / OQ-7** — no file in the partner-statistics surface decides card
- *    visibility from `tier`. That decision belongs to `resolvePartnerLogoLink`
- *    in `apps/web` and nowhere else; a `tier === 'gold'` test on this side would
+ *    visibility. That decision belongs to `resolvePartnerLogoLink`
+ *    in `apps/web` and nowhere else; a membership comparison on this side would
  *    be a second source of truth about what the home carousel renders, and the
  *    two would part ways the moment HOS-1159 lands.
  *
@@ -81,13 +81,13 @@ describe('HOS-1063 AC-7 — the partner stats route is gated by OWNERSHIP only',
     });
 });
 
-describe('HOS-1063 §7.2 — no card gating by tier on the API side', () => {
+describe('HOS-1063 §7.2 — no card gating on the API side', () => {
     it.each([
         ['mine-stats route', MINE_STATS_ROUTE],
         ['logo click capture route', CLICK_CAPTURE_ROUTE]
-    ])('%s never compares a partner tier', (_label, file) => {
+    ])('%s never compares membership', (_label, file) => {
         const code = readCode(file);
-        expect(code).not.toMatch(/tier\s*===/);
+        expect(code).not.toMatch(/membership\s*===/);
         expect(code).not.toMatch(/['"]gold['"]/);
         expect(code).not.toMatch(/['"]silver['"]/);
     });

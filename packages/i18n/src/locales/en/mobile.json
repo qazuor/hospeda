@@ -38,9 +38,14 @@
         },
         "accommodations": {
             "listTitle": "My listings",
-            "lifecycleActive": "Active",
-            "lifecycleDraft": "Draft",
-            "lifecycleArchived": "Archived",
+            "status": {
+                "DRAFT": "Draft",
+                "PUBLISHED": "Published",
+                "UNPUBLISHED_BY_BILLING": "Unpublished by your plan",
+                "ARCHIVED": "Archived",
+                "MODERATED": "Moderated",
+                "PURGED": "Deleted"
+            },
             "loading": "Loading listings...",
             "error": "Could not load listings. Please try again.",
             "empty": "You don't have any listings yet.",

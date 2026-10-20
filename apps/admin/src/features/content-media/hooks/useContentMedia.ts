@@ -4,7 +4,7 @@
  *
  * Entity-agnostic: every hook takes an `entity` argument (`'post'` or
  * `'event'`) and resolves the correct admin endpoint from it. Direct port of
- * `useCommerceMedia` (HOS-382), which does the same for the two commerce
+ * `useListingMedia` (HOS-382), which does the same for the two listing
  * verticals. `post_media` and `event_media` share a row shape, so one hook
  * file serves both rather than duplicating per entity.
  *
@@ -16,7 +16,7 @@
  *
  * All mutations invalidate the list query on success via the shared query key
  * factory. Reorder is intentionally omitted, mirroring the accommodation
- * and commerce gallery precedent (SPEC-204 locked decision: no drag/reorder in
+ * and listing gallery precedent (SPEC-204 locked decision: no drag/reorder in
  * the admin gallery UI). Archive/restore are also omitted — the admin API
  * exposes no archive/restore routes for `post_media` / `event_media` (see
  * `apps/api/src/routes/post/admin/` and `apps/api/src/routes/event/admin/` —

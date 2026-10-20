@@ -1,0 +1,194 @@
+import { sql } from 'drizzle-orm';
+import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+
+/**
+ * The closed catalog of domain event types (NUCLEO/08 §1.2, "qué pasó").
+ *
+ * A TS constant mirrored by a CHECK constraint rather than a pg enum: adding a
+ * type is a one-line change here plus the regenerated CHECK, with no enum
+ * migration and no `@repo/schemas` enum (and its frozen-count guards) for a
+ * table that no API surface exposes.
+ *
+ * - `email.undeliverable`: a transactional mail that will never arrive
+ *   (retries exhausted or hard bounce), escalated by the outbox sender
+ *   (NUCLEO/07 §1.3, AC:U2:4).
+ * - `listing.created` / `listing.edited`: an owner act on their own listing
+ *   that is not a state transition (HOS-1499, piece V9a, AC:V9a:1). They are
+ *   "fact 1" of the retention clock (NUCLEO/01 §1.2), read back from this
+ *   table. Content fields carry only their name (AC:V9a:2). `listing.exported`
+ *   is deliberately absent: no export operation exists yet.
+ * - `listing.status_changed`: an audited publication state transition (V6 §9).
+ * - `listing.fix_request_opened` / `listing.fix_request_closed`: an admin opened/closed a fix request on a listing (ACC:12, V6 `pedido_de_arreglo`); also closed by PB12 without mail.
+ * - `reconciliation.mark_opened`: una marca de conciliación abierta o acumulada por
+ *   `S14` (HOS-1523, AC:B3:13; NUCLEO/08 §4.1: el evento crítico se escribe uno por uno).
+ * - `trial.extended`: a running trial extended by the administrative action 11
+ *   (origin `SUPER_ADMIN`, mandatory `reason`; HOS-1445, AC:V4:9). The
+ *   redemption extensions are NOT here: they live in `canje_de_trial`.
+ * - `account.closed_on_request`: an account closed by the administrative
+ *   action 24 at its owner's request (`entity_type = 'user'`, the account is
+ *   the subject). The account is pseudonymized, so `changes` carries only FIELD
+ *   NAMES, never the old personal values (NUCLEO/08 §3 action 24; HOS-1494).
+ * - `partner_application.email_replaced`: the email of a partner application
+ *   replaced by the administrative action 24 (`entity_type =
+ *   'partner_application'`). The email is personal data, so `changes` carries
+ *   only field names (NUCLEO/08 §3 action 24; HOS-1494).
+ * - `subscription.provider_cancellation_decided`: one of our transitions
+ *   decided to cancel the preapproval of this subscription (`entity_type =
+ *   'subscription'`, `entity_id` = its id, `reason` = the transition code,
+ *   `occurred_at` = the instant of the transition). It is the auditable record
+ *   the B11 sweep reads both the population and the 3-day retry clock from
+ *   (AC:B11:6; B11.md "the instant of the transition is already recorded:
+ *   every transition is auditable"; NUCLEO/08 §1.1 criterion 2; HOS-1603).
+ * - `subscription.amount_mutation_decided`: one of OUR amount-mutating transitions
+ *   (S30 in B9b; S37 in B12 and S10 in B8b later) decided to change the
+ *   authorization amount; the sweep retries the mutation for 3 days from it
+ *   (MOT:5, AC:B9b:5).
+ * - `subscription.provider_cancelled_after_rejection`: the `B/03` §10.1 mirror
+ *   moved a `GRACE_PERIOD` row to `CANCELLED` because the provider cancelled
+ *   its preapproval after a rejected charge (mirror pair `CANCELLED_ON_GRACE`).
+ *   Written by `mirrorProviderCancellationOnGrace` in the same transaction as
+ *   the cancellation (`entity_type = 'subscription'`, `entity_id` = its id,
+ *   `reason = 'CANCELLED_ON_GRACE'`, `occurred_at` = the instant of the provider
+ *   re-read, actor `provider`). It tells this `CANCELLED` apart from every other
+ *   one: `canCharge` keeps counting it until the 16th deadline's window ends,
+ *   and the `LIVE_PREAPPROVAL_ON_CLOSED_ROW` pair re-sends the cancellation on
+ *   it (B11 §3; HOS-1676 H-2).
+ */
+export const DOMAIN_EVENT_TYPES = [
+    'email.undeliverable',
+    'listing.created',
+    'listing.edited',
+    'listing.status_changed',
+    'listing.fix_request_opened',
+    'listing.fix_request_closed',
+    'trial.extended',
+    'reconciliation.mark_opened',
+    'account.closed_on_request',
+    'partner_application.email_replaced',
+    'subscription.provider_cancellation_decided',
+    'subscription.provider_cancelled_after_rejection',
+    'subscription.amount_mutation_decided',
+    /** An open reconciliation mark passed deadline 17; written by the sweep. */
+    'reconciliation.mark_escalated',
+    /** An accredited payment was charged below the expected amount (corrida 2). */
+    'reconciliation.undercharge_detected',
+    /** A completed pause gave net days (corrida 2). */
+    'reconciliation.pause_gift_detected'
+] as const;
+
+/** One type of the closed domain event catalog. */
+export type DomainEventType = (typeof DOMAIN_EVENT_TYPES)[number];
+
+/**
+ * Who caused an event (NUCLEO/08 §1.2, "quién"): the owning person, an
+ * administrator, a job, or the payment provider.
+ */
+export const DOMAIN_EVENT_ACTOR_TYPES = ['owner', 'admin', 'job', 'provider'] as const;
+
+/** One kind of actor. */
+export type DomainEventActorType = (typeof DOMAIN_EVENT_ACTOR_TYPES)[number];
+
+/**
+ * One changed field (NUCLEO/08 §1.2, "qué cambió").
+ *
+ * `old`/`new` are carried only for fields that are NOT listing content (status,
+ * plan, amount, dates). For a content field (texts, photos, FAQ, hours) only
+ * `field` is stored, never its values: a delta of a text field IS a copy of
+ * the content, and this table is never deleted from.
+ */
+export interface DomainEventChange {
+    readonly field: string;
+    readonly old?: unknown;
+    readonly new?: unknown;
+}
+
+/** Renders a readonly string tuple as a SQL `IN (...)` list. */
+function sqlInList(values: readonly string[]) {
+    return sql.raw(values.map((value) => `'${value}'`).join(', '));
+}
+
+/**
+ * Domain event log (HOS-1424, unit U2, AC:U2:11; NUCLEO/02 §2.6, NUCLEO/08 §1).
+ *
+ * The audit record of what happened, to which entity, who caused it, when,
+ * under which correlation, and which fields changed. References and deltas,
+ * never a copy of the content.
+ *
+ * APPEND-ONLY. There is no `deleted_at` and no `updated_at` on purpose: a soft
+ * delete is a write that no guard against `DELETE` sees. A `BEFORE UPDATE OR
+ * DELETE` row trigger, hand-appended to migration 0131 (Drizzle cannot express
+ * triggers), rejects both with SQLSTATE `P0001`. `TRUNCATE` is not a row
+ * operation and is NOT blocked: the integration suites wipe every table with
+ * `TRUNCATE ... CASCADE` between tests, and no application code path issues
+ * one.
+ *
+ * - `actor_id` has no FK: the event must outlive (and never block) the account
+ *   it names, and a job or the provider has no account at all.
+ * - `entity_id` is text, not uuid: the pieces that write this table may not
+ *   alter it, and not every entity is keyed by a uuid.
+ * - `occurred_at` is a UTC instant (`timestamptz`, NUCLEO/07 §3).
+ */
+export const domainEvent = pgTable(
+    'domain_event',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+
+        /** What happened. See {@link DOMAIN_EVENT_TYPES}. */
+        eventType: varchar('event_type', { length: 100 }).$type<DomainEventType>().notNull(),
+
+        /** Kind of entity the event is about (e.g. `email_outbox`). */
+        entityType: varchar('entity_type', { length: 100 }).notNull(),
+
+        /** Id of that entity. */
+        entityId: varchar('entity_id', { length: 255 }).notNull(),
+
+        /** Account that caused it, when there is one. No FK on purpose. */
+        actorId: uuid('actor_id'),
+
+        /** Kind of actor. See {@link DOMAIN_EVENT_ACTOR_TYPES}. */
+        actorType: varchar('actor_type', { length: 20 }).$type<DomainEventActorType>().notNull(),
+
+        /** When it happened, in UTC. */
+        occurredAt: timestamp('occurred_at', { withTimezone: true }).defaultNow().notNull(),
+
+        /** Fields that changed. A JSON array of {@link DomainEventChange}. */
+        changes: jsonb('changes').$type<DomainEventChange[]>().notNull().default([]),
+
+        /** Why, when the operation admits a reason. */
+        reason: text('reason'),
+
+        /** Correlation of the business intention (or job item) that produced it (NUCLEO/08 §2). */
+        correlationId: uuid('correlation_id').notNull()
+    },
+    (table) => ({
+        domain_event_entity_idx: index('domain_event_entity_idx').on(
+            table.entityType,
+            table.entityId,
+            table.occurredAt
+        ),
+        domain_event_correlation_idx: index('domain_event_correlation_idx').on(table.correlationId),
+        domain_event_type_idx: index('domain_event_type_idx').on(table.eventType, table.occurredAt),
+        domain_event_event_type_check: check(
+            'domain_event_event_type_check',
+            sql`${table.eventType} IN (${sqlInList(DOMAIN_EVENT_TYPES)})`
+        ),
+        domain_event_actor_type_check: check(
+            'domain_event_actor_type_check',
+            sql`${table.actorType} IN (${sqlInList(DOMAIN_EVENT_ACTOR_TYPES)})`
+        ),
+        /** A person (owner or admin) is always named; a job or the provider has no account. */
+        domain_event_person_actor_check: check(
+            'domain_event_person_actor_check',
+            sql`${table.actorType} NOT IN ('owner', 'admin') OR ${table.actorId} IS NOT NULL`
+        ),
+        domain_event_changes_array_check: check(
+            'domain_event_changes_array_check',
+            sql`jsonb_typeof(${table.changes}) = 'array'`
+        )
+    })
+);
+
+/** Insert shape of a `domain_event` row. */
+export type InsertDomainEvent = typeof domainEvent.$inferInsert;
+/** Select shape of a `domain_event` row. */
+export type SelectDomainEvent = typeof domainEvent.$inferSelect;

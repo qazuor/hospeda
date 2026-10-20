@@ -312,7 +312,7 @@ export const GastronomyMenuItemInputSchema = z.object({
      * gets a second one at render.
      *
      * Accepting it from the body is safe in a way `menuFileUrl` was not (see
-     * `CommerceMenuManager`'s scheme-gate note): the value is only ever a URL
+     * `GastronomyMenuManager`'s scheme-gate note): the value is only ever a URL
      * to render, it is scheme-checked here, and the ENTITLEMENT for having a
      * dish photo at all is enforced by the route before this parses.
      */

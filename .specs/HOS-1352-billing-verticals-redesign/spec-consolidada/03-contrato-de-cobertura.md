@@ -598,7 +598,7 @@ discontinúan, así que no hay fecha de fin de servicio de una vertical ni regla
 La emisión se decide sólo por el estado de cada fuente (las tablas de arriba, del §2.8 y de `V/03`
 §2). **Retirar planes sigue existiendo, también todos los de una vertical** (`B/10` §3), y no toca
 esta regla: una versión retirada deja de venderse y quien la tiene la conserva
-([AC:B12:1](20-fase-3/B12.md#ac-b12-1)). Discontinuar una vertical queda fuera de esta versión.
+([AC:B4:12](10-corte/B4.md#ac-b4-12)). Discontinuar una vertical queda fuera de esta versión.
 
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:588, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:589, .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:590
 

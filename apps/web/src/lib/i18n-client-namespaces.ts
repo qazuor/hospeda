@@ -62,7 +62,6 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'accommodations.detail',
     'accommodations.featureNames',
     'accommodations.types',
-    'account.addons',
     'account.alerts',
     'account.alliances',
     'account.avatar',
@@ -132,10 +131,11 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'auth.tabs',
     'auth.verifyEmail',
     'billing.checkout',
-    // HOS-937 step 3 — the checkout-retry banner (CheckoutRetryBanner.client.tsx)
-    // named on `mi-cuenta/suscripcion` after a card-rejected preapproval.
-    'billing.checkoutRetry',
     'billing.limit',
+    // HOS-1491 — the subscribe button and the publish button's no-plans
+    // rejection render these keys in the browser.
+    'publish.noPlans',
+    'publish.subscribe',
     'blog.categories',
     'comments.form',
     'comments.thread',
@@ -143,27 +143,20 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // (`downloading`/`download`/`locked`/`error`) with an inline Spanish
     // fallback, so a missing prefix does not render a raw key on an /en/ or
     // /pt/ page — it silently prints Spanish there instead.
-    'commerce.brochure',
+    'listing.brochure',
     // HOS-1057 — `ExperienceCertificatePanel.client.tsx` names every state it
     // renders with an inline Spanish fallback, so a missing prefix does not
     // print a raw key on an /en/ or /pt/ page: it silently prints Spanish
     // instead, which is the failure this list exists to prevent.
-    'commerce.certificate',
-    'commerce.changePassword',
-    // NOT an i18n key — a `PermissionEnum` VALUE (`commerce.editOwn`), named as a
-    // string literal by `UserMenu.client.tsx` to decide the PostHog
-    // `user_type`. Nothing ever passes it to `t()`, and no `editOwn` key exists
-    // under this namespace in es/en/pt.
-    //
-    // It is declared anyway because the guard matches any literal whose head is
-    // a real namespace, on purpose: keys routinely reach `t()` through a data
-    // structure, so a call-site-only scan would miss them and ship a menu of raw
-    // dotted keys. That over-match is worth keeping — the cost here is zero
-    // bytes, since `pickClientNamespaces` copies only keys that exist, and this
-    // prefix matches none. See the `gastronomy.editOwn` / `experience.editOwn`
-    // siblings below, added by HOS-1077 for the same reason.
-    'commerce.editOwn',
-    'commerce.owner',
+    'experience.certificate',
+    'account.changePassword',
+    // HOS-1492 — the row 30 "I fixed it" island (`ReportFixedButton.client.tsx`)
+    // renders `listing.notices.fixRequest.*`, and imports the notices module.
+    'listing.notices',
+    'listing.owner',
+    // The gastronomy-only editor panels (menu, daily specials, venue events)
+    // live under their own namespace since the shared `listing` one was split.
+    'gastronomy.owner',
     'common.anonymous',
     // Named directly by the review islands' network-failure branch. It is also
     // listed in EXTERNAL_I18N_KEY_PREFIXES, which covers the copy built inside
@@ -198,11 +191,11 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // HOS-957 — the rich-text toolbar's link dialog, which replaced
     // `window.prompt('URL del enlace', …)`. Named by `LinkUrlDialog.client.tsx`
     // through `RichTextEditor.client.tsx`, so it is reachable from all four
-    // editors that mount it (accommodation, commerce, event, post).
+    // editors that mount it (accommodation, gastronomy/experience, event, post).
     'common.richText',
     'common.saving',
     'common.untitled',
-    // HOS-734 — `CommerceViewsWidget.client.tsx` names `common.window.7d` /
+    // HOS-734 — `ListingViewsWidget.client.tsx` names `common.window.7d` /
     // `.30d` / `.ariaLabel` for its time-window toggle, reusing the same keys
     // admin's `WindowToggle` already used (admin ships its own bundle, so this
     // entry is new here specifically because a WEB client island now names it).
@@ -230,22 +223,20 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'destinations.rating',
     'destinations.weather',
     'events.categories',
-    // HOS-1077: a `PermissionEnum` value, not a key — same as `commerce.editOwn`
-    // above, whose vertical split created it. `UserMenu.client.tsx` reads all
-    // three so a gastronomy-only or experience-only owner is still segmented as
-    // an `owner` in PostHog rather than a `tourist`.
+    // The vertical EDIT_OWN permission values are used by UserMenu analytics,
+    // not as translation keys.
     // HOS-1264 — the AI chat's vertical-specific copy, named via
     // `aiChatCopyKey` in `lib/ai-chat-copy.ts`. Missing, the panel title and
     // disclaimer printed as raw keys on the experience page.
     'experience.aiChat',
     'experience.editOwn',
     'experience.reviews',
-    // HOS-822 — the commerce owner form and the public listing page now name
+    // HOS-822 — the gastronomy/experience owner form and the public listing page now name
     // the SAME listing-type key (`experience.type.*` / `gastronomy.types.*`,
-    // via `resolveCommerceTypeLabel`). The form is a client island, so both
-    // prefixes have to ship: they replace `commerce.owner.editor.typeOption.*`,
+    // via `resolveGastronomyTypeLabel` / `resolveExperienceTypeLabel`). The form is a client island, so both
+    // prefixes have to ship: they replace `listing.owner.editor.typeOption.*`,
     // the editor-private duplicate that was reachable here under
-    // `commerce.owner` and has been deleted.
+    // `listing.owner` and has been deleted.
     'experience.type',
     'external-reputation.aggregate',
     'external-reputation.errors',
@@ -312,18 +303,6 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'newsletter.error',
     'newsletter.errorMessage',
     'newsletter.errorPage',
-    'pricing.free',
-    'pricing.monthlyOnly',
-    'pricing.period',
-    // HOS-1233. The three the plans-page trial branch names from islands: the
-    // warn-and-confirm dialog, the remaining-days banner, and the already-VIP
-    // disabled state. All three sit on the last click before payment, so a
-    // missing prefix here does not degrade — it renders the raw key text at
-    // exactly the moment the visitor is deciding whether to be charged.
-    'pricing.touristVipHeld',
-    'pricing.trialBanner',
-    'pricing.trialNotEligible',
-    'pricing.trialWarning',
     'review.carousel',
     'review.destinationSidebar',
     'review.dialog',

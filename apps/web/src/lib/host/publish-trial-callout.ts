@@ -18,7 +18,8 @@ export interface PublishTrialCalloutInput {
     readonly isTrialExpired: boolean;
     /**
      * Whether publishing would grant this owner a trial, from
-     * `GET /protected/accommodations/publish-eligibility` (`startsTrial`).
+     * `GET /protected/publish/subscribe-destination/{vertical}` mapped by
+     * `resolveTrialEligibility` (`true` only for `PUBLISH`; HOS-1668).
      *
      * `null` means UNRESOLVED, not "no": a signed-out visitor, or a read that
      * failed. The two are deliberately one value, because the callout treats

@@ -16,9 +16,9 @@
  * holds the same logic with the accommodation-specific parts lifted into an
  * {@link EditorRegistry} the caller supplies.
  *
- * Nothing here knows about a vertical. `accommodation-editor-sections.ts` and
- * `commerce-editor-sections.ts` each declare one registry and the rest of the
- * editor reads only this file.
+ * Nothing here knows about a vertical. `accommodation-editor-sections.ts`,
+ * `gastronomy-editor-sections.ts` and `experience-editor-sections.ts` each
+ * declare one registry and the rest of the editor reads only this file.
  */
 
 import type { SupportedLocale } from '@/lib/i18n';

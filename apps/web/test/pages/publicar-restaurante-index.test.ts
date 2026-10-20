@@ -12,7 +12,7 @@
  * `applyCacheHeaders` pricing class) moved with the content itself: the
  * shared-section family guard in `test/pages/sales-pages-family.guard.test.ts`
  * covers `/planes/gastronomia/index.astro` alongside its four siblings, and
- * `test/pages/commerce-landing-cta.guard.test.ts` covers the vertical's
+ * `test/pages/listing-landing-cta.guard.test.ts` covers the vertical's
  * checkout CTA wiring on both the sales page and its own `/precios/` page
  * (`test/pages/pricing-ssr-runtime.test.ts`). Nothing here duplicates that
  * coverage — this file only asserts the one thing left that is genuinely a

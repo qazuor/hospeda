@@ -84,8 +84,8 @@
 
 import { AccommodationModel, getDb, UserModel, withTransaction } from '@repo/db';
 import { createEmailClient } from '@repo/email';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { NotificationScheduleService } from '@repo/service-core';
+import { PermissionEnum } from '@repo/schemas';
+import { createSystemActor, NotificationScheduleService } from '@repo/service-core';
 import { sendAppEmail } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
@@ -114,11 +114,8 @@ const MAX_BATCH_SIZE = 100;
 // ---------------------------------------------------------------------------
 
 /** System-level actor used for all service calls. */
-const SYSTEM_ACTOR = {
-    id: '00000000-0000-0000-0000-000000000001',
-    // HOS-296: the actor carries a SET of hats. This synthetic system actor
-    // wears exactly one, ADMIN, which is all the conversation service checks.
-    roles: [RoleEnum.ADMIN],
+const SYSTEM_ACTOR = createSystemActor({
+    jobId: 'cron.conversation-notification',
     permissions: [
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_VIEW_ANY,
@@ -130,9 +127,8 @@ const SYSTEM_ACTOR = {
         PermissionEnum.CONVERSATION_BLOCK_OWN,
         PermissionEnum.CONVERSATION_BLOCK_ANY,
         PermissionEnum.CONVERSATION_DELETE_ANY
-    ] as readonly PermissionEnum[],
-    _isSystemActor: true
-} as const;
+    ]
+});
 
 // ---------------------------------------------------------------------------
 // Redis idempotency — atomic claim / release

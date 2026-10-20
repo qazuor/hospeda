@@ -323,7 +323,8 @@ describe('GuestThreadResponseSchema — wrapper enforcement (SPEC-210 PR3)', () 
     const VALID_THREAD_PAYLOAD = {
         conversation: RAW_CONVERSATION_ROW,
         messages: [RAW_MESSAGE_ROW],
-        hasMore: false
+        hasMore: false,
+        listingAvailability: 'AVAILABLE'
     } as const;
 
     it('accepts a valid thread payload (conversation + messages + hasMore)', () => {

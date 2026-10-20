@@ -12,10 +12,14 @@
 import { AccommodationIdSchema, AccommodationPublicSchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { resolveOwnerEntitlementsForOwnerId } from '../../../middlewares/owner-entitlement';
+
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
-import { filterAccommodationByEntitlements } from '../../../utils/entitlement-filter';
+import {
+    filterPublicPaidFields,
+    resolvePublicFieldGrants
+} from '../../../utils/entitlement-filter';
+
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -41,13 +45,13 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
         id: AccommodationIdSchema
     },
     responseSchema: AccommodationPublicSchema.nullable(),
-    handler: async (ctx: Context, params: Record<string, unknown>) => {
+    handler: async (_ctx: Context, params: Record<string, unknown>) => {
         // HOS-353: resolve visibility against a GUEST actor, never the caller.
         //
         // `checkCanView` consults the reader through four mechanisms — `isOwner`,
         // ACCOMMODATION_VIEW_ALL, ACCOMMODATION_VIEW_PRIVATE and the VIP entitlement —
-        // across the lifecycle, owner-suspended, plan-restricted and visibility
-        // branches. So the same `:id` answers 200 for an owner/staff/VIP and 404/403
+        // across the publication-state branch (V6.9b; before, the old lifecycle,
+        // owner-suspended, plan-restricted and visibility branches). So the same `:id` answers 200 for an owner/staff/VIP and 404/403
         // for everyone else. This route sits under a PUBLIC_CACHE_ENDPOINTS
         // prefix whose key carries no actor, and 200s are cacheable — so an owner
         // opening their own DRAFT listing parks that 200 in the slot every anonymous
@@ -66,26 +70,24 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
             return null;
         }
 
-        // HOS-929: public read treats holding either the admin-curated
-        // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
-        // flag as featured. `featuredByEntitlement` itself is stripped by
-        // `AccommodationPublicSchema` (never in its pick), so only the OR'd
-        // `isFeatured` reaches the response.
+        // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+        // (the only featuring source since HOS-1419); the raw column itself is
+        // stripped by the public schema (never in its pick).
         const accommodation = {
             ...result.data,
             isFeatured: resolvePublicIsFeatured(result.data)
         };
 
-        // SPEC-187 owner-entitlement gate: resolve the owning host's entitlements
-        // and pass them to filterAccommodationByEntitlements. When the owner lacks
-        // CAN_USE_RICH_DESCRIPTION, richDescription is omitted from the payload.
-        // Fail-closed: no ownerId → empty entitlements → field omitted.
-        const ownerEntitlements = accommodation.ownerId
-            ? await resolveOwnerEntitlementsForOwnerId(accommodation.ownerId)
-            : [];
-        const filtered = filterAccommodationByEntitlements(accommodation, ownerEntitlements);
-
-        return filtered;
+        const grants = await resolvePublicFieldGrants([accommodation.ownerId]);
+        return filterPublicPaidFields(
+            accommodation,
+            grants.get(accommodation.ownerId ?? '') ?? {
+                richDescription: false,
+                video: false,
+                verification: false,
+                aiChat: false
+            }
+        );
     },
     options: {
         cacheTTL: 300,

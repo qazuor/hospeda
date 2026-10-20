@@ -11,9 +11,10 @@ import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { PageTabs, userTabs } from '@/components/layout/PageTabs';
-import { ImpersonateButton } from '@/features/users/components/ImpersonateButton';
+import { AccountCloseOnRequestCard } from '@/features/users/components/AccountCloseOnRequestCard';
 import { UserAccommodationsCard } from '@/features/users/components/UserAccommodationsCard';
 import { UserPublicationsCard } from '@/features/users/components/UserPublicationsCard';
+import { UserTrialSummaryCard } from '@/features/users/components/UserTrialSummaryCard';
 import { useUserHeaderProps } from '@/features/users/hooks/useUserHeaderProps';
 import { useUserPage } from '@/features/users/hooks/useUserPage';
 import { useDeleteUserMutation } from '@/features/users/hooks/useUserQuery';
@@ -42,21 +43,15 @@ function UserViewPage() {
     });
 
     const headerExtraActions = (
-        <>
-            <ImpersonateButton
-                userId={id}
-                variant="responsive"
-            />
-            <DeleteRowButton
-                entityId={id}
-                entityName={displayName}
-                entityLabel={t('admin-entities.entities.user.singular')}
-                permission={PermissionEnum.USER_DELETE}
-                useDeleteMutation={useDeleteUserMutation}
-                variant="responsive"
-                onDeleted={() => navigate({ to: '/access/users' })}
-            />
-        </>
+        <DeleteRowButton
+            entityId={id}
+            entityName={displayName}
+            entityLabel={t('admin-entities.entities.user.singular')}
+            permission={PermissionEnum.USER_DELETE}
+            useDeleteMutation={useDeleteUserMutation}
+            variant="responsive"
+            onDeleted={() => navigate({ to: '/access/users' })}
+        />
     );
 
     const headerTabs = (
@@ -88,9 +83,14 @@ function UserViewPage() {
                     userPermissions={entityData.userPermissions}
                 />
                 <UserAccommodationsCard userId={id} />
+                <UserTrialSummaryCard userId={id} />
                 <UserPublicationsCard
                     userId={id}
                     permissions={entityData.userPermissions}
+                />
+                <AccountCloseOnRequestCard
+                    userId={id}
+                    onClosed={() => navigate({ to: '/access/users' })}
                 />
             </div>
         </EntityPageBase>

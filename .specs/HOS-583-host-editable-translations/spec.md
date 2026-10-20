@@ -20,9 +20,9 @@ Portuguese text that is published under their business name, corrects it per
 locale, and the correction is frozen against future AI runs. Generating with AI
 stays premium; **correcting is free**.
 
-The pattern already exists for commerce
-(`apps/web/src/components/commerce/CommerceTranslationPanel.client.tsx`). This
-spec ports it to accommodations and adds the two things commerce does not have:
+The pattern already exists for gastronomy and experience
+(the existing gastronomy and experience listing implementation). This
+spec ports it to accommodations and adds the two things gastronomy and experience does not have:
 the freeze (`translationMeta.<field>.<locale>.autoTranslated = false`) and the
 "the Spanish original changed" notice with a per-field regenerate.
 
@@ -63,7 +63,7 @@ to the host, and unfixable by them.
 ## 4. Non-goals
 
 - **NG-1** — No rich-text editor in the translation panel. Four plain
-  textareas, exactly like the commerce panel; `richDescription` translations are
+  textareas, exactly like the gastronomy and experience panel; `richDescription` translations are
   edited as raw Markdown.
 - **NG-2** — No translation editing for `destination`, `event`, `post` or `poi`.
   The `translationMeta` mechanism is shared by all five tables, but only the
@@ -72,7 +72,7 @@ to the host, and unfixable by them.
   informational; regenerating is always an explicit host action (it costs quota).
 - **NG-4** — No change to the admin override endpoint or the admin
   `TranslationStatus` component.
-- **NG-5** — Commerce is not retrofitted with the freeze in this spec (see R-4).
+- **NG-5** — Gastronomy and experience is not retrofitted with the freeze in this spec (see R-4).
 
 ## 5. Current baseline
 
@@ -162,13 +162,13 @@ surface. See OQ-1.
 ### 6.1 Panel: badges stay, textareas arrive
 
 `TranslationPanel.client.tsx` keeps its field-card / locale-badge visual
-language (it is the panel hosts already know) and gains the commerce panel's
+language (it is the panel hosts already know) and gains the gastronomy and experience panel's
 editing model:
 
 - Locale tab bar `ES | EN | PT`; the tab carries the presence badge already
   rendered today.
 - Inside the active tab, one labelled textarea per in-scope field. The label
-  carries the locale — `Descripción (EN)` — for the exact reason the commerce
+  carries the locale — `Descripción (EN)` — for the exact reason the gastronomy and experience
   panel does (HOS-371: without it a screen reader announces the same name as the
   editor's own field, and `getByRole('textbox', { name })` matches both).
 - The `ES` tab is **read-only**: Spanish is the source, edited on its own
@@ -190,7 +190,7 @@ Decided by the owner: the edit rides the accommodation PATCH.
    `ownFields = ['nameI18n', 'summaryI18n', 'descriptionI18n', 'richDescriptionI18n']`,
    so the translations page can never clobber another section's data — the
    invariant the hook exists to hold.
-3. The panel becomes stateless with respect to persistence (commerce model): it
+3. The panel becomes stateless with respect to persistence (gastronomy and experience model): it
    calls `onChange` with the full i18n state; the page owns the dirty diff and
    the save button.
 
@@ -383,10 +383,10 @@ Web:
   but this spec adds the first host-driven path into that update. Omit
   `translationMeta` from the update input as part of this work, so the only way
   to write it is the §6.3 primitive.
-- **R-4 — Commerce has the same freeze gap.** `CommerceTranslationPanel` edits
+- **R-4 — Gastronomy and experience listings have the same freeze gap.** Their translation edits
   are not marked `autoTranslated: false`, so a batch AI run can overwrite an
   owner's correction there. Out of scope; file a Linear follow-up once the
-  primitive from §6.3 exists, since it makes the commerce fix small.
+  primitive from §6.3 exists, since it makes the gastronomy and experience fix small.
 - **R-5 — Stale detection with no backfill.** Rows translated before this ships
   carry no baseline, so staleness is unknown for them. Fail quiet: show no
   notice rather than a false one. It self-heals on the next write.

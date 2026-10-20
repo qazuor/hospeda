@@ -52,6 +52,7 @@ vi.mock('../../../src/services/contentModeration/get-threshold-for-context.js', 
 // ---------------------------------------------------------------------------
 // Accommodation review stateful model store
 // ---------------------------------------------------------------------------
+const mockAccommodationFindById = vi.hoisted(() => vi.fn());
 
 /**
  * Stateful in-memory store backing AccommodationReviewModel mock.
@@ -215,7 +216,7 @@ vi.mock('@repo/db', async (importOriginal) => {
         }),
         AccommodationModel: vi.fn(function () {
             return {
-                findById: vi.fn().mockResolvedValue(null),
+                findById: mockAccommodationFindById,
                 findOne: vi.fn().mockResolvedValue(null),
                 create: vi.fn(),
                 update: vi.fn(),
@@ -277,6 +278,7 @@ import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
@@ -490,6 +492,10 @@ beforeEach(() => {
     vi.clearAllMocks();
     accReviewStore.clear();
     destReviewStore.clear();
+    mockAccommodationFindById.mockResolvedValue({
+        ownerId: getMockId('user', 'owner'),
+        publicationStatus: PublicationStatusEnum.PUBLISHED
+    });
 });
 
 // ===========================================================================

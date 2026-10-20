@@ -1,10 +1,8 @@
-import { EntitlementKey } from '@repo/billing';
 import { useStore } from '@tanstack/react-form';
 import * as React from 'react';
 import { useEntityFormContext } from '@/components/entity-form/context/EntityFormContext';
 import { computeScore } from '@/components/quality-score';
 import { QualityScore } from '@/components/quality-score/QualityScore';
-import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
 import { createEventSignals } from '../config/score-signals';
 
 // Same workaround as AccommodationQualityScore — `ReactFormApi` doesn't
@@ -33,7 +31,6 @@ export const EventQualityScore = React.memo(function EventQualityScoreComponent(
     compact = false
 }: EventQualityScoreProps) {
     const { form } = useEntityFormContext();
-    const { has, isLoading: entitlementsLoading } = useMyEntitlements();
 
     // TYPE-WORKAROUND: `ReactFormApi` (the EntityFormContext type alias) doesn't expose
     // `.store` in its public type even though the runtime `FormApi` from `useForm` always
@@ -41,15 +38,10 @@ export const EventQualityScore = React.memo(function EventQualityScoreComponent(
     const formStore = (form as unknown as { readonly store: FormStore }).store;
     const values = useStore(formStore, (state) => (state as FormStoreState).values);
 
-    // SPEC-171 — staff receive every entitlement (`has` → true); HOSTs depend
-    // on their plan. While entitlements are loading we fail-open to avoid
-    // flashing the gated state.
-    const hasVideoGalleryFeature = entitlementsLoading || has(EntitlementKey.CAN_EMBED_VIDEO);
+    // Events are not verticals; can_embed_video is vertical-scoped, and the API decides.
+    const hasVideoGalleryFeature = true;
 
-    const signals = React.useMemo(
-        () => createEventSignals({ hasVideoGalleryFeature }),
-        [hasVideoGalleryFeature]
-    );
+    const signals = React.useMemo(() => createEventSignals({ hasVideoGalleryFeature }), []);
 
     const result = React.useMemo(() => computeScore(signals, values), [signals, values]);
 

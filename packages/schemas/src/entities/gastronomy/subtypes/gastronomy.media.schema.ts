@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import {
-    BaseCommerceMediaSchema,
-    CommerceMediaStateSchema,
-    CommerceMediaUpdatePayloadSchema
-} from '../../../common/commerce-media.schema.js';
 import { PreviousFeaturedOutcomeSchema } from '../../../common/featured-media.schema.js';
+import {
+    BaseListingMediaSchema,
+    ListingMediaStateSchema,
+    ListingMediaUpdatePayloadSchema
+} from '../../../common/listing-media.schema.js';
 import {
     hasAtLeastOneMediaTextField,
     ImageAttributionSchema,
@@ -14,25 +14,25 @@ import { ModerationStatusEnumSchema } from '../../../enums/index.js';
 
 /**
  * Enum schema for the visibility state of a single gastronomy media row.
- * Re-exports the shared {@link CommerceMediaStateSchema} under the
+ * Re-exports the shared {@link ListingMediaStateSchema} under the
  * per-vertical name used by gastronomy media endpoints/services.
  *
  * @see packages/db/src/schemas/gastronomy/gastronomy_media.dbschema.ts
  */
-export const GastronomyMediaStateSchema = CommerceMediaStateSchema;
+export const GastronomyMediaStateSchema = ListingMediaStateSchema;
 export type GastronomyMediaState = z.infer<typeof GastronomyMediaStateSchema>;
 
 /**
  * Zod schema for a single row in the `gastronomy_media` table.
  *
- * Extends {@link BaseCommerceMediaSchema} (shared with `experience_media`)
+ * Extends {@link BaseListingMediaSchema} (shared with `experience_media`)
  * with the two fields that differ per vertical: `id` and the parent FK
  * (`gastronomyId`). See the base schema's JSDoc for the full field-level
- * documentation shared by both commerce verticals.
+ * documentation shared by both verticals.
  *
  * @see packages/db/src/schemas/gastronomy/gastronomy_media.dbschema.ts
  */
-export const GastronomyMediaSchema = BaseCommerceMediaSchema.extend({
+export const GastronomyMediaSchema = BaseListingMediaSchema.extend({
     /** UUID primary key for this media row. */
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** UUID of the parent gastronomy listing (FK → gastronomies.id). */
@@ -76,14 +76,14 @@ export const GastronomyMediaAddPayloadSchema = z.object({
      * Full public URL of the photo (Cloudinary delivery URL or external CDN).
      * Required — the upload endpoint returns this URL before this call is made.
      */
-    url: mediaAssetUrl('zodError.common.commerceMedia.url.invalid'),
+    url: mediaAssetUrl('zodError.common.listingMedia.url.invalid'),
     /**
      * Cloudinary `public_id` (e.g. `hospeda/dev/abc123`).
      * Optional — historic or external-URL payloads may not carry one.
      */
     publicId: z
         .string()
-        .min(1, { message: 'zodError.common.commerceMedia.publicId.min' })
+        .min(1, { message: 'zodError.common.listingMedia.publicId.min' })
         .optional(),
     /**
      * Short display caption (max 100 chars).
@@ -91,8 +91,8 @@ export const GastronomyMediaAddPayloadSchema = z.object({
      */
     caption: z
         .string()
-        .min(3, { message: 'zodError.common.commerceMedia.caption.min' })
-        .max(100, { message: 'zodError.common.commerceMedia.caption.max' })
+        .min(3, { message: 'zodError.common.listingMedia.caption.min' })
+        .max(100, { message: 'zodError.common.listingMedia.caption.max' })
         .optional(),
     /**
      * Longer description of photo content (max 300 chars).
@@ -100,8 +100,8 @@ export const GastronomyMediaAddPayloadSchema = z.object({
      */
     description: z
         .string()
-        .min(10, { message: 'zodError.common.commerceMedia.description.min' })
-        .max(300, { message: 'zodError.common.commerceMedia.description.max' })
+        .min(10, { message: 'zodError.common.listingMedia.description.min' })
+        .max(300, { message: 'zodError.common.listingMedia.description.max' })
         .optional(),
     /**
      * Accessible alt text for `<img alt>` and screen readers.
@@ -109,8 +109,8 @@ export const GastronomyMediaAddPayloadSchema = z.object({
      */
     alt: z
         .string()
-        .min(1, { message: 'zodError.common.commerceMedia.alt.min' })
-        .max(200, { message: 'zodError.common.commerceMedia.alt.max' })
+        .min(1, { message: 'zodError.common.listingMedia.alt.min' })
+        .max(200, { message: 'zodError.common.listingMedia.alt.max' })
         .optional(),
     /**
      * Optional credits/source metadata (photographer, sourceUrl, license).
@@ -153,7 +153,7 @@ export type GastronomyMediaAddInput = z.infer<typeof GastronomyMediaAddInputSche
  * verbatim is what keeps `isFeatured` unreachable from a request body: the
  * caller never states the outcome, the endpoint does.
  *
- * There is no `planGalleryCap` here, unlike the accommodation twin. Commerce
+ * There is no `planGalleryCap` here, unlike the accommodation twin. Gastronomy
  * listings have no per-plan photo allowance — only the fixed per-entity cap
  * from `getGalleryCap`, which the service reads itself.
  */
@@ -370,8 +370,8 @@ export type GastronomyMediaRestoreInput = z.infer<typeof GastronomyMediaRestoreI
 // Update Text Metadata (HOS-1036 — PATCH /gastronomies/:id/media/:mediaId)
 // ----------------------------------------------------------------------------
 
-/** HTTP payload for `PATCH /gastronomies/:id/media/:mediaId`. Alias of the shared commerce payload. */
-export const GastronomyMediaUpdatePayloadSchema = CommerceMediaUpdatePayloadSchema;
+/** HTTP payload for `PATCH /gastronomies/:id/media/:mediaId`. Alias of the shared listing payload. */
+export const GastronomyMediaUpdatePayloadSchema = ListingMediaUpdatePayloadSchema;
 /** Inferred type for the update-media HTTP payload. */
 export type GastronomyMediaUpdatePayload = z.infer<typeof GastronomyMediaUpdatePayloadSchema>;
 
@@ -393,7 +393,7 @@ export const GastronomyMediaUpdateInputSchema = z
         ...GastronomyMediaUpdatePayloadSchema.shape
     })
     .refine(hasAtLeastOneMediaTextField, {
-        message: 'zodError.common.commerceMedia.update.atLeastOneField'
+        message: 'zodError.common.listingMedia.update.atLeastOneField'
     });
 /** Inferred type for the update-media service input. */
 export type GastronomyMediaUpdateInput = z.infer<typeof GastronomyMediaUpdateInputSchema>;

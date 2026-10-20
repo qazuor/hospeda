@@ -16,16 +16,17 @@
  * @see SPEC-207 §4.1
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     EntityViewWindowSchema,
     HostViewDailySeriesSchema,
     PermissionEnum,
-    type ServiceErrorCode
+    type ServiceErrorCode,
+    VerticalEnum
 } from '@repo/schemas';
 import { entityViewService, ServiceError } from '@repo/service-core';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 /**
@@ -35,6 +36,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
  * aggregated across all of the host's own accommodations. Requires
  * `ACCOMMODATION_VIEW_OWN` permission (standard host-tier) and
  * `VIEW_BASIC_STATS` entitlement.
+ * Reads the owner's effective view_basic_stats capability before returning statistics.
  */
 export const hostAccommodationDailySeriesRoute = createProtectedRoute({
     method: 'get',
@@ -53,6 +55,11 @@ export const hostAccommodationDailySeriesRoute = createProtectedRoute({
     responseSchema: HostViewDailySeriesSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            keys: ['view_basic_stats']
+        });
         const typedQuery = query as { window: '7d' | '30d' };
 
         const result = await entityViewService.getDailySeriesForHostAccommodations({
@@ -70,10 +77,6 @@ export const hostAccommodationDailySeriesRoute = createProtectedRoute({
         };
     },
     options: {
-        // Gated by VIEW_BASIC_STATS — same entitlement as accommodations/me stats
-        // (SPEC-145 gate matrix: host Card G), ensuring both widgets are consistently
-        // accessible on the same plan tier.
-        middlewares: [requireEntitlement(EntitlementKey.VIEW_BASIC_STATS)],
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

@@ -6,11 +6,12 @@ import {
     GastronomyAdminSchema,
     type GastronomyUpdateInput,
     GastronomyUpdateInputSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -22,16 +23,16 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * Partial update gastronomy listing — Admin endpoint.
  *
  * Uses the same `GastronomyUpdateInputSchema` (all fields partial) as the PUT
- * endpoint. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.
+ * endpoint. Requires GASTRONOMY_EDIT_ALL permission.
  */
 export const adminPatchGastronomyRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}',
     summary: 'Partial update gastronomy listing (admin)',
     description:
-        'Updates specific fields of a gastronomy listing. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.',
+        'Updates specific fields of a gastronomy listing. Requires GASTRONOMY_EDIT_ALL permission.',
     tags: ['Gastronomy'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -46,7 +47,10 @@ export const adminPatchGastronomyRoute = createAdminRoute({
         const id = params.id as string;
         const data = body as GastronomyUpdateInput;
 
-        const result = await gastronomyService.update(actor, id, data);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => gastronomyService.update(actor, id, data)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

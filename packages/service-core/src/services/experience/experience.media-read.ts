@@ -6,8 +6,8 @@
  *
  * Mirrors `gastronomy.media-read.ts` (and, transitively, `accommodation.media-read.ts`)
  * field-for-field, delegating the pure composition step to the SHARED
- * `composeCommerceMedia` helper — see `commerce-media-compose.ts` for why one
- * function serves both commerce verticals.
+ * `composeListingMedia` helper — see `listing-media-compose.ts` for why one
+ * function serves both the gastronomy and experience verticals.
  *
  * Both helpers use the batch finder `findByExperiences` (one `IN` query) so
  * list/search composition does not incur an N+1.
@@ -28,7 +28,7 @@
 
 import type { DrizzleClient, ExperienceMediaModel } from '@repo/db';
 import type { Experience, ExperienceMedia } from '@repo/schemas';
-import { composeCommerceMedia } from '../commerce/commerce-media-compose';
+import { composeListingMedia } from '../listing/listing-media-compose';
 
 // ---------------------------------------------------------------------------
 // Private helper
@@ -42,7 +42,7 @@ function withComposedExperienceMedia<T extends Experience>(
     entity: T,
     rows: readonly ExperienceMedia[]
 ): T {
-    const composed = composeCommerceMedia({ rows, videos: entity.videos });
+    const composed = composeListingMedia({ rows, videos: entity.videos });
     const hasContent = Object.keys(composed).length > 0;
     return { ...entity, media: hasContent ? composed : entity.media } as T;
 }

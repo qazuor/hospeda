@@ -88,13 +88,9 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // of the five that had NO landing before, so it is a genuinely new
     // indexable URL rather than a relocation.
     { path: '/planes/turistas/', changefreq: 'monthly', priority: 0.8 },
-    // HOS-985: the partner audience's level-2 sales page. `/sumate/partner/`
-    // below still answers 200 and keeps its entry: it holds the lead form both
-    // partner pages send people to, and cannot 301 into this family until that
-    // form has a home inside it.
-    { path: '/planes/aliados/', changefreq: 'monthly', priority: 0.8 },
 
-    // HOS-1032: level 3 — the five pricing pages. They carry the priority the
+    // HOS-1032: level 3 — the pricing pages (the aliados pair was removed with
+    // the old billing, HOS-1637). They carry the priority the
     // URLs they replace had, because they are the same content at a new
     // address, and each is the page that answers "cuánto cuesta …" for its
     // audience, which is a search intent distinct from its sales page's.
@@ -107,7 +103,6 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     { path: '/planes/turistas/precios/', changefreq: 'monthly', priority: 0.8 },
     { path: '/planes/gastronomia/precios/', changefreq: 'monthly', priority: 0.7 },
     { path: '/planes/experiencias/precios/', changefreq: 'monthly', priority: 0.7 },
-    { path: '/planes/aliados/precios/', changefreq: 'monthly', priority: 0.7 },
 
     // Partner / collaborator acquisition.
     { path: '/sumate/partner/', changefreq: 'monthly', priority: 0.6 },
@@ -135,7 +130,8 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // Legal.
     { path: '/legal/terminos/', changefreq: 'yearly', priority: 0.3 },
     { path: '/legal/privacidad/', changefreq: 'yearly', priority: 0.3 },
-    { path: '/legal/cookies/', changefreq: 'yearly', priority: 0.3 }
+    { path: '/legal/cookies/', changefreq: 'yearly', priority: 0.3 },
+    { path: '/legal/arrepentimiento/', changefreq: 'yearly', priority: 0.3 }
 ] as const;
 
 /** Why a parameter-free page is kept out of the static sitemap. */
@@ -183,7 +179,6 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     '/alojamientos/comparar/': 'noindex',
     '/alojamientos/mapa/': 'noindex',
     '/destinos/mapa/': 'noindex',
-    '/suscriptores/plan1/': 'noindex',
     '/newsletter/confirma-tu-email/': 'noindex',
     '/newsletter/confirmado/': 'noindex',
     '/newsletter/desuscripto/': 'noindex',
@@ -205,7 +200,7 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
 
     // Redirect-only since HOS-1032. The five pricing URLs the `/planes/`
     // namespace replaced (HOS-941 D-8), plus the two comparison pages whose
-    // table moved onto the pricing page itself (D-11) and the two commerce
+    // table moved onto the pricing page itself (D-11) and the two gastronomy/experience
     // landings whose price block moved down a level (D-9 for the slug).
     //
     // All seven leave the sitemap in the SAME change that turns them into
@@ -230,12 +225,9 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     // into a redirect.
     '/suscriptores/propietarios/': 'transactional',
 
-    // MercadoPago return targets and the redirect-only checkout root.
+    // The redirect-only checkout root. Its old-billing MercadoPago return pages
+    // were removed with the old billing (HOS-1637).
     '/suscriptores/checkout/': 'transactional',
-    '/suscriptores/checkout/success/': 'transactional',
-    '/suscriptores/checkout/failure/': 'transactional',
-    '/suscriptores/checkout/pending/': 'transactional',
-    '/partners/checkout/pending/': 'transactional',
 
     // Guest-messaging landings, reachable only via an emailed access token.
     '/guest/messages/request-access/': 'token-gated',

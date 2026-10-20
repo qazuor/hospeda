@@ -11,11 +11,12 @@ import {
     type GastronomyMediaAddPayload,
     GastronomyMediaAddPayloadSchema,
     GastronomyMediaSingleOutputSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { addGastronomyMedia, GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -26,17 +27,17 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * POST /api/v1/admin/gastronomies/:id/media
  * Add photo to gastronomy listing gallery — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
+ * Requires GASTRONOMY_EDIT_ALL permission. The service helper
  * `addGastronomyMedia` enforces the same gate via `checkGastronomyCanEditMedia`.
  */
 export const adminAddGastronomyMediaRoute = createAdminRoute({
     method: 'post',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media',
     summary: 'Add photo to gastronomy listing gallery (admin)',
     description:
-        'Registers an already-uploaded URL as a new gastronomy_media row. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+        'Registers an already-uploaded URL as a new gastronomy_media row. Requires GASTRONOMY_EDIT_ALL.',
     tags: ['Gastronomy', 'Media'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -58,7 +59,10 @@ export const adminAddGastronomyMediaRoute = createAdminRoute({
         const model = (
             gastronomyService as unknown as { model: Parameters<typeof addGastronomyMedia>[0] }
         ).model;
-        const result = await addGastronomyMedia(model, actor, input);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => addGastronomyMedia(model, actor, input)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

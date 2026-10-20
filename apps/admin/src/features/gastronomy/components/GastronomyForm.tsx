@@ -119,7 +119,6 @@ export function GastronomyForm({
             name: '',
             type: GastronomyTypeEnum.RESTAURANT,
             destinationId: '',
-            isFeatured: false,
             ...defaultValues
         } as GastronomyFormValues,
         onSubmit: async ({ value }) => {

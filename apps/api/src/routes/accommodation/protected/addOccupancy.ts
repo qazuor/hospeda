@@ -13,25 +13,20 @@
  * on mismatch, the path value simply always wins).
  *
  * No declarative `ownership:` config — MANAGE permission + ownership are
- * enforced inside `addOccupancy`. The `CAN_USE_CALENDAR` entitlement is
- * enforced HERE at the route via `requireEntitlement`, reading
- * `userEntitlements` (populated by the same `loadEntitlements` path the
- * frontend trusts, including HOST draft defaults and the staff bypass) —
- * mirroring `views/protected/accommodations-me.ts`. This is deliberately
- * NOT re-checked in the service: gating the owner's own billing entitlement
- * via `resolveOwnerCanUseCalendar` would fail closed for a brand-new HOST
- * with no subscription yet, even though the frontend gate (which trusts
- * `loadEntitlements`'s host-draft-defaults fallback) already let them in.
+ * enforced inside `addOccupancy`. Calendar operations run without the former
+ * `can_use_calendar` on the listing owner through listing access.
+ * The listing access resolver requires the route capability on the owner.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     AccommodationIdSchema,
     AccommodationOccupancyCreateInputSchema,
-    AccommodationOccupancySchema
+    AccommodationOccupancySchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { addOccupancy } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -44,6 +39,12 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 export const protectedAddOccupancyRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/occupancy',
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        capabilities: ['can_use_calendar'],
+        idParam: 'id'
+    },
     summary: 'Block a single day on the occupancy calendar (owner)',
     description:
         'Creates (or idempotently returns the existing) source=MANUAL occupancy row ' +
@@ -68,8 +69,5 @@ export const protectedAddOccupancyRoute = createProtectedRoute({
             actor,
             input: { accommodationId, date, note }
         });
-    },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_USE_CALENDAR)]
     }
 });

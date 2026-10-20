@@ -4,7 +4,7 @@
  * ---
  * WHY THE CONTENT IS SEPARATE FROM THE LAYOUT
  *
- * Same split `commerce-brochure` uses and for the same reason: what a
+ * Same split `listing-brochure` uses and for the same reason: what a
  * certificate SAYS is translated, auditable copy, and where it sits on the page
  * is typography. Keeping them apart means a test can assert the sentence
  * without rendering a PDF, and the renderer can be swapped without touching a
@@ -101,7 +101,7 @@ function i18nText(input: {
 /**
  * Absolute URL of the experience's public ficha.
  *
- * Mirrors `buildPublicListingUrl` in `commerce-brochure`, deliberately not
+ * Mirrors `buildPublicListingUrl` in `listing-brochure`, deliberately not
  * imported from it: the two modules answer to different features and a shared
  * helper would tie the certificate's QR to whatever the brochure's URL shape
  * becomes. The segment is asserted literally by this module's test, which is
@@ -178,28 +178,28 @@ export function buildCertificateContent(input: {
     const experienceName = i18nText({ value: experience.nameI18n, locale }) || experience.name;
 
     return {
-        title: t({ locale, key: 'commerce.certificate.title', fallback: 'Certificado' }),
+        title: t({ locale, key: 'listing.certificate.title', fallback: 'Certificado' }),
         preamble: t({
             locale,
-            key: 'commerce.certificate.preamble',
+            key: 'listing.certificate.preamble',
             fallback: 'El presente certifica que'
         }),
         recipientName: certificate.recipientName,
         connector: t({
             locale,
-            key: 'commerce.certificate.connector',
+            key: 'listing.certificate.connector',
             fallback: 'realizó la experiencia'
         }),
         experienceName,
         dateLine: formatCertificateDate({ completedAt: certificate.completedAt, locale }),
         qrHint: t({
             locale,
-            key: 'commerce.certificate.qrHint',
+            key: 'listing.certificate.qrHint',
             fallback: 'Escaneá el código para conocer la experiencia.'
         }),
         footer: t({
             locale,
-            key: 'commerce.certificate.footer',
+            key: 'listing.certificate.footer',
             fallback: 'hospeda.com.ar'
         }),
         publicUrl: buildExperiencePublicUrl({

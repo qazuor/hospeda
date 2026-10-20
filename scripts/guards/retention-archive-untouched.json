@@ -1,0 +1,42 @@
+{
+    "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:244-254; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:758-764",
+    "measuredAt": "HOS-1694",
+    "files": [
+        {
+            "file": "packages/verticals/src/publication/archive-inactive-listing.ts",
+            "sha256": "3c8b219d2a5ddb6132cfe29df40d7ff3ca4130ca85be41d34865c6f2a1281c0e"
+        },
+        {
+            "file": "packages/verticals/src/publication/archive-notices.ts",
+            "sha256": "e5ec3ac46faac81cd72b2a0e62433572a1288ec1c2c806a376eca960eeaae8ba"
+        },
+        {
+            "file": "packages/verticals/src/publication/inactivity-archive-run.ts",
+            "sha256": "d39fcb3ad725cf59519d5226ab15c20cccad282f115486e861ec9a728c624488"
+        },
+        {
+            "file": "packages/verticals/src/publication/retention-clock.ts",
+            "sha256": "b7e986f55bc4e856d92b87378457aa0e8855cfe10c4dd96fa22fc79ef453e385"
+        },
+        {
+            "file": "packages/db/src/models/listing/listing-retention.model.ts",
+            "sha256": "8f15798caf43261b1d5e924d44c5c8e11d9b73f3f2e35ff1aa4eb2958cdf3d8f"
+        },
+        {
+            "file": "apps/api/src/cron/jobs/listing-inactivity-archive.job.ts",
+            "sha256": "b189c0dfd35bd383cabf21d38d709b0b92e7c8e737a17feb7db769c6566b10ef"
+        },
+        {
+            "file": "apps/api/src/utils/listing-publication/archive-ports.ts",
+            "sha256": "b05e86dac77eb48a52ca40aa8d00329bac58418450dad8e553a1e206424f90ed"
+        },
+        {
+            "file": "packages/notifications/src/services/outbox/listing-archived-renderers.tsx",
+            "sha256": "f5a7691a86ece81e4c5894bcc9447ac282679ae84d0f8e340c86eee09253bbe6"
+        },
+        {
+            "file": "packages/notifications/src/templates/listing/listing-archived.tsx",
+            "sha256": "4ad08b0c711020b344b267dee7854031b9247720385b6ac0b18bb6936c320df7"
+        }
+    ]
+}

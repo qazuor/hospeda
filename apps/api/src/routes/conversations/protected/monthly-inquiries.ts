@@ -12,13 +12,13 @@
  * @see SPEC-155 HOST card I
  */
 
-import { EntitlementKey } from '@repo/billing';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, VerticalEnum } from '@repo/schemas';
 import { ConversationService, ServiceError } from '@repo/service-core';
 import { z } from 'zod';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -49,6 +49,7 @@ const queryParamsSchema = z.object({
  * Aggregated monthly inquiry counts for the authenticated host. Requires
  * `CONVERSATION_VIEW_OWN`. Returns 200 with a zero-filled series even when
  * the host has zero conversations.
+ * Reads the owner's effective view_basic_stats capability before returning statistics.
  */
 export const hostConversationMonthlyInquiriesRoute = createProtectedRoute({
     method: 'get',
@@ -64,6 +65,11 @@ export const hostConversationMonthlyInquiriesRoute = createProtectedRoute({
     responseSchema: HostMonthlyInquiriesSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            keys: ['view_basic_stats']
+        });
         const months = (query as { months?: number } | undefined)?.months ?? 6;
 
         const result = await conversationService.getHostMonthlyInquiries(actor, { months });
@@ -75,10 +81,6 @@ export const hostConversationMonthlyInquiriesRoute = createProtectedRoute({
         return { months: result.data ?? [] };
     },
     options: {
-        // SPEC-145 T-006: VIEW_BASIC_STATS gate — monthly-inquiries trend KPI is
-        // a basic stats feature granted on owner-basico (and above) and
-        // complex-basico (and above). Tourists never see this route.
-        middlewares: [requireEntitlement(EntitlementKey.VIEW_BASIC_STATS)],
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

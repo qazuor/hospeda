@@ -5,9 +5,7 @@
  * GET /api/v1/protected/gastronomies/{id}/menu-qr/scans
  * ```
  *
- * Same gate, same middleware order, and the same ownership rule as
- * `menuQr.ts` in this directory — read that file's module doc for the full
- * rationale, which is not repeated here.
+ * The same ownership and menu_qr_scan_metrics gate as `menuQr.ts` applies.
  *
  * ## The one thing this route does differently from `menuQr.ts`: it never mints
  *
@@ -21,8 +19,7 @@
  * @module routes/gastronomy/protected/menuQrScans
  */
 
-import { EntitlementKey } from '@repo/billing';
-import { PermissionEnum, QrCodeScanStatsSchema, QrCodeScanWindowSchema } from '@repo/schemas';
+import { QrCodeScanStatsSchema, QrCodeScanWindowSchema, VerticalEnum } from '@repo/schemas';
 import {
     buildEmptyQrCodeScanStats,
     entityNotFoundError,
@@ -34,8 +31,7 @@ import {
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -63,11 +59,8 @@ export async function handleGetGastronomyMenuQrScans(
     const listing = await gastronomyService.getById(actor, gastronomyId);
     const entity = listing.error ? null : listing.data;
 
-    // Same gate, same wording as `menuQr.ts` / `protected/getById.ts` — a
-    // divergent message here would tell a caller that the id they hold is
-    // real (HOS-600). A 403 would confirm the id exists, so this is a 404.
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.COMMERCE_VIEW_ALL);
-    if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
+    // Listing access has already checked ownership; retain the missing-row 404.
+    if (!entity) {
         throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
     }
 
@@ -104,18 +97,22 @@ export async function handleGetGastronomyMenuQrScans(
 /**
  * GET /api/v1/protected/gastronomies/:id/menu-qr/scans
  *
- * Premium-only: gated on `MENU_QR_SCAN_METRICS`, granted by `gastronomy-premium`
- * alone (HOS-1044 §6.5), same as `menuQr.ts`.
+ * Owner-only scan aggregate requiring menu_qr_scan_metrics on the listing owner.
  */
 export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/menu-qr/scans',
+    listingAccess: {
+        vertical: VerticalEnum.GASTRONOMY,
+        operation: 'READ_OWN_COMMERCIAL',
+        idParam: 'id',
+        step6Key: 'menu_qr_scan_metrics'
+    },
     summary: 'Get the scan aggregate for a gastronomy listing’s menu QR',
     description:
         'Returns the total scans, a gap-filled daily series, and device/OS/language breakdowns ' +
         'for the venue’s menu QR over a rolling window (7d or 30d, default 30d). A venue with no ' +
-        'menu QR yet gets an all-zero aggregate — this endpoint never mints a code. Owner-only, ' +
-        'and requires the menu_qr_scan_metrics entitlement granted by the premium gastronomy plan.',
+        'menu QR yet gets an all-zero aggregate — this endpoint never mints a code. Owner-only.',
     tags: ['Gastronomy', 'Gastronomy Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -132,10 +129,7 @@ export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
                 windowMs: 60_000,
                 max: MENU_QR_SCANS_RATE_LIMIT_MAX,
                 keyPrefix: 'menu-qr-scans:gastronomy'
-            }),
-            // Loader before checker (HOS-1074) — same as `menuQr.ts`.
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MENU_QR_SCAN_METRICS)
+            })
         ]
     }
 });

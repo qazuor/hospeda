@@ -13,10 +13,32 @@
  * already does — otherwise every `--reset` would wipe the applied-migrations
  * record and every seed data-migration would silently re-run from scratch.
  */
+import { REFERENCE_TABLES } from '@repo/db';
 import { describe, expect, it } from 'vitest';
 import { partitionTablesForReset } from '../../src/utils/dbReset.js';
 
 describe('partitionTablesForReset', () => {
+    it('treats the shared REFERENCE_TABLES constant as always excluded', () => {
+        // Arrange
+        const discoveredTables = ['users', ...REFERENCE_TABLES];
+
+        // Act
+        const result = partitionTablesForReset({ discoveredTables, exclude: [] });
+
+        // Assert
+        expect([...REFERENCE_TABLES].sort()).toEqual([
+            'billing_deadline_version',
+            'catalog_key',
+            'plan',
+            'plan_version',
+            'plan_version_entitlement',
+            'plan_version_limit',
+            'vertical',
+            'vertical_deadline_version'
+        ]);
+        expect(result.tablesToReset).toEqual(['users']);
+    });
+
     it('excludes seed_migrations even when the caller does not ask to exclude it', () => {
         // Arrange
         const discoveredTables = ['users', 'seed_migrations', 'accommodations'];
@@ -28,6 +50,38 @@ describe('partitionTablesForReset', () => {
         expect(result.tablesToReset).not.toContain('seed_migrations');
         expect(result.tablesSkipped).toContain('seed_migrations');
         expect(result.tablesToReset).toEqual(['users', 'accommodations']);
+    });
+
+    it('keeps migration-written reference tables out of the reset (HOS-1430, HOS-1516)', () => {
+        // Arrange
+        const discoveredTables = [
+            'users',
+            'vertical',
+            'catalog_key',
+            'billing_deadline_version',
+            'vertical_deadline_version',
+            'plan',
+            'plan_version',
+            'plan_version_entitlement',
+            'plan_version_limit',
+            'accommodations'
+        ];
+
+        // Act
+        const result = partitionTablesForReset({ discoveredTables, exclude: [] });
+
+        // Assert
+        expect(result.tablesToReset).toEqual(['users', 'accommodations']);
+        expect(result.tablesSkipped).toEqual([
+            'vertical',
+            'catalog_key',
+            'billing_deadline_version',
+            'vertical_deadline_version',
+            'plan',
+            'plan_version',
+            'plan_version_entitlement',
+            'plan_version_limit'
+        ]);
     });
 
     it('excludes drizzle_migrations alongside seed_migrations (both always-excluded)', () => {

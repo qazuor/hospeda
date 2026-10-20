@@ -5,7 +5,7 @@ import { allianceLeads } from '../../schemas/alliance/alliance_lead.dbschema.ts'
  * AllianceLeadModel — DB access for inbound alliance leads (HOS-277).
  *
  * Provides standard CRUD via BaseModelImpl, including soft-delete/restore
- * (the table carries a `deletedAt` column, unlike `commerceLeads`). Custom
+ * (the table carries a `deletedAt` column, unlike the retired lead-intake table). Custom
  * query methods (e.g. findByKind, findByStatus) should be added here as the
  * admin inbox is built.
  */

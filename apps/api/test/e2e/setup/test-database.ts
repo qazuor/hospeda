@@ -83,10 +83,12 @@ export class TestDatabaseManager {
     /**
      * Verify the test database schema is present before any test queries run.
      *
-     * Probes for `billing_plans` (the most touched billing table). If the
+     * Probes for `users` (a core, always-present table). It used to probe for
+     * `billing_plans`, which was removed with the legacy billing system
+     * (HOS-1416). If the
      * relation is missing the suite fails with an actionable instruction
      * naming the exact commands to rebuild the schema, instead of letting
-     * tests fail mid-flow on a `Failed query: select id from billing_plans`
+     * tests fail mid-flow on a `Failed query: select id from users`
      * error that does not point at the cause.
      *
      * The check is deliberately narrow — one table — to keep startup fast.
@@ -104,7 +106,7 @@ export class TestDatabaseManager {
                     SELECT 1
                     FROM information_schema.tables
                     WHERE table_schema = 'public'
-                    AND table_name = 'billing_plans'
+                    AND table_name = 'users'
                 ) AS exists
             `);
 
@@ -112,7 +114,7 @@ export class TestDatabaseManager {
             if (!exists) {
                 throw new Error(
                     [
-                        "Test database schema not initialized — table 'billing_plans' is missing.",
+                        "Test database schema not initialized — table 'users' is missing.",
                         '',
                         'Rebuild it with:',
                         `  HOSPEDA_DATABASE_URL='${connectionString}' (cd packages/db && pnpm db:push)`,
@@ -124,7 +126,7 @@ export class TestDatabaseManager {
                 );
             }
         } catch (error) {
-            if (error instanceof Error && error.message.includes("'billing_plans' is missing")) {
+            if (error instanceof Error && error.message.includes("'users' is missing")) {
                 throw error;
             }
             throw new Error(
@@ -235,7 +237,7 @@ export class TestDatabaseManager {
     }
 
     /**
-     * Clean all test data (truncate all tables)
+     * Clean test data while keeping the reference rows installed by migrations.
      * WARNING: This is destructive, use only in test environment
      *
      * ## One statement, not one per table
@@ -283,10 +285,12 @@ export class TestDatabaseManager {
         SELECT tablename
         FROM pg_tables
         WHERE schemaname = 'public'
-        AND tablename NOT IN ('drizzle_migrations')
+        AND tablename NOT IN ('drizzle_migrations', 'vertical', 'catalog_key', 'billing_deadline_version', 'vertical_deadline_version', 'plan', 'plan_version', 'plan_version_entitlement', 'plan_version_limit')
       `);
 
-            // Truncate every table in ONE statement. An empty schema would make
+            // Keep migration-owned reference catalogs: later integration files
+            // need these rows even after another file calls clean().
+            // Truncate the remaining tables in ONE statement. An empty schema would make
             // `TRUNCATE TABLE  CASCADE` a syntax error, so nothing is sent when
             // there is nothing to truncate.
             const quoted = (tables.rows as Array<{ tablename: string }>).map(

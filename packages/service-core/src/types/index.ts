@@ -39,6 +39,21 @@ export interface ServiceContext<THookState = Record<string, unknown>> extends Qu
      */
     hookState?: THookState;
     /**
+     * Correlation of the business intention this call belongs to (HOS-1499;
+     * NUCLEO/08 §2, minted at the edge by U2). Carried into every domain event
+     * the call writes. Optional: when absent, the event writer falls back to the
+     * resolver the API wires at startup (`setCorrelationIdResolver`) and, outside
+     * any request, mints a fresh one — `domain_event.correlation_id` is NOT NULL.
+     */
+    correlationId?: string;
+    /**
+     * The reason an administrative action on somebody else's resource carries
+     * (NUCLEO/08 §1.2 "por qué"; ACC:15, HOS-1493). Optional: when absent, the
+     * writer falls back to the resolver the API wires at startup
+     * (`setActionReasonResolver`) and, failing that, records `null`.
+     */
+    actionReason?: string;
+    /**
      * Pagination parameters extracted from the search/count input before the
      * pagination keys are stripped from `params`.
      *
@@ -71,7 +86,7 @@ export type Actor = {
      *
      * Replaces the former single `role: RoleEnum` scalar: `users.role` no
      * longer exists and one account can wear several hats at once (host and
-     * commerce owner, say). Effective permissions are the union over these
+     * listing owner, say). Effective permissions are the union over these
      * roles, then the per-user overrides:
      * `(⋃ perms(role_i) ∪ grants) \ denies`.
      *
@@ -122,7 +137,7 @@ export type Actor = {
     /**
      * Whether the account must rotate a server-generated password before it can
      * use protected routes — mirrors `users.must_change_password`, set when a
-     * commerce-owner account is provisioned (SPEC-239 T-041).
+     * listing-owner account is provisioned (SPEC-239 T-041).
      *
      * Carried on the actor since HOS-296 so `GET /auth/me` surfaces it. Before
      * that, the flag existed ONLY as a Better Auth `additionalField`, which
@@ -132,13 +147,15 @@ export type Actor = {
      * NOT the same flag as `AuthMeResponse.passwordChangeRequired`: that one is
      * `users.adminInfo.passwordChangeRequired`, is computed only for actors
      * holding `ACCESS_PANEL_ADMIN`, and is therefore always `false` for the
-     * commerce owners this field exists to gate. Optional because guests and
+     * listing owner this field exists to gate. Optional because guests and
      * system actors have no password; callers MUST treat `undefined` as
      * "no rotation required" (fail-open, matching the pre-existing gate).
      */
     mustChangePassword?: boolean;
     /** Flag indicating this is a system actor, not a real user */
     _isSystemActor?: boolean;
+    /** Identifier of the job that built this system actor; only `createSystemActor` writes it. */
+    _systemJobId?: string;
 };
 
 /**

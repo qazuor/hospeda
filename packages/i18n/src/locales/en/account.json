@@ -75,7 +75,7 @@
             "title": "Your profile",
             "body": "Update your personal information, preferences and account settings."
         },
-        "commerce": {
+        "listing": {
             "title": "Your business",
             "body": "Edit the public content, opening hours and visible details of your business."
         },
@@ -83,10 +83,10 @@
             "title": "Welcome to your restaurant dashboard",
             "body": "From here you can manage your account and the public content of your restaurant."
         },
-        "commerceGastronomy": {
+        "listingGastronomy": {
             "body": "Edit the menu, opening hours and visible details of your restaurant."
         },
-        "commerceListings": {
+        "myListings": {
             "title": "Your businesses",
             "body": "Review the status of each of your businesses and edit them."
         },
@@ -94,7 +94,7 @@
             "title": "Your menu QR code",
             "body": "Generate your menu's QR code and check how many times your customers scanned it."
         },
-        "commerceViews": {
+        "listingViews": {
             "title": "Views on your listing",
             "body": "Track how many people viewed your business's public listing."
         },
@@ -102,7 +102,7 @@
             "title": "Welcome to your experience dashboard",
             "body": "From here you can manage your account and the public content of your experience."
         },
-        "commerceExperience": {
+        "listingExperience": {
             "body": "Edit the description, schedule and visible details of your experience."
         },
         "greetingEditor": {
@@ -128,7 +128,7 @@
         "groupAccount": "My account",
         "groupTourist": "Traveler area",
         "groupHost": "Host area",
-        "groupCommerce": "Business area",
+        "groupListings": "Business area",
         "groupEditorial": "Editorial area",
         "groupProvider": "Provider area",
         "dashboard": "My account",
@@ -441,46 +441,84 @@
         "usageWarning": "You're approaching the limit",
         "usageAtLimit": "Limit reached",
         "usageOf": "{{current}} of {{max}}",
-        "usage": {
-            "title": "Your plan usage",
-            "subtitle": "How much of each limit included in your plan you have used.",
-            "loading": "Loading your plan usage...",
-            "unlimited": "Unlimited",
-            "ofMax": "{{current}} of {{max}}",
-            "unlimitedUsage": "{{current}} in use",
-            "addonBonus": "Includes {{bonus}} extra from add-ons",
-            "thresholdWarning": "Close to the limit",
-            "thresholdCritical": "Almost no room left",
-            "thresholdReached": "You have reached the limit",
-            "thresholdExceeded": "Limit exceeded",
-            "audienceHost": "As a host",
-            "audienceTraveler": "As a traveller",
-            "monthlyNote": "Resets at the start of each month.",
-            "capOnly": "Up to {{max}}",
-            "perAccommodationEmpty": "You have not published any accommodation yet.",
-            "upgradePlan": "Upgrade my plan",
-            "buyAddon": "Extend it with an add-on",
-            "limits": {
-                "max_accommodations": "Published accommodations",
-                "max_gastronomies": "Published gastronomy listings",
-                "max_experiences": "Published experiences",
-                "max_photos_per_accommodation": "Photos per accommodation",
-                "max_active_promotions": "Active promotions",
-                "max_favorites": "Saved favourites",
-                "max_properties": "Properties in the complex",
-                "max_staff_accounts": "Staff accounts",
-                "max_active_alerts": "Active price alerts",
-                "max_compare_items": "Accommodations being compared",
-                "max_ai_text_improve_per_month": "AI text improvements (per month)",
-                "max_ai_chat_per_month": "AI questions answered on your listings (per month)",
-                "max_ai_chat_consumer_per_month": "Questions to the AI assistant (per month)",
-                "max_ai_search_per_month": "AI searches (per month)",
-                "max_ai_support_per_month": "AI support questions (per month)",
-                "max_ai_translate_per_month": "AI translations (per month)",
-                "max_ai_accommodation_import_per_month": "AI accommodation imports (per month)",
-                "max_search_history_entries": "Searches kept in your history",
-                "max_collections": "Favourite collections"
-            }
+        "trialSummary": {
+            "title": "Your free {{vertical}} trial",
+            "vertical": {
+                "accommodation": "accommodation",
+                "gastronomy": "gastronomy",
+                "experience": "experiences"
+            },
+            "total_one": "{{count}} trial day in total",
+            "total_other": "{{count}} trial days in total",
+            "origins": {
+                "base_one": "{{count}} from the plan",
+                "base_other": "{{count}} from the plan",
+                "promo_one": "{{count}} from promotions",
+                "promo_other": "{{count}} from promotions",
+                "support_one": "{{count}} granted by support",
+                "support_other": "{{count}} granted by support"
+            },
+            "dates": "From {{start}} to {{end}}"
+        },
+        "mine": {
+            "title": "Your subscriptions",
+            "empty": "You have no current subscriptions.",
+            "planChangeUnavailable": "You can't change plans yet: cancel at the end of the period and subscribe again.",
+            "paidAfterCancellation": "Your payment went through and you have service until {{date}}; your subscription was already cancelled, so it does not renew: if you want to continue, subscribe again.",
+            "paidAfterCancellationAddons": "The charge for this subscription's recurring add-ons was stopped too: you keep seeing them until {{date}}.",
+            "deferredCourtesy_one": "You have 1 month left, which starts running when you complete the payment.",
+            "deferredCourtesy_other": "You have {{count}} months left, which start running when you complete the payment.",
+            "status": {
+                "ACTIVE": "Active",
+                "GRACE_PERIOD": "Payment pending",
+                "SUSPENDED": "Suspended",
+                "CANCEL_SCHEDULED": "Cancellation requested",
+                "NOT_RENEWING": "Not renewing"
+            },
+            "loadError": "We could not read your subscriptions. Reload the page.",
+            "scheduledUntil": "You cancelled this subscription: you keep it until {{date}}.",
+            "grace": "We could not charge your installment. If you change the card you pay with on Mercado Pago, the charge is retried right away; we cannot promise it will go through. If it does not go through before {{date}}, your subscription is suspended and you will have to subscribe again."
+        },
+        "cancel": {
+            "open": "Cancel subscription",
+            "activeEnds": "If you confirm, we cancel the automatic charge today and you keep the service until {{date}}.",
+            "suspendedEnds": "If you confirm, the subscription ends today: it was suspended, so there is no paid period left to keep.",
+            "graceEnds": "If you confirm, the service ends today: you lose the service the grace period was giving you until {{date}}. In exchange, we will not claim the installment we could not charge.",
+            "noMoreCharges": "You will not be charged again. Our email arrives first; then Mercado Pago may send one about the cancellation.",
+            "addonsTitle": "These recurring add-ons are cancelled with your subscription:",
+            "addon": {
+                "CHARGE_CUT_TODAY": "{{name}}: {{price}} {{cycle}}. Its charge stops today and you keep seeing it until {{date}}.",
+                "AT_SERVICE_END": "{{name}}: {{price}} {{cycle}}. It is awaiting authorization or has a pending charge: it turns off on {{date}}, when the service ends.",
+                "TODAY": "{{name}}: {{price}} {{cycle}}. It turns off today with your subscription."
+            },
+            "addonsComeBack": "If you come back, you buy them again: they do not resume.",
+            "confirm": "Confirm cancellation",
+            "back": "Back",
+            "pending": "Cancelling…",
+            "loadError": "We could not read what happens if you cancel this subscription. Try again.",
+            "retry": "Retry",
+            "actError": "We could not cancel your subscription. Try again.",
+            "stateChanged": "Your subscription changed while you were looking at it. Reload the page to see its state.",
+            "doneScheduled": "Done: you cancelled your subscription. You keep it until {{date}}.",
+            "doneEnded": "Done: you cancelled your subscription. The service ended today."
+        },
+        "promoRedeem": {
+            "trialTitle": "Have a code to extend your trial?",
+            "subscriptionTitle": "Have a promo code?",
+            "trialSectionTitle": "Have an active trial?",
+            "label": "Promo code",
+            "submit": "Redeem code",
+            "pending": "Redeeming…",
+            "error": "We could not redeem the code. Try again.",
+            "firstCharge": "Your next charge will be discounted: {{amount}}.",
+            "after": "After that, you will pay {{amount}}.",
+            "providerEmail": "When it ends, Mercado Pago will email you to say the seller changed the amount.",
+            "promoEnds": "This also tells you that your promo ends.",
+            "nCharges_one": "The discount applies to your next {{count}} charge: {{amount}}.",
+            "nCharges_other": "The discount applies to your next {{count}} charges: {{amount}}.",
+            "forever": "Your subscription price changes to {{amount}}, with no end date.",
+            "trialExtension_one": "You added {{count}} trial day.",
+            "trialExtension_other": "You added {{count}} trial days."
         }
     },
     "favorites": {
@@ -666,8 +704,8 @@
                 "promotions": "My Promotions",
                 "recommendations": "Suggestions",
                 "recommendationsDesc": "Accommodations picked for you",
-                "myCommerceDesc": "Manage your listing, photos and subscription",
-                "myMessagesCommerceDesc": "Enquiries you receive about your business"
+                "myListingDesc": "Manage your listing, photos and subscription",
+                "myMessagesListingDesc": "Enquiries you receive about your business"
             },
             "stats": {
                 "favorites": "My Favorites",
@@ -724,147 +762,12 @@
         },
         "subscription": {
             "title": "My Subscription",
-            "titleCommerce": "Commerce Subscription",
+            "titleListing": "Listing Subscription",
             "description": "Manage your plan and subscription on Hospeda",
             "heading": "My Subscription",
             "headingDesc": "Manage your plan and payment preferences",
-            "loading": "Loading subscription...",
-            "emptyTitle": "No active subscription",
-            "emptyBody": "You don't have an active plan yet. Explore our plans to access exclusive benefits.",
-            "errorTitle": "Error loading subscription",
-            "planCardLabel": "Current plan details",
-            "statusLabel": "Status",
-            "nextBillingLabel": "Next billing date",
-            "accessUntilLabel": "Access until",
-            "complimentaryLabel": "Complimentary plan",
-            "complimentaryNoBilling": "No expiry",
-            "paymentMethodLabel": "Payment method",
-            "paymentMercadoPago": "MercadoPago",
-            "paymentNone": "No payment method",
-            "noBillingDate": "No billing date available",
-            "actionsLabel": "Actions",
-            "actionsTitle": "Manage subscription",
-            "downloadInvoice": "Download last invoice",
-            "invoiceError": "Could not retrieve the last invoice.",
-            "noInvoices": "You don't have any invoices yet.",
-            "invoiceNoPdf": "The invoice does not have a PDF available yet.",
-            "cancelButton": "Cancel subscription",
-            "cancelAriaLabel": "Cancel subscription",
-            "adminLink": "More options (admin panel)",
-            "viewPlans": "View plans",
-            "upgradeLink": "View available plans",
-            "pauseButton": "Pause subscription",
-            "pauseAriaLabel": "Pause subscription",
-            "resumeButton": "Resume subscription",
-            "pauseSuccess": "Subscription paused.",
-            "pauseError": "Could not pause the subscription.",
-            "resumeSuccess": "Subscription resumed.",
-            "resumeError": "Could not resume the subscription.",
-            "uncancelButton": "Discard cancellation",
-            "uncancelSuccess": "Cancellation discarded. Your subscription stays active.",
-            "uncancelError": "Could not discard the cancellation.",
-            "replacePaymentMethodButton": "Update payment method",
-            "replacePaymentMethodError": "We could not start updating your payment method. Please try again; if it keeps failing, write to support.",
-            "replacePaymentMethodContactSupport": "Write to support",
-            "replacePaymentMethodEmailSubject": "I cannot update my payment method",
-            "trialExtension": {
-                "title": "Extend your free trial",
-                "help": "If you have a promo code, apply it now to add days to your trial.",
-                "label": "Promo code",
-                "placeholder": "Enter your code",
-                "apply": "Apply",
-                "applying": "Applying...",
-                "success": "Done. Your free trial was extended.",
-                "successWithDate": "Done. Your free trial now ends on {{date}}.",
-                "errorGeneric": "We could not apply the code. Check it and try again."
-            },
-            "status": {
-                "active": "Active",
-                "trial": "Trial",
-                "cancelled": "Cancelled",
-                "cancelling": "Cancellation scheduled",
-                "expired": "Expired",
-                "past_due": "Past due",
-                "pending": "Pending",
-                "paused": "Paused",
-                "courtesy": "Gifted"
-            },
-            "cancelScheduled": {
-                "title": "Subscription cancelled",
-                "body": "No further charges will be made. You keep access to your plan until {date}.",
-                "planChangeBlocked": "You can't change plans while a cancellation is pending. You'll be able to once the current period ends."
-            },
-            "pauseModal": {
-                "title": "Pause subscription",
-                "body": "While paused, you stop being charged and your listings are hidden from the site and cannot be edited until you resume. All your settings are preserved and return unchanged when you resume.",
-                "confirm": "Pause"
-            },
             "cancelModal": {
-                "title": "Cancel subscription",
-                "emailSubject": "Subscription cancellation",
-                "body": "To cancel your subscription, email us at info@hospeda.com.ar and an agent will process it promptly. Your plan will remain active until the end of the current period.",
-                "contactSupport": "Contact support",
-                "confirm": "Yes, cancel subscription",
-                "description": "By cancelling your subscription you keep access to your plan until the end of the current period. No further charges will be made.",
-                "reasonLabel": "Reason for cancellation (optional)",
-                "reasonPlaceholder": "Tell us why you're cancelling so we can improve...",
-                "successTitle": "Subscription cancelled",
-                "successBody": "Your subscription has been cancelled. You still have access until {date}.",
-                "flagOffFallback": "Online cancellation is not available at this time. Please contact support to cancel your subscription.",
-                "cancelError": "Could not cancel the subscription. Please try again."
-            },
-            "scheduledChange": {
-                "title": "Scheduled plan change",
-                "body": "Your plan will change to {plan} on {date}."
-            },
-            "changePlanButton": "Change plan",
-            "changePlanAriaLabel": "Change subscription plan",
-            "planPicker": {
-                "title": "Change plan",
-                "subtitle": "Choose the plan you want to switch to.",
-                "listLabel": "Available plans",
-                "currentBadge": "Current plan",
-                "upgradeBadge": "Upgrade",
-                "downgradeBadge": "Downgrade",
-                "selectMonthly": "Monthly",
-                "selectAnnual": "Annual"
-            },
-            "downgradePreview": {
-                "title": "Review changes before continuing",
-                "intro": "Switching to the {plan} plan will apply restrictions to your account. Choose what you want to keep.",
-                "accommodationsTitle": "Accommodations ({active} active, max {cap})",
-                "accommodationsHint_one": "Select up to {{count}} accommodation to keep active. The rest will be deactivated.",
-                "accommodationsHint_other": "Select up to {{count}} accommodations to keep active. The rest will be deactivated.",
-                "accommodationsListLabel": "Accommodations list",
-                "promotionsTitle": "Promotions ({active} active, max {cap})",
-                "promotionsHint_one": "Select up to {{count}} promotion to keep active.",
-                "promotionsHint_other": "Select up to {{count}} promotions to keep active.",
-                "promotionsListLabel": "Promotions list",
-                "overCapWarningSelectedCount_one": "{{count}} selected",
-                "overCapWarningSelectedCount_other": "{{count}} selected",
-                "overCapWarning": "You have {{selectedPhrase}} but the plan allows {cap}. Deselect {extra}.",
-                "defaultKeep": "Suggested",
-                "photosTitle": "Excess photos",
-                "photosHint": "Some accommodations have more photos than allowed. The excess will be archived.",
-                "photosOf": "photos, max.",
-                "photoOverflowLabel": "Photos to be archived",
-                "keepPhotoLabel": "Keep photo {url}",
-                "grandfatherTitle": "Content that will become read-only",
-                "grandfatherHint": "These accommodations have content you won't be able to edit with the new plan, but it will NOT be deleted.",
-                "richDescription": "Rich description",
-                "videoEmbed": "Embedded video",
-                "confirmButton": "Continue with change"
-            },
-            "planChangeFlow": {
-                "scheduledTitle": "Change scheduled",
-                "scheduledBody": "Your plan will change on {date}. Until then, you keep your current plan.",
-                "restrictionHint": "Restrictions will be applied at that time. The exact details may vary based on your usage at the time of the change.",
-                "activeTitle": "Plan updated",
-                "activeBody": "Your plan was changed successfully.",
-                "redirecting": "Redirecting to payment...",
-                "previewError": "Could not get the change preview. Please try again.",
-                "changeError": "Could not change the plan. Please try again.",
-                "goToPlans": "See plans and subscribe"
+                "body": "To cancel your subscription, email us at info@hospeda.com.ar and an agent will process it promptly. Your plan will remain active until the end of the current period."
             },
             "titleGastronomy": "Gastronomy subscription",
             "titleExperience": "Experience subscription",
@@ -875,8 +778,7 @@
                 "gastronomy": "Gastronomy",
                 "experience": "Experiences",
                 "tourist": "Traveler"
-            },
-            "courtesyUntilLabel": "No charge until"
+            }
         },
         "whatsNew": {
             "title": "What's New",
@@ -897,29 +799,6 @@
         "recommendations": {
             "title": "Suggestions for you",
             "description": "Accommodations picked especially for you, based on your favorites, searches, and recent activity on Hospeda"
-        },
-        "addons": {
-            "title": "Add-ons",
-            "description": "Extend your account features with additional add-ons on Hospeda"
-        },
-        "redeem": {
-            "title": "Redeem a code",
-            "description": "Enter a promo code and apply it to your account right away.",
-            "help": "Type the code exactly as we sent it and we apply it right away.",
-            "dashboardLink": "Have a promo code?",
-            "backToSubscription": "Back to my subscription",
-            "plansCta": "See plans",
-            "errorNotFound": "We could not find that code. Check the spelling.",
-            "errorInactive": "This code is no longer active.",
-            "errorExpired": "This code has expired.",
-            "errorMaxUses": "This code has reached its usage limit.",
-            "errorMaxUsesPerUser": "You have already used this code the maximum number of times.",
-            "errorPlanRestriction": "This code is not valid for your plan.",
-            "errorNewUsersOnly": "This code is for new customers only.",
-            "errorMinAmount": "Your purchase does not reach the minimum required for this code.",
-            "discountNotice": "This is a discount code. We did not use it — you can apply it when you subscribe to a plan.",
-            "compNotice": "This code cannot be redeemed. Get in touch if you were promised a complimentary subscription.",
-            "successDiscount": "Done. The discount is applied to your subscription."
         }
     },
     "newsletter": {
@@ -1164,7 +1043,11 @@
             "message": "Price alerts are available on Plus and VIP plans. Upgrade your plan to access this feature.",
             "cta": "View plans"
         },
-        "listLabel": "Your active price alerts"
+        "listLabel": "Your active price alerts",
+        "closedNotice": "This alert was closed because that listing no longer exists.",
+        "activeHeading": "Active alerts",
+        "closedHeading": "Closed alerts",
+        "closedListLabel": "Your closed price alerts"
     },
     "exclusiveDeals": {
         "loading": "Loading exclusive deals...",
@@ -1208,137 +1091,11 @@
         }
     },
     "addons": {
-        "title": "Add-ons",
         "subtitle": "Extend your account with additional add-ons",
         "loading": "Loading add-ons...",
-        "errorFetch": "Could not load the available add-ons",
-        "empty": "No add-ons available right now.",
-        "groups": {
-            "perAccommodation": "Per accommodation",
-            "account": "Account-wide"
-        },
-        "focus": {
-            "others": "Other add-ons",
-            "headings": {
-                "fallback": "The add-on you were looking for",
-                "extra-photos-20": "To add more photos",
-                "extra-accommodations-5": "To list more accommodations",
-                "extra-properties-5": "To add more properties",
-                "visibility-boost-7d": "To feature your accommodation",
-                "visibility-boost-30d": "To feature your accommodation",
-                "ai-support-monthly": "To add AI support"
-            }
-        },
-        "featuredOffer": {
-            "notFeaturedNotice": "Your accommodation is not featured. This add-on features it automatically, no extra step needed.",
-            "title": "Feature this accommodation",
-            "body": "A visibility boost makes this accommodation appear featured in listings and search results for as long as the add-on lasts.",
-            "scope": "Heads up: the boost applies to this listing only. If you have more than one accommodation, each one needs its own add-on.",
-            "linkSr": "for this accommodation"
-        },
-        "billingType": {
-            "one_time": "One-time",
-            "recurring": "Monthly"
-        },
-        "recurringNotice": "This is a subscription: it renews on its own and is charged every month while it stays active.",
-        "duration_one": "{{count}} day",
-        "duration_other": "{{count}} days",
         "priceLabel": "Price",
-        "buyButton": "Buy",
-        "buyingButton": "Processing...",
-        "owned": "Active",
         "accommodationSelect": {
-            "label": {
-                "accommodation": "Accommodation",
-                "gastronomy": "Restaurant",
-                "experience": "Experience"
-            },
-            "placeholder": {
-                "accommodation": "Choose an accommodation",
-                "gastronomy": "Choose a restaurant",
-                "experience": "Choose an experience"
-            },
-            "required": "Choose an accommodation to continue",
-            "empty": {
-                "accommodation": "You need an accommodation first",
-                "gastronomy": "You need a published restaurant first",
-                "experience": "You need a published experience first"
-            }
-        },
-        "gate": {
-            "title": "You need an active subscription",
-            "body": "Add-ons are available for accounts with an active or trial subscription.",
-            "cta": "View plans"
-        },
-        "result": {
-            "success": "Add-on purchased successfully!",
-            "failure": "The purchase didn't go through. You can try again whenever you want."
-        },
-        "errors": {
-            "purchaseFailed": "Could not start the purchase. Please try again.",
-            "missingAccommodation": "Choose an accommodation to continue."
-        },
-        "catalog": {
-            "visibility-boost-7d": {
-                "name": "Visibility Boost (7 days)",
-                "description": "Your accommodation appears featured in search results for 7 days."
-            },
-            "visibility-boost-30d": {
-                "name": "Visibility Boost (30 days)",
-                "description": "Your accommodation appears featured in search results for 30 days."
-            },
-            "visibility-boost-gastronomy-7d": {
-                "name": "Visibility Boost — Restaurant (7 days)",
-                "description": "Your restaurant appears featured in search results for 7 days."
-            },
-            "visibility-boost-gastronomy-30d": {
-                "name": "Visibility Boost — Restaurant (30 days)",
-                "description": "Your restaurant appears featured in search results for 30 days."
-            },
-            "visibility-boost-experience-7d": {
-                "name": "Visibility Boost — Experience (7 days)",
-                "description": "Your experience appears featured in search results for 7 days."
-            },
-            "visibility-boost-experience-30d": {
-                "name": "Visibility Boost — Experience (30 days)",
-                "description": "Your experience appears featured in search results for 30 days."
-            },
-            "extra-photos-20": {
-                "name": "Extra Photos Pack (+20 photos)",
-                "description": "Adds 20 additional photos to each accommodation. Renews monthly."
-            },
-            "extra-accommodations-5": {
-                "name": "Extra Accommodations Pack (+5)",
-                "description": "Adds 5 additional accommodations to your plan. Renews monthly."
-            },
-            "extra-properties-5": {
-                "name": "Extra Properties Pack (+5)",
-                "description": "Adds 5 additional properties to your complex. Renews monthly."
-            },
-            "ai-support-monthly": {
-                "name": "AI Support (monthly)",
-                "description": "Unlocks AI-powered support tools for hosts, including smart reply suggestions and automated guest FAQ handling. Renews monthly."
-            },
-            "extra-gastronomies-1": {
-                "name": "Extra Gastronomy Listing (+1)",
-                "description": "Adds 1 additional gastronomy listing to your plan. Renews monthly."
-            },
-            "extra-experiences-1": {
-                "name": "Extra Experience Listing (+1)",
-                "description": "Adds 1 additional experience listing to your plan. Renews monthly."
-            },
-            "private-galleries-5": {
-                "name": "Private Galleries Pack (+5)",
-                "description": "Adds 5 additional active private galleries for your experiences, and enables private galleries on plans that do not include them. Renews monthly."
-            },
-            "private-galleries-10": {
-                "name": "Private Galleries Pack (+10)",
-                "description": "Adds 10 additional active private galleries for your experiences, and enables private galleries on plans that do not include them. Renews monthly."
-            },
-            "private-galleries-20": {
-                "name": "Private Galleries Pack (+20)",
-                "description": "Adds 20 additional active private galleries for your experiences, and enables private galleries on plans that do not include them. Renews monthly."
-            }
+            "required": "Choose an accommodation to continue"
         }
     },
     "myContent": {
@@ -1729,5 +1486,30 @@
     },
     "description": "Gestioná tu cuenta en Hospeda",
     "menu": "Menú de cuenta",
-    "title": "Mi cuenta"
+    "title": "Mi cuenta",
+    "changePassword": {
+        "title": "Change password",
+        "subtitle": "For security reasons, you need to update your password before continuing.",
+        "fields": {
+            "currentPassword": "Current password",
+            "newPassword": "New password",
+            "confirmNewPassword": "Confirm new password"
+        },
+        "submit": "Change password",
+        "submitting": "Saving...",
+        "success": "Your password was updated successfully.",
+        "error": "An error occurred while updating the password. Please try again.",
+        "mismatch": "Passwords do not match.",
+        "currentIncorrect": "The current password is incorrect.",
+        "currentRequired": "La contraseña actual es requerida.",
+        "hidePassword": "Ocultar contraseña",
+        "showPassword": "Mostrar contraseña",
+        "strength": {
+            "medium": "Media",
+            "strong": "Segura",
+            "weak": "Débil"
+        },
+        "strengthLabel": "Seguridad de la contraseña",
+        "accountNotice": "You are about to change the password for this account:"
+    }
 }

@@ -5,15 +5,15 @@
  * are string-level checks on the `.astro` source — same pattern
  * `mi-cuenta-index.astro.test.ts` and `mi-cuenta-addons.astro.test.ts` use for
  * their own components/pages, and the same LIMIT applies: this proves the
- * commerce branch is DECLARED, not that it RENDERS.
+ * owner branch is DECLARED, not that it RENDERS.
  *
  * ## The bug this closes
  *
  * `AccountStatsGrid.astro` used to branch `isHost ? (...) : (...)` — exactly
- * two states. A commerce-only owner (`GASTRONOMY_OWNER`/`EXPERIENCE_OWNER`, no
+ * two states. A gastronomy/experience-only owner (`GASTRONOMY_OWNER`/`EXPERIENCE_OWNER`, no
  * `HOST` role) is neither, so `isHost` resolved `false` and they fell into the
  * tourist `else` branch: Favoritos, Reseñas — neither describes a merchant
- * account, and both link to pages a commerce-only owner has never used.
+ * account, and both link to pages a gastronomy/experience-only owner has never used.
  */
 
 import { readFileSync } from 'node:fs';
@@ -25,49 +25,49 @@ const source = readFileSync(
     'utf8'
 );
 
-describe('AccountStatsGrid.astro — commerce-owner branch (HOS-1293)', () => {
-    it('accepts an isCommerceOwner prop, distinct from isHost', () => {
-        expect(source).toContain('isCommerceOwner');
+describe('AccountStatsGrid.astro — owner branch (HOS-1293)', () => {
+    it('accepts an isOwner prop, distinct from isHost', () => {
+        expect(source).toContain('isOwner');
         expect(source).toContain('isHost');
     });
 
-    it('isCommerceOwner is bound DIRECTLY to Astro.props — never aliased, never hardcoded (HOS-1293 mutation hardening)', () => {
-        // The two tests above check that the STRING `isCommerceOwner` and the
-        // `isHost ? ( ... ) : isCommerceOwner ? (` SYNTAX are present — both
+    it('isOwner is bound DIRECTLY to Astro.props — never aliased, never hardcoded (HOS-1293 mutation hardening)', () => {
+        // The two tests above check that the STRING `isOwner` and the
+        // `isHost ? ( ... ) : isOwner ? (` SYNTAX are present — both
         // satisfied even if the identifier is captured under an alias and the
         // real binding is a hardcoded literal, e.g.
-        // `const { isCommerceOwner: isCommerceOwnerProp = false } = Astro.props;
-        //  const isCommerceOwner = true;` — which renders the commerce branch
+        // `const { isOwner: isOwnerProp = false } = Astro.props;
+        //  const isOwner = true;` — which renders the owner branch
         // for EVERY non-host account, tourists included, and passed every
         // other assertion in this file when measured. This pins the exact
-        // destructuring so `isCommerceOwner` can only ever be the prop itself.
+        // destructuring so `isOwner` can only ever be the prop itself.
         expect(source).toContain(
-            'const { locale, isHost = false, isCommerceOwner = false } = Astro.props;'
+            'const { locale, isHost = false, isOwner = false } = Astro.props;'
         );
     });
 
-    it('is a THREE-way branch — host, then commerce, then tourist — not a binary one', () => {
+    it('is a THREE-way branch — host, then owner, then tourist — not a binary one', () => {
         // The regression shape: `isHost ? (...) : (...)` has exactly two arms.
-        // Reintroducing that (e.g. by deleting the isCommerceOwner arm) would
+        // Reintroducing that (e.g. by deleting the isOwner arm) would
         // make this pattern absent while the prop itself might still be
         // declared — so this checks the BRANCH STRUCTURE, not just the prop.
         expect(source).toMatch(/isHost\s*\?\s*\(/);
-        expect(source).toMatch(/\)\s*:\s*isCommerceOwner\s*\?\s*\(/);
+        expect(source).toMatch(/\)\s*:\s*isOwner\s*\?\s*\(/);
     });
 
-    it('the commerce branch links to mi-cuenta/comercio, never to a tourist or host page', () => {
-        // Isolate the commerce branch's own markup (between its opening test
+    it('the owner branch links to mi-cuenta/comercio, never to a tourist or host page', () => {
+        // Isolate the owner branch's own markup (between its opening test
         // and the tourist branch's own opening comment) so a mutation that
         // moved the link to the WRONG branch is still caught.
-        const commerceBranchStart = source.indexOf(': isCommerceOwner ? (');
+        const ownerBranchStart = source.indexOf(': isOwner ? (');
         const touristBranchStart = source.indexOf('<!-- Tourist: Favorites stat -->');
-        expect(commerceBranchStart).toBeGreaterThan(-1);
-        expect(touristBranchStart).toBeGreaterThan(commerceBranchStart);
+        expect(ownerBranchStart).toBeGreaterThan(-1);
+        expect(touristBranchStart).toBeGreaterThan(ownerBranchStart);
 
-        const commerceBranch = source.slice(commerceBranchStart, touristBranchStart);
-        expect(commerceBranch).toContain("path: 'mi-cuenta/comercio'");
-        expect(commerceBranch).not.toContain("path: 'mi-cuenta/favoritos'");
-        expect(commerceBranch).not.toContain("path: 'mi-cuenta/propiedades'");
+        const ownerBranch = source.slice(ownerBranchStart, touristBranchStart);
+        expect(ownerBranch).toContain("path: 'mi-cuenta/comercio'");
+        expect(ownerBranch).not.toContain("path: 'mi-cuenta/favoritos'");
+        expect(ownerBranch).not.toContain("path: 'mi-cuenta/propiedades'");
     });
 
     it('uses its own listings i18n keys, not the host properties keys or the tourist favorites keys', () => {

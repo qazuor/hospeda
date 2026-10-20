@@ -8,7 +8,7 @@ import { EntityTypeEnum } from '../../enums/entity-type.enum.js';
  * CONVERSATION, REVIEW, BILLING_SUBSCRIPTION, PAYMENT, HOST_TRADE) are
  * explicitly excluded.
  *
- * GASTRONOMY and EXPERIENCE were added by HOS-734 to give both commerce
+ * GASTRONOMY and EXPERIENCE were added by HOS-734 to give both
  * verticals the same "basic stats" (view counts) accommodation, posts, and
  * events already had. No DB migration was needed: `entity_views.entity_type`
  * already reuses the full `entity_type_enum` Postgres enum (see

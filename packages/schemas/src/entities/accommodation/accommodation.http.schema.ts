@@ -315,18 +315,6 @@ export const AccommodationCreateHttpSchema = z.object({
     currency: PriceCurrencyEnumSchema.default(PriceCurrencyEnum.ARS),
 
     // Boolean properties
-    // isFeatured is intentionally omitted from this general update schema: it is
-    // not a free-form field an owner edits alongside the rest of the listing.
-    // Featuring is derived from the FEATURED_LISTING entitlement
-    // (accommodations.featuredByEntitlement, renamed from featuredByPlan —
-    // SPEC-309 OQ-1), grantable via plan OR an accommodation-scoped addon
-    // (SPEC-309 OQ-3). The admin path keeps manual isFeatured control via
-    // AccommodationPatchInputSchema in accommodation.crud.schema.ts (SPEC-292).
-    // HOS-929 (2026-08-29 owner decision) retired the owner self-service
-    // toggle entirely: holding the entitlement now features the listing
-    // automatically (public read ORs `isFeatured` with `featuredByEntitlement`,
-    // see `apps/api/src/utils/accommodation-featured.ts`) — there is no owner
-    // write path for this field anywhere, this schema included.
     isAvailable: httpBodyBoolean().default(true),
     allowsPets: httpBodyBoolean().default(false),
 
@@ -384,7 +372,8 @@ export type AccommodationCreateHttp = z.infer<typeof AccommodationCreateHttpSche
  * (`httpToDomainAccommodationCreateDraft`) can reuse the same mapping logic
  * without reimplementing the nested transformations.
  *
- * The resulting record is always persisted with `lifecycleState: DRAFT`.
+ * The resulting record is always born `publicationStatus: DRAFT` (the model
+ * sets it; no HTTP input carries it — HOS-1641).
  */
 export const AccommodationCreateDraftHttpSchema = z.object({
     // --- Required essentials ---
@@ -695,9 +684,7 @@ export const httpToDomainAccommodationSearch = (
 
 import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { mediaAssetUrl } from '../../common/media.schema.js';
-import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
-import { VisibilityEnum } from '../../enums/visibility.enum.js';
 
 // ---------------------------------------------------------------------------
 // Media normalisation helper (SPEC-208)
@@ -856,21 +843,10 @@ export const httpToDomainAccommodationCreate = (
     type: httpData.type,
     destinationId: httpData.destinationId,
     ownerId: httpData.ownerId,
-    // isFeatured is always false on owner-created accommodations (SPEC-292).
-    // Not settable at creation — it is derived from the FEATURED_LISTING
-    // entitlement (accommodations.featuredByEntitlement, renamed from
-    // featuredByPlan — SPEC-309 OQ-1). Admin keeps manual control via the admin
-    // path. HOS-929 retired the owner self-service toggle: holding the
-    // entitlement now features the listing automatically post-creation, with
-    // no owner write path anywhere for this field.
-    isFeatured: false,
-
-    // Required fields with sensible defaults using proper enums
-    moderationState: ModerationStatusEnum.PENDING,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    // Required fields with sensible defaults. The publication state is not an
+    // input: the listing is born DRAFT and only the PB transitions move it.
     reviewsCount: 0,
     averageRating: 0,
-    visibility: VisibilityEnum.PUBLIC,
 
     // ✅ COMPLETED: Proper nested object structures
 
@@ -987,11 +963,10 @@ const DRAFT_DESCRIPTION_PLACEHOLDER =
  * `httpToDomainAccommodationCreate` (SPEC-258 single source of truth).
  *
  * Forced server-side overrides:
- * - `lifecycleState`: always `DRAFT`
- * - `visibility`: always `PRIVATE`
- * - `isFeatured`: always `false`
- * - `moderationState`: always `PENDING`
  * - `ownerId`: always injected from the authenticated actor
+ *
+ * The publication state is not part of the input: the listing is born
+ * `DRAFT` and only the PB publication transitions move it (HOS-1641).
  *
  * @param httpData - Validated HTTP draft input.
  * @param ownerId - Authenticated actor ID (injected by the route handler).
@@ -1010,12 +985,8 @@ export const httpToDomainAccommodationCreateDraft = (
     ownerId,
 
     // --- Forced server-side overrides ---
-    isFeatured: false,
-    moderationState: ModerationStatusEnum.PENDING,
-    lifecycleState: LifecycleStatusEnum.DRAFT,
     reviewsCount: 0,
     averageRating: 0,
-    visibility: VisibilityEnum.PRIVATE,
 
     // --- Optional: location (→ location JSONB) ---
     // Emit the `location` block only when at least one location field is present.
@@ -1108,9 +1079,6 @@ export const httpToDomainAccommodationUpdate = (
     httpData: AccommodationUpdateHttp
 ): AccommodationUpdateInput => ({
     // Only map fields that exist in both schemas.
-    // isFeatured is intentionally absent: owner PATCH must not carry it.
-    // The field stays undefined (AccommodationUpdateInput is .partial()), so
-    // the service layer sees no instruction to flip the featured flag (SPEC-292).
     name: httpData.name,
     summary: httpData.summary,
     description: httpData.description,

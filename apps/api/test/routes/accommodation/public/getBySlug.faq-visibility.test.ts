@@ -129,11 +129,6 @@ vi.mock('../../../../src/utils/logger', () => ({
     }
 }));
 
-vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    ownerEntitlementMiddleware: vi.fn(),
-    resolveOwnerEntitlementsForOwnerId: mockResolveOwnerEntitlementsForOwnerId
-}));
-
 vi.mock('../../../../src/utils/route-factory', () => ({
     createPublicRoute: (options: {
         method: 'get' | 'post' | 'put' | 'delete' | 'patch';

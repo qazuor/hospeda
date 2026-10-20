@@ -20,12 +20,11 @@ import { AccommodationPublicSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
+
 import { createGuestActor } from '../../../utils/actor';
-import type { AccommodationData } from '../../../utils/entitlement-filter';
 import {
-    filterAccommodationListByOwnerEntitlements,
-    stripRichDescriptionFields
+    filterPublicPaidFieldsForOwner,
+    resolvePublicFieldGrants
 } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
@@ -38,7 +37,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * List accommodations by owner - Public endpoint
  *
  * Visibility rules (enforced server-side, not exposed to clients):
- * - Only `lifecycleState = ACTIVE` accommodations are returned.
+ * - Only `publicationStatus = PUBLISHED` accommodations are returned.
  * - Soft-deleted records are excluded automatically by the service/model layer.
  * - The `ownerId` is taken from the URL path; client cannot override it.
  *
@@ -62,11 +61,10 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
 
         // HOS-352: resolve visibility against a GUEST actor, never the caller.
         //
-        // `_executeSearch` derives `excludeOwnerSuspended` / `excludePlanRestricted` /
-        // `activeOnly` from the actor (isOwnScope when `ownerId === actor.id`, or a
-        // VIP/staff entitlement), so the OWNER viewing their own public profile — or
-        // any VIP/staff actor — received DRAFT / owner-suspended / plan-restricted
-        // rows an anonymous visitor must never see. `applyAccommodationLocationPrivacyList`
+        // `_executeSearch` derives `publishedOnly` from the actor (off when
+        // `ownerId === actor.id`; before V6.9b the old flags were also off for a
+        // VIP/staff entitlement), so the OWNER viewing their own public profile
+        // received unpublished rows an anonymous visitor must never see. `applyAccommodationLocationPrivacyList`
         // (called from `_afterSearch`) reads the same real actor to decide whether to
         // reveal the EXACT street address, so the owner's own request also carried
         // their unobfuscated coordinates instead of the salted approximate location.
@@ -81,8 +79,8 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
             ownerId,
             page,
             pageSize,
-            // Only surface publicly visible accommodations.
-            // `lifecycleState` is validated and enforced by the service layer.
+            // Only surface PUBLISHED accommodations: the service enforces
+            // `publicationStatus` for a guest actor.
             // Soft-deleted records are excluded by the base model (deletedAt IS NULL).
             featuredFirst: true
         });
@@ -99,37 +97,10 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
             };
         }
 
-        // SPEC-187 / SPEC-212 data-level omission: richDescription and its i18n
-        // sibling are PREMIUM fields gated per-owner by the entitlement system.
-        // This card-listing endpoint never renders them, so BOTH are stripped
-        // before reaching the response payload — fail-closed and independent of
-        // any schema change.
+        // Apply the owner-effective paid-field grants to the returned page.
         const rawItems = result.data?.items ?? [];
-        const strippedItems = rawItems.map(stripRichDescriptionFields);
-
-        // SPEC-291 Phase 3b / HOS-341: gate `isVerified` by the OWNER's billing
-        // entitlement. At most ONE batched role query — for the cache-cold ownerIds
-        // only, none at all when every owner is warm in the resolver's cache — then
-        // parallel billing lookups for those same cold owners, then a synchronous
-        // gate pass. Every row here belongs to the path-param owner, so that batch
-        // resolves a single id; the ids are still collected from the items rather
-        // than taken from the path so the call matches the four sibling listings
-        // verbatim and an empty page resolves an empty id list.
-        //
-        // Fail-closed: an owner absent from the map keeps no badge. The gate depends
-        // on the owner of the row, never on the reader (HOS-288).
-        const uniqueOwnerIds = [
-            ...new Set(
-                strippedItems
-                    .map((item) => (item as { ownerId?: string }).ownerId)
-                    .filter((id): id is string => typeof id === 'string' && id.length > 0)
-            )
-        ];
-        const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
-        const items = filterAccommodationListByOwnerEntitlements(
-            strippedItems as AccommodationData[],
-            ownerEntitlementsMap
-        );
+        const grants = await resolvePublicFieldGrants(rawItems.map((item) => item.ownerId));
+        const items = rawItems.map((item) => filterPublicPaidFieldsForOwner(item, grants));
 
         return {
             items,

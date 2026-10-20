@@ -154,8 +154,7 @@ describe('UserModel', () => {
                     gastronomiesCount: 1,
                     experiencesCount: 4,
                     eventsCount: 1,
-                    postsCount: 3,
-                    currentPlanSlug: 'owner-pro'
+                    postsCount: 3
                 }
             ];
             // findAllWithCounts paginated path: baseQuery.$dynamic().limit(n).offset(n) -> rows
@@ -196,8 +195,7 @@ describe('UserModel', () => {
                 gastronomiesCount: 1,
                 experiencesCount: 4,
                 eventsCount: 1,
-                postsCount: 3,
-                currentPlanSlug: 'owner-pro'
+                postsCount: 3
             });
         });
 
@@ -210,8 +208,7 @@ describe('UserModel', () => {
                     gastronomiesCount: 0,
                     experiencesCount: 0,
                     eventsCount: 0,
-                    postsCount: 0,
-                    currentPlanSlug: null
+                    postsCount: 0
                 }
             ];
             const mockSelectResult = {

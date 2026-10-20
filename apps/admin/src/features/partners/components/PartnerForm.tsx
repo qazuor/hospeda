@@ -8,19 +8,12 @@
  * RO-RO props — inputs are plain values, outputs are via callbacks.
  */
 
-import {
-    createPartnerSchema,
-    LifecycleStatusEnum,
-    PartnerSubscriptionStatusEnum,
-    PartnerTierEnum,
-    PartnerTypeEnum
-} from '@repo/schemas';
+import { createPartnerSchema, LifecycleStatusEnum, PartnerTypeEnum } from '@repo/schemas';
 import { useForm } from '@tanstack/react-form';
 import * as React from 'react';
 import type { z } from 'zod';
 import { Button } from '@/components/ui-wrapped/Button';
 import { isApiError } from '@/lib/errors';
-import type { PartnerAdminPlanOption } from '../hooks/usePartnerQuery';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -35,8 +28,6 @@ export interface PartnerFormProps {
      * omit (or pass `undefined`) when creating.
      */
     readonly initialData?: Partial<PartnerFormValues> | null;
-    /** Available billing plans for the plan selector. */
-    readonly plans: readonly PartnerAdminPlanOption[];
     /** Whether the form is in a pending/saving state. */
     readonly isSubmitting?: boolean;
     /** Label for the submit button. */
@@ -62,16 +53,6 @@ function slugify(value: string): string {
         .toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-');
-}
-
-/**
- * Formats a Date, ISO string, or null/undefined as a `YYYY-MM-DD` string
- * suitable for an `<input type="date">`.
- */
-function toInputDate(value: Date | string | null | undefined): string {
-    if (!value) return '';
-    const date = value instanceof Date ? value : new Date(value);
-    return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
 }
 
 /**
@@ -108,17 +89,9 @@ function extractConflictField(message: string): string | null {
 // ---------------------------------------------------------------------------
 
 const TYPE_OPTIONS: ReadonlyArray<{ value: PartnerTypeEnum; label: string }> = [
-    { value: PartnerTypeEnum.COMMERCE, label: 'Comercio' },
+    { value: PartnerTypeEnum.BUSINESS, label: 'Comercio' },
     { value: PartnerTypeEnum.NGO, label: 'ONG' },
     { value: PartnerTypeEnum.INSTITUTION, label: 'Institución' }
-];
-
-// Gold and silver are the only tiers. `bronze` was retired by HOS-294: it had
-// no plan and no price, and gold is the tier that grants the partner's own
-// public page at `/partners/<slug>/`.
-const TIER_OPTIONS: ReadonlyArray<{ value: PartnerTierEnum; label: string }> = [
-    { value: PartnerTierEnum.GOLD, label: 'Gold' },
-    { value: PartnerTierEnum.SILVER, label: 'Silver' }
 ];
 
 // ---------------------------------------------------------------------------
@@ -190,7 +163,6 @@ function FieldWrapper({ label, htmlFor, required, error, children }: FieldWrappe
  */
 export function PartnerForm({
     initialData,
-    plans,
     isSubmitting = false,
     submitLabel = 'Guardar',
     onCancel,
@@ -219,17 +191,11 @@ export function PartnerForm({
         defaultValues: {
             name: initialData?.name ?? '',
             slug: initialData?.slug ?? '',
-            type: initialData?.type ?? PartnerTypeEnum.COMMERCE,
-            tier: initialData?.tier ?? PartnerTierEnum.GOLD,
+            type: initialData?.type ?? PartnerTypeEnum.BUSINESS,
             logoUrl: initialData?.logoUrl ?? null,
             websiteUrl: initialData?.websiteUrl ?? null,
             description: initialData?.description ?? null,
-            planId: initialData?.planId ?? null,
-            subscriptionStatus:
-                initialData?.subscriptionStatus ?? PartnerSubscriptionStatusEnum.PENDING,
-            lifecycleState: initialData?.lifecycleState ?? LifecycleStatusEnum.ACTIVE,
-            startsAt: initialData?.startsAt ?? null,
-            endsAt: initialData?.endsAt ?? null
+            lifecycleState: initialData?.lifecycleState ?? LifecycleStatusEnum.ACTIVE
         } as PartnerFormValues,
         onSubmit: async ({ value }) => {
             submitHandlerRan.current = true;
@@ -428,92 +394,6 @@ export function PartnerForm({
                                 </FieldWrapper>
                             )}
                         </form.Field>
-
-                        {/* Tier */}
-                        <form.Field
-                            name="tier"
-                            validators={{
-                                onChange: ({ value }) =>
-                                    value ? undefined : 'El tier es requerido'
-                            }}
-                        >
-                            {(field) => (
-                                <FieldWrapper
-                                    label="Tier"
-                                    htmlFor={field.name}
-                                    required
-                                    error={fieldError(field.state.meta, submitAttempted)}
-                                >
-                                    <select
-                                        id={field.name}
-                                        name={field.name}
-                                        value={(field.state.value as string) ?? ''}
-                                        onBlur={field.handleBlur}
-                                        onChange={(e) =>
-                                            field.handleChange(e.target.value as PartnerTierEnum)
-                                        }
-                                        className={INPUT_CLASS}
-                                        disabled={isSubmitting}
-                                        aria-required="true"
-                                    >
-                                        <option value="">Seleccioná el tier…</option>
-                                        {TIER_OPTIONS.map((opt) => (
-                                            <option
-                                                key={opt.value}
-                                                value={opt.value}
-                                            >
-                                                {opt.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </FieldWrapper>
-                            )}
-                        </form.Field>
-
-                        {/* Plan */}
-                        <div className="sm:col-span-2">
-                            {/* NO required validator, deliberately. `partnerSchema.planId`
-                                is `.nullable().optional()`, and every partner in production
-                                carries `plan_id = NULL` — a hand-written "required" rule
-                                here therefore vetoed the save on EVERY existing partner
-                                before the submit handler could run (H-161). A partner
-                                without a plan is a real, supported state: it is what a
-                                curated partner looks like until someone sells it one. */}
-                            <form.Field name="planId">
-                                {(field) => (
-                                    <FieldWrapper
-                                        label="Plan de billing"
-                                        htmlFor={field.name}
-                                        error={fieldError(field.state.meta, submitAttempted)}
-                                    >
-                                        <select
-                                            id={field.name}
-                                            name={field.name}
-                                            value={(field.state.value as string) ?? ''}
-                                            onBlur={field.handleBlur}
-                                            onChange={(e) =>
-                                                field.handleChange(e.target.value || null)
-                                            }
-                                            className={INPUT_CLASS}
-                                            disabled={isSubmitting}
-                                        >
-                                            <option value="">Sin plan asignado</option>
-                                            {plans.map((plan) => (
-                                                <option
-                                                    key={plan.id}
-                                                    value={plan.id}
-                                                >
-                                                    {plan.name}
-                                                    {plan.monthlyPriceArs === null
-                                                        ? ''
-                                                        : ` · ARS ${(plan.monthlyPriceArs / 100).toLocaleString('es-AR')}`}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </FieldWrapper>
-                                )}
-                            </form.Field>
-                        </div>
                     </div>
                 </section>
 
@@ -565,79 +445,6 @@ export function PartnerForm({
                                         onBlur={field.handleBlur}
                                         onChange={(e) => field.handleChange(e.target.value || null)}
                                         placeholder="https://ejemplo.com"
-                                        className={INPUT_CLASS}
-                                        disabled={isSubmitting}
-                                    />
-                                </FieldWrapper>
-                            )}
-                        </form.Field>
-                    </div>
-                </section>
-
-                {/* ---- Subscription period ---- */}
-                <section aria-labelledby="partner-dates-heading">
-                    <h3
-                        id="partner-dates-heading"
-                        className="mb-4 font-semibold text-muted-foreground text-sm uppercase tracking-wide"
-                    >
-                        Período de partnership
-                    </h3>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        {/* Starts At */}
-                        <form.Field name="startsAt">
-                            {(field) => (
-                                <FieldWrapper
-                                    label="Inicio (opcional)"
-                                    htmlFor={field.name}
-                                    error={fieldError(field.state.meta, submitAttempted)}
-                                >
-                                    <input
-                                        id={field.name}
-                                        name={field.name}
-                                        type="date"
-                                        value={toInputDate(
-                                            field.state.value as Date | string | null
-                                        )}
-                                        onBlur={field.handleBlur}
-                                        // Clearable, and empty by default (HOS-278 D1). This
-                                        // field used to refuse to clear and to prefill the
-                                        // current date, so a partner that had not started yet
-                                        // still carried a start date — invented, and
-                                        // indistinguishable from a real one everywhere it was
-                                        // read afterwards.
-                                        onChange={(e) =>
-                                            field.handleChange(
-                                                e.target.value ? new Date(e.target.value) : null
-                                            )
-                                        }
-                                        className={INPUT_CLASS}
-                                        disabled={isSubmitting}
-                                    />
-                                </FieldWrapper>
-                            )}
-                        </form.Field>
-
-                        {/* Ends At */}
-                        <form.Field name="endsAt">
-                            {(field) => (
-                                <FieldWrapper
-                                    label="Fin (opcional)"
-                                    htmlFor={field.name}
-                                    error={fieldError(field.state.meta, submitAttempted)}
-                                >
-                                    <input
-                                        id={field.name}
-                                        name={field.name}
-                                        type="date"
-                                        value={toInputDate(
-                                            field.state.value as Date | string | null
-                                        )}
-                                        onBlur={field.handleBlur}
-                                        onChange={(e) =>
-                                            field.handleChange(
-                                                e.target.value ? new Date(e.target.value) : null
-                                            )
-                                        }
                                         className={INPUT_CLASS}
                                         disabled={isSubmitting}
                                     />

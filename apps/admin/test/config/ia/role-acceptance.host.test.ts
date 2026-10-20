@@ -83,7 +83,7 @@ const HOST_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_OWN,
     // ACCESS: Basic access
     // NOTE (HOS-152): ACCESS_PANEL_ADMIN was REMOVED from HOST's real grant —
-    // HOST/COMMERCE_OWNER must never reach the admin panel (see
+    // HOST/GASTRONOMY_OWNER/EXPERIENCE_OWNER must never reach the admin panel (see
     // packages/seed/src/required/rolePermissions.seed.ts). A real HOST is
     // bounced by apps/admin/src/lib/authed-guard.ts before any of this nav
     // config ever renders; this array still mirrors HOST's real grant for the
@@ -144,7 +144,7 @@ function resolveVisibleSections(): string[] {
 describe(`AC-10 — ${RoleEnum.HOST} role navigation`, () => {
     // ── mainMenu ────────────────────────────────────────────────────────────
 
-    it('mainMenu is exactly [inicio, misAlojamientos, consultas, miFacturacion, miCuenta]', () => {
+    it('mainMenu is exactly [inicio, misAlojamientos, consultas, miCuenta]', () => {
         // Arrange
         const hostRole = validatedConfig.roles[RoleEnum.HOST];
 
@@ -153,13 +153,7 @@ describe(`AC-10 — ${RoleEnum.HOST} role navigation`, () => {
 
         // Assert
         expect(hostRole?.enabled).toBe(true);
-        expect(mainMenu).toEqual([
-            'inicio',
-            'misAlojamientos',
-            'consultas',
-            'miFacturacion',
-            'miCuenta'
-        ]);
+        expect(mainMenu).toEqual(['inicio', 'misAlojamientos', 'consultas', 'miCuenta']);
     });
 
     it('miCuenta is IN the mainMenu (not hidden behind avatar dropdown only)', () => {
@@ -286,19 +280,17 @@ describe(`AC-10 — ${RoleEnum.HOST} role navigation`, () => {
         expect(accessible).toBe(true);
     });
 
-    it('all 5 mainMenu sections resolve to at least one accessible sidebar item for HOST', () => {
+    it('all 4 mainMenu sections resolve to at least one accessible sidebar item for HOST', () => {
         // Arrange + Act
         const visible = resolveVisibleSections();
 
-        // Assert — all 5 sections have accessible items for HOST
-        expect(visible).toHaveLength(5);
+        // Assert — all 4 sections have accessible items for HOST
+        // (HOS-1416: miFacturacion was removed with the billing surface)
+        expect(visible).toHaveLength(4);
         expect(visible).toContain('inicio');
         expect(visible).toContain('misAlojamientos');
         expect(visible).toContain('consultas');
         expect(visible).toContain('miCuenta');
-        // miFacturacion included too (SUBSCRIPTION_VIEW / PRICING_PLAN_VIEW are gated
-        // but onMissing defaults to 'disable', so the items still occupy the sidebar)
-        expect(visible).toContain('miFacturacion');
     });
 
     it('HOST does NOT have catalogo in mainMenu (data != nav principle)', () => {

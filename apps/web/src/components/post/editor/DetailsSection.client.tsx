@@ -22,7 +22,7 @@ import type { PostEditFormData } from './post-edit-data';
  *
  * Structural on purpose — the editor needs an id and a label and nothing else,
  * so `DestinationData` (id/name/path) satisfies it without this section
- * depending on that shape, and without borrowing the commerce vertical's
+ * depending on that shape, and without borrowing the gastronomy or experience vertical's
  * `DestinationOption`.
  */
 export interface PostDestinationOption {
@@ -95,7 +95,7 @@ export function DetailsSection({
 
             {/*
              * Hidden entirely when the catalog fetch failed or is empty. Unlike
-             * the commerce editor's destination select, this field is OPTIONAL
+             * the listing editor's destination select, this field is OPTIONAL
              * (a post needs no destination to be complete), so an unavailable
              * catalog costs the author nothing — there is no state they are
              * locked out of reaching.

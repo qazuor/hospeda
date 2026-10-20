@@ -799,6 +799,9 @@ Fuente: [PASO:3b](../30-el-corte.md#paso-3b) · [FILA:B9a](#fila-b9a)
 
 ### Criterios de aceptación
 
+<a id="corte-mvp-b9a"></a>
+**Corte del MVP, ajuste del 2026-10-07** ([CU](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#lote-cr-a-dd-2026-10-07)): al corte un grant **sólo se otorga desde la herramienta del paso 3b**. Revocar y la fuga de `USER`/`GLOBAL` ([AC:B9a:6](#ac-b9a-6), [AC:B9a:7](#ac-b9a-7)) y el grant a quien paga ([AC:B9a:13](#ac-b9a-13), [AC:B9a:14](#ac-b9a-14), [AC:B9a:17](#ac-b9a-17)) van a la **Fase 2**, con la confirmación de `B13a.3`.
+
 <a id="ac-b9a-1"></a>
 **AC:B9a:1** — otorgar un grant corta el cobro en el acto (`S13`)
 
@@ -882,6 +885,8 @@ Fuente: [INV:27](../02-nucleo.md#inv-27) · [INV:28](../02-nucleo.md#inv-28) · 
 
 Fuente: [DEC-ADDON-005](../01-decisiones-vigentes.md#dec-addon-005) · [TRANS:B:S20](../04-catalogos.md#trans-b-s20)
 
+> **Corte del MVP, 2026-10-07: esta AC va en la Fase 2** ([CU](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#lote-cr-a-dd-2026-10-07): al corte el grant sólo se otorga desde la herramienta del paso 3b ([AC:B9a:15](#ac-b9a-15)), a dos cuentas que no pagan, y no hay revocar). En el árbol vive en una hoja de esa fase; no se implementa al corte.
+
 <a id="ac-b9a-7"></a>
 **AC:B9a:7** — revocar: se guarda el motivo y no se repara nada
 
@@ -895,6 +900,8 @@ Fuente: [DEC-ADDON-005](../01-decisiones-vigentes.md#dec-addon-005) · [TRANS:B:
   las tres cosas (la pantalla es de [B13a](B13a.md#ac-b13a-6)).
 
 Fuente: [DEC-GRANT-008](../01-decisiones-vigentes.md#dec-grant-008) · [DEC-GRANT-001](../01-decisiones-vigentes.md#dec-grant-001) · [DEC-TRIAL-009](../01-decisiones-vigentes.md#dec-trial-009) · [DEC-ADDON-003](../01-decisiones-vigentes.md#dec-addon-003) · [ACC:2](../02-nucleo.md#acc-2)
+
+> **Corte del MVP, 2026-10-07: esta AC va en la Fase 2** ([CU](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#lote-cr-a-dd-2026-10-07): al corte el grant sólo se otorga desde la herramienta del paso 3b ([AC:B9a:15](#ac-b9a-15)), a dos cuentas que no pagan, y no hay revocar). En el árbol vive en una hoja de esa fase; no se implementa al corte.
 
 <a id="ac-b9a-8"></a>
 **AC:B9a:8** — a lo sumo un grant vivo por beneficiario, por la base
@@ -965,6 +972,8 @@ Fuente: [LISTA:B9a](#lista-b9a) · [FILA:B9a](#fila-b9a)
 
 Fuente: [LOCK:C3](../04-catalogos.md#lock-c3) · [TRANS:B:S13](../04-catalogos.md#trans-b-s13)
 
+> **Corte del MVP, 2026-10-07: esta AC va en la Fase 2** ([CU](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#lote-cr-a-dd-2026-10-07): al corte el grant sólo se otorga desde la herramienta del paso 3b ([AC:B9a:15](#ac-b9a-15)), a dos cuentas que no pagan, y no hay revocar). En el árbol vive en una hoja de esa fase; no se implementa al corte.
+
 <a id="ac-b9a-14"></a>
 **AC:B9a:14** — la tercera comprobación del barrido: el fan-out incompleto
 
@@ -975,6 +984,8 @@ Fuente: [LOCK:C3](../04-catalogos.md#lock-c3) · [TRANS:B:S13](../04-catalogos.m
   `S13`/`S20`, que es idempotente y reanudable fila por fila.
 
 Fuente: [MOT:10](../04-catalogos.md#mot-10) · [FILA:B9a](#fila-b9a) · [TRANS:B:S13](../04-catalogos.md#trans-b-s13)
+
+> **Corte del MVP, 2026-10-07: esta AC va en la Fase 2** ([CU](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#lote-cr-a-dd-2026-10-07): al corte el grant sólo se otorga desde la herramienta del paso 3b ([AC:B9a:15](#ac-b9a-15)), a dos cuentas que no pagan, y no hay revocar). En el árbol vive en una hoja de esa fase; no se implementa al corte.
 
 <a id="ac-b9a-15"></a>
 **AC:B9a:15** — la herramienta del paso 3b
@@ -1017,6 +1028,8 @@ Fuente: [LISTA:B9a](#lista-b9a) · [LISTA:B9](#lista-b9) · [FILA:B9a](#fila-b9a
   ya llama (era del criterio de `B7`, que llega antes, y pasa al de `B9a`).
 
 Fuente: [LISTA:B9a](#lista-b9a) · [TRANS:B:S13](../04-catalogos.md#trans-b-s13) · [OWN:41-corte-del-mvp:t9:BL](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bl) · [DEC-ARCH-017#📌6](../01-decisiones-vigentes.md#dec-arch-017-p6)
+
+> **Corte del MVP, 2026-10-07: esta AC va en la Fase 2** ([CU](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#lote-cr-a-dd-2026-10-07): al corte el grant sólo se otorga desde la herramienta del paso 3b ([AC:B9a:15](#ac-b9a-15)), a dos cuentas que no pagan, y no hay revocar). En el árbol vive en una hoja de esa fase; no se implementa al corte.
 
 ### Los criterios de terminación de origen
 

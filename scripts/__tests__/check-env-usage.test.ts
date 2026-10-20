@@ -197,41 +197,34 @@ describe('diffUsageAgainstRegistry', () => {
         expect(result.unregistered).toEqual([]);
     });
 
-    it('should demonstrate the red-then-green regression shape for the 3 known-missing vars (AC-1)', () => {
-        // Arrange — "before": registry lacks the 3 vars this spec's motivating bug found
+    it('should demonstrate the red-then-green regression shape for the known-missing vars (AC-1)', () => {
+        // Arrange — "before": registry lacks the vars this spec's motivating bug found
         const usages = [
             { name: 'HOSPEDA_TAG_USER_QUOTA_PER_USER', file: 'tag.service.ts', line: 241 },
-            { name: 'HOSPEDA_DEPLOY_ENV', file: 'environment.ts', line: 43 },
-            { name: 'HOSPEDA_QZPAY_TEST_CONTROL_ENABLED', file: 'qzpay-test-control.ts', line: 77 }
+            { name: 'HOSPEDA_DEPLOY_ENV', file: 'environment.ts', line: 43 }
         ];
         const registryWithoutThem = new Set<string>();
-        const registryWithThem = new Set([
-            'HOSPEDA_TAG_USER_QUOTA_PER_USER',
-            'HOSPEDA_DEPLOY_ENV',
-            'HOSPEDA_QZPAY_TEST_CONTROL_ENABLED'
-        ]);
+        const registryWithThem = new Set(['HOSPEDA_TAG_USER_QUOTA_PER_USER', 'HOSPEDA_DEPLOY_ENV']);
 
         // Act
         const before = diffUsageAgainstRegistry({ usages, registryNames: registryWithoutThem });
         const after = diffUsageAgainstRegistry({ usages, registryNames: registryWithThem });
 
         // Assert
-        expect(before.unregistered).toHaveLength(3);
+        expect(before.unregistered).toHaveLength(2);
         expect(after.unregistered).toHaveLength(0);
     });
 });
 
 describe('AC-1 regression against the REAL registry (HOS-79 T-020)', () => {
-    it('does not flag the 3 vars whose missing registration motivated this spec', () => {
+    it('does not flag the vars whose missing registration motivated this spec', () => {
         // Arrange — unlike the synthetic red/green case above, this runs the
         // scanner diff against the ACTUAL ENV_REGISTRY. Removing any of these
-        // three from packages/config regresses this test, closing AC-1 end to
+        // these from packages/config regresses this test, closing AC-1 end to
         // end at the scanner layer (not just the registry-presence layer).
-        const knownPreviouslyMissing = [
-            'HOSPEDA_TAG_USER_QUOTA_PER_USER',
-            'HOSPEDA_DEPLOY_ENV',
-            'HOSPEDA_QZPAY_TEST_CONTROL_ENABLED'
-        ];
+        // (The third var of the original finding was removed with the old
+        // billing, HOS-1419, so only the two survivors are pinned here.)
+        const knownPreviouslyMissing = ['HOSPEDA_TAG_USER_QUOTA_PER_USER', 'HOSPEDA_DEPLOY_ENV'];
         const usages = knownPreviouslyMissing.map((name, index) => ({
             name,
             file: 'regression-fixture.ts',
@@ -242,7 +235,7 @@ describe('AC-1 regression against the REAL registry (HOS-79 T-020)', () => {
         // Act
         const result = diffUsageAgainstRegistry({ usages, registryNames });
 
-        // Assert — all three now resolve; none reported as unregistered.
+        // Assert — all of them resolve; none reported as unregistered.
         expect(result.unregistered).toEqual([]);
     });
 });

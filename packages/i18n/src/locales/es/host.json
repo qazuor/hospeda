@@ -211,8 +211,10 @@
             "status": {
                 "DRAFT": "Borrador",
                 "PUBLISHED": "Publicada",
-                "SUSPENDED": "Suspendida",
-                "INACTIVE": "Pausada"
+                "UNPUBLISHED_BY_BILLING": "Sin publicar por tu plan",
+                "ARCHIVED": "Archivada",
+                "MODERATED": "Moderada",
+                "PURGED": "Eliminada"
             },
             "actions": {
                 "edit": "Editar",
@@ -238,10 +240,23 @@
             "deleteError": "No se pudo eliminar. Intentá de nuevo.",
             "publishError": "No se pudo publicar. Intentá de nuevo.",
             "publishSubscriptionRequiredMessage": "Necesitás un plan activo para publicar.",
+            "publishCheckFailed": "No pudimos comprobar si podés publicar. Recargá la página para intentarlo de nuevo.",
             "publishSubscriptionRequiredCta": "Ver planes",
             "priceOnRequest": "Precio a consultar",
             "publishMissingRequirementsMessage": "Para publicar falta completar: {{fields}}.",
-            "publishMissingRequirementsCta": "Completar en el editor"
+            "publishMissingRequirementsCta": "Completar en el editor",
+            "subscribeToPublish": {
+                "title": "Suscribite para publicar",
+                "body": "Tu ficha sigue sin publicar. Para publicarla necesitás una suscripción de {{vertical}}.",
+                "vertical": {
+                    "accommodation": "alojamiento",
+                    "gastronomy": "gastronomía",
+                    "experience": "experiencias"
+                }
+            },
+            "unpublishTrialNote": "La prueba gratis sigue corriendo: despublicar no detiene el reloj del trial.",
+            "unpublishRecurringNote_one": "Tenés {{count}} destaque recurrente sobre esta ficha: se sigue cobrando aunque no esté publicada, hasta que lo des de baja.",
+            "unpublishRecurringNote_other": "Tenés {{count}} destaques recurrentes sobre esta ficha: se siguen cobrando aunque no esté publicada, hasta que los des de baja."
         },
         "editor": {
             "section": {
@@ -456,8 +471,7 @@
                 "title": "Tu ficha ya está lista",
                 "body": "Completaste todo lo que hacía falta. Si la publicás ahora, va a aparecer en el sitio, visible para los turistas.",
                 "publishNow": "Publicar ahora",
-                "keepEditing": "Seguir editando",
-                "blockedTitle": "Necesitás un plan activo"
+                "keepEditing": "Seguir editando"
             },
             "toast": {
                 "saveSuccess": "Cambios guardados",
@@ -914,18 +928,15 @@
             "properties": "Propiedades",
             "promotions": "Promociones",
             "messages": "Mensajes",
-            "subscription": "Suscripción",
-            "addons": "Complementos"
+            "subscription": "Suscripción"
         }
     },
     "pages": {
         "nueva": {
             "trialCalloutTitle_one": "{{trialDays}} día gratis, sin tarjeta — una sola para alojamientos",
             "trialCalloutTitle_other": "{{trialDays}} días gratis, sin tarjeta — una sola para alojamientos",
-            "trialCalloutTitleIneligible": "Armá tu propiedad",
             "trialNote_one": "Podés armar tu propiedad ahora, sin apuro y sin tarjeta. La prueba gratis de {{trialDays}} día arranca sola cuando publicás; es una sola para alojamientos, y cuando termine, elegís un plan para seguir publicado.",
             "trialNote_other": "Podés armar tu propiedad ahora, sin apuro y sin tarjeta. La prueba gratis de {{trialDays}} días arranca sola cuando publicás; es una sola para alojamientos, y cuando termine, elegís un plan para seguir publicado.",
-            "trialNoteIneligible": "Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo.",
             "subtitle": "Creamos el borrador con estos datos. Las fotos, los precios y el resto los cargás en el paso 2, desde el panel.",
             "precheck": {
                 "pickDraftDeleteOrUpgrade": {

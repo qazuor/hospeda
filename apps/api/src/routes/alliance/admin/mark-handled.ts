@@ -46,8 +46,8 @@ const allianceLeadService = new AllianceLeadService(
  * `id` comes from the URL param; body carries status + optional adminNote.
  * Mirrors `AllianceLeadMarkHandledSchema` (@repo/schemas), redeclared locally
  * with `z.enum(...)` (instead of `.refine()`) so the inferred TS type narrows
- * to exactly `'approved' | 'rejected'` — same convention as commerce's
- * `MarkHandledBodySchema` (`apps/api/src/routes/commerce/admin/mark-handled.ts`).
+ * to exactly `'approved' | 'rejected'` — same convention as the gastronomy and experience
+ * `MarkHandledBodySchema` (the retired lead mark-handled route).
  * Runtime validation is defense-in-depth: the service layer re-validates via
  * `AllianceLeadMarkHandledSchema`.
  */

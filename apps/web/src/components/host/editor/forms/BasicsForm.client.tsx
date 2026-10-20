@@ -50,7 +50,7 @@ export function BasicsForm({
             // type-only change (e.g. COUNTRY_HOUSE -> CABIN) needs the same
             // opt-in as a rename does.
             ...buildSlugRefreshPayload({
-                currentLifecycleState: initialData.lifecycleState,
+                currentPublicationStatus: initialData.publicationStatus,
                 initialName: baseline.name,
                 currentName: values.name,
                 initialType: baseline.type,
@@ -61,7 +61,7 @@ export function BasicsForm({
     });
 
     const slugRefreshPlacement = getSlugRefreshOptInPlacement({
-        currentLifecycleState: initialData.lifecycleState,
+        currentPublicationStatus: initialData.publicationStatus,
         initialName: form.baselineValues.name,
         currentName: form.values.name,
         initialType: form.baselineValues.type,

@@ -4,7 +4,7 @@
  * Uses `EntityCreatePageBase` with the gastronomy consolidated config.
  * Supports an optional owner assignment via OwnerSelect (existing users only —
  * new-owner provisioning is out of scope for this task).
- * Gate-protected by COMMERCE_CREATE.
+ * Gate-protected by GASTRONOMY_CREATE.
  */
 
 import { GastronomyAdminCreateInputSchema, PermissionEnum } from '@repo/schemas';
@@ -28,7 +28,7 @@ export const Route = createFileRoute('/_authed/gastronomies/new')({
 /**
  * Create page for a new gastronomy listing.
  *
- * The create form includes all commerce identity fields, gastronomy-specific
+ * The create form includes all listing identity fields, gastronomy-specific
  * fields (type, priceRange, menuUrl), and operational fields.  An optional
  * owner can be assigned on creation via the ownerId field in the identity
  * section (backed by OwnerSelect in the consolidated config).
@@ -64,7 +64,7 @@ function GastronomyCreatePage() {
     };
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.COMMERCE_CREATE]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.GASTRONOMY_CREATE]}>
             <EntityCreatePageBase
                 config={createConfig}
                 zodSchema={GastronomyAdminCreateInputSchema}

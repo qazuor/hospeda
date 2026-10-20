@@ -70,7 +70,6 @@ const SYSTEM_FLAGS = [
     'profileCompleted',
     'setPasswordPrompted',
     'banned',
-    'serviceSuspended',
     'permissions',
     'role'
 ] as const;
@@ -133,7 +132,6 @@ describe('PATCH /protected/users/:id — system-flag mass-assignment guard', () 
                 emailVerified: false,
                 profileCompleted: false,
                 banned: true,
-                serviceSuspended: true,
                 roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.ACCESS_PANEL_ADMIN]
             })

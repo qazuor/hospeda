@@ -47,7 +47,7 @@ import type { RoleConfigSchema } from '../schema';
 export const hostRole: z.input<typeof RoleConfigSchema> = {
     enabled: true,
     label: { es: 'Anfitrión', en: 'Host', pt: 'Anfitrião' },
-    mainMenu: ['inicio', 'misAlojamientos', 'consultas', 'miFacturacion', 'miCuenta'],
+    mainMenu: ['inicio', 'misAlojamientos', 'consultas', 'miCuenta'],
     dashboard: 'hostDashboard',
     topbar: {
         showSearch: false,

@@ -8,7 +8,7 @@ import type {
     UserSummary
 } from '@repo/schemas';
 import type { AnyColumn, SQL } from 'drizzle-orm';
-import { and, asc, count, desc, eq, gte, inArray, isNull, lte, ne, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { accommodationOccupancy } from '../../schemas/accommodation/accommodationOccupancy.dbschema.ts';
@@ -26,6 +26,7 @@ import {
 } from '../../utils/geo.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
+import { withListingBirthColumns } from '../listing/listing-birth.ts';
 
 /**
  * Nullable numeric columns where Postgres' default NULLS handling causes UX surprises.
@@ -156,11 +157,12 @@ function buildBasePriceConditions(
  * Compose the full ORDER BY list for accommodation search queries.
  *
  * Precedence (applied in order):
- *   1. `featuredFirst` pin     → `(isFeatured OR featuredByEntitlement) DESC` prepended
- *                                (SPEC-292: admin-curated OR entitlement-derived featuring).
+ *   1. `featuredFirst` pin     → `featuredByEntitlement DESC` prepended (SPEC-292;
+ *                                the only featuring source since HOS-1419).
  *   2. `sorts[]` if present    → iterated in declared order. Any `isFeatured`
  *                                entry is dropped when `featuredFirst` is pinned
- *                                (prevents a duplicated `ORDER BY is_featured`).
+ *                                (prevents a duplicated featured ORDER BY); when not
+ *                                pinned it orders by `featuredByEntitlement`.
  *   3. Legacy `sortBy`/`sortOrder` fallback when `sorts[]` is absent or empty.
  *                                Also dropped if it would duplicate the pin.
  *   4. `id DESC`               → stable tiebreaker, ALWAYS appended so pagination
@@ -187,16 +189,11 @@ export function buildAccommodationOrderBy(params: {
     const orderBy: SQL[] = [];
 
     if (params.featuredFirst) {
-        // SPEC-292 — effective featured = admin-curated (`isFeatured`) OR
-        // entitlement-derived (`featuredByEntitlement`, set by the billing sync;
-        // renamed SPEC-309 to reflect plan+addon union). Order by the disjunction
-        // so both surface first; the expression is evaluated per-row for sorting
-        // (not index-driven). The composite and partial indexes added in migration
-        // 0035 on these columns serve filtered queries (WHERE clauses), not this
-        // computed ORDER BY expression.
-        orderBy.push(
-            desc(sql`(${accommodations.isFeatured} OR ${accommodations.featuredByEntitlement})`)
-        );
+        // SPEC-292 — effective featured = entitlement-derived
+        // (`featuredByEntitlement`, set by the billing sync; renamed SPEC-309).
+        // It is the only featuring source since HOS-1419 dropped the
+        // admin-curated `is_featured` column.
+        orderBy.push(desc(accommodations.featuredByEntitlement));
     }
 
     const legacyFallback: SortField[] =
@@ -244,7 +241,10 @@ export function buildAccommodationOrderBy(params: {
             }
             continue;
         }
-        const column = accommodations[sort.field as keyof typeof accommodations];
+        // `isFeatured` is the public name of the featured state; its only source
+        // is `featuredByEntitlement` since HOS-1419 dropped `is_featured`.
+        const columnKey = sort.field === 'isFeatured' ? 'featuredByEntitlement' : sort.field;
+        const column = accommodations[columnKey as keyof typeof accommodations];
         if (column && typeof column === 'object' && 'name' in column) {
             orderBy.push(buildSortExpr(column as AnyColumn, sort.order, sort.field));
         }
@@ -423,6 +423,14 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
     protected table = accommodations;
     public entityName = 'accommodations';
 
+    /** Creates an accommodation with its initial publication clock. */
+    override async create(
+        data: Partial<Accommodation>,
+        tx?: DrizzleClient
+    ): Promise<Accommodation> {
+        return super.create(withListingBirthColumns({ data }).data, tx);
+    }
+
     protected override readonly validRelationKeys = [
         'owner',
         'createdBy',
@@ -496,10 +504,10 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
      * Centralizing the rule here — rather than fixing each of those call sites —
      * closes the gap for every current and future caller of these three methods.
      *
-     * NOTE: only `deletedAt` belongs at the model layer. `visibility` and
-     * `lifecycleState` must NOT become model defaults — the admin panel has to see
-     * `PRIVATE` accommodations and an owner has to see their own `DRAFT`, so those
-     * two predicates stay explicit at each public read path.
+     * NOTE: only `deletedAt` belongs at the model layer. `publicationStatus`
+     * must NOT become a model default — the admin panel has to see every state and
+     * an owner has to see their own `DRAFT`, so the `PUBLISHED` predicate stays
+     * explicit at each public read path (`publishedOnly`, HOS-1641).
      *
      * Returns `undefined` (no condition injected, i.e. soft-deleted rows are
      * included) when EITHER escape hatch applies, mirroring the existing
@@ -601,12 +609,11 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
 
     public async countByFilters(
         params: AccommodationSearchInput & {
-            excludeRestricted?: boolean;
-            excludeOwnerSuspended?: boolean;
-            /** SPEC-167 T-004: exclude plan-restricted accommodations from public counts. */
-            excludePlanRestricted?: boolean;
-            /** Restrict results to ACTIVE lifecycle state (excludes DRAFT, INACTIVE, ARCHIVED). */
-            activeOnly?: boolean;
+            /**
+             * HOS-1641 (V6.9b): restrict to `publicationStatus = PUBLISHED`, the
+             * only state anybody but the owner or the admin may see (AC:V5:5).
+             */
+            publishedOnly?: boolean;
         },
         tx?: DrizzleClient
     ): Promise<{ count: number }> {
@@ -629,21 +636,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         } else if (params.destinationId) {
             whereClauses.push(eq(accommodations.destinationId, params.destinationId));
         }
-        if (params.excludeRestricted) {
-            whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
-        }
-        if (params.excludeOwnerSuspended) {
-            whereClauses.push(eq(accommodations.ownerSuspended, false));
-        }
-        // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
-        // Mirrors excludeOwnerSuspended treatment (same layers, same query helper).
-        if (params.excludePlanRestricted) {
-            whereClauses.push(eq(accommodations.planRestricted, false));
-        }
-        // Restrict to ACTIVE lifecycle state for public reads.
-        // When true, excludes DRAFT, INACTIVE, and ARCHIVED accommodations.
-        if (params.activeOnly) {
-            whereClauses.push(eq(accommodations.lifecycleState, 'ACTIVE'));
+        // HOS-1641 (V6.9b): public reads see PUBLISHED listings only.
+        if (params.publishedOnly) {
+            whereClauses.push(eq(accommodations.publicationStatus, 'PUBLISHED'));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -758,12 +753,11 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
 
     public async search(
         params: AccommodationSearchInput & {
-            excludeRestricted?: boolean;
-            excludeOwnerSuspended?: boolean;
-            /** SPEC-167 T-004: exclude plan-restricted accommodations from public searches. */
-            excludePlanRestricted?: boolean;
-            /** Restrict results to ACTIVE lifecycle state (excludes DRAFT, INACTIVE, ARCHIVED). */
-            activeOnly?: boolean;
+            /**
+             * HOS-1641 (V6.9b): restrict to `publicationStatus = PUBLISHED`, the
+             * only state anybody but the owner or the admin may see (AC:V5:5).
+             */
+            publishedOnly?: boolean;
         },
         tx?: DrizzleClient
     ): Promise<{ items: Accommodation[]; total: number }> {
@@ -786,20 +780,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         } else if (params.destinationId) {
             whereClauses.push(eq(accommodations.destinationId, params.destinationId));
         }
-        if (params.excludeRestricted) {
-            whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
-        }
-        if (params.excludeOwnerSuspended) {
-            whereClauses.push(eq(accommodations.ownerSuspended, false));
-        }
-        // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
-        if (params.excludePlanRestricted) {
-            whereClauses.push(eq(accommodations.planRestricted, false));
-        }
-        // Restrict to ACTIVE lifecycle state for public reads.
-        // When true, excludes DRAFT, INACTIVE, and ARCHIVED accommodations.
-        if (params.activeOnly) {
-            whereClauses.push(eq(accommodations.lifecycleState, 'ACTIVE'));
+        // HOS-1641 (V6.9b): public reads see PUBLISHED listings only.
+        if (params.publishedOnly) {
+            whereClauses.push(eq(accommodations.publicationStatus, 'PUBLISHED'));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -938,12 +921,11 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
      */
     public async searchWithRelations(
         params: AccommodationSearchInput & {
-            excludeRestricted?: boolean;
-            excludeOwnerSuspended?: boolean;
-            /** SPEC-167 T-004: exclude plan-restricted accommodations from public searches. */
-            excludePlanRestricted?: boolean;
-            /** Restrict results to ACTIVE lifecycle state (excludes DRAFT, INACTIVE, ARCHIVED). */
-            activeOnly?: boolean;
+            /**
+             * HOS-1641 (V6.9b): restrict to `publicationStatus = PUBLISHED`, the
+             * only state anybody but the owner or the admin may see (AC:V5:5).
+             */
+            publishedOnly?: boolean;
         },
         tx?: DrizzleClient
     ): Promise<{
@@ -974,20 +956,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         } else if (params.destinationId) {
             whereClauses.push(eq(accommodations.destinationId, params.destinationId));
         }
-        if (params.excludeRestricted) {
-            whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
-        }
-        if (params.excludeOwnerSuspended) {
-            whereClauses.push(eq(accommodations.ownerSuspended, false));
-        }
-        // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
-        if (params.excludePlanRestricted) {
-            whereClauses.push(eq(accommodations.planRestricted, false));
-        }
-        // Restrict to ACTIVE lifecycle state for public reads.
-        // When true, excludes DRAFT, INACTIVE, and ARCHIVED accommodations.
-        if (params.activeOnly) {
-            whereClauses.push(eq(accommodations.lifecycleState, 'ACTIVE'));
+        // HOS-1641 (V6.9b): public reads see PUBLISHED listings only.
+        if (params.publishedOnly) {
+            whereClauses.push(eq(accommodations.publicationStatus, 'PUBLISHED'));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -1188,12 +1159,11 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             destinationId?: string;
             type?: string;
             onlyFeatured?: boolean;
-            excludeRestricted?: boolean;
-            excludeOwnerSuspended?: boolean;
-            /** SPEC-167 T-004: exclude plan-restricted accommodations from public top-rated lists. */
-            excludePlanRestricted?: boolean;
-            /** Restrict results to ACTIVE lifecycle state (excludes DRAFT, INACTIVE, ARCHIVED). */
-            activeOnly?: boolean;
+            /**
+             * HOS-1641 (V6.9b): restrict to `publicationStatus = PUBLISHED`, the
+             * only state anybody but the owner or the admin may see (AC:V5:5).
+             */
+            publishedOnly?: boolean;
         },
         tx?: DrizzleClient
     ): Promise<Accommodation[]> {
@@ -1203,26 +1173,19 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             destinationId,
             type,
             onlyFeatured = false,
-            excludeRestricted = false,
-            excludeOwnerSuspended = false,
-            excludePlanRestricted = false,
-            activeOnly = false
+            publishedOnly = false
         } = params ?? {};
 
         // Single query with all relations loaded via Drizzle's `with` clause
         const results = await db.query.accommodations.findMany({
-            where: (fields, { eq, ne: neOp, isNull: isNullOp }) => {
+            where: (fields, { eq, isNull: isNullOp }) => {
                 const clauses: SQL<unknown>[] = [isNullOp(fields.deletedAt)];
                 if (destinationId) clauses.push(eq(fields.destinationId, destinationId));
                 // DRIZZLE-LIMITATION: Domain enum (string union) and Drizzle column's branded pgEnum type differ at TS level but are identical at runtime.
                 if (type) clauses.push(eq(fields.type, type as unknown as typeof fields.type));
-                if (onlyFeatured) clauses.push(eq(fields.isFeatured, true));
-                if (excludeRestricted) clauses.push(neOp(fields.visibility, 'RESTRICTED'));
-                if (excludeOwnerSuspended) clauses.push(eq(fields.ownerSuspended, false));
-                // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
-                if (excludePlanRestricted) clauses.push(eq(fields.planRestricted, false));
-                // Restrict to ACTIVE lifecycle state for public reads.
-                if (activeOnly) clauses.push(eq(fields.lifecycleState, 'ACTIVE'));
+                if (onlyFeatured) clauses.push(eq(fields.featuredByEntitlement, true));
+                // HOS-1641 (V6.9b): public reads see PUBLISHED listings only.
+                if (publishedOnly) clauses.push(eq(fields.publicationStatus, 'PUBLISHED'));
                 return and(...clauses);
             },
             with: {
@@ -1350,10 +1313,10 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
     /**
      * Per-accommodation market comparison for the HOST card J redesign.
      *
-     * For each of the owner's active accommodations, returns the listing's
+     * For each of the owner's published accommodations, returns the listing's
      * own rating + review count alongside the average rating + total
-     * review count of every other active accommodation in the same
-     * destination. The widget uses these pairs to draw a "you vs
+     * review count of every published accommodation in the same
+     * destination (`publication_status = 'PUBLISHED'`, HOS-1641). The widget uses these pairs to draw a "you vs
      * destination" indicator per row.
      *
      * (Price comparison was considered but skipped — `accommodations.price`
@@ -1397,7 +1360,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                     SELECT AVG(a2.average_rating)::float
                     FROM ${accommodations} a2
                     WHERE a2.destination_id = ${accommodations.destinationId}
-                      AND a2.lifecycle_state = 'ACTIVE'
+                      AND a2.publication_status = 'PUBLISHED'
                       AND a2.deleted_at IS NULL
                       AND a2.reviews_count > 0
                 )
@@ -1407,7 +1370,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                     SELECT SUM(a2.reviews_count)::int
                     FROM ${accommodations} a2
                     WHERE a2.destination_id = ${accommodations.destinationId}
-                      AND a2.lifecycle_state = 'ACTIVE'
+                      AND a2.publication_status = 'PUBLISHED'
                       AND a2.deleted_at IS NULL
                 )
             `;
@@ -1426,7 +1389,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                     FROM ${accommodations} a2
                     WHERE a2.destination_id = ${accommodations.destinationId}
                       AND a2.type = ${accommodations.type}
-                      AND a2.lifecycle_state = 'ACTIVE'
+                      AND a2.publication_status = 'PUBLISHED'
                       AND a2.deleted_at IS NULL
                       AND (a2.price->>'price') IS NOT NULL
                       AND (a2.price->>'price')::numeric > 0
@@ -1452,7 +1415,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                 .where(
                     and(
                         eq(accommodations.ownerId, ownerId),
-                        eq(accommodations.lifecycleState, 'ACTIVE'),
+                        eq(accommodations.publicationStatus, 'PUBLISHED'),
                         isNull(accommodations.deletedAt)
                     )
                 )

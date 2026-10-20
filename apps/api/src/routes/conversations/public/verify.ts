@@ -8,8 +8,8 @@
  *
  * Rate limit: 20 requests / 10 minutes (IP-based).
  */
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
-import { ConversationService } from '@repo/service-core';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { ConversationService, createSystemActor } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createConversationMailer } from '../../../lib/conversation-mailer';
 import { createPerRouteRateLimitMiddleware } from '../../../middlewares/rate-limit';
@@ -19,19 +19,15 @@ import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse, handleRouteError } from '../../../utils/response-helpers';
 
 /** Minimal system actor for public endpoints that invoke services. */
-const PUBLIC_SYSTEM_ACTOR = {
-    id: '00000000-0000-0000-0000-000000000001',
-    // HOS-296: the actor carries a SET of hats. This synthetic system actor
-    // wears exactly one, ADMIN, which is all the conversation service checks.
-    roles: [RoleEnum.ADMIN],
+const PUBLIC_SYSTEM_ACTOR = createSystemActor({
+    jobId: 'conversations.public.verify',
     permissions: [
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_VIEW_ANY,
         PermissionEnum.CONVERSATION_REPLY_OWN,
         PermissionEnum.CONVERSATION_REPLY_ANY
-    ] as readonly PermissionEnum[],
-    _isSystemActor: true
-} as const;
+    ]
+});
 
 /** Builds a `ConversationService` instance with API-level deps injected. */
 function buildConversationService(): ConversationService {

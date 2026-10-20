@@ -109,10 +109,10 @@ describe('getLimitHelp', () => {
         expect(result).not.toBe('billing.limitHelp.max_accommodations');
     });
 
-    it('degrades to a humanized key for a limit the catalogue does not know', () => {
+    it('degrades to a readable explanation for a limit the catalogue does not know', () => {
         const result = getLimitHelp({ key: 'max_something_new', t: translatorOver({}) });
 
-        expect(result).toBe('Max Something New');
+        expect(result).toBe('Allowed maximum for Something New.');
     });
 
     it('is a DIFFERENT string from the limit label, not a repeat of it', () => {

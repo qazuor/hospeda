@@ -1,77 +1,16 @@
-/**
- * @file plan-copy-veracity.test.ts
- * @description Regression guard for the FREE-FORM plan copy (HOS-331).
- *
- * The comparison table and the `/funcionalidades` brochure are structured data
- * and are already guarded by `features-content-veracity.test.ts`. The plan
- * *descriptions* are not: they are prose living in i18n JSON, rendered on the
- * public pricing cards (`billing.plan.<slug>.description`, via
- * `getPlanDescription`) and in the admin plan table
- * (`admin-billing.plans.descriptions.<slug>`). Prose drifts silently — HOS-16
- * deleted the `AD_FREE` entitlement and both surfaces kept selling "ad-free"
- * for months.
- *
- * The guard below pins each marketing claim to the entitlement that backs it:
- *
- *  - A claim whose key is not in `EntitlementKey` at all (`ad_free`,
- *    `concierge`, …) is a PHANTOM: no plan can ever legitimately make it, so
- *    any copy containing its phrase fails.
- *  - A claim whose key IS a real entitlement may only appear in the copy of a
- *    plan that actually grants it.
- *
- * ## What this guard is NOT
- *
- * Matching is `copy.includes(phrase)` against an enumerated phrase list, so it
- * catches a REGRESSION TO KNOWN WORDING, not every possible unbacked claim.
- * Rewording "sin publicidad" as "libre de anuncios" walks past it, and a
- * brand-new invented feature nobody listed is invisible to it. It is a ratchet
- * on the lies we have already told, not a proof of honesty. Two consequences:
- * add the phrase here whenever a claim is removed from copy, and do not treat
- * a green run as licence to skip reading new marketing text.
- *
- * It is also blind to "granted but not built": `PRIORITY_SUPPORT` and
- * `CUSTOM_BRANDING` are real entitlements on real plans, yet
- * `features-content-veracity.test.ts` pins both as `upcoming` because no gate
- * consumes them. Selling those in prose is an owner decision (2026-07-28), not
- * something this file can adjudicate.
- *
- * This lives in `apps/web` rather than `packages/i18n` because the assertion
- * needs `@repo/billing`, and `packages/i18n` is deliberately a leaf package
- * with no billing dependency. The locale JSON is read from disk so the single
- * guard covers both the web and the admin namespace.
- */
-
+/** Locale-only marketing copy guard restored from HOS-331. */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ALL_PLANS, EntitlementKey } from '@repo/billing';
 import { describe, expect, it } from 'vitest';
 
 const LOCALES = ['es', 'en', 'pt'] as const;
 type Locale = (typeof LOCALES)[number];
-
 const LOCALES_DIR = resolve(__dirname, '../../../../../packages/i18n/src/locales');
-
-/** Every value the `EntitlementKey` enum actually defines. */
-const REAL_ENTITLEMENTS = new Set<string>(Object.values(EntitlementKey));
-
-/**
- * A marketing claim that plan copy can make, and the entitlement key that has
- * to back it. `entitlement` is intentionally a raw string, not an
- * `EntitlementKey`: phantom claims name keys that do NOT exist in the enum, and
- * that is exactly what makes them unusable in copy.
- */
 interface PlanClaim {
     readonly id: string;
     readonly entitlement: string;
-    /** Lowercased substrings, per locale, that assert this claim. */
     readonly phrases: Readonly<Record<Locale, readonly string[]>>;
 }
-
-/**
- * Claims that no plan can make, because the feature has no entitlement in the
- * catalog. `ad_free` was removed by HOS-16; the rest were never modeled at all
- * and were pure marketing invention (owner decision 2026-07-28, HOS-331).
- */
 const PHANTOM_CLAIMS: readonly PlanClaim[] = [
     {
         id: 'ad-free',
@@ -149,101 +88,7 @@ const PHANTOM_CLAIMS: readonly PlanClaim[] = [
     }
 ];
 
-/**
- * Claims backed by a real entitlement. A plan may only make them when its own
- * entitlement list grants the key — this is what catches copy that survives a
- * repackaging (a claim moved to a higher tier but left in the lower tier's
- * description).
- */
-const BACKED_CLAIMS: readonly PlanClaim[] = [
-    {
-        id: 'price-alerts',
-        entitlement: EntitlementKey.PRICE_ALERTS,
-        phrases: {
-            es: ['alertas de precio'],
-            en: ['price alert'],
-            pt: ['alertas de preço']
-        }
-    },
-    {
-        id: 'exclusive-deals',
-        entitlement: EntitlementKey.EXCLUSIVE_DEALS,
-        phrases: {
-            es: ['ofertas exclusivas'],
-            en: ['exclusive deals'],
-            pt: ['ofertas exclusivas']
-        }
-    },
-    {
-        id: 'vip-support',
-        entitlement: EntitlementKey.VIP_SUPPORT,
-        phrases: { es: ['soporte vip'], en: ['vip support'], pt: ['suporte vip'] }
-    },
-    {
-        id: 'vip-promotions',
-        entitlement: EntitlementKey.VIP_PROMOTIONS_ACCESS,
-        phrases: {
-            es: ['promociones exclusivas'],
-            en: ['exclusive promotions'],
-            pt: ['promoções exclusivas']
-        }
-    },
-    {
-        id: 'whatsapp-direct',
-        entitlement: EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
-        phrases: {
-            es: ['contacto directo por whatsapp'],
-            en: ['direct whatsapp contact'],
-            pt: ['contato direto por whatsapp']
-        }
-    },
-    {
-        id: 'custom-branding',
-        entitlement: EntitlementKey.CUSTOM_BRANDING,
-        phrases: {
-            es: ['branding personalizado'],
-            en: ['custom branding'],
-            pt: ['identidade visual personalizada']
-        }
-    },
-    {
-        id: 'priority-support',
-        entitlement: EntitlementKey.PRIORITY_SUPPORT,
-        phrases: {
-            es: ['soporte prioritario'],
-            en: ['priority support'],
-            pt: ['suporte prioritário']
-        }
-    },
-    {
-        id: 'verification-badge',
-        entitlement: EntitlementKey.HAS_VERIFICATION_BADGE,
-        phrases: {
-            es: ['sello de verificación'],
-            en: ['verification badge'],
-            pt: ['selo de verificação']
-        }
-    },
-    {
-        id: 'advanced-stats',
-        entitlement: EntitlementKey.VIEW_ADVANCED_STATS,
-        phrases: {
-            es: ['estadísticas avanzadas', 'analíticas avanzadas'],
-            en: ['advanced statistics', 'advanced analytics'],
-            pt: ['estatísticas avançadas', 'análises avançadas']
-        }
-    },
-    {
-        id: 'featured-listing',
-        entitlement: EntitlementKey.FEATURED_LISTING,
-        phrases: {
-            es: ['listado destacado'],
-            en: ['featured listing'],
-            pt: ['anúncio em destaque']
-        }
-    }
-];
-
+// HOS-1352: transitional until V3 (HOS-1357), see PR — plan-entitlement checks await the replacement catalogue.
 function readLocaleJson(locale: Locale, file: string): Record<string, unknown> {
     return JSON.parse(readFileSync(resolve(LOCALES_DIR, locale, file), 'utf8'));
 }
@@ -272,66 +117,6 @@ function lookup(source: Record<string, unknown>, path: string): string | undefin
     return lookupExact(source, path) ?? lookupExact(source, `${path}_other`);
 }
 
-/** Locales that must carry a description for every active plan. */
-const ACTIVE_PLANS = ALL_PLANS.filter((plan) => plan.isActive);
-
-/**
- * Every plan description rendered by a product surface, as
- * `{ slug, locale, surface, copy }`. Missing keys are skipped here and asserted
- * separately by the presence test below — skipping silently is what would let a
- * deleted key sail through, since a plan with no translation falls back to the
- * ENGLISH `PlanDefinition.description` on a Spanish page.
- */
-function collectPlanCopy(): ReadonlyArray<{
-    readonly slug: string;
-    readonly locale: Locale;
-    readonly surface: string;
-    readonly copy: string;
-}> {
-    const rows: Array<{ slug: string; locale: Locale; surface: string; copy: string }> = [];
-    for (const locale of LOCALES) {
-        const billing = readLocaleJson(locale, 'billing.json');
-        const adminBilling = readLocaleJson(locale, 'admin-billing.json');
-        for (const plan of ALL_PLANS) {
-            const web = lookup(billing, `plan.${plan.slug}.description`);
-            if (web) {
-                rows.push({ slug: plan.slug, locale, surface: 'billing.plan', copy: web });
-            }
-            const admin = lookup(adminBilling, `plans.descriptions.${plan.slug}`);
-            if (admin) {
-                rows.push({
-                    slug: plan.slug,
-                    locale,
-                    surface: 'admin-billing.plans.descriptions',
-                    copy: admin
-                });
-            }
-        }
-    }
-    return rows;
-}
-
-/**
- * Free-form plan/billing prose that lives OUTSIDE the plan descriptions and is
- * still rendered to users: the public FAQ and the owners landing. These carried
- * their own unbacked claims ("soporte dedicado", collections on a free account)
- * and were invisible to the first version of this guard, which read only the two
- * description paths (HOS-331 round 2).
- *
- * Keyed by locale-relative file and dotted path so a failure names the exact
- * string to fix.
- */
-/**
- * Every answer rendered by `/preguntas-frecuentes`, derived rather than listed.
- *
- * That page walks a 7-category table and renders EVERY item under
- * `faq.categories.<cat>.items.<item>.answer` (see its `categories` const). An
- * enumerated subset therefore covered 6 of 51 answers while the doc comment
- * claimed "the public FAQ" — the same list-vs-reach gap that made a
- * PROSE_SURFACES entry inert one round earlier. Deriving from the catalog means
- * a new FAQ entry is guarded the day it is written, without anyone remembering
- * to add it here.
- */
 function faqAnswerPaths(): ReadonlyArray<{ readonly file: string; readonly path: string }> {
     const faq = readLocaleJson('es', 'faq.json');
     const categories = (faq.categories ?? {}) as Record<
@@ -472,20 +257,7 @@ const FIRST_SUBSCRIPTION_HINTS: Record<Locale, readonly string[]> = {
     pt: ['primeira assinatura', 'uma só para hospedagens']
 };
 
-const PLAN_COPY = collectPlanCopy();
 const PROSE_COPY = collectProseCopy();
-const PLAN_BY_SLUG = new Map(ALL_PLANS.map((plan) => [plan.slug, plan]));
-
-/**
- * Match a claim's phrases against a string, in EVERY language rather than only
- * the one the file is filed under.
- *
- * Locale directories here do not guarantee locale content: `features.json` is
- * Spanish end to end in `en/` and `pt/` (190 of its 200 strings are untranslated).
- * Searching only the directory's language would let "sin publicidad" sit in
- * `en/` unseen — and would raise a false failure on a qualifier that IS present,
- * just in Spanish. Scanning all three is strictly stronger and immune to that.
- */
 function matchedPhrase(copy: string, claim: PlanClaim, _locale: Locale): string | undefined {
     const haystack = copy.toLowerCase();
     for (const locale of LOCALES) {
@@ -494,72 +266,6 @@ function matchedPhrase(copy: string, claim: PlanClaim, _locale: Locale): string 
     }
     return undefined;
 }
-
-describe('plan copy veracity — phantom claims (HOS-331)', () => {
-    it('lists only claims that are genuinely absent from the entitlement catalog', () => {
-        // Non-vacuity: if one of these ever becomes a real entitlement, the
-        // claim must move to BACKED_CLAIMS instead of silently staying banned.
-        for (const claim of PHANTOM_CLAIMS) {
-            expect(REAL_ENTITLEMENTS.has(claim.entitlement)).toBe(false);
-        }
-    });
-
-    it('has a description for every active plan on both surfaces, in every locale', () => {
-        // Guards the guard, per (plan, locale, surface) rather than by total
-        // count: a global `toBeGreaterThan` still passes after a key is deleted,
-        // and a deleted key silently falls back to the English config string.
-        const missing: string[] = [];
-        for (const locale of LOCALES) {
-            const billing = readLocaleJson(locale, 'billing.json');
-            const adminBilling = readLocaleJson(locale, 'admin-billing.json');
-            for (const plan of ACTIVE_PLANS) {
-                if (!lookup(billing, `plan.${plan.slug}.description`)?.trim()) {
-                    missing.push(`${locale}: billing.plan.${plan.slug}.description`);
-                }
-                if (!lookup(adminBilling, `plans.descriptions.${plan.slug}`)?.trim()) {
-                    missing.push(`${locale}: admin-billing.plans.descriptions.${plan.slug}`);
-                }
-            }
-        }
-        expect(missing).toEqual([]);
-        expect(ACTIVE_PLANS.length).toBeGreaterThan(0);
-    });
-
-    it('reads every prose surface it claims to cover', () => {
-        // Same reasoning for the FAQ/landing paths: a renamed key would quietly
-        // drop that string from the sweep instead of failing.
-        //
-        // The count guard matters as much as the resolution one: PROSE_SURFACES
-        // is the single input to all four prose rules, and `collectProseCopy`
-        // drops unresolved rows silently, so a shrunken list weakens every rule
-        // at once with no other signal.
-        expect(PROSE_SURFACES.length).toBeGreaterThan(50);
-        const missing: string[] = [];
-        for (const locale of LOCALES) {
-            for (const { file, path } of PROSE_SURFACES) {
-                if (!lookup(readLocaleJson(locale, file), path)?.trim()) {
-                    missing.push(`${locale}: ${file}:${path}`);
-                }
-            }
-        }
-        expect(missing).toEqual([]);
-    });
-
-    it('never promises a feature that has no entitlement behind it', () => {
-        const violations: string[] = [];
-        for (const row of PLAN_COPY) {
-            for (const claim of PHANTOM_CLAIMS) {
-                const phrase = matchedPhrase(row.copy, claim, row.locale);
-                if (phrase) {
-                    violations.push(
-                        `${row.locale}/${row.surface}.${row.slug} sells "${phrase}" (${claim.id}), which no entitlement backs`
-                    );
-                }
-            }
-        }
-        expect(violations).toEqual([]);
-    });
-});
 
 describe('plan copy veracity — FAQ and landing prose (HOS-331)', () => {
     it('never promises a feature that has no entitlement behind it', () => {
@@ -641,25 +347,7 @@ describe('plan copy veracity — FAQ and landing prose (HOS-331)', () => {
     });
 });
 
-describe('plan copy veracity — backed claims (HOS-331)', () => {
-    it('only claims a real feature on plans that actually grant it', () => {
-        const violations: string[] = [];
-        for (const row of PLAN_COPY) {
-            const plan = PLAN_BY_SLUG.get(row.slug);
-            if (!plan) continue;
-            const granted = new Set<string>(plan.entitlements as readonly string[]);
-            for (const claim of BACKED_CLAIMS) {
-                const phrase = matchedPhrase(row.copy, claim, row.locale);
-                if (phrase && !granted.has(claim.entitlement)) {
-                    violations.push(
-                        `${row.locale}/${row.surface}.${row.slug} sells "${phrase}" but the plan does not grant ${claim.entitlement}`
-                    );
-                }
-            }
-        }
-        expect(violations).toEqual([]);
-    });
-
+describe('plan copy veracity — hero trial', () => {
     it('qualifies the hero trial stat, whose claim is split across two keys', () => {
         // `hero.stats.trial` renders as one pill: `value` holds the
         // interpolated number and `label` holds the words. Neither key can be

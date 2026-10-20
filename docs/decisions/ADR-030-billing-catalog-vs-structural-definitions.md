@@ -1,8 +1,10 @@
 # ADR-030: Billing Catalog vs. Structural Definitions
 
+> **Note (HOS-1626, 2026-10):** `@repo/billing` was retired (the package was deleted). Entitlement and limit keys now live in `packages/schemas/src/catalog/` (`entitlement-keys.ts`, `limit-keys.ts`, `key-enums.ts`); commercial values live in the database catalog. The `ALL_PLANS` / `ALL_ADDONS` / `DEFAULT_PROMO_CODES` exports and the structural config files it describes no longer exist.
+
 ## Status
 
-Accepted (2026-06-04)
+Superseded by DEC-ARCH-012 (HOS-1352). Previously: Accepted (2026-06-04)
 
 **Lineage**: formalises the boundary first drawn in SPEC-168
 ("Admin Plan Management") and completed by SPEC-192 ("Billing Catalog to DB").

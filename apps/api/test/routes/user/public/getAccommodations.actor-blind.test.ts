@@ -2,11 +2,10 @@
  * HOS-352 regression — `GET /api/v1/public/users/:id/accommodations` must be
  * ACTOR-BLIND.
  *
- * `AccommodationService._executeSearch` derives `excludeOwnerSuspended` /
- * `excludePlanRestricted` / `activeOnly` from the actor handed to it: an owner
- * whose id matches the `ownerId` filter (`isOwnScope`), or a VIP/staff actor,
- * gets DRAFT / owner-suspended / plan-restricted rows that an anonymous visitor
- * must never see. This route forwarded the REAL request actor — resolved from
+ * `AccommodationService._executeSearch` derives `publishedOnly` from the actor
+ * handed to it: an owner whose id matches the `ownerId` filter (`isOwnScope`)
+ * gets unpublished rows that an anonymous visitor must never see (before V6.9b
+ * a VIP/staff actor did too). This route forwarded the REAL request actor — resolved from
  * `actorMiddleware`, which authenticates via session COOKIE — straight into
  * `accommodationService.search()`.
  *
@@ -91,10 +90,6 @@ vi.mock('../../../../src/utils/actor', async (importOriginal) => {
 
 vi.mock('../../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-}));
-
-vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    resolveOwnerEntitlementsForOwnerIds: vi.fn().mockResolvedValue(new Map())
 }));
 
 /** Minimal list route-factory mock: wraps the handler in a Hono app. */

@@ -4,7 +4,7 @@
  * This exists because the wiring is easy to leave half-done, and the failure is
  * completely silent: photos persist into `post_media`, every write test passes,
  * and the photos simply never appear on whichever surface was missed. Nothing
- * errors. Commerce hit exactly this (see `commerce/read-media-wiring.test.ts`),
+ * errors. Gastronomy and experience hit exactly this (see `listing/read-media-wiring.test.ts`),
  * where the composition helpers were written, tested and exported while nothing
  * called them.
  *

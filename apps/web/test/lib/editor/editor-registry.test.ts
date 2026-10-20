@@ -3,7 +3,7 @@
  * @description Guards the vertical-agnostic core of the section registry
  * (HOS-1080).
  *
- * The accommodation and commerce registries each have their own suite; this one
+ * The accommodation, gastronomy and experience registries each have their own suite; this one
  * pins the behaviour they share, against a fixture registry rather than a real
  * one. That matters for the visibility rules in particular: the live registries
  * have at most one conditional section between them, so asserting fail-closed

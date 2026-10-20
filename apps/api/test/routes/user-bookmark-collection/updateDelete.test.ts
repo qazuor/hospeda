@@ -10,19 +10,21 @@
  * Pattern mirrors test/routes/user-bookmark-collection/list.test.ts (T-CL5).
  */
 
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode, type VerticalEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
 
 // ─── Hoisted mocks ──────────────────────────────────────────────────────────
-const { mockCollectionService } = vi.hoisted(() => {
+const { mockCollectionService, effectiveSet } = vi.hoisted(() => {
     const mockCollectionService = {
+        getCollectionById: vi.fn(),
         updateCollection: vi.fn(),
         deleteCollection: vi.fn()
     };
-    return { mockCollectionService };
+    return { mockCollectionService, effectiveSet: vi.fn() };
 });
 
 vi.mock('@repo/service-core', async (importOriginal) => {
@@ -43,6 +45,9 @@ vi.mock('@repo/db', async (importOriginal) => {
 vi.mock('../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() }
 }));
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet })
+}));
 
 /**
  * Mock gateCollections (CAN_USE_COLLECTIONS entitlement gate, SPEC-287) to
@@ -51,16 +56,6 @@ vi.mock('../../../src/utils/logger', () => ({
  * Uses importOriginal so every OTHER gate exported by this module (imported
  * by unrelated routes in the app graph loaded via initApp()) stays real.
  */
-vi.mock('../../../src/middlewares/tourist-entitlements', async (importOriginal) => {
-    const actual =
-        await importOriginal<typeof import('../../../src/middlewares/tourist-entitlements')>();
-    return {
-        ...actual,
-        gateCollections: () => async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        }
-    };
-});
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const BASE_URL = '/api/v1/protected/user-bookmark-collections';
@@ -127,6 +122,20 @@ describe('PATCH /api/v1/protected/user-bookmark-collections/:id — update', () 
 
     beforeEach(() => {
         vi.clearAllMocks();
+        effectiveSet.mockImplementation(
+            async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+                rehydrateEffectiveSet({
+                    version: 1,
+                    userId,
+                    vertical,
+                    hasLiveNonTrialTitle: false,
+                    inheritsTouristVip: false,
+                    entries: [{ key: 'can_use_collections', value: 1, strategy: 'MAX' as const }]
+                })
+        );
+        mockCollectionService.getCollectionById.mockResolvedValue({
+            data: { collection: makeCollection() }
+        });
     });
 
     // =========================================================================
@@ -323,6 +332,20 @@ describe('DELETE /api/v1/protected/user-bookmark-collections/:id — delete', ()
 
     beforeEach(() => {
         vi.clearAllMocks();
+        effectiveSet.mockImplementation(
+            async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+                rehydrateEffectiveSet({
+                    version: 1,
+                    userId,
+                    vertical,
+                    hasLiveNonTrialTitle: false,
+                    inheritsTouristVip: false,
+                    entries: [{ key: 'can_use_collections', value: 1, strategy: 'MAX' as const }]
+                })
+        );
+        mockCollectionService.getCollectionById.mockResolvedValue({
+            data: { collection: makeCollection() }
+        });
     });
 
     // =========================================================================

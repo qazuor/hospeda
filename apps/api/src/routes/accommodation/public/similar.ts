@@ -3,17 +3,16 @@
  * Returns accommodations similar to the given one, matched by type or destination.
  */
 import { accommodationMediaModel, accommodations, getDb } from '@repo/db';
-import { AccommodationPublicSchema, ServiceErrorCode } from '@repo/schemas';
+import { AccommodationPublicSchema, PublicationStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import { composeAccommodationMedia, ServiceError } from '@repo/service-core';
 import { and, desc, eq, isNull, ne, or, type SQL } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
+
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
-import type { AccommodationData } from '../../../utils/entitlement-filter';
 import {
-    filterAccommodationListByOwnerEntitlements,
-    stripRichDescriptionFields
+    filterPublicPaidFieldsForOwner,
+    resolvePublicFieldGrants
 } from '../../../utils/entitlement-filter';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -55,10 +54,10 @@ export const publicGetSimilarRoute = createPublicRoute({
 
         // Fetch current accommodation to get type and destinationId.
         // HOS-288: a bare `eq(id)` answered 200 with a full recommendation list for a
-        // soft-deleted / DRAFT / PRIVATE id. With these predicates the row is simply not
+        // soft-deleted or unpublished id. With these predicates the row is simply not
         // found and the NOT_FOUND throw right below fires.
         //
-        // For DRAFT/PRIVATE that closes an enumeration oracle. For soft-deleted it does
+        // For an unpublished listing that closes an enumeration oracle. For soft-deleted it does
         // NOT — `checkCanViewAccommodation` deliberately answers 410 GONE on
         // `/accommodations/:slug` for a formerly-PUBLIC deleted listing so crawlers
         // deindex it (HOS-117 T-022), i.e. existence is disclosed there by design. The
@@ -77,7 +76,7 @@ export const publicGetSimilarRoute = createPublicRoute({
         // would turn the leak into cache poisoning.
         //
         // Accepted cost: a token-bearing owner or VIP asking `/similar` for their own
-        // DRAFT/PRIVATE listing now gets 404 instead of recommendations. No first-party
+        // unpublished listing now gets 404 instead of recommendations. No first-party
         // regression — `apps/web` issues this SSR call with no cookie header, so it is
         // already anonymous, and the section degrades to empty via `Promise.allSettled`.
         const current = await db
@@ -90,8 +89,7 @@ export const publicGetSimilarRoute = createPublicRoute({
                 and(
                     eq(accommodations.id, id),
                     isNull(accommodations.deletedAt),
-                    eq(accommodations.lifecycleState, 'ACTIVE'),
-                    eq(accommodations.visibility, 'PUBLIC')
+                    eq(accommodations.publicationStatus, PublicationStatusEnum.PUBLISHED)
                 )
             )
             .limit(1);
@@ -123,8 +121,8 @@ export const publicGetSimilarRoute = createPublicRoute({
         const where = and(
             orCondition,
             ne(accommodations.id, id),
-            eq(accommodations.lifecycleState, 'ACTIVE'),
-            eq(accommodations.visibility, 'PUBLIC'),
+            // V6.9b (HOS-1641): PUBLISHED is the only public state.
+            eq(accommodations.publicationStatus, PublicationStatusEnum.PUBLISHED),
             // HOS-288: soft-deleted rows must never reach a public response.
             // `AccommodationModel` defaults to excluding them on findAll/count/
             // findAllWithRelations, but this handler is a RAW relational query on
@@ -148,12 +146,11 @@ export const publicGetSimilarRoute = createPublicRoute({
                 summary: true,
                 description: true,
                 type: true,
-                isFeatured: true,
-                // HOS-929: the billing-derived sibling of `isFeatured` (SPEC-292,
-                // renamed SPEC-309 OQ-3). This raw query bypasses the service/model
-                // layer entirely, so nothing else selects it for this route — it
-                // must be explicit here or the public OR silently degrades to
-                // `isFeatured` alone.
+                // HOS-929: the featuring source behind the public `isFeatured`
+                // (SPEC-292, renamed SPEC-309 OQ-3). This raw query bypasses the
+                // service/model layer entirely, so nothing else selects it for this
+                // route — it must be explicit here or every similar listing reads
+                // as not featured.
                 featuredByEntitlement: true,
                 // SPEC-291 Phase 3b: select isVerified so the badge gate can read the
                 // real DB value. Previously omitted → defaulted to false by stripWithSchema
@@ -176,12 +173,8 @@ export const publicGetSimilarRoute = createPublicRoute({
                 extraInfo: true,
                 destinationId: true,
                 ownerId: true,
-                visibility: true,
-                lifecycleState: true,
                 createdAt: true,
                 updatedAt: true,
-                ownerSuspended: true,
-                planRestricted: true,
                 contactInfo: true,
                 socialNetworks: true,
                 // richDescription and its SPEC-212 i18n sibling intentionally excluded —
@@ -198,7 +191,6 @@ export const publicGetSimilarRoute = createPublicRoute({
                 createdById: false,
                 updatedById: false,
                 lastWarnedAt: false,
-                moderationState: false,
                 schedule: false,
                 rating: false
             },
@@ -236,49 +228,27 @@ export const publicGetSimilarRoute = createPublicRoute({
         // The Web transform's `deriveCityFields()` reads `cityDestination`
         // (preferred) before falling back to legacy `destination`.
         //
-        // SPEC-187 / SPEC-212 data-level omission: richDescription and its i18n sibling
-        // are PREMIUM fields gated per-owner by the entitlement system. Similar-card
-        // listings never render them. We strip BOTH explicitly here as a second layer of
-        // defense (the DB projection above is the first layer — this ensures the fields
-        // are absent even if the query layer changes or is mocked in tests). Using the
-        // shared helper keeps this layer complete: the previous hand-rolled destructure
-        // dropped only the plain field, so the "survives a query-layer change" guarantee
-        // this block advertises did not actually hold for richDescriptionI18n.
+        // Apply the owner-effective paid-field grants to each similar listing.
+        const grants = await resolvePublicFieldGrants(rows.map((row) => row.ownerId));
         const mappedRows = rows.map((row) => {
-            const { destination, ...rest } = stripRichDescriptionFields(
-                row as Record<string, unknown> & { destination?: unknown }
+            const { destination, ...rest } = filterPublicPaidFieldsForOwner(
+                row as Record<string, unknown> & { destination?: unknown },
+                grants
             );
             const media = composeAccommodationMedia({
                 rows: mediaByAccommodationId.get(row.id) ?? [],
                 videos: row.videos
             });
-            // HOS-929: public read treats holding either source flag as
-            // featured. `featuredByEntitlement` itself is stripped by
-            // `AccommodationPublicSchema` (never in its pick).
+            // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+            // (the only featuring source since HOS-1419); the raw column itself is
+            // stripped by the public schema (never in its pick).
             const withMedia = { ...rest, media, isFeatured: resolvePublicIsFeatured(row) };
             return destination ? { ...withMedia, cityDestination: destination } : withMedia;
         });
 
-        // SPEC-291 Phase 3b: gate isVerified by the owner's billing entitlement.
-        // Collect unique ownerIds for this page, resolve entitlements in ONE batch
-        // query, then apply the gate synchronously. Fail-closed: owners absent from
-        // the map (e.g. billing lookup failed) have isVerified forced to false.
-        const uniqueOwnerIds = [
-            ...new Set(
-                mappedRows
-                    .map((r) => (r as { ownerId?: string }).ownerId)
-                    .filter((id): id is string => typeof id === 'string' && id.length > 0)
-            )
-        ];
-        const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
-        return filterAccommodationListByOwnerEntitlements(
-            // TYPE-WORKAROUND: HOS-929's explicit `isFeatured` override above narrows
-            // this object literal enough that TS no longer sees "sufficient overlap"
-            // with `AccommodationData` for a direct `as` cast — go through `unknown`
-            // first, same as other raw-query mappings in this codebase.
-            mappedRows as unknown as AccommodationData[],
-            ownerEntitlementsMap
-        );
+        // The SPEC-291 isVerified owner-entitlement gate was removed with the
+        // legacy billing system (HOS-1416); `isVerified` is emitted as stored.
+        return mappedRows;
     },
     options: {
         cacheTTL: 300,

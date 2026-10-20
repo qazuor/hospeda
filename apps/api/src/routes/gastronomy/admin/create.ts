@@ -6,10 +6,12 @@ import {
     type GastronomyAdminCreateInput,
     GastronomyAdminCreateInputSchema,
     GastronomyAdminSchema,
-    PermissionEnum
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -20,16 +22,27 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * POST /api/v1/admin/gastronomies
  * Create gastronomy listing — Admin endpoint.
  *
- * Requires GASTRONOMY_CREATE (or the legacy COMMERCE_CREATE) permission.
+ * Requires GASTRONOMY_CREATE permission.
  */
 export const adminCreateGastronomyRoute = createAdminRoute({
     method: 'post',
     path: '/',
     summary: 'Create gastronomy listing',
-    description:
-        'Creates a new gastronomy listing. Requires GASTRONOMY_CREATE (or the legacy COMMERCE_CREATE) permission.',
+    description: 'Creates a new gastronomy listing. Requires GASTRONOMY_CREATE permission.',
     tags: ['Gastronomy'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_CREATE, PermissionEnum.COMMERCE_CREATE]],
+    // Own create: `GASTRONOMY_CREATE` (re-checked by the listing-access middleware). Create on behalf of
+    // another owner (`ownerId` ≠ actor) is action 15 (ACC:15, H12): the listing
+    // access chain demands LISTING_FOREIGN_CONTENT_EDIT and runs steps 5 to 7 on
+    // that owner, so holding `GASTRONOMY_CREATE` alone never creates for somebody else.
+    anyOfPermissions: [
+        [PermissionEnum.GASTRONOMY_CREATE, PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT]
+    ],
+    listingAccess: {
+        vertical: VerticalEnum.GASTRONOMY,
+        operation: 'CREATE',
+        createSubjectFromBody: 'ownerId',
+        ownCreatePermission: PermissionEnum.GASTRONOMY_CREATE
+    },
     requestBody: GastronomyAdminCreateInputSchema,
     responseSchema: GastronomyAdminSchema,
     handler: async (
@@ -40,7 +53,10 @@ export const adminCreateGastronomyRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const data = body as GastronomyAdminCreateInput;
 
-        const result = await gastronomyService.create(actor, data);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => gastronomyService.create(actor, data)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

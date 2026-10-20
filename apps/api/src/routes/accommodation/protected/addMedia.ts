@@ -1,40 +1,19 @@
-/**
- * POST /api/v1/protected/accommodations/:id/media
- * Add a photo to an accommodation gallery — Protected (owner-facing) endpoint (SPEC-204)
- *
- * This is a URL-receiver endpoint: the caller has already uploaded the file to
- * Cloudinary via `POST /api/v1/admin/media/upload` (or equivalent). This endpoint
- * registers the returned URL + metadata as a new `accommodation_media` row.
- *
- * Plan cap enforcement:
- *   - Owner-actors always have `ownerId === actor.id`, so the cap check ALWAYS applies.
- *   - Enforcement happens in this route handler (not in the service) because
- *     `checkLimit` requires the Hono `Context` populated by `entitlementMiddleware`.
- *
- * Mirrors `apps/api/src/routes/accommodation/admin/addMedia.ts` cap-block verbatim,
- * adapted for the protected (owner-actor) context.
- */
-
-import { EntitlementKey, LimitKey } from '@repo/billing';
-import { accommodationMediaModel } from '@repo/db';
 import {
     AccommodationIdSchema,
     type AccommodationMediaAddInput,
     type AccommodationMediaAddPayload,
     AccommodationMediaAddPayloadSchema,
     AccommodationMediaSingleOutputSchema,
-    ProductDomainEnum,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { buildLimitReachedDetails } from '../../../middlewares/limit-enforcement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
-import { calculateThreshold, calculateUsagePercent, checkLimit } from '../../../utils/limit-check';
+import { accommodationGalleryPhotoLimit } from '../../../utils/listing-access/photo-limit';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -46,17 +25,24 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * calls `_canUpdate(actor, accommodation)` which enforces
  * `ACCOMMODATION_UPDATE_ANY` OR (`ACCOMMODATION_UPDATE_OWN` + ownership).
  * Route requires `EDIT_ACCOMMODATION_INFO` entitlement (granted on all host plans)
- * plus an inline plan photo-count cap check.
+ * plus the owner gallery photo limit in listing access.
  */
-export const protectedAddMediaRoute = createCRUDRoute({
+export const protectedAddMediaRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/media',
     summary: 'Add photo to accommodation gallery (owner)',
     description:
         'Register an already-uploaded URL as a new accommodation_media row. ' +
         'Requires EDIT_ACCOMMODATION_INFO entitlement. Plan photo cap is enforced ' +
-        'inline. The service layer enforces UPDATE_OWN + ownership.',
+        'on the owner. The service layer enforces UPDATE_OWN + ownership.',
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        idParam: 'id',
+        limit: accommodationGalleryPhotoLimit
+    },
     tags: ['Accommodations', 'Media'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema
     },
@@ -70,65 +56,10 @@ export const protectedAddMediaRoute = createCRUDRoute({
         const actor = getActorFromContext(ctx);
         const accommodationId = params.id as string;
 
-        // ── Plan cap enforcement ──────────────────────────────────────────────
-        // For protected owner-actors, `ownerId === actor.id` is always true for
-        // their own accommodations, so the plan cap ALWAYS applies.
-        // The count is GALLERY-ONLY (`isFeatured: false`, HOS-791). The featured
-        // image is not a gallery item and does not consume a plan photo slot, so
-        // an owner on a 15-photo plan keeps 15 gallery photos plus their featured
-        // one. Counting them together closed the gallery one photo early and
-        // reported "15/15" while the owner could only see 14.
+        // Listing access already checked the owner's visible gallery limit.
         const accommodation = await accommodationService.getById(actor, accommodationId);
         if (accommodation.error || !accommodation.data) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
-        }
-
-        const ownerId = (accommodation.data as { ownerId?: string | null }).ownerId;
-        if (ownerId && ownerId === actor.id) {
-            const { total: currentGalleryPhotoCount } =
-                await accommodationMediaModel.findByAccommodation({
-                    accommodationId,
-                    state: 'visible',
-                    isFeatured: false
-                });
-
-            const planLimitCheck = checkLimit({
-                context: ctx,
-                limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                currentCount: currentGalleryPhotoCount
-            });
-
-            const threshold = calculateThreshold(
-                currentGalleryPhotoCount,
-                planLimitCheck.maxAllowed
-            );
-            const usagePercent = calculateUsagePercent(
-                currentGalleryPhotoCount,
-                planLimitCheck.maxAllowed
-            );
-
-            if (threshold === 'warning' || threshold === 'critical') {
-                ctx.header(
-                    'X-Usage-Warning',
-                    `limitKey=${LimitKey.MAX_PHOTOS_PER_ACCOMMODATION};usage=${currentGalleryPhotoCount};max=${planLimitCheck.maxAllowed};threshold=${threshold}`
-                );
-            }
-
-            if (!planLimitCheck.allowed) {
-                apiLogger.warn(
-                    `Plan photo limit reached for accommodation ${accommodationId} (owner ${actor.id}): ${planLimitCheck.currentCount}/${planLimitCheck.maxAllowed}`
-                );
-                throw new ServiceError(
-                    ServiceErrorCode.LIMIT_REACHED,
-                    planLimitCheck.upgradeMessage ?? 'Photo limit reached',
-                    buildLimitReachedDetails({
-                        limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                        currentCount: planLimitCheck.currentCount,
-                        maxAllowed: planLimitCheck.maxAllowed,
-                        usagePercent
-                    })
-                );
-            }
         }
 
         // ── Delegate to service ───────────────────────────────────────────────
@@ -144,12 +75,5 @@ export const protectedAddMediaRoute = createCRUDRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // SPEC-145 T-004 / SPEC-204: gallery mutation requires EDIT_ACCOMMODATION_INFO.
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });

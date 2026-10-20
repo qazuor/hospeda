@@ -310,7 +310,7 @@ describe('useZodForm', () => {
     // -----------------------------------------------------------------------
     // HOS-814 — aggregateFields
     //
-    // Zod reports an issue at its DEEPEST path, so the commerce editor's
+    // Zod reports an issue at its DEEPEST path, so the gastronomy/experience editor's
     // `openingHours` rejections arrived as
     // `openingHours.days.mon.shifts.0.close`. The section's <FieldError> reads
     // `fieldErrors.openingHours` and `focusFirstInvalidField` derives an id from
@@ -348,7 +348,7 @@ describe('useZodForm', () => {
         // The opt-in is what changes behaviour: every OTHER form sharing this
         // hook must keep the exact mapping it had. This pins that isolation —
         // it is not an endorsement of the empty aggregate, which is precisely
-        // the shape the commerce editor opts OUT of below.
+        // the shape the gastronomy/experience editor opts OUT of below.
         it('leaves the aggregate key empty for a form that did NOT opt in', () => {
             const { result } = renderHook(() => useZodForm({ schema: NestedSchema }));
 

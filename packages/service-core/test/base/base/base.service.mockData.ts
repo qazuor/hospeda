@@ -50,8 +50,6 @@ export const mockUser: InferredUser = {
     // SPEC-113 profile completion flags
     profileCompleted: false,
     setPasswordPrompted: false,
-    // SPEC-143 #29 service-suspension flag (canonical source)
-    serviceSuspended: false,
     // HOS-375 platform/service-account flag
     isSystemAccount: false
 };

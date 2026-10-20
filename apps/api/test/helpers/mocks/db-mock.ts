@@ -31,9 +31,8 @@ export const billingAddonPurchasesCols = {
 } as const;
 
 /** Shared billing notification log column-name stubs. */
-export const billingNotificationLogsCols = {
+export const notificationLogsCols = {
     id: 'id',
-    customerId: 'customer_id',
     eventType: 'event_type',
     channel: 'channel',
     status: 'status',
@@ -129,10 +128,7 @@ const GASTRONOMY_TABLE_COLUMNS = {
     menuUrl: 'menu_url',
     ownerId: 'owner_id',
     destinationId: 'destination_id',
-    visibility: 'visibility',
-    lifecycleState: 'lifecycle_state',
-    moderationState: 'moderation_state',
-    isFeatured: 'is_featured',
+    publicationStatus: 'publication_status',
     reviewsCount: 'reviews_count',
     averageRating: 'average_rating',
     createdAt: 'created_at',
@@ -175,11 +171,7 @@ const EXPERIENCE_TABLE_COLUMNS = {
     isPriceOnRequest: 'is_price_on_request',
     ownerId: 'owner_id',
     destinationId: 'destination_id',
-    visibility: 'visibility',
-    lifecycleState: 'lifecycle_state',
-    moderationState: 'moderation_state',
-    isFeatured: 'is_featured',
-    hasActiveSubscription: 'has_active_subscription',
+    publicationStatus: 'publication_status',
     reviewsCount: 'reviews_count',
     averageRating: 'average_rating',
     createdAt: 'created_at',
@@ -348,7 +340,7 @@ export function createDbMock() {
          * the moment the importing line runs.
          *
          * That is not a cosmetic gap. `GastronomyService._executeCount` is on the
-         * path the commerce limits middleware takes to count an owner's listings,
+         * path the gastronomy and experience limits middleware takes to count an owner's listings,
          * and since HOS-1078 that middleware fails CLOSED — so a missing export
          * here surfaces as a **503 on listing creation**, which reads as a broken
          * route rather than as an unstubbed helper. Same species of failure the
@@ -474,6 +466,15 @@ export function createDbMock() {
             column: a,
             values: b
         })),
+
+        // HOS-1499: every listing create/update records the owner act through
+        // this singleton; without it a real service under this mock throws
+        // "Cannot read properties of undefined (reading 'insert')".
+        domainEventModel: {
+            insert: vi.fn(async () => ({})),
+            findByEntity: vi.fn(async () => []),
+            findByCorrelationId: vi.fn(async () => [])
+        },
 
         // Mock BaseModel class
         BaseModel: class MockBaseModel {
@@ -1004,13 +1005,11 @@ export function createDbMock() {
             }
         },
 
-        // Accommodation table stubs (SPEC-167 T-007: plan-restriction.service imports
-        // accommodations.id / accommodations.deletedAt for inArray/isNull WHERE clauses)
+        // Accommodation table stubs
         accommodations: {
             id: 'id',
             ownerId: 'owner_id',
-            planRestricted: 'plan_restricted',
-            ownerSuspended: 'owner_suspended',
+            publicationStatus: 'publication_status',
             deletedAt: 'deleted_at',
             updatedAt: 'updated_at'
         },
@@ -1030,12 +1029,10 @@ export function createDbMock() {
             deletedAt: 'deleted_at'
         },
 
-        // Owner promotions table stubs (SPEC-167 T-008: plan-restriction.service imports
-        // ownerPromotions.id / ownerPromotions.deletedAt for inArray/isNull WHERE clauses)
+        // Owner promotions table stubs
         ownerPromotions: {
             id: 'id',
             ownerId: 'owner_id',
-            planRestricted: 'plan_restricted',
             lifecycleState: 'lifecycle_state',
             deletedAt: 'deleted_at',
             updatedAt: 'updated_at'
@@ -1043,7 +1040,7 @@ export function createDbMock() {
 
         // Billing schema stubs
         billingAddonPurchases: billingAddonPurchasesCols,
-        billingNotificationLogs: billingNotificationLogsCols,
+        notificationLogs: notificationLogsCols,
         billingAuditLogs: {
             action: 'action',
             entityType: 'entityType',
@@ -1097,7 +1094,7 @@ export function createDbMock() {
         // (`loadCorrelationRow`) to decide whether an in-flight checkout's
         // share link may be handed back. Imported at module scope by
         // `subscription-checkout.service.ts` (via `checkout-idempotency.ts`),
-        // so any test that boots the accommodation/commerce/partner checkout
+        // so any test that boots the accommodation/gastronomy/experience/partner checkout
         // path resolves it through this mock — column-marker stub only, same
         // shape as `billingSubscriptions` above; the generic `getDb()` builder
         // resolves every `.limit()` to `[]` regardless of table.
@@ -1189,7 +1186,7 @@ export function createDbMock() {
             deletedAt: 'deleted_at'
         },
 
-        // Shared amenity/feature catalog and the commerce junction tables the
+        // Shared amenity/feature catalog and the gastronomy and experience junction tables the
         // public detail routes join against (HOS-1072). Column-name stubs only:
         // this mock replaces the WHOLE `@repo/db` module, so a table it does not
         // name arrives as `undefined` and the first `eq(table.column, …)` throws
@@ -1340,7 +1337,7 @@ export function createDbMock() {
         AttractionModel: GenericMockModel,
         BillingAddonPurchaseModel: GenericMockModel,
         BillingDunningAttemptModel: GenericMockModel,
-        BillingNotificationLogModel: GenericMockModel,
+        NotificationLogModel: GenericMockModel,
         BillingSettingsModel: GenericMockModel,
         BillingSubscriptionEventModel: GenericMockModel,
         DestinationFaqModel: GenericMockModel,
@@ -1524,11 +1521,11 @@ export function createDbMock() {
             hardDelete: vi.fn().mockResolvedValue(undefined)
         },
 
-        // HOS-372: relational commerce media singletons, the gastronomy/experience
+        // HOS-372: relational gastronomy or experience media singletons, the gastronomy/experience
         // twins of accommodationMediaModel above. GastronomyService and
         // ExperienceService resolve them in their constructors
         // (`mediaModel ?? gastronomyMediaModel`), so a mock without them fails at
-        // MODULE LOAD for every test that touches the commerce routes — the suite
+        // MODULE LOAD for every test that touches the gastronomy and experience routes — the suite
         // reports "0 tests" rather than a failure, which reads like a pass.
         gastronomyMediaModel: {
             findByGastronomy: vi.fn().mockResolvedValue({ items: [], total: 0 }),

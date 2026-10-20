@@ -1,6 +1,5 @@
-import { EntitlementKey } from '@repo/billing';
 import type { useTranslations } from '@repo/i18n';
-import { PermissionEnum } from '@repo/schemas';
+import { EntitlementKeyEnum, PermissionEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
 
@@ -23,7 +22,7 @@ export const createStatisticsConsolidatedSection = (
             view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
             edit: [] // No editable
         },
-        entitlementKey: EntitlementKey.VIEW_ADVANCED_STATS, // T-G-004: Gate statistics section
+        entitlementKey: EntitlementKeyEnum.VIEW_ADVANCED_STATS, // T-G-004: Gate statistics section
         fields: [
             // Métricas de visualización
             {

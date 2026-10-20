@@ -9,7 +9,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { withPublicIsFeatured } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
-import { withPublicVisibleFaqs } from '../../../utils/commerce-faq-visibility';
+import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -40,8 +40,7 @@ export const publicGetGastronomyByIdRoute = createPublicRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        // HOS-1286: the OR of the two featuring sources, applied in the
-        // PUBLIC tier only. Before this the handler returned the row as-is.
+        // HOS-1286: the public `isFeatured`, derived in the PUBLIC tier only.
         return result.data ? withPublicIsFeatured(withPublicVisibleFaqs(result.data)) : null;
     },
     options: {

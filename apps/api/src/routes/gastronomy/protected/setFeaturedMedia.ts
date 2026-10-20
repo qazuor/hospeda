@@ -13,7 +13,7 @@
  *
  * No request body — gastronomyId and mediaId come from URL params.
  *
- * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff) —
+ * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
  * enforced inside `setFeaturedGastronomyMedia` via `checkGastronomyCanEditMedia`.
  *
  * NOTE: `index.ts` registers this before /{id}/media/{mediaId} by convention.
@@ -21,17 +21,15 @@
  * Hono resolves the static `featured` segment regardless of insertion order
  * (mirrors the reorder-route note).
  */
-import { EntitlementKey } from '@repo/billing';
-import { GastronomyMediaSingleOutputSchema, ProductDomainEnum } from '@repo/schemas';
+
+import { GastronomyMediaSingleOutputSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService, ServiceError, setFeaturedGastronomyMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -41,16 +39,18 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.
  */
-export const protectedSetFeaturedGastronomyMediaRoute = createCRUDRoute({
+export const protectedSetFeaturedGastronomyMediaRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/media/{mediaId}/featured',
     summary: 'Set featured photo for gastronomy listing gallery',
     description:
         'Promotes the target media row to is_featured=true and demotes the previous ' +
         'featured row (if any). Archived photos cannot be featured — restore the ' +
-        'photo to visible first. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2. ' +
+        'photo to visible first. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff). ' +
         'No request body — ids come from URL params.',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -75,14 +75,5 @@ export const protectedSetFeaturedGastronomyMediaRoute = createCRUDRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // HOS-1275: mirrors the gate `patch.ts` mounted under HOS-1074. See
-        // `addFaq.ts` for why the vertical loader must be first.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO),
-            requireLiveSubscription(ProductDomainEnum.GASTRONOMY)
-        ]
     }
 });

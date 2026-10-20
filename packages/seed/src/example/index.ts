@@ -7,6 +7,7 @@ import { seedAccommodationExternalListings } from './accommodationExternalListin
 import { seedAccommodationExternalReputation } from './accommodationExternalReputation.seed.js';
 import { seedAccommodationReviews } from './accommodationReviews.seed.js';
 import { seedAccommodations } from './accommodations.seed.js';
+import { seedBillingCatalog } from './billingCatalog.seed.js';
 import { seedBookmarks } from './bookmarks.seed.js';
 import { seedDestinationReviews } from './destinationReviews.seed.js';
 import { seedEntityTagAssignments } from './entityTagAssignments.seed.js';
@@ -64,7 +65,7 @@ import { seedUserTags } from './userTags.seed.js';
  * // 6. Partners (brand/business directory)
  * // 7. Reviews
  * // 8. Host trades
- * // 9. Experiences (commerce listings — SPEC-240)
+ * // 9. Experiences (experience listings — SPEC-240)
  * // 10. Bookmarks and tags
  * // 11. Tag relations (connecting tags to entities)
  * ```
@@ -75,6 +76,7 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
     logger.info(`${STATUS_ICONS.Seed} Initializing example data load...\n`);
 
     try {
+        await seedBillingCatalog();
         // Accommodations modified the actor to set the owner id as actor,
         // so we save the old actor and restore it after the seed
         const oldContextActor = context.actor;
@@ -98,9 +100,9 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         await seedAccommodationExternalReputation();
         await seedHostTrades(context);
         context.actor = oldContextActor;
-        // SPEC-239 — gastronomy commerce listings
+        // SPEC-239 — gastronomy listings
         await seedGastronomies(context);
-        // SPEC-240 T-014 — experience commerce listing seed data
+        // SPEC-240 T-014 — experience listing seed data
         await seedExperiences(context);
         context.actor = oldContextActor;
         await seedUserBookmarkCollections(context);

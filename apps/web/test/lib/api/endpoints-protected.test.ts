@@ -21,8 +21,9 @@ vi.mock('../../../src/lib/api/client', () => ({
 import {
     accommodationCalendarSyncApi,
     accommodationFaqApi,
-    publishApi,
-    userApi
+    effectiveSetApi,
+    promoCodeApi,
+    publishApi
 } from '../../../src/lib/api/endpoints-protected';
 
 describe('accommodationCalendarSyncApi credentialed mutations (HOS-157 regression)', () => {
@@ -56,43 +57,6 @@ describe('accommodationCalendarSyncApi credentialed mutations (HOS-157 regressio
             body: {}
         });
         expect(post).not.toHaveBeenCalled();
-    });
-});
-
-describe('userApi.getSubscription productDomain param (HOS-259)', () => {
-    beforeEach(() => {
-        getProtected.mockReset();
-        getProtected.mockResolvedValue({ ok: true, data: { subscription: null } });
-    });
-
-    it('omits the productDomain query param when none is passed (server default applies)', async () => {
-        await userApi.getSubscription();
-
-        expect(getProtected).toHaveBeenCalledWith({
-            path: '/api/v1/protected/users/me/subscription',
-            params: undefined,
-            cookieHeader: undefined
-        });
-    });
-
-    it('forwards productDomain=commerce as a query param', async () => {
-        await userApi.getSubscription({ productDomain: 'commerce' });
-
-        expect(getProtected).toHaveBeenCalledWith({
-            path: '/api/v1/protected/users/me/subscription',
-            params: { productDomain: 'commerce' },
-            cookieHeader: undefined
-        });
-    });
-
-    it('forwards the cookieHeader alongside productDomain for SSR callers', async () => {
-        await userApi.getSubscription({ productDomain: 'accommodation', cookieHeader: 'sid=abc' });
-
-        expect(getProtected).toHaveBeenCalledWith({
-            path: '/api/v1/protected/users/me/subscription',
-            params: { productDomain: 'accommodation' },
-            cookieHeader: 'sid=abc'
-        });
     });
 });
 
@@ -215,5 +179,41 @@ describe('publishApi.precheck path per vertical (HOS-1156 T-016)', () => {
     it('uses the credentialed getProtected, never a bare get', async () => {
         await publishApi.precheck({ vertical: 'experience' });
         expect(getProtected).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('HOS-1646 · cliente web de capacidades · effective set endpoint', () => {
+    it('requests the protected effective set with the vertical query and cookie', async () => {
+        getProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                userId: 'u',
+                vertical: 'tourist',
+                hasLiveNonTrialTitle: false,
+                entitlements: {},
+                limits: {}
+            }
+        });
+        await effectiveSetApi.get({ vertical: 'tourist', cookieHeader: 'session=abc' });
+        expect(getProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/users/me/effective-set',
+            params: { vertical: 'tourist' },
+            cookieHeader: 'session=abc'
+        });
+    });
+});
+
+describe('promoCodeApi (AC:B9b:12 HOS-1591 TEST:B9b:12 (support))', () => {
+    beforeEach(() => {
+        postProtected.mockReset();
+        postProtected.mockResolvedValue({ ok: true, data: {} });
+    });
+
+    it('redeem posts the code and vertical to the protected endpoint', async () => {
+        await promoCodeApi.redeem({ code: 'SAVE20', vertical: 'accommodation' });
+        expect(postProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/billing/promo-codes/redeem',
+            body: { code: 'SAVE20', vertical: 'accommodation' }
+        });
     });
 });

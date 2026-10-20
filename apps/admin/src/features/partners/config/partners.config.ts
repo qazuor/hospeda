@@ -22,44 +22,9 @@ export const partnersConfig: EntityConfig<Partner> = {
                 type: 'select',
                 order: 1,
                 options: [
-                    { value: 'commerce', labelKey: 'admin-filters.partnerType.commerce' },
+                    { value: 'business', labelKey: 'admin-filters.partnerType.business' },
                     { value: 'ngo', labelKey: 'admin-filters.partnerType.ngo' },
                     { value: 'institution', labelKey: 'admin-filters.partnerType.institution' }
-                ]
-            },
-            {
-                paramKey: 'tier',
-                labelKey: 'admin-filters.partnerTier.label',
-                type: 'select',
-                order: 2,
-                // Two tiers only — `bronze` was retired by HOS-294. These are
-                // plain string literals, so nothing in the type system would
-                // have flagged the stale option: it would have kept offering a
-                // filter that matches no row, forever.
-                options: [
-                    { value: 'gold', labelKey: 'admin-filters.partnerTier.gold' },
-                    { value: 'silver', labelKey: 'admin-filters.partnerTier.silver' }
-                ]
-            },
-            {
-                paramKey: 'subscriptionStatus',
-                labelKey: 'admin-filters.partnerSubscriptionStatus.label',
-                type: 'select',
-                order: 3,
-                options: [
-                    { value: 'active', labelKey: 'admin-filters.partnerSubscriptionStatus.active' },
-                    {
-                        value: 'pending',
-                        labelKey: 'admin-filters.partnerSubscriptionStatus.pending'
-                    },
-                    {
-                        value: 'past_due',
-                        labelKey: 'admin-filters.partnerSubscriptionStatus.past_due'
-                    },
-                    {
-                        value: 'cancelled',
-                        labelKey: 'admin-filters.partnerSubscriptionStatus.cancelled'
-                    }
                 ]
             },
             {

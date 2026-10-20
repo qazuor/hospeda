@@ -9,6 +9,7 @@ import {
     getDb,
     gte,
     isNull,
+    listingReviewsShownCondition,
     lte
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
@@ -33,8 +34,11 @@ import {
     type EntityFilters,
     LifecycleStatusEnum,
     ModerationStatusEnum,
-    ServiceErrorCode
+    type PublicationStatusEnum,
+    ServiceErrorCode,
+    VerticalEnum
 } from '@repo/schemas';
+import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import { type SQL, sql } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
@@ -47,8 +51,10 @@ import {
     ServiceError,
     type ServiceOutput
 } from '../../types';
+import { entityNotFoundError } from '../../utils/not-found';
 import { AccommodationService } from '../accommodation/accommodation.service';
 import { getThresholdForContext } from '../contentModeration/get-threshold-for-context';
+import { listingShowsReviews } from '../listing/listing-reviews-shown.js';
 import { resolveInitialModerationState } from '../moderation/review-moderation.helpers';
 import { computeAccommodationReviewAverage } from './accommodationReview.helpers';
 import {
@@ -177,7 +183,10 @@ export class AccommodationReviewService extends BaseCrudService<
         // (regression covered by test/services/where-leak.regression.test.ts).
         (filters as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
         (filters as Record<string, unknown>).moderationState = ModerationStatusEnum.APPROVED;
-        return this.model.findAll({ ...filters, deletedAt: null }, { page, pageSize });
+        // AC:1686:3: only PURGED listings hide reviews from public readers.
+        return this.model.findAll({ ...filters, deletedAt: null }, { page, pageSize }, [
+            listingReviewsShownCondition({ vertical: VerticalEnum.ACCOMMODATION })
+        ]);
     }
 
     protected async _executeCount(
@@ -197,7 +206,15 @@ export class AccommodationReviewService extends BaseCrudService<
         // sortBy/sortOrder also stripped to prevent WHERE-clause leak.
         (filters as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
         (filters as Record<string, unknown>).moderationState = ModerationStatusEnum.APPROVED;
-        const count = await this.model.count({ ...filters, deletedAt: null });
+        // AC:1686:3: only PURGED listings hide reviews from public readers.
+        const count = await this.model.count(
+            { ...filters, deletedAt: null },
+            {
+                additionalConditions: [
+                    listingReviewsShownCondition({ vertical: VerticalEnum.ACCOMMODATION })
+                ]
+            }
+        );
         return { count };
     }
 
@@ -342,9 +359,19 @@ export class AccommodationReviewService extends BaseCrudService<
      */
     protected async _beforeCreate(
         data: AccommodationReviewCreateInput,
-        _actor: Actor,
-        _ctx: ServiceContext
+        actor: Actor,
+        ctx: ServiceContext
     ): Promise<Partial<AccommodationReview>> {
+        const accommodation = await this.accommodationModel.findById(data.accommodationId, ctx.tx);
+        if (
+            !resolveResourceStep({
+                actorId: actor.id,
+                facts: readListingAccessFacts({ entity: accommodation }),
+                operation: 'WRITE_ABOUT_LISTING'
+            }).allowed
+        ) {
+            throw entityNotFoundError({ entityName: AccommodationService.ENTITY_NAME });
+        }
         const existing = await this.model.findOne({
             userId: data.userId,
             accommodationId: data.accommodationId,
@@ -685,6 +712,21 @@ export class AccommodationReviewService extends BaseCrudService<
             execute: async (validated, validatedActor) => {
                 await this._canList(validatedActor);
                 const { accommodationId, page, pageSize } = validated;
+                if (!opts?.includeAllStates) {
+                    const accommodation = await this.accommodationModel.findById(
+                        accommodationId,
+                        ctx?.tx
+                    );
+                    if (
+                        accommodation &&
+                        !listingShowsReviews({
+                            publicationStatus:
+                                accommodation.publicationStatus as PublicationStatusEnum
+                        })
+                    ) {
+                        return { accommodationReviews: [], total: 0 };
+                    }
+                }
                 const baseWhere: Record<string, unknown> = {
                     accommodationId,
                     deletedAt: null
@@ -791,10 +833,12 @@ export class AccommodationReviewService extends BaseCrudService<
                 (defaultFilters as Record<string, unknown>).moderationState =
                     ModerationStatusEnum.APPROVED;
 
+                // AC:1686:2: only PURGED listings hide reviews in public testimonials.
                 const result = await this.model.findAllWithUser(
                     defaultFilters,
                     { page, pageSize },
-                    ctx?.tx
+                    ctx?.tx,
+                    [listingReviewsShownCondition({ vertical: VerticalEnum.ACCOMMODATION })]
                 );
 
                 // Wrap the result in consistent format

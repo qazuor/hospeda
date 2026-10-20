@@ -83,6 +83,8 @@ Every job handler receives a `CronJobContext` and returns a `CronJobResult`:
 interface CronJobContext {
   logger: Logger;
   startedAt: Date;
+  runId: string;         // fresh UUID per run (HOS-1424)
+  correlationId: string; // the run's correlation (HOS-1424)
   dryRun: boolean;
 }
 
@@ -95,6 +97,35 @@ interface CronJobResult {
   details?: Record<string, unknown>;
 }
 ```
+
+#### Time zone: schedules are read on the Buenos Aires wall clock (HOS-1424)
+
+Every schedule is registered with node-cron's per-task option
+`{ timezone: 'America/Argentina/Buenos_Aires' }` (`MARKET_TIMEZONE` from
+`@repo/utils`), so `0 8 * * *` fires at **08:00 in Buenos Aires** (11:00 UTC)
+whatever zone the process runs in. `TZ` is never set or read. The admin panel's
+"next run" is computed in the same zone.
+
+Before HOS-1424 the scheduler fixed no zone, so on the VPS (UTC) every
+expression was read in UTC. The expressions were **not** compensated when the
+zone was fixed (owner decision): every job with a fixed hour now runs three
+hours later in real time than it used to. Jobs that only use the minute field
+(`* * * * *`, `*/5 * * * *`, `0 * * * *`) are unaffected.
+
+Windows expressed in days ("three days before", "today so far") are computed on
+the same calendar with `startOfMarketDay()` from `@repo/utils`; instants are
+always stored in UTC (NUCLEO/07 §3).
+
+#### Run id and correlation (HOS-1424)
+
+Each scheduled tick and each manual trigger gets a fresh `runId` and a run
+`correlationId`; both are stamped on every log line of the run, so a run can be
+read whole. A manual trigger uses the correlation of the admin request that
+started it (echoed in the `X-Correlation-ID` response header). A job that
+processes items also carries, per item, **the item's own** correlation: the one
+stored on the entity (e.g. `email_outbox.correlation_id`), or one minted for the
+item when the entity has none. `cron_runs` is unchanged and does not store either
+id.
 
 ---
 
@@ -505,7 +536,7 @@ import type { CronJobDefinition } from '../types.js';
 /**
  * Session cleanup cron job definition
  *
- * Schedule: Daily at 3:00 AM UTC
+ * Schedule: Daily at 03:00 Buenos Aires time
  * Purpose: Remove expired sessions to maintain database health
  */
 export const cleanupSessionsJob: CronJobDefinition = {
@@ -870,6 +901,7 @@ await sendMetrics(metrics);
 | `trial-expiry` | `0 2 * * *` | Expire trials that have passed their end date | 5 min |
 | `webhook-retry` | `0 */1 * * *` | Retry failed webhook events from dead letter queue | 5 min |
 | `notification-schedule` | `0 8 * * *` | Send scheduled notifications for trials and renewals | 2 min |
+| `email-outbox-sender` | `* * * * *` | Send queued `email_outbox` rows: recover expired leases, suppress, send, log each attempt, escalate undeliverable transactional mail (HOS-1423) | 55 s |
 | `addon-expiry` | `0 5 * * *` | Process expired add-ons and send warnings | 2 min |
 | `exchange-rate-fetch` | `0 6 * * *` | Fetch latest exchange rates from external providers | 2 min |
 | `dunning` | `0 3 * * *` | Process dunning for past-due subscriptions (send reminders, escalate) | 5 min |
@@ -881,7 +913,7 @@ await sendMetrics(metrics);
 
 **File:** `apps/api/src/cron/jobs/trial-expiry.ts`
 
-**Schedule:** Daily at 2:00 AM UTC
+**Schedule:** Daily at 02:00 Buenos Aires time
 
 **Purpose:** Automatically expire trial subscriptions that have passed their end date.
 
@@ -902,7 +934,8 @@ await sendMetrics(metrics);
 
 **Dependencies:**
 
-- `@repo/billing` - QZPay Billing instance
+- `@repo/payments` - payment provider interface (the former `@repo/billing` QZPay instance was deleted by HOS-1626)
+- Note: `apps/api/src/cron/jobs/trial-expiry.ts` no longer exists on this branch; the closest job today is `trial-machine-expiry.job.ts`, so this section describes the retired behaviour
 - `TrialService` - Trial management logic
 
 **Example Output:**
@@ -977,7 +1010,7 @@ await sendMetrics(metrics);
 
 **File:** `apps/api/src/cron/jobs/notification-schedule.job.ts`
 
-**Schedule:** Daily at 8:00 AM UTC (5:00 AM Argentina time)
+**Schedule:** Daily at 08:00 Buenos Aires time (11:00 UTC)
 
 **Purpose:** Send scheduled notifications for trials and subscription renewals.
 
@@ -1043,11 +1076,60 @@ await sendMetrics(metrics);
 
 ---
 
+### email-outbox-sender
+
+**File:** `apps/api/src/cron/jobs/email-outbox-sender.job.ts` (wiring) and
+`packages/notifications/src/services/outbox/` (the batch and the suppression evaluator).
+
+**Schedule:** every minute (`* * * * *`). Lease of a claimed row: 5 minutes. Batch: 50 rows.
+Both are code constants (`EMAIL_OUTBOX_SENDER_SCHEDULE`, `EMAIL_OUTBOX_LEASE_MS`,
+`EMAIL_OUTBOX_BATCH_SIZE`), not env vars.
+
+**Purpose:** the sending half of the HOS-1352 unit `U2` outbox. A domain transition enqueues a
+row in `email_outbox` inside its own transaction; this job sends it outside.
+
+**What it does, per run** (`now` is `ctx.startedAt`, used for every lease, window and record):
+
+1. `recoverExpired` — every `processing` row whose lease expired goes back to `pending`.
+2. `claim` — up to 50 `pending`/`retry` rows move to `processing` with this run as owner
+   (`FOR UPDATE SKIP LOCKED`, so parallel runs never share a row).
+3. **Suppression, in order** (NUCLEO/07 §4.2), evaluated by the pure
+   `evaluateOutboxSuppression`:
+   1. hard bounce (a `bounced` row for the address in `notification_log`) — suppresses
+      everything, transactional included;
+   2. deleted account — `users.deleted_at` earlier than the row's `created_at` (a row enqueued
+      before the deletion still goes out, to the address it captured);
+   3. opt-out (`PreferenceService`) — commercial only;
+   4. daily cap — commercial only, **1** sent commercial mail per recipient in a **rolling 24 h**
+      window (becomes the Buenos Aires calendar day in U2.3).
+
+   The class comes from `OUTBOX_TEMPLATE_CLASS`: only the five post-trial win-back templates are
+   commercial; every other template, including an unknown one, is transactional.
+4. Render (`OUTBOX_MAIL_RENDERERS`, empty until the units that enqueue register theirs) and send.
+5. Record **one** `notification_log` row per attempt (`sent`, `failed`, `bounced`), or one
+   `suppressed` row. `notification_log` is the only attempt record; `email_outbox` is queue
+   state; the Redis `RetryService` is not used.
+
+**Failures:** a refused send returns the row to `retry`; the fifth refused attempt
+(`EMAIL_OUTBOX_CONSTANTS.MAX_ATTEMPTS`) leaves it `failed`. A hard bounce leaves it `failed` at
+once. "Undeliverable" is `failed` plus a `last_error` marker: `undeliverable:retries_exhausted`
+or `undeliverable:hard_bounce`; a suppressed row carries `suppressed:<cause>`.
+
+**Escalation:** a **transactional** mail that is undeliverable (retries exhausted or hard
+bounce) writes an extra `notification_log` row with status `undeliverable` and is logged with
+`capture: true` (Sentry) on the cron logger. It never blocks the domain transaction that
+enqueued it. The `domain_event` record of it is U2.3.
+
+**Without `HOSPEDA_EMAIL_API_KEY`:** the run only releases expired leases and leaves the queue
+untouched.
+
+---
+
 ### addon-expiry
 
 **File:** `apps/api/src/cron/jobs/addon-expiry.job.ts`
 
-**Schedule:** Daily at 5:00 AM UTC (2:00 AM Argentina time)
+**Schedule:** Daily at 05:00 Buenos Aires time (08:00 UTC)
 
 **Purpose:** Process expired add-ons and send expiration warnings.
 

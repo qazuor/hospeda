@@ -29,19 +29,14 @@ export {
     experienceHooks,
     useAssignExperienceOwnerMutation,
     useCreateExperienceMutation,
-    useDeleteExperienceMutation,
     useExperiencePendingReviewsQuery,
     useExperienceQuery,
-    useModerateExperienceMutation,
     useModerateExperienceReviewMutation,
-    useRestoreExperienceMutation,
     useUpdateExperienceMutation
 } from './hooks/useExperienceQuery';
 
 // Canonical hooks re-export (mirrors gastronomy pattern)
 export {
     useCreateExperienceMutation as useExperienceCreate,
-    useDeleteExperienceMutation as useExperienceDelete,
-    useRestoreExperienceMutation as useExperienceRestore,
     useUpdateExperienceMutation as useExperienceUpdate
 } from './hooks/useExperiences';

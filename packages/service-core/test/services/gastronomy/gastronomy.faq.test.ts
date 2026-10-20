@@ -27,8 +27,13 @@ const mockFaqModel = {
 
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
+    // HOS-1642: these writes now record an owner-act event; the double keeps
+    // the write off the (nonexistent) test database.
+    const doubles = await import('../../helpers/owner-act-doubles');
     return {
         ...actual,
+        domainEventModel: doubles.domainEventModelDouble,
+        withTransaction: doubles.fakeDbWithTransaction,
         GastronomyFaqModel: vi.fn(function () {
             return mockFaqModel;
         })
@@ -56,6 +61,7 @@ import {
 } from '../../../src/services/gastronomy/gastronomy.faq';
 import type { Actor } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
+import { FAKE_DB_TX } from '../../helpers/owner-act-doubles';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -82,15 +88,15 @@ function makeFaq(overrides: Partial<GastronomyFaq> = {}): GastronomyFaq {
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces COMMERCE_FAQS_EDIT_OWN
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.GASTRONOMY_OWNER],
+    // SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN replaces the per-section FAQ permission
+    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
 };
 
 const _staffActor: Actor = {
     id: 'staff-id',
     roles: [RoleEnum.ADMIN],
-    permissions: [PermissionEnum.COMMERCE_EDIT_ALL, PermissionEnum.COMMERCE_VIEW_ALL]
+    permissions: [PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.GASTRONOMY_VIEW_ALL]
 };
 
 const touristActor: Actor = {
@@ -176,7 +182,7 @@ describe('addGastronomyFaq', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should return FORBIDDEN when actor lacks COMMERCE_EDIT_OWN', async () => {
+    it('should return FORBIDDEN when actor lacks GASTRONOMY_EDIT_OWN', async () => {
         // Arrange
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         const input: GastronomyFaqAddInput = {
@@ -216,7 +222,7 @@ describe('addGastronomyFaq', () => {
         expect(result.error).toBeUndefined();
         expect(mockFaqModel.create).toHaveBeenCalledWith(
             expect.objectContaining({ displayOrder: 0 }),
-            undefined
+            FAKE_DB_TX
         );
     });
 
@@ -243,7 +249,7 @@ describe('addGastronomyFaq', () => {
         // Assert — displayOrder should be 4 (max 3 + 1)
         expect(mockFaqModel.create).toHaveBeenCalledWith(
             expect.objectContaining({ displayOrder: 4 }),
-            undefined
+            FAKE_DB_TX
         );
     });
 
@@ -415,7 +421,7 @@ describe('removeGastronomyFaq', () => {
         expect(mockFaqModel.softDelete).toHaveBeenCalledWith(
             expect.objectContaining({ id: FAQ_ID }),
             ownerActor.id,
-            undefined
+            FAKE_DB_TX
         );
     });
 });

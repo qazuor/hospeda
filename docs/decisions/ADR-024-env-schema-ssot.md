@@ -31,7 +31,7 @@ absent from the registry. This was not theoretical:
   lived in `ApiEnvSchema` for an unknown duration without being registered.
   Discovered by chance when a single commit happened to add them to both.
 - 5 vars (`HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS`, `HOSPEDA_AUTH_LOCKOUT_WINDOW_MS`,
-  `HOSPEDA_ADDON_LIFECYCLE_ENABLED`, `HOSPEDA_REVALIDATION_SECRET`,
+  `HOSPEDA_ADDON_LIFECYCLE_ENABLED` (removed by HOS-1419), `HOSPEDA_REVALIDATION_SECRET`,
   `HOSPEDA_REVALIDATION_CRON_SCHEDULE`) were validated by the schema
   but absent from both the mirror and the registry until SPEC-090.
 
@@ -136,7 +136,7 @@ Adopt **Option C**:
 
 - `HOSPEDA_REVALIDATION_SECRET` (api, web)
 - `HOSPEDA_REVALIDATION_CRON_SCHEDULE` (api)
-- `HOSPEDA_ADDON_LIFECYCLE_ENABLED` (api)
+- `HOSPEDA_ADDON_LIFECYCLE_ENABLED` (api; removed by HOS-1419)
 - `HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS` (api)
 - `HOSPEDA_AUTH_LOCKOUT_WINDOW_MS` (api)
 - `PUBLIC_ADMIN_URL` (web) — present in schema, missing from registry

@@ -7,11 +7,12 @@ import {
     type ExperienceFaqUpdateInput,
     FaqWithChannelVisibilityUpdatePayloadSchema,
     type FaqWithChannelVisibilityUpdatePayloadType,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, ServiceError, updateExperienceFaq } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -22,17 +23,16 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * PUT /api/v1/admin/experiences/:id/faqs/:faqId
  * Update FAQ in experience listing — Admin endpoint.
  *
- * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
+ * Requires EXPERIENCE_EDIT_ALL permission. The service helper
  * `updateExperienceFaq` enforces the same gate via `checkExperienceCanEditFaqs`.
  */
 export const adminUpdateExperienceFaqRoute = createAdminRoute({
     method: 'put',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
     summary: 'Update FAQ in experience listing (admin)',
-    description:
-        'Updates an existing FAQ in an experience listing. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+    description: 'Updates an existing FAQ in an experience listing. Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'FAQs'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -56,7 +56,10 @@ export const adminUpdateExperienceFaqRoute = createAdminRoute({
         const model = (
             experienceService as unknown as { model: Parameters<typeof updateExperienceFaq>[0] }
         ).model;
-        const result = await updateExperienceFaq(model, actor, input);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => updateExperienceFaq(model, actor, input)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

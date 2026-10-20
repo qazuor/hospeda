@@ -1,11 +1,5 @@
-import { DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL } from '@repo/billing';
-import type { DrizzleClient } from '@repo/db';
 import {
     accounts,
-    billingCustomers,
-    billingPlans,
-    billingSubscriptions,
-    entitySubscriptions,
     eq,
     GastronomyMediaModel,
     gastronomies,
@@ -15,19 +9,13 @@ import {
     sql,
     users
 } from '@repo/db';
-import {
-    LifecycleStatusEnum,
-    ProductDomainEnum,
-    RoleEnum,
-    RoleGrantReason,
-    VisibilityEnum
-} from '@repo/schemas';
+import { LifecycleStatusEnum, RoleEnum, RoleGrantReason, VisibilityEnum } from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
 import { hash } from 'bcryptjs';
 import exampleManifest from '../manifest-example.json';
-import { buildGastronomyMediaRows } from '../utils/commerce-media-builder.js';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
 import { STATUS_ICONS } from '../utils/icons.js';
+import { buildGastronomyMediaRows } from '../utils/listing-media-builder.js';
 import { loadJsonFiles } from '../utils/loadJsonFile.js';
 import { logger } from '../utils/logger.js';
 import type { FixtureMediaBlock } from '../utils/media-rows-builder.js';
@@ -91,15 +79,15 @@ export const getGastronomyReviewFixtureId = (input: {
 const SALT_ROUNDS = 12;
 
 /**
- * Shared password for all dev commerce-owner accounts.
+ * Shared password for all dev listing-owner accounts.
  * Dev-only convenience — these accounts never exist on staging/prod.
  */
 const DEV_PW = 'Password123!';
 
 /**
- * Spec of a COMMERCE_OWNER user to seed.
+ * Spec of a GASTRONOMY_OWNER user to seed.
  */
-interface CommerceOwnerSpec {
+interface ListingOwnerSpec {
     readonly seedId: string;
     readonly email: string;
     readonly displayName: string;
@@ -109,18 +97,18 @@ interface CommerceOwnerSpec {
 }
 
 /**
- * E2E tourist user seeded alongside the commerce-owner block.
+ * E2E tourist user seeded alongside the listing-owner block.
  *
- * Role: USER — intentionally NOT COMMERCE_OWNER and NOT staff, so the
- * `isCommerceOwnerRole` gate in `/mi-cuenta/comercio/index.astro` redirects
- * this user to `/mi-cuenta/`.  Used by SPEC-252 COMMERCE-02 test case 1.
+ * Role: USER — intentionally NOT GASTRONOMY_OWNER and NOT staff, so the
+ * listing-area nav gate in `/mi-cuenta/comercio/index.astro` redirects
+ * this user to `/mi-cuenta/`.  Used by SPEC-252 listing-02 test case 1.
  *
  * `profileCompleted: true` is required because the profile-completion
  * middleware guard (Step 7.5 in middleware.ts) intercepts incomplete profiles
- * before the commerce role gate runs — an incomplete profile would redirect
+ * before the listing-owner role gate runs — an incomplete profile would redirect
  * to `/mi-cuenta/completar-perfil/` instead, breaking the test assertion.
  *
- * Password: Password123! (same shared dev constant as COMMERCE_OWNER accounts).
+ * Password: Password123! (same shared dev constant as GASTRONOMY_OWNER accounts).
  * Email: e2e-tourist@local.test (clearly E2E-scoped, never used on staging/prod).
  */
 const E2E_TOURIST = {
@@ -132,15 +120,15 @@ const E2E_TOURIST = {
 } as const;
 
 /**
- * Dev COMMERCE_OWNER users for gastronomy listings.
+ * Dev GASTRONOMY_OWNER users for gastronomy listings.
  * Three owners covering 6 listings (2 each):
  * - Julieta: listings 001 (la-parrilla-del-puerto, CdU) + 002 (cafe-del-palacio, Colón)
  * - Rodrigo: listings 003 (cerveceria-del-rio, Gualeguaychú) + 004 (heladeria-luna, Concordia)
  * - Valentina: listings 005 (restaurant-termas, Federación) + 006 (bar-rinconcito, CdU — DRAFT/PRIVATE)
  */
-const COMMERCE_OWNERS: readonly CommerceOwnerSpec[] = [
+const LISTING_OWNERS: readonly ListingOwnerSpec[] = [
     {
-        seedId: '041-user-commerce-owner-julieta',
+        seedId: '041-user-gastronomy-owner-julieta',
         email: 'gastro-owner-julieta@local.test',
         displayName: 'Julieta Ferreyra',
         firstName: 'Julieta',
@@ -148,7 +136,7 @@ const COMMERCE_OWNERS: readonly CommerceOwnerSpec[] = [
         slug: 'julieta-ferreyra-gastro'
     },
     {
-        seedId: '042-user-commerce-owner-rodrigo',
+        seedId: '042-user-gastronomy-owner-rodrigo',
         email: 'gastro-owner-rodrigo@local.test',
         displayName: 'Rodrigo Casas',
         firstName: 'Rodrigo',
@@ -156,7 +144,7 @@ const COMMERCE_OWNERS: readonly CommerceOwnerSpec[] = [
         slug: 'rodrigo-casas-gastro'
     },
     {
-        seedId: '043-user-commerce-owner-valentina',
+        seedId: '043-user-gastronomy-owner-valentina',
         email: 'gastro-owner-valentina@local.test',
         displayName: 'Valentina Ríos',
         firstName: 'Valentina',
@@ -182,10 +170,8 @@ interface GastronomySeedData {
     readonly type: string;
     readonly priceRange?: string | null;
     readonly menuUrl?: string | null;
-    readonly visibility: string;
-    readonly lifecycleState: string;
-    readonly moderationState: string;
-    readonly isFeatured: boolean;
+    /** Publication state the listing is born with (HOS-1641: replaces the three old state columns). */
+    readonly publicationStatus: string;
     readonly contactInfo?: Record<string, unknown> | null;
     readonly socialNetworks?: Record<string, unknown> | null;
     readonly openingHours?: Record<string, unknown> | null;
@@ -226,117 +212,6 @@ interface GastronomyReviewFile {
     }>;
 }
 
-/**
- * Ensures a `billing_customers` row exists for the given owner and returns the
- * customer id.
- */
-async function ensureBillingCustomer(
-    userId: string,
-    email: string,
-    db: DrizzleClient
-): Promise<string> {
-    const existing = await db
-        .select({ id: billingCustomers.id })
-        .from(billingCustomers)
-        .where(eq(billingCustomers.externalId, userId))
-        .limit(1);
-
-    const existingRow = existing[0];
-    if (existingRow) {
-        return existingRow.id;
-    }
-
-    const inserted = await db
-        .insert(billingCustomers)
-        .values({
-            email,
-            externalId: userId,
-            livemode: false,
-            metadata: { source: 'gastronomy-example-seed' }
-        })
-        .returning({ id: billingCustomers.id });
-
-    const insertedRow = inserted[0];
-    if (!insertedRow) {
-        throw new Error(`Insert into billing_customers returned no row for userId=${userId}`);
-    }
-    return insertedRow.id;
-}
-
-/**
- * Ensures a `billing_subscriptions` row (status=active) exists for the given
- * customer + commerce plan.  Returns the subscription id.
- *
- * Uses a 30-day window from seed time — period accuracy does not matter for
- * local dev; only `status = 'active'` drives visibility reconciliation.
- */
-async function ensureCommerceSubscription(
-    customerId: string,
-    planId: string,
-    db: DrizzleClient
-): Promise<string> {
-    const existing = await db
-        .select({ id: billingSubscriptions.id })
-        .from(billingSubscriptions)
-        .where(eq(billingSubscriptions.customerId, customerId))
-        .limit(1);
-
-    const existingRow = existing[0];
-    if (existingRow) {
-        return existingRow.id;
-    }
-
-    const now = new Date();
-    const periodEnd = new Date(now);
-    periodEnd.setDate(periodEnd.getDate() + 30);
-
-    const inserted = await db
-        .insert(billingSubscriptions)
-        .values({
-            customerId,
-            planId,
-            status: 'active',
-            billingInterval: 'month',
-            livemode: false,
-            currentPeriodStart: now,
-            currentPeriodEnd: periodEnd,
-            // HOS-692: this fixture is always a gastronomy listing (see
-            // `ensureListingSubscriptionLink` below, which hardcodes
-            // entityType: 'gastronomy' for the same reason) — stamp the typed
-            // vertical directly instead of the pre-HOS-685 'commerce' umbrella,
-            // or a fresh seed run would keep recreating rows Bloque B's rewrite
-            // has to clean up again.
-            //
-            // HOS-1233 T-035: written HERE, in the insert. It used to be a raw
-            // `UPDATE ... SET product_domain` issued a statement later, on the
-            // grounds that the column lived in the extras carril and not in the
-            // TS schema — true when that comment was written, and untrue since
-            // HOS-73 promoted it to a typed Drizzle column. The row therefore
-            // spent a moment filed under the column default, which is the exact
-            // shape that stops working once the default is dropped (T-036):
-            // this insert would be rejected before its correction ever ran.
-            productDomain: ProductDomainEnum.GASTRONOMY
-        })
-        .returning({ id: billingSubscriptions.id });
-
-    const insertedRow = inserted[0];
-    if (!insertedRow) {
-        throw new Error(
-            `Insert into billing_subscriptions returned no row for customerId=${customerId}`
-        );
-    }
-
-    return insertedRow.id;
-}
-
-/**
- * Ensures a `entity_subscriptions` link row exists for the given
- * entity + subscription.  Idempotent via onConflictDoNothing on the
- * UNIQUE(entityType, entityId) index.
- *
- * This link is what makes a listing publicly visible: the public-read layer
- * checks `entity_subscriptions` status for each listing returned.
- */
 /**
  * Inserts a listing's fixture photos as `gastronomy_media` rows (HOS-372).
  *
@@ -380,47 +255,23 @@ async function seedGastronomyMediaRows({
     }
 }
 
-async function ensureListingSubscriptionLink(
-    subscriptionId: string,
-    entityId: string,
-    db: DrizzleClient
-): Promise<void> {
-    await db
-        .insert(entitySubscriptions)
-        .values({
-            subscriptionId,
-            // HOS-692: matches entityType below — this fixture is always a
-            // gastronomy listing, never the pre-HOS-685 'commerce' umbrella.
-            productDomain: ProductDomainEnum.GASTRONOMY,
-            entityType: 'gastronomy',
-            entityId,
-            status: 'active'
-        })
-        .onConflictDoNothing();
-}
-
 /**
- * Seeds the three COMMERCE_OWNER users, their billing subscriptions, the
- * gastronomy listings (via Drizzle insert), gastronomy FAQs, gastronomy
- * reviews, and the `entity_subscriptions` link rows.
+ * Seeds the three GASTRONOMY_OWNER users, the gastronomy listings (via Drizzle
+ * insert), gastronomy FAQs, and gastronomy reviews.
  *
  * ### Ordering constraint
- * MUST run after destinations, example users, and the required `commercePlan`
- * seeds so that:
+ * MUST run after destinations and example users so that:
  * - `idMapper` already holds `destinations.*` and `users.*` mappings.
- * - The commerce billing plan exists in `billing_plans`.
  *
  * ### Visibility model
- * - Listings 001–005: `visibility=PUBLIC` + `lifecycleState=ACTIVE` +
- *   active `entity_subscriptions` link → publicly visible on /gastronomia.
- * - Listing 006: `visibility=PRIVATE` + `lifecycleState=DRAFT` + NO link →
+ * - Listings 001–005: `publicationStatus=PUBLISHED` →
+ *   publicly visible on /gastronomia.
+ * - Listing 006: `publicationStatus=DRAFT` →
  *   intentionally NOT visible; demonstrates the gating.
  *
  * ### Idempotency
  * - Gastronomy rows: idempotent via `onConflictDoNothing` on the unique `slug`.
- * - Commerce owner users: idempotent via pre-check on `email`.
- * - Billing rows: idempotent via pre-check on `externalId` / `customerId`.
- * - Subscription links: idempotent via `onConflictDoNothing` on UNIQUE(entityType, entityId).
+ * - Listing owner users: idempotent via pre-check on `email`.
  * - FAQ rows: idempotent via `onConflictDoNothing` on the (now explicit,
  *   deterministic) primary key.
  * - Review rows: idempotent via `onConflictDoNothing` on UNIQUE(userId, gastronomyId).
@@ -466,31 +317,10 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
     let successCount = 0;
     let errorCount = 0;
 
-    // ── Step 1: Resolve the gastronomy-vertical commerce plan id ────────────
-    // HOS-695 (release C): the pre-HOS-688 'commerce-listing' plan is retired
-    // and no longer seeded — resolve the per-vertical slug from the catalogue
-    // default map instead (the same slug `seedCommercePlan` stamps with
-    // `product_domain = 'gastronomy'`).
-    const gastronomyPlanSlug = DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy;
-    const commercePlanRows = await db
-        .select({ id: billingPlans.id })
-        .from(billingPlans)
-        .where(eq(billingPlans.name, gastronomyPlanSlug))
-        .limit(1);
-
-    const commercePlanRow = commercePlanRows[0];
-    if (!commercePlanRow) {
-        throw new Error(
-            `Gastronomy plan "${gastronomyPlanSlug}" not found in billing_plans. ` +
-                'Run the required seed (seedCommercePlan) before seedGastronomies.'
-        );
-    }
-    const commercePlanId = commercePlanRow.id;
-
-    // ── Step 2: Seed COMMERCE_OWNER users + billing customers ───────────────
+    // ── Step 1: Seed GASTRONOMY_OWNER users ───────────────────────────────────
     const passwordHash = await hash(DEV_PW, SALT_ROUNDS);
 
-    for (const owner of COMMERCE_OWNERS) {
+    for (const owner of LISTING_OWNERS) {
         // Idempotent: check by email before inserting
         const existingUser = await db
             .select({ id: users.id })
@@ -504,27 +334,17 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
         if (existingUserRow) {
             realUserId = existingUserRow.id;
             logger.debug(
-                `  ${STATUS_ICONS.Info} COMMERCE_OWNER "${owner.displayName}" already exists — skipped`
+                `  ${STATUS_ICONS.Info} Listing owner "${owner.displayName}" already exists — skipped`
             );
             // Heal: ensure profile_completed = true on existing rows so the
-            // profile-completion middleware gate does not block the commerce area.
+            // profile-completion middleware gate does not block the listing-owner area.
             await db.execute(
                 sql`UPDATE users SET profile_completed = true WHERE id = ${realUserId} AND profile_completed = false`
             );
             // Heal: re-grant the hats. Idempotent, and required for databases
             // seeded before HOS-296 whose owners have no `user_role` rows yet.
-            // HOS-964 follow-up (2026-09-07 smoke finding): GASTRONOMY_OWNER
-            // added alongside the legacy COMMERCE_OWNER so this fixture
-            // matches what `createForOwner` (base-commerce-listing.service.ts)
-            // actually grants in production — BOTH hats in the same
-            // transaction. Without it, these seeded owners never receive any
-            // What's New entry targeted at GASTRONOMY_OWNER, because
-            // COMMERCE_OWNER is (correctly) excluded from that audience enum.
-            for (const role of [
-                RoleEnum.USER,
-                RoleEnum.COMMERCE_OWNER,
-                RoleEnum.GASTRONOMY_OWNER
-            ]) {
+            // Retain the per-vertical owner role for existing seeded accounts.
+            for (const role of [RoleEnum.USER, RoleEnum.GASTRONOMY_OWNER]) {
                 const healed = await grantRole({
                     userId: realUserId,
                     role,
@@ -562,24 +382,13 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             realUserId = insertedUserRow.id;
 
             // HOS-296: hats are rows in `user_role`, not a column on `users`.
-            // AC-11's `commerce-02-access-control` and `commerce-04-permission-gate`
+            // AC-11's `listing-02-access-control` and `listing-04-permission-gate`
             // e2e specs sign in as exactly this fixture, so the grant here is
             // what makes those suites pass — sweeping raw SQL in `apps/e2e`
             // does not cover it.
             //
-            // `USER` is granted alongside `COMMERCE_OWNER` because that is what
-            // a real signup produces (Better Auth's create hook grants the
-            // baseline, everything else is layered on top). `GASTRONOMY_OWNER`
-            // is granted too (HOS-964 follow-up, 2026-09-07) — production's
-            // `createForOwner` grants both the legacy and the vertical role in
-            // the same transaction (HOS-1077), and this fixture was drifting
-            // from that: it only ever held the legacy `COMMERCE_OWNER`, so a
-            // What's New entry targeted at `GASTRONOMY_OWNER` never reached it.
-            for (const role of [
-                RoleEnum.USER,
-                RoleEnum.COMMERCE_OWNER,
-                RoleEnum.GASTRONOMY_OWNER
-            ]) {
+            // Grant USER from signup and the gastronomy owner role for the listing.
+            for (const role of [RoleEnum.USER, RoleEnum.GASTRONOMY_OWNER]) {
                 const granted = await grantRole({
                     userId: realUserId,
                     role,
@@ -606,25 +415,22 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             });
 
             logger.debug(
-                `  ${STATUS_ICONS.Success} Created COMMERCE_OWNER "${owner.displayName}" (${owner.email})`
+                `  ${STATUS_ICONS.Success} Created Listing owner "${owner.displayName}" (${owner.email})`
             );
         }
 
         // Register in idMapper so gastronomy JSON files can resolve ownerId
         context.idMapper.setMapping('users', owner.seedId, realUserId, owner.displayName);
 
-        // Ensure billing customer row (idempotent)
-        await ensureBillingCustomer(realUserId, owner.email, db);
-
-        summaryTracker.trackSuccess('CommerceOwners');
+        summaryTracker.trackSuccess('ListingOwners');
     }
 
     // ── Step 2b: Seed E2E tourist user (role USER, credential account) ────────
-    // Needed by SPEC-252 COMMERCE-02 test case 1: a logueable non-commerce,
-    // non-staff user that the `isCommerceOwnerRole` gate redirects away from
+    // Needed by SPEC-252 listing-02 test case 1: a logueable non-listing-owner,
+    // non-staff user that the listing-area nav gate redirects away from
     // /mi-cuenta/comercio/. The example seed's regular users are created via
     // UserService and never get a Better Auth `accounts` row, so sign-in fails
-    // for them. This user is seeded here alongside the commerce owners because
+    // for them. This user is seeded here alongside the listing owners because
     // this function already owns the credential-creation infrastructure.
     {
         const existingTourist = await db
@@ -639,7 +445,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                 `  ${STATUS_ICONS.Info} E2E tourist "${E2E_TOURIST.displayName}" already exists — skipped`
             );
             // Heal: ensure profile_completed = true so the profile-completion gate
-            // does not intercept before the commerce role gate runs.
+            // does not intercept before the listing-owner role gate runs.
             await db.execute(
                 sql`UPDATE users SET profile_completed = true WHERE id = ${existingTouristRow.id} AND profile_completed = false`
             );
@@ -679,8 +485,8 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             }
 
             // HOS-296: the tourist fixture's single `USER` hat, as a row.
-            // `commerce-02` case 1 asserts that this account is REDIRECTED away
-            // from `/mi-cuenta/comercio/`, so the absence of COMMERCE_OWNER is
+            // `listing-02` case 1 asserts that this account is REDIRECTED away
+            // from `/mi-cuenta/comercio/`, so the absence of GASTRONOMY_OWNER is
             // as load-bearing as the presence of USER.
             const grantedTourist = await grantRole({
                 userId: insertedTouristRow.id,
@@ -739,6 +545,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             // versioned data-migrations can target a specific gastronomy listing
             // by a fixed id.
             const gastronomyId = getGastronomyFixtureId(item.id);
+            const now = new Date();
 
             const [inserted] = await db
                 .insert(gastronomies)
@@ -761,12 +568,10 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                     menuUrl: item.menuUrl ?? null,
                     ownerId: realOwnerId,
                     destinationId: realDestinationId,
-                    visibility: item.visibility as (typeof gastronomies.$inferInsert)['visibility'],
-                    lifecycleState:
-                        item.lifecycleState as (typeof gastronomies.$inferInsert)['lifecycleState'],
-                    moderationState:
-                        item.moderationState as (typeof gastronomies.$inferInsert)['moderationState'],
-                    isFeatured: item.isFeatured,
+                    publicationStatus:
+                        item.publicationStatus as (typeof gastronomies.$inferInsert)['publicationStatus'],
+                    inactiveSince: now,
+                    deadlinesVersion: 1,
                     contactInfo: (item.contactInfo ??
                         null) as (typeof gastronomies.$inferInsert)['contactInfo'],
                     socialNetworks: (item.socialNetworks ??
@@ -816,30 +621,8 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                     label: item.name
                 });
 
-                // ── Step 4: Subscription link (PUBLIC/ACTIVE only) ─────────────
-                // Listings 001–005 (PUBLIC + ACTIVE) get a `entity_subscriptions`
-                // link so the public read layer considers them visible.
-                // Listing 006 (PRIVATE + DRAFT) is intentionally skipped.
-                if (item.visibility === 'PUBLIC' && item.lifecycleState === 'ACTIVE') {
-                    const ownerCustomerRows = await db
-                        .select({ id: billingCustomers.id })
-                        .from(billingCustomers)
-                        .where(eq(billingCustomers.externalId, realOwnerId))
-                        .limit(1);
-
-                    const ownerCustomerRow = ownerCustomerRows[0];
-                    if (ownerCustomerRow) {
-                        const subscriptionId = await ensureCommerceSubscription(
-                            ownerCustomerRow.id,
-                            commercePlanId,
-                            db
-                        );
-                        await ensureListingSubscriptionLink(subscriptionId, realId, db);
-                    }
-                }
-
                 logger.debug(
-                    `  ${STATUS_ICONS.Success} [${index + 1}/${items.length}] "${item.name}" (${item.type}) → ${item.destinationId} [${item.visibility}/${item.lifecycleState}]`
+                    `  ${STATUS_ICONS.Success} [${index + 1}/${items.length}] "${item.name}" (${item.type}) → ${item.destinationId} [${item.publicationStatus}]`
                 );
             } else {
                 logger.debug(

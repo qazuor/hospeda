@@ -17,7 +17,7 @@
  * landing point one constant CTA at "create your account OR, if you already
  * have one, go straight to the thing you came here to do": the landing
  * itself cannot branch on the session without losing its cache, this page
- * already parses it. See `src/lib/commerce/start-url.ts` for the full
+ * already parses it. See `src/lib/listing/start-url.ts` for the full
  * rationale.
  *
  * The password-REGISTRATION path still lands the BROWSER on
@@ -72,7 +72,7 @@ const { returnPath, validatedCallbackUrl, signInConfig, signUpConfig } = resolve
 // when no safe one was provided; a validated callbackUrl takes precedence,
 // mirroring signin.astro — HOS-959). Honouring the param HERE is the whole
 // mechanism behind HOS-810: a signed-in visitor who clicks "Empezar ahora" on
-// a cached commerce landing arrives at this page and is forwarded to the
+// a cached gastronomy/experience landing arrives at this page and is forwarded to the
 // create form, instead of being dumped on /mi-cuenta/ with no link onward.
 if (Astro.locals.user) {
     return Astro.redirect(validatedCallbackUrl ?? returnPath);

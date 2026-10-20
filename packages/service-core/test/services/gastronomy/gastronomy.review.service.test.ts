@@ -21,6 +21,7 @@ import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
@@ -29,7 +30,7 @@ import {
     type GastronomyReviewModerateInput,
     GastronomyReviewService
 } from '../../../src/services/gastronomy/gastronomy.review.service';
-import type { Actor } from '../../../src/types';
+import { type Actor, ServiceError } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
 
 type AnyService = any;
@@ -63,9 +64,9 @@ const staffActor: Actor = {
     id: STAFF_ID,
     roles: [RoleEnum.ADMIN],
     permissions: [
-        PermissionEnum.COMMERCE_EDIT_ALL,
-        PermissionEnum.COMMERCE_MODERATE_REVIEW,
-        PermissionEnum.COMMERCE_VIEW_ALL
+        PermissionEnum.GASTRONOMY_EDIT_ALL,
+        PermissionEnum.GASTRONOMY_MODERATE_REVIEW,
+        PermissionEnum.GASTRONOMY_VIEW_ALL
     ]
 };
 
@@ -117,6 +118,11 @@ function makeReviewModel(review: GastronomyReview | null = null) {
 
 function makeGastronomyModel() {
     return {
+        findById: vi.fn().mockResolvedValue({
+            id: GASTRONOMY_ID,
+            ownerId: OTHER_USER,
+            publicationStatus: PublicationStatusEnum.PUBLISHED
+        }),
         update: vi.fn().mockResolvedValue({ id: GASTRONOMY_ID, averageRating: 4.0 })
     };
 }
@@ -149,7 +155,7 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('GastronomyReviewService.moderateReview', () => {
-    it('should return FORBIDDEN when actor lacks COMMERCE_MODERATE_REVIEW', async () => {
+    it('should return FORBIDDEN when actor lacks GASTRONOMY_MODERATE_REVIEW', async () => {
         const service = makeService();
         const result = await service.moderateReview(
             { id: REVIEW_ID, decision: ModerationStatusEnum.APPROVED },
@@ -215,7 +221,7 @@ describe('GastronomyReviewService.moderateReview', () => {
 // ---------------------------------------------------------------------------
 
 describe('GastronomyReviewService.getPendingCount', () => {
-    it('should return FORBIDDEN when actor lacks COMMERCE_MODERATE_REVIEW', async () => {
+    it('should return FORBIDDEN when actor lacks GASTRONOMY_MODERATE_REVIEW', async () => {
         const service = makeService();
         const result = await service.getPendingCount(reviewerActor);
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -283,6 +289,40 @@ describe('GastronomyReviewService.listByGastronomy', () => {
             undefined
         );
     });
+
+    it('returns empty without reading reviews for a PURGED listing', async () => {
+        const service = makeService();
+        const listingModel = (service as AnyService)._gastronomyModel;
+        listingModel.findById.mockResolvedValue({
+            publicationStatus: PublicationStatusEnum.PURGED
+        });
+
+        const result = await service.listByGastronomy(GASTRONOMY_ID, staffActor);
+
+        expect(result.data).toEqual({ reviews: [], total: 0 });
+        expect((service as AnyService).model.findAllWithRelations).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        PublicationStatusEnum.PUBLISHED,
+        PublicationStatusEnum.ARCHIVED
+    ])('continues reading reviews for %s listings', async (publicationStatus) => {
+        const review = makeReview({
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            moderationState: ModerationStatusEnum.APPROVED,
+            deletedAt: null
+        });
+        const service = makeService(review);
+        (service as AnyService)._gastronomyModel.findById.mockResolvedValue({
+            publicationStatus
+        });
+
+        const result = await service.listByGastronomy(GASTRONOMY_ID, staffActor);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.reviews).toHaveLength(1);
+        expect((service as AnyService).model.findAllWithRelations).toHaveBeenCalledOnce();
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -290,6 +330,31 @@ describe('GastronomyReviewService.listByGastronomy', () => {
 // ---------------------------------------------------------------------------
 
 describe('GastronomyReviewService._beforeCreate', () => {
+    it('masks a DRAFT listing exactly like a missing listing', async () => {
+        const service = makeService();
+        const model = (service as AnyService)._gastronomyModel;
+        model.findById
+            .mockResolvedValueOnce({
+                id: GASTRONOMY_ID,
+                ownerId: OTHER_USER,
+                publicationStatus: PublicationStatusEnum.DRAFT
+            })
+            .mockResolvedValueOnce(null);
+        const beforeCreate = (service as AnyService)._beforeCreate.bind(service);
+        const input = { gastronomyId: GASTRONOMY_ID, overallRating: 4 };
+        const capture = async () => {
+            try {
+                await beforeCreate(input, reviewerActor, { hookState: {} });
+            } catch (error) {
+                if (error instanceof ServiceError)
+                    return { code: error.code, message: error.message };
+                throw error;
+            }
+            throw new Error('expected review refusal');
+        };
+        expect(await capture()).toEqual(await capture());
+    });
+
     it('should throw ALREADY_EXISTS when user has an existing review', async () => {
         const existingReview = makeReview();
         const service = makeService();
@@ -334,12 +399,12 @@ describe('GastronomyReviewService permission hooks', () => {
         expect(() => (service as AnyService)._canCreate(reviewerActor, {})).not.toThrow();
     });
 
-    it('_canUpdate should throw FORBIDDEN without COMMERCE_EDIT_ALL', () => {
+    it('_canUpdate should throw FORBIDDEN without GASTRONOMY_EDIT_ALL', () => {
         const service = makeService();
         expect(() => (service as AnyService)._canUpdate(reviewerActor, {})).toThrow();
     });
 
-    it('_canUpdate should allow staff with COMMERCE_EDIT_ALL', () => {
+    it('_canUpdate should allow staff with GASTRONOMY_EDIT_ALL', () => {
         const service = makeService();
         expect(() => (service as AnyService)._canUpdate(staffActor, {})).not.toThrow();
     });
@@ -350,25 +415,25 @@ describe('GastronomyReviewService permission hooks', () => {
         expect(() => (service as AnyService)._canSoftDelete(reviewerActor, review)).not.toThrow();
     });
 
-    it('_canSoftDelete should allow staff with COMMERCE_EDIT_ALL', () => {
+    it('_canSoftDelete should allow staff with GASTRONOMY_EDIT_ALL', () => {
         const review = makeReview();
         const service = makeService(review);
         expect(() => (service as AnyService)._canSoftDelete(staffActor, review)).not.toThrow();
     });
 
-    it('_canSoftDelete should throw FORBIDDEN for non-author without COMMERCE_EDIT_ALL', () => {
+    it('_canSoftDelete should throw FORBIDDEN for non-author without GASTRONOMY_EDIT_ALL', () => {
         const review = makeReview();
         const service = makeService(review);
         const stranger: Actor = { id: OTHER_USER, roles: [RoleEnum.USER], permissions: [] };
         expect(() => (service as AnyService)._canSoftDelete(stranger, review)).toThrow();
     });
 
-    it('_canHardDelete should throw FORBIDDEN without COMMERCE_EDIT_ALL', () => {
+    it('_canHardDelete should throw FORBIDDEN without GASTRONOMY_EDIT_ALL', () => {
         const service = makeService();
         expect(() => (service as AnyService)._canHardDelete(reviewerActor, {})).toThrow();
     });
 
-    it('_canRestore should throw FORBIDDEN without COMMERCE_EDIT_ALL', () => {
+    it('_canRestore should throw FORBIDDEN without GASTRONOMY_EDIT_ALL', () => {
         const service = makeService();
         expect(() => (service as AnyService)._canRestore(reviewerActor, {})).toThrow();
     });

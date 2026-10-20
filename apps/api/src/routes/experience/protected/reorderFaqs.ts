@@ -4,23 +4,21 @@
  *
  * The caller supplies an explicit { faqId, displayOrder }[] array.
  * The service validates that all faqId values belong to the specified experience.
- * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
+ * Gated on EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff).
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     ExperienceFaqRemoveOutputSchema,
     FaqReorderPayloadSchema,
-    ProductDomainEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, reorderExperienceFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -34,12 +32,14 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone FAQ helper without requiring a public accessor.
  */
-export const protectedReorderExperienceFaqsRoute = createCRUDRoute({
+export const protectedReorderExperienceFaqsRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/faqs/reorder',
     summary: 'Reorder FAQs on experience listing',
     description: 'Sets a new display order for FAQs belonging to the given experience listing',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     tags: ['Experience', 'Experience FAQs'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -66,14 +66,5 @@ export const protectedReorderExperienceFaqsRoute = createCRUDRoute({
         }
 
         return result.data ?? { success: true };
-    },
-    options: {
-        // HOS-1275: mirrors the gastronomy twin. See `addFaq.ts` for why the
-        // vertical loader must be first.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
-            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
-        ]
     }
 });

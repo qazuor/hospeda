@@ -15,7 +15,11 @@ import { Pool } from 'pg';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const DB_NAME = 'hospeda_service_integration_test';
+// A leaf can choose its own disposable database when other agents run in parallel.
+const DB_NAME = process.env.HOSPEDA_SERVICE_TEST_DB_NAME || 'hospeda_service_integration_test';
+if (!/^[a-z][a-z0-9_]{0,62}$/.test(DB_NAME)) {
+    throw new Error('HOSPEDA_SERVICE_TEST_DB_NAME must be a safe PostgreSQL identifier');
+}
 const CONNECTION_BASE =
     process.env.HOSPEDA_TEST_DATABASE_URL ||
     'postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres';
@@ -72,12 +76,30 @@ export async function setup(): Promise<void> {
     // same versioned carril as the VPS) using @repo/db's own drizzle-kit script.
     const dbPkgDir = resolve(__dirname, '../../../../db');
     try {
-        execFileSync('pnpm', ['run', 'drizzle-kit', 'migrate', '--config', 'drizzle.config.ts'], {
-            cwd: dbPkgDir,
-            env: { ...process.env, HOSPEDA_DATABASE_URL: getTestConnectionString() },
-            stdio: 'pipe',
-            timeout: 120_000
-        });
+        // HOS-1416: invoke the same toolchain the `drizzle-kit` package script
+        // wraps (`tsx node_modules/drizzle-kit/bin.cjs`) but WITHOUT going
+        // through `pnpm run`. pnpm's verify-deps-before-run gate aborts every
+        // `pnpm run` while the lockfile is out of sync with the qzpay dep
+        // removals (the lockfile update lands in a follow-up task), which
+        // broke the local integration setup. Same binary, same args, same
+        // env — no behaviour change once the lockfile is synced. Mirrors the
+        // fix T1 already applied to @repo/db's own global-setup.
+        execFileSync(
+            process.execPath,
+            [
+                resolve(dbPkgDir, 'node_modules/tsx/dist/cli.mjs'),
+                'node_modules/drizzle-kit/bin.cjs',
+                'migrate',
+                '--config',
+                'drizzle.config.ts'
+            ],
+            {
+                cwd: dbPkgDir,
+                env: { ...process.env, HOSPEDA_DATABASE_URL: getTestConnectionString() },
+                stdio: 'pipe',
+                timeout: 120_000
+            }
+        );
     } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         throw new Error(`[service-integration-setup] drizzle-kit migrate failed.\n  Error: ${msg}`);

@@ -89,7 +89,7 @@ Reference: `ci.yml` line 188 uses `bash scripts/check-unsafe-ilike.sh` — that 
 Static drift analysis via Explore subagent revealed 4 schema/API drifts in test assertions.
 All 4 fixed in this branch (see T-105-04 section below).
 
-Commerce @p0 selectors (`.mc-list__name`, `.mc-list__edit`, `#ce-menuUrl`, `#ce-richDescription`,
+Listing-owner @p0 selectors (`.mc-list__name`, `.mc-list__edit`, `#ce-menuUrl`, `#ce-richDescription`,
 `.gastro-contact__menu-btn`, `.exp-info__body`) validated against current web components — all present.
 
 `host-07e` cron endpoint drift (removed VPS migration endpoint `/api/v1/cron/...`) is guarded by

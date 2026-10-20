@@ -126,12 +126,13 @@ export const GastronomyListItemSchema = GastronomySchema.pick({
     type: true,
     priceRange: true,
     media: true,
-    isFeatured: true,
     ownerId: true,
     destinationId: true,
     createdAt: true,
     updatedAt: true
 }).extend({
+    /** Featured state, derived from `featuredByEntitlement` (HOS-1419). */
+    isFeatured: z.boolean().optional(),
     // Use `.default(0)` only — `.default().optional()` is a dead chain because
     // `.default()` already handles the absent-key case; adding `.optional()` after
     // it creates a ZodOptional(ZodDefault) where the outer optional is never reached.
@@ -157,10 +158,11 @@ export const GastronomySummarySchema = GastronomySchema.pick({
     type: true,
     priceRange: true,
     media: true,
-    isFeatured: true,
     ownerId: true,
     destinationId: true
 }).extend({
+    /** Featured state, derived from `featuredByEntitlement` (HOS-1419). */
+    isFeatured: z.boolean().optional(),
     // Use `.default(0)` only — same rationale as GastronomyListItemSchema above.
     reviewsCount: z.number().int().min(0).default(0),
     averageRating: z.number().min(0).max(5).default(0)

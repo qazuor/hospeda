@@ -45,8 +45,9 @@ describe('carta.astro — 404 guards', () => {
         expect(cartaSrc).toContain('result.error.status === 410 ? 410 : 404');
     });
 
-    it('404s a non-PUBLIC visibility, same rule as the listing', () => {
-        expect(cartaSrc).toContain("visibility !== 'PUBLIC'");
+    it('reads no old publication column: a non-PUBLISHED venue 404s through the public read (HOS-1641)', () => {
+        expect(cartaSrc).not.toMatch(/raw\.(visibility|lifecycleState|moderationState)/);
+        expect(cartaSrc).toContain('!result.ok');
     });
 
     it('404s a venue with no menu content at all (neither carta nor file)', () => {
@@ -101,7 +102,7 @@ describe('carta.astro — stays out of QR and entitlement scope', () => {
     it('never references an entitlement gate', () => {
         expect(cartaSrc).not.toContain('requireEntitlement');
         expect(cartaSrc).not.toContain('EntitlementKey');
-        expect(cartaSrc).not.toContain('commerceVerticalEntitlementMiddleware');
+        expect(cartaSrc).not.toContain('VerticalEntitlementMiddleware');
     });
 });
 

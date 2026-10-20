@@ -6,7 +6,7 @@
  * branches that listed the categories of each group by hand and had NO final
  * `else`: a category no branch claimed was not put in an "other" bucket, it was
  * dropped. Thirty-four of the enum's eighty-one categories — `HOST_TRADE`,
- * `PARTNER`, `MEDIA`, `MODERATION`, `COMMERCE`, every `SOCIAL_*`, and more —
+ * `PARTNER`, `MEDIA`, `MODERATION`, every `SOCIAL_*`, and more —
  * fell through that hole.
  *
  * What that costs, stated precisely: this page is a READ-ONLY catalogue. It
@@ -49,7 +49,7 @@ import { PermissionCategoryEnum } from '@repo/schemas';
 export const PERMISSION_CATEGORY_GROUPS = [
     'Content Management',
     'User & Access',
-    'Commerce & Billing',
+    'Listing & Billing',
     'Marketing & Advertising',
     'Services & Listings',
     'System & Configuration',
@@ -75,7 +75,7 @@ export const UNGROUPED_CATEGORY_GROUP: PermissionCategoryGroup = 'Other';
 export const GROUP_TRANSLATION_KEYS: Record<PermissionCategoryGroup, TranslationKey> = {
     'Content Management': 'admin-pages.access.permissions.groupContentManagement',
     'User & Access': 'admin-pages.access.permissions.groupUserAccess',
-    'Commerce & Billing': 'admin-pages.access.permissions.groupCommerceBilling',
+    'Listing & Billing': 'admin-pages.access.permissions.groupListingsBilling',
     'Marketing & Advertising': 'admin-pages.access.permissions.groupMarketingAdvertising',
     'Services & Listings': 'admin-pages.access.permissions.groupServicesListings',
     'System & Configuration': 'admin-pages.access.permissions.groupSystemConfiguration',
@@ -126,20 +126,18 @@ export const CATEGORY_GROUP: Record<PermissionCategoryEnum, PermissionCategoryGr
     [PermissionCategoryEnum.PERMISSION]: 'User & Access',
     [PermissionCategoryEnum.CLIENT_ACCESS_RIGHT]: 'User & Access',
 
-    // ---- Commerce & Billing ------------------------------------------------
-    [PermissionCategoryEnum.INVOICE]: 'Commerce & Billing',
-    [PermissionCategoryEnum.INVOICE_LINE]: 'Commerce & Billing',
-    [PermissionCategoryEnum.PAYMENT]: 'Commerce & Billing',
-    [PermissionCategoryEnum.PAYMENT_METHOD]: 'Commerce & Billing',
-    [PermissionCategoryEnum.PURCHASE]: 'Commerce & Billing',
-    [PermissionCategoryEnum.REFUND]: 'Commerce & Billing',
-    [PermissionCategoryEnum.CREDIT_NOTE]: 'Commerce & Billing',
-    [PermissionCategoryEnum.SUBSCRIPTION]: 'Commerce & Billing',
-    [PermissionCategoryEnum.SUBSCRIPTION_ITEM]: 'Commerce & Billing',
-    [PermissionCategoryEnum.PRODUCT]: 'Commerce & Billing',
-    [PermissionCategoryEnum.CLIENT]: 'Commerce & Billing',
-    [PermissionCategoryEnum.BILLING]: 'Commerce & Billing',
-    [PermissionCategoryEnum.EXCHANGE_RATE]: 'Commerce & Billing',
+    // ---- Listing & Billing ------------------------------------------------
+    [PermissionCategoryEnum.INVOICE]: 'Listing & Billing',
+    [PermissionCategoryEnum.INVOICE_LINE]: 'Listing & Billing',
+    [PermissionCategoryEnum.PAYMENT]: 'Listing & Billing',
+    [PermissionCategoryEnum.PAYMENT_METHOD]: 'Listing & Billing',
+    [PermissionCategoryEnum.PURCHASE]: 'Listing & Billing',
+    [PermissionCategoryEnum.REFUND]: 'Listing & Billing',
+    [PermissionCategoryEnum.CREDIT_NOTE]: 'Listing & Billing',
+    [PermissionCategoryEnum.PRODUCT]: 'Listing & Billing',
+    [PermissionCategoryEnum.CLIENT]: 'Listing & Billing',
+    [PermissionCategoryEnum.BILLING]: 'Listing & Billing',
+    [PermissionCategoryEnum.EXCHANGE_RATE]: 'Listing & Billing',
 
     // ---- Marketing & Advertising -------------------------------------------
     [PermissionCategoryEnum.CAMPAIGN]: 'Marketing & Advertising',
@@ -166,17 +164,13 @@ export const CATEGORY_GROUP: Record<PermissionCategoryEnum, PermissionCategoryGr
 
     // ---- Services & Listings -----------------------------------------------
     [PermissionCategoryEnum.ACCOMMODATION_LISTING]: 'Services & Listings',
-    [PermissionCategoryEnum.ACCOMMODATION_LISTING_PLAN]: 'Services & Listings',
     [PermissionCategoryEnum.SERVICE_LISTING]: 'Services & Listings',
-    [PermissionCategoryEnum.SERVICE_LISTING_PLAN]: 'Services & Listings',
     [PermissionCategoryEnum.SERVICE_ORDER]: 'Services & Listings',
     [PermissionCategoryEnum.BENEFIT_LISTING]: 'Services & Listings',
-    [PermissionCategoryEnum.BENEFIT_LISTING_PLAN]: 'Services & Listings',
     [PermissionCategoryEnum.BENEFIT_PARTNER]: 'Services & Listings',
     [PermissionCategoryEnum.TOURIST_SERVICE]: 'Services & Listings',
     [PermissionCategoryEnum.PROFESSIONAL_SERVICE]: 'Services & Listings',
     [PermissionCategoryEnum.PROFESSIONAL_SERVICE_ORDER]: 'Services & Listings',
-    [PermissionCategoryEnum.COMMERCE]: 'Services & Listings',
     [PermissionCategoryEnum.GASTRONOMY]: 'Services & Listings',
     [PermissionCategoryEnum.EXPERIENCE]: 'Services & Listings',
     [PermissionCategoryEnum.HOST_TRADE]: 'Services & Listings',

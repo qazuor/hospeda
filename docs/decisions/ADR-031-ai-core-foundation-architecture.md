@@ -1,5 +1,7 @@
 # ADR-031: AI Foundation Architecture (`@repo/ai-core`)
 
+> **Note (HOS-1626, 2026-10):** `@repo/billing` was retired (the package was deleted). The AI entitlement and limit keys now live in `packages/schemas/src/catalog/` (`entitlement-keys.ts`, `limit-keys.ts`, `key-enums.ts`), still lowercase `snake_case`.
+
 **Status**: Accepted
 **Date**: 2026-06-05
 **Spec**: SPEC-173

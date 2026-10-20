@@ -12,8 +12,8 @@
  * `process.env.X` directly, bypassing every per-app Zod schema, and nothing
  * previously caught that. Three real vars were found unregistered this way
  * before this script existed: `HOSPEDA_TAG_USER_QUOTA_PER_USER`,
- * `HOSPEDA_DEPLOY_ENV`, `HOSPEDA_QZPAY_TEST_CONTROL_ENABLED` (all registered
- * by a companion task before this script shipped).
+ * `HOSPEDA_DEPLOY_ENV` and a third one later removed with the old billing
+ * (HOS-1419) — all registered by a companion task before this script shipped.
  *
  * Primary (failing) direction — AC-1:
  *   Any `process.env.X` used in scope whose `X` has no matching

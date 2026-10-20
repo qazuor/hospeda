@@ -221,8 +221,8 @@
                     "answer": "Não para navegar e buscar. Sim se quiser salvar favoritos, deixar avaliações, receber novidades por e-mail ou publicar como anfitrião ou organizador. Criar conta é grátis e rápido."
                 },
                 "deleteAccount": {
-                    "question": "Como excluo minha conta?",
-                    "answer": "Em Minha Conta > Configurações > Excluir conta. Removemos seus dados pessoais em até 30 dias conforme nossa política de privacidade. As avaliações que você deixou podem permanecer de forma anônima."
+                    "question": "Como encerro minha conta?",
+                    "answer": "Por enquanto, o encerramento da conta é feito pela nossa equipe de suporte: envie um e-mail para info@hospeda.com.ar ou use a página de Contato para pedir. Se você tem uma assinatura, primeiro a cancelamos; se publicou anúncios, nós os excluímos; e por último encerramos a conta: substituímos seu nome, seu e-mail e seus telefones, e encerramos seu acesso. Se o Mercado Pago ainda não confirmou o cancelamento da sua assinatura, o encerramento da conta aguarda essa confirmação. Guardamos os comprovantes de pagamento, porque a lei nos obriga. As avaliações que você deixou podem continuar publicadas, sem o seu nome."
                 },
                 "dataStored": {
                     "question": "Quais dados vocês guardam sobre mim?",

@@ -35,7 +35,7 @@
             "SPECIAL_CONDITION": "Condição especial"
         },
         "partnerTypeOptions": {
-            "commerce": "Comércio",
+            "business": "Comércio",
             "ngo": "ONG",
             "institution": "Instituição"
         },

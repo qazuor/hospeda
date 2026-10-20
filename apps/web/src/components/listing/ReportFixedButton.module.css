@@ -1,0 +1,32 @@
+/**
+ * ReportFixedButton.module.css
+ *
+ * Row 30 (HOS-1492): the owner's "I fixed it" button under a fix request, and
+ * the line that confirms the report. Composes the shared compact button.
+ */
+
+.wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-1, 0.25rem);
+}
+
+.button {
+    composes: secondaryCompact from "../account/AccountButton.module.css";
+}
+
+.reported {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    line-height: 1.45;
+}
+
+.error {
+    margin: 0;
+    width: 100%;
+    font-size: 0.75rem;
+    color: var(--destructive);
+}

@@ -15,18 +15,15 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         return { get: mockHostDashboardGet };
     },
     // AnalyticsSection also imports from endpoints-protected — stub the parts it uses
-    get billingApi() {
-        return {
-            getEntitlements: vi.fn().mockReturnValue(new Promise(() => {}))
-        };
-    },
     get hostAnalyticsApi() {
         return {
             getViews: vi.fn().mockReturnValue(new Promise(() => {})),
             getFavoritesBreakdown: vi.fn().mockReturnValue(new Promise(() => {})),
             getResponseRate: vi.fn().mockReturnValue(new Promise(() => {})),
             getInquiryTrend: vi.fn().mockReturnValue(new Promise(() => {})),
-            getMarketComparison: vi.fn().mockReturnValue(new Promise(() => {}))
+            getMarketComparison: vi.fn().mockReturnValue(new Promise(() => {})),
+            listOwnAccommodations: vi.fn().mockReturnValue(new Promise(() => {})),
+            getViewsDailySeries: vi.fn().mockReturnValue(new Promise(() => {}))
         };
     }
 }));
@@ -184,8 +181,11 @@ describe('HostDashboard', () => {
     });
 });
 
-describe('HostDashboard quick actions (HOS-726)', () => {
-    it('renders five quick-action links, the fifth being the add-ons catalog', async () => {
+describe('HostDashboard quick actions (HOS-726 → HOS-1637)', () => {
+    it('renders four quick-action links, with no add-ons shortcut', async () => {
+        // HOS-726 added a fifth shortcut to the old add-ons catalog
+        // (`mi-cuenta/addons`); that page was removed with the old billing
+        // (HOS-1637, AC:B13a:20), and a link to it would be a 404.
         mockHostDashboardGet.mockResolvedValue({
             ok: true,
             data: mockDashboardApiResponse
@@ -196,12 +196,10 @@ describe('HostDashboard quick actions (HOS-726)', () => {
         // Wait for the ready render before touching the DOM — the loading
         // skeleton has no links at all, so asserting too early passes for the
         // wrong reason.
-        const addonsLink = await screen.findByRole('link', { name: /complementos/i });
-        expect(addonsLink).toHaveAttribute('href', '/es/mi-cuenta/addons/');
+        const subscriptionLink = await screen.findByRole('link', { name: /suscripci/i });
 
-        // Assert on the RENDERED list, not on the config: a declarative array
-        // that never reaches the DOM is exactly the failure this guards.
-        const quickActionList = addonsLink.closest('ul');
+        // Assert on the RENDERED list, not on the config.
+        const quickActionList = subscriptionLink.closest('ul');
         expect(quickActionList).not.toBeNull();
         const hrefs = Array.from(quickActionList?.querySelectorAll('a') ?? []).map((anchor) =>
             anchor.getAttribute('href')
@@ -210,32 +208,8 @@ describe('HostDashboard quick actions (HOS-726)', () => {
             '/es/mi-cuenta/propiedades/',
             '/es/mi-cuenta/promociones/',
             '/es/mi-cuenta/consultas/',
-            '/es/mi-cuenta/suscripcion/',
-            '/es/mi-cuenta/addons/'
+            '/es/mi-cuenta/suscripcion/'
         ]);
-    });
-
-    it('links the add-ons shortcut to the whole catalog, with no ?addon= focus', async () => {
-        mockHostDashboardGet.mockResolvedValue({
-            ok: true,
-            data: mockDashboardApiResponse
-        });
-
-        render(<HostDashboard locale="es" />);
-
-        const addonsLink = await screen.findByRole('link', { name: /complementos/i });
-        expect(addonsLink.getAttribute('href')).not.toContain('?');
-    });
-
-    it('localizes the add-ons shortcut label per locale', async () => {
-        mockHostDashboardGet.mockResolvedValue({
-            ok: true,
-            data: mockDashboardApiResponse
-        });
-
-        render(<HostDashboard locale="en" />);
-
-        const addonsLink = await screen.findByRole('link', { name: /add-ons/i });
-        expect(addonsLink).toHaveAttribute('href', '/en/mi-cuenta/addons/');
+        expect(document.body.innerHTML).not.toContain('mi-cuenta/addons');
     });
 });

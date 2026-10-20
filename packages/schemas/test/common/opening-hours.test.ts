@@ -289,7 +289,7 @@ describe('OpeningHoursSchema', () => {
 /**
  * HOS-906 — a day must resolve to open-with-shifts or closed. Before this
  * refine, `{ closed: false, shifts: [] }` — the exact default an untouched
- * day in the commerce opening-hours editor persisted on save — validated
+ * day in the listing opening-hours editor persisted on save — validated
  * successfully, so a host who edited only ONE day of the week ended up
  * saving that intermediate, undecided state on every other day.
  */
@@ -375,7 +375,7 @@ describe('OpeningHoursFields', () => {
         });
         // Act
         const result = EntitySchema.safeParse({
-            name: 'Test Commerce',
+            name: 'Test Listing',
             openingHours: validFullWeek
         });
         // Assert

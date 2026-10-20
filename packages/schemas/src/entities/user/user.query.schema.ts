@@ -303,8 +303,7 @@ export const UserListItemWithCountsSchema = UserListItemSchema.extend({
     reviewsCount: z.number().int().min(0).default(0),
     bookingsCount: z.number().int().min(0).default(0),
     eventsCount: z.number().int().min(0).default(0),
-    postsCount: z.number().int().min(0).default(0),
-    currentPlanSlug: z.string().nullable().optional()
+    postsCount: z.number().int().min(0).default(0)
 });
 
 export const UserListWithCountsOutputSchema = PaginationResultSchema(UserListItemWithCountsSchema);

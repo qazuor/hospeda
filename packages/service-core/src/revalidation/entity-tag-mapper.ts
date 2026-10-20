@@ -165,7 +165,7 @@ export function getAffectedCacheTags(event: EntityChangeData): readonly string[]
 
         case 'gastronomy':
         case 'experience': {
-            // Both are commerce listings with the same shape: a detail page and
+            // Both are gastronomy and experience listings with the same shape: a detail page and
             // a listing page of their own, optionally tied to one destination.
             // `event.entityType` is the discriminant, so this shared arm stays
             // exact rather than guessing.
@@ -178,7 +178,7 @@ export function getAffectedCacheTags(event: EntityChangeData): readonly string[]
             }
             tags.add(CACHE_TAG_COLLECTIONS[event.entityType]);
             // Deliberately NOT `CACHE_TAG_HOME`: unlike accommodations, events
-            // and posts, the home page does not surface commerce listings.
+            // and posts, the home page does not surface gastronomy and experience listings.
             // Adding it would evict the home on every restaurant edit for no
             // reason.
             if (event.destinationSlug) {

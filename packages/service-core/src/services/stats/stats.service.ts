@@ -1,4 +1,5 @@
-import { accommodationReviews, getDb, users } from '@repo/db';
+import { accommodationReviews, getDb, listingReviewsShownCondition, users } from '@repo/db';
+import { VerticalEnum } from '@repo/schemas';
 import { and, avg, desc, eq, isNull, max } from 'drizzle-orm';
 import type { ServiceConfig, ServiceLogger } from '../../types/index.js';
 
@@ -27,6 +28,7 @@ export class StatsService {
      * scale, rounded to 2 decimals (matching the `numeric(3, 2)` storage
      * precision). Considers only non-deleted, ACTIVE reviews. Returns 0 when
      * there are no reviews.
+     * Excludes reviews of `PURGED` listings (AC:1686:3).
      */
     async getGlobalAccommodationAverageRating(): Promise<number> {
         const db = getDb();
@@ -37,7 +39,8 @@ export class StatsService {
             .where(
                 and(
                     eq(accommodationReviews.lifecycleState, 'ACTIVE'),
-                    isNull(accommodationReviews.deletedAt)
+                    isNull(accommodationReviews.deletedAt),
+                    listingReviewsShownCondition({ vertical: VerticalEnum.ACCOMMODATION })
                 )
             );
 
@@ -70,6 +73,7 @@ export class StatsService {
      * - Over-fetches by a small factor (`limit * 3`, capped at 30) before the
      *   in-JS filter so the final list almost always reaches `limit` even when
      *   recent reviewers happen to lack avatars.
+     * - Excludes reviews of `PURGED` listings (AC:1686:3).
      */
     async getRecentReviewerAvatars(input: { limit: number }): Promise<readonly string[]> {
         const safeLimit = Math.max(0, Math.floor(input.limit));
@@ -90,6 +94,7 @@ export class StatsService {
                 and(
                     eq(accommodationReviews.lifecycleState, 'ACTIVE'),
                     isNull(accommodationReviews.deletedAt),
+                    listingReviewsShownCondition({ vertical: VerticalEnum.ACCOMMODATION }),
                     isNull(users.deletedAt)
                 )
             )

@@ -14,6 +14,32 @@ import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(resolve(__dirname, '../../src/layouts/Header.astro'), 'utf8');
 
+describe('TEST:B13a:25 header', () => {
+    const islandSources = [
+        ['Header.astro', '../../src/layouts/Header.astro'],
+        ['UserMenu.client.tsx', '../../src/components/shared/navigation/UserMenu.client.tsx'],
+        ['MobileMenuIsland.astro', '../../src/components/shared/navigation/MobileMenuIsland.astro'],
+        ['MobileMenu.client.tsx', '../../src/components/shared/navigation/MobileMenu.client.tsx'],
+        ['PublishMenu.client.tsx', '../../src/components/shared/navigation/PublishMenu.client.tsx']
+    ] as const;
+
+    it('keeps capabilities and the retired endpoint out of the header and its islands', () => {
+        for (const [name, path] of islandSources) {
+            const source = readFileSync(resolve(__dirname, path), 'utf8');
+            expect(source, name).not.toMatch(
+                /useMyEntitlements|getEntitlementsCached|effectiveSetApi/
+            );
+            expect(source, name).not.toContain('/protected/users/me/entitlements');
+        }
+    });
+
+    it('keeps the Publicar CTA unconditional (HOS-691 AC-12)', () => {
+        expect(src).toContain('<PublishMenu');
+        expect(src).not.toMatch(/const\s+isAlreadyHost/);
+        expect(src).not.toContain('EntitlementKey.PUBLISH_ACCOMMODATIONS');
+    });
+});
+
 // ─── File structure ───────────────────────────────────────────────────────────
 
 describe('Header.astro — file structure', () => {
@@ -95,7 +121,7 @@ describe('Header.astro — Publicar CTA', () => {
     it('does NOT gate the CTA behind an isAlreadyHost / entitlements check (AC-12)', () => {
         // The old header hid the CTA entirely for an existing HOST via an SSR
         // entitlements fetch. HOS-691 AC-12 requires the control to be
-        // present for a HOST (and a COMMERCE_OWNER) account, so that check —
+        // present for a HOST (and a GASTRONOMY_OWNER) account, so that check —
         // and the SSR fetch backing it — must be gone. Checks the actual
         // declaration/fetch-call shape rather than a bare substring, which
         // this file's own explanatory comments may legitimately mention.

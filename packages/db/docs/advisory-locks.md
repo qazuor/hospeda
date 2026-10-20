@@ -6,6 +6,7 @@ All PostgreSQL advisory locks used in the Hospeda platform. Lock IDs must be uni
 
 | Lock ID | Owner File | Purpose | Type | Spec |
 |---------|-----------|---------|------|------|
+| (1479, 22) | `packages/service-core/src/services/vertical-deadlines/vertical-deadlines.service.ts` | Action 22, vertical half: serialize publishing `vertical_deadline_version` versions | `pg_advisory_xact_lock` (blocking) | HOS-1479 |
 | 1001 | `apps/api/src/cron/jobs/webhook-retry.job.ts` | Prevent overlapping webhook retry cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-009 |
 | 1002 | `apps/api/src/cron/jobs/notification-schedule.job.ts` | Prevent overlapping notification schedule cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-034 |
 | 1003 | `apps/api/src/cron/jobs/dunning.job.ts` | Prevent overlapping dunning cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-021 |
@@ -15,6 +16,7 @@ All PostgreSQL advisory locks used in the Hospeda platform. Lock IDs must be uni
 | 1007 | `apps/api/src/cron/jobs/subscription-poll.job.ts` | Prevent overlapping subscription poll cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-143 |
 | 1008 | `apps/api/src/cron/jobs/exchange-rate-fetch.job.ts` | Prevent overlapping exchange rate fetch cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-194 |
 | 43001 | `apps/api/src/cron/jobs/addon-expiry.job.ts` | Prevent overlapping addon expiry cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-064 |
+| hash-derived | `apps/api/src/utils/trial/trial-machine-ports.ts` | The trial machine lock per user + vertical (FILA:V4 item 6): T1-T5 and, from V6.1, PB1. Key: trialMachineLockKey() → hashtextextended(key, 0) | `pg_advisory_xact_lock` (blocking) | HOS-1445 |
 | hash-derived | `apps/api/src/services/addon-plan-change.service.ts` | Per-customer addon recalculation serialization | `pg_advisory_xact_lock` (blocking) | SPEC-064 |
 | 43010 | `apps/api/src/cron/jobs/archive-expired-promotions.job.ts` | Prevent overlapping promotion archive cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-063 |
 | 43020 | _(retired — id reserved, not reused)_ | RETIRED (HOS-112): `conversation-notification.job.ts` no longer acquires an advisory lock. The atomic Redis dispatch claim (`SET conv:notif:{scheduleId} 1 NX EX 600`) serializes per-schedule ownership across overlapping runs, and `NotificationScheduleService.advanceSchedule`'s double-advance guard is the DB-level safety net — the lock added no closed gap beyond those two, and holding it across a batched persist step was actively harmful (dropped an entire batch of streak advances on lock contention after the emails were already sent, causing duplicates). | — | SPEC-085 / HOS-112 |

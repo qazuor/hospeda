@@ -4,11 +4,11 @@
  * This is the rule the whole panel hangs on, and the one most likely to be
  * "simplified" into a bug: both cards are derived from the RESULT of
  * `resolvePartnerLogoLink` — the function the home carousel calls — and never
- * from a `tier` label. Deriving them independently would create a second source
+ * from a commercial label. Deriving them independently would create a second source
  * of truth about what the home page renders.
  *
  * The last describe block is the proof that the derivation is real: it shows
- * that HOS-1159 (silver logos stop being clickable) changes the panel WITHOUT
+ * that HOS-1159 (external logo links stop being clickable) changes the panel WITHOUT
  * touching the module under test, because the resolver's answer is what moves.
  */
 
@@ -49,97 +49,37 @@ describe('resolvePartnerStatsCards — the panel is invisible without a partner'
     });
 });
 
-describe('resolvePartnerStatsCards — a GOLD partner with a page', () => {
-    it('shows BOTH cards', () => {
+describe('resolvePartnerStatsCards — public page stays dark until V7', () => {
+    it('shows clicks only when the partner has a safe external site', () => {
         const result = resolvePartnerStatsCards({
-            stats: statsFor({ tier: 'gold', slug: 'bodega', websiteUrl: 'https://bodega.test' }),
+            stats: statsFor({ slug: 'bodega', websiteUrl: 'https://bodega.test' }),
             locale: 'es'
         });
 
-        expect(result).toEqual({ visible: true, showViews: true, showClicks: true });
+        expect(result).toEqual({ visible: true, showViews: false, showClicks: true });
     });
 
-    /**
-     * `resolvePartnerLogoLink` fails closed on a gold partner with no slug — it
-     * would otherwise link to `/partners//`. The panel must fail closed the same
-     * way, and this is the case that proves the gate is not just `tier`.
-     */
-    it('hides the views card for a GOLD partner with no slug, exactly as the carousel drops the link', () => {
+    it('hides both cards when there is no external site', () => {
         const result = resolvePartnerStatsCards({
-            stats: statsFor({ tier: 'gold', slug: undefined, websiteUrl: undefined }),
+            stats: statsFor({ slug: 'bodega', websiteUrl: undefined }),
             locale: 'es'
         });
 
-        expect(result.visible).toBe(true);
-        expect(result.showViews).toBe(false);
-        expect(result.showClicks).toBe(false);
-    });
-});
-
-describe('resolvePartnerStatsCards — a SILVER partner (G-3)', () => {
-    /**
-     * The G-3 case. A silver partner has no page, so their view count is not
-     * LOW, it is UNDEFINED — and a rendered `0` would read as "nobody came to
-     * see you". The card must be suppressed, and the component's negative branch
-     * carries no numeral (asserted separately by the section guard).
-     */
-    it('hides the views card — the metric does not exist, it is not zero', () => {
-        const result = resolvePartnerStatsCards({
-            stats: statsFor({ tier: 'silver', slug: 'plata', websiteUrl: 'https://plata.test' }),
-            locale: 'es'
-        });
-
-        expect(result.showViews).toBe(false);
+        expect(result).toEqual({ visible: true, showViews: false, showClicks: false });
     });
 
-    /**
-     * The mirror-image error. TODAY the code links a silver logo to the
-     * partner's own site whenever they filled one in (spec §5.3), so those
-     * clicks are real and hiding them would be as wrong as inventing a zero.
-     */
-    it('SHOWS the clicks card while a silver logo still links out', () => {
+    it('drops clicks when the resolver refuses an unsafe website', () => {
         const result = resolvePartnerStatsCards({
-            stats: statsFor({ tier: 'silver', slug: 'plata', websiteUrl: 'https://plata.test' }),
-            locale: 'es'
-        });
-
-        expect(result.showClicks).toBe(true);
-    });
-
-    it('hides the clicks card for a silver partner with no website — the day-one state', () => {
-        const result = resolvePartnerStatsCards({
-            stats: statsFor({ tier: 'silver', slug: 'plata', websiteUrl: undefined }),
+            stats: statsFor({ websiteUrl: 'javascript:alert(1)' }),
             locale: 'es'
         });
 
         expect(result.showClicks).toBe(false);
         expect(result.showViews).toBe(false);
     });
-});
 
-describe('resolvePartnerStatsCards — the derivation survives HOS-1159 without an edit here', () => {
-    /**
-     * `resolvePartnerLogoLink` refuses a website whose scheme is not http(s)
-     * (HOS-592). That refusal is the same mechanism HOS-1159 will use to stop
-     * linking silver logos, so this case demonstrates the property that matters:
-     * when the RESOLVER stops returning a link, the clicks card stops rendering,
-     * with no change to `partner-stats-cards.ts`.
-     *
-     * A `tier === 'gold'` gate would keep answering the old question and would
-     * have to be found and edited by hand.
-     */
-    it('drops the clicks card when the resolver refuses the website, without any tier logic', () => {
-        const result = resolvePartnerStatsCards({
-            // eslint-disable-next-line no-script-url
-            stats: statsFor({ tier: 'silver', websiteUrl: 'javascript:alert(1)' }),
-            locale: 'es'
-        });
-
-        expect(result.showClicks).toBe(false);
-    });
-
-    it('is locale-independent — the locale only shapes the internal href', () => {
-        const stats = statsFor({ tier: 'gold', slug: 'bodega' });
+    it('is locale-independent while the internal destination is unavailable', () => {
+        const stats = statsFor({ slug: 'bodega', websiteUrl: 'https://bodega.test' });
         expect(resolvePartnerStatsCards({ stats, locale: 'en' })).toEqual(
             resolvePartnerStatsCards({ stats, locale: 'pt' })
         );
@@ -176,7 +116,6 @@ const windowedStats = ({
         id: '11111111-1111-4111-8111-111111111111',
         name: 'Aliado',
         slug: 'bodega',
-        tier: 'gold',
         websiteUrl: 'https://bodega.test',
         ...partner
     },
@@ -319,22 +258,20 @@ describe('resolvePartnerStatsView — degradation is asymmetric on purpose', () 
 
 describe('resolvePartnerStatsView — gating is unchanged by the second window', () => {
     /**
-     * G-3 across both windows: a partner with no page of their own must not get
+     * G-3 across both windows: a partner whose public page is unavailable must not get
      * a views card, and therefore must not get EITHER figure. The numbers still
      * travel in the view model — suppressing them here would move the decision
      * away from `resolvePartnerLogoLink` — and it is `showViews` that the
      * component honours.
      */
-    it('withholds the views card for a silver partner even though both figures exist', () => {
+    it('withholds the views card even though both figures exist', () => {
         const view = resolvePartnerStatsView({
             stats30: windowedStats({
-                partner: { tier: 'silver' },
                 windowDays: 30,
                 viewsTotal: 41,
                 clicksTotal: 12
             }),
             stats7: windowedStats({
-                partner: { tier: 'silver' },
                 windowDays: 7,
                 viewsTotal: 9,
                 clicksTotal: 3
@@ -351,7 +288,7 @@ describe('resolvePartnerStatsView — gating is unchanged by the second window',
     });
 
     it('withholds both cards when the logo links nowhere', () => {
-        const noSurface = { tier: 'silver', slug: undefined, websiteUrl: undefined };
+        const noSurface = { slug: undefined, websiteUrl: undefined };
         const view = resolvePartnerStatsView({
             stats30: windowedStats({
                 partner: noSurface,

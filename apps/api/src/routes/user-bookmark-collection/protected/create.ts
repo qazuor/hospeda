@@ -4,20 +4,19 @@
  * The userId is resolved from the authenticated session, not from the request body.
  * @route POST /api/v1/protected/user-bookmark-collections
  */
-import { LimitKey } from '@repo/billing';
+
 import {
     ServiceErrorCode,
     type UserBookmarkCollectionCreateInput,
     UserBookmarkCollectionCreateInputSchema,
-    UserBookmarkCollectionSchema
+    UserBookmarkCollectionSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { ServiceError, UserBookmarkCollectionService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { getRemainingLimit } from '../../../middlewares/entitlement';
-import { gateCollections } from '../../../middlewares/tourist-entitlements';
-import type { AppBindings } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate, readEffectiveLimit } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -31,12 +30,6 @@ const CreateCollectionRequestSchema = UserBookmarkCollectionCreateInputSchema.om
     userId: true
 });
 
-/**
- * Default plan limit when the limit is not yet configured in the entitlement
- * context (e.g. unrecognised plan). Mirrors the VIP plan limit (25).
- */
-const DEFAULT_PLAN_LIMIT = 25;
-
 export const createUserBookmarkCollectionRoute = createProtectedRoute({
     method: 'post',
     path: '/',
@@ -46,7 +39,6 @@ export const createUserBookmarkCollectionRoute = createProtectedRoute({
     tags: ['User Bookmark Collections'],
     requestBody: CreateCollectionRequestSchema,
     responseSchema: UserBookmarkCollectionSchema,
-    options: { middlewares: [gateCollections()] },
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -54,13 +46,33 @@ export const createUserBookmarkCollectionRoute = createProtectedRoute({
     ) => {
         const actor = getActorFromContext(ctx);
         const input = body as Omit<UserBookmarkCollectionCreateInput, 'userId'>;
-
-        // Resolve the plan limit from the entitlement context.
-        // getRemainingLimit returns -1 for unlimited, 0 for disabled.
-        // Both are mapped to a safe default: for unlimited (staff) we use
-        // the hard cap (25); disabled should not reach here (gate blocks it).
-        const rawLimit = getRemainingLimit(ctx as Context<AppBindings>, LimitKey.MAX_COLLECTIONS);
-        const planLimit = rawLimit === -1 ? 25 : rawLimit > 0 ? rawLimit : DEFAULT_PLAN_LIMIT;
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['can_use_collections'],
+            limit: async () => {
+                const countResult = await collectionService
+                    .countActiveCollections(actor)
+                    .catch(() => {
+                        throw new ServiceError(
+                            ServiceErrorCode.SERVICE_UNAVAILABLE,
+                            'Usage count unavailable'
+                        );
+                    });
+                if (countResult.error || !countResult.data) {
+                    throw new ServiceError(
+                        ServiceErrorCode.SERVICE_UNAVAILABLE,
+                        'Usage count unavailable'
+                    );
+                }
+                return { key: 'max_collections', requested: countResult.data.count + 1 };
+            }
+        });
+        const planLimit = await readEffectiveLimit({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            key: 'max_collections'
+        });
 
         const result = await collectionService.createCollection(
             actor,
@@ -72,11 +84,29 @@ export const createUserBookmarkCollectionRoute = createProtectedRoute({
         );
 
         if (result.error) {
-            const { code, message } = result.error;
+            const { code, message, details } = result.error;
 
-            // QUOTA_EXCEEDED maps to 403 Forbidden (per spec section "API Design")
+            // Preserve the service quota details in the standard plan-limit response.
             if (code === ServiceErrorCode.QUOTA_EXCEEDED) {
-                throw new HTTPException(403, { message });
+                const currentCount =
+                    typeof details === 'object' &&
+                    details !== null &&
+                    'currentCount' in details &&
+                    typeof details.currentCount === 'number'
+                        ? details.currentCount
+                        : 0;
+                const maxAllowed =
+                    typeof details === 'object' &&
+                    details !== null &&
+                    'maxAllowed' in details &&
+                    typeof details.maxAllowed === 'number'
+                        ? details.maxAllowed
+                        : planLimit;
+                throw new ServiceError(ServiceErrorCode.LIMIT_REACHED, 'Limit reached', {
+                    limitKey: 'max_collections',
+                    currentCount,
+                    maxAllowed
+                });
             }
 
             // ALREADY_EXISTS (NAME_TAKEN reason) maps to 409 Conflict

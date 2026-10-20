@@ -103,19 +103,6 @@ describe('useCurrentSection', () => {
         expect(result.current?.id).toBe('miCuenta');
     });
 
-    it('resolves /billing/subscriptions to "miFacturacion" section (longest prefix wins)', () => {
-        // miFacturacionSidebar has a link to /billing/subscriptions
-        // comercialSidebar also has billing links — /billing/subscriptions should
-        // match the sidebar that has the most specific (longest) link route.
-        setPathname('/billing/subscriptions');
-        const { result } = renderHook(() => useCurrentSection());
-        // Both comercial and miFacturacion sidebars have /billing/subscriptions.
-        // In the real config, comercialSidebar also includes /billing/subscriptions —
-        // the hook picks the first best-score match. The exact section depends on the
-        // real config order, so we just assert a valid section is returned.
-        expect(result.current?.id).toBeDefined();
-    });
-
     it('resolves /notifications/123 to "inicio" via prefix (link is /notifications, non-exact)', () => {
         setPathname('/notifications/123');
         const { result } = renderHook(() => useCurrentSection());

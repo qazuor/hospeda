@@ -32,9 +32,9 @@
  * @module test/routes/accommodation/protected/patch-persistence
  */
 
-import { EntitlementKey } from '@repo/billing';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, PublicationStatusEnum, RoleEnum, VerticalEnum } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -43,6 +43,45 @@ import {
 } from '../../../../src/middlewares/ownership.js';
 import { protectedPatchAccommodationRoute } from '../../../../src/routes/accommodation/protected/patch.js';
 import type { AppBindings } from '../../../../src/types.js';
+
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: vi.fn(async () => ({
+            facts: {
+                ownerId: '11111111-1111-4111-8111-111111111111',
+                publicationStatus: PublicationStatusEnum.PUBLISHED
+            },
+            ownerId: '11111111-1111-4111-8111-111111111111'
+        })),
+        billing: {
+            coverage: vi.fn(async () => ({
+                covered: false,
+                sources: [
+                    {
+                        type: 'BASE',
+                        reference: { kind: 'PLAN_VERSION', planVersionId: 'base' },
+                        scope: 'VERTICAL',
+                        target: null,
+                        since: new Date('2025-01-01'),
+                        until: 'NEVER_EXPIRES',
+                        charged: null,
+                        floor: null
+                    }
+                ]
+            }))
+        },
+        effectiveSet: vi.fn(async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' }]
+            })
+        )
+    })
+}));
 
 const ACCOMMODATION_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
@@ -73,14 +112,6 @@ function buildApp(): Hono<AppBindings> {
             roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
         });
-        c.set('billingLoadFailed', false);
-        c.set(
-            'userEntitlements',
-            new Set([
-                EntitlementKey.EDIT_ACCOMMODATION_INFO,
-                EntitlementKey.CAN_USE_RICH_DESCRIPTION
-            ])
-        );
         return next();
     });
 

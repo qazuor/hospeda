@@ -4,6 +4,10 @@ import React, { type ReactNode, Suspense } from 'react';
 import type { ZodSchema } from 'zod';
 import { EntityFormProvider, FormModeEnum } from '@/components/entity-form';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import {
+    NoChangesToSaveError,
+    pickChangedFields
+} from '@/components/entity-form/utils/changed-fields.utils';
 import { nullifyClearedSocialNetworks } from '@/components/entity-form/utils/social-networks-payload.utils';
 import {
     prepareFormValues,
@@ -88,7 +92,7 @@ export interface EntityPageBaseProps<T = Record<string, unknown>> {
      */
     qualityScore?: ReactNode | ((options: { readonly isReduced: boolean }) => ReactNode);
     /**
-     * Extra header actions (e.g. impersonate, delete). Rendered to the left of
+     * Extra header actions (e.g. delete). Rendered to the left of
      * the mode-specific action set, with a divider between them.
      *
      * Forwarded as-is to `EntityPageHeader.extraActions`.
@@ -198,27 +202,49 @@ export const EntityPageBase = <T = Record<string, unknown>>({
     }, [initialMode, setMode]);
 
     // ------------------------------------------------------------------
+    // Prepare initial form values
+    // ------------------------------------------------------------------
+    const preparedValues = React.useMemo(() => {
+        if (!entity) return {};
+        const entityRecord = entity as Record<string, unknown>;
+
+        const editSections = entityConfig.editSections.map((section) =>
+            typeof section === 'function' ? section() : section
+        );
+        const allFieldIds = editSections
+            .flatMap((section) => section.fields || [])
+            .map((field) => field.id);
+
+        return prepareFormValues(entityRecord, allFieldIds);
+    }, [entity, entityConfig.editSections]);
+
+    // ------------------------------------------------------------------
     // Save handler
     // ------------------------------------------------------------------
     const handleSave = React.useCallback(
         async (values: Record<string, unknown>) => {
             adminLogger.debug('[EntityPageBase] All form values', values);
 
-            const fieldsToSave: Record<string, unknown> = {};
             const allFields = entityConfig.editSections.flatMap((section) => {
                 const sectionConfig = typeof section === 'function' ? section() : section;
                 return sectionConfig.fields;
             });
 
-            for (const field of allFields) {
-                // Mirror EntityFormSection.readValue: for dot-notation ids the
-                // nested copy is the authoritative one (TanStack Form writes
-                // there). Falling back to the flat literal key avoids losing
-                // values that were never touched after initial seeding.
-                const fresh = readFieldValueForSave(values, field.id);
-                if (fresh !== undefined) {
-                    fieldsToSave[field.id] = fresh;
-                }
+            // Only what changed travels (HOS-1493). Sending every editable field
+            // made a support edit on somebody else's listing fail with 403: the
+            // API accepts content fields only there, and an unchanged status or
+            // visibility field rode along. Mirror EntityFormSection.readValue on
+            // both sides: for dot-notation ids the nested copy is authoritative
+            // (TanStack Form writes there), with the flat literal key as fallback.
+            const { changed: fieldsToSave } = pickChangedFields({
+                fieldIds: allFields.map((field) => field.id),
+                readCurrent: (id) => readFieldValueForSave(values, id),
+                readInitial: (id) => readFieldValueForSave(preparedValues, id)
+            });
+
+            if (Object.keys(fieldsToSave).length === 0) {
+                // Nothing to write: no request. The edit surface says so.
+                throw new NoChangesToSaveError();
             }
 
             // A cleared social network must travel as `null`: the column is merged
@@ -242,25 +268,15 @@ export const EntityPageBase = <T = Record<string, unknown>>({
             onSaveSuccess?.();
             goToView();
         },
-        [updateMutation, goToView, entityConfig.editSections, extraSavePayload, onSaveSuccess]
+        [
+            updateMutation,
+            goToView,
+            entityConfig.editSections,
+            extraSavePayload,
+            onSaveSuccess,
+            preparedValues
+        ]
     );
-
-    // ------------------------------------------------------------------
-    // Prepare initial form values
-    // ------------------------------------------------------------------
-    const preparedValues = React.useMemo(() => {
-        if (!entity) return {};
-        const entityRecord = entity as Record<string, unknown>;
-
-        const editSections = entityConfig.editSections.map((section) =>
-            typeof section === 'function' ? section() : section
-        );
-        const allFieldIds = editSections
-            .flatMap((section) => section.fields || [])
-            .map((field) => field.id);
-
-        return prepareFormValues(entityRecord, allFieldIds);
-    }, [entity, entityConfig.editSections]);
 
     // ------------------------------------------------------------------
     // Loading / error / not-found states

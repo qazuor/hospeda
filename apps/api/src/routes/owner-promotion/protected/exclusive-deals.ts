@@ -2,53 +2,32 @@
  * Protected exclusive-deals list endpoint (HOS-21 T-008/T-009)
  *
  * Tourist-facing listing of owner promotions scoped by touristAudience tier.
- * Reuses `OwnerPromotionService.findExclusiveDeals` (T-005/T-006) — NOT the
- * public `search()`/`list.ts` path used by `PromotionBanner`, which stays
- * ungated and untouched.
+ * Reuses `OwnerPromotionService.findExclusiveDeals` — not the public search path.
  *
- * Gated by `gateExclusiveDeals()` (EXCLUSIVE_DEALS entitlement). A caller who
- * additionally carries VIP_PROMOTIONS_ACCESS sees 'plus' + 'vip' rows; everyone
- * else sees 'plus' only (HOS-21 D1, additive VIP tier).
- *
- * HOS-1224 note: both entitlements are now carried by the SAME single tier.
- * `tourist-plus` — which held EXCLUSIVE_DEALS without VIP_PROMOTIONS_ACCESS and
- * was therefore the only actor that could observe the 'plus'-only branch — was
- * retired as a product, so `tourist-vip` is the sole paid tourist tier and no
- * accommodation plan lands in that branch either. The two-audience split stays
- * because it is a property of the DEAL (`TouristAudienceEnum`), not of a plan,
- * but the 'plus'-only path is currently unreachable for a tourist. Reported as
- * a HOS-1224 follow-up rather than removed here.
- *
- * Mounted at `/exclusive-deals`, a distinct path from `/` (list) and `/{id}`
- * (get/update/patch/delete) — per the Destination Hierarchy Routes precedent
- * (`docs/...`: "the by-path route is registered before :id routes to avoid
- * conflicts"), this file's route is registered before `get.ts` in
- * `protected/index.ts` so the literal path isn't swallowed by `/{id}`.
+ * Mounted at `/exclusive-deals` before `/{id}` in `protected/index.ts` so the
+ * literal path is not swallowed by the parameter route.
  */
-import { EntitlementKey } from '@repo/billing';
-import { OwnerPromotionListItemSchema, TouristAudienceEnum } from '@repo/schemas';
+
+import { OwnerPromotionListItemSchema, TouristAudienceEnum, VerticalEnum } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { hasEntitlement } from '../../../middlewares/entitlement';
-import { gateExclusiveDeals } from '../../../middlewares/tourist-entitlements';
+
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate, readEffectiveKeys } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createProtectedListRoute } from '../../../utils/route-factory';
 
 const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
 
-/**
- * GET /api/v1/protected/owner-promotions/exclusive-deals
- * List exclusive deals visible to the authenticated tourist's plan tier.
- */
+/** GET /api/v1/protected/owner-promotions/exclusive-deals */
 export const protectedListExclusiveDealsRoute = createProtectedListRoute({
     method: 'get',
     path: '/exclusive-deals',
     summary: 'List exclusive deals',
     description:
-        "Returns active owner promotions scoped to the authenticated tourist's plan tier (plus vs plus+vip). Excludes deals on accommodations the caller cannot see. Requires the EXCLUSIVE_DEALS entitlement.",
+        "Returns active owner promotions scoped to the authenticated tourist's effective plan tier.",
     tags: ['Owner Promotions'],
     requestQuery: {
         accommodationId: z.string().uuid().optional()
@@ -63,7 +42,18 @@ export const protectedListExclusiveDealsRoute = createProtectedListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query ?? {});
 
-        const audienceScope = hasEntitlement(ctx, EntitlementKey.VIP_PROMOTIONS_ACCESS)
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['exclusive_deals']
+        });
+
+        const effectiveKeys = await readEffectiveKeys({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['vip_promotions_access']
+        });
+        const audienceScope = effectiveKeys.vip_promotions_access
             ? [TouristAudienceEnum.PLUS, TouristAudienceEnum.VIP]
             : [TouristAudienceEnum.PLUS];
 
@@ -86,7 +76,5 @@ export const protectedListExclusiveDealsRoute = createProtectedListRoute({
             pagination: getPaginationResponse(result.data?.total ?? 0, { page, pageSize })
         };
     },
-    options: {
-        middlewares: [gateExclusiveDeals()]
-    }
+    options: {}
 });

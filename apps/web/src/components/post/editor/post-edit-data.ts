@@ -4,8 +4,8 @@
  * (HOS-374 Phase 2 2C-2).
  *
  * Kept out of the orchestrator component so the diff contract is unit-testable
- * without mounting React — the same split the commerce editor uses
- * (`commerce-edit-data.ts`).
+ * without mounting React — the same split the listing editor uses
+ * (`listing-edit-data.ts`).
  */
 
 import type { PostEditDetail } from '@/lib/api/types';
@@ -20,7 +20,7 @@ import type { PostEditDetail } from '@/lib/api/types';
  * Deliberately absent:
  *  - `slug` — server-derived at create time and immutable afterwards here.
  *    Changing it silently breaks the post's public URL with no redirect
- *    (same reasoning as the commerce listing's slug, HOS-166 OQ-3).
+ *    (same reasoning as the listing's slug, HOS-166 OQ-3).
  *  - `isFeatured` — editorial curation, not authorship. The PATCH schema
  *    accepts it, but an author must not be able to feature their own post.
  *  - `visibility` / `moderationState` / `lifecycleState` — publication state

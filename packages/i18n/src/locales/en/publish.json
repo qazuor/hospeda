@@ -1,4 +1,18 @@
 {
+    "subscribe": {
+        "publishCta": "Publish my listing",
+        "trialNote_one": "Your {{trialDays}}-day free trial starts when you publish.",
+        "trialNote_other": "Your {{trialDays}}-day free trial starts when you publish.",
+        "checkoutMonthly": "Subscribe with monthly billing",
+        "checkoutAnnual": "Subscribe with annual billing",
+        "continuePayment": "Continue payment",
+        "currentPlan": "Your current plan in {{vertical}}",
+        "touristVipInherited": "Your plan already includes Tourist VIP: you do not need to buy it."
+    },
+    "noPlans": {
+        "title": "This vertical has no available plans",
+        "body": "Your listing is still unpublished. There is nothing to purchase and no free trial to start."
+    },
     "signedOut": {
         "tagline": "First step",
         "title": "Create your account and publish",

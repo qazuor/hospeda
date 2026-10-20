@@ -125,7 +125,7 @@ event-organizers, event-locations.
 | `SUPER_ADMIN` / `ADMIN` | All entities (staff) |
 | `EDITOR` | All **editorial** content (posts + events, incl. private/draft) by design; `ACCESS_PANEL_ADMIN` for `/options` |
 | `HOST` | **Own** accommodations only (`ACCOMMODATION_VIEW_OWN`); `ACCESS_PANEL_ADMIN` for `/options` |
-| `CLIENT_MANAGER` | Broad grants **not yet tightened** — role unused, tracked debt (see [debt-items.md](../../.qtm/specs/SPEC-169-role-permission-own-scoping/debt-items.md)) |
+| `CLIENT_MANAGER` | Broad grants **not yet tightened** — role unused, tracked debt (see debt-items.md (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`)) |
 | `SPONSOR` / `USER` / `GUEST` | Public only |
 
 ## The systemic guard

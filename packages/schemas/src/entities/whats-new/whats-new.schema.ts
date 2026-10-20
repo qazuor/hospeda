@@ -45,10 +45,6 @@ export type WhatsNewEntryI18n = z.infer<typeof WhatsNewEntryI18nSchema>;
  *   authenticated session and might reasonably be the intended reader of a
  *   curated announcement: `SUPER_ADMIN`, `ADMIN`, `EDITOR`, `HOST`,
  *   `GASTRONOMY_OWNER`, `EXPERIENCE_OWNER`, `SPONSOR`, `USER`.
- * - **`COMMERCE_OWNER` excluded** — RETIRING (HOS-1077 release 2). It is being
- *   replaced by the per-vertical `GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`
- *   (already included above), so a NEW targeting option should never be added
- *   for a role that new accounts stop receiving.
  * - **`GUEST` excluded** — this is the not-logged-in placeholder role used by
  *   the public website. A guest never reaches `/api/v1/protected/whats-new`
  *   (it requires an authenticated session), so a guest-targeted entry could

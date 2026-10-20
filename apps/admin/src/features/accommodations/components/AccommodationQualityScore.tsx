@@ -1,10 +1,10 @@
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { useStore } from '@tanstack/react-form';
 import * as React from 'react';
 import { useEntityFormContext } from '@/components/entity-form/context/EntityFormContext';
 import { computeScore } from '@/components/quality-score';
 import { QualityScore } from '@/components/quality-score/QualityScore';
-import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useEffectiveSet } from '@/features/billing/use-effective-set';
 import { createAccommodationSignals } from '../config/score-signals';
 
 // The `ReactFormApi` alias used by EntityFormContext in this monorepo doesn't
@@ -37,7 +37,7 @@ export const AccommodationQualityScore = React.memo(function AccommodationQualit
     compact = false
 }: AccommodationQualityScoreProps) {
     const { form } = useEntityFormContext();
-    const { has, isLoading: entitlementsLoading } = useMyEntitlements();
+    const { has, isLoading: entitlementsLoading } = useEffectiveSet();
 
     // The engine is pure so recomputation is cheap (~10 signals per pass).
     // Selecting `state.values` triggers a re-render only when the values
@@ -52,7 +52,7 @@ export const AccommodationQualityScore = React.memo(function AccommodationQualit
     // (SPEC-171): staff receive every entitlement (`has` → true) so they are
     // never gated, HOSTs depend on their plan. While entitlements are loading
     // we fail-open to avoid flashing the gated state.
-    const hasVideoGalleryFeature = entitlementsLoading || has(EntitlementKey.CAN_EMBED_VIDEO);
+    const hasVideoGalleryFeature = entitlementsLoading || has(EntitlementKeyEnum.CAN_EMBED_VIDEO);
 
     const signals = React.useMemo(
         () => createAccommodationSignals({ hasVideoGalleryFeature }),

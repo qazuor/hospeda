@@ -7,7 +7,8 @@
  *
  * 404 is returned when:
  * - The API returns !result.ok (listing not found or server error).
- * - The listing's visibility is 'PRIVATE' or 'RESTRICTED' (not public).
+ * - The listing is not PUBLISHED: the public read answers it like an unknown
+ *   slug (HOS-1641), so this is the same `!result.ok` case.
  *
  * @route /{lang}/gastronomia/{slug}/
  * @rendering SSR (on-demand)
@@ -28,7 +29,7 @@ import GastronomyContactBlock from '@/components/gastronomy/GastronomyContactBlo
 // Reused, not duplicated (HOS-1072): gastronomy reads the SAME `amenities` /
 // `features` catalog as accommodations, so it shares the i18n namespace
 // (`accommodations.amenityNames.<slug>`) these two grids already resolve. A
-// commerce copy would fork that contract for no gain.
+// gastronomy/experience copy would fork that contract for no gain.
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import GastronomyEventsCta from '@/components/gastronomy/GastronomyEventsCta.astro';
@@ -69,22 +70,20 @@ if (!result.ok) {
 
 const raw = result.data as unknown as Record<string, unknown>;
 
-// --- Visibility gate ---
-// Public pages only show listings with visibility === 'PUBLIC'.
-// 'PRIVATE' and 'RESTRICTED' listings return 404 to anonymous visitors.
-const visibility = raw.visibility as string | undefined;
-if (visibility && visibility !== 'PUBLIC') {
-    return new Response(null, { status: 404 });
-}
+// --- Publication gate (HOS-1641) ---
+// There is no second gate here on purpose: the public read answers ONLY a
+// `PUBLISHED` listing (AC:V5:5), and every other publication state answers the
+// same 404 as an unknown slug, which `!result.ok` above already returns. The
+// public payload carries no publication field to re-check.
 
 const gastronomy = toGastronomyDetailPageProps({ item: raw, locale });
 
 // --- Edge cacheability (HOS-369 W2-4) ---
-// After BOTH guards above — the 404/410 for missing or soft-deleted rows, and
-// the visibility gate. That ordering is what makes this safe: a non-PUBLIC
-// listing 404s before reaching here, so a private listing can never be shared
-// from the edge. It mirrors the service side, which only schedules a purge for
-// a listing that is ACTIVE and PUBLIC.
+// After the guard above — the 404/410 for missing, soft-deleted or
+// non-PUBLISHED rows (HOS-1641: the public read answers only PUBLISHED). That
+// ordering is what makes this safe: a non-published listing 404s before
+// reaching here, so it can never be shared from the edge. It mirrors the
+// service side, which only schedules a purge for a PUBLISHED listing.
 //
 // Addressed by its OWN two tags and deliberately NOT by `list-gastronomy`: a
 // detail page is not a listing, and the collection tag would make every

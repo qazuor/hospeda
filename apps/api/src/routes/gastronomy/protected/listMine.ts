@@ -9,17 +9,8 @@
  * MUST be registered BEFORE the `/{id}` route so Hono does not treat the literal
  * `mine` path segment as an `:id` param.
  */
-import {
-    CommerceEntityTypeEnum,
-    CommerceOwnerListingListSchema,
-    LifecycleStatusEnum,
-    VisibilityEnum
-} from '@repo/schemas';
-import {
-    GastronomyService,
-    getCommerceListingSubscriptionStatuses,
-    ServiceError
-} from '@repo/service-core';
+import { OwnerListingListSchema, ProductDomainEnum, PublicationStatusEnum } from '@repo/schemas';
+import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -34,10 +25,11 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
 export const protectedListMyGastronomyRoute = createProtectedRoute({
     method: 'get',
     path: '/mine',
+    emailUnverifiedOperation: 'READ_OWN',
     summary: 'List my gastronomy listings (protected)',
     description: "Returns the authenticated owner's own gastronomy listings as summaries",
     tags: ['Gastronomy'],
-    responseSchema: CommerceOwnerListingListSchema,
+    responseSchema: OwnerListingListSchema,
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
         const result = await gastronomyService.listOwn(actor);
@@ -48,31 +40,21 @@ export const protectedListMyGastronomyRoute = createProtectedRoute({
 
         const ownListings = result.data?.listings ?? [];
 
-        // HOS-166 W1: batch-resolve each listing's commerce subscription
-        // status (dunning/suspended surfacing) — one query for the whole
-        // page instead of one per listing.
-        const subscriptionStatuses = await getCommerceListingSubscriptionStatuses({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
-            entityIds: ownListings.map((listing) => listing.id)
-        });
-
         const listings = ownListings.map((listing) => ({
             id: listing.id,
-            vertical: CommerceEntityTypeEnum.GASTRONOMY,
+            vertical: ProductDomainEnum.GASTRONOMY,
             name: listing.name,
             slug: listing.slug,
             type: listing.type,
-            isPublic: listing.visibility === VisibilityEnum.PUBLIC,
-            // HOS-982 PR 2. BOTH clauses, and a second field rather than a
-            // widening of `isPublic` above — see the schema for why. A row
-            // that is PUBLIC but not ACTIVE has no public page, and every
-            // protected route that prints something for a listing answers
-            // 404 for it; a card that asked only `isPublic` would offer
-            // downloads that cannot work and render a code that cannot scan.
-            hasPublicPage:
-                listing.lifecycleState === LifecycleStatusEnum.ACTIVE &&
-                listing.visibility === VisibilityEnum.PUBLIC,
-            subscriptionStatus: subscriptionStatuses.get(listing.id) ?? null
+            // V6.9b (HOS-1641): both flags read the single publication state.
+            // Only a PUBLISHED listing is public and has a public page; every
+            // protected route that prints something for a listing answers 404
+            // for any other state, so a card must not offer those downloads.
+            isPublic: listing.publicationStatus === PublicationStatusEnum.PUBLISHED,
+            hasPublicPage: listing.publicationStatus === PublicationStatusEnum.PUBLISHED,
+            publicationStatus: listing.publicationStatus
+            // subscriptionStatus was removed with the legacy billing system
+            // (HOS-1416).
         }));
 
         return { listings };

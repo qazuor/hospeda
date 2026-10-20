@@ -8,8 +8,8 @@
  *   - Suite seed has the `tourist-vip` and `owner-pro` billing plans in
  *     `billing_plans` with `name = slug` and livemode = false. Seeded by
  *     packages/seed/src/required/billingPlans.seed.ts.
- *   - Suite seed has at least 1 ACTIVE, publicly-visible (destination-linked)
- *     accommodation available via getAnyCityDestinationId().
+ *   - Suite seed has at least 1 PUBLISHED (destination-linked) accommodation
+ *     available via getAnyCityDestinationId().
  *
  * Validates (HOS-21 T-016 subtasks):
  *   - Free tourist: GET /exclusive-deals → 403 ENTITLEMENT_REQUIRED (API), and
@@ -41,7 +41,7 @@ import {
     markProfileCompleted
 } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { execSQL, getDbPool, hasOldBillingSchema } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
@@ -59,6 +59,8 @@ type OwnerPromotionRow = { id: string; tourist_audience: string } & Record<strin
  * with livemode = false, so the QZPay adapter only sees livemode = false rows.
  */
 async function resolvePlanIdBySlug(slug: string): Promise<string | null> {
+    // The billing tables were dropped by migration 0125 (HOS-1416): report "not seeded".
+    if (!(await hasOldBillingSchema())) return null;
     const rows = await execSQL<PlanRow>(
         'SELECT id FROM billing_plans WHERE name = $1 AND livemode = false LIMIT 1',
         [slug]
@@ -108,6 +110,8 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
     let ownerProPlanId: string | null = null;
 
     // ── Shared fixture: owner + visible/restricted accommodations + deals ──
+    // "Visible" is a PUBLISHED listing; "restricted" is one the public never
+    // sees (DRAFT), which is all `publication_status` can say (HOS-1641).
     let ownerId: string | null = null;
     let visibleAccommodationId: string | null = null;
     let restrictedAccommodationId: string | null = null;
@@ -126,13 +130,13 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
         const visible = await execSQL<AccommodationRow>(
             `INSERT INTO accommodations (
                  slug, name, summary, description, type,
-                 owner_id, destination_id, lifecycle_state,
-                 visibility, moderation_state, is_featured,
+                 owner_id, destination_id,
+                 publication_status, inactive_since, deadlines_version,
                  created_at, updated_at
              ) VALUES (
                  $1, $2, $3, $4, 'HOUSE'::accommodation_type_enum,
-                 $5, $6, 'ACTIVE'::lifecycle_status_enum,
-                 'PUBLIC'::visibility_enum, 'APPROVED'::moderation_status_enum, false,
+                 $5, $6,
+                 'PUBLISHED'::publication_status_enum, NOW(), 1,
                  NOW(), NOW()
              ) RETURNING id`,
             [
@@ -149,13 +153,13 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
         const restricted = await execSQL<AccommodationRow>(
             `INSERT INTO accommodations (
                  slug, name, summary, description, type,
-                 owner_id, destination_id, lifecycle_state,
-                 visibility, moderation_state, is_featured,
+                 owner_id, destination_id,
+                 publication_status, inactive_since, deadlines_version,
                  created_at, updated_at
              ) VALUES (
                  $1, $2, $3, $4, 'HOUSE'::accommodation_type_enum,
-                 $5, $6, 'ACTIVE'::lifecycle_status_enum,
-                 'RESTRICTED'::visibility_enum, 'APPROVED'::moderation_status_enum, false,
+                 $5, $6,
+                 'DRAFT'::publication_status_enum, NOW(), 1,
                  NOW(), NOW()
              ) RETURNING id`,
             [
@@ -224,6 +228,11 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
     test('free tourist: 403 ENTITLEMENT_REQUIRED on the API, upgrade CTA in the UI', async ({
         page
     }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         const free = await createUser({ role: 'USER' }, { apiBaseUrl: API_URL });
         userIds.push(free.id);
         // /mi-cuenta/* bounces users with profile_completed = false to the profile
@@ -252,6 +261,11 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
     test('tourist-vip: sees plus + vip deals with the VIP badge, restricted deal still excluded', async ({
         page
     }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
         if (!vipPlanId) return;
 
@@ -286,6 +300,11 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
     });
 
     test('owner: can mark a new promotion VIP-only via the form', async ({ page }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         test.fixme(!ownerProPlanId, 'owner-pro plan not seeded — cannot run');
         if (!ownerProPlanId) return;
 

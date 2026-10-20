@@ -11,12 +11,7 @@
  */
 
 import type { Gastronomy } from '@repo/schemas';
-import {
-    GastronomyTypeEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    VisibilityEnum
-} from '@repo/schemas';
+import { GastronomyTypeEnum, PublicationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     projectGastronomyOwnerAvatar,
@@ -41,10 +36,7 @@ function makeGastronomy(overrides: Partial<Record<string, unknown>> = {}): Gastr
         type: GastronomyTypeEnum.PARRILLA,
         destinationId: DEST_ID,
         ownerId: OWNER_ID,
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
-        moderationState: ModerationStatusEnum.APPROVED,
-        visibility: VisibilityEnum.PUBLIC,
-        isFeatured: false,
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
         averageRating: 0,
         reviewsCount: 0,
         adminInfo: { notes: 'internal notes' } as unknown as Gastronomy['adminInfo'],

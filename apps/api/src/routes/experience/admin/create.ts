@@ -6,10 +6,12 @@ import {
     type ExperienceAdminCreateInput,
     ExperienceAdminCreateInputCheckedSchema,
     ExperienceAdminSchema,
-    PermissionEnum
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -20,16 +22,27 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * POST /api/v1/admin/experiences
  * Create experience listing — Admin endpoint.
  *
- * Requires EXPERIENCE_CREATE (or the legacy COMMERCE_CREATE) permission.
+ * Requires EXPERIENCE_CREATE permission.
  */
 export const adminCreateExperienceRoute = createAdminRoute({
     method: 'post',
     path: '/',
     summary: 'Create experience listing',
-    description:
-        'Creates a new experience listing. Requires EXPERIENCE_CREATE (or the legacy COMMERCE_CREATE) permission.',
+    description: 'Creates a new experience listing. Requires EXPERIENCE_CREATE permission.',
     tags: ['Experience'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_CREATE, PermissionEnum.COMMERCE_CREATE]],
+    // Own create: `EXPERIENCE_CREATE` (re-checked by the listing-access middleware). Create on behalf of
+    // another owner (`ownerId` ≠ actor) is action 15 (ACC:15, H12): the listing
+    // access chain demands LISTING_FOREIGN_CONTENT_EDIT and runs steps 5 to 7 on
+    // that owner, so holding `EXPERIENCE_CREATE` alone never creates for somebody else.
+    anyOfPermissions: [
+        [PermissionEnum.EXPERIENCE_CREATE, PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT]
+    ],
+    listingAccess: {
+        vertical: VerticalEnum.EXPERIENCE,
+        operation: 'CREATE',
+        createSubjectFromBody: 'ownerId',
+        ownCreatePermission: PermissionEnum.EXPERIENCE_CREATE
+    },
     // H-156: the CHECKED variant carries the cross-field pricing rule
     // (priceUnit required unless the price is on request).
     requestBody: ExperienceAdminCreateInputCheckedSchema,
@@ -42,7 +55,10 @@ export const adminCreateExperienceRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const data = body as ExperienceAdminCreateInput;
 
-        const result = await experienceService.create(actor, data);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => experienceService.create(actor, data)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

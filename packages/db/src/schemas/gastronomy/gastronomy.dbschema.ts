@@ -20,13 +20,8 @@ import {
     uuid
 } from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
-import {
-    GastronomyTypePgEnum,
-    LifecycleStatusPgEnum,
-    ModerationStatusPgEnum,
-    PriceRangePgEnum,
-    VisibilityPgEnum
-} from '../enums.dbschema.ts';
+import { GastronomyTypePgEnum, PriceRangePgEnum } from '../enums.dbschema.ts';
+import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { users } from '../user/user.dbschema.ts';
 import { gastronomyEvents } from './gastronomy_event.dbschema.ts';
 import { gastronomyFaqs } from './gastronomy_faq.dbschema.ts';
@@ -54,11 +49,11 @@ export const GastronomyMenuFileKindPgEnum = pgEnum('gastronomy_menu_file_kind_en
 ]);
 
 /**
- * Gastronomy table — commerce listings for food and beverage venues (SPEC-239).
+ * Gastronomy table — listings for food and beverage venues (SPEC-239).
  *
  * Mirrors the accommodation table shape as closely as possible:
  * - Same audit columns (createdById, updatedById, deletedById)
- * - Same lifecycle / visibility / moderation state pg enums
+ * - Same publication state (`listingPublicationColumns`, V/03 §9)
  * - Same jsonb contact/social/media/seo/adminInfo pattern
  * - Additional columns specific to gastronomy: type, priceRange, menuUrl, openingHours
  */
@@ -135,29 +130,26 @@ export const gastronomies = pgTable(
         ownerId: uuid('owner_id')
             .notNull()
             .references(() => users.id, { onDelete: 'restrict' }),
+        // HOS-1478 (V6.8a): the listing publication model of V/03 §9.
+        ...listingPublicationColumns(),
         destinationId: uuid('destination_id')
             .notNull()
             .references(() => destinations.id, { onDelete: 'restrict' }),
-        // Visibility / lifecycle / moderation (reuse existing pg enums)
-        visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
-        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
-        moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
-        isFeatured: boolean('is_featured').notNull().default(false),
         /**
          * Denormalized billing-state flag (HOS-1286) — mirror of
          * `accommodations.featured_by_entitlement`. True while a
          * `visibility-boost-gastronomy-*` addon purchase grants an active
          * FEATURED_LISTING entitlement for THIS listing. Written only by the
-         * billing sync primitives, never by admin curation, and deliberately
-         * independent of {@link isFeatured}: the effective public value is the
-         * disjunction `isFeatured OR featuredByEntitlement`, ORed in the PUBLIC
+         * billing sync primitives, never by admin curation. Since HOS-1419
+         * dropped the admin-curated `is_featured` column it is the ONLY featuring
+         * source: the public `isFeatured` value is derived from it in the PUBLIC
          * routes only (`resolvePublicIsFeatured`).
          *
-         * **Only one source feeds it, unlike accommodation.** No commerce plan
-         * grants FEATURED_LISTING (`commerce-entitlements.config.ts` grants
+         * **Only one source feeds it, unlike accommodation.** No gastronomy plan
+         * grants FEATURED_LISTING (the gastronomy entitlement config grants
          * EDIT/PUBLISH/VIEW_BASIC_STATS per vertical and nothing else), so this
          * column has exactly one writer — the addon — where accommodation has
-         * two (plan owner-wide + addon per-listing). A future commerce plan that
+         * two (plan owner-wide + addon per-listing). A future gastronomy plan that
          * grants featuring must add the plan-driven half; it does not exist yet
          * and is not stubbed here.
          *
@@ -179,7 +171,7 @@ export const gastronomies = pgTable(
          * included, whereas the join would put a new query on a hot public path
          * with no precedent to consult when it misbehaves.
          *
-         * If this is ever unified for real, the question is not "should commerce
+         * If this is ever unified for real, the question is not "should gastronomy
          * derive?" but "should BOTH derive?" — recorded here so whoever asks it
          * knows the alternative was considered and why it lost.
          */
@@ -204,25 +196,23 @@ export const gastronomies = pgTable(
         gastronomies_destinationId_idx: index('gastronomies_destinationId_idx').on(
             table.destinationId
         ),
-        gastronomies_visibility_idx: index('gastronomies_visibility_idx').on(table.visibility),
-        gastronomies_isFeatured_idx: index('gastronomies_isFeatured_idx').on(table.isFeatured),
-        // HOS-1286: parallel index for featuredByEntitlement, mirroring the
-        // accommodations pair. A BitmapOr of (isFeatured_idx,
-        // featuredByEntitlement_idx) serves "isFeatured OR featuredByEntitlement"
-        // without an expression index over the disjunction.
+        // HOS-1641 (V6.9b): public and per-destination reads filter on
+        // `publication_status = 'PUBLISHED'`; these replace the visibility indexes.
+        gastronomies_publicationStatus_idx: index('gastronomies_publicationStatus_idx').on(
+            table.publicationStatus
+        ),
+        gastronomies_destinationId_publicationStatus_idx: index(
+            'gastronomies_destinationId_publicationStatus_idx'
+        ).on(table.destinationId, table.publicationStatus),
+        // HOS-1286: index for featuredByEntitlement, mirroring the accommodations
+        // one — the only featuring source since HOS-1419 dropped `is_featured`.
         gastronomies_featuredByEntitlement_idx: index('gastronomies_featuredByEntitlement_idx').on(
             table.featuredByEntitlement
         ),
         gastronomies_type_idx: index('gastronomies_type_idx').on(table.type),
         gastronomies_ownerId_idx: index('gastronomies_ownerId_idx').on(table.ownerId),
         gastronomies_deletedAt_idx: index('gastronomies_deletedAt_idx').on(table.deletedAt),
-        gastronomies_moderationState_idx: index('gastronomies_moderationState_idx').on(
-            table.moderationState
-        ),
         // Composite indexes (same pattern as accommodations)
-        gastronomies_destinationId_visibility_idx: index(
-            'gastronomies_destinationId_visibility_idx'
-        ).on(table.destinationId, table.visibility),
         gastronomies_ownerId_deletedAt_idx: index('gastronomies_ownerId_deletedAt_idx').on(
             table.ownerId,
             table.deletedAt

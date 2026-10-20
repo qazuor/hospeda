@@ -15,24 +15,16 @@
  * single orphaned asset, which is recoverable; leaving a withdrawn menu on the
  * public page is not.
  *
- * Gated on `MANAGE_GASTRONOMY_MENU`, same as the upload (HOS-895 PR2) — see
- * `uploadMenuFile.ts` for why. Deleting is refused the same as replacing: a
- * `-basico` owner cannot clear an attachment that predates the gate any more
- * than they can upload a new one. That is intentional, not an oversight — the
- * withdraw path they DO have is downgrading to `menuUrl` only being what the
- * public page already renders for them (it stops showing the file the moment
- * `resolveOwnerGrantsGastronomyMenuManagement` returns `false`, regardless of
- * whether the row is deleted).
+ * Menu file deletion requires manage_gastronomy_menu on the listing owner.
  *
  * @module routes/gastronomy/protected/deleteMenuFile
  */
-import { EntitlementKey } from '@repo/billing';
-import { PermissionEnum, SuccessSchema } from '@repo/schemas';
+
+import { PermissionEnum, SuccessSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -44,6 +36,12 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
 export const protectedDeleteGastronomyMenuFileRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/menu-file',
+    listingAccess: {
+        vertical: VerticalEnum.GASTRONOMY,
+        operation: 'EDIT',
+        idParam: 'id',
+        capabilities: ['manage_gastronomy_menu']
+    },
     summary: 'Remove the uploaded menu photo or PDF',
     description:
         'Clears the listing’s uploaded menu file and deletes the stored asset. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above. The structured menu and the external link are untouched.',
@@ -57,14 +55,14 @@ export const protectedDeleteGastronomyMenuFileRoute = createProtectedRoute({
         const gastronomyId = params.id as string;
 
         const listing = await gastronomyService.getById(actor, gastronomyId);
-        const hasEditAll = actor.permissions?.includes(PermissionEnum.COMMERCE_EDIT_ALL);
+        const hasEditAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_ALL);
 
         // 404, not 403 — a 403 would confirm the id exists (error contract).
         if (
             listing.error ||
             !listing.data ||
             (!hasEditAll && listing.data.ownerId !== actor.id) ||
-            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.COMMERCE_EDIT_OWN))
+            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_OWN))
         ) {
             return createErrorResponse(
                 { code: 'NOT_FOUND', message: 'Gastronomy listing not found' },
@@ -117,12 +115,5 @@ export const protectedDeleteGastronomyMenuFileRoute = createProtectedRoute({
         }
 
         return { success: true } as const;
-    },
-    options: {
-        middlewares: [
-            // Loader before checker (HOS-1074) — see uploadMenuFile.ts.
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MANAGE_GASTRONOMY_MENU)
-        ]
     }
 });

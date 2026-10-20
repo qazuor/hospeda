@@ -10,8 +10,8 @@
  * ---
  * ONE ROUTE, THREE VERTICALS — AND THE CAP THAT ALMOST BROKE IT
  *
- * The obvious way to read a commerce cap is to mount
- * `commerceVerticalEntitlementMiddleware(vertical)`, which is what puts the
+ * The obvious way to read a gastronomy or experience cap is to mount
+ * the retired per-vertical entitlement middleware, which is what puts the
  * vertical's key into `userLimits`. That middleware takes its vertical at
  * CONSTRUCTION time, so it cannot serve a route whose vertical arrives as a path
  * param — and mounting the wrong one, or none, is silent: `getRemainingLimit`
@@ -19,7 +19,7 @@
  * precheck would report "you have room" to every owner at their cap, forever,
  * with nothing raised.
  *
- * So the cap is resolved by CALLING `resolveCommerceVerticalCap` — the same
+ * So the cap is resolved by CALLING the retired per-vertical cap resolver — the same
  * function that middleware calls, exported for exactly this reason (its own doc:
  * "Two independent readings of 'the cap' would let the two disagree, and the
  * disagreement would look like a working checkout"). The resolved value is then
@@ -38,38 +38,18 @@
  * @module services/publish-precheck.service
  */
 
-// `isCommercePublishVertical` is imported HERE, from the package, and NOT through
-// `./publish-listing-reads` — which used to re-export it as a convenience.
-//
-// That convenience was a live bug. This file's test mocks
-// `./publish-listing-reads` to stub two reads, rebuilding the module as
-// `{ ...actual, countOwnListings, listOwnDraftListings }`. Spreading an ESM
-// namespace copies VALUES, not live bindings, so a re-exported symbol is
-// captured at whatever state it holds the instant the factory runs — and this
-// one came out `undefined`, making `ensureVerticalLimitLoaded` throw
-// `isCommercePublishVertical is not a function`. `resolvePublishPrecheck`
-// catches everything and fails open, so all six matrix cells silently answered
-// `create_direct` — including the one cell where that IS the right answer, which
-// therefore still passed. It read as a decision bug, not a missing function.
-// Whether it broke at all depended on module evaluation ORDER, which is why an
-// unrelated edit to that file surfaced it.
-//
-// Importing from the package means mocking the reads module can only affect the
-// reads that module declares.
-import {
-    isCommercePublishVertical,
-    LIMIT_KEY_BY_PUBLISH_VERTICAL,
-    type LimitKey,
-    type PublishVertical
-} from '@repo/billing';
 import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
-import { resolveCommerceVerticalCap } from '../middlewares/commerce-entitlement';
+import type { PublicationVertical } from '../../../../packages/verticals/src/publication/publication-types';
 import type { AppBindings } from '../types';
-import { checkLimit } from '../utils/limit-check';
+import { getListingPublicationPorts } from '../utils/listing-publication/ports';
 import { apiLogger } from '../utils/logger';
 import { deriveOnboardingDecision, type OnboardingPrecheckDecision } from './onboarding-precheck';
-import { countOwnListings, listOwnDraftListings, type PublishDraft } from './publish-listing-reads';
+import {
+    listOwnDraftListings,
+    type PublishDraft,
+    type PublishVertical
+} from './publish-listing-reads';
 
 /** What the precheck answers, for any vertical. */
 export interface PublishPrecheckResult {
@@ -84,57 +64,18 @@ export interface PublishPrecheckResult {
 /**
  * The answer used whenever an input could not be resolved.
  *
- * `create_direct` with a zero cap is deliberately NOT "unlimited": the numbers
- * are what the panel would have rendered, and the panel is not rendered for this
- * decision. What matters is that the form shows and the server-side gate still
- * runs.
+ * A value of -1 means there is no plan-based cap during the transition.
+ * The panel does not render a quota for decisions with `hasQuota: true`.
  */
 const FAIL_OPEN: PublishPrecheckResult = {
     currentCount: 0,
-    maxAllowed: 0,
+    // Unknown or absent effective limits intentionally fail open.
+    maxAllowed: -1,
     hasQuota: true,
     draftCount: 0,
     drafts: [],
     decision: 'create_direct'
 };
-
-/**
- * Publishes the vertical's cap into `userLimits` so the comparison below runs
- * through the shared {@link checkLimit}.
- *
- * Accommodation needs nothing: the global `entitlementMiddleware` has already
- * loaded that domain's keys, and `max_accommodations` is one of them. A commerce
- * vertical's key is never in that set by construction (SPEC-239 isolates the
- * domains), so it is resolved and written here — mirroring, for one request, what
- * `commerceVerticalEntitlementMiddleware` does for a statically-known vertical.
- *
- * Only `userLimits` is touched. `userEntitlements` is deliberately left alone:
- * this route gates on nothing, and replacing the accommodation entitlement set
- * on a read-only path could only cause a later gate to read the wrong domain.
- *
- * @param input.ctx - The request context.
- * @param input.vertical - The vertical being prechecked.
- */
-async function ensureVerticalLimitLoaded(input: {
-    ctx: Context<AppBindings>;
-    vertical: PublishVertical;
-}): Promise<void> {
-    const { ctx, vertical } = input;
-
-    if (!isCommercePublishVertical(vertical)) {
-        return;
-    }
-
-    const limitKey: LimitKey = LIMIT_KEY_BY_PUBLISH_VERTICAL[vertical];
-    const cap = await resolveCommerceVerticalCap({
-        customerId: ctx.get('billingCustomerId'),
-        vertical
-    });
-
-    const limits = new Map<LimitKey, number>(ctx.get('userLimits') ?? []);
-    limits.set(limitKey, cap);
-    ctx.set('userLimits', limits);
-}
 
 /**
  * Resolves the publish precheck for one vertical.
@@ -150,19 +91,26 @@ export async function resolvePublishPrecheck(input: {
     actor: Actor;
     vertical: PublishVertical;
 }): Promise<PublishPrecheckResult> {
-    const { ctx, actor, vertical } = input;
+    const { ctx: _ctx, actor, vertical } = input;
+    const publicationVertical = vertical as PublicationVertical;
 
     try {
-        await ensureVerticalLimitLoaded({ ctx, vertical });
-
         // Both reads are independent, so they go out together. Neither throws;
         // each answers `null` when it could not resolve.
-        const [currentCount, drafts] = await Promise.all([
-            countOwnListings({ vertical, actor }),
+        const publication = getListingPublicationPorts();
+        const [[publishedCount, maxAllowed], drafts] = await Promise.all([
+            publication.unitOfWork.runLocked(
+                { userId: actor.id, vertical: publicationVertical },
+                async (tx) =>
+                    Promise.all([
+                        tx.countPublished({ vertical: publicationVertical, ownerId: actor.id }),
+                        tx.readPublishLimit({ userId: actor.id, vertical: publicationVertical })
+                    ])
+            ),
             listOwnDraftListings({ vertical, actor })
         ]);
 
-        if (currentCount === null || drafts === null) {
+        if (publishedCount === null || maxAllowed === null || drafts === null) {
             apiLogger.warn(
                 { vertical, ownerId: actor.id },
                 'publish precheck could not resolve its inputs — failing open to create_direct'
@@ -170,21 +118,19 @@ export async function resolvePublishPrecheck(input: {
             return FAIL_OPEN;
         }
 
-        const limitCheck = checkLimit({
-            context: ctx,
-            limitKey: LIMIT_KEY_BY_PUBLISH_VERTICAL[vertical],
-            currentCount
-        });
-
+        // PRE_TRIAL has no max_accommodations in its effective set. Keep its
+        // prior fail-open behavior while returning the resolved public count.
+        const effectiveMax = maxAllowed > 0 ? maxAllowed : -1;
+        const hasQuota = effectiveMax < 0 || publishedCount < effectiveMax;
         const decision = deriveOnboardingDecision({
             draftCount: drafts.length,
-            hasQuota: limitCheck.allowed
+            hasQuota
         });
 
         return {
-            currentCount,
-            maxAllowed: limitCheck.maxAllowed,
-            hasQuota: limitCheck.allowed,
+            currentCount: publishedCount,
+            maxAllowed: effectiveMax,
+            hasQuota,
             draftCount: drafts.length,
             drafts,
             decision

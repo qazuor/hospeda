@@ -20,7 +20,7 @@
  * an interaction is exactly what hides them from a crawler too.
  *
  * Gastronomy and experience are two separate cards (AC-9), never a single
- * "commerce" one: `'commerce'` is a RETIRED `ProductDomainEnum` value and
+ * joint one: the old shared umbrella is a RETIRED `ProductDomainEnum` value and
  * regrouping the verticals under it in the UI would resurrect the vocabulary the
  * domain split removed.
  *
@@ -44,7 +44,7 @@
  *
  * ## Prices AND trial lengths are fetched, never written down
  *
- * Each "from $X" comes from `GET /api/v1/public/plans` at request time (AC-8),
+ * Each "from $X" comes from `GET /api/v1/public/plan-catalog?vertical=` at request time (AC-8),
  * so an operator's price edit in admin shows up here without a redeploy — same
  * contract the two pricing pages have had since SPEC-168 D3. When a domain's
  * fetch fails, `fetchAudienceOffers` yields `null` for that audience and the

@@ -12,21 +12,12 @@ import {
 const testActor = { id: 'test', roles: [RoleEnum.ADMIN], permissions: [] };
 
 describe('Accommodation Normalizers', () => {
-    it('normalizeCreateInput sets default visibility to PRIVATE if missing', () => {
+    it('normalizeCreateInput injects no visibility default (born DRAFT by the model, HOS-1641)', () => {
         const input: z.infer<typeof AccommodationCreateInputSchema> = { name: 'Test' } as z.infer<
             typeof AccommodationCreateInputSchema
         >;
         const result = normalizeCreateInput(input, testActor);
-        expect(result.visibility).toBe('PRIVATE');
-    });
-
-    it('normalizeCreateInput preserves provided visibility', () => {
-        const input: z.infer<typeof AccommodationCreateInputSchema> = {
-            name: 'Test',
-            visibility: 'PUBLIC'
-        } as z.infer<typeof AccommodationCreateInputSchema>;
-        const result = normalizeCreateInput(input, testActor);
-        expect(result.visibility).toBe('PUBLIC');
+        expect(result).toStrictEqual(input);
     });
 
     it('normalizeUpdateInput returns the same object', () => {

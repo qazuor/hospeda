@@ -2,7 +2,7 @@
  * ContentGalleryManager
  *
  * Dedicated gallery management UI for post/event photos (HOS-390).
- * Entity-agnostic port of `CommerceGalleryManager` (HOS-382) —
+ * Entity-agnostic port of `ListingGalleryManager` (HOS-382) —
  * operates on the relational `post_media` / `event_media` tables
  * via the granular admin endpoints — each operation persists
  * immediately (settle-and-refetch). No accumulate-and-save, no drag-and-drop

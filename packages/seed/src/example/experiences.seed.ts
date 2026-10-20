@@ -1,16 +1,13 @@
 /**
- * experiences.seed.ts — Experience commerce listing seeder (SPEC-240 T-014).
+ * experiences.seed.ts — Experience listing seeder (SPEC-240 T-014).
  *
  * Inserts 5 experience listings covering different types, price units, and
- * visibility states.  Mirrors the gastronomy seeder pattern from SPEC-239
+ * publication states.  Mirrors the gastronomy seeder pattern from SPEC-239
  * but uses direct Drizzle-level insertion (bypassing ExperienceService.create)
- * for two reasons:
- *
- *  1. `hasActiveSubscription` is a server-managed field that the
- *     ExperienceUpdateInputSchema explicitly omits; it cannot be set via the
- *     service CRUD path.
- *  2. The seed must create the COMMERCE_OWNER user who will own the listings
- *     (no COMMERCE_OWNER users exist in the required-seed pipeline).
+ * because the seed reuses the gastronomy owner and grants `EXPERIENCE_OWNER`
+ * before inserting that user's experience listings. (It used to have a second
+ * reason, the server-managed `has_active_subscription` column; HOS-1419 dropped
+ * that column.)
  *
  * Idempotent: each INSERT uses ON CONFLICT (slug) DO NOTHING so re-running
  * the seed is safe.
@@ -30,17 +27,19 @@
  * child-table fixtures (FAQs/reviews) exist for this entity yet.
  *
  * Seeded listings:
- *  1. EXCURSION       — Concepción del Uruguay, per_person, ACTIVE+PUBLIC+hasActiveSub=true
- *  2. KAYAK_RENTAL    — Colón, per_hour, ACTIVE+PUBLIC+hasActiveSub=true
- *  3. TOUR_GUIDE      — Gualeguaychú, isPriceOnRequest, ACTIVE+PUBLIC+hasActiveSub=true
- *  4. BOAT_TRIP       — Concordia, per_group, DRAFT+PRIVATE+hasActiveSub=false (non-visible)
- *  5. CULTURAL_TOUR   — Concepción del Uruguay, per_person, DRAFT+PUBLIC+hasActiveSub=false (non-visible)
+ *  1. EXCURSION       — Concepción del Uruguay, per_person, PUBLISHED+hasActiveSub=true
+ *  2. KAYAK_RENTAL    — Colón, per_hour, PUBLISHED+hasActiveSub=true
+ *  3. TOUR_GUIDE      — Gualeguaychú, isPriceOnRequest, PUBLISHED+hasActiveSub=true
+ *  4. BOAT_TRIP       — Concordia, per_group, DRAFT+hasActiveSub=false (non-visible)
+ *  5. CULTURAL_TOUR   — Concepción del Uruguay, per_person, DRAFT+hasActiveSub=false (non-visible)
  */
 
 import { ExperienceMediaModel } from '@repo/db';
+import { PublicationStatusEnum, RoleEnum, RoleGrantReason } from '@repo/schemas';
+import { grantRole } from '@repo/service-core';
 import { Pool } from 'pg';
-import { buildExperienceMediaRows } from '../utils/commerce-media-builder.js';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
+import { buildExperienceMediaRows } from '../utils/listing-media-builder.js';
 import { logger } from '../utils/logger.js';
 import type { FixtureMediaBlock } from '../utils/media-rows-builder.js';
 import type { SeedContext } from '../utils/seedContext.js';
@@ -66,11 +65,8 @@ interface ExperienceInsertInput {
     priceFrom: number;
     priceUnit: string;
     isPriceOnRequest: boolean;
-    hasActiveSubscription: boolean;
-    visibility: string;
-    lifecycleState: string;
-    moderationState: string;
-    isFeatured: boolean;
+    /** Publication state the listing is born with (HOS-1641: replaces the three old state columns). */
+    publicationStatus: PublicationStatusEnum;
     ownerId: string;
     destinationId: string;
     createdById: string;
@@ -83,7 +79,7 @@ interface ExperienceInsertInput {
 }
 
 /**
- * Derives the deterministic UUIDv5 id for an `example` experience commerce
+ * Derives the deterministic UUIDv5 id for an `example` experience
  * listing (HOS-25 T-026).
  *
  * Unlike other `example` entities (accommodations, events, destinations…),
@@ -119,7 +115,7 @@ type ExperienceInsertInputDraft = Omit<ExperienceInsertInput, 'id'>;
  */
 function buildExperienceInputs(
     superAdminId: string,
-    commerceOwnerId: string,
+    listingOwnerId: string,
     destinations: Record<string, string>
 ): ExperienceInsertInput[] {
     const concepcion = destinations['concepcion-del-uruguay'];
@@ -145,12 +141,8 @@ function buildExperienceInputs(
             priceFrom: 850000,
             priceUnit: 'per_person',
             isPriceOnRequest: false,
-            hasActiveSubscription: true,
-            visibility: 'PUBLIC',
-            lifecycleState: 'ACTIVE',
-            moderationState: 'APPROVED',
-            isFeatured: true,
-            ownerId: commerceOwnerId,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            ownerId: listingOwnerId,
             destinationId: concepcion,
             createdById: superAdminId,
             media: {
@@ -183,12 +175,8 @@ function buildExperienceInputs(
             priceFrom: 350000,
             priceUnit: 'per_hour',
             isPriceOnRequest: false,
-            hasActiveSubscription: true,
-            visibility: 'PUBLIC',
-            lifecycleState: 'ACTIVE',
-            moderationState: 'APPROVED',
-            isFeatured: false,
-            ownerId: commerceOwnerId,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            ownerId: listingOwnerId,
             destinationId: colon,
             createdById: superAdminId,
             media: {
@@ -221,12 +209,8 @@ function buildExperienceInputs(
             priceFrom: 0,
             priceUnit: 'per_group',
             isPriceOnRequest: true,
-            hasActiveSubscription: true,
-            visibility: 'PUBLIC',
-            lifecycleState: 'ACTIVE',
-            moderationState: 'APPROVED',
-            isFeatured: false,
-            ownerId: commerceOwnerId,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            ownerId: listingOwnerId,
             destinationId: gualeguaychu,
             createdById: superAdminId,
             media: {
@@ -259,12 +243,8 @@ function buildExperienceInputs(
             priceFrom: 1200000,
             priceUnit: 'per_group',
             isPriceOnRequest: false,
-            hasActiveSubscription: false,
-            visibility: 'PRIVATE',
-            lifecycleState: 'DRAFT',
-            moderationState: 'PENDING',
-            isFeatured: false,
-            ownerId: commerceOwnerId,
+            publicationStatus: PublicationStatusEnum.DRAFT,
+            ownerId: listingOwnerId,
             destinationId: concordia,
             createdById: superAdminId,
             media: {
@@ -298,12 +278,8 @@ function buildExperienceInputs(
             priceFrom: 650000,
             priceUnit: 'per_person',
             isPriceOnRequest: false,
-            hasActiveSubscription: false,
-            visibility: 'PUBLIC',
-            lifecycleState: 'DRAFT',
-            moderationState: 'PENDING',
-            isFeatured: false,
-            ownerId: commerceOwnerId,
+            publicationStatus: PublicationStatusEnum.DRAFT,
+            ownerId: listingOwnerId,
             destinationId: concepcion,
             createdById: superAdminId,
             media: {
@@ -341,10 +317,8 @@ function buildExperienceInputs(
 /**
  * Inserts a listing's fixture photos as `experience_media` rows (HOS-372).
  *
- * Uses `ExperienceMediaModel` rather than this file's raw `pg.Pool`: the pool
- * exists here because `has_active_subscription` is a server-managed column the
- * service schema excludes, which is not a constraint the media table shares.
- * Going through the model keeps the row shape typed and reuses the same builder
+ * Uses `ExperienceMediaModel` rather than this file's raw `pg.Pool`. Going
+ * through the model keeps the row shape typed and reuses the same builder
  * the accommodation and gastronomy seeds use.
  *
  * Idempotent: skips entirely when the listing already has media rows.
@@ -382,12 +356,10 @@ async function seedExperienceMediaRows({
 }
 
 /**
- * Seeds experience commerce listings using a raw pg.Pool connection.
+ * Seeds experience listings using a raw pg.Pool connection.
  *
- * `hasActiveSubscription` is a server-managed field excluded from the
- * service-level ExperienceUpdateInputSchema, so direct SQL insertion is
- * intentional and correct here (same tradeoff as billing plan seeding which
- * also bypasses service validation for admin-only fields).
+ * Direct SQL insertion keeps the deterministic fixture ids (HOS-25 T-026)
+ * without going through the service create path.
  *
  * @param context - Seed context (actor used to resolve super admin ID).
  * @returns Promise resolving when all experience rows are created or skipped.
@@ -438,13 +410,13 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
         }
 
         // ------------------------------------------------------------------
-        // 3. Resolve the logueable COMMERCE_OWNER who owns the experiences.
-        //    We reuse gastro-owner-julieta@local.test — the first commerce owner
+        // 3. Resolve the user who owns the experiences.
+        //    We reuse gastro-owner-julieta@local.test — the first listing owner
         //    seeded by gastronomies.seed.ts (which runs before experiences in the
         //    pipeline).  That user already has:
         //      • a Better Auth `accounts` credential row (password = Password123!)
         //      • profile_completed = true (set by gastronomies.seed.ts)
-        //    so E2E tests can sign in and reach the commerce area without hitting
+        //    so E2E tests can sign in and reach the listing-owner area without hitting
         //    the profile-completion middleware gate.
         // ------------------------------------------------------------------
         const ownerEmail = 'gastro-owner-julieta@local.test';
@@ -454,16 +426,27 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
         );
         if (!ownerRows[0]) {
             throw new Error(
-                `[experiences] COMMERCE_OWNER "${ownerEmail}" not found. seedGastronomies() must run before seedExperiences() — check the seed pipeline order.`
+                `[experiences] Owner "${ownerEmail}" not found. seedGastronomies() must run before seedExperiences() — check the seed pipeline order.`
             );
         }
-        const commerceOwnerId = ownerRows[0].id;
-        logger.info(`[experiences] Using COMMERCE_OWNER: ${ownerEmail} (${commerceOwnerId})`);
+        const listingOwnerId = ownerRows[0].id;
+        const grantedExperienceRole = await grantRole({
+            userId: listingOwnerId,
+            role: RoleEnum.EXPERIENCE_OWNER,
+            grantedBy: null,
+            reason: RoleGrantReason.SEED
+        });
+        if (grantedExperienceRole.error) {
+            throw new Error(
+                `Failed to grant EXPERIENCE_OWNER to ${ownerEmail}: ${grantedExperienceRole.error.message}`
+            );
+        }
+        logger.info(`[experiences] Using EXPERIENCE_OWNER: ${ownerEmail} (${listingOwnerId})`);
 
         // ------------------------------------------------------------------
         // 4. Insert experiences (idempotent — ON CONFLICT DO NOTHING)
         // ------------------------------------------------------------------
-        const inputs = buildExperienceInputs(superAdminId, commerceOwnerId, destinations);
+        const inputs = buildExperienceInputs(superAdminId, listingOwnerId, destinations);
         let inserted = 0;
         let skipped = 0;
 
@@ -479,14 +462,14 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
             const result = await pool.query<{ id: string }>(
                 `INSERT INTO experiences
                    (id, slug, name, summary, description, type,
-                    price_from, price_unit, is_price_on_request, has_active_subscription,
-                    visibility, lifecycle_state, moderation_state, is_featured,
-                    owner_id, destination_id, created_by_id, updated_by_id)
+                    price_from, price_unit, is_price_on_request,
+                    owner_id, destination_id, created_by_id, updated_by_id,
+                    publication_status, inactive_since, deadlines_version)
                  VALUES
                    ($1, $2, $3, $4, $5, $6,
-                    $7, $8, $9, $10,
-                    $11, $12, $13, $14,
-                    $15, $16, $17, $17)
+                    $7, $8, $9,
+                    $10, $11, $12, $12,
+                    $13::publication_status_enum, now(), 1)
                  ON CONFLICT (slug) DO NOTHING
                  RETURNING id`,
                 [
@@ -499,14 +482,10 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
                     input.priceFrom,
                     input.priceUnit,
                     input.isPriceOnRequest,
-                    input.hasActiveSubscription,
-                    input.visibility,
-                    input.lifecycleState,
-                    input.moderationState,
-                    input.isFeatured,
                     input.ownerId,
                     input.destinationId,
-                    input.createdById
+                    input.createdById,
+                    input.publicationStatus
                 ]
             );
 

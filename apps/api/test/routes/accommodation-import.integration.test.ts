@@ -22,6 +22,22 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockCapture } = vi.hoisted(() => ({ mockCapture: vi.fn() }));
 
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async ({ userId }: { userId: string }) => ({
+            entitlements: {
+                get: () => (userId === 'dddddddd-dddd-4ddd-8ddd-dddddddddddd' ? undefined : 1)
+            },
+            limits: { get: () => 10 }
+        })
+    })
+}));
+vi.mock('@repo/ai-core', async (importActual) => ({
+    ...(await importActual<typeof import('@repo/ai-core')>()),
+    getMonthlyCallCount: vi.fn(async () => 0),
+    recordAiUsage: vi.fn(async () => undefined)
+}));
+
 vi.mock('@repo/utils/safe-fetch', async (importActual) => {
     const actual = await importActual<typeof import('@repo/utils/safe-fetch')>();
     return { ...actual, safeExternalFetch: vi.fn() };
@@ -73,7 +89,7 @@ function plainUserHeaders(): Record<string, string> {
         'content-type': 'application/json',
         accept: 'application/json',
         'user-agent': 'vitest',
-        'x-mock-actor-id': ACTOR_ID,
+        'x-mock-actor-id': 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
         'x-mock-actor-role': 'USER',
         'x-mock-actor-permissions': JSON.stringify([])
     };

@@ -6,8 +6,8 @@
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/index.js';
+import { PublicationStatusEnum } from '../../enums/publication-status.enum.js';
 
 /**
  * Admin search schema for gastronomy listings.
@@ -19,12 +19,23 @@ import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/inde
  *   page: 1,
  *   pageSize: 20,
  *   type: 'RESTAURANT',
- *   isFeatured: true,
  *   priceRange: 'MID',
  * });
  * ```
  */
 export const GastronomyAdminSearchSchema = AdminSearchBaseSchema.extend({
+    /**
+     * Filter by `publicationStatus` (HOS-1641). REPLACES the base `status`,
+     * which is a `LifecycleStatusEnum` filter: gastronomy listings no longer carry a
+     * lifecycle column, so the panel filters on the six `PublicationStatusEnum`
+     * values instead. `'all'` (the default) does not filter. Same override as
+     * `HostTradeBenefitUsageAdminSearchSchema`.
+     */
+    status: z
+        .enum(['all', ...Object.values(PublicationStatusEnum)] as [string, ...string[]])
+        .default('all')
+        .describe('Filter by publication status. Use "all" to show all statuses'),
+
     /** Filter by gastronomy sub-type. */
     type: GastronomyTypeEnumSchema.optional().describe('Filter by gastronomy type'),
 
@@ -43,10 +54,9 @@ export const GastronomyAdminSearchSchema = AdminSearchBaseSchema.extend({
         .string()
         .uuid({ message: 'zodError.admin.search.gastronomy.ownerId.uuid' })
         .optional()
-        .describe('Filter by owner'),
+        .describe('Filter by owner')
 
     /** Filter featured gastronomy listings. */
-    isFeatured: createBooleanQueryParam('Filter by featured status')
 });
 
 /**

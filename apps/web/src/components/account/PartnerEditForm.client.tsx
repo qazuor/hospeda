@@ -6,7 +6,7 @@
  *
  * Four field groups, each with different mechanics:
  *
- * 1. **Identity** (`name`, `slug`, `type`, `tier`) — DISABLED, display-only.
+ * 1. **Identity** (`name`, `slug`, `type`) — DISABLED, display-only.
  *    These are admin-managed (`PARTNER_OWNER_FORBIDDEN_FIELDS` in
  *    `@repo/schemas`), so the form never even builds them into a payload —
  *    disabling the inputs is a UX affordance, not the enforcement mechanism.

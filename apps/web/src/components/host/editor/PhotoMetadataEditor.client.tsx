@@ -19,7 +19,7 @@
  *  - `host/editor/PhotoSection.client.tsx` (the accommodation portada slot),
  *  - `host/editor/PhotoGalleryItem.client.tsx` (each accommodation thumbnail),
  *  - `account/editor/ContentMediaSection.client.tsx` (post + event),
- *  - `commerce/editor/MediaSection.client.tsx` (gastronomy + experience).
+ *  - `listing/editor/MediaSection.client.tsx` (gastronomy + experience).
  *
  * It stayed in this directory rather than moving to a neutral one: the styles
  * it uses live in `PhotoSection.module.css`, and moving the component without

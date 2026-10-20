@@ -144,7 +144,7 @@ Every service method requires an `Actor` representing the user or system perform
 ```typescript
 type Actor = {
   id: string;                             // Unique identifier
-  roles: readonly RoleEnum[];             // Every role the actor holds at once (HOS-296) — GUEST, USER, HOST, COMMERCE_OWNER, EDITOR, SPONSOR, CLIENT_MANAGER, ADMIN, SUPER_ADMIN, SYSTEM
+  roles: readonly RoleEnum[];             // Every role the actor holds at once (HOS-296) — GUEST, USER, HOST, GASTRONOMY_OWNER / EXPERIENCE_OWNER, EDITOR, SPONSOR, CLIENT_MANAGER, ADMIN, SUPER_ADMIN, SYSTEM
   permissions: readonly PermissionEnum[]; // Union of granted permissions across all held roles + overrides
 };
 

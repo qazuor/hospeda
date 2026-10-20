@@ -23,7 +23,6 @@
 set -eu
 
 SCAN_DIRS=(
-    "packages/billing/src"
     "packages/service-core/src"
     "packages/notifications/src"
     "packages/utils/src"

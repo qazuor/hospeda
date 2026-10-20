@@ -13,10 +13,11 @@
  *
  * No request body — gastronomyId and mediaId come from URL params.
  */
-import { GastronomyMediaSingleOutputSchema, PermissionEnum } from '@repo/schemas';
+import { GastronomyMediaSingleOutputSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService, ServiceError, setFeaturedGastronomyMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -27,20 +28,20 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * PUT /api/v1/admin/gastronomies/:id/media/:mediaId/featured
  * Set featured photo for gastronomy listing gallery — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
+ * Requires GASTRONOMY_EDIT_ALL permission. The service helper
  * `setFeaturedGastronomyMedia` enforces the same gate via `checkGastronomyCanEditMedia`.
  */
 export const adminSetFeaturedGastronomyMediaRoute = createAdminRoute({
     method: 'put',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}/featured',
     summary: 'Set featured photo for gastronomy listing gallery (admin)',
     description:
         'Promotes the target media row to is_featured=true and demotes the previous ' +
         'featured row (if any). Archived photos cannot be featured — restore the ' +
-        'photo to visible first. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL). No request body — ids ' +
+        'photo to visible first. Requires GASTRONOMY_EDIT_ALL. No request body — ids ' +
         'come from URL params.',
     tags: ['Gastronomy', 'Media'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -55,9 +56,13 @@ export const adminSetFeaturedGastronomyMediaRoute = createAdminRoute({
                 model: Parameters<typeof setFeaturedGastronomyMedia>[0];
             }
         ).model;
-        const result = await setFeaturedGastronomyMedia(model, actor, {
-            gastronomyId: params.id as string,
-            mediaId: params.mediaId as string
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                setFeaturedGastronomyMedia(model, actor, {
+                    gastronomyId: params.id as string,
+                    mediaId: params.mediaId as string
+                })
         });
 
         if (result.error) {

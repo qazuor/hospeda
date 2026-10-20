@@ -225,7 +225,7 @@ export const createActions: Record<string, CreateAction> = {
     },
 
     /**
-     * Create a new promo code. Gated by DISCOUNT_CODE_CREATE.
+     * Create a new promo code. Gated by BILLING_MANAGE_PROMO_CODES (action 21).
      * Real route: apps/admin/src/routes/_authed/billing/promo-codes.tsx
      * (no dedicated /new route — action triggers modal, route points to list)
      */
@@ -234,7 +234,7 @@ export const createActions: Record<string, CreateAction> = {
         label: { es: 'Nuevo código promo', en: 'New promo code', pt: 'Novo código promo' },
         route: '/billing/promo-codes',
         icon: 'CouponsIcon',
-        permissions: ['DISCOUNT_CODE_CREATE']
+        permissions: ['BILLING_MANAGE_PROMO_CODES']
     },
 
     // ── Plataforma ──────────────────────────────────────────────────────────

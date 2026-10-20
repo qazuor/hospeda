@@ -40,6 +40,48 @@ vi.mock('@/components/ui/ToastProvider', () => ({
     useToast: () => ({ addToast: mockAddToast })
 }));
 
+vi.mock('../SuperAdminRoleDialog', () => ({
+    SuperAdminRoleTrigger: ({
+        disabled,
+        onClick,
+        label
+    }: {
+        readonly disabled: boolean;
+        readonly onClick: () => void;
+        readonly label: string;
+    }) => (
+        <button
+            type="button"
+            disabled={disabled}
+            onClick={onClick}
+            aria-label={label}
+        />
+    ),
+    SuperAdminRoleDialog: ({
+        open,
+        change,
+        onConfirm
+    }: {
+        readonly open: boolean;
+        readonly change: 'ASSIGN' | 'REMOVE';
+        readonly onConfirm: (params: { readonly reason: string }) => void | Promise<void>;
+    }) =>
+        open ? (
+            <section
+                data-testid="super-admin-role-dialog"
+                data-change={change}
+            >
+                <textarea data-testid="super-admin-role-reason" />
+                <button
+                    type="button"
+                    onClick={() => onConfirm({ reason: 'approved for pricing' })}
+                >
+                    Confirm SUPER_ADMIN
+                </button>
+            </section>
+        ) : null
+}));
+
 vi.mock('@/components/ui/select', () => ({
     Select: ({
         value,
@@ -239,7 +281,8 @@ describe('UserRolesCard (HOS-296)', () => {
         expect(offered).not.toContain('SYSTEM');
         expect(offered).not.toContain('GUEST');
         expect(offered).toContain('SPONSOR');
-        expect(offered).toContain('COMMERCE_OWNER');
+        expect(offered).toContain('GASTRONOMY_OWNER');
+        expect(offered).toContain('EXPERIENCE_OWNER');
     });
 
     it('grants ADDITIVELY — the POST body carries only the new role', async () => {
@@ -265,6 +308,74 @@ describe('UserRolesCard (HOS-296)', () => {
         expect(post?.path).toBe(`/api/v1/admin/users/${USER_ID}/roles`);
         // No "roles: [...]" replacement payload, and no other hat mentioned.
         expect(post?.body).toEqual({ role: 'SPONSOR' });
+    });
+
+    it('requires the SUPER_ADMIN confirmation and sends its mandatory reason', async () => {
+        stubRoles(TWO_HATS);
+        renderCard();
+        fireEvent.change(await screen.findByTestId('role-select-stub'), {
+            target: { value: 'SUPER_ADMIN' }
+        });
+        fireEvent.change(
+            screen.getByLabelText('admin-pages.access.users.roles.reasonPlaceholder'),
+            {
+                target: { value: 'ignored row reason' }
+            }
+        );
+        fireEvent.click(screen.getByText('admin-pages.access.users.roles.grantRole'));
+
+        expect(screen.getByTestId('super-admin-role-dialog').getAttribute('data-change')).toBe(
+            'ASSIGN'
+        );
+        expect(
+            mockedFetchApi.mock.calls.some(
+                ([args]) => (args as { method?: string }).method === 'POST'
+            )
+        ).toBe(false);
+        fireEvent.click(screen.getByText('Confirm SUPER_ADMIN'));
+        await waitFor(() => {
+            const post = mockedFetchApi.mock.calls
+                .map(([args]) => args as { method?: string; body?: unknown })
+                .find((args) => args.method === 'POST');
+            expect(post?.body).toEqual({ role: 'SUPER_ADMIN', reason: 'approved for pricing' });
+        });
+    });
+
+    it('keeps HOST grants direct without opening the SUPER_ADMIN dialog', async () => {
+        stubRoles(ONE_HAT);
+        renderCard();
+        fireEvent.change(await screen.findByTestId('role-select-stub'), {
+            target: { value: 'HOST' }
+        });
+        fireEvent.click(screen.getByText('admin-pages.access.users.roles.grantRole'));
+        await waitFor(() => {
+            const post = mockedFetchApi.mock.calls
+                .map(([args]) => args as { method?: string; body?: unknown })
+                .find((args) => args.method === 'POST');
+            expect(post?.body).toEqual({ role: 'HOST' });
+        });
+        expect(screen.queryByTestId('super-admin-role-dialog')).toBeNull();
+    });
+
+    it('opens the SUPER_ADMIN removal dialog while other roles keep the usual revoke dialog', async () => {
+        const superAdminRoles = {
+            ...TWO_HATS,
+            roles: [...TWO_HATS.roles, { ...TWO_HATS.roles[0], role: 'SUPER_ADMIN' }]
+        } as UserRoleGrantsResponse;
+        stubRoles(superAdminRoles);
+        renderCard();
+        await waitFor(() =>
+            expect(
+                screen.getAllByLabelText('admin-pages.access.users.roles.revokeRole')
+            ).toHaveLength(3)
+        );
+        fireEvent.click(
+            screen.getAllByLabelText('admin-pages.access.users.roles.revokeRole')[2] as HTMLElement
+        );
+        expect(screen.getByTestId('super-admin-role-dialog').getAttribute('data-change')).toBe(
+            'REMOVE'
+        );
+        expect(screen.getAllByTestId('confirm-revoke')).toHaveLength(2);
     });
 
     it('sends the operator reason to the audit trail when one is typed', async () => {

@@ -39,7 +39,7 @@ export interface PlanPriceChangeNoticeProps {
  * old/new amounts, the effective date, the >=15-day advance window, and the
  * free right to cancel before then). It has NOT been reviewed by counsel. It
  * MUST be reviewed/approved by the owner/legal, and this marker removed, BEFORE
- * the increase flag (HOSPEDA_BILLING_PRICE_INCREASE_ENABLED) is enabled in prod.
+ * any price-increase notice is sent in prod.
  *
  * @param props - Plan price-change notice data.
  */

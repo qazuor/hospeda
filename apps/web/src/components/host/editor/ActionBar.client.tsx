@@ -5,7 +5,7 @@
  * Renders Back (secondary) and Save (primary) buttons. Both are disabled
  * during the save operation to prevent double-submits.
  *
- * Shared by all four host editors (accommodation, commerce, event, post —
+ * Shared by all four host editors (accommodation, gastronomy/experience, event, post —
  * HOS-1014). The secondary button always navigates to a fixed hub, never
  * `history.back()`, so it reads "Back"/"Volver"/"Voltar"
  * (`host.properties.editor.action.back`), not "Cancel" — it doesn't discard

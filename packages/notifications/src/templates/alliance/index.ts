@@ -7,4 +7,3 @@ export * from './alliance-lead-decision.js';
 export * from './host-trade-revoked.js';
 export * from './partner-mentions-logged.js';
 export * from './partner-revoked.js';
-export * from './partner-unpaid-notice.js';

@@ -1,4 +1,18 @@
 {
+    "subscribe": {
+        "publishCta": "Publicar mi ficha",
+        "trialNote_one": "La prueba gratis de {{trialDays}} día empieza cuando publicás.",
+        "trialNote_other": "La prueba gratis de {{trialDays}} días empieza cuando publicás.",
+        "checkoutMonthly": "Suscribirme con pago mensual",
+        "checkoutAnnual": "Suscribirme con pago anual",
+        "continuePayment": "Continuar el pago",
+        "currentPlan": "Tu plan actual en {{vertical}}",
+        "touristVipInherited": "Tu plan ya incluye Turista VIP: no hace falta comprarlo."
+    },
+    "noPlans": {
+        "title": "Esta vertical no tiene planes disponibles",
+        "body": "Tu ficha sigue sin publicar. No hay nada que contratar ni una prueba gratis que empezar."
+    },
     "signedOut": {
         "tagline": "Primer paso",
         "title": "Creá tu cuenta y publicá",

@@ -3,22 +3,20 @@
  * Add a new FAQ to an accommodation
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     type AccommodationFaqAddInput,
     AccommodationFaqSingleOutputSchema,
     AccommodationIdSchema,
     FaqWithChannelVisibilityCreatePayloadSchema,
     type FaqWithChannelVisibilityCreatePayloadType,
-    ProductDomainEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 // Initialize service once
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -27,12 +25,14 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * Route definition using createCRUDRoute factory
  * ✅ Full HTTP method support with request body validation
  */
-export const addFaqRoute = createCRUDRoute({
+export const addFaqRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/faqs',
     summary: 'Add FAQ to accommodation',
     description: 'Add a new frequently asked question to a specific accommodation',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     tags: ['Accommodations', 'FAQs'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema
     },
@@ -56,14 +56,6 @@ export const addFaqRoute = createCRUDRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // SPEC-145 T-004: FAQ mutation is accommodation content; same entitlement
-        // gate as update/patch (EDIT_ACCOMMODATION_INFO — granted on all host plans).
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });
 

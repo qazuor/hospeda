@@ -100,11 +100,8 @@ describe('AccommodationService.search', () => {
             pageSize: 2,
             sortBy: undefined,
             sortOrder: 'asc',
-            excludeRestricted: false,
-            excludeOwnerSuspended: false,
-            excludePlanRestricted: false,
-            // actor has ACCOMMODATION_VIEW_ALL → hasVipAccess=true → activeOnly=false
-            activeOnly: false
+            // A non-owner, staff included, reads PUBLISHED only (AC:V5:5, HOS-1641)
+            publishedOnly: true
         });
     });
 
@@ -192,11 +189,8 @@ describe('AccommodationService.search', () => {
             pageSize: 10,
             sortBy: undefined,
             sortOrder: 'asc',
-            excludeRestricted: false,
-            excludeOwnerSuspended: false,
-            excludePlanRestricted: false,
-            // actor has ACCOMMODATION_VIEW_ALL → hasVipAccess=true → activeOnly=false
-            activeOnly: false
+            // A non-owner, staff included, reads PUBLISHED only (AC:V5:5, HOS-1641)
+            publishedOnly: true
         });
     });
 });

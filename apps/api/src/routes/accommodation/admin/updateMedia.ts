@@ -25,10 +25,12 @@ import {
     AccommodationMediaIdSchema,
     AccommodationMediaSingleOutputSchema,
     type AccommodationMediaUpdatePayload,
-    AccommodationMediaUpdatePayloadSchema
+    AccommodationMediaUpdatePayloadSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -58,6 +60,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminUpdateMediaRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}',
     summary: 'Correct photo text metadata in accommodation gallery (admin)',
     description:
@@ -81,13 +84,17 @@ export const adminUpdateMediaRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const payload = body as AccommodationMediaUpdatePayload;
 
-        const result = await accommodationService.updateMedia(actor, {
-            accommodationId: params.id as string,
-            mediaId: params.mediaId as string,
-            caption: payload.caption,
-            description: payload.description,
-            alt: payload.alt,
-            attribution: payload.attribution
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                accommodationService.updateMedia(actor, {
+                    accommodationId: params.id as string,
+                    mediaId: params.mediaId as string,
+                    caption: payload.caption,
+                    description: payload.description,
+                    alt: payload.alt,
+                    attribution: payload.attribution
+                })
         });
 
         if (result.error) {

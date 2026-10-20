@@ -27,7 +27,7 @@ import type { CronJobDefinition } from '../types.js';
 export const hostTradeUsageReminderJob: CronJobDefinition = {
     name: 'host-trade-usage-reminder',
     description: 'Send the single day-10 reminder for benefit usages still pending',
-    schedule: '30 4 * * *', // Daily at 4:30 UTC, after the expiry sweep
+    schedule: '30 4 * * *', // Daily at 4:30 Buenos Aires time, after the expiry sweep
     enabled: true,
     timeoutMs: 300_000,
 

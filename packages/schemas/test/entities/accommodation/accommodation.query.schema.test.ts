@@ -17,7 +17,6 @@ const createValidAccommodation = () => ({
     summary: 'A comfortable hotel in the heart of the city',
     description:
         'A test hotel for unit testing purposes with all amenities and features you need for a comfortable stay',
-    moderationState: 'APPROVED',
     price: {
         amount: 100,
         currency: 'USD'
@@ -39,7 +38,7 @@ const createValidAccommodation = () => ({
     averageRating: 0,
     isFeatured: false,
     isActive: true,
-    visibility: 'PUBLIC',
+    publicationStatus: 'PUBLISHED',
     ownerId: '12345678-1234-4234-8234-123456789013',
     destinationId: '12345678-1234-4234-8234-123456789014',
     adminInfo: {

@@ -71,3 +71,34 @@
     width: 100%;
     margin: 0;
 }
+
+.noPlans {
+    display: grid;
+    gap: var(--space-2);
+    width: 100%;
+    color: var(--core-foreground);
+}
+
+.noPlans > span {
+    color: var(--core-muted-foreground);
+}
+
+/* HOS-1668 C-2: the destination read failed; a status line, never a button. */
+.checkFailed {
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    width: 100%;
+}
+
+/* HOS-1492 row 21: "subscribe to publish", with the plan link kept below. */
+.subscribeToPublish {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+    width: 100%;
+    color: var(--core-foreground);
+}
+
+.subscribeToPublish > span {
+    color: var(--core-muted-foreground);
+}

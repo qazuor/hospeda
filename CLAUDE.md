@@ -94,7 +94,7 @@ pnpm db:generate      # Generate migration from schema changes
 pnpm db:studio        # Open Drizzle Studio
 pnpm db:seed          # Seed database
 pnpm db:fresh         # Reset + migrate + seed
-pnpm db:fresh-dev     # Reset + push schema + seed (dev shortcut)
+pnpm db:fresh-dev     # Reset + migrate + extras + seed + test users (dev shortcut; committed migrations only)
 pnpm db:seed:ready-user <email>  # Mark one user ready (skip onboarding friction) - SPEC-264
 
 # Build
@@ -195,7 +195,7 @@ Hospeda billing is built on **QZPay** (`@qazuor/qzpay-core`) with a MercadoPago 
 - **Routes**: `apps/api/src/routes/billing/` (start-paid, plan-change, subscription-cancel, addons, webhooks, etc.)
 - **Services**: `packages/service-core/src/services/billing/` (subscription, addon, promo-code, settings — deliberately outside `BaseCrudService`)
 - **Cron jobs**: `apps/api/src/cron/jobs/` (dunning, webhook-retry, finalize-cancelled-subs, trial-reconcile, addon-expiry, apply-scheduled-plan-changes, subscription-poll, abandoned-pending-subs, exchange-rate-fetch — **a partial list**; `preapproval-less-expiry`, `entity-subscription-cache-reconcile`, `addon-subscription-reconcile`, `courtesy-expiry`, `partner-expiry`, `partner-unpaid-reaper`, `propagate-plan-price-changes` and `reactivation-supersession-reconcile` are billing-side too). These are JOB NAMES, not filenames — `trial-reconcile` lives in `trial-expiry.ts`, so `ls` will not find it. `apps/api/src/cron/schedules.manifest.ts` is the authoritative name → schedule list.
-- **Config**: `packages/billing/` (plan definitions, entitlement keys, limits, MP adapter factory)
+- **Catalog and providers** (`packages/billing/` was deleted by HOS-1626): plan, price and limit VALUES live in the database catalog (`billing_plans`, `billing_prices`), not in code; entitlement and limit KEYS live in `packages/schemas/src/catalog/` (`entitlement-keys.ts`, `limit-keys.ts`, `key-enums.ts`); the payment provider interface and the Mercado Pago adapter live in `packages/payments/`; the vertical rules (effective set, publication, quota, trial) in `packages/verticals/`; their shared contracts in `packages/billing-verticals-contract/`
 - **DB adapter**: `packages/db/src/billing/drizzle-adapter.ts` (QZPay Drizzle storage adapter)
 
 Key DB columns: `billing_subscriptions.mp_subscription_id` stores the MercadoPago preapproval ID for EVERY subscription — monthly and annual alike since HOS-171 (see below). `billing_customers.segment` (not `category`). `billing_plans.id` is UUID; `billing_subscriptions.plan_id` is varchar but stores the plan UUID.
@@ -284,18 +284,16 @@ yet, which is why anything that depends on a confirmed payment (see
   preapproval status does not change, so a `preapproval.updated` webhook may never
   arrive and the row would stay `trialing` forever.
 
-Three distinct grace mechanisms exist (see [`docs/billing/grace-period-source-of-truth.md`](docs/billing/grace-period-source-of-truth.md)):
+Three distinct grace mechanisms exist:
 past-due dunning grace (7 days, `past_due` status), cron-lag grace (6h, `active` status), and soft-cancel grace (until `currentPeriodEnd`).
 
-For MP sandbox setup, webhook configuration, sandbox test-user creation, and rollback: see [`docs/migration/mercadopago-sandbox-runbook.md`](docs/migration/mercadopago-sandbox-runbook.md). For incident response: [`docs/billing/billing-runbooks.md`](docs/billing/billing-runbooks.md). For entitlement gate decisions: [`docs/billing/endpoint-gate-matrix.md`](docs/billing/endpoint-gate-matrix.md).
+#### Gastronomy and experience subscription isolation (SPEC-239)
 
-#### Commerce subscription isolation (SPEC-239)
-
-Commerce listings use a **separate billing domain** that must never pollute the
+Gastronomy and experience listings use a **separate billing domain** that must never pollute the
 accommodation entitlement engine:
 
 - `billing_subscriptions.product_domain` — **one domain per vertical**, not a single
-  `'commerce'` bucket. `ProductDomainEnum` holds six values:
+  shared legacy bucket. `ProductDomainEnum` holds six values:
   `'accommodation'` (host subscriptions), `'gastronomy'`, `'experience'`,
   `'partner'`, `'tourist'` (HOS-1233 — the tourist tiers, which own no listings
   at all; before that spec they were filed as `'accommodation'`, so every read
@@ -307,9 +305,9 @@ accommodation entitlement engine:
   "the plan this person pays for". It counts no other domain, so a user who is at
   once a host, a restaurant owner and a partner keeps correct accommodation
   entitlements regardless of the other subscriptions' state.
-- **`'commerce'` is a RETIRED value** (release B / HOS-692) that survives only on
+- **The former shared domain value is RETIRED** (release B / HOS-692) that survives only on
   legacy rows. HOS-695 narrowed the match on purpose: a row still carrying
-  `'commerce'` satisfies **neither** `'gastronomy'` **nor** `'experience'`, so it
+  that retired value satisfies **neither** `'gastronomy'` **nor** `'experience'`, so it
   goes dark rather than silently matching a vertical it was never resolved to. Do
   not "fix" that by widening the comparison — a dark listing is the intended
   failure mode.
@@ -319,9 +317,9 @@ accommodation entitlement engine:
   reads asymmetrically by design: **`accommodation` fails open** (a missing object,
   or a `null`/`undefined` column, counts as accommodation, because the column
   post-dates most rows), while **every other domain fails closed**. To test
-  membership across all commerce verticals at once, call it once per domain —
+  membership across all gastronomy and experience verticals at once, call it once per domain —
   there is no union helper, and there deliberately is not one: `HOS-1081`
-  (`ebfd413e0`) deleted `isCommerceSubscription()` because it had zero callers
+  (`ebfd413e0`) deleted the removed shared-domain subscription helper because it had zero callers
   outside its own file and tests. Do not reintroduce it without a consumer, and
   do not reach for `isAccommodationSubscription()` as a substitute — it answers
   a different question and, unlike the rest, fails OPEN.
@@ -367,24 +365,24 @@ accommodation entitlement engine:
   errors. Call `hydrateSubscriptionProductDomains()` first, or read the column
   straight from Drizzle. `scripts/check-subscription-domain-hydration.sh` (HOS-1176)
   fails CI on a comparison whose file does neither.
-- The commerce-vertical plans in `billing_plans` carry their own
+- The gastronomy and experience plans in `billing_plans` carry their own
   `product_domain` and are intentionally kept OUT of `ALL_PLANS`, so the
   accommodation seed loop, `GET /api/v1/public/plans` and the grant-matrix
   snapshot tests all stay accommodation-only.
-- `entity_subscriptions` (renamed from `commerce_listing_subscriptions` by
+- `entity_subscriptions` (renamed from the former listing-subscription table by
   HOS-1084) — **ONE subscription-status cache for the three verticals**, not a
-  commerce-only link table. One row per LISTING, `UNIQUE(entity_type, entity_id)`,
+  vertical-specific link table. One row per LISTING, `UNIQUE(entity_type, entity_id)`,
   where `entity_type` is `'accommodation' | 'gastronomy' | 'experience'`. It does
   two jobs and not every vertical needs both: it maps a subscription to the
-  listings it covers (commerce needs this; accommodation resolves its listings
+  listings it covers (gastronomy and experience need this; accommodation resolves its listings
   from `accommodations.owner_id`), and it lets a public request read the status
-  without joining `billing_subscriptions` (both need this). The commerce
+  without joining `billing_subscriptions` (both need this). The listing
   visibility reconciler reads it to decide whether a listing is public;
   `owner-entitlement.ts` reads it to resolve a host's entitlements without
   walking QZPay.
   Three things not to break:
   - the UNIQUE is per **listing**, never per subscription — one subscription
-    legitimately owns many rows (a host's whole portfolio, a commerce owner's
+    legitimately owns many rows (a host's whole portfolio, a gastronomy or experience owner's
     1/3/10 cap), and a unique on `subscription_id` would reject the second
     property of every multi-property host;
   - a row with `subscription_id = NULL` and `status = 'none'` is a **negative
@@ -395,7 +393,7 @@ accommodation entitlement engine:
     live resolution. Only a row that is present AND wrong can lie, which is what
     the write-through path and the reconcile cron defend.
 - **TWO reconcilers, and the second one is partners.** `reconcileSubscriptionLinkedEntities`
-  (`apps/api/src/services/subscription-linked-entities.service.ts`) drives commerce
+  (`apps/api/src/services/subscription-linked-entities.service.ts`) drives listing
   visibility AND the accommodation `entity_subscriptions` cache. It does **not**
   touch partners: `reconcilePartnerForSubscription`
   (`apps/api/src/services/partner-reconcile.service.ts`) is a separate bridge
@@ -412,8 +410,8 @@ accommodation entitlement engine:
   call site cannot be born with the gap silently.
   HOS-1306 measured the four then-unwired sites and found **zero real gaps** —
   `subscription-comp-grant` had already been wired by HOS-1160, and a partner
-  subscription cannot reach the other three (the commerce attach path is closed by
-  `CommerceVertical = 'gastronomy' | 'experience'` plus `subscriptionMatchesDomain`'s
+  subscription cannot reach the other three (the listing attach path is closed by
+  the two listing vertical types plus `subscriptionMatchesDomain`'s
   fail-closed; `trial-local-expiry` because no partner plan has a trial;
   `preapproval-less-expiry` because no writer produces an `active` partner row with
   a null preapproval). That last one is the fragile one: it holds by the ABSENCE of
@@ -433,7 +431,7 @@ accommodation entitlement engine:
   typed Drizzle columns as of `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73) — accessed via
   normal typed queries (HOS-75), not raw SQL or the extras carril. The old
   extras/017 column-creation file was deleted once the typed columns landed.
-  See [`docs/decisions/ADR-035-commerce-core-gastronomy-separation.md`](docs/decisions/ADR-035-commerce-core-gastronomy-separation.md).
+  See ADR-035, the gastronomy/experience separation decision, under `docs/decisions/`.
 
 #### Promo code effect engine (SPEC-262)
 
@@ -496,17 +494,18 @@ scans `src/pages` in full against a prefix allowlist. It is **not**
 eight route families omits `planes` entirely; the spec's AC-10 named that one and
 was therefore satisfiable by construction (witness case on HOS-1311).
 
-AC-16's claim — "you already hold the VIP benefits" — rests on every
-accommodation and commerce tier spreading `TOURIST_VIP_ENTITLEMENTS` and
-`TOURIST_VIP_LIMITS` whole (HOS-975 D-A). That invariant is already guarded, in
-two places, so do not write a third: `packages/billing/test/owner-inherits-tourist.test.ts`
-(the six accommodation tiers) and `packages/billing/test/commerce-vertical-plans.test.ts`
-(all six commerce tiers, plus the limit VALUES — the entitlement engine reads an
-absent key as UNLIMITED, so keys alone would not prove it). The six commerce
-tiers receive that spread from **one** factory, `commerceVerticalTier()` in
-`packages/billing/src/config/plans.config.ts` — a single point of failure worth
-knowing before editing it. Partner plans spread neither, which is why `partner`
-is absent from `TOURIST_VIP_BLOCKING_DOMAINS`.
+AC-16's claim — "you already hold the VIP benefits" — used to rest on every
+accommodation and gastronomy/experience tier spreading `TOURIST_VIP_ENTITLEMENTS`
+and `TOURIST_VIP_LIMITS` whole (HOS-975 D-A), guarded by
+`packages/billing/test/owner-inherits-tourist.test.ts` and a shared vertical tier
+factory in `packages/billing/src/config/plans.config.ts`. All of that was deleted
+with `packages/billing/` (HOS-1626) and is no longer a spread: the inheritance is
+resolved at runtime by `resolveTouristVipInheritance`
+(`packages/verticals/src/effective-set/tourist-vip-inheritance.ts`, called from
+`resolve-effective-set.ts`), wired through the port in
+`apps/api/src/routes/billing-subscription/tourist-vip-inheritance.ts`, and swept by
+`sweepInheritedTouristVips` (`subscription-window-expiry` cron). Do not cite the
+old spread or its guard as current.
 
 #### Featured-listing entitlement (SPEC-292 → SPEC-309)
 
@@ -545,25 +544,25 @@ flag driven by **two independent sources** (SPEC-309 OQ-3):
 
 For entitlement gates, limit enforcement, route permission models, UI gates, and form persistence — work that has zero dependency on real MercadoPago — prefer **local-first** over staging redeploys.
 
-`pnpm db:fresh-dev` creates 42 dev-only test users covering every role × plan × billing-state combination (17 pre-HOS-1268: 2 staff + 2 tourist tiers + 3 host tiers + 1 trial host + 1 host with addon + 1 dual-role host/provider + 4 commerce-owner fixtures, HOS-694 + 3 complex tiers + 1 dual-role host/commerce; plus 25 from HOS-1268: gastronomy/experience trial + addon + at-cap parity fixtures, and a past_due/cancelled/paused/comp/courtesy fixture per vertical — accommodation, gastronomy, experience, tourist). Login with `<slug>@local.test` / `Password123!`. Full matrix in [`packages/seed/CLAUDE.md`](packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1) and its [Billing-state matrix](packages/seed/CLAUDE.md#billing-state-matrix-hos-1268) section. To re-seed only the test users (after a db wipe): `pnpm db:seed:test-users`. These users are seeded **ready to use** (no profile/welcome-tour/what's-new/password-change friction — SPEC-264); to ready a manually-created user, run `pnpm db:seed:ready-user <email>`.
+`pnpm db:fresh-dev` creates 42 dev-only test users covering every role × plan × billing-state combination (17 pre-HOS-1268: 2 staff + 2 tourist tiers + 3 host tiers + 1 trial host + 1 host with addon + 1 dual-role host/provider + 4 gastronomy/experience owner fixtures, HOS-694 + 3 complex tiers + 1 dual-role host/provider; plus 25 from HOS-1268: gastronomy/experience trial + addon + at-cap parity fixtures, and a past_due/cancelled/paused/comp/courtesy fixture per vertical — accommodation, gastronomy, experience, tourist). Login with `<slug>@local.test` / `Password123!`. Full matrix in [`packages/seed/CLAUDE.md`](packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1) and its [Billing-state matrix](packages/seed/CLAUDE.md#billing-state-matrix-hos-1268) section. To re-seed only the test users (after a db wipe): `pnpm db:seed:test-users`. These users are seeded **ready to use** (no profile/welcome-tour/what's-new/password-change friction — SPEC-264); to ready a manually-created user, run `pnpm db:seed:ready-user <email>`.
 
 Staging is still required for: MercadoPago checkout (`/start-paid`, polling fallback, webhook signature verification), Cloudflare cache revalidation, and cron behavior in production-like timing. Everything else goes local.
 
-### Billing testing — manual smoke checklist required (SPEC-143)
+### Billing testing — manual smoke checklist required
 
 Any PR that touches the billing surface (checkout, webhooks, cron, refund, admin billing ops, entitlements) MUST have the relevant manual staging smoke executed before merging to `staging`, in addition to CI passing. The vitest e2e suite uses an MP stub and cannot catch divergences between the stub and real MercadoPago behavior; the staging smoke against the real MP sandbox is the gate.
 
+The checklist is `docs/billing/smoke-checklist.md` (HOS-1352), in two parts: a **staging** section and a **production** section.
+
 Workflow:
 
-1. Before opening the PR, identify which sections of [`.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md`](.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md) the change exercises.
-2. Run those sections against `https://staging.hospeda.com.ar` with the MP sandbox credentials configured on `hospeda-api-staging`. Use [`.qtm/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md`](.qtm/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md) to pick the right card + cardholder combo per sub-flow.
-3. File the sign-off entry inside the relevant section of the checklist (date, executor, PR number, result, notes).
+1. Before opening the PR, identify which parts of the **staging** section of `docs/billing/smoke-checklist.md` the change exercises.
+2. Run them against `https://staging.hospeda.com.ar` with the MP sandbox credentials configured on `hospeda-api-staging`.
+3. File the sign-off entry inside the relevant part of the checklist (date, executor, PR number, result, notes).
 4. Reference the sign-off in the PR description so reviewers can verify it.
-5. For PRs that change the **billing CORE** (start-paid route, webhook handlers, dunning/exchange-rate crons, refund flow, admin billing ops), the prod smoke ([`.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md`](.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md)) MUST be executed too — that's the production go-live gate. Routine billing-touching PRs (UI tweaks, copy changes, schema additions) only need staging.
+5. For PRs that change the **billing CORE** (checkout, webhook handlers, billing crons, refund flow, admin billing ops), the **production** section of the same checklist MUST be executed too — that's the production go-live gate. Routine billing-touching PRs (UI tweaks, copy changes, schema additions) only need staging.
 
 Failed smokes block merge. Notes-only passes (smoke surfaces a known documented bug from an engram entry) can merge but the bug entry must be linked from the PR.
-
-This rule was approved as part of SPEC-143 phase 4 polish (engram `#532` decision Q1).
 
 ### Smoke-gate labels for any spec (generalized 2026-07-02)
 
@@ -690,7 +689,7 @@ missed.
 - **Merge commit messages**: commitlint rejects `merge:` as a type. Use `chore: merge <source> into <target> (...)` instead.
 - **PR titles MUST carry a work tag** (enforced by the `Validate PR Title` CI check — see [`.github/workflows/validate-pr-title.yml`](.github/workflows/validate-pr-title.yml)). Every PR title MUST start with one of three tags, before the conventional-commit type:
   - `[HOS-NNN]` — work that belongs to a spec tracked in Linear (team `Hospeda`, key `HOS`). This is the current convention (since the 2026-07-01 Linear tracking migration — see [Spec & Task Management](#spec--task-management)). Format: `[HOS-NNN] type(scope): description` (e.g. `[HOS-12] feat(web): unify loading states`).
-  - `[SPEC-NNN]` — legacy tag for specs still in flight from before the Linear migration (`.qtm/specs/SPEC-NNN-slug/`, not yet migrated to a `HOS-xxx` issue). Do not use for new specs.
+  - `[SPEC-NNN]` — legacy tag for specs still in flight from before the Linear migration (tracked in the retired legacy spec system, not yet migrated to a `HOS-xxx` issue). Do not use for new specs.
   - `[NOSPEC:<slug>]` — small changes that do NOT go through the formal spec process (typos, infra one-offs, dependency patches). The `<slug>` is a short kebab-case identifier so multiple no-spec PRs are distinguishable at a glance. Format: `[NOSPEC:<slug>] type(scope): description` (e.g. `[NOSPEC:footer-copy] fix(web): typo in footer`).
   - The tag is non-negotiable: a reviewer must know which spec (or that none) a PR belongs to from the PR list alone. Bot-authored PRs (`dependabot[bot]`, `github-actions[bot]`) are exempt — the CI check skips them.
 
@@ -899,7 +898,7 @@ Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.m
 - **No legacy env aliasing**: Per SPEC-035, env vars are validated by Zod against `HOSPEDA_*` names exclusively in `apps/api/src/utils/env.ts` (`ApiEnvBaseSchema`). There is NO runtime mapping from unprefixed names. The only accepted exceptions are platform-injected vars (`NODE_ENV`, `CI`, `API_PORT`, `API_HOST`) which are read as-is. See [docs/guides/environment-variables.md](docs/guides/environment-variables.md) for the full policy.
 - **Auth**: NEVER check roles directly.. always use `PermissionEnum`
 - **Three migration carriles** — (1) structural changes (tables/columns/indexes/FKs/enums) go to `packages/db/src/migrations/` via `pnpm db:generate` + `pnpm db:migrate`; (2) Drizzle-invisible objects (triggers, materialized views, CHECK constraints, special indexes) go to `packages/db/src/migrations/extras/` (hand-written, idempotent, re-applied by `pnpm db:apply-extras`); (3) **seed DATA changes** go to `packages/seed/src/data-migrations/` (numbered TS modules, ledgered in `seed_migrations`, run by `pnpm db:seed:migrate` — HOS-25). Run order on a live env: `db:migrate` → `db:apply-extras` → `db:seed:migrate`. **That order satisfies one direction only** — it is right for a data-migration that needs a column the schema carril ADDS, and wrong for one that needs a column the schema carril REMOVES, because `db:migrate` applies the whole pending batch before any data change runs. A backfill shipped in the same release as the `DROP COLUMN` of its source therefore reads nothing, moves zero rows, and is ledgered applied forever (HOS-433, measured in production: 18ms and `ok`). The fix is not a different order but the expand/contract split the structural carril already requires — backfill in release N, drop in N+1 — plus `meta.requiresColumns` on the migration so the runner aborts loudly if it is violated anyway (it refuses only when the column is missing AND its table still holds rows — an absent column over an empty table lost nothing). See [packages/db/CLAUDE.md](packages/db/CLAUDE.md), [packages/seed/CLAUDE.md](packages/seed/CLAUDE.md), and [docs/guides/migrations.md](docs/guides/migrations.md).
-- **Seed dual-write rule (MANDATORY, HOS-25)** — when a change modifies **seed DATA that already lives in a live env** (add/rename/remove a `required` catalog row — amenity, feature, attraction, destination — a billing plan/limit/entitlement, or any `example` row with a deterministic id), the SAME PR MUST do BOTH: (1) edit the **baseline** (JSON fixture / TS constant) so a fresh DB is built correct, AND (2) add a numbered **data-migration** via `pnpm db:seed:make <slug>` so already-seeded staging/prod get the same delta. Editing only the baseline is a silent bug: fresh DBs are correct but live DBs never receive the change (exactly why billing had to patch via `extras/*.plan.sql`). A CI drift guard enforces this (`scripts/check-seed-dual-write.sh`, **fail-closed** since HOS-173: everything under `packages/seed/src/data/**` is guarded by default minus an explicit demo-only exemption list). Does NOT apply to seed **infrastructure** (seedFactory, utils, orchestrator), tests, types, or **demo-only synthetic `example` data** (fake accommodations, events, posts, reviews — content that must never represent a real environment). It DOES apply to curated `example` content bound for a live env (`partner`, `gastronomy`, `hostTrade`, `postSponsor`, `postSponsorship`, `experiences`) — every fixture here has a deterministic id, so "non-deterministic example data" is not a real exemption. See [packages/seed/CLAUDE.md](packages/seed/CLAUDE.md).
+- **Seed dual-write rule (MANDATORY, HOS-25)** — when a change modifies **seed DATA that already lives in a live env** (add/rename/remove a `required` catalog row — amenity, feature, attraction, destination — or any `example` row with a deterministic id), the SAME PR MUST do BOTH: (1) edit the **baseline** (JSON fixture / TS constant) so a fresh DB is built correct, AND (2) add a numbered **data-migration** via `pnpm db:seed:make <slug>` so already-seeded staging/prod get the same delta. Editing only the baseline is a silent bug: fresh DBs are correct but live DBs never receive the change. A CI drift guard enforces this (`scripts/check-seed-dual-write.sh`, **fail-closed** since HOS-173: everything under `packages/seed/src/data/**` is guarded by default minus an explicit demo-only exemption list). Does NOT apply to seed **infrastructure** (seedFactory, utils, orchestrator), tests, types, or **demo-only synthetic `example` data** (fake accommodations, events, posts, reviews — content that must never represent a real environment). It DOES apply to curated `example` content bound for a live env (`partner`, `gastronomy`, `hostTrade`, `postSponsor`, `postSponsorship`, `experiences`) — every fixture here has a deterministic id, so "non-deterministic example data" is not a real exemption. See [packages/seed/CLAUDE.md](packages/seed/CLAUDE.md).
 - **`db:push` is dev-only** — NEVER run `drizzle-kit push` against the VPS. Use `pnpm db:migrate` for staging and production. On VPS use `hops db-migrate --target=staging|prod`.
 - **`db:generate` before a schema PR** — the drift guard blocks CI if the TS schema changed without a committed migration file.
 - **LIKE wildcard injection**: NEVER use raw `ilike()` from `drizzle-orm`. Always use `safeIlike()` from `@repo/db`, which auto-escapes `%`, `_`, and `\` metacharacters. CI will reject PRs with raw `ilike()` in production source. See `packages/db/src/utils/drizzle-helpers.ts`.
@@ -928,7 +927,7 @@ When introducing a new pattern, utility, or constant.. first check if it already
 
 **Since 2026-07-01, Linear is the single source of truth for spec/roadmap tracking.**
 All non-trivial work MUST go through Linear + `.specs/`. This replaced the old
-`.qtm/`-based system (index.json + CSV) to eliminate desync across worktrees/agents —
+in-repo tracking system (index.json + CSV) to eliminate desync across worktrees/agents —
 see "Legacy system" below for why.
 
 ### Terminology: "spec" vs "issue"
@@ -1034,7 +1033,7 @@ Never guess a label that doesn't exist in Linear — validate against
 
 If the user says "work on spec 123", resolve it as Linear issue `HOS-123`, then open
 `.specs/HOS-123-*/spec.md`. Never invent a new `SPEC-NNN` identifier for new work —
-that numbering belongs to the retired `.qtm/` system (see below). If ambiguous
+that numbering belongs to the retired legacy spec system (see below). If ambiguous
 (could be a legacy `SPEC-123` still in flight), say so and ask.
 
 ### State Management Rules
@@ -1105,27 +1104,23 @@ every issue it could not move, but the check that catches this in one step is th
 same either way: compare the issue's `updatedAt` against the merge time. If it is
 older, no automation touched it, and the state has to be set by hand.
 
-### Legacy system (`.qtm/`) — do not use for new work
+### Legacy system — do not use for new work
 
-`.qtm/specs/index.json`, `.qtm/tasks/index.json`, and `specs-prioritization.csv` are
-**retired as sources of truth** (2026-07-01 Linear migration). They are NOT deleted —
-existing `.qtm/specs/SPEC-NNN-slug/` folders for specs still in flight from before the
-migration stay there as historical/working record until closed or migrated to a
-`.specs/HOS-xxx-slug/` folder — but:
+The in-repo tracking system that preceded Linear (a specs index, a tasks index and
+a prioritization CSV) was retired as a source of truth on 2026-07-01 and its folder
+was deleted from the repo by HOS-1352 (U1). So:
 
-- **NEVER** create a new `SPEC-NNN` entry, folder, or CSV row for new work.
-- **NEVER** treat `.qtm/specs/index.json` / `.qtm/tasks/index.json` status as accurate
-  without verifying against `gh pr list` / actual code — the migration audit found
-  several specs silently shipped-but-never-closed in these files (real precedent, not
-  hypothetical: SPEC-239/285/289/291 were fully merged while the index still said
-  `in-progress`). Don't repeat that pattern by trusting these files going forward.
+- **NEVER** create a new `SPEC-NNN` identifier for new work.
+- **NEVER** trust a status recorded by that retired system without verifying against
+  `gh pr list` / actual code — the migration audit found several specs silently
+  shipped-but-never-closed there (real precedent, not hypothetical:
+  SPEC-239/285/289/291 were fully merged while the index still said `in-progress`).
 - `scripts/render-specs-prioritization.py` (the CSV viewer/editor) was removed
   entirely along with the `pnpm specs:board` script — it has no replacement, since
   live tracking now lives in Linear directly.
 - If you finish a legacy `SPEC-NNN` spec that never got a Linear issue, migrate it on
   close: create the `HOS-xxx` issue (kind-spec, state Done) summarizing what shipped,
-  optionally move `spec.md` into `.specs/HOS-xxx-slug/`, and leave a note in the old
-  `.qtm/specs/SPEC-NNN-slug/` folder pointing at the new `HOS-xxx` issue.
+  and optionally move its `spec.md` into `.specs/HOS-xxx-slug/`.
 
 ## Important Notes
 
@@ -1150,8 +1145,6 @@ Each app/package has its own `CLAUDE.md` with detailed instructions:
 - [i18n Docs](packages/i18n/docs/README.md) - i18n guides and API reference
 - [Icons](packages/icons/CLAUDE.md) - Icon components
 - [Logger](packages/logger/CLAUDE.md) - Logging
-- [Billing](packages/billing/CLAUDE.md) - Billing/monetization
-- [Billing Docs](packages/billing/docs/README.md) - Billing API and integration guides
 - [Auth UI](packages/auth-ui/CLAUDE.md) - Auth components
 - [Auth UI Docs](packages/auth-ui/docs/README.md) - Auth UI guides and quick start
 - [Notifications Docs](packages/notifications/docs/README.md) - Notification system guides
@@ -1213,8 +1206,8 @@ explícitamente, o se empieza a tocar código):
 4. **Branch**: `spec/HOS-<n>-<slug>` (Linear matchea el ID en cualquier parte del
    nombre de branch, así que este prefijo sigue auto-linkeando en GitHub).
 
-Specs legacy todavía en curso desde antes de la migración (`.qtm/specs/SPEC-NNN-slug/`,
-sin issue `HOS-xxx` propio) siguen usando la convención vieja (`spec-<NNN>-<slug>`,
+Specs legacy todavía en curso desde antes de la migración (del sistema de specs
+retirado, sin issue `HOS-xxx` propio) siguen usando la convención vieja (`spec-<NNN>-<slug>`,
 branch `spec/SPEC-<NNN>-<slug>`) hasta que cierren o se migren.
 5. **Antes de crear**: correr `git worktree list` y revisar. Si ya existe una worktree para esa spec (matching nombre o branch), USAR esa en lugar de crear nueva. Avisar al usuario "ya existe la worktree X en path Y, sigo ahí".
 6. **Después de crear (OBLIGATORIO copiar env)**: ejecutar SIEMPRE, desde la raíz del repo, `./scripts/copy-env-to-worktree.sh <ruta-ABSOLUTA-del-worktree>`. El script lee `.worktreeinclude` y copia los `.env.local` / `docker/.env` gitignored que `git worktree add` NO copia solo. Sin esto la worktree no arranca. **Usar ruta ABSOLUTA siempre** (tanto en `git worktree add` como acá): `git worktree add ../foo` resuelve el `..` contra el cwd del shell, NO contra la raíz del repo, y si el cwd es un subdir crea el worktree anidado en el lugar equivocado. Después avisar al usuario el path absoluto y sugerir abrir nueva terminal o `cd` ahí. **Atajo**: `bash ~/.claude/skills/worktree/scripts/wt-create.sh <type> <slug>` hace `git worktree add` + esta copia de env + `pnpm install` + build de packages en un solo paso (respeta los patrones de `.claude/project.config.json`).

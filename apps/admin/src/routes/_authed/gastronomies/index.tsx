@@ -1,5 +1,5 @@
 /**
- * Gastronomy list page — admin directory of food and beverage commerce listings.
+ * Gastronomy list page — admin directory of food and beverage listings.
  *
  * Uses the generic `createEntityListPage` system via the gastronomy feature config.
  * The route and component are generated from `GastronomiesRoute` /

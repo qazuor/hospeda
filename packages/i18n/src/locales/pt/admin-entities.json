@@ -993,5 +993,111 @@
             "errorTitle": "Erro ao criar ofício",
             "errorMessage": "Não foi possível criar o ofício. Tente novamente."
         }
+    },
+    "listingPurgeOnRequest": {
+        "action": "Excluir a pedido do dono",
+        "title": "Excluir o anúncio a pedido do dono",
+        "whatHappens": {
+            "listing": "Você vai excluir o anúncio {name} a pedido do dono.",
+            "content": "O conteúdo dele (textos, fotos, perguntas, horários) é apagado e não volta.",
+            "featured": "Se houver um destaque apontando para este anúncio, ele é cancelado."
+        },
+        "reasonLabel": "Por quê",
+        "reasonHelp": "Fica no registro, junto com quem o excluiu e de quem era.",
+        "cancel": "Cancelar",
+        "confirm": "Excluir o anúncio",
+        "successTitle": "Anúncio excluído",
+        "successMessage": "O anúncio {name} foi excluído a pedido do dono.",
+        "errorTitle": "Não foi possível excluir o anúncio",
+        "stateChanged": "O anúncio mudou nesse meio-tempo (por exemplo, mudou de dono) e não foi excluído. Recarregue a página e confira antes de tentar de novo."
+    },
+    "accountCloseOnRequest": {
+        "action": "Encerrar a conta a pedido do dono",
+        "title": "Encerrar a conta a pedido do dono",
+        "loading": "Verificando o que ainda resta na conta…",
+        "notFound": "Esta conta não existe mais ou já foi encerrada.",
+        "forbidden": "Você não pode encerrar a sua própria conta nem uma conta do sistema: quem faz isso é outra conta da equipe com a permissão.",
+        "loadError": "Não conseguimos verificar a conta. Feche e tente de novo.",
+        "blocked": {
+            "intro": "Ainda não é possível encerrá-la. Falta:",
+            "canCharge": "Ainda há uma assinatura que pode cobrar: cancele-a primeiro (e espere o Mercado Pago confirmar o cancelamento).",
+            "listings": "Ainda há anúncios não excluídos ({count}): exclua-os com \"Excluir a pedido do dono\".",
+            "partnerPresence": "Há uma presença de Partner com conteúdo: é preciso esvaziá-la primeiro."
+        },
+        "whatHappens": {
+            "account": "Você vai encerrar a conta de {name} ({email}) a pedido do dono.",
+            "nothingLeft": "Não resta cobrança, anúncio nem presença de Partner.",
+            "pseudonymised": "A conta não é excluída: é pseudonimizada e fica sem acesso para sempre. O nome, o e-mail e o telefone são substituídos, a senha e os acessos com Google são apagados, e as sessões são encerradas.",
+            "untouched": "Os comprovantes e o registro não são alterados."
+        },
+        "reasonLabel": "Por quê",
+        "reasonHelp": "Fica no registro, junto com quem a encerrou e de quem era.",
+        "cancel": "Cancelar",
+        "close": "Fechar",
+        "confirm": "Encerrar a conta",
+        "successTitle": "Conta encerrada",
+        "successMessage": "A conta foi encerrada a pedido do dono.",
+        "errorTitle": "Não foi possível encerrar a conta",
+        "stateChanged": "A conta mudou desde que você abriu esta confirmação e não foi encerrada. Verificamos de novo o que ainda resta."
+    },
+    "listingModeration": {
+        "title": "Moderação da ficha",
+        "statusLabel": "Status",
+        "fixRequestOpen": "Pedido de correção: aberto",
+        "fixRequestClosed": "Pedido de correção: encerrado",
+        "resultLabel": "Última ação",
+        "reasonLabel": "Por quê",
+        "reasonHelp": "O dono recebe o motivo no aviso e ele fica no registro.",
+        "cancel": "Cancelar",
+        "actions": {
+            "requestFix": "Pedir uma correção",
+            "takeDown": "Retirar a ficha",
+            "lift": "Suspender a moderação",
+            "closeFixRequest": "Encerrar o pedido de correção"
+        },
+        "dialog": {
+            "requestFix": {
+                "title": "Pedir uma correção",
+                "description": "Você vai pedir ao dono de «{name}» que corrija a ficha. A ficha continua onde está e o dono recebe o aviso com o motivo.",
+                "suggestedDateLabel": "Data sugerida (opcional)"
+            },
+            "takeDown": {
+                "title": "Retirar a ficha",
+                "description": "Você vai retirar «{name}». A ficha sai do site público até que você a libere.",
+                "ownerNotice": "O dono recebe o aviso com o motivo. Pode vê-la, editá-la e excluí-la, mas não publicá-la.",
+                "featured": "Se ela tiver destaques recorrentes, eles continuam sendo cobrados até que o dono os cancele."
+            },
+            "lift": {
+                "title": "Suspender a moderação",
+                "description": "Você vai suspender a moderação de «{name}». A ficha volta para onde estava antes de ser retirada e o dono recebe o aviso.",
+                "keepFixRequestLabel": "Mantê-la com pedido de correção",
+                "keepFixRequestHelp": "A ficha volta para onde estava e o pedido continua aberto."
+            },
+            "closeFixRequest": {
+                "title": "Encerrar o pedido de correção",
+                "description": "Você vai encerrar o pedido de correção de «{name}». A ficha não muda de estado."
+            }
+        },
+        "confirm": {
+            "requestFix": "Pedir a correção",
+            "takeDown": "Retirar a ficha",
+            "lift": "Suspender a moderação",
+            "closeFixRequest": "Encerrar o pedido"
+        },
+        "successTitle": "Pronto",
+        "successMessage": "A ficha ficou: {status}.",
+        "errors": {
+            "title": "Não foi possível moderar a ficha",
+            "invalid": "Revise o motivo: ele não pode ficar vazio nem passar de 2000 caracteres.",
+            "forbidden": "Você não tem permissão para moderar fichas.",
+            "notFound": "A ficha não existe mais.",
+            "generic": "Não foi possível moderar a ficha.",
+            "conflict": {
+                "requestFix": "A ficha já tem um pedido de correção aberto, ou mudou de estado. Recarregue a página.",
+                "takeDown": "A ficha mudou de estado e não foi retirada. Recarregue a página.",
+                "lift": "A ficha não está mais moderada. Recarregue a página.",
+                "closeFixRequest": "A ficha não tem um pedido de correção aberto."
+            }
+        }
     }
 }

@@ -64,7 +64,7 @@ export function PlanEntitlementGate({
     upgradeUrl,
     locale = 'es'
 }: PlanEntitlementGateProps): React.ReactNode {
-    const { has, isLoading, error } = useMyEntitlements();
+    const { has, isLoading, error } = useMyEntitlements({ vertical: 'accommodation' });
     const { t } = createTranslations(locale);
 
     // While loading — show children to avoid layout flash.

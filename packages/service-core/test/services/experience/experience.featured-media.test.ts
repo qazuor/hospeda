@@ -1,7 +1,7 @@
 /**
  * packages/service-core/test/services/experience/experience.featured-media.test.ts
  *
- * HOS-803 — `addExperienceFeaturedMedia`, the commerce wiring of the shared
+ * HOS-803 — `addExperienceFeaturedMedia`, the gastronomy/experience wiring of the shared
  * born-featured primitive.
  *
  * The primitive's policy is proved once, against a fake table, in
@@ -38,8 +38,12 @@ const mockMediaModel = {
 
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
+    // HOS-1642: these writes now record an owner-act event; the double keeps
+    // the write off the (nonexistent) test database.
+    const doubles = await import('../../helpers/owner-act-doubles');
     return {
         ...actual,
+        domainEventModel: doubles.domainEventModelDouble,
         ExperienceMediaModel: vi.fn(function () {
             return mockMediaModel;
         }),
@@ -65,7 +69,7 @@ const EXPERIENCE_ID = '00000000-0000-4000-a000-000000000001';
 const PREVIOUS_ID = '00000000-0000-4000-a000-000000000002';
 const OWNER_ID = '00000000-0000-4000-a000-000000000003';
 
-/** 30 for commerce verticals — the cap this wiring must actually pass on. */
+/** 30 for the gastronomy and experience verticals — the cap this wiring must actually pass on. */
 const ENTITY_CAP = getGalleryCap('experience');
 
 const PAYLOAD = { url: 'https://cdn.example.com/new-cover.jpg' };
@@ -87,8 +91,8 @@ function makeMediaRow(overrides: Record<string, unknown> = {}) {
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.EXPERIENCE_OWNER],
+    permissions: [PermissionEnum.EXPERIENCE_EDIT_OWN]
 };
 
 const touristActor: Actor = {
@@ -263,7 +267,7 @@ describe('addExperienceFeaturedMedia (HOS-803)', () => {
         expect(mockMediaModel.create).not.toHaveBeenCalled();
     });
 
-    it('refuses an actor without COMMERCE_EDIT_OWN, before touching the table', async () => {
+    it('refuses an actor without EXPERIENCE_EDIT_OWN, before touching the table', async () => {
         const model = makeExperienceModel({ id: EXPERIENCE_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: 0, previousFeatured: false });
 

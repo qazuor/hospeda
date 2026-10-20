@@ -14,15 +14,28 @@
 
 import {
     EntityTypeEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     QrCodePurposeEnum,
     QrCodeSourceEnum,
-    RoleEnum,
-    VisibilityEnum
+    RoleEnum
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// HOS-1499: every listing write now runs in a transaction and records the
+// owner act; neither has a database here.
+vi.mock('../../../src/utils/transaction', async () => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return { withServiceTransaction: vi.fn(doubles.fakeWithServiceTransaction) };
+});
+vi.mock('@repo/db', async (importOriginal) => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...(await importOriginal<object>()),
+        domainEventModel: doubles.domainEventModelDouble
+    };
+});
+
 import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
 import type { QrCodeService } from '../../../src/services/qr-code/qr-code.service';
 import type { Actor } from '../../../src/types';
@@ -46,9 +59,7 @@ const makeGastronomy = (overrides: Record<string, unknown> = {}) => ({
     type: 'PARRILLA',
     destinationId: getMockId('destination', 'dest-gastro-qr-1'),
     ownerId: OWNER_ID,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    moderationState: ModerationStatusEnum.APPROVED,
-    visibility: VisibilityEnum.PUBLIC,
+    publicationStatus: PublicationStatusEnum.PUBLISHED,
     isFeatured: false,
     averageRating: 0,
     reviewsCount: 0,
@@ -166,7 +177,7 @@ function buildService(input: {
 const admin: Actor = {
     id: 'admin-uuid-1',
     roles: [RoleEnum.ADMIN],
-    permissions: [PermissionEnum.COMMERCE_EDIT_ALL]
+    permissions: [PermissionEnum.GASTRONOMY_EDIT_ALL]
 };
 
 describe('GastronomyService — menu QR target sync on slug change (HOS-1044 AC-5)', () => {

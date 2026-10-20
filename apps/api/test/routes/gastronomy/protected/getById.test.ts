@@ -2,14 +2,14 @@
  * Regression tests for GET /api/v1/protected/gastronomies/:id — ownership IDOR fix.
  *
  * Security context: GastronomyProtectedSchema exposes owner-private fields
- * (contactInfo, ownerId, lifecycleState, richDescription, audit dates) that
+ * (contactInfo, ownerId, publicationStatus, richDescription, audit dates) that
  * the public tier never returns. Before this fix any authenticated user could
  * fetch any listing via the protected tier, leaking those PII fields.
  *
  * Covers (read-IDOR regression, SPEC-239):
  * - Non-owner authenticated actor receives NOT_FOUND (404 in HTTP terms)
  * - Owner receives the listing (200)
- * - Staff actor holding COMMERCE_VIEW_ALL receives the listing (200 bypass)
+ * - Staff actor holding GASTRONOMY_VIEW_ALL receives the listing (200 bypass)
  * - Unauthenticated requests receive 401
  */
 import { PermissionEnum } from '@repo/schemas';
@@ -37,16 +37,13 @@ const MOCK_GASTRONOMY = {
     description: 'Descripción detallada de la parrilla de prueba.',
     ownerId: OWNER_ID,
     destinationId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
-    hasActiveSubscription: true,
-    lifecycleState: 'ACTIVE',
-    visibility: 'PUBLIC',
+    publicationStatus: 'PUBLISHED',
     averageRating: 4.5,
     reviewsCount: 0,
     isPriceOnRequest: false,
     isFeatured: false,
     // HOS-1286: the protected tier serializes both featuring sources separately.
     featuredByEntitlement: false,
-    moderationState: 'APPROVED',
     media: null,
     seo: null,
     socialNetworks: null,
@@ -120,16 +117,16 @@ const nonOwnerHeaders = {
 const ownerHeaders = {
     ...UA,
     'x-mock-actor-id': OWNER_ID,
-    'x-mock-actor-role': 'COMMERCE_OWNER',
+    'x-mock-actor-role': 'GASTRONOMY_OWNER',
     'x-mock-actor-permissions': JSON.stringify([])
 };
 
-/** Staff actor with COMMERCE_VIEW_ALL bypass (not the owner). */
+/** Staff actor with GASTRONOMY_VIEW_ALL bypass (not the owner). */
 const staffHeaders = {
     ...UA,
     'x-mock-actor-id': NON_OWNER_ID,
     'x-mock-actor-role': 'ADMIN',
-    'x-mock-actor-permissions': JSON.stringify([PermissionEnum.COMMERCE_VIEW_ALL])
+    'x-mock-actor-permissions': JSON.stringify([PermissionEnum.GASTRONOMY_VIEW_ALL])
 };
 
 // ---------------------------------------------------------------------------
@@ -185,8 +182,8 @@ describe('GET /api/v1/protected/gastronomies/:id — ownership IDOR regression',
         expect(body.data.ownerId).toBe(OWNER_ID);
     });
 
-    it('returns 200 for a staff actor holding COMMERCE_VIEW_ALL (bypass gate)', async () => {
-        // Staff with COMMERCE_VIEW_ALL must be able to inspect any listing even
+    it('returns 200 for a staff actor holding GASTRONOMY_VIEW_ALL (bypass gate)', async () => {
+        // Staff with GASTRONOMY_VIEW_ALL must be able to inspect any listing even
         // when they are not the owner — admin / support workflows depend on this.
         const res = await app.request(`${BASE}/${LISTING_ID}`, {
             method: 'GET',

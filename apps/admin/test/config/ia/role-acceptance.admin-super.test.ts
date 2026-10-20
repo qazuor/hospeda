@@ -133,7 +133,7 @@ const ADMIN_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.POST_VIEW_PRIVATE,
     PermissionEnum.POST_VIEW_DRAFT,
     PermissionEnum.POST_VIEW_ALL,
-    // USER: Most permissions (no impersonate, no hard delete)
+    // USER: Most permissions (no hard delete)
     PermissionEnum.USER_READ_ALL,
     PermissionEnum.USER_CREATE,
     PermissionEnum.USER_UPDATE_ROLES,
@@ -242,11 +242,6 @@ const ADMIN_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.OWNER_PROMOTION_HARD_DELETE_ANY,
     PermissionEnum.OWNER_PROMOTION_RESTORE_ANY,
     PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_ANY,
-    // BILLING
-    PermissionEnum.BILLING_READ_ALL,
-    PermissionEnum.BILLING_PROMO_CODE_READ,
-    PermissionEnum.BILLING_PROMO_CODE_MANAGE,
-    PermissionEnum.BILLING_METRICS_READ,
     // REVALIDATION
     PermissionEnum.REVALIDATION_TRIGGER,
     PermissionEnum.REVALIDATION_CONFIG_VIEW,
@@ -543,7 +538,7 @@ describe(`AC-12 — ${RoleEnum.ADMIN} role navigation`, () => {
         expect(adminHasDebug).toBe(false);
     });
 
-    it('all 8 sections have ≥1 accessible sidebar item for ADMIN', () => {
+    it('keeps surviving sections accessible while legacy commercial links are retired', () => {
         for (const sectionId of EXPECTED_MAIN_MENU) {
             // Arrange
             const section = validatedConfig.sections[sectionId];
@@ -560,7 +555,10 @@ describe(`AC-12 — ${RoleEnum.ADMIN} role navigation`, () => {
             });
 
             // Assert
-            expect(accessible).toBe(true);
+            // HOS-1416 removed the old billing admin links. The commercial
+            // section remains registered but has no accessible items until
+            // the replacement billing administration surface is built.
+            expect(accessible, sectionId).toBe(sectionId !== 'comercial');
         }
     });
 });

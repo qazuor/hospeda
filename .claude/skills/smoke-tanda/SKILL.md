@@ -292,7 +292,7 @@ Everything below is derived. Nothing is asked.
 ```ts
 // origin: #3271, #3274
 {
-    id: '2026-09-05-commerce-publish-free-trial',
+    id: '2026-09-05-gastronomy-experience-publish-free-trial',
     publishedAt: 'on-promotion',
     highlight: false,
     roles: ['GASTRONOMY_OWNER'],

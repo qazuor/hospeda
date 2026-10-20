@@ -14,7 +14,7 @@
  * 7. Clicking the down arrow calls .reorder and reorders the list.
  * 8. Per-row action buttons carry a UNIQUE accessible name (question-scoped) —
  *    regression guard for the duplicate-name bug already hit once in
- *    CommerceFaqManager (four action pairs sharing one name across rows).
+ *    ListingFaqManager (four action pairs sharing one name across rows).
  * 9. Channel-visibility checkboxes (HOS-393 fase 2): both default to checked
  *    on a new FAQ (G-3), toggling them is reflected in the .add/.update
  *    payload, and the edit form seeds them from the FAQ's current flags.
@@ -532,7 +532,7 @@ describe('FaqSection', () => {
     });
 
     it('gives each row unique accessible names for its action buttons (a11y regression)', () => {
-        // Regression guard: CommerceFaqManager once shipped four action pairs
+        // Regression guard: ListingFaqManager once shipped four action pairs
         // (Subir/Bajar/Editar/Eliminar) all sharing ONE accessible name across
         // every row. Every action button here must embed the row's own
         // question so no two rows collide.

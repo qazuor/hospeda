@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createContentStateMutationHooks } from '@/features/content/hooks/useContentStateMutations';
 import { fetchApi } from '@/lib/api/client';
 import { isApiError } from '@/lib/errors';
 import type { AccommodationCore } from '../schemas/accommodation-client.schema';
@@ -9,20 +8,6 @@ import {
     accommodationQueryKeys,
     invalidateAccommodationLists
 } from './accommodationQueryKeys';
-
-/**
- * Moderation mutation for a listing (H-102).
- *
- * Only `useModerateMutation` is usable here: `POST /admin/accommodations/:id/moderate`
- * is the sole state endpoint a listing has. Until it existed, an accommodation
- * could not leave `PENDING` by any route — every row in production sits there,
- * published ones included — while the admin's pending counter kept counting them.
- * A queue counting work nobody can do only grows.
- */
-export const ACCOMMODATION_STATE_MUTATIONS = createContentStateMutationHooks({
-    entity: 'accommodations',
-    queryKeys: accommodationQueryKeys
-});
 
 /**
  * Custom hooks for accommodation data fetching and mutations
@@ -328,29 +313,6 @@ export const useVerifyAccommodationMutation = (id: string) => {
             queryClient.setQueryData(accommodationQueryKeys.detail(id), updatedAccommodation);
 
             // Invalidate lists to reflect changes
-            queryClient.invalidateQueries({ queryKey: invalidateAccommodationLists() });
-        }
-    });
-};
-
-/**
- * Mutation hook for deleting accommodations
- */
-export const useDeleteAccommodationMutation = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (id: string): Promise<void> => {
-            await fetchApi({
-                path: `/api/v1/admin/accommodations/${id}`,
-                method: 'DELETE'
-            });
-        },
-        onSuccess: (_, deletedId) => {
-            // Remove from cache
-            queryClient.removeQueries({ queryKey: accommodationQueryKeys.detail(deletedId) });
-
-            // Invalidate lists
             queryClient.invalidateQueries({ queryKey: invalidateAccommodationLists() });
         }
     });

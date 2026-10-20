@@ -53,12 +53,7 @@
         },
         "trial": {
             "noCharge": "Nenhuma cobrança foi realizada",
-            "subscribeNow": "Assinar agora",
-            "expiredBanner": {
-                "title": "Seu período de teste gratuito encerrou",
-                "body": "Seu teste do plano {{planSlug}} venceu em {{expiresAt}}. Assine para voltar a publicar.",
-                "cta": "Ver planos"
-            }
+            "subscribeNow": "Assinar agora"
         },
         "cancelled": {
             "title": "Assinatura cancelada",
@@ -183,34 +178,8 @@
     },
     "checkout": {
         "success": {
-            "title": "Sua assinatura está ativa!",
-            "subtitle": "Seu pagamento foi aprovado com sucesso",
             "planDetails": "Plano: {{planName}}",
-            "amountDetails": "Valor: {{amount}}",
-            "verifyingStatus": "Verificando o status do pagamento...",
-            "verifyingSubtitle": "Estamos confirmando seu pagamento. Pode levar alguns instantes.",
-            "cta": "Ir para minha conta",
-            "pageTitle": "Pagamento aprovado",
-            "promoIgnoredNote": "Seu código não foi aplicado: ele estende um período de teste grátis, e esta assinatura não tem um.",
-            "linkErrorTitle": "Não conseguimos vincular seu pagamento",
-            "linkErrorSubtitle": "Houve um problema ao vincular este pagamento à sua conta. Se você já pagou, entre em contato com o suporte com o número da operação do MercadoPago.",
-            "unresolvedTitle": "Ainda estamos confirmando seu pagamento",
-            "unresolvedSubtitle": "Seu pagamento não foi perdido. O MercadoPago pode levar alguns minutos para confirmá-lo e, assim que isso acontecer, seu plano é ativado automaticamente. Você pode fechar esta página: verifique o status em Minha Conta, ou escreva para nós se daqui a pouco ainda não conseguir vê-lo.",
-            "unresolvedSupportCta": "Fale conosco"
-        },
-        "pending": {
-            "title": "Seu pagamento está sendo processado",
-            "body": "Pode levar até 24 horas para confirmar. Vamos te avisar por email quando for aprovado.",
-            "cta": "Verificar status",
-            "pageTitle": "Pagamento em processamento"
-        },
-        "partnerPending": {
-            "pageTitle": "Pagamento recebido",
-            "title": "Recebemos seu pagamento",
-            "body": "Estamos confirmando a operação com o MercadoPago. Pode levar alguns minutos e, em alguns casos, até 24 horas. Quando o pagamento for aprovado, sua presença no Hospeda é ativada automaticamente: você não precisa fazer mais nada.",
-            "note": "Guarde o comprovante que o MercadoPago enviou. Se algo não ficar claro, fale com a gente e revisamos junto com você.",
-            "homeCta": "Ir para o início",
-            "contactCta": "Fale com a gente"
+            "amountDetails": "Valor: {{amount}}"
         },
         "failure": {
             "title": "Não foi possível processar o pagamento",
@@ -228,48 +197,6 @@
             "supportCta": "Falar com o suporte",
             "pageTitle": "Pagamento recusado"
         },
-        "button": {
-            "cta": "Contratar",
-            "processing": "Processando...",
-            "processingAriaLabel": "Processando pagamento",
-            "error": "Não conseguimos iniciar o pagamento. Tente novamente.",
-            "unauthCta": "Faça login para contratar",
-            "currentPlan": "Plano atual",
-            "currentPlanAriaLabel": "Este é o seu plano atual",
-            "changePlan": "Mudar para este plano",
-            "freeRegisterCta": "Cadastre-se grátis",
-            "freePlanLegend": "Você já tem este plano"
-        },
-        "promoApply": {
-            "label": "Código de desconto",
-            "inputPlaceholder": "Digite seu código",
-            "applyButton": "Aplicar",
-            "applying": "Verificando...",
-            "removeButton": "Remover",
-            "discountPercentForever": "{{percent}}% de desconto para sempre",
-            "discountPercentCycle_one": "{{percent}}% de desconto por {{months}} mês",
-            "discountPercentCycle_other": "{{percent}}% de desconto por {{months}} meses",
-            "discountFixedForever": "R${{amount}} de desconto para sempre",
-            "discountFixedCycle_one": "R${{amount}} de desconto por {{months}} mês",
-            "discountFixedCycle_other": "R${{amount}} de desconto por {{months}} meses",
-            "trialExtension_one": "{{days}} dia extra de avaliação gratuita",
-            "trialExtension_other": "{{days}} dias extras de avaliação gratuita",
-            "comp": "Grátis para sempre",
-            "compNotRedeemable": "Este código não pode ser resgatado. Fale com a gente se prometeram uma assinatura de cortesia a você.",
-            "errorInvalid": "O código informado não é válido. Verifique e tente novamente.",
-            "errorAnnualOutsideTrial": "Este código de desconto não se aplica a planos anuais fora do período de avaliação.",
-            "errorGeneric": "Não conseguimos verificar o código. Tente novamente.",
-            "errorNotFound": "Não encontramos esse código. Verifique se está escrito corretamente.",
-            "errorInactive": "Este código não está mais ativo.",
-            "errorExpired": "Este código expirou.",
-            "errorMaxUses": "Este código atingiu seu limite de usos.",
-            "errorMaxUsesPerUser": "Você já usou este código o número máximo de vezes.",
-            "errorPlanRestriction": "Este código não é válido para o plano selecionado.",
-            "errorNewUsersOnly": "Este código é apenas para novos clientes.",
-            "errorMinAmount": "Sua compra não atinge o mínimo exigido para este código.",
-            "pendingAuthMessage": "Você vai poder aplicar o código {{code}} assim que terminar de se cadastrar.",
-            "registerCta": "Cadastrar-me"
-        },
         "payerEmailConfirm": {
             "title": "Com qual email você vai poder pagar",
             "body": "O Mercado Pago só vai deixar você pagar com este email exato. Se quiser usar outra conta do Mercado Pago, altere antes de continuar.",
@@ -286,22 +213,46 @@
         "firstPublishPaused": {
             "title": "Publicação de novos anúncios em pausa",
             "body": "Pausamos temporariamente a publicação de novos anúncios. Seu anúncio fica salvo como rascunho e você poderá publicá-lo quando retomarmos."
+        },
+        "signup": {
+            "title": "Confirme sua assinatura",
+            "intro": "Você vai autorizar o pagamento no Mercado Pago. Lá, poderá conferir o valor e o ciclo antes de confirmar.",
+            "confirm": "Continuar para o Mercado Pago",
+            "submitting": "Preparando o pagamento…",
+            "pending": {
+                "title": "Sua assinatura de {{vertical}} está aguardando a conclusão do pagamento",
+                "resume": "Concluir o pagamento no Mercado Pago",
+                "windowEnds": "Você tem até {{date}}."
+            },
+            "rejection": {
+                "planNotForSale": "Este plano não está mais à venda.",
+                "seePlans": "Ver os planos disponíveis",
+                "previousAttemptClosing": "Estamos encerrando sua tentativa anterior. Tente novamente em alguns minutos.",
+                "touristVipInherited": "Seu plano atual já inclui os benefícios do Turista VIP",
+                "commitmentTaken": "Você já tem uma assinatura em andamento nesta categoria.",
+                "generic": "Não foi possível iniciar sua assinatura. Tente novamente em alguns minutos."
+            },
+            "trialNotice": {
+                "running_one": "Você está no período de teste: resta {{days}} dia, até {{date}}.",
+                "running_other": "Você está no período de teste: restam {{days}} dias, até {{date}}.",
+                "endsOnCharge": "Se a primeira cobrança for aprovada, seu teste termina e você perde esses dias.",
+                "keepsOnDecline": "Se a cobrança for recusada, você continua no teste com esses dias.",
+                "unknown": "Se você está em período de teste nesta categoria: quando a primeira cobrança for aprovada ele termina e você perde os dias restantes; se a cobrança for recusada, você continua no teste com esses dias."
+            },
+            "touristVipNotice": {
+                "cancelledOnReturn": "Você tem uma assinatura suspensa cujo plano lhe dava os benefícios de Turista VIP. Se você regularizá-la, esta assinatura de Turista VIP é cancelada na hora e o que você pagou não é reembolsado, porque seu plano volta a lhe dar esses benefícios.",
+                "unknown": "Se você tem uma assinatura suspensa cujo plano lhe dava os benefícios de Turista VIP e a regulariza, uma assinatura de Turista VIP que você comprar é cancelada na hora, sem reembolso."
+            },
+            "retry": "Tentar novamente",
+            "vertical": {
+                "accommodation": "hospedagem",
+                "gastronomy": "gastronomia",
+                "experience": "experiências",
+                "tourist": "Turista VIP",
+                "partner": "parceiros",
+                "unknown": "Hospeda"
+            }
         }
-    },
-    "checkoutRetry": {
-        "checkingTitle": "Verificando seu pagamento...",
-        "checkingBody": "Estamos verificando o status da sua assinatura.",
-        "redirectingTitle": "Estamos te redirecionando para o Mercado Pago...",
-        "redirectingBody": "Um momento, estamos te levando para concluir o pagamento.",
-        "activeTitle": "Sua assinatura já está ativa",
-        "activeBody": "Não precisa pagar de novo: seu plano já está funcionando.",
-        "confirmingTitle": "Estamos confirmando seu pagamento",
-        "confirmingBody": "Talvez já estejamos resolvendo isso em outra aba. Aguarde um momento.",
-        "confirmingTimedOutTitle": "Ainda estamos confirmando seu pagamento",
-        "confirmingTimedOutBody": "Isso está demorando mais do que o esperado. Você pode tentar novamente em instantes.",
-        "errorTitle": "Não conseguimos verificar seu pagamento",
-        "errorBody": "Tente novamente, ou fale conosco se o problema continuar.",
-        "retryButton": "Tentar novamente"
     },
     "limit": {
         "max_favorites": {
@@ -592,7 +543,12 @@
         "manage_gastronomy_events": "Eventos do local, com data ou semanais",
         "multilingual_gastronomy_menu": "Cardápio em vários idiomas",
         "menu_qr_scan_metrics": "QR do cardápio com painel de escaneamentos",
-        "manage_experience_private_galleries": "Galerias privadas para seus clientes"
+        "manage_experience_private_galleries": "Galerias privadas para seus clientes",
+        "partner_public_page": "Página própria dentro da Hospeda",
+        "partner_carousel_presence": "Logo no carrossel de aliados",
+        "recover_own_listing": "Ver, exportar, reativar ou excluir suas fichas",
+        "subscribe_to_plan": "Assinar um plano",
+        "activate_trial": "Ativar o período de teste"
     },
     "comparison": {
         "unlimited": "Ilimitado",
@@ -616,7 +572,7 @@
             "gastronomyMenu": "O cardápio",
             "experienceListing": "Sua experiência na Hospeda",
             "experienceService": "Antes e depois do passeio",
-            "commerceExtras": "Ferramentas extras"
+            "listingExtras": "Ferramentas extras"
         },
         "row": {
             "favorites": "Favoritos",
@@ -665,7 +621,7 @@
             "experienceDirections": "Como chegar ao ponto de encontro",
             "experienceCertificate": "Certificado para quem participou",
             "listingPdf": "Ficha para baixar em PDF",
-            "aiChatCommerce": "Consultas por chat com IA por mês"
+            "aiChatListing": "Consultas por chat com IA por mês"
         },
         "rowDesc": {
             "favorites": "Salve as acomodações de interesse para consultar mais tarde.",

@@ -1,37 +1,34 @@
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
-import { CommerceIdentityFields } from '../../common/commerce-identity.schema.js';
-import { CommerceRatingSchema } from '../../common/commerce-rating.schema.js';
 import { BaseContactFields } from '../../common/contact.schema.js';
+import { GastronomyRatingSchema } from '../../common/gastronomy-rating.schema.js';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
-import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { ListingIdentityFields } from '../../common/listing-identity.schema.js';
 import { BaseMediaFields, BaseVideosFields } from '../../common/media.schema.js';
-import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { OpeningHoursFields } from '../../common/opening-hours.schema.js';
 import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
 import { SocialNetworkFields } from '../../common/social.schema.js';
 import { TagsFields } from '../../common/tags.schema.js';
-import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/index.js';
+import { PublicationStatusEnumSchema } from '../../enums/publication-status.schema.js';
 import { GastronomyFaqSchema } from './subtypes/gastronomy.faq.schema.js';
 import { GastronomyMenuFileKindSchema } from './subtypes/gastronomy.menu.schema.js';
 
 /**
- * Gastronomy Entity Schema — commerce listing for food and beverage venues.
+ * Gastronomy Entity Schema — listing for food and beverage venues.
  *
  * Composed by spreading shared base-field const objects (same composition pattern
  * as `AccommodationSchema`) plus gastronomy-specific fields:
- * - Identity: name/slug/summary/description/richDescription + i18n via `CommerceIdentityFields`
+ * - Identity: name/slug/summary/description/richDescription + i18n via `ListingIdentityFields`
  * - Schedule: weekly opening hours via `OpeningHoursFields`
  * - Contact: phone/email/website via `BaseContactFields`
  * - Social: social network links via `SocialNetworkFields`
  * - Media: featured image + gallery + videos via `BaseMediaFields`
  * - Reviews: aggregate reviewsCount/averageRating via `BaseReviewFields`
- * - Lifecycle: lifecycleState via `BaseLifecycleFields`
- * - Moderation: moderationState via `BaseModerationFields`
- * - Visibility: visibility via `BaseVisibilityFields`
+ * - Publication: `publicationStatus` (`PublicationStatusEnum`), written only by
+ *   the PB publication transitions (HOS-1641)
  * - SEO: title/description via `BaseSeoFields`
  * - Admin: adminInfo via `BaseAdminFields`
  * - Tags: tags array via `TagsFields`
@@ -47,7 +44,7 @@ export const GastronomySchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
     // Core identity fields (name/slug/summary/description/richDescription + i18n)
-    ...CommerceIdentityFields,
+    ...ListingIdentityFields,
 
     // Gastronomy-specific fields
     /** Gastronomy sub-category (RESTAURANT, BAR, CAFE, PARRILLA, etc.). */
@@ -93,26 +90,29 @@ export const GastronomySchema = z.object({
     destinationId: DestinationIdSchema,
     ownerId: UserIdSchema,
 
-    /** Whether this gastronomy listing is featured on the platform. */
-    isFeatured: z.boolean().default(false),
-
     /**
      * Billing-derived featuring (HOS-1286): true while a
      * `visibility-boost-gastronomy-*` addon purchase grants an active
      * FEATURED_LISTING entitlement for THIS listing.
      *
-     * Deliberately independent of {@link isFeatured}, the admin-curated flag.
-     * PUBLIC responses serialize their disjunction as `isFeatured`
+     * The ONLY featuring source since HOS-1419 dropped the admin-curated
+     * `is_featured` column. PUBLIC responses serialize it as `isFeatured`
      * (`resolvePublicIsFeatured`) and never expose this column on its own —
      * exactly as `AccommodationPublicSchema` omits its twin. Admin and the
-     * owner's own editor keep seeing the two sources separately.
+     * owner's own editor see it under its own name.
      */
     featuredByEntitlement: z.boolean().default(false),
 
+    /**
+     * Publication state of the listing (`PublicationStatusEnum`, the `listing`
+     * state of `V/03` §9). It replaces the old lifecycle, visibility and
+     * moderation columns (HOS-1641): only `PUBLISHED` is public.
+     * Server-managed: written ONLY by the PB publication transitions, never
+     * through a create/update input (it is omitted from those schemas).
+     */
+    publicationStatus: PublicationStatusEnumSchema,
+
     // Base field groups — spread in the same order as AccommodationSchema
-    ...BaseLifecycleFields,
-    ...BaseModerationFields,
-    ...BaseVisibilityFields,
     ...BaseReviewFields,
     ...BaseSeoFields,
     ...BaseContactFields,
@@ -153,7 +153,7 @@ export const GastronomySchema = z.object({
      * Aggregate of individual `GastronomyReview` records. Null when no
      * reviews have been submitted yet.
      */
-    rating: CommerceRatingSchema.nullish()
+    rating: GastronomyRatingSchema.nullish()
 });
 
 /** TypeScript type inferred from {@link GastronomySchema}. */

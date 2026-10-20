@@ -38,7 +38,8 @@
  * @module test/routes/accommodation-faq-channel-visibility
  */
 
-import { EntitlementKey, type LimitKey } from '@repo/billing';
+import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -84,19 +85,24 @@ vi.mock('../../src/utils/logger.js', () => ({
     }
 }));
 
-vi.mock('../../src/middlewares/entitlement', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../src/middlewares/entitlement')>();
-    return {
-        ...actual,
-        entitlementMiddleware:
-            () => async (c: import('hono').Context, next: () => Promise<void>) => {
-                c.set('userEntitlements', new Set([EntitlementKey.EDIT_ACCOMMODATION_INFO]));
-                c.set('userLimits', new Map<LimitKey, number>());
-                c.set('billingLoadFailed', false);
-                await next();
-            }
-    };
-});
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: { ownerId: mockActor.id, publicationStatus: PublicationStatusEnum.PUBLISHED },
+            ownerId: mockActor.id
+        }),
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
 
 // ---------------------------------------------------------------------------
 // Import app AFTER mocks

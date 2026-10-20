@@ -187,7 +187,7 @@ describe('POST /api/indexnow — what it submits', () => {
     });
 
     /**
-     * The commerce listings, end to end. They reach this endpoint through the
+     * The listings, end to end. They reach this endpoint through the
      * same union as everything else, and their Spanish segments (`gastronomia`,
      * `experiencias`) are the ones the site actually serves in every locale.
      */

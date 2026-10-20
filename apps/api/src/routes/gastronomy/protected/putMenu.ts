@@ -6,48 +6,26 @@
  * ## What it answers, and in what order
  *
  * 1. **Authentication** — `createCRUDRoute` over the protected router.
- * 2. **The plan's terms** — `commerceVerticalEntitlementMiddleware('gastronomy')`
- *    loads the caller's gastronomy grants and `requireEntitlement` refuses a
- *    caller whose plan does not carry `MANAGE_GASTRONOMY_MENU`. The loader MUST
- *    stay ahead of the gate: the global `entitlementMiddleware` has already put
- *    the ACCOMMODATION set in the context, and that set never carries a commerce
- *    key (HOS-1074).
- * 3. **The dish photos, if any** — `menuPayloadCarriesItemPhoto` inspects the
- *    BODY and, when it finds a photo, requires `MENU_ITEM_PHOTOS` too
- *    (HOS-1045). Conditional on the payload rather than a second
- *    `requireEntitlement`, because a `-pro` owner IS entitled to write a carta
- *    — just not to put a picture on a dish of it. See
- *    `menu-item-photo-gate.ts` for why this refuses instead of stripping.
- * 4. **The translations, if any** — `menuPayloadCarriesTranslations` inspects
- *    the same BODY and, when a section or dish names `nameI18n`/
- *    `descriptionI18n`, requires `MULTILINGUAL_GASTRONOMY_MENU` too
- *    (HOS-1043). Same shape and same reasoning as the photo gate above: a
- *    `-pro` owner keeps writing an untranslated carta undisturbed.
- * 5. **Ownership** — inside `replaceGastronomyMenu`, via the same
- *    `COMMERCE_EDIT_OWN` / `COMMERCE_EDIT_ALL` gate the FAQ and media writes use.
+ * 2. **Listing access** — the owner needs menu management, plus photo or
+ *    translation capability when the payload carries those fields.
+ * 3. **Ownership** — inside `replaceGastronomyMenu`, via the same
+ *    `GASTRONOMY_EDIT_OWN` / `GASTRONOMY_EDIT_ALL` gate the sibling writes use.
  *
- * ## The gate is on THIS route and not on the read
- *
- * `MANAGE_GASTRONOMY_MENU` gates building a carta, not seeing one. A `-basico`
- * owner opens the same editor and uses the two ungated fallbacks — the external
- * link and the uploaded photo/PDF — so `GET .../menu` must answer for them.
- * See `getMenu.ts`.
  *
  * ## Whole document, one transaction
  *
  * The body is the ENTIRE carta, and an empty `sections` array is a legitimate
- * submission meaning "delete it" — the owner who fell back to a photo needs a
- * way to say that. See `packages/service-core/src/services/gastronomy/gastronomy.menu.ts`
+ * submission meaning "delete it". See `packages/service-core/src/services/gastronomy/gastronomy.menu.ts`
  * for why the carta is written whole where `gastronomy_media` is written per row.
  *
  * @module routes/gastronomy/protected/putMenu
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     GastronomyMenuOutputSchema,
     type GastronomyMenuReplacePayload,
     GastronomyMenuReplacePayloadSchema,
-    ServiceErrorCode
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, replaceGastronomyMenu } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against — see
@@ -55,12 +33,9 @@ import { GastronomyService, replaceGastronomyMenu } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { hasEntitlement, requireEntitlement } from '../../../middlewares/entitlement';
-import type { AppBindings } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 import { menuPayloadCarriesItemPhoto } from './menu-item-photo-gate';
 import { menuPayloadCarriesTranslations } from './menu-translations-gate';
 
@@ -73,35 +48,6 @@ export async function handlePutGastronomyMenu(
     body: Record<string, unknown>
 ) {
     const actor = getActorFromContext(ctx);
-
-    // HOS-1045 — the payload-conditional half of the gate. `hasEntitlement`
-    // reads the set `commerceVerticalEntitlementMiddleware` put in the context,
-    // so this is the caller's GASTRONOMY grants, not their accommodation ones,
-    // and it answers `false` when that set is missing entirely — the fail-closed
-    // direction, which is the only safe one for a paid capability.
-    if (
-        menuPayloadCarriesItemPhoto(body) &&
-        !hasEntitlement(ctx as Context<AppBindings>, EntitlementKey.MENU_ITEM_PHOTOS)
-    ) {
-        throw new ServiceError(
-            ServiceErrorCode.ENTITLEMENT_REQUIRED,
-            `Access denied. This feature requires the '${EntitlementKey.MENU_ITEM_PHOTOS}' entitlement.`
-        );
-    }
-
-    // HOS-1043 — the payload-conditional half of the translations gate. Same
-    // shape and same reasoning as the photo check above: a `-pro` owner keeps
-    // writing an untranslated carta undisturbed, and only a document that
-    // NAMES a translation is refused when the plan does not grant it.
-    if (
-        menuPayloadCarriesTranslations(body) &&
-        !hasEntitlement(ctx as Context<AppBindings>, EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU)
-    ) {
-        throw new ServiceError(
-            ServiceErrorCode.ENTITLEMENT_REQUIRED,
-            `Access denied. This feature requires the '${EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU}' entitlement.`
-        );
-    }
 
     // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`, the
     // same accessor the FAQ and media routes use.
@@ -126,24 +72,29 @@ export async function handlePutGastronomyMenu(
     return result.data;
 }
 
-export const protectedPutGastronomyMenuRoute = createCRUDRoute({
+export const protectedPutGastronomyMenuRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/menu',
     summary: 'Replace the structured menu of a gastronomy listing',
     description:
         'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above; a document carrying a per-dish photo additionally requires menu_item_photos (premium), and a document carrying a nameI18n/descriptionI18n translation additionally requires multilingual_gastronomy_menu (premium).',
+    listingAccess: {
+        vertical: VerticalEnum.GASTRONOMY,
+        operation: 'EDIT',
+        idParam: 'id',
+        capabilities: ({ body }) => [
+            'manage_gastronomy_menu',
+            ...(menuPayloadCarriesItemPhoto(body) ? ['menu_item_photos'] : []),
+            ...(menuPayloadCarriesTranslations(body) ? ['multilingual_gastronomy_menu'] : [])
+        ]
+    },
     tags: ['Gastronomy', 'Gastronomy Menu'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     requestBody: GastronomyMenuReplacePayloadSchema,
     responseSchema: GastronomyMenuOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
-        handlePutGastronomyMenu(ctx, params, body),
-    options: {
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MANAGE_GASTRONOMY_MENU)
-        ]
-    }
+        handlePutGastronomyMenu(ctx, params, body)
 });

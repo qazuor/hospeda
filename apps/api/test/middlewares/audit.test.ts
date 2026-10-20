@@ -44,6 +44,7 @@ const { AuditEventType, auditLogSpy } = vi.hoisted(() => {
         AUTH_PASSWORD_CHANGED: 'auth.password.changed',
         ACCESS_DENIED: 'access.denied',
         BILLING_MUTATION: 'billing.mutation',
+        BILLING_READ: 'billing.read',
         PERMISSION_CHANGE: 'permission.change',
         SESSION_SIGNOUT: 'session.signout',
         USER_ADMIN_MUTATION: 'user.admin.mutation',

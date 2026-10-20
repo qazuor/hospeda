@@ -21,13 +21,12 @@
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { resetDb, setDb } from '@repo/db';
+import { domainEventModel, resetDb, setDb } from '@repo/db';
 import {
-    LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
-    RoleEnum,
-    VisibilityEnum
+    PublicationStatusEnum,
+    RoleEnum
 } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -82,20 +81,24 @@ const ownerActor = {
 
 /** Minimal Drizzle stub for `AccommodationMediaModel.findById` + `.update()`. */
 function makeMediaDbMock(updateResult: unknown[]) {
-    return {
+    const db = {
         select: vi.fn(() => ({
             from: () => ({ where: () => ({ limit: () => Promise.resolve([baseMediaRow]) }) })
         })),
         update: vi.fn(() => ({
             set: () => ({ where: () => ({ returning: () => Promise.resolve(updateResult) }) })
-        }))
+        })),
+        // HOS-1642: media and its owner act now share a transaction.
+        transaction: vi.fn()
     };
+    db.transaction.mockImplementation(async (run: (tx: typeof db) => Promise<unknown>) => run(db));
+    return db;
 }
 
 /**
  * Builds the service over an accommodation with the given publication state.
- * `_isPubliclyVisible` requires BOTH `lifecycleState: ACTIVE` and
- * `visibility: PUBLIC`, so a DRAFT listing is the negative control.
+ * `_isPubliclyVisible` requires `publicationStatus: PUBLISHED` (HOS-1641), so a
+ * DRAFT listing is the negative control.
  */
 function buildService({ isPublic }: { readonly isPublic: boolean }) {
     const accommodationModel = {
@@ -104,8 +107,9 @@ function buildService({ isPublic }: { readonly isPublic: boolean }) {
             ownerId: ownerActor.id,
             slug: 'cabana-del-rio',
             destinationId: DESTINATION_ID,
-            lifecycleState: isPublic ? LifecycleStatusEnum.ACTIVE : LifecycleStatusEnum.DRAFT,
-            visibility: isPublic ? VisibilityEnum.PUBLIC : VisibilityEnum.PRIVATE
+            publicationStatus: isPublic
+                ? PublicationStatusEnum.PUBLISHED
+                : PublicationStatusEnum.DRAFT
         })
     };
     return new AccommodationService({} as ServiceConfig, accommodationModel as never);
@@ -114,9 +118,13 @@ function buildService({ isPublic }: { readonly isPublic: boolean }) {
 describe('accommodation media — public-page revalidation (HOS-389 §4)', () => {
     beforeEach(() => {
         mockScheduleRevalidation.mockClear();
+        // This test asserts cache scheduling; the owner-act integration test
+        // checks the real event insert and rollback against PostgreSQL.
+        vi.spyOn(domainEventModel, 'insert').mockResolvedValue({} as never);
     });
 
     afterEach(() => {
+        vi.restoreAllMocks();
         resetDb();
     });
 

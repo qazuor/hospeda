@@ -18,7 +18,7 @@
  *   6. `findAllActiveByProvider` only returns active rows for the requested
  *      provider.
  */
-import { CalendarSyncStatusEnum, OccupancySourceEnum } from '@repo/schemas';
+import { CalendarSyncStatusEnum, OccupancySourceEnum, PublicationStatusEnum } from '@repo/schemas';
 import { eq } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationCalendarSyncModel } from '../../src/models/accommodation/accommodationCalendarSync.model.ts';
@@ -44,14 +44,16 @@ async function seedAccommodation(tx: DrizzleClient, slugSuffix: string) {
     const [accommodation] = await tx
         .insert(accommodations)
         .values({
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            inactiveSince: new Date(),
+            deadlinesVersion: 1,
             ownerId: owner.id,
             destinationId: destination.id,
             slug: `hos157-cal-sync-${slugSuffix}-${uid}`,
             name: 'HOS-157 Calendar Sync Test',
             summary: 'Regression test for the AccommodationCalendarSyncModel.',
             type: 'HOUSE',
-            description: 'Accommodation inserted for the HOS-157 calendar sync model test.',
-            lifecycleState: 'ACTIVE'
+            description: 'Accommodation inserted for the HOS-157 calendar sync model test.'
         })
         .returning();
     if (!accommodation) throw new Error('Failed to insert accommodation');

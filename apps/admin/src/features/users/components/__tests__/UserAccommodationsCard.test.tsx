@@ -32,8 +32,7 @@ function createAccommodation(overrides: Partial<AccommodationCore> = {}): Accomm
         id: 'acc-1',
         name: 'Hotel del Río',
         slug: 'hotel-del-rio',
-        visibility: 'PUBLIC',
-        lifecycleState: 'ACTIVE',
+        publicationStatus: 'PUBLISHED',
         cityDestination: {
             id: 'dest-1',
             name: 'Concepción del Uruguay',
@@ -108,6 +107,32 @@ describe('UserAccommodationsCard', () => {
             },
             { enabled: true }
         );
+    });
+
+    it('badges each accommodation with its publication state (HOS-1641)', () => {
+        // Arrange
+        mockedUseUserPermissions.mockReturnValue([PermissionEnum.ACCOMMODATION_VIEW_ALL]);
+        mockedUseAccommodationListQuery.mockReturnValue(
+            createQueryResult({
+                data: {
+                    accommodations: [
+                        createAccommodation({
+                            publicationStatus: 'MODERATED'
+                        } as Partial<AccommodationCore>)
+                    ],
+                    total: 1,
+                    page: 1,
+                    limit: 100
+                }
+            })
+        );
+
+        // Act
+        render(<UserAccommodationsCard userId="owner-1" />);
+
+        // Assert
+        expect(screen.getByText('admin-filters.publicationStatus.moderated')).toBeInTheDocument();
+        expect(screen.queryByText('admin-filters.publicationStatus.published')).toBeNull();
     });
 
     it('renders the empty state when the user has no accommodations', () => {

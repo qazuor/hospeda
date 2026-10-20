@@ -20,20 +20,18 @@ import { adminAddGastronomyMediaRoute } from './addMedia';
 import { adminAssignGastronomyOwnerRoute } from './assignOwner';
 import { adminBatchGastronomiesRoute } from './batch';
 import { adminCreateGastronomyRoute } from './create';
-import { adminDeleteGastronomyRoute } from './delete';
 import { adminGetGastronomyByIdRoute } from './getById';
 import { adminGetGastronomyFaqsRoute } from './getFaqs';
 import { adminGetGastronomyMediaRoute } from './getMedia';
-import { adminHardDeleteGastronomyRoute } from './hardDelete';
 import { adminListGastronomiesRoute } from './list';
 import { adminModerateGastronomyRoute } from './moderate';
 import { adminGastronomyOptionsRoute } from './options';
 import { adminPatchGastronomyRoute } from './patch';
+import { adminPurgeOnRequestGastronomyRoute } from './purge';
 import { adminRemoveGastronomyFaqRoute } from './removeFaq';
 import { adminRemoveGastronomyMediaRoute } from './removeMedia';
 import { adminReorderGastronomyFaqsRoute } from './reorderFaqs';
 import { adminReorderGastronomyMediaRoute } from './reorderMedia';
-import { adminRestoreGastronomyRoute } from './restore';
 import { adminSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
 import { adminUpdateGastronomyRoute } from './update';
 import { adminUpdateGastronomyFaqRoute } from './updateFaq';
@@ -68,22 +66,14 @@ app.route('/', adminUpdateGastronomyRoute);
 // PATCH /:id - Partial update
 app.route('/', adminPatchGastronomyRoute);
 
-// DELETE /:id - Soft delete
-app.route('/', adminDeleteGastronomyRoute);
-
-// DELETE /:id/hard - Hard delete
-app.route('/', adminHardDeleteGastronomyRoute);
-
-// POST /:id/restore - Restore soft-deleted listing
-app.route('/', adminRestoreGastronomyRoute);
-
 // POST /:id/assign-owner - Set/replace listing owner
 app.route('/', adminAssignGastronomyOwnerRoute);
 
-// POST /:id/moderate - Apply the moderation verdict to the LISTING (HOS-686).
-// Distinct from /reviews/:id/moderate above, which moderates reviews ABOUT a
-// listing: different permission, different subject.
+// POST /:id/moderate - ACC:12 two-level publication moderation; the legacy moderation column was retired by V6.9b.
 app.route('/', adminModerateGastronomyRoute);
+
+// POST /:id/purge - ACC:23 purge at the owner's request (PB12, mandatory reason).
+app.route('/', adminPurgeOnRequestGastronomyRoute);
 
 // PATCH /:id/faqs/reorder - Reorder FAQs for a listing
 // Registered before /:id/faqs routes to prevent "reorder" matching as a faqId param
@@ -101,7 +91,7 @@ app.route('/', adminUpdateGastronomyFaqRoute);
 // DELETE /:id/faqs/:faqId - Remove FAQ from a listing
 app.route('/', adminRemoveGastronomyFaqRoute);
 
-// Media management (HOS-372) - gated on COMMERCE_EDIT_ALL
+// Media management (HOS-372) - gated on GASTRONOMY_EDIT_ALL
 
 // PATCH /:id/media/reorder - Reorder gallery photos
 // Registered before /:id/media/:mediaId to prevent "reorder" matching as a mediaId param

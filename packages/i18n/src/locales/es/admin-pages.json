@@ -628,7 +628,6 @@
                 "POST_COMMENT": "Comentarios de Publicaciones",
                 "RECOMMENDATION": "Recomendaciones",
                 "MODERATION": "Moderación",
-                "COMMERCE": "Comercios",
                 "GASTRONOMY": "Gastronomía",
                 "EXPERIENCE": "Experiencias",
                 "HOST_TRADE": "Canje entre Anfitriones",
@@ -656,7 +655,7 @@
             "permissionModel": "Modelo de permisos",
             "groupContentManagement": "Gestión de Contenido",
             "groupUserAccess": "Usuarios y Acceso",
-            "groupCommerceBilling": "Comercio y Facturación",
+            "groupListingsBilling": "Comercio y Facturación",
             "groupMarketingAdvertising": "Marketing y Publicidad",
             "groupServicesListings": "Servicios y Listados",
             "groupSystemConfiguration": "Sistema y Configuración",
@@ -743,17 +742,6 @@
                         "cap5": "Contactar anfitriones"
                     }
                 },
-                "COMMERCE_OWNER": {
-                    "name": "Dueño de Comercio",
-                    "description": "Titular de un comercio que gestiona su propia ficha comercial",
-                    "capabilities": {
-                        "cap1": "Gestionar su ficha comercial",
-                        "cap2": "Actualizar horarios y contacto",
-                        "cap3": "Subir fotos",
-                        "cap4": "Responder reseñas",
-                        "cap5": "Ver analíticas de su comercio"
-                    }
-                },
                 "GASTRONOMY_OWNER": {
                     "name": "Dueño de Gastronomía",
                     "description": "Titular de un restaurante, bar o café que gestiona su propia ficha (sin acceso a experiencias)",
@@ -774,6 +762,13 @@
                         "cap3": "Subir fotos",
                         "cap4": "Responder reseñas",
                         "cap5": "Ver analíticas de su experiencia"
+                    }
+                },
+                "PARTNER_OWNER": {
+                    "name": "Socio",
+                    "description": "Titular de la presencia pública de un Partner (página y carrusel). Se otorga cuando reclama su presencia",
+                    "capabilities": {
+                        "cap1": "Gestionar la presencia de su Partner"
                     }
                 },
                 "SPONSOR": {
@@ -826,6 +821,37 @@
                 "count_other": "{{count}} alojamientos",
                 "empty": "Este usuario no tiene alojamientos asociados.",
                 "error": "No pudimos cargar los alojamientos de este usuario."
+            },
+            "trialSummary": {
+                "title": "Prueba gratis",
+                "description": "Días de prueba acumulados por vertical y de dónde salieron.",
+                "none": "Sin prueba gratis en esta vertical.",
+                "consumedWithoutClock": "La prueba ya se consumió; no tiene reloj ni días.",
+                "error": "No pudimos leer la prueba de esta vertical.",
+                "vertical": {
+                    "accommodation": "Alojamiento",
+                    "gastronomy": "Gastronomía",
+                    "experience": "Experiencias"
+                },
+                "status": {
+                    "TRIAL_ACTIVE": "En curso",
+                    "TRIAL_EXPIRED": "Vencida",
+                    "TRIAL_CONVERTED": "Convertida"
+                },
+                "total_one": "{{count}} día de prueba en total",
+                "total_other": "{{count}} días de prueba en total",
+                "totalWithCeiling_one": "{{total}} de {{count}} día máx.",
+                "totalWithCeiling_other": "{{total}} de {{count}} días máx.",
+                "ceilingReached": "Llegó al techo de días de prueba: sólo la extensión de un SUPER_ADMIN puede pasarlo.",
+                "origins": {
+                    "base_one": "{{count}} del plan",
+                    "base_other": "{{count}} del plan",
+                    "promo_one": "{{count}} por promociones",
+                    "promo_other": "{{count}} por promociones",
+                    "support_one": "{{count}} regalado por soporte",
+                    "support_other": "{{count}} regalados por soporte"
+                },
+                "dates": "Del {{start}} al {{end}}"
             },
             "publications": {
                 "title": "Publicaciones del usuario",
@@ -910,7 +936,30 @@
                 "selectRolePlaceholder": "Elegí un rol para otorgar",
                 "reasonPlaceholder": "Motivo del otorgamiento (opcional, queda en la auditoría)",
                 "revokeReasonPlaceholder": "Motivo de la revocación (opcional, queda en la auditoría)",
-                "changesTakeEffectNextRequest": "Los cambios se aplican en la próxima request del usuario"
+                "changesTakeEffectNextRequest": "Los cambios se aplican en la próxima request del usuario",
+                "superAdmin": {
+                    "title": {
+                        "assign": "Dar el rol SUPER_ADMIN",
+                        "remove": "Quitar el rol SUPER_ADMIN"
+                    },
+                    "description": {
+                        "assign": "Le vas a dar el rol SUPER_ADMIN a {{name}} ({{email}}). Con el rol va a poder ejecutar estas acciones:",
+                        "remove": "Le vas a quitar el rol SUPER_ADMIN a {{name}} ({{email}}). Va a dejar de poder ejecutar estas acciones:"
+                    },
+                    "reasonLabel": "Motivo (obligatorio)",
+                    "reasonPlaceholder": "Escribí el motivo que quedará en la auditoría",
+                    "confirm": { "assign": "Dar el rol", "remove": "Quitar el rol" },
+                    "cancel": "Cancelar",
+                    "rows": {
+                        "ACC_17": "Migrar a los clientes de un plan retirado",
+                        "ACC_18": "Publicar una versión de plan",
+                        "ACC_19": "Fijar el precio de un ciclo",
+                        "ACC_20": "Publicar una versión de complemento",
+                        "ACC_21": "Crear o cerrar un código promocional",
+                        "ACC_22": "Cambiar un plazo",
+                        "ACC_26": "Asignar o quitar el rol SUPER_ADMIN"
+                    }
+                }
             }
         }
     },

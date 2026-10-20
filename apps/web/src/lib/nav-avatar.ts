@@ -26,7 +26,7 @@ import { isVisibleByPermissions } from '@/lib/nav-gating';
  * candidate the user has permission for is shown — never both. Future dense
  * verticals (e.g. gastronomy, experiences) append to this list.
  */
-const BUSINESS_SHORTCUT_CANDIDATE_IDS: readonly string[] = ['hostDashboard', 'commerce'];
+const BUSINESS_SHORTCUT_CANDIDATE_IDS: readonly string[] = ['hostDashboard', 'comercio-listings'];
 
 /**
  * Finds a `NavItem` by id anywhere in `ACCOUNT_NAV_GROUPS`, with its
@@ -34,7 +34,7 @@ const BUSINESS_SHORTCUT_CANDIDATE_IDS: readonly string[] = ['hostDashboard', 'co
  * the single source of truth for labels/hrefs/icons/permissions instead of
  * duplicating them here.
  *
- * `hostDashboard` and `commerce` (the two business-shortcut candidates)
+ * `hostDashboard` and `comercio-listings` (the two business-shortcut candidates)
  * declare `requiredPermission` on their GROUP (`anfitrion`/`comercio`), not
  * on the item itself — mirroring how `getNavForSurface` gates them (group
  * visibility first, then item visibility). Using `item.requiredPermission`
@@ -47,7 +47,11 @@ function findAccountNavItemById(id: string): NavItem | undefined {
         if (found) {
             return found.requiredPermission
                 ? found
-                : { ...found, requiredPermission: group.requiredPermission };
+                : {
+                      ...found,
+                      requiredPermission: group.requiredPermission,
+                      requiredPermissions: group.requiredPermissions
+                  };
         }
     }
     return undefined;
@@ -71,7 +75,7 @@ export interface PickBusinessShortcutResult {
  * in priority order and returns the first item whose `requiredPermission` is
  * present in `permissions` — never more than one, even if the user qualifies
  * for several (e.g. a user with both `accommodation.create` and
- * `commerce.editOwn` sees only "Panel del anfitrión").
+ * `gastronomy.editOwn` sees only "Panel del anfitrión").
  *
  * @param params - `{ permissions }` (RO-RO).
  * @returns `{ item }` — the prioritized shortcut, or `{ item: null }` if none apply.

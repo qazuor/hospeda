@@ -27,29 +27,27 @@
  * The PARENT experience is NOT protected that way, and that is deliberate. The gate
  * (`checkExperienceCanEditMedia`) answers `FORBIDDEN` (403) on an experience the actor
  * may not edit and `NOT_FOUND` (404) on one that does not exist, so an actor whose
- * grant is ownership-scoped (`COMMERCE_EDIT_OWN` without `COMMERCE_EDIT_ALL`) can tell
+ * grant is ownership-scoped (`EXPERIENCE_EDIT_OWN` without `EXPERIENCE_EDIT_ALL`) can tell
  * a stranger's experience id from an invented one. The sibling media helpers — add,
  * remove, reorder, setFeatured and the media read — all share that same gate, so
  * closing the gap in `update` alone would leave `update` at 404 while `remove` stays at
  * 403 on the very same parent. It belongs to a follow-up covering all six helpers
  * across the four entities at once.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     ExperienceMediaSingleOutputSchema,
     type ExperienceMediaUpdatePayload,
     ExperienceMediaUpdatePayloadSchema,
-    ProductDomainEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, ServiceError, updateExperienceMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -58,7 +56,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  *
  * Permission model: the service helper `updateExperienceMedia` gates on `checkExperienceCanEditMedia` — listing owner or staff — exactly like `setFeaturedExperienceMedia`.
  */
-export const protectedUpdateExperienceMediaRoute = createCRUDRoute({
+export const protectedUpdateExperienceMediaRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/media/{mediaId}',
     summary: 'Correct photo text metadata in experience gallery',
@@ -66,8 +64,10 @@ export const protectedUpdateExperienceMediaRoute = createCRUDRoute({
         'Patch caption/description/alt/attribution on an existing media row. ' +
         'Each field is nullable: omit to leave unchanged, null to clear, a value ' +
         'to replace. At least one field must be present — an empty body is a ' +
-        'VALIDATION_ERROR, not a silent 200. Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2.',
+        'VALIDATION_ERROR, not a silent 200. Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff).',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     tags: ['Experience', 'Experience Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -103,15 +103,5 @@ export const protectedUpdateExperienceMediaRoute = createCRUDRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // HOS-1275: mirrors the gastronomy twin. See
-        // `gastronomy/protected/addFaq.ts` for why the vertical loader must be
-        // first.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
-            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
-        ]
     }
 });

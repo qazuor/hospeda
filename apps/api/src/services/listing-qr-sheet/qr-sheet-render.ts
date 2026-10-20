@@ -76,7 +76,7 @@ import { type QrModuleMatrix, renderQrMatrix } from '../../utils/qr-render.js';
 // mechanics (greedy wrapping with a character-level break for an over-wide
 // token), not brochure policy, and a second copy would drift the first time
 // either page learned something about fitting text.
-import { wrapText } from '../commerce-brochure/brochure-render.js';
+import { wrapText } from '../listing-brochure/brochure-render.js';
 import type { ListingQrSheetContent } from './qr-sheet-content.js';
 import {
     A4_WIDTH,

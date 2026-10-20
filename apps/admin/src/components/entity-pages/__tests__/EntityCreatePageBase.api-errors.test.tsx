@@ -48,8 +48,8 @@ vi.mock('@/hooks/use-user-permissions', () => ({
     useUserPermissions: () => []
 }));
 
-vi.mock('@/features/billing/use-my-entitlements', () => ({
-    useMyEntitlements: () => ({ has: () => true, isLoading: false })
+vi.mock('@/features/billing/use-effective-set', () => ({
+    useEffectiveSet: () => ({ has: () => true, isLoading: false })
 }));
 
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';

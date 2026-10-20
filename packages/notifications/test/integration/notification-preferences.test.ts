@@ -12,7 +12,7 @@
  * @module test/integration/notification-preferences.test
  */
 
-import { billingNotificationLog, type getDb } from '@repo/db';
+import { type getDb, notificationLog } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import {
@@ -158,11 +158,10 @@ describe('Notification Preferences Integration Tests', () => {
             );
 
             // Verify database log entry with status 'skipped'
-            expect(mockDb.insert).toHaveBeenCalledWith(billingNotificationLog);
+            expect(mockDb.insert).toHaveBeenCalledWith(notificationLog);
             const insertCall = (mockDb.insert as Mock).mock.results[0].value;
             expect(insertCall.values).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    customerId: 'cus_opted_out',
                     type: NotificationType.RENEWAL_REMINDER,
                     status: 'skipped',
                     errorMessage: 'User has opted out of this notification type'
@@ -221,14 +220,14 @@ describe('Notification Preferences Integration Tests', () => {
             });
 
             const payload: NotificationPayload = {
-                type: NotificationType.ADDON_EXPIRATION_WARNING,
+                type: NotificationType.RENEWAL_REMINDER,
                 recipientEmail: 'email-disabled@example.com',
                 recipientName: 'Email Disabled User',
                 userId,
                 customerId: 'cus_email_disabled',
-                addonName: 'Visibility Boost',
+                planName: 'Pro',
                 daysRemaining: 2,
-                expirationDate: '2026-02-05'
+                renewalDate: '2026-02-05'
             };
 
             // Act
@@ -556,7 +555,6 @@ describe('Notification Preferences Integration Tests', () => {
             const insertCall = (mockDb.insert as Mock).mock.results[0].value;
             expect(insertCall.values).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    customerId: 'cus_admin_log',
                     type: NotificationType.ADMIN_PAYMENT_FAILURE,
                     channel: 'email',
                     recipient: 'admin@hospeda.com',

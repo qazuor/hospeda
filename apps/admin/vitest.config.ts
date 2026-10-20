@@ -9,17 +9,6 @@ export default mergeConfig(
     defineConfig({
         cacheDir: path.resolve(import.meta.dirname, '../../.vite/admin'),
         plugins: [react(), tsconfigPaths()],
-        resolve: {
-            // Map @repo/billing to its TypeScript source so vitest can resolve it
-            // without requiring a dist/ build in the worktree. This mirrors the
-            // tsconfig path alias approach used by other @repo/* packages.
-            alias: {
-                '@repo/billing': path.resolve(
-                    import.meta.dirname,
-                    '../../packages/billing/src/index.ts'
-                )
-            }
-        },
         test: {
             globals: true,
             environment: 'jsdom',

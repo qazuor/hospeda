@@ -1935,10 +1935,8 @@ describe('RevalidationService -- coalescing covers BOTH debounce branches', () =
      * with a fully green suite, because every other test schedules distinct slugs
      * exactly once.
      *
-     * This is the ordinary plan-change shape, not an edge case:
-     * `immediate-plan-swap` runs upgrade restoration and then
-     * `syncFeaturedByEntitlementForOwner` over overlapping accommodations, so the
-     * same debounce keys are hit twice in one request.
+     * This is an ordinary shape, not an edge case: two bulk writes over
+     * overlapping accommodations hit the same debounce keys twice in one request.
      */
     it('fires ONE purge even when every entity is rescheduled inside its window', async () => {
         const adapter = makeMockAdapter();

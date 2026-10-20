@@ -25,7 +25,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 
 // Re-exported so the many call sites that reason in accommodation terms keep
 // importing the types from here. The definitions live in `editor-registry.ts`
-// since HOS-1080, where commerce reads them too.
+// since HOS-1080, where gastronomy/experience reads them too.
 export type { EditorSection, EditorSectionGroup };
 
 /**

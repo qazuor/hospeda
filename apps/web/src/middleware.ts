@@ -382,7 +382,7 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
 
         // Step 7.2 (SPEC-239): Must-change-password gate.
         //
-        // Commerce owners are provisioned with a server-generated password and
+        // Gastronomy/experience owners are provisioned with a server-generated password and
         // the `mustChangePassword` flag set to true. Until they choose a personal
         // password, ALL protected routes (except the change-password page itself
         // and auth/signout) redirect to /mi-cuenta/cambiar-contrasena/.

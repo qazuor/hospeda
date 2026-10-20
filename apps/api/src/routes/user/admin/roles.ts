@@ -8,9 +8,9 @@
  * - POST   /{id}/roles         → grant a hat (additive, idempotent)
  * - DELETE /{id}/roles/{role}  → revoke a hat (idempotent, never the last one)
  *
- * Both mutations are gated on `PermissionEnum.USER_UPDATE_ROLES` — the exact
- * permission the retired single-select already required, so no operator gains
- * or loses the capability in this cut (AC-10). The read is gated on
+ * Both mutations retain `PermissionEnum.USER_UPDATE_ROLES`; assigning or
+ * removing SUPER_ADMIN dispatches to administrative action 26, which requires
+ * its own permission, a reason, and a different subject account. The read is gated on
  * `USER_READ_ALL`, matching the `view` permission of the admin panel's
  * Role & Permissions section.
  *
@@ -52,12 +52,14 @@ import {
     UserRoleMutationResponseSchema
 } from '@repo/schemas';
 import {
+    changeSuperAdminRole,
     getUserRoleGrants,
     getUserRoles,
     grantRole,
     revokeRole,
     ServiceError
 } from '@repo/service-core';
+import { resolveRoleAssignmentAction } from '@repo/verticals';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -94,7 +96,8 @@ export const adminGetUserRolesRoute = createAdminRoute({
 /**
  * POST /api/v1/admin/users/{id}/roles
  *
- * Grants one hat. Additive by contract: it never removes another role, which
+ * Grants one hat. SUPER_ADMIN uses action 26, its own permission and a required
+ * reason, and can never be assigned to the acting account. Additive by contract: it never removes another role, which
  * is the entire point of the change — the old single-select overwrote.
  * Idempotent, so re-granting a hat the user already wears succeeds and writes
  * no audit row (an audit trail records state changes, not requests).
@@ -104,7 +107,7 @@ export const adminGrantUserRoleRoute = createAdminRoute({
     path: '/{id}/roles',
     summary: 'Grant a role to a user (admin)',
     description:
-        'Adds a role to the user without removing any other. Idempotent: granting a role the user already holds succeeds as a no-op.',
+        'Adds a role without removing another. SUPER_ADMIN is action 26 and requires its own permission and a reason; it cannot be assigned to the acting account. Idempotent.',
     tags: ['Users'],
     requiredPermissions: [PermissionEnum.USER_UPDATE_ROLES],
     requestParams: { id: UserIdSchema },
@@ -118,6 +121,12 @@ export const adminGrantUserRoleRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const userId = params.id as string;
         const { role, reason } = body as GrantUserRoleBody;
+
+        if (resolveRoleAssignmentAction({ role }) !== null) {
+            await changeSuperAdminRole({ actor, userId, change: 'ASSIGN', reason });
+            const roles = await getUserRoles({ userId });
+            return { userId, role, roles: [...roles] };
+        }
 
         const result = await grantRole({
             userId,
@@ -157,7 +166,9 @@ export const adminGrantUserRoleRoute = createAdminRoute({
 /**
  * DELETE /api/v1/admin/users/{id}/roles/{role}
  *
- * Revokes one hat. Idempotent when the user does not wear it.
+ * Revokes one hat. SUPER_ADMIN uses action 26, its own permission and a
+ * required reason, and can never be removed from the acting account.
+ * Idempotent when the user does not wear it.
  *
  * Refuses to remove the user's LAST role (AC-5): `revokeRole` returns a
  * `VALIDATION_ERROR`, which the shared error handler maps to **HTTP 400** —
@@ -171,7 +182,7 @@ export const adminRevokeUserRoleRoute = createAdminRoute({
     path: '/{id}/roles/{role}',
     summary: 'Revoke a role from a user (admin)',
     description:
-        "Removes a role from the user. Idempotent when the user does not hold it. Returns 400 when the role is the user's last one — an account must always keep at least one.",
+        "Removes a role. SUPER_ADMIN is action 26 and requires its own permission and a reason; it cannot be removed from the acting account. Returns 400 when the role is the user's last one.",
     tags: ['Users'],
     requiredPermissions: [PermissionEnum.USER_UPDATE_ROLES],
     requestParams: { id: UserIdSchema, role: RoleEnumSchema },
@@ -190,6 +201,12 @@ export const adminRevokeUserRoleRoute = createAdminRoute({
         const userId = params.id as string;
         const role = params.role as RoleEnum;
         const reason = typeof query?.reason === 'string' ? query.reason : null;
+
+        if (resolveRoleAssignmentAction({ role }) !== null) {
+            await changeSuperAdminRole({ actor, userId, change: 'REMOVE', reason });
+            const roles = await getUserRoles({ userId });
+            return { userId, role, roles: [...roles] };
+        }
 
         const result = await revokeRole({
             userId,

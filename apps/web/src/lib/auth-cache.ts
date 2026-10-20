@@ -45,7 +45,7 @@ export interface AuthMeSnapshot {
     readonly user: AuthMeUser | null;
     readonly permissions: ReadonlyArray<string>;
     /**
-     * Every role the actor holds (e.g. `['USER', 'HOST', 'COMMERCE_OWNER']`).
+     * Every role the actor holds (e.g. `['USER', 'HOST', 'GASTRONOMY_OWNER']`).
      * Empty for guests. HOS-296 replaced the former `role` scalar: an account
      * can wear several hats and there is no derived "primary role", so
      * consumers must ask `roles.includes(X)`.

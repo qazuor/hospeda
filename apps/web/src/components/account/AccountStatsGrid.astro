@@ -3,7 +3,7 @@
  * @file AccountStatsGrid.astro
  * @description Quick stats grid for the account dashboard.
  * Renders one of three audience branches — tourist (favorites + reviews),
- * host (properties + messages), or commerce owner (listings, HOS-1293) — plus
+ * host (properties + messages), or gastronomy/experience owner (listings, HOS-1293) — plus
  * the subscription card, always shown. Values are updated client-side via DOM
  * id references from the parent page script.
  */
@@ -20,17 +20,17 @@ interface Props {
      *  the default tourist cards (favorites + reviews). The subscription card is always shown. */
     readonly isHost?: boolean;
     /**
-     * When true AND `isHost` is false, renders the commerce-owner listings
-     * card instead of the tourist pair (HOS-1293). A commerce-only owner
+     * When true AND `isHost` is false, renders the gastronomy/experience owner
+     * listings card instead of the tourist pair (HOS-1293). A gastronomy/experience-only owner
      * (`GASTRONOMY_OWNER`/`EXPERIENCE_OWNER`, no `HOST` role) used to fall
      * into the tourist branch — Favoritos/Reseñas, neither of which
-     * describes their account. Host wins over commerce when an account
+     * describes their account. Host wins over the listings card when an account
      * holds both hats, same precedence `resolveSubscriptionPlansPath` uses.
      */
-    readonly isCommerceOwner?: boolean;
+    readonly isOwner?: boolean;
 }
 
-const { locale, isHost = false, isCommerceOwner = false } = Astro.props;
+const { locale, isHost = false, isOwner = false } = Astro.props;
 const { t } = createTranslations(locale);
 
 const viewLabel = t('account.pages.dashboard.viewLabel', 'Ver');
@@ -70,7 +70,7 @@ const statPropertiesLabel = t('account.pages.dashboard.stats.properties', 'Mis p
 const statPropertiesDesc = t('account.pages.dashboard.stats.propertiesDesc', 'Alojamientos publicados');
 const statMessagesLabel = t('account.pages.dashboard.stats.messages', 'Mensajes sin leer');
 const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consultas de huéspedes');
-// HOS-1293: the commerce-owner branch. Separate labels from the host pair
+// HOS-1293: the gastronomy/experience owner branch. Separate labels from the host pair
 // above — "propiedades" describes accommodation, not a gastronomy or
 // experience listing.
 const statListingsLabel = t('account.pages.dashboard.stats.listings', 'Mis fichas');
@@ -110,10 +110,10 @@ const statListingsDesc = t('account.pages.dashboard.stats.listingsDesc', 'Fichas
                 </a>
             </article>
         </>
-    ) : isCommerceOwner ? (
+    ) : isOwner ? (
         <>
             <!--
-              Commerce owner: listings stat (HOS-1293). Only ONE card, not a
+              Gastronomy/experience owner: listings stat (HOS-1293). Only ONE card, not a
               pair like the host/tourist branches: this platform has no
               conversation/inquiry model for gastronomy or experience listings
               — `conversations.accommodationId` is the table's only listing
@@ -129,7 +129,7 @@ const statListingsDesc = t('account.pages.dashboard.stats.listingsDesc', 'Fichas
                         <BriefcaseIcon size={20} weight="fill" aria-hidden="true" />
                     </span>
                 </div>
-                <p id="stat-commerce-listings" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
+                <p id="stat-listings" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
                 <p class="account__stat-desc">{statListingsDesc}</p>
                 <a href={buildUrl({ locale, path: 'mi-cuenta/comercio' })} class="account__stat-link">
                     {viewLabel} {statListingsLabel.toLowerCase()}

@@ -2,7 +2,7 @@
  * Protected accommodation routes
  * Routes that require authentication
  *
- * IMPORTANT: Routes with ownership middleware (update, patch, softDelete) are
+ * IMPORTANT: Routes with ownership middleware (update, patch, purge) are
  * isolated in a dedicated sub-router to prevent their app.use() middleware from
  * leaking to other routes (e.g. contact). See route-factory.ts applyRouteMiddlewares().
  */
@@ -35,16 +35,19 @@ import { protectedImportFromUrlStatusRoute } from './import-from-url-status';
 import { protectedListOwnAccommodationsRoute } from './list';
 import { protectedPatchAccommodationRoute } from './patch';
 import { protectedPublishAccommodationRoute } from './publish';
-import { protectedGetPublishEligibilityRoute } from './publishEligibility';
+import { protectedPurgeAccommodationRoute } from './purge';
+import { protectedAccommodationPurgePreviewRoute } from './purgePreview';
 import { protectedGetAccommodationQrCodeRoute } from './qrCode';
 import { protectedGetAccommodationQrSheetRoute } from './qrSheet';
+import { protectedReactivateAccommodationRoute } from './reactivate';
 import { removeFaqRoute } from './removeFaq';
 import { protectedRemoveMediaRoute } from './removeMedia';
 import { protectedRemoveOccupancyRoute } from './removeOccupancy';
 import { protectedReorderFaqsRoute } from './reorderFaqs';
 import { protectedReorderMediaRoute } from './reorderMedia';
+import { protectedAccommodationReportFixedRoute } from './reportFixed';
 import { protectedSetFeaturedMediaRoute } from './setFeaturedMedia';
-import { protectedSoftDeleteAccommodationRoute } from './softDelete';
+import { protectedAccommodationSupportEditsRoute } from './supportEdits';
 import { protectedUnpublishAccommodationRoute } from './unpublish';
 import { protectedUpdateAccommodationRoute } from './update';
 import { updateFaqRoute } from './updateFaq';
@@ -58,9 +61,13 @@ import { protectedUpdateOccupancyEventRoute } from './updateOccupancyEvent';
 const ownershipRoutes = createRouter();
 ownershipRoutes.route('/', protectedUpdateAccommodationRoute);
 ownershipRoutes.route('/', protectedPatchAccommodationRoute);
-ownershipRoutes.route('/', protectedSoftDeleteAccommodationRoute);
 // POST /:id/unpublish - Transition ACTIVE → INACTIVE
 ownershipRoutes.route('/', protectedUnpublishAccommodationRoute);
+ownershipRoutes.route('/', protectedReactivateAccommodationRoute);
+ownershipRoutes.route('/', protectedPurgeAccommodationRoute);
+ownershipRoutes.route('/', protectedAccommodationPurgePreviewRoute);
+ownershipRoutes.route('/', protectedAccommodationSupportEditsRoute);
+ownershipRoutes.route('/', protectedAccommodationReportFixedRoute);
 // POST /:id/publish - Transition DRAFT (or INACTIVE) → ACTIVE (HOS-110)
 ownershipRoutes.route('/', protectedPublishAccommodationRoute);
 
@@ -79,13 +86,6 @@ app.route('/', protectedListOwnAccommodationsRoute);
 // POST /compare - Side-by-side comparison (SPEC-288 T-003)
 // CRITICAL: registered BEFORE GET /:id so "compare" is not captured as a UUID param.
 app.route('/', compareAccommodationsRoute);
-
-// GET /publish-eligibility - What POST /:id/publish would decide for this owner (HOS-1183)
-// CRITICAL: same single-segment collision as /compare above — registered BEFORE
-// GET /:id so "publish-eligibility" is not captured as a UUID param. Owner-level
-// on purpose: billing eligibility cannot differ between two listings of the same
-// owner, so the properties page resolves it once for the whole portfolio.
-app.route('/', protectedGetPublishEligibilityRoute);
 
 // GET /:id/qr-sheet - Printable QR sheet for the door (HOS-982). Two segments,
 // so it never collides with GET /:id; registered ahead of it for the same

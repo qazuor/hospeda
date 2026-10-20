@@ -1,0 +1,56 @@
+{
+    "name": "@repo/verticals",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "sideEffects": false,
+    "license": "MIT",
+    "description": "The verticals half of the HOS-1352 program: what a plan grants and how listings live. Talks to billing only through @repo/billing-verticals-contract (GUARD:G14). Today: the plan catalog's side of the contract's inverse direction (planPolicy, changeDirection, addonPolicy).",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "build:ts": "tsup",
+        "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
+        "typecheck": "tsc --noEmit --project ./tsconfig.json",
+        "test": "vitest run --passWithNoTests",
+        "test:coverage": "vitest run --coverage --passWithNoTests",
+        "test:watch": "vitest",
+        "test:integration": "vitest run --config vitest.integration.config.ts",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "check": "biome check --write .",
+        "clean": "rm -rf node_modules dist"
+    },
+    "dependencies": {
+        "@repo/billing-verticals-contract": "workspace:*",
+        "@repo/schemas": "workspace:*"
+    },
+    "devDependencies": {
+        "@repo/db": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
+        "@types/node": "^26.6.1",
+        "@types/pg": "^8.21.0",
+        "@vitest/coverage-v8": "^4.1.10",
+        "drizzle-orm": "^0.45.2",
+        "pg": "^8.22.0",
+        "tsup": "^8.5.1",
+        "typescript": "6.0.3",
+        "vitest": "^4.1.11"
+    }
+}

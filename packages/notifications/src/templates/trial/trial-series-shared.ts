@@ -45,6 +45,8 @@ export interface TrialSeriesEmailProps {
      * accommodation copy — see that function's doc.
      */
     readonly productDomain?: string | null;
+    /** Verticales nombradas por la pieza consolidada; con varias, se nombran todas. */
+    readonly verticals?: readonly string[];
 }
 
 /**

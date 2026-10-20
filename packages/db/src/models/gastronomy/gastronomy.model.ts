@@ -6,6 +6,7 @@ import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { withListingBirthColumns } from '../listing/listing-birth.ts';
 
 /**
  * Search input for gastronomy listings (basic subset — expand as routes are built).
@@ -22,7 +23,7 @@ interface GastronomySearchInput {
 }
 
 /**
- * GastronomyModel — all DB access for gastronomy commerce listings (SPEC-239).
+ * GastronomyModel — all DB access for gastronomy listings (SPEC-239).
  *
  * Mirrors AccommodationModel structure: extends BaseModelImpl, provides search()
  * and findWithRelations() overrides. Expand with domain-specific query methods
@@ -31,6 +32,11 @@ interface GastronomySearchInput {
 export class GastronomyModel extends BaseModelImpl<Gastronomy> {
     protected table = gastronomies;
     public entityName = 'gastronomies';
+
+    /** Creates a gastronomy with its initial publication clock. */
+    override async create(data: Partial<Gastronomy>, tx?: DrizzleClient): Promise<Gastronomy> {
+        return super.create(withListingBirthColumns({ data }).data, tx);
+    }
 
     protected override readonly validRelationKeys = [
         'owner',
@@ -116,7 +122,9 @@ export class GastronomyModel extends BaseModelImpl<Gastronomy> {
                 );
             }
             if (params.isFeatured !== undefined) {
-                whereClauses.push(eq(gastronomies.isFeatured, params.isFeatured));
+                // `isFeatured` is the public name; its only source is
+                // `featuredByEntitlement` since HOS-1419 dropped `is_featured`.
+                whereClauses.push(eq(gastronomies.featuredByEntitlement, params.isFeatured));
             }
             if (params.q) {
                 whereClauses.push(safeIlike(gastronomies.name, params.q));
@@ -155,8 +163,8 @@ export class GastronomyModel extends BaseModelImpl<Gastronomy> {
     /**
      * Returns the IDs of every non-deleted gastronomy listing owned by the
      * given owner. Mirrors `AccommodationModel.findIdsByOwnerId` — used by
-     * `EntityViewService.getStatsForOwnCommerceListings` /
-     * `getDailySeriesForOwnCommerceListings` (HOS-734) to resolve which
+     * `EntityViewService.getStatsForOwnListings` /
+     * `getDailySeriesForOwnListings` (HOS-734) to resolve which
      * `entity_views` rows belong to the caller without accepting an ownerId
      * param at the route layer (anti-peeking).
      *

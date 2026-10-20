@@ -7,7 +7,7 @@
  * WHY A GUARD. `Dialog.module.css` used to leave `.panel` with no padding at
  * all, on the assumption that content brings its own. Thirteen of the fifteen
  * consumers did, because they compose `DialogHeader`/`DialogBody`/`DialogFooter`,
- * which each carry padding. Two did not — both commerce plan pickers passed
+ * which each carry padding. Two did not — both gastronomy/experience plan pickers passed
  * bare children — and shipped a heading at 0px from the panel corner, on the
  * screen a customer reads while deciding to pay more. Those two have since
  * been migrated onto the slots, so all fifteen compose them today.
@@ -90,7 +90,7 @@ const PANEL_RULE = /^\.panel\s*\{([^}]*)\}/m;
 const NONZERO_PADDING = /\bpadding\s*:\s*(?!0\s*[;}])[^;}]+/;
 
 /** The opt-out rule: a `:has()` selector on `.panel` that zeroes padding. */
-const HAS_OPTOUT_RULE = /((?:\.panel:has\([^)]*\)\s*,?\s*)+)\{([^}]*)\}/m;
+const HAS_OPTOUT_RULE = /((?:\.panel:has\([^)]*\)[\s,]*)+)\{([^}]*)\}/m;
 
 /** Strips `/* … *\/` comments so commented-out CSS cannot satisfy a check. */
 function stripComments(css: string): string {
@@ -116,7 +116,7 @@ describe('dialog panel padding (HOS-1235 static guard)', () => {
             'The shared dialog .panel no longer declares a non-zero padding. That padding is ' +
                 'the only thing standing between a dialog built from bare children and a ' +
                 'heading rendered at 0px from the panel corner (HOS-1235 — it shipped that way ' +
-                'on the commerce plan picker). If a dialog needs no padding, it should compose ' +
+                'on the retired plan picker). If a dialog needs no padding, it should compose ' +
                 'the DialogHeader/DialogBody/DialogFooter slots, which opt out via :has().'
         ).toBe(true);
     });

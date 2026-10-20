@@ -1,0 +1,4 @@
+ALTER TABLE "subscription" ADD COLUMN "renewal_notice_deadline_version" integer;--> statement-breakpoint
+ALTER TABLE "subscription" ADD COLUMN "renewal_notice_charge_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "subscription" ADD CONSTRAINT "subscription_renewal_notice_deadline_version_billing_deadline_version_version_fk" FOREIGN KEY ("renewal_notice_deadline_version") REFERENCES "public"."billing_deadline_version"("version") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "subscription" ADD CONSTRAINT "ck_subscription_renewal_notice_pair" CHECK (("subscription"."renewal_notice_deadline_version" IS NULL AND "subscription"."renewal_notice_charge_at" IS NULL) OR ("subscription"."renewal_notice_deadline_version" IS NOT NULL AND "subscription"."renewal_notice_charge_at" IS NOT NULL));

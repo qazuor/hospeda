@@ -333,7 +333,7 @@ describe('check 3 — every admin entity has a label to render', () => {
         const root = makeRepo({
             locales: { 'admin-entities': { entities: {} } },
             sources: {
-                'apps/admin/src/features/commerce/x.test.tsx': "entityKey: 'testCommerce',"
+                'apps/admin/src/features/listing/x.test.tsx': "entityKey: 'testListing',"
             }
         });
         expect(run(root)).toBe(0);

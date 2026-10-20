@@ -25,7 +25,8 @@
  * WHAT THE FIX IS
  * ---------------------------------------------------------------------------
  * `status` is a key `AdminSearchBaseSchema` RESERVES. `adminList` now resolves
- * it to the column that actually exists — `lifecycleState`, else `status` — and
+ * it to the column that actually exists — `lifecycleState`, else
+ * `publicationStatus` (the listing tables, HOS-1641), else `status` — and
  * answers 400 (`VALIDATION_ERROR`) when the table has neither, instead of
  * handing `buildWhereClause` a key it is going to discard.
  *
@@ -36,7 +37,7 @@
 
 import type { BaseModel as BaseModelDB } from '@repo/db';
 import { buildWhereClause } from '@repo/db';
-import { AdminSearchBaseSchema } from '@repo/schemas';
+import { AccommodationAdminSearchSchema, AdminSearchBaseSchema } from '@repo/schemas';
 import type { SQL, Table } from 'drizzle-orm';
 import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -65,7 +66,7 @@ const tableWithoutLifecycleStateOrDeletedAt = pgTable('hos_1379_bare', {
     createdAt: timestamp('created_at').notNull()
 });
 
-/** Shaped like `accommodations`: the 27 services that already work. Must not regress. */
+/** Shaped like `destinations`: the services that already work on lifecycleState. Must not regress. */
 const tableWithLifecycleState = pgTable('hos_1379_lifecycle', {
     id: uuid('id').primaryKey(),
     name: text('name').notNull(),
@@ -88,9 +89,31 @@ const tableWithStatusColumn = pgTable('hos_1379_status_col', {
     createdAt: timestamp('created_at').notNull()
 });
 
+/**
+ * Shaped like `accommodations` / `gastronomies` / `experiences` since V6.9b
+ * (HOS-1641): no `lifecycleState` and no `status`, but a `publicationStatus`
+ * column, and admin search schemas that REDEFINE `status` to
+ * PublicationStatusEnum.
+ */
+const tableWithPublicationStatus = pgTable('hos_1641_publication_status', {
+    id: uuid('id').primaryKey(),
+    name: text('name').notNull(),
+    publicationStatus: text('publication_status').notNull(),
+    deletedAt: timestamp('deleted_at'),
+    createdAt: timestamp('created_at').notNull()
+});
+
 /** A service whose `adminList` is reachable: it has an admin search schema. */
 class AdminListableService extends TestService {
     protected override adminSearchSchema = AdminSearchBaseSchema;
+}
+
+/**
+ * A listing service: its admin search schema redefines `status` to
+ * `'all' | PublicationStatusEnum` (HOS-1641).
+ */
+class ListingAdminListableService extends TestService {
+    protected override adminSearchSchema = AccommodationAdminSearchSchema;
 }
 
 /**
@@ -247,5 +270,21 @@ describe('HOS-1379: adminList resolves the reserved `status` filter to a real co
         expect(constrainedColumns(where as Record<string, unknown>, tableWithStatusColumn)).toEqual(
             ['status', 'deleted_at']
         );
+    });
+
+    it('a listing table filters `status` on its publicationStatus column (HOS-1641)', async () => {
+        asMock(modelMock.getTable).mockReturnValue(tableWithPublicationStatus as never);
+        const service = createServiceTestInstance(ListingAdminListableService, modelMock);
+
+        const result = await service.adminList(mockAdminActor, adminQuery('MODERATED'));
+
+        expect(result.error).toBeUndefined();
+        const [where] = asMock(modelMock.findAll).mock.calls[0] ?? [];
+        expect((where as Record<string, unknown>).publicationStatus).toBe('MODERATED');
+        expect((where as Record<string, unknown>).status).toBeUndefined();
+        expect((where as Record<string, unknown>).lifecycleState).toBeUndefined();
+        expect(
+            constrainedColumns(where as Record<string, unknown>, tableWithPublicationStatus)
+        ).toEqual(['publication_status', 'deleted_at']);
     });
 });

@@ -4,10 +4,14 @@
  */
 import { createRouter } from '../../../utils/create-app';
 import { adminUserBatchRoute } from './batch';
+import {
+    adminAccountClosurePreviewRoute,
+    adminCloseAccountOnRequestRoute
+} from './close-on-request';
 import { adminCreateUserRoute } from './create';
 import { adminDeleteUserRoute } from './delete';
+import { adminGetUserEffectiveSetRoute } from './effective-set';
 import { adminGetUserByIdRoute } from './getById';
-import { adminHardDeleteUserRoute } from './hardDelete';
 import { adminListUsersRoute } from './list';
 import { adminUserOptionsRoute } from './options';
 import { adminPatchUserRoute } from './patch';
@@ -20,6 +24,7 @@ import {
 import { adminRestoreUserRoute } from './restore';
 import { adminGetUserRolesRoute, adminGrantUserRoleRoute, adminRevokeUserRoleRoute } from './roles';
 import { adminUserStatsRoute } from './stats';
+import { adminGetUserTrialSummaryRoute } from './trial-summary';
 import { adminUpdateUserRoute } from './update';
 
 const app = createRouter();
@@ -35,6 +40,12 @@ app.route('/', adminUserStatsRoute);
 // GET /options - Lightweight relation-selector lookup (SPEC-169 §5.5)
 // Registered before /:id so Hono does not resolve "options" as a UUID param
 app.route('/', adminUserOptionsRoute);
+
+// GET /:id/effective-set (HOS-1638, AC:B13a:23) — before the bare /:id routes.
+app.route('/', adminGetUserEffectiveSetRoute);
+
+// GET /:id/trial-summary (HOS-1677, V8a fila 4, mitad panel)
+app.route('/', adminGetUserTrialSummaryRoute);
 
 // Per-user permission overrides (SPEC-170). Registered BEFORE the /:id routes
 // so "permissions" is never matched as a bare /:id segment.
@@ -71,6 +82,16 @@ app.route('/', adminGetUserRolesRoute);
 app.route('/', adminGrantUserRoleRoute);
 app.route('/', adminRevokeUserRoleRoute);
 
+// Administrative action 24, close an account at its owner's request (ACC:24,
+// HOS-1494). Registered BEFORE the /:id routes, like the sub-paths above. The
+// read and the closure share path AND permission (USER_CLOSE_ON_REQUEST) on
+// purpose: route middlewares are per path and method-agnostic, so one gate
+// covers both.
+// GET  /:id/close-on-request
+// POST /:id/close-on-request
+app.route('/', adminAccountClosurePreviewRoute);
+app.route('/', adminCloseAccountOnRequestRoute);
+
 // POST / - Create user
 app.route('/', adminCreateUserRoute);
 
@@ -85,9 +106,6 @@ app.route('/', adminPatchUserRoute);
 
 // DELETE /:id - Soft delete user
 app.route('/', adminDeleteUserRoute);
-
-// DELETE /:id/hard - Hard delete user
-app.route('/', adminHardDeleteUserRoute);
 
 // POST /:id/restore - Restore soft-deleted user
 app.route('/', adminRestoreUserRoute);

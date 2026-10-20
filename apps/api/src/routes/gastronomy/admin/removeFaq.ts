@@ -5,11 +5,12 @@
 import {
     type GastronomyFaqRemoveInput,
     GastronomyFaqRemoveOutputSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, removeGastronomyFaq, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -20,17 +21,16 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * DELETE /api/v1/admin/gastronomies/:id/faqs/:faqId
  * Remove FAQ from gastronomy listing — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
+ * Requires GASTRONOMY_EDIT_ALL permission. The service helper
  * `removeGastronomyFaq` enforces the same gate via `checkGastronomyCanEditFaqs`.
  */
 export const adminRemoveGastronomyFaqRoute = createAdminRoute({
     method: 'delete',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from gastronomy listing (admin)',
-    description:
-        'Removes a FAQ from a gastronomy listing. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+    description: 'Removes a FAQ from a gastronomy listing. Requires GASTRONOMY_EDIT_ALL.',
     tags: ['Gastronomy', 'FAQs'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -48,7 +48,10 @@ export const adminRemoveGastronomyFaqRoute = createAdminRoute({
         const model = (
             gastronomyService as unknown as { model: Parameters<typeof removeGastronomyFaq>[0] }
         ).model;
-        const result = await removeGastronomyFaq(model, actor, input);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => removeGastronomyFaq(model, actor, input)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

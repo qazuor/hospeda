@@ -51,8 +51,7 @@ describe('API Mocking Examples', () => {
                 id: 'custom-acc',
                 name: 'Custom Test Hotel',
                 slug: 'custom-test-hotel',
-                type: 'hotel',
-                lifecycleState: 'active'
+                type: 'hotel'
             };
 
             server.use(

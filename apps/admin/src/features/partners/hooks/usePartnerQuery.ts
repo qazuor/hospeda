@@ -2,20 +2,11 @@ import type { CreatePartner, Partner, UpdatePartner } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 
-export interface PartnerAdminPlanOption {
-    readonly id: string;
-    readonly slug: string;
-    readonly name: string;
-    readonly description: string | null;
-    readonly monthlyPriceArs: number | null;
-}
-
 export const partnerQueryKeys = {
     all: ['partners'] as const,
     lists: () => [...partnerQueryKeys.all, 'list'] as const,
     details: () => [...partnerQueryKeys.all, 'detail'] as const,
-    detail: (id: string) => [...partnerQueryKeys.details(), id] as const,
-    plans: () => [...partnerQueryKeys.all, 'plans'] as const
+    detail: (id: string) => [...partnerQueryKeys.details(), id] as const
 };
 
 async function fetchPartner(id: string) {
@@ -43,42 +34,11 @@ async function updatePartner(id: string, data: UpdatePartner) {
     return result.data.data;
 }
 
-async function fetchPartnerPlans() {
-    const result = await fetchApi<{ success: boolean; data: PartnerAdminPlanOption[] }>({
-        path: '/api/v1/admin/partners/plans'
-    });
-    return result.data.data;
-}
-
-async function sendPartnerPaymentLink(id: string) {
-    const result = await fetchApi<{
-        success: boolean;
-        data: { paymentUrl: string; planId: string };
-    }>({
-        path: `/api/v1/admin/partners/${id}/send-link`,
-        method: 'POST'
-    });
-    return result.data.data;
-}
-
 async function registerPartnerManualPayment(id: string, note?: string) {
     const result = await fetchApi<{ success: boolean; data: Partner }>({
         path: `/api/v1/admin/partners/${id}/manual-payment`,
         method: 'POST',
         body: { note }
-    });
-    return result.data.data;
-}
-
-/** Answers the payment question the review cron raised (HOS-1299). */
-async function reviewPartnerPayment(
-    id: string,
-    body: { readonly decision: 'confirmed-paid' | 'not-paid'; readonly confirmedThrough?: string }
-) {
-    const result = await fetchApi<{ success: boolean; data: Partner }>({
-        path: `/api/v1/admin/partners/${id}/review-payment`,
-        method: 'POST',
-        body
     });
     return result.data.data;
 }
@@ -89,14 +49,6 @@ export function usePartnerQuery(id: string, options?: { enabled?: boolean }) {
         queryFn: () => fetchPartner(id),
         enabled: options?.enabled !== false && !!id,
         staleTime: 30_000
-    });
-}
-
-export function usePartnerPlansQuery() {
-    return useQuery({
-        queryKey: partnerQueryKeys.plans(),
-        queryFn: fetchPartnerPlans,
-        staleTime: 60_000
     });
 }
 
@@ -121,43 +73,11 @@ export function useUpdatePartnerMutation(id: string) {
     });
 }
 
-export function useSendPartnerPaymentLinkMutation(id: string) {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: () => sendPartnerPaymentLink(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: partnerQueryKeys.detail(id) });
-            queryClient.invalidateQueries({ queryKey: partnerQueryKeys.lists() });
-        }
-    });
-}
-
 export function useRegisterPartnerManualPaymentMutation(id: string) {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: ({ note }: { readonly note?: string }) =>
             registerPartnerManualPayment(id, note),
-        onSuccess: (updated) => {
-            queryClient.setQueryData(partnerQueryKeys.detail(id), updated);
-            queryClient.invalidateQueries({ queryKey: partnerQueryKeys.lists() });
-        }
-    });
-}
-
-/**
- * Answers a pending payment review (HOS-1299).
- *
- * Invalidates the LIST as well as the detail: `not-paid` archives the partner,
- * and a stale list would keep showing them as active right beside the decision
- * that took them down.
- */
-export function usePartnerPaymentReviewMutation(id: string) {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (body: {
-            readonly decision: 'confirmed-paid' | 'not-paid';
-            readonly confirmedThrough?: string;
-        }) => reviewPartnerPayment(id, body),
         onSuccess: (updated) => {
             queryClient.setQueryData(partnerQueryKeys.detail(id), updated);
             queryClient.invalidateQueries({ queryKey: partnerQueryKeys.lists() });

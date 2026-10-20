@@ -15,6 +15,8 @@
  * @module test/routes/gastronomy-faq-channel-visibility
  */
 
+import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -37,7 +39,7 @@ vi.mock('@repo/service-core', async () => {
 const mockActor = {
     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     roles: ['HOST'],
-    permissions: ['commerce.edit.own', 'access.panelProtected']
+    permissions: ['gastronomy.editOwn', 'access.panelProtected']
 };
 vi.mock('../../src/utils/actor.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../src/utils/actor.js')>();
@@ -54,6 +56,25 @@ vi.mock('../../src/utils/logger.js', () => ({
         warn: vi.fn(),
         error: vi.fn()
     }
+}));
+
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: { ownerId: mockActor.id, publicationStatus: PublicationStatusEnum.PUBLISHED },
+            ownerId: mockActor.id
+        }),
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.GASTRONOMY,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'edit_gastronomy_info', value: 1, strategy: 'MAX' }]
+            })
+    })
 }));
 
 // ---------------------------------------------------------------------------

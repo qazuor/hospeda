@@ -27,29 +27,27 @@
  * The PARENT gastronomy is NOT protected that way, and that is deliberate. The gate
  * (`checkGastronomyCanEditMedia`) answers `FORBIDDEN` (403) on a gastronomy the actor
  * may not edit and `NOT_FOUND` (404) on one that does not exist, so an actor whose
- * grant is ownership-scoped (`COMMERCE_EDIT_OWN` without `COMMERCE_EDIT_ALL`) can tell
+ * grant is ownership-scoped (`GASTRONOMY_EDIT_OWN` without `GASTRONOMY_EDIT_ALL`) can tell
  * a stranger's gastronomy id from an invented one. The sibling media helpers — add,
  * remove, reorder, setFeatured and the media read — all share that same gate, so
  * closing the gap in `update` alone would leave `update` at 404 while `remove` stays at
  * 403 on the very same parent. It belongs to a follow-up covering all six helpers
  * across the four entities at once.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     GastronomyMediaSingleOutputSchema,
     type GastronomyMediaUpdatePayload,
     GastronomyMediaUpdatePayloadSchema,
-    ProductDomainEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError, updateGastronomyMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -58,7 +56,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  *
  * Permission model: the service helper `updateGastronomyMedia` gates on `checkGastronomyCanEditMedia` — listing owner or staff — exactly like `setFeaturedGastronomyMedia`.
  */
-export const protectedUpdateGastronomyMediaRoute = createCRUDRoute({
+export const protectedUpdateGastronomyMediaRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/media/{mediaId}',
     summary: 'Correct photo text metadata in gastronomy gallery',
@@ -66,8 +64,10 @@ export const protectedUpdateGastronomyMediaRoute = createCRUDRoute({
         'Patch caption/description/alt/attribution on an existing media row. ' +
         'Each field is nullable: omit to leave unchanged, null to clear, a value ' +
         'to replace. At least one field must be present — an empty body is a ' +
-        'VALIDATION_ERROR, not a silent 200. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2.',
+        'VALIDATION_ERROR, not a silent 200. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -103,14 +103,5 @@ export const protectedUpdateGastronomyMediaRoute = createCRUDRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // HOS-1275: mirrors the gate `patch.ts` mounted under HOS-1074. See
-        // `addFaq.ts` for why the vertical loader must be first.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO),
-            requireLiveSubscription(ProductDomainEnum.GASTRONOMY)
-        ]
     }
 });

@@ -3,7 +3,7 @@
  *
  * Approves or rejects a single gastronomy review. Delegates the state
  * transition to `GastronomyReviewService.moderateReview()`, which gates the
- * action on {@link PermissionEnum.COMMERCE_MODERATE_REVIEW}.
+ * action on {@link PermissionEnum.GASTRONOMY_MODERATE_REVIEW}.
  *
  * @module routes/gastronomy/reviews/admin/moderate
  * @see SPEC-239 T-046
@@ -29,7 +29,7 @@ const gastronomyReviewService = new GastronomyReviewService({ logger: apiLogger 
  * Returns the updated review.
  *
  * @throws 400 if `decision` is not `APPROVED` or `REJECTED`.
- * @throws 403 if the actor lacks both GASTRONOMY_MODERATE_REVIEW and COMMERCE_MODERATE_REVIEW.
+ * @throws 403 if the actor lacks GASTRONOMY_MODERATE_REVIEW.
  * @throws 404 if the review does not exist.
  */
 export const adminModerateGastronomyReviewRoute = createAdminRoute({
@@ -39,11 +39,9 @@ export const adminModerateGastronomyReviewRoute = createAdminRoute({
     description:
         'Approves or rejects a gastronomy review. Sets moderationState, moderatedById, ' +
         'moderatedAt, and optionally moderationReason. Triggers rating recompute on the listing. ' +
-        'Requires GASTRONOMY_MODERATE_REVIEW (or the legacy COMMERCE_MODERATE_REVIEW).',
+        'Requires GASTRONOMY_MODERATE_REVIEW.',
     tags: ['Gastronomy Reviews', 'Admin'],
-    anyOfPermissions: [
-        [PermissionEnum.GASTRONOMY_MODERATE_REVIEW, PermissionEnum.COMMERCE_MODERATE_REVIEW]
-    ],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_MODERATE_REVIEW]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

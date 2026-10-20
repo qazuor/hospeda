@@ -2,30 +2,30 @@
  * @file useExperienceQuery.ts
  * TanStack Query hooks for experience CRUD operations (SPEC-240 T-028).
  *
- * These hooks are produced by `createCommerceEntityHooks` — they cover all
+ * These hooks are produced by `createListingEntityHooks` — they cover all
  * standard CRUD mutations (create, update, delete, restore) plus the
- * commerce-specific extras (assign-owner, moderate-review, pending-reviews).
+ * listing-specific extras (assign-owner, moderate-review, pending-reviews).
  *
  * Individual named exports are provided for import ergonomics in components
  * and column factories.
  */
 
 import type { ExperienceAdmin } from '@repo/schemas';
-import { createCommerceEntityHooks } from '@/features/commerce';
+import { createListingEntityHooks } from '@/features/listing';
 
 // ---------------------------------------------------------------------------
-// Factory — produces all CRUD + commerce hooks for the experience entity
+// Factory — produces all CRUD + listing hooks for the experience entity
 // ---------------------------------------------------------------------------
 
 /**
- * Full set of CRUD + commerce hooks for experience listings.
+ * Full set of CRUD + listing hooks for experience listings.
  *
  * @example
  * ```ts
  * const { useGetById, useCreate, useUpdate } = experienceHooks;
  * ```
  */
-export const experienceHooks = createCommerceEntityHooks<ExperienceAdmin>({
+export const experienceHooks = createListingEntityHooks<ExperienceAdmin>({
     entityName: 'experiences',
     apiEndpoint: '/api/v1/admin/experiences'
 });
@@ -59,20 +59,6 @@ export const useCreateExperienceMutation = () => experienceHooks.useCreate();
 export const useUpdateExperienceMutation = () => experienceHooks.useUpdate();
 
 /**
- * Mutation hook to soft-delete an experience listing.
- *
- * @returns TanStack Query `UseMutationResult`
- */
-export const useDeleteExperienceMutation = () => experienceHooks.useDelete();
-
-/**
- * Mutation hook to restore a soft-deleted experience listing.
- *
- * @returns TanStack Query `UseMutationResult`
- */
-export const useRestoreExperienceMutation = () => experienceHooks.useRestore();
-
-/**
  * Mutation hook to reassign the owner of an experience listing.
  *
  * @returns TanStack Query `UseMutationResult`
@@ -86,22 +72,6 @@ export const useAssignExperienceOwnerMutation = () => experienceHooks.useAssignO
  */
 export const useModerateExperienceReviewMutation = () =>
     experienceHooks.useModerateReviewMutation();
-
-/**
- * Mutation hook to moderate the LISTING itself (HOS-686).
- *
- * NOT {@link useModerateExperienceReviewMutation}, which moderates reviews
- * written *about* a listing. This one writes `moderationState` on the listing —
- * the verdict the commerce visibility reconciler reads to take a rejected
- * listing off the public site.
- *
- * Shaped as `(id) => mutation` so `InlineStateSelectCell` can drive it.
- *
- * @param id - UUID of the experience listing
- * @returns TanStack Query `UseMutationResult`
- */
-export const useModerateExperienceMutation = (id: string) =>
-    experienceHooks.useModerateListingMutation(id);
 
 /**
  * Query hook to fetch reviews pending moderation for experience listings.

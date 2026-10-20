@@ -85,18 +85,18 @@ export type GastronomySearchHttp = z.infer<typeof GastronomySearchHttpSchema>;
  */
 export const GastronomyCreateHttpSchema = z.object({
     /** Display name of the gastronomy listing. */
-    name: z.string().min(2, { message: 'zodError.commerce.name.min' }).max(100),
+    name: z.string().min(2, { message: 'zodError.listing.name.min' }).max(100),
     /** Short marketing summary. */
     summary: z
         .string()
-        .min(10, { message: 'zodError.commerce.summary.min' })
-        .max(300, { message: 'zodError.commerce.summary.max' })
+        .min(10, { message: 'zodError.listing.summary.min' })
+        .max(300, { message: 'zodError.listing.summary.max' })
         .optional(),
     /** Full description. */
     description: z
         .string()
-        .min(20, { message: 'zodError.commerce.description.min' })
-        .max(2000, { message: 'zodError.commerce.description.max' })
+        .min(20, { message: 'zodError.listing.description.min' })
+        .max(2000, { message: 'zodError.listing.description.max' })
         .optional(),
     /** Gastronomy sub-type. */
     type: GastronomyTypeEnumSchema,
@@ -109,7 +109,6 @@ export const GastronomyCreateHttpSchema = z.object({
         .startsWith('https://', { message: 'zodError.gastronomy.menuUrl.httpsRequired' })
         .optional(),
     /** Whether the listing is featured. */
-    isFeatured: httpBodyBoolean().default(false),
     /** Destination UUID for the listing. */
     destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /**
@@ -176,10 +175,6 @@ export type GastronomyGetHttp = z.infer<typeof GastronomyGetHttpSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
-import { httpBodyBoolean } from '../../common/boolean-params.js';
-import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
-import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
-import { VisibilityEnum } from '../../enums/visibility.enum.js';
 import type {
     GastronomyAdminCreateInput,
     GastronomyUpdateInput
@@ -244,14 +239,11 @@ export const httpToDomainGastronomyCreate = (
     ownerId: httpData.ownerId,
     priceRange: httpData.priceRange,
     menuUrl: httpData.menuUrl,
-    isFeatured: httpData.isFeatured,
 
-    // Server-managed defaults
-    moderationState: ModerationStatusEnum.PENDING,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    // Server-managed defaults. The publication state is not an input: the
+    // listing is born DRAFT and only the PB transitions move it (HOS-1641).
     reviewsCount: 0,
     averageRating: 0,
-    visibility: VisibilityEnum.PUBLIC,
 
     // Contact info mapping from flat HTTP fields
     ...(httpData.phone !== undefined ||
@@ -305,7 +297,6 @@ export const httpToDomainGastronomyUpdate = (
     type: httpData.type,
     priceRange: httpData.priceRange,
     menuUrl: httpData.menuUrl,
-    isFeatured: httpData.isFeatured,
     destinationId: httpData.destinationId,
 
     // Contact info mapping (emit only provided fields).
@@ -363,8 +354,8 @@ export const httpToDomainGastronomyUpdate = (
  * If the `Exclude<>` type is NOT `never`, there are domain fields the HTTP
  * converter does NOT emit. Many of these are intentionally absent because they
  * are either:
- *   a) Server-managed (ownerId, reviewsCount, averageRating, lifecycleState,
- *      moderationState, visibility) — injected by the service, not by HTTP.
+ *   a) Server-managed (ownerId, reviewsCount, averageRating,
+ *      publicationStatus) — injected by the service, not by HTTP.
  *   b) Rich content not carried by the basic HTTP form (richDescription, seo*,
  *      adminInfo, tags, faqs, rating, openingHours, media, i18n variants).
  *

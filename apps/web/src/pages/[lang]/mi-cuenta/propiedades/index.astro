@@ -16,25 +16,30 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 import type { Accommodation } from '@repo/schemas';
 import { CreditCardIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
+import {
+    type PublishAffordance,
+    resolvePublishAffordance,
+    UNKNOWN_PUBLISH_AFFORDANCE
+} from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
-import {
-    fetchHostUsageBadge,
-    MAX_ACCOMMODATIONS_LIMIT_KEY
-} from '@/lib/host/usage-badge';
-import { resolveLimitAddonOffer } from '@/lib/billing/limit-addon-offer';
+import { buildUsageBadge, fetchHostUsageBadge } from '@/lib/host/usage-badge';
 import { shouldShowNeedsPlanBanner } from '@/lib/host/needs-plan-banner';
-import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
 import { publishApi } from '@/lib/api/endpoints-protected';
+import {
+    EMPTY_LISTING_NOTICES_INDEX,
+    indexListingNotices,
+    type ListingNoticesIndex
+} from '@/lib/listing/listing-notices';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
@@ -94,22 +99,25 @@ let usageData: { currentUsage: number; maxAllowed: number; threshold: string } |
 // wired it into the button. One value answering two questions is what let a
 // plan-shaped boolean decide publishability; the publish affordance now reads
 // the server's own verdict below.
-let hasOwnerPlan = true;
+let hasOwnerPlan = false;
+let effectiveSetReadOk = false;
 
-// ── HOS-1183: what would the server do if this owner published? ──
-// Resolved ONCE for the whole grid: billing eligibility is a property of the
-// owner, so it cannot differ between two cards. Fail-open on any error for the
-// same reason as above — `/publish` is the real enforcement point, and hiding
-// the button on a blip strands a host who could publish.
+// ── HOS-1668: what would the server do if this owner published? ──
+// Resolved ONCE for the whole grid: coverage and trial eligibility are
+// properties of the owner, so they cannot differ between two cards. Read from
+// `subscribe-destination`, the same decision PB1 and `listing-access` consult
+// when they reject a publish (HOS-1183's `publish-eligibility` answered 500 and
+// this page failed OPEN, showing Publish anyway).
 //
-// `startsTrial` fails the other way (silent). An unannounced trial costs a
-// surprise; an announced one that never starts is a broken promise.
-let canPublish = true;
-let publishStartsTrial = false;
-// Admin-paused new signups: the owner's FIRST publish (the one that starts the
-// trial) is refused while the freeze is on. Defaults to `false` — on a failed
-// read the card offers Publish and `/publish` refuses with the same copy.
-let publishFirstPaused = false;
+// Fails CLOSED: until a read succeeds the affordance is `unknown`, and the card
+// shows a "could not check" status instead of Publish or the plans link.
+let publishAffordance: PublishAffordance = UNKNOWN_PUBLISH_AFFORDANCE;
+
+// ── HOS-1492: each listing's notices (rows 8/9, 18, 20, 24, 30, 31) and the
+// unpublish confirmation lines (rows 2 and 25). Read in the same Promise.all.
+// A failed read leaves every card without notices — never an invented one —
+// and the page keeps rendering.
+let listingNotices: ListingNoticesIndex = EMPTY_LISTING_NOTICES_INDEX;
 
 try {
     const apiUrl = getApiUrl();
@@ -121,17 +129,18 @@ try {
             Accept: 'application/json'
         };
 
-        // Parallel fetch: accommodations + plan-aware usage badge context +
-        // the publish verdict. The third joins the existing Promise.all rather
+        // Parallel fetch: accommodations + effective set +
+        // the publish destination. The third joins the existing Promise.all rather
         // than awaiting after it — this is one extra billing read per page
         // load, and serialising it would add its latency to every render.
-        const [accomResponse, usageBadgeResult, eligibilityResult] = await Promise.all([
+        const [accomResponse, usageBadgeResult, destinationResult, noticesResult] = await Promise.all([
             fetch(
                 `${apiUrl}/api/v1/protected/accommodations?pageSize=50&sortBy=createdAt&sortOrder=desc`,
                 { headers }
             ),
-            fetchHostUsageBadge({ apiUrl, headers }),
-            publishApi.accommodationEligibility({ cookieHeader })
+            fetchHostUsageBadge({ cookieHeader }),
+            publishApi.subscribeDestination({ vertical: 'accommodation', cookieHeader }),
+            publishApi.listingNotices({ vertical: 'accommodation', cookieHeader })
         ]);
 
         if (accomResponse.ok) {
@@ -144,26 +153,25 @@ try {
             logger.error('[propiedades] API responded with status', accomResponse.status);
         }
 
-        usageData = usageBadgeResult.usageData;
+        const publishedCount = properties.filter(
+            (property) => property.publicationStatus === PublicationStatusEnum.PUBLISHED
+        ).length;
+        usageData = buildUsageBadge({ effectiveSet: usageBadgeResult.effectiveSet, currentUsage: publishedCount });
         hasOwnerPlan = usageBadgeResult.hasOwnerPlan;
+        effectiveSetReadOk = usageBadgeResult.entitlementsReadOk;
 
-        if (!usageBadgeResult.entitlementsReadOk) {
-            logger.warn('[propiedades] entitlements fetch returned non-ok', {
-                status: usageBadgeResult.entitlementsStatus
-            });
+        if (!usageBadgeResult.entitlementsReadOk) logger.warn('[propiedades] effective-set read failed');
+
+        publishAffordance = resolvePublishAffordance({ result: destinationResult });
+        listingNotices = indexListingNotices({ result: noticesResult });
+        if (!listingNotices.ok) {
+            logger.warn('[propiedades] listing-notices read failed');
         }
-        // Entitlements fetch failure is non-fatal — hasOwnerPlan stays true (fail-open)
-
-        if (eligibilityResult.ok) {
-            canPublish = eligibilityResult.data.canPublish;
-            publishStartsTrial = eligibilityResult.data.startsTrial;
-            publishFirstPaused = eligibilityResult.data.firstPublishPaused === true;
-        } else {
-            // Both defaults already hold; logged so a systematic failure is
-            // visible rather than silently degrading every card to "publishable
-            // and no trial announced".
-            logger.warn('[propiedades] publish-eligibility fetch failed', {
-                error: eligibilityResult.error
+        if (!destinationResult.ok) {
+            // The affordance is already `unknown`; logged so a systematic
+            // failure is visible rather than silently hiding every Publish.
+            logger.warn('[propiedades] subscribe-destination read failed', {
+                error: destinationResult.error
             });
         }
     }
@@ -201,12 +209,6 @@ const ownerPlansUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.own
 
 const isEmpty = properties.length === 0;
 
-// H-98: resolve the generic owner trial length ONCE for the whole grid (see
-// `PropertyCard`'s `trialDays` prop doc) instead of fetching per card — this
-// page renders one `PropertyCard` per property. Skipped entirely when there
-// is nothing to render (empty state has no card to pass it to).
-const genericTrialDays = isEmpty ? 0 : await resolveGenericOwnerTrialDays();
-
 // HOS-217: proactive "anfitrión en preparación" banner — an owner with at
 // least one DRAFT property but no real owner/complex subscription would
 // otherwise only discover they can't publish by clicking "Publicar" on the
@@ -215,11 +217,12 @@ const genericTrialDays = isEmpty ? 0 : await resolveGenericOwnerTrialDays();
 // requested onboarding journey. Decision extracted to a pure, unit-tested
 // helper (see `@/lib/host/needs-plan-banner`).
 const hasDraftProperty = properties.some(
-    (property) => property.lifecycleState === LifecycleStatusEnum.DRAFT
+    (property) => property.publicationStatus === PublicationStatusEnum.DRAFT
 );
 const showNeedsPlanBanner = shouldShowNeedsPlanBanner({
     isEmpty,
     fetchError,
+    effectiveSetReadOk,
     hasDraftProperty,
     hasOwnerPlan
 });
@@ -231,17 +234,6 @@ const needsPlanDescription = t(
 );
 const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan de anfitrión');
 
-// HOS-727: the quota badge is where the host SEES the cap, so it is where the
-// cheap way past it belongs — next to, not instead of, the plan upgrade.
-// Resolved from the limit (never a hardcoded add-ons link): if
-// `max_accommodations` ever stops having a purchasable add-on this is `null`
-// and the badge silently goes back to offering only the upgrade, rather than
-// promising a card the add-ons page does not have.
-const accommodationsAddonOffer = resolveLimitAddonOffer({
-    locale,
-    limitKey: MAX_ACCOMMODATIONS_LIMIT_KEY
-});
-const usageAddonLabel = t('account.subscription.usage.buyAddon', 'Ampliar con un complemento');
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="propiedades">
@@ -284,15 +276,6 @@ const usageAddonLabel = t('account.subscription.usage.buyAddon', 'Ampliar con un
                     max: usageData.maxAllowed
                 })}
             </span>
-            {usageData.threshold !== 'ok' && accommodationsAddonOffer !== null && (
-                <a
-                    href={accommodationsAddonOffer.href}
-                    class="props-page__usage-addon"
-                    data-testid="usage-addon-cta"
-                >
-                    {usageAddonLabel}
-                </a>
-            )}
             {usageData.threshold !== 'ok' && (
                 <a href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner })} class="props-page__usage-upgrade">
                     {t('host.properties.usage.upgrade', 'Mejorar plan')}
@@ -322,7 +305,13 @@ const usageAddonLabel = t('account.subscription.usage.buyAddon', 'Ampliar con un
         <div class="props-page__grid" role="list" aria-label={title}>
             {properties.map((property) => (
                 <div class="props-page__item" role="listitem" data-reveal="up">
-                    <PropertyCard property={property} locale={locale} canPublish={canPublish} startsTrial={publishStartsTrial} firstPublishPaused={publishFirstPaused} trialDays={genericTrialDays} />
+                    <PropertyCard
+                        property={property}
+                        locale={locale}
+                        publishAffordance={publishAffordance}
+                        notices={listingNotices.byListingId.get(property.id)}
+                        trialRunning={listingNotices.trialRunning}
+                    />
                 </div>
             ))}
         </div>
@@ -401,31 +390,6 @@ const usageAddonLabel = t('account.subscription.usage.buyAddon', 'Ampliar con un
     }
 
     .props-page__usage-upgrade:hover {
-        opacity: 0.88;
-    }
-
-    /* ── HOS-727: the add-on offer, sitting beside the plan upgrade ──
-       Outlined rather than filled: it reads as a second, lighter way out of
-       the cap without restyling the pre-existing upgrade pill or competing
-       with it for the eye. Inherits `color` so it stays legible on all four
-       threshold backgrounds (ok / warning / critical / exceeded). */
-    .props-page__usage-addon {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.75rem;
-        border-radius: var(--radius-pill, 9999px);
-        border: 1px solid currentcolor;
-        color: inherit;
-        background-color: transparent;
-        font-family: var(--font-sans);
-        font-weight: 600;
-        font-size: 0.75rem;
-        text-decoration: none;
-        white-space: nowrap;
-        transition: opacity 150ms ease-out;
-    }
-
-    .props-page__usage-addon:hover {
         opacity: 0.88;
     }
 

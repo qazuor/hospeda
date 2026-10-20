@@ -7,8 +7,6 @@
  *  - useGastronomyQuery — detail fetch + enabled flag
  *  - useCreateGastronomyMutation — POST + return value
  *  - useUpdateGastronomyMutation — PUT/PATCH + return value
- *  - useDeleteGastronomyMutation — DELETE + return value
- *  - useRestoreGastronomyMutation — restore POST + return value
  *  - useAssignGastronomyOwnerMutation — assign-owner POST + method
  *  - useModerateGastronomyReviewMutation — review moderation POST
  *  - useGastronomyPendingReviewsQuery — pending reviews list
@@ -25,11 +23,9 @@ import { fetchApi } from '@/lib/api/client';
 import {
     useAssignGastronomyOwnerMutation,
     useCreateGastronomyMutation,
-    useDeleteGastronomyMutation,
     useGastronomyPendingReviewsQuery,
     useGastronomyQuery,
     useModerateGastronomyReviewMutation,
-    useRestoreGastronomyMutation,
     useUpdateGastronomyMutation
 } from '../hooks/useGastronomyQuery';
 
@@ -48,9 +44,7 @@ const MOCK_GASTRONOMY = {
     name: 'El Rancho',
     type: 'RESTAURANT',
     priceRange: 'MID',
-    lifecycleState: 'ACTIVE',
-    moderationState: 'APPROVED',
-    isFeatured: false,
+    publicationStatus: 'PUBLISHED',
     ownerId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
     destinationId: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
     createdAt: new Date().toISOString(),
@@ -188,36 +182,6 @@ describe('useUpdateGastronomyMutation', () => {
         } as never);
 
         expect(returned).toMatchObject({ name: 'El Rancho Actualizado' });
-    });
-});
-
-describe('useDeleteGastronomyMutation', () => {
-    it('should DELETE a gastronomy by ID', async () => {
-        mockedFetchApi.mockResolvedValue({ data: { success: true }, status: 200 } as never);
-
-        const { result } = renderHook(() => useDeleteGastronomyMutation(), {
-            wrapper: createWrapper()
-        });
-
-        const returnedId = await result.current.mutateAsync(GASTRONOMY_ID);
-
-        expect(returnedId).toBe(GASTRONOMY_ID);
-        expect(mockedFetchApi).toHaveBeenCalledWith(expect.objectContaining({ method: 'DELETE' }));
-    });
-});
-
-describe('useRestoreGastronomyMutation', () => {
-    it('should restore a soft-deleted gastronomy', async () => {
-        mockedFetchApi.mockResolvedValue({ data: { success: true }, status: 200 } as never);
-
-        const { result } = renderHook(() => useRestoreGastronomyMutation(), {
-            wrapper: createWrapper()
-        });
-
-        const returnedId = await result.current.mutateAsync(GASTRONOMY_ID);
-
-        expect(returnedId).toBe(GASTRONOMY_ID);
-        expect(mockedFetchApi).toHaveBeenCalledWith(expect.objectContaining({ method: 'POST' }));
     });
 });
 

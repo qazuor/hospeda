@@ -57,7 +57,7 @@ it deliberately excludes and why.
 Every audience section, benefit list, plan-comparison table, addon card, and
 "próximamente" item is sourced from a hardcoded TypeScript module,
 `apps/web/src/lib/features-content.ts` — **not** from the billing plans API
-(`packages/billing`, `billing_plans` table) or any other backend call. Copy
+(the `billing_plans` database catalog) or any other backend call. Copy
 strings are resolved through i18n keys under the `features.*` namespace
 (`packages/i18n/src/locales/{es,en,pt}/features.json`); the structural data
 (row counts, cupos/limits, icons) lives in the content module itself.
@@ -65,8 +65,8 @@ strings are resolved through i18n keys under the `features.*` namespace
 This is a deliberate simplification for a marketing brochure: the numbers on
 this page (favoritos, alojamientos publicables, etc.) are a snapshot of the
 plan packaging at the time the page was written, not a live read of
-`packages/billing`'s plan definitions. **If plan limits change** (e.g. a
-future `packages/billing` recalibration), `features-content.ts` must be
+the plan definitions in the database catalog. **If plan limits change** (e.g. a
+future catalog recalibration), `features-content.ts` must be
 updated by hand to match — there is no automated sync between the two. No
 prices are shown anywhere on the page (Zod-schema style "cupos not prices"
 by design — see the module's own JSDoc for the exact contract).

@@ -14,6 +14,14 @@
         "active": "Active",
         "archived": "Archived"
     },
+    "publicationStatus": {
+        "draft": "Draft",
+        "published": "Published",
+        "unpublishedByBilling": "Unpublished by the plan",
+        "archived": "Archived",
+        "moderated": "Moderated",
+        "purged": "Deleted"
+    },
     "destinationType": {
         "label": "Destination type",
         "country": "Country",
@@ -257,21 +265,8 @@
     },
     "partnerType": {
         "label": "Partner type",
-        "commerce": "Commerce",
+        "business": "Business",
         "ngo": "NGO",
         "institution": "Institution"
-    },
-    "partnerTier": {
-        "label": "Tier",
-        "bronze": "Bronze",
-        "silver": "Silver",
-        "gold": "Gold"
-    },
-    "partnerSubscriptionStatus": {
-        "label": "Subscription status",
-        "active": "Active",
-        "pending": "Pending",
-        "past_due": "Past due",
-        "cancelled": "Cancelled"
     }
 }

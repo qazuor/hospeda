@@ -36,13 +36,13 @@ describe('resolveRoleFilter', () => {
 
     it('returns the whole set when only `roles` is supplied', () => {
         // Arrange
-        const roles = [RoleEnum.HOST, RoleEnum.COMMERCE_OWNER] as const;
+        const roles = [RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER] as const;
 
         // Act
         const result = resolveRoleFilter({ roles });
 
         // Assert
-        expect(result).toEqual([RoleEnum.HOST, RoleEnum.COMMERCE_OWNER]);
+        expect(result).toEqual([RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER]);
     });
 
     it('intersects both filters when they overlap, as the schema documents', () => {

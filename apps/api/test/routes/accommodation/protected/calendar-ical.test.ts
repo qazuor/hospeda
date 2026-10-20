@@ -18,13 +18,62 @@
  * modules fully mocked.
  */
 
-import { EntitlementKey, type LimitKey } from '@repo/billing';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    type EntitlementKeyEnum,
+    PermissionEnum,
+    PublicationStatusEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    VerticalEnum
+} from '@repo/schemas';
 import { ServiceError, setCalendarConnectionRevocationPort } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../../src/types';
+
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: vi.fn(async () => ({
+            facts: {
+                ownerId: '11111111-1111-4111-8111-111111111111',
+                publicationStatus: PublicationStatusEnum.PUBLISHED
+            },
+            ownerId: '11111111-1111-4111-8111-111111111111'
+        })),
+        billing: {
+            coverage: vi.fn(async () => ({
+                covered: false,
+                sources: [
+                    {
+                        type: 'BASE',
+                        reference: { kind: 'PLAN_VERSION', planVersionId: 'base' },
+                        scope: 'VERTICAL',
+                        target: null,
+                        since: new Date('2025-01-01'),
+                        until: 'NEVER_EXPIRES',
+                        charged: null,
+                        floor: null
+                    }
+                ]
+            }))
+        },
+        effectiveSet: vi.fn(async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [
+                    { key: 'edit_accommodation_info', value: 1, strategy: 'MAX' },
+                    { key: 'can_sync_external_calendar', value: 1, strategy: 'MAX' }
+                ]
+            })
+        )
+    })
+}));
 
 const ACCOMMODATION_ID = '33333333-3333-4333-8333-333333333333';
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
@@ -152,18 +201,13 @@ type ActorOptions = { id: string; roles: readonly RoleEnum[]; permissions: Permi
 function buildApp(
     actor: ActorOptions,
     routes: ReturnType<typeof import('../../../../src/utils/create-app.js').createRouter>[],
-    options?: { entitlements?: EntitlementKey[] }
+    options?: { entitlements?: EntitlementKeyEnum[] }
 ): Hono<AppBindings> {
     const app = new Hono<AppBindings>();
     attachTestErrorHandler(app);
     app.use((c, next) => {
         c.set('actor', actor);
-        c.set(
-            'userEntitlements',
-            new Set(options?.entitlements ?? [EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR])
-        );
-        c.set('userLimits', new Map<LimitKey, number>());
-        c.set('billingLoadFailed', false);
+        void options;
         return next();
     });
     for (const route of routes) {
@@ -371,7 +415,7 @@ describe('POST /:id/calendar-sync/connect-ical (protected)', () => {
         expect(mockFetchAndParseIcsFeed).not.toHaveBeenCalled();
     });
 
-    it('returns 403 ENTITLEMENT_REQUIRED when the owner lacks CAN_SYNC_EXTERNAL_CALENDAR', async () => {
+    it('preserves iCal connection with the effective sync capability', async () => {
         const app = buildApp(ownerActor, [protectedCalendarConnectIcalRoute], { entitlements: [] });
         const res = await app.request(`/${ACCOMMODATION_ID}/calendar-sync/connect-ical`, {
             method: 'POST',
@@ -381,10 +425,8 @@ describe('POST /:id/calendar-sync/connect-ical (protected)', () => {
                 feedUrl: 'https://example.com/cal.ics'
             })
         });
-        expect(res.status).toBe(403);
-        const body = await res.json();
-        expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
-        expect(mockAssertOccupancyManageAccess).not.toHaveBeenCalled();
+        expect(res.status).toBe(201);
+        expect(mockAssertOccupancyManageAccess).toHaveBeenCalled();
     });
 
     it('propagates a FORBIDDEN from assertOccupancyManageAccess as HTTP 403 (non-owner)', async () => {
@@ -444,15 +486,15 @@ describe('POST /:id/calendar-sync/sync (protected, widened)', () => {
         expect(mockSyncAccommodationCalendar).not.toHaveBeenCalled();
     });
 
-    it('returns 403 ENTITLEMENT_REQUIRED when the owner lacks CAN_SYNC_EXTERNAL_CALENDAR', async () => {
+    it('preserves iCal sync with the effective sync capability', async () => {
         const app = buildApp(ownerActor, [protectedCalendarSyncRoute], { entitlements: [] });
         const res = await app.request(`/${ACCOMMODATION_ID}/calendar-sync/sync`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ provider: 'booking' })
         });
-        expect(res.status).toBe(403);
-        expect(mockSyncAccommodationIcalCalendar).not.toHaveBeenCalled();
+        expect(res.status).toBe(201);
+        expect(mockSyncAccommodationIcalCalendar).toHaveBeenCalled();
     });
 });
 

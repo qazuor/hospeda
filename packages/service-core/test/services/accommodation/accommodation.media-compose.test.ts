@@ -157,11 +157,11 @@ describe('composeAccommodationMedia (SPEC-204 T-012)', () => {
  * Regression suite for H-23 — media awaiting moderation was composed and served.
  *
  * Measured on posts in production, but the defect is the composer shape, and
- * this is the second of the two implementations of it. Gating only the commerce
+ * this is the second of the two implementations of it. Gating only the gastronomy and experience
  * copy would leave accommodations with the same mechanism intact and the two
  * verticals disagreeing about what "published photo" means.
  *
- * @see packages/service-core/src/services/commerce/commerce-media-compose.ts
+ * @see packages/service-core/src/services/listing/listing-media-compose.ts
  */
 describe('composeAccommodationMedia moderation gate (H-23)', () => {
     it('excludes a PENDING row from the gallery', () => {

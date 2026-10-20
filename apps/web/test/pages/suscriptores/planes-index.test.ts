@@ -858,7 +858,6 @@ describe('no trial key on the plan surfaces writes a number of days', () => {
         expect(Object.keys(allTrialCopy(locale)).sort()).toEqual([
             'pricing.index.trial_one',
             'pricing.index.trial_other',
-            'pricing.trialNotEligible',
             'pricing.trial_one',
             'pricing.trial_other'
         ]);

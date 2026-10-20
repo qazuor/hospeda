@@ -201,13 +201,7 @@ describe('hostRole', () => {
         // Arrange
         const result = RoleConfigSchema.parse(hostRole);
         // Assert
-        expect(result.mainMenu).toEqual([
-            'inicio',
-            'misAlojamientos',
-            'consultas',
-            'miFacturacion',
-            'miCuenta'
-        ]);
+        expect(result.mainMenu).toEqual(['inicio', 'misAlojamientos', 'consultas', 'miCuenta']);
     });
 
     it('should reference hostDashboard', () => {

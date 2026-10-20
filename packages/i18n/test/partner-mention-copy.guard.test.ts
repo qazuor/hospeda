@@ -43,13 +43,10 @@
 import { describe, expect, it } from 'vitest';
 import accountEn from '../src/locales/en/account.json';
 import adminEn from '../src/locales/en/admin-pages.json';
-import partnersEn from '../src/locales/en/partners.json';
 import accountEs from '../src/locales/es/account.json';
 import adminEs from '../src/locales/es/admin-pages.json';
-import partnersEs from '../src/locales/es/partners.json';
 import accountPt from '../src/locales/pt/account.json';
 import adminPt from '../src/locales/pt/admin-pages.json';
-import partnersPt from '../src/locales/pt/partners.json';
 
 /**
  * Every partner-mentions copy subtree, across every surface and all locales.
@@ -68,19 +65,9 @@ const SUBTREES: ReadonlyArray<{
     { label: 'pt admin-pages.partnerMentions', tree: adminPt.partnerMentions },
     { label: 'es account.partnerMentions', tree: accountEs.partnerMentions },
     { label: 'en account.partnerMentions', tree: accountEn.partnerMentions },
-    { label: 'pt account.partnerMentions', tree: accountPt.partnerMentions },
-    // HOS-985 — the partner SALES page (`/planes/aliados/`), added because it
-    // makes the same promise to a wider audience: it names the mentions log as
-    // a reason to become a partner, and it is read by prospects rather than by
-    // partners who already signed. The whole `landing` subtree is covered, not
-    // just the two strings that speak about the log today, for the same reason
-    // the subtrees above are: a key added tomorrow has to be covered the moment
-    // it is added. Anyone who needs one of these words in a future CTA is
-    // welcome to restructure — the failure will say exactly which string and
-    // which word, which is the conversation worth having before shipping it.
-    { label: 'es partners.landing', tree: partnersEs.landing },
-    { label: 'en partners.landing', tree: partnersEn.landing },
-    { label: 'pt partners.landing', tree: partnersPt.landing }
+    { label: 'pt account.partnerMentions', tree: accountPt.partnerMentions }
+    // The partner SALES page subtree (`partners.landing`, HOS-985) left with
+    // its `/planes/aliados/` page, removed with the old billing (HOS-1637).
 ];
 
 /**
@@ -161,9 +148,10 @@ describe('HOS-377 AC-3 — the mentions log never speaks of metrics', () => {
     it('covers every locale of every surface', () => {
         // A subtree that went missing (renamed namespace, dropped locale) would
         // otherwise make this suite pass by checking nothing.
-        // Three surfaces × three locales: admin, the partner's own dashboard,
-        // and the public sales page (HOS-985).
-        expect(SUBTREES).toHaveLength(9);
+        // Two surfaces × three locales: admin and the partner's own dashboard.
+        // The public sales page (HOS-985) was removed with the old billing
+        // (HOS-1637).
+        expect(SUBTREES).toHaveLength(6);
         for (const { label, tree } of SUBTREES) {
             expect(tree, `${label} is missing — the guard would check nothing`).toBeDefined();
             expect(collectStrings(tree).length, `${label} has no strings`).toBeGreaterThan(0);

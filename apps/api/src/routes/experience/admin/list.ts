@@ -15,7 +15,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * GET /api/v1/admin/experiences
  * List experience listings — Admin endpoint.
  *
- * Permission model: the entity-specific permission (COMMERCE_VIEW_ALL) is
+ * Permission model: the entity-specific permission (EXPERIENCE_VIEW_ALL) is
  * enforced in the service (`_canAdminList` → `checkExperienceCanAdminList`).
  * The route gate only requires admin-panel access, matching the accommodation
  * admin list pattern.

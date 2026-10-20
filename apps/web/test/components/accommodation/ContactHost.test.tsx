@@ -65,21 +65,12 @@ const ACCOMMODATION_META = {
 
 const ACTIVE_ACCOMMODATION = {
     id: 'acc-001',
-    lifecycleState: 'ACTIVE' as const,
-    deletedAt: null,
-    ...ACCOMMODATION_META
-};
-
-const INACTIVE_ACCOMMODATION = {
-    id: 'acc-001',
-    lifecycleState: 'ARCHIVED' as const,
     deletedAt: null,
     ...ACCOMMODATION_META
 };
 
 const DELETED_ACCOMMODATION = {
     id: 'acc-001',
-    lifecycleState: 'ACTIVE' as const,
     deletedAt: '2024-01-01T00:00:00Z',
     ...ACCOMMODATION_META
 };
@@ -207,16 +198,6 @@ describe('ContactHost', () => {
             const link = screen.getByRole('link');
             expect(link).toBeInTheDocument();
             expect(link).toHaveAttribute('href', expect.stringContaining('conv-999'));
-        });
-
-        it('does NOT render when lifecycleState is not ACTIVE', () => {
-            const { container } = render(
-                <ContactHost
-                    accommodation={INACTIVE_ACCOMMODATION}
-                    locale={LOCALE}
-                />
-            );
-            expect(container.firstChild).toBeNull();
         });
 
         it('does NOT render when accommodation.deletedAt is set', () => {

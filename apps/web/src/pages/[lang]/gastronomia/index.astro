@@ -25,7 +25,7 @@ import {
     buildGastronomyListingSummary,
     DEFAULT_GASTRONOMY_TYPES,
     DEFAULT_PRICE_RANGES
-} from '@/lib/commerce-listing-summary';
+} from '@/lib/listing-summary';
 import { gastronomyApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
 import { toGastronomyCardProps } from '@/lib/api/transforms';
 import { getGastronomyTypeIcon } from '@/lib/gastronomy-type-icons';
@@ -286,7 +286,7 @@ initialParams.sortBy = sortKey;
  * Build a human-readable summary like "Mostrando 9 de 18 establecimientos
  * gastronómicos..." to replace the generic "N resultados encontrados" line
  * (BETA-119). Mirrors the accommodations/events/posts pattern via the shared
- * `commerce-listing-summary` module. `pt` maps to `es` because the builder
+ * `listing-summary` module. `pt` maps to `es` because the builder
  * only ships es/en phrase dictionaries, same as the other listing pages.
  */
 const summaryLocale: 'es' | 'en' = locale === 'pt' ? 'es' : locale;

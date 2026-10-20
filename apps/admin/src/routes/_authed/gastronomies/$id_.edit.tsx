@@ -2,14 +2,14 @@
  * Gastronomy edit page — allows admins to update an existing gastronomy listing.
  *
  * Uses `EntityPageBase` in edit mode with `EntityEditContent` (flat layout).
- * Gate-protected by COMMERCE_EDIT_ALL.
+ * Gate-protected by GASTRONOMY_EDIT_ALL.
  *
  * HOS-382: the `media.featuredImage` / `media.gallery` field handlers were
  * removed. Those fields used to buffer uploads into a `media` object on
  * PATCH, but the `media` JSONB column was dropped (HOS-372) and the update
  * schema silently strips that key — every photo uploaded through this form
  * was orphaned in Cloudinary with no DB row. Photos are now managed via the
- * dedicated Gallery tab (`/gastronomies/:id/gallery`, `CommerceGalleryManager`),
+ * dedicated Gallery tab (`/gastronomies/:id/gallery`, `ListingGalleryManager`),
  * reachable from the `PageTabs` bar below, mirroring accommodations.
  */
 
@@ -45,7 +45,7 @@ function GastronomyEditPage() {
     const entityData = useGastronomyPage(id);
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.COMMERCE_EDIT_ALL]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.GASTRONOMY_EDIT_ALL]}>
             <div className="space-y-4">
                 <div className="flex items-center justify-between gap-4">
                     <PageTabs

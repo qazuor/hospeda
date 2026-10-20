@@ -65,7 +65,6 @@ import {
     NewsletterContentTypeEnum,
     NewsletterSourceEnum,
     NewsletterSubscriberStatusEnum,
-    PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
@@ -73,6 +72,7 @@ import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
+import { createSystemActor } from '../../utils/system-actor.js';
 import { checkCanViewSubscribers, requireSelf } from './newsletter-subscriber.permissions.js';
 import {
     generateUnsubscribeToken,
@@ -702,11 +702,10 @@ export class NewsletterSubscriberService extends BaseService {
         ctx?: ServiceContext
     ): Promise<ServiceOutput<VerifyTokenResult>> {
         // Use a minimal system actor so runWithLoggingAndValidation is happy
-        const systemActor: Actor = {
-            id: '00000000-0000-0000-0000-000000000001',
-            roles: ['SUPER_ADMIN'] as never,
-            permissions: Object.values(PermissionEnum) as never
-        };
+        const systemActor = createSystemActor({
+            jobId: 'newsletter.subscriber.verify-token',
+            permissions: []
+        });
         return this.runWithLoggingAndValidation({
             methodName: 'verifyToken',
             input: { actor: systemActor, token },
@@ -924,11 +923,10 @@ export class NewsletterSubscriberService extends BaseService {
         token: string,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<UnsubscribeByTokenResult>> {
-        const systemActor: Actor = {
-            id: '00000000-0000-0000-0000-000000000001',
-            roles: ['SUPER_ADMIN'] as never,
-            permissions: Object.values(PermissionEnum) as never
-        };
+        const systemActor = createSystemActor({
+            jobId: 'newsletter.subscriber.unsubscribe-by-token',
+            permissions: []
+        });
         return this.runWithLoggingAndValidation({
             methodName: 'unsubscribeByToken',
             input: { actor: systemActor, token },
@@ -1324,11 +1322,10 @@ export class NewsletterSubscriberService extends BaseService {
         },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<LinkAnonymousSubscribersResult>> {
-        const systemActor: Actor = {
-            id: '00000000-0000-0000-0000-000000000001',
-            roles: ['SUPER_ADMIN'] as never,
-            permissions: Object.values(PermissionEnum) as never
-        };
+        const systemActor = createSystemActor({
+            jobId: 'newsletter.subscriber.link-anonymous-subscribers-to-user',
+            permissions: []
+        });
         return this.runWithLoggingAndValidation({
             methodName: 'linkAnonymousSubscribersToUser',
             input: { actor: systemActor, ...input },
@@ -1485,11 +1482,10 @@ export class NewsletterSubscriberService extends BaseService {
         },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<SubscribeResult>> {
-        const systemActor: Actor = {
-            id: '00000000-0000-0000-0000-000000000001',
-            roles: ['SUPER_ADMIN'] as never,
-            permissions: Object.values(PermissionEnum) as never
-        };
+        const systemActor = createSystemActor({
+            jobId: 'newsletter.subscriber.subscribe-guest',
+            permissions: []
+        });
         return this.runWithLoggingAndValidation({
             methodName: 'subscribeGuest',
             input: { actor: systemActor, ...input },
@@ -1641,11 +1637,10 @@ export class NewsletterSubscriberService extends BaseService {
         input: { email: string; channel?: NewsletterChannelEnum },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ sent: true }>> {
-        const systemActor: Actor = {
-            id: '00000000-0000-0000-0000-000000000001',
-            roles: ['SUPER_ADMIN'] as never,
-            permissions: Object.values(PermissionEnum) as never
-        };
+        const systemActor = createSystemActor({
+            jobId: 'newsletter.subscriber.resend-guest-verification',
+            permissions: []
+        });
         return this.runWithLoggingAndValidation({
             methodName: 'resendGuestVerification',
             input: { actor: systemActor, ...input },
@@ -1748,11 +1743,10 @@ export class NewsletterSubscriberService extends BaseService {
         },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<GetEligibleForCampaignResult>> {
-        const systemActor: Actor = {
-            id: '00000000-0000-0000-0000-000000000001',
-            roles: ['SUPER_ADMIN'] as never,
-            permissions: Object.values(PermissionEnum) as never
-        };
+        const systemActor = createSystemActor({
+            jobId: 'newsletter.subscriber.get-eligible-for-campaign',
+            permissions: []
+        });
         return this.runWithLoggingAndValidation({
             methodName: 'getEligibleForCampaign',
             input: { actor: systemActor, ...input },

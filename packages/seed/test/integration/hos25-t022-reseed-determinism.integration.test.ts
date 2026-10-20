@@ -77,7 +77,7 @@ import {
     resetDb
 } from '@repo/db';
 import { users } from '@repo/db/schemas';
-import type { DestinationType } from '@repo/schemas';
+import { type DestinationType, PublicationStatusEnum } from '@repo/schemas';
 import { AccommodationReviewService, type ServiceContext } from '@repo/service-core';
 import { config as loadDotenv } from 'dotenv';
 import { Pool } from 'pg';
@@ -227,8 +227,7 @@ async function insertPlainAccommodation(
                     url: 'https://example.com/t022-accommodation.jpg'
                 }
             },
-            lifecycleState: 'ACTIVE',
-            visibility: 'PUBLIC',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             createdById: ownerId,
             updatedById: ownerId
         },
@@ -715,9 +714,9 @@ describe('HOS-25 T-022 — end-to-end reseed-determinism against a real database
                         type: 'RESTAURANT',
                         ownerId,
                         destinationId,
-                        visibility: 'PUBLIC',
-                        lifecycleState: 'ACTIVE',
-                        moderationState: 'APPROVED',
+                        publicationStatus: PublicationStatusEnum.PUBLISHED,
+                        inactiveSince: new Date(),
+                        deadlinesVersion: 1,
                         isFeatured: false,
                         reviewsCount: 0,
                         averageRating: 0,

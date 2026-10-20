@@ -8,15 +8,13 @@ import {
     DestinationIdSchema,
     UserIdSchema
 } from '../../common/id.schema.js';
-import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { AccommodationEntityMediaFields, BaseVideosFields } from '../../common/media.schema.js';
-import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
 import { SocialNetworkFields } from '../../common/social.schema.js';
 import { TagsFields } from '../../common/tags.schema.js';
-import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { AccommodationTypeEnumSchema } from '../../enums/index.js';
+import { PublicationStatusEnumSchema } from '../../enums/publication-status.schema.js';
 import { AccommodationLocationFields } from './accommodation.location.schema.js';
 import { AccommodationFaqSchema } from './subtypes/accommodation.faq.schema.js';
 import { AccommodationIaDataSchema } from './subtypes/accommodation.ia.schema.js';
@@ -81,7 +79,7 @@ export const AccommodationExtraInfoSchema = z.object({
  * Strict variant of {@link AccommodationExtraInfoSchema} requiring
  * `capacity`/`minNights`/`bedrooms`/`bathrooms` — the four fields a DRAFT may
  * legitimately omit on read/write, but which MUST be present before an
- * accommodation can be published (DRAFT/INACTIVE -> ACTIVE).
+ * accommodation can be published (-> PUBLISHED).
  *
  * Used exclusively by `AccommodationService.publish()`'s completeness guard
  * (HOS-152). Never used on the read or draft-write paths — those stay
@@ -179,24 +177,29 @@ export const AccommodationSchema = z.object({
      */
     translationMeta: TranslationMetaSchema.nullish(),
 
-    isFeatured: z.boolean().default(false),
-
     /**
      * Billing-derived denormalization (SPEC-292, renamed SPEC-309): whether an
      * ACTIVE plan or addon FEATURED_LISTING entitlement currently covers this
      * accommodation. Written ONLY by the sync primitives in
      * `accommodation.sync-featured-by-entitlement.ts` — never by the general
-     * update path. Deliberately independent from `isFeatured` (admin-curated);
-     * see SPEC-309 OQ-3. Never exposed on `AccommodationPublicSchema` — public
-     * routes read it internally to compute the OR'd public `isFeatured` value
+     * update path. Since HOS-1419 dropped the admin-curated `is_featured` column
+     * it is the ONLY featuring source. Never exposed on `AccommodationPublicSchema`
+     * — public routes read it internally to compute the public `isFeatured` value
      * (HOS-929) and strip the raw column before serialization.
      */
     featuredByEntitlement: z.boolean().default(false),
 
+    /**
+     * Publication state of the listing (`PublicationStatusEnum`, the `listing`
+     * state of `V/03` §9). It replaces the six old lifecycle, visibility,
+     * moderation and billing-restriction columns (HOS-1641): only `PUBLISHED`
+     * is public.
+     * Server-managed: written ONLY by the PB publication transitions, never
+     * through a create/update input (it is omitted from those schemas).
+     */
+    publicationStatus: PublicationStatusEnumSchema,
+
     // Base field groups
-    ...BaseLifecycleFields,
-    ...BaseModerationFields,
-    ...BaseVisibilityFields,
     ...BaseReviewFields,
     ...BaseSeoFields,
     ...BaseContactFields,
@@ -212,42 +215,13 @@ export const AccommodationSchema = z.object({
     ownerId: UserIdSchema,
 
     /**
-     * Service-suspension flag (SPEC-143 #29). Denormalized from
-     * `users.service_suspended` (the canonical source) for the public-read hot
-     * path and the accommodation edit-lock. Flipped in bulk across an owner's
-     * accommodations when their subscription is paused with service suspension
-     * (host self-pause or admin "full" pause), and cleared on resume.
-     * Server-managed: never set through create/update input (it is omitted from
-     * those schemas); only the pause/resume flow mutates it.
-     */
-    ownerSuspended: z.boolean().default(false),
-
-    /**
-     * Downgrade-restriction flag (SPEC-167 §3, D-3). Set to `true` by the
-     * apply-scheduled-plan-changes cron (and the admin `onAfterSubscriptionChangePlan`
-     * hook) when a host downgrades and the accommodation exceeds the target plan's
-     * `MAX_ACCOMMODATIONS` cap. Cleared automatically on re-upgrade once the host is
-     * back within cap.
-     *
-     * This flag is intentionally separate from `ownerSuspended` — `ownerSuspended`
-     * is a bulk pause/resume toggle for ALL of an owner's accommodations; this flag
-     * is a selective, per-accommodation downgrade restriction. The two states MUST
-     * NOT collide (design decision D-3).
-     *
-     * Server-managed: never set through create/update input (it is omitted from those
-     * schemas); only the downgrade-restriction flow mutates it.
-     */
-    planRestricted: z.boolean().default(false),
-
-    /**
      * Master visibility toggle for the external reputation block (SPEC-237).
      *
      * When `false`, the public detail page hides all external reputation blocks
      * regardless of individual listing `showLink` / `showReviews` flags.
      * When `true`, individual platform listing flags govern visibility.
      *
-     * NOT NULL DEFAULT false in the DB — matches the same semantics as
-     * `ownerSuspended` and `planRestricted`.
+     * NOT NULL DEFAULT false in the DB.
      * Owner-managed via the protected `PATCH /:id/external-reputation/master-toggle`
      * endpoint; defaults to false (hidden) until the owner opts in.
      */
@@ -259,23 +233,6 @@ export const AccommodationSchema = z.object({
     verifiedAt: z.coerce.date().nullable().optional(),
     /** Admin user who performed the last verify/unverify action. */
     verifiedById: UserIdSchema.nullable().optional(),
-
-    /**
-     * HOS-1181: when BILLING took this listing down — today only the
-     * accommodation trial-expiry cron's unpublish (which passes
-     * `billingUnpublish: true`). Null when the listing is live, was taken down
-     * by its owner, or has been published again.
-     *
-     * `lifecycleState = INACTIVE` alone cannot tell a billing unpublish from
-     * an owner-initiated one (both write the same row shape), so this column is
-     * what the win-back republish selects on when the owner pays. Cleared by
-     * ANY publish, in the same write that flips `lifecycleState` to ACTIVE.
-     *
-     * Server-managed: never set through create/update input (it is omitted
-     * from those schemas); only the trial-expiry cron sets it and
-     * publish/win-back-republish clear it.
-     */
-    billingUnpublishedAt: z.date().nullable().optional(),
 
     // Optional related data
     iaData: z.array(AccommodationIaDataSchema).optional(),

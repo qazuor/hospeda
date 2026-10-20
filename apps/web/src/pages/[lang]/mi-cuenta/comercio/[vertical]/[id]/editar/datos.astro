@@ -1,7 +1,7 @@
 ---
 /**
  * @file datos.astro
- * @description Identity and description section of the commerce editor (HOS-1080).
+ * @description Identity and description section of the gastronomy/experience editor (HOS-1080).
  *
  * Needs the destinations catalog but NOT the amenity/feature ones. `slug` stays
  * out of the form — the owner never edits it directly; the server keeps it
@@ -13,15 +13,15 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
-import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
-import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
-import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { ListingEditor } from '@/components/listing/ListingEditor.client';
+import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
+import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 import { isListingPublished } from '@/lib/listing-slug-refresh';
 
 export const prerender = false;
 
-const resolution = await resolveCommerceEditorPage({
+const resolution = await resolveListingEditorPage({
 	astro: Astro,
 	sectionSlug: 'datos',
 	need: ['destinations']
@@ -42,31 +42,31 @@ const { t } = createTranslations(locale);
 //
 // It lives on THIS page since HOS-1080, and only this one: it is about what
 // renaming does to the URL, and the name field is here.
-const listingIsPublished = isListingPublished({ lifecycleState: detail.lifecycleState });
+const listingIsPublished = isListingPublished({ publicationStatus: detail.publicationStatus });
 ---
 
-<CommerceEditorSectionLayout
+<ListingEditorSectionLayout
 	locale={locale}
 	registry={registry}
 	listingId={listingId}
 	listingName={detail.name}
 	currentSectionId={sectionId}
 	currentSectionSlug="datos"
-	title={t('commerce.owner.editor.sectionNav.basicInfo', 'Información básica')}
+	title={t('listing.owner.editor.sectionNav.basicInfo', 'Información básica')}
 >
 	<p class="ce-identity__notice">
 		{listingIsPublished
 			? t(
-					'commerce.owner.editor.slugFixedNotice',
+					'listing.owner.editor.slugFixedNotice',
 					'La dirección web de tu ficha (su URL) ya está fija: cambiar el nombre no la modifica.',
 				)
 			: t(
-					'commerce.owner.editor.slugFollowsNameNotice',
+					'listing.owner.editor.slugFollowsNameNotice',
 					'La dirección web de tu ficha (su URL) va a seguir al nombre hasta que la publiques.',
 				)}
 	</p>
 
-	<CommerceListingEditor
+	<ListingEditor
 		client:load
 		sectionId="basicInfo"
 		vertical={vertical}
@@ -76,7 +76,7 @@ const listingIsPublished = isListingPublished({ lifecycleState: detail.lifecycle
 		destinations={resolution.destinations}
 		destinationsLoadFailed={resolution.destinationsLoadFailed}
 	/>
-</CommerceEditorSectionLayout>
+</ListingEditorSectionLayout>
 
 <style>
 	.ce-identity__notice {

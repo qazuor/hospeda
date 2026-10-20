@@ -67,6 +67,8 @@ import type { TranslationFn } from '@/lib/i18n';
  * endpoint returns — not `LimitDefinition[]`.
  */
 export interface PricingPlan {
+    readonly planVersionId?: string;
+    readonly billingOptions?: { readonly monthly: string; readonly annual: string | null };
     readonly slug: string;
     readonly name: string;
     readonly description: string;

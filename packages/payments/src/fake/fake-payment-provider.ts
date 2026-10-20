@@ -1,0 +1,817 @@
+/**
+ * The in-memory fake payment provider (DEC-ARCH-004, condition B).
+ *
+ * It implements the WHOLE interface, every one of the eight capabilities, and
+ * it is written without one provider concept: being writable that way is what
+ * proves the interface does not leak one (AC:B1:1).
+ *
+ * **It lies like the real one** (DEC-TEST-003, AC:B1:9, AC:B1:13): every lie of
+ * the closed list (`fake-lists.json`) whose surface the interface carries is
+ * told here, by default, each in ONE place, behind `this.lying({ lie })`. A
+ * test turns a lie off only by naming it and saying why
+ * (`honestAbout: [{ lie, why }]`); GUARD:G15 checks both rules statically. The
+ * provider rules stay on; measured behaviours switch off only by name with why. What it
+ * simulates without having measured it is apart and off by default
+ * (`simulate: [{ simulation, why }]`).
+ *
+ * Every read by id carries its instant, taken from the injected clock (AC:B1:4),
+ * and every delay of the fake (a late charge, a late notice, an expiring link)
+ * runs on that same clock: the fake never reads the system time.
+ *
+ * Beyond the interface it exposes two test-side handles: `approve` stands for
+ * the customer granting the permission on the provider's page, and
+ * `takeDeliveries` hands over the notices the fake sent and that are due.
+ */
+import type { Clock } from '@repo/billing-verticals-contract';
+import type { CapabilitySupportMap, PaymentCapability } from '../provider/capabilities';
+import type {
+    AuthorizationRef,
+    AuthorizationSearchInput,
+    AuthorizationSearchResult,
+    AuthorizationSnapshot,
+    AuthorizeInput,
+    AuthorizeResult,
+    ChangeAmountInput,
+    ChargeInput,
+    ChargeListResult,
+    ChargeRef,
+    ChargeResult,
+    ChargeSnapshot,
+    MutationAcknowledgement,
+    NoticeDelivery,
+    OrderRef,
+    OrderSearchInput,
+    OrderSearchResult,
+    OrderSnapshot,
+    PaymentProvider,
+    ProviderNotice,
+    RefundInput,
+    RefundResult
+} from '../provider/payment-provider';
+import { type ProviderRead, stampProviderRead } from '../provider/provider-read';
+import {
+    AuthorizationRefSchema,
+    AuthorizationSearchInputSchema,
+    AuthorizeInputSchema,
+    ChangeAmountInputSchema,
+    ChargeInputSchema,
+    ChargeRefSchema,
+    NoticeDeliverySchema,
+    OrderRefSchema,
+    OrderSearchInputSchema,
+    parseProviderInput,
+    RefundInputSchema
+} from '../provider/schemas';
+import { createFakeCardValidation } from './fake-card-validation';
+import { applyFakeChargeCycles, fakeCycleRetryInstants } from './fake-charge-cycle';
+import { applyFakeChargeback } from './fake-chargeback';
+import { FakeLedger } from './fake-ledger';
+import type { FakeBehaviourId, FakeLieId } from './fake-lists';
+import { decodeFakeNotice } from './fake-notice';
+import {
+    FAKE_SWITCHABLE_BEHAVIOURS,
+    type FakePaymentProviderOptions,
+    parseFakeOptions
+} from './fake-options';
+import { FakeOrders } from './fake-orders';
+import { FakeOutbox } from './fake-outbox';
+import { assertChargeableAmount, assertUnusedPaymentToken, nextChargeBatch } from './fake-rules';
+import { searchStoredAuthorizations } from './fake-search';
+import {
+    APPROVAL_BASE_URL,
+    assertSameCurrency,
+    FAKE_CAPABILITY_SUPPORT,
+    FAKE_HONEST_LINK_LIFETIME_MS,
+    NOT_REFUNDABLE_MESSAGE,
+    rejected,
+    throughNetwork
+} from './fake-support';
+
+export { FAKE_CAPABILITY_SUPPORT, FAKE_HONEST_LINK_LIFETIME_MS, NOT_REFUNDABLE_MESSAGE };
+
+/** In-memory payment provider implementing all eight capabilities, lying as measured. */
+export class FakePaymentProvider implements PaymentProvider {
+    readonly capabilitySupport: CapabilitySupportMap = FAKE_CAPABILITY_SUPPORT;
+
+    private readonly outbox: FakeOutbox;
+    private readonly ledger: FakeLedger;
+    private readonly orders: FakeOrders;
+    private readonly clock: Clock;
+    private readonly honest: ReadonlySet<string>;
+    private readonly simulating: ReadonlySet<string>;
+    private readonly without: ReadonlySet<string>;
+    private readonly usedPaymentTokens = new Set<string>();
+
+    /**
+     * @param options.clock - The clock every read and every delay runs on
+     * @param options.idNamespace - Keeps generated ids unique across integration test providers sharing a database
+     * @param options.honestAbout - The lies this test turns off, each with why
+     * @param options.simulate - The simulations this test turns on, each with why
+     */
+    constructor(options: FakePaymentProviderOptions) {
+        const parsed = parseFakeOptions({ options });
+        for (const behaviour of parsed.without) {
+            if (!(FAKE_SWITCHABLE_BEHAVIOURS as readonly string[]).includes(behaviour)) {
+                throw new Error(`${behaviour} is not switchable yet`);
+            }
+        }
+        this.clock = parsed.clock;
+        this.honest = parsed.honest;
+        this.simulating = parsed.simulating;
+        this.without = parsed.without;
+        this.outbox = new FakeOutbox({
+            clock: this.clock,
+            isHonestAbout: ({ lie }) => this.honest.has(lie),
+            outOfOrder: this.simulating.has('noticesOutOfOrder')
+        });
+        this.ledger = new FakeLedger({ outbox: this.outbox, idNamespace: parsed.idNamespace });
+        this.orders = new FakeOrders({ ledger: this.ledger, clock: this.clock });
+    }
+
+    /**
+     * Capability 1 · authorize: the authorization is born pending the customer's
+     * approval. Each equal request creates another (M3), and the link comes
+     * back broken (M10).
+     */
+    async authorize(input: AuthorizeInput): Promise<AuthorizeResult> {
+        const { value } = parseProviderInput({
+            schema: AuthorizeInputSchema,
+            input,
+            capability: 'authorize'
+        });
+        return throughNetwork({
+            simulating: this.simulating,
+            capability: 'authorize',
+            run: () => {
+                this.catchUp();
+                assertChargeableAmount({ amount: value.amount, capability: 'authorize' });
+                assertUnusedPaymentToken({
+                    paymentToken: value.paymentToken,
+                    usedTokens: this.usedPaymentTokens
+                });
+                const existing = [...this.ledger.authorizations.values()].find(
+                    (stored) => stored.snapshot.reference === value.reference
+                );
+                if (existing && !this.lying({ lie: 'M3' })) {
+                    const { authorizationId } = existing.snapshot;
+                    return { authorizationId, approvalUrl: existing.approvalUrl };
+                }
+                const authorizationId = this.ledger.nextId({ prefix: 'auth' });
+                const link = `${APPROVAL_BASE_URL}${authorizationId}`;
+                const approvalUrl = this.lying({ lie: 'M10' }) ? `${link}?activation=true` : link;
+                const dropsSentFields = this.dropsWhatWasSent();
+                this.ledger.authorizations.set(authorizationId, {
+                    snapshot: {
+                        authorizationId,
+                        reference: value.reference,
+                        status: 'pending',
+                        amount: { ...value.amount },
+                        cadence: dropsSentFields ? { everyMonths: 1 } : { ...value.cadence },
+                        firstChargeAt: dropsSentFields ? null : (value.firstChargeAt ?? null),
+                        nextChargeAt: null,
+                        freePeriodDays: this.addedFreePeriodDays({
+                            firstChargeAt: value.firstChargeAt
+                        }),
+                        chargeRecordCount: 0,
+                        lastChargedAt: null,
+                        lastModifiedAt: this.clock.now().toISOString()
+                    },
+                    version: 1,
+                    approvalUrl,
+                    createdAt: this.now(),
+                    payerEmail: value.payerEmail ?? null
+                });
+                if (value.paymentToken !== undefined)
+                    this.usedPaymentTokens.add(value.paymentToken);
+                this.ledger.emit({
+                    resourceKind: 'authorization',
+                    resourceId: authorizationId,
+                    version: 1
+                });
+                return { authorizationId, approvalUrl };
+            }
+        });
+    }
+
+    /**
+     * Test handle: the customer grants the permission on the provider's page.
+     * It is not a request of ours, so no network simulation touches it.
+     *
+     * @param input.authorizationId - The pending authorization
+     * @returns The acknowledgement of the transition
+     */
+    async approve(input: AuthorizationRef): Promise<MutationAcknowledgement> {
+        const current = this.ledger.authorizationOrThrow({
+            id: input.authorizationId,
+            capability: 'authorize'
+        });
+        const nextChargeAt = current.snapshot.firstChargeAt ?? this.clock.now().toISOString();
+        const result = await this.transition({
+            input,
+            capability: 'authorize',
+            from: ['pending'],
+            to: 'active',
+            viaNetwork: false
+        });
+        current.snapshot = { ...current.snapshot, nextChargeAt };
+        if (this.behaving({ behaviour: 'RP12' })) {
+            createFakeCardValidation({ clock: this.clock, ledger: this.ledger, passes: true });
+        }
+        return result;
+    }
+
+    /**
+     * Test handle for the customer changing their card on the provider page.
+     * Measured by EX-36 (sandbox) and PA-3 (production); the retry after a
+     * recycled charge (GR-1) is not simulated here.
+     */
+    async changeCard(input: {
+        readonly authorizationId: string;
+        readonly passes: boolean;
+    }): Promise<{ readonly chargeId: string } | null> {
+        this.catchUp();
+        const authorization = this.ledger.authorizationOrThrow({
+            id: input.authorizationId,
+            capability: 'authorize'
+        });
+        if (authorization.snapshot.status === 'cancelled') {
+            throw rejected({
+                capability: 'authorize',
+                reason: 'a cancelled authorization accepts no card change'
+            });
+        }
+        if (!this.behaving({ behaviour: 'RP12' })) return null;
+        const validation = createFakeCardValidation({
+            clock: this.clock,
+            ledger: this.ledger,
+            passes: input.passes
+        });
+        return { chargeId: validation.chargeId };
+    }
+
+    /** Test handle: records a rejected charge without requiring a live authorization. */
+    async declineCharge(input: {
+        readonly authorizationId: string;
+        readonly declineReason: string | null;
+    }): Promise<{ readonly chargeId: string }> {
+        this.catchUp();
+        const authorization = this.ledger.authorizationOrThrow({
+            id: input.authorizationId,
+            capability: 'charge'
+        });
+        const chargeId = this.ledger.nextId({ prefix: 'charge' });
+        this.ledger.charges.set(chargeId, {
+            snapshot: {
+                chargeId,
+                createdAt: this.clock.now().toISOString(),
+                expiresAt: this.expiryFor({
+                    authorization,
+                    first: ![...this.ledger.charges.values()].some(
+                        (c) => c.snapshot.authorizationId === input.authorizationId
+                    )
+                }),
+                purpose: 'charge',
+                authorizationId: input.authorizationId,
+                reference: authorization.snapshot.reference,
+                status: 'rejected',
+                declineReason: input.declineReason,
+                amount: { ...authorization.snapshot.amount },
+                refundedAmount: {
+                    amountMinor: 0,
+                    currency: authorization.snapshot.amount.currency
+                },
+                chargedBack: false
+            },
+            version: 1,
+            settleAt: null,
+            refundAttempts: 0,
+            refundsByReference: new Map()
+        });
+        this.writeLastAttempt({ authorization, approved: false });
+        this.advanceNextCharge({ authorization });
+        this.ledger.emit({ resourceKind: 'charge', resourceId: chargeId, version: 1 });
+        return { chargeId };
+    }
+
+    /** Test handle: a rejected cycle retries three times on one record, then pauses at expiry. */
+    async failChargeCycle(input: {
+        readonly authorizationId: string;
+        readonly declineReason: string | null;
+        readonly approveOnAttempt?: 2 | 3 | 4;
+    }): Promise<{ readonly chargeId: string }> {
+        const result = await this.declineCharge(input);
+        const stored = this.ledger.chargeOrThrow({ id: result.chargeId, capability: 'charge' });
+        if (this.behaving({ behaviour: 'RP8' }) && stored.snapshot.expiresAt !== null) {
+            stored.cycleAttempts = fakeCycleRetryInstants({
+                createdAt: stored.snapshot.createdAt,
+                expiresAt: stored.snapshot.expiresAt
+            });
+            stored.cycleAttempt = 1;
+            stored.approveOnAttempt = input.approveOnAttempt;
+        }
+        return result;
+    }
+
+    /**
+     * Capability 2 · charge: only an active authorization is charged (RP9), in
+     * its currency and within the amount range (RP3, RP4). The charge lands in
+     * the first batch after the hour it was asked (M8): pending until then.
+     */
+    async charge(input: ChargeInput): Promise<ChargeResult> {
+        const { value } = parseProviderInput({
+            schema: ChargeInputSchema,
+            input,
+            capability: 'charge'
+        });
+        return throughNetwork({
+            simulating: this.simulating,
+            capability: 'charge',
+            run: () => {
+                this.catchUp();
+                const stored = this.ledger.authorizationOrThrow({
+                    id: value.authorizationId,
+                    capability: 'charge'
+                });
+                if (stored.snapshot.status === 'paused') {
+                    throw rejected({
+                        capability: 'charge',
+                        reason: 'a paused authorization is not charged'
+                    });
+                }
+                if (stored.snapshot.status !== 'active') {
+                    throw rejected({
+                        capability: 'charge',
+                        reason: `authorization is ${stored.snapshot.status}`
+                    });
+                }
+                assertChargeableAmount({ amount: value.amount, capability: 'charge' });
+                assertSameCurrency({
+                    expected: stored.snapshot.amount,
+                    actual: value.amount,
+                    capability: 'charge'
+                });
+                const late = this.lying({ lie: 'M8' });
+                const chargeId = this.ledger.nextId({ prefix: 'charge' });
+                this.ledger.charges.set(chargeId, {
+                    snapshot: {
+                        chargeId,
+                        createdAt: this.clock.now().toISOString(),
+                        expiresAt: this.expiryFor({
+                            authorization: stored,
+                            first: ![...this.ledger.charges.values()].some(
+                                (c) => c.snapshot.authorizationId === value.authorizationId
+                            )
+                        }),
+                        purpose: 'charge',
+                        authorizationId: value.authorizationId,
+                        reference: value.reference,
+                        status: late ? 'pending' : 'approved',
+                        declineReason: null,
+                        amount: { ...value.amount },
+                        refundedAmount: { amountMinor: 0, currency: value.amount.currency },
+                        chargedBack: false
+                    },
+                    version: 1,
+                    settleAt: late ? nextChargeBatch({ at: this.now() }) : null,
+                    refundAttempts: 0,
+                    refundsByReference: new Map()
+                });
+                this.writeLastAttempt({ authorization: stored, approved: !late });
+                this.advanceNextCharge({ authorization: stored });
+                this.ledger.emit({ resourceKind: 'charge', resourceId: chargeId, version: 1 });
+                return { chargeId };
+            }
+        });
+    }
+
+    /**
+     * Capability 3 · change the amount of a live authorization. A paused one
+     * refuses it (RP6); the new amount keeps the range (RP3, RP4). No notice
+     * says it happened (M5).
+     */
+    async changeAmount(input: ChangeAmountInput): Promise<MutationAcknowledgement> {
+        const { value } = parseProviderInput({
+            schema: ChangeAmountInputSchema,
+            input,
+            capability: 'changeAmount'
+        });
+        return throughNetwork({
+            simulating: this.simulating,
+            capability: 'changeAmount',
+            run: () => {
+                this.catchUp();
+                const stored = this.ledger.authorizationOrThrow({
+                    id: value.authorizationId,
+                    capability: 'changeAmount'
+                });
+                const { status } = stored.snapshot;
+                if (status === 'cancelled' || status === 'paused') {
+                    throw rejected({
+                        capability: 'changeAmount',
+                        reason: `a ${status} authorization accepts no change`
+                    });
+                }
+                assertChargeableAmount({ amount: value.amount, capability: 'changeAmount' });
+                assertSameCurrency({
+                    expected: stored.snapshot.amount,
+                    actual: value.amount,
+                    capability: 'changeAmount'
+                });
+                stored.snapshot = {
+                    ...stored.snapshot,
+                    amount: { ...value.amount },
+                    lastModifiedAt: this.clock.now().toISOString()
+                };
+                this.ledger.bump({
+                    stored,
+                    resourceKind: 'authorization',
+                    resourceId: value.authorizationId,
+                    notify: !this.lying({ lie: 'M5' })
+                });
+                return { accepted: true as const, resourceId: value.authorizationId };
+            }
+        });
+    }
+
+    /** Capability 4 · pause an active authorization. */
+    async pause(input: AuthorizationRef): Promise<MutationAcknowledgement> {
+        return this.transition({
+            input,
+            capability: 'pauseAndResume',
+            from: ['active'],
+            to: 'paused'
+        });
+    }
+
+    /** Capability 4 · resume a paused authorization. */
+    async resume(input: AuthorizationRef): Promise<MutationAcknowledgement> {
+        return this.transition({
+            input,
+            capability: 'pauseAndResume',
+            from: ['paused'],
+            to: 'active'
+        });
+    }
+
+    /** Capability 5 · cancel: irreversible, from any state but cancelled (RP6: paused too). */
+    async cancel(input: AuthorizationRef): Promise<MutationAcknowledgement> {
+        return this.transition({
+            input,
+            capability: 'cancel',
+            from: ['pending', 'active', 'paused'],
+            to: 'cancelled'
+        });
+    }
+
+    /**
+     * Capability 6 · refund, total or partial, cumulative against what was
+     * charged. The `reference` is the idempotency key: without it the request
+     * fails before anything else (RP2), and repeated it moves nothing (RP5).
+     * The first partial refund of a charge is refused as not refundable (M13).
+     */
+    async refund(input: RefundInput): Promise<RefundResult> {
+        const { value } = parseProviderInput({
+            schema: RefundInputSchema,
+            input,
+            capability: 'refund'
+        });
+        return throughNetwork({
+            simulating: this.simulating,
+            capability: 'refund',
+            run: () => {
+                this.catchUp();
+                const stored = this.ledger.chargeOrThrow({
+                    id: value.chargeId,
+                    capability: 'refund'
+                });
+                const replayed = stored.refundsByReference.get(value.reference);
+                if (replayed !== undefined) {
+                    if (replayed !== value.amount.amountMinor) {
+                        throw rejected({
+                            capability: 'refund',
+                            reason: 'the key was already used for another amount'
+                        });
+                    }
+                    return { refundId: '' };
+                }
+                const { snapshot } = stored;
+                if (snapshot.status !== 'approved') {
+                    throw rejected({
+                        capability: 'refund',
+                        reason: `charge is ${snapshot.status}`
+                    });
+                }
+                assertSameCurrency({
+                    expected: snapshot.amount,
+                    actual: value.amount,
+                    capability: 'refund'
+                });
+                const refunded = snapshot.refundedAmount.amountMinor + value.amount.amountMinor;
+                if (refunded > snapshot.amount.amountMinor) {
+                    throw rejected({
+                        capability: 'refund',
+                        reason: 'refund exceeds the charged amount'
+                    });
+                }
+                stored.refundAttempts += 1;
+                const partial = refunded < snapshot.amount.amountMinor;
+                if (stored.refundAttempts === 1 && partial && this.lying({ lie: 'M13' })) {
+                    throw rejected({ capability: 'refund', reason: NOT_REFUNDABLE_MESSAGE });
+                }
+                stored.snapshot = {
+                    ...snapshot,
+                    refundedAmount: { amountMinor: refunded, currency: snapshot.amount.currency }
+                };
+                stored.refundsByReference.set(value.reference, value.amount.amountMinor);
+                const refundId = this.ledger.nextId({ prefix: 'refund' });
+                this.ledger.bump({ stored, resourceKind: 'charge', resourceId: value.chargeId });
+                this.ledger.emit({ resourceKind: 'refund', resourceId: refundId, version: 1 });
+                return { refundId };
+            }
+        });
+    }
+
+    /** Capability 7 · read an authorization by id. */
+    async readAuthorization(input: AuthorizationRef): Promise<ProviderRead<AuthorizationSnapshot>> {
+        const { value } = parseProviderInput({
+            schema: AuthorizationRefSchema,
+            input,
+            capability: 'read'
+        });
+        this.catchUp();
+        const stored = this.ledger.authorizationOrThrow({
+            id: value.authorizationId,
+            capability: 'read'
+        });
+        const records = [...this.ledger.charges.values()].filter(
+            (charge) => charge.snapshot.authorizationId === value.authorizationId
+        );
+        const snapshot = structuredClone({
+            ...stored.snapshot,
+            chargeRecordCount: this.lying({ lie: 'M7' })
+                ? records.length
+                : records.filter((c) => c.snapshot.status === 'approved').length
+        });
+        return stampProviderRead({ snapshot, clock: this.clock });
+    }
+
+    async listCharges(input: AuthorizationRef): Promise<ChargeListResult> {
+        const { value } = parseProviderInput({
+            schema: AuthorizationRefSchema,
+            input,
+            capability: 'read'
+        });
+        this.catchUp();
+        this.ledger.authorizationOrThrow({ id: value.authorizationId, capability: 'read' });
+        return {
+            chargeIds: [...this.ledger.charges.values()]
+                .filter((c) => c.snapshot.authorizationId === value.authorizationId)
+                .sort((a, b) => a.snapshot.createdAt.localeCompare(b.snapshot.createdAt))
+                .map((c) => c.snapshot.chargeId)
+        };
+    }
+
+    /** Capability 7 · search authorizations. */
+    async searchAuthorizations(
+        input: AuthorizationSearchInput
+    ): Promise<AuthorizationSearchResult> {
+        const { value } = parseProviderInput({
+            schema: AuthorizationSearchInputSchema,
+            input,
+            capability: 'read'
+        });
+        this.catchUp();
+        return searchStoredAuthorizations({
+            stored: this.ledger.authorizations.values(),
+            input: value,
+            partial: this.lying({ lie: 'M4' })
+        });
+    }
+
+    /** Capability 7 · read a charge by id. */
+    async readCharge(input: ChargeRef): Promise<ProviderRead<ChargeSnapshot>> {
+        const { value } = parseProviderInput({
+            schema: ChargeRefSchema,
+            input,
+            capability: 'read'
+        });
+        this.catchUp();
+        const snapshot = structuredClone(
+            this.ledger.chargeOrThrow({ id: value.chargeId, capability: 'read' }).snapshot
+        );
+        return stampProviderRead({ snapshot, clock: this.clock });
+    }
+
+    /** Capability 7 · read a one-time order by id. */
+    async readOrder(input: OrderRef): Promise<ProviderRead<OrderSnapshot>> {
+        const ref = { schema: OrderRefSchema, input, capability: 'read' } as const;
+        const { orderId } = parseProviderInput(ref).value;
+        this.catchUp();
+        return stampProviderRead({ snapshot: this.orders.read({ orderId }), clock: this.clock });
+    }
+
+    /** Capability 7 · search orders by exact reference inside a bounded range (RP13, EX-57). */
+    async searchOrders(input: OrderSearchInput): Promise<OrderSearchResult> {
+        const ref = { schema: OrderSearchInputSchema, input, capability: 'read' } as const;
+        const { value } = parseProviderInput(ref);
+        this.catchUp();
+        return this.orders.search(value);
+    }
+
+    /** Test handle (not a PaymentProvider method): the customer places an order, paid or not. */
+    placeOrder(input: {
+        readonly reference: string;
+        readonly createdAt?: string;
+        readonly paid: boolean;
+    }): { readonly orderId: string } {
+        return this.orders.place(input);
+    }
+
+    /** Capability 8 · decode one of the fake's own deliveries, in either format, into a notice. */
+    async decodeNotice(input: NoticeDelivery): Promise<ProviderNotice> {
+        const { value } = parseProviderInput({
+            schema: NoticeDeliverySchema,
+            input,
+            capability: 'notify'
+        });
+        return decodeFakeNotice({ delivery: value }).notice;
+    }
+
+    /** Test handle, like `approve` (not a PaymentProvider method): the payer disputes an approved charge. */
+    async chargeBack(input: ChargeRef): Promise<MutationAcknowledgement> {
+        const ref = { schema: ChargeRefSchema, input, capability: 'read' } as const;
+        const { chargeId } = parseProviderInput(ref).value;
+        this.catchUp();
+        applyFakeChargeback({ ledger: this.ledger, chargeId });
+        return { accepted: true, resourceId: chargeId };
+    }
+
+    /**
+     * Test handle: hands over, and forgets, every delivery due by now.
+     *
+     * @returns The due deliveries, oldest first
+     */
+    takeDeliveries(): { readonly deliveries: readonly NoticeDelivery[] } {
+        this.catchUp();
+        return this.outbox.take();
+    }
+
+    private lying(args: { readonly lie: FakeLieId }): boolean {
+        return !this.honest.has(args.lie);
+    }
+
+    private behaving(args: { readonly behaviour: FakeBehaviourId }): boolean {
+        return !this.without.has(args.behaviour);
+    }
+
+    private expiryFor(args: {
+        readonly authorization: { snapshot: AuthorizationSnapshot };
+        readonly first: boolean;
+    }): string | null {
+        if (!this.behaving({ behaviour: 'RP7' }) || args.first) return null;
+        const date = new Date(this.clock.now());
+        date.setUTCMonth(date.getUTCMonth() + args.authorization.snapshot.cadence.everyMonths);
+        return date.toISOString();
+    }
+
+    /** Advance the provider calendar by one cycle when a charge is created. */
+    private advanceNextCharge(args: {
+        readonly authorization: { snapshot: AuthorizationSnapshot };
+    }): void {
+        const current = args.authorization.snapshot.nextChargeAt;
+        if (current === null) return;
+        const date = new Date(current);
+        date.setUTCMonth(date.getUTCMonth() + args.authorization.snapshot.cadence.everyMonths);
+        args.authorization.snapshot = {
+            ...args.authorization.snapshot,
+            nextChargeAt: date.toISOString()
+        };
+    }
+
+    /** Simulate Mercado Pago moving its own calendar; useful for measured provider behavior. */
+    moveNextCharge(input: { readonly authorizationId: string; readonly at: Date }): void {
+        const stored = this.ledger.authorizationOrThrow({
+            id: input.authorizationId,
+            capability: 'read'
+        });
+        stored.snapshot = { ...stored.snapshot, nextChargeAt: input.at.toISOString() };
+        this.ledger.bump({
+            stored,
+            resourceKind: 'authorization',
+            resourceId: input.authorizationId
+        });
+    }
+
+    private writeLastAttempt(args: {
+        readonly authorization: { snapshot: AuthorizationSnapshot; version: number };
+        readonly approved: boolean;
+    }): void {
+        if (!this.behaving({ behaviour: 'RP11' }) && !args.approved) return;
+        args.authorization.snapshot = {
+            ...args.authorization.snapshot,
+            lastChargedAt: this.clock.now().toISOString()
+        };
+    }
+
+    /** EX-5 measured discarded `items` at creation; dropping cycle/date extends AC:B3:42.
+     * M1 + M9: combinación no medida; comportamiento provisorio, Coord-33.
+     * M1 descarta la fecha guardada y M9 calcula el período desde la fecha enviada.
+     */
+    private dropsWhatWasSent(): boolean {
+        return this.lying({ lie: 'M1' });
+    }
+
+    /** A future first charge can carry a provider-added period; it is not our trial state. */
+    private addedFreePeriodDays(args: {
+        readonly firstChargeAt: string | undefined;
+    }): number | null {
+        const first = args.firstChargeAt ? Date.parse(args.firstChargeAt) : NaN;
+        if (!(first > this.now()) || !this.lying({ lie: 'M9' })) return null;
+        return Math.max(1, Math.ceil((first - this.now()) / 86_400_000));
+    }
+
+    /** Brings the time-driven state up to the clock: late charges land, open links expire. */
+    private catchUp(): void {
+        const now = this.now();
+        applyFakeChargeCycles({
+            charges: this.ledger.charges,
+            authorizations: this.ledger.authorizations,
+            now,
+            ledger: this.ledger,
+            updateLastAttempt: this.behaving({ behaviour: 'RP11' })
+        });
+        for (const [chargeId, stored] of this.ledger.charges) {
+            if (stored.settleAt === null || stored.settleAt > now) continue;
+            const at = stored.settleAt;
+            stored.settleAt = null;
+            stored.snapshot = { ...stored.snapshot, status: 'approved' };
+            this.ledger.bump({ stored, resourceKind: 'charge', resourceId: chargeId, at });
+        }
+        this.expireOpenLinks({ now });
+    }
+
+    /** With M11 off, a link nobody approved expires after a day. With it on, never. */
+    private expireOpenLinks(args: { readonly now: number }): void {
+        if (this.lying({ lie: 'M11' })) return;
+        for (const [authorizationId, stored] of this.ledger.authorizations) {
+            const expiresAt = stored.createdAt + FAKE_HONEST_LINK_LIFETIME_MS;
+            if (stored.snapshot.status !== 'pending' || expiresAt > args.now) continue;
+            stored.snapshot = { ...stored.snapshot, status: 'cancelled' };
+            this.ledger.bump({
+                stored,
+                resourceKind: 'authorization',
+                resourceId: authorizationId,
+                at: expiresAt
+            });
+        }
+    }
+
+    private async transition(args: {
+        readonly input: AuthorizationRef;
+        readonly capability: PaymentCapability;
+        readonly from: readonly AuthorizationSnapshot['status'][];
+        readonly to: AuthorizationSnapshot['status'];
+        readonly viaNetwork?: boolean;
+    }): Promise<MutationAcknowledgement> {
+        const { value } = parseProviderInput({
+            schema: AuthorizationRefSchema,
+            input: args.input,
+            capability: args.capability
+        });
+        const run = (): MutationAcknowledgement => {
+            this.catchUp();
+            const stored = this.ledger.authorizationOrThrow({
+                id: value.authorizationId,
+                capability: args.capability
+            });
+            if (!args.from.includes(stored.snapshot.status)) {
+                throw rejected({
+                    capability: args.capability,
+                    reason: `cannot go from ${stored.snapshot.status} to ${args.to}`
+                });
+            }
+            stored.snapshot = {
+                ...stored.snapshot,
+                status: args.to,
+                lastModifiedAt: this.clock.now().toISOString()
+            };
+            this.ledger.bump({
+                stored,
+                resourceKind: 'authorization',
+                resourceId: value.authorizationId
+            });
+            return { accepted: true, resourceId: value.authorizationId };
+        };
+        return args.viaNetwork === false
+            ? run()
+            : throughNetwork({
+                  simulating: this.simulating,
+                  capability: args.capability,
+                  run
+              });
+    }
+
+    private now(): number {
+        return this.clock.now().getTime();
+    }
+}

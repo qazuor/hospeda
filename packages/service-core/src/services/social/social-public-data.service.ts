@@ -10,7 +10,7 @@
  *
  * Scope is deliberately tight (R-1): this is NOT a general-purpose public API
  * aggregator. It only ever reads:
- *  - accommodations with `visibility = PUBLIC` and `lifecycleState = ACTIVE`
+ *  - accommodations with `publicationStatus = PUBLISHED` (V6.9b, HOS-1641)
  *  - destinations with `visibility = PUBLIC` and `lifecycleState = ACTIVE`
  *
  * Extending it to another entity type is a conscious, reviewed change: add a
@@ -42,6 +42,7 @@ import {
 } from '@repo/db';
 import {
     LifecycleStatusEnum,
+    PublicationStatusEnum,
     ServiceErrorCode,
     type SocialPublicDataEntityType,
     type SocialPublicDataItem,
@@ -249,7 +250,7 @@ export class SocialPublicDataService {
     // ---------------------------------------------------------------------------
 
     /**
-     * Queries PUBLIC/ACTIVE, non-deleted accommodations, most recent first,
+     * Queries PUBLISHED, non-deleted accommodations, most recent first,
      * optionally narrowed by a `name` substring match.
      *
      * SPEC-204 T-024: this calls the model directly, so it bypasses the service
@@ -268,8 +269,7 @@ export class SocialPublicDataService {
         const { items } = await this.accommodationModel.findAll(
             {
                 deletedAt: null,
-                visibility: VisibilityEnum.PUBLIC,
-                lifecycleState: LifecycleStatusEnum.ACTIVE
+                publicationStatus: PublicationStatusEnum.PUBLISHED
             },
             { page: 1, pageSize: limit, sortBy: 'createdAt', sortOrder: 'desc' },
             additionalConditions

@@ -19,8 +19,8 @@ import type { AccommodationModel, RAccommodationAmenityModel, UserModel } from '
 import {
     AccommodationTypeEnum,
     DestinationTypeEnum,
-    LifecycleStatusEnum,
     PriceCurrencyEnum,
+    PublicationStatusEnum,
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
@@ -33,6 +33,7 @@ import { ServiceError } from '../../../src/types';
 import { createMockAccommodation } from '../../factories/accommodationFactory';
 import { createActor, createHostActor, createSuperAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
+import { domainEventModelDouble } from '../../helpers/owner-act-doubles';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 const grantRoleMock = vi.hoisted(() => vi.fn());
@@ -46,6 +47,15 @@ vi.mock('../../../src/services/user-role/user-role.service.js', () => ({
     // — an INTERNAL_ERROR that looks nothing like a role problem.
     getUserRoles: getUserRolesMock
 }));
+
+// HOS-1499: listing writes record the owner act in `domain_event`; no DB here.
+vi.mock('@repo/db', async (importOriginal) => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...(await importOriginal<object>()),
+        domainEventModel: doubles.domainEventModelDouble
+    };
+});
 
 vi.mock('../../../src/utils/transaction.js', () => ({
     /**
@@ -164,7 +174,7 @@ describe('AccommodationService.createForOnboarding', () => {
             const created = createMockAccommodation({
                 id: 'acc-001',
                 ownerId: 'user-001',
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                publicationStatus: PublicationStatusEnum.DRAFT
             });
             (accommodationModel.create as Mock).mockResolvedValue(created);
 
@@ -179,6 +189,31 @@ describe('AccommodationService.createForOnboarding', () => {
                 expect(result.data.accommodation.id).toBe('acc-001');
             }
             expect(accommodationModel.create).toHaveBeenCalledTimes(1);
+        });
+
+        // TEST:V9a:1 (unit) — AC:V9a:1, the accommodation owner-create path.
+        it('records the owner create as a listing.created event (HOS-1499)', async () => {
+            const actor = createActor({ id: 'user-001v' });
+            (accommodationModel.create as Mock).mockResolvedValue(
+                createMockAccommodation({ id: 'acc-001v', ownerId: 'user-001v' })
+            );
+            domainEventModelDouble.writes.length = 0;
+
+            const result = await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
+
+            expect(result.error).toBeUndefined();
+            expect(domainEventModelDouble.writes).toHaveLength(1);
+            expect(domainEventModelDouble.writes[0]).toMatchObject({
+                eventType: 'listing.created',
+                entityType: 'accommodation',
+                entityId: 'acc-001v',
+                actorId: 'user-001v',
+                actorType: 'owner'
+            });
+            // Content fields carry only their name — never the typed text.
+            expect(JSON.stringify(domainEventModelDouble.writes[0])).not.toContain(
+                VALID_DRAFT_INPUT.name
+            );
         });
 
         it('grants the HOST hat in the same transaction as the draft insert', async () => {
@@ -205,12 +240,12 @@ describe('AccommodationService.createForOnboarding', () => {
         });
 
         it.each([
-            ['COMMERCE_OWNER', RoleEnum.COMMERCE_OWNER],
+            ['GASTRONOMY_OWNER', RoleEnum.GASTRONOMY_OWNER],
             ['SPONSOR', RoleEnum.SPONSOR],
             ['EDITOR', RoleEnum.EDITOR]
         ])('grants HOST to a %s actor — the removed `role === USER` guard used to skip them', async (label) => {
             // HOS-296 §6.8: the old exact-match guard is exactly why a
-            // COMMERCE_OWNER starting host onboarding never became a host.
+            // GASTRONOMY_OWNER starting host onboarding never became a host.
             // The service no longer reads the actor's existing hats at all,
             // so what this pins is that no guard was reintroduced.
             const actor = createActor({ id: `user-${label}` });
@@ -244,13 +279,13 @@ describe('AccommodationService.createForOnboarding', () => {
             expect(result.error).toBeDefined();
         });
 
-        it('forces ownerId to actor.id and lifecycleState to DRAFT (defense in depth)', async () => {
+        it('forces ownerId to actor.id and writes no publication state (born DRAFT by the model)', async () => {
             // Arrange
             const actor = createActor({ id: 'user-002' });
             const created = createMockAccommodation({
                 id: 'acc-002',
                 ownerId: 'user-002',
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                publicationStatus: PublicationStatusEnum.DRAFT
             });
             (accommodationModel.create as Mock).mockResolvedValue(created);
 
@@ -262,7 +297,10 @@ describe('AccommodationService.createForOnboarding', () => {
             expect(createCalls).toHaveLength(1);
             const payload = createCalls[0]?.[0];
             expect(payload.ownerId).toBe('user-002');
-            expect(payload.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
+            // V6.9b (HOS-1641): only the publication machine writes the state;
+            // the model's birth columns make the row DRAFT.
+            expect(payload).not.toHaveProperty('publicationStatus');
+            expect(payload).not.toHaveProperty('lifecycleState');
             expect(payload.lastWarnedAt).toBeNull();
             expect(payload.createdById).toBe('user-002');
         });
@@ -279,7 +317,7 @@ describe('AccommodationService.createForOnboarding', () => {
             const created = createMockAccommodation({
                 id: 'acc-created',
                 ownerId: 'user-003',
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                publicationStatus: PublicationStatusEnum.DRAFT
             });
             (accommodationModel.create as Mock).mockResolvedValue(created);
 
@@ -339,7 +377,7 @@ describe('AccommodationService.createForOnboarding', () => {
             const created = createMockAccommodation({
                 id: 'acc-host-new',
                 ownerId: 'user-host',
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                publicationStatus: PublicationStatusEnum.DRAFT
             });
             (accommodationModel.create as Mock).mockResolvedValue(created);
 
@@ -363,7 +401,7 @@ describe('AccommodationService.createForOnboarding', () => {
             const created = createMockAccommodation({
                 id: 'acc-host-second-draft',
                 ownerId: 'user-host-draft',
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                publicationStatus: PublicationStatusEnum.DRAFT
             });
             (accommodationModel.create as Mock).mockResolvedValue(created);
 
@@ -589,7 +627,7 @@ describe('AccommodationService.createForOnboarding', () => {
             const created = createMockAccommodation({
                 id: 'acc-minimal',
                 ownerId: 'user-minimal',
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                publicationStatus: PublicationStatusEnum.DRAFT
             });
             (accommodationModel.create as Mock).mockResolvedValue(created);
 
@@ -609,7 +647,7 @@ describe('AccommodationService.createForOnboarding', () => {
             expect(payload.price).toBeUndefined();
             expect(payload.contactInfo).toBeUndefined();
             // Required forced fields are still set
-            expect(payload.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
+            expect(payload).not.toHaveProperty('publicationStatus');
             expect(payload.ownerId).toBe('user-minimal');
         });
     });

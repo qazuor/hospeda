@@ -17,16 +17,29 @@
 import type { Gastronomy } from '@repo/schemas';
 import {
     GastronomyTypeEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
     PermissionEnum,
     PriceRangeEnum,
+    PublicationStatusEnum,
     RoleEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    ServiceErrorCode
 } from '@repo/schemas';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// HOS-1499: every listing write now runs in a transaction and records the
+// owner act; neither has a database here.
+vi.mock('../../../src/utils/transaction', async () => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return { withServiceTransaction: vi.fn(doubles.fakeWithServiceTransaction) };
+});
+vi.mock('@repo/db', async (importOriginal) => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...(await importOriginal<object>()),
+        domainEventModel: doubles.domainEventModelDouble
+    };
+});
+
 import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
 import type { Actor } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
@@ -48,10 +61,7 @@ function makeGastronomyEntity(overrides: Partial<Record<string, unknown>> = {}):
         type: GastronomyTypeEnum.PARRILLA,
         destinationId: DEST_ID,
         ownerId: OWNER_ID,
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
-        moderationState: ModerationStatusEnum.APPROVED,
-        visibility: VisibilityEnum.PUBLIC,
-        isFeatured: false,
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
         averageRating: 0,
         reviewsCount: 0,
         createdAt: new Date('2024-01-01'),
@@ -62,27 +72,27 @@ function makeGastronomyEntity(overrides: Partial<Record<string, unknown>> = {}):
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces 10 per-section perms
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.GASTRONOMY_OWNER],
+    // SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN replaces 10 per-section perms
+    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
 };
 
 const staffActor: Actor = {
     id: 'staff-uuid-1',
     roles: [RoleEnum.ADMIN],
     permissions: [
-        PermissionEnum.COMMERCE_CREATE,
-        PermissionEnum.COMMERCE_EDIT_ALL,
-        PermissionEnum.COMMERCE_DELETE,
-        PermissionEnum.COMMERCE_VIEW_ALL
+        PermissionEnum.GASTRONOMY_CREATE,
+        PermissionEnum.GASTRONOMY_EDIT_ALL,
+        PermissionEnum.GASTRONOMY_DELETE,
+        PermissionEnum.GASTRONOMY_VIEW_ALL
     ]
 };
 
 const otherUserActor: Actor = {
     id: OTHER_USER,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    // SPEC-253 D2=b: COMMERCE_EDIT_OWN gives owner rights but entity.ownerId != OTHER_USER
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.GASTRONOMY_OWNER],
+    // SPEC-253 D2=b: GASTRONOMY_EDIT_OWN gives owner rights but entity.ownerId != OTHER_USER
+    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
 };
 
 // ---------------------------------------------------------------------------
@@ -132,7 +142,7 @@ function makeJunctionModel() {
 }
 
 /**
- * HOS-321: `CommerceCatalogModel` validates the whole set through `findByIds`
+ * HOS-321: `ListingCatalogModel` validates the whole set through `findByIds`
  * in one query. These stubs are injected onto an `any`-typed field, so nothing
  * would flag a stale `findById`-only shape until it blew up at runtime.
  */
@@ -195,7 +205,7 @@ describe('GastronomyService.updateOwn', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should allow staff with COMMERCE_EDIT_ALL to update any listing', async () => {
+    it('should allow staff with GASTRONOMY_EDIT_ALL to update any listing', async () => {
         const entity = makeGastronomyEntity();
         const service = makeService(entity);
         const result = await service.updateOwn(
@@ -206,11 +216,11 @@ describe('GastronomyService.updateOwn', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should allow an owner with COMMERCE_EDIT_OWN to update operational fields (US-5)', async () => {
-        // SPEC-253 D2=b: single COMMERCE_EDIT_OWN gate replaces per-section gating.
-        // The owner holds COMMERCE_EDIT_OWN and owns the listing. updateOwn enforces
+    it('should allow an owner with GASTRONOMY_EDIT_OWN to update operational fields (US-5)', async () => {
+        // SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN gate replaces per-section gating.
+        // The owner holds GASTRONOMY_EDIT_OWN and owns the listing. updateOwn enforces
         // the single gate, then the base update()'s _canUpdate (checkCanEditOwnOrAll)
-        // accepts the owner — no COMMERCE_EDIT_ALL is required. Core US-5 behavior.
+        // accepts the owner — no GASTRONOMY_EDIT_ALL is required. Core US-5 behavior.
         const entity = makeGastronomyEntity();
         const service = makeService(entity);
         const result = await service.updateOwn(
@@ -221,13 +231,13 @@ describe('GastronomyService.updateOwn', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should return FORBIDDEN when owner lacks COMMERCE_EDIT_OWN (single gate)', async () => {
+    it('should return FORBIDDEN when owner lacks GASTRONOMY_EDIT_OWN (single gate)', async () => {
         const entity = makeGastronomyEntity();
         const service = makeService(entity);
-        // Actor is the owner but has NO permissions (not COMMERCE_EDIT_OWN, not COMMERCE_EDIT_ALL)
+        // Actor is the owner but has NO permissions (not GASTRONOMY_EDIT_OWN, not GASTRONOMY_EDIT_ALL)
         const actorNoPerm: Actor = {
             id: OWNER_ID,
-            roles: [RoleEnum.COMMERCE_OWNER],
+            roles: [RoleEnum.GASTRONOMY_OWNER],
             permissions: []
         };
         const result = await service.updateOwn(
@@ -335,7 +345,7 @@ describe('GastronomyService.updateOwn', () => {
 // listing, so the owner has to own their own identity). `slug` stays
 // admin-only post-create (HOS-166 OQ-3 — derived server-side from `name` at
 // create, staff-only rename after). Only true control fields
-// (lifecycle/visibility/moderation/isFeatured/ownerId) remain stripped.
+// (publicationStatus/ownerId) remain stripped.
 describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-022, SPEC-253, HOS-166 D-1)', () => {
     it('persists name/description/destinationId/type/summary/i18n; strips control fields + slug', async () => {
         const entity = makeGastronomyEntity();
@@ -352,10 +362,7 @@ describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-
                 'Una descripción base actualizada por el propio dueño del comercio para su ficha.', // HOS-166 D-1 — must persist
             destinationId: '00000000-0000-4000-a000-0000000000ff', // HOS-166 D-1 — must persist
             slug: 'forged-slug', // immutable post-create (OQ-3) — stripped
-            lifecycleState: LifecycleStatusEnum.ARCHIVED, // control field — stripped
-            visibility: VisibilityEnum.PRIVATE, // control field — stripped
-            moderationState: ModerationStatusEnum.REJECTED, // control field — stripped
-            isFeatured: true, // control field — stripped
+            publicationStatus: PublicationStatusEnum.MODERATED, // control field — stripped
             ownerId: '00000000-0000-4000-a000-0000000000fe' // control field — stripped
         };
 
@@ -374,14 +381,7 @@ describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-
         expect(updatePayload.destinationId).toBe(payload.destinationId);
 
         // Control fields + immutable slug are still stripped by the owner-update schema.
-        for (const forbidden of [
-            'slug',
-            'lifecycleState',
-            'visibility',
-            'moderationState',
-            'isFeatured',
-            'ownerId'
-        ]) {
+        for (const forbidden of ['slug', 'publicationStatus', 'ownerId']) {
             expect(updatePayload).not.toHaveProperty(forbidden);
         }
     });
@@ -546,13 +546,13 @@ describe('GastronomyService._projectPublicEntity', () => {
 // ---------------------------------------------------------------------------
 
 describe('GastronomyService._canView', () => {
-    it('should throw GONE for a deleted PUBLIC entity when actor lacks COMMERCE_VIEW_ALL', () => {
+    it('should throw GONE for a deleted PUBLIC entity when actor lacks GASTRONOMY_VIEW_ALL', () => {
         // The deleted-at gate fires first (before the owner check), so both owner
-        // and non-owner actors without COMMERCE_VIEW_ALL receive GONE (410,
+        // and non-owner actors without GASTRONOMY_VIEW_ALL receive GONE (410,
         // deindex) instead of NOT_FOUND (404, never existed) — but only because
         // this listing was PUBLIC (indexable) before deletion.
         const entity = makeGastronomyEntity({
-            visibility: VisibilityEnum.PUBLIC,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             deletedAt: new Date()
         });
         const service = makeService(entity);
@@ -568,7 +568,7 @@ describe('GastronomyService._canView', () => {
         // A PRIVATE listing was never publicly discoverable, so its deletion
         // must stay a uniform 404 (never distinguishable from never-existed).
         const entity = makeGastronomyEntity({
-            visibility: VisibilityEnum.PRIVATE,
+            publicationStatus: PublicationStatusEnum.DRAFT,
             deletedAt: new Date()
         });
         const service = makeService(entity);
@@ -580,9 +580,9 @@ describe('GastronomyService._canView', () => {
         );
     });
 
-    it('should allow staff with COMMERCE_VIEW_ALL to view deleted entities', () => {
+    it('should allow staff with GASTRONOMY_VIEW_ALL to view deleted entities', () => {
         const entity = makeGastronomyEntity({
-            visibility: VisibilityEnum.PUBLIC,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             deletedAt: new Date()
         });
         const service = makeService(entity);
@@ -606,7 +606,7 @@ describe('GastronomyService.ENTITY_NAME', () => {
 // ---------------------------------------------------------------------------
 
 describe('GastronomyService public search visibility filter (AC-6.2)', () => {
-    it('forces visibility=PUBLIC + lifecycleState=ACTIVE on public search (no hidden-listing leak)', async () => {
+    it('forces publicationStatus=PUBLISHED on public search (no hidden-listing leak)', async () => {
         const service = makeService(makeGastronomyEntity());
         const model = (service as AnyService).model;
         await service.search(otherUserActor, { page: 1, pageSize: 10 });
@@ -614,8 +614,7 @@ describe('GastronomyService public search visibility filter (AC-6.2)', () => {
         expect(model.findAllWithRelations).toHaveBeenCalled();
         expect(model.findAllWithRelations.mock.calls[0][1]).toMatchObject({
             deletedAt: null,
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
     });
 
@@ -625,8 +624,7 @@ describe('GastronomyService public search visibility filter (AC-6.2)', () => {
         await service.count(otherUserActor, { page: 1, pageSize: 10 });
         expect(model.count).toHaveBeenCalled();
         expect(model.count.mock.calls[0][0]).toMatchObject({
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
     });
 });
@@ -650,7 +648,7 @@ describe('GastronomyService.assignOwner', () => {
         expect(result.data?.ownerId).toBe(OTHER_USER);
     });
 
-    it('returns FORBIDDEN when the actor lacks COMMERCE_EDIT_ALL', async () => {
+    it('returns FORBIDDEN when the actor lacks GASTRONOMY_EDIT_ALL', async () => {
         const service = makeService(makeGastronomyEntity());
         const model = (service as AnyService).model;
 
@@ -674,7 +672,7 @@ describe('GastronomyService.assignOwner', () => {
 });
 
 // ---------------------------------------------------------------------------
-// listOwn — owner-tier read inherited from BaseCommerceListingService (SPEC-249 T-004)
+// listOwn — owner-tier read inherited from BaseListingService (SPEC-249 T-004)
 // ---------------------------------------------------------------------------
 
 describe('GastronomyService.listOwn', () => {
@@ -721,7 +719,7 @@ describe('GastronomyService._executeSearch — B7a regression (destination relat
         );
     });
 
-    it('preserves the AC-6.2 security invariant (visibility=PUBLIC + lifecycleState=ACTIVE + deletedAt=null) in the where argument', async () => {
+    it('preserves the AC-6.2 security invariant (publicationStatus=PUBLISHED + deletedAt=null) in the where argument', async () => {
         const entity = makeGastronomyEntity();
         const service = makeService(entity);
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
@@ -733,8 +731,7 @@ describe('GastronomyService._executeSearch — B7a regression (destination relat
         // arg[1] is the where object in findAllWithRelations
         expect(mockFindAllWithRelations.mock.calls[0]?.[1]).toMatchObject({
             deletedAt: null,
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
         // Scalar filters from caller are forwarded too
         expect(mockFindAllWithRelations.mock.calls[0]?.[1]).toMatchObject({

@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, lt, lte, or, type SQL } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lt, lte, max, or, type SQL } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { cronRuns } from '../../schemas/cron/cron_run.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -18,6 +18,32 @@ type CronRun = typeof cronRuns.$inferSelect;
 export class CronRunModel extends BaseModelImpl<CronRun> {
     protected table = cronRuns;
     public entityName = 'cron_runs';
+
+    /**
+     * Finds the latest completed production pass before this run started.
+     * Dry runs did not inspect listings. Failed/timeout runs are excluded so a
+     * failure makes the prior trusted pass older; that can only delay a purge
+     * where coverageLostAt is absent, the safe direction for irreversible deletion.
+     */
+    async findPreviousRunStartedAt(args: {
+        readonly jobName: string;
+        readonly before: Date;
+        readonly tx?: DrizzleClient;
+    }): Promise<Date | null> {
+        const db = this.getClient(args.tx);
+        const [row] = await db
+            .select({ startedAt: max(cronRuns.startedAt) })
+            .from(cronRuns)
+            .where(
+                and(
+                    eq(cronRuns.jobName, args.jobName),
+                    eq(cronRuns.dryRun, false),
+                    inArray(cronRuns.status, ['success', 'partial']),
+                    lt(cronRuns.startedAt, args.before)
+                )
+            );
+        return row?.startedAt ?? null;
+    }
 
     protected getTableName(): string {
         return 'cronRuns';

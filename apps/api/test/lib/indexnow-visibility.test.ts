@@ -84,14 +84,37 @@ describe('IndexNow visibility sources', () => {
     });
 
     /**
-     * All four conditions are load-bearing: `slug` addresses the row,
-     * `lifecycleState` + `visibility` are the pair that makes a page public
-     * (the same pair `AccommodationService._isPubliclyVisible` and
-     * `isCommerceListingPubliclyVisible` use), and `deletedAt` catches a soft
-     * delete those two never see because their callers hold a live row.
+     * The three listing tables lost `lifecycleState`/`visibility` (HOS-1641):
+     * a listing is public exactly when its publication state is `PUBLISHED`.
+     * The other three entities keep their pair. `slug` addresses the row and
+     * `deletedAt` catches a soft delete the state alone never sees.
      */
+    const LISTING_ENTITY_TYPES = ['accommodation', 'gastronomy', 'experience'] as const;
+    const PAIR_ENTITY_TYPES = NOTIFIABLE_ENTITY_TYPES.filter(
+        (entityType) => !(LISTING_ENTITY_TYPES as readonly string[]).includes(entityType)
+    );
+
     it.each(
-        NOTIFIABLE_ENTITY_TYPES
+        LISTING_ENTITY_TYPES
+    )('%s filters on slug + publication status + soft-delete, never the old pair', (entityType) => {
+        const table = TABLE_OF[entityType];
+        const block = lookupBlock(entityType);
+
+        expect(block, `${entityType}: missing slug filter`).toContain(`eq(${table}.slug, slug)`);
+        expect(block, `${entityType}: missing publication filter`).toContain(
+            `eq(${table}.publicationStatus, PUBLISHED)`
+        );
+        expect(block, `${entityType}: missing soft-delete filter`).toContain(
+            `isNull(${table}.deletedAt)`
+        );
+        expect(block, `${entityType}: reads a retired column`).not.toContain(
+            `${table}.lifecycleState`
+        );
+        expect(block, `${entityType}: reads a retired column`).not.toContain(`${table}.visibility`);
+    });
+
+    it.each(
+        PAIR_ENTITY_TYPES
     )('%s filters on slug + lifecycle + visibility + soft-delete', (entityType) => {
         const table = TABLE_OF[entityType];
         const block = lookupBlock(entityType);
@@ -108,10 +131,11 @@ describe('IndexNow visibility sources', () => {
         );
     });
 
-    it('binds ACTIVE and PUBLIC to the shared enums, not to string literals', () => {
-        // A literal would drift silently if either enum were ever renamed.
+    it('binds ACTIVE, PUBLIC and PUBLISHED to the shared enums, not to string literals', () => {
+        // A literal would drift silently if any enum were ever renamed.
         expect(SOURCE).toContain('const ACTIVE = LifecycleStatusEnum.ACTIVE;');
         expect(SOURCE).toContain('const PUBLIC = VisibilityEnum.PUBLIC;');
+        expect(SOURCE).toContain('const PUBLISHED = PublicationStatusEnum.PUBLISHED;');
     });
 
     it('slices one block per entity type (the guard is not reading the whole file)', () => {

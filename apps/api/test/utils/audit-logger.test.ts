@@ -82,6 +82,7 @@ vi.mock('@repo/logger', () => {
         AUTH_PASSWORD_CHANGED: 'auth.password.changed',
         ACCESS_DENIED: 'access.denied',
         BILLING_MUTATION: 'billing.mutation',
+        BILLING_READ: 'billing.read',
         PERMISSION_CHANGE: 'permission.change',
         SESSION_SIGNOUT: 'session.signout',
         USER_ADMIN_MUTATION: 'user.admin.mutation',
@@ -280,6 +281,25 @@ describe('audit-logger', () => {
             expect(loggedEntry).toMatchObject({ auditEvent: AuditEventType.BILLING_MUTATION });
             expect(typeof loggedEntry.timestamp).toBe('string');
             expect(loggedMessage).toBe(`AUDIT:${AuditEventType.BILLING_MUTATION}`);
+        });
+
+        it('logs BILLING_READ with the actor and subject without a mutation action', () => {
+            auditLog({
+                auditEvent: AuditEventType.BILLING_READ,
+                actorId: 'admin-1',
+                resourceType: 'subscription',
+                resourceId: 'sub-123',
+                metadata: { subjectId: 'owner-1' }
+            });
+
+            const mockInfo = getAuditInfoMock();
+            expect(mockInfo).toHaveBeenCalledOnce();
+            expect(mockInfo.mock.calls[0]?.[0]).toMatchObject({
+                auditEvent: AuditEventType.BILLING_READ,
+                actorId: 'admin-1',
+                metadata: { subjectId: 'owner-1' }
+            });
+            expect(mockAddBreadcrumb.mock.calls[0]?.[0]).toMatchObject({ level: 'info' });
         });
 
         it('should log PERMISSION_CHANGE with correct auditEvent and message', () => {
@@ -1071,6 +1091,7 @@ describe('audit-logger — queryable persistence (SPEC-162)', () => {
 
         it.each([
             AuditEventType.BILLING_MUTATION,
+            AuditEventType.BILLING_READ,
             AuditEventType.PERMISSION_CHANGE,
             AuditEventType.USER_ADMIN_MUTATION,
             AuditEventType.ROUTE_MUTATION

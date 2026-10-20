@@ -35,7 +35,9 @@
         "validation-failed-fields_one": "La validación falló para {{count}} campo. Por favor, revisa los campos resaltados.",
         "validation-failed-fields_other": "La validación falló para {{count}} campos. Por favor, revisa los campos resaltados.",
         "save-changes": "Guardar cambios",
-        "saving": "Guardando..."
+        "saving": "Guardando...",
+        "no-changes": "No hay cambios para guardar.",
+        "save-forbidden": "No se guardó: no tenés permiso para cambiar alguno de estos campos. En una ficha de otra persona, soporte sólo puede editar su contenido (textos, fotos, preguntas frecuentes, horarios, precios y contacto). Deshacé los demás cambios y volvé a guardar."
     },
     "field": {
         "required": "{{field}} es requerido",

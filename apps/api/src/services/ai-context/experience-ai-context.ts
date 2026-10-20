@@ -13,13 +13,12 @@
  * `MANAGE_EXPERIENCE_DIRECTIONS` from `-pro` upward — HOS-1049 drew that line
  * deliberately. This assembler honours it from the entitlement set the ROUTE
  * resolved, for the reason the gastronomy assembler gates the carta: today every
- * commerce tier granting `AI_CHAT` also grants the directions, and that is a
+ * gastronomy or experience tier granting `AI_CHAT` also grants the directions, and that is a
  * property of the current catalogue rather than a guarantee.
  *
  * @module apps/api/services/ai-context/experience-ai-context
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { experienceFaqs, experiences, getDb } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
@@ -274,13 +273,13 @@ function formatDuration(minutes: number): string {
  * soft-deleted, mapped by the streaming factory to a pre-stream 404. The FAQ read
  * degrades to an empty list with a logged warning.
  *
- * @param input - Actor, entity id, resolved prompt, locale, owner entitlements.
+ * @param input - Actor, entity id, resolved prompt, locale and owner capabilities.
  * @returns The context block, system message and experience name.
  */
 export async function assembleExperienceContext(
     input: AssembleChatContextInput
 ): Promise<AssembleChatContextOutput> {
-    const { entityId, resolvedPrompt, locale, ownerEntitlements } = input;
+    const { entityId, resolvedPrompt, locale } = input;
     const db = getDb();
 
     const rows = await db
@@ -317,7 +316,7 @@ export async function assembleExperienceContext(
     const contextBlock = buildExperienceMarkdownContext(
         experience,
         faqs,
-        ownerEntitlements.has(EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS)
+        input.ownerCapabilities.manageExperienceDirections === true
     );
 
     return {

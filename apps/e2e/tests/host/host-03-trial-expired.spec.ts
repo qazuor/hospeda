@@ -19,13 +19,19 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { PublicationStatusEnum } from '@repo/schemas';
 import {
     createAccommodation,
     createSubscription,
     createUser,
     forceVerifyEmail
 } from '../../fixtures/api-helpers.ts';
-import { execSQL, forceTrialExpired, getDbPool } from '../../fixtures/db-helpers.ts';
+import {
+    execSQL,
+    forceTrialExpired,
+    getDbPool,
+    hasOldBillingSchema
+} from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
@@ -42,6 +48,11 @@ test.describe('HOST-03: trial expired blocks writes @p0 @host @billing', () => {
     });
 
     test('trial-expired host: blocks writes via UI + API, keeps reads', async ({ page }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         // Paywall here is enforced by the date-aware publish gate (checkEligibility
         // + isSubscriptionLive, SPEC-217): a trial past trial_end beyond the 6h grace
         // returns subscription_required. Deterministic against the local DB — no
@@ -79,7 +90,7 @@ test.describe('HOST-03: trial expired blocks writes @p0 @host @billing', () => {
         // Pre-existing published accommodation owned by the host.
         const accommodation = await createAccommodation({
             ownerId: host.id,
-            lifecycleState: 'ACTIVE',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             slugPrefix: 'host-03-acc'
         });
 

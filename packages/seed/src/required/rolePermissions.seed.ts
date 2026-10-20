@@ -59,6 +59,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCOMMODATION_VISIBILITY_CHANGE,
         PermissionEnum.ACCOMMODATION_LIFECYCLE_CHANGE,
         PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,
+        PermissionEnum.LISTING_MODERATE,
+        PermissionEnum.LISTING_PURGE_ON_REQUEST,
+        PermissionEnum.USER_CLOSE_ON_REQUEST,
         // Catalog management (amenities/features)
         PermissionEnum.AMENITY_CREATE,
         PermissionEnum.AMENITY_UPDATE,
@@ -159,7 +162,6 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         // USER: All permissions
         PermissionEnum.USER_READ_ALL,
-        PermissionEnum.USER_IMPERSONATE,
         PermissionEnum.USER_CREATE,
         PermissionEnum.USER_UPDATE_ROLES,
         PermissionEnum.USER_VISIBILITY_CHANGE,
@@ -325,27 +327,6 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_ANY,
         PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_OWN,
 
-        // BILLING: All billing admin permissions. MANAGE_SUBSCRIPTIONS and
-        // BILLING_MANAGE gate write ops on the qzpay-hono admin tier (cancel,
-        // change-plan, extend-trial, force-cancel, refund, mark-paid, void,
-        // entitlements/limits manage). Without them ADMIN can only READ; today
-        // only SUPER_ADMIN can write (via the actor.ts catch-all bypass that
-        // grants every PermissionEnum value regardless of role_permission).
-        // Surfaced during SPEC-143 Block 2 smoke 2.2 (admin subscription cancel).
-        PermissionEnum.BILLING_READ_ALL,
-        PermissionEnum.BILLING_MANAGE,
-        PermissionEnum.MANAGE_SUBSCRIPTIONS,
-        PermissionEnum.BILLING_PROMO_CODE_READ,
-        PermissionEnum.BILLING_PROMO_CODE_MANAGE,
-        PermissionEnum.BILLING_METRICS_READ,
-        // HOS-765 orphan-payment rescue (force-link + payment backfill).
-        // SUPER_ADMIN ONLY, and deliberately not folded into BILLING_MANAGE:
-        // these two verbs write money into the ledger and bind a real payer's
-        // charge to a named person's subscription. Granting it alongside
-        // BILLING_MANAGE would mean the grant that lets someone expire an add-on
-        // also lets them move a charge between customers.
-        PermissionEnum.BILLING_RECONCILIATION_MANAGE,
-
         // REVALIDATION: All permissions
         PermissionEnum.REVALIDATION_TRIGGER,
         PermissionEnum.REVALIDATION_CONFIG_VIEW,
@@ -374,10 +355,20 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MAINTENANCE_MODE_WRITE,
         PermissionEnum.BILLING_SETTINGS_VIEW,
         PermissionEnum.BILLING_SETTINGS_WRITE,
+        PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT,
+        PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
+        // HOS-1540: action 14 (settle a charge or refund that happened outside our flow) — SUPER_ADMIN-only.
+        PermissionEnum.BILLING_SETTLE_EXTERNAL,
+        // HOS-1543: action 8 (cancel a subscription; with the revocation motive it runs S36) — SUPER_ADMIN-only.
+        PermissionEnum.BILLING_CANCEL_SUBSCRIPTION,
+        // HOS-1697: action 7 (lift a reconciliation mark, S15) — SUPER_ADMIN-only.
+        PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK,
+        // SUPER_ADMIN-only (V5.6).
+        PermissionEnum.USER_MANAGE_SUPER_ADMIN_ROLE,
+        PermissionEnum.BILLING_GRANT_COMPLIMENTARY,
+        PermissionEnum.BILLING_MANAGE_PROMO_CODES,
         PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF,
-        PermissionEnum.BILLING_ADDON_PURCHASE, // HOS-726 — staff see every gated nav entry.
 
         // AI (SPEC-173): credential vault + settings management — SUPER_ADMIN-only.
         PermissionEnum.AI_SETTINGS_MANAGE,
@@ -394,28 +385,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MODERATION_THRESHOLD_RESTORE,
         PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE,
 
-        // COMMERCE: Admin-tier gastronomy / commerce management (SPEC-239).
-        // Listed explicitly here so the all-permissions short-circuit in actor.ts
-        // is never the sole reason these grants exist for SUPER_ADMIN.
-        PermissionEnum.COMMERCE_CREATE,
-        PermissionEnum.COMMERCE_VIEW_ALL,
-        PermissionEnum.COMMERCE_EDIT_ALL,
-        PermissionEnum.COMMERCE_DELETE,
-        PermissionEnum.COMMERCE_MODERATE_REVIEW,
-        // HOS-686: the LISTING's own moderation verdict — the post-publication
-        // control that replaces the removed pre-publication admin gate. Distinct
-        // from COMMERCE_MODERATE_REVIEW above, which only moderates reviews
-        // written about a listing.
-        PermissionEnum.COMMERCE_MODERATION_CHANGE,
-
-        // HOS-1077: the per-vertical split of the six admin-tier COMMERCE_*
-        // above. Seeded ALONGSIDE them, not instead of them — this is the expand
-        // release, so both families are live and every gate reads either one.
-        // Release 2 deletes the COMMERCE_* six from this list.
-        //
-        // Granting both verticals to staff is not a re-coupling: staff are meant
-        // to reach everything. What the split buys is the ability to grant ONE
-        // of them to somebody who is not staff, which was impossible before.
+        // HOS-1077: per-vertical staff permissions for gastronomy and experiences.
         PermissionEnum.GASTRONOMY_CREATE,
         PermissionEnum.GASTRONOMY_VIEW_ALL,
         PermissionEnum.GASTRONOMY_EDIT_ALL,
@@ -528,6 +498,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCOMMODATION_VISIBILITY_CHANGE,
         PermissionEnum.ACCOMMODATION_LIFECYCLE_CHANGE,
         PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,
+        PermissionEnum.LISTING_MODERATE,
+        PermissionEnum.LISTING_PURGE_ON_REQUEST,
+        PermissionEnum.USER_CLOSE_ON_REQUEST,
         // Catalog management (amenities/features)
         PermissionEnum.AMENITY_CREATE,
         PermissionEnum.AMENITY_UPDATE,
@@ -618,7 +591,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_VIEW_DRAFT,
         PermissionEnum.POST_VIEW_ALL,
 
-        // USER: Most permissions (no impersonate, no hard delete)
+        // USER: Most permissions (no hard delete)
         PermissionEnum.USER_READ_ALL,
         PermissionEnum.USER_CREATE,
         PermissionEnum.USER_UPDATE_ROLES,
@@ -736,10 +709,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // METRICS: All permissions
         PermissionEnum.METRICS_RESET,
 
-        // SPEC-164: POST_SPONSORSHIP_MANAGE, all SPONSORSHIP _ANY, all OWNER_PROMOTION _ANY,
-        // and all BILLING permissions (BILLING_READ_ALL, BILLING_MANAGE, MANAGE_SUBSCRIPTIONS,
-        // BILLING_PROMO_CODE_READ, BILLING_PROMO_CODE_MANAGE, BILLING_METRICS_READ) have been
-        // revoked from ADMIN (19 total). These are now SUPER_ADMIN-only.
+        // SPEC-164: POST_SPONSORSHIP_MANAGE, all SPONSORSHIP _ANY and all OWNER_PROMOTION _ANY
+        // have been revoked from ADMIN. These are now SUPER_ADMIN-only. (The old billing
+        // admin family revoked alongside them was retired entirely by HOS-1419.)
 
         // REVALIDATION: All permissions
         PermissionEnum.REVALIDATION_TRIGGER,
@@ -767,10 +739,10 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.SETTINGS_GENERAL_WRITE,
         PermissionEnum.BILLING_SETTINGS_VIEW,
         PermissionEnum.BILLING_SETTINGS_WRITE,
+        PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT,
+        PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
         PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF,
-        PermissionEnum.BILLING_ADDON_PURCHASE, // HOS-726 — staff see every gated nav entry.
 
         // MODERATION: Content auto-moderation management (SPEC-195)
         PermissionEnum.MODERATION_TERM_VIEW,
@@ -784,28 +756,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MODERATION_THRESHOLD_RESTORE,
         PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE,
 
-        // COMMERCE: Admin-tier gastronomy / commerce management (SPEC-239).
-        // SUPER_ADMIN already holds these via the all-permissions short-circuit
-        // in actor.ts; seeded here for completeness should that bypass ever change.
-        PermissionEnum.COMMERCE_CREATE,
-        PermissionEnum.COMMERCE_VIEW_ALL,
-        PermissionEnum.COMMERCE_EDIT_ALL,
-        PermissionEnum.COMMERCE_DELETE,
-        PermissionEnum.COMMERCE_MODERATE_REVIEW,
-        // HOS-686: the LISTING's own moderation verdict — the post-publication
-        // control that replaces the removed pre-publication admin gate. Distinct
-        // from COMMERCE_MODERATE_REVIEW above, which only moderates reviews
-        // written about a listing.
-        PermissionEnum.COMMERCE_MODERATION_CHANGE,
-
-        // HOS-1077: the per-vertical split of the six admin-tier COMMERCE_*
-        // above. Seeded ALONGSIDE them, not instead of them — this is the expand
-        // release, so both families are live and every gate reads either one.
-        // Release 2 deletes the COMMERCE_* six from this list.
-        //
-        // Granting both verticals to staff is not a re-coupling: staff are meant
-        // to reach everything. What the split buys is the ability to grant ONE
-        // of them to somebody who is not staff, which was impossible before.
+        // HOS-1077: per-vertical staff permissions for gastronomy and experiences.
         PermissionEnum.GASTRONOMY_CREATE,
         PermissionEnum.GASTRONOMY_VIEW_ALL,
         PermissionEnum.GASTRONOMY_EDIT_ALL,
@@ -922,10 +873,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // panel access is re-granted at that point, not preemptively.
         PermissionEnum.ACCESS_API_PUBLIC,
 
-        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit + self-billing
-        // (CLIENT_MANAGER buys complex tiers per SPEC-143 test users).
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit.
         PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF
     ],
 
@@ -1051,6 +1000,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.NEWSLETTER_SUBSCRIBER_VIEW,
 
         // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit only.
+        PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF
     ],
 
@@ -1176,13 +1126,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
         PermissionEnum.CONVERSATION_BLOCK_OWN,
 
-        // PLATFORM SETTINGS V1 (SPEC-156): HOST self-billing landing + Mi cuenta self-edit.
-        // BILLING_VIEW_OWN/SUBSCRIPTION_VIEW_OWN are distinct from BILLING_READ_ALL (admin-tier).
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit.
         PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF,
-        // HOS-726: reaches the self-service add-on catalog (/mi-cuenta/addons) and buys from it.
-        PermissionEnum.BILLING_ADDON_PURCHASE,
 
         // HOST_TRADE: read-only access to the admin-curated host trades directory (SPEC-241).
         PermissionEnum.HOST_TRADE_VIEW,
@@ -1196,92 +1142,15 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
     ],
 
     // ---------------------------------------------------------------------------
-    // COMMERCE_OWNER — Gastronomía / commerce listings operator (SPEC-239 / SPEC-253)
-    //
-    // Mirrors the HOST role but scoped to commerce vertical.
-    // A single COMMERCE_EDIT_OWN permission covers all owner-accessible sections
-    // (operational fields, FAQs, i18n, etc.) — the 10 per-section permissions
-    // were collapsed in SPEC-253 D2=b full-removal decision.
-    // ---------------------------------------------------------------------------
-    [RoleEnum.COMMERCE_OWNER]: [
-        // Single owner write permission (SPEC-253 D2=b): replaces the 10
-        // per-section COMMERCE_*_EDIT_OWN permissions removed from PermissionEnum.
-        PermissionEnum.COMMERCE_EDIT_OWN,
-
-        // COMMERCE_CREATE (HOS-166 PR-A): the owner creates their own listing
-        // self-service after lead approval — see the 0021 data-migration for
-        // the companion delta on already-seeded environments.
-        PermissionEnum.COMMERCE_CREATE,
-
-        // USER: Basic profile permissions
-        PermissionEnum.USER_VIEW_PROFILE,
-        PermissionEnum.USER_UPDATE_PROFILE,
-        PermissionEnum.USER_SETTINGS_UPDATE,
-
-        // RECOMMENDATION: Personalized recommendations feed (SPEC-284, always own-scoped)
-        PermissionEnum.RECOMMENDATION_VIEW,
-
-        // USER_BOOKMARK: Own bookmarks
-        PermissionEnum.USER_BOOKMARK_CREATE,
-        PermissionEnum.USER_BOOKMARK_UPDATE,
-        PermissionEnum.USER_BOOKMARK_DELETE,
-        PermissionEnum.USER_BOOKMARK_VIEW,
-        PermissionEnum.USER_BOOKMARK_RESTORE,
-
-        // USER_BOOKMARK_COLLECTION: Own collections
-        PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
-        PermissionEnum.USER_BOOKMARK_COLLECTION_UPDATE,
-        PermissionEnum.USER_BOOKMARK_COLLECTION_DELETE,
-        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
-
-        // ACCESS: Basic dashboard access (owner self-service now lives entirely
-        // in the web app's /mi-cuenta — NOT the admin panel; ACCESS_PANEL_ADMIN
-        // is intentionally absent here)
-        PermissionEnum.DASHBOARD_BASE_VIEW,
-        PermissionEnum.ACCESS_API_PUBLIC,
-
-        // MEDIA: Upload and delete own images
-        PermissionEnum.MEDIA_UPLOAD,
-        PermissionEnum.MEDIA_DELETE,
-
-        // CONVERSATION: Own-scoped conversations with guests
-        PermissionEnum.CONVERSATION_VIEW_OWN,
-        PermissionEnum.CONVERSATION_REPLY_OWN,
-        PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
-        PermissionEnum.CONVERSATION_BLOCK_OWN,
-
-        // BILLING: Own subscription and billing view (mirrors HOST)
-        PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
-        PermissionEnum.USER_UPDATE_SELF,
-
-        // HOS-726: reaches the self-service add-on catalog (/mi-cuenta/addons)
-        // and buys from it. This is the grant the whole permission exists for:
-        // a commerce owner buys `extra-gastronomies-1`, and ACCOMMODATION_CREATE
-        // (the closest pre-existing gate) leaves them out.
-        PermissionEnum.BILLING_ADDON_PURCHASE
-    ],
-
     [RoleEnum.GASTRONOMY_OWNER]: [
-        // HOS-1077: the gastronomy half of what `COMMERCE_OWNER` used to grant as
-        // one indivisible bundle. This role is the reason the split exists —
-        // holding it lets somebody run a gastronomy listing WITHOUT any
-        // authority over the other vertical, which `COMMERCE_OWNER` could not
-        // express.
-        //
-        // Deliberately NOT granted any `COMMERCE_*`: adding them back here would
-        // re-create the coupling. Existing accounts keep `COMMERCE_OWNER` as a
-        // SECOND row in `user_role` (roles are many-to-many since HOS-296), so
-        // nobody loses access during the expand window without this role
-        // carrying the legacy family too.
+        // HOS-1077: owner rights are scoped to gastronomy listings.
         //
         // Single owner write permission, mirroring SPEC-253 D2=b: one
         // `editOwn` covers every owner-accessible section, not ten per-section
         // permissions.
         PermissionEnum.GASTRONOMY_EDIT_OWN,
 
-        // Creating the listing is what makes somebody an owner — the same
-        // self-service door `COMMERCE_CREATE` opens today (HOS-166 PR-A).
+        // Creating a listing is the self-service owner path.
         PermissionEnum.GASTRONOMY_CREATE,
 
         // USER: Basic profile permissions
@@ -1321,36 +1190,20 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
         PermissionEnum.CONVERSATION_BLOCK_OWN,
 
-        // BILLING: Own subscription and billing view (mirrors HOST)
+        // Mi cuenta self-edit (mirrors HOST)
         PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
-        PermissionEnum.USER_UPDATE_SELF,
-
-        // HOS-726: reaches the self-service add-on catalog (/mi-cuenta/addons)
-        // and buys from it. Same reasoning as COMMERCE_OWNER above.
-        PermissionEnum.BILLING_ADDON_PURCHASE
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.EXPERIENCE_OWNER]: [
-        // HOS-1077: the experience half of what `COMMERCE_OWNER` used to grant as
-        // one indivisible bundle. This role is the reason the split exists —
-        // holding it lets somebody run an experience listing WITHOUT any
-        // authority over the other vertical, which `COMMERCE_OWNER` could not
-        // express.
-        //
-        // Deliberately NOT granted any `COMMERCE_*`: adding them back here would
-        // re-create the coupling. Existing accounts keep `COMMERCE_OWNER` as a
-        // SECOND row in `user_role` (roles are many-to-many since HOS-296), so
-        // nobody loses access during the expand window without this role
-        // carrying the legacy family too.
+        // HOS-1077: owner rights are scoped to experience listings.
         //
         // Single owner write permission, mirroring SPEC-253 D2=b: one
         // `editOwn` covers every owner-accessible section, not ten per-section
         // permissions.
         PermissionEnum.EXPERIENCE_EDIT_OWN,
 
-        // Creating the listing is what makes somebody an owner — the same
-        // self-service door `COMMERCE_CREATE` opens today (HOS-166 PR-A).
+        // Creating a listing is the self-service owner path.
         PermissionEnum.EXPERIENCE_CREATE,
 
         // USER: Basic profile permissions
@@ -1390,15 +1243,13 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
         PermissionEnum.CONVERSATION_BLOCK_OWN,
 
-        // BILLING: Own subscription and billing view (mirrors HOST)
+        // Mi cuenta self-edit (mirrors HOST)
         PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
-        PermissionEnum.USER_UPDATE_SELF,
-
-        // HOS-726: reaches the self-service add-on catalog (/mi-cuenta/addons)
-        // and buys from it. Same reasoning as COMMERCE_OWNER above.
-        PermissionEnum.BILLING_ADDON_PURCHASE
+        PermissionEnum.USER_UPDATE_SELF
     ],
+
+    /** sin permisos hasta V7 */
+    [RoleEnum.PARTNER_OWNER]: [],
 
     [RoleEnum.USER]: [
         // SPEC-165: registered users (tourist role) may comment on posts and events.
@@ -1438,12 +1289,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // ACCESS: Public API only
         PermissionEnum.ACCESS_API_PUBLIC,
 
-        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit + self-billing
-        // (USER buys tourist tiers + needs checkout flow to upgrade to HOST).
-        // BILLING_VIEW_OWN gates /protected/billing/*; ownership middleware
-        // still enforces per-resource scope.
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit.
         PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF
     ],
 
@@ -1469,10 +1316,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // ACCESS: Public API only
         PermissionEnum.ACCESS_API_PUBLIC,
 
-        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit + self-billing
-        // (SPONSOR pays for sponsorship packages — needs /protected/billing/* access).
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit.
         PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF
     ],
 

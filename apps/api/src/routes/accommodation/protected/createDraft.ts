@@ -9,18 +9,18 @@
  * web app redirects the host to the admin panel edit page so they can fill
  * in the rest of the listing (location, price, photos, amenities, etc.).
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     type AccommodationCreateDraftHttp,
     AccommodationCreateDraftHttpSchema,
     AccommodationProtectedSchema,
     httpToDomainAccommodationCreateDraft,
-    PermissionEnum
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { enforceAccommodationLimit } from '../../../middlewares/limit-enforcement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
@@ -37,11 +37,13 @@ export const protectedCreateAccommodationDraftRoute = createProtectedRoute({
     path: '/draft',
     summary: 'Create accommodation draft',
     description:
-        'Creates a new accommodation with lifecycleState=DRAFT and the minimum required fields. Requires ACCOMMODATION_CREATE permission.',
+        'Creates a new accommodation with publicationStatus=DRAFT and the minimum required fields. Requires ACCOMMODATION_CREATE permission.',
     tags: ['Accommodations'],
     requiredPermissions: [PermissionEnum.ACCOMMODATION_CREATE],
     requestBody: AccommodationCreateDraftHttpSchema,
     responseSchema: AccommodationProtectedSchema,
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'CREATE' },
+    // CREATE keeps drafts unlimited; PB1 counts published listings at publication (V6.1; V2.md:434-438).
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -69,12 +71,6 @@ export const protectedCreateAccommodationDraftRoute = createProtectedRoute({
         return stripRichDescriptionFields(result.data);
     },
     options: {
-        // SPEC-145 T-004: entitlement gate BEFORE limit check — host must have the
-        // PUBLISH_ACCOMMODATIONS entitlement (granted on all owner/complex plans)
-        // before we even consult the accommodation-count limit.
-        middlewares: [
-            requireEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS),
-            enforceAccommodationLimit()
-        ]
+        // CREATE keeps drafts unlimited; PB1 counts published listings at publication (V6.1; V2.md:434-438).
     }
 });

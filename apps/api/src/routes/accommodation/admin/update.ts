@@ -6,23 +6,20 @@ import {
     AccommodationAdminSchema,
     AccommodationIdSchema,
     type AccommodationUpdateInput,
-    AccommodationUpdateInputSchema
+    AccommodationUpdateInputSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getQZPayBilling } from '../../../middlewares/billing';
-import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
+
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const accommodationService = new AccommodationService(
-    { logger: apiLogger },
-    undefined,
-    null,
-    undefined,
-    buildAccommodationPublishDeps(() => getQZPayBilling())
-);
+// The publish-deps (trial eligibility + local trial) went down with the legacy
+// billing system (HOS-1416); `publishDeps` is optional in `AccommodationService`.
+const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
  * PUT /api/v1/admin/accommodations/:id
@@ -32,7 +29,7 @@ const accommodationService = new AccommodationService(
  * - Route requires admin-panel access (ACCESS_PANEL_ADMIN or ACCESS_API_ADMIN
  *   via `createAdminRoute`'s level check). Only staff roles
  *   (SUPER_ADMIN / ADMIN / EDITOR / CLIENT_MANAGER) hold that permission, so
- *   this endpoint is admin-only. HOST / COMMERCE_OWNER do NOT reach it: they
+ *   this endpoint is admin-only. HOST / GASTRONOMY_OWNER / EXPERIENCE_OWNER do NOT reach it: they
  *   self-manage their own accommodations from the web app
  *   (`/mi-cuenta/propiedades/`) via the owner-scoped `/api/v1/protected/*`
  *   routes, which enforce ownership without any admin permission.
@@ -53,6 +50,7 @@ const accommodationService = new AccommodationService(
  */
 export const adminUpdateAccommodationRoute = createAdminRoute({
     method: 'put',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}',
     summary: 'Update accommodation (admin)',
     description:
@@ -72,7 +70,10 @@ export const adminUpdateAccommodationRoute = createAdminRoute({
         const { id } = params;
         const data = body as AccommodationUpdateInput;
 
-        const result = await accommodationService.update(actor, id as string, data);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => accommodationService.update(actor, id as string, data)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

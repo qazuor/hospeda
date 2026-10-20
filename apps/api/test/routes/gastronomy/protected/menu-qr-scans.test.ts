@@ -1,68 +1,9 @@
-/**
- * The venue's menu QR scan aggregate endpoint — gate, "no code yet" and
- * ownership (HOS-1044 §6.4, §6.5, AC-3).
- *
- * ```
- * GET /api/v1/protected/gastronomies/{id}/menu-qr/scans
- * ```
- *
- * Mirrors `menu-qr.test.ts`'s real-middleware-stack strategy: the gate is
- * exercised through the actual `commerceVerticalEntitlementMiddleware` +
- * `requireEntitlement` pair (not a mocked middleware), with a fake billing
- * provider standing in for MercadoPago/QZPay.
- *
- * - **AC-3** — the gate is `MENU_QR_SCAN_METRICS`, granted by `gastronomy-premium`
- *   alone: basic and pro both answer 403, premium answers 200. Asserted per
- *   tier.
- * - **"No code yet" (§6.4)** — a venue with no `MENU` code answers 200 with an
- *   all-zero aggregate, never a 404, and never mints one (no call reaches
- *   `getOrCreateForEntity`, which this route does not even import).
- * - **404, never 403, for a foreign listing** — same rule as `menu-qr.ts`.
- *
- * @module test/routes/gastronomy/protected/menu-qr-scans
- */
-
-import { getDb } from '@repo/db';
+/** Menu QR scan totals, empty history, and ownership with an effective capability fixture. */
+import { PublicationStatusEnum, type VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../../src/types.js';
-
-/** Product domains as actually STORED, keyed by subscription id (HOS-934). */
-let fakeStoredProductDomains: Record<string, string | null> = {};
-/** Subscriptions the fake billing provider returns for the customer. */
-let fakeSubscriptions: Array<Record<string, unknown>> = [];
-/** Plans the fake provider resolves by id, `entitlements` being the half this file cares about. */
-let fakePlans: Record<string, { limits: Record<string, number>; entitlements?: string[] }> = {};
-
-vi.mock('../../../../src/middlewares/billing', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../../../src/middlewares/billing')>();
-    return {
-        ...actual,
-        getQZPayBilling: () => ({
-            subscriptions: {
-                getByCustomerId: async () => fakeSubscriptions
-            },
-            plans: {
-                get: async (id: string) => fakePlans[id] ?? null
-            },
-            limits: {
-                getByCustomerId: async () => []
-            }
-        })
-    };
-});
-
-vi.mock('../../../../src/services/plan.service', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../../../src/services/plan.service')>();
-    return {
-        ...actual,
-        PlanService: class {
-            async getBySlug(_slug: string) {
-                return { success: true as const, data: { limits: { max_gastronomies: 1 } } };
-            }
-        }
-    };
-});
 
 const { mockGetById, mockFindLiveCodeForEntity, mockGetScanStatsForCode } = vi.hoisted(() => ({
     mockGetById: vi.fn(),
@@ -89,6 +30,30 @@ vi.mock('@repo/service-core', async (importActual) => {
     };
 });
 
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => {
+            const result = await mockGetById();
+            const ownerId = result.data?.ownerId ?? null;
+            return {
+                facts: ownerId
+                    ? { ownerId, publicationStatus: PublicationStatusEnum.PUBLISHED }
+                    : null,
+                ownerId
+            };
+        },
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'menu_qr_scan_metrics', value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
+
 vi.mock('../../../../src/utils/logger.js', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
@@ -97,60 +62,28 @@ const { protectedGetGastronomyMenuQrScansRoute } = await import(
     '../../../../src/routes/gastronomy/protected/menuQrScans.js'
 );
 const { createErrorHandler } = await import('../../../../src/middlewares/response.js');
-const { _resetCommerceBaseLimitCache } = await import(
-    '../../../../src/middlewares/commerce-entitlement.js'
-);
-
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const OTHER_USER_ID = '99999999-9999-4999-8999-999999999999';
 const GASTRONOMY_ID = '22222222-2222-4222-8222-222222222222';
 const QR_ID = '33333333-3333-4333-8333-333333333333';
 
-/** Wires the mocked `getDb()` to answer `hydrateSubscriptionProductDomains`'s recovery SELECT. */
-function mockProductDomainRecovery() {
-    vi.mocked(getDb).mockReturnValue({
-        select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-                where: vi.fn().mockResolvedValue(
-                    Object.entries(fakeStoredProductDomains).map(([id, productDomain]) => ({
-                        id,
-                        productDomain
-                    }))
-                )
-            })
-        })
-    } as never);
-}
-
-function buildApp(input: { actorId?: string; billingCustomerId?: string } = {}): Hono<AppBindings> {
+function buildApp(input: { actorId?: string } = {}): Hono<AppBindings> {
     const app = new Hono<AppBindings>();
     app.onError(createErrorHandler());
-    app.use((c, next) => {
-        c.set('actor', { id: input.actorId ?? OWNER_ID, roles: [], permissions: [] } as never);
-        if (input.billingCustomerId) {
-            c.set('billingCustomerId', input.billingCustomerId);
-        }
+    app.use((context, next) => {
+        context.set('actor', {
+            id: input.actorId ?? OWNER_ID,
+            roles: [],
+            permissions: []
+        } as never);
         return next();
     });
     app.route('/', protectedGetGastronomyMenuQrScansRoute);
     return app;
 }
 
-/** Grants the caller a live gastronomy subscription on the given plan. */
-function grantSubscription(entitlements: string[]) {
-    fakeSubscriptions = [{ id: 's1', status: 'active', planId: 'p1' }];
-    fakeStoredProductDomains = { s1: 'gastronomy' };
-    mockProductDomainRecovery();
-    fakePlans = { p1: { limits: { max_gastronomies: 5 }, entitlements } };
-}
-
 beforeEach(() => {
     vi.clearAllMocks();
-    fakeSubscriptions = [];
-    fakePlans = {};
-    fakeStoredProductDomains = {};
-    _resetCommerceBaseLimitCache();
-    mockProductDomainRecovery();
 
     mockGetById.mockResolvedValue({
         data: {
@@ -173,33 +106,18 @@ beforeEach(() => {
     });
 });
 
-afterEach(() => {
-    _resetCommerceBaseLimitCache();
-});
-
-describe('GET /{id}/menu-qr/scans — tier gate (AC-3)', () => {
-    it('answers 403 for a gastronomy-basico owner (no subscription at all)', async () => {
+describe('GET /{id}/menu-qr/scans — effective capability granted', () => {
+    it('serves scan totals for the granted owner', async () => {
         const app = buildApp();
 
         const res = await app.request(`/${GASTRONOMY_ID}/menu-qr/scans`);
 
-        expect(res.status).toBe(403);
-        expect(mockFindLiveCodeForEntity).not.toHaveBeenCalled();
-    });
-
-    it('answers 403 for a gastronomy-pro owner (plan grants menu management, not the QR analytics)', async () => {
-        grantSubscription(['manage_gastronomy_menu', 'manage_gastronomy_events']);
-        const app = buildApp({ billingCustomerId: 'cus-1' });
-
-        const res = await app.request(`/${GASTRONOMY_ID}/menu-qr/scans`);
-
-        expect(res.status).toBe(403);
-        expect(mockFindLiveCodeForEntity).not.toHaveBeenCalled();
+        expect(res.status).toBe(200);
+        expect(mockFindLiveCodeForEntity).toHaveBeenCalled();
     });
 
     it('answers 200 for a gastronomy-premium owner (plan grants menu_qr_scan_metrics)', async () => {
-        grantSubscription(['manage_gastronomy_menu', 'menu_item_photos', 'menu_qr_scan_metrics']);
-        const app = buildApp({ billingCustomerId: 'cus-1' });
+        const app = buildApp();
 
         const res = await app.request(`/${GASTRONOMY_ID}/menu-qr/scans`);
 
@@ -209,13 +127,9 @@ describe('GET /{id}/menu-qr/scans — tier gate (AC-3)', () => {
 });
 
 describe('GET /{id}/menu-qr/scans — no code yet (§6.4)', () => {
-    beforeEach(() => {
-        grantSubscription(['menu_qr_scan_metrics']);
-    });
-
     it('answers 200 with an all-zero aggregate rather than 404', async () => {
         mockFindLiveCodeForEntity.mockResolvedValue({ data: null });
-        const app = buildApp({ billingCustomerId: 'cus-1' });
+        const app = buildApp();
 
         const res = await app.request(`/${GASTRONOMY_ID}/menu-qr/scans`);
         const body = await res.json();
@@ -227,7 +141,7 @@ describe('GET /{id}/menu-qr/scans — no code yet (§6.4)', () => {
 
     it('never calls getScanStatsForCode, and never mints — this route holds no reference to getOrCreateForEntity', async () => {
         mockFindLiveCodeForEntity.mockResolvedValue({ data: null });
-        const app = buildApp({ billingCustomerId: 'cus-1' });
+        const app = buildApp();
 
         await app.request(`/${GASTRONOMY_ID}/menu-qr/scans`);
 
@@ -236,7 +150,7 @@ describe('GET /{id}/menu-qr/scans — no code yet (§6.4)', () => {
 
     it('gap-fills a full 30-day zero series when the window is not overridden', async () => {
         mockFindLiveCodeForEntity.mockResolvedValue({ data: null });
-        const app = buildApp({ billingCustomerId: 'cus-1' });
+        const app = buildApp();
 
         const res = await app.request(`/${GASTRONOMY_ID}/menu-qr/scans`);
         const body = await res.json();
@@ -248,7 +162,6 @@ describe('GET /{id}/menu-qr/scans — no code yet (§6.4)', () => {
 
 describe('GET /{id}/menu-qr/scans — existing code', () => {
     beforeEach(() => {
-        grantSubscription(['menu_qr_scan_metrics']);
         mockFindLiveCodeForEntity.mockResolvedValue({
             data: {
                 id: QR_ID,
@@ -259,7 +172,7 @@ describe('GET /{id}/menu-qr/scans — existing code', () => {
     });
 
     it('delegates to getScanStatsForCode with the resolved qrCodeId and requested window', async () => {
-        const app = buildApp({ billingCustomerId: 'cus-1' });
+        const app = buildApp();
 
         await app.request(`/${GASTRONOMY_ID}/menu-qr/scans?window=7d`);
 
@@ -281,7 +194,7 @@ describe('GET /{id}/menu-qr/scans — existing code', () => {
                 byBrowserLanguage: { unknown: 5 }
             }
         });
-        const app = buildApp({ billingCustomerId: 'cus-1' });
+        const app = buildApp();
 
         const res = await app.request(`/${GASTRONOMY_ID}/menu-qr/scans?window=7d`);
         const body = await res.json();
@@ -292,12 +205,8 @@ describe('GET /{id}/menu-qr/scans — existing code', () => {
 });
 
 describe('GET /{id}/menu-qr/scans — ownership (404, never 403)', () => {
-    beforeEach(() => {
-        grantSubscription(['menu_qr_scan_metrics']);
-    });
-
     it('answers 404 for a listing owned by somebody else', async () => {
-        const app = buildApp({ actorId: OTHER_USER_ID, billingCustomerId: 'cus-1' });
+        const app = buildApp({ actorId: OTHER_USER_ID });
 
         const res = await app.request(`/${GASTRONOMY_ID}/menu-qr/scans`);
 
@@ -307,7 +216,7 @@ describe('GET /{id}/menu-qr/scans — ownership (404, never 403)', () => {
 
     it('answers 404, never 403, so a caller cannot tell a foreign id from a missing one', async () => {
         mockGetById.mockResolvedValue({ data: null });
-        const app = buildApp({ billingCustomerId: 'cus-1' });
+        const app = buildApp();
 
         const res = await app.request(`/${GASTRONOMY_ID}/menu-qr/scans`);
 

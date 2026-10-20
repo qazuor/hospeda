@@ -51,12 +51,9 @@ const ACCOMMODATION_WITH_RICH = {
     extraInfo: null,
     destinationId: 'dddddddd-0000-4000-8000-000000000007',
     ownerId: OWNER_ID,
-    visibility: 'PUBLIC',
-    lifecycleState: 'ACTIVE',
+    publicationStatus: 'PUBLISHED',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
-    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-    ownerSuspended: false,
-    planRestricted: false
+    updatedAt: new Date('2026-01-01T00:00:00.000Z')
 };
 
 vi.mock('@repo/service-core', async (importOriginal) => {
@@ -105,9 +102,6 @@ vi.mock('../../../../src/utils/logger', () => ({
 // different verdict: nothing here asserts on `isVerified` and the fixture leaves
 // it falsy, so the gate short-circuits before it ever reads an entitlement. This
 // suite is about rich-description stripping; the gate has its own badge-gate suite.
-vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    resolveOwnerEntitlementsForOwnerIds: vi.fn().mockResolvedValue(new Map())
-}));
 
 vi.mock('../../../../src/utils/route-factory', () => ({
     createPublicListRoute: (options: {

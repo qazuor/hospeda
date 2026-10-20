@@ -6,8 +6,8 @@
  * Covers:
  *  - createGastronomyConsolidatedConfig returns at least 3 sections
  *  - Includes a gastronomy-specific section with the type, priceRange, menuUrl fields
- *  - commerce-identity section is present
- *  - commerce-operational section is present
+ *  - listing-identity section is present
+ *  - listing-operational section is present
  *  - Metadata has entityName / entityNamePlural
  *  - All sections have an id, title, modes, fields
  *  - type field is marked required

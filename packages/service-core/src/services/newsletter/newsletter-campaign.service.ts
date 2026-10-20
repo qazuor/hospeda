@@ -33,7 +33,6 @@ import type { CreateNewsletterCampaign, UpdateNewsletterCampaign } from '@repo/s
 import {
     NewsletterCampaignStatusEnum,
     NewsletterContentTypeEnum,
-    PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { and, count, eq, isNull, sql } from 'drizzle-orm';
@@ -41,6 +40,7 @@ import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
+import { createSystemActor } from '../../utils/system-actor.js';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import {
     checkCanSendCampaign,
@@ -1212,12 +1212,10 @@ export class NewsletterCampaignService extends BaseService {
      */
     public async closeSentCampaigns(): Promise<ServiceOutput<number>> {
         // Use a synthetic system actor for the logging pipeline
-        const systemActor: Actor = {
-            id: '00000000-0000-0000-0000-000000000002',
-            roles: ['SUPER_ADMIN'] as never,
-            permissions: Object.values(PermissionEnum) as never,
-            _isSystemActor: true
-        };
+        const systemActor = createSystemActor({
+            jobId: 'newsletter.campaign.close-sent-campaigns',
+            permissions: []
+        });
 
         return this.runWithLoggingAndValidation({
             methodName: 'closeSentCampaigns',

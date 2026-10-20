@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Regression test for HOS-712 (second round): `0059-purge-test-and-commerce-example`
+ * Regression test for HOS-712 (second round): migration 0059
  * resolved the content it deletes ONLY by literal slug, while three of those
  * tables hold an `ON DELETE restrict` reference back to the accounts the
  * migration purges in its last step.
@@ -54,14 +54,17 @@ import {
     ExperienceTypeEnum,
     GastronomyTypeEnum,
     OccupancySourceEnum,
+    PublicationStatusEnum,
     RoleEnum
 } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0059-purge-test-and-commerce-example.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
+import { loadMigrationByNumber } from './__helpers__/load-migration.js';
+
+const migration = await loadMigrationByNumber({ number: '0059' });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -186,7 +189,10 @@ async function insertGastronomy(
             description: 'HOS-712 fixture gastronomy, rolled back after the test.',
             type: GastronomyTypeEnum.RESTAURANT,
             ownerId: args.ownerId,
-            destinationId: args.destinationId
+            destinationId: args.destinationId,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            inactiveSince: new Date(),
+            deadlinesVersion: 1
         } as typeof gastronomies.$inferInsert)
         .returning({ id: gastronomies.id });
     const row = inserted[0];
@@ -210,7 +216,10 @@ async function insertExperience(
             description: 'HOS-712 fixture experience, rolled back after the test.',
             type: ExperienceTypeEnum.KAYAK_RENTAL,
             ownerId: args.ownerId,
-            destinationId: args.destinationId
+            destinationId: args.destinationId,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            inactiveSince: new Date(),
+            deadlinesVersion: 1
         } as typeof experiences.$inferInsert)
         .returning({ id: experiences.id });
     const row = inserted[0];
@@ -234,7 +243,10 @@ async function insertAccommodation(
             description: 'HOS-712 fixture accommodation, rolled back after the test.',
             type: AccommodationTypeEnum.CABIN,
             ownerId: args.ownerId,
-            destinationId: args.destinationId
+            destinationId: args.destinationId,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            inactiveSince: new Date(),
+            deadlinesVersion: 1
         } as typeof accommodations.$inferInsert)
         .returning({ id: accommodations.id });
     const row = inserted[0];

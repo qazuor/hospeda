@@ -85,7 +85,7 @@
 - Propiedades actuales de persona:
   - `role`
   - `is_host`
-  - `is_commerce_owner`
+  - `is_gastronomy_owner`, `is_experience_owner`
   - `is_staff`
   - `plan`
   - `plan_status`

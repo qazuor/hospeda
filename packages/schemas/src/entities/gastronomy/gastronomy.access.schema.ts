@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import {
-    CommerceListingAmenityPublicSchema,
-    CommerceListingFeaturePublicSchema
-} from '../../common/commerce-catalog.schema.js';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
+import {
+    ListingAmenityPublicSchema,
+    ListingFeaturePublicSchema
+} from '../../common/listing-catalog.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { GastronomySchema } from './gastronomy.schema.js';
 import { GastronomyDailySpecialPublicSchema } from './subtypes/gastronomy.daily-special.schema.js';
@@ -46,7 +46,6 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
     // Content
     summary: true,
     description: true,
-    isFeatured: true,
 
     // I18n translations
     nameI18n: true,
@@ -82,8 +81,8 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
     reviewsCount: true,
     rating: true,
 
-    // Visibility
-    visibility: true,
+    // No publication state here (HOS-1641): every listing a stranger can read
+    // is PUBLISHED, so exposing it would say nothing.
 
     // SEO (public)
     seo: true,
@@ -98,6 +97,13 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
     openingHours: true
 }).extend({
     /**
+     * Public featured state. Not a column: since HOS-1419 dropped the
+     * admin-curated `is_featured` it is derived in the public routes from
+     * `featuredByEntitlement` (`resolvePublicIsFeatured`), which itself is never
+     * exposed here. Defaults to `false` for a read that did not derive it.
+     */
+    isFeatured: z.boolean().default(false),
+    /**
      * Rich-text (markdown) variant of the description for entitled owners.
      * Must survive serialization so the web client can switch between rich
      * and plain rendering. The entitlement-by-omission gate runs BEFORE
@@ -105,7 +111,7 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
      */
     richDescription: z
         .string()
-        .max(5000, { message: 'zodError.commerce.richDescription.max' })
+        .max(5000, { message: 'zodError.listing.richDescription.max' })
         .nullish(),
     /**
      * Override picked `media` to use `BaseMediaObjectSchema` (without any
@@ -161,9 +167,9 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
      * join must say "not loaded", not "this venue has none". Absent and empty
      * are different facts and the card grid renders nothing for either.
      */
-    amenities: z.array(CommerceListingAmenityPublicSchema).optional(),
+    amenities: z.array(ListingAmenityPublicSchema).optional(),
     /** Features the owner ticked, joined with the shared catalog (HOS-1072). */
-    features: z.array(CommerceListingFeaturePublicSchema).optional(),
+    features: z.array(ListingFeaturePublicSchema).optional(),
     /**
      * The structured carta's sections and dishes (HOS-895 PR2), joined from
      * `gastronomy_menu_sections` / `gastronomy_menu_items`.
@@ -246,10 +252,9 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
     summaryI18n: true,
     descriptionI18n: true,
     richDescriptionI18n: true,
-    isFeatured: true,
-    // HOS-1286: the owner's own editor sees both featuring sources separately,
-    // like the accommodation protected tier. Never added to the PUBLIC pick —
-    // public reads get the OR under `isFeatured` and nothing else.
+    // HOS-1286: the owner's own editor sees the featuring source under its own
+    // name, like the accommodation protected tier. Never added to the PUBLIC
+    // pick — public reads get it derived under `isFeatured` and nothing else.
     featuredByEntitlement: true,
     destinationId: true,
     media: true,
@@ -257,7 +262,6 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
     averageRating: true,
     reviewsCount: true,
     rating: true,
-    visibility: true,
     seo: true,
     tags: true,
     priceRange: true,
@@ -275,8 +279,9 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
     // Social networks
     socialNetworks: true,
 
-    // Lifecycle (for owners)
-    lifecycleState: true,
+    // Publication state (for owners, HOS-1641): the six `PublicationStatusEnum`
+    // values, written only by the PB publication transitions.
+    publicationStatus: true,
 
     // FAQs
     faqs: true,
@@ -289,7 +294,7 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
      * Description relaxed on the read side so DRAFT listings with short
      * descriptions can still be fetched without tripping `min(20)`.
      */
-    description: z.string().max(2000, { message: 'zodError.commerce.description.max' }),
+    description: z.string().max(2000, { message: 'zodError.listing.description.max' }),
     /**
      * HOS-190: read⊇write — a persisted contactInfo (legacy phone format, missing
      * mobilePhone) must never 500 the response. Format stays strict on write.
@@ -300,7 +305,7 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
     /** Rich-text description (protected visibility follows the same entitlement gate). */
     richDescription: z
         .string()
-        .max(5000, { message: 'zodError.commerce.richDescription.max' })
+        .max(5000, { message: 'zodError.listing.richDescription.max' })
         .nullish(),
     /**
      * Currently-associated amenity catalog IDs (junction read-back, SPEC-249).
@@ -331,7 +336,7 @@ export const GastronomyAdminSchema = GastronomySchema.extend({
      * Description relaxed on the read side so DRAFT listings can still be
      * fetched by the admin panel. See SPEC-143 Finding #9 (accommodation pattern).
      */
-    description: z.string().max(2000, { message: 'zodError.commerce.description.max' }),
+    description: z.string().max(2000, { message: 'zodError.listing.description.max' }),
     /** HOS-190: read⊇write lenient contactInfo (see GastronomyProtectedSchema). */
     contactInfo: ContactInfoReadSchema.nullish()
 });

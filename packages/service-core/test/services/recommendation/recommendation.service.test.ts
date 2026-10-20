@@ -60,7 +60,7 @@ const createJoinedRow = (
         ...createMockAccommodation({
             id: overrides.id ?? getMockId('accommodation'),
             destinationId,
-            isFeatured: overrides.isFeatured ?? false,
+            featuredByEntitlement: overrides.isFeatured ?? false,
             averageRating: overrides.averageRating ?? 4,
             price: { price: 20000, currency: PriceCurrencyEnum.ARS }
         }),

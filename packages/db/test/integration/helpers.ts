@@ -1,4 +1,3 @@
-import { qzpaySchema } from '@qazuor/qzpay-drizzle';
 /**
  * Shared helpers for database integration tests (SPEC-061).
  *
@@ -20,13 +19,14 @@ import { qzpaySchema } from '@qazuor/qzpay-drizzle';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as hospedaSchema from '../../src/schemas/index.ts';
+import { REFERENCE_TABLES } from '../../src/schemas/vertical/reference-tables.ts';
 import type { DrizzleClient } from '../../src/types.ts';
 
 /**
  * Combined schema that mirrors `packages/db/src/client.ts` so model and
  * relational queries used in tests resolve types identically to runtime code.
  */
-const schema = { ...hospedaSchema, ...qzpaySchema };
+const schema = { ...hospedaSchema };
 
 /**
  * Sentinel error used to force a transaction rollback without surfacing as a
@@ -130,7 +130,9 @@ export async function withCleanSlate(fn: (db: DrizzleClient) => Promise<void>): 
     const result = await p.query<{ tablename: string }>(
         `SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename`
     );
-    const tables = result.rows.map((r) => `"${r.tablename}"`);
+    const tables = result.rows
+        .filter((r) => !REFERENCE_TABLES.includes(r.tablename))
+        .map((r) => `"${r.tablename}"`);
     if (tables.length > 0) {
         await p.query(`TRUNCATE ${tables.join(', ')} RESTART IDENTITY CASCADE`);
     }

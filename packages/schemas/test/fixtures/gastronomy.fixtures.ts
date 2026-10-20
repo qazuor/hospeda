@@ -5,13 +5,11 @@ import {
     createBaseAuditFields,
     createBaseContactFields,
     createBaseIdFields,
-    createBaseLifecycleFields,
     createBaseMediaFields,
-    createBaseModerationFields,
     createBaseReviewFields,
     createBaseSeoFields,
     createBaseTagsFields,
-    createBaseVisibilityFields
+    createPublicationStatusFields
 } from './common.fixtures.js';
 
 /**
@@ -19,7 +17,7 @@ import {
  */
 
 /**
- * Creates gastronomy-specific identity fields matching CommerceIdentityFields.
+ * Creates gastronomy-specific identity fields matching ListingIdentityFields.
  */
 const createGastronomyIdentityFields = () => ({
     slug: faker.lorem.slug(3),
@@ -79,9 +77,9 @@ const createOpeningHoursFields = () => ({
 });
 
 /**
- * Creates a commerce rating (food/service/ambiance/value).
+ * Creates a gastronomy rating (food/service/ambiance/value).
  */
-const createCommerceRating = () => ({
+const createGastronomyRating = () => ({
     food: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
     service: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
     ambiance: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
@@ -109,9 +107,7 @@ export const createValidGastronomy = () => ({
     destinationId: faker.string.uuid(),
     ownerId: faker.string.uuid(),
     isFeatured: faker.datatype.boolean({ probability: 0.2 }),
-    ...createBaseLifecycleFields(),
-    ...createBaseModerationFields(),
-    ...createBaseVisibilityFields(),
+    ...createPublicationStatusFields(),
     ...createBaseReviewFields(),
     ...createBaseSeoFields(),
     ...createBaseContactFields(),
@@ -120,7 +116,7 @@ export const createValidGastronomy = () => ({
     ...createBaseMediaFields(),
     ...createBaseAdminFields(),
     ...createBaseTagsFields(),
-    rating: faker.helpers.maybe(() => createCommerceRating(), { probability: 0.7 }),
+    rating: faker.helpers.maybe(() => createGastronomyRating(), { probability: 0.7 }),
     faqs: undefined
 });
 
@@ -137,9 +133,7 @@ export const createMinimalGastronomy = () => ({
     destinationId: faker.string.uuid(),
     ownerId: faker.string.uuid(),
     isFeatured: false,
-    lifecycleState: 'DRAFT',
-    moderationState: 'PENDING',
-    visibility: 'PRIVATE',
+    publicationStatus: 'DRAFT',
     reviewsCount: 0,
     averageRating: 0,
     createdAt: new Date(),

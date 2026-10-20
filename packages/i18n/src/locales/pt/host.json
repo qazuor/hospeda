@@ -211,8 +211,10 @@
             "status": {
                 "DRAFT": "Rascunho",
                 "PUBLISHED": "Publicada",
-                "SUSPENDED": "Suspensa",
-                "INACTIVE": "Pausada"
+                "UNPUBLISHED_BY_BILLING": "Despublicada pelo seu plano",
+                "ARCHIVED": "Arquivada",
+                "MODERATED": "Moderada",
+                "PURGED": "Excluída"
             },
             "actions": {
                 "edit": "Editar",
@@ -238,10 +240,23 @@
             "deleteError": "Não foi possível excluir. Tente novamente.",
             "publishError": "Não foi possível publicar. Tente novamente.",
             "publishSubscriptionRequiredMessage": "Você precisa de um plano ativo para publicar.",
+            "publishCheckFailed": "Não conseguimos verificar se você pode publicar. Recarregue a página para tentar novamente.",
             "publishSubscriptionRequiredCta": "Ver planos",
             "priceOnRequest": "Preço a consultar",
             "publishMissingRequirementsMessage": "Para publicar falta completar: {{fields}}.",
-            "publishMissingRequirementsCta": "Completar no editor"
+            "publishMissingRequirementsCta": "Completar no editor",
+            "subscribeToPublish": {
+                "title": "Assine para publicar",
+                "body": "O seu anúncio continua sem publicar. Para publicá-lo você precisa de uma assinatura de {{vertical}}.",
+                "vertical": {
+                    "accommodation": "hospedagem",
+                    "gastronomy": "gastronomia",
+                    "experience": "experiências"
+                }
+            },
+            "unpublishTrialNote": "A avaliação gratuita continua correndo: despublicar não para o relógio da avaliação.",
+            "unpublishRecurringNote_one": "Você tem {{count}} destaque recorrente neste anúncio: ele continua sendo cobrado mesmo sem publicar, até você cancelá-lo.",
+            "unpublishRecurringNote_other": "Você tem {{count}} destaques recorrentes neste anúncio: eles continuam sendo cobrados mesmo sem publicar, até você cancelá-los."
         },
         "editor": {
             "section": {
@@ -456,8 +471,7 @@
                 "title": "Sua ficha já está pronta",
                 "body": "Você completou tudo o que faltava. Se publicar agora, vai aparecer no site, visível para os turistas.",
                 "publishNow": "Publicar agora",
-                "keepEditing": "Continuar editando",
-                "blockedTitle": "Você precisa de um plano ativo"
+                "keepEditing": "Continuar editando"
             },
             "toast": {
                 "saveSuccess": "Alterações salvas",
@@ -914,18 +928,15 @@
             "properties": "Propriedades",
             "promotions": "Promoções",
             "messages": "Mensagens",
-            "subscription": "Assinatura",
-            "addons": "Complementos"
+            "subscription": "Assinatura"
         }
     },
     "pages": {
         "nueva": {
             "trialCalloutTitle_one": "{{trialDays}} dia grátis, sem cartão — uma só para hospedagens",
             "trialCalloutTitle_other": "{{trialDays}} dias grátis, sem cartão — uma só para hospedagens",
-            "trialCalloutTitleIneligible": "Monte sua propriedade",
             "trialNote_one": "Você pode montar sua propriedade agora, sem pressa e sem cartão. O teste gratuito de {{trialDays}} dia começa sozinho quando você publica; é uma só para hospedagens e, quando terminar, você escolhe um plano para continuar publicado.",
             "trialNote_other": "Você pode montar sua propriedade agora, sem pressa e sem cartão. O teste gratuito de {{trialDays}} dias começa sozinho quando você publica; é uma só para hospedagens e, quando terminar, você escolhe um plano para continuar publicado.",
-            "trialNoteIneligible": "Voce pode criar e editar seu rascunho agora. Para publica-lo e ficar visivel vai precisar de um plano de anfitriao ativo.",
             "subtitle": "Criamos o rascunho com esses dados. As fotos, os preços e o resto você carrega no passo 2, no painel.",
             "precheck": {
                 "pickDraftDeleteOrUpgrade": {

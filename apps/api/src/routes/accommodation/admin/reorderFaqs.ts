@@ -7,10 +7,12 @@ import {
     AccommodationIdSchema,
     type FaqReorderPayload,
     FaqReorderPayloadSchema,
-    SuccessSchema
+    SuccessSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -29,6 +31,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminReorderAccommodationFaqsRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/reorder',
     summary: 'Reorder FAQs for an accommodation (admin)',
     description:
@@ -46,9 +49,13 @@ export const adminReorderAccommodationFaqsRoute = createAdminRoute({
     ) => {
         const actor = getActorFromContext(ctx);
 
-        const result = await accommodationService.reorderFaqs(actor, {
-            accommodationId: params.id as string,
-            order: (body as FaqReorderPayload).order
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                accommodationService.reorderFaqs(actor, {
+                    accommodationId: params.id as string,
+                    order: (body as FaqReorderPayload).order
+                })
         });
 
         if (result.error) {

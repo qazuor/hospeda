@@ -15,10 +15,12 @@ import {
     AccommodationIdSchema,
     AccommodationMediaListOutputSchema,
     type AccommodationMediaReorderPayload,
-    AccommodationMediaReorderPayloadSchema
+    AccommodationMediaReorderPayloadSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -40,6 +42,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminReorderMediaRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/reorder',
     summary: 'Reorder accommodation gallery photos (admin)',
     description:
@@ -60,9 +63,13 @@ export const adminReorderMediaRoute = createAdminRoute({
     ) => {
         const actor = getActorFromContext(ctx);
 
-        const result = await accommodationService.reorderMedia(actor, {
-            accommodationId: params.id as string,
-            orderedIds: (body as AccommodationMediaReorderPayload).orderedIds
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                accommodationService.reorderMedia(actor, {
+                    accommodationId: params.id as string,
+                    orderedIds: (body as AccommodationMediaReorderPayload).orderedIds
+                })
         });
 
         if (result.error) {

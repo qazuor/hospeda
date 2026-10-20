@@ -24,7 +24,7 @@
  *   `.uncheck()` dispatches real pointer events that React tracks correctly. No
  *   helper needed.
  *
- * @see apps/web/src/components/commerce/CommerceListingEditor.client.tsx
+ * @see apps/web/src/components/listing/ListingEditor.client.tsx
  * @see SPEC-253 T-028, T-030
  */
 

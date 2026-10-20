@@ -11,7 +11,7 @@
  *   reorderGastronomyMedia / getGastronomyMedia / setFeaturedGastronomyMedia,
  *   plus the composed-media read attach helpers
  * - Projection utilities — projectGastronomyPublic / projectGastronomyOwnerAvatar
- * - Permission helpers — granular COMMERCE_* gate wrappers
+ * - Permission helpers — granular per-vertical gate wrappers
  * - Types — GastronomyHookState
  */
 
@@ -48,19 +48,6 @@ export {
 } from './gastronomy.media-read';
 // Menu helpers (HOS-895) — the carta, read whole and written whole
 export { getGastronomyMenu, replaceGastronomyMenu } from './gastronomy.menu';
-// Owner-plan entitlement resolvers (HOS-895 PR2; generalised by HOS-1041,
-// widened by HOS-1045, set-returning variant added by HOS-1042) — the live
-// checks behind the public detail page's display gates. All of them share ONE
-// three-query lookup, so they cannot drift; prefer the SET variant when a
-// caller needs more than one key on the same render.
-export {
-    type GastronomyMenuGrants,
-    resolveOwnerGastronomyMenuGrants,
-    resolveOwnerGastronomyPlanEntitlementSet,
-    resolveOwnerGrantsGastronomyDailySpecial,
-    resolveOwnerGrantsGastronomyEntitlement,
-    resolveOwnerGrantsGastronomyMenuManagement
-} from './gastronomy.menu-entitlement';
 // Permission helpers
 export {
     checkGastronomyCanAdminList,

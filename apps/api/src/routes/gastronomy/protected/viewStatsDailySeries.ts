@@ -5,19 +5,23 @@
  * the authenticated owner, over a rolling window (7d or 30d) — HOS-734.
  *
  * Mirrors `views/protected/daily-series.ts` (the accommodation twin). See
- * `viewStats.ts` in this same directory for the full gate-order rationale.
+ * `viewStats.ts` in this same directory for the shared stats read.
  *
  * @module routes/gastronomy/protected/viewStatsDailySeries
  * @see HOS-734
  */
 
-import { EntitlementKey } from '@repo/billing';
 import type { ServiceErrorCode } from '@repo/schemas';
-import { EntityTypeEnum, EntityViewWindowSchema, HostViewDailySeriesSchema } from '@repo/schemas';
+import {
+    EntityTypeEnum,
+    EntityViewWindowSchema,
+    HostViewDailySeriesSchema,
+    VerticalEnum
+} from '@repo/schemas';
 import { entityViewService, ServiceError } from '@repo/service-core';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 /**
@@ -25,8 +29,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
  *
  * Authenticated owner endpoint that returns a gap-filled daily view-count
  * series aggregated across all of the caller's own gastronomy listings.
- * Requires the `view_basic_stats` entitlement (same gate as `viewStats.ts`,
- * so both widgets are consistently accessible on the same plan tier).
+ * Reads the owner's effective view_basic_stats capability before returning statistics.
  */
 export const protectedGastronomyViewStatsDailySeriesRoute = createProtectedRoute({
     method: 'get',
@@ -44,9 +47,14 @@ export const protectedGastronomyViewStatsDailySeriesRoute = createProtectedRoute
     responseSchema: HostViewDailySeriesSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.GASTRONOMY,
+            keys: ['view_basic_stats']
+        });
         const typedQuery = query as { window: '7d' | '30d' };
 
-        const result = await entityViewService.getDailySeriesForOwnCommerceListings({
+        const result = await entityViewService.getDailySeriesForOwnListings({
             actor,
             entityType: EntityTypeEnum.GASTRONOMY,
             window: typedQuery.window
@@ -62,10 +70,6 @@ export const protectedGastronomyViewStatsDailySeriesRoute = createProtectedRoute
         };
     },
     options: {
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.VIEW_BASIC_STATS)
-        ],
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

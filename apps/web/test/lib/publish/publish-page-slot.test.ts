@@ -172,7 +172,7 @@ describe('resolvePublishPageSlot — every URL is per-vertical', () => {
     });
 
     for (const vertical of ['gastronomy', 'experience'] as const) {
-        it(`points a ${vertical} panel at commerce, the ${vertical} editor and its own billing domain`, async () => {
+        it(`points a ${vertical} panel at listings, the ${vertical} editor and its own billing domain`, async () => {
             precheck.mockResolvedValue(ok('resume_or_create', { drafts: [draft] }));
 
             const slot = await resolvePublishPageSlot({
@@ -183,7 +183,7 @@ describe('resolvePublishPageSlot — every URL is per-vertical', () => {
 
             expect(slot.accountListingsUrl).toBe('/es/mi-cuenta/comercio/');
             expect(slot.editUrl).toBe(`/es/mi-cuenta/comercio/${vertical}/listing-1/editar/`);
-            // A commerce owner sent to the bare subscription page would read a
+            // A gastronomy/experience owner sent to the bare subscription page would read a
             // page about a subscription they may not hold (HOS-689).
             expect(slot.subscriptionUrl).toBe(`/es/mi-cuenta/suscripcion/?domain=${vertical}`);
         });

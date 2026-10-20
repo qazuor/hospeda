@@ -26,14 +26,6 @@ vi.mock('../../src/middlewares/auth', () => ({
     authMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next())
 }));
 
-vi.mock('../../src/middlewares/billing', () => ({
-    billingMiddleware: async (_c: unknown, next: () => Promise<void>) => next()
-}));
-
-vi.mock('../../src/middlewares/billing-customer', () => ({
-    billingCustomerMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next())
-}));
-
 vi.mock('../../src/middlewares/cache', () => ({
     cacheMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next())
 }));
@@ -44,10 +36,6 @@ vi.mock('../../src/middlewares/compression', () => ({
 
 vi.mock('../../src/middlewares/cors', () => ({
     corsMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next())
-}));
-
-vi.mock('../../src/middlewares/entitlement', () => ({
-    entitlementMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next())
 }));
 
 vi.mock('../../src/middlewares/logger', () => ({
@@ -81,10 +69,6 @@ vi.mock('../../src/middlewares/security', () => ({
 
 vi.mock('../../src/middlewares/sentry', () => ({
     sentryMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next())
-}));
-
-vi.mock('../../src/middlewares/trial', () => ({
-    trialMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next())
 }));
 
 vi.mock('../../src/middlewares/validation', () => ({

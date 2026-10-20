@@ -1,0 +1,349 @@
+{
+    "fila_viva": [
+        {
+            "file": "packages/service-core/src/services/billing/subscription/complement-selection.ts",
+            "symbol": "selectComplementTargets",
+            "row": null,
+            "why": "HOS-1562 S32/S11 shared selector: reads other vertical principals and applies the rule-specific live-state exclusion for USER/GLOBAL complements.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/complement-selection.ts",
+            "symbol": "pauseEndForUserWide",
+            "row": null,
+            "why": "HOS-1562 S32: reads compatible principal states and their open customer-request pauses to derive the USER/GLOBAL expected end.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/complement-pause-s32.ts",
+            "symbol": "pauseComplementsS32",
+            "row": null,
+            "why": "HOS-1562 S32: validates that the principal is suspended or has left the live rows before selecting complements.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/complement-pause-s32.ts",
+            "symbol": "writeComplementPause",
+            "row": null,
+            "why": "HOS-1562 S32 race check: under row locks confirms the principal still matches the trigger before pausing a complement.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/db/src/models/subscription/subscription.model.ts",
+            "symbol": "findLiveCommitment",
+            "row": null,
+            "why": "Consumidor real del candado del §11; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-inventory.model.ts",
+            "symbol": "listSweepInventoryPage",
+            "row": null,
+            "why": "B11 lista desde nuestro inventario las suscripciones vivas con vínculo para leerlas por id; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
+            "symbol": "listOpenSuccessionsOnDeadPredecessorsPage",
+            "row": 15,
+            "why": "Consumidor de la primera comprobación de cero llamadas de B11.8: encuentra sucesoras vivas cuya predecesora terminó.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
+            "symbol": "findSubscriptionIdsWithoutLiveSuccessor",
+            "row": 8,
+            "why": "Consumidor de la segunda comprobación de cero llamadas de B11.8: filtra pagos cuya predecesora ya no tiene sucesora viva. ",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/plan-catalog/plan-publication.anchored-customers.ts",
+            "symbol": "countAnchoredCustomersFromSubscriptions",
+            "row": null,
+            "why": "Consumidor real declarado por docblock; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/notice/process-provider-notice.service.ts",
+            "symbol": "processProviderNotice",
+            "row": null,
+            "why": "AC:B3:19 (HOS-1524): al espejar la baja del proveedor busca una sucesora viva para cerrar la sucesión dentro de la transacción; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/decline-first-charge.service.ts",
+            "symbol": "declineFirstCharge",
+            "row": null,
+            "why": "AC:B3:17 (HOS-1524, S16): busca una sucesora viva para cerrar la sucesión (S18) dentro de la transacción; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/late-payment-conditions.ts",
+            "symbol": "isLiveSuccessionPredecessor",
+            "row": 8,
+            "why": "AC:B7:6 (HOS-1558, S5, D-4): una sucesora viva apuntándola hace de la fila la predecesora de una sucesión en curso y el pago lo retiene S19; cubre también la fila 12 (la sucesora viva que ya autorizó), que cae en esta misma excepción.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/late-payment-conditions.ts",
+            "symbol": "hasOtherLivePrincipal",
+            "row": 6,
+            "why": "AC:B7:6 (HOS-1558, S5): condición 3 del pago tardío, otra principal viva del mismo user + vertical (las seis, PENDING_AUTHORIZATION incluido).",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-s13.ts",
+            "symbol": "readS13Rows",
+            "row": null,
+            "why": "S13 bloquea y selecciona todas las principales vivas de las verticales que ancla el acto.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/refund/refund-source.ts",
+            "symbol": "assertRetainedPaymentRefundable",
+            "row": null,
+            "why": "AC:B7:17 (HOS-1561 H12, GUARD:G-R1-D): RF1 y RF4 no devuelven el pago que S19 retuvo mientras la fila que lo retiene siga viva (la sucesión no se resolvió); no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/coverage/can-charge.ts",
+            "symbol": "rowCanCharge",
+            "row": 27,
+            "why": "AC:B4:5 (HOS-1534): la respuesta de puedeCobrarle cuenta toda suscripción de la cuenta en una fila viva menos CANCEL_SCHEDULED; la CANCEL_SCHEDULED y la terminal con provider_link cuentan mientras cancelled_seen_at esté vacío, y la CHARGE_DECLINED hasta que pase el plazo 16 desde esa columna; desde HOS-1676 también la CANCELLED del espejo tras un rechazo (CANCELLED_ON_GRACE, con el evento subscription.provider_cancelled_after_rejection), con la misma ventana.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/addon-orphanhood.ts",
+            "symbol": "findOrphanhoodCandidates",
+            "row": 18,
+            "why": "AC:B5:25 (HOS-1545): los candidatos de B/16 §4.3 son las instancias del desde de A5, las dos con una autorización que puede cobrar (PENDING_AUTHORIZATION y ACTIVE).",
+            "subject": "addon_instance"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/addon-orphanhood.ts",
+            "symbol": "isAddonInstanceOrphaned",
+            "row": 5,
+            "why": "AC:B5:25 (HOS-1545): primera mitad del addon huérfano, el objetivo dejó de ser fila viva; para LISTING sobre el conjunto de las principales del user + vertical y para USER/GLOBAL sobre las principales vivas y pagando de cada vertical compatible (las seis).",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/addon-orphanhood.ts",
+            "symbol": "verticalSubscriptionOrphaned",
+            "row": 11,
+            "why": "AC:B5:25 (HOS-1545): segunda mitad del addon huérfano, ninguna fila viva con sucede_a apuntándola; reusa isLiveSuccessionPredecessor (fila 8) sin reescribir el predicado, y lee sucedida_por, que no se borra.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/addon-instance-a5.ts",
+            "symbol": "applyA5",
+            "row": 18,
+            "why": "AC:B5:25 (HOS-1545): el desde de A5, sólo PENDING_AUTHORIZATION y ACTIVE; fuera de esos dos A5 no escribe nada.",
+            "subject": "addon_instance"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/addon-without-shutdown-check.ts",
+            "symbol": "runAddonWithoutShutdownCheck",
+            "row": 25,
+            "why": "AC:B5:31: la cuarta comprobación inspecciona las instancias vivas (fila 25) para abrir la marca 11 cuando A5 no corrió.",
+            "subject": "addon_instance"
+        },
+        {
+            "file": "apps/api/src/services/listing-publication/listing-purge-preview.service.ts",
+            "symbol": "readListingPurgePreview",
+            "row": 3,
+            "why": "AC:B13a:4 (HOS-1618): la confirmación lee las instancias vivas de scope LISTING que quedan asociadas a la ficha borrada.",
+            "subject": "addon_instance"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/addon-instance-a5.ts",
+            "symbol": "runOrphanhood",
+            "row": null,
+            "why": "AC:B5:25 (HOS-1545): el disparador de B/16 §4.3 es que la principal haya salido de las filas vivas (las seis), no un estado de llegada; si sigue viva no se evalúa nada. Es el evento, no una mitad del predicado (ésa es la fila 5, en addon-orphanhood.ts), así que no tiene fila propia en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/complement-s21.ts",
+            "symbol": "applyS21",
+            "row": 20,
+            "why": "AC:B5:28 (HOS-1545): el desde de S21, toda fila viva DE COMPLEMENTO (las seis) de la que cuelga una instancia; ABANDONED y CHARGE_DECLINED quedan afuera.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/complement-s21.ts",
+            "symbol": "findComplementsAwaitingS21",
+            "row": 20,
+            "why": "AC:B5:28 (HOS-1545): la re-evaluación de S21, las filas vivas DE COMPLEMENTO (las seis) cuya instancia ya está CANCELLED: la corrida que murió entre A5 y S21.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-s20.ts",
+            "symbol": "readS20ComplementRows",
+            "row": 19,
+            "subject": "subscription",
+            "why": "AC:B9a:4 (HOS-1583): el alcance de S20, toda fila viva DE COMPLEMENTO del beneficiario (las seis)."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-s20.ts",
+            "symbol": "readS20Instances",
+            "row": 19,
+            "subject": "addon_instance",
+            "why": "AC:B9a:4 (HOS-1583): el alcance de S20, la instancia en uno de sus dos estados vivos."
+        }
+    ],
+    "grant_vivo_ancla_viva": [
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-live-anchors.ts",
+            "symbol": "hasLivePermanentGrantAnchor",
+            "row": 2,
+            "why": "Tercera mitad de la orfandad (B/16 §4.2): ¿hay un ancla viva en esa vertical?"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/coverage/grant-sources.ts",
+            "symbol": "resolveGrantSources",
+            "row": null,
+            "why": "La fuente GRANT de coverage() lee el ancla viva de UNA vertical."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant.service.ts",
+            "symbol": "anchorPermanentGrantVertical",
+            "row": 6,
+            "why": "Anclar exige un grant vivo: a uno revocado no se le ancla nada."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/addon-without-shutdown-check.ts",
+            "symbol": "verdictOf",
+            "row": 2,
+            "why": "AC:B5:31, segunda mitad: reconoce el título de una instancia anclado a un permanent_grant revocado."
+        },
+        {
+            "file": "apps/api/src/services/cutover-b9a/step-3b.service.ts",
+            "symbol": "runStep3b",
+            "row": null,
+            "why": "La herramienta del 3b saltea al beneficiario que ya tiene un ancla viva de Alojamiento (AC:B9a:15)."
+        }
+    ],
+    "marca_abierta": [
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/open-reconciliation-mark.service.ts",
+            "symbol": "openReconciliationMark",
+            "row": 10,
+            "why": "S14 consulta la marca abierta antes de abrir otra."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/lift-reconciliation-mark.service.ts",
+            "symbol": "liftReconciliationMark",
+            "row": 1,
+            "why": "S15 relee levantada_en para decidir el desde."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/lift-reconciliation-mark-by-admin.service.ts",
+            "symbol": "liftReconciliationMarkByAdmin",
+            "row": null,
+            "why": "La acción 7 devuelve lifted_at recién escrito por S15 para auditar qué marca se levantó; no lo relee como estado de origen y no corresponde a una fila del glosario."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/succession-target-guard.ts",
+            "symbol": "checkSuccessionTarget",
+            "row": 2,
+            "why": "La prohibición de ser sucedida consulta marcas abiertas."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/grace-expiry-check.ts",
+            "symbol": "hasOpenUnresolvedPeriodChargeMark",
+            "row": null,
+            "why": "La comprobación del vencimiento del grace no corre S6 mientras la fila tenga abierta la marca COBRO_DEL_PERIODO_SIN_RESOLVER (B/09 §6.2; motivo 21); no tiene fila en el inventario del glosario."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/succession-retention-ports.ts",
+            "symbol": "retainedPaymentsFromLedger",
+            "row": null,
+            "why": "La fuente de pagos retenidos del barrido de cero llamadas (B11.8, HOS-1561 H11) excluye la retención cuyo pago ya cuelga sin resolver de una marca abierta PAGO_PENDIENTE_SIN_RAMA de esa fila, para no colgarlo dos veces (MARK_PAYMENT_ALREADY_HUNG); no tiene fila en el inventario del glosario."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/our-cancellation-retry.ts",
+            "symbol": "retryOurCancellation",
+            "row": null,
+            "why": "El reintento de una cancelación nuestra deja de reintentar mientras la fila tenga abierta la marca CANCELACION_SIN_CONFIRMAR (AC:B11:6; motivo 16)."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/comparisons/period-charges-comparison.ts",
+            "symbol": "alreadyHung",
+            "row": null,
+            "why": "AC:B11:10 (H8): una carga pendiente ya colgada sin resolver de cualquier marca abierta no se vuelve a emitir ni hace fallar la fila."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/coverage/can-charge.ts",
+            "symbol": "countOpenUnconfirmedCancellationMarks",
+            "row": 12,
+            "why": "AC:B4:5 (HOS-1534): la respuesta de puedeCobrarle, su mitad de la marca: cuenta las marcas CANCELACION_SIN_CONFIRMAR con lifted_at vacío sobre las suscripciones de la cuenta y, si hay una, contesta sí."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/actionable-marks.ts",
+            "symbol": "listActionableReconciliationMarks",
+            "row": 6,
+            "why": "El listado accionable (B/19 §6, AC:B13a:9): una entrada por marca abierta, con su motivo, desde cuándo, todos sus pagos colgados con cantidad y total, y la propuesta del catálogo, con los nueve que devuelven plata adelante."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/actionable-mark-events.ts",
+            "symbol": "readReconciliationMarkEvents",
+            "row": 6,
+            "why": "Resuelve los eventos críticos de una marca con el intervalo de apertura y cierre guardado por la marca (DEC-RF-005)."
+        },
+        {
+            "file": "apps/api/src/routes/billing-reconciliation/admin/mark-events.ts",
+            "symbol": "readReconciliationMarkEventsRoute",
+            "row": 6,
+            "why": "La ruta admin del vínculo (AC:B13a:9) serializa levantada_en de la marca que lee readReconciliationMarkEvents, para que el panel muestre si la marca sigue abierta."
+        },
+        {
+            "file": "apps/api/src/routes/billing-reconciliation/admin/lift-mark.ts",
+            "symbol": "adminLiftReconciliationMarkRoute",
+            "row": null,
+            "why": "La ruta serializa levantada_en recién escrita por S15 para responder qué marca se levantó; no la relee como estado de origen y no corresponde a una fila del glosario."
+        }
+    ],
+    "cortesia_diferida": [
+        {
+            "file": "packages/service-core/src/services/billing/coverage/courtesy-sources.ts",
+            "symbol": "resolveCourtesySources",
+            "row": null,
+            "why": "La fuente CORTESÍA emite sólo la cortesía vigente: excluye la diferida (balance_months no nulo)."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-courtesy.ts",
+            "symbol": "closeDeferredCourtesyBalances",
+            "row": 9,
+            "why": "S13 cierra el saldo diferido en las verticales que el acto ancla (DEC-GRANT-013)."
+        },
+        {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
+            "symbol": "balanceMonths",
+            "row": 4,
+            "why": "La sexta comprobación de cero llamadas de B11.8 detecta cortesías diferidas por su saldo abierto."
+        },
+        {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
+            "symbol": "balanceClosedAt",
+            "row": 4,
+            "why": "La sexta comprobación de cero llamadas de B11.8 excluye cortesías cuyo saldo ya se cerró."
+        },
+        {
+            "file": "packages/db/src/models/subscription/subscription.model.ts",
+            "symbol": "abandonPendingAuthorization",
+            "row": 9,
+            "why": "S3 cierra el saldo diferido de la cortesía."
+        },
+        {
+            "file": "packages/schemas/src/api/billing/subscription-self-cancel.schema.ts",
+            "symbol": "balanceMonths",
+            "row": 21,
+            "why": "El contrato de respuesta incluye el saldo en meses de la cortesía diferida para mostrarlo en Mi Suscripción (AC:B13a:8); no decide nada con el término."
+        },
+        {
+            "file": "apps/api/src/routes/billing-subscription/read-own-subscriptions.ts",
+            "symbol": "readOwnDeferredCourtesies",
+            "row": 10,
+            "why": "Mi Suscripción muestra la cortesía diferida del beneficiario con su condición, en la vertical de la suscripción que la firmó (AC:B13a:8, DEC-GRANT-012); no decide nada con el término."
+        }
+    ]
+}

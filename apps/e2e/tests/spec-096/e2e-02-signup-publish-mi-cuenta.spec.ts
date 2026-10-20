@@ -104,11 +104,11 @@ test.describe('E2E-2: signup → onboarding → /mi-cuenta visible @p0 @host @on
         ).toBe(true);
 
         // DB invariant: one accommodation owned by the new host.
-        const accs = await execSQL<{ id: string; lifecycle_state: string }>(
-            'SELECT id, lifecycle_state FROM accommodations WHERE owner_id = $1',
+        const accs = await execSQL<{ id: string; publication_status: string }>(
+            'SELECT id, publication_status FROM accommodations WHERE owner_id = $1',
             [user.id]
         );
         expect(accs.length).toBe(1);
-        expect(accs[0]?.lifecycle_state).toBe('DRAFT');
+        expect(accs[0]?.publication_status).toBe('DRAFT');
     });
 });

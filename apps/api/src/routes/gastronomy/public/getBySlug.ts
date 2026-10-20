@@ -3,14 +3,13 @@
  * Returns a single gastronomy listing projected through GastronomyPublicSchema.
  * Returns null (404) when the listing is not found or not publicly visible.
  */
-import { EntitlementKey } from '@repo/billing';
-import { GastronomyPublicSchema } from '@repo/schemas';
+
+import { GastronomyPublicSchema, VerticalEnum } from '@repo/schemas';
 import {
     GastronomyService,
     getGastronomyDailySpecials,
     getGastronomyEvents,
     getGastronomyMenu,
-    resolveOwnerGastronomyPlanEntitlementSet,
     ServiceError
 } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -18,11 +17,12 @@ import { z } from 'zod';
 import { getTodayInMarketTimezone } from '../../../services/calendar-sync/date-range';
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
+import { readEffectiveKeys } from '../../../utils/listing-access/user-gate';
 import {
     fetchGastronomyAmenities,
     fetchGastronomyFeatures
-} from '../../../utils/commerce-catalog-relations';
-import { withPublicVisibleFaqs } from '../../../utils/commerce-faq-visibility';
+} from '../../../utils/listing-catalog-relations';
+import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 import { applyGastronomyDailySpecialsGate } from './daily-specials-projection';
@@ -118,51 +118,48 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         // reads of the same subscription if a plan change landed mid-render,
         // publishing one paid feature while withholding another for no reason a
         // reader could see. See `resolveOwnerGastronomyPlanEntitlements`.
-        const [
-            amenitiesData,
-            featuresData,
-            menuResult,
-            eventsResult,
-            dailySpecialsResult,
-            ownerPlanEntitlements
-        ] = await Promise.all([
-            fetchGastronomyAmenities(gastronomy.id),
-            fetchGastronomyFeatures(gastronomy.id),
-            getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
-            getGastronomyEvents(model, { gastronomyId: gastronomy.id }),
-            getGastronomyDailySpecials(model, { gastronomyId: gastronomy.id, validOn: today }),
-            resolveOwnerGastronomyPlanEntitlementSet({ ownerId: gastronomy.ownerId })
-        ]);
+        const ownerGrants = await readEffectiveKeys({
+            userId: gastronomy.ownerId,
+            vertical: VerticalEnum.GASTRONOMY,
+            keys: [
+                'manage_gastronomy_menu',
+                'menu_item_photos',
+                'multilingual_gastronomy_menu',
+                'manage_gastronomy_events',
+                'manage_gastronomy_daily_special'
+            ]
+        });
+
+        const [amenitiesData, featuresData, menuResult, eventsResult, dailySpecialsResult] =
+            await Promise.all([
+                fetchGastronomyAmenities(gastronomy.id),
+                fetchGastronomyFeatures(gastronomy.id),
+                getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
+                getGastronomyEvents(model, { gastronomyId: gastronomy.id }),
+                getGastronomyDailySpecials(model, { gastronomyId: gastronomy.id, validOn: today })
+            ]);
 
         const menuGate = applyGastronomyMenuManagementGate({
             gastronomy,
             menuSections: menuResult.error ? [] : menuResult.data.sections,
-            ownerGrantsMenuManagement: ownerPlanEntitlements.has(
-                EntitlementKey.MANAGE_GASTRONOMY_MENU
-            ),
-            ownerGrantsMenuItemPhotos: ownerPlanEntitlements.has(EntitlementKey.MENU_ITEM_PHOTOS),
-            ownerGrantsMenuTranslations: ownerPlanEntitlements.has(
-                EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU
-            )
+            ownerGrantsMenuManagement: ownerGrants.manage_gastronomy_menu ?? false,
+            ownerGrantsMenuItemPhotos: ownerGrants.menu_item_photos ?? false,
+            ownerGrantsMenuTranslations: ownerGrants.multilingual_gastronomy_menu ?? false
         });
 
         const eventsGate = applyGastronomyVenueEventsGate({
             events: eventsResult.error ? [] : eventsResult.data.events,
-            ownerGrantsVenueEvents: ownerPlanEntitlements.has(
-                EntitlementKey.MANAGE_GASTRONOMY_EVENTS
-            )
+            ownerGrantsVenueEvents: ownerGrants.manage_gastronomy_events ?? false
         });
 
         const dailySpecialsGate = applyGastronomyDailySpecialsGate({
             dailySpecials: dailySpecialsResult.error ? [] : dailySpecialsResult.data.specials,
-            ownerGrantsDailySpecial: ownerPlanEntitlements.has(
-                EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
-            )
+            ownerGrantsDailySpecial: ownerGrants.manage_gastronomy_daily_special ?? false
         });
 
         return {
             ...withPublicVisibleFaqs(gastronomy),
-            // HOS-1286: PUBLIC tier ORs the two featuring sources.
+            // HOS-1286: PUBLIC tier derives `isFeatured` from `featuredByEntitlement`.
             isFeatured: resolvePublicIsFeatured(gastronomy),
             amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
             features: featuresData.length > 0 ? featuresData : undefined,

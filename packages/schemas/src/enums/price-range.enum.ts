@@ -1,5 +1,5 @@
 /**
- * Price range enum for commerce entities and accommodations.
+ * Price range enum for gastronomy, experience and accommodation entities.
  * Indicates the general price tier of a listing (e.g. a gastronomy venue).
  *
  * - BUDGET: Low cost, accessible options.

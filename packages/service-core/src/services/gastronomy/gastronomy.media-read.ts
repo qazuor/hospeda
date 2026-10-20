@@ -5,9 +5,9 @@
  * composed `Media` shape onto gastronomy entities (HOS-372).
  *
  * Mirrors `accommodation.media-read.ts` field-for-field, delegating the pure
- * composition step to the SHARED `composeCommerceMedia` helper (unlike
+ * composition step to the SHARED `composeListingMedia` helper (unlike
  * accommodation, which has its own dedicated composer — see
- * `commerce-media-compose.ts` for why one function serves both commerce
+ * `listing-media-compose.ts` for why one function serves both gastronomy and experience
  * verticals).
  *
  * Both helpers use the batch finder `findByGastronomies` (one `IN` query) so
@@ -29,7 +29,7 @@
 
 import type { DrizzleClient, GastronomyMediaModel } from '@repo/db';
 import type { Gastronomy, GastronomyMedia } from '@repo/schemas';
-import { composeCommerceMedia } from '../commerce/commerce-media-compose';
+import { composeListingMedia } from '../listing/listing-media-compose';
 
 // ---------------------------------------------------------------------------
 // Private helper
@@ -43,7 +43,7 @@ function withComposedGastronomyMedia<T extends Gastronomy>(
     entity: T,
     rows: readonly GastronomyMedia[]
 ): T {
-    const composed = composeCommerceMedia({ rows, videos: entity.videos });
+    const composed = composeListingMedia({ rows, videos: entity.videos });
     const hasContent = Object.keys(composed).length > 0;
     return { ...entity, media: hasContent ? composed : entity.media } as T;
 }

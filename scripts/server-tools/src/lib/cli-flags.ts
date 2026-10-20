@@ -58,9 +58,9 @@
  *   explicitly `die()`s on it with its own message. Accepting `--email x` here
  *   would let this validator wave through an invocation the command then
  *   rejects.
- * - `'both'`   — either spelling: `billing-test-link`/`billing-test-reset`
- *   `--email` / `--buyer-email`, `env-check-rules --app`, and the three
- *   `r2-lifecycle` flags.
+ * - `'both'`   — either spelling: `env-check-rules --app`, and the three
+ *   `r2-lifecycle` flags. (HOS-1416: the `billing-test-link`/`billing-test-reset`
+ *   commands were removed with the legacy billing surface.)
  */
 export type ValueFlagSyntax = 'equals' | 'space' | 'both';
 
@@ -154,13 +154,13 @@ export interface ValidateCommandFlagsResult {
 /** Hints that apply to every command, since these tokens are typed everywhere. */
 const GLOBAL_HINTS: Readonly<Record<string, string>> = {
     '--dry-run':
-        'no such global flag. Read-only previews are per command: db-seed-migrate has --status, billing-test-reset is dry-run by default (--execute writes), cron-trigger has --dry-run.',
+        'no such global flag. Read-only previews are per command: db-seed-migrate has --status, cron-trigger has --dry-run.',
     '--env':
         'to pick an environment use the GLOBAL --target=prod|staging, before or after the command name. (`exec` has its own --env <prefix>, which lists container env vars.)',
     '--prod': 'did you mean --target=prod?',
     '--staging': 'did you mean --target=staging?',
     '--force': 'no such flag; the confirmation skip is --yes.',
-    '-y': 'did you mean --yes? (-y is only an alias on the billing-test-* commands.)'
+    '-y': 'did you mean --yes?'
 };
 
 /** Looks up the hint for a token, matching `--key=value` on its key. */

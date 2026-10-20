@@ -19,8 +19,8 @@ vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({ t: (key: string) => key })
 }));
 
-vi.mock('@/features/billing/use-my-entitlements', () => ({
-    useMyEntitlements: () => ({ has: () => true, isLoading: false })
+vi.mock('@/features/billing/use-effective-set', () => ({
+    useEffectiveSet: () => ({ has: () => true, isLoading: false })
 }));
 
 import {

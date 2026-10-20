@@ -240,9 +240,9 @@ uncacheable one cache.
 2026-09-04, `GET /api/v1/public/partners` returns zero rows in production —
 both partners named in the original HOS-519 report
 (`autoservice-litoral`, `fundacion-entre-rios-sustentable`) were HARD-DELETED
-by the seed data-migration `0059-purge-test-and-commerce-example.ts`
-(`PARTNER_SLUGS`, `packages/seed/src/data-migrations/0059-purge-test-and-commerce-example.ts:260-262`),
-an intentional 2026-08-23 owner decision to clear commerce example data before
+by the seed data-migration `0059` (purge of test and example listings)
+(`PARTNER_SLUGS`, `0059`, `PARTNER_SLUGS` block, lines 260-262),
+an intentional 2026-08-23 owner decision to clear gastronomy and experience example data before
 launch. So this rule currently has **nothing to verify against in production**
 — `curl` against either slug answers 404, not 200, and will keep doing so
 until a real gold partner is onboarded. Verify against **staging** instead
@@ -890,7 +890,7 @@ Purge scoping, each probe 7 s after the purge:
 |---|---|---|---|---|
 | `preview:attr-centro-historico` | **MISS** | `HIT` | `HIT` | `HIT` |
 
-The first table shows the two new commerce collections are isolated from each
+The first table shows the two new gastronomy and experience collections are isolated from each
 other and from the detail pages. The second shows a per-entity tag evicts one
 attraction without touching its sibling.
 

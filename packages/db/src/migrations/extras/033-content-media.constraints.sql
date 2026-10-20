@@ -7,7 +7,7 @@
 -- `pnpm db:migrate`. Both tables are created by the structural migration
 -- 0075_absurd_adam_warlock.sql (carril 1).
 --
--- Mirrors 032-commerce-media.constraints.sql (and 018 before it) exactly, one
+-- Mirrors 032-gastronomy-experience-media.constraints.sql (and 018 before it) exactly, one
 -- block pair per entity. Posts and events are separate tables, not one
 -- polymorphic table, so each needs its own index and CHECK — the deliberate
 -- cost of having the DATABASE guarantee the invariant per content type.

@@ -7,7 +7,8 @@ triggers:
   - límites comerciales
   - trial
   - suscripción
-  - packages/billing
+  - packages/verticals
+  - packages/payments
 ---
 
 # Hospeda Billing
@@ -25,9 +26,15 @@ trial, suscripciones o sincronización entre verticales.
 - Invalidaciones de cache y cambios de estado deben respetar las invariantes
   existentes.
 - Las tres verticales deben conservar paridad cuando la regla sea común.
-- La configuración de código es fuente de capacidades y defaults; después del
-  seed, los campos comerciales editables viven en la base y no deben ser
+- Los valores de planes, precios y límites viven en el catálogo de la base de
+  datos (`@repo/billing` se retiró con HOS-1626); en código quedan sólo las
+  claves (`packages/schemas/src/catalog/entitlement-keys.ts`, `limit-keys.ts`,
+  `key-enums.ts`). Los campos comerciales editables no deben ser
   sobreescritos silenciosamente.
+- El conjunto efectivo, la publicación, la cuota y el trial viven en
+  `packages/verticals` (la herencia del Tourist VIP, en
+  `packages/verticals/src/effective-set/tourist-vip-inheritance.ts`); el
+  proveedor de cobro y el adaptador de MercadoPago, en `packages/payments`.
 - `billing_subscriptions.mp_subscription_id` identifica el preapproval de
   MercadoPago tanto para planes mensuales como anuales; no lo confundas con el
   slug del plan ni con un pago único.

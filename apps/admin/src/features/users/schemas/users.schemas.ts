@@ -27,8 +27,7 @@ export const UserListItemWithComputedFieldsSchema = UserListItemSchema.extend({
     gastronomiesCount: z.number().optional(),
     experiencesCount: z.number().optional(),
     eventsCount: z.number().optional(),
-    postsCount: z.number().optional(),
-    currentPlanSlug: z.string().nullable().optional()
+    postsCount: z.number().optional()
 }).transform((data) => ({
     ...data,
     locationCity: data.location?.city || undefined,
@@ -36,8 +35,7 @@ export const UserListItemWithComputedFieldsSchema = UserListItemSchema.extend({
     gastronomiesCount: data.gastronomiesCount || 0,
     experiencesCount: data.experiencesCount || 0,
     eventsCount: data.eventsCount || 0,
-    postsCount: data.postsCount || 0,
-    currentPlanSlug: data.currentPlanSlug ?? null
+    postsCount: data.postsCount || 0
 }));
 
 // Re-export main schema

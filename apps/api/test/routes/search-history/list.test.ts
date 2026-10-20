@@ -6,15 +6,36 @@
  * service-layer tests in packages/service-core/test/services/userSearchHistory/.
  * No DB required — services are mocked.
  */
-import { beforeAll, describe, expect, it } from 'vitest';
+import type { VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
+
+const effectiveSet = vi.fn();
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet })
+}));
 
 describe('GET /api/v1/protected/search-history (list search history)', () => {
     let app: AppOpenAPI;
     const base = '/api/v1/protected/search-history';
 
     beforeAll(async () => {
+        effectiveSet.mockImplementation(
+            async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+                rehydrateEffectiveSet({
+                    version: 1,
+                    userId,
+                    vertical,
+                    hasLiveNonTrialTitle: false,
+                    inheritsTouristVip: false,
+                    entries: [
+                        { key: 'can_view_search_history', value: 1, strategy: 'MAX' },
+                        { key: 'max_search_history_entries', value: 1, strategy: 'MAX' }
+                    ]
+                })
+        );
         app = initApp();
     });
 

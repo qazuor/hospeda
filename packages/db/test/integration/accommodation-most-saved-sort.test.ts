@@ -29,6 +29,7 @@
  * PG error 42703 "column accommodations.entity_id does not exist".
  * With the fix it passes.
  */
+import { PublicationStatusEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model.ts';
 import { accommodations, destinations, userBookmarks, users } from '../../src/schemas/index.ts';
@@ -57,14 +58,16 @@ describe('AccommodationModel.searchWithRelations — mostSaved sort (SPEC-213 re
             const [accommodation] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `spec213-mostsaved-${uid}`,
                     name: 'SPEC-213 MostSaved Regression Test',
                     summary: 'Regression test for mostSaved sort bug.',
                     type: 'HOUSE',
-                    description: 'Accommodation inserted for the mostSaved sort regression test.',
-                    lifecycleState: 'ACTIVE'
+                    description: 'Accommodation inserted for the mostSaved sort regression test.'
                 })
                 .returning();
             if (!accommodation) throw new Error('Failed to insert accommodation');
@@ -119,14 +122,16 @@ describe('AccommodationModel.searchWithRelations — mostSaved sort (SPEC-213 re
             const [accommodationA] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `spec213-order-a-${uid}`,
                     name: 'SPEC-213 Order A (bookmarked)',
                     summary: 'Accommodation A — bookmarked.',
                     type: 'HOUSE',
-                    description: 'Accommodation A for mostSaved ordering regression test.',
-                    lifecycleState: 'ACTIVE'
+                    description: 'Accommodation A for mostSaved ordering regression test.'
                 })
                 .returning();
             if (!accommodationA) throw new Error('Failed to insert accommodation A');
@@ -135,14 +140,16 @@ describe('AccommodationModel.searchWithRelations — mostSaved sort (SPEC-213 re
             const [accommodationB] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `spec213-order-b-${uid}`,
                     name: 'SPEC-213 Order B (no bookmark)',
                     summary: 'Accommodation B — not bookmarked.',
                     type: 'HOUSE',
-                    description: 'Accommodation B for mostSaved ordering regression test.',
-                    lifecycleState: 'ACTIVE'
+                    description: 'Accommodation B for mostSaved ordering regression test.'
                 })
                 .returning();
             if (!accommodationB) throw new Error('Failed to insert accommodation B');

@@ -84,6 +84,19 @@ global.ResizeObserver = class ResizeObserver {
     disconnect() {}
 };
 
+global.IntersectionObserver = class IntersectionObserver implements IntersectionObserver {
+    readonly root = null;
+    readonly rootMargin = '0px';
+    readonly scrollMargin = '0px';
+    readonly thresholds = [0];
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords(): IntersectionObserverEntry[] {
+        return [];
+    }
+};
+
 // Mock Better Auth React client
 vi.mock('better-auth/react', () => {
     const mockSession = {
@@ -176,38 +189,6 @@ vi.mock('@tanstack/react-router', () => ({
         })
 }));
 
-// Mock @qazuor/qzpay-react — gates always render children in tests
-vi.mock('@qazuor/qzpay-react', () => ({
-    LimitGate: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    LimitReachedUI: () => <div data-testid="limit-reached" />,
-    EntitlementGate: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    useEntitlements: () => ({ check: () => true, isLoading: false }),
-    QZPayProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    qzpayMergeTheme: (base: Record<string, unknown>, overrides: Record<string, unknown>) => {
-        const result = { ...base };
-        for (const key of Object.keys(overrides)) {
-            const baseVal = base[key];
-            const overVal = overrides[key];
-            if (
-                baseVal &&
-                typeof baseVal === 'object' &&
-                !Array.isArray(baseVal) &&
-                overVal &&
-                typeof overVal === 'object' &&
-                !Array.isArray(overVal)
-            ) {
-                result[key] = {
-                    ...(baseVal as Record<string, unknown>),
-                    ...(overVal as Record<string, unknown>)
-                };
-            } else {
-                result[key] = overVal;
-            }
-        }
-        return result;
-    }
-}));
-
 // Global mock for @repo/icons using a plain object (no Proxy).
 // Enumerates all icon names used across the admin app.
 // NOTE: Do NOT use a Proxy as the vi.mock factory return value — it causes
@@ -227,6 +208,7 @@ vi.mock('@repo/icons', () => {
         ICON_SIZES: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32, '2xl': 40 },
         // Entity icons
         AccommodationIcon: stub('AccommodationIcon'),
+        getAccommodationTypeIcon: () => stub('AccommodationIcon'),
         DestinationIcon: stub('DestinationIcon'),
         EventIcon: stub('EventIcon'),
         EventLocationIcon: stub('EventLocationIcon'),

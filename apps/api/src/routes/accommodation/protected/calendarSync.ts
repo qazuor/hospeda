@@ -17,26 +17,27 @@
  * provider selection to the UI.
  *
  * Gate model: ownership + `ACCOMMODATION_OCCUPANCY_MANAGE` inline via
- * `assertOccupancyManageAccess`; `CAN_SYNC_EXTERNAL_CALENDAR` at the route via
- * `requireEntitlement`. Neither sync service throws for operational
- * failures — each returns a discriminated result and records ERROR state —
- * so a failed sync surfaces as a 200 with `status: 'error'`, not a 5xx.
+ * `assertOccupancyManageAccess`; external sync also requires the effective plan
+ * entitlement. Neither sync service throws for operational failures — each
+ * returns a discriminated result and records ERROR state — so a failed sync
+ * surfaces as a 200 with `status: 'error'`, not a 5xx.
+ * The listing access resolver requires the route capability on the owner.
  *
  * @module routes/accommodation/protected/calendarSync
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
     type CalendarProviderToken,
     type CalendarSyncResult,
     CalendarSyncResultSchema,
     OccupancySourceEnum,
-    SyncCalendarBodySchema
+    SyncCalendarBodySchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { assertOccupancyManageAccess } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { syncAccommodationCalendar } from '../../../services/google-calendar/google-calendar-sync.service';
 import { syncAccommodationIcalCalendar } from '../../../services/ical-calendar/ical-calendar-sync.service';
 import type { IcalProvider } from '../../../services/ical-calendar/ical-credential.repository';
@@ -64,6 +65,12 @@ const ICAL_PROVIDER_BY_TOKEN: Record<'airbnb' | 'booking' | 'other', IcalProvide
 export const protectedCalendarSyncRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/calendar-sync/sync',
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        capabilities: ['can_sync_external_calendar'],
+        idParam: 'id'
+    },
     summary: 'Trigger an external calendar occupancy sync (owner)',
     description:
         'Runs one on-demand sync (Google Calendar OAuth or an Airbnb/Booking/generic iCal feed, ' +
@@ -95,8 +102,5 @@ export const protectedCalendarSyncRoute = createProtectedRoute({
 
         const provider = ICAL_PROVIDER_BY_TOKEN[providerToken];
         return await syncAccommodationIcalCalendar({ accommodationId, provider });
-    },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR)]
     }
 });

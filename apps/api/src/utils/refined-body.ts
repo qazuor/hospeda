@@ -34,7 +34,7 @@
  *   which is the only place that can actually hold that order.
  * - `host-trade/admin/usages.ts` — a hand-rolled `safeParse`, kept because it
  *   is what narrows the body to the typed shape the handler reads.
- * - `commerce/protected/create.ts` — a hand-rolled `safeParse`, kept because
+ * - `gastronomy/protected/create.ts` and `experience/protected/create.ts` — a hand-rolled `safeParse`, kept because
  *   it re-applies admin defaults after stamping owner/visibility fields.
  *
  * A fifth, `host-trade/protected/mine-usages.ts`, was removed with its cause.

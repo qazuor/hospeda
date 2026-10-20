@@ -7,24 +7,21 @@
  * popular/featured cold-start fallback when that profile has no signal yet
  * (`isColdStart: true`).
  *
- * Entitlement gate: `CAN_VIEW_RECOMMENDATIONS` — handled by
- * `gateRecommendations()` (plan axis). The service additionally enforces
- * `PermissionEnum.RECOMMENDATION_VIEW` (role axis) — see
- * `RecommendationService.getFeed` for the full two-layer authorization
- * breakdown.
+ * The service still enforces `PermissionEnum.RECOMMENDATION_VIEW` (role axis) —
+ * see `RecommendationService.getFeed` for the authorization breakdown.
  *
  * No query params: the feed is always scoped to the actor's own id and the
- * item count is fixed across every plan that carries the entitlement
- * (spec OQ-3 — binary v1, no per-plan tuning, no pagination).
+ * feed has no pagination.
  *
  * @route GET /api/v1/protected/recommendations
  * @module routes/recommendations/protected/get
  */
-import { RecommendationFeedResponseSchema } from '@repo/schemas';
+import { RecommendationFeedResponseSchema, VerticalEnum } from '@repo/schemas';
 import { RecommendationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { gateRecommendations } from '../../../middlewares/tourist-entitlements';
+
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -44,11 +41,15 @@ export const getRecommendationsRoute = createProtectedRoute({
     tags: ['Recommendations'],
     responseSchema: RecommendationFeedResponseSchema,
     options: {
-        middlewares: [gateRecommendations()],
         customRateLimit: { requests: 120, windowMs: 60000 }
     },
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['can_view_recommendations']
+        });
 
         const result = await recommendationService.getFeed(actor);
 

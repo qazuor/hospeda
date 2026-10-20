@@ -20,20 +20,18 @@ import { adminAddExperienceMediaRoute } from './addMedia';
 import { adminAssignExperienceOwnerRoute } from './assignOwner';
 import { adminBatchExperiencesRoute } from './batch';
 import { adminCreateExperienceRoute } from './create';
-import { adminDeleteExperienceRoute } from './delete';
 import { adminGetExperienceByIdRoute } from './getById';
 import { adminGetExperienceFaqsRoute } from './getFaqs';
 import { adminGetExperienceMediaRoute } from './getMedia';
-import { adminHardDeleteExperienceRoute } from './hardDelete';
 import { adminListExperiencesRoute } from './list';
 import { adminModerateExperienceRoute } from './moderate';
 import { adminExperienceOptionsRoute } from './options';
 import { adminPatchExperienceRoute } from './patch';
+import { adminPurgeOnRequestExperienceRoute } from './purge';
 import { adminRemoveExperienceFaqRoute } from './removeFaq';
 import { adminRemoveExperienceMediaRoute } from './removeMedia';
 import { adminReorderExperienceFaqsRoute } from './reorderFaqs';
 import { adminReorderExperienceMediaRoute } from './reorderMedia';
-import { adminRestoreExperienceRoute } from './restore';
 import { adminSetFeaturedExperienceMediaRoute } from './setFeaturedMedia';
 import { adminUpdateExperienceRoute } from './update';
 import { adminUpdateExperienceFaqRoute } from './updateFaq';
@@ -68,22 +66,14 @@ app.route('/', adminUpdateExperienceRoute);
 // PATCH /:id - Partial update
 app.route('/', adminPatchExperienceRoute);
 
-// DELETE /:id - Soft delete
-app.route('/', adminDeleteExperienceRoute);
-
-// DELETE /:id/hard - Hard delete
-app.route('/', adminHardDeleteExperienceRoute);
-
-// POST /:id/restore - Restore soft-deleted listing
-app.route('/', adminRestoreExperienceRoute);
-
 // POST /:id/assign-owner - Set/replace listing owner
 app.route('/', adminAssignExperienceOwnerRoute);
 
-// POST /:id/moderate - Apply the moderation verdict to the LISTING (HOS-686).
-// Distinct from /reviews/:id/moderate above, which moderates reviews ABOUT a
-// listing: different permission, different subject.
+// POST /:id/moderate - ACC:12 two-level publication moderation; the legacy moderation column was retired by V6.9b.
 app.route('/', adminModerateExperienceRoute);
+
+// POST /:id/purge - ACC:23 purge at the owner's request (PB12, mandatory reason).
+app.route('/', adminPurgeOnRequestExperienceRoute);
 
 // PATCH /:id/faqs/reorder - Reorder FAQs for a listing
 // Registered before /:id/faqs routes to prevent "reorder" matching as a faqId param
@@ -101,7 +91,7 @@ app.route('/', adminUpdateExperienceFaqRoute);
 // DELETE /:id/faqs/:faqId - Remove FAQ from a listing
 app.route('/', adminRemoveExperienceFaqRoute);
 
-// Media management (HOS-372) - gated on COMMERCE_EDIT_ALL
+// Media management (HOS-372) - gated on EXPERIENCE_EDIT_ALL
 
 // PATCH /:id/media/reorder - Reorder gallery photos
 // Registered before /:id/media/:mediaId to prevent "reorder" matching as a mediaId param

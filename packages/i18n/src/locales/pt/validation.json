@@ -1424,7 +1424,7 @@
             }
         }
     },
-    "commerce": {
+    "listing": {
         "description": {
             "max": "La descripción no puede superar los {{max}} caracteres",
             "min": "La descripción debe tener al menos {{min}} caracteres",
@@ -1454,7 +1454,7 @@
             "required": "El resumen es obligatorio"
         }
     },
-    "commerceLead": {
+    "listingLead": {
         "adminNote": {
             "max": "La nota de administrador no puede superar los {{max}} caracteres"
         },
@@ -1519,7 +1519,7 @@
         "checkOut": {
             "invalidDate": "El check-out debe ser una fecha válida"
         },
-        "commerceMedia": {
+        "listingMedia": {
             "alt": {
                 "max": "O texto alternativo não pode ultrapassar {{max}} caracteres",
                 "min": "O texto alternativo deve ter ao menos {{min}} caracteres"
@@ -1548,7 +1548,7 @@
                 "invalid": "A URL não é válida"
             }
         },
-        "commerceRating": {
+        "listingRating": {
             "ambiance": {
                 "max": "El puntaje de ambiente no puede superar los {{max}}",
                 "min": "El puntaje de ambiente debe ser al menos {{min}}",
@@ -2049,6 +2049,27 @@
         },
         "uuid": {
             "invalid": "El uuid no es válido"
+        },
+        "listingModeration": {
+            "reason": {
+                "required": "Informe o motivo",
+                "max": "O motivo não pode ultrapassar {{max}} caracteres"
+            },
+            "suggestedDate": {
+                "invalid": "A data sugerida não é válida"
+            }
+        },
+        "accountCloseOnRequest": {
+            "reason": {
+                "required": "Escreva o motivo do encerramento da conta.",
+                "max": "O motivo não pode ultrapassar 2000 caracteres."
+            }
+        },
+        "listingPurgeOnRequest": {
+            "reason": {
+                "required": "Escreva o motivo da exclusão.",
+                "max": "O motivo não pode ultrapassar 2000 caracteres."
+            }
         }
     },
     "contact": {
@@ -2319,6 +2340,11 @@
         "isAuthenticated": {
             "required": "O estado de autenticação é obrigatório"
         },
+        "listingStats": {
+            "entityType": {
+                "invalid": "O tipo de entidade não é válido para as estatísticas de anúncios"
+            }
+        },
         "stats": {
             "total": {
                 "integer": "O total de visitas deve ser um número inteiro",
@@ -2364,7 +2390,7 @@
         "clientType": {
             "invalid": "El client type no es válido"
         },
-        "commerceEntityType": {
+        "listingEntityType": {
             "invalid": "El tipo de entidad comercial no es válido"
         },
         "conversationStatus": {
@@ -2499,6 +2525,9 @@
         "productType": {
             "invalid": "El product type no es válido"
         },
+        "publicationStatus": {
+            "invalid": "O status de publicação não é válido"
+        },
         "qrCodeCenterLogo": {
             "invalid": "O logo central do código QR não é válido"
         },
@@ -2583,6 +2612,9 @@
         },
         "touristAudience": {
             "invalid": "El tourist audience no es válido"
+        },
+        "trialStatus": {
+            "invalid": "O status do trial não é válido"
         },
         "visibility": {
             "invalid": "El visibility no es válido"

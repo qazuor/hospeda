@@ -1,11 +1,11 @@
 /**
  * experience.service.ts
  *
- * Concrete service for experience commerce listings (SPEC-240 T-017).
+ * Concrete service for experience listings (SPEC-240 T-017).
  *
  * ## Architecture
  *
- * `ExperienceService` extends {@link BaseCommerceListingService} and satisfies its
+ * `ExperienceService` extends {@link BaseListingService} and satisfies its
  * abstract contract by wiring the experience-specific DB models.  All shared
  * behaviors (slug auto-generation, junction sync, owner-scoping, rating recompute,
  * destination validation) are inherited from the base — zero shared logic is
@@ -17,11 +17,11 @@
  *    (`rExperienceAmenityModel`, `rExperienceFeatureModel`) and catalog models
  *    (`amenityModel`, `featureModel`) for the base junction-sync machinery.
  * 2. **Search filters** — `_executeSearch` / `_executeCount` apply experience
- *    filters (`type`, `hasActiveSubscription`, `destinationId`, `isFeatured`, …).
+ *    filters (`type`, `destinationId`, `isFeatured`, …).
  * 3. **Owner update gate** — `updateOwn()` validates with
  *    `ExperienceOwnerUpdateInputSchema` (operational sections only), enforces
  *    ownership (`NOT_FOUND` for non-owners), and gates on a single
- *    `COMMERCE_EDIT_OWN` permission (SPEC-253 D2=b; per-section perms removed).
+ *    `EXPERIENCE_EDIT_OWN` permission (SPEC-253 D2=b; per-section perms removed).
  * 4. **Public projections** — `_projectPublicEntity` strips `adminInfo` and
  *    `ownerId` from public-tier responses.
  *
@@ -49,10 +49,9 @@ import {
     ExperienceSearchSchema,
     type ExperienceUpdateInput,
     ExperienceUpdateInputSchema,
-    LifecycleStatusEnum,
     PermissionEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    PublicationStatusEnum,
+    ServiceErrorCode
 } from '@repo/schemas';
 import type {
     Actor,
@@ -63,12 +62,11 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { assertListingReadable, entityNotFoundError } from '../../utils';
 import { hasPermission } from '../../utils/permission';
-import type {
-    CommerceCatalogModel,
-    CommerceJunctionModel
-} from '../commerce/base-commerce-listing.service';
-import { BaseCommerceListingService } from '../commerce/base-commerce-listing.service';
+import { EXPERIENCE_ENTITY_NAME } from '../entity-names';
+import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-listing.service';
+import { BaseListingService } from '../listing/base-listing.service';
 import {
     attachComposedExperienceMedia,
     attachComposedExperienceMediaList
@@ -88,9 +86,9 @@ import { projectExperienceOwnerAvatar, projectExperiencePublic } from './experie
 import type { ExperienceHookState } from './experience.types';
 
 /**
- * Business-logic service for experience commerce listings.
+ * Business-logic service for experience listings.
  *
- * Extends {@link BaseCommerceListingService} with experience-specific model
+ * Extends {@link BaseListingService} with experience-specific model
  * wiring and operational-update gate.  All shared lifecycle behaviors (slug,
  * junction sync, owner-scoping, rating recompute) are provided by the base class.
  *
@@ -114,7 +112,7 @@ import type { ExperienceHookState } from './experience.types';
  * );
  * ```
  */
-export class ExperienceService extends BaseCommerceListingService<
+export class ExperienceService extends BaseListingService<
     Experience,
     ExperienceModel,
     typeof ExperienceAdminCreateInputSchema,
@@ -135,13 +133,13 @@ export class ExperienceService extends BaseCommerceListingService<
     // -----------------------------------------------------------------------
 
     /** @internal Overrideable in unit tests. */
-    private _amenityModelInstance: CommerceCatalogModel;
+    private _amenityModelInstance: ListingCatalogModel;
     /** @internal Overrideable in unit tests. */
-    private _featureModelInstance: CommerceCatalogModel;
+    private _featureModelInstance: ListingCatalogModel;
     /** @internal Overrideable in unit tests. */
-    private _amenityJunctionModelInstance: CommerceJunctionModel<Record<string, unknown>>;
+    private _amenityJunctionModelInstance: ListingJunctionModel<Record<string, unknown>>;
     /** @internal Overrideable in unit tests. */
-    private _featureJunctionModelInstance: CommerceJunctionModel<Record<string, unknown>>;
+    private _featureJunctionModelInstance: ListingJunctionModel<Record<string, unknown>>;
 
     /**
      * Relational media model used by the read-composition hooks (HOS-372).
@@ -156,12 +154,12 @@ export class ExperienceService extends BaseCommerceListingService<
         this.adminSearchSchema = ExperienceAdminSearchSchema;
         this._amenityModelInstance = new AmenityModel();
         this._featureModelInstance = new FeatureModel();
-        // TYPE-WORKAROUND: concrete experience junction model bridged to the generic CommerceJunctionModel contract
+        // TYPE-WORKAROUND: concrete experience junction model bridged to the generic ListingJunctionModel contract
         this._amenityJunctionModelInstance =
-            rExperienceAmenityModel as unknown as CommerceJunctionModel<Record<string, unknown>>;
-        // TYPE-WORKAROUND: concrete experience junction model bridged to the generic CommerceJunctionModel contract
+            rExperienceAmenityModel as unknown as ListingJunctionModel<Record<string, unknown>>;
+        // TYPE-WORKAROUND: concrete experience junction model bridged to the generic ListingJunctionModel contract
         this._featureJunctionModelInstance =
-            rExperienceFeatureModel as unknown as CommerceJunctionModel<Record<string, unknown>>;
+            rExperienceFeatureModel as unknown as ListingJunctionModel<Record<string, unknown>>;
     }
 
     // -----------------------------------------------------------------------
@@ -170,7 +168,7 @@ export class ExperienceService extends BaseCommerceListingService<
 
     /**
      * FK column name on junction tables that references this entity.
-     * Used by `syncCommerceAmenityJunction` / `syncCommerceFeatureJunction`.
+     * Used by `syncListingAmenityJunction` / `syncListingFeatureJunction`.
      */
     protected override get _entityFkColumn(): string {
         return 'experienceId';
@@ -187,23 +185,23 @@ export class ExperienceService extends BaseCommerceListingService<
         return 'experience';
     }
 
-    /** Experience-amenity junction model (satisfies {@link CommerceJunctionModel}). */
-    protected override get _amenityJunctionModel(): CommerceJunctionModel<Record<string, unknown>> {
+    /** Experience-amenity junction model (satisfies {@link ListingJunctionModel}). */
+    protected override get _amenityJunctionModel(): ListingJunctionModel<Record<string, unknown>> {
         return this._amenityJunctionModelInstance;
     }
 
     /** Experience-feature junction model. */
-    protected override get _featureJunctionModel(): CommerceJunctionModel<Record<string, unknown>> {
+    protected override get _featureJunctionModel(): ListingJunctionModel<Record<string, unknown>> {
         return this._featureJunctionModelInstance;
     }
 
     /** Amenity catalog model — validates supplied amenity IDs before sync. */
-    protected override get _amenityModel(): CommerceCatalogModel {
+    protected override get _amenityModel(): ListingCatalogModel {
         return this._amenityModelInstance;
     }
 
     /** Feature catalog model — validates supplied feature IDs before sync. */
-    protected override get _featureModel(): CommerceCatalogModel {
+    protected override get _featureModel(): ListingCatalogModel {
         return this._featureModelInstance;
     }
 
@@ -224,7 +222,7 @@ export class ExperienceService extends BaseCommerceListingService<
     //
     // WITHOUT this wiring the relational rows are written but never read: the
     // owner persists photos successfully and they appear nowhere. Any new
-    // commerce vertical must wire the same three hooks.
+    // listing vertical must wire the same three hooks.
     //
     // Composition is batched (`findByExperiences`, one IN query) so a list page
     // does not go N+1.
@@ -315,34 +313,24 @@ export class ExperienceService extends BaseCommerceListingService<
         checkExperienceCanView(actor);
 
         // Soft-deleted listings existed but are permanently gone. Only those that
-        // were PUBLIC (indexable) surface as GONE (410) so crawlers/LLM fetchers
-        // deindex the URL fast; deleted PRIVATE content that was never public
+        // were PUBLISHED (indexable) surface as GONE (410) so crawlers/LLM fetchers
+        // deindex the URL fast; deleted content that was never public
         // returns NOT_FOUND (404, uniform) to preserve the anti-enumeration
-        // contract (SPEC-092 T-087). Staff with COMMERCE_VIEW_ALL still see it
+        // contract (SPEC-092 T-087). Staff with EXPERIENCE_VIEW_ALL still see it
         // for management (HOS-117 T-022).
         if (
             entity.deletedAt !== null &&
             entity.deletedAt !== undefined &&
-            !hasPermission(actor, PermissionEnum.COMMERCE_VIEW_ALL)
+            !hasPermission(actor, PermissionEnum.EXPERIENCE_VIEW_ALL)
         ) {
-            if (entity.visibility === VisibilityEnum.PUBLIC) {
+            if (entity.publicationStatus === PublicationStatusEnum.PUBLISHED) {
                 throw new ServiceError(ServiceErrorCode.GONE, 'Experience is gone');
             }
-            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Experience not found');
+            throw entityNotFoundError({ entityName: EXPERIENCE_ENTITY_NAME });
         }
 
-        // Non-admin / non-owner actors receive NOT_FOUND for non-ACTIVE or PRIVATE
-        // listings (mirrors AccommodationService._canView for public-read gating).
-        const isOwner = entity.ownerId === actor.id;
-        const isStaff = hasPermission(actor, PermissionEnum.COMMERCE_VIEW_ALL);
-        if (!isOwner && !isStaff) {
-            if (entity.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
-                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Experience not found');
-            }
-            if (entity.visibility === VisibilityEnum.PRIVATE) {
-                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Experience not found');
-            }
-        }
+        if (hasPermission(actor, PermissionEnum.EXPERIENCE_VIEW_ALL)) return;
+        assertListingReadable({ actor, entity, entityName: EXPERIENCE_ENTITY_NAME });
     }
 
     protected _canList(actor: Actor): void {
@@ -367,7 +355,7 @@ export class ExperienceService extends BaseCommerceListingService<
 
     /**
      * Admin-list gate: verifies admin-panel access (base class) then checks
-     * entity-specific commerce permission.
+     * entity-specific listing permission.
      *
      * @param actor - The actor performing the action.
      * @throws {ServiceError} FORBIDDEN when the actor lacks the required permission.
@@ -414,7 +402,7 @@ export class ExperienceService extends BaseCommerceListingService<
      * Executes the public search query with experience-specific filter support.
      *
      * Scalar filters forwarded to the model: `type`, `destinationId`,
-     * `ownerId`, `isFeatured`, `hasActiveSubscription`.
+     * `ownerId`, `isFeatured`.
      *
      * NOTE: `amenities` / `features` (array filters requiring junction-table
      * JOINs) and `minRating` / `maxRating` are stripped here and NOT applied —
@@ -447,7 +435,7 @@ export class ExperienceService extends BaseCommerceListingService<
         } = params;
 
         // Public search MUST only surface listings with an active subscription
-        // (AC-6.2 / AC-4.3): force visibility=PUBLIC + lifecycleState=ACTIVE AFTER
+        // (AC-6.2 / AC-4.3): force publicationStatus=PUBLISHED AFTER
         // the caller's scalar filters so no query param can widen the result set.
         // Relations (destination, owner) are loaded so the web card transform can
         // read destinationName without an N+1 query (Bug B3 fix).
@@ -463,8 +451,7 @@ export class ExperienceService extends BaseCommerceListingService<
             {
                 ...scalarFilters,
                 deletedAt: null,
-                visibility: VisibilityEnum.PUBLIC,
-                lifecycleState: LifecycleStatusEnum.ACTIVE
+                publicationStatus: PublicationStatusEnum.PUBLISHED
             },
             {
                 page,
@@ -511,8 +498,7 @@ export class ExperienceService extends BaseCommerceListingService<
             {
                 ...scalarFilters,
                 deletedAt: null,
-                visibility: VisibilityEnum.PUBLIC,
-                lifecycleState: LifecycleStatusEnum.ACTIVE
+                publicationStatus: PublicationStatusEnum.PUBLISHED
             },
             { tx: ctx?.tx }
         );
@@ -523,7 +509,7 @@ export class ExperienceService extends BaseCommerceListingService<
      * Admin search — inherits owner-scoping from the base class.
      *
      * Experience-specific entity filters (`type`, `destinationId`,
-     * `ownerId`, `isFeatured`, `hasActiveSubscription`) are plain scalars that
+     * `ownerId`) are plain scalars that
      * the generic admin search builder handles natively via the where-clause builder.
      *
      * @param params - Admin search parameters assembled by `adminList()`.
@@ -563,9 +549,9 @@ export class ExperienceService extends BaseCommerceListingService<
      *    an owner reports that an edit "does not save".
      * 2. **Ownership check**: a non-owner receives `NOT_FOUND` to prevent
      *    existence leakage (same pattern as SPEC-169 for accommodations).
-     *    Staff holding `COMMERCE_EDIT_ALL` bypass the ownership check.
-     * 3. **Single permission check** (SPEC-253 D2=b): gated on `COMMERCE_EDIT_OWN`
-     *    (owner) OR `COMMERCE_EDIT_ALL` (staff). The former per-section permissions
+     *    Staff holding `EXPERIENCE_EDIT_ALL` bypass the ownership check.
+     * 3. **Single permission check** (SPEC-253 D2=b): gated on `EXPERIENCE_EDIT_OWN`
+     *    (owner) OR `EXPERIENCE_EDIT_ALL` (staff). The former per-section permissions
      *    are removed — one check replaces all 8 conditional gates.
      * 4. **Delegation**: passes through to `this.update()` so that junction sync
      *    (`_beforeUpdate` / `_afterUpdate`) fires for amenity/feature changes.
@@ -611,7 +597,7 @@ export class ExperienceService extends BaseCommerceListingService<
 
             // 3. Ownership gate — non-owners receive NOT_FOUND (existence leak prevention).
             const isOwner = entity.ownerId === actor.id;
-            const hasEditAll = hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL);
+            const hasEditAll = hasPermission(actor, PermissionEnum.EXPERIENCE_EDIT_ALL);
             if (!isOwner && !hasEditAll) {
                 return {
                     error: {
@@ -621,7 +607,7 @@ export class ExperienceService extends BaseCommerceListingService<
                 };
             }
 
-            // 4. Single permission check (SPEC-253 D2=b): COMMERCE_EDIT_OWN covers all
+            // 4. Single permission check (SPEC-253 D2=b): EXPERIENCE_EDIT_OWN covers all
             //    owner-accessible sections. Staff with EDIT_ALL bypass this gate.
             if (!hasEditAll) {
                 checkExperienceCanEditOwn(actor, entity);
@@ -632,9 +618,9 @@ export class ExperienceService extends BaseCommerceListingService<
             //    so casting is safe here.  Base update signature: update(actor, id, data, ctx?).
             //
             //    Base update() runs _canUpdate, which is owner-aware
-            //    (checkExperienceCanEditOwnOrAll: COMMERCE_EDIT_ALL OR owner +
-            //    COMMERCE_EDIT_OWN). updateOwn() already enforced ownership and the
-            //    single COMMERCE_EDIT_OWN gate above, and the payload was validated
+            //    (checkExperienceCanEditOwnOrAll: EXPERIENCE_EDIT_ALL OR owner +
+            //    EXPERIENCE_EDIT_OWN). updateOwn() already enforced ownership and the
+            //    single EXPERIENCE_EDIT_OWN gate above, and the payload was validated
             //    against the owner schema (operational fields only), so the actor
             //    passes the base gate without any privilege elevation.
             return this.update(

@@ -17,16 +17,6 @@
     flex-wrap: wrap;
 }
 
-/* Colors/radius/padding/font come from the shared AccountButton `.primary`
-   variant (BETA-143e). This local class only supplies the anchor-specific
-   underline reset. */
-.createButton {
-    composes: primary from "../account/AccountButton.module.css";
-    text-decoration: none;
-}
-
-/* ── Upgrade banner (plan without create_promotions entitlement) ── */
-
 .upgradeBanner {
     display: flex;
     align-items: center;
@@ -38,26 +28,22 @@
     border: 1px solid var(--border, var(--core-foreground-a15));
     border-radius: var(--radius-card, 24px);
 }
-
 .upgradeTextGroup {
     display: flex;
     flex-direction: column;
     gap: var(--space-1, 0.25rem);
 }
-
 .upgradeTitle {
     font-family: var(--font-heading);
     font-weight: 600;
     font-size: 1rem;
     color: var(--core-foreground);
 }
-
 .upgradeHint {
     font-family: var(--font-sans);
     font-size: 0.875rem;
     color: var(--core-muted-foreground);
 }
-
 .upgradeLink {
     display: inline-flex;
     align-items: center;
@@ -73,14 +59,20 @@
     white-space: nowrap;
     transition: opacity var(--duration-fast, 0.2s) ease;
 }
-
 .upgradeLink:hover {
     opacity: 0.88;
 }
-
 .upgradeLink:focus-visible {
     outline: 2px solid var(--brand-primary);
     outline-offset: 2px;
+}
+
+/* Colors/radius/padding/font come from the shared AccountButton `.primary`
+   variant (BETA-143e). This local class only supplies the anchor-specific
+   underline reset. */
+.createButton {
+    composes: primary from "../account/AccountButton.module.css";
+    text-decoration: none;
 }
 
 /* ── Delete error banner ── */

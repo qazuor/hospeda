@@ -1,5 +1,9 @@
+export * from './action-reason';
+export * from './administrative-authorization';
+export * from './correlation';
 export * from './foreign-row';
 export * from './identifier';
+export * from './listing-readable';
 export * from './location-obfuscation';
 export * from './logging';
 export * from './normalizer';
@@ -9,5 +13,6 @@ export * from './permission';
 export * from './postgres-error-cause';
 export * from './relations';
 export * from './service-logger';
+export * from './system-actor';
 export * from './transaction';
 export * from './validation';

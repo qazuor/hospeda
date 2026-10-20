@@ -26,6 +26,13 @@
  * verdict, and the tests below assert the SAME protection against the state
  * that still deserves it: never offer publishing that cannot succeed. What
  * changed is which owner that is.
+ *
+ * ## One prop, from the server's publish decision (HOS-1668)
+ *
+ * `canPublish` / `startsTrial` came from `publish-eligibility`, which answered
+ * 500 while the page failed open. The island now takes one `affordance`
+ * resolved from `subscribe-destination`; a failed read is `unknown` and renders
+ * a status line, never a button.
  */
 
 import { render, screen, waitFor } from '@testing-library/react';
@@ -38,6 +45,25 @@ const publishMock = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/api/endpoints-protected', () => ({
     accommodationEditApi: { publish: publishMock }
 }));
+
+/** Affordances as `resolvePublishAffordance` returns them, one per destination. */
+const COVERED = { kind: 'covered', canPublish: true, startsTrial: false, trialDays: null } as const;
+const PUBLISH = { kind: 'publish', canPublish: true, startsTrial: true, trialDays: 30 } as const;
+const CHECKOUT = {
+    kind: 'checkout',
+    canPublish: false,
+    startsTrial: false,
+    trialDays: null
+} as const;
+const UNKNOWN = {
+    kind: 'unknown',
+    canPublish: false,
+    startsTrial: false,
+    trialDays: null
+} as const;
+
+/** Visible status line for a failed destination read. */
+const CHECK_FAILED = 'No pudimos comprobar si podés publicar.';
 
 /** Props with everything wired for the happy path; tests override what they test. */
 function props(overrides: Record<string, unknown> = {}) {
@@ -54,8 +80,8 @@ function props(overrides: Record<string, unknown> = {}) {
         subscriptionRequiredCta: 'Ver planes',
         missingRequirementsMessage: 'Para publicar falta completar: {{fields}}.',
         missingRequirementsCta: 'Completar en el editor',
-        canPublish: true,
-        startsTrial: false,
+        affordance: COVERED,
+        checkFailedText: CHECK_FAILED,
         confirmTrialNote: 'Al publicar arranca tu prueba gratis de 30 días. Sin tarjeta.',
         choosePlanLabel: 'Elegir plan de anfitrión',
         ...overrides
@@ -72,7 +98,7 @@ beforeEach(() => {
 describe('PublishButton — never offer what the server would refuse (H-99, narrowed by HOS-1183)', () => {
     it('offers the plan instead of the publish button when the server would refuse', () => {
         // Arrange / Act
-        render(<PublishButton {...props({ canPublish: false })} />);
+        render(<PublishButton {...props({ affordance: CHECKOUT })} />);
 
         // Assert — the protection H-99 introduced, unchanged. What narrowed is
         // its trigger: it now fires on the server's verdict, not on "no plan
@@ -83,7 +109,7 @@ describe('PublishButton — never offer what the server would refuse (H-99, narr
 
     it('never promises the listing will go live when it cannot', async () => {
         // Arrange
-        render(<PublishButton {...props({ canPublish: false })} />);
+        render(<PublishButton {...props({ affordance: CHECKOUT })} />);
 
         // Assert — the confirmation copy is unreachable, so the promise is
         // never made. Reaching it required a click that no longer exists.
@@ -103,7 +129,7 @@ describe('PublishButton — never offer what the server would refuse (H-99, narr
         // Arrange / Act — `first_publish`: no subscription loaded, so the old
         // `hasActivePlan` boolean was false and this owner got a plans link.
         // The server publishes them and starts their trial.
-        render(<PublishButton {...props({ canPublish: true, startsTrial: true })} />);
+        render(<PublishButton {...props({ affordance: PUBLISH })} />);
 
         // Assert
         expect(screen.getByText('Publicar')).toBeInTheDocument();
@@ -122,7 +148,7 @@ describe('PublishButton — the trial is announced where it is real (HOS-1183 D-
         // Arrange — the presence half of the pair. Publishing starts a 30-day
         // clock by the owner's own action; not saying so is what later produces
         // "my trial was consumed without warning".
-        render(<PublishButton {...props({ canPublish: true, startsTrial: true })} />);
+        render(<PublishButton {...props({ affordance: PUBLISH })} />);
 
         // Act
         await openConfirm();
@@ -135,7 +161,7 @@ describe('PublishButton — the trial is announced where it is real (HOS-1183 D-
         // Arrange — `has_active_sub`. The absence half; its sibling above
         // asserts the identical string IS rendered, so a typo in the selector
         // cannot make both pass.
-        render(<PublishButton {...props({ canPublish: true, startsTrial: false })} />);
+        render(<PublishButton {...props({ affordance: COVERED })} />);
 
         // Act
         await openConfirm();
@@ -150,7 +176,7 @@ describe('PublishButton — the trial is announced where it is real (HOS-1183 D-
         // Arrange / Act — `subscription_required`. The one state where a
         // free-run promise is a lie: the trial is gone, and a checkout will not
         // grant another one either.
-        render(<PublishButton {...props({ canPublish: false, startsTrial: false })} />);
+        render(<PublishButton {...props({ affordance: CHECKOUT })} />);
 
         // Assert
         expect(screen.queryByText(TRIAL_NOTE)).not.toBeInTheDocument();
@@ -270,5 +296,105 @@ describe('PublishButton — the rejection names real fields (H-94)', () => {
         await waitFor(() => {
             expect(screen.getByText('Ver planes')).toBeInTheDocument();
         });
+    });
+});
+
+describe("PublishButton — the affordance is the server's publish decision (HOS-1668)", () => {
+    /** Opens the confirm step. */
+    async function openConfirm() {
+        const user = userEvent.setup();
+        await user.click(screen.getByRole('button', { name: 'Publicar' }));
+    }
+
+    // HOS-1668 C-1: COVERED publishes without a trial.
+    it('offers Publish without a trial note when the owner is covered', async () => {
+        render(<PublishButton {...props({ affordance: COVERED })} />);
+
+        await openConfirm();
+
+        expect(screen.getByRole('button', { name: 'Sí, publicar' })).toBeInTheDocument();
+        expect(screen.queryByText(TRIAL_NOTE)).not.toBeInTheDocument();
+        expect(screen.queryByText('Elegir plan de anfitrión')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('publish-check-failed')).not.toBeInTheDocument();
+    });
+
+    // HOS-1668 C-1: PUBLISH publishes and starts the trial.
+    it('offers Publish with the trial note when publishing starts the trial', async () => {
+        render(<PublishButton {...props({ affordance: PUBLISH })} />);
+
+        await openConfirm();
+
+        expect(screen.getByRole('button', { name: 'Sí, publicar' })).toBeInTheDocument();
+        expect(screen.getByText(TRIAL_NOTE)).toBeInTheDocument();
+    });
+
+    // HOS-1668 C-1: CHECKOUT is rejected by the server, so only the plan link.
+    it('offers only the plan link when the server would send the owner to checkout', () => {
+        render(<PublishButton {...props({ affordance: CHECKOUT })} />);
+
+        expect(screen.getByRole('link', { name: 'Elegir plan de anfitrión' })).toBeInTheDocument();
+        expect(screen.queryByRole('button')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('publish-check-failed')).not.toBeInTheDocument();
+    });
+
+    // HOS-1668 C-2: a failed read never leaves the button enabled in silence.
+    it('shows the check-failed status and no button or link when the read failed', () => {
+        render(<PublishButton {...props({ affordance: UNKNOWN })} />);
+
+        const status = screen.getByTestId('publish-check-failed');
+        expect(status).toHaveTextContent(CHECK_FAILED);
+        expect(status).toHaveAttribute('role', 'status');
+        expect(screen.queryByRole('button')).not.toBeInTheDocument();
+        expect(screen.queryByRole('link')).not.toBeInTheDocument();
+        expect(publishMock).not.toHaveBeenCalled();
+    });
+});
+
+describe('PublishButton — row 21 "suscribite para publicar" (HOS-1492, AC:V8a:4)', () => {
+    const TITLE = 'Suscribite para publicar';
+    const BODY =
+        'Tu ficha sigue sin publicar. Para publicarla necesitás una suscripción de alojamiento.';
+
+    it('TEST:V8a:5 the checkout affordance says it, and keeps the plan link with its exact name', () => {
+        // Arrange / Act
+        render(<PublishButton {...props({ affordance: CHECKOUT })} />);
+
+        // Assert
+        const notice = screen.getByTestId('publish-subscribe-to-publish');
+        expect(notice).toHaveTextContent(TITLE);
+        expect(notice).toHaveTextContent(BODY);
+        expect(screen.getByRole('link', { name: 'Elegir plan de anfitrión' })).toBeInTheDocument();
+        expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    });
+
+    it('TEST:V8a:5 the reactive subscription_required says the same notice', async () => {
+        // Arrange
+        publishMock.mockResolvedValue({
+            ok: false,
+            error: { status: 403, code: 'FORBIDDEN', message: 'subscription_required' }
+        });
+        const user = userEvent.setup();
+        render(<PublishButton {...props()} />);
+
+        // Act
+        await user.click(screen.getByRole('button', { name: 'Publicar' }));
+        await user.click(screen.getByRole('button', { name: 'Sí, publicar' }));
+
+        // Assert
+        const notice = await screen.findByTestId('publish-subscribe-to-publish');
+        expect(notice).toHaveTextContent(TITLE);
+        expect(notice).toHaveTextContent(BODY);
+        expect(screen.getByRole('link', { name: 'Ver planes' })).toBeInTheDocument();
+    });
+
+    it('is absent where publishing goes through or the read failed', () => {
+        // Arrange / Act
+        for (const affordance of [COVERED, PUBLISH, UNKNOWN]) {
+            const { unmount } = render(<PublishButton {...props({ affordance })} />);
+
+            // Assert
+            expect(document.body).not.toHaveTextContent(/suscribite/i);
+            unmount();
+        }
     });
 });

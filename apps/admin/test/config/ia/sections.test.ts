@@ -21,8 +21,7 @@ const ALL_SIDEBAR_IDS = [
     'analisisSidebar',
     'miCuentaSidebar',
     'misAlojamientosSidebar',
-    'consultasSidebar',
-    'miFacturacionSidebar'
+    'consultasSidebar'
 ] as const;
 
 // Original 7 section IDs
@@ -37,16 +36,16 @@ const ORIGINAL_SECTION_IDS = [
 ] as const;
 
 // HOST sections added in T-039
-const HOST_SECTION_IDS = ['miCuenta', 'misAlojamientos', 'consultas', 'miFacturacion'] as const;
+const HOST_SECTION_IDS = ['miCuenta', 'misAlojamientos', 'consultas'] as const;
 
 describe('sections', () => {
     describe('registry shape', () => {
-        it('should export exactly 12 sections (7 original + 4 HOST + 1 Marketing)', () => {
+        it('should export exactly 11 sections (7 original + 3 HOST + 1 Marketing)', () => {
             // Arrange
             const keys = Object.keys(sections);
 
             // Assert
-            expect(keys).toHaveLength(12);
+            expect(keys).toHaveLength(11);
         });
 
         it('should contain all original section IDs', () => {
@@ -140,7 +139,6 @@ describe('sections', () => {
             expect(sections.miCuenta.sidebar).toBe('miCuentaSidebar');
             expect(sections.misAlojamientos.sidebar).toBe('misAlojamientosSidebar');
             expect(sections.consultas.sidebar).toBe('consultasSidebar');
-            expect(sections.miFacturacion.sidebar).toBe('miFacturacionSidebar');
         });
     });
 
@@ -179,11 +177,6 @@ describe('sections', () => {
         it('should have consultas pointing to /conversations', () => {
             expect(sections.consultas.route).toBe('/conversations');
             expect(sections.consultas.defaultRoute).toBe('/conversations');
-        });
-
-        it('should have miFacturacion pointing to /billing/subscriptions', () => {
-            expect(sections.miFacturacion.route).toBe('/billing/subscriptions');
-            expect(sections.miFacturacion.defaultRoute).toBe('/billing/subscriptions');
         });
     });
 });

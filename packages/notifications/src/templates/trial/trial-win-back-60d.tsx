@@ -1,4 +1,5 @@
 import { Section, Text } from '@react-email/components';
+import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
@@ -19,7 +20,11 @@ import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial
  *
  * @param props - Trial series email data
  */
-export function TrialWinBack60Days({ recipientName, upgradeUrl }: TrialSeriesEmailProps) {
+export function TrialWinBack60Days({
+    recipientName,
+    upgradeUrl,
+    verticals
+}: TrialSeriesEmailProps) {
     return (
         <EmailLayout
             previewText="Último mail por tu prueba: tu ficha queda guardada igual"
@@ -28,6 +33,11 @@ export function TrialWinBack60Days({ recipientName, upgradeUrl }: TrialSeriesEma
             <Heading>Tu ficha sigue disponible cuando quieras</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>
+            {verticals && verticals.length > 1 ? (
+                <Text style={styles.paragraph}>
+                    Tu prueba incluye {formatTrialVerticals({ verticals })}.
+                </Text>
+            ) : null}
 
             <Text style={styles.paragraph}>
                 Este es el último mail que te mandamos por tu prueba en Hospeda. No te vamos a

@@ -2,13 +2,10 @@ export {
     adminCreatePartnerRoute,
     adminDeletePartnerRoute,
     adminGetPartnerRoute,
-    adminListPartnerPlansRoute,
     adminListPartnersRoute,
     adminManualPaymentRoute,
     adminReviewPartnerContentRoute,
-    adminReviewPartnerPaymentRoute,
     adminRevokePartnerRoute,
-    adminSendPaymentLinkRoute,
     adminUpdatePartnerRoute
 } from './admin/index.js';
 export {

@@ -330,12 +330,11 @@ Always run `db:apply-extras` after `db:migrate` on a fresh environment.
 > `src/migrations/extras/`, even though both carriles are hand-written and idempotent-by-intent.
 > See [docs/guides/seed-data-migrations.md](../../docs/guides/seed-data-migrations.md) for the
 > full boundary and worked examples. The pre-HOS-25 billing data files
-> `023-billing-plans-ai-consumer-search-limits.plan.sql`,
-> `024-billing-plans-collections-limit.plan.sql`, and
-> `025-hos16-deactivate-complex-plans.plan.sql` below are **superseded** by the ported
-> `data-migrations/0001`-`0003-*.ts` modules — left in place (not deleted) since they may
-> already have applied on a live environment; each carril's own ledger makes the other a
-> no-op wherever it already ran.
+> `023-billing-plans-ai-consumer-search-limits.plan.sql` and
+> `024-billing-plans-collections-limit.plan.sql` were **superseded** by the ported
+> `data-migrations/0001`/`0002-*.ts` modules and have been deleted; HOS-1419 deleted the
+> last one, `025-hos16-deactivate-complex-plans.plan.sql`, together with the rest of the
+> old-billing extras.
 
 ### Dev vs VPS comparison
 
@@ -351,15 +350,22 @@ Iterate freely in dev — push resets the DB to match the TS schema immediately:
 
 ```bash
 pnpm db:push          # Push schema directly to local DB (no migration file — DEV ONLY)
-pnpm db:fresh-dev     # Reset + push + seed (the normal local dev loop)
+pnpm db:fresh-dev     # Reset + migrate + extras + seed (the normal local dev loop)
 ```
+
+`db:fresh-dev` builds the database with `db:migrate`, not `push` (HOS-1431, AC:V1:4(d)): the
+reference rows of `catalog_key` and `vertical` travel inside migration 0129, so a pushed schema
+would come up without them. It applies **committed** migrations only — a schema change you have
+not generated yet is invisible to it. While iterating on an uncommitted schema change, use
+`db:push` on top, then `db:generate` before the PR.
 
 `push` is **dev-only** and must NEVER be run against a VPS. It drops objects the migration
 history depends on and cannot be rolled back.
 
 ### Close-of-work workflow (mandatory before a schema PR)
 
-1. Iterate freely in dev with `push` / `db:fresh-dev`.
+1. Iterate freely in dev with `push`; rebuild from scratch with `db:fresh-dev` once the
+   migration is generated.
 2. Run `pnpm --filter @repo/db db:generate` and review the generated file.
 3. If the column type change requires a data conversion, hand-edit the generated `.sql` to add
    the `USING` expression (Drizzle won't invent it).
@@ -736,13 +742,11 @@ These objects live in **Carril 2** (`src/migrations/extras/`). They are applied 
 | `001-search-index.matview.sql` | Materialized view | `search_index` + GIN + UNIQUE index + `refresh_search_index()` |
 | `002-set-updated-at.trigger.sql` | Trigger | `set_updated_at` on all tables with `updated_at` |
 | `003-delete-entity-bookmarks.trigger.sql` | Trigger | `delete_entity_bookmarks` on 5 tables |
-| `004-billing.constraints.sql` | CHECK constraints | `billing_addon_purchases` status / JSONB checks |
 | `005-media.constraints.sql` | CHECK constraints | media-related column constraints |
 | `006-conversation.indexes.sql` | Special indexes | conversation functional/partial indexes |
 | `007-messages.constraints.sql` | CHECK constraints | messages column constraints |
 | `008-bookmark.indexes.sql` | Special indexes | bookmark partial/functional indexes |
 | `009-newsletter.indexes.sql` | Special indexes | newsletter functional indexes |
-| `010-abandoned-status.data-migration.sql` | Data migration | Canonicalises `incomplete_expired` → `abandoned` in billing_subscriptions |
 | `011-entity-views.indexes.sql` | Special indexes | entity_views partial/functional indexes |
 | `012-content-moderation-thresholds.check.sql` | CHECK constraints | Cross-column CHECK `pending < reject` on content_moderation_thresholds |
 | `013-moderation-role-grants.data.sql` | Bootstrap data | MODERATION_* permission grants for `admin` + `super_admin` roles (SPEC-195) |
@@ -783,9 +787,9 @@ For full details, constraint definitions, and verification queries see:
 ## Common Gotchas
 
 - `billing_subscription_addons` has no `livemode` or `deleted_at` columns
-- `billing_plans.id` is UUID but `billing_subscriptions.plan_id` is varchar. Despite the varchar type, `plan_id` stores the plan **UUID** (`billing_plans.id`), NOT the slug — verified against real data (SPEC-168 D1). Plan mutations therefore target the `id` (UUID), and the slug (`billing_plans.name`) is **immutable** after creation (config/web/entitlements resolve by slug). Plans are now **runtime-editable** from the admin (SPEC-168); the `@repo/billing` config is seed-only.
+- `billing_plans.id` is UUID but `billing_subscriptions.plan_id` is varchar. Despite the varchar type, `plan_id` stores the plan **UUID** (`billing_plans.id`), NOT the slug — verified against real data (SPEC-168 D1). Plan mutations therefore target the `id` (UUID), and the slug (`billing_plans.name`) is **immutable** after creation (config/web/entitlements resolve by slug). Plans are **runtime-editable** from the admin (SPEC-168) and the database catalog is their only source: `@repo/billing` and its seed-only config were deleted by HOS-1626.
 - `billing_customers` uses `segment` column, not `category`
-- `billing_subscriptions.mp_subscription_id` stores the **MercadoPago preapproval ID** for **every** subscription — monthly and annual alike since HOS-171. Annual is a recurring preapproval at MP `frequency: 12, frequency_type: 'months'`, not a one-time charge; `create-annual-subscription.ts` no longer exists. (This bullet used to say the column is `NULL` for annual because "those use a one-time payment object" — both the conclusion and the reason are dead.) It IS legitimately `NULL` for `status = 'comp'` rows, which are direct DB inserts with no preapproval at all (SPEC-262). Use this column when looking up a subscription in the MP sandbox dashboard (Subscriptions → search by preapproval ID). See [`docs/migration/mercadopago-sandbox-runbook.md`](../../docs/migration/mercadopago-sandbox-runbook.md) for inspection steps.
+- `billing_subscriptions.mp_subscription_id` stores the **MercadoPago preapproval ID** for **every** subscription — monthly and annual alike since HOS-171. Annual is a recurring preapproval at MP `frequency: 12, frequency_type: 'months'`, not a one-time charge; `create-annual-subscription.ts` no longer exists. (This bullet used to say the column is `NULL` for annual because "those use a one-time payment object" — both the conclusion and the reason are dead.) It IS legitimately `NULL` for `status = 'comp'` rows, which are direct DB inserts with no preapproval at all (SPEC-262). Use this column when looking up a subscription in the MP sandbox dashboard (Subscriptions → search by preapproval ID).
 - `numeric()` columns use `mode: 'number'` for runtime JS number coercion (SPEC-056). For monetary values, prefer `integer` storage in centavos (see ADR-006)
 - Always use soft delete (deletedAt timestamp) by default
 - **`drizzle-kit push` is dev-only** — NEVER run it against a VPS. Use `db:migrate` (real

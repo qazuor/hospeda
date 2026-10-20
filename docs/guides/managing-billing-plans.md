@@ -15,8 +15,8 @@ change a price, an entitlement, or a limit.
 
 - The catalog of plans is the source of truth in the database (the qzpay
   `billing_plans` table, with prices in `billing_prices`).
-- The `@repo/billing` source-code config is read **once, to seed** an empty
-  database with the initial plans. After that first seed, every change is made
+- There is no source-code plan config any more: `@repo/billing`, which was read
+  once to seed an empty database, was deleted by HOS-1626. Every change is made
   from the admin panel and is never overwritten by a re-seed.
 - The web pricing pages and the checkout both read from this same database
   catalog, so what a visitor sees is always what they are charged.
@@ -165,7 +165,6 @@ hard-delete is guarded and discouraged.
   (superseded by SPEC-168; explains the prior code-only model)
 - [ADR-006: Integer Monetary Values](../decisions/ADR-006-integer-monetary-values.md)
 - [ADR-009: Trial Host-Only](../decisions/ADR-009-trial-host-only.md) — **superseded**; kept as a historical record only
-- [Billing Package](../../packages/billing/CLAUDE.md)
 - SPEC-168: `.claude/specs/SPEC-168-admin-plan-management/spec.md`
 - HOS-39: `.specs/HOS-39-plans-limits-entitlements-editable/spec.md` — narrowed
   the Model C admin-editable field policy (entitlements/trial/sort-order
