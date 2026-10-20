@@ -14,6 +14,12 @@ export interface UseMyEntitlementsParams {
 export interface UseMyEntitlementsReturn {
     readonly has: (key: string) => boolean;
     readonly limit: (key: string) => number;
+    /**
+     * The cap a pre-trial owner's DRAFT accepts for `key` (HOS-1721): what the
+     * trial will grant at first publish. `0` when absent — for anyone with a
+     * title, and for every key that is not a DRAFT photo limit.
+     */
+    readonly draftLimit: (key: string) => number;
     readonly isLoading: boolean;
     readonly error: Error | null;
 }
@@ -71,5 +77,6 @@ export function useMyEntitlements({
         [data]
     );
     const limit = useCallback((key: string) => data?.limits[key] ?? 0, [data]);
-    return { has, limit, isLoading, error };
+    const draftLimit = useCallback((key: string) => data?.preTrialDraftLimits?.[key] ?? 0, [data]);
+    return { has, limit, draftLimit, isLoading, error };
 }

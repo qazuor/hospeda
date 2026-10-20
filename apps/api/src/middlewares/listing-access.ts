@@ -188,7 +188,8 @@ export async function enforceListingAccess(args: {
         requiredKeys,
         limit,
         billing: ports.billing,
-        effectiveSet: ports.effectiveSet
+        effectiveSet: ports.effectiveSet,
+        preTrialDraftLimits: ports.preTrialDraftLimits
     });
     if (result.allowed) {
         // H6: the reason is recorded only once the administrative action is permitted.

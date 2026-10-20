@@ -562,4 +562,34 @@ describe('resolveEffectiveGalleryCap', () => {
         // (however big) reads as "full" against it.
         expect(result.cap).toBeGreaterThan(10_000);
     });
+
+    it('HOS-1721 resolves a pre-trial DRAFT to the cap the trial will grant', () => {
+        const result = resolveEffectiveGalleryCap({
+            planLimit: 0,
+            isEntitlementsLoading: false,
+            draftLimit: 15
+        });
+
+        expect(result).toEqual({ cap: 15, isResolved: true });
+    });
+
+    it('HOS-1721 lets a real plan cap win over the draft allowance', () => {
+        const result = resolveEffectiveGalleryCap({
+            planLimit: 30,
+            isEntitlementsLoading: false,
+            draftLimit: 15
+        });
+
+        expect(result).toEqual({ cap: 30, isResolved: true });
+    });
+
+    it('HOS-1721 stays unresolved while loading even with a draft allowance', () => {
+        expect(
+            resolveEffectiveGalleryCap({
+                planLimit: 0,
+                isEntitlementsLoading: true,
+                draftLimit: 15
+            }).isResolved
+        ).toBe(false);
+    });
 });

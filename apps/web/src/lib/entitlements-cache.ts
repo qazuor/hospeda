@@ -6,6 +6,8 @@ export interface EntitlementsData {
     readonly entitlements: Readonly<Record<string, number>>;
     readonly limits: Readonly<Record<string, number>>;
     readonly hasLiveNonTrialTitle: boolean;
+    /** Photo caps a pre-trial owner's DRAFT accepts (HOS-1721); absent otherwise. */
+    readonly preTrialDraftLimits?: Readonly<Record<string, number>>;
     readonly failed: boolean;
 }
 const absent = (): EntitlementsData => ({

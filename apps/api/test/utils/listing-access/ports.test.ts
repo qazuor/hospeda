@@ -5,6 +5,7 @@
  * bootstrap assembler of `@repo/verticals`.
  */
 
+import { VerticalEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -76,6 +77,27 @@ describe('AC:B4:4 AC:B4:5 AC:B4:6 US:B4:3 getListingAccessPorts().billing is rea
         expect(mocks.createBootstrapBillingForVerticals).not.toHaveBeenCalled();
         expect(mocks.createApiBillingCoverage).toHaveBeenCalledWith({
             reader: { tag: 'trial-and-base reader' }
+        });
+    });
+});
+
+describe('HOS-1721 getListingAccessPorts().preTrialDraftLimits', () => {
+    it('asks the real billing coverage and answers nothing for an account that is not pre-trial', async () => {
+        // Arrange
+        mocks.coverage.mockResolvedValue({ covered: false, sources: [] });
+        const { preTrialDraftLimits } = getListingAccessPorts();
+
+        // Act
+        const limits = await preTrialDraftLimits({
+            userId: '11111111-1111-4111-8111-111111111111',
+            vertical: VerticalEnum.ACCOMMODATION
+        });
+
+        // Assert
+        expect(limits.size).toBe(0);
+        expect(mocks.coverage).toHaveBeenCalledWith({
+            userId: '11111111-1111-4111-8111-111111111111',
+            vertical: VerticalEnum.ACCOMMODATION
         });
     });
 });
