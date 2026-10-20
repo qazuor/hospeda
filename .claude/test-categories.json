@@ -4,7 +4,6 @@
     "billing": {
         "description": "Checkout, suscripciones, add-ons, promos, webhooks de MercadoPago",
         "include": [
-            "packages/billing/**",
             "**/services/billing/**",
             "apps/api/src/routes/billing/**",
             "**/*subscription*",
