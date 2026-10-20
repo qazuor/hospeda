@@ -1345,6 +1345,8 @@ Esto hace fallback: prefiere `HOSPEDA_GIT_SHA` (que vamos a setear en Coolify), 
 
 Vamos a crear 3 Dockerfiles, uno por app.
 
+**Nota 2026-10-20 (HOS-1352)**: los Dockerfiles de abajo son el borrador del 2026-05-06 y quedaron desactualizados. Los reales (`apps/api/Dockerfile`, `apps/web/Dockerfile`, `apps/admin/Dockerfile`) ya no listan `package.json` por package: hacen `COPY apps apps` y `COPY packages packages` (el comentario de `apps/api/Dockerfile:24-27` explica por qué). Además `packages/billing` se borró con HOS-1626, así que los `COPY packages/billing/package.json` de estos borradores romperían el build; no los copies.
+
 > **Nota previa**: la lista de packages a copiar se generó leyendo `apps/<app>/package.json` para detectar **TODOS los `workspace:*`** que cada app importa. Si en algún momento agregás un nuevo package al monorepo y una app empieza a usarlo, **tenés que agregar el `COPY packages/<nombre>/package.json` correspondiente** en el Dockerfile de esa app — si no, `pnpm install --frozen-lockfile` falla.
 
 #### `apps/api/Dockerfile`
@@ -2400,7 +2402,7 @@ Coolify a veces no puede pedir el cert hasta que el DNS resuelve hacia él (chic
 8. En Coolify → `hospeda-api-prod` → **Environment Variables**
 9. Agregá / actualizá:
    - `MP_WEBHOOK_SECRET` = el valor copiado en el paso 6
-   - (Si tu código usa otro nombre de env var, alineá según `apps/api/src/utils/env.ts` o `packages/billing` — el registry del proyecto manda)
+   - (Si tu código usa otro nombre de env var, alineá según `apps/api/src/utils/env.ts` o el registry de `packages/config` — el registry del proyecto manda)
 10. Click **Restart** o redeploy de la API para que tome la nueva env.
 
 #### Validación
