@@ -12,8 +12,13 @@ node_modules
 **/.vercel
 build/
 
-# Coverage and test runner state
-**/coverage
+# Coverage and test runner state. Anchored to package roots on purpose:
+# `**/coverage` also stripped source folders named `coverage/` under `src/`
+# (guarded by scripts/__tests__/dockerignore-keeps-source.test.ts).
+coverage
+apps/*/coverage
+packages/*/coverage
+scripts/*/coverage
 .nyc_output/
 
 # Environment files (secrets stay outside the image)
