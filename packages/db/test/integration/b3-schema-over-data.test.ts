@@ -49,7 +49,10 @@ async function fingerprints(): Promise<Record<string, Fingerprint>> {
                 ? "WHERE t.slug = 'b3-over-data'"
                 : table === 'plan_version'
                   ? "WHERE t.plan_id = (SELECT id FROM plan WHERE slug = 'b3-over-data')"
-                  : '';
+                  : table === 'billing_option'
+                    ? // Later catalog migrations (0176) load their own prices; compare the fixture's only.
+                      "WHERE t.plan_version_id IN (SELECT id FROM plan_version WHERE plan_id = (SELECT id FROM plan WHERE slug = 'b3-over-data'))"
+                    : '';
         const query = await db.query<Fingerprint>(
             `SELECT count(*)::text AS count, md5(coalesce(string_agg(${row}, '|' ORDER BY ${row}), '')) AS digest FROM ${table} t ${fixtureOnly}`
         );
