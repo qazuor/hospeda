@@ -1806,6 +1806,14 @@
                 "closed": "Devolución asentada: el pedido {{refundId}} quedó ejecutado ({{status}}).",
                 "separate": "Devolución asentada aparte como {{refundId}} ({{status}}). El pedido {{requestedRefundId}} sigue abierto."
             }
+        },
+        "openRefunds": {
+            "title": "Pedidos de devolución abiertos",
+            "intro": "Pedidos de devolución que siguen abiertos sobre los pagos de esta suscripción. Devolvé cada uno desde el panel de Mercado Pago y asentalo acá con la referencia de esa devolución.",
+            "loading": "Buscando pedidos de devolución abiertos…",
+            "empty": "Esta suscripción no tiene pedidos de devolución abiertos.",
+            "loadError": "No pudimos leer los pedidos de devolución abiertos. Recargá la página para volver a intentar.",
+            "noPermission": "Ver y asentar los pedidos de devolución abiertos lo hace otra persona del equipo con los permisos para inspeccionar suscripciones y asentar lo que pasó por fuera."
         }
     },
     "reconciliationMarks": {

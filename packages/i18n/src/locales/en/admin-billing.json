@@ -1806,6 +1806,14 @@
                 "closed": "Refund recorded: request {{refundId}} is now executed ({{status}}).",
                 "separate": "Refund recorded separately as {{refundId}} ({{status}}). Request {{requestedRefundId}} stays open."
             }
+        },
+        "openRefunds": {
+            "title": "Open refund requests",
+            "intro": "Refund requests still open on this subscription's payments. Refund each one from the Mercado Pago panel and record it here with that refund's reference.",
+            "loading": "Looking for open refund requests…",
+            "empty": "This subscription has no open refund requests.",
+            "loadError": "We could not read the open refund requests. Reload the page to try again.",
+            "noPermission": "Another team member with the permissions to inspect subscriptions and record out-of-flow settlements reviews and records these refund requests."
         }
     },
     "reconciliationMarks": {
