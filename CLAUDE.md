@@ -499,10 +499,13 @@ accommodation and gastronomy/experience tier spreading `TOURIST_VIP_ENTITLEMENTS
 and `TOURIST_VIP_LIMITS` whole (HOS-975 D-A), guarded by
 `packages/billing/test/owner-inherits-tourist.test.ts` and a shared vertical tier
 factory in `packages/billing/src/config/plans.config.ts`. All of that was deleted
-with `packages/billing/` (HOS-1626): plan contents are now rows in the database
-catalog, so those symbols and that guard no longer exist, and no replacement
-guard of the inheritance was found on this branch. Do not cite the old guard as
-current; whether a catalog-level check is wanted is an open question.
+with `packages/billing/` (HOS-1626) and is no longer a spread: the inheritance is
+resolved at runtime by `resolveTouristVipInheritance`
+(`packages/verticals/src/effective-set/tourist-vip-inheritance.ts`, called from
+`resolve-effective-set.ts`), wired through the port in
+`apps/api/src/routes/billing-subscription/tourist-vip-inheritance.ts`, and swept by
+`sweepInheritedTouristVips` (`subscription-window-expiry` cron). Do not cite the
+old spread or its guard as current.
 
 #### Featured-listing entitlement (SPEC-292 → SPEC-309)
 
