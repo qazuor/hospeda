@@ -105,10 +105,9 @@ overrides:
   #
   #     grep "'@qazuor/qzpay-core@" pnpm-lock.yaml   # must print ONE line
   #
-  # Which is now a guard rather than a habit —
-  # `scripts/check-qzpay-wave-convergence.sh`, wired into both `check:guards`
-  # and its own CI step. It proves one core version resolves, not WHICH one; the
-  # floors above stay prose, and are not machine-checked.
+  # That count was once a guard (`scripts/check-qzpay-wave-convergence.sh`).
+  # The script no longer exists in this tree: it was retired with the qzpay
+  # dependencies (HOS-1416). The floors above were never machine-checked.
   #
   # HOS-1233 (2026-09-08): raised to core 6.0.0. `productDomain` is now REQUIRED
   # on subscription creation — a major because omitting it stops compiling.
@@ -119,14 +118,14 @@ overrides:
   # Not one line of code was wrong; the value was simply never stated. The floor
   # is what keeps it stateable. FLOOR: core >= 6.0.0.
   #
-  # Current wave (2026-09-08): core 6.0.0 · mercadopago 2.11.1 · drizzle 3.0.0 ·
-  # hono 2.0.0 · react 2.0.0. Declared as `^` ranges in apps/api, apps/admin,
-  # packages/db and packages/service-core.
-  #
-  # This line was stale for two waves before anyone noticed (it still named the
-  # 2026-09-01 wave while the workspace had moved twice). It is prose, so no
-  # guard reads it — `check-qzpay-wave-convergence.sh` proves ONE core resolves,
-  # never which one. Update it in the same commit that moves the ranges.
+  # Last wave before removal (2026-09-08): core 6.0.0 · mercadopago 2.11.1 ·
+  # drizzle 3.0.0 · hono 2.0.0 · react 2.0.0. These were `^` ranges in apps/api,
+  # apps/admin, packages/db and packages/service-core. As of HOS-1416 NO
+  # workspace package declares any `@qazuor/qzpay*` dependency and
+  # `pnpm-lock.yaml` has no qzpay entry, so everything in this block is
+  # historical. It is kept only as the record of why the convergence rule
+  # existed; the new billing does not use qzpay (HOS-1352 spec 30-el-corte.md,
+  # section 4.5). Nothing here is enforced any more.
   #
   # WHAT KEEPS THE WAVE TOGETHER. The rule above is about two DIFFERENT exact
   # core demands coexisting, which is narrower than "never bump one package".
