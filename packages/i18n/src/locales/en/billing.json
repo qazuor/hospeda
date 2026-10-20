@@ -543,7 +543,12 @@
         "manage_gastronomy_events": "Venue events, dated or weekly",
         "multilingual_gastronomy_menu": "Menu in multiple languages",
         "menu_qr_scan_metrics": "Menu QR with scan analytics panel",
-        "manage_experience_private_galleries": "Private galleries for your customers"
+        "manage_experience_private_galleries": "Private galleries for your customers",
+        "partner_public_page": "Your own page on Hospeda",
+        "partner_carousel_presence": "Logo in the partner carousel",
+        "recover_own_listing": "View, export, reactivate or delete your listings",
+        "subscribe_to_plan": "Subscribe to a plan",
+        "activate_trial": "Start the trial period"
     },
     "comparison": {
         "unlimited": "Unlimited",
