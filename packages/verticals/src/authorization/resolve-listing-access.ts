@@ -1,5 +1,5 @@
 import type { BillingForVerticals } from '@repo/billing-verticals-contract';
-import { VerticalEnumSchema } from '@repo/schemas';
+import { PublicationStatusEnum, VerticalEnumSchema } from '@repo/schemas';
 import { resolveAdministrativeActionStep } from './administrative-action-step';
 import {
     ADMINISTRATIVE_ACTION_LISTING_OPERATIONS,
@@ -13,6 +13,7 @@ import {
     OPERATION_PASSES_STEP5,
     OPERATION_STEP6_KEY
 } from './listing-operation';
+import { isPreTrialDraftLimitKey, type PreTrialDraftLimitsPort } from './pre-trial-draft-limit';
 import { type ListingAccessFacts, resolveResourceStep } from './resource-step';
 import { resolveResourceVertical } from './resource-vertical';
 
@@ -60,6 +61,12 @@ export type ListingAccessResult =
  * beyond the operation key. Evaluated in step 6 on the subject after the
  * operation key and before the limit step (step 7). All keys are mandatory
  * (AND logic); the first failure returns `NO_CAPABILITY` with that key.
+ *
+ * `preTrialDraftLimits` — step 7 on a DRAFT (HOS-1721, DEC-TRIAL-007): for a
+ * photo limit the subject's effective set does not carry, the cap is what the
+ * trial will grant at first publish, so a pre-trial owner can reach that
+ * publish. Only DRAFT listings and {@link isPreTrialDraftLimitKey} keys ask it;
+ * every other limit keeps reading an absent value as `0`.
  */
 export async function resolveListingAccess(args: {
     readonly actorId: string | null;
@@ -78,6 +85,7 @@ export async function resolveListingAccess(args: {
     readonly limit?: { readonly key: string; readonly requested: number };
     readonly billing: Pick<BillingForVerticals, 'coverage'>;
     readonly effectiveSet: EffectiveSetPort;
+    readonly preTrialDraftLimits?: PreTrialDraftLimitsPort;
 }): Promise<ListingAccessResult> {
     const vertical = resolveResourceVertical({
         resourceVertical: args.vertical,
@@ -182,11 +190,25 @@ export async function resolveListingAccess(args: {
     if (args.limit) {
         evaluatedSteps.push(7);
         if (subjectId === null) return { allowed: false, reason: 'NOT_FOUND' };
+        const limitSubjectId = subjectId;
+        const limitVertical = VerticalEnumSchema.parse(args.vertical);
+        const limitKey = args.limit.key;
+        const draftLimits = args.preTrialDraftLimits;
+        const fallbackMax =
+            draftLimits &&
+            args.facts?.publicationStatus === PublicationStatusEnum.DRAFT &&
+            isPreTrialDraftLimitKey({ vertical: limitVertical, key: limitKey })
+                ? async () =>
+                      (await draftLimits({ userId: limitSubjectId, vertical: limitVertical })).get(
+                          limitKey
+                      )
+                : undefined;
         const limit = await resolveLimitStep({
             userId: subjectId,
-            vertical: VerticalEnumSchema.parse(args.vertical),
+            vertical: limitVertical,
             limit: args.limit,
-            effectiveSet: args.effectiveSet
+            effectiveSet: args.effectiveSet,
+            fallbackMax
         });
         if (!limit.allowed) return limit;
     }
