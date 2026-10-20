@@ -1,5 +1,7 @@
 # ADR-009: Free Trial Restricted to HOST Role
 
+> **Note (HOS-1626, 2026-10):** `@repo/billing` was retired (the package was deleted). The trial constants and plan definitions cited below no longer exist in code; trial terms are values in the database plan catalog.
+
 ## Status
 
 **Superseded by DEC-ARCH-012 (HOS-1352) — historical record only. Do not read anything below as current.**
