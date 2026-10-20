@@ -50,9 +50,8 @@ const AI_OWNER_ENTITLEMENTS: readonly string[] = [
 ];
 
 /**
- * Minimal plan shape required by i18n helpers. Accepts both the static
- * `PlanDefinition` from the billing catalog and the runtime `PublicPlanData` from
- * @/lib/billing/fetch-plans — both provide slug, name, and description.
+ * Minimal runtime plan shape required by i18n helpers. `PublicPlanData` from
+ * `@/lib/billing/fetch-plans` provides slug, name, and description.
  */
 interface PlanLike {
     readonly slug: string;

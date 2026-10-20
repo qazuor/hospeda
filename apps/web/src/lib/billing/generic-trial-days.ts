@@ -4,12 +4,12 @@
  * surfaces that promise a trial BEFORE the visitor has picked a specific plan
  * (the FAQ, the `/funcionalidades` hero, the `/publicar` callout, the plan
  * comparison CTA, the new-property form, the property list's
- * "necesitás un plan" message). Those surfaces used to hardcode
- * `OWNER_TRIAL_DAYS` from the web static trial-days module, which is independent of
- * `billing_plans.metadata.trialDays` in the database — the number the
- * checkout actually grants. If the owner changes a plan's trial length, the
- * constant silently goes stale and the web keeps promising the old number
- * (H-98).
+ * "necesitás un plan" message). The FAQ and `/funcionalidades` pages are cached
+ * for 24 hours and do not read the database, so they use the static
+ * `OWNER_TRIAL_DAYS` from `@/lib/billing/owner-trial-days`. This is also the
+ * fallback for `resolveGenericOwnerTrialDays`, independent of
+ * `billing_plans.metadata.trialDays` — the number checkout actually grants.
+ * Reading the trial length from plans is HOS-528.
  *
  * ## Why the MINIMUM across owner plans, not the maximum or an arbitrary one
  *
@@ -42,8 +42,8 @@
  *   and falls back to `OWNER_TRIAL_DAYS` when the fetch fails or no plan
  *   qualifies.
  *
- * Both are SSR-only (they end up importing the public plan fetcher), so they must
- * only be called from `.astro` frontmatter — never from a client island. See
+ * This module imports the public plan fetcher, so its helpers are SSR-only:
+ * call them from `.astro` frontmatter, never from a client island. See
  * `apps/web/test/static-guards/billing-barrel-client-isolation.test.ts`.
  */
 
