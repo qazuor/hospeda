@@ -54,7 +54,7 @@ describe('HOS-1724 a never-charged preapproval read back by id', () => {
             status: 'pending',
             amount: { amountMinor: 1_800_000, currency: 'ARS' },
             cadence: { everyMonths: 1 },
-            firstChargeAt: '2026-10-20T19:10:00.000-04:00',
+            firstChargeAt: '2026-10-20T23:10:00.000Z',
             nextChargeAt: '2026-10-20T23:10:00.000Z',
             freePeriodDays: null,
             chargeRecordCount: null,
