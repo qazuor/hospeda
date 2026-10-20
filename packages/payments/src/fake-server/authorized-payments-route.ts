@@ -8,6 +8,7 @@ export async function handleAuthorizedPaymentsRoute(args: {
     readonly method: string;
     readonly url: URL;
     readonly headers: IncomingHttpHeaders;
+    readonly now: Date;
 }): Promise<{ readonly status: number; readonly body: unknown } | null> {
     if (args.method !== 'GET' || args.url.pathname !== '/authorized_payments/search') return null;
     const authorizationId = args.url.searchParams.get('preapproval_id');
@@ -41,11 +42,16 @@ export async function handleAuthorizedPaymentsRoute(args: {
                 retry_attempt: 1,
                 transaction_amount: snapshot.amount.amountMinor / 100,
                 currency_id: snapshot.amount.currency,
-                payment: {
-                    id: chargeId,
-                    status: snapshot.status,
-                    status_detail: snapshot.declineReason
-                }
+                payment:
+                    snapshot.status === 'rejected' &&
+                    snapshot.expiresAt !== null &&
+                    Date.parse(snapshot.expiresAt) <= args.now.getTime()
+                        ? { status: snapshot.status, status_detail: snapshot.declineReason }
+                        : {
+                              id: chargeId,
+                              status: snapshot.status,
+                              status_detail: snapshot.declineReason
+                          }
             };
         })
     );

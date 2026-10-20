@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { ChargeListResult } from '../../provider/payment-provider';
 import { type MercadoPagoSend, parseResponse, providerError } from './mercadopago-http';
+import { resolveUnnamedChargeRecords } from './mercadopago-unnamed-charges';
 
 const ChargeSearchResponseSchema = z.object({
     paging: z.object({ total: z.number().int().nonnegative() }),
@@ -9,6 +10,7 @@ const ChargeSearchResponseSchema = z.object({
             id: z.union([z.string(), z.number()]),
             date_created: z.string().optional(),
             expire_date: z.string().nullable().optional(),
+            external_reference: z.string().nullable().optional(),
             payment: z
                 .object({ id: z.union([z.string(), z.number()]).optional() })
                 .nullable()
@@ -60,10 +62,15 @@ export async function listMercadoPagoCharges(input: {
     readonly send: MercadoPagoSend;
 }): Promise<ChargeListResult> {
     const records = await readMercadoPagoChargeRecords(input);
-    const withPayment = records.filter((record) => record.payment?.id !== undefined);
+    const unnamed = await resolveUnnamedChargeRecords({ ...input, records });
+    const withPayment = records.flatMap((record) => {
+        const paymentId =
+            record.payment?.id === undefined ? unnamed.get(record) : String(record.payment.id);
+        return paymentId === undefined ? [] : [{ record, paymentId }];
+    });
     if (
         withPayment.some(
-            (record) =>
+            ({ record }) =>
                 record.date_created === undefined ||
                 !Number.isFinite(Date.parse(record.date_created))
         )
@@ -75,7 +82,7 @@ export async function listMercadoPagoCharges(input: {
         );
 
     const ordered = withPayment
-        .map((record, index) => ({ record, index }))
+        .map((item, index) => ({ ...item, index }))
         .sort((left, right) => {
             return (
                 Date.parse(left.record.date_created ?? '') -
@@ -83,8 +90,6 @@ export async function listMercadoPagoCharges(input: {
             );
         });
     return {
-        chargeIds: ordered.flatMap(({ record }) =>
-            record.payment?.id === undefined ? [] : [String(record.payment.id)]
-        )
+        chargeIds: ordered.map(({ paymentId }) => paymentId)
     };
 }
