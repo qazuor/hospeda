@@ -43,7 +43,6 @@
         "vitest": "^4.1.11"
     },
     "dependencies": {
-        "@repo/billing": "workspace:*",
         "@repo/billing-verticals-contract": "workspace:*",
         "@repo/cache-tags": "workspace:*",
         "@repo/content-moderation": "workspace:*",
