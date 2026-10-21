@@ -145,13 +145,16 @@ describe('S1 signup window response', () => {
         });
         const authorize = vi.spyOn(fake, 'authorize');
         const app = initApp({ clock, paymentProvider: fake });
+        // Reuse is per declared payer email: a retry with ANOTHER email replaces
+        // the pending attempt (S39, HOS-1732), so both requests declare the same one.
+        const payerEmail = `mp-${crypto.randomUUID()}@example.test`;
         const request = () =>
             app.request(path, {
                 method: 'POST',
                 headers: headers(user.id),
                 body: JSON.stringify({
                     billingOptionId: option.id,
-                    payerEmail: `mp-${crypto.randomUUID()}@example.test`
+                    payerEmail
                 })
             });
         const first = await (await request()).json();
