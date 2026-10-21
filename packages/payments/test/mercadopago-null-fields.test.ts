@@ -19,7 +19,11 @@ const pendingPreapproval = JSON.parse(
         ),
         'utf8'
     )
-) as Record<string, unknown> & { readonly id: string; readonly external_reference: string };
+) as Record<string, unknown> & {
+    readonly id: string;
+    readonly external_reference: string;
+    readonly init_point: string;
+};
 
 const clock = createAdjustableClock({ start: new Date('2026-10-20T23:10:13.000Z') });
 
@@ -59,7 +63,8 @@ describe('HOS-1724 a never-charged preapproval read back by id', () => {
             freePeriodDays: null,
             chargeRecordCount: null,
             lastChargedAt: null,
-            lastModifiedAt: '2026-10-20T19:10:12.968-04:00'
+            lastModifiedAt: '2026-10-20T19:10:12.968-04:00',
+            approvalUrl: pendingPreapproval.init_point
         });
     });
 
@@ -118,6 +123,37 @@ describe('HOS-1724 a never-charged preapproval read back by id', () => {
         // Assert
         expect(read.snapshot.chargeRecordCount).toBe(2);
         expect(read.snapshot.lastChargedAt).toBe('2026-10-20T19:12:00.000-04:00');
+    });
+});
+
+describe('HOS-1725 the approval link on a read by id', () => {
+    it('maps the raw init_point, unsanitized, for the consumer to sanitize', async () => {
+        // Arrange
+        const provider = adapterAnswering({ route: () => pendingPreapproval });
+
+        // Act
+        const read = await provider.readAuthorization({ authorizationId: pendingPreapproval.id });
+
+        // Assert
+        expect(read.snapshot.approvalUrl).toBe(pendingPreapproval.init_point);
+        expect(read.snapshot.approvalUrl).toContain('activation=true');
+    });
+
+    it.each([
+        ['null', { init_point: null }],
+        ['absent', { init_point: undefined }]
+    ])('reads an init_point sent as %s as no link, without failing the read', async (_, patch) => {
+        // Arrange
+        const provider = adapterAnswering({
+            route: () => ({ ...pendingPreapproval, ...patch })
+        });
+
+        // Act
+        const read = await provider.readAuthorization({ authorizationId: pendingPreapproval.id });
+
+        // Assert
+        expect(read.snapshot.approvalUrl).toBeNull();
+        expect(read.snapshot.status).toBe('pending');
     });
 });
 

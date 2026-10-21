@@ -174,7 +174,8 @@ export class FakePaymentProvider implements PaymentProvider {
                         }),
                         chargeRecordCount: 0,
                         lastChargedAt: null,
-                        lastModifiedAt: this.clock.now().toISOString()
+                        lastModifiedAt: this.clock.now().toISOString(),
+                        approvalUrl
                     },
                     version: 1,
                     approvalUrl,

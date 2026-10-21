@@ -124,7 +124,8 @@ describe('HOS-1724 creation confirmation compares the first charge as an instant
             freePeriodDays: null,
             chargeRecordCount: null,
             lastChargedAt: null,
-            lastModifiedAt: null
+            lastModifiedAt: null,
+            approvalUrl: null
         };
         const provider = {
             readAuthorization: async () => stampProviderRead({ clock, snapshot })
