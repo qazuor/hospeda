@@ -8,6 +8,7 @@ import {
     subscriptions,
     users
 } from '@repo/db';
+import { sanitizeApprovalUrl } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
 import { afterAll, describe, expect, it, vi } from 'vitest';
@@ -146,7 +147,7 @@ describe('TEST:1723:1 creation in progress', () => {
         expect(authorize).not.toHaveBeenCalled();
         expect(await counts(user.id)).toEqual({ subscriptions: 1, keys: 1, links: 0 });
     });
-    it('keeps another billing option on COMMITMENT_TAKEN', async () => {
+    it('TEST:1723:2 keeps another billing option on COMMITMENT_TAKEN', async () => {
         const { user, versionId, optionIds } = await seed();
         await subscriptionModel.createPendingAuthorization({
             userId: user.id,
@@ -157,6 +158,7 @@ describe('TEST:1723:1 creation in progress', () => {
             authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const authorize = vi.spyOn(fake, 'authorize');
         await expect(
             startSubscription(
                 {
@@ -167,6 +169,7 @@ describe('TEST:1723:1 creation in progress', () => {
                 ports(fake)
             )
         ).rejects.toMatchObject({ reason: 'COMMITMENT_TAKEN' });
+        expect(authorize).not.toHaveBeenCalled();
     });
 
     it('TEST:1723:1 returns the same reason when the unfinished row already has a provider link', async () => {
@@ -187,6 +190,7 @@ describe('TEST:1723:1 creation in progress', () => {
                 providerId: `retry-linked-${crypto.randomUUID()}`
             });
         const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const authorize = vi.spyOn(fake, 'authorize');
         await expect(
             startSubscription(
                 {
@@ -197,6 +201,7 @@ describe('TEST:1723:1 creation in progress', () => {
                 ports(fake)
             )
         ).rejects.toMatchObject({ reason: 'PREVIOUS_ATTEMPT_IN_PROGRESS' });
+        expect(authorize).not.toHaveBeenCalled();
         expect(await counts(user.id)).toEqual({ subscriptions: 1, keys: 1, links: 1 });
     });
 
@@ -234,10 +239,15 @@ describe('TEST:1723:1 creation in progress', () => {
         );
         expect(summary).toMatchObject({ rowsExamined: 1, recreated: 1 });
         const result = await startSubscription(input, { ...ports(fake, time), provider });
+        const recreatedCall = authorize.mock.results[1];
+        if (!recreatedCall || recreatedCall.type !== 'return') {
+            throw new Error('Expected the creation sweep to call the provider');
+        }
+        const recreatedAuthorization = await recreatedCall.value;
         expect(result).toMatchObject({
             subscriptionId: row.id,
             authorizationId: expect.any(String),
-            checkoutUrl: expect.stringMatching(/^https:\/\//)
+            checkoutUrl: sanitizeApprovalUrl(recreatedAuthorization).url
         });
         expect(authorize).toHaveBeenCalledTimes(2);
         expect(await counts(user.id)).toEqual({ subscriptions: 1, keys: 2, links: 1 });
