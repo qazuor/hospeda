@@ -1,5 +1,13 @@
 // TEST:1731:1 — a rejected checkout charge closes an already-cancelled pending signup.
-import { coverageLosses, emailOutbox, eq, providerLinks, subscriptions, users } from '@repo/db';
+import {
+    coverageLosses,
+    emailOutbox,
+    eq,
+    payments,
+    providerLinks,
+    subscriptions,
+    users
+} from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service';
@@ -112,6 +120,13 @@ describe('HOS-1731 pending first charge rejection', () => {
             outcome: 'DECLINED',
             decline: { outcome: 'DECLINED', cancelCall: 'NOT_NEEDED' }
         });
+        // TEST:1731:5 (D3): S16 leaves the rejected payment to P2.
+        if (result.outcome !== 'DECLINED') throw new Error('Expected a declined charge result');
+        const [payment] = await getServiceTestDb()
+            .select({ status: payments.status })
+            .from(payments)
+            .where(eq(payments.id, result.paymentId));
+        expect(payment?.status).toBe('PENDING');
         const [row] = await getServiceTestDb()
             .select()
             .from(subscriptions)
