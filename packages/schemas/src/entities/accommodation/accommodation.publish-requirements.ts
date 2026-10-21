@@ -67,11 +67,12 @@ export type AccommodationPublishRequirementId =
 
 /**
  * The facts a publish check needs, gathered from wherever the caller holds
- * them. Deliberately NOT the full `Accommodation`: the server reads `extraInfo`
- * plus a media lookup, the editor hub reads its already-loaded editor payload,
- * and neither should have to shape itself like the other to ask the question.
+ * them. Deliberately NOT the full `Accommodation`: the server reads the
+ * description, `extraInfo` and a media lookup, while the editor hub reads its
+ * already-loaded editor payload; neither has to shape itself like the other.
  */
 export interface AccommodationPublishReadinessInput {
+    /** Long description; the seeded draft placeholder is not considered complete. */
     readonly description: string | null | undefined;
     readonly capacity?: number | null;
     readonly minNights?: number | null;

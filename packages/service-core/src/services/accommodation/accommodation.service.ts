@@ -1633,6 +1633,7 @@ export class AccommodationService extends BaseCrudService<
         const extraInfo = accommodation.extraInfo ?? {};
         const missingRequirements = resolveMissingPublishRequirements({
             input: {
+                description: accommodation.description,
                 capacity: extraInfo.capacity,
                 minNights: extraInfo.minNights,
                 bedrooms: extraInfo.bedrooms,
