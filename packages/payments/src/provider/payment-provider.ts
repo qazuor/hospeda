@@ -137,6 +137,13 @@ export interface AuthorizationSnapshot {
     readonly lastChargedAt: string | null;
     /** Instant (ISO 8601) when the provider last modified this resource; null when unavailable. */
     readonly lastModifiedAt: string | null;
+    /**
+     * Where the customer goes to grant the permission, RAW, as the provider reports it on a
+     * read (the same link `authorize` answered); null when the provider gives none. Shown only
+     * through `sanitizeApprovalUrl` (GUARD:G10). It lets a recovery that never saw the
+     * `authorize` answer (HOS-1725) store the link the person is sent to.
+     */
+    readonly approvalUrl: string | null;
 }
 
 /** Capability 7 input: narrow, non-authoritative search criteria. */

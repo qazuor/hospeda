@@ -100,7 +100,10 @@ const ReadResponseSchema = z.object({
         })
         .nullish(),
     last_modified: z.string().nullish(),
-    next_payment_date: z.string().nullish()
+    next_payment_date: z.string().nullish(),
+    // Not validated as a URL here: a malformed link must not fail the whole read.
+    // Its consumer sanitizes it and refuses what is not a usable https link (HOS-1725).
+    init_point: z.string().nullish()
 });
 
 /** Convert a provider date to an ISO UTC instant, tolerating invalid values. */
@@ -302,7 +305,8 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
                 freePeriodDays: parsed.auto_recurring.free_trial?.frequency ?? null,
                 chargeRecordCount: parsed.summarized?.charged_quantity ?? null,
                 lastChargedAt: parsed.summarized?.last_charged_date ?? null,
-                lastModifiedAt: parsed.last_modified ?? null
+                lastModifiedAt: parsed.last_modified ?? null,
+                approvalUrl: parsed.init_point ?? null
             }
         });
     }

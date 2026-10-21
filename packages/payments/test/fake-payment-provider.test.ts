@@ -81,7 +81,8 @@ describe('authorize and approve', () => {
             freePeriodDays: null,
             chargeRecordCount: 0,
             lastChargedAt: null,
-            lastModifiedAt: '2026-10-01T03:00:00.000Z'
+            lastModifiedAt: '2026-10-01T03:00:00.000Z',
+            approvalUrl
         });
         expect(after.status).toBe('active');
         expect(after.nextChargeAt).toBe('2026-10-01T03:00:00.000Z');

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, asc, eq, gt, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, isNull, or, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { users } from '../../schemas/user/user.dbschema.ts';
 import { billingOptions } from '../../schemas/vertical/billing-option.dbschema.ts';
@@ -43,6 +43,15 @@ export interface MintCreateKeyIfUnlinkedInput {
     readonly tx?: DrizzleClient;
 }
 
+/** Input for completing the creation key a recovered authorization answers (HOS-1725). */
+export interface CompleteNewestCreateKeyInput {
+    readonly subscriptionId: string;
+    /** Sanitized, application-owned result; never a raw provider response. */
+    readonly result: Record<string, unknown>;
+    readonly completedAt: Date;
+    readonly tx: DrizzleClient;
+}
+
 /** Read model and narrow key writer used by the creation sweep. */
 export class CreationSweepModel {
     /**
@@ -59,7 +68,7 @@ export class CreationSweepModel {
             SELECT newest.key FROM idempotency_key AS newest
             WHERE newest.subject_id = ${subscriptions.id}
               AND newest.operation = 'PREAPPROVAL_CREATE'
-            ORDER BY newest.created_at DESC
+            ORDER BY newest.created_at DESC, newest.key DESC
             LIMIT 1
         )`;
         return db
@@ -130,6 +139,46 @@ export class CreationSweepModel {
             return { key };
         };
         return input.tx ? write(input.tx) : getDb().transaction(write);
+    }
+
+    /**
+     * Completes the subscription's NEWEST `PREAPPROVAL_CREATE` key with `result`, only while it
+     * is still incomplete (HOS-1725).
+     *
+     * "Newest" is the order `SubscriptionModel.findLiveCommitment` reads (`created_at DESC, key
+     * DESC`), so the key completed here is exactly the one S1's reuse decides on. Older keys of
+     * dead attempts are left as they are: nothing reads them. A key that is already completed
+     * (an `applied: false` creation, or a concurrent writer) is never overwritten.
+     *
+     * Run it inside the caller's transaction, after locking the subscription, so the key and the
+     * provider link it describes commit together.
+     *
+     * @param input.subscriptionId - The subject of the key
+     * @param input.result - The sanitized, application-owned result to store
+     * @param input.completedAt - The caller's decision instant
+     * @param input.tx - The caller's transaction
+     * @returns `true` when a key was completed
+     */
+    async completeNewestCreateKey(input: CompleteNewestCreateKeyInput): Promise<boolean> {
+        const [newest] = await input.tx
+            .select({ key: idempotencyKeys.key, completedAt: idempotencyKeys.completedAt })
+            .from(idempotencyKeys)
+            .where(
+                and(
+                    eq(idempotencyKeys.subjectId, input.subscriptionId),
+                    eq(idempotencyKeys.operation, 'PREAPPROVAL_CREATE')
+                )
+            )
+            .orderBy(desc(idempotencyKeys.createdAt), desc(idempotencyKeys.key))
+            .limit(1)
+            .for('update');
+        if (!newest || newest.completedAt !== null) return false;
+        const completed = await input.tx
+            .update(idempotencyKeys)
+            .set({ result: input.result, completedAt: input.completedAt })
+            .where(and(eq(idempotencyKeys.key, newest.key), isNull(idempotencyKeys.completedAt)))
+            .returning({ key: idempotencyKeys.key });
+        return completed.length === 1;
     }
 }
 

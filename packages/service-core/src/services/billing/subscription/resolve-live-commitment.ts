@@ -18,6 +18,29 @@ const AppliedAuthorizationResultSchema = z.object({
     checkoutUrl: z.url()
 });
 
+/** The stored result of an applied creation, the one shape S1's reuse accepts. */
+export type AppliedAuthorizationResult = z.infer<typeof AppliedAuthorizationResultSchema>;
+
+/**
+ * Builds the result every writer of an applied `PREAPPROVAL_CREATE` stores: S1's own success
+ * path and the creations sweep's recovery (HOS-1725). One builder next to the schema that reads
+ * it back, so the writers cannot drift from what the reuse decision accepts.
+ *
+ * @param input.authorizationId - The provider authorization the key created
+ * @param input.checkoutUrl - The SANITIZED approval link
+ * @returns The result to persist on the key
+ */
+export function appliedAuthorizationResult(input: {
+    readonly authorizationId: string;
+    readonly checkoutUrl: string;
+}): AppliedAuthorizationResult {
+    return {
+        authorizationId: input.authorizationId,
+        applied: true,
+        checkoutUrl: input.checkoutUrl
+    };
+}
+
 /** The today's 409 for an occupied commitment slot (H11). */
 function commitmentTaken(): ServiceError {
     return new ServiceError(
