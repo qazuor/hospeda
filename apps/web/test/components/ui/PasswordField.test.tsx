@@ -19,7 +19,8 @@ import { PasswordField } from '../../../src/components/ui/PasswordField.client';
 // @repo/schemas internally imports @repo/feedback/schemas which is not
 // resolvable in the jsdom test environment. We mock only the export we need.
 vi.mock('@repo/schemas', () => ({
-    StrongPasswordRegex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+    StrongPasswordRegex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!-/:-@[-`{-~])[\s\S]{8,}$/,
+    AsciiSpecialCharacterRegex: /[!-/:-@[-`{-~]/,
     PROFILE_COMPLETION_MIN_PASSWORD_LENGTH: 8
 }));
 
