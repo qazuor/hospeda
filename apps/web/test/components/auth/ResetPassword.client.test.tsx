@@ -74,7 +74,39 @@ describe('ResetPassword password validation (HOS-190 slice 3)', () => {
         submit();
 
         expect(screen.getByRole('alert')).toHaveTextContent(
-            'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (@$!%*?&).'
+            'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (por ejemplo ! @ # $ - _).'
+        );
+        expect(resetPasswordMock).not.toHaveBeenCalled();
+    });
+
+    it('TEST:1720:4 accepts the smoke password and calls resetPassword', async () => {
+        renderIsland();
+        fireEvent.change(screen.getByLabelText(/^Nueva contraseña/), {
+            target: { value: 'Abcdef1234-ghijklm!xy' }
+        });
+        fireEvent.change(screen.getByLabelText(/^Confirmar contraseña/), {
+            target: { value: 'Abcdef1234-ghijklm!xy' }
+        });
+        submit();
+        await waitFor(() =>
+            expect(resetPasswordMock).toHaveBeenCalledWith({
+                newPassword: 'Abcdef1234-ghijklm!xy',
+                token: 'reset-token-123'
+            })
+        );
+    });
+
+    it('TEST:1720:4 rejects a password without an ASCII symbol and does not call resetPassword', () => {
+        renderIsland();
+        fireEvent.change(screen.getByLabelText(/^Nueva contraseña/), {
+            target: { value: 'Abcdef1234 ñ' }
+        });
+        fireEvent.change(screen.getByLabelText(/^Confirmar contraseña/), {
+            target: { value: 'Abcdef1234 ñ' }
+        });
+        submit();
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (por ejemplo ! @ # $ - _).'
         );
         expect(resetPasswordMock).not.toHaveBeenCalled();
     });
