@@ -216,7 +216,14 @@
         },
         "signup": {
             "title": "Confirmá tu suscripción",
-            "intro": "Vas a autorizar el pago en Mercado Pago. Ahí ves el monto y el ciclo antes de confirmar.",
+            "intro": "Vas a autorizar el pago en Mercado Pago.",
+            "planSummary": "{{plan}} · {{amount}} {{cycle}}",
+            "cycle": {
+                "monthly": "por mes",
+                "quarterly": "por trimestre",
+                "semiannual": "por semestre",
+                "annual": "por año"
+            },
             "confirm": "Ir a pagar con Mercado Pago",
             "submitting": "Preparando el pago…",
             "payerEmail": {

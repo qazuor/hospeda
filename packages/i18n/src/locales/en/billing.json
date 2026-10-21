@@ -216,7 +216,14 @@
         },
         "signup": {
             "title": "Confirm your subscription",
-            "intro": "You will authorize the payment with Mercado Pago. You can review the amount and billing cycle there before confirming.",
+            "intro": "You will authorize the payment with Mercado Pago.",
+            "planSummary": "{{plan}} · {{amount}} {{cycle}}",
+            "cycle": {
+                "monthly": "per month",
+                "quarterly": "per quarter",
+                "semiannual": "per half-year",
+                "annual": "per year"
+            },
             "confirm": "Continue to Mercado Pago",
             "submitting": "Preparing your payment…",
             "payerEmail": {
