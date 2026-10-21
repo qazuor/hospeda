@@ -6,6 +6,7 @@ import {
     ARREARS_SUSPENSION_SUBJECT,
     ArrearsSuspension,
     type ArrearsSuspensionOneTimeAddon,
+    AttemptReplacedCancel,
     CLOSED_SUBSCRIPTION_AUTHORIZATION_CANCEL_SUBJECT,
     ClosedSubscriptionAuthorizationCancel,
     DIRECT_CANCELLATION_SUBJECT,
@@ -75,6 +76,16 @@ function beforeCancel(row: EmailOutboxRow) {
     if (typeof data.subscriptionId !== 'string')
         throw new TypeError('Faltan datos requeridos del aviso de cancelación');
     return { subject: 'Tu autorización pendiente venció', react: <SignupBeforeCancel /> };
+}
+
+function attemptReplacedCancel(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError('Faltan datos requeridos del aviso de cancelación');
+    return {
+        subject: 'Reemplazamos tu intento de alta anterior',
+        react: <AttemptReplacedCancel />
+    };
 }
 
 function touristVipInheritedCancel(row: EmailOutboxRow) {
@@ -385,6 +396,7 @@ export function createBillingSignupRenderers(input: {
         'billing.payment-credited': ({ row }) => paymentCredited(row),
         'billing.signup-confirmed': ({ row }) => confirmed(row),
         'billing.before-cancel': ({ row }) => beforeCancel(row),
+        'billing.attempt-replaced-cancel': ({ row }) => attemptReplacedCancel(row),
         'billing.signup-incomplete': ({ row }) => incomplete(row),
         'billing.arrears-suspension': ({ row }) => arrearsSuspension(row),
         'billing.tourist-vip-inherited-cancel': ({ row }) => touristVipInheritedCancel(row),

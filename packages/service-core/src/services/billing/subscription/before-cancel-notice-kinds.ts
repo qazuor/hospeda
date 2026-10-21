@@ -28,7 +28,9 @@ export const BEFORE_CANCEL_TEMPLATE_BY_KIND = {
     /** S20: a permanent grant converted an addon to $0 and cut its complement's charge (B9a, HOS-1583). */
     PERMANENT_GRANT_ADDON: 'billing.permanent-grant-addon-cancel',
     /** S23 and S24: the person cancelled from SUSPENDED or GRACE_PERIOD; the service ends today. */
-    DIRECT_CANCELLATION: 'billing.direct-cancellation'
+    DIRECT_CANCELLATION: 'billing.direct-cancellation',
+    /** S39: the person started the signup again (another payer email, or a creation that did not apply). */
+    ATTEMPT_REPLACED: 'billing.attempt-replaced-cancel'
 } as const;
 
 /** A kind of before-cancel notice; each one has its own template and no kind is a default. */
