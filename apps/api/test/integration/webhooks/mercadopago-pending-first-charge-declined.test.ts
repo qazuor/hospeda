@@ -1,9 +1,18 @@
 // TEST:1731:7 — the real signed payment notice closes the pending checkout signup.
-import { emailOutbox, eq, getDb, payments, providerLinks, subscriptions } from '@repo/db';
+import {
+    billingDeadlineVersions,
+    emailOutbox,
+    eq,
+    getDb,
+    payments,
+    providerLinks,
+    subscriptions
+} from '@repo/db';
 import { type LogEntry, registerHook, unregisterHook } from '@repo/logger';
 import { MercadoPagoPaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { type FakeProviderServer, startFakeProviderServer } from '@repo/payments/fake-server';
+import type { BillingDeadlineValues } from '@repo/schemas';
 import { createAdjustableClock } from '@repo/test-clock';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -28,6 +37,35 @@ let server: FakeProviderServer;
 let app: ReturnType<typeof initApp>;
 let lifterId: string;
 
+/**
+ * Migration `0138_woozy_dagger.sql` owns billing deadline version 1, but every
+ * `hospeda-api` integration file shares one database and runs in series, and
+ * `billing-deadlines.test.ts` truncates `billing_deadline_version` after its
+ * tests. The signup reads version 1, so this file recreates it instead of
+ * assuming it survives (same pattern as `billing-subscription/reuse.test.ts`).
+ * `onConflictDoNothing` keeps the seed idempotent and never triggers the
+ * UPDATE/DELETE-only immutability trigger.
+ */
+const billingDeadlineVersion1Values = {
+    '10': { cardHours: 72, manualDays: 7 },
+    '11': { noticeDays: 60, contactDays: [30, 7] },
+    '12': { noticeDays: 60, contactDays: [30, 7] },
+    '13': { daysBefore: [5, 1] },
+    '14': { daysBefore: 7 },
+    '15': { hoursRemaining: 24 },
+    '16': { days: 7 },
+    '17': { days: 7 },
+    '18': { days: 180 },
+    '19': { minutes: 60 }
+} satisfies BillingDeadlineValues;
+
+const ensureBillingDeadlineVersion1 = async (): Promise<void> => {
+    await getDb()
+        .insert(billingDeadlineVersions)
+        .values({ version: 1, values: billingDeadlineVersion1Values })
+        .onConflictDoNothing();
+};
+
 const outcomeFrom = (entry: LogEntry): unknown => {
     if (
         entry.message !== 'Mercado Pago delivery received' ||
@@ -43,6 +81,7 @@ describe('TEST:1731:7 signed first-charge decline webhook', () => {
         process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
         process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET = SIGNING_KEY;
         await testDb.setup();
+        await ensureBillingDeadlineVersion1();
         validateApiEnv();
         server = await startFakeProviderServer({ provider: fake, clock });
         app = initApp({
