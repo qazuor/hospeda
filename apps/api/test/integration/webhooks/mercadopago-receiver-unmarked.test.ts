@@ -166,7 +166,8 @@ describe('Mercado Pago unmarked receiver integration', () => {
         clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
         const deliveries = server
             .mercadoPagoDeliveries({ webhookSecret })
-            .deliveries.map((delivery) => {
+            .deliveries.filter(({ channel }) => channel === 'WEBHOOKS')
+            .map((delivery) => {
                 const query = new URLSearchParams(delivery.query);
                 query.delete('source_news');
                 return { ...delivery, query: query.toString() };
