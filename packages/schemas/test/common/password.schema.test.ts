@@ -12,6 +12,15 @@ describe('StrongPasswordRegex', () => {
             expect(StrongPasswordRegex.test('Aa1@bcde')).toBe(true);
         });
 
+        test('TEST:1720:1 accepts the smoke password and printable symbols beyond the former allowlist', () => {
+            for (const symbol of ['-', '.', '_', '#', ' ', 'é', 'ñ']) {
+                expect(
+                    StrongPasswordSchema.safeParse(`Abcdef1234${symbol}ghijklm!xy`).success
+                ).toBe(true);
+            }
+            expect(StrongPasswordSchema.safeParse('Abcdef1234-ghijklm!xy').success).toBe(true);
+        });
+
         test('should match password with multiple special characters', () => {
             expect(StrongPasswordRegex.test('My!P@ss1Word$')).toBe(true);
         });
@@ -25,6 +34,11 @@ describe('StrongPasswordRegex', () => {
     });
 
     describe('when password is missing required character class', () => {
+        test('TEST:1720:1 rejects when only whitespace or accented letters could count as special', () => {
+            expect(StrongPasswordSchema.safeParse('Abcdef1234 ñ').success).toBe(false);
+            expect(StrongPasswordSchema.safeParse('Abcdef12é').success).toBe(false);
+        });
+
         test('should not match password without uppercase letter', () => {
             expect(StrongPasswordRegex.test('noupperc@se1')).toBe(false);
         });
