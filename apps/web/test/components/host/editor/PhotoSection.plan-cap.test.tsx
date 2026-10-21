@@ -396,7 +396,7 @@ describe('HOS-1721 — a pre-trial owner can fill the photos of their DRAFT', ()
         };
         const { rerender } = render(<PhotoSection {...props} />);
         await waitFor(() =>
-            expect(screen.getByRole('button', { name: /Agregar fotos/i })).toBeInTheDocument()
+            expect(screen.getByRole('button', { name: /Agregar fotos/i })).toBeEnabled()
         );
 
         mockFeaturedOverride.current = {
