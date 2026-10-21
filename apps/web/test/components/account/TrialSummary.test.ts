@@ -82,10 +82,17 @@ describe('TrialSummary.astro — row 4, the accumulated trial days', () => {
     });
 
     it('renders nothing for NONE, for zero days, or without entries', () => {
-        expect(SOURCE).toContain(
-            "if (!('totalDays' in summary) || summary.totalDays <= 0) return [];"
-        );
+        expect(SOURCE).toContain('resolveTrialSummaryView({ summary })');
         expect(SOURCE).toContain('views.length > 0 && (');
+    });
+
+    it('TEST:1727:6 — consumes the view resolver and marks running or ended cards', () => {
+        expect(SOURCE).toContain('resolveTrialSummaryView({ summary })');
+        expect(SOURCE).toContain('data-trial-state=');
+        expect(SOURCE).toMatch(/kind === 'running' \? 'running' : 'ended'/);
+        expect(SOURCE).not.toContain('summary.totalDays <= 0');
+        expect(SOURCE).not.toMatch(/fetch\(|publishApi/);
+        expect(SOURCE).not.toMatch(/client:/);
     });
 
     it('states the start and end dates only when both are known', () => {
