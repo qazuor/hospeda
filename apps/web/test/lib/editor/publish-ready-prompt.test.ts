@@ -64,6 +64,11 @@ describe('shouldPromptPublishReady', () => {
         ).toBe(false);
     });
 
+    it('does not prompt after capacity is completed while the placeholder remains', () => {
+        const before = { ...MISSING_DESCRIPTION, capacity: null };
+        expect(shouldPromptPublishReady(input({ before, after: MISSING_DESCRIPTION }))).toBe(false);
+    });
+
     it('prompts when a real description is the last missing requirement', () => {
         expect(shouldPromptPublishReady(input({ before: MISSING_DESCRIPTION, after: READY }))).toBe(
             true

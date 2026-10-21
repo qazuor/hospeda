@@ -353,6 +353,7 @@ describe('HOS-1024 — sober upsell when the gallery is full at the plan cap', (
 
 describe('HOS-1721 — a pre-trial owner can fill the photos of their DRAFT', () => {
     const publishContext = {
+        description: 'A real accommodation description with enough detail.',
         capacity: 2,
         minNights: 1,
         bedrooms: 1,

@@ -19,6 +19,7 @@ vi.mock('@/lib/api/endpoints-protected', () => ({ publishApi: { subscribeDestina
 
 /** A listing meeting every blocking requirement. */
 const READY: AccommodationPublishReadinessInput = {
+    description: 'A real accommodation description with enough detail.',
     capacity: 4,
     minNights: 1,
     bedrooms: 2,

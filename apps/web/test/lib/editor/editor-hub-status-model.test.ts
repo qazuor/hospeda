@@ -266,4 +266,8 @@ describe('resolveEditorSectionStatuses — warns about what actually blocks (H-1
             'host.properties.editor.publishRequirement.description'
         ]);
     });
+
+    it('has no description blocker when a real description is present', () => {
+        expect(resolve().basicInfo?.tone).not.toBe('blocking');
+    });
 });
