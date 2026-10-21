@@ -5,7 +5,13 @@
  * applied result in that same recovery, or the person's retry answers 409
  * `COMMITMENT_TAKEN` until the authorization window closes (~72h).
  */
-import { eq, idempotencyKeys, providerLinks, subscriptionModel } from '@repo/db';
+import {
+    eq,
+    idempotencyKeys,
+    providerLinks,
+    reconciliationInventoryModel,
+    subscriptionModel
+} from '@repo/db';
 import { sanitizeApprovalUrl } from '@repo/payments';
 import type { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -141,6 +147,39 @@ describe('HOS-1725 the creations sweep completes the creation key it recovers', 
         const summary = await sweep(fake, time);
 
         // Assert
+        expect(summary.keysCompleted).toBe(0);
+        const keys = await createKeys(row.subscription.id);
+        expect(keys.every((key) => key.completedAt === null)).toBe(true);
+    });
+
+    it('does not heal when, under the lock, the row is linked to another creation', async () => {
+        // Arrange
+        const time = createAdjustableClock({ start: new Date(Date.now() + 20 * 60_000) });
+        const { fake } = createReconciliationFake(time);
+        const row = await seedPendingCreation();
+        const created = await authorizeFor(fake, row);
+        await getServiceTestDb().insert(providerLinks).values({
+            subscriptionId: row.subscription.id,
+            provider: 'MERCADO_PAGO',
+            providerId: created.authorizationId
+        });
+        const lock = reconciliationInventoryModel.lockSubscriptionForLink.bind(
+            reconciliationInventoryModel
+        );
+        const relinked = vi
+            .spyOn(reconciliationInventoryModel, 'lockSubscriptionForLink')
+            .mockImplementation(async (input) => {
+                const locked = await lock(input);
+                return locked?.providerLink
+                    ? { ...locked, providerLink: { ...locked.providerLink, providerId: 'other' } }
+                    : locked;
+            });
+
+        // Act
+        const summary = await sweep(fake, time).finally(() => relinked.mockRestore());
+
+        // Assert
+        expect(relinked).toHaveBeenCalled();
         expect(summary.keysCompleted).toBe(0);
         const keys = await createKeys(row.subscription.id);
         expect(keys.every((key) => key.completedAt === null)).toBe(true);
