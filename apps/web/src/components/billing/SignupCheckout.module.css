@@ -24,6 +24,16 @@
     background: var(--core-card);
 }
 
+.planSummary {
+    width: 100%;
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    background: var(--core-card);
+    color: var(--core-foreground);
+    font-weight: 600;
+}
+
 .trialNotice p {
     line-height: 1.5;
 }

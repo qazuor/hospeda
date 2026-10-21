@@ -11,7 +11,8 @@ const props = {
     accountEmail: 'account@example.test',
     plansHref: '/es/planes/',
     trialNotice: null,
-    touristVipNotice: null
+    touristVipNotice: null,
+    planSummary: null
 };
 
 const success = {
