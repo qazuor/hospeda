@@ -219,6 +219,11 @@
             "intro": "You will authorize the payment with Mercado Pago. You can review the amount and billing cycle there before confirming.",
             "confirm": "Continue to Mercado Pago",
             "submitting": "Preparing your payment…",
+            "payerEmail": {
+                "label": "Email of your Mercado Pago account",
+                "hint": "It must be the email of the account you will pay with. If it differs from your Hospeda email, change it here: if it does not match, Mercado Pago will reject the payment.",
+                "invalid": "Enter a valid email."
+            },
             "pending": {
                 "title": "Your {{vertical}} subscription is waiting for you to complete payment",
                 "resume": "Complete payment with Mercado Pago",
