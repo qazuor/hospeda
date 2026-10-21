@@ -5,6 +5,7 @@ import {
     createLostFirstRejectionCheck,
     createNextChargeSync,
     createPaymentReconciliationMarkPayments,
+    createPendingFirstChargeDeclineCheck,
     createPeriodChargesComparison,
     createPersistedReconciliationDailySummary,
     createPromoChargePolicy,
@@ -99,6 +100,14 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             clock,
                             payments: creditedPaymentsFromLedger,
                             planPolicy
+                        }),
+                        createPendingFirstChargeDeclineCheck({
+                            provider,
+                            clock,
+                            beforeCancelNotice,
+                            payments: creditedPaymentsFromLedger,
+                            coverageNotices: getCoverageNotices(),
+                            cancellationSeen: providerLinkCancellationSeen
                         }),
                         // AC:B7:4 (DEC-SUB-022): the successor of a paying predecessor that
                         // entered grace has its preapproval re-read every day; `cancelled` or
