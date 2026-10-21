@@ -33,6 +33,15 @@ describe('TEST:1720:2 PasswordField symbols', () => {
         expect(screen.getByText(/Un carácter especial/)).toHaveTextContent('✅');
         expect(screen.getByRole('status')).toHaveTextContent('Fuerte');
     });
+    it('counts a hyphen as an ASCII special character on its own', () => {
+        renderValue('Abcdef1234-ghijklm');
+        expect(screen.getByText(/Un carácter especial/)).toHaveTextContent('✅');
+        expect(screen.getByRole('status')).toHaveTextContent('Fuerte');
+    });
+    it('uses the shared ASCII symbol rule in non-strong strength scoring', () => {
+        renderValue('abc12345-');
+        expect(screen.getByRole('status')).toHaveTextContent('Media');
+    });
     it.each([
         'Abcdef1234ghijklm',
         'Abcdef1234 ñ'
