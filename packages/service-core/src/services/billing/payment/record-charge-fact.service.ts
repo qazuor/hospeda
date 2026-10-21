@@ -295,7 +295,11 @@ export async function recordChargeFact(
             planPolicy: ports.planPolicy
         }
     );
-    if (grace.outcome !== 'NOT_APPLICABLE' || grace.reason !== 'NO_CREDITED_PAYMENT')
+    if (grace.outcome !== 'NOT_APPLICABLE') return { outcome: 'GRACE', paymentId, grace };
+    if (
+        grace.reason !== 'NO_CREDITED_PAYMENT' &&
+        !(grace.reason === 'NOT_ACTIVE' && linked.subscription.status === 'PENDING_AUTHORIZATION')
+    )
         return { outcome: 'GRACE', paymentId, grace };
     const decline = await declineFirstCharge({ chargeId: input.chargeId }, ports);
     return { outcome: 'DECLINED', paymentId, decline };
