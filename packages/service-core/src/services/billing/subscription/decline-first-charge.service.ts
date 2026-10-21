@@ -47,6 +47,7 @@ export type DeclineFirstChargeResult =
               | 'CHARGE_NOT_REJECTED'
               | 'NO_SUBSCRIPTION'
               | 'NOT_ACTIVE'
+              | 'AUTHORIZATION_NOT_CANCELLED'
               | 'HAS_CREDITED_PAYMENT'
               | 'LEFT_TO_S4'
               | 'LOST_RACE';
@@ -64,10 +65,10 @@ export interface DeclineFirstChargePorts {
 }
 
 /**
- * S16: the first rejected charge of a signup closes its authorization and signup row.
- * `CHARGE_DECLINED` emits no coverage source (03-contrato-de-cobertura.md:475), so once
- * the transaction committed a `REMOVED` coverage notice is emitted; a notice failure is
- * logged and undoes nothing.
+ * S16 closes a signup after its first rejected charge. For HOS-1731, a pending signup
+ * enters only when its authorization has already been read as cancelled, because cancelling
+ * a live checkout could destroy a successful retry. Active signups retain the existing path.
+ * `CHARGE_DECLINED` emits no coverage source, so active coverage removal is notified after commit.
  */
 export async function declineFirstCharge(
     input: { readonly chargeId: string },
@@ -94,7 +95,9 @@ export async function declineFirstCharge(
         .limit(1);
     if (!row) return { outcome: 'NOT_APPLICABLE', reason: 'NO_SUBSCRIPTION' };
     const { subscription, providerLink } = row;
-    if (subscription.status !== 'ACTIVE' || subscription.class !== 'PRINCIPAL')
+    const sourceStatus = subscription.status;
+    const isPendingSignup = sourceStatus === 'PENDING_AUTHORIZATION';
+    if ((sourceStatus !== 'ACTIVE' && !isPendingSignup) || subscription.class !== 'PRINCIPAL')
         return { outcome: 'NOT_APPLICABLE', reason: 'NOT_ACTIVE' };
 
     if (await payments.hasCreditedPayment({ subscriptionId: subscription.id }))
@@ -115,6 +118,8 @@ export async function declineFirstCharge(
     };
 
     const authorization = await rereadAuthorization();
+    if (isPendingSignup && authorization.status !== 'cancelled')
+        return { outcome: 'NOT_APPLICABLE', reason: 'AUTHORIZATION_NOT_CANCELLED' };
     let cancelCall: 'SENT' | 'FAILED' | 'DEFERRED' | 'NOT_NEEDED';
     if (authorization.status === 'cancelled') {
         await recordCancellationSeen({
@@ -192,7 +197,9 @@ export async function declineFirstCharge(
         const [updated] = await tx
             .update(subscriptions)
             .set({ status: 'CHARGE_DECLINED', updatedAt: declinedAt })
-            .where(and(eq(subscriptions.id, subscription.id), eq(subscriptions.status, 'ACTIVE')))
+            .where(
+                and(eq(subscriptions.id, subscription.id), eq(subscriptions.status, sourceStatus))
+            )
             .returning();
         if (!updated) return null;
         // S16 decided the cancellation; with the re-read already `cancelled` there was no call to
@@ -204,7 +211,7 @@ export async function declineFirstCharge(
                 decidedAt: declinedAt,
                 actor: { type: 'provider' },
                 correlationId: randomUUID(),
-                changes: [{ field: 'status', old: 'ACTIVE', new: 'CHARGE_DECLINED' }],
+                changes: [{ field: 'status', old: sourceStatus, new: 'CHARGE_DECLINED' }],
                 tx
             });
         }
@@ -232,7 +239,7 @@ export async function declineFirstCharge(
                 tx
             });
         // coberturaPerdidaEn in the same transaction as the drop (contract §4.1; I-5).
-        if (updated.userId)
+        if (sourceStatus === 'ACTIVE' && updated.userId)
             await recordCoverageLossIfUncovered({
                 tx,
                 userId: updated.userId,
@@ -245,7 +252,7 @@ export async function declineFirstCharge(
     if (declined === null) return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
 
     const vertical = VerticalEnumSchema.safeParse(declined.subject.vertical);
-    if (declined.subject.userId && vertical.success) {
+    if (sourceStatus === 'ACTIVE' && declined.subject.userId && vertical.success) {
         try {
             await (ports.coverageNotices ?? unwiredCoverageNotices).emitCoverageChanged({
                 userId: declined.subject.userId,
@@ -259,7 +266,7 @@ export async function declineFirstCharge(
                 'Coverage changed notice failed after charge-declined commit'
             );
         }
-    } else {
+    } else if (sourceStatus === 'ACTIVE') {
         logger.error(
             { subscriptionId: subscription.id, vertical: declined.subject.vertical },
             'Charge-declined subscription has no coverage subject to notify'
