@@ -46,7 +46,7 @@ The preview and action report the following twelve reasons (source: `apps/api/do
 | `SUBSCRIPTION_NOT_FOUND` | Check the customer email and subscription ID, then find the subscription again. |
 | `ADMINISTRATIVE_ACTION_FORBIDDEN` | Another admin must process it; nobody acts on their own account. |
 | `REVOCATION_NOT_PRINCIPAL` | Find the customer's `PRINCIPAL` subscription. |
-| `REVOCATION_STATE_NOT_ALLOWED` | Check the current subscription state and escalate to the billing owner; do not force the action. |
+| `REVOCATION_STATE_NOT_ALLOWED` | Check the current subscription state and escalate to the billing owner; do not force the action. If the subscription is already `CANCELLED`, the screen says “This subscription is already cancelled”; there is nothing to retry, and open refund requests remain in their list (§6). |
 | `REVOCATION_NO_CREDITED_PAYMENT` | Check the subscription's payment history and escalate; there is no credited payment for S36 to revoke. |
 | `REVOCATION_WINDOW_CLOSED` | Tell the customer the window closed. If they still want to leave, use administrative cancellation without refund at `/billing/subscriptions/<id>/cancellation` (HOS-1696), or direct them to self-service cancellation. |
 | `REVOCATION_AMOUNT_UNAVAILABLE` | Do not confirm. Escalate the unanchored manual payment amount to the billing owner. |
@@ -68,7 +68,7 @@ If the refunded amount differs from the request, the review step explains the di
 
 ### If the result screen was closed
 
-Return to `/billing/subscriptions/<subscriptionId>/revocation` for that subscription. Its **Open refund requests** section lists each `REQUESTED` refund for that subscription's payments and offers the same settlement form for each request (D-1, option 2). Reading the list requires `billing.subscription.inspect`; settling requires `billing.settleExternal`. If you do not have either permission, another team member can do it.
+Return to `/billing/subscriptions/<subscriptionId>/revocation` for that subscription. Its **Open refund requests** section lists each `REQUESTED` refund for that subscription's payments and offers the same settlement form for each request (D-1, option 2). Reading the list requires `billing.subscription.inspect`; settling requires `billing.settleExternal`. If you do not have either permission, another team member can do it. After a reload, the screen shows the already-cancelled notice alongside the list.
 
 ### API fallback
 

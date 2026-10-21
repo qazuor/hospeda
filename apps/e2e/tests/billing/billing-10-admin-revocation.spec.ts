@@ -267,6 +267,8 @@ test.describe('TEST:B5:22 AC:B5:39 admin revocation (S36) end to end @p0 @billin
         expect(requested?.status).toBe('REQUESTED');
 
         await page.reload();
+        await expect(screen.getByTestId('subscription-revocation-already-cancelled')).toBeVisible();
+        await expect(screen.getByTestId('subscription-revocation-blocked')).toHaveCount(0);
         const openRefunds = screen.getByTestId('subscription-revocation-open-refunds');
         await expect(openRefunds).toBeVisible();
         const item = openRefunds.locator(

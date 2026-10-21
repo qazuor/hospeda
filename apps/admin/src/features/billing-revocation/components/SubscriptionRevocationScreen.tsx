@@ -35,12 +35,14 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/ToastProvider';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslations } from '@/hooks/use-translations';
+import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { isApiError } from '@/lib/errors';
 import { adminLogger } from '@/utils/logger';
 import {
     useRevokeSubscriptionMutation,
     useSubscriptionRevocationPreview
 } from '../hooks/useSubscriptionRevocation';
+import { useSubscriptionStatus } from '../hooks/useSubscriptionStatus';
 import {
     isKnownRevocationReason,
     isRevocationNoticeReason,
@@ -50,7 +52,11 @@ import {
 } from '../revocation-reasons';
 import { RevocationOpenRefunds } from './RevocationOpenRefunds';
 import { RevocationPreviewDetails } from './RevocationPreviewDetails';
-import { RevocationPreviewRefusal, RevocationUnavailable } from './RevocationPreviewRefusal';
+import {
+    classifyRevocationPreviewError,
+    RevocationPreviewRefusal,
+    RevocationUnavailable
+} from './RevocationPreviewRefusal';
 import { RevocationResultDetails } from './RevocationResultDetails';
 
 /** HTTP status of a changed payment or row between the preview and the act. */
@@ -98,11 +104,21 @@ function RevocationBody({ subscriptionId }: SubscriptionRevocationScreenProps) {
     const { addToast } = useToast();
     const validId = SubscriptionRevocationParamsSchema.safeParse({ subscriptionId }).success;
     const preview = useSubscriptionRevocationPreview({ subscriptionId, enabled: validId });
+    const canInspect = useUserPermissions().includes(PermissionEnum.BILLING_SUBSCRIPTION_INSPECT);
     const mutation = useRevokeSubscriptionMutation();
     const [note, setNote] = useState('');
     const [notice, setNotice] = useState<RevocationNoticeReason | null>(null);
     const [forbidden, setForbidden] = useState(false);
     const [outcome, setOutcome] = useState<RevocationOutcome | null>(null);
+    const stateRefusal = preview.error
+        ? classifyRevocationPreviewError({ error: preview.error })
+        : null;
+    const stateRefused =
+        stateRefusal?.kind === 'blocked' && stateRefusal.reason === 'REVOCATION_STATE_NOT_ALLOWED';
+    const status = useSubscriptionStatus({
+        subscriptionId,
+        enabled: validId && stateRefused && canInspect && outcome === null
+    });
     const noteId = useId();
     const noteHelpId = useId();
 
@@ -192,7 +208,9 @@ function RevocationBody({ subscriptionId }: SubscriptionRevocationScreenProps) {
                     <span>{t(REVOCATION_NOTICE_KEYS[notice])}</span>
                 </p>
             ) : null}
-            {preview.isLoading || preview.isFetching ? (
+            {preview.isLoading ||
+            preview.isFetching ||
+            (stateRefused && canInspect && status.isLoading) ? (
                 <p
                     className="flex items-center gap-2"
                     data-testid="subscription-revocation-loading"
@@ -201,7 +219,10 @@ function RevocationBody({ subscriptionId }: SubscriptionRevocationScreenProps) {
                     <span>{t('admin-billing.subscriptionRevocation.loading')}</span>
                 </p>
             ) : preview.error ? (
-                <RevocationPreviewRefusal error={preview.error} />
+                <RevocationPreviewRefusal
+                    error={preview.error}
+                    subscriptionStatus={status.data}
+                />
             ) : preview.data ? (
                 <div
                     className="space-y-4"
