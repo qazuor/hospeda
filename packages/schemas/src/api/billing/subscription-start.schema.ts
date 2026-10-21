@@ -18,7 +18,8 @@ export const StartSubscriptionRejectionReasonSchema = z.enum([
     'PREVIOUS_ATTEMPT_CLOSING',
     'COMMITMENT_TAKEN',
     'TOURIST_VIP_INHERITED',
-    'CREATION_NOT_APPLIED'
+    'CREATION_NOT_APPLIED',
+    'PREVIOUS_ATTEMPT_IN_PROGRESS'
 ]);
 
 export type StartSubscriptionRejectionReason = z.infer<

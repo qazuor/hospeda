@@ -80,7 +80,7 @@ export interface PricingPlan {
     readonly isActive: boolean;
     /** Entitlement keys (string values matching EntitlementKey). */
     readonly entitlements: readonly string[];
-    /** Numeric caps as a key -> value map; `-1` is the unlimited sentinel. */
+    /** Numeric caps as a key -> value map; unlimited uses the catalog sentinel. */
     readonly limits: Readonly<Record<string, number>>;
 }
 

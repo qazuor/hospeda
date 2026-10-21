@@ -443,6 +443,9 @@
         "usageOf": "{{current}} de {{max}}",
         "trialSummary": {
             "title": "Seu teste grátis de {{vertical}}",
+            "endedTitle": "Seu teste grátis de {{vertical}} terminou",
+            "endedConverted": "Seu teste terminou e agora você tem seu plano.",
+            "endedExpired": "Seu teste terminou em {{end}}.",
             "vertical": {
                 "accommodation": "hospedagem",
                 "gastronomy": "gastronomia",
@@ -970,7 +973,7 @@
             "digit": "Al menos 1 número",
             "length": "Mínimo 8 caracteres",
             "lower": "Al menos 1 minúscula",
-            "special": "Al menos 1 carácter especial (@$!%*?&)",
+            "special": "Al menos 1 carácter especial (por ejemplo ! @ # $ - _)",
             "upper": "Al menos 1 mayúscula"
         },
         "showPassword": "Mostrar contraseña"

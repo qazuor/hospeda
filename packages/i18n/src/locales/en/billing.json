@@ -216,7 +216,14 @@
         },
         "signup": {
             "title": "Confirm your subscription",
-            "intro": "You will authorize the payment with Mercado Pago. You can review the amount and billing cycle there before confirming.",
+            "intro": "You will authorize the payment with Mercado Pago.",
+            "planSummary": "{{plan}} · {{amount}} {{cycle}}",
+            "cycle": {
+                "monthly": "per month",
+                "quarterly": "per quarter",
+                "semiannual": "per half-year",
+                "annual": "per year"
+            },
             "confirm": "Continue to Mercado Pago",
             "submitting": "Preparing your payment…",
             "payerEmail": {
@@ -233,6 +240,7 @@
                 "planNotForSale": "This plan is no longer available for purchase.",
                 "seePlans": "See current plans",
                 "previousAttemptClosing": "We are closing your previous attempt. Please try again in a few minutes.",
+                "previousAttemptInProgress": "We are still preparing your previous attempt with Mercado Pago. Please try again in a few minutes.",
                 "touristVipInherited": "Your current plan already includes Turista VIP benefits",
                 "commitmentTaken": "You already have an active subscription in this vertical.",
                 "generic": "We could not start your subscription. Please try again in a few minutes."

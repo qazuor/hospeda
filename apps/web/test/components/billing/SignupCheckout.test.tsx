@@ -12,7 +12,8 @@ const props = {
     accountEmail: 'account@example.test',
     plansHref: '/es/planes/turistas/',
     trialNotice: null,
-    touristVipNotice: null
+    touristVipNotice: null,
+    planSummary: null
 };
 const success = {
     ok: true,
@@ -28,6 +29,31 @@ const success = {
 beforeEach(() => vi.resetAllMocks());
 
 describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
+    it('TEST:1723:7 shows the selected plan summary before confirmation when available', () => {
+        render(
+            <SignupCheckout
+                {...props}
+                planSummary={{ name: 'Básico', amount: 1500000, currency: 'ARS', cycle: 'monthly' }}
+            />
+        );
+        const summary = screen.getByTestId('signup-checkout-plan-summary');
+        expect(summary).toHaveTextContent('Básico · $ 15.000 por mes');
+        expect(
+            summary.compareDocumentPosition(screen.getByTestId('signup-checkout-confirm')) &
+                Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+    });
+
+    it('does not show a plan summary when it is unavailable', () => {
+        render(
+            <SignupCheckout
+                {...props}
+                planSummary={null}
+            />
+        );
+        expect(screen.queryByTestId('signup-checkout-plan-summary')).not.toBeInTheDocument();
+    });
+
     it('renders idle server content and does not call S1 until clicked', () => {
         render(<SignupCheckout {...props} />);
         expect(screen.getByTestId('signup-checkout')).toHaveAttribute('data-state', 'idle');
@@ -110,6 +136,19 @@ describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
         expect(await screen.findByTestId('signup-checkout-retry')).toBeInTheDocument();
         expect(screen.getByTestId('signup-checkout-rejection')).toHaveTextContent(
             'Estamos cerrando tu intento anterior; probá de nuevo en unos minutos.'
+        );
+    });
+
+    it('TEST:1723:5b shows the translated retry action for an unfinished previous creation', async () => {
+        start.mockResolvedValueOnce({
+            ok: false,
+            error: { status: 409, reason: 'PREVIOUS_ATTEMPT_IN_PROGRESS', message: 'English' }
+        });
+        render(<SignupCheckout {...props} />);
+        fireEvent.click(screen.getByTestId('signup-checkout-confirm'));
+        expect(await screen.findByTestId('signup-checkout-retry')).toBeInTheDocument();
+        expect(screen.getByTestId('signup-checkout-rejection')).toHaveTextContent(
+            'Todavía estamos preparando tu intento anterior con Mercado Pago. Probá de nuevo en unos minutos.'
         );
     });
 

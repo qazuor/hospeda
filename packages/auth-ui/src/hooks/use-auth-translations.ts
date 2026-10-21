@@ -85,7 +85,7 @@ const getFallbackText = (key: string, params?: Record<string, string | number>):
         'auth-ui.signUp.rules.upper': 'Al menos una mayúscula',
         'auth-ui.signUp.rules.lower': 'Al menos una minúscula',
         'auth-ui.signUp.rules.digit': 'Al menos un número',
-        'auth-ui.signUp.rules.special': 'Al menos un carácter especial (@$!%*?&)',
+        'auth-ui.signUp.rules.special': 'Un carácter especial (por ejemplo ! @ # $ - _)',
         'auth-ui.signUp.errors.passwordsDoNotMatch': 'Las contraseñas no coinciden',
 
         // User Menu

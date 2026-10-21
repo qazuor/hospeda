@@ -5,10 +5,13 @@ import {
     formatSignupWindowEnd,
     resolveDeclaredPayerEmail,
     resolveSignupRejection,
+    SIGNUP_CYCLE_LABEL_KEY,
     SIGNUP_VERTICAL_LABEL_KEY,
+    type SignupPlanSummary,
     type SignupTouristVipNotice,
     type SignupTrialNotice
 } from '@/lib/billing/signup-checkout';
+import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import styles from './SignupCheckout.module.css';
@@ -21,6 +24,7 @@ export interface SignupCheckoutProps {
     readonly plansHref: string;
     readonly trialNotice: SignupTrialNotice | null;
     readonly touristVipNotice: SignupTouristVipNotice | null;
+    readonly planSummary: SignupPlanSummary | null;
 }
 
 const TOURIST_VIP_NOTICE_KEY: Record<SignupTouristVipNotice['kind'], string> = {
@@ -40,7 +44,8 @@ export function SignupCheckout({
     accountEmail,
     plansHref,
     trialNotice,
-    touristVipNotice
+    touristVipNotice,
+    planSummary
 }: SignupCheckoutProps) {
     const [view, setView] = useState<CheckoutView>({ state: 'idle' });
     const [payerEmail, setPayerEmail] = useState(accountEmail);
@@ -96,6 +101,23 @@ export function SignupCheckout({
             )}
             {view.state === 'idle' || view.state === 'submitting' ? (
                 <>
+                    {planSummary && (
+                        <div
+                            className={styles.planSummary}
+                            data-testid="signup-checkout-plan-summary"
+                        >
+                            {t('billing.checkout.signup.planSummary', undefined, {
+                                plan: planSummary.name,
+                                amount: formatPrice({
+                                    amount: planSummary.amount / 100,
+                                    currency: planSummary.currency,
+                                    locale,
+                                    showDecimals: planSummary.amount % 100 !== 0
+                                }),
+                                cycle: t(SIGNUP_CYCLE_LABEL_KEY[planSummary.cycle])
+                            })}
+                        </div>
+                    )}
                     <div className={styles.payerEmailField}>
                         <label
                             className={styles.payerEmailLabel}

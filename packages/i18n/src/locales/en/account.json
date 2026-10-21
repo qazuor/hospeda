@@ -443,6 +443,9 @@
         "usageOf": "{{current}} of {{max}}",
         "trialSummary": {
             "title": "Your free {{vertical}} trial",
+            "endedTitle": "Your free {{vertical}} trial has ended",
+            "endedConverted": "Your trial ended and you now have your plan.",
+            "endedExpired": "Your trial ended on {{end}}.",
             "vertical": {
                 "accommodation": "accommodation",
                 "gastronomy": "gastronomy",
@@ -970,7 +973,7 @@
             "digit": "Al menos 1 número",
             "length": "Mínimo 8 caracteres",
             "lower": "Al menos 1 minúscula",
-            "special": "Al menos 1 carácter especial (@$!%*?&)",
+            "special": "At least 1 special character (for example ! @ # $ - _)",
             "upper": "Al menos 1 mayúscula"
         },
         "showPassword": "Mostrar contraseña"

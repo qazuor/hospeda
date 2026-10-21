@@ -1,22 +1,15 @@
 ---
 /**
  * @file TrialSummary.astro
- * @description Row 4 of Mi Suscripción (HOS-1492, V8a.1b): the accumulated
- * free-trial days of the person in each vertical and where they came from
- * ("{base} from the plan, {promo} from promotions, {support} granted by
- * support"; only the origins above zero), with the start and end dates.
+ * @description Row 4 of Mi Suscripción: accumulated trial days while a trial
+ * is active, or a short ended notice for converted and expired trials.
  *
- * Server-rendered, no island and no fetch: the page reads the trial-summary
- * route once per vertical and hands in what answered. A vertical
- * without a trial (`status: 'NONE'`), with zero days, or whose read failed is
- * simply absent, so the block renders nothing at all when there is nothing to
- * say. Self-contained on purpose: the page around it is rewritten by B13a.4,
- * and this block has to move whole.
- *
- * The panel half of row 4 is not here (D2).
+ * Server-rendered, with no island or fetch. The page reads each vertical once
+ * and passes the resolved API response to this component.
  */
 import type { TrialSummaryResponse } from '@repo/schemas';
 import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
+import { resolveTrialSummaryView } from '@/lib/billing/trial-summary-view';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { formatNoticeInstant } from '@/lib/listing/listing-notices';
 import styles from './TrialSummary.module.css';
@@ -51,29 +44,61 @@ const ORIGIN_KEYS = [
 const { locale, entries } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
-const views = entries.flatMap(({ vertical, summary }) => {
-	if (!('totalDays' in summary) || summary.totalDays <= 0) return [];
-	const origins = ORIGIN_KEYS.filter(([origin]) => summary.origins[origin] > 0)
-		.map(([origin, key]) => tPlural(key, summary.origins[origin], { count: summary.origins[origin] }))
-		.join(', ');
-	const start = summary.startedAt ? formatNoticeInstant({ iso: summary.startedAt, locale }) : null;
-	const end = summary.endsAt ? formatNoticeInstant({ iso: summary.endsAt, locale }) : null;
-	return [
-		{
+type SummaryCardView = {
+	readonly vertical: PublishVerticalSlug;
+	readonly state: 'running' | 'ended';
+	readonly title: string;
+	readonly total: string | null;
+	readonly origins: string;
+	readonly dates: string | null;
+	readonly notice: string | null;
+};
+
+const views = entries.flatMap<SummaryCardView>(({ vertical, summary }) => {
+	const state = resolveTrialSummaryView({ summary });
+	if (state.kind === 'hidden') return [];
+
+	const verticalName = t(VERTICAL_KEY[vertical]);
+	if (state.kind === 'running') {
+		const origins = ORIGIN_KEYS.filter(([origin]) => state.origins[origin] > 0)
+			.map(([origin, key]) => tPlural(key, state.origins[origin], { count: state.origins[origin] }))
+			.join(', ');
+		const start = state.startedAt ? formatNoticeInstant({ iso: state.startedAt, locale }) : null;
+		const end = state.endsAt ? formatNoticeInstant({ iso: state.endsAt, locale }) : null;
+		return [{
 			vertical,
-			title: t('account.subscription.trialSummary.title', undefined, {
-				vertical: t(VERTICAL_KEY[vertical])
-			}),
-			total: tPlural('account.subscription.trialSummary.total', summary.totalDays, {
-				count: summary.totalDays
+			state: 'running' as const,
+			title: t('account.subscription.trialSummary.title', undefined, { vertical: verticalName }),
+			total: tPlural('account.subscription.trialSummary.total', state.totalDays, {
+				count: state.totalDays
 			}),
 			origins,
-			dates:
-				start && end
-					? t('account.subscription.trialSummary.dates', undefined, { start, end })
-					: null
-		}
-	];
+			dates: start && end
+				? t('account.subscription.trialSummary.dates', undefined, { start, end })
+				: null,
+			notice: null
+		}];
+	}
+
+	const title = t('account.subscription.trialSummary.endedTitle', undefined, {
+		vertical: verticalName
+	});
+	const notice = state.kind === 'ended_converted'
+		? t('account.subscription.trialSummary.endedConverted')
+		: state.endsAt
+			? formatNoticeInstant({ iso: state.endsAt, locale })
+			: null;
+	return [{
+		vertical,
+		state: 'ended' as const,
+		title,
+		total: null,
+		origins: '',
+		dates: null,
+		notice: state.kind === 'ended_expired' && notice
+			? t('account.subscription.trialSummary.endedExpired', undefined, { end: notice })
+			: notice
+	}];
 });
 ---
 
@@ -81,11 +106,14 @@ const views = entries.flatMap(({ vertical, summary }) => {
 	views.length > 0 && (
 		<section class={styles.summary} data-testid="trial-summary">
 			{views.map((view) => (
-				<article class={styles.item} data-vertical={view.vertical}>
+				<article class={styles.item} data-vertical={view.vertical} data-trial-state={view.state}>
 					<h2 class={styles.title}>{view.title}</h2>
-					<p class={styles.total}>
-						{view.origins ? `${view.total}: ${view.origins}` : view.total}
-					</p>
+					{view.total && (
+						<p class={styles.total}>
+							{view.origins ? `${view.total}: ${view.origins}` : view.total}
+						</p>
+					)}
+					{view.notice && <p class={styles.total}>{view.notice}</p>}
 					{view.dates && <p class={styles.dates}>{view.dates}</p>}
 				</article>
 			))}

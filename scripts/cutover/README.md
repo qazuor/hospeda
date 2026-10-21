@@ -99,6 +99,16 @@ The run order is fixed:
    re-reads the refund by id. If the IPN delivery is not seen, the run fails but still returns and
    re-reads the payment; the probe is also cancelled and re-read if its delivery was missing.
 
+**Provider panel URLs.** Set the Webhooks URL to
+`<HOSPEDA_API_URL>/api/v1/webhooks/mercadopago?source_news=webhooks` and the IPN URL to
+`<HOSPEDA_API_URL>/api/v1/webhooks/mercadopago`; both use the same receiver. Webhooks delivers
+`payment`, `subscription_preapproval`, and `subscription_authorized_payment` with `data.id` and
+`type` query parameters, signed with the application's secret
+(`HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET`). IPN delivers only `payment` with `id` and `topic` query
+parameters. Since HOS-1726, the receiver recognizes Webhooks from the marker or the `data.id` plus
+`type` query shape, so losing the marker in the panel no longer leaves notices unprocessed. The old
+system still requires the marker until cutover, so keep it in place.
+
 The query in `scripts/cutover/notification-reader.ts` runs only from this folder, under a
 read-only session and `READ ONLY` transaction. It selects no `url` or `body` and returns only a
 boolean. Its location is exempt from G17(c) by path (U3.3).

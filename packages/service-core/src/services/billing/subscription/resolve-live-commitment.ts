@@ -51,6 +51,16 @@ function commitmentTaken(): ServiceError {
     );
 }
 
+/** The same-option creation key is still unfinished, so the caller may retry later. */
+function creationInProgress(): ServiceError {
+    return new ServiceError(
+        ServiceErrorCode.ALREADY_EXISTS,
+        'The previous signup attempt is still being prepared; try again in a few minutes',
+        undefined,
+        'PREVIOUS_ATTEMPT_IN_PROGRESS'
+    );
+}
+
 /**
  * The reuse decision of S1: does the live commitment answer this request with
  * what is already stored? Reuse requires ALL of:
@@ -63,9 +73,9 @@ function commitmentTaken(): ServiceError {
  * - the clock is before the instant stored when its authorization window opened.
  *
  * When it does, the stored `{ subscriptionId, authorizationId, checkoutUrl }`
- * is returned WITHOUT calling the provider and WITHOUT writing anything. When
- * it does not, the same 409 `COMMITMENT_TAKEN` as before is thrown (an in-flight
- * winner, another plan, an expired window or a diverging creation all answer it).
+ * is returned WITHOUT calling the provider and WITHOUT writing anything. An
+ * unfinished key for the same option answers `PREVIOUS_ATTEMPT_IN_PROGRESS`;
+ * other non-reusable commitments answer `COMMITMENT_TAKEN`.
  */
 export async function resolveLiveCommitmentReuse(input: {
     readonly commitment: LiveCommitment;
@@ -76,7 +86,7 @@ export async function resolveLiveCommitmentReuse(input: {
     if (subscription.status !== 'PENDING_AUTHORIZATION') throw commitmentTaken();
     if (subscription.billingOptionId !== input.billingOptionId) throw commitmentTaken();
     const key = input.commitment.idempotencyKey;
-    if (!key || key.completedAt === null) throw commitmentTaken();
+    if (!key || key.completedAt === null) throw creationInProgress();
     const parsed = AppliedAuthorizationResultSchema.safeParse(key.result);
     if (!parsed.success) throw commitmentTaken();
     const windowEndsAt = subscription.authorizationWindowEndsAt;

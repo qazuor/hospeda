@@ -39,7 +39,23 @@ async function createUser() {
     return user;
 }
 
-async function createOption(vertical: string) {
+async function createOption(
+    vertical: string,
+    input: { versionId?: string; cycle?: 'monthly' | 'annual'; amount?: number } = {}
+) {
+    if (input.versionId) {
+        const [option] = await getDb()
+            .insert(billingOptions)
+            .values({
+                planVersionId: input.versionId,
+                cycle: input.cycle ?? 'monthly',
+                amount: input.amount ?? 100000,
+                currency: 'ARS'
+            })
+            .returning();
+        if (!option) throw new Error('No signup notice billing option');
+        return { ...option, planName: 'Checkout plan', versionId: input.versionId };
+    }
     const [plan] = await getDb()
         .insert(plans)
         .values({ vertical, slug: `b13a-notice-${randomUUID()}`, name: 'Checkout plan' })
@@ -60,10 +76,15 @@ async function createOption(vertical: string) {
     if (!version) throw new Error('No signup notice plan version');
     const [option] = await getDb()
         .insert(billingOptions)
-        .values({ planVersionId: version.id, cycle: 'monthly', amount: 100000, currency: 'ARS' })
+        .values({
+            planVersionId: version.id,
+            cycle: input.cycle ?? 'monthly',
+            amount: input.amount ?? 100000,
+            currency: 'ARS'
+        })
         .returning();
     if (!option) throw new Error('No signup notice billing option');
-    return option;
+    return { ...option, planName: plan.name, versionId: version.id };
 }
 
 function headers(userId: string) {
@@ -104,7 +125,15 @@ afterAll(async () => {
 describe('TEST:B13a:21a AC:B13a:5 the checkout reads the trial of the option vertical', () => {
     it('returns the ceil day count and only the selected vertical trial', async () => {
         const user = await createUser();
-        const accommodationOption = await createOption(VerticalEnum.ACCOMMODATION);
+        const accommodationOption = await createOption(VerticalEnum.ACCOMMODATION, {
+            cycle: 'monthly',
+            amount: 1500000
+        });
+        const accommodationAnnualOption = await createOption(VerticalEnum.ACCOMMODATION, {
+            versionId: accommodationOption.versionId,
+            cycle: 'annual',
+            amount: 15000000
+        });
         const gastronomyOption = await createOption(VerticalEnum.GASTRONOMY);
         await createTrial({ userId: user.id, status: 'TRIAL_ACTIVE' });
         const endsAt = new Date(now.getTime() + 10.5 * 86_400_000);
@@ -120,6 +149,7 @@ describe('TEST:B13a:21a AC:B13a:5 the checkout reads the trial of the option ver
             .from(subscriptions)
             .where(eq(subscriptions.userId, user.id));
         const accommodation = await readNotice(user.id, accommodationOption.id);
+        const accommodationAnnual = await readNotice(user.id, accommodationAnnualOption.id);
         const gastronomy = await readNotice(user.id, gastronomyOption.id);
         const after = await getDb()
             .select({ id: subscriptions.id })
@@ -128,12 +158,26 @@ describe('TEST:B13a:21a AC:B13a:5 the checkout reads the trial of the option ver
 
         expect(accommodation.response.status).toBe(200);
         expect(accommodation.body.data).toEqual({
+            plan: { name: 'Checkout plan', amount: 1500000, currency: 'ARS', cycle: 'monthly' },
+            vertical: 'accommodation',
+            touristVip: { status: 'NOT_AFFECTED' },
+            trial: { status: 'RUNNING', endsAt: endsAt.toISOString(), daysLeft: 11 }
+        });
+        expect(accommodationAnnual.response.status).toBe(200);
+        expect(accommodationAnnual.body.data).toEqual({
+            plan: {
+                name: 'Checkout plan',
+                amount: 15000000,
+                currency: 'ARS',
+                cycle: 'annual'
+            },
             vertical: 'accommodation',
             touristVip: { status: 'NOT_AFFECTED' },
             trial: { status: 'RUNNING', endsAt: endsAt.toISOString(), daysLeft: 11 }
         });
         expect(gastronomy.response.status).toBe(200);
         expect(gastronomy.body.data).toEqual({
+            plan: { name: 'Checkout plan', amount: 100000, currency: 'ARS', cycle: 'monthly' },
             vertical: 'gastronomy',
             touristVip: { status: 'NOT_AFFECTED' },
             trial: { status: 'NOT_RUNNING' }

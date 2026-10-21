@@ -104,7 +104,10 @@ export function SignUp({
             upper: t('auth.signUp.rules.upper', 'Una letra mayúscula (A-Z)'),
             lower: t('auth.signUp.rules.lower', 'Una letra minúscula (a-z)'),
             digit: t('auth.signUp.rules.digit', 'Un número (0-9)'),
-            special: t('auth.signUp.rules.special', 'Un carácter especial (@$!%*?&)')
+            special: t(
+                'auth.signUp.rules.special',
+                'Un carácter especial (por ejemplo ! @ # $ - _)'
+            )
         }
     };
 
@@ -156,7 +159,7 @@ export function SignUp({
                 setPasswordError(
                     t(
                         'auth.signUp.errors.passwordWeak',
-                        'La contraseña debe cumplir todas las reglas (8+ caracteres, mayúscula, minúscula, número y carácter especial).'
+                        'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (por ejemplo ! @ # $ - _).'
                     )
                 );
             }

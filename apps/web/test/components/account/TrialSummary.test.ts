@@ -22,6 +22,9 @@ type Locale = 'es' | 'en' | 'pt';
 
 interface TrialSummaryCopy {
     readonly title: string;
+    readonly endedTitle: string;
+    readonly endedConverted: string;
+    readonly endedExpired: string;
     readonly vertical: Record<'accommodation' | 'gastronomy' | 'experience', string>;
     readonly total_one: string;
     readonly total_other: string;
@@ -48,14 +51,17 @@ describe('TrialSummary.astro — row 4, the accumulated trial days', () => {
         expect(copy.origins.support_other).toBe('{{count}} regalados por soporte');
         expect(copy.dates).toBe('Del {{start}} al {{end}}');
         expect(SOURCE).toContain(
-            "tPlural('account.subscription.trialSummary.total', summary.totalDays"
+            "tPlural('account.subscription.trialSummary.total', state.totalDays"
         );
     });
 
-    it('TEST:V8a:7 — every locale carries every key with its placeholders', () => {
-        for (const locale of ['es', 'en', 'pt'] as const) {
-            const copy = readCopy(locale);
+    it('TEST:1727:5 / TEST:V8a:7 — every locale carries every key with its placeholders', () => {
+        const copies = (['es', 'en', 'pt'] as const).map(readCopy);
+        for (const copy of copies) {
             expect(copy.title).toContain('{{vertical}}');
+            expect(copy.endedTitle).toContain('{{vertical}}');
+            expect(copy.endedConverted).toBeTruthy();
+            expect(copy.endedExpired).toContain('{{end}}');
             expect(copy.total_one).toContain('{{count}}');
             expect(copy.total_other).toContain('{{count}}');
             for (const origin of ['base', 'promo', 'support']) {
@@ -70,6 +76,12 @@ describe('TrialSummary.astro — row 4, the accumulated trial days', () => {
                 'gastronomy'
             ]);
         }
+        expect(copies[1].endedTitle).toBe('Your free {{vertical}} trial has ended');
+        expect(copies[1].endedConverted).toBe('Your trial ended and you now have your plan.');
+        expect(copies[1].endedExpired).toBe('Your trial ended on {{end}}.');
+        expect(copies[2].endedTitle).toBe('Seu teste grátis de {{vertical}} terminou');
+        expect(copies[2].endedConverted).toBe('Seu teste terminou e agora você tem seu plano.');
+        expect(copies[2].endedExpired).toBe('Seu teste terminou em {{end}}.');
     });
 
     it('lists only the origins above zero, in base, promo, support order', () => {
@@ -78,14 +90,24 @@ describe('TrialSummary.astro — row 4, the accumulated trial days', () => {
         expect(SOURCE).toContain(
             "['support', 'account.subscription.trialSummary.origins.support']"
         );
-        expect(SOURCE).toContain('ORIGIN_KEYS.filter(([origin]) => summary.origins[origin] > 0)');
+        expect(SOURCE).toContain('ORIGIN_KEYS.filter(([origin]) => state.origins[origin] > 0)');
     });
 
     it('renders nothing for NONE, for zero days, or without entries', () => {
-        expect(SOURCE).toContain(
-            "if (!('totalDays' in summary) || summary.totalDays <= 0) return [];"
-        );
+        expect(SOURCE).toContain('resolveTrialSummaryView({ summary })');
         expect(SOURCE).toContain('views.length > 0 && (');
+    });
+
+    it('TEST:1727:6 — consumes the view resolver and marks running or ended cards', () => {
+        expect(SOURCE).toContain('resolveTrialSummaryView({ summary })');
+        expect(SOURCE).toContain('data-trial-state=');
+        expect(SOURCE).toContain("state: 'running' as const");
+        expect(SOURCE).toContain("state: 'ended' as const");
+        expect(SOURCE).toContain('formatNoticeInstant({ iso: state.endsAt, locale })');
+        expect(SOURCE).toContain("'account.subscription.trialSummary.endedExpired'");
+        expect(SOURCE).not.toContain('summary.totalDays <= 0');
+        expect(SOURCE).not.toMatch(/fetch\(|publishApi/);
+        expect(SOURCE).not.toMatch(/client:/);
     });
 
     it('states the start and end dates only when both are known', () => {

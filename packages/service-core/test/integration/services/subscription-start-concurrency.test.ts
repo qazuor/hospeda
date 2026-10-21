@@ -233,12 +233,12 @@ describe('TEST:B3:6 ten simultaneous signups of one user + vertical', () => {
         }
         for (const result of rejected) {
             expect(result.reason).toBeInstanceOf(ServiceError);
-            expect((result.reason as ServiceError).reason).toBe('COMMITMENT_TAKEN');
+            expect((result.reason as ServiceError).reason).toBe('PREVIOUS_ATTEMPT_IN_PROGRESS');
         }
         expect(await counts(choice.user.id)).toEqual({ subscriptions: 1, keys: 1, links: 1 });
     });
 
-    it('holds the winner in authorize while the other nine are refused, then completes', async () => {
+    it('holds the winner in authorize while the other nine receive a retryable reason, then completes', async () => {
         const choice = await seedChoice();
         const fake = new FakePaymentProvider({
             idNamespace: crypto.randomUUID(),
@@ -278,7 +278,7 @@ describe('TEST:B3:6 ten simultaneous signups of one user + vertical', () => {
         for (const result of results) {
             if (result.status === 'rejected') {
                 expect(result.error).toBeInstanceOf(ServiceError);
-                expect((result.error as ServiceError).reason).toBe('COMMITMENT_TAKEN');
+                expect((result.error as ServiceError).reason).toBe('PREVIOUS_ATTEMPT_IN_PROGRESS');
             }
         }
         expect(await counts(choice.user.id)).toEqual({ subscriptions: 1, keys: 1, links: 1 });
@@ -398,7 +398,7 @@ describe('TEST:B3:6 race and reuse', () => {
         expect(await counts(choice.user.id)).toEqual({ subscriptions: 1, keys: 1, links: 1 });
     });
 
-    it('refuses a live row whose key is still in flight (no result yet)', async () => {
+    it('answers retryably for a live row whose key is still in flight (no result yet)', async () => {
         const choice = await seedChoice();
         const fake = new FakePaymentProvider({
             idNamespace: crypto.randomUUID(),
@@ -421,7 +421,7 @@ describe('TEST:B3:6 race and reuse', () => {
                 { userId: choice.user.id, billingOptionId: choice.billingOptionId, returnUrl },
                 ports(provider)
             )
-        ).rejects.toMatchObject({ reason: 'COMMITMENT_TAKEN' });
+        ).rejects.toMatchObject({ reason: 'PREVIOUS_ATTEMPT_IN_PROGRESS' });
         expect(authorize).not.toHaveBeenCalled();
         // No provider call ever happened, so the in-flight row has no link yet.
         expect(await counts(choice.user.id)).toEqual({ subscriptions: 1, keys: 1, links: 0 });

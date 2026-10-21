@@ -1724,6 +1724,7 @@
         }
     },
     "subscriptionRevocation": {
+        "alreadyCancelled": "Esta assinatura já está cancelada. Não há mais nada para revogar.",
         "title": "Revogar uma assinatura (direito de arrependimento)",
         "motive": "Motivo: revogação pelo direito de arrependimento.",
         "loading": "Verificando a última cobrança da assinatura…",
@@ -1757,6 +1758,7 @@
         "confirm": "Revogar: cancelar, cortar o serviço e solicitar a devolução",
         "blocked": {
             "intro": "Não é possível revogar. Nada foi cancelado.",
+            "introStateNotAllowed": "Não é possível revogar.",
             "REFUND_EXCEEDS_BALANCE": "Essa cobrança já tem devoluções solicitadas ou feitas por todo o seu valor. A revogação não é registrada: a assinatura não é cancelada nem o serviço é cortado. Resolva primeiro essa devolução.",
             "PAYMENT_NOT_REFUNDABLE": "A última cobrança já foi devolvida ou tem um estorno: não pode ser devolvida outra vez.",
             "REVOCATION_WINDOW_CLOSED": "Passaram mais de 10 dias corridos desde a última cobrança: o prazo para revogar venceu.",

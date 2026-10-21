@@ -1,5 +1,6 @@
 /** Pure URL, rejection, vertical, and date helpers for the signup checkout. */
 import {
+    type BillingCycle,
     SignupNoticeResponseSchema,
     type StartSubscriptionRejectionReason,
     StartSubscriptionRequestSchema,
@@ -29,6 +30,45 @@ export type SignupTrialNotice =
 export type SignupTouristVipNotice =
     | { readonly kind: 'CANCELLED_ON_RETURN' }
     | { readonly kind: 'UNKNOWN' };
+
+/**
+ * The plan, amount and cycle of the selected billing option, shown on the
+ * checkout before the redirect to Mercado Pago (HOS-1723, owner decision D-3).
+ * Parsed from the signup notice's `plan` (`SignupNoticeResponseSchema`); a
+ * notice without it resolves to `null` and the summary is omitted.
+ */
+export type SignupPlanSummary = {
+    /** Display name of the plan. */
+    readonly name: string;
+    /** Price of the option in minor units (centavos). */
+    readonly amount: number;
+    /** Only ARS is sold today. */
+    readonly currency: 'ARS';
+    /** Billing cycle of the option (monthly or annual). */
+    readonly cycle: BillingCycle;
+};
+
+/** Resolve the selected plan and option amount, failing closed for unreadable notices. */
+export function resolveSignupPlanSummary({
+    result
+}: {
+    readonly result: unknown;
+}): SignupPlanSummary | null {
+    if (
+        !result ||
+        typeof result !== 'object' ||
+        !('ok' in result) ||
+        result.ok !== true ||
+        !('data' in result)
+    )
+        return null;
+    const plan =
+        result.data && typeof result.data === 'object' && 'plan' in result.data
+            ? result.data.plan
+            : undefined;
+    const parsed = SignupNoticeResponseSchema.shape.plan.safeParse(plan);
+    return parsed.success ? parsed.data : null;
+}
 
 /** Resolve a protected signup notice, failing toward the conditional warning. */
 export function resolveSignupTrialNotice({
@@ -115,6 +155,11 @@ const REJECTION_BY_REASON: Record<
         retryable: true,
         showPlansLink: false
     },
+    PREVIOUS_ATTEMPT_IN_PROGRESS: {
+        messageKey: 'billing.checkout.signup.rejection.previousAttemptInProgress',
+        retryable: true,
+        showPlansLink: false
+    },
     COMMITMENT_TAKEN: {
         messageKey: 'billing.checkout.signup.rejection.commitmentTaken',
         retryable: false,
@@ -169,6 +214,14 @@ export const SIGNUP_VERTICAL_LABEL_KEY: Record<VerticalEnum, string> = {
     experience: 'billing.checkout.signup.vertical.experience',
     tourist: 'billing.checkout.signup.vertical.tourist',
     partner: 'billing.checkout.signup.vertical.partner'
+};
+
+/** Translation key for each supported signup billing cycle. */
+export const SIGNUP_CYCLE_LABEL_KEY: Record<BillingCycle, string> = {
+    monthly: 'billing.checkout.signup.cycle.monthly',
+    quarterly: 'billing.checkout.signup.cycle.quarterly',
+    semiannual: 'billing.checkout.signup.cycle.semiannual',
+    annual: 'billing.checkout.signup.cycle.annual'
 };
 
 /** Return true only for parseable HTTP(S) provider URLs. */

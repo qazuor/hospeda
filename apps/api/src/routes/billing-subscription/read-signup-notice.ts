@@ -1,5 +1,11 @@
-import { and, eq, getDb, trials } from '@repo/db';
-import { ServiceErrorCode, type SignupNoticeResponse, VerticalEnumSchema } from '@repo/schemas';
+import { and, billingOptions, eq, getDb, trials } from '@repo/db';
+import {
+    BillingCycleSchema,
+    ServiceErrorCode,
+    type SignupNoticeResponse,
+    SignupNoticeResponseSchema,
+    VerticalEnumSchema
+} from '@repo/schemas';
 import { readBillingChoice, ServiceError } from '@repo/service-core';
 import { isTrialRunning } from '../../services/listing-notices/listing-notices.builder';
 import { getClock } from '../../utils/clock';
@@ -20,6 +26,30 @@ export async function readSignupNotice(input: {
     readonly billingOptionId: string;
 }): Promise<SignupNoticeResponse> {
     const choice = await readBillingChoice({ billingOptionId: input.billingOptionId });
+    const [option] = await getDb()
+        .select({
+            cycle: billingOptions.cycle,
+            amount: billingOptions.amount,
+            currency: billingOptions.currency
+        })
+        .from(billingOptions)
+        .where(eq(billingOptions.id, input.billingOptionId))
+        .limit(1);
+    if (!option) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Billing option not found');
+    const cycle = BillingCycleSchema.safeParse(option.cycle);
+    if (!cycle.success)
+        throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Unknown billing option cycle');
+    const currency = SignupNoticeResponseSchema.shape.plan.shape.currency.safeParse(
+        option.currency
+    );
+    if (!currency.success)
+        throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Unknown billing option currency');
+    const plan = {
+        name: choice.planName,
+        amount: option.amount,
+        currency: currency.data,
+        cycle: cycle.data
+    };
     const parsedVertical = VerticalEnumSchema.safeParse(choice.vertical);
     if (!parsedVertical.success) {
         throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Unknown billing option vertical');
@@ -59,10 +89,11 @@ export async function readSignupNotice(input: {
         .limit(1);
     const now = getClock().clock.now();
     if (!isTrialRunning({ trial: trial ?? null, now }).running || !trial?.endsAt) {
-        return { vertical, touristVip, trial: { status: 'NOT_RUNNING' } };
+        return { plan, vertical, touristVip, trial: { status: 'NOT_RUNNING' } };
     }
 
     return {
+        plan,
         vertical,
         touristVip,
         trial: {

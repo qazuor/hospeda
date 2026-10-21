@@ -5,6 +5,7 @@
  * used by the change-password page.
  */
 import type { TranslationKey } from '@repo/i18n';
+import { AsciiSpecialCharacterRegex } from '@repo/schemas';
 
 /** Password validation rules */
 export const PASSWORD_RULES = {
@@ -12,7 +13,7 @@ export const PASSWORD_RULES = {
     hasUppercase: /[A-Z]/,
     hasLowercase: /[a-z]/,
     hasNumber: /[0-9]/,
-    hasSpecial: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/
+    hasSpecial: AsciiSpecialCharacterRegex
 } as const;
 
 /** Individual rule check result */
