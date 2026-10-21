@@ -311,9 +311,7 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
         );
     });
 
-    test('the web checkout creates the preapproval for the declared payer email', async ({
-        page
-    }) => {
+    test('TEST:1730:5d creates the preapproval for the declared payer email', async ({ page }) => {
         if (!fakeServer) throw new Error('TEST:1730:5d fake provider server was not started');
         fakeServer.useProvider({
             provider: new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() })
