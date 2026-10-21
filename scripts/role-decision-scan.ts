@@ -1,6 +1,6 @@
 /**
  * GUARD:G6 AST predicates. Half (a) finds role constants used in comparisons,
- * membership checks and switch cases (catalog 04-catalogos.md:7663; INV:12).
+ * membership checks and switch cases (catalog 04-catalogos.md:7676; INV:12).
  * Half (b) finds role reads while building the effective set (INV:13; V5.md:1222-1227).
  *
  * What it does NOT verify: variable-to-variable comparisons, calculated-key

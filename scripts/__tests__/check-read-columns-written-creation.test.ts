@@ -41,6 +41,7 @@ const RETURNED_READS = [
     ['TRANS:B:S20', 'subscription.class'],
     ['TRANS:B:S21', 'subscription.class'],
     ['TRANS:B:S29', 'subscription.payment_method'],
+    ['TRANS:B:S39', 'subscription.authorization_window_ends_at'],
     ['TRANS:B:MP1', 'subscription.payment_method'],
     ['TRANS:B:MP2', 'subscription.payment_method'],
     ['TRANS:B:MP3', 'subscription.payment_method'],
@@ -70,7 +71,8 @@ const EXPECTED: Record<(typeof CREATION_WRITES)[number], readonly string[]> = {
         'TRANS:B:MP5 reads unwritten column subscription.payment_method'
     ],
     'subscription.authorization_window_ends_at': [
-        'TRANS:B:S3 reads unwritten column subscription.authorization_window_ends_at'
+        'TRANS:B:S3 reads unwritten column subscription.authorization_window_ends_at',
+        'TRANS:B:S39 reads unwritten column subscription.authorization_window_ends_at'
     ],
     'subscription.authorization_window_deadline_version': [
         'TRANS:B:S3 reads unwritten column subscription.authorization_window_deadline_version'
@@ -128,7 +130,7 @@ describe('TEST:1667:1 AC:1667:1 — S1 creation writes', () => {
 });
 
 describe('TEST:1667:2 AC:1667:2 — restored reads', () => {
-    it('restores the twenty retired reads in their catalog order', () => {
+    it('restores the twenty-one retired reads in their catalog order', () => {
         const corpus = read({ root: ROOT });
         expect(
             corpus.transitions.flatMap((row) =>
@@ -142,7 +144,7 @@ describe('TEST:1667:2 AC:1667:2 — restored reads', () => {
     it('passes G-R6 across the real corpus', () => {
         expect(run()).toEqual({
             exitCode: 0,
-            output: 'OK GUARD:G-R6: verified 167 read columns.'
+            output: 'OK GUARD:G-R6: verified 171 read columns.'
         });
     });
 });

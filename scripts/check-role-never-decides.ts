@@ -1,6 +1,6 @@
 /**
  * GUARD:G6 checks that authorization does not compare a role constant
- * (04-catalogos.md:7663; INV:12) and that effective-set construction reads no
+ * (04-catalogos.md:7676; INV:12) and that effective-set construction reads no
  * role (INV:13; V5.md:1222-1227). See role-decision-scan.ts for blind spots.
  * The scanner does not verify variable-to-variable comparisons, calculated
  * role maps, cross-file role sets, clients, or seed data.
