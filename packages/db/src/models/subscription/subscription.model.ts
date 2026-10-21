@@ -330,7 +330,9 @@ export class SubscriptionModel {
                     inArray(subscriptions.status, [...LIVE_SUBSCRIPTION_STATUSES])
                 )
             )
-            .orderBy(desc(idempotencyKeys.createdAt))
+            // The key tie-break matches `CreationSweepModel.completeNewestCreateKey`, so the
+            // key the creation sweep completes is the one this read returns (HOS-1725).
+            .orderBy(desc(idempotencyKeys.createdAt), desc(idempotencyKeys.key))
             .limit(1);
         return row ?? null;
     }

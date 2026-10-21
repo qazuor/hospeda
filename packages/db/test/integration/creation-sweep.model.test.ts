@@ -320,4 +320,85 @@ describe('creation sweep persistence (supports TEST:B11:23)', () => {
             expect(result?.idempotencyKey?.key).toBe(newestKey);
         });
     });
+
+    it('HOS-1725 completeNewestCreateKey completes the key findLiveCommitment reads, ties included', async () => {
+        await withTestTransaction(async (tx) => {
+            // Arrange: two keys with the SAME created_at, the case only the tie-break decides.
+            const anchors = await seedAnchors(tx);
+            const [user] = await tx.insert(users).values(testData.user()).returning();
+            if (!user) throw new Error('Expected unique user');
+            const pending = await subscriptionModel.createPendingAuthorization({
+                userId: user.id,
+                vertical: 'accommodation',
+                planVersionId: anchors.versionId,
+                billingOptionId: anchors.optionId,
+                authorizationWindowDeadlineVersion: 1,
+                authorizationWindowEndsAt: new Date('2026-11-01T00:00:00.000Z'),
+                tx
+            });
+            const tie = new Date('2026-10-11T10:00:00.000Z');
+            await tx
+                .update(idempotencyKeys)
+                .set({ createdAt: tie })
+                .where(eq(idempotencyKeys.key, pending.idempotencyKey));
+            // Sorts after any hex UUID, so `key DESC` makes it the newest.
+            const tied = 'zzzz-tied-key';
+            await tx.insert(idempotencyKeys).values({
+                key: tied,
+                operation: 'PREAPPROVAL_CREATE',
+                subjectId: pending.subscription.id,
+                createdAt: tie
+            });
+            const result = {
+                authorizationId: 'auth-1',
+                applied: true,
+                checkoutUrl: 'https://x.test/'
+            };
+
+            // Act
+            const first = await model.completeNewestCreateKey({
+                subscriptionId: pending.subscription.id,
+                result,
+                completedAt: tie,
+                tx
+            });
+            const second = await model.completeNewestCreateKey({
+                subscriptionId: pending.subscription.id,
+                result: { ...result, authorizationId: 'auth-2' },
+                completedAt: new Date(tie.getTime() + 1),
+                tx
+            });
+            const commitment = await subscriptionModel.findLiveCommitment({
+                userId: user.id,
+                vertical: 'accommodation',
+                tx
+            });
+
+            // Assert
+            expect(first).toBe(true);
+            expect(second).toBe(false);
+            expect(commitment?.idempotencyKey?.result).toEqual(result);
+            expect(commitment?.idempotencyKey?.completedAt).toEqual(tie);
+            const keys = await tx
+                .select()
+                .from(idempotencyKeys)
+                .where(eq(idempotencyKeys.subjectId, pending.subscription.id));
+            expect(keys.filter((key) => key.completedAt !== null)).toHaveLength(1);
+        });
+    });
+
+    it('HOS-1725 completeNewestCreateKey completes nothing for a row without a creation key', async () => {
+        await withTestTransaction(async (tx) => {
+            const anchors = await seedAnchors(tx);
+            const row = await addRow({ tx, anchors });
+            expect(
+                await model.completeNewestCreateKey({
+                    subscriptionId: row.subscription.id,
+                    result: { applied: true },
+                    completedAt: new Date('2026-10-11T10:00:00.000Z'),
+                    tx
+                })
+            ).toBe(false);
+        });
+    });
 });
