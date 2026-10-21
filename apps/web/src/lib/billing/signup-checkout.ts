@@ -2,12 +2,23 @@
 import {
     SignupNoticeResponseSchema,
     type StartSubscriptionRejectionReason,
+    StartSubscriptionRequestSchema,
     type VerticalEnum
 } from '@repo/schemas';
 import { MARKET_TIMEZONE } from '@repo/utils';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrlWithParams } from '@/lib/urls';
+
+/** Validate and normalize the payer email using the API request contract. */
+export function resolveDeclaredPayerEmail({
+    value
+}: {
+    readonly value: unknown;
+}): { readonly ok: true; readonly email: string } | { readonly ok: false } {
+    const parsed = StartSubscriptionRequestSchema.shape.payerEmail.safeParse(value);
+    return parsed.success ? { ok: true, email: parsed.data } : { ok: false };
+}
 
 /** Trial state rendered before an explicit signup confirmation. */
 export type SignupTrialNotice =

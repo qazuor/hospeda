@@ -21,10 +21,29 @@ vi.mock('../../../src/lib/api/client', () => ({
 import {
     accommodationCalendarSyncApi,
     accommodationFaqApi,
+    billingSubscriptionApi,
     effectiveSetApi,
     promoCodeApi,
     publishApi
 } from '../../../src/lib/api/endpoints-protected';
+
+describe('TEST:1730:5c billing subscription client', () => {
+    it('posts the selected option and declared payer email exactly', async () => {
+        postProtected.mockReset();
+        postProtected.mockResolvedValue({ ok: true, data: {} });
+        await billingSubscriptionApi.start({
+            billingOptionId: '123e4567-e89b-42d3-a456-426614174000',
+            payerEmail: 'payer@example.test'
+        });
+        expect(postProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/billing/subscriptions',
+            body: {
+                billingOptionId: '123e4567-e89b-42d3-a456-426614174000',
+                payerEmail: 'payer@example.test'
+            }
+        });
+    });
+});
 
 describe('accommodationCalendarSyncApi credentialed mutations (HOS-157 regression)', () => {
     beforeEach(() => {
