@@ -1,4 +1,4 @@
-/** @file TEST:1729:6 SSR wiring keeps the commerce index fail-closed and per-vertical. */
+/** @file TEST:1729:6 SSR wiring keeps the business index fail-closed and per-vertical. */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';

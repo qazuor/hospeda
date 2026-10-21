@@ -1,5 +1,5 @@
 /**
- * Resolves the server's publish decision once per listed commerce vertical.
+ * Resolves the server's publish decision once per listed business vertical.
  * A missing session or failed read always leaves the affordance fail-closed.
  */
 import { PublicationStatusEnum } from '@repo/schemas';

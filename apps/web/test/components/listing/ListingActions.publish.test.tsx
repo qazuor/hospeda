@@ -1,6 +1,6 @@
 /**
  * @file ListingActions.publish.test.tsx
- * @description TEST:1729:5/7 regression coverage for publishing complete commerce drafts.
+ * @description TEST:1729:5/7 regression coverage for publishing complete business drafts.
  */
 import { PublicationStatusEnum } from '@repo/schemas';
 import { fireEvent, render, screen } from '@testing-library/react';
