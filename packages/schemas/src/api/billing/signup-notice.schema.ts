@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BillingCycleSchema } from '../../catalog/plan-publication.schema.js';
 import { VerticalEnumSchema } from '../../enums/vertical.schema.js';
 
 /**
@@ -7,6 +8,13 @@ import { VerticalEnumSchema } from '../../enums/vertical.schema.js';
  * `endsAt` so the displayed count never understates the calendar interval.
  */
 export const SignupNoticeResponseSchema = z.object({
+    /** The plan, amount in minor units and cycle of the selected billing option, shown before the redirect. */
+    plan: z.object({
+        name: z.string().min(1),
+        amount: z.number().int().nonnegative(),
+        currency: z.literal('ARS'),
+        cycle: BillingCycleSchema
+    }),
     /** Vertical selected by the billing option. */
     vertical: VerticalEnumSchema,
     /** Tourist VIP status after a suspended plan holder returns to service. */

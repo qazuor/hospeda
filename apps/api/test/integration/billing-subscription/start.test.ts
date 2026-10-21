@@ -25,8 +25,8 @@ const path = '/api/v1/protected/billing/subscriptions';
 const clock = { now: () => new Date('2026-10-08T20:00:00.000Z') };
 
 /**
- * The COMMITMENT_TAKEN cases below POST against a live commitment. Today they
- * are answered by `resolve-live-commitment.ts:70-74`, which throws 409 BEFORE
+ * The occupied commitment case below POSTs against a live commitment. Before
+ * HOS-1723, it was answered by `resolve-live-commitment.ts:70-74` with 409 BEFORE
  * reading the reuse window, so this file does not strictly read
  * `values['10'].cardHours` yet. The seed is kept anyway so the file is
  * self-sufficient: `billing_deadline_version` is wiped by `testDb.clean()` and
@@ -112,7 +112,7 @@ function headers(userId: string) {
     };
 }
 
-describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
+describe('TEST:B3:2 and TEST:1723:1 protected S1 route rejections', () => {
     beforeAll(async () => {
         process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
         await testDb.setup();
@@ -149,7 +149,7 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
         ).toEqual([]);
     });
 
-    it('returns a distinct 409 when the durable commitment is occupied', async () => {
+    it('TEST:1723:1 returns retryable 409 for an unfinished same-option commitment', async () => {
         const { user, version, option } = await fixture(true);
         // TEST:B3:10 (base: versión y vencimiento guardados al abrir la ventana)
         await subscriptionModel.createPendingAuthorization({
@@ -169,7 +169,7 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
             body: JSON.stringify({ billingOptionId: option.id, payerEmail: user.email })
         });
         expect(response.status).toBe(409);
-        expect((await response.json()).error.reason).toBe('COMMITMENT_TAKEN');
+        expect((await response.json()).error.reason).toBe('PREVIOUS_ATTEMPT_IN_PROGRESS');
         expect(authorize).not.toHaveBeenCalled();
     });
 

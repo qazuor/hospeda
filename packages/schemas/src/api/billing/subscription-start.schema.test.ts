@@ -47,13 +47,14 @@ describe('TEST:B3:2 subscription start request', () => {
         ).toBe('a@b.co');
     });
 
-    it('keeps the four public rejection reasons closed', () => {
+    it('TEST:1723:5 keeps the public rejection reasons closed', () => {
         expect(StartSubscriptionRejectionReasonSchema.options).toEqual([
             'PLAN_NOT_FOR_SALE',
             'PREVIOUS_ATTEMPT_CLOSING',
             'COMMITMENT_TAKEN',
             'TOURIST_VIP_INHERITED',
-            'CREATION_NOT_APPLIED'
+            'CREATION_NOT_APPLIED',
+            'PREVIOUS_ATTEMPT_IN_PROGRESS'
         ]);
         expect(StartSubscriptionRejectionReasonSchema.safeParse('OTHER').success).toBe(false);
     });

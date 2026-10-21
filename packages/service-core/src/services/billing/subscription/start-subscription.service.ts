@@ -318,7 +318,7 @@ export async function startSubscription(
     } catch (error) {
         // The loser of a simultaneous race hits the partial unique index, not a
         // pre-check: read the commitment the winner just committed and resolve
-        // it the same way (reuse, or COMMITMENT_TAKEN while it is in flight).
+        // it the same way (reuse, or PREVIOUS_ATTEMPT_IN_PROGRESS while it is in flight).
         const cause = extractPostgresErrorCause(error);
         if (cause?.code !== '23505' || cause.constraint !== 'uq_subscription_commitment_origin')
             throw error;

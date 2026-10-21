@@ -3,7 +3,7 @@
  * authorization, the creations sweep recovers the row by linking it. The
  * `PREAPPROVAL_CREATE` key that S1's reuse reads must be completed with the
  * applied result in that same recovery, or the person's retry answers 409
- * `COMMITMENT_TAKEN` until the authorization window closes (~72h).
+ * a retryable in-progress reason until the authorization window closes (~72h).
  */
 import {
     eq,
@@ -117,7 +117,9 @@ describe('HOS-1725 the creations sweep completes the creation key it recovers', 
             provider: 'MERCADO_PAGO',
             providerId: created.authorizationId
         });
-        await expect(retry(row, time)).rejects.toMatchObject({ reason: 'COMMITMENT_TAKEN' });
+        await expect(retry(row, time)).rejects.toMatchObject({
+            reason: 'PREVIOUS_ATTEMPT_IN_PROGRESS'
+        });
 
         // Act
         const summary = await sweep(fake, time);
@@ -241,7 +243,9 @@ describe('HOS-1725 the creations sweep completes the creation key it recovers', 
         const keys = await createKeys(row.subscription.id);
         expect(keys).toHaveLength(1);
         expect(keys[0]?.completedAt).toBeNull();
-        await expect(retry(row, time)).rejects.toMatchObject({ reason: 'COMMITMENT_TAKEN' });
+        await expect(retry(row, time)).rejects.toMatchObject({
+            reason: 'PREVIOUS_ATTEMPT_IN_PROGRESS'
+        });
     });
 
     it('leaves an already-linked key incomplete when the provider gives no checkout link', async () => {
@@ -264,6 +268,8 @@ describe('HOS-1725 the creations sweep completes the creation key it recovers', 
         // Assert
         expect(summary.rowsFailed).toBe(0);
         expect(summary.keysCompleted).toBe(0);
-        await expect(retry(row, time)).rejects.toMatchObject({ reason: 'COMMITMENT_TAKEN' });
+        await expect(retry(row, time)).rejects.toMatchObject({
+            reason: 'PREVIOUS_ATTEMPT_IN_PROGRESS'
+        });
     });
 });

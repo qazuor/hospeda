@@ -8,20 +8,45 @@ import {
     isDisplayableCheckoutUrl,
     parseSignupOptionId,
     resolveDeclaredPayerEmail,
+    resolveSignupPlanSummary,
     resolveSignupRejection,
     resolveSignupTouristVipNotice,
     resolveSignupTrialNotice,
+    SIGNUP_CYCLE_LABEL_KEY,
     SIGNUP_VERTICAL_LABEL_KEY
 } from '@/lib/billing/signup-checkout';
 
 const validId = '123e4567-e89b-42d3-a456-426614174000';
 
 describe('signup checkout helpers — B3 UI (B3.md:1045-1053)', () => {
+    it('resolves a valid plan summary and fails closed for unreadable notices', () => {
+        const data = {
+            plan: { name: 'Básico', amount: 1500000, currency: 'ARS', cycle: 'monthly' },
+            vertical: 'accommodation',
+            touristVip: { status: 'NOT_AFFECTED' },
+            trial: { status: 'NOT_RUNNING' }
+        };
+        expect(resolveSignupPlanSummary({ result: { ok: true, data } })).toEqual(data.plan);
+        expect(resolveSignupPlanSummary({ result: { ok: false } })).toBeNull();
+        expect(resolveSignupPlanSummary({ result: { ok: true } })).toBeNull();
+        expect(
+            resolveSignupPlanSummary({
+                result: { ok: true, data: { ...data, plan: { ...data.plan, amount: -1 } } }
+            })
+        ).toBeNull();
+    });
+
     it.each([
         ['PLAN_NOT_FOR_SALE', 'billing.checkout.signup.rejection.planNotForSale', false, true],
         [
             'PREVIOUS_ATTEMPT_CLOSING',
             'billing.checkout.signup.rejection.previousAttemptClosing',
+            true,
+            false
+        ],
+        [
+            'PREVIOUS_ATTEMPT_IN_PROGRESS',
+            'billing.checkout.signup.rejection.previousAttemptInProgress',
             true,
             false
         ],
@@ -102,6 +127,15 @@ describe('signup checkout helpers — B3 UI (B3.md:1045-1053)', () => {
             'billing.checkout.signup.vertical.accommodation'
         );
     });
+
+    it('maps every billing cycle to a translation key', () => {
+        expect(SIGNUP_CYCLE_LABEL_KEY).toEqual({
+            monthly: 'billing.checkout.signup.cycle.monthly',
+            quarterly: 'billing.checkout.signup.cycle.quarterly',
+            semiannual: 'billing.checkout.signup.cycle.semiannual',
+            annual: 'billing.checkout.signup.cycle.annual'
+        });
+    });
 });
 
 describe('TEST:B13a:21c AC:B13a:5 resolveSignupTrialNotice', () => {
@@ -111,6 +145,12 @@ describe('TEST:B13a:21c AC:B13a:5 resolveSignupTrialNotice', () => {
                 result: {
                     ok: true,
                     data: {
+                        plan: {
+                            name: 'Plan test',
+                            amount: 100000,
+                            currency: 'ARS',
+                            cycle: 'monthly'
+                        },
                         vertical: 'accommodation',
                         touristVip: { status: 'NOT_AFFECTED' },
                         trial: {
@@ -134,6 +174,12 @@ describe('TEST:B13a:21c AC:B13a:5 resolveSignupTrialNotice', () => {
                 result: {
                     ok: true,
                     data: {
+                        plan: {
+                            name: 'Plan test',
+                            amount: 100000,
+                            currency: 'ARS',
+                            cycle: 'monthly'
+                        },
                         vertical: 'gastronomy',
                         touristVip: { status: 'NOT_AFFECTED' },
                         trial: { status: 'NOT_RUNNING' }
@@ -159,6 +205,7 @@ describe('TEST:1623:6 resolveSignupTouristVipNotice', () => {
             {
                 ok: true,
                 data: {
+                    plan: { name: 'Plan test', amount: 100000, currency: 'ARS', cycle: 'monthly' },
                     vertical: 'tourist',
                     touristVip: { status: 'CANCELLED_ON_RETURN' },
                     trial: { status: 'NOT_RUNNING' }
@@ -171,6 +218,7 @@ describe('TEST:1623:6 resolveSignupTouristVipNotice', () => {
             {
                 ok: true,
                 data: {
+                    plan: { name: 'Plan test', amount: 100000, currency: 'ARS', cycle: 'monthly' },
                     vertical: 'tourist',
                     touristVip: { status: 'NOT_AFFECTED' },
                     trial: { status: 'NOT_RUNNING' }
