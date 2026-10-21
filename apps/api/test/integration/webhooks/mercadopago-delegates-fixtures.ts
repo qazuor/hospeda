@@ -203,7 +203,10 @@ export async function signup(input: {
             'x-mock-actor-role': 'USER',
             'x-mock-actor-permissions': '[]'
         },
-        body: JSON.stringify({ billingOptionId: input.billingOptionId })
+        body: JSON.stringify({
+            billingOptionId: input.billingOptionId,
+            payerEmail: `mp-${crypto.randomUUID()}@example.test`
+        })
     });
     const text = await response.text();
     if (response.status !== 201 && response.status !== 200)

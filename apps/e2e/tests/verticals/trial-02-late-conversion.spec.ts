@@ -220,7 +220,10 @@ test.describe('TEST:V4:23 AC:V4:17 the late conversion of an expired trial (T5) 
             const response = await fetch(`${API_URL}/api/v1/protected/billing/subscriptions`, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json', cookie: ownerUser.sessionCookie },
-                body: JSON.stringify({ billingOptionId })
+                body: JSON.stringify({
+                    billingOptionId,
+                    payerEmail: `mp-${crypto.randomUUID()}@example.test`
+                })
             });
             const body = (await response.json()) as {
                 readonly data?: {

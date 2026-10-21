@@ -6,22 +6,45 @@ import {
 } from './subscription-start.schema';
 
 describe('TEST:B3:2 subscription start request', () => {
-    it('accepts only a billing option identifier', () => {
+    it('accepts only a billing option identifier and the declared payer email', () => {
         const billingOptionId = crypto.randomUUID();
-        expect(StartSubscriptionRequestSchema.parse({ billingOptionId })).toEqual({
-            billingOptionId
+        const payerEmail = 'payer@example.test';
+        expect(StartSubscriptionRequestSchema.parse({ billingOptionId, payerEmail })).toEqual({
+            billingOptionId,
+            payerEmail
         });
+        expect(StartSubscriptionRequestSchema.safeParse({ billingOptionId }).success).toBe(false);
         expect(
-            StartSubscriptionRequestSchema.safeParse({ billingOptionId, vertical: 'accommodation' })
-                .success
+            StartSubscriptionRequestSchema.safeParse({
+                billingOptionId,
+                payerEmail,
+                vertical: 'accommodation'
+            }).success
         ).toBe(false);
         expect(
-            StartSubscriptionRequestSchema.safeParse({ billingOptionId, paymentToken: 'opaque' })
-                .success
+            StartSubscriptionRequestSchema.safeParse({
+                billingOptionId,
+                payerEmail,
+                paymentToken: 'opaque'
+            }).success
         ).toBe(false);
         expect(
             StartSubscriptionRequestSchema.safeParse({ billingOptionId: 'missing' }).success
         ).toBe(false);
+        const oversizedEmail = `a@${'b'.repeat(63)}.${'c'.repeat(63)}.${'d'.repeat(63)}.${'e'.repeat(62)}`;
+        expect(oversizedEmail).toHaveLength(256);
+        for (const invalidEmail of ['', '   ', 'not-an-email', oversizedEmail]) {
+            expect(
+                StartSubscriptionRequestSchema.safeParse({
+                    billingOptionId,
+                    payerEmail: invalidEmail
+                }).success
+            ).toBe(false);
+        }
+        expect(
+            StartSubscriptionRequestSchema.parse({ billingOptionId, payerEmail: ' a@b.co ' })
+                .payerEmail
+        ).toBe('a@b.co');
     });
 
     it('keeps the four public rejection reasons closed', () => {

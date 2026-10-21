@@ -1,9 +1,13 @@
 import { z } from 'zod';
 import { VerticalEnumSchema } from '../../enums/vertical.schema.js';
 
-/** Public S1 body: version and vertical come only from the option's composite FK. */
+/**
+ * The payer declares the provider account email that will authorize this attempt.
+ * It is not a confirmed email and is never stored as one.
+ */
 export const StartSubscriptionRequestSchema = z.strictObject({
-    billingOptionId: z.uuid()
+    billingOptionId: z.uuid(),
+    payerEmail: z.string().trim().email().max(255)
 });
 
 export type StartSubscriptionRequest = z.infer<typeof StartSubscriptionRequestSchema>;

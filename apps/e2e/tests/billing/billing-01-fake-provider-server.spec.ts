@@ -130,7 +130,10 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
                 'content-type': 'application/json',
                 cookie: user.sessionCookie
             },
-            body: JSON.stringify({ billingOptionId: optionId })
+            body: JSON.stringify({
+                billingOptionId: optionId,
+                payerEmail: `mp-${crypto.randomUUID()}@example.test`
+            })
         });
         const body = (await response.json()) as {
             data?: { authorizationId?: string; checkoutUrl?: string; subscriptionId?: string };

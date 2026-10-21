@@ -112,7 +112,10 @@ describe('S1 signup window response', () => {
         const response = await app.request(path, {
             method: 'POST',
             headers: headers(user.id),
-            body: JSON.stringify({ billingOptionId: option.id })
+            body: JSON.stringify({
+                billingOptionId: option.id,
+                payerEmail: `mp-${crypto.randomUUID()}@example.test`
+            })
         });
         const body = await response.json();
         const [row] = await getDb()
@@ -146,7 +149,10 @@ describe('S1 signup window response', () => {
             app.request(path, {
                 method: 'POST',
                 headers: headers(user.id),
-                body: JSON.stringify({ billingOptionId: option.id })
+                body: JSON.stringify({
+                    billingOptionId: option.id,
+                    payerEmail: `mp-${crypto.randomUUID()}@example.test`
+                })
             });
         const first = await (await request()).json();
         const secondResponse = await request();
@@ -182,7 +188,10 @@ describe('S1 signup window response', () => {
         const response = await app.request(path, {
             method: 'POST',
             headers: headers(user.id),
-            body: JSON.stringify({ billingOptionId: option.id })
+            body: JSON.stringify({
+                billingOptionId: option.id,
+                payerEmail: `mp-${crypto.randomUUID()}@example.test`
+            })
         });
         const body = await response.json();
 

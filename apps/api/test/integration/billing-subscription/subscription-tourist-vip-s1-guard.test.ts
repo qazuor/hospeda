@@ -131,7 +131,10 @@ describe('subscription Tourist VIP S1 guard (TEST:B3:29)', () => {
                     'x-mock-actor-role': 'USER',
                     'x-mock-actor-permissions': '[]'
                 },
-                body: JSON.stringify({ billingOptionId: purchaseOption!.id })
+                body: JSON.stringify({
+                    billingOptionId: purchaseOption!.id,
+                    payerEmail: `mp-${crypto.randomUUID()}@example.test`
+                })
             }
         );
         expect(response.status).toBe(201);

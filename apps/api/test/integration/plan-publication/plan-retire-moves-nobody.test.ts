@@ -388,7 +388,10 @@ describe('TEST:B4:12 (AC:B4:12) retiring every plan of a vertical: S1 rejects an
             const response = await subscriber.app.request(S1_PATH, {
                 method: 'POST',
                 headers: userHeaders({ userId: newcomerId }),
-                body: JSON.stringify({ billingOptionId: option.id })
+                body: JSON.stringify({
+                    billingOptionId: option.id,
+                    payerEmail: `mp-${crypto.randomUUID()}@example.test`
+                })
             });
             const body = await response.json();
             expect(response.status, JSON.stringify(body)).toBe(422);
