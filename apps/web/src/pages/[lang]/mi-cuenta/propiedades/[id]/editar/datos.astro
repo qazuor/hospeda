@@ -3,26 +3,30 @@
  * @file datos.astro
  * @description Basic data section of the accommodation editor (HOS-318 T-020).
  *
- * Five fields. Needs the destinations catalog but NOT the amenity/feature ones.
+ * Five fields. Needs destinations and media for the publish-ready prompt.
  */
 
 import { BasicsForm } from '@/components/host/editor/forms/BasicsForm.client';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
 import { createTranslations } from '@/lib/i18n';
 
 export const prerender = false;
 
+// HOS-1183: basic info owns the description requirement and needs the main image
+// to determine whether saving the description completes publication readiness.
 const resolution = await resolveEditorPage({
 	astro: Astro,
 	sectionSlug: 'datos',
-	need: ['destinations', 'translations'],
+	need: ['destinations', 'media', 'translations'],
 });
 
 if (resolution.redirect) return resolution.redirect;
 
 const { data, locale, accommodationId, sectionId } = resolution;
 const { t } = createTranslations(locale);
+const trialDays = await resolveGenericOwnerTrialDays();
 ---
 
 <EditorSectionLayout
@@ -39,6 +43,8 @@ const { t } = createTranslations(locale);
 		accommodationId={accommodationId}
 		initialData={data.accommodation}
 		destinations={data.destinations}
+		hasMainImage={Boolean(data.featuredImage)}
+		trialDays={trialDays}
 		client:load
 	/>
 </EditorSectionLayout>

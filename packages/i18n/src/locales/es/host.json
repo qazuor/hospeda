@@ -702,6 +702,7 @@
                 "minNights": "noches mínimas",
                 "bedrooms": "habitaciones",
                 "bathrooms": "baños",
+                "description": "la descripción",
                 "mainImage": "la foto principal"
             },
             "pageDescription": "Editar información de tu propiedad"

@@ -15,6 +15,7 @@ import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { PriceCurrencyEnum } from '../../enums/currency.enum.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
+import { DRAFT_DESCRIPTION_PLACEHOLDER } from './accommodation.publish-requirements.js';
 
 /**
  * HTTP-compatible accommodation search schema with automatic coercion
@@ -937,17 +938,6 @@ export const httpToDomainAccommodationCreate = (
     // would be lost without this second emission onto the real column.
     ...httpMediaToDomainVideos(httpData.media)
 });
-
-/**
- * Placeholder description seeded on draft creation when the host did not
- * provide one in the onboarding form. Must be ≥ 30 chars to satisfy the
- * base `AccommodationSchema.description.min(30)` constraint used by the
- * full create/update paths. The host will overwrite it from the admin panel
- * before publishing. See SPEC-143 Finding #9 for the bilateral-validation
- * gap this avoids (read schema 500 vs blank-on-create).
- */
-const DRAFT_DESCRIPTION_PLACEHOLDER =
-    'Borrador en progreso. Completá la descripción del alojamiento desde el panel de administración antes de publicarlo.';
 
 /**
  * Convert minimal HTTP draft input into a domain create input.

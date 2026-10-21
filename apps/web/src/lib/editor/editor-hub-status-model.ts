@@ -34,7 +34,7 @@
  *
  * ## Blocking versus advisory
  *
- * The soft hints (description, price, coordinates, contact, FAQs) stay: they
+ * The soft hints (price, coordinates, contact, FAQs) stay: they
  * are worth prompting for, and publishing without them is allowed. What changes
  * is that they no longer LOOK the same as a real blocker. A `blocking` status
  * says the listing cannot go live until it is resolved; a `warning` says the

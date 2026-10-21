@@ -28,6 +28,7 @@ import {
 
 /** A listing that satisfies every publish requirement. */
 const COMPLETE = {
+    description: 'A real accommodation description long enough for the form.',
     capacity: 4,
     minNights: 1,
     bedrooms: 2,
@@ -113,6 +114,7 @@ describe('resolveMissingPublishRequirements', () => {
     it('should report every missing field, not just the first', () => {
         // Arrange
         const input = {
+            description: null,
             capacity: undefined,
             minNights: undefined,
             bedrooms: undefined,
@@ -125,7 +127,14 @@ describe('resolveMissingPublishRequirements', () => {
 
         // Assert — collapsing to one field would recreate the "tells you one
         // thing, then rejects for the next" loop.
-        expect(missing).toEqual(['capacity', 'minNights', 'bedrooms', 'bathrooms', 'mainImage']);
+        expect(missing).toEqual([
+            'description',
+            'capacity',
+            'minNights',
+            'bedrooms',
+            'bathrooms',
+            'mainImage'
+        ]);
     });
 
     it('should treat null the same as undefined', () => {
