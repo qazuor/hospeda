@@ -5,8 +5,8 @@
  *
  * Covers: every card state renders the right badge, the checklist renders
  * `missing` for an incomplete draft (AC-21), and a complete draft reports it is
- * ready. There is no publish control: the self-checkout it used to start was
- * removed with the old billing system.
+ * ready. Publish-specific status and affordance cases live in
+ * ListingActions.publish.test.tsx (HOS-1729).
  */
 
 import { PublicationStatusEnum } from '@repo/schemas';
@@ -17,7 +17,8 @@ import type { OwnerListingSummaryWithState } from '../../../src/lib/listing/owne
 
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
+        t: (_key: string, fallback?: string) => fallback ?? _key,
+        tPlural: (_key: string, count: number) => `trial ${count}`
     })
 }));
 
@@ -45,7 +46,8 @@ vi.mock('../../../src/lib/urls', () => ({
 // because the panel swallows a failed image on purpose. A test that is green
 // whether or not it reached a live server is not testing anything about it.
 vi.mock('../../../src/lib/env', () => ({
-    getApiUrl: () => 'https://api.test'
+    getApiUrl: () => 'https://api.test',
+    isLoggingEnabled: () => false
 }));
 
 function buildListing(
