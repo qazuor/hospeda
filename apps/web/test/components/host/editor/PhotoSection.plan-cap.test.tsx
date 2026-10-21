@@ -32,7 +32,8 @@ const {
     mockLimit,
     mockDraftLimit,
     mockIsLoading,
-    mockFeaturedOverride
+    mockFeaturedOverride,
+    mockSubscribeDestination
 } = vi.hoisted(() => ({
     mockListMedia: vi.fn(),
     mockAddMedia: vi.fn(),
@@ -40,7 +41,8 @@ const {
     mockLimit: vi.fn(),
     mockDraftLimit: vi.fn(),
     mockIsLoading: vi.fn(),
-    mockFeaturedOverride: { current: null as null | Record<string, unknown> }
+    mockFeaturedOverride: { current: null as null | Record<string, unknown> },
+    mockSubscribeDestination: vi.fn()
 }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
@@ -53,10 +55,7 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         updateMedia: vi.fn()
     },
     publishApi: {
-        subscribeDestination: vi.fn().mockResolvedValue({
-            ok: true,
-            data: { destination: 'PUBLISH', trialDays: 14 }
-        })
+        subscribeDestination: mockSubscribeDestination
     },
     protectedMediaApi: { deleteMedia: vi.fn() }
 }));
@@ -144,6 +143,10 @@ function makeAddOk(i: number) {
 beforeEach(() => {
     vi.clearAllMocks();
     mockFeaturedOverride.current = null;
+    mockSubscribeDestination.mockResolvedValue({
+        ok: true,
+        data: { destination: 'PUBLISH', trialDays: 14 }
+    });
     clearToasts();
     mockListMedia.mockReturnValue(makeListOk());
     mockIsLoading.mockReturnValue(false);
@@ -409,6 +412,7 @@ describe('HOS-1721 — a pre-trial owner can fill the photos of their DRAFT', ()
         rerender(<PhotoSection {...props} />);
 
         await waitFor(() => expect(screen.getByAltText('Imagen principal')).toBeInTheDocument());
+        await waitFor(() => expect(mockSubscribeDestination).not.toHaveBeenCalled());
         expect(screen.queryByText(/Tu ficha ya está lista/i)).not.toBeInTheDocument();
     });
 
