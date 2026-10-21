@@ -196,6 +196,8 @@ describe('TEST:1732:3 AC:1732:3 replacement refusal re-reads', () => {
         const before = await rows(input.choice.user.id);
         input.provider.readAuthorization = () =>
             input.fake.readAuthorization({ authorizationId: 'missing-authorization' });
+        const authorize = vi.spyOn(input.fake, 'authorize');
+        const cancel = vi.spyOn(input.fake, 'cancel');
 
         await expect(
             startSubscription(
@@ -224,6 +226,8 @@ describe('TEST:1732:3 AC:1732:3 replacement refusal re-reads', () => {
             .from(domainEvent)
             .where(eq(domainEvent.entityId, input.first.subscriptionId));
         expect(decisions.filter((event) => event.reason === 'S39')).toHaveLength(0);
+        expect(authorize).not.toHaveBeenCalled();
+        expect(cancel).not.toHaveBeenCalled();
         expect(input.notices).not.toHaveBeenCalled();
     });
 });
