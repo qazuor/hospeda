@@ -68,7 +68,8 @@ const CHECK_FAILED = 'No pudimos comprobar si podés publicar.';
 /** Props with everything wired for the happy path; tests override what they test. */
 function props(overrides: Record<string, unknown> = {}) {
     return {
-        accommodationId: 'acc-1',
+        vertical: 'accommodation',
+        listingId: 'acc-1',
         locale: 'es' as const,
         label: 'Publicar',
         confirmTitle: '¿Publicar este alojamiento?',

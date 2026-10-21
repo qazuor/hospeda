@@ -40,7 +40,11 @@ describe('subscribe destination canonical guard (AC:V8a:1)', () => {
             resolve(sourceRoot, 'components/host/PublishButton.client.tsx'),
             'utf8'
         );
-        for (const source of [subscribe, publish]) {
+        const publishListing = readFileSync(
+            resolve(sourceRoot, 'lib/publish/publish-listing.ts'),
+            'utf8'
+        );
+        for (const source of [subscribe, publish, publishListing]) {
             expect(source).not.toMatch(/(?:plans?\.length|trialDays\s*(?:>|<|===|!==))/);
         }
     });

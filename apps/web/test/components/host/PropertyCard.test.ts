@@ -236,9 +236,18 @@ describe('PropertyCard.astro — the publish affordance fails closed (HOS-1668)'
     // HOS-1668 C-1: the island receives the affordance itself and the
     // translated check-failed text.
     it('forwards the affordance and the check-failed text to PublishButton', () => {
+        expect(propertyCardSource).toContain(
+            'listingId={property.id}\n                    vertical="accommodation"'
+        );
         expect(propertyCardSource).toContain('affordance={publishAffordance}');
         expect(propertyCardSource).toContain(
             "checkFailedText={t('host.properties.card.publishCheckFailed')}"
+        );
+    });
+
+    it('keeps the accommodation-specific unpublish prop unchanged', () => {
+        expect(propertyCardSource).toContain(
+            '<UnpublishButton\n                    client:load\n                    accommodationId={property.id}'
         );
     });
 });
