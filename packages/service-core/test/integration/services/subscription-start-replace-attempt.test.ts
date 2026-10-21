@@ -77,11 +77,12 @@ async function seedChoice() {
 }
 function ports(
     provider: ReturnType<typeof namespaceFake>,
-    beforeCancel = vi.fn(async () => 'SENT' as const)
+    beforeCancel = vi.fn(async () => 'SENT' as const),
+    injectedClock = clock
 ) {
     return {
         provider,
-        clock,
+        clock: injectedClock,
         planPolicy: async () => ({
             graceDays: 10,
             allowsPause: false,
@@ -323,6 +324,54 @@ describe('TEST:1732:3 AC:1732:3 provider re-read controls replacement', () => {
         );
         expect(second.subscriptionId).not.toBe(first.subscriptionId);
         expect(authorize).toHaveBeenCalledOnce();
+        expect(cancel).not.toHaveBeenCalled();
+        expect(notices).not.toHaveBeenCalled();
+    });
+});
+
+describe('TEST:1732:6 AC:1732:6 the authorization window precedes replacement', () => {
+    it('does not replace an attempt after its window expires, even with another email', async () => {
+        let now = new Date(clock.now());
+        const mutableClock = { now: () => now };
+        const choice = await seedChoice();
+        const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
+            clock: mutableClock,
+            honestAbout: [{ lie: 'M1', why: 'provide an applied authorization' }]
+        });
+        const provider = namespaceFake(fake);
+        const notices = vi.fn(async () => 'SENT' as const);
+        const first = await startSubscription(
+            {
+                userId: choice.user.id,
+                billingOptionId: choice.billingOptionId,
+                returnUrl: 'https://hospeda.example/account',
+                payerEmail: 'first@example.test'
+            },
+            ports(provider, notices, mutableClock)
+        );
+        const before = await rows(choice.user.id);
+        const deadline = before.all.find(
+            (row) => row.id === first.subscriptionId
+        )?.authorizationWindowEndsAt;
+        if (!deadline) throw new Error('Missing authorization window');
+        now = new Date(deadline.getTime() + 1);
+        const authorize = vi.spyOn(fake, 'authorize');
+        const cancel = vi.spyOn(fake, 'cancel');
+
+        await expect(
+            startSubscription(
+                {
+                    userId: choice.user.id,
+                    billingOptionId: choice.billingOptionId,
+                    returnUrl: 'https://hospeda.example/account',
+                    payerEmail: 'second@example.test'
+                },
+                ports(provider, notices, mutableClock)
+            )
+        ).rejects.toMatchObject({ reason: 'COMMITMENT_TAKEN' });
+        expect(await rows(choice.user.id)).toEqual(before);
+        expect(authorize).not.toHaveBeenCalled();
         expect(cancel).not.toHaveBeenCalled();
         expect(notices).not.toHaveBeenCalled();
     });
