@@ -130,7 +130,7 @@ describe('TEST:1730:2 and TEST:1730:3b declared payer email on S1', () => {
 });
 
 describe('TEST:1730:6 pending reuse keeps the first attempt email', () => {
-    it('returns the stored checkout without authorizing again or replacing declaredPayerEmail', async () => {
+    it('returns the stored checkout with the same normalized email (AC:1732:4)', async () => {
         const choice = await seedChoice('monthly');
         const fake = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
         const provider = namespaceFake(fake);
@@ -149,7 +149,7 @@ describe('TEST:1730:6 pending reuse keeps the first attempt email', () => {
                 userId: choice.user.id,
                 billingOptionId: choice.billingOptionId,
                 returnUrl,
-                payerEmail: 'second@example.test'
+                payerEmail: '  FIRST@example.test '
             },
             ports(provider)
         );

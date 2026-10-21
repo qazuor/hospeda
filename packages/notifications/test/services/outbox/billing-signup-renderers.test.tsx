@@ -15,6 +15,22 @@ const renderers = createBillingSignupRenderers({ siteUrl: 'https://hospeda.test'
 const subscriptionId = '8b17fa49-59f3-4a13-a0d5-fd42e6bac482';
 
 describe('billing signup outbox renderers', () => {
+    it('TEST:1732:11 AC:1732:9 renders the replaced attempt notice and requires subscriptionId', async () => {
+        const result = await renderers['billing.attempt-replaced-cancel']!({
+            row: row({ template: 'billing.attempt-replaced-cancel', payload: { subscriptionId } })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject).toBe('Reemplazamos tu intento de alta anterior');
+        expect(html).toContain('Reemplazamos tu intento de alta anterior');
+        expect(html).toContain('Si Mercado Pago te avisa esa cancelación, es por esto.');
+        expect(html).toContain('Ese intento no te cobró nada.');
+        expect(() =>
+            renderers['billing.attempt-replaced-cancel']!({
+                row: row({ template: 'billing.attempt-replaced-cancel', payload: {} })
+            })
+        ).toThrow(TypeError);
+    });
+
     it('renders the confirmed signup with plan, provider notice, and formatted first charge date', async () => {
         const result = await renderers['billing.signup-confirmed']!({
             row: row({
