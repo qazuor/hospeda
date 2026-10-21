@@ -1,5 +1,5 @@
 // TEST:1731:1 — a rejected checkout charge closes an already-cancelled pending signup.
-import { emailOutbox, eq, subscriptions, users } from '@repo/db';
+import { coverageLosses, emailOutbox, eq, providerLinks, subscriptions, users } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service';
@@ -12,7 +12,13 @@ afterAll(closeServiceTestPool);
 const now = new Date('2026-10-01T03:00:00.000Z');
 const clock = { now: () => new Date(now) };
 
-async function setup() {
+async function setup({
+    cancel = true,
+    authorize = false
+}: {
+    readonly cancel?: boolean;
+    readonly authorize?: boolean;
+} = {}) {
     const [user] = await getServiceTestDb()
         .insert(users)
         .values({
@@ -69,8 +75,16 @@ async function setup() {
         authorizationId: started.authorizationId,
         declineReason: 'cc_rejected_insufficient_amount'
     });
-    await fake.cancel({ authorizationId: started.authorizationId });
-    return { fake, started, chargeId: charge.chargeId, userId: user.id, beforeCancelNotice };
+    if (authorize) await fake.approve({ authorizationId: started.authorizationId });
+    if (cancel) await fake.cancel({ authorizationId: started.authorizationId });
+    return {
+        fake,
+        started,
+        chargeId: charge.chargeId,
+        userId: user.id,
+        optionId,
+        beforeCancelNotice
+    };
 }
 
 async function ownOutbox(subscriptionId: string) {
@@ -103,11 +117,122 @@ describe('HOS-1731 pending first charge rejection', () => {
             .from(subscriptions)
             .where(eq(subscriptions.id, own.started.subscriptionId));
         expect(row?.status).toBe('CHARGE_DECLINED');
-        expect(row?.providerLink?.cancellationSeenAt).toBeDefined();
+        const [link] = await getServiceTestDb()
+            .select()
+            .from(providerLinks)
+            .where(eq(providerLinks.subscriptionId, own.started.subscriptionId));
+        expect(link?.cancelledSeenAt).toEqual(now);
         const mails = await ownOutbox(own.started.subscriptionId);
         expect(mails).toHaveLength(1);
         expect(mails[0]?.payload).toMatchObject({
             declineReason: 'cc_rejected_insufficient_amount'
         });
+    });
+
+    it.each([
+        ['pending', false] as const,
+        ['authorized', true] as const
+    ])('TEST:1731:2 leaves a %s authorization untouched', async (_label, authorize) => {
+        const own = await setup({ cancel: false, authorize });
+        const cancel = vi.spyOn(own.fake, 'cancel');
+        const result = await recordChargeFact(
+            { chargeId: own.chargeId },
+            {
+                provider: own.fake,
+                clock,
+                beforeCancelNotice: own.beforeCancelNotice,
+                cancellationSeen: providerLinkCancellationSeen
+            }
+        );
+        expect(result).toMatchObject({
+            outcome: 'DECLINED',
+            decline: {
+                outcome: 'NOT_APPLICABLE',
+                reason: 'AUTHORIZATION_NOT_CANCELLED'
+            }
+        });
+        expect(cancel).not.toHaveBeenCalled();
+        const [row] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, own.started.subscriptionId));
+        expect(row?.status).toBe('PENDING_AUTHORIZATION');
+        expect(await ownOutbox(own.started.subscriptionId)).toHaveLength(0);
+    });
+
+    it('TEST:1731:3 deduplicates redelivery after the row is closed', async () => {
+        const own = await setup();
+        const ports = {
+            provider: own.fake,
+            clock,
+            beforeCancelNotice: own.beforeCancelNotice,
+            cancellationSeen: providerLinkCancellationSeen
+        };
+        const first = await recordChargeFact({ chargeId: own.chargeId }, ports);
+        const second = await recordChargeFact({ chargeId: own.chargeId }, ports);
+        expect(first.outcome).toBe('DECLINED');
+        expect(second.outcome).toBe('GRACE');
+        expect(await ownOutbox(own.started.subscriptionId)).toHaveLength(1);
+    });
+
+    it('TEST:1731:4 closes pending without coverage loss or a removal notice', async () => {
+        const own = await setup();
+        const emitCoverageChanged = vi.fn(async () => undefined);
+        const result = await recordChargeFact(
+            { chargeId: own.chargeId },
+            {
+                provider: own.fake,
+                clock,
+                beforeCancelNotice: own.beforeCancelNotice,
+                cancellationSeen: providerLinkCancellationSeen,
+                coverageNotices: { emitCoverageChanged }
+            }
+        );
+        expect(result.outcome).toBe('DECLINED');
+        expect(emitCoverageChanged).not.toHaveBeenCalled();
+        const losses = await getServiceTestDb()
+            .select()
+            .from(coverageLosses)
+            .where(eq(coverageLosses.userId, own.userId));
+        expect(losses).toHaveLength(0);
+    });
+
+    it('TEST:1731:6 retry creates a new live authorization after closing the old row', async () => {
+        const own = await setup();
+        await recordChargeFact(
+            { chargeId: own.chargeId },
+            {
+                provider: own.fake,
+                clock,
+                beforeCancelNotice: own.beforeCancelNotice,
+                cancellationSeen: providerLinkCancellationSeen
+            }
+        );
+        const optionId = own.optionId;
+        const retry = await startSubscription(
+            { userId: own.userId, billingOptionId: optionId, returnUrl: 'https://example.test' },
+            {
+                provider: own.fake,
+                clock,
+                beforeCancelNotice: own.beforeCancelNotice,
+                touristVipInheritance: noTouristVip,
+                planPolicy: async () => ({
+                    graceDays: 10,
+                    allowsPause: false,
+                    current: true,
+                    sellable: true
+                })
+            }
+        );
+        expect(retry.authorizationId).not.toBe(own.started.authorizationId);
+        expect(retry.checkoutUrl).not.toBe(own.started.checkoutUrl);
+        const rows = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.userId, own.userId));
+        expect(rows.filter((row) => row.status === 'PENDING_AUTHORIZATION')).toHaveLength(1);
+        expect(rows.find((row) => row.id === own.started.subscriptionId)?.status).toBe(
+            'CHARGE_DECLINED'
+        );
     });
 });
