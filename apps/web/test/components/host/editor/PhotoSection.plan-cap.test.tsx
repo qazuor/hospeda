@@ -16,6 +16,7 @@
  * `limit()`/`isLoading` deterministically without touching the network.
  */
 
+import { DRAFT_DESCRIPTION_PLACEHOLDER } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PhotoSectionProps } from '@/components/host/editor/PhotoSection.client';
@@ -30,14 +31,16 @@ const {
     mockUploadEntityImage,
     mockLimit,
     mockDraftLimit,
-    mockIsLoading
+    mockIsLoading,
+    mockFeaturedOverride
 } = vi.hoisted(() => ({
     mockListMedia: vi.fn(),
     mockAddMedia: vi.fn(),
     mockUploadEntityImage: vi.fn(),
     mockLimit: vi.fn(),
     mockDraftLimit: vi.fn(),
-    mockIsLoading: vi.fn()
+    mockIsLoading: vi.fn(),
+    mockFeaturedOverride: { current: null as null | Record<string, unknown> }
 }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
@@ -55,6 +58,21 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
 vi.mock('@/lib/media/upload-entity', () => ({
     uploadEntityImage: mockUploadEntityImage
 }));
+
+vi.mock('@/components/host/editor/use-photo-section', async () => {
+    const actual = await vi.importActual<
+        typeof import('@/components/host/editor/use-photo-section')
+    >('@/components/host/editor/use-photo-section');
+    return {
+        ...actual,
+        usePhotoSection: (params: Parameters<typeof actual.usePhotoSection>[0]) => {
+            const state = actual.usePhotoSection(params);
+            return mockFeaturedOverride.current === null
+                ? state
+                : { ...state, featuredItem: mockFeaturedOverride.current as never };
+        }
+    };
+});
 
 vi.mock('@/hooks/useMyEntitlements', () => ({
     useMyEntitlements: () => ({
@@ -119,6 +137,7 @@ function makeAddOk(i: number) {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    mockFeaturedOverride.current = null;
     clearToasts();
     mockListMedia.mockReturnValue(makeListOk());
     mockIsLoading.mockReturnValue(false);
@@ -361,6 +380,30 @@ describe('HOS-1721 — a pre-trial owner can fill the photos of their DRAFT', ()
         isDraft: true,
         trialDays: 30
     } as const;
+
+    it('does not show the publish-ready prompt when a completed photo leaves the draft placeholder', async () => {
+        mockListMedia.mockReturnValue(makeListOk());
+
+        const props = {
+            ...defaultProps,
+            publishContext: { ...publishContext, description: DRAFT_DESCRIPTION_PLACEHOLDER }
+        };
+        const { rerender } = render(<PhotoSection {...props} />);
+        await waitFor(() =>
+            expect(screen.getByRole('button', { name: /Agregar fotos/i })).toBeInTheDocument()
+        );
+
+        mockFeaturedOverride.current = {
+            id: 'featured-id',
+            url: 'https://cdn.example.com/featured.jpg',
+            publicId: 'featured',
+            isFeatured: true
+        };
+        rerender(<PhotoSection {...props} />);
+
+        await waitFor(() => expect(screen.getByAltText('Imagen principal')).toBeInTheDocument());
+        expect(screen.queryByText(/Tu ficha ya está lista/i)).not.toBeInTheDocument();
+    });
 
     it('shows the trial cap and enables uploads on a DRAFT when the plan grants no cap', async () => {
         mockLimit.mockReturnValue(0);
