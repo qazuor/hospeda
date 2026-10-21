@@ -182,14 +182,21 @@ describe('TEST:B11:20 el juego de salida contra el falso', () => {
         );
     });
 
-    it('LISTA:B11 cláusula 16: la salvedad 4 del barrido cuenta once filas de la spec más la del Turista VIP heredado (Coord-289) y una sola lápida, la de recepción', async () => {
+    it('TEST:1732:12 AC:1732:9 LISTA:B11 cláusula 16: la salvedad 4 del barrido cuenta las catorce transiciones', async () => {
         // B11.md:372: S12, S3, S13, S16, S20, S22, S23, S24, S31, S36 and the receipt tombstone;
         // the twelfth is the inherited Tourist VIP, by the owner's decision H3 → b (Coord-289);
-        // the thirteenth is REJECTION_REVIVED, the revived rejection terminal (Coord-351 F3, B11 §3).
+        // the thirteenth is REJECTION_REVIVED, the revived rejection terminal (Coord-351 F3, B11 §3);
+        // the fourteenth is S39, the replaced pending attempt (HOS-1732).
         const spec = ['S12', 'S3', 'S13', 'S16', 'S20', 'S22', 'S23', 'S24', 'S31', 'S36'];
-        expect(SALVEDAD_4_TRANSITIONS).toHaveLength(13);
+        expect(SALVEDAD_4_TRANSITIONS).toHaveLength(14);
         expect([...SALVEDAD_4_TRANSITIONS].sort()).toEqual(
-            [...spec, 'RECEPTION_TOMBSTONE', 'TOURIST_VIP_INHERITED', 'REJECTION_REVIVED'].sort()
+            [
+                ...spec,
+                'RECEPTION_TOMBSTONE',
+                'TOURIST_VIP_INHERITED',
+                'REJECTION_REVIVED',
+                'S39'
+            ].sort()
         );
         expect(SALVEDAD_4_TRANSITIONS.filter((code) => code.endsWith('_TOMBSTONE'))).toEqual([
             'RECEPTION_TOMBSTONE'
