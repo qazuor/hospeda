@@ -25,7 +25,7 @@ import { readAnchoredBillingOption } from '../read-anchored-billing-option';
 import type { ArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
 import type { BeforeCancelNoticeKind } from './before-cancel-notice-kinds';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
-import { resolveLiveCommitmentReuse } from './resolve-live-commitment';
+import { appliedAuthorizationResult, resolveLiveCommitmentReuse } from './resolve-live-commitment';
 
 const logger = createLogger('subscription-start');
 
@@ -189,9 +189,13 @@ export async function authorizePendingSubscription(input: {
         subscriptionId: pending.subscription.id,
         provider: 'MERCADO_PAGO',
         providerId: created.authorizationId,
-        result: applied
-            ? { authorizationId: created.authorizationId, applied: true, checkoutUrl }
-            : { authorizationId: created.authorizationId, applied: false, fields },
+        result:
+            applied && checkoutUrl
+                ? appliedAuthorizationResult({
+                      authorizationId: created.authorizationId,
+                      checkoutUrl
+                  })
+                : { authorizationId: created.authorizationId, applied: false, fields },
         completedAt: input.clock.now()
     });
     if (!applied) {

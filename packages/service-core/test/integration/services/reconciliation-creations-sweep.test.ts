@@ -14,6 +14,7 @@ import {
     CREATION_RECREATE_AFTER_MS,
     runCreationsSweep
 } from '../../../src/services/billing/reconciliation/creations/creations-sweep.service.js';
+import { resolveLiveCommitmentReuse } from '../../../src/services/billing/subscription/resolve-live-commitment.js';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers.js';
 import {
     createReconciliationFake,
@@ -337,13 +338,25 @@ describe('TEST:B11:23 creations sweep over the fake', () => {
         expect(keys.find((key) => key.key === row.key)?.completedAt).toBeNull();
         const newest = keys.find((key) => key.key !== row.key);
         expect(newest?.completedAt).toBeInstanceOf(Date);
-        expect(
+        const commitment = await subscriptionModel.findLiveCommitment({
+            userId: row.subscription.userId!,
+            vertical: 'accommodation'
+        });
+        expect(commitment?.idempotencyKey?.key).toBe(newest?.key);
+        // HOS-1725: the recreated creation is reusable by S1's retry, not a 409.
+        const reused = await resolveLiveCommitmentReuse({
+            commitment: commitment!,
+            billingOptionId: row.subscription.billingOptionId!,
+            clock: time
+        });
+        expect(reused.checkoutUrl).toMatch(/^https:\/\//);
+        expect(reused.authorizationId).toBe(
             (
-                await subscriptionModel.findLiveCommitment({
-                    userId: row.subscription.userId!,
-                    vertical: 'accommodation'
-                })
-            )?.idempotencyKey?.key
-        ).toBe(newest?.key);
+                await getServiceTestDb()
+                    .select()
+                    .from(providerLinks)
+                    .where(eq(providerLinks.subscriptionId, row.subscription.id))
+            )[0]?.providerId
+        );
     });
 });
