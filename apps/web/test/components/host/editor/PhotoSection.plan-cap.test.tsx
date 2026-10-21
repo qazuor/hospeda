@@ -52,6 +52,12 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         reorderMedia: vi.fn(),
         updateMedia: vi.fn()
     },
+    publishApi: {
+        subscribeDestination: vi.fn().mockResolvedValue({
+            ok: true,
+            data: { destination: 'PUBLISH', trialDays: 14 }
+        })
+    },
     protectedMediaApi: { deleteMedia: vi.fn() }
 }));
 
