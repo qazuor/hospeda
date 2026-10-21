@@ -31,10 +31,20 @@ export type SignupTouristVipNotice =
     | { readonly kind: 'CANCELLED_ON_RETURN' }
     | { readonly kind: 'UNKNOWN' };
 
+/**
+ * The plan, amount and cycle of the selected billing option, shown on the
+ * checkout before the redirect to Mercado Pago (HOS-1723, owner decision D-3).
+ * Parsed from the signup notice's `plan` (`SignupNoticeResponseSchema`); a
+ * notice without it resolves to `null` and the summary is omitted.
+ */
 export type SignupPlanSummary = {
+    /** Display name of the plan. */
     readonly name: string;
+    /** Price of the option in minor units (centavos). */
     readonly amount: number;
+    /** Only ARS is sold today. */
     readonly currency: 'ARS';
+    /** Billing cycle of the option (monthly or annual). */
     readonly cycle: BillingCycle;
 };
 
