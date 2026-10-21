@@ -466,11 +466,12 @@ describe('resolveRowCells — limit cells', () => {
         expect(resolveRowCells({ cell: row('publish').cell, plans })).toEqual([5, 1]);
     });
 
-    it('renders -1 as unlimited', () => {
+    it('renders the catalog sentinel as unlimited', () => {
+        // AC:1719:2/:3: the catalog sentinel is displayed as unlimited in the comparison table.
         const plans: readonly PlanCellSource[] = [
-            { slug: 'owner-premium', limits: { max_accommodations: -1 }, entitlements: [] }
+            { slug: 'owner-premium', limits: { max_favorites: 2147483647 }, entitlements: [] }
         ];
-        expect(resolveRowCells({ cell: row('publish').cell, plans })).toEqual(['unlimited']);
+        expect(resolveRowCells({ cell: row('favorites').cell, plans })).toEqual(['unlimited']);
     });
 
     it('falls back to not-included when the plan does not carry the limit key', () => {

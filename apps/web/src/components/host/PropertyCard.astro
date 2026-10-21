@@ -305,7 +305,8 @@ const hasAnyAction = hasAnyPropertyCardAction({ actions });
             {actions.publish && (
                 <PublishButton
                     client:load
-                    accommodationId={property.id}
+                    listingId={property.id}
+                    vertical="accommodation"
                     locale={locale}
                     label={t('host.properties.card.actions.publish', 'Publicar')}
                     confirmTitle={t('host.properties.card.actions.publishConfirmTitle', '¿Publicar este alojamiento?')}

@@ -23,7 +23,7 @@
  */
 
 import { EntitlementKeyEnum, LimitKeyEnum } from '@repo/schemas';
-
+import { isUnlimitedLimit } from './plan-card-delta';
 export type YesNo = 'yes' | 'no';
 
 export interface LimitCell {
@@ -517,7 +517,7 @@ export function resolveCell({
         case 'limit': {
             const val = plan.limits[cell.key];
             if (typeof val !== 'number') return 'no';
-            return val === -1 ? 'unlimited' : val;
+            return isUnlimitedLimit({ value: val }) ? 'unlimited' : val;
         }
         case 'entitlement':
             return plan.entitlements.includes(cell.key) ? 'yes' : 'no';

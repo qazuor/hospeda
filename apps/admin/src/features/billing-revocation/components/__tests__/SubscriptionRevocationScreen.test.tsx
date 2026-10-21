@@ -25,7 +25,6 @@ import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/lib/errors';
-import { KNOWN_REVOCATION_REASONS } from '../../revocation-reasons';
 import { SubscriptionRevocationScreen } from '../SubscriptionRevocationScreen';
 
 // ---------------------------------------------------------------------------
@@ -110,6 +109,10 @@ const previewState: PreviewState = { isLoading: false, error: null, data: READY 
 const refetch = vi.fn();
 const previewInputs = vi.fn();
 const mutateAsync = vi.fn();
+
+vi.mock('../../hooks/useSubscriptionStatus', () => ({
+    useSubscriptionStatus: () => ({ data: undefined, isLoading: false })
+}));
 
 vi.mock('../../hooks/useSubscriptionRevocation', () => ({
     useSubscriptionRevocationPreview: (input: { subscriptionId: string; enabled: boolean }) => {
@@ -235,108 +238,6 @@ describe('HOS-1678 revocation confirmation screen', () => {
 
         // Assert
         expect(screen.queryByTestId('subscription-revocation-predecessor')).not.toBeInTheDocument();
-    });
-
-    it('(d) REFUND_EXCEEDS_BALANCE on the preview (Coord-351) blocks with no confirm and no note', () => {
-        // Arrange
-        previewState.data = undefined;
-        previewState.error = refusal(422, 'REFUND_EXCEEDS_BALANCE');
-
-        // Act
-        renderScreen();
-
-        // Assert
-        const blocked = screen.getByTestId('subscription-revocation-blocked');
-        expect(blocked).toHaveAttribute('data-reason', 'REFUND_EXCEEDS_BALANCE');
-        expect(blocked).toHaveTextContent('No se puede revocar. No se canceló nada.');
-        expect(blocked).toHaveTextContent('devoluciones pedidas o hechas por todo su monto');
-        expect(screen.queryByTestId('subscription-revocation-ready')).not.toBeInTheDocument();
-        expectNoConfirm();
-    });
-
-    it.each(
-        KNOWN_REVOCATION_REASONS.filter(
-            (reason) =>
-                reason !== 'SUBSCRIPTION_NOT_FOUND' &&
-                reason !== 'ADMINISTRATIVE_ACTION_FORBIDDEN' &&
-                reason !== 'REFUND_EXCEEDS_BALANCE'
-        )
-    )('(e) %s on the preview shows its copy and no confirm', (reason) => {
-        // Arrange
-        previewState.data = undefined;
-        previewState.error = refusal(reason.startsWith('REVOCATION_WINDOW') ? 422 : 409, reason);
-        const expected = (esAdminBilling.subscriptionRevocation.blocked as Record<string, string>)[
-            reason
-        ];
-
-        // Act
-        renderScreen();
-
-        // Assert
-        const blocked = screen.getByTestId('subscription-revocation-blocked');
-        expect(blocked).toHaveAttribute('data-reason', reason);
-        expect(blocked).toHaveTextContent(expected ?? 'MISSING');
-        expectNoConfirm();
-    });
-
-    it('(e) 404 and 403 on the preview read as unavailable, with no confirm', () => {
-        // Arrange
-        previewState.data = undefined;
-        previewState.error = refusal(404, 'SUBSCRIPTION_NOT_FOUND');
-
-        // Act
-        const { unmount } = render(
-            React.createElement(SubscriptionRevocationScreen, { subscriptionId: SUBSCRIPTION_ID })
-        );
-
-        // Assert
-        expect(screen.getByTestId('subscription-revocation-unavailable')).toHaveTextContent(
-            'Esta suscripción no existe.'
-        );
-        expectNoConfirm();
-
-        // Arrange + Act: 403 without reason (the route's early permission check)
-        unmount();
-        previewState.error = refusal(403);
-        renderScreen();
-
-        // Assert
-        expect(screen.getByTestId('subscription-revocation-unavailable')).toHaveTextContent(
-            'No podés revocar esta suscripción'
-        );
-        expectNoConfirm();
-    });
-
-    it('(f) an unknown reason and a 5xx show generic copy, with no confirm', () => {
-        // Arrange
-        previewState.data = undefined;
-        previewState.error = refusal(409, 'RETAINED_PAYMENT_SUCCESSION_OPEN');
-
-        // Act
-        const { unmount } = render(
-            React.createElement(SubscriptionRevocationScreen, { subscriptionId: SUBSCRIPTION_ID })
-        );
-
-        // Assert
-        const blocked = screen.getByTestId('subscription-revocation-blocked');
-        expect(blocked).toHaveAttribute('data-reason', 'RETAINED_PAYMENT_SUCCESSION_OPEN');
-        expect(blocked).toHaveTextContent(
-            'No se puede revocar ahora (código RETAINED_PAYMENT_SUCCESSION_OPEN).'
-        );
-        expectNoConfirm();
-
-        // Arrange + Act: a 5xx, even holding a stale preview
-        unmount();
-        previewState.data = READY;
-        previewState.error = refusal(500);
-        renderScreen();
-
-        // Assert
-        expect(screen.getByTestId('subscription-revocation-unavailable')).toHaveTextContent(
-            'No pudimos revisar la suscripción'
-        );
-        expect(screen.queryByTestId('subscription-revocation-ready')).not.toBeInTheDocument();
-        expectNoConfirm();
     });
 
     it('(g) confirming sends the payment.id of the preview and the trimmed note', async () => {

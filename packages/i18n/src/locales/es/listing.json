@@ -330,6 +330,17 @@
                 "hours": "los horarios",
                 "other": "otros datos"
             }
+        },
+        "publish": {
+            "confirmTitle": {
+                "gastronomy": "¿Publicar este comercio?",
+                "experience": "¿Publicar esta experiencia?"
+            },
+            "choosePlan": {
+                "gastronomy": "Elegir plan de gastronomía",
+                "experience": "Elegir plan de experiencias"
+            },
+            "missingRequirements": "No se pudo publicar porque faltan datos."
         }
     },
     "notices": {
