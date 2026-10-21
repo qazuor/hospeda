@@ -1,0 +1,113 @@
+// TEST:1731:1 — a rejected checkout charge closes an already-cancelled pending signup.
+import { emailOutbox, eq, subscriptions, users } from '@repo/db';
+import { FakePaymentProvider } from '@repo/payments/fake';
+import { afterAll, describe, expect, it, vi } from 'vitest';
+import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service';
+import { providerLinkCancellationSeen } from '../../../src/services/billing/subscription/provider-link-cancellation-seen';
+import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
+import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { noTouristVip } from './support/tourist-vip';
+
+afterAll(closeServiceTestPool);
+const now = new Date('2026-10-01T03:00:00.000Z');
+const clock = { now: () => new Date(now) };
+
+async function setup() {
+    const [user] = await getServiceTestDb()
+        .insert(users)
+        .values({
+            email: `hos1731-${crypto.randomUUID()}@example.test`,
+            displayName: 'HOS-1731',
+            emailVerified: true,
+            lifecycleState: 'ACTIVE'
+        })
+        .returning();
+    if (!user) throw new Error('Missing user');
+    const planId = (
+        await getServiceTestPool().query<{ id: string }>(
+            'INSERT INTO plan (vertical, slug, name) VALUES ($1, $2, $3) RETURNING id',
+            ['accommodation', `hos1731-${crypto.randomUUID()}`, 'Plan']
+        )
+    ).rows[0]?.id;
+    if (!planId) throw new Error('Missing plan');
+    const versionId = (
+        await getServiceTestPool().query<{ id: string }>(
+            "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip) VALUES ($1, 'accommodation', $2, true, true, 0, false, false) RETURNING id",
+            [planId, Math.floor(Math.random() * 1_000_000_000)]
+        )
+    ).rows[0]?.id;
+    if (!versionId) throw new Error('Missing version');
+    const optionId = (
+        await getServiceTestPool().query<{ id: string }>(
+            "INSERT INTO billing_option (plan_version_id, cycle, amount, currency) VALUES ($1, 'monthly', 250000, 'ARS') RETURNING id",
+            [versionId]
+        )
+    ).rows[0]?.id;
+    if (!optionId) throw new Error('Missing option');
+    const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+    const beforeCancelNotice = { beforeCancel: vi.fn(async () => 'SENT' as const) };
+    const started = await startSubscription(
+        {
+            userId: user.id,
+            billingOptionId: optionId,
+            returnUrl: 'https://example.test'
+        },
+        {
+            provider: fake,
+            clock,
+            beforeCancelNotice,
+            touristVipInheritance: noTouristVip,
+            planPolicy: async () => ({
+                graceDays: 10,
+                allowsPause: false,
+                current: true,
+                sellable: true
+            })
+        }
+    );
+    const charge = await fake.declineCharge({
+        authorizationId: started.authorizationId,
+        declineReason: 'cc_rejected_insufficient_amount'
+    });
+    await fake.cancel({ authorizationId: started.authorizationId });
+    return { fake, started, chargeId: charge.chargeId, userId: user.id, beforeCancelNotice };
+}
+
+async function ownOutbox(subscriptionId: string) {
+    const rows = await getServiceTestDb().select().from(emailOutbox);
+    return rows.filter(
+        (row) =>
+            row.template === 'billing.signup-declined' &&
+            (row.payload as { subscriptionId?: string }).subscriptionId === subscriptionId
+    );
+}
+
+describe('HOS-1731 pending first charge rejection', () => {
+    it('TEST:1731:1 closes the cancelled pending attempt via the recorded payment notice', async () => {
+        const own = await setup();
+        const result = await recordChargeFact(
+            { chargeId: own.chargeId },
+            {
+                provider: own.fake,
+                clock,
+                beforeCancelNotice: own.beforeCancelNotice,
+                cancellationSeen: providerLinkCancellationSeen
+            }
+        );
+        expect(result).toMatchObject({
+            outcome: 'DECLINED',
+            decline: { outcome: 'DECLINED', cancelCall: 'NOT_NEEDED' }
+        });
+        const [row] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, own.started.subscriptionId));
+        expect(row?.status).toBe('CHARGE_DECLINED');
+        expect(row?.providerLink?.cancellationSeenAt).toBeDefined();
+        const mails = await ownOutbox(own.started.subscriptionId);
+        expect(mails).toHaveLength(1);
+        expect(mails[0]?.payload).toMatchObject({
+            declineReason: 'cc_rejected_insufficient_amount'
+        });
+    });
+});
