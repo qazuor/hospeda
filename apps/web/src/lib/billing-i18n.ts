@@ -182,7 +182,7 @@ export function getLimitHelp(input: { key: string; t: Translator }): string {
  * label or the number formatted for the locale.
  *
  * @param input.value - Raw value from the plan's `limits` map.
- * @param input.isUnlimited - Whether the value is the catalogue's `-1`
+ * @param input.isUnlimited - Whether the value is the catalogue's int4 max
  *   sentinel. Passed in rather than re-derived so this helper stays ignorant of
  *   the sentinel's spelling — `plan-card-delta.ts` owns that.
  * @param input.intlLocale - BCP-47 tag for thousand separators.

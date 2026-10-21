@@ -31,6 +31,7 @@ describe('HOS-1719 unlimited sentinel guards', () => {
         expect(migrationValue, 'max_favorites migration row').not.toBeNull();
         expect(isUnlimitedLimit({ value: Number(catalogValue?.[1]) })).toBe(true);
         expect(isUnlimitedLimit({ value: Number(migrationValue?.[1]) })).toBe(true);
+        expect(isUnlimitedLimit({ value: 5 })).toBe(false);
     });
 
     it('TEST:1719:5 keeps one web sentinel definition and removes stale -1 comparisons', () => {

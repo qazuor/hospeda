@@ -181,9 +181,8 @@ describe('computePlanDelta', () => {
     });
 
     describe('the unlimited sentinel', () => {
-        it('ranks -1 ABOVE a finite value, so going unlimited is a rise', () => {
-            // A naive numeric comparison reads -1 as smaller than 5 and drops
-            // `owner-premium`'s unlimited promotions from its delta entirely.
+        it('ranks the catalog sentinel ABOVE a finite value, so going unlimited is a rise', () => {
+            // AC:1719:3: a naive numeric comparison reads the sentinel as a finite cap.
             const pro = plan({ slug: 'pro', limits: { max_active_promotions: 5 } });
             const premium = plan({
                 slug: 'premium',
@@ -195,7 +194,7 @@ describe('computePlanDelta', () => {
             expect(delta.limitChanges).toEqual([
                 {
                     key: 'max_active_promotions',
-                    value: -1,
+                    value: 2147483647,
                     previousValue: 5,
                     kind: 'raised',
                     isUnlimited: true

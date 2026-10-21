@@ -49,6 +49,17 @@ describe('HOS-1719 unlimited limit', () => {
 
         expect(limitText).toContain('Ilimitado');
         expect(limitText).not.toMatch(/2\.147\.483\.647|2147483647/);
+        const finiteCard = buildPricingCardViews({
+            plans: [pricingPlan({ slug: 'tourist-plus', limits: { max_favorites: 5 } })],
+            audience: 'tourist',
+            intlLocale: 'es-AR',
+            t
+        }).cards[0];
+        const finiteText = [...(finiteCard?.visibleItems ?? []), ...(finiteCard?.hiddenItems ?? [])]
+            .filter((item) => item.kind === 'limit')
+            .map((item) => item.text)
+            .join(' ');
+        expect(finiteText).toContain('5');
     });
 
     it('TEST:1719:2 resolves the real sentinel as unlimited and finite or absent values normally', () => {
