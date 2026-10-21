@@ -718,7 +718,7 @@
         {
             "id": "TRANS:B:S16",
             "machine": "subscription",
-            "from": ["ACTIVE"],
+            "from": ["ACTIVE", "PENDING_AUTHORIZATION"],
             "events": ["first_charge_declined"],
             "to": ["CHARGE_DECLINED"],
             "guard": {},
