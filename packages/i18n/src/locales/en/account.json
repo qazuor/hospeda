@@ -443,6 +443,9 @@
         "usageOf": "{{current}} of {{max}}",
         "trialSummary": {
             "title": "Your free {{vertical}} trial",
+            "endedTitle": "Your free {{vertical}} trial has ended",
+            "endedConverted": "Your trial ended and you now have your plan.",
+            "endedExpired": "Your trial ended on {{end}}.",
             "vertical": {
                 "accommodation": "accommodation",
                 "gastronomy": "gastronomy",
