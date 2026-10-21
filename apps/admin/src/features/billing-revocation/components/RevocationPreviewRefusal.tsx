@@ -12,7 +12,7 @@
  */
 
 import type { TranslationKey } from '@repo/i18n';
-import { AlertCircleIcon } from '@repo/icons';
+import { AlertCircleIcon, InfoIcon } from '@repo/icons';
 import { useTranslations } from '@/hooks/use-translations';
 import { isApiError } from '@/lib/errors';
 import {
@@ -62,6 +62,8 @@ export function classifyRevocationPreviewError({
 export interface RevocationPreviewRefusalProps {
     /** The error the preview query holds. */
     readonly error: unknown;
+    /** Confirmed current subscription status, when the caller may inspect it. */
+    readonly subscriptionStatus?: string | null;
 }
 
 /**
@@ -69,12 +71,18 @@ export interface RevocationPreviewRefusalProps {
  *
  * @param props - The preview error.
  */
-export function RevocationPreviewRefusal({ error }: RevocationPreviewRefusalProps) {
+export function RevocationPreviewRefusal({
+    error,
+    subscriptionStatus
+}: RevocationPreviewRefusalProps) {
     const { t } = useTranslations();
     const refusal = classifyRevocationPreviewError({ error });
 
     if (refusal.kind === 'unavailable') {
         return <RevocationUnavailable messageKey={refusal.key} />;
+    }
+    if (refusal.reason === 'REVOCATION_STATE_NOT_ALLOWED' && subscriptionStatus === 'CANCELLED') {
+        return <RevocationAlreadyCancelled />;
     }
 
     return (
@@ -88,7 +96,13 @@ export function RevocationPreviewRefusal({ error }: RevocationPreviewRefusalProp
                     size={16}
                     className="mt-0.5 shrink-0"
                 />
-                <span>{t('admin-billing.subscriptionRevocation.blocked.intro')}</span>
+                <span>
+                    {t(
+                        refusal.reason === 'REVOCATION_STATE_NOT_ALLOWED'
+                            ? 'admin-billing.subscriptionRevocation.blocked.introStateNotAllowed'
+                            : 'admin-billing.subscriptionRevocation.blocked.intro'
+                    )}
+                </span>
             </p>
             <p>
                 {isKnownRevocationReason(refusal.reason)
@@ -98,6 +112,24 @@ export function RevocationPreviewRefusal({ error }: RevocationPreviewRefusalProp
                       })}
             </p>
         </div>
+    );
+}
+
+/** Neutral state shown when inspection confirms that revocation already completed. */
+export function RevocationAlreadyCancelled() {
+    const { t } = useTranslations();
+    return (
+        <p
+            role="status"
+            className="flex items-start gap-2 font-medium"
+            data-testid="subscription-revocation-already-cancelled"
+        >
+            <InfoIcon
+                size={16}
+                className="mt-0.5 shrink-0"
+            />
+            <span>{t('admin-billing.subscriptionRevocation.alreadyCancelled')}</span>
+        </p>
     );
 }
 

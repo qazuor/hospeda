@@ -1724,6 +1724,7 @@
         }
     },
     "subscriptionRevocation": {
+        "alreadyCancelled": "This subscription is already cancelled. There is nothing left to revoke.",
         "title": "Revoke a subscription (right of withdrawal)",
         "motive": "Reason: revocation under the right of withdrawal.",
         "loading": "Checking the subscription's last charge…",
@@ -1757,6 +1758,7 @@
         "confirm": "Revoke: cancel, end the service and request the refund",
         "blocked": {
             "intro": "It cannot be revoked. Nothing was cancelled.",
+            "introStateNotAllowed": "It cannot be revoked.",
             "REFUND_EXCEEDS_BALANCE": "That charge already has refunds requested or made for its whole amount. The revocation is not registered: the subscription is not cancelled and the service is not ended. Resolve that refund first.",
             "PAYMENT_NOT_REFUNDABLE": "The last charge was already refunded or has a chargeback: it cannot be refunded again.",
             "REVOCATION_WINDOW_CLOSED": "More than 10 calendar days have passed since the last charge: the revocation window has closed.",

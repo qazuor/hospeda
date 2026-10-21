@@ -84,6 +84,9 @@ const previewState: {
 };
 const refetch = vi.fn();
 const mutateAsync = vi.fn();
+vi.mock('../../hooks/useSubscriptionStatus', () => ({
+    useSubscriptionStatus: () => ({ data: undefined, isLoading: false })
+}));
 vi.mock('../../hooks/useSubscriptionRevocation', () => ({
     useSubscriptionRevocationPreview: () => ({ ...previewState, isFetching: false, refetch }),
     useRevokeSubscriptionMutation: () => ({ mutateAsync, isPending: false })

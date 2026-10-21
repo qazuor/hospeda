@@ -1724,6 +1724,7 @@
         }
     },
     "subscriptionRevocation": {
+        "alreadyCancelled": "Esta suscripción ya está cancelada. No hay nada más que revocar.",
         "title": "Revocar una suscripción (derecho de arrepentimiento)",
         "motive": "Motivo: revocación del derecho de arrepentimiento.",
         "loading": "Revisando el último cobro de la suscripción…",
@@ -1757,6 +1758,7 @@
         "confirm": "Revocar: cancelar, cortar el servicio y pedir la devolución",
         "blocked": {
             "intro": "No se puede revocar. No se canceló nada.",
+            "introStateNotAllowed": "No se puede revocar.",
             "REFUND_EXCEEDS_BALANCE": "Ese cobro ya tiene devoluciones pedidas o hechas por todo su monto. La revocación no se registra: no se cancela la suscripción ni se corta el servicio. Resolvé primero esa devolución.",
             "PAYMENT_NOT_REFUNDABLE": "El último cobro ya se devolvió o tiene un contracargo: no se puede devolver otra vez.",
             "REVOCATION_WINDOW_CLOSED": "Pasaron más de 10 días corridos desde el último cobro: venció el plazo para revocar.",
