@@ -183,8 +183,10 @@ describe('TEST:1731:8 pending first charge reconciliation', () => {
         async () => {
             const own = await setup({ cancel: false });
             const cancel = vi.spyOn(own.provider, 'cancel');
+            const readCharge = vi.spyOn(own.provider, 'readCharge');
             await createPendingFirstChargeDeclineCheck(ports(own))(await directInput(own));
             expect(cancel).not.toHaveBeenCalled();
+            expect(readCharge).not.toHaveBeenCalled();
             const [row] = await getServiceTestDb()
                 .select()
                 .from(subscriptions)
