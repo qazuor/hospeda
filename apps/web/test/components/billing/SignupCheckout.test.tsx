@@ -9,6 +9,7 @@ vi.mock('@/lib/api/endpoints-protected', () => ({ billingSubscriptionApi: { star
 const props = {
     locale: 'es' as const,
     billingOptionId: '123e4567-e89b-42d3-a456-426614174000',
+    accountEmail: 'account@example.test',
     plansHref: '/es/planes/turistas/',
     trialNotice: null,
     touristVipNotice: null

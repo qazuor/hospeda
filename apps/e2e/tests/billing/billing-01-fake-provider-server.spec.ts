@@ -130,7 +130,10 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
                 'content-type': 'application/json',
                 cookie: user.sessionCookie
             },
-            body: JSON.stringify({ billingOptionId: optionId })
+            body: JSON.stringify({
+                billingOptionId: optionId,
+                payerEmail: `mp-${crypto.randomUUID()}@example.test`
+            })
         });
         const body = (await response.json()) as {
             data?: { authorizationId?: string; checkoutUrl?: string; subscriptionId?: string };
@@ -306,5 +309,49 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
         expect(Math.abs(windowEnd - (Date.now() + 72 * 60 * 60 * 1000))).toBeGreaterThan(
             29 * 24 * 60 * 60 * 1000
         );
+    });
+
+    test('TEST:1730:5d creates the preapproval for the declared payer email', async ({ page }) => {
+        if (!fakeServer) throw new Error('TEST:1730:5d fake provider server was not started');
+        fakeServer.useProvider({
+            provider: new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() })
+        });
+        const user = await freshUser();
+        const declaredEmail = `declared-${crypto.randomUUID()}@example.test`;
+        await seedCookieConsent(page);
+        await attachSession(page, user.sessionCookie);
+        await openSignupCheckout({
+            page,
+            webUrl: process.env.HOSPEDA_E2E_WEB_URL,
+            billingOptionId: monthlyOptionId
+        });
+        await page.getByTestId('signup-checkout-payer-email').fill(declaredEmail);
+        await page.getByTestId('signup-checkout-confirm').click();
+
+        const pending = page.getByTestId('signup-checkout-pending');
+        await expect(pending).toBeVisible();
+        const subscriptionId = await pending.getAttribute('data-subscription-id');
+        expect(subscriptionId).toBeTruthy();
+        const declaredSearch = await fetch(
+            `${E2E_FAKE_PROVIDER_URL}/preapproval/search?payer_email=${encodeURIComponent(declaredEmail)}`,
+            { headers: { authorization: 'Bearer e2e-fake-provider' } }
+        );
+        const declaredBody = (await declaredSearch.json()) as {
+            results: Array<{ external_reference: string }>;
+        };
+        expect(
+            declaredBody.results.some((result) => result.external_reference === subscriptionId)
+        ).toBe(true);
+
+        const accountSearch = await fetch(
+            `${E2E_FAKE_PROVIDER_URL}/preapproval/search?payer_email=${encodeURIComponent(user.email)}`,
+            { headers: { authorization: 'Bearer e2e-fake-provider' } }
+        );
+        const accountBody = (await accountSearch.json()) as {
+            results: Array<{ external_reference: string }>;
+        };
+        expect(
+            accountBody.results.some((result) => result.external_reference === subscriptionId)
+        ).toBe(false);
     });
 });

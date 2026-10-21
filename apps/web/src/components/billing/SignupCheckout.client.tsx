@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import type { StartSubscriptionResponse } from '@/lib/api/endpoints-protected';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import {
     formatSignupWindowEnd,
+    resolveDeclaredPayerEmail,
     resolveSignupRejection,
     SIGNUP_VERTICAL_LABEL_KEY,
     type SignupTouristVipNotice,
@@ -16,6 +17,7 @@ import styles from './SignupCheckout.module.css';
 export interface SignupCheckoutProps {
     readonly locale: SupportedLocale;
     readonly billingOptionId: string;
+    readonly accountEmail: string;
     readonly plansHref: string;
     readonly trialNotice: SignupTrialNotice | null;
     readonly touristVipNotice: SignupTouristVipNotice | null;
@@ -35,18 +37,32 @@ type CheckoutView =
 export function SignupCheckout({
     locale,
     billingOptionId,
+    accountEmail,
     plansHref,
     trialNotice,
     touristVipNotice
 }: SignupCheckoutProps) {
     const [view, setView] = useState<CheckoutView>({ state: 'idle' });
+    const [payerEmail, setPayerEmail] = useState(accountEmail);
+    const [payerEmailError, setPayerEmailError] = useState(false);
+    const payerEmailInputId = useId();
+    const payerEmailHelpId = useId();
+    const payerEmailErrorId = useId();
     const { t, tPlural } = useMemo(() => createTranslations(locale), [locale]);
 
     const start = async () => {
         if (view.state === 'submitting' || view.state === 'pending') return;
+        const resolvedEmail = resolveDeclaredPayerEmail({ value: payerEmail });
+        if (!resolvedEmail.ok) {
+            setPayerEmailError(true);
+            return;
+        }
         setView({ state: 'submitting' });
         try {
-            const result = await billingSubscriptionApi.start({ billingOptionId });
+            const result = await billingSubscriptionApi.start({
+                billingOptionId,
+                payerEmail: resolvedEmail.email
+            });
             if (!result.ok) {
                 setView({
                     state: 'rejected',
@@ -80,6 +96,44 @@ export function SignupCheckout({
             )}
             {view.state === 'idle' || view.state === 'submitting' ? (
                 <>
+                    <div className={styles.payerEmailField}>
+                        <label
+                            className={styles.payerEmailLabel}
+                            htmlFor={payerEmailInputId}
+                        >
+                            {t('billing.checkout.signup.payerEmail.label')}
+                        </label>
+                        <input
+                            id={payerEmailInputId}
+                            className={styles.payerEmailInput}
+                            type="email"
+                            inputMode="email"
+                            autoComplete="email"
+                            data-testid="signup-checkout-payer-email"
+                            value={payerEmail}
+                            aria-invalid={payerEmailError}
+                            aria-describedby={`${payerEmailHelpId}${payerEmailError ? ` ${payerEmailErrorId}` : ''}`}
+                            onChange={(event) => {
+                                setPayerEmail(event.currentTarget.value);
+                                setPayerEmailError(false);
+                            }}
+                        />
+                        <p
+                            className={styles.payerEmailHint}
+                            id={payerEmailHelpId}
+                        >
+                            {t('billing.checkout.signup.payerEmail.hint')}
+                        </p>
+                        {payerEmailError && (
+                            <p
+                                className={styles.payerEmailError}
+                                id={payerEmailErrorId}
+                                role="alert"
+                            >
+                                {t('billing.checkout.signup.payerEmail.invalid')}
+                            </p>
+                        )}
+                    </div>
                     {trialNotice && (
                         <div
                             className={styles.trialNotice}

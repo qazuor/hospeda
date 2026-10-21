@@ -30,6 +30,7 @@ export interface CreatePendingAuthorizationInput {
     readonly billingOptionId: string;
     readonly authorizationWindowDeadlineVersion: number;
     readonly authorizationWindowEndsAt: Date;
+    readonly declaredPayerEmail?: string;
     /** Optional outer transaction; its caller must commit before the provider call. */
     readonly tx?: DrizzleClient;
 }
@@ -136,6 +137,7 @@ export class SubscriptionModel {
                     paymentMethod: 'CARD',
                     status: 'PENDING_AUTHORIZATION',
                     class: 'PRINCIPAL',
+                    declaredPayerEmail: input.declaredPayerEmail ?? null,
                     authorizationWindowDeadlineVersion: input.authorizationWindowDeadlineVersion,
                     authorizationWindowEndsAt: input.authorizationWindowEndsAt
                 })

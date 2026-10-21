@@ -1,4 +1,4 @@
-import { eq, getDb, planCatalogModel, users } from '@repo/db';
+import { planCatalogModel } from '@repo/db';
 import {
     ServiceErrorCode,
     SignupNoticeResponseSchema,
@@ -40,18 +40,13 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
     handler: async (ctx: Context, _params, body) => {
         const actor = getActorFromContext(ctx);
         const parsed = StartSubscriptionRequestSchema.parse(body);
-        const [user] = await getDb()
-            .select({ email: users.email })
-            .from(users)
-            .where(eq(users.id, actor.id))
-            .limit(1);
         try {
             const result = await startSubscription(
                 {
                     userId: actor.id,
                     billingOptionId: parsed.billingOptionId,
                     returnUrl: env.HOSPEDA_SITE_URL,
-                    payerEmail: user?.email
+                    payerEmail: parsed.payerEmail
                 },
                 {
                     provider: getPaymentProvider(),

@@ -33,6 +33,7 @@ export interface PendingCreationRow {
     readonly providerLink: SelectProviderLink | null;
     readonly newestCreateKey: SelectIdempotencyKey | null;
     readonly userEmail: string | null;
+    readonly payerEmail: string | null;
     readonly planName: string;
 }
 
@@ -77,6 +78,9 @@ export class CreationSweepModel {
                 providerLink: providerLinks,
                 newestCreateKey: idempotencyKeys,
                 userEmail: users.email,
+                payerEmail: sql<
+                    string | null
+                >`coalesce(${subscriptions.declaredPayerEmail}, ${users.email})`,
                 planName: plans.name
             })
             .from(subscriptions)

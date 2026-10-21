@@ -236,7 +236,10 @@ test.describe('TEST:B3:35 AC:B3:33 AC:B3:9 the signup end to end with two abando
         const response = await fetch(`${API_URL}/api/v1/protected/billing/subscriptions`, {
             method: 'POST',
             headers: { 'content-type': 'application/json', cookie: personB.sessionCookie },
-            body: JSON.stringify({ billingOptionId: monthlyOptionId })
+            body: JSON.stringify({
+                billingOptionId: monthlyOptionId,
+                payerEmail: `mp-${crypto.randomUUID()}@example.test`
+            })
         });
         const body = (await response.json()) as {
             readonly data?: { readonly subscriptionId?: string };

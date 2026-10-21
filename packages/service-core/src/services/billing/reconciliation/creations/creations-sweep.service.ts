@@ -66,7 +66,7 @@ export async function runCreationsSweep(
         });
         for (const row of page) {
             rowsExamined++;
-            const { subscription, providerLink, newestCreateKey, userEmail, planName } = row;
+            const { subscription, providerLink, newestCreateKey, payerEmail, planName } = row;
             try {
                 let cancellationFailure: unknown;
                 const cancelAndCount = async (authorizationId: string) => {
@@ -93,7 +93,7 @@ export async function runCreationsSweep(
                     }
                 };
                 const rowStartedAt = ports.clock.now();
-                if (!userEmail?.trim()) {
+                if (!payerEmail?.trim()) {
                     skippedNoEmail++;
                     continue;
                 }
@@ -105,7 +105,7 @@ export async function runCreationsSweep(
                     continue;
                 }
                 // The provider search intentionally uses only payerEmail; its result is classified locally.
-                const found = await ports.provider.searchAuthorizations({ payerEmail: userEmail });
+                const found = await ports.provider.searchAuthorizations({ payerEmail });
                 const named = found.authorizations.filter(
                     (candidate) => candidate.reference === subscription.id
                 );
@@ -190,7 +190,7 @@ export async function runCreationsSweep(
                         clock: ports.clock,
                         reason: planName,
                         returnUrl: ports.returnUrl,
-                        payerEmail: userEmail,
+                        payerEmail,
                         firstChargeAt: subscription.firstChargeAt?.toISOString()
                     });
                     recreated++;

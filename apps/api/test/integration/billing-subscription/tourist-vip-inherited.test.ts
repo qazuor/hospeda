@@ -123,8 +123,18 @@ describe('TEST:B3:29 Tourist VIP inherited S1 route guard', () => {
                 body: JSON.stringify(body)
             });
         expect((await send({ billingOptionId: vip.billingOption.id }, false)).status).toBe(401);
-        expect((await send({ billingOptionId: 'not-a-uuid' })).status).toBe(400);
-        const blocked = await send({ billingOptionId: vip.billingOption.id });
+        expect(
+            (
+                await send({
+                    billingOptionId: 'not-a-uuid',
+                    payerEmail: `mp-${crypto.randomUUID()}@example.test`
+                })
+            ).status
+        ).toBe(400);
+        const blocked = await send({
+            billingOptionId: vip.billingOption.id,
+            payerEmail: `mp-${crypto.randomUUID()}@example.test`
+        });
         expect(blocked.status).toBe(409);
         expect((await blocked.json()).error.reason).toBe('TOURIST_VIP_INHERITED');
         expect(authorize).not.toHaveBeenCalled();
@@ -138,7 +148,10 @@ describe('TEST:B3:29 Tourist VIP inherited S1 route guard', () => {
             .update(subscriptions)
             .set({ status: 'CANCELLED' })
             .where(eq(subscriptions.id, titleRow.id));
-        const admitted = await send({ billingOptionId: vip.billingOption.id });
+        const admitted = await send({
+            billingOptionId: vip.billingOption.id,
+            payerEmail: `mp-${crypto.randomUUID()}@example.test`
+        });
         expect(admitted.status).toBe(201);
         expect((await admitted.json()).data.checkoutUrl).toBeDefined();
         expect(authorize).toHaveBeenCalledTimes(1);
@@ -161,7 +174,10 @@ describe('TEST:B3:29 Tourist VIP inherited S1 route guard', () => {
         const response = await app.request(path, {
             method: 'POST',
             headers: headers(title.user.id),
-            body: JSON.stringify({ billingOptionId: vip.billingOption.id })
+            body: JSON.stringify({
+                billingOptionId: vip.billingOption.id,
+                payerEmail: `mp-${crypto.randomUUID()}@example.test`
+            })
         });
         expect(response.status).toBe(201);
         expect((await response.json()).data.checkoutUrl).toBeDefined();
