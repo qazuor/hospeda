@@ -264,9 +264,14 @@ overrides:
   # twice: Dependabot #3413 bumped only the direct paths and left
   # @remix-run/node and unifont on 8.10.0, so the floor moves again.
   undici: ">=8.10.2 <9"
-  "vite@^6.0.0": ">=8.0.16 <9"
-  "vite@^7.0.0": ">=8.0.16 <9"
-  "vite@>=6.0.0": ">=8.0.16 <9"
+  # GHSA-587h-7wmj-h5pm (2026-10): every vite line below 8.3.3 on the 8.3 minor
+  # (8.2.4 on 8.2) is affected. The floor was ours again: the `>=6.0.0` selector
+  # rewrites the direct `^8.3.0` specifiers too, which is how the lock stayed on
+  # 8.2.1 while both package.json files asked for 8.3. Raise the floor to the
+  # patched 8.3 release so the override cannot pull the lock below its own specs.
+  "vite@^6.0.0": ">=8.3.3 <9"
+  "vite@^7.0.0": ">=8.3.3 <9"
+  "vite@>=6.0.0": ">=8.3.3 <9"
   "@sentry/vite-plugin": ">=5.3.0"
   # GHSA-2v37-7h3g-55p8 (advisory ampliado 2026-08-07, y otra vez 2026-08-15):
   # el generador custom puede colgarse en un loop infinito con size 0. Sólo la
