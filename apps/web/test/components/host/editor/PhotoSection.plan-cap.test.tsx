@@ -398,6 +398,7 @@ describe('HOS-1721 — a pre-trial owner can fill the photos of their DRAFT', ()
         await waitFor(() =>
             expect(screen.getByRole('button', { name: /Agregar fotos/i })).toBeEnabled()
         );
+        await mockListMedia.mock.results[0]?.value;
 
         mockFeaturedOverride.current = {
             id: 'featured-id',
