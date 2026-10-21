@@ -2894,6 +2894,25 @@ export type SubscribeDestinationResponse = z.infer<typeof SubscribeDestinationRe
  */
 export const publishApi = {
     /**
+     * Publish a gastronomy or experience listing.
+     *
+     * @param params.vertical - Listing vertical.
+     * @param params.id - Listing identifier.
+     * @returns The published listing or a typed API error.
+     */
+    publish({
+        vertical,
+        id
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly id: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/${LISTING_VERTICAL_PLURAL[vertical]}/${id}/publish`
+        });
+    },
+
+    /**
      * Precheck publishing in one vertical for the current actor.
      *
      * @param params.vertical - Which vertical to precheck.

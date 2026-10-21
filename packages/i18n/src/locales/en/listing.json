@@ -330,6 +330,17 @@
                 "hours": "the opening hours",
                 "other": "other details"
             }
+        },
+        "publish": {
+            "confirmTitle": {
+                "gastronomy": "Publish this business?",
+                "experience": "Publish this experience?"
+            },
+            "choosePlan": {
+                "gastronomy": "Choose a gastronomy plan",
+                "experience": "Choose an experiences plan"
+            },
+            "missingRequirements": "The listing could not be published because information is missing."
         }
     },
     "notices": {
