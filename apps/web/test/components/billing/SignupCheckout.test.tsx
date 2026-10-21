@@ -113,6 +113,19 @@ describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
         );
     });
 
+    it('TEST:1723:5b shows the translated retry action for an unfinished previous creation', async () => {
+        start.mockResolvedValueOnce({
+            ok: false,
+            error: { status: 409, reason: 'PREVIOUS_ATTEMPT_IN_PROGRESS', message: 'English' }
+        });
+        render(<SignupCheckout {...props} />);
+        fireEvent.click(screen.getByTestId('signup-checkout-confirm'));
+        expect(await screen.findByTestId('signup-checkout-retry')).toBeInTheDocument();
+        expect(screen.getByTestId('signup-checkout-rejection')).toHaveTextContent(
+            'Todavía estamos preparando tu intento anterior con Mercado Pago. Probá de nuevo en unos minutos.'
+        );
+    });
+
     it('uses generic localized copy for unknown reasons and prevents duplicate submits', async () => {
         let resolve: (value: unknown) => void = () => undefined;
         start.mockImplementation(

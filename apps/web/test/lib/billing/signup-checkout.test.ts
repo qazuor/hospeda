@@ -25,6 +25,12 @@ describe('signup checkout helpers — B3 UI (B3.md:1045-1053)', () => {
             true,
             false
         ],
+        [
+            'PREVIOUS_ATTEMPT_IN_PROGRESS',
+            'billing.checkout.signup.rejection.previousAttemptInProgress',
+            true,
+            false
+        ],
         ['COMMITMENT_TAKEN', 'billing.checkout.signup.rejection.commitmentTaken', false, false],
         [
             'TOURIST_VIP_INHERITED',

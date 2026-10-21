@@ -25,7 +25,7 @@ const path = '/api/v1/protected/billing/subscriptions';
 const clock = { now: () => new Date('2026-10-08T20:00:00.000Z') };
 
 /**
- * The COMMITMENT_TAKEN cases below POST against a live commitment. Today they
+ * The occupied commitment case below POSTs against a live commitment. Today it
  * are answered by `resolve-live-commitment.ts:70-74`, which throws 409 BEFORE
  * reading the reuse window, so this file does not strictly read
  * `values['10'].cardHours` yet. The seed is kept anyway so the file is
@@ -169,7 +169,7 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
             body: JSON.stringify({ billingOptionId: option.id, payerEmail: user.email })
         });
         expect(response.status).toBe(409);
-        expect((await response.json()).error.reason).toBe('COMMITMENT_TAKEN');
+        expect((await response.json()).error.reason).toBe('PREVIOUS_ATTEMPT_IN_PROGRESS');
         expect(authorize).not.toHaveBeenCalled();
     });
 
