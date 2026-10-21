@@ -8,17 +8,21 @@ import { z } from 'zod';
  * - At least one uppercase letter (A-Z)
  * - At least one lowercase letter (a-z)
  * - At least one digit (0-9)
- * - At least one special character (@$!%*?&)
+ * - At least one ASCII symbol (one of the 32 ASCII punctuation and symbol characters)
  */
-export const StrongPasswordRegex =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+/** Matches any of the 32 ASCII punctuation and symbol characters. */
+export const AsciiSpecialCharacterRegex = /[!-/:-@[-`{-~]/;
+
+export const StrongPasswordRegex = new RegExp(
+    `^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*${AsciiSpecialCharacterRegex.source})[\\s\\S]{8,}$`
+);
 
 /**
  * Strong password Zod schema.
  *
  * Validates that a password meets the platform security requirements:
  * minimum 8 characters, at least one uppercase letter, one lowercase letter,
- * one digit, and one special character from the set `@$!%*?&`.
+ * one digit, and one ASCII symbol from the 32 ASCII punctuation and symbol characters.
  *
  * Maximum length is capped at 128 characters to prevent DoS via large inputs.
  *
