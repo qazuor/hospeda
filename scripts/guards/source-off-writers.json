@@ -41,6 +41,14 @@
     },
     {
         "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "abandonReplacedPendingAuthorization",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S39 moves PENDING_AUTHORIZATION to ABANDONED; neither emits a coverage source (03-contrato-de-cobertura.md:466-467; I-6)."
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
         "symbol": "abandonPendingAuthorization",
         "table": "courtesyGrants",
         "effect": "turns-off",

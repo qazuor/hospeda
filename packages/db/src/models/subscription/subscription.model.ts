@@ -100,6 +100,13 @@ export interface PendingAuthorizationTransitionInput {
     readonly tx?: DrizzleClient;
 }
 
+/** Input for S39's conditional close of a replaced card signup attempt. */
+export interface AbandonReplacedPendingAuthorizationInput {
+    readonly subscriptionId: string;
+    readonly now: Date;
+    readonly tx: DrizzleClient;
+}
+
 /** Provider result persisted after the external authorization call. */
 export interface RecordAuthorizationResultInput {
     readonly idempotencyKey: string;
@@ -275,6 +282,29 @@ export class SubscriptionModel {
             };
         };
         return input.tx ? write(input.tx) : getDb().transaction(write);
+    }
+
+    /**
+     * S39 closes only a replaced pending card signup. Unlike S3, it does not
+     * close courtesy balances or manual installments because S39 applies only
+     * to a card signup that is not a successor.
+     */
+    async abandonReplacedPendingAuthorization(
+        input: AbandonReplacedPendingAuthorizationInput
+    ): Promise<{ wrote: boolean }> {
+        const rows = await input.tx
+            .update(subscriptions)
+            .set({ status: 'ABANDONED', updatedAt: input.now })
+            .where(
+                and(
+                    eq(subscriptions.id, input.subscriptionId),
+                    eq(subscriptions.status, 'PENDING_AUTHORIZATION'),
+                    eq(subscriptions.class, 'PRINCIPAL'),
+                    isNull(subscriptions.succeedsId)
+                )
+            )
+            .returning({ id: subscriptions.id });
+        return { wrote: rows.length > 0 };
     }
 
     /** Reads every declined row and its mandate id for S1's by-id re-read. */
