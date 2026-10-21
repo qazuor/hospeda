@@ -176,10 +176,14 @@ describe('HOS-1725 the creations sweep completes the creation key it recovers', 
             });
 
         // Act
-        const summary = await sweep(fake, time).finally(() => relinked.mockRestore());
+        let lockCalls = 0;
+        const summary = await sweep(fake, time).finally(() => {
+            lockCalls = relinked.mock.calls.length;
+            relinked.mockRestore();
+        });
 
         // Assert
-        expect(relinked).toHaveBeenCalled();
+        expect(lockCalls).toBeGreaterThan(0);
         expect(summary.keysCompleted).toBe(0);
         const keys = await createKeys(row.subscription.id);
         expect(keys.every((key) => key.completedAt === null)).toBe(true);
