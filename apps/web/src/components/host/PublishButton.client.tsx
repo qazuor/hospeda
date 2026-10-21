@@ -1,83 +1,16 @@
 /**
  * @file PublishButton.client.tsx
- * @description React island that renders a "Publicar" primary button with an
- * inline confirmation step.
- *
- * Flow:
- *  1. Idle  → shows the "Publicar" button.
- *  2. Click → swaps to inline confirmation with "[Sí, publicar] [Cancelar]".
- *  3. Confirm (Sí) → calls POST /api/v1/protected/accommodations/:id/publish,
- *                    disables UI while pending. A dedicated `/publish`
- *                    endpoint is used instead of the generic update PATCH
- *                    because publishing is a PB1 transition: no create or
- *                    update input accepts `publicationStatus` (HOS-1641).
- *  4. Success → reloads the page via window.location.reload() so the card
- *               re-renders with the new PUBLISHED status.
- *  5. Error   → shows inline error message, re-enables the button. Two
- *               failures get a dedicated banner instead, because retrying
- *               them changes nothing: `403 subscription_required` (no active
- *               plan — links to the plans page) and `400 VALIDATION_ERROR`
- *               (the publish-completeness gate — links to the editor and
- *               names the fields the server reported).
- *  6. No (cancel) → returns to step 1.
- *
- * ## When the server would refuse, there is no step 1 at all (H-99)
- *
- * When `affordance.canPublish` is false the button is never rendered: the plan
- * link takes its place (or the no-plans notice, or the check-failed status). Publishing used to be offered with the same prominence as Edit and
- * Delete to an owner with no subscription at all, opening a dialog that promised
- * "va a aparecer en el sitio, visible para los turistas" — something that could
- * not happen — and failing only on confirm. Worse, the failure cited missing
- * bathrooms rather than the missing plan, because the server checked
- * completeness first. Both halves are fixed: the guard order flipped
- * server-side, and this button no longer offers what it cannot deliver.
- *
- * ## The rejection names real fields (H-94)
- *
- * The completeness branch used to map ANY 400 onto one fixed sentence naming
- * capacity, guests and bathrooms — its own comment admitted treating "cualquier
- * otro 400 como capacidad incompleta". In production that told a host their
- * guests and bedrooms were missing while the form showed 11 and 3, and never
- * mentioned bathrooms, the one field actually absent. The fields now come from
- * the server's `reason`, resolved through the same shared requirement list the
- * gate rejects from.
- *
- * ## Publishing starts the trial again, and the button reads the verdict (HOS-1183)
- *
- * This has flipped twice. Originally publishing granted a no-card trial and the
- * confirm step announced it. HOS-171 (card-first) moved the trial onto the
- * MercadoPago preapproval the CHECKOUT creates, so publishing required an active
- * subscription, rejected without one, and every billing promise was stripped from
- * the confirm copy. HOS-1012 moved the trial back off MercadoPago — a local row
- * with `mp_subscription_id = NULL`, inserted in the same transaction as the
- * lifecycle flip — so publishing grants it once more.
- *
- * The server followed; this button did not, and that is the bug HOS-1183 fixed.
- * It gated on `hasActivePlan` (`entitlements.plan != null`), which is the
- * server's `has_active_sub` verdict alone, while the server publishes on
- * `first_publish` too. The two publishable verdicts collapsed into one `false`
- * and the button vanished for exactly the owner holding an intact trial.
- *
- * ## The affordance is the server's publish decision (HOS-1668)
- *
- * HOS-1183 fed this button from `GET /protected/accommodations/publish-eligibility`,
- * a second resolver that went down with the legacy billing system and answered
- * 500 while the page failed OPEN and showed "Publicar" anyway. The single
- * `affordance` prop now comes from `resolvePublishAffordance`, which maps
- * `GET /protected/publish/subscribe-destination/{vertical}` — the same predicate
- * PB1 and `listing-access` consult when they reject a publish. A failed read is
- * the `unknown` affordance: a status line, never a button (HOS-1668 C-2). The
- * trial line shows in the one branch where it is true (`affordance.startsTrial`).
- *
- * Mirrors UnpublishButton.client.tsx / DeleteButton.client.tsx (same
- * inline-confirm UX), but uses a positive (green) accent for the confirm
- * button instead of the danger red.
+ * @description Inline publish confirmation using the server-resolved
+ * `subscribe-destination` affordance. Dispatch and vertical paths live in
+ * `lib/publish/publish-listing.ts`; this component preserves the fail-closed
+ * state order and only announces a trial when `affordance.startsTrial` is true.
  *
  * @example
  * ```astro
  * <PublishButton
  *   client:load
- *   accommodationId={property.id}
+ *   listingId={property.id}
+ *   vertical="accommodation"
  *   locale={locale}
  *   label={t('host.properties.card.actions.publish', 'Publicar')}
  *   confirmTitle={t('host.properties.card.actions.publishConfirmTitle', '...')}
@@ -104,10 +37,14 @@ import {
 } from '@repo/schemas';
 import { type JSX, useState } from 'react';
 import { PaidSignupsPausedNotice } from '@/components/billing/PaidSignupsPausedNotice';
-import { accommodationEditApi } from '@/lib/api/endpoints-protected';
+import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildSubscribeToPublishCopy } from '@/lib/listing/listing-notices';
-import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import {
+    publishListing,
+    resolvePublishEditorPath,
+    resolvePublishPricingPath
+} from '@/lib/publish/publish-listing';
 import { NO_PLANS_AVAILABLE_MESSAGE, type PublishAffordance } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
 import styles from './PublishButton.module.css';
@@ -136,8 +73,10 @@ type PublishState =
  * Props for the PublishButton component.
  */
 export interface PublishButtonProps {
-    /** The accommodation ID to publish (DRAFT → ACTIVE). */
-    readonly accommodationId: string;
+    /** Listing identifier. */
+    readonly listingId: string;
+    /** Listing vertical. */
+    readonly vertical: PublishVerticalSlug;
     /** Current locale, used to build the plans-page link on `subscription_required`. */
     readonly locale: SupportedLocale;
     /** Label for the main primary button (already-translated string). */
@@ -217,7 +156,8 @@ export interface PublishButtonProps {
  * @param props - See `PublishButtonProps`.
  */
 export function PublishButton({
-    accommodationId,
+    listingId,
+    vertical,
     locale,
     label,
     confirmTitle,
@@ -245,7 +185,7 @@ export function PublishButton({
      * shows where the affordance (`checkout`) or the server
      * (`subscription_required`) already said publishing needs a subscription.
      */
-    const subscribeToPublish = buildSubscribeToPublishCopy({ t, vertical: 'accommodation' });
+    const subscribeToPublish = buildSubscribeToPublishCopy({ t, vertical });
 
     /** User clicked the main "Publicar" button → enter confirmation mode. */
     function handleRequestConfirm(): void {
@@ -264,7 +204,7 @@ export function PublishButton({
         setState('pending');
         setApiError(null);
 
-        const result = await accommodationEditApi.publish({ id: accommodationId });
+        const result = await publishListing({ vertical, id: listingId });
 
         if (!result.ok) {
             // The owner has no active subscription. Route them to the plans page
@@ -377,7 +317,7 @@ export function PublishButton({
                 <strong>{subscribeToPublish.title}</strong>
                 <span>{subscribeToPublish.body}</span>
                 <a
-                    href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner })}
+                    href={buildUrl({ locale, path: resolvePublishPricingPath({ vertical }) })}
                     className={`${styles.action} ${styles.primary}`}
                 >
                     {choosePlanLabel}
@@ -418,7 +358,7 @@ export function PublishButton({
     // Publish failed because the owner has no active plan. Show a banner
     // pointing to the plans page instead of a retryable error.
     if (state === 'subscriptionRequired') {
-        const plansUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
+        const plansUrl = buildUrl({ locale, path: resolvePublishPricingPath({ vertical }) });
         return (
             <span
                 role="alert"
@@ -444,7 +384,7 @@ export function PublishButton({
     if (state === 'missingRequirements') {
         const editUrl = buildUrl({
             locale,
-            path: `mi-cuenta/propiedades/${accommodationId}/editar`
+            path: resolvePublishEditorPath({ vertical, id: listingId })
         });
         // Falls back to the generic sentence only when the server sent no
         // recognisable reason — an old API build, say. It is vague, but it
