@@ -159,6 +159,7 @@ export * from './billing/reconciliation/sweep/our-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/paid-orders-check.js';
 export * from './billing/reconciliation/sweep/pause-gift.js';
 export * from './billing/reconciliation/sweep/pause-gift-check.js';
+export * from './billing/reconciliation/sweep/pending-first-charge-check.js';
 export * from './billing/reconciliation/sweep/provider-pause-check.js';
 export * from './billing/reconciliation/sweep/reconciliation-divergence.js';
 export * from './billing/reconciliation/sweep/reconciliation-sweep.service.js';

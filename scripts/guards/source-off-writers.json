@@ -63,7 +63,7 @@
         "table": "subscriptions",
         "effect": "turns-off",
         "via": "notice",
-        "reason": "S16 moves ACTIVE to CHARGE_DECLINED, which emits no source (03-contrato-de-cobertura.md:475); the coverage notice is emitted after commit."
+        "reason": "S16 moves ACTIVE to CHARGE_DECLINED, which emits no source (03-contrato-de-cobertura.md:475); the active coverage notice is emitted after commit. A PENDING_AUTHORIZATION row never emitted a coverage source, so that branch does not emit a removal notice."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/enter-grace.service.ts",
