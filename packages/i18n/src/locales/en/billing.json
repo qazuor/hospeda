@@ -233,6 +233,7 @@
                 "planNotForSale": "This plan is no longer available for purchase.",
                 "seePlans": "See current plans",
                 "previousAttemptClosing": "We are closing your previous attempt. Please try again in a few minutes.",
+                "previousAttemptInProgress": "We are still preparing your previous attempt with Mercado Pago. Please try again in a few minutes.",
                 "touristVipInherited": "Your current plan already includes Turista VIP benefits",
                 "commitmentTaken": "You already have an active subscription in this vertical.",
                 "generic": "We could not start your subscription. Please try again in a few minutes."

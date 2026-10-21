@@ -233,6 +233,7 @@
                 "planNotForSale": "Este plan ya no está a la venta.",
                 "seePlans": "Ver los planes vigentes",
                 "previousAttemptClosing": "Estamos cerrando tu intento anterior; probá de nuevo en unos minutos.",
+                "previousAttemptInProgress": "Todavía estamos preparando tu intento anterior con Mercado Pago. Probá de nuevo en unos minutos.",
                 "touristVipInherited": "Tu plan actual ya incluye los beneficios de Turista VIP",
                 "commitmentTaken": "Ya tenés una suscripción en curso en esta vertical.",
                 "generic": "No pudimos iniciar tu suscripción. Probá de nuevo en unos minutos."
