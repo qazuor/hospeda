@@ -122,7 +122,10 @@ describe('TEST:B3:34 signup confirmed notice', () => {
         const created = await app.request(path, {
             method: 'POST',
             headers: headers(user.id),
-            body: JSON.stringify({ billingOptionId: option.id })
+            body: JSON.stringify({
+                billingOptionId: option.id,
+                payerEmail: `mp-${crypto.randomUUID()}@example.test`
+            })
         });
         const createdBody = (await created.json()) as {
             data: { authorizationId: string; subscriptionId: string };

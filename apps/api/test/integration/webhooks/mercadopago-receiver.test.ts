@@ -71,7 +71,10 @@ async function createPendingSignup() {
             'x-mock-actor-role': 'USER',
             'x-mock-actor-permissions': '[]'
         },
-        body: JSON.stringify({ billingOptionId: option.id })
+        body: JSON.stringify({
+            billingOptionId: option.id,
+            payerEmail: `mp-${crypto.randomUUID()}@example.test`
+        })
     });
     const responseText = await response.text();
     if (response.status !== 201 && response.status !== 200)

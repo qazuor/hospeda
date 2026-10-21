@@ -127,7 +127,10 @@ async function postSignup(userId: string, billingOptionId: string) {
     return app.request(startPath, {
         method: 'POST',
         headers: userHeaders(userId),
-        body: JSON.stringify({ billingOptionId })
+        body: JSON.stringify({
+            billingOptionId,
+            payerEmail: `mp-${crypto.randomUUID()}@example.test`
+        })
     });
 }
 

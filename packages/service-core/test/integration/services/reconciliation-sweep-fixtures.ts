@@ -166,6 +166,7 @@ export async function seedSubscription(
         fake?: FakePaymentProvider;
         vertical?: 'accommodation' | 'tourist';
         amountMinor?: number;
+        declaredPayerEmail?: string;
     } = {}
 ) {
     const amountMinor = options.amountMinor ?? 250000;
@@ -176,7 +177,8 @@ export async function seedSubscription(
         planVersionId: choice.versionId,
         billingOptionId: choice.optionId,
         authorizationWindowDeadlineVersion: 1,
-        authorizationWindowEndsAt: new Date('2027-01-01T00:00:00.000Z')
+        authorizationWindowEndsAt: new Date('2027-01-01T00:00:00.000Z'),
+        declaredPayerEmail: options.declaredPayerEmail
     });
     const id = pending.subscription.id;
     seededIds.add(id);
@@ -213,8 +215,11 @@ export async function seedSubscription(
 }
 
 /** Fixture for AC:B11:23: one fresh pending creation with its durable key and recipient. */
-export async function seedPendingCreation() {
-    const seeded = await seedSubscription({ status: 'PENDING_AUTHORIZATION' });
+export async function seedPendingCreation(options: { declaredPayerEmail?: string } = {}) {
+    const seeded = await seedSubscription({
+        status: 'PENDING_AUTHORIZATION',
+        declaredPayerEmail: options.declaredPayerEmail
+    });
     const [user] = await getServiceTestDb()
         .select({ email: users.email })
         .from(users)

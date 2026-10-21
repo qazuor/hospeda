@@ -1,0 +1,1 @@
+ALTER TABLE "subscription" ADD COLUMN "declared_payer_email" varchar(255);

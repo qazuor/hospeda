@@ -311,6 +311,7 @@ export async function startSubscription(
             vertical: choice.vertical,
             planVersionId: choice.planVersionId,
             billingOptionId: choice.id,
+            declaredPayerEmail: input.payerEmail,
             authorizationWindowDeadlineVersion: deadlines.version,
             authorizationWindowEndsAt
         });
