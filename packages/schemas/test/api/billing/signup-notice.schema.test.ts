@@ -6,6 +6,7 @@ describe('TEST:B13a:21b AC:B13a:5 the signup notice contract', () => {
         [
             'running trial',
             {
+                plan: { name: 'Plan test', amount: 1500000, currency: 'ARS', cycle: 'monthly' },
                 vertical: 'accommodation',
                 touristVip: { status: 'NOT_AFFECTED' },
                 trial: {
@@ -18,6 +19,7 @@ describe('TEST:B13a:21b AC:B13a:5 the signup notice contract', () => {
         [
             'no running trial',
             {
+                plan: { name: 'Plan test', amount: 1500000, currency: 'ARS', cycle: 'annual' },
                 vertical: 'gastronomy',
                 touristVip: { status: 'CANCELLED_ON_RETURN' },
                 trial: { status: 'NOT_RUNNING' }
@@ -47,6 +49,15 @@ describe('TEST:B13a:21b AC:B13a:5 the signup notice contract', () => {
             }
         ],
         ['unknown vertical', { vertical: 'unknown', trial: { status: 'NOT_RUNNING' } }],
+        [
+            'invalid plan amount and cycle',
+            {
+                plan: { name: 'Plan', amount: -1, currency: 'ARS', cycle: 'weekly' },
+                vertical: 'accommodation',
+                touristVip: { status: 'NOT_AFFECTED' },
+                trial: { status: 'NOT_RUNNING' }
+            }
+        ],
         ['missing Tourist VIP status', { vertical: 'tourist', trial: { status: 'NOT_RUNNING' } }],
         [
             'unknown Tourist VIP status',
