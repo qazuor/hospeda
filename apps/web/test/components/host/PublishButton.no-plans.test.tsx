@@ -19,7 +19,8 @@ describe('PublishButton no plans (TEST:V8a:4)', () => {
         const user = userEvent.setup();
         render(
             <PublishButton
-                accommodationId="listing-1"
+                listingId="listing-1"
+                vertical="accommodation"
                 locale="es"
                 label="Publicar"
                 confirmTitle="Confirmar"
@@ -56,7 +57,8 @@ describe('PublishButton no plans (TEST:V8a:4)', () => {
     it('shows the no-plans message up front for the no-plans affordance, with no button or link', () => {
         render(
             <PublishButton
-                accommodationId="listing-1"
+                listingId="listing-1"
+                vertical="accommodation"
                 locale="es"
                 label="Publicar"
                 confirmTitle="Confirmar"

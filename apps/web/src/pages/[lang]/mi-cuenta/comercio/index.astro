@@ -29,6 +29,8 @@ import {
 import { webLogger as logger } from '@/lib/logger';
 import { hasListingNavAccess } from '@/lib/nav-gating';
 import { fetchOwnerListingsWithState } from '@/lib/listing/owner-listings';
+import { resolveListingPublishAffordances } from '@/lib/listing/listing-publish-affordance';
+import { UNKNOWN_PUBLISH_AFFORDANCE } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -69,26 +71,29 @@ const isPurged = (listing: (typeof listings)[number]): boolean =>
 // once per vertical this page lists. A failed read leaves that vertical's
 // listings without notices (never an invented one) and the page renders.
 const listedVerticals = [...new Set(listings.map((listing) => listing.vertical))];
-const noticesByVertical = new Map<string, ListingNoticesIndex>(
-    await Promise.all(
-        listedVerticals.map(async (vertical) => {
-            if (!cookieHeader) return [vertical, EMPTY_LISTING_NOTICES_INDEX] as const;
-            try {
-                const index = indexListingNotices({
-                    result: await publishApi.listingNotices({ vertical, cookieHeader })
-                });
-                if (!index.ok) logger.warn('[comercio] listing-notices read failed', { vertical });
-                return [vertical, index] as const;
-            } catch (error) {
-                logger.warn('[comercio] listing-notices request failed', {
-                    vertical,
-                    error: error instanceof Error ? error.message : String(error)
-                });
-                return [vertical, EMPTY_LISTING_NOTICES_INDEX] as const;
-            }
-        })
-    )
-);
+const [publishAffordances, noticesByVertical] = await Promise.all([
+    resolveListingPublishAffordances({ listings, cookieHeader }),
+    (async () => new Map<string, ListingNoticesIndex>(
+        await Promise.all(
+            listedVerticals.map(async (vertical) => {
+                if (!cookieHeader) return [vertical, EMPTY_LISTING_NOTICES_INDEX] as const;
+                try {
+                    const index = indexListingNotices({
+                        result: await publishApi.listingNotices({ vertical, cookieHeader })
+                    });
+                    if (!index.ok) logger.warn('[comercio] listing-notices read failed', { vertical });
+                    return [vertical, index] as const;
+                } catch (error) {
+                    logger.warn('[comercio] listing-notices request failed', {
+                        vertical,
+                        error: error instanceof Error ? error.message : String(error)
+                    });
+                    return [vertical, EMPTY_LISTING_NOTICES_INDEX] as const;
+                }
+            })
+        )
+    ))()
+]);
 
 // HOS-1156 retired `/mi-cuenta/comercio/nuevo/`, the vertical picker this
 // button used to open. Its replacement for a SIGNED-IN owner is the publish hub,
@@ -177,6 +182,7 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
                                 client:visible
                                 listing={listing}
                                 locale={locale}
+                                publishAffordance={publishAffordances.get(listing.vertical) ?? UNKNOWN_PUBLISH_AFFORDANCE}
                             />
 
                             <ListingNotices
