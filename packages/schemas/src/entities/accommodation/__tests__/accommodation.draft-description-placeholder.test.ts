@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { AccommodationTypeEnum } from '../../../enums/accommodation-type.enum';
 import { httpToDomainAccommodationCreateDraft } from '../accommodation.http.schema';
 import {
     ACCOMMODATION_PUBLISH_REQUIREMENTS,
@@ -18,10 +19,10 @@ const READY = {
     hasMainImage: true
 } as const;
 
-const draft = (description: string | null | undefined) => ({
+const draft = (description: string | undefined) => ({
     name: 'A cabin',
     summary: 'A sufficiently long summary',
-    type: 'CABIN' as const,
+    type: AccommodationTypeEnum.CABIN,
     destinationId: '00000000-0000-4000-8000-000000000001',
     ...(description === undefined ? {} : { description })
 });
