@@ -280,5 +280,13 @@
         "effect": "neutral",
         "via": null,
         "reason": "A COMPLEMENTO emits no subscription source and its addon instance does not change; S12 orphanhood on the principal turns it off."
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "mintKeyAfterRejectedCreation",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-1732: after the provider rejected the creation, the retry updates the declared payer email on the same PENDING_AUTHORIZATION row (no provider link yet); the row stays uncovered, so coverage does not change."
     }
 ]
