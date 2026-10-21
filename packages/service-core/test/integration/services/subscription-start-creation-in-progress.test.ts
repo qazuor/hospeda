@@ -11,8 +11,18 @@ import {
 import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
 import { afterAll, describe, expect, it, vi } from 'vitest';
+import { createAdjustableClock } from '../../../../test-clock/src/adjustable-clock.js';
+import {
+    CREATION_RECREATE_AFTER_MS,
+    runCreationsSweep
+} from '../../../src/services/billing/reconciliation/creations/creations-sweep.service.js';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import {
+    createReconciliationFake,
+    trackSeededReconciliationRow,
+    withSeededPendingCreations
+} from './reconciliation-sweep-fixtures.js';
 import { namespaceFake } from './support/payment-provider';
 import { noTouristVip } from './support/tourist-vip.ts';
 
@@ -71,10 +81,10 @@ async function seed() {
     return { user: user!, versionId, optionIds };
 }
 
-function ports(fake: FakePaymentProvider) {
+function ports(fake: FakePaymentProvider, injectedClock = clock) {
     return {
         provider: namespaceFake(fake),
-        clock,
+        clock: injectedClock,
         planPolicy: async () => ({
             graceDays: 10,
             allowsPause: false,
@@ -157,5 +167,79 @@ describe('TEST:1723:1 creation in progress', () => {
                 ports(fake)
             )
         ).rejects.toMatchObject({ reason: 'COMMITMENT_TAKEN' });
+    });
+
+    it('TEST:1723:1 returns the same reason when the unfinished row already has a provider link', async () => {
+        const { user, versionId, optionIds } = await seed();
+        const pending = await subscriptionModel.createPendingAuthorization({
+            userId: user.id,
+            vertical: 'accommodation',
+            planVersionId: versionId,
+            billingOptionId: optionIds[0]!,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
+        });
+        await getServiceTestDb()
+            .insert(providerLinks)
+            .values({
+                subscriptionId: pending.subscription.id,
+                provider: 'MERCADO_PAGO',
+                providerId: `retry-linked-${crypto.randomUUID()}`
+            });
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        await expect(
+            startSubscription(
+                {
+                    userId: user.id,
+                    billingOptionId: optionIds[0]!,
+                    returnUrl: 'https://hospeda.example'
+                },
+                ports(fake)
+            )
+        ).rejects.toMatchObject({ reason: 'PREVIOUS_ATTEMPT_IN_PROGRESS' });
+        expect(await counts(user.id)).toEqual({ subscriptions: 1, keys: 1, links: 1 });
+    });
+
+    it('TEST:1723:3 retries after provider failure, sweep recreation, then returns the same sanitized link', async () => {
+        const { user, optionIds } = await seed();
+        const time = createAdjustableClock({ start: new Date(Date.now() + 20 * 60_000) });
+        const { fake, provider } = createReconciliationFake(time);
+        const authorize = vi.spyOn(fake, 'authorize').mockRejectedValueOnce(
+            new (await import('@repo/payments')).PaymentProviderError({
+                code: 'REJECTED',
+                capability: 'authorize',
+                message: 'Rejected by fake provider'
+            })
+        );
+        const input = {
+            userId: user.id,
+            billingOptionId: optionIds[0]!,
+            returnUrl: 'https://hospeda.example',
+            payerEmail: user.email
+        };
+        await expect(
+            startSubscription(input, { ...ports(fake, time), provider })
+        ).rejects.toMatchObject({ code: 'REJECTED', capability: 'authorize' });
+        const row = (
+            await getDb().select().from(subscriptions).where(eq(subscriptions.userId, user.id))
+        )[0]!;
+        trackSeededReconciliationRow(row.id);
+        await expect(
+            startSubscription(input, { ...ports(fake, time), provider })
+        ).rejects.toMatchObject({ reason: 'PREVIOUS_ATTEMPT_IN_PROGRESS' });
+        expect(authorize).toHaveBeenCalledOnce();
+        time.advance({ ms: CREATION_RECREATE_AFTER_MS + 1 });
+        const summary = await withSeededPendingCreations(() =>
+            runCreationsSweep({}, { provider, clock: time, returnUrl: input.returnUrl })
+        );
+        expect(summary).toMatchObject({ rowsExamined: 1, recreated: 1 });
+        const result = await startSubscription(input, { ...ports(fake, time), provider });
+        expect(result).toMatchObject({
+            subscriptionId: row.id,
+            authorizationId: expect.any(String),
+            checkoutUrl: expect.stringMatching(/^https:\/\//)
+        });
+        expect(authorize).toHaveBeenCalledTimes(2);
+        expect(await counts(user.id)).toEqual({ subscriptions: 1, keys: 2, links: 1 });
     });
 });
