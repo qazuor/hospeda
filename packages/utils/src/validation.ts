@@ -53,39 +53,6 @@ export function isValidPhone(phone: string): boolean {
 }
 
 /**
- * Check if a string is a valid password
- * @param password - Password to validate
- * @param options - Validation options
- * @returns Whether the password is valid
- */
-export function isValidPassword(
-    password: string,
-    options: {
-        minLength?: number;
-        requireUppercase?: boolean;
-        requireLowercase?: boolean;
-        requireNumbers?: boolean;
-        requireSpecialChars?: boolean;
-    } = {}
-): boolean {
-    const {
-        minLength = 8,
-        requireUppercase = true,
-        requireLowercase = true,
-        requireNumbers = true,
-        requireSpecialChars = true
-    } = options;
-
-    if (password.length < minLength) return false;
-    if (requireUppercase && !/[A-Z]/.test(password)) return false;
-    if (requireLowercase && !/[a-z]/.test(password)) return false;
-    if (requireNumbers && !/[0-9]/.test(password)) return false;
-    if (requireSpecialChars && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) return false;
-
-    return true;
-}
-
-/**
  * The all-zero UUID (RFC 9562 "Nil UUID"). Syntactically a valid UUID, so
  * `z.string().uuid()` accepts it, but it can never identify a real row.
  */

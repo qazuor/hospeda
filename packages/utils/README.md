@@ -329,7 +329,6 @@ import {
   isValidEmail,
   isValidUrl,
   isValidPhone,
-  isValidPassword,
   isNumber,
   isString,
   isBoolean,
@@ -352,19 +351,6 @@ isValidUrl('not-a-url');  // false
 // Validate phone
 isValidPhone('+5493435123456');  // true
 isValidPhone('123');  // false
-
-// Validate password
-isValidPassword('MyPass123!');  // true
-isValidPassword('weak');  // false
-
-// Custom password validation
-isValidPassword('MyPassword', {
-  minLength: 6,
-  requireUppercase: true,
-  requireLowercase: true,
-  requireNumbers: false,
-  requireSpecialChars: false
-});  // true
 
 // Type checks
 isNumber(42);  // true
@@ -444,7 +430,6 @@ isFunction(() => {});  // true
 - `isValidEmail(email: string): boolean` - Validate email
 - `isValidUrl(url: string): boolean` - Validate URL
 - `isValidPhone(phone: string): boolean` - Validate phone (simple)
-- `isValidPassword(password: string, options?: PasswordOptions): boolean` - Validate password
 - `isNumber(value: unknown): boolean` - Check if number
 - `isString(value: unknown): boolean` - Check if string
 - `isBoolean(value: unknown): boolean` - Check if boolean
@@ -553,7 +538,8 @@ export function PriceDisplay({ amount, currency = 'ARS' }) {
 ### Validating User Input
 
 ```typescript
-import { isValidEmail, isValidPassword } from '@repo/utils';
+import { isValidEmail } from '@repo/utils';
+import { StrongPasswordSchema } from '@repo/schemas';
 
 // In forms
 export function validateSignup(data: SignupInput) {
@@ -563,7 +549,7 @@ export function validateSignup(data: SignupInput) {
     errors.email = 'Invalid email address';
   }
 
-  if (!isValidPassword(data.password)) {
+  if (!StrongPasswordSchema.safeParse(data.password).success) {
     errors.password = 'Password must be at least 8 characters with uppercase, lowercase, numbers, and special characters';
   }
 

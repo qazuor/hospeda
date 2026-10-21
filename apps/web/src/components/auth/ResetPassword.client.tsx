@@ -68,7 +68,10 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
             upper: t('auth.resetPassword.rules.upper', 'Una letra mayúscula (A-Z)'),
             lower: t('auth.resetPassword.rules.lower', 'Una letra minúscula (a-z)'),
             digit: t('auth.resetPassword.rules.digit', 'Un número (0-9)'),
-            special: t('auth.resetPassword.rules.special', 'Un carácter especial (@$!%*?&)')
+            special: t(
+                'auth.resetPassword.rules.special',
+                'Un carácter especial (por ejemplo ! @ # $ - _)'
+            )
         }
     };
 
@@ -117,7 +120,7 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                 setError(
                     t(
                         'auth.resetPassword.errors.passwordWeak',
-                        'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (@$!%*?&).'
+                        'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (por ejemplo ! @ # $ - _).'
                     )
                 );
             }
