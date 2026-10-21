@@ -443,6 +443,9 @@
         "usageOf": "{{current}} de {{max}}",
         "trialSummary": {
             "title": "Seu teste grátis de {{vertical}}",
+            "endedTitle": "Seu teste grátis de {{vertical}} terminou",
+            "endedConverted": "Seu teste terminou e agora você tem seu plano.",
+            "endedExpired": "Seu teste terminou em {{end}}.",
             "vertical": {
                 "accommodation": "hospedagem",
                 "gastronomy": "gastronomia",
