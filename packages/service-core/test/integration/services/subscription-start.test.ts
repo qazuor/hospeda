@@ -104,6 +104,67 @@ function ports(
     };
 }
 
+describe('TEST:1730:2 and TEST:1730:3b declared payer email on S1', () => {
+    it('sends and stores the declared email without changing the account email', async () => {
+        const choice = await seedChoice('monthly');
+        const accountEmail = choice.user.email;
+        const declaredEmail = 'Different.Case+mp@example.test';
+        const fake = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
+        const authorize = vi.spyOn(fake, 'authorize');
+        const result = await startSubscription(
+            {
+                userId: choice.user.id,
+                billingOptionId: choice.billingOptionId,
+                returnUrl,
+                payerEmail: declaredEmail
+            },
+            ports(namespaceFake(fake))
+        );
+        const [row] = await getDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, result.subscriptionId));
+        const [account] = await getDb().select().from(users).where(eq(users.id, choice.user.id));
+        expect(authorize.mock.calls[0]?.[0].payerEmail).toBe(declaredEmail);
+        expect(row?.declaredPayerEmail).toBe(declaredEmail);
+        expect(account?.email).toBe(accountEmail);
+    });
+});
+
+describe('TEST:1730:6 pending reuse keeps the first attempt email', () => {
+    it('returns the stored checkout without authorizing again or replacing declaredPayerEmail', async () => {
+        const choice = await seedChoice('monthly');
+        const fake = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
+        const provider = namespaceFake(fake);
+        const first = await startSubscription(
+            {
+                userId: choice.user.id,
+                billingOptionId: choice.billingOptionId,
+                returnUrl,
+                payerEmail: 'first@example.test'
+            },
+            ports(provider)
+        );
+        const authorize = vi.spyOn(fake, 'authorize');
+        const retry = await startSubscription(
+            {
+                userId: choice.user.id,
+                billingOptionId: choice.billingOptionId,
+                returnUrl,
+                payerEmail: 'second@example.test'
+            },
+            ports(provider)
+        );
+        const [row] = await getDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, first.subscriptionId));
+        expect(retry).toEqual(first);
+        expect(authorize).not.toHaveBeenCalled();
+        expect(row?.declaredPayerEmail).toBe('first@example.test');
+    });
+});
+
 describe('TEST:B3:1 S1 durable pending authorization', () => {
     it('commits the row and key before authorize, with amount, cycle, reason and reference from our catalog', async () => {
         const choice = await seedChoice();
