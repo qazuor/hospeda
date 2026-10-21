@@ -211,7 +211,8 @@ describe('TEST:1723:1 creation in progress', () => {
         const { fake, provider } = createReconciliationFake(time);
         const authorize = vi.spyOn(fake, 'authorize').mockRejectedValueOnce(
             new (await import('@repo/payments')).PaymentProviderError({
-                code: 'REJECTED',
+                // HOS-1732: a REJECTED creation is recreated on retry; UNAVAILABLE still waits for the sweep.
+                code: 'UNAVAILABLE',
                 capability: 'authorize',
                 message: 'Rejected by fake provider'
             })
@@ -224,7 +225,7 @@ describe('TEST:1723:1 creation in progress', () => {
         };
         await expect(
             startSubscription(input, { ...ports(fake, time), provider })
-        ).rejects.toMatchObject({ code: 'REJECTED', capability: 'authorize' });
+        ).rejects.toMatchObject({ code: 'UNAVAILABLE', capability: 'authorize' });
         const row = (
             await getDb().select().from(subscriptions).where(eq(subscriptions.userId, user.id))
         )[0]!;
