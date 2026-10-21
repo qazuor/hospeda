@@ -25,7 +25,12 @@ import { readAnchoredBillingOption } from '../read-anchored-billing-option';
 import type { ArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
 import type { BeforeCancelNoticeKind } from './before-cancel-notice-kinds';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
-import { appliedAuthorizationResult, resolveLiveCommitmentReuse } from './resolve-live-commitment';
+import { replacePendingAttempt } from './replace-pending-attempt.service';
+import {
+    appliedAuthorizationResult,
+    previousAttemptInProgress,
+    resolveLiveCommitmentReuse
+} from './resolve-live-commitment';
 
 const logger = createLogger('subscription-start');
 
@@ -293,12 +298,16 @@ export async function startSubscription(
         userId: input.userId,
         vertical: choice.vertical
     });
-    if (existing)
-        return resolveLiveCommitmentReuse({
+    if (existing) {
+        const resolution = await resolveLiveCommitmentReuse({
             commitment: existing,
             billingOptionId: choice.id,
-            clock: ports.clock
+            clock: ports.clock,
+            payerEmail: input.payerEmail
         });
+        if (resolution.kind === 'REUSE') return resolution.result;
+        await replacePendingAttempt({ commitment: existing, userId: input.userId }, ports);
+    }
 
     const deadlines = await getCurrentBillingDeadlines();
     const authorizationWindowEndsAt = new Date(
@@ -327,11 +336,14 @@ export async function startSubscription(
             vertical: choice.vertical
         });
         if (!raced) throw error;
-        return resolveLiveCommitmentReuse({
+        const resolution = await resolveLiveCommitmentReuse({
             commitment: raced,
             billingOptionId: choice.id,
-            clock: ports.clock
+            clock: ports.clock,
+            payerEmail: input.payerEmail
         });
+        if (resolution.kind === 'REPLACE') throw previousAttemptInProgress();
+        return resolution.result;
     }
     return authorizePendingSubscription({
         pending,
