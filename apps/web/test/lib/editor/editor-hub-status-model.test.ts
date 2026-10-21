@@ -21,6 +21,7 @@ const COMPLETE: EditorStatusInput = {
     faqCount: 3,
     hasContact: true,
     publishReadiness: {
+        description: 'A real accommodation description with enough detail.',
         capacity: 4,
         minNights: 1,
         bedrooms: 2,
@@ -141,6 +142,7 @@ describe('resolveEditorSectionStatuses — warns about what actually blocks (H-1
         // and the publish was refused for that very field.
         const statuses = resolve({
             publishReadiness: {
+                description: 'A real accommodation description with enough detail.',
                 capacity: 11,
                 minNights: 1,
                 bedrooms: 3,
@@ -161,6 +163,7 @@ describe('resolveEditorSectionStatuses — warns about what actually blocks (H-1
         // before H-101, so a listing blocked solely on it got no signal.
         const statuses = resolve({
             publishReadiness: {
+                description: 'A real accommodation description with enough detail.',
                 capacity: 4,
                 minNights: null,
                 bedrooms: 2,
@@ -179,6 +182,7 @@ describe('resolveEditorSectionStatuses — warns about what actually blocks (H-1
         // Arrange
         const statuses = resolve({
             publishReadiness: {
+                description: 'A real accommodation description with enough detail.',
                 capacity: undefined,
                 minNights: undefined,
                 bedrooms: 2,
@@ -247,5 +251,19 @@ describe('resolveEditorSectionStatuses — warns about what actually blocks (H-1
         // Assert
         const blocking = Object.values(statuses).filter((s) => s.tone === 'blocking');
         expect(blocking).toEqual([]);
+    });
+
+    it('blocks basic info while the description is the draft placeholder', () => {
+        const statuses = resolve({
+            publishReadiness: {
+                ...COMPLETE.publishReadiness,
+                description:
+                    'Borrador en progreso. Completá la descripción del alojamiento desde el panel de administración antes de publicarlo.'
+            }
+        });
+        expect(statuses.basicInfo?.tone).toBe('blocking');
+        expect(statuses.basicInfo?.missingRequirementLabelKeys).toEqual([
+            'host.properties.editor.publishRequirement.description'
+        ]);
     });
 });

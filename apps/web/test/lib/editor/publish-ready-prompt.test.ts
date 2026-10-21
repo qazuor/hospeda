@@ -14,6 +14,7 @@ import { shouldPromptPublishReady } from '@/lib/editor/publish-ready-prompt';
 
 /** A listing meeting every blocking requirement. */
 const READY: AccommodationPublishReadinessInput = {
+    description: 'A real accommodation description with enough detail.',
     capacity: 4,
     minNights: 1,
     bedrooms: 2,
@@ -24,6 +25,11 @@ const READY: AccommodationPublishReadinessInput = {
 /** The same listing, one requirement short. */
 const MISSING_BATHROOMS: AccommodationPublishReadinessInput = { ...READY, bathrooms: null };
 const MISSING_PHOTO: AccommodationPublishReadinessInput = { ...READY, hasMainImage: false };
+const MISSING_DESCRIPTION: AccommodationPublishReadinessInput = {
+    ...READY,
+    description:
+        'Borrador en progreso. Completá la descripción del alojamiento desde el panel de administración antes de publicarlo.'
+};
 
 /** Everything true except what a test varies. */
 function input(overrides: Partial<Parameters<typeof shouldPromptPublishReady>[0]> = {}) {
@@ -45,6 +51,23 @@ describe('shouldPromptPublishReady', () => {
         // The realistic ending: hosts fill text first and upload photos last,
         // so this transition happens in the photo flow rather than a form save.
         expect(shouldPromptPublishReady(input({ before: MISSING_PHOTO, after: READY }))).toBe(true);
+    });
+
+    it('does not prompt after photo upload while the draft description is the placeholder', () => {
+        expect(
+            shouldPromptPublishReady(
+                input({
+                    before: { ...MISSING_DESCRIPTION, hasMainImage: false },
+                    after: MISSING_DESCRIPTION
+                })
+            )
+        ).toBe(false);
+    });
+
+    it('prompts when a real description is the last missing requirement', () => {
+        expect(shouldPromptPublishReady(input({ before: MISSING_DESCRIPTION, after: READY }))).toBe(
+            true
+        );
     });
 
     describe('it fires once, because a line is crossed once', () => {
