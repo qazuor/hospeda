@@ -159,7 +159,7 @@ describe('billing reconciliation sweep cron', () => {
         );
     });
 
-    it('injects provider and clock and maps summary counters', async () => {
+    it('TEST:1731:9 injects provider and clock and maps summary counters', async () => {
         mockSweep.mockResolvedValue({
             rowsRead: 8,
             runId: 'run-id',
