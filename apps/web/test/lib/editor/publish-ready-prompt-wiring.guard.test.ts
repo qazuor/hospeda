@@ -36,6 +36,7 @@ const SRC_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../src'
  * only hand-written part, and a section with no entry fails loudly.
  */
 const PROMPT_WIRING_BY_SECTION: Readonly<Record<string, string>> = {
+    basicInfo: 'components/host/editor/forms/BasicsForm.client.tsx',
     capacityPricing: 'components/host/editor/forms/CapacityPricingForm.client.tsx',
     photos: 'components/host/editor/PhotoSection.client.tsx'
 };

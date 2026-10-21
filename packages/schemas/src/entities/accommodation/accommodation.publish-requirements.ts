@@ -27,11 +27,15 @@
  * ## What belongs here, and what does not
  *
  * A requirement in this list BLOCKS publication. The softer editor hints
- * (description, price, coordinates, contact, FAQs) stay in
+ * (price, coordinates, contact, FAQs) stay in
  * `resolveEditorSectionStatuses` as advice: they are worth prompting for but
  * publishing without them is allowed. The distinction is the whole point — the
  * old hub rendered both kinds identically, so "⚠ Sin fotos" looked exactly as
  * binding as a real blocker while being the opposite.
+ *
+ * The draft description placeholder is also a requirement. It is the only way
+ * the accommodation onboarding path can reach publication without a real
+ * description: HOS-1722 treats the seeded text as missing before publication.
  *
  * The main image is a requirement by owner decision (14/08): with it, "avisa y
  * no bloquea" becomes "avisa y bloquea", which was the reading the warning
@@ -54,6 +58,7 @@
 
 /** Identifier of one publish requirement. */
 export type AccommodationPublishRequirementId =
+    | 'description'
     | 'capacity'
     | 'minNights'
     | 'bedrooms'
@@ -62,17 +67,40 @@ export type AccommodationPublishRequirementId =
 
 /**
  * The facts a publish check needs, gathered from wherever the caller holds
- * them. Deliberately NOT the full `Accommodation`: the server reads `extraInfo`
- * plus a media lookup, the editor hub reads its already-loaded editor payload,
- * and neither should have to shape itself like the other to ask the question.
+ * them. Deliberately NOT the full `Accommodation`: the server reads the
+ * description, `extraInfo` and a media lookup, while the editor hub reads its
+ * already-loaded editor payload; neither has to shape itself like the other.
  */
 export interface AccommodationPublishReadinessInput {
+    /** Long description; the seeded draft placeholder is not considered complete. */
+    readonly description: string | null | undefined;
     readonly capacity?: number | null;
     readonly minNights?: number | null;
     readonly bedrooms?: number | null;
     readonly bathrooms?: number | null;
     /** Whether the listing has a main image. Owner decision (14/08). */
     readonly hasMainImage: boolean;
+}
+
+/**
+ * Text seeded when an accommodation draft omits its long description.
+ * Publication rejects this value as a missing description (HOS-1722).
+ */
+export const DRAFT_DESCRIPTION_PLACEHOLDER =
+    'Borrador en progreso. Completá la descripción del alojamiento desde el panel de administración antes de publicarlo.';
+
+/**
+ * Whether a draft description is the seeded placeholder.
+ *
+ * @param params - The description to check.
+ * @returns True only when trimming surrounding whitespace yields the exact placeholder.
+ */
+export function isDraftDescriptionPlaceholder({
+    description
+}: {
+    readonly description: string | null | undefined;
+}): boolean {
+    return typeof description === 'string' && description.trim() === DRAFT_DESCRIPTION_PLACEHOLDER;
 }
 
 /** One blocking requirement, and where in the editor it gets resolved. */
@@ -115,6 +143,15 @@ function isAnswered(value: number | null | undefined): boolean {
  * reads better following the editor's own section order.
  */
 export const ACCOMMODATION_PUBLISH_REQUIREMENTS: readonly AccommodationPublishRequirement[] = [
+    {
+        id: 'description',
+        editorSectionId: 'basicInfo',
+        labelKey: 'host.properties.editor.publishRequirement.description',
+        isSatisfied: (input) =>
+            typeof input.description === 'string' &&
+            input.description.trim().length > 0 &&
+            !isDraftDescriptionPlaceholder({ description: input.description })
+    },
     {
         id: 'capacity',
         editorSectionId: 'capacityPricing',

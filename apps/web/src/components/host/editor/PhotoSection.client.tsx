@@ -101,6 +101,7 @@ export interface PhotoSectionProps {
      * editor's photo page.
      */
     readonly publishContext?: {
+        readonly description: string | null | undefined;
         readonly capacity: number | null;
         readonly minNights: number | null;
         readonly bedrooms: number | null;
@@ -229,10 +230,10 @@ export function PhotoSection({
             return;
         }
 
-        const { capacity, minNights, bedrooms, bathrooms, isDraft } = publishContext;
+        const { description, capacity, minNights, bedrooms, bathrooms, isDraft } = publishContext;
         void publishPrompt.evaluate({
-            before: { capacity, minNights, bedrooms, bathrooms, hasMainImage: false },
-            after: { capacity, minNights, bedrooms, bathrooms, hasMainImage: true },
+            before: { description, capacity, minNights, bedrooms, bathrooms, hasMainImage: false },
+            after: { description, capacity, minNights, bedrooms, bathrooms, hasMainImage: true },
             isDraft
         });
     }, [featuredItem, opsReady, publishContext, publishPrompt]);
