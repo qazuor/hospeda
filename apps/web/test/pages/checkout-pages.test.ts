@@ -32,12 +32,13 @@ describe('signup checkout page — B3 UI (B3.md:1045-1053)', () => {
         );
     });
 
-    it('renders the checkout island on load with request locale and noindex metadata', () => {
+    it('TEST:1730:5b passes the account email to the checkout island', () => {
         expect(indexSrc).toContain('Astro.locals.locale');
         expect(indexSrc).not.toContain('Astro.params.lang');
         expect(indexSrc).toContain('<SignupCheckout');
         expect(indexSrc).toContain('trialNotice={trialNotice}');
         expect(indexSrc).toContain('touristVipNotice={touristVipNotice}');
+        expect(indexSrc).toContain('accountEmail={user.email}');
         expect(indexSrc).toContain('billingSubscriptionApi.signupNotice');
         expect(indexSrc).toContain('noindex={true}');
         expect(indexSrc).toContain('canonical={canonicalUrl}');
