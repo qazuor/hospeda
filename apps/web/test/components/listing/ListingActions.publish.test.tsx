@@ -2,6 +2,8 @@
  * @file ListingActions.publish.test.tsx
  * @description TEST:1729:5/7 regression coverage for publishing complete business drafts.
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -30,6 +32,10 @@ vi.mock('../../../src/lib/urls', () => ({
 }));
 
 const PUBLISH = { kind: 'publish', canPublish: true, startsTrial: true, trialDays: 30 } as const;
+const publishButtonSource = readFileSync(
+    resolve(__dirname, '../../../src/components/host/PublishButton.client.tsx'),
+    'utf8'
+);
 function listing(
     vertical: 'gastronomy' | 'experience',
     overrides: Partial<OwnerListingSummaryWithState> = {}
@@ -79,6 +85,7 @@ describe('ListingActions publish — TEST:1729:5 and TEST:1729:7', () => {
         ).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'Sí, publicar' }));
         expect(publishMock).toHaveBeenCalledWith({ vertical, id: `listing-${vertical}` });
+        expect(publishButtonSource).toContain('window.location.reload();');
     });
 
     it('defaults a missing publish affordance to unknown and never shows a publish button', () => {
