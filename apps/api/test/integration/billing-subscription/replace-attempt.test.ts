@@ -105,15 +105,17 @@ describe('TEST:1732:10 AC:1732:10 protected S1 route replaces a pending attempt'
         });
         const authorize = vi.spyOn(fake, 'authorize');
         const app = initApp({ clock, paymentProvider: fake });
+        const firstEmail = `first-${crypto.randomUUID()}@example.test`;
+        const secondEmail = `second-${crypto.randomUUID()}@example.test`;
         const send = async (payerEmail: string) =>
             app.request(path, {
                 method: 'POST',
                 headers: headers(user.id),
                 body: JSON.stringify({ billingOptionId: option.id, payerEmail })
             });
-        const first = await send(`first-${crypto.randomUUID()}@example.test`);
+        const first = await send(firstEmail);
         const firstBody = await first.json();
-        const second = await send(`second-${crypto.randomUUID()}@example.test`);
+        const second = await send(secondEmail);
         const secondBody = await second.json();
         const rows = await getDb()
             .select()
@@ -131,6 +133,12 @@ describe('TEST:1732:10 AC:1732:10 protected S1 route replaces a pending attempt'
             'ABANDONED',
             'PENDING_AUTHORIZATION'
         ]);
+        expect(
+            rows.find((row) => row.id === firstBody.data.subscriptionId)?.declaredPayerEmail
+        ).toBe(firstEmail);
+        expect(
+            rows.find((row) => row.id === secondBody.data.subscriptionId)?.declaredPayerEmail
+        ).toBe(secondEmail);
         expect(notices.map((notice) => notice.template)).toContain(
             'billing.attempt-replaced-cancel'
         );
