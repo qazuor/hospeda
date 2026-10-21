@@ -216,6 +216,18 @@ describe('TEST:1732:7 AC:1732:7 simultaneous replacements serialize on the old r
             ports(provider)
         );
         const authorize = vi.spyOn(fake, 'authorize');
+        const originalRead = provider.readAuthorization;
+        let readCount = 0;
+        let releaseReads!: () => void;
+        const bothReads = new Promise<void>((resolve) => {
+            releaseReads = resolve;
+        });
+        provider.readAuthorization = async (input) => {
+            readCount += 1;
+            if (readCount === 2) releaseReads();
+            await bothReads;
+            return originalRead(input);
+        };
         const settled = await Promise.allSettled(
             ['second@example.test', 'third@example.test'].map((payerEmail) =>
                 startSubscription(
@@ -244,6 +256,11 @@ describe('TEST:1732:7 AC:1732:7 simultaneous replacements serialize on the old r
             'ABANDONED'
         );
         expect(authorize).toHaveBeenCalledOnce();
+        const oldDecisions = await getDb()
+            .select()
+            .from(domainEvent)
+            .where(eq(domainEvent.entityId, first.subscriptionId));
+        expect(oldDecisions.filter((event) => event.reason === 'S39')).toHaveLength(1);
     });
 });
 
