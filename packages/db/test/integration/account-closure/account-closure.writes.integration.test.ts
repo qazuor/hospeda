@@ -6,6 +6,7 @@ import {
     buildApplicationEmailPseudonym
 } from '../../../src/models/account-closure/account-closure.pure.ts';
 import { users } from '../../../src/schemas/user/user.dbschema.ts';
+import { subscriptions } from '../../../src/schemas/vertical/subscription.dbschema.ts';
 import type { DrizzleClient } from '../../../src/types.ts';
 import { closeTestPool, testData, withTestTransaction } from '../helpers.ts';
 
@@ -94,6 +95,7 @@ async function seedJuan(tx: DrizzleClient) {
     return {
         juan,
         admin,
+        other,
         verificationId,
         pendingId: String(pending[0]?.id),
         rejectedId: String(rejected[0]?.id),
@@ -119,6 +121,44 @@ async function snapshot(tx: DrizzleClient, juanId: string, receiptId: string) {
 }
 
 describe('TEST:V8a:13 the account closure writes (model)', () => {
+    it('TEST:1730:7 clears declared payer emails only for the closed account', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedJuan(tx);
+            const [owned] = await tx
+                .insert(subscriptions)
+                .values({
+                    userId: seed.juan.id,
+                    status: 'CANCELLED',
+                    class: 'LAPIDA',
+                    declaredPayerEmail: 'juan-declared@example.test'
+                })
+                .returning();
+            const [other] = await tx
+                .insert(subscriptions)
+                .values({
+                    userId: seed.other.id,
+                    status: 'CANCELLED',
+                    class: 'LAPIDA',
+                    declaredPayerEmail: 'other-declared@example.test'
+                })
+                .returning();
+            if (!owned || !other) throw new Error('Expected subscription rows');
+            await accountClosureModel.closeAccount({
+                tx,
+                userId: seed.juan.id,
+                actorId: seed.admin.id,
+                at: new Date('2026-10-12T12:00:00.000Z')
+            });
+            const result = await tx
+                .select({ id: subscriptions.id, email: subscriptions.declaredPayerEmail })
+                .from(subscriptions);
+            expect(result.find((row) => row.id === owned.id)?.email).toBeNull();
+            expect(result.find((row) => row.id === other.id)?.email).toBe(
+                'other-declared@example.test'
+            );
+        });
+    });
+
     it('pseudonymises the account, drops credentials and sessions, and leaves trial and receipt as they were', async () => {
         await withTestTransaction(async (tx) => {
             // Arrange
