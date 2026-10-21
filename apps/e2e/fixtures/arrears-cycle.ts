@@ -221,7 +221,10 @@ export async function createApiCardSubscription(args: {
     const response = await fetch(`${API_URL}/api/v1/protected/billing/subscriptions`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', cookie: args.user.sessionCookie },
-        body: JSON.stringify({ billingOptionId: args.billingOptionId })
+        body: JSON.stringify({
+            billingOptionId: args.billingOptionId,
+            payerEmail: `mp-${crypto.randomUUID()}@example.test`
+        })
     });
     const body = CardSubscriptionResponseSchema.parse(await response.json());
     const subscriptionId = body.data?.subscriptionId;

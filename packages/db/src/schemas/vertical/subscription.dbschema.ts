@@ -74,6 +74,13 @@ export const subscriptions = pgTable(
         serviceEndsAt: timestamp('service_ends_at', { withTimezone: true }),
         /** fecha de primer cobro con la que nació */
         firstChargeAt: timestamp('first_charge_at', { withTimezone: true }),
+        /**
+         * The email the payer DECLARED for this row's authorization attempt; sent to the provider
+         * as `payer_email` and read back only by the creations sweep to find the loose preapproval.
+         * It is NEVER a confirmed email (the provider returns `payer_email` empty on a read), and
+         * no code may read it as the payer's identity.
+         */
+        declaredPayerEmail: varchar('declared_payer_email', { length: 255 }),
         /** versión de plazos de la ventana (PLAZO:10) */
         authorizationWindowDeadlineVersion: integer(
             'authorization_window_deadline_version'

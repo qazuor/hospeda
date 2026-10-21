@@ -219,6 +219,11 @@
             "intro": "Você vai autorizar o pagamento no Mercado Pago. Lá, poderá conferir o valor e o ciclo antes de confirmar.",
             "confirm": "Continuar para o Mercado Pago",
             "submitting": "Preparando o pagamento…",
+            "payerEmail": {
+                "label": "E-mail da sua conta do Mercado Pago",
+                "hint": "Tem que ser o e-mail da conta com a qual você vai pagar. Se for diferente do e-mail da sua conta Hospeda, mude aqui: se não coincidir, o Mercado Pago recusa o pagamento.",
+                "invalid": "Informe um e-mail válido."
+            },
             "pending": {
                 "title": "Sua assinatura de {{vertical}} está aguardando a conclusão do pagamento",
                 "resume": "Concluir o pagamento no Mercado Pago",

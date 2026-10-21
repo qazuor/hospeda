@@ -5596,13 +5596,15 @@ export const billingSubscriptionApi = {
     },
     /** Start signup for the selected billing option. */
     start({
-        billingOptionId
+        billingOptionId,
+        payerEmail
     }: {
         readonly billingOptionId: string;
+        readonly payerEmail: string;
     }): Promise<ApiResult<StartSubscriptionResponse>> {
         return apiClient.postProtected<StartSubscriptionResponse>({
             path: `${PROTECTED}/billing/subscriptions`,
-            body: { billingOptionId }
+            body: { billingOptionId, payerEmail }
         });
     }
 };

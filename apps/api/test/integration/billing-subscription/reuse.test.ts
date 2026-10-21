@@ -126,7 +126,10 @@ describe('TEST:B3:6 protected S1 route reuses the live commitment', () => {
         });
         const authorize = vi.spyOn(fake, 'authorize');
         const app = initApp({ clock, paymentProvider: fake });
-        const body = JSON.stringify({ billingOptionId: option.id });
+        const body = JSON.stringify({
+            billingOptionId: option.id,
+            payerEmail: `mp-${crypto.randomUUID()}@example.test`
+        });
 
         const first = await app.request(path, {
             method: 'POST',
@@ -209,7 +212,10 @@ describe('TEST:B3:6 protected S1 route reuses the live commitment', () => {
         const response = await app.request(path, {
             method: 'POST',
             headers: headers(mine.user.id),
-            body: JSON.stringify({ billingOptionId: mine.option.id })
+            body: JSON.stringify({
+                billingOptionId: mine.option.id,
+                payerEmail: `mp-${crypto.randomUUID()}@example.test`
+            })
         });
 
         expect(response.status).toBe(409);

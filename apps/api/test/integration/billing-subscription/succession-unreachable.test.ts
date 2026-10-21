@@ -177,7 +177,10 @@ describe('TEST:B3:5 — no route of the branch declares a succession (AC:B3:5)',
         const response = await app.request(path, {
             method: 'POST',
             headers: headers(user.id),
-            body: JSON.stringify({ billingOptionId: option.id })
+            body: JSON.stringify({
+                billingOptionId: option.id,
+                payerEmail: `mp-${crypto.randomUUID()}@example.test`
+            })
         });
         expect(response.status).toBe(201);
 
@@ -215,7 +218,10 @@ describe('TEST:B3:5 — no route of the branch declares a succession (AC:B3:5)',
             const response = await app.request(path, {
                 method: 'POST',
                 headers: headers(mine.user.id),
-                body: JSON.stringify({ billingOptionId: mine.option.id })
+                body: JSON.stringify({
+                    billingOptionId: mine.option.id,
+                    payerEmail: `mp-${crypto.randomUUID()}@example.test`
+                })
             });
 
             expect(response.status).toBe(409);

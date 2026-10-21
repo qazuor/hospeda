@@ -126,13 +126,13 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
         const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
         const authorize = vi.spyOn(fake, 'authorize');
         const app = initApp({ clock, paymentProvider: fake });
-        const request = (body: unknown, authenticated = true) =>
+        const request = (body: Record<string, unknown>, authenticated = true) =>
             app.request(path, {
                 method: 'POST',
                 headers: authenticated
                     ? headers(user.id)
                     : { 'content-type': 'application/json', 'user-agent': 'vitest' },
-                body: JSON.stringify(body)
+                body: JSON.stringify({ ...body, payerEmail: user.email })
             });
         expect((await request({ billingOptionId: option.id }, false)).status).toBe(401);
         expect((await request({ billingOptionId: 'invalid' })).status).toBe(400);
@@ -166,7 +166,7 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
         const response = await app.request(path, {
             method: 'POST',
             headers: headers(user.id),
-            body: JSON.stringify({ billingOptionId: option.id })
+            body: JSON.stringify({ billingOptionId: option.id, payerEmail: user.email })
         });
         expect(response.status).toBe(409);
         expect((await response.json()).error.reason).toBe('COMMITMENT_TAKEN');
@@ -255,7 +255,7 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
                 headers: authenticated
                     ? headers(user.id)
                     : { 'content-type': 'application/json', 'user-agent': 'vitest' },
-                body: JSON.stringify({ billingOptionId: vipOption[0]!.id })
+                body: JSON.stringify({ billingOptionId: vipOption[0]!.id, payerEmail: user.email })
             });
         expect((await request(false)).status).toBe(401);
         const rejected = await request();
@@ -409,7 +409,7 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
         const response = await app.request(path, {
             method: 'POST',
             headers: headers(user.id),
-            body: JSON.stringify({ billingOptionId: option.id })
+            body: JSON.stringify({ billingOptionId: option.id, payerEmail: user.email })
         });
         expect(response.status).toBe(422);
         expect((await response.json()).error.reason).toBe('PLAN_NOT_FOR_SALE');

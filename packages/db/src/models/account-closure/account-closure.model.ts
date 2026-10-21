@@ -223,7 +223,8 @@ export const accountClosureModel = {
      * (d) deletes its sessions, with the same criterion as `revokeUserSessions`
      *     (`packages/service-core/src/services/user/user.session-revocation.ts:42-55`);
      * (e) deletes its `account` rows: the password and every external provider link (AUT-015);
-     * (f) pseudonymises the `users` row: mailbox, display, first and last name, slug (a copy of
+     * (f) clears its declared payer emails from subscription authorization attempts;
+     * (g) pseudonymises the `users` row: mailbox, display, first and last name, slug (a copy of
      *     the name), and every phone and mailbox in `contact_info`; writes `deleted_at` and
      *     `deleted_by_id`. Writing `deleted_at` fires `trg_softdelete_bookmarks_on_users`
      *     (`extras/003`), which deletes the bookmarks OTHER accounts saved on this one.
@@ -269,6 +270,10 @@ export const accountClosureModel = {
         const accounts = await tx.execute(
             sql`DELETE FROM account WHERE user_id = ${userId} RETURNING id`
         );
+        await tx.execute(sql`
+            UPDATE subscription
+            SET declared_payer_email = NULL
+            WHERE user_id = ${userId} AND declared_payer_email IS NOT NULL`);
 
         const nulledContactKeys = sql.join(
             ACCOUNT_CLOSURE_CONTACT_KEYS.map((key) => sql`${key}::text, NULL`),

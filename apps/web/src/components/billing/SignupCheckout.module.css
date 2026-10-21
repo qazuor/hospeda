@@ -28,6 +28,46 @@
     line-height: 1.5;
 }
 
+.payerEmailField {
+    display: grid;
+    gap: var(--space-2);
+    width: 100%;
+}
+
+.payerEmailLabel {
+    color: var(--core-foreground);
+    font-weight: 600;
+}
+
+.payerEmailInput {
+    width: 100%;
+    min-height: 44px;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+    background: var(--core-card);
+    color: var(--core-foreground);
+    font: inherit;
+}
+
+.payerEmailInput:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 3px;
+}
+
+.payerEmailHint,
+.payerEmailError {
+    line-height: 1.5;
+}
+
+.payerEmailHint {
+    color: var(--core-muted-foreground);
+}
+
+.payerEmailError {
+    color: var(--brand-primary);
+}
+
 .primary,
 .message button {
     min-height: 44px;
@@ -47,6 +87,7 @@
 }
 
 .primary:focus-visible,
+.payerEmailInput:focus-visible,
 .message a:focus-visible,
 .message button:focus-visible {
     outline: 2px solid var(--brand-primary);

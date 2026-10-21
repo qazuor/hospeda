@@ -7,6 +7,7 @@ import {
     formatSignupWindowEnd,
     isDisplayableCheckoutUrl,
     parseSignupOptionId,
+    resolveDeclaredPayerEmail,
     resolveSignupRejection,
     resolveSignupTouristVipNotice,
     resolveSignupTrialNotice,
@@ -202,5 +203,18 @@ describe('TEST:1623:6 resolveSignupTouristVipNotice', () => {
         expect(resolveSignupTouristVipNotice({ result: { ok: true } })).toEqual({
             kind: 'UNKNOWN'
         });
+    });
+});
+
+describe('TEST:1730:5 helper declared payer email', () => {
+    it('uses the request schema to validate and trim an email', () => {
+        expect(resolveDeclaredPayerEmail({ value: '  payer@example.test  ' })).toEqual({
+            ok: true,
+            email: 'payer@example.test'
+        });
+    });
+
+    it.each(['', 'not-an-email', null])('rejects invalid email value %s', (value) => {
+        expect(resolveDeclaredPayerEmail({ value })).toEqual({ ok: false });
     });
 });

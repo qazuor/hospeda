@@ -57,6 +57,7 @@ async function addRow(args: {
     paymentMethod?: 'CARD' | 'MANUAL';
     windowEndsAt?: Date | null;
     linked?: boolean;
+    declaredPayerEmail?: string;
 }) {
     const rowClass = args.rowClass ?? 'PRINCIPAL';
     const [user] = await args.tx.insert(users).values(testData.user()).returning();
@@ -72,6 +73,7 @@ async function addRow(args: {
             paymentMethod: args.paymentMethod ?? 'CARD',
             status: args.status ?? 'PENDING_AUTHORIZATION',
             class: rowClass,
+            declaredPayerEmail: args.declaredPayerEmail ?? null,
             authorizationWindowDeadlineVersion:
                 args.windowEndsAt === undefined || args.windowEndsAt !== null ? 1 : null,
             authorizationWindowEndsAt:
@@ -92,12 +94,17 @@ async function addRow(args: {
 }
 
 describe('creation sweep persistence (supports TEST:B11:23)', () => {
-    it('lists only eligible principal card rows, with links, newest key, email and plan name', async () => {
+    it('TEST:1730:4b lists payerEmail as declared when present and userEmail as fallback', async () => {
         await withTestTransaction(async (tx) => {
             const anchors = await seedAnchors(tx);
             const now = new Date('2026-10-11T10:00:00.000Z');
             const linked = await addRow({ tx, anchors, linked: true });
-            const unlinked = await addRow({ tx, anchors, windowEndsAt: null });
+            const unlinked = await addRow({
+                tx,
+                anchors,
+                windowEndsAt: null,
+                declaredPayerEmail: 'declared@example.test'
+            });
             const newestTime = new Date('2026-10-10T00:00:00.000Z');
             for (const [key, createdAt] of [
                 ['creation-old', new Date(newestTime.getTime() - 1_000)],
@@ -137,7 +144,12 @@ describe('creation sweep persistence (supports TEST:B11:23)', () => {
             expect(linkedRow.providerLink?.subscriptionId).toBe(linked.subscription.id);
             expect(linkedRow.newestCreateKey?.key).toBe('creation-new');
             expect(linkedRow.userEmail).toBe(linked.user.email);
+            expect(linkedRow.payerEmail).toBe(linked.user.email);
             expect(linkedRow.planName).toBe('Plan de prueba');
+            expect(
+                page.find(({ subscription }) => subscription.id === unlinked.subscription.id)
+                    ?.payerEmail
+            ).toBe('declared@example.test');
             expect(
                 page.find(({ subscription }) => subscription.id === unlinked.subscription.id)
                     ?.newestCreateKey?.key
