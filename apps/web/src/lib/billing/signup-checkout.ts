@@ -115,6 +115,11 @@ const REJECTION_BY_REASON: Record<
         retryable: true,
         showPlansLink: false
     },
+    PREVIOUS_ATTEMPT_IN_PROGRESS: {
+        messageKey: 'billing.checkout.signup.rejection.previousAttemptInProgress',
+        retryable: true,
+        showPlansLink: false
+    },
     COMMITMENT_TAKEN: {
         messageKey: 'billing.checkout.signup.rejection.commitmentTaken',
         retryable: false,
