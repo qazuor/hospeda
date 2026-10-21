@@ -1,21 +1,23 @@
 import { z } from 'zod';
 import type { OrderSearchResult, OrderSnapshot } from '../../provider/payment-provider';
 import { type MercadoPagoSend, parseResponse, providerError } from './mercadopago-http';
+import { nullAsAbsent } from './mercadopago-null-as-absent';
 
+// A null creation date reads as absent, so `createdAt` can fall back or fail closed.
 const OrderSchema = z.object({
     id: z.union([z.string(), z.number()]).transform(String),
     status: z.string(),
     external_reference: z.string().nullish(),
-    created_date: z.string().optional(),
-    date_created: z.string().optional()
+    created_date: nullAsAbsent({ schema: z.string() }),
+    date_created: nullAsAbsent({ schema: z.string() })
 });
 const OrderSearchSchema = z.object({
     data: z.array(
         z.object({
             id: z.union([z.string(), z.number()]).transform(String),
             external_reference: z.string().nullish(),
-            created_date: z.string().optional(),
-            date_created: z.string().optional()
+            created_date: nullAsAbsent({ schema: z.string() }),
+            date_created: nullAsAbsent({ schema: z.string() })
         })
     ),
     paging: z.object({ total: z.number().int().nonnegative() })

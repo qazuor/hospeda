@@ -1,0 +1,39 @@
+{
+  "id": "0000000000000000000000000fake0001",
+  "payer_id": 1000000001,
+  "payer_email": "",
+  "back_url": "https://example.invalid/return",
+  "collector_id": 1000000002,
+  "application_id": 1000000003,
+  "status": "pending",
+  "reason": "Basic",
+  "external_reference": "00000000-0000-4000-8000-000000000001",
+  "date_created": "2026-10-20T19:10:00.000-04:00",
+  "last_modified": "2026-10-20T19:10:12.968-04:00",
+  "init_point": "https://example.invalid/subscriptions/checkout?preapproval_id=0000000000000000000000000fake0001&activation=true",
+  "auto_recurring": {
+    "frequency": 1,
+    "frequency_type": "months",
+    "transaction_amount": 18000.00,
+    "currency_id": "ARS",
+    "start_date": "2026-10-20T19:10:00.000-04:00",
+    "has_billing_day": false,
+    "free_trial": null
+  },
+  "summarized": {
+    "quotas": null,
+    "charged_quantity": null,
+    "pending_charge_quantity": null,
+    "charged_amount": null,
+    "pending_charge_amount": null,
+    "semaphore": null,
+    "last_charged_date": null,
+    "last_charged_amount": null
+  },
+  "next_payment_date": "2026-10-20T19:10:00.000-04:00",
+  "payment_method_id": null,
+  "payment_method_id_secondary": null,
+  "first_invoice_offset": null,
+  "subscription_id": "0000000000000000000000000fake0001",
+  "owner": null
+}

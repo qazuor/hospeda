@@ -214,7 +214,7 @@ describe('TEST:B11:27 (support) the adapter reads a chargeback and a refunded ch
         expect(snapshot.chargedBack).toBe(false);
     });
 
-    it('TEST:1710:1 AC:1710:1 (h) any other provider status still fails closed', async () => {
+    it('TEST:1710:1 AC:1710:1 (h) any undocumented provider status still fails closed', async () => {
         // AC:1710:1 keeps fail-closed status handling while using the measured payment fields.
         const body = {
             id: 'charge-x',
@@ -229,7 +229,7 @@ describe('TEST:B11:27 (support) the adapter reads a chargeback and a refunded ch
             currency_id: 'ARS',
             transaction_amount_refunded: 0
         };
-        for (const status of ['cancelled', 'in_mediation', 'authorized', 'refunded_partially']) {
+        for (const status of ['refunded_partially', 'unknown_status']) {
             const adapter = new MercadoPagoPaymentProvider({
                 clock,
                 accessToken: 'test-token',

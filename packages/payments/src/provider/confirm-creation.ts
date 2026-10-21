@@ -30,8 +30,21 @@ const CREATION_FIELDS: readonly AuthorizationCreationField[] = [
     'firstChargeAt'
 ];
 
+/** Whether two ISO 8601 strings name the same instant, whatever offset each is spelled in. */
+function sameInstant(args: { readonly sent: unknown; readonly read: unknown }): boolean {
+    if (typeof args.sent !== 'string' || typeof args.read !== 'string') return false;
+    const sent = Date.parse(args.sent);
+    return Number.isFinite(sent) && sent === Date.parse(args.read);
+}
+
 /** Compare the simple domain values without treating a provider acknowledgement as evidence. */
-function sameField(args: { readonly sent: unknown; readonly read: unknown }): boolean {
+function sameField(args: {
+    readonly field: AuthorizationCreationField;
+    readonly sent: unknown;
+    readonly read: unknown;
+}): boolean {
+    // A provider may echo the first charge in its own offset (HOS-1724): compare instants.
+    if (args.field === 'firstChargeAt') return sameInstant(args);
     if (typeof args.sent !== 'object' || args.sent === null) return Object.is(args.sent, args.read);
     if (typeof args.read !== 'object' || args.read === null) return false;
     const sent = args.sent as Record<string, unknown>;
@@ -60,7 +73,7 @@ export async function confirmAuthorizationCreation(input: {
         const sentValue = sent[field];
         if (sentValue === undefined) return [];
         const readValue = read.snapshot[field];
-        return sameField({ sent: sentValue, read: readValue })
+        return sameField({ field, sent: sentValue, read: readValue })
             ? []
             : [{ field, sent: sentValue, read: readValue }];
     });

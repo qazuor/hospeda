@@ -88,17 +88,19 @@ const ReadResponseSchema = z.object({
         frequency_type: z.string(),
         transaction_amount: z.number(),
         currency_id: z.string(),
-        start_date: z.string().nullable().optional(),
-        free_trial: z.object({ frequency: z.number() }).nullable().optional()
+        start_date: z.string().nullish(),
+        free_trial: z.object({ frequency: z.number() }).nullish()
     }),
+    // A never-charged preapproval answers every `summarized` field as null
+    // (HOS-1724); null means "not reported", mapped below to a null count.
     summarized: z
         .object({
-            charged_quantity: z.number().int().nonnegative().optional(),
-            last_charged_date: z.string().nullable().optional()
+            charged_quantity: z.number().int().nonnegative().nullish(),
+            last_charged_date: z.string().nullish()
         })
-        .optional(),
-    last_modified: z.string().nullable().optional(),
-    next_payment_date: z.string().nullable().optional()
+        .nullish(),
+    last_modified: z.string().nullish(),
+    next_payment_date: z.string().nullish()
 });
 
 /** Convert a provider date to an ISO UTC instant, tolerating invalid values. */
@@ -294,7 +296,8 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
                     currency: parsed.auto_recurring.currency_id
                 },
                 cadence: { everyMonths: parsed.auto_recurring.frequency },
-                firstChargeAt: parsed.auto_recurring.start_date ?? null,
+                // Mercado Pago echoes start_date in its own offset; normalize like nextChargeAt.
+                firstChargeAt: toIsoInstant({ value: parsed.auto_recurring.start_date }),
                 nextChargeAt: toIsoInstant({ value: parsed.next_payment_date }),
                 freePeriodDays: parsed.auto_recurring.free_trial?.frequency ?? null,
                 chargeRecordCount: parsed.summarized?.charged_quantity ?? null,

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { ChargeSnapshot } from '../../provider/payment-provider';
 import { readMercadoPagoChargeWindow } from './mercadopago-charge-window';
 import { type MercadoPagoSend, parseResponse, providerError } from './mercadopago-http';
+import { nullAsAbsent } from './mercadopago-null-as-absent';
 import {
     MercadoPagoPaymentLinkFieldsSchema,
     readMercadoPagoAuthorizationLink
@@ -12,19 +13,43 @@ const ReadChargeResponseSchema = z.object({
     date_created: z.string().datetime({ offset: true }),
     external_reference: z.string().nullable().optional(),
     ...MercadoPagoPaymentLinkFieldsSchema.shape,
-    status: z.enum(['pending', 'in_process', 'approved', 'rejected', 'refunded', 'charged_back']),
+    // Every documented Mercado Pago payment status; anything else still fails closed.
+    status: z.enum([
+        'pending',
+        'in_process',
+        'authorized',
+        'in_mediation',
+        'cancelled',
+        'approved',
+        'rejected',
+        'refunded',
+        'charged_back'
+    ]),
     status_detail: z.string().nullable().optional(),
     transaction_amount: z.number().nonnegative(),
     currency_id: z.string().min(1),
-    transaction_amount_refunded: z.number().nonnegative().optional()
+    // null is read as absent, so an approved payment without it still fails closed below.
+    transaction_amount_refunded: nullAsAbsent({ schema: z.number().nonnegative() })
 });
 
+/**
+ * Maps a Mercado Pago payment status to the domain. `authorized` (reserved,
+ * not captured), `in_mediation` (disputed, money held) and `cancelled`
+ * (closed before collection) are neither a collection we may count nor a
+ * decline we may act on (grace, expiry), so they read as `pending` (HOS-1724).
+ */
 function toChargeStatus({
     status
 }: {
     readonly status: z.infer<typeof ReadChargeResponseSchema>['status'];
 }): ChargeSnapshot['status'] {
-    if (status === 'in_process') return 'pending';
+    if (
+        status === 'in_process' ||
+        status === 'authorized' ||
+        status === 'in_mediation' ||
+        status === 'cancelled'
+    )
+        return 'pending';
     if (status === 'refunded' || status === 'charged_back') return 'approved';
     return status;
 }

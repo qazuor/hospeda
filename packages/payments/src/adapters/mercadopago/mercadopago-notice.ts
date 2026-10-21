@@ -22,7 +22,8 @@ export function decodeMercadoPagoNotice(args: { readonly body: string }): Provid
         throw invalidNotice({ type });
     }
 
-    const version = 'version' in candidate ? candidate.version : undefined;
+    // A null version reads like an absent one (HOS-1724).
+    const version = 'version' in candidate ? (candidate.version ?? undefined) : undefined;
     if (version !== undefined && typeof version !== 'string' && typeof version !== 'number') {
         throw invalidNotice({ type });
     }
