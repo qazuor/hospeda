@@ -77,7 +77,7 @@ export const subscriptions = pgTable(
         /**
          * The email the payer DECLARED for this row's authorization attempt; sent to the provider
          * as `payer_email`, read by the creations sweep to find the loose preapproval, and read by
-         * S1 to compare a retry email and decide whether the attempt is replaced (HOS-1732).
+         * S1 to compare retry email; S1 rewrites it when retrying after a rejected creation (HOS-1732).
          * It is NEVER a confirmed email (the provider returns `payer_email` empty on a read), and
          * no code may read it as the payer's identity.
          */

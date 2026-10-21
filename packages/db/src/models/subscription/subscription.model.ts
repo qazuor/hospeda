@@ -21,6 +21,7 @@ import {
     subscriptions
 } from '../../schemas/vertical/subscription.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
+import { reconciliationInventoryModel } from '../reconciliation-inventory/reconciliation-inventory.model.ts';
 
 /** Identity and immutable anchors for the new card subscription. */
 export interface CreatePendingAuthorizationInput {
@@ -119,6 +120,23 @@ export interface RecordAuthorizationResultInput {
     readonly tx?: DrizzleClient;
 }
 
+/** Input for conditionally recording a rejected preapproval creation. */
+export interface RecordCreationRejectedInput {
+    readonly idempotencyKey: string;
+    readonly subscriptionId: string;
+    readonly result: Record<string, unknown>;
+    readonly completedAt: Date;
+    readonly tx?: DrizzleClient;
+}
+
+/** Input for minting a replacement key after a provider-rejected creation. */
+export interface MintKeyAfterRejectedCreationInput {
+    readonly subscriptionId: string;
+    readonly rejectedKey: string;
+    readonly declaredPayerEmail?: string;
+    readonly createdAt: Date;
+}
+
 /** Result of S3's abandonment: whether the row was written and the courtesy balance that was closed. */
 export interface AbandonPendingAuthorizationResult {
     /** `true` when the subscription row was transitioned. */
@@ -129,6 +147,71 @@ export interface AbandonPendingAuthorizationResult {
 
 /** Minimal S1 persistence model; no BaseModelImpl CRUD surface. */
 export class SubscriptionModel {
+    /** Completes the exact creation key once, without creating a provider link. */
+    async recordCreationRejected(input: RecordCreationRejectedInput): Promise<boolean> {
+        const db = input.tx ?? getDb();
+        const rows = await db
+            .update(idempotencyKeys)
+            .set({ result: input.result, completedAt: input.completedAt })
+            .where(
+                and(
+                    eq(idempotencyKeys.key, input.idempotencyKey),
+                    eq(idempotencyKeys.operation, 'PREAPPROVAL_CREATE'),
+                    eq(idempotencyKeys.subjectId, input.subscriptionId),
+                    isNull(idempotencyKeys.completedAt)
+                )
+            )
+            .returning({ key: idempotencyKeys.key });
+        return rows.length === 1;
+    }
+
+    /** Locks the rejected pending row and creates its next attempt key atomically. */
+    async mintKeyAfterRejectedCreation(
+        input: MintKeyAfterRejectedCreationInput
+    ): Promise<{ readonly key: string } | null> {
+        return getDb().transaction(async (tx) => {
+            const locked = await reconciliationInventoryModel.lockSubscriptionForLink({
+                subscriptionId: input.subscriptionId,
+                tx
+            });
+            if (
+                locked?.subscription.status !== 'PENDING_AUTHORIZATION' ||
+                locked.providerLink !== null
+            )
+                return null;
+            const [latest] = await tx
+                .select({ key: idempotencyKeys.key, createdAt: idempotencyKeys.createdAt })
+                .from(idempotencyKeys)
+                .where(
+                    and(
+                        eq(idempotencyKeys.subjectId, input.subscriptionId),
+                        eq(idempotencyKeys.operation, 'PREAPPROVAL_CREATE')
+                    )
+                )
+                .orderBy(desc(idempotencyKeys.createdAt), desc(idempotencyKeys.key))
+                .limit(1);
+            if (latest?.key !== input.rejectedKey) return null;
+            if (input.declaredPayerEmail !== undefined) {
+                await tx
+                    .update(subscriptions)
+                    .set({ declaredPayerEmail: input.declaredPayerEmail })
+                    .where(eq(subscriptions.id, input.subscriptionId));
+            }
+            const key = randomUUID();
+            const createdAt =
+                latest.createdAt && input.createdAt <= latest.createdAt
+                    ? new Date(latest.createdAt.getTime() + 1)
+                    : input.createdAt;
+            await tx.insert(idempotencyKeys).values({
+                key,
+                operation: 'PREAPPROVAL_CREATE',
+                subjectId: input.subscriptionId,
+                createdAt
+            });
+            return { key };
+        });
+    }
+
     /** Writes the PENDING_AUTHORIZATION row and key in one transaction. */
     async createPendingAuthorization(
         input: CreatePendingAuthorizationInput

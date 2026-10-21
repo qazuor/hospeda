@@ -1,5 +1,6 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { LiveCommitment } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import { ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
@@ -22,6 +23,21 @@ const NotAppliedAuthorizationResultSchema = z.object({
     authorizationId: z.string().min(1),
     applied: z.literal(false)
 });
+
+const RejectedCreationResultSchema = z.object({
+    outcome: z.literal('REJECTED_BY_PROVIDER'),
+    code: z.literal('REJECTED')
+});
+
+const logger = createLogger('resolve-live-commitment');
+
+/** The result persisted when the provider rejects a creation before returning an authorization. */
+export type RejectedCreationResult = z.infer<typeof RejectedCreationResultSchema>;
+
+/** Builds the stored result for a rejected preapproval creation. */
+export function rejectedCreationResult(): RejectedCreationResult {
+    return { outcome: 'REJECTED_BY_PROVIDER', code: 'REJECTED' };
+}
 
 /** The stored result of an applied creation, the one shape S1's reuse accepts. */
 export type AppliedAuthorizationResult = z.infer<typeof AppliedAuthorizationResultSchema>;
@@ -67,8 +83,9 @@ export function previousAttemptInProgress(): ServiceError {
 }
 
 /**
- * The S1 decision for a live commitment: can the request reuse the stored
- * authorization, or does the pending attempt need replacement? Reuse requires:
+ * The S1 decision for a live commitment: reuse an authorization, replace an
+ * attempt, or recreate after a rejected creation. The authorization window
+ * must remain open for every decision that calls the provider.
  *
  * - the row is `PENDING_AUTHORIZATION` (H6, H8);
  * - it is anchored to the very same `billingOptionId` the person asked for
@@ -79,8 +96,8 @@ export function previousAttemptInProgress(): ServiceError {
  *
  * When it does, the stored `{ subscriptionId, authorizationId, checkoutUrl }`
  * is returned WITHOUT calling the provider and WITHOUT writing anything. A
- * changed declared payer email or completed unapplied creation asks S1 to
- * replace the row; all other non-reusable commitments answer `COMMITMENT_TAKEN`.
+ * changed payer email or completed unapplied creation asks S1 to replace the
+ * row; an unlinked rejected creation asks S1 to mint a new key on that row.
  */
 export function resolveLiveCommitmentReuse(input: {
     readonly commitment: LiveCommitment;
@@ -95,6 +112,7 @@ export function resolveLiveCommitmentReuse(input: {
 }): Promise<
     | { readonly kind: 'REUSE'; readonly result: StartSubscriptionResult }
     | { readonly kind: 'REPLACE'; readonly cause: 'PAYER_EMAIL_CHANGED' | 'CREATION_NOT_APPLIED' }
+    | { readonly kind: 'RECREATE'; readonly rejectedKey: string }
 >;
 export async function resolveLiveCommitmentReuse(input: {
     readonly commitment: LiveCommitment;
@@ -105,6 +123,7 @@ export async function resolveLiveCommitmentReuse(input: {
     | StartSubscriptionResult
     | { readonly kind: 'REUSE'; readonly result: StartSubscriptionResult }
     | { readonly kind: 'REPLACE'; readonly cause: 'PAYER_EMAIL_CHANGED' | 'CREATION_NOT_APPLIED' }
+    | { readonly kind: 'RECREATE'; readonly rejectedKey: string }
 > {
     const { subscription } = input.commitment;
     if (subscription.status !== 'PENDING_AUTHORIZATION') throw commitmentTaken();
@@ -133,5 +152,16 @@ export async function resolveLiveCommitmentReuse(input: {
     const notApplied = NotAppliedAuthorizationResultSchema.safeParse(key.result);
     if (notApplied.success && input.commitment.providerLink)
         return { kind: 'REPLACE', cause: 'CREATION_NOT_APPLIED' };
+    const rejected = RejectedCreationResultSchema.safeParse(key.result);
+    if (rejected.success) {
+        if (input.commitment.providerLink) {
+            logger.error(
+                { subscriptionId: subscription.id, idempotencyKey: key.key },
+                'Rejected creation unexpectedly has a provider link'
+            );
+            throw commitmentTaken();
+        }
+        return { kind: 'RECREATE', rejectedKey: key.key };
+    }
     throw commitmentTaken();
 }
