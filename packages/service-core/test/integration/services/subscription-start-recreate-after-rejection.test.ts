@@ -6,6 +6,7 @@ import {
     plans,
     planVersions,
     providerLinks,
+    subscriptionModel,
     subscriptions,
     users
 } from '@repo/db';
@@ -287,6 +288,25 @@ describe('subscription start after rejected creation', () => {
         await expect(startSubscription(input, ports(fake))).rejects.toMatchObject({
             code: 'REJECTED'
         });
+        const row = (
+            await getServiceTestDb()
+                .select()
+                .from(subscriptions)
+                .where(eq(subscriptions.userId, choice.user.id))
+        )[0]!;
+        const [rejected] = await getServiceTestDb()
+            .select()
+            .from(idempotencyKeys)
+            .where(eq(idempotencyKeys.subjectId, row.id));
+        expect(rejected!.result).toMatchObject({ outcome: 'REJECTED_BY_PROVIDER' });
+        expect(
+            await subscriptionModel.mintKeyAfterRejectedCreation({
+                subscriptionId: row.id,
+                rejectedKey: 'stale-key',
+                declaredPayerEmail: input.payerEmail,
+                createdAt: clock.now()
+            })
+        ).toBeNull();
         let signalStarted!: () => void;
         let release!: () => void;
         const started = new Promise<void>((resolve) => {
