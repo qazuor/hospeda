@@ -970,7 +970,7 @@
             "digit": "Al menos 1 número",
             "length": "Mínimo 8 caracteres",
             "lower": "Al menos 1 minúscula",
-            "special": "Al menos 1 carácter especial (@$!%*?&)",
+            "special": "Al menos 1 carácter especial (por ejemplo ! @ # $ - _)",
             "upper": "Al menos 1 mayúscula"
         },
         "showPassword": "Mostrar contraseña"
