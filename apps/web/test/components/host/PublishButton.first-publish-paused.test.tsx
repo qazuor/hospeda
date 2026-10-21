@@ -33,7 +33,8 @@ const ES_PAUSED_BODY =
 
 function props(overrides: Record<string, unknown> = {}) {
     return {
-        accommodationId: 'acc-1',
+        vertical: 'accommodation',
+        listingId: 'acc-1',
         locale: 'es' as const,
         label: 'Publicar',
         confirmTitle: '¿Publicar este alojamiento?',

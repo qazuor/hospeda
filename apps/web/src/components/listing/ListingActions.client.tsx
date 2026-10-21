@@ -9,9 +9,8 @@
  * (and the certificate for an experience), or, for a draft, the checklist of
  * what is still missing.
  *
- * There is no publish or payment control here: the owner self-checkout this
- * island used to start was removed with the old billing system, and nothing
- * replaces it yet. A complete draft therefore only reports that it is ready.
+ * A complete DRAFT may mount the shared publish action when the server-derived
+ * affordance allows it; all other card states keep their existing actions.
  *
  * Hydration: `client:visible` — this sits inside a listing card in a list,
  * not above-the-fold interactive chrome.
@@ -19,7 +18,10 @@
 
 import type { JSX } from 'react';
 import { ExperienceCertificatePanel } from '@/components/experience/ExperienceCertificatePanel.client';
+import { PublishButton } from '@/components/host/PublishButton.client';
 import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
+import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
+import { resolvePropertyCardActions } from '@/lib/host/property-card-actions';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { ListingCardState } from '@/lib/listing/listing-card-state';
@@ -29,6 +31,7 @@ import {
     MISSING_FIELD_I18N_SUFFIX
 } from '@/lib/listing/missing-field-labels';
 import type { OwnerListingSummaryWithState } from '@/lib/listing/owner-listings';
+import { type PublishAffordance, UNKNOWN_PUBLISH_AFFORDANCE } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
 import { BrochureDownloadButton } from './BrochureDownloadButton.client';
 import styles from './ListingActions.module.css';
@@ -38,6 +41,8 @@ export interface ListingActionsProps {
     readonly listing: OwnerListingSummaryWithState;
     /** Active locale for translations and URL construction. */
     readonly locale: SupportedLocale;
+    /** Server-derived publish decision; missing data fails closed. */
+    readonly publishAffordance?: PublishAffordance;
 }
 
 /** Public detail path segment per vertical (mirrors the `[slug].astro` routes). */
@@ -46,12 +51,28 @@ const PUBLIC_PATH_BY_VERTICAL: Record<OwnerListingSummaryWithState['vertical'], 
     experience: 'experiencias'
 };
 
+const PUBLISH_CONFIRM_TITLE_KEY: Readonly<Record<PublishVerticalSlug, string>> = {
+    accommodation: 'host.properties.card.actions.publishConfirmTitle',
+    gastronomy: 'listing.owner.publish.confirmTitle.gastronomy',
+    experience: 'listing.owner.publish.confirmTitle.experience'
+};
+
+const PUBLISH_CHOOSE_PLAN_KEY: Readonly<Record<PublishVerticalSlug, string>> = {
+    accommodation: 'host.properties.card.actions.choosePlan',
+    gastronomy: 'listing.owner.publish.choosePlan.gastronomy',
+    experience: 'listing.owner.publish.choosePlan.experience'
+};
+
 /**
  * ListingActions — renders the right badge/checklist for a single
  * owner-listing card, driven by `resolveListingCardState`.
  */
-export function ListingActions({ listing, locale }: ListingActionsProps): JSX.Element | null {
-    const { t } = createTranslations(locale);
+export function ListingActions({
+    listing,
+    locale,
+    publishAffordance = UNKNOWN_PUBLISH_AFFORDANCE
+}: ListingActionsProps): JSX.Element | null {
+    const { t, tPlural } = createTranslations(locale);
 
     const state: ListingCardState = resolveListingCardState({
         publicationStatus: listing.publicationStatus,
@@ -157,6 +178,9 @@ export function ListingActions({ listing, locale }: ListingActionsProps): JSX.El
     // incomplete draft (HOS-166 §8 point 4).
     const missing = state.kind === 'draft-incomplete' ? state.missing : [];
     const isComplete = state.kind === 'draft-complete';
+    const cardActions = resolvePropertyCardActions({
+        publicationStatus: listing.publicationStatus
+    });
 
     return (
         <div className={styles.actions}>
@@ -165,6 +189,50 @@ export function ListingActions({ listing, locale }: ListingActionsProps): JSX.El
                     ? t('listing.owner.list.state.draftComplete', 'Borrador — listo para publicar')
                     : t('listing.owner.list.state.draftIncomplete', 'Borrador — incompleto')}
             </span>
+
+            {isComplete && cardActions.publish && (
+                <PublishButton
+                    listingId={listing.id}
+                    vertical={listing.vertical}
+                    locale={locale}
+                    label={t('host.properties.card.actions.publish', 'Publicar')}
+                    confirmTitle={t(PUBLISH_CONFIRM_TITLE_KEY[listing.vertical])}
+                    confirmNote={t(
+                        'host.properties.card.actions.publishConfirmNote',
+                        'Va a aparecer en el sitio, visible para los turistas.'
+                    )}
+                    confirmTrialNote={tPlural(
+                        'host.properties.card.actions.publishConfirmTrialNote',
+                        publishAffordance.trialDays ?? 0,
+                        { trialDays: publishAffordance.trialDays ?? 0 }
+                    )}
+                    confirmYes={t('host.properties.card.actions.publishYes', 'Sí, publicar')}
+                    confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
+                    errorText={t(
+                        'host.properties.card.publishError',
+                        'No se pudo publicar. Intentá de nuevo.'
+                    )}
+                    subscriptionRequiredMessage={t(
+                        'host.properties.card.publishSubscriptionRequiredMessage',
+                        'Necesitás un plan activo para publicar.'
+                    )}
+                    subscriptionRequiredCta={t(
+                        'host.properties.card.publishSubscriptionRequiredCta',
+                        'Ver planes'
+                    )}
+                    missingRequirementsMessage={t(
+                        'listing.owner.publish.missingRequirements',
+                        'No se pudo publicar porque faltan datos.'
+                    )}
+                    missingRequirementsCta={t(
+                        'host.properties.card.publishMissingRequirementsCta',
+                        'Completar en el editor'
+                    )}
+                    affordance={publishAffordance}
+                    checkFailedText={t('host.properties.card.publishCheckFailed')}
+                    choosePlanLabel={t(PUBLISH_CHOOSE_PLAN_KEY[listing.vertical])}
+                />
+            )}
 
             {missing.length > 0 && (
                 <ul
