@@ -28,7 +28,62 @@ afterAll(closeServiceTestPool);
 beforeEach(resetSeededReconciliationInventory);
 
 describe('TEST:B11:23 creations sweep over the fake', () => {
-    it('links the newest matching pending, cancels older duplicates, and ignores another row', async () => {
+    it('TEST:1730:4 finds a loose preapproval only under the declared email', async () => {
+        const time = createAdjustableClock({ start: new Date(Date.now() + 20 * 60_000) });
+        const { fake } = createReconciliationFake(time);
+        const row = await seedPendingCreation({ declaredPayerEmail: 'declared@example.test' });
+        const created = await fake.authorize({
+            reference: row.subscription.id,
+            amount: { amountMinor: 250000, currency: 'ARS' },
+            cadence: { everyMonths: 1 },
+            reason: 'test',
+            returnUrl: 'https://example.test',
+            payerEmail: 'declared@example.test'
+        });
+        const search = vi.spyOn(fake, 'searchAuthorizations');
+        const summary = await withSeededPendingCreations(() =>
+            runCreationsSweep(
+                {},
+                { provider: fake, clock: time, returnUrl: 'https://example.test' }
+            )
+        );
+        expect(search).toHaveBeenCalledWith({ payerEmail: 'declared@example.test' });
+        expect(
+            search.mock.calls.every(([filters]) => Object.keys(filters).join(',') === 'payerEmail')
+        ).toBe(true);
+        expect(summary.linked).toBe(1);
+        expect(
+            (
+                await getServiceTestDb()
+                    .select()
+                    .from(providerLinks)
+                    .where(eq(providerLinks.subscriptionId, row.subscription.id))
+            )[0]?.providerId
+        ).toBe(created.authorizationId);
+    });
+
+    it('TEST:1730:4 recreates with the declared email after an empty search', async () => {
+        const time = createAdjustableClock({
+            start: new Date(Date.now() + CREATION_RECREATE_AFTER_MS + 60_000)
+        });
+        const { fake } = createReconciliationFake(time);
+        const row = await seedPendingCreation({ declaredPayerEmail: 'declared@example.test' });
+        const authorize = vi.spyOn(fake, 'authorize');
+        const search = vi.spyOn(fake, 'searchAuthorizations');
+        await withSeededPendingCreations(() =>
+            runCreationsSweep(
+                {},
+                { provider: fake, clock: time, returnUrl: 'https://example.test' }
+            )
+        );
+        expect(search).toHaveBeenCalledWith({ payerEmail: 'declared@example.test' });
+        expect(authorize).toHaveBeenCalledWith(
+            expect.objectContaining({ payerEmail: 'declared@example.test' })
+        );
+        expect(row.subscription.userId).toBeTruthy();
+    });
+
+    it('TEST:1730:4 legacy NULL rows search by the account email; links only matching pending creations', async () => {
         const time = createAdjustableClock({ start: new Date(Date.now() + 20 * 60_000) });
         const { fake } = createReconciliationFake(time);
         const row = await seedPendingCreation();

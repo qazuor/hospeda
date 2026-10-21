@@ -46,6 +46,7 @@ function subscription(overrides: Partial<SelectSubscription> = {}): SelectSubscr
         nextChargeAt: null,
         serviceEndsAt: null,
         firstChargeAt: null,
+        declaredPayerEmail: null,
         authorizationWindowDeadlineVersion: null,
         authorizationWindowEndsAt: null,
         graceStartedAt: null,
