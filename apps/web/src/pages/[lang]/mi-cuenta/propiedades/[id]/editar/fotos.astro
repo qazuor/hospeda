@@ -39,6 +39,7 @@ const { t } = createTranslations(locale);
 const trialDays = await resolveGenericOwnerTrialDays();
 const publishContext = {
 	capacity: data.accommodation.maxGuests,
+	description: data.accommodation.description,
 	minNights: data.accommodation.minNights,
 	bedrooms: data.accommodation.bedrooms,
 	bathrooms: data.accommodation.bathrooms,
