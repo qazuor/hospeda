@@ -1,7 +1,7 @@
 /**
  * @file webhooks/mercadopago.ts
  * Receives POST /api/v1/webhooks/mercadopago for Webhooks and IPN. Webhooks
- * require a valid signature (401 when invalid, 500 when no secret is configured);
+ * are identified by `source_news=webhooks` or the `data.id` plus `type` query shape and require a valid signature (401 when invalid, 500 when no secret is configured);
  * IPN is stored without processing. The body cap answers 413, successful
  * storage/processing answers 200, and failed storage or rereading answers 500
  * (D2, D3).
