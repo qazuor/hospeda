@@ -182,7 +182,7 @@ describe('TEST:B11:20 el juego de salida contra el falso', () => {
         );
     });
 
-    it('TEST:1732:12 AC:1732:9 LISTA:B11 cláusula 16: la salvedad 4 del barrido cuenta las catorce transiciones', async () => {
+    it('LISTA:B11 cláusula 16: la salvedad 4 del barrido cuenta las catorce transiciones (TEST:1732:12 AC:1732:9)', async () => {
         // B11.md:372: S12, S3, S13, S16, S20, S22, S23, S24, S31, S36 and the receipt tombstone;
         // the twelfth is the inherited Tourist VIP, by the owner's decision H3 → b (Coord-289);
         // the thirteenth is REJECTION_REVIVED, the revived rejection terminal (Coord-351 F3, B11 §3);
