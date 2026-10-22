@@ -42,8 +42,8 @@ import {
     parseCutoverStep3Args,
     readCheckoutSha,
     readContainerEnvValue,
-    requiresTypedConfirmation,
     runCutoverStep3,
+    shouldPromptForTypedConfirmation,
     WRITE_TRIALS_PROD_PHRASE
 } from '../lib/cutover-step-3-core.ts';
 import { dockerInspectEnv } from '../lib/docker.ts';
@@ -195,10 +195,11 @@ export async function cutoverStep3(argv: ReadonlyArray<string>): Promise<void> {
     }
 
     if (
-        requiresTypedConfirmation({
+        shouldPromptForTypedConfirmation({
             target,
             mode: options.mode,
-            allowShaMismatch: options.allowShaMismatch
+            allowShaMismatch: options.allowShaMismatch,
+            yes: options.yes
         })
     ) {
         await confirmProd({ target, mode: options.mode });

@@ -100,6 +100,37 @@ export function requiresTypedConfirmation(input: RequiresTypedConfirmationInput)
     return input.allowShaMismatch;
 }
 
+/** Input for {@link shouldPromptForTypedConfirmation}. */
+export interface ShouldPromptForTypedConfirmationInput extends RequiresTypedConfirmationInput {
+    /**
+     * `--yes` as parsed. Accepted so the call site forwards the whole parsed
+     * option set; deliberately ignored by the decision below.
+     */
+    readonly yes: boolean;
+}
+
+/**
+ * Decide whether the command must actually prompt for the typed phrase.
+ *
+ * This is the single place the prompt decision is made, so a test can cover
+ * the `--yes` case directly. `--yes` is accepted but never consulted: it
+ * cannot skip the prod guard. The command's call site must call this function
+ * and nothing else — never add `&& !options.yes` (or any other condition)
+ * around it.
+ *
+ * @param input - Target, mode, the SHA-override flag and `--yes`.
+ * @returns `true` when the operator must type {@link WRITE_TRIALS_PROD_PHRASE}.
+ */
+export function shouldPromptForTypedConfirmation(
+    input: ShouldPromptForTypedConfirmationInput
+): boolean {
+    return requiresTypedConfirmation({
+        target: input.target,
+        mode: input.mode,
+        allowShaMismatch: input.allowShaMismatch
+    });
+}
+
 /** Input for {@link isTypedConfirmationValid}. */
 export interface IsTypedConfirmationValidInput {
     /** The raw text the operator typed. */
