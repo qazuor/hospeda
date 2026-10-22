@@ -13,14 +13,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // Hoisted mock variables — must be declared before any vi.mock factory
 // ---------------------------------------------------------------------------
 
-const { mockCaptureException, mockSchedule, mockGetEnabledCronJobs, mockRecordCronRun, mockEnv } =
-    vi.hoisted(() => ({
-        mockCaptureException: vi.fn(),
-        mockSchedule: vi.fn(),
-        mockGetEnabledCronJobs: vi.fn(),
-        mockRecordCronRun: vi.fn(),
-        mockEnv: { HOSPEDA_CRON_ADAPTER: 'node-cron' as string }
-    }));
+const {
+    mockCaptureException,
+    mockSchedule,
+    mockGetEnabledCronJobs,
+    mockRecordCronRun,
+    mockPingHealthchecks,
+    mockEnv
+} = vi.hoisted(() => ({
+    mockCaptureException: vi.fn(),
+    mockSchedule: vi.fn(),
+    mockGetEnabledCronJobs: vi.fn(),
+    mockRecordCronRun: vi.fn(),
+    mockPingHealthchecks: vi.fn(),
+    mockEnv: { HOSPEDA_CRON_ADAPTER: 'node-cron' as string }
+}));
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -46,6 +53,15 @@ vi.mock('../../src/cron/registry', () => ({
 
 vi.mock('../../src/cron/record-run', () => ({
     recordCronRun: mockRecordCronRun
+}));
+
+vi.mock('../../src/utils/healthchecks-ping', () => ({
+    HEALTHCHECKS_MONITORED_JOBS: [
+        'billing-reconciliation-sweep',
+        'listing-coverage-reconciler',
+        'listing-remote-deletion-retry'
+    ],
+    pingHealthchecks: mockPingHealthchecks
 }));
 
 // node-cron is a dynamic import — mock the whole module
@@ -301,5 +317,94 @@ describe('startCronScheduler — market time zone and run ids (HOS-1424)', () =>
         }
         expect(seen[0]?.runId).not.toBe(seen[1]?.runId);
         expect(seen[0]?.correlationId).not.toBe(seen[1]?.correlationId);
+    });
+});
+
+describe('startCronScheduler — Healthchecks pings (HOS-1742, TEST:1742:7)', () => {
+    const MONITORED = 'billing-reconciliation-sweep';
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockEnv.HOSPEDA_CRON_ADAPTER = 'node-cron';
+        mockRecordCronRun.mockResolvedValue(undefined);
+        mockPingHealthchecks.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('pings start then success when the handler returns success', async () => {
+        const job = makeJob(MONITORED, () => Promise.resolve(makeSuccessResult()));
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+        await fireTick();
+
+        expect(mockPingHealthchecks.mock.calls.map((call) => call[0])).toEqual([
+            { job: MONITORED, signal: 'start' },
+            { job: MONITORED, signal: 'success' }
+        ]);
+        expect(mockRecordCronRun).toHaveBeenCalledOnce();
+    });
+
+    it('pings start then fail when the handler returns success === false', async () => {
+        const job = makeJob(MONITORED, () => Promise.resolve(makeSoftFailResult(2)));
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+        await fireTick();
+
+        expect(mockPingHealthchecks.mock.calls.map((call) => call[0])).toEqual([
+            { job: MONITORED, signal: 'start' },
+            { job: MONITORED, signal: 'fail' }
+        ]);
+    });
+
+    it('pings start then fail when the handler throws', async () => {
+        const job = makeJob(MONITORED, () => Promise.reject(new Error('boom')));
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+        await fireTick();
+
+        expect(mockPingHealthchecks.mock.calls.map((call) => call[0])).toEqual([
+            { job: MONITORED, signal: 'start' },
+            { job: MONITORED, signal: 'fail' }
+        ]);
+        expect(mockRecordCronRun).toHaveBeenCalledOnce();
+    });
+
+    it('does not ping a job outside the monitored list', async () => {
+        const job = makeJob('dunning', () => Promise.resolve(makeSuccessResult()));
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+        await fireTick();
+
+        expect(mockPingHealthchecks).not.toHaveBeenCalled();
+        expect(mockRecordCronRun).toHaveBeenCalledOnce();
+    });
+
+    it('records the run and captures the tick error even if the helper rejects', async () => {
+        mockPingHealthchecks.mockRejectedValue(new Error('monitor down'));
+        const job = makeJob(MONITORED, () => Promise.reject(new Error('db exploded')));
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+        await fireTick();
+
+        expect(mockRecordCronRun).toHaveBeenCalledOnce();
+        expect(mockCaptureException).toHaveBeenCalledOnce();
+        const [, capturedOpts] = mockCaptureException.mock.calls[0] as [
+            unknown,
+            Record<string, unknown>
+        ];
+        expect(capturedOpts).toMatchObject({ level: 'error' });
     });
 });

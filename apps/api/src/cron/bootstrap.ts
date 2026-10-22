@@ -24,6 +24,11 @@ import { randomUUID } from 'node:crypto';
 import { MARKET_TIMEZONE } from '@repo/utils';
 import * as Sentry from '@sentry/node';
 import { env } from '../utils/env.js';
+import {
+    HEALTHCHECKS_MONITORED_JOBS,
+    type HealthchecksSignal,
+    pingHealthchecks
+} from '../utils/healthchecks-ping';
 import { apiLogger } from '../utils/logger';
 import { recordCronRun } from './record-run';
 import { getEnabledCronJobs } from './registry';
@@ -34,6 +39,26 @@ const DEFAULT_JOB_TIMEOUT_MS = 30_000;
 
 /** node-cron options shared by every registered schedule. */
 export const CRON_SCHEDULE_OPTIONS = { timezone: MARKET_TIMEZONE } as const;
+
+/** O(1) lookup for the jobs that report to Healthchecks.io (HOS-1742). */
+const HEALTHCHECKS_MONITORED_JOB_SET: ReadonlySet<string> = new Set(HEALTHCHECKS_MONITORED_JOBS);
+
+/**
+ * Fires one Healthchecks ping without waiting on it (HOS-1742).
+ *
+ * Fire-and-forget keeps a slow or unreachable monitor from delaying the tick or
+ * altering the job outcome. The helper swallows its own failures; the trailing
+ * catch is defense in depth so a future regression can never surface as an
+ * unhandled rejection or reach the tick's error path.
+ *
+ * @param job - Cron job name.
+ * @param signal - Lifecycle signal (`start`, `success`, or `fail`).
+ */
+function pingHealthchecksBestEffort(job: string, signal: HealthchecksSignal): void {
+    void pingHealthchecks({ job, signal }).catch(() => {
+        // Monitoring never alters the cron outcome.
+    });
+}
 
 /**
  * Builds the per-tick context handed to a job handler.
@@ -151,7 +176,9 @@ export const startCronScheduler = async (): Promise<void> => {
                 scheduleExpression,
                 async () => {
                     const startTime = Date.now();
+                    const healthchecksMonitored = HEALTHCHECKS_MONITORED_JOB_SET.has(job.name);
                     apiLogger.info({ message: `[cron] tick: ${job.name}` });
+                    if (healthchecksMonitored) pingHealthchecksBestEffort(job.name, 'start');
                     try {
                         const result = await runJobWithTimeout(
                             job,
@@ -173,6 +200,15 @@ export const startCronScheduler = async (): Promise<void> => {
                             finishedAt: new Date(),
                             result
                         });
+
+                        // HOS-1742: the Healthchecks mirror follows result.success; the
+                        // Sentry captures below are unchanged.
+                        if (healthchecksMonitored) {
+                            pingHealthchecksBestEffort(
+                                job.name,
+                                result.success === true ? 'success' : 'fail'
+                            );
+                        }
 
                         // Soft-failure: job completed but reported errors — capture once
                         // per run so silent partial failures are visible in Sentry.
@@ -252,6 +288,9 @@ export const startCronScheduler = async (): Promise<void> => {
                             finishedAt: new Date(),
                             error
                         });
+
+                        // HOS-1742: a thrown tick is a failed check-in; Sentry unchanged.
+                        if (healthchecksMonitored) pingHealthchecksBestEffort(job.name, 'fail');
                     }
                 },
                 CRON_SCHEDULE_OPTIONS
