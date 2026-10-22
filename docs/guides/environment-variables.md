@@ -113,6 +113,8 @@ pnpm env:check
 | `HOSPEDA_SENTRY_DSN` | url | no | yes | - | Sentry DSN for API error tracking |
 | `HOSPEDA_SENTRY_RELEASE` | string | no | no | - | Sentry release identifier |
 | `HOSPEDA_SENTRY_PROJECT` | string | no | no | - | Sentry project name |
+| `HOSPEDA_HEALTHCHECKS_PING_KEY` | string | no | yes | - | Healthchecks.io project ping key for the free cron monitors (HOS-1742) |
+| `HOSPEDA_HEALTHCHECKS_SLUG_PREFIX` | enum | no | no | - | `staging` or `prod`; prefixes each check slug (HOS-1742) |
 | `HOSPEDA_MERCADOLIBRE_CLIENT_ID` | string | no | no | - | MercadoLibre OAuth app client ID (HOS-45) |
 | `HOSPEDA_MERCADOLIBRE_CLIENT_SECRET` | string | no | yes | - | MercadoLibre OAuth app client secret (HOS-45) |
 | `HOSPEDA_MERCADOLIBRE_REDIRECT_URI` | url | no | no | - | MercadoLibre OAuth callback URL, e.g. `https://api.hospeda.com.ar/api/v1/admin/mercadolibre-oauth/callback` (HOS-45) |
