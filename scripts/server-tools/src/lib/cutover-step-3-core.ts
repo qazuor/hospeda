@@ -135,12 +135,25 @@ export function readContainerEnvValue(input: {
     return entry === undefined ? undefined : entry.slice(prefix.length);
 }
 
+/**
+ * The only host variables the child gets.
+ *
+ * The wrapped script is launched through `pnpm` and `node`, so it needs the
+ * host's `PATH` (container paths point at the container filesystem), `HOME`
+ * (package-manager caches and config) and `LANG` (a sane locale). Nothing
+ * else from the host is forwarded — in particular no `HOSPEDA_*` key, so a
+ * host value can never shadow the container's.
+ */
+export const STEP3_HOST_ENV_ALLOWLIST = ['PATH', 'HOME', 'LANG'] as const;
+
 /** Input for {@link buildStep3ChildEnv}. */
 export interface BuildStep3ChildEnvInput {
     /** `Config.Env` entries from the target's api container. */
     readonly containerEnv: ReadonlyArray<string>;
     /** Host-reachable Postgres URL built from the target's Postgres container. */
     readonly databaseUrl: string;
+    /** Host process environment; only {@link STEP3_HOST_ENV_ALLOWLIST} is read. */
+    readonly hostEnv: Readonly<Record<string, string | undefined>>;
 }
 
 /**
@@ -148,13 +161,18 @@ export interface BuildStep3ChildEnvInput {
  *
  * The api container's own environment is the only source of the full
  * `validateApiEnv()` surface, but the system entries (`PATH`, `HOME`,
- * `NODE_VERSION`, image-specific values) must never leak: the script runs with
- * the host's process environment underneath, and overriding `PATH` there would
- * point it at the container's filesystem. Only `NODE_ENV` and `HOSPEDA_*` keys
- * are forwarded, and `HOSPEDA_DATABASE_URL` is replaced with the URL reachable
- * from the host. The result stays in memory — callers must never log it.
+ * `NODE_VERSION`, image-specific values) must never leak: overriding `PATH`
+ * with the container's would point the host process at the container's
+ * filesystem. Only `NODE_ENV` and `HOSPEDA_*` keys are taken from the
+ * container, plus the closed host allowlist in
+ * {@link STEP3_HOST_ENV_ALLOWLIST} so `pnpm`/`node` can start. A host
+ * `HOSPEDA_*` never enters — the container value always wins — and
+ * `HOSPEDA_DATABASE_URL` is replaced with the URL reachable from the host.
+ * The caller passes the result to the runner with `inheritEnv: false`, so this
+ * object is the child's entire environment. It stays in memory — callers must
+ * never log it.
  *
- * @param input - Container env entries and the host DB URL.
+ * @param input - Container env entries, the host DB URL and the host env.
  * @returns A new env object with only the allowed keys.
  */
 export function buildStep3ChildEnv(
@@ -167,6 +185,10 @@ export function buildStep3ChildEnv(
         const key = entry.slice(0, separator);
         if (key !== 'NODE_ENV' && !key.startsWith('HOSPEDA_')) continue;
         env[key] = entry.slice(separator + 1);
+    }
+    for (const key of STEP3_HOST_ENV_ALLOWLIST) {
+        const value = input.hostEnv[key];
+        if (value !== undefined) env[key] = value;
     }
     env.HOSPEDA_DATABASE_URL = input.databaseUrl;
     return env;
@@ -271,7 +293,9 @@ export interface RunCutoverStep3Input {
  * This is deliberately NOT wrapped in `die()`: the script's exits (0 success,
  * 1 nothing planned/error, 2 refused arguments) are the command's exits, so
  * the cutover runbook can key on them. Stdio is inherited so the script's own
- * sanitized JSON result is the operator's output.
+ * sanitized JSON result is the operator's output. The runner receives
+ * `inheritEnv: false`, so `input.env` is the child's entire environment and no
+ * host variable leaks in.
  *
  * @param input - Runner, checkout root, mode and child env.
  * @returns The child process exit code.
@@ -288,7 +312,7 @@ export async function runCutoverStep3(input: RunCutoverStep3Input): Promise<numb
             'scripts/cutover-v6-step-3.ts',
             modeFlag
         ],
-        { cwd: input.repoRoot, inherit: true, env: input.env }
+        { cwd: input.repoRoot, inherit: true, inheritEnv: false, env: input.env }
     );
     return result.exitCode;
 }

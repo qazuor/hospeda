@@ -204,7 +204,7 @@ export async function cutoverStep3(argv: ReadonlyArray<string>): Promise<void> {
         await confirmProd({ target, mode: options.mode });
     }
 
-    const childEnv = buildStep3ChildEnv({ containerEnv, databaseUrl });
+    const childEnv = buildStep3ChildEnv({ containerEnv, databaseUrl, hostEnv: process.env });
 
     log.info(`Target  : ${target}`);
     log.info(`Repo    : ${repoRoot}`);
