@@ -1,8 +1,9 @@
-import { billingDeadlineVersions } from '@repo/db';
+import { billingDeadlineVersions, users } from '@repo/db';
 import { registerCaptureHook, unregisterCaptureHook } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { PaymentProviderError } from '@repo/payments';
 import { encodeFakeNotice, FakePaymentProvider } from '@repo/payments/fake';
+import type { BillingDeadlineValues } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { processProviderNotice } from '../../../src/services/billing/notice/process-provider-notice.service.js';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service.js';
@@ -22,7 +23,7 @@ const values = {
     '17': { days: 7 },
     '18': { days: 180 },
     '19': { minutes: 60 }
-};
+} as const satisfies BillingDeadlineValues;
 
 afterAll(closeServiceTestPool);
 afterEach(unregisterCaptureHook);
@@ -35,7 +36,7 @@ describe('TEST:1737:8 provider notice failure cause', () => {
             .onConflictDoNothing();
         const user = (
             await getServiceTestDb()
-                .insert((await import('@repo/db')).users)
+                .insert(users)
                 .values({
                     email: `notice-failure-${crypto.randomUUID()}@example.test`,
                     displayName: 'Notice',
@@ -124,6 +125,6 @@ describe('TEST:1737:8 provider notice failure cause', () => {
         );
         expect(result).toEqual({ ack: 'ERROR', outcome: 'FAILED' });
         expect(captured).toHaveLength(1);
-        expect(captured[0]).toBe(failure);
+        expect(captured[0]).toMatchObject({ channel: 'WEBHOOKS', error: failure });
     });
 });

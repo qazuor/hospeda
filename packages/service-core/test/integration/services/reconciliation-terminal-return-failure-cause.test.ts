@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { openReconciliationMark } from '../../../src/services/billing/reconciliation/open-reconciliation-mark.service.js';
 import { runTerminalReturn } from '../../../src/services/billing/reconciliation/sweep/terminal-return.js';
 import { closeServiceTestPool, getServiceTestDb } from './helpers.js';
+import { reconciliationDeadlineValues } from './reconciliation-sweep-fixtures.js';
 import {
     resetSeededTerminalReturnInventory,
     seedTerminalRow,
@@ -11,7 +12,7 @@ import {
 } from './support/terminal-return-fixtures.js';
 
 const clock = { now: () => new Date('2026-11-01T10:00:00.000Z') };
-const deadlines = { current: async () => ({ version: 1, values: { '16': { days: 180 } } }) };
+const deadlines = { current: async () => ({ values: reconciliationDeadlineValues }) };
 const cause = new Error('Mercado Pago request failed (429)');
 
 beforeAll(() => getServiceTestDb());
