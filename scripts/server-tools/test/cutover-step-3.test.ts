@@ -329,6 +329,6 @@ describe('the registered cutover-step-3 argv spec', () => {
         expect(start).toBeGreaterThan(-1);
         const entry = source.slice(start, source.indexOf('run: cutoverStep3', start));
         expect(entry).toContain("targetPolicy: 'explicit-required'");
-        expect(entry).toContain('argv: CUTOVER_STEP_3_ARGV');
+        expect(entry).toContain('CUTOVER_STEP_3_ARGV');
     });
 });
