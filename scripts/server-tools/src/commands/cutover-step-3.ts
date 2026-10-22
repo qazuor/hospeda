@@ -35,15 +35,11 @@ import { join } from 'node:path';
 import type { CommandArgvSpec } from '../lib/cli-flags.ts';
 import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
 import {
-    buildStep3ChildEnv,
     type CutoverStep3Mode,
-    checkDeployedSha,
+    executeCutoverStep3,
     isTypedConfirmationValid,
     parseCutoverStep3Args,
     readCheckoutSha,
-    readContainerEnvValue,
-    runCutoverStep3,
-    shouldPromptForTypedConfirmation,
     WRITE_TRIALS_PROD_PHRASE
 } from '../lib/cutover-step-3-core.ts';
 import { dockerInspectEnv } from '../lib/docker.ts';
@@ -114,8 +110,10 @@ Required environment variables (in scripts/server-tools/.env.local):
 `.trim();
 
 /**
- * Prompt for the prod typed confirmation and stop the command when it does
- * not match. Returns normally only when the operator typed the exact phrase.
+ * Prompt for the prod typed confirmation and abort the run when it does not
+ * match. Returns normally only when the operator typed the exact phrase; on
+ * mismatch it warns and throws so `executeCutoverStep3` can report the abort
+ * without this module exiting the process itself.
  */
 async function confirmProd(input: {
     readonly target: Target;
@@ -132,7 +130,7 @@ async function confirmProd(input: {
     });
     if (!isTypedConfirmationValid({ typed })) {
         log.warn('Aborted: typed confirmation did not match.');
-        process.exit(1);
+        throw new Error('Aborted: typed confirmation did not match.');
     }
 }
 
@@ -177,46 +175,25 @@ export async function cutoverStep3(argv: ReadonlyArray<string>): Promise<void> {
         db: credentials.database
     });
 
-    const deployedSha = readContainerEnvValue({
-        containerEnv,
-        key: 'HOSPEDA_COMMIT_SHA'
-    });
-    const checkoutSha = await readCheckoutSha({ runner, repoRoot });
-    const shaCheck = checkDeployedSha({
-        checkoutSha,
-        deployedSha,
-        allowMismatch: options.allowShaMismatch
-    });
-    if (!shaCheck.ok) {
-        die(shaCheck.message);
-    }
-    if (shaCheck.warning !== undefined) {
-        log.warn(shaCheck.warning);
-    }
-
-    if (
-        shouldPromptForTypedConfirmation({
-            target,
-            mode: options.mode,
-            allowShaMismatch: options.allowShaMismatch,
-            yes: options.yes
-        })
-    ) {
-        await confirmProd({ target, mode: options.mode });
-    }
-
-    const childEnv = buildStep3ChildEnv({ containerEnv, databaseUrl, hostEnv: process.env });
-
-    log.info(`Target  : ${target}`);
-    log.info(`Repo    : ${repoRoot}`);
-    log.info(`Mode    : ${options.mode === 'write' ? 'write trials' : 'dry-run'}`);
-    log.info(`Env     : ${Object.keys(childEnv).length} env vars passed`);
-
-    const exitCode = await runCutoverStep3({
+    const result = await executeCutoverStep3({
         runner,
         repoRoot,
-        mode: options.mode,
-        env: childEnv
+        target,
+        options,
+        containerEnv,
+        databaseUrl,
+        hostEnv: process.env,
+        readCheckoutSha: ({ repoRoot: checkoutRoot }) =>
+            readCheckoutSha({ runner, repoRoot: checkoutRoot }),
+        confirmProd,
+        log
     });
-    process.exit(exitCode);
+
+    if (result.ok) {
+        process.exit(result.exitCode);
+    }
+    if (result.reason === 'sha-guard') {
+        die(result.message);
+    }
+    process.exit(1);
 }

@@ -5,7 +5,8 @@
  * (Docker inspection, repo-root resolution, prompts); everything that can be
  * decided without touching a process lives here so it can be unit-tested with
  * a fake `Runner`. No function in this module reads `process.env`, prints, or
- * calls `process.exit`.
+ * calls `process.exit`: {@link executeCutoverStep3} receives every effect as
+ * an injected dependency and returns a typed result the command translates.
  */
 
 import type { Runner } from './runner.ts';
@@ -346,4 +347,138 @@ export async function runCutoverStep3(input: RunCutoverStep3Input): Promise<numb
         { cwd: input.repoRoot, inherit: true, inheritEnv: false, env: input.env }
     );
     return result.exitCode;
+}
+
+/** The logging surface the orchestration needs; `log` from `./log.ts` satisfies it. */
+export interface CutoverStep3Logger {
+    info(message: string): void;
+    warn(message: string): void;
+}
+
+/**
+ * Ask the operator for the prod typed confirmation.
+ *
+ * The injected implementation is expected to stop the run (by throwing) when
+ * the typed phrase does not match, so the orchestration can report the abort
+ * without calling `process.exit` itself.
+ */
+export type ConfirmProdFn = (input: {
+    readonly target: Target;
+    readonly mode: CutoverStep3Mode;
+}) => Promise<void>;
+
+/** Read the checkout's HEAD SHA; the command wires the runner-backed reader. */
+export type ReadCheckoutShaFn = (input: { readonly repoRoot: string }) => Promise<string>;
+
+/** Input for {@link executeCutoverStep3}. Every effect is injected. */
+export interface ExecuteCutoverStep3Input {
+    /** Injected runner, used only for the wrapped script. */
+    readonly runner: Runner;
+    /** Checkout that will run the script. */
+    readonly repoRoot: string;
+    /** Resolved target environment. */
+    readonly target: Target;
+    /** Parsed command-line options. */
+    readonly options: ParsedCutoverStep3Args;
+    /** `Config.Env` entries from the target's api container. */
+    readonly containerEnv: ReadonlyArray<string>;
+    /** Host-reachable Postgres URL built from the target's Postgres container. */
+    readonly databaseUrl: string;
+    /** Host process environment; only the allowlist is forwarded. */
+    readonly hostEnv: Readonly<Record<string, string | undefined>>;
+    /** Reader for the checkout SHA. */
+    readonly readCheckoutSha: ReadCheckoutShaFn;
+    /** Prod confirmation prompt. */
+    readonly confirmProd: ConfirmProdFn;
+    /** Destination for the operator-facing status lines. */
+    readonly log: CutoverStep3Logger;
+}
+
+/**
+ * Result of {@link executeCutoverStep3}.
+ *
+ * `sha-guard` carries a message the command must print; `confirmation-rejected`
+ * was already reported by `confirmProd`, so the command only exits 1.
+ */
+export type ExecuteCutoverStep3Result =
+    | { readonly ok: true; readonly exitCode: number }
+    | {
+          readonly ok: false;
+          readonly reason: 'sha-guard' | 'confirmation-rejected';
+          readonly message: string;
+      };
+
+/**
+ * Orchestrate one `hops cutover-step-3` run: version guard, prod confirmation,
+ * child environment and script execution.
+ *
+ * This is the call site the command wrapper delegates to, extracted so its
+ * ordering can be tested without Docker, a prompt or a child process. The
+ * confirmation decision comes from {@link shouldPromptForTypedConfirmation}
+ * and nothing else; in particular `--yes` is forwarded but never consulted
+ * here, so this function never skips the prod prompt. The wrapped script runs
+ * only after the guard passes and the confirmation (when required) resolves.
+ *
+ * @param input - Injected effects and parsed options.
+ * @returns `{ ok: true, exitCode }` with the script's exit code, or
+ * `{ ok: false, reason, message }` when a guard or the confirmation stopped
+ * the run before the script.
+ */
+export async function executeCutoverStep3(
+    input: ExecuteCutoverStep3Input
+): Promise<ExecuteCutoverStep3Result> {
+    const deployedSha = readContainerEnvValue({
+        containerEnv: input.containerEnv,
+        key: 'HOSPEDA_COMMIT_SHA'
+    });
+    const checkoutSha = await input.readCheckoutSha({ repoRoot: input.repoRoot });
+    const shaCheck = checkDeployedSha({
+        checkoutSha,
+        deployedSha,
+        allowMismatch: input.options.allowShaMismatch
+    });
+    if (!shaCheck.ok) {
+        return { ok: false, reason: 'sha-guard', message: shaCheck.message };
+    }
+    if (shaCheck.warning !== undefined) {
+        input.log.warn(shaCheck.warning);
+    }
+
+    if (
+        shouldPromptForTypedConfirmation({
+            target: input.target,
+            mode: input.options.mode,
+            allowShaMismatch: input.options.allowShaMismatch,
+            yes: input.options.yes
+        })
+    ) {
+        try {
+            await input.confirmProd({ target: input.target, mode: input.options.mode });
+        } catch (error) {
+            return {
+                ok: false,
+                reason: 'confirmation-rejected',
+                message: error instanceof Error ? error.message : String(error)
+            };
+        }
+    }
+
+    const childEnv = buildStep3ChildEnv({
+        containerEnv: input.containerEnv,
+        databaseUrl: input.databaseUrl,
+        hostEnv: input.hostEnv
+    });
+
+    input.log.info(`Target  : ${input.target}`);
+    input.log.info(`Repo    : ${input.repoRoot}`);
+    input.log.info(`Mode    : ${input.options.mode === 'write' ? 'write trials' : 'dry-run'}`);
+    input.log.info(`Env     : ${Object.keys(childEnv).length} env vars passed`);
+
+    const exitCode = await runCutoverStep3({
+        runner: input.runner,
+        repoRoot: input.repoRoot,
+        mode: input.options.mode,
+        env: childEnv
+    });
+    return { ok: true, exitCode };
 }
