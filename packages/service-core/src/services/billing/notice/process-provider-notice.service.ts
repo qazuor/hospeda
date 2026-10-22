@@ -480,7 +480,7 @@ export async function processProviderNotice(
         }
         return { ack: 'OK', outcome: finalOutcome };
     } catch (error) {
-        logger.error({ channel: input.channel, error }, 'Provider notice processing failed', {
+        logger.error(error, `Provider notice processing failed (channel: ${input.channel})`, {
             capture: true
         });
         return { ack: 'ERROR', outcome: 'FAILED' };
