@@ -4,6 +4,7 @@ import { type Actor, getUserRoles } from '@repo/service-core';
 import { resolveEffectivePermissions } from '../../middlewares/actor.js';
 import { buildPermanentGrantPorts } from '../../routes/billing-permanent-grant/admin/ports.js';
 import { injectClock, systemClock } from '../../utils/clock.js';
+import { subscribeEffectiveSetCoverageInvalidation } from '../../utils/effective-set-coverage-invalidation.js';
 import {
     drainListingCoverageRecalculations,
     subscribeListingCoverageRecalculation
@@ -35,11 +36,13 @@ export function composeStep3bProcess(options: ComposeStep3bOptions = {}): {
     injectPaymentProvider({ provider: options.provider ?? defaultPaymentProvider({ clock }) });
     const stopListing = subscribeListingCoverageRecalculation();
     const stopTrial = subscribeTrialCoverageConversion();
+    const stopEffectiveSetInvalidation = subscribeEffectiveSetCoverageInvalidation();
     return {
         ports: buildPermanentGrantPorts(),
         async stop() {
             stopTrial();
             stopListing();
+            stopEffectiveSetInvalidation();
             await drainListingCoverageRecalculations();
         }
     };

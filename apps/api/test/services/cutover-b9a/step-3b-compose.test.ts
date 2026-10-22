@@ -3,9 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
     stopListing: vi.fn(),
     stopTrial: vi.fn(),
+    stopEffectiveSetInvalidation: vi.fn(),
     drain: vi.fn(),
     subscribeListing: vi.fn(),
     subscribeTrial: vi.fn(),
+    subscribeEffectiveSetInvalidation: vi.fn(),
     injectClock: vi.fn(),
     injectProvider: vi.fn(),
     buildPorts: vi.fn(),
@@ -19,6 +21,9 @@ vi.mock('../../../src/utils/listing-publication/coverage-listener.js', () => ({
 }));
 vi.mock('../../../src/utils/trial/trial-coverage-listener.js', () => ({
     subscribeTrialCoverageConversion: mocks.subscribeTrial
+}));
+vi.mock('../../../src/utils/effective-set-coverage-invalidation.js', () => ({
+    subscribeEffectiveSetCoverageInvalidation: mocks.subscribeEffectiveSetInvalidation
 }));
 vi.mock('../../../src/routes/billing-permanent-grant/admin/ports.js', () => ({
     buildPermanentGrantPorts: mocks.buildPorts
@@ -51,9 +56,11 @@ describe('TEST:1698:3 AC:1698:2 step 3b composition drain', () => {
         vi.clearAllMocks();
         mocks.stopListing.mockReset();
         mocks.stopTrial.mockReset();
+        mocks.stopEffectiveSetInvalidation.mockReset();
         mocks.drain.mockReset();
         mocks.subscribeListing.mockReturnValue(mocks.stopListing);
         mocks.subscribeTrial.mockReturnValue(mocks.stopTrial);
+        mocks.subscribeEffectiveSetInvalidation.mockReturnValue(mocks.stopEffectiveSetInvalidation);
         mocks.buildPorts.mockReturnValue({});
         mocks.defaultProvider.mockReturnValue({});
     });
@@ -74,17 +81,21 @@ describe('TEST:1698:3 AC:1698:2 step 3b composition drain', () => {
         expect(settled).toBe(true);
     });
 
-    it('TEST:1698:3 AC:1698:2 stops both listeners before draining once', async () => {
+    it('TEST:1698:3 AC:1698:2 stops all listeners before draining once', async () => {
         mocks.drain.mockResolvedValue(undefined);
         const composition = composeStep3bProcess();
         await expect(composition.stop()).resolves.toBeUndefined();
         expect(mocks.stopTrial).toHaveBeenCalledTimes(1);
         expect(mocks.stopListing).toHaveBeenCalledTimes(1);
+        expect(mocks.stopEffectiveSetInvalidation).toHaveBeenCalledTimes(1);
         expect(mocks.drain).toHaveBeenCalledTimes(1);
         expect(mocks.stopTrial.mock.invocationCallOrder[0]!).toBeLessThan(
             mocks.drain.mock.invocationCallOrder[0]!
         );
         expect(mocks.stopListing.mock.invocationCallOrder[0]!).toBeLessThan(
+            mocks.drain.mock.invocationCallOrder[0]!
+        );
+        expect(mocks.stopEffectiveSetInvalidation.mock.invocationCallOrder[0]!).toBeLessThan(
             mocks.drain.mock.invocationCallOrder[0]!
         );
     });

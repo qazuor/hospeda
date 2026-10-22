@@ -63,6 +63,7 @@ import {
 } from './mercadopago-mutations';
 import { decodeMercadoPagoNotice } from './mercadopago-notice';
 import { readMercadoPagoOrder, searchMercadoPagoOrders } from './mercadopago-orders';
+import { type MercadoPagoReadRetryPolicy, sendWithReadRetry } from './mercadopago-read-retry';
 import { searchMercadoPagoAuthorizations } from './mercadopago-search';
 
 const MercadoPagoOptionsSchema = z.strictObject({
@@ -72,8 +73,20 @@ const MercadoPagoOptionsSchema = z.strictObject({
     baseUrl: z.string().url().optional().default('https://api.mercadopago.com'),
     accessToken: z.string().min(1).optional(),
     timeoutMs: z.number().positive().finite().optional().default(5000),
-    fetch: z.custom<typeof globalThis.fetch>((value) => typeof value === 'function').optional()
+    fetch: z.custom<typeof globalThis.fetch>((value) => typeof value === 'function').optional(),
+    readRetry: z.custom<MercadoPagoReadRetryPolicy>(isReadRetryPolicy).optional(),
+    sleep: z
+        .custom<(ms: number) => Promise<void>>((value) => typeof value === 'function')
+        .optional()
 });
+
+function isReadRetryPolicy(value: unknown): value is MercadoPagoReadRetryPolicy {
+    if (typeof value !== 'object' || value === null) return false;
+    const policy = value as Record<string, unknown>;
+    return ['maxAttempts', 'baseDelayMs', 'maxDelayMs', 'maxTotalDelayMs'].every(
+        (key) => typeof policy[key] === 'number' && Number.isFinite(policy[key]) && policy[key] >= 0
+    );
+}
 
 const AuthorizationResponseSchema = z.object({
     id: z.string().min(1),
@@ -123,6 +136,8 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     private readonly accessToken: string | undefined;
     private readonly timeoutMs: number;
     private readonly request: typeof globalThis.fetch;
+    private readonly readRetry: MercadoPagoReadRetryPolicy | undefined;
+    private readonly sleep: (ms: number) => Promise<void>;
 
     private async send(args: {
         readonly capability: PaymentCapability;
@@ -137,29 +152,37 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
                 args.capability,
                 'Mercado Pago access token is not configured'
             );
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), this.timeoutMs);
-        try {
-            return await this.request(`${this.baseUrl}${args.path}`, {
-                method: args.method,
-                headers: {
-                    Authorization: `Bearer ${this.accessToken}`,
-                    ...(args.body ? { 'Content-Type': 'application/json' } : {}),
-                    ...args.headers
-                },
-                ...(args.body ? { body: JSON.stringify(args.body) } : {}),
-                signal: controller.signal
-            });
-        } catch (cause) {
-            throw providerError(
-                'UNAVAILABLE',
-                args.capability,
-                'Mercado Pago is unavailable',
-                cause
-            );
-        } finally {
-            clearTimeout(timer);
-        }
+        return sendWithReadRetry({
+            method: args.method,
+            policy: this.readRetry,
+            sleep: this.sleep,
+            now: () => this.clock.now(),
+            attempt: async () => {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+                try {
+                    return await this.request(`${this.baseUrl}${args.path}`, {
+                        method: args.method,
+                        headers: {
+                            Authorization: `Bearer ${this.accessToken}`,
+                            ...(args.body ? { 'Content-Type': 'application/json' } : {}),
+                            ...args.headers
+                        },
+                        ...(args.body ? { body: JSON.stringify(args.body) } : {}),
+                        signal: controller.signal
+                    });
+                } catch (cause) {
+                    throw providerError(
+                        'UNAVAILABLE',
+                        args.capability,
+                        'Mercado Pago is unavailable',
+                        cause
+                    );
+                } finally {
+                    clearTimeout(timer);
+                }
+            }
+        });
     }
 
     /**
@@ -171,6 +194,8 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         readonly accessToken?: string;
         readonly timeoutMs?: number;
         readonly fetch?: typeof globalThis.fetch;
+        readonly readRetry?: MercadoPagoReadRetryPolicy;
+        readonly sleep?: (ms: number) => Promise<void>;
     }) {
         const parsed = MercadoPagoOptionsSchema.parse(options);
         this.clock = PaymentProviderOptionsSchema.parse({ clock: parsed.clock }).clock;
@@ -178,6 +203,9 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         this.accessToken = parsed.accessToken;
         this.timeoutMs = parsed.timeoutMs;
         this.request = parsed.fetch ?? globalThis.fetch;
+        this.readRetry = parsed.readRetry;
+        this.sleep =
+            parsed.sleep ?? ((ms) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
     }
 
     /** Capability 1 · authorize. */
