@@ -80,6 +80,7 @@ describe('TEST:1735:11 pending attempt checkout panel', () => {
         expect(
             await island.findByTestId('signup-checkout-pending-attempt-cancelled')
         ).toBeInTheDocument();
+        expect(island.queryByTestId('signup-checkout-pending-attempt')).toBeNull();
         expect(island.getByTestId('signup-checkout-confirm')).toBeInTheDocument();
         unmount();
         render(
