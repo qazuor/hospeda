@@ -44,6 +44,7 @@ import {
 import { createTranslationServiceAdapter } from './services/translation-service.adapter';
 import { AuditEventType, auditLog } from './utils/audit-logger';
 import { closeDatabase, initializeDatabase } from './utils/database';
+import { subscribeEffectiveSetCoverageInvalidation } from './utils/effective-set-coverage-invalidation';
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
 import { subscribeListingCoverageRecalculation } from './utils/listing-publication/coverage-listener';
@@ -354,6 +355,7 @@ const startServer = async (): Promise<void> => {
         const app = initApp();
         const unsubscribeCoverage = subscribeListingCoverageRecalculation();
         const unsubscribeTrialConversion = subscribeTrialCoverageConversion();
+        const unsubscribeEffectiveSetInvalidation = subscribeEffectiveSetCoverageInvalidation();
 
         // Newsletter dispatch worker handle — populated below after serve() resolves.
         // Hoisted here so gracefulShutdown can await its drain.
@@ -458,6 +460,7 @@ const startServer = async (): Promise<void> => {
             apiLogger.info(`Received ${signal}, shutting down gracefully...`);
             unsubscribeCoverage?.();
             unsubscribeTrialConversion?.();
+            unsubscribeEffectiveSetInvalidation?.();
 
             try {
                 // Drain in-flight BullMQ jobs first — must complete BEFORE Redis

@@ -1,3 +1,4 @@
+import { VerticalEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeRedis } from '../../../../packages/verticals/test/effective-set-cache/fake-redis';
 import { injectClock, systemClock } from '../../src/utils/clock';
@@ -29,14 +30,14 @@ describe('TEST:1738:2 AC:1738:2 API effective-set cache invalidation on coverage
         const cache = createApiEffectiveSetCache<number>({ encode: String, decode: Number });
         const load = vi.fn().mockResolvedValueOnce(0).mockResolvedValueOnce(1);
 
-        expect(await cache.readThrough({ userId, vertical: 'tourist', load })).toBe(0);
+        expect(await cache.readThrough({ userId, vertical: VerticalEnum.TOURIST, load })).toBe(0);
         await getCoverageNotices().emitCoverageChanged({
             userId,
-            vertical: 'tourist',
+            vertical: VerticalEnum.TOURIST,
             sourceType: 'SUBSCRIPTION',
             change: 'ADDED'
         });
-        expect(await cache.readThrough({ userId, vertical: 'tourist', load })).toBe(1);
+        expect(await cache.readThrough({ userId, vertical: VerticalEnum.TOURIST, load })).toBe(1);
         expect(load).toHaveBeenCalledTimes(2);
     });
 
@@ -45,14 +46,18 @@ describe('TEST:1738:2 AC:1738:2 API effective-set cache invalidation on coverage
         const cache = createApiEffectiveSetCache<number>({ encode: String, decode: Number });
         const load = vi.fn().mockResolvedValueOnce(1).mockResolvedValueOnce(0);
 
-        expect(await cache.readThrough({ userId, vertical: 'accommodation', load })).toBe(1);
+        expect(
+            await cache.readThrough({ userId, vertical: VerticalEnum.ACCOMMODATION, load })
+        ).toBe(1);
         await getCoverageNotices().emitCoverageChanged({
             userId,
-            vertical: 'accommodation',
+            vertical: VerticalEnum.ACCOMMODATION,
             sourceType: 'SUBSCRIPTION',
             change: 'REMOVED'
         });
-        expect(await cache.readThrough({ userId, vertical: 'accommodation', load })).toBe(0);
+        expect(
+            await cache.readThrough({ userId, vertical: VerticalEnum.ACCOMMODATION, load })
+        ).toBe(0);
         expect(load).toHaveBeenCalledTimes(2);
     });
 });
