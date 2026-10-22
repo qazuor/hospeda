@@ -109,6 +109,11 @@ describe('TEST:1734 rejected charge edges', () => {
                 }
             );
             expect(activeResult.outcome).toBe('DECLINED');
+            const [activeSubscription] = await getServiceTestDb()
+                .select({ status: subscriptions.status })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, active.started.subscriptionId));
+            expect(activeSubscription?.status).toBe('CHARGE_DECLINED');
             const [activePayment] = await getServiceTestDb()
                 .select()
                 .from(payments)
@@ -129,6 +134,11 @@ describe('TEST:1734 rejected charge edges', () => {
                 grace: { outcome: 'GRACE_STARTED' },
                 terminalRejection: { outcome: 'FAILED' }
             });
+            const [successorSubscription] = await getServiceTestDb()
+                .select({ status: subscriptions.status })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, successor.successorId));
+            expect(successorSubscription?.status).toBe('GRACE_PERIOD');
             const [successorPayment] = await getServiceTestDb()
                 .select()
                 .from(payments)
@@ -163,6 +173,11 @@ describe('TEST:1734 rejected charge edges', () => {
                 .from(payments)
                 .where(eq(payments.providerFactId, deadCharge.chargeId));
             expect(deadPayment).toMatchObject({ status: 'FAILED', version: 2 });
+            const [deadSubscription] = await getServiceTestDb()
+                .select({ status: subscriptions.status })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, dead.started.subscriptionId));
+            expect(deadSubscription?.status).toBe('CANCELLED');
         }
     );
 
@@ -175,6 +190,9 @@ describe('TEST:1734 rejected charge edges', () => {
                 .from(payments)
                 .where(eq(payments.providerFactId, retry.chargeId));
             expect(pending).toMatchObject({ status: 'PENDING', version: 1 });
+            const retryable = await recordChargeFact({ chargeId: retry.chargeId }, retry.ports);
+            expect(retryable.outcome).toBe('GRACE');
+            expect(retryable).not.toHaveProperty('terminalRejection');
             retry.advanceToAttempt(2);
             const credited = await recordChargeFact({ chargeId: retry.chargeId }, retry.ports);
             expect(credited).toMatchObject({
@@ -287,6 +305,18 @@ describe('TEST:1734 rejected charge edges', () => {
                 .from(subscriptions)
                 .where(eq(subscriptions.id, own.started.subscriptionId));
             expect(after?.status).toBe('CHARGE_DECLINED');
+            const ownMail = await getServiceTestDb()
+                .select()
+                .from(emailOutbox)
+                .where(eq(emailOutbox.recipientUserId, own.user.id));
+            expect(
+                ownMail.filter(
+                    (row) =>
+                        row.template === 'billing.signup-declined' &&
+                        (row.payload as { subscriptionId?: string }).subscriptionId ===
+                            own.started.subscriptionId
+                )
+            ).toHaveLength(1);
         }
     );
 
