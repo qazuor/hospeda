@@ -5,9 +5,11 @@ import {
     getDb,
     idempotencyKeys,
     providerLinks,
+    subscriptionModel,
     subscriptions,
     users
 } from '@repo/db';
+import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -68,7 +70,7 @@ async function seedChoice() {
     ).rows[0]?.id;
     if (!versionId) throw new Error('No version');
     const optionIds = await Promise.all(
-        ['monthly', 'annually'].map(
+        ['monthly', 'annual'].map(
             async (cycle) =>
                 (
                     await getServiceTestPool().query<{ id: string }>(
@@ -78,13 +80,27 @@ async function seedChoice() {
                 ).rows[0]!.id
         )
     );
-    return { user, optionIds };
+    return { user, versionId, optionIds };
 }
 
-function ports(fake: FakePaymentProvider, beforeCancel = vi.fn(async () => 'SENT' as const)) {
+const providers = new WeakMap<FakePaymentProvider, PaymentProvider>();
+function providerFor(fake: FakePaymentProvider) {
+    let provider = providers.get(fake);
+    if (!provider) {
+        provider = namespaceFake(fake);
+        providers.set(fake, provider);
+    }
+    return provider;
+}
+
+function ports(
+    fake: FakePaymentProvider,
+    beforeCancel = vi.fn(async () => 'SENT' as const),
+    injectedClock = clock
+) {
     return {
-        provider: namespaceFake(fake),
-        clock,
+        provider: providerFor(fake),
+        clock: injectedClock,
         beforeCancelNotice: { beforeCancel },
         planPolicy: async () => ({
             graceDays: 10,
@@ -191,7 +207,7 @@ describe('TEST:1735:2 AC:1735:2 cancellation waits for the before-cancel notice 
                 decision: { transition: 'S40', decidedAt: clock.now() },
                 correlationId: crypto.randomUUID()
             },
-            { provider: namespaceFake(fake), clock, beforeCancelNotice: { beforeCancel } }
+            { provider: providerFor(fake), clock, beforeCancelNotice: { beforeCancel } }
         );
         expect(beforeCancel).toHaveBeenLastCalledWith(
             expect.objectContaining({ kind: 'ATTEMPT_CANCELLED' })
@@ -209,26 +225,35 @@ describe('TEST:1735:3 AC:1735:3 provider reread controls whether the pending att
             honestAbout: [{ lie: 'M1', why: 'provide applied authorizations' }]
         });
         const first = await start(fake, choice.user.id, choice.optionIds[0]!);
-        const { link } = await saved(first.subscriptionId);
-        await fake.approve({ authorizationId: link.providerId });
+        await fake.approve({
+            authorizationId: first.authorizationId.split(':').slice(1).join(':')
+        });
         const cancel = vi.spyOn(fake, 'cancel');
+        const beforeCancel = vi.fn(async () => 'SENT' as const);
         await expect(
             cancelPendingAttempt(
                 { subscriptionId: first.subscriptionId, userId: choice.user.id },
-                ports(fake)
+                ports(fake, beforeCancel)
             )
         ).rejects.toMatchObject({ reason: 'COMMITMENT_TAKEN' });
         expect((await saved(first.subscriptionId)).row.status).toBe('PENDING_AUTHORIZATION');
         expect(cancel).not.toHaveBeenCalled();
-        const second = await start(fake, choice.user.id, choice.optionIds[1]!);
-        const secondLink = (await saved(second.subscriptionId)).link;
-        await fake.cancel({ authorizationId: secondLink.providerId });
+        expect(beforeCancel).not.toHaveBeenCalled();
+        const secondChoice = await seedChoice();
+        const second = await start(fake, secondChoice.user.id, secondChoice.optionIds[1]!);
+        await fake.cancel({
+            authorizationId: second.authorizationId.split(':').slice(1).join(':')
+        });
+        cancel.mockClear();
+        beforeCancel.mockClear();
         expect(
             await cancelPendingAttempt(
-                { subscriptionId: second.subscriptionId, userId: choice.user.id },
+                { subscriptionId: second.subscriptionId, userId: secondChoice.user.id },
                 ports(fake)
             )
         ).toEqual({ subscriptionId: second.subscriptionId, outcome: 'ABANDONED' });
+        expect(cancel).not.toHaveBeenCalled();
+        expect(beforeCancel).not.toHaveBeenCalled();
     });
 });
 
@@ -253,6 +278,92 @@ describe('TEST:1735:4 AC:1735:4 only an owned, linked, completed principal pendi
             )
         ).toEqual({ subscriptionId: pending.subscriptionId, outcome: 'ALREADY_ABANDONED' });
         expect(read).not.toHaveBeenCalled();
+    });
+
+    it('hides another owner and missing ids behind NOT_FOUND without reading the provider', async () => {
+        const first = await seedChoice();
+        const second = await seedChoice();
+        const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
+            clock,
+            honestAbout: [{ lie: 'M1', why: 'provide applied authorizations' }]
+        });
+        const pending = await start(fake, first.user.id, first.optionIds[0]!);
+        const read = vi.spyOn(fake, 'readAuthorization');
+        await expect(
+            cancelPendingAttempt(
+                { subscriptionId: pending.subscriptionId, userId: second.user.id },
+                ports(fake)
+            )
+        ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+        await expect(
+            cancelPendingAttempt(
+                { subscriptionId: crypto.randomUUID(), userId: first.user.id },
+                ports(fake)
+            )
+        ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+        expect(read).not.toHaveBeenCalled();
+    });
+
+    it('rejects a non-pending state and an unfinished creation key without reading the provider', async () => {
+        const choice = await seedChoice();
+        const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
+            clock,
+            honestAbout: [{ lie: 'M1', why: 'provide applied authorizations' }]
+        });
+        const pending = await start(fake, choice.user.id, choice.optionIds[0]!);
+        const read = vi.spyOn(fake, 'readAuthorization');
+        await getDb()
+            .update(subscriptions)
+            .set({ status: 'ACTIVE' })
+            .where(eq(subscriptions.id, pending.subscriptionId));
+        await expect(
+            cancelPendingAttempt(
+                { subscriptionId: pending.subscriptionId, userId: choice.user.id },
+                ports(fake)
+            )
+        ).rejects.toMatchObject({ reason: 'COMMITMENT_TAKEN' });
+        const unfinishedChoice = await seedChoice();
+        const unfinished = await subscriptionModel.createPendingAuthorization({
+            userId: unfinishedChoice.user.id,
+            vertical: 'accommodation',
+            planVersionId: unfinishedChoice.versionId,
+            billingOptionId: unfinishedChoice.optionIds[1]!,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(clock.now().getTime() - 1)
+        });
+        await expect(
+            cancelPendingAttempt(
+                { subscriptionId: unfinished.subscription.id, userId: unfinishedChoice.user.id },
+                ports(fake)
+            )
+        ).rejects.toMatchObject({ reason: 'PREVIOUS_ATTEMPT_IN_PROGRESS' });
+        expect(read).not.toHaveBeenCalled();
+        await getDb()
+            .update(subscriptions)
+            .set({ status: 'ABANDONED' })
+            .where(eq(subscriptions.id, unfinished.subscription.id));
+    });
+
+    it('closes a pending attempt even when its authorization window has elapsed', async () => {
+        const choice = await seedChoice();
+        const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
+            clock,
+            honestAbout: [{ lie: 'M1', why: 'provide an applied authorization' }]
+        });
+        const pending = await start(fake, choice.user.id, choice.optionIds[0]!);
+        await getDb()
+            .update(subscriptions)
+            .set({ authorizationWindowEndsAt: new Date(clock.now().getTime() - 1) })
+            .where(eq(subscriptions.id, pending.subscriptionId));
+        expect(
+            await cancelPendingAttempt(
+                { subscriptionId: pending.subscriptionId, userId: choice.user.id },
+                ports(fake)
+            )
+        ).toEqual({ subscriptionId: pending.subscriptionId, outcome: 'ABANDONED' });
     });
 });
 
@@ -307,7 +418,7 @@ describe('TEST:1735:6 AC:1735:6 abandoned attempts remain known to authorization
                     arrival: { kind: 'AUTHORIZATION' },
                     correlationId: crypto.randomUUID()
                 },
-                { provider: namespaceFake(fake), clock }
+                { provider: providerFor(fake), clock }
             )
         ).resolves.toEqual({ outcome: 'KNOWN', subscriptionId: pending.subscriptionId });
     });
