@@ -1029,6 +1029,17 @@
             "writes": ["subscription.status", "domain_event.changes"]
         },
         {
+            "id": "TRANS:B:S40",
+            "machine": "subscription",
+            "from": ["PENDING_AUTHORIZATION"],
+            "events": ["signup_attempt_cancelled_by_person"],
+            "to": ["ABANDONED"],
+            "guard": {},
+            "reads": ["subscription.status"],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
             "id": "TRANS:B:P1",
             "machine": "payment",
             "from": ["PENDING"],

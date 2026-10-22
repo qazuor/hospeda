@@ -12,13 +12,13 @@ const ROOT = path.resolve(import.meta.dirname, '../..');
 function copyCorpus(): TransitionCorpus {
     return JSON.parse(JSON.stringify(loadCorpus({ root: ROOT }))) as TransitionCorpus;
 }
-describe('TEST:V4:16/17 TEST:1732:12 AC:1732:9 transition corpus shape and catalog anchoring', () => {
+describe('TEST:V4:16/17 TEST:1732:12 TEST:1735:7b AC:1735:7 transition corpus shape and catalog anchoring', () => {
     it('accepts the real vertical declarations and validates their shape', () => {
         const corpus = loadCorpus({ root: ROOT });
         expect(validateCorpus({ corpus })).toEqual([]);
         expect(checkAnchoring({ corpus, catalog: parseCatalog({ root: ROOT }) })).toEqual([]);
         expect(Object.keys(corpus.machines)).toHaveLength(10);
-        expect(corpus.transitions).toHaveLength(84);
+        expect(corpus.transitions).toHaveLength(85);
         expect(
             Object.fromEntries(
                 Object.keys(corpus.machines).map((machine) => [
@@ -30,7 +30,7 @@ describe('TEST:V4:16/17 TEST:1732:12 AC:1732:9 transition corpus shape and catal
             trial: 7,
             publication: 13,
             partner_application: 3,
-            subscription: 35,
+            subscription: 36,
             grace: 0,
             pause: 0,
             payment: 7,

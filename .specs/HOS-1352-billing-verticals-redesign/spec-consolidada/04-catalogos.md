@@ -4164,6 +4164,19 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **condición**: la fila es el origen vivo de ese `user + vertical`, de la misma billing option, con la ventana abierta y la clave de creación completada; el email declarado difiere del nuevo (sin distinguir mayúsculas ni espacios al borde) o la creación no aplicó; y la relectura del preapproval por id lo ve `pending` o `cancelled` con nuestro `external_reference`: si lo ve `authorized`, `S39` no ocurre
 - **efectos**: como `S3`: se cancela el preapproval con la regla de relectura de `S17` y el correo antes (`ATTEMPT_REPLACED`); la fila llega a `ABANDONED` pase lo que pase con la llamada y conserva su `provider_link`, y el barrido reintenta la cancelación (salvedad 4); no sale el aviso de alta incompleta; después, en el mismo pedido, `S1` crea la fila nueva.
 
+<a id="trans-b-s40"></a>
+
+### `TRANS:B:S40` · `S40` — `PENDING_AUTHORIZATION` → `ABANDONED`
+
+- **Pieza dueña**: B3
+- **Fuente de la asignación**: HOS-1735 (fuera del corpus de fuentes; regla nueva, decisión D-1 del kit; decisión del owner del 2026-10-21, opción 2)
+- **Test mínimo**: integración con DB.
+- **desde**: `PENDING_AUTHORIZATION`
+- **evento**: la persona cancela su intento de alta pendiente
+- **hacia**: `ABANDONED`
+- **condición**: la fila es el origen vivo de esa persona (`PRINCIPAL`, sin `sucede_a`), vinculada y con la clave de creación completada; la ventana no se mira; y la relectura del preapproval por id lo ve `pending` o `cancelled` con nuestro `external_reference`: si lo ve `authorized`, `S40` no ocurre
+- **efectos**: como `S39`: se cancela el preapproval con la regla de relectura de `S17` y el correo antes (`ATTEMPT_CANCELLED`); la fila llega a `ABANDONED` pase lo que pase con la llamada y conserva su `provider_link`, y el barrido reintenta la cancelación (salvedad 4); no sale el aviso de alta incompleta; el compromiso de esa vertical queda libre para un `S1` nuevo.
+
 ## Transiciones que no existen (`B/03` §3.3)
 
 ### Transiciones que no existen (`B/03` §3.3) — «3.3 Las transiciones que NO existen, y por qué»
