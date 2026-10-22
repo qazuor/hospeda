@@ -47,6 +47,46 @@ export async function monthlyOptionForSlug(slug: CatalogSlug): Promise<string> {
 }
 
 /**
+ * The annual billing option of the current catalog version of `slug`,
+ * inserted when the 0144 catalog has none.
+ *
+ * @param slug - The 0144 catalog plan
+ * @returns The billing option id
+ */
+export async function annualOptionForSlug(slug: CatalogSlug): Promise<string> {
+    const rows = await execSQL<{ id: string }>(
+        `WITH current_version AS (
+             SELECT plan_version.id
+               FROM plan
+               JOIN plan_version ON plan_version.plan_id = plan.id
+              WHERE plan.slug = $1
+                AND plan_version.current = true
+              LIMIT 1
+         ), inserted_option AS (
+             INSERT INTO billing_option (plan_version_id, cycle, amount, currency)
+             SELECT id, 'annual', 2400000, 'ARS' FROM current_version
+             ON CONFLICT (plan_version_id, cycle) DO NOTHING
+             RETURNING id
+         )
+         SELECT id FROM inserted_option
+         UNION ALL
+         SELECT billing_option.id
+           FROM billing_option
+           JOIN current_version ON billing_option.plan_version_id = current_version.id
+          WHERE billing_option.cycle = 'annual'
+         LIMIT 1`,
+        [slug]
+    );
+    const id = rows[0]?.id;
+    if (!id) {
+        throw new Error(
+            `signup-checkout: current catalog version or annual option missing for ${slug}`
+        );
+    }
+    return id;
+}
+
+/**
  * Seeds an `ACTIVE` `PRINCIPAL` `CARD` subscription of the person, anchored to
  * the current catalog version of `slug` through its monthly option (inserted
  * when missing). No preapproval and no `provider_link`: the subscription covers
