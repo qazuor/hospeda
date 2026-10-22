@@ -56,8 +56,9 @@ describe('TEST:V6:5 restitution notice outbox', () => {
     it('HOS-1744 leaves an incomplete billing-unpublished listing out when coverage activates', async () => {
         const { ownerId, listingIds } = await createFixture();
         const db = getDb();
-        const completeId = listingIds[3];
-        const incompleteId = listingIds[4];
+        // The incomplete candidate is older, so it wins the only available slot without the filter.
+        const completeId = listingIds[4];
+        const incompleteId = listingIds[3];
         if (!completeId || !incompleteId) throw new Error('Fixture candidates missing');
         await db
             .update(accommodations)
@@ -89,6 +90,11 @@ describe('TEST:V6:5 restitution notice outbox', () => {
             expect(statuses.find((row) => row.id === incompleteId)?.publicationStatus).toBe(
                 PublicationStatusEnum.UNPUBLISHED_BY_BILLING
             );
+            const rows = await waitForOutbox(ownerId, 1);
+            expect(rows[0]?.payload).toMatchObject({
+                restoredListingIds: [completeId],
+                notRestoredListingIds: []
+            });
         } finally {
             stop();
         }
