@@ -1,5 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { AccommodationModel, accommodations, destinations, getDb, users } from '@repo/db';
+import {
+    AccommodationModel,
+    accommodationMedia,
+    accommodations,
+    destinations,
+    getDb,
+    users
+} from '@repo/db';
 import { type Accommodation, PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -82,11 +89,20 @@ describe('TEST:V6:5 production publication listener', () => {
                     ownerId: user.id,
                     destinationId: destination.id,
                     type: 'CABIN',
-                    publicationStatus: PublicationStatusEnum.PUBLISHED
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 }
                 } as Partial<Accommodation>,
                 db
             );
             listings.push(listing);
+            await db.insert(accommodationMedia).values({
+                accommodationId: listing.id,
+                url: 'https://example.test/surplus-featured.jpg',
+                moderationState: 'APPROVED',
+                state: 'visible',
+                isFeatured: true,
+                sortOrder: 0
+            });
             await listingPublicationModel.insertStatusChangedEvent({
                 tx: db,
                 vertical: VerticalEnum.ACCOMMODATION,

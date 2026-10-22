@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
     AccommodationModel,
+    accommodationMedia,
     accommodations,
     destinations,
     emailOutbox,
@@ -133,11 +134,20 @@ async function createFixture(): Promise<{ ownerId: string; listingIds: string[] 
                 ownerId: owner.id,
                 destinationId: destination.id,
                 type: 'CABIN',
-                publicationStatus: PublicationStatusEnum.PUBLISHED
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
+                extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 }
             } as Partial<Accommodation>,
             db
         );
         listingIds.push(listing.id);
+        await db.insert(accommodationMedia).values({
+            accommodationId: listing.id,
+            url: 'https://example.test/restitution-featured.jpg',
+            moderationState: 'APPROVED',
+            state: 'visible',
+            isFeatured: true,
+            sortOrder: 0
+        });
         await listingPublicationModel.insertStatusChangedEvent({
             tx: db,
             vertical: VerticalEnum.ACCOMMODATION,
