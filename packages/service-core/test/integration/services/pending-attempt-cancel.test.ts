@@ -318,6 +318,14 @@ describe('TEST:1735:4 AC:1735:4 only an owned, linked, completed principal pendi
             .update(subscriptions)
             .set({ status: 'ACTIVE' })
             .where(eq(subscriptions.id, pending.subscriptionId));
+        const conditionalWrite = await getDb().transaction((tx) =>
+            subscriptionModel.abandonReplacedPendingAuthorization({
+                subscriptionId: pending.subscriptionId,
+                now: clock.now(),
+                tx
+            })
+        );
+        expect(conditionalWrite.wrote).toBe(false);
         await expect(
             cancelPendingAttempt(
                 { subscriptionId: pending.subscriptionId, userId: choice.user.id },
