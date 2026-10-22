@@ -16,7 +16,8 @@ import {
     isTypedConfirmationValid,
     parseCutoverStep3Args,
     requiresTypedConfirmation,
-    runCutoverStep3
+    runCutoverStep3,
+    shouldPromptForTypedConfirmation
 } from '../src/lib/cutover-step-3-core.ts';
 import type { Runner, RunOptions } from '../src/lib/runner.ts';
 
@@ -47,6 +48,36 @@ const CONTAINER_ENV = [
     'FOO=bar',
     'HOSPEDA_X=a=b'
 ] as const;
+
+/**
+ * Simulated host environment. The allowlist keys let `pnpm`/`node` start; the
+ * rest must never reach the child. `HOSPEDA_*` values are decoys: the
+ * container's value always wins and a host-only `HOSPEDA_*` never enters.
+ */
+const HOST_ENV = {
+    PATH: '/usr/local/bin:/usr/bin',
+    HOME: '/root',
+    LANG: 'C.UTF-8',
+    SECRET_X: 'do-not-leak',
+    NODE_OPTIONS: '--max-old-space-size=512',
+    HOSPEDA_DATABASE_URL: 'postgresql://host-leak/db',
+    HOSPEDA_BETTER_AUTH_SECRET: 'host-secret',
+    HOSPEDA_HOST_ONLY: 'do-not-leak',
+    FOO: 'bar'
+} as const;
+
+const DATABASE_URL = 'postgresql://hospeda_user:pass@127.0.0.1:5432/hospeda_staging';
+
+/** The only keys allowed in the child env: container filter + host allowlist + DB URL. */
+const EXPECTED_CHILD_ENV_KEYS = [
+    'HOME',
+    'HOSPEDA_BETTER_AUTH_SECRET',
+    'HOSPEDA_DATABASE_URL',
+    'HOSPEDA_X',
+    'LANG',
+    'NODE_ENV',
+    'PATH'
+];
 
 // ---------------------------------------------------------------------------
 // TEST:1745:1 — parseCutoverStep3Args
@@ -124,6 +155,60 @@ describe('requiresTypedConfirmation', () => {
     });
 });
 
+describe('shouldPromptForTypedConfirmation', () => {
+    it('asks on a prod write even when --yes is set', () => {
+        expect(
+            shouldPromptForTypedConfirmation({
+                target: 'prod',
+                mode: 'write',
+                allowShaMismatch: false,
+                yes: true
+            })
+        ).toBe(true);
+    });
+
+    it('asks on a prod dry-run with --allow-sha-mismatch even when --yes is set', () => {
+        expect(
+            shouldPromptForTypedConfirmation({
+                target: 'prod',
+                mode: 'dry-run',
+                allowShaMismatch: true,
+                yes: true
+            })
+        ).toBe(true);
+    });
+
+    it('does not ask on a plain prod dry-run, with or without --yes', () => {
+        expect(
+            shouldPromptForTypedConfirmation({
+                target: 'prod',
+                mode: 'dry-run',
+                allowShaMismatch: false,
+                yes: false
+            })
+        ).toBe(false);
+        expect(
+            shouldPromptForTypedConfirmation({
+                target: 'prod',
+                mode: 'dry-run',
+                allowShaMismatch: false,
+                yes: true
+            })
+        ).toBe(false);
+    });
+
+    it('never asks on staging, with or without --yes', () => {
+        expect(
+            shouldPromptForTypedConfirmation({
+                target: 'staging',
+                mode: 'write',
+                allowShaMismatch: true,
+                yes: true
+            })
+        ).toBe(false);
+    });
+});
+
 describe('isTypedConfirmationValid', () => {
     it('accepts only the exact phrase', () => {
         expect(isTypedConfirmationValid({ typed: 'write-trials-prod' })).toBe(true);
@@ -190,8 +275,42 @@ describe('runCutoverStep3', () => {
         expect(calls[0]?.options).toEqual({
             cwd: '/srv/hospeda',
             inherit: true,
+            inheritEnv: false,
             env
         });
+    });
+
+    it('runs the child with inheritEnv:false and only the allowlisted env', async () => {
+        const calls: { argv: readonly string[]; options?: RunOptions }[] = [];
+        const childEnv = buildStep3ChildEnv({
+            containerEnv: CONTAINER_ENV,
+            databaseUrl: DATABASE_URL,
+            hostEnv: HOST_ENV
+        });
+
+        await runCutoverStep3({
+            runner: fakeRunner(0, calls),
+            repoRoot: '/srv/hospeda',
+            mode: 'write',
+            env: childEnv
+        });
+
+        const options = calls[0]?.options;
+        expect(options?.inheritEnv).toBe(false);
+        expect(Object.keys(options?.env ?? {}).sort()).toEqual(EXPECTED_CHILD_ENV_KEYS);
+        expect(options?.env).toEqual({
+            NODE_ENV: 'production',
+            HOSPEDA_DATABASE_URL: DATABASE_URL,
+            HOSPEDA_BETTER_AUTH_SECRET: 's',
+            HOSPEDA_X: 'a=b',
+            PATH: HOST_ENV.PATH,
+            HOME: HOST_ENV.HOME,
+            LANG: HOST_ENV.LANG
+        });
+        expect(options?.env?.SECRET_X).toBeUndefined();
+        expect(options?.env?.NODE_OPTIONS).toBeUndefined();
+        expect(options?.env?.FOO).toBeUndefined();
+        expect(options?.env?.HOSPEDA_HOST_ONLY).toBeUndefined();
     });
 
     it('passes --confirm-write-trials in write mode', async () => {
@@ -211,27 +330,56 @@ describe('runCutoverStep3', () => {
 // ---------------------------------------------------------------------------
 
 describe('buildStep3ChildEnv', () => {
-    it('keeps only HOSPEDA_* and NODE_ENV and replaces the DB URL', () => {
+    it('keeps only HOSPEDA_* and NODE_ENV from the container, plus the host allowlist', () => {
         const env = buildStep3ChildEnv({
             containerEnv: CONTAINER_ENV,
-            databaseUrl: 'postgresql://hospeda_user:pass@127.0.0.1:5432/hospeda_staging'
+            databaseUrl: DATABASE_URL,
+            hostEnv: HOST_ENV
         });
         expect(env).toEqual({
             NODE_ENV: 'production',
-            HOSPEDA_DATABASE_URL: 'postgresql://hospeda_user:pass@127.0.0.1:5432/hospeda_staging',
+            HOSPEDA_DATABASE_URL: DATABASE_URL,
             HOSPEDA_BETTER_AUTH_SECRET: 's',
-            HOSPEDA_X: 'a=b'
+            HOSPEDA_X: 'a=b',
+            PATH: HOST_ENV.PATH,
+            HOME: HOST_ENV.HOME,
+            LANG: HOST_ENV.LANG
         });
-        expect(env.PATH).toBeUndefined();
-        expect(env.HOME).toBeUndefined();
+        expect(Object.keys(env).sort()).toEqual(EXPECTED_CHILD_ENV_KEYS);
         expect(env.NODE_VERSION).toBeUndefined();
         expect(env.FOO).toBeUndefined();
+        expect(env.SECRET_X).toBeUndefined();
+        expect(env.NODE_OPTIONS).toBeUndefined();
+        expect(env.HOSPEDA_HOST_ONLY).toBeUndefined();
+    });
+
+    it('never lets a host HOSPEDA_* win over the container value', () => {
+        const env = buildStep3ChildEnv({
+            containerEnv: CONTAINER_ENV,
+            databaseUrl: DATABASE_URL,
+            hostEnv: HOST_ENV
+        });
+        expect(env.HOSPEDA_BETTER_AUTH_SECRET).toBe('s');
+        expect(env.HOSPEDA_DATABASE_URL).toBe(DATABASE_URL);
+    });
+
+    it('omits allowlisted host keys that are absent', () => {
+        const env = buildStep3ChildEnv({
+            containerEnv: ['NODE_ENV=production'],
+            databaseUrl: DATABASE_URL,
+            hostEnv: {}
+        });
+        expect(env).toEqual({
+            NODE_ENV: 'production',
+            HOSPEDA_DATABASE_URL: DATABASE_URL
+        });
     });
 
     it('preserves "=" characters inside a value', () => {
         const env = buildStep3ChildEnv({
             containerEnv: ['HOSPEDA_X=a=b'],
-            databaseUrl: 'postgresql://host/db'
+            databaseUrl: 'postgresql://host/db',
+            hostEnv: {}
         });
         expect(env.HOSPEDA_X).toBe('a=b');
     });
