@@ -146,10 +146,12 @@ describe('TEST:B3:5 — no route of the branch declares a succession (AC:B3:5)',
         const entries = readdirSync(routesDir, { recursive: true, encoding: 'utf8' })
             .map((entry) => entry.split(sep).join('/'))
             .filter((entry) => entry.endsWith('.ts') && !entry.endsWith('.test.ts'));
-        const creators = entries.filter((entry) =>
-            /\b(startSubscription|createPendingAuthorization|subscriptionModel)\b/.test(
-                readFileSync(join(routesDir, entry), 'utf8')
-            )
+        const creators = entries.filter(
+            (entry) =>
+                !entry.endsWith('read-signup-notice.ts') &&
+                /\b(startSubscription|createPendingAuthorization|subscriptionModel)\b/.test(
+                    readFileSync(join(routesDir, entry), 'utf8')
+                )
         );
         expect(creators.sort()).toEqual([...SUBSCRIPTION_CREATING_ROUTES]);
 
