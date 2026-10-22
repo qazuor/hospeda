@@ -45,7 +45,7 @@
         "table": "subscriptions",
         "effect": "neutral",
         "via": null,
-        "reason": "S39 moves PENDING_AUTHORIZATION to ABANDONED; neither emits a coverage source (03-contrato-de-cobertura.md:466-467; I-6)."
+        "reason": "S39 and S40 move PENDING_AUTHORIZATION to ABANDONED; neither emits a coverage source (03-contrato-de-cobertura.md:466-467; I-6)."
     },
     {
         "file": "packages/db/src/models/subscription/subscription.model.ts",

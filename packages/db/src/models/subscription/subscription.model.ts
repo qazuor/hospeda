@@ -101,7 +101,7 @@ export interface PendingAuthorizationTransitionInput {
     readonly tx?: DrizzleClient;
 }
 
-/** Input for S39's conditional close of a replaced card signup attempt. */
+/** Input for S39/S40's conditional close of a pending card signup attempt. */
 export interface AbandonReplacedPendingAuthorizationInput {
     readonly subscriptionId: string;
     readonly now: Date;
@@ -368,9 +368,9 @@ export class SubscriptionModel {
     }
 
     /**
-     * S39 closes only a replaced pending card signup. Unlike S3, it does not
-     * close courtesy balances or manual installments because S39 applies only
-     * to a card signup that is not a successor.
+     * S39 closes a replaced pending card signup; S40 closes one cancelled by
+     * the person. Neither closes courtesy balances or manual installments:
+     * both apply only to a card signup that is not a successor.
      */
     async abandonReplacedPendingAuthorization(
         input: AbandonReplacedPendingAuthorizationInput
