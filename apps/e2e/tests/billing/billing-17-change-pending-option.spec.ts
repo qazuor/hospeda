@@ -23,7 +23,7 @@ const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
 const card = (page: import('@playwright/test').Page, versionId: string) =>
     page.locator(`[data-testid="pricing-card-cta"][data-plan-version-id="${versionId}"]`);
 
-test.describe('TEST:1735:16 AC:1735:16 change the billing option with a pending attempt @p0 @billing', () => {
+test.describe('TEST:1735:16 AC:1735:16 change the billing option with a pending attempt @p0 @billing @clock', () => {
     test.describe.configure({ mode: 'serial', timeout: 180_000 });
 
     const clock = createAdjustableClock({ start: new Date() });
@@ -37,7 +37,16 @@ test.describe('TEST:1735:16 AC:1735:16 change the billing option with a pending 
 
     test.beforeAll(async () => {
         fakeServer = await startE2eFakeProvider({
-            provider: new FakePaymentProvider({ clock, idNamespace: randomUUID() }),
+            provider: new FakePaymentProvider({
+                clock,
+                idNamespace: randomUUID(),
+                honestAbout: [
+                    {
+                        lie: 'M1',
+                        why: 'TEST:1735:16 needs the annual cadence read back as created.'
+                    }
+                ]
+            }),
             clock
         });
         mailCapture = await startE2eMailCapture();
