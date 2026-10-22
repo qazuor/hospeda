@@ -479,7 +479,10 @@ export async function processProviderNotice(
             throw new Error('Provider link version changed concurrently');
         }
         return { ack: 'OK', outcome: finalOutcome };
-    } catch {
+    } catch (error) {
+        logger.error(error, `Provider notice processing failed (channel: ${input.channel})`, {
+            capture: true
+        });
         return { ack: 'ERROR', outcome: 'FAILED' };
     }
 }

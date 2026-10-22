@@ -24,6 +24,10 @@ import {
 
 const logger = createLogger('terminal-return');
 
+function errorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
+
 export interface TerminalReturnPorts {
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly deadlines?: CanChargeDeadlines;
@@ -38,6 +42,7 @@ export interface RunTerminalReturnPorts extends TerminalReturnPorts {
 }
 
 export interface TerminalReturnSummary {
+    /** Successful reads and rows that threw are independent counts, not a partition of the inventory. */
     readonly rowsRead: number;
     readonly rowsFailed: number;
     readonly failures: ReadonlyArray<{ readonly subscriptionId: string; readonly message: string }>;
@@ -167,12 +172,15 @@ export async function runTerminalReturn(
                 }
                 if (reason === null) exempt++;
                 else stayed[reason]++;
-            } catch {
+            } catch (error) {
                 failures.push({
                     subscriptionId: row.subscription.id,
-                    message: 'Terminal return row failed'
+                    message: errorMessage(error)
                 });
-                logger.error({ subscriptionId: row.subscription.id }, 'Terminal return row failed');
+                logger.error(
+                    { subscriptionId: row.subscription.id, error: errorMessage(error) },
+                    'Terminal return row failed'
+                );
             }
         }
         if (page.length < input.pageSize) break;

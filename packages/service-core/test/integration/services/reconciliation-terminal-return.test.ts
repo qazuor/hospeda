@@ -453,7 +453,7 @@ describe('TEST:B11:14 terminal return and exemption', () => {
         expect(summary.terminalReturn?.rowsFailed).toBe(1);
         expect(summary.failures).toContainEqual({
             subscriptionId: failed.subscription.id,
-            message: 'Terminal return row failed'
+            message: 'failed read'
         });
         expect(read.mock.calls.some(([arg]) => arg.authorizationId === healthy.providerId)).toBe(
             true
