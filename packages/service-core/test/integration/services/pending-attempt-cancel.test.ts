@@ -255,6 +255,47 @@ describe('TEST:1735:3 AC:1735:3 provider reread controls whether the pending att
         expect(cancel).not.toHaveBeenCalled();
         expect(beforeCancel).not.toHaveBeenCalled();
     });
+
+    it('rejects a mismatched provider reference, propagates a failed read, and rejects paused state', async () => {
+        const choice = await seedChoice();
+        const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
+            clock,
+            honestAbout: [{ lie: 'M1', why: 'provide an applied authorization' }]
+        });
+        const pending = await start(fake, choice.user.id, choice.optionIds[0]!);
+        const provider = providerFor(fake);
+        const originalRead = provider.readAuthorization.bind(provider);
+        const read = vi
+            .spyOn(provider, 'readAuthorization')
+            .mockImplementationOnce(async (input) => {
+                const result = await originalRead(input);
+                return { ...result, snapshot: { ...result.snapshot, reference: 'different-row' } };
+            });
+        const beforeCancel = vi.fn(async () => 'SENT' as const);
+        const cancel = vi.spyOn(fake, 'cancel');
+        const input = { subscriptionId: pending.subscriptionId, userId: choice.user.id };
+        await expect(cancelPendingAttempt(input, ports(fake, beforeCancel))).rejects.toMatchObject({
+            reason: 'COMMITMENT_TAKEN'
+        });
+        expect((await saved(pending.subscriptionId)).row.status).toBe('PENDING_AUTHORIZATION');
+        read.mockRejectedValueOnce(new Error('provider read unavailable'));
+        await expect(cancelPendingAttempt(input, ports(fake, beforeCancel))).rejects.toThrow(
+            'provider read unavailable'
+        );
+        await fake.approve({
+            authorizationId: pending.authorizationId.split(':').slice(1).join(':')
+        });
+        await fake.pause({
+            authorizationId: pending.authorizationId.split(':').slice(1).join(':')
+        });
+        await expect(cancelPendingAttempt(input, ports(fake, beforeCancel))).rejects.toMatchObject({
+            reason: 'COMMITMENT_TAKEN'
+        });
+        expect((await saved(pending.subscriptionId)).row.status).toBe('PENDING_AUTHORIZATION');
+        expect(beforeCancel).not.toHaveBeenCalled();
+        expect(cancel).not.toHaveBeenCalled();
+    });
 });
 
 describe('TEST:1735:4 AC:1735:4 only an owned, linked, completed principal pending attempt is cancellable', () => {
