@@ -36,6 +36,7 @@ import { appRestart } from './commands/app-restart.ts';
 import { runContainerExec } from './commands/container-exec.ts';
 import { cronList } from './commands/cron-list.ts';
 import { cronTrigger } from './commands/cron-trigger.ts';
+import { CUTOVER_STEP_3_ARGV, cutoverStep3 } from './commands/cutover-step-3.ts';
 import { dbBackupNow } from './commands/db-backup-now.ts';
 import { dbCounts } from './commands/db-counts.ts';
 import { dbMigrate } from './commands/db-migrate.ts';
@@ -323,6 +324,17 @@ const COMMANDS: ReadonlyArray<Command> = [
             }
         },
         run: dbSeedMigrate
+    },
+    {
+        name: 'cutover-step-3',
+        summary:
+            'Run the V6 cutover step 3 script (writes the five cutover trials) against the target DB; dry-run by default.',
+        // The script WRITES trial rows on the cutover, and its only safe default
+        // (dry-run) still talks to the target database. Requiring an explicit
+        // --target= is what keeps a staging rehearsal from reaching prod.
+        targetPolicy: 'explicit-required',
+        argv: { ...CUTOVER_STEP_3_ARGV },
+        run: cutoverStep3
     },
     {
         name: 'db-seed-test-users',
