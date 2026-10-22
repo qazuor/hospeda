@@ -16,7 +16,7 @@ const candidates: readonly PublicationListing[] = [completeId, incompleteId].map
 }));
 
 describe('coverage restitution completeness', () => {
-    it('restores only the complete candidate', async () => {
+    it('TEST:1744:1 restores only the complete candidate', async () => {
         const harness = makeHarness({
             listings: candidates,
             limit: 3,
@@ -33,7 +33,7 @@ describe('coverage restitution completeness', () => {
         expect(harness.statusWrites.map(({ listingId: id }) => id)).toEqual([completeId]);
     });
 
-    it('does not let an earlier incomplete candidate consume the only available slot', async () => {
+    it('TEST:1744:2 does not let an earlier incomplete candidate consume the only available slot', async () => {
         const orderedCandidates = [incompleteId, completeId].map((id, index) => ({
             id,
             ownerId: userId,
@@ -56,7 +56,7 @@ describe('coverage restitution completeness', () => {
         expect(result.restored).toEqual([completeId]);
     });
 
-    it('keeps an incomplete returnable archive archived', async () => {
+    it('TEST:1744:3 keeps an incomplete returnable archive archived', async () => {
         const archived = {
             ...candidates[0]!,
             id: completeId,
@@ -79,7 +79,7 @@ describe('coverage restitution completeness', () => {
         expect(harness.statusWrites).toEqual([]);
     });
 
-    it('omits incomplete candidates from the notice and queues no notice when all are incomplete', async () => {
+    it('TEST:1744:4 omits incomplete candidates from the notice and queues no notice when all are incomplete', async () => {
         const harness = makeHarness({
             listings: candidates,
             limit: 3,
