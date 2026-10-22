@@ -12,7 +12,10 @@ import { CUTOVER_STEP_3_ARGV } from '../src/commands/cutover-step-3.ts';
 import { validateCommandFlags } from '../src/lib/cli-flags.ts';
 import {
     buildStep3ChildEnv,
+    type CutoverStep3Mode,
     checkDeployedSha,
+    type ExecuteCutoverStep3Input,
+    executeCutoverStep3,
     isTypedConfirmationValid,
     parseCutoverStep3Args,
     requiresTypedConfirmation,
@@ -20,6 +23,7 @@ import {
     shouldPromptForTypedConfirmation
 } from '../src/lib/cutover-step-3-core.ts';
 import type { Runner, RunOptions } from '../src/lib/runner.ts';
+import type { Target } from '../src/lib/target.ts';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -206,6 +210,144 @@ describe('shouldPromptForTypedConfirmation', () => {
                 yes: true
             })
         ).toBe(false);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// TEST:1745:2 — executeCutoverStep3: the orchestration around the decision
+//
+// These tests exercise the call site, not the pure decision: they would fail
+// if the command started skipping the prompt because of `--yes`, before the
+// version guard or around any other input.
+// ---------------------------------------------------------------------------
+
+const CHECKOUT_SHA = '0e94f0e2eeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+const DEPLOYED_SHA = '0e94f0e2ee';
+const PROD_CONTAINER_ENV = [...CONTAINER_ENV, `HOSPEDA_COMMIT_SHA=${DEPLOYED_SHA}`];
+
+/** An execution input whose defaults pass every guard (prod write, `--yes`). */
+function execInput(overrides: Partial<ExecuteCutoverStep3Input> = {}): ExecuteCutoverStep3Input {
+    return {
+        runner: fakeRunner(0, []),
+        repoRoot: '/srv/hospeda',
+        target: 'prod',
+        options: { mode: 'write', allowShaMismatch: false, yes: true },
+        containerEnv: PROD_CONTAINER_ENV,
+        databaseUrl: DATABASE_URL,
+        hostEnv: HOST_ENV,
+        readCheckoutSha: async () => CHECKOUT_SHA,
+        confirmProd: async () => {},
+        log: { info: () => {}, warn: () => {} },
+        ...overrides
+    };
+}
+
+describe('executeCutoverStep3', () => {
+    it('confirms a prod write exactly once before running, even with --yes', async () => {
+        const events: string[] = [];
+        const runner: Runner = {
+            async run() {
+                events.push('run');
+                return { exitCode: 0, stdout: '', stderr: '', failed: false };
+            }
+        };
+
+        const result = await executeCutoverStep3(
+            execInput({
+                runner,
+                confirmProd: async () => {
+                    events.push('confirm');
+                }
+            })
+        );
+
+        expect(events).toEqual(['confirm', 'run']);
+        expect(result).toEqual({ ok: true, exitCode: 0 });
+    });
+
+    it('never runs the script when the prod confirmation throws', async () => {
+        let runs = 0;
+        const runner: Runner = {
+            async run() {
+                runs += 1;
+                return { exitCode: 0, stdout: '', stderr: '', failed: false };
+            }
+        };
+
+        const result = await executeCutoverStep3(
+            execInput({
+                runner,
+                confirmProd: async () => {
+                    throw new Error('rejected');
+                }
+            })
+        );
+
+        expect(runs).toBe(0);
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.reason).toBe('confirmation-rejected');
+    });
+
+    it('confirms a prod dry-run that overrides the SHA guard, even with --yes', async () => {
+        const confirmations: { target: Target; mode: CutoverStep3Mode }[] = [];
+
+        const result = await executeCutoverStep3(
+            execInput({
+                options: { mode: 'dry-run', allowShaMismatch: true, yes: true },
+                confirmProd: async (input) => {
+                    confirmations.push({ target: input.target, mode: input.mode });
+                }
+            })
+        );
+
+        expect(confirmations).toEqual([{ target: 'prod', mode: 'dry-run' }]);
+        expect(result.ok).toBe(true);
+    });
+
+    it('does not confirm on staging, even with --yes', async () => {
+        let confirmations = 0;
+
+        const result = await executeCutoverStep3(
+            execInput({
+                target: 'staging',
+                confirmProd: async () => {
+                    confirmations += 1;
+                }
+            })
+        );
+
+        expect(confirmations).toBe(0);
+        expect(result.ok).toBe(true);
+    });
+
+    it('stops before confirmation and the runner when the SHA guard rejects the checkout', async () => {
+        let runs = 0;
+        let confirmations = 0;
+        const runner: Runner = {
+            async run() {
+                runs += 1;
+                return { exitCode: 0, stdout: '', stderr: '', failed: false };
+            }
+        };
+
+        const result = await executeCutoverStep3(
+            execInput({
+                runner,
+                readCheckoutSha: async () => 'ffffffffffffffffffffffffffffffffffffffff',
+                confirmProd: async () => {
+                    confirmations += 1;
+                }
+            })
+        );
+
+        expect(runs).toBe(0);
+        expect(confirmations).toBe(0);
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.reason).toBe('sha-guard');
+            expect(result.message).toContain('ffffffffffffffffffffffffffffffffffffffff');
+            expect(result.message).toContain(DEPLOYED_SHA);
+        }
     });
 });
 
