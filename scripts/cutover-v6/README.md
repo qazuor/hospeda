@@ -2,6 +2,35 @@
 
 Standalone tools for the V6 cut. Run from a reviewed cutover checkout, never from a development worktree against production.
 
+## Step 3: cutover trials (`hops cutover-step-3`)
+
+Step 3 writes the five cutover trials to the target database. Run it from the VPS host through `hops` (not `pnpm` by hand inside the api image, which ships no `tsx` and no `pnpm`):
+
+```bash
+hops --target=staging cutover-step-3                # dry-run: plans the five rows, writes nothing
+hops --target=staging cutover-step-3 --confirm-write-trials
+```
+
+Order of operations:
+
+1. Run the **dry-run** (the default when no mode flag is passed).
+2. Inspect the five planned rows by hand.
+3. Only then run again with `--confirm-write-trials`.
+
+On `--target=prod`, `--confirm-write-trials` requires typing `write-trials-prod`. `--yes` does not skip that typed confirmation. A rerun that finds the rows already written writes nothing and reports `already_done`.
+
+The command runs `pnpm --filter hospeda-api exec tsx scripts/cutover-v6-step-3.ts …` in `$HOPS_REPO_ROOT` with the target api container's `HOSPEDA_*` and `NODE_ENV`, and a `HOSPEDA_DATABASE_URL` reachable from the host (built like `hops db-migrate`). That environment stays in memory: it is never printed or written to disk.
+
+Version guard: before running, the command compares the checkout's `HEAD` with the deployed `HOSPEDA_COMMIT_SHA` (10-char prefix). A mismatch stops with exit 1 and prints both SHAs. The command never runs `git pull`; align the checkout to the deployed commit first. `--allow-sha-mismatch` overrides the guard, and on prod that override also requires the typed confirmation even for a dry-run.
+
+Exit codes are the script's, unchanged:
+
+| Exit | Meaning |
+|---|---|
+| `0` | `dry_run`, `completed` or `already_done` |
+| `1` | `nothing_planned`, a guard failure, or an error |
+| `2` | refused arguments |
+
 ## Step 6 order
 
 Run the staging rehearsal first. On cutover day, prepare and commit the repository baseline and rewrite both database ledgers as one coordinated operation. No migration may run between those two actions.

@@ -49,14 +49,48 @@ export interface RunOptions {
      */
     readonly input?: string;
     /**
-     * Override / extend env vars for the child process. Merged on top of
-     * `process.env`.
+     * Environment variables for the child process. By default they are merged
+     * on top of `process.env`; see {@link inheritEnv} to change that.
      */
     readonly env?: Readonly<Record<string, string>>;
+    /**
+     * Inherit the parent process environment. Defaults to `true`, preserving
+     * the historical behaviour for every existing caller. When `false`, the
+     * child receives EXACTLY the object in {@link env} and nothing else from
+     * the host, so a host-only variable (`NODE_OPTIONS`, a secret, a stray
+     * `HOSPEDA_*`) can never leak into a child that must run with a closed
+     * allowlist.
+     */
+    readonly inheritEnv?: boolean;
     /**
      * Working directory for the child. Defaults to the toolkit's cwd.
      */
     readonly cwd?: string;
+}
+
+/**
+ * Resolve the environment handed to the child process.
+ *
+ * Exported and pure so the merge policy can be tested without spawning
+ * anything. With `inheritEnv: false` the host environment is discarded and
+ * only `env` is returned (an empty object when it is absent). Otherwise the
+ * host environment is the base and `env` is layered on top, which is the
+ * default for every existing caller.
+ *
+ * @param input - Requested env, the inheritance flag and the host env.
+ * @returns The env to pass to execa, or `undefined` to let execa inherit the
+ * parent environment unchanged.
+ */
+export function resolveChildEnv(input: {
+    readonly env?: Readonly<Record<string, string>>;
+    readonly inheritEnv?: boolean;
+    readonly hostEnv?: Readonly<Record<string, string | undefined>>;
+}): Readonly<Record<string, string | undefined>> | undefined {
+    if (input.inheritEnv === false) {
+        return input.env ?? {};
+    }
+    const hostEnv = input.hostEnv ?? process.env;
+    return input.env === undefined ? hostEnv : { ...hostEnv, ...input.env };
 }
 
 /**
@@ -78,10 +112,16 @@ export class LocalRunner implements Runner {
             throw new Error('LocalRunner.run: argv must include at least the command');
         }
 
+        const inheritEnv = options.inheritEnv ?? true;
         const result = await execa(command, args, {
             stdio: options.inherit ? 'inherit' : 'pipe',
             input: options.input,
-            env: options.env ? { ...process.env, ...options.env } : process.env,
+            env: resolveChildEnv({
+                env: options.env,
+                inheritEnv,
+                hostEnv: process.env
+            }),
+            extendEnv: inheritEnv,
             cwd: options.cwd,
             reject: false
         });
