@@ -28,6 +28,7 @@ import type {
     ListingPurgePreviewResponse,
     ListingSupportEditsResponse,
     OccupancySourceEnum,
+    PendingAttemptCancellationResponseSchema,
     PriceAlertResponse,
     PricingSituationResponse,
     PricingSituationVertical,
@@ -5605,6 +5606,16 @@ export const billingSubscriptionApi = {
         return apiClient.postProtected<StartSubscriptionResponse>({
             path: `${PROTECTED}/billing/subscriptions`,
             body: { billingOptionId, payerEmail }
+        });
+    },
+    /** Abandon a pending signup authorization attempt. */
+    cancelPendingAttempt({
+        subscriptionId
+    }: {
+        readonly subscriptionId: string;
+    }): Promise<ApiResult<z.infer<typeof PendingAttemptCancellationResponseSchema>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/${subscriptionId}/pending-attempt-cancellation`
         });
     }
 };

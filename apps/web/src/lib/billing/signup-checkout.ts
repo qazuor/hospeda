@@ -48,6 +48,42 @@ export type SignupPlanSummary = {
     readonly cycle: BillingCycle;
 };
 
+/** Pending attempt returned by the signup notice for another billing option. */
+export type SignupPendingAttempt = {
+    readonly subscriptionId: string;
+    readonly plan: SignupPlanSummary;
+    readonly checkoutUrl: string | null;
+    readonly authorizationWindowEndsAt: string;
+};
+
+/** Resolve only the optional pending attempt, tolerating legacy and unreadable notices. */
+export function resolveSignupPendingAttempt({
+    result
+}: {
+    readonly result: unknown;
+}): SignupPendingAttempt | null {
+    if (
+        !result ||
+        typeof result !== 'object' ||
+        !('ok' in result) ||
+        result.ok !== true ||
+        !('data' in result)
+    )
+        return null;
+    const data = result.data;
+    const value =
+        data && typeof data === 'object' && 'pendingAttempt' in data
+            ? data.pendingAttempt
+            : undefined;
+    const parsed = SignupNoticeResponseSchema.shape.pendingAttempt.safeParse(value);
+    return parsed.success &&
+        (parsed.data === null ||
+            parsed.data.checkoutUrl === null ||
+            isDisplayableCheckoutUrl({ checkoutUrl: parsed.data.checkoutUrl }))
+        ? parsed.data
+        : null;
+}
+
 /** Resolve the selected plan and option amount, failing closed for unreadable notices. */
 export function resolveSignupPlanSummary({
     result
