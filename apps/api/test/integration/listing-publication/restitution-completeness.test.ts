@@ -11,8 +11,10 @@ import { testDb } from '../../e2e/setup/test-database';
 import {
     createListing,
     createOwner,
+    createTrial,
     createVerticalDestination,
-    createVerticalListing
+    createVerticalListing,
+    ensurePublicationCatalog
 } from './publication-routes.helpers';
 
 const now = new Date('2026-10-22T12:00:00.000Z');
@@ -34,6 +36,8 @@ afterAll(async () => testDb.teardown());
 describe.each(verticals)('TEST:1744:6 restitution completeness — %s', (vertical) => {
     it('restores a complete candidate and leaves the incomplete candidate unpublished', async () => {
         const owner = await createOwner();
+        await ensurePublicationCatalog(vertical);
+        await createTrial({ userId: owner.id, vertical, status: 'TRIAL_ACTIVE' });
         const destinationId = await createVerticalDestination();
         const create = (complete: boolean) => {
             if (vertical === VerticalEnum.ACCOMMODATION)
@@ -56,10 +60,6 @@ describe.each(verticals)('TEST:1744:6 restitution completeness — %s', (vertica
         const ports = getListingPublicationPorts({ liveLimit: async () => 3 });
         await recalculateCoverage({
             ...ports,
-            billing: {
-                ...ports.billing,
-                coverage: async () => ({ covered: true, sources: [] })
-            },
             clock,
             userId: owner.id,
             vertical,
