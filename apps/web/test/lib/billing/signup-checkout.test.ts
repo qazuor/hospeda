@@ -145,6 +145,7 @@ describe('TEST:B13a:21c AC:B13a:5 resolveSignupTrialNotice', () => {
                 result: {
                     ok: true,
                     data: {
+                        pendingAttempt: null,
                         plan: {
                             name: 'Plan test',
                             amount: 100000,
@@ -174,6 +175,7 @@ describe('TEST:B13a:21c AC:B13a:5 resolveSignupTrialNotice', () => {
                 result: {
                     ok: true,
                     data: {
+                        pendingAttempt: null,
                         plan: {
                             name: 'Plan test',
                             amount: 100000,
@@ -205,6 +207,7 @@ describe('TEST:1623:6 resolveSignupTouristVipNotice', () => {
             {
                 ok: true,
                 data: {
+                    pendingAttempt: null,
                     plan: { name: 'Plan test', amount: 100000, currency: 'ARS', cycle: 'monthly' },
                     vertical: 'tourist',
                     touristVip: { status: 'CANCELLED_ON_RETURN' },
@@ -218,6 +221,7 @@ describe('TEST:1623:6 resolveSignupTouristVipNotice', () => {
             {
                 ok: true,
                 data: {
+                    pendingAttempt: null,
                     plan: { name: 'Plan test', amount: 100000, currency: 'ARS', cycle: 'monthly' },
                     vertical: 'tourist',
                     touristVip: { status: 'NOT_AFFECTED' },

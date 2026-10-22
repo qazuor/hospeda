@@ -122,7 +122,7 @@ afterAll(async () => {
     await testDb.teardown();
 });
 
-describe('TEST:B13a:21a AC:B13a:5 the checkout reads the trial of the option vertical', () => {
+describe('TEST:B13a:21a AC:B13a:5 and AC:1735:8 the checkout reads the trial of the option vertical', () => {
     it('returns the ceil day count and only the selected vertical trial', async () => {
         const user = await createUser();
         const accommodationOption = await createOption(VerticalEnum.ACCOMMODATION, {
@@ -159,6 +159,7 @@ describe('TEST:B13a:21a AC:B13a:5 the checkout reads the trial of the option ver
         expect(accommodation.response.status).toBe(200);
         expect(accommodation.body.data).toEqual({
             plan: { name: 'Checkout plan', amount: 1500000, currency: 'ARS', cycle: 'monthly' },
+            pendingAttempt: null,
             vertical: 'accommodation',
             touristVip: { status: 'NOT_AFFECTED' },
             trial: { status: 'RUNNING', endsAt: endsAt.toISOString(), daysLeft: 11 }
@@ -171,6 +172,7 @@ describe('TEST:B13a:21a AC:B13a:5 the checkout reads the trial of the option ver
                 currency: 'ARS',
                 cycle: 'annual'
             },
+            pendingAttempt: null,
             vertical: 'accommodation',
             touristVip: { status: 'NOT_AFFECTED' },
             trial: { status: 'RUNNING', endsAt: endsAt.toISOString(), daysLeft: 11 }
@@ -178,6 +180,7 @@ describe('TEST:B13a:21a AC:B13a:5 the checkout reads the trial of the option ver
         expect(gastronomy.response.status).toBe(200);
         expect(gastronomy.body.data).toEqual({
             plan: { name: 'Checkout plan', amount: 100000, currency: 'ARS', cycle: 'monthly' },
+            pendingAttempt: null,
             vertical: 'gastronomy',
             touristVip: { status: 'NOT_AFFECTED' },
             trial: { status: 'NOT_RUNNING' }
