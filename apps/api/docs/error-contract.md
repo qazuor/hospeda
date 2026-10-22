@@ -383,6 +383,12 @@ is NOT enforced there is R3-style param validation.
 
 `PLAN_NOT_FOR_SALE` is 422; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. The new rejection is 409 because the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
 
+### Pending signup attempt cancellation (HOS-1735)
+
+`GET /api/v1/protected/billing/subscriptions/signup-notice/{billingOptionId}` includes `pendingAttempt`: `null` unless the caller has a live pending attempt for another billing option in the requested vertical; otherwise it contains the attempt plan, authorization-window end, and a resumable checkout URL when the stored creation result is valid.
+
+`POST /api/v1/protected/billing/subscriptions/{subscriptionId}/pending-attempt-cancellation` returns 200 with `{ subscriptionId, outcome: 'ABANDONED' | 'ALREADY_ABANDONED' }`. An unknown subscription or one owned by another person returns 404 `NOT_FOUND`. `COMMITMENT_TAKEN` and `PREVIOUS_ATTEMPT_IN_PROGRESS` return 409 `ALREADY_EXISTS` with the corresponding `reason`.
+
 ## Action 14 rejections (B5.3)
 
 `POST /api/v1/admin/billing-refunds/external` (ACC:14, RF4) answers every typed rejection of `settleExternalRefund` with its `reason`. The mapping lives in `src/routes/billing-refund/admin/settle-external.ts` as an exhaustive `Record` over `SETTLE_EXTERNAL_REFUND_REJECTIONS`, so a new service reason without an entry breaks the typecheck.

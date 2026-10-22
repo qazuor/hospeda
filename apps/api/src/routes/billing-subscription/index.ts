@@ -22,6 +22,7 @@ import {
     protectedCancellationPreviewRoute,
     protectedCancelSubscriptionRoute
 } from './cancellation';
+import { protectedPendingAttemptCancellationRoute } from './pending-attempt-cancellation';
 import { protectedPricingSituationRoute } from './pricing-situation';
 import { protectedReadSubscriptionRoute } from './read';
 import { protectedReadOwnSubscriptionsRoute } from './read-mine';
@@ -122,6 +123,7 @@ export const protectedSignupNoticeRoute = createProtectedRoute({
 const router = createRouter();
 router.route('/', protectedStartSubscriptionRoute);
 router.route('/', protectedSignupNoticeRoute);
+router.route('/', protectedPendingAttemptCancellationRoute);
 export const protectedBillingSubscriptionRoutes = router;
 
 const readRouter = createRouter();
