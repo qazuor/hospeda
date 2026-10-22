@@ -22,10 +22,11 @@ export function PendingAttemptPanel({
     readonly onCancel: () => void;
 }) {
     const { t } = createTranslations(locale);
-    const resumeHref =
+    const resumeHref = resolveSafeExternalUrl(
         attempt.checkoutUrl && isDisplayableCheckoutUrl({ checkoutUrl: attempt.checkoutUrl })
-            ? resolveSafeExternalUrl(attempt.checkoutUrl)
-            : undefined;
+            ? attempt.checkoutUrl
+            : undefined
+    );
     const amount = formatPrice({
         amount: attempt.plan.amount / 100,
         currency: attempt.plan.currency,
