@@ -18,7 +18,7 @@ describe('TEST:V4:16/17 TEST:1732:12 AC:1732:9 transition corpus shape and catal
         expect(validateCorpus({ corpus })).toEqual([]);
         expect(checkAnchoring({ corpus, catalog: parseCatalog({ root: ROOT }) })).toEqual([]);
         expect(Object.keys(corpus.machines)).toHaveLength(10);
-        expect(corpus.transitions).toHaveLength(84);
+        expect(corpus.transitions).toHaveLength(85);
         expect(
             Object.fromEntries(
                 Object.keys(corpus.machines).map((machine) => [
@@ -33,7 +33,7 @@ describe('TEST:V4:16/17 TEST:1732:12 AC:1732:9 transition corpus shape and catal
             subscription: 35,
             grace: 0,
             pause: 0,
-            payment: 7,
+            payment: 8,
             refund: 5,
             manual_payment: 6,
             addon_instance: 8

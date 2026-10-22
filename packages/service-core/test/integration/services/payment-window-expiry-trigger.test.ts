@@ -121,7 +121,7 @@ describe('TEST:1709:2 AC:1709:1 AC:1709:2 open renewal window', () => {
 
 describe('TEST:1709:3 AC:1709:2 signup without provider window', () => {
     it.skipIf(!isServiceTestDbAvailable())(
-        'TEST:1709:3 AC:1709:2 leaves the first rejected record pending',
+        'TEST:1709:3 AC:1709:2 AC:1734:1 P8 fails the first rejected record',
         async () => {
             const fixture = await paymentFixture();
             const { chargeId } = await fixture.provider.declineCharge({
@@ -147,10 +147,9 @@ describe('TEST:1709:3 AC:1709:2 signup without provider window', () => {
             expect(read.snapshot.expiresAt).toBeNull();
             const before = await readPayment(payment.id);
             fixture.clock.advance({ ms: 70 * 86_400_000 });
-            const summary = await expireLapsedPayments({}, fixture);
+            await expireLapsedPayments({}, fixture);
+            expect(before).toMatchObject({ status: 'FAILED', version: 2 });
             expect(await readPayment(payment.id)).toEqual(before);
-            expect(before).toEqual({ ...payment, status: 'PENDING', version: 1 });
-            expect(summary.open).toBeGreaterThanOrEqual(1);
         }
     );
 });

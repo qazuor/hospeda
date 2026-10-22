@@ -1113,6 +1113,17 @@
             "writes": ["payment.status", "domain_event.changes"]
         },
         {
+            "id": "TRANS:B:P8",
+            "machine": "payment",
+            "from": ["PENDING"],
+            "events": ["provider_payment_rejected_without_window"],
+            "to": ["FAILED"],
+            "guard": {},
+            "reads": ["payment.status"],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["payment.status", "domain_event.changes"]
+        },
+        {
             "id": "TRANS:B:RF1",
             "machine": "refund",
             "from": ["*NO_ROW"],

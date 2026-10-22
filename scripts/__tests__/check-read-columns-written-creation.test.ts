@@ -144,7 +144,7 @@ describe('TEST:1667:2 AC:1667:2 — restored reads', () => {
     it('passes G-R6 across the real corpus', () => {
         expect(run()).toEqual({
             exitCode: 0,
-            output: 'OK GUARD:G-R6: verified 171 read columns.'
+            output: 'OK GUARD:G-R6: verified 172 read columns.'
         });
     });
 });
