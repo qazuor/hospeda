@@ -102,8 +102,8 @@ describe('TEST:1737:8 provider notice failure cause', () => {
                 return typeof value === 'function' ? value.bind(fake) : value;
             }
         });
-        const captured: unknown[] = [];
-        registerCaptureHook((error) => captured.push(error));
+        const captured: { error: unknown; extra: Record<string, unknown> }[] = [];
+        registerCaptureHook((error, extra) => captured.push({ error, extra }));
         const encoded = encodeFakeNotice({
             notice: {
                 resourceKind: 'authorization',
@@ -125,6 +125,7 @@ describe('TEST:1737:8 provider notice failure cause', () => {
         );
         expect(result).toEqual({ ack: 'ERROR', outcome: 'FAILED' });
         expect(captured).toHaveLength(1);
-        expect(captured[0]).toMatchObject({ channel: 'WEBHOOKS', error: failure });
+        expect(captured[0].error).toBe(failure);
+        expect(captured[0].extra.label).toContain('WEBHOOKS');
     });
 });
