@@ -209,6 +209,7 @@ export * from './billing/subscription/reactivate-suspended.service.js';
 export * from './billing/subscription/reactivate-suspended-after-commit.js';
 export * from './billing/subscription/refuse-undeclared-transition.js';
 export * from './billing/subscription/renewal-notice.js';
+export { readResumableCheckoutUrl } from './billing/subscription/resolve-live-commitment.js';
 export * from './billing/subscription/revocation-payment.js';
 export * from './billing/subscription/revoke-subscription.service.js';
 export * from './billing/subscription/s11-service-end.js';
