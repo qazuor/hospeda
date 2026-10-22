@@ -1,3 +1,4 @@
+/** Hourly payment expiry sweep for closed retry windows (P2) and terminal rejections (P8). */
 import type { Clock } from '@repo/billing-verticals-contract';
 import { and, asc, eq, getDb, gt, isNotNull, payments } from '@repo/db';
 import { createLogger } from '@repo/logger';
@@ -5,6 +6,7 @@ import type { PaymentProvider } from '@repo/payments';
 import { actStartInstant, assertFreshForAct } from '@repo/payments';
 import { lastCycleRecordIsOpen } from '../reconciliation/sweep/last-cycle-record.js';
 import { failPayment } from './fail-payment.service.js';
+import { isRejectedWithoutRetryWindow } from './rejected-charge-terminal.js';
 
 const logger = createLogger('payment-window-expiry');
 
@@ -25,7 +27,8 @@ export interface ExpireLapsedPaymentsSummary {
 
 /**
  * Re-reads every pending subscription payment by provider id and applies P2
- * only when a rejected charge's collection window has closed.
+ * when a rejected charge's collection window has closed, or P8 when it has no
+ * retry window (HOS-1734).
  *
  * @param input - Optional keyset page size; defaults to 100.
  * @param ports - Provider reader and clock used for each payment act.
@@ -72,7 +75,8 @@ export async function expireLapsedPayments(
                         complete: true,
                         actStartedAt
                     });
-                if (!closedWithoutCollection) {
+                const terminalRejection = isRejectedWithoutRetryWindow({ charge });
+                if (!closedWithoutCollection && !terminalRejection) {
                     summary.open++;
                     continue;
                 }

@@ -4426,7 +4426,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 - **Fuente de la asignación**: HOS-1734 (decisión del owner, 2026-10-21)
 - **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
 - **desde** (estado origen): `PENDING`
-- **evento** (disparador): **el proveedor reporta el cobro rechazado y el cobro no tiene ventana de reintentos** —su registro no trae `expire_date`, que es el del alta (`RC-7`)—, leído por id al registrar el hecho
+- **evento** (disparador): **el proveedor reporta el cobro rechazado y el cobro no tiene ventana de reintentos** —su registro no trae `expire_date`, que es el del alta (`RC-7`)—, leído por id al registrar el hecho; y por el job horario `payment-window-expiry` sobre los hechos `PENDING` que relee por id, que es lo que cierra los hechos anteriores al deploy o cuyo aviso se perdió (HOS-1734, D2)
 - **hacia** (estado destino): `FAILED`
 - **nota** (guardas y efectos): **convive con `P2`**: un cobro rechazado **con** ventana sigue en `PENDING` mientras el proveedor lo reintenta en el mismo registro y con el mismo id del hecho (`RP8`, `GR-1`), y si un reintento se aprueba corre `P1` sobre la misma fila; ese lo cierra `P2` al vencer la ventana. Corre **después** de `S4`/`S16`, que releen el cobro y no el estado del hecho; un cobro `pending` (`in_process` incluido) no lo dispara; repetido, no escribe
 
