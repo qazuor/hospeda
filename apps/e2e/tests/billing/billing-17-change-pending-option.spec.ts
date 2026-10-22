@@ -113,12 +113,13 @@ test.describe('TEST:1735:16 AC:1735:16 change the billing option with a pending 
         let originalResumeHref = '';
         await test.step('1. Start a monthly checkout and retain its pending link', async () => {
             await openSignupCheckout({ page, webUrl: WEB_URL, billingOptionId: monthlyOptionId });
-            await page.getByTestId('signup-checkout-confirm').click();
-            const pending = page.getByTestId('signup-checkout-pending');
+            const checkout = page.getByTestId('signup-checkout');
+            await checkout.getByTestId('signup-checkout-confirm').click();
+            const pending = checkout.getByTestId('signup-checkout-pending');
             await expect(pending).toBeVisible();
             originalSubscriptionId = (await pending.getAttribute('data-subscription-id')) ?? '';
             expect(originalSubscriptionId).toBeTruthy();
-            const resume = page.getByTestId('signup-checkout-resume-link');
+            const resume = checkout.getByTestId('signup-checkout-resume-link');
             await expect(resume).toBeVisible();
             originalResumeHref = (await resume.getAttribute('href')) ?? '';
             expect(originalResumeHref).toBeTruthy();
@@ -145,24 +146,26 @@ test.describe('TEST:1735:16 AC:1735:16 change the billing option with a pending 
         });
 
         await test.step('2. Annual checkout shows the existing attempt and blocks confirmation', async () => {
-            const pendingAttempt = page.getByTestId('signup-checkout-pending-attempt');
+            const checkout = page.getByTestId('signup-checkout');
+            const pendingAttempt = checkout.getByTestId('signup-checkout-pending-attempt');
             await expect(pendingAttempt).toBeVisible();
             await expect(pendingAttempt).toHaveAttribute(
                 'data-subscription-id',
                 originalSubscriptionId
             );
-            await expect(page.getByTestId('signup-checkout-confirm')).toHaveCount(0);
+            await expect(checkout.getByTestId('signup-checkout-confirm')).toHaveCount(0);
             await expect(
-                page.getByTestId('signup-checkout-pending-attempt-resume')
+                checkout.getByTestId('signup-checkout-pending-attempt-resume')
             ).toHaveAttribute('href', originalResumeHref);
         });
 
         await test.step('3. Cancel the pending attempt and verify its durable effects', async () => {
-            await page.getByTestId('signup-checkout-pending-attempt-cancel').click();
+            const checkout = page.getByTestId('signup-checkout');
+            await checkout.getByTestId('signup-checkout-pending-attempt-cancel').click();
             await expect(
-                page.getByTestId('signup-checkout-pending-attempt-cancelled')
+                checkout.getByTestId('signup-checkout-pending-attempt-cancelled')
             ).toBeVisible();
-            await expect(page.getByTestId('signup-checkout-confirm')).toBeVisible();
+            await expect(checkout.getByTestId('signup-checkout-confirm')).toBeVisible();
             const subscription = await execSQL<{
                 status: string;
                 provider_link_id: string | null;
@@ -188,8 +191,9 @@ test.describe('TEST:1735:16 AC:1735:16 change the billing option with a pending 
         });
 
         await test.step('4. Confirm annual checkout and receive a new subscription', async () => {
-            await page.getByTestId('signup-checkout-confirm').click();
-            const pending = page.getByTestId('signup-checkout-pending');
+            const checkout = page.getByTestId('signup-checkout');
+            await checkout.getByTestId('signup-checkout-confirm').click();
+            const pending = checkout.getByTestId('signup-checkout-pending');
             await expect(pending).toBeVisible();
             const newSubscriptionId = await pending.getAttribute('data-subscription-id');
             expect(newSubscriptionId).toBeTruthy();
