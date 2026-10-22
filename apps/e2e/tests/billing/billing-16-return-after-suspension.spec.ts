@@ -103,6 +103,7 @@ test.describe('TEST:1624:1 a suspended card subscriber comes back: S23, a new S1
             const listing = await createAccommodation({
                 ownerId: subscriber.user.id,
                 publicationStatus: PublicationStatusEnum.PUBLISHED,
+                complete: true,
                 withTrial: false
             });
             listingId = listing.id;

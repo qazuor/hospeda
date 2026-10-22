@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
     AccommodationModel,
+    accommodationMedia,
     accommodations,
     destinations,
     domainEventModel,
@@ -144,10 +145,22 @@ describe('TEST:V6:7 API daily coverage reconciler', () => {
                     ownerId: owner.id,
                     destinationId: destinationId,
                     type: 'CABIN',
-                    publicationStatus: status
+                    publicationStatus: status,
+                    ...(status === PublicationStatusEnum.PUBLISHED
+                        ? { extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 } }
+                        : {})
                 } as Partial<Accommodation>,
                 db
             );
+            if (status === PublicationStatusEnum.PUBLISHED)
+                await db.insert(accommodationMedia).values({
+                    accommodationId: listing.id,
+                    url: 'https://example.test/daily-reconciler-featured.jpg',
+                    moderationState: 'APPROVED',
+                    state: 'visible',
+                    isFeatured: true,
+                    sortOrder: 0
+                });
             await db
                 .update(accommodations)
                 .set({ inactiveSince: new Date(now.getTime() - 120 * 86_400_000) })
@@ -311,10 +324,19 @@ describe('TEST:V6:7 API daily coverage reconciler', () => {
                 ownerId: owner.id,
                 destinationId: destination.id,
                 type: 'CABIN',
-                publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+                publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+                extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 }
             } as Partial<Accommodation>,
             db
         );
+        await db.insert(accommodationMedia).values({
+            accommodationId: listing.id,
+            url: 'https://example.test/daily-reconciler-pb3-featured.jpg',
+            moderationState: 'APPROVED',
+            state: 'visible',
+            isFeatured: true,
+            sortOrder: 0
+        });
 
         const ports = getListingReconcilerPorts();
         const liveLimit = await ports.liveLimit({

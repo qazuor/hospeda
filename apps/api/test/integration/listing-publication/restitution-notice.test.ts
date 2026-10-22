@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
     AccommodationModel,
+    accommodationMedia,
     accommodations,
     destinations,
     emailOutbox,
@@ -52,6 +53,53 @@ beforeEach(async () => {
 afterAll(async () => testDb.teardown());
 
 describe('TEST:V6:5 restitution notice outbox', () => {
+    it('HOS-1744 leaves an incomplete billing-unpublished listing out when coverage activates', async () => {
+        const { ownerId, listingIds } = await createFixture();
+        const db = getDb();
+        // The incomplete candidate is older, so it wins the only available slot without the filter.
+        const completeId = listingIds[4];
+        const incompleteId = listingIds[3];
+        if (!completeId || !incompleteId) throw new Error('Fixture candidates missing');
+        await db
+            .update(accommodations)
+            .set({ publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING })
+            .where(and(eq(accommodations.id, completeId), eq(accommodations.ownerId, ownerId)));
+        await db
+            .update(accommodations)
+            .set({
+                publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+                extraInfo: null
+            })
+            .where(and(eq(accommodations.id, incompleteId), eq(accommodations.ownerId, ownerId)));
+
+        const stop = subscribeListingCoverageRecalculation();
+        try {
+            accessState.limit = 4;
+            accessState.listener?.({ userId: ownerId, vertical: VerticalEnum.ACCOMMODATION });
+            await waitForPublished(ownerId, 4);
+            const statuses = await db
+                .select({
+                    id: accommodations.id,
+                    publicationStatus: accommodations.publicationStatus
+                })
+                .from(accommodations)
+                .where(and(eq(accommodations.ownerId, ownerId)));
+            expect(statuses.find((row) => row.id === completeId)?.publicationStatus).toBe(
+                PublicationStatusEnum.PUBLISHED
+            );
+            expect(statuses.find((row) => row.id === incompleteId)?.publicationStatus).toBe(
+                PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+            );
+            const rows = await waitForOutbox(ownerId, 1);
+            expect(rows[0]?.payload).toMatchObject({
+                restoredListingIds: [completeId],
+                notRestoredListingIds: []
+            });
+        } finally {
+            stop();
+        }
+    });
+
     it('queues one pending notice with returned ids and deduplicates a no-change pass', async () => {
         const { ownerId, listingIds } = await createFixture();
         const stop = subscribeListingCoverageRecalculation();
@@ -133,11 +181,20 @@ async function createFixture(): Promise<{ ownerId: string; listingIds: string[] 
                 ownerId: owner.id,
                 destinationId: destination.id,
                 type: 'CABIN',
-                publicationStatus: PublicationStatusEnum.PUBLISHED
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
+                extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 }
             } as Partial<Accommodation>,
             db
         );
         listingIds.push(listing.id);
+        await db.insert(accommodationMedia).values({
+            accommodationId: listing.id,
+            url: 'https://example.test/restitution-featured.jpg',
+            moderationState: 'APPROVED',
+            state: 'visible',
+            isFeatured: true,
+            sortOrder: 0
+        });
         await listingPublicationModel.insertStatusChangedEvent({
             tx: db,
             vertical: VerticalEnum.ACCOMMODATION,

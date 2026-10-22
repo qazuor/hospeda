@@ -25,6 +25,7 @@ import type {
 } from '../../../../../packages/verticals/src/publication/publication-types';
 import { PUBLICATION_LIMIT_KEYS } from '../../../../../packages/verticals/src/publication/publication-types';
 import { trialMachineLockKey } from '../../../../../packages/verticals/src/trial/trial-lock-key';
+import { readIncompleteListingIds } from '../../services/listing-publication/listing-publish-completeness';
 import { getClock } from '../clock';
 import { invalidateEffectiveSetsForUser } from '../effective-set-cache';
 import { getListingAccessPorts } from '../listing-access/ports';
@@ -61,7 +62,7 @@ export function getListingPublicationPorts(options?: {
                 await tx.execute(
                     sql`SELECT pg_advisory_xact_lock(hashtextextended(${trialMachineLockKey(args).key}, 0))`
                 );
-                const publication: PublicationTransaction = {
+                const publication = {
                     async purgeListingContent(input) {
                         return listingPurgeModel.purgeListingContent({ ...input, tx });
                     },
@@ -97,6 +98,16 @@ export function getListingPublicationPorts(options?: {
                     },
                     async readListing(input) {
                         return listingPublicationModel.readListing({ ...input, tx });
+                    },
+                    async readIncompleteListingIds(input) {
+                        const incomplete = await readIncompleteListingIds(input);
+                        for (const [listingId, missing] of incomplete) {
+                            apiLogger.info(
+                                { listingId, vertical: input.vertical, missing },
+                                'Coverage restitution skipped incomplete listing'
+                            );
+                        }
+                        return incomplete;
                     },
                     async countPublished(input) {
                         return listingPublicationModel.countPublished({ ...input, tx });
@@ -280,7 +291,7 @@ export function getListingPublicationPorts(options?: {
                         tx,
                         clock: getClock().clock
                     }).scheduleExpiryCampaign
-                } as PublicationTransaction;
+                } satisfies PublicationTransaction;
                 return work(publication);
             });
         }

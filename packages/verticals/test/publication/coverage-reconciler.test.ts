@@ -40,6 +40,7 @@ function ports(overrides: Partial<ReconcilerPorts> = {}) {
                     readRetentionListing: async () => null,
                     readArchiveOrigins: async () => new Map(),
                     listByOwner: async () => [],
+                    readIncompleteListingIds: async () => new Map(),
                     readDeclaredPublishLimit: async () => 2,
                     readPublicationInstants: async () => new Map(),
                     stampInactiveSince: async () => {},

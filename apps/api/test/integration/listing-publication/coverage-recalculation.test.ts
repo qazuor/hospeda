@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
     AccommodationModel,
+    accommodationMedia,
     accommodations,
     destinations,
     getDb,
@@ -293,10 +294,19 @@ describe('TEST:V6 API coverage recalculation', () => {
                         ownerId: user.id,
                         destinationId: destination.id,
                         type: 'CABIN',
-                        publicationStatus: status
+                        publicationStatus: status,
+                        extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 }
                     } as Partial<Accommodation>,
                     db
                 );
+                await db.insert(accommodationMedia).values({
+                    accommodationId: listing.id,
+                    url: 'https://example.test/t3-featured.jpg',
+                    moderationState: 'APPROVED',
+                    state: 'visible',
+                    isFeatured: true,
+                    sortOrder: 0
+                });
                 return { id: listing.id, initialStatus: status };
             })
         );

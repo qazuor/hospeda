@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { accommodations, getDb, users } from '@repo/db';
 import {
+    buildPublishRequirementsReason,
     NO_PLANS_AVAILABLE_MESSAGE,
-    resolveListingCompleteness,
     ServiceErrorCode,
     VerticalEnum
 } from '@repo/schemas';
@@ -19,6 +19,7 @@ import type { PublicationVertical } from '../../../../../packages/verticals/src/
 import { PUBLICATION_LIMIT_KEYS } from '../../../../../packages/verticals/src/publication/publication-types';
 import { getListingPublicationPorts } from '../../utils/listing-publication/ports';
 import { loadListingMedia } from '../listing-media';
+import { evaluateListingPublishCompleteness } from './listing-publish-completeness';
 import { resolveSubscribeDestinationForUser } from './subscribe-destination.service';
 
 const accommodationService = new AccommodationService({});
@@ -44,9 +45,18 @@ export class ListingPublicationService {
                     throw new ServiceError(existing.error.code, existing.error.message);
                 if (!existing.data)
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
-                await accommodationService.assertPublishCompleteness({
-                    accommodation: existing.data
+                const completeness = await evaluateListingPublishCompleteness({
+                    vertical,
+                    listing: existing.data,
+                    media: {}
                 });
+                if (!completeness.complete)
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `Cannot publish accommodation: missing ${completeness.missing.join(', ')}`,
+                        undefined,
+                        buildPublishRequirementsReason({ missing: completeness.missing })
+                    );
                 ownerId = existing.data.ownerId;
                 break;
             }
@@ -57,9 +67,10 @@ export class ListingPublicationService {
                 if (!existing.data)
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy not found');
                 const media = await loadListingMedia({ entityType: vertical, entityId: args.id });
-                const completeness = resolveListingCompleteness({
-                    entityType: vertical,
-                    listing: { ...existing.data, media }
+                const completeness = await evaluateListingPublishCompleteness({
+                    vertical,
+                    listing: existing.data,
+                    media
                 });
                 if (!completeness.complete)
                     throw new ServiceError(
@@ -76,9 +87,10 @@ export class ListingPublicationService {
                 if (!existing.data)
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Experience not found');
                 const media = await loadListingMedia({ entityType: vertical, entityId: args.id });
-                const completeness = resolveListingCompleteness({
-                    entityType: vertical,
-                    listing: { ...existing.data, media }
+                const completeness = await evaluateListingPublishCompleteness({
+                    vertical,
+                    listing: existing.data,
+                    media
                 });
                 if (!completeness.complete)
                     throw new ServiceError(

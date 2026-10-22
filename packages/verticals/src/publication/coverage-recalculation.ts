@@ -183,7 +183,17 @@ export async function recalculateCoverage(args: {
                 });
                 let available = Math.max(0, limit - publishedNow);
                 const returning = [...candidatesAtStart, ...archivedCandidates];
-                const ordered = orderReturningCandidates({ entries: returning.map(entry) });
+                const incomplete =
+                    returning.length > 0
+                        ? await tx.readIncompleteListingIds({
+                              vertical: args.vertical,
+                              listingIds: returning.map((candidate) => candidate.id)
+                          })
+                        : new Map<string, readonly string[]>();
+                const eligibleReturning = returning.filter(
+                    (candidate) => !incomplete.has(candidate.id)
+                );
+                const ordered = orderReturningCandidates({ entries: eligibleReturning.map(entry) });
                 for (const candidate of ordered) {
                     if (available === 0) break;
                     const listing = returning.find((row) => row.id === candidate.id);

@@ -640,6 +640,8 @@ export async function createAccommodation(options: {
     readonly extraInfo?: Record<string, unknown>;
     /** Skip the normal active-trial fixture to exercise the PRE_TRIAL publish flow. */
     readonly withTrial?: boolean;
+    /** Seed the main image required by the accommodation publish-completeness evaluator. */
+    readonly complete?: boolean;
 }): Promise<CreatedAccommodation> {
     const destinationId = options.destinationId ?? (await getAnyCityDestinationId());
     const slug = `${options.slugPrefix ?? 'e2e-acc'}-${Date.now().toString(36)}-${randomToken(2)}`;
@@ -676,6 +678,14 @@ export async function createAccommodation(options: {
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('createAccommodation: insert returned no id');
+    if (options.complete) {
+        await execSQL(
+            `INSERT INTO accommodation_media
+                 (accommodation_id, url, state, is_featured, sort_order, moderation_state)
+             VALUES ($1, $2, 'visible', true, 0, 'APPROVED')`,
+            [id, `https://cdn.example.test/${slug}-main.jpg`]
+        );
+    }
     if (options.withTrial ?? true) {
         await ensureListingOwnerTrial(getDbPool(), options.ownerId, VerticalEnum.ACCOMMODATION);
     }
