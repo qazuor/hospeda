@@ -216,12 +216,12 @@
         },
         "signup": {
             "pendingAttempt": {
-                "title": "You have a pending signup attempt",
-                "body": "You started signing up for {{plan}} ({{amount}}, {{cycle}}) and have not authorized it with Mercado Pago yet. To choose this other option, cancel that attempt first. It expires on {{date}}.",
+                "title": "You have a pending subscription signup attempt",
+                "body": "You started a subscription signup for {{plan}} ({{amount}}, {{cycle}}) and have not authorized it with Mercado Pago yet. To choose this other option, cancel that attempt first. It expires on {{date}}.",
                 "resume": "Resume that attempt",
                 "cancel": "Cancel that attempt",
                 "cancelling": "Canceling…",
-                "cancelled": "We canceled your previous attempt. You can choose this option now."
+                "cancelled": "We canceled your previous subscription signup attempt. You can choose this option now."
             },
             "title": "Confirm your subscription",
             "intro": "You will authorize the payment with Mercado Pago.",
