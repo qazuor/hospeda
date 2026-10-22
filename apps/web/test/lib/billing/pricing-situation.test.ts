@@ -109,8 +109,16 @@ describe('TEST:1621:5 pricing card CTA situation resolver', () => {
         expect(result).toEqual({
             kind: 'checkout',
             links: [
-                { cycle: 'monthly', href: '/es/suscriptores/checkout/?opcion=monthly-a' },
-                { cycle: 'annual', href: '/es/suscriptores/checkout/?opcion=annual-a' }
+                {
+                    cycle: 'monthly',
+                    href: '/es/suscriptores/checkout/?opcion=monthly-a',
+                    resumes: false
+                },
+                {
+                    cycle: 'annual',
+                    href: '/es/suscriptores/checkout/?opcion=annual-a',
+                    resumes: false
+                }
             ]
         });
     });

@@ -11,6 +11,33 @@ beforeEach(() => {
 });
 
 describe('PlanCardCta', () => {
+    it('TEST:1735:14 labels only the anchored option as payment continuation', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: {
+                situation: 'SUBSCRIBED',
+                status: 'PENDING_AUTHORIZATION',
+                planVersionId: 'v1',
+                billingOptionId: 'a1'
+            }
+        });
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v1"
+                billingOptions={{ monthly: 'm1', annual: 'a1' }}
+            />
+        );
+        expect(
+            await screen.findByRole('link', { name: 'Suscribirme con pago mensual' })
+        ).toHaveAttribute('href', '/es/suscriptores/checkout/?opcion=m1');
+        expect(screen.getByRole('link', { name: 'Continuar el pago' })).toHaveAttribute(
+            'href',
+            '/es/suscriptores/checkout/?opcion=a1'
+        );
+    });
+
     it('renders exact monthly and annual checkout links from the shared situation read', async () => {
         pricingSituation.mockResolvedValue({ ok: true, data: { situation: 'CHECKOUT' } });
         render(

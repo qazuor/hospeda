@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignupCheckout } from '@/components/billing/SignupCheckout.client';
 
@@ -34,18 +34,19 @@ describe('TEST:1735:11 pending attempt checkout panel', () => {
                 pendingAttempt={pendingAttempt}
             />
         );
-        const panel = screen.getByTestId('signup-checkout-pending-attempt');
+        const island = within(screen.getByTestId('signup-checkout'));
+        const panel = island.getByTestId('signup-checkout-pending-attempt');
         expect(panel).toHaveAttribute('data-subscription-id', pendingAttempt.subscriptionId);
         expect(panel).toHaveTextContent('Básico');
         expect(panel).toHaveTextContent('$ 15.000');
         expect(panel).toHaveTextContent('por mes');
         expect(panel).toHaveTextContent('12 de octubre de 2026');
-        expect(screen.getByTestId('signup-checkout-pending-attempt-resume')).toHaveAttribute(
+        expect(island.getByTestId('signup-checkout-pending-attempt-resume')).toHaveAttribute(
             'href',
             pendingAttempt.checkoutUrl
         );
-        expect(screen.queryByTestId('signup-checkout-confirm')).toBeNull();
-        expect(screen.queryByTestId('signup-checkout-payer-email')).toBeNull();
+        expect(island.queryByTestId('signup-checkout-confirm')).toBeNull();
+        expect(island.queryByTestId('signup-checkout-payer-email')).toBeNull();
     });
 
     it('omits resume when checkoutUrl is null and keeps cancel', () => {
@@ -55,8 +56,9 @@ describe('TEST:1735:11 pending attempt checkout panel', () => {
                 pendingAttempt={{ ...pendingAttempt, checkoutUrl: null }}
             />
         );
-        expect(screen.queryByTestId('signup-checkout-pending-attempt-resume')).toBeNull();
-        expect(screen.getByTestId('signup-checkout-pending-attempt-cancel')).toBeInTheDocument();
+        const island = within(screen.getByTestId('signup-checkout'));
+        expect(island.queryByTestId('signup-checkout-pending-attempt-resume')).toBeNull();
+        expect(island.getByTestId('signup-checkout-pending-attempt-cancel')).toBeInTheDocument();
     });
 
     it('TEST:1735:12 cancels once and restores the form, or shows API rejection', async () => {
@@ -64,21 +66,23 @@ describe('TEST:1735:11 pending attempt checkout panel', () => {
             ok: true,
             data: { outcome: 'ABANDONED' }
         });
-        const { rerender } = render(
+        const { unmount } = render(
             <SignupCheckout
                 {...props}
                 pendingAttempt={pendingAttempt}
             />
         );
-        fireEvent.click(screen.getByTestId('signup-checkout-pending-attempt-cancel'));
+        let island = within(screen.getByTestId('signup-checkout'));
+        fireEvent.click(island.getByTestId('signup-checkout-pending-attempt-cancel'));
         expect(api.cancelPendingAttempt).toHaveBeenCalledWith({
             subscriptionId: pendingAttempt.subscriptionId
         });
         expect(
-            await screen.findByTestId('signup-checkout-pending-attempt-cancelled')
+            await island.findByTestId('signup-checkout-pending-attempt-cancelled')
         ).toBeInTheDocument();
-        expect(screen.getByTestId('signup-checkout-confirm')).toBeInTheDocument();
-        rerender(
+        expect(island.getByTestId('signup-checkout-confirm')).toBeInTheDocument();
+        unmount();
+        render(
             <SignupCheckout
                 {...props}
                 pendingAttempt={pendingAttempt}
@@ -88,8 +92,9 @@ describe('TEST:1735:11 pending attempt checkout panel', () => {
             ok: false,
             error: { status: 409, reason: 'COMMITMENT_TAKEN' }
         });
-        fireEvent.click(screen.getByTestId('signup-checkout-pending-attempt-cancel'));
-        expect(await screen.findByTestId('signup-checkout-rejection')).toHaveAttribute(
+        island = within(screen.getByTestId('signup-checkout'));
+        fireEvent.click(island.getByTestId('signup-checkout-pending-attempt-cancel'));
+        expect(await island.findByTestId('signup-checkout-rejection')).toHaveAttribute(
             'data-reason',
             'COMMITMENT_TAKEN'
         );
@@ -107,8 +112,29 @@ describe('TEST:1735:11 pending attempt checkout panel', () => {
                 pendingAttempt={null}
             />
         );
-        fireEvent.click(screen.getByTestId('signup-checkout-confirm'));
-        expect(await screen.findByTestId('signup-checkout-pending-attempt')).toBeInTheDocument();
+        const island = within(screen.getByTestId('signup-checkout'));
+        fireEvent.click(island.getByTestId('signup-checkout-confirm'));
+        expect(await island.findByTestId('signup-checkout-pending-attempt')).toBeInTheDocument();
+    });
+
+    it('TEST:1735:13 keeps the existing rejection when reread has no pendingAttempt', async () => {
+        api.start.mockResolvedValueOnce({
+            ok: false,
+            error: { status: 409, reason: 'COMMITMENT_TAKEN' }
+        });
+        api.signupNotice.mockResolvedValueOnce({ ok: true, data: { pendingAttempt: null } });
+        render(
+            <SignupCheckout
+                {...props}
+                pendingAttempt={null}
+            />
+        );
+        const island = within(screen.getByTestId('signup-checkout'));
+        fireEvent.click(island.getByTestId('signup-checkout-confirm'));
+        expect(await island.findByTestId('signup-checkout-rejection')).toHaveAttribute(
+            'data-reason',
+            'COMMITMENT_TAKEN'
+        );
     });
 
     it('without pendingAttempt keeps the current checkout form', () => {
@@ -118,7 +144,8 @@ describe('TEST:1735:11 pending attempt checkout panel', () => {
                 pendingAttempt={null}
             />
         );
-        expect(screen.getByTestId('signup-checkout-confirm')).toBeInTheDocument();
-        expect(screen.getByTestId('signup-checkout-payer-email')).toBeInTheDocument();
+        const island = within(screen.getByTestId('signup-checkout'));
+        expect(island.getByTestId('signup-checkout-confirm')).toBeInTheDocument();
+        expect(island.getByTestId('signup-checkout-payer-email')).toBeInTheDocument();
     });
 });

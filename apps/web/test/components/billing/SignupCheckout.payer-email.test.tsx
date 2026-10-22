@@ -12,7 +12,8 @@ const props = {
     plansHref: '/es/planes/',
     trialNotice: null,
     touristVipNotice: null,
-    planSummary: null
+    planSummary: null,
+    pendingAttempt: null
 };
 
 const success = {
