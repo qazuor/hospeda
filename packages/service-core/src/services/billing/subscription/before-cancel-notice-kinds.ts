@@ -30,7 +30,9 @@ export const BEFORE_CANCEL_TEMPLATE_BY_KIND = {
     /** S23 and S24: the person cancelled from SUSPENDED or GRACE_PERIOD; the service ends today. */
     DIRECT_CANCELLATION: 'billing.direct-cancellation',
     /** S39: the person started the signup again (another payer email, or a creation that did not apply). */
-    ATTEMPT_REPLACED: 'billing.attempt-replaced-cancel'
+    ATTEMPT_REPLACED: 'billing.attempt-replaced-cancel',
+    /** S40: the person cancelled their pending signup attempt. */
+    ATTEMPT_CANCELLED: 'billing.attempt-cancelled-cancel'
 } as const;
 
 /** A kind of before-cancel notice; each one has its own template and no kind is a default. */

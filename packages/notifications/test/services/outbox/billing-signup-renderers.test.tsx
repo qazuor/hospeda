@@ -15,6 +15,23 @@ const renderers = createBillingSignupRenderers({ siteUrl: 'https://hospeda.test'
 const subscriptionId = '8b17fa49-59f3-4a13-a0d5-fd42e6bac482';
 
 describe('billing signup outbox renderers', () => {
+    it('TEST:1735:7a AC:1735:7 renders the person-cancelled attempt notice and requires subscriptionId', async () => {
+        const result = await renderers['billing.attempt-cancelled-cancel']!({
+            row: row({ template: 'billing.attempt-cancelled-cancel', payload: { subscriptionId } })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject).toBe('Cancelamos tu intento de alta');
+        expect(html).toContain('Cancelamos tu intento de alta');
+        expect(html).toContain('Cancelaste el intento de alta que tenías pendiente');
+        expect(html).toContain('Si Mercado Pago te avisa esa cancelación, es por esto.');
+        expect(html).toContain('Ese intento no te cobró nada.');
+        expect(() =>
+            renderers['billing.attempt-cancelled-cancel']!({
+                row: row({ template: 'billing.attempt-cancelled-cancel', payload: {} })
+            })
+        ).toThrow(TypeError);
+    });
+
     it('TEST:1732:11 AC:1732:9 renders the replaced attempt notice and requires subscriptionId', async () => {
         const result = await renderers['billing.attempt-replaced-cancel']!({
             row: row({ template: 'billing.attempt-replaced-cancel', payload: { subscriptionId } })
