@@ -363,11 +363,10 @@ exist. Sentry check-ins (`cron-monitor-ping.ts`, `cron-heartbeat.ts`) stay exact
    missed check-in reaches you.
 4. **Env vars per environment.** On the VPS, set both vars for the API resource — the same ping
    key in both, and the matching prefix — then redeploy:
-   - staging: `hops env-set api --target=staging HOSPEDA_HEALTHCHECKS_PING_KEY=<ping-key>` (use
-     `--secret` for the masked prompt) and
-     `hops env-set api --target=staging HOSPEDA_HEALTHCHECKS_SLUG_PREFIX=staging`, then
-     `hops redeploy api --target=staging`.
-   - prod: same commands with `--target=prod` and `HOSPEDA_HEALTHCHECKS_SLUG_PREFIX=prod`.
+   - staging: `hops --target=staging env-set api HOSPEDA_HEALTHCHECKS_PING_KEY --secret` (masked
+     prompt) and `hops --target=staging env-set api HOSPEDA_HEALTHCHECKS_SLUG_PREFIX staging`,
+     then `hops --target=staging redeploy api`.
+   - prod: the same commands with `--target=prod` and `HOSPEDA_HEALTHCHECKS_SLUG_PREFIX=prod`.
 
 The ping URL always carries `?create=0`, so a slug that does not exist is **not** created:
 Healthchecks answers `404 not found` and the helper only logs a warning. Create the six checks
