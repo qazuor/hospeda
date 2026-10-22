@@ -5,6 +5,7 @@ import {
     emailOutbox,
     eq,
     getDb,
+    idempotencyKeys,
     plans,
     planVersions,
     subscriptions,
@@ -268,5 +269,35 @@ describe('TEST:1735:10 pending signup attempt cancellation API', () => {
         });
         expect(conflict.status).toBe(409);
         expect((await conflict.json()).error.reason).toBe('COMMITMENT_TAKEN');
+    });
+
+    it('maps an incomplete signup key to 409 PREVIOUS_ATTEMPT_IN_PROGRESS', async () => {
+        const { user, monthly } = await fixture();
+        const fake = new FakePaymentProvider({ idNamespace: randomUUID(), clock });
+        const app = initApp({ clock, paymentProvider: fake });
+        const signup = await app.request(root, {
+            method: 'POST',
+            headers: headers(user.id),
+            body: JSON.stringify({
+                billingOptionId: monthly.id,
+                payerEmail: `payer-${randomUUID()}@example.test`
+            })
+        });
+        const signupBody = await signup.json();
+        expect(signup.status).toBe(201);
+        await getDb()
+            .update(idempotencyKeys)
+            .set({ result: null, completedAt: null })
+            .where(eq(idempotencyKeys.subjectId, signupBody.data.subscriptionId));
+
+        const response = await app.request(
+            `${root}/${signupBody.data.subscriptionId}/pending-attempt-cancellation`,
+            { method: 'POST', headers: headers(user.id) }
+        );
+        const body = await response.json();
+
+        expect(response.status).toBe(409);
+        expect(body.error.code).toBe('ALREADY_EXISTS');
+        expect(body.error.reason).toBe('PREVIOUS_ATTEMPT_IN_PROGRESS');
     });
 });
