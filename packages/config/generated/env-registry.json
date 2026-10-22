@@ -1292,6 +1292,42 @@
       "howToObtainEs": "El slug del proyecto que aparece en la URL de Sentry: sentry.io/organizations/<org>/projects/<este-valor>/. Lo usa la herramienta de upload de source maps."
     },
     {
+      "name": "HOSPEDA_HEALTHCHECKS_PING_KEY",
+      "description": "Healthchecks.io project ping key for free cron monitors",
+      "descriptionEs": "Ping key del proyecto de Healthchecks.io para los monitores de cron gratuitos",
+      "type": "string",
+      "required": false,
+      "secret": true,
+      "exampleValue": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "apps": [
+        "api"
+      ],
+      "category": "monitoring",
+      "helpUrl": "https://healthchecks.io/docs/http_api/",
+      "howToObtain": "Healthchecks.io → the single free-plan project → Settings → Ping Key. Optional (HOS-1742): with no key the cron ping is a no-op. Staging and prod share the same project and key, so the environment lives in HOSPEDA_HEALTHCHECKS_SLUG_PREFIX instead.",
+      "howToObtainEs": "Healthchecks.io → el único proyecto del plan gratuito → Settings → Ping Key. Opcional (HOS-1742): sin la clave el ping de cron es un no-op. Staging y prod comparten el mismo proyecto y la misma clave, así que el entorno va en HOSPEDA_HEALTHCHECKS_SLUG_PREFIX."
+    },
+    {
+      "name": "HOSPEDA_HEALTHCHECKS_SLUG_PREFIX",
+      "description": "Healthchecks.io check slug prefix (staging | prod)",
+      "descriptionEs": "Prefijo del slug de los checks de Healthchecks.io (staging | prod) — separa staging y prod dentro del único proyecto gratuito.",
+      "type": "enum",
+      "required": false,
+      "secret": false,
+      "enumValues": [
+        "staging",
+        "prod"
+      ],
+      "exampleValue": "staging",
+      "apps": [
+        "api"
+      ],
+      "category": "monitoring",
+      "helpUrl": "https://healthchecks.io/docs/http_api/",
+      "howToObtain": "Set to `staging` on the staging container and `prod` on the prod container. The check slug is `<prefix>-<job>` (for example `staging-billing-reconciliation-sweep`), which keeps the two environments apart inside the one free-plan project. Optional (HOS-1742): without a prefix the ping is a no-op, so staging can never feed the prod checks.",
+      "howToObtainEs": "Poné `staging` en el contenedor de staging y `prod` en el de prod. El slug del check es `<prefijo>-<job>` (por ejemplo `staging-billing-reconciliation-sweep`), que separa los dos entornos dentro del único proyecto gratuito. Opcional (HOS-1742): sin prefijo el ping es un no-op, así staging nunca alimenta los checks de prod."
+    },
+    {
       "name": "HOSPEDA_SENTRY_ENVIRONMENT",
       "description": "Sentry environment tag (production | staging)",
       "descriptionEs": "Tag de entorno en Sentry (production | staging) — separa eventos prod y staging cuando ambos corren con NODE_ENV=production.",
@@ -4600,6 +4636,12 @@
         "min": 1,
         "max": 20
       }
+    },
+    "HOSPEDA_HEALTHCHECKS_SLUG_PREFIX": {
+      "enumValues": [
+        "staging",
+        "prod"
+      ]
     },
     "HOSPEDA_SENTRY_ENVIRONMENT": {
       "enumValues": [

@@ -340,3 +340,36 @@ nothing here needs a redeploy.
 5. **Production**, the day after step 5 of the cutover (crons on): repeat steps 2 to 4 with the
    production environment.
 6. Sign off on HOS-1352.
+
+### Healthchecks.io (free plan, owner only)
+
+HOS-1742 replaces the paid Sentry Crons slots for these three jobs with Healthchecks.io's free
+plan. No agent runs any part of this; the API only sends the pings once the two env vars below
+exist. Sentry check-ins (`cron-monitor-ping.ts`, `cron-heartbeat.ts`) stay exactly as they are.
+
+1. **One project.** Create a single project on the Healthchecks.io free plan. The free plan allows
+   one project, so staging and prod share it. Copy its **Ping Key** (Project Settings → Ping Key);
+   this is the value of `HOSPEDA_HEALTHCHECKS_PING_KEY` in both environments.
+2. **Six checks, by slug.** Create one check per slug: `staging-<job>` and `prod-<job>` for the
+   three monitored jobs. Use the schedule from `apps/api/src/cron/schedules.manifest.ts`:
+   - `listing-coverage-reconciler` → `0 5 * * *`
+   - `listing-remote-deletion-retry` → `45 5 * * *`
+   - `billing-reconciliation-sweep` → `0 6 * * *`
+
+   Time zone for all six: `America/Argentina/Buenos_Aires`. Pick a grace period you are
+   comfortable with; suggested: **2 h** for `billing-reconciliation-sweep` (Sentry used a 120 min
+   margin) and **1 h** for the other two.
+3. **Notification.** Add your email as the project's integration so a late ping, a `/fail`, or a
+   missed check-in reaches you.
+4. **Env vars per environment.** On the VPS, set both vars for the API resource — the same ping
+   key in both, and the matching prefix — then redeploy:
+   - staging: `hops --target=staging env-set api HOSPEDA_HEALTHCHECKS_PING_KEY --secret` (masked
+     prompt) and `hops --target=staging env-set api HOSPEDA_HEALTHCHECKS_SLUG_PREFIX staging`,
+     then `hops --target=staging redeploy api`.
+   - prod: the same commands with `--target=prod` and `HOSPEDA_HEALTHCHECKS_SLUG_PREFIX=prod`.
+
+The ping URL always carries `?create=0`, so a slug that does not exist is **not** created:
+Healthchecks answers `404 not found` and the helper only logs a warning. Create the six checks
+**before** setting the env vars, or the first pings are lost (the checks stay "new" until their
+first ping). With either env var missing the helper is a deliberate no-op: no prefix, no ping, so
+staging can never feed the prod checks.
