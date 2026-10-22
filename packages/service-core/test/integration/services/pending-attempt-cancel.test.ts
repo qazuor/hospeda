@@ -414,6 +414,28 @@ describe('TEST:1735:4 AC:1735:4 only an owned, linked, completed principal pendi
             )
         ).toEqual({ subscriptionId: pending.subscriptionId, outcome: 'ABANDONED' });
     });
+
+    it('rejects a pending row that is not PRINCIPAL without reading the provider', async () => {
+        const choice = await seedChoice();
+        const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
+            clock,
+            honestAbout: [{ lie: 'M1', why: 'provide an applied authorization' }]
+        });
+        const pending = await start(fake, choice.user.id, choice.optionIds[0]!);
+        const read = vi.spyOn(fake, 'readAuthorization');
+        await getDb()
+            .update(subscriptions)
+            .set({ class: 'COMPLEMENTO' })
+            .where(eq(subscriptions.id, pending.subscriptionId));
+        await expect(
+            cancelPendingAttempt(
+                { subscriptionId: pending.subscriptionId, userId: choice.user.id },
+                ports(fake)
+            )
+        ).rejects.toMatchObject({ reason: 'COMMITMENT_TAKEN' });
+        expect(read).not.toHaveBeenCalled();
+    });
 });
 
 describe('TEST:1735:5 AC:1735:5 concurrent cancellation requests produce one S40 decision', () => {
