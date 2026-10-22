@@ -35,3 +35,14 @@ export const StartSubscriptionResponseSchema = z.strictObject({
     /** Expiration from subscription.authorization_window_ends_at. */
     authorizationWindowEndsAt: z.iso.datetime()
 });
+
+/** Path parameters for cancelling the authenticated user's pending signup attempt. */
+export const PendingAttemptCancellationParamsSchema = z.strictObject({
+    subscriptionId: z.uuid()
+});
+
+/** Successful result of cancelling a pending signup attempt. */
+export const PendingAttemptCancellationResponseSchema = z.strictObject({
+    subscriptionId: z.uuid(),
+    outcome: z.enum(['ABANDONED', 'ALREADY_ABANDONED'])
+});

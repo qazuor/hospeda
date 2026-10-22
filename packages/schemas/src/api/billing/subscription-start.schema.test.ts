@@ -1,11 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import {
+    PendingAttemptCancellationResponseSchema,
     StartSubscriptionRejectionReasonSchema,
     StartSubscriptionRequestSchema,
     StartSubscriptionResponseSchema
 } from './subscription-start.schema';
 
 describe('TEST:B3:2 subscription start request', () => {
+    it('TEST:1735:9 accepts only the two pending-attempt cancellation outcomes', () => {
+        const subscriptionId = crypto.randomUUID();
+        for (const outcome of ['ABANDONED', 'ALREADY_ABANDONED']) {
+            expect(
+                PendingAttemptCancellationResponseSchema.parse({ subscriptionId, outcome })
+            ).toEqual({
+                subscriptionId,
+                outcome
+            });
+        }
+        expect(
+            PendingAttemptCancellationResponseSchema.safeParse({
+                subscriptionId,
+                outcome: 'ACTIVE'
+            }).success
+        ).toBe(false);
+        expect(
+            PendingAttemptCancellationResponseSchema.safeParse({
+                subscriptionId,
+                outcome: 'ABANDONED',
+                extra: true
+            }).success
+        ).toBe(false);
+    });
     it('accepts only a billing option identifier and the declared payer email', () => {
         const billingOptionId = crypto.randomUUID();
         const payerEmail = 'payer@example.test';

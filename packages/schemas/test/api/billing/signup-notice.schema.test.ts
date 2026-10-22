@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { SignupNoticeResponseSchema } from '../../../src/api/billing/signup-notice.schema.js';
 
-describe('TEST:B13a:21b AC:B13a:5 the signup notice contract', () => {
+describe('TEST:B13a:21b AC:B13a:5 and AC:1735:8 the signup notice contract', () => {
     it.each([
         [
             'running trial',
             {
                 plan: { name: 'Plan test', amount: 1500000, currency: 'ARS', cycle: 'monthly' },
+                pendingAttempt: null,
                 vertical: 'accommodation',
                 touristVip: { status: 'NOT_AFFECTED' },
                 trial: {
@@ -20,6 +21,7 @@ describe('TEST:B13a:21b AC:B13a:5 the signup notice contract', () => {
             'no running trial',
             {
                 plan: { name: 'Plan test', amount: 1500000, currency: 'ARS', cycle: 'annual' },
+                pendingAttempt: null,
                 vertical: 'gastronomy',
                 touristVip: { status: 'CANCELLED_ON_RETURN' },
                 trial: { status: 'NOT_RUNNING' }

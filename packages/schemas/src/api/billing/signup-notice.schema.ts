@@ -15,6 +15,21 @@ export const SignupNoticeResponseSchema = z.object({
         currency: z.literal('ARS'),
         cycle: BillingCycleSchema
     }),
+    /** A live pending attempt on another billing option in the selected vertical. */
+    pendingAttempt: z.union([
+        z.null(),
+        z.object({
+            subscriptionId: z.uuid(),
+            plan: z.object({
+                name: z.string().min(1),
+                amount: z.number().int().nonnegative(),
+                currency: z.literal('ARS'),
+                cycle: BillingCycleSchema
+            }),
+            checkoutUrl: z.url().nullable(),
+            authorizationWindowEndsAt: z.iso.datetime()
+        })
+    ]),
     /** Vertical selected by the billing option. */
     vertical: VerticalEnumSchema,
     /** Tourist VIP status after a suspended plan holder returns to service. */
