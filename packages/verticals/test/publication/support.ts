@@ -27,6 +27,7 @@ export function makeHarness(
         readonly trialAvailable?: boolean;
         readonly setReturnsFalse?: boolean;
         readonly listings?: readonly PublicationListing[];
+        readonly incompleteListingIds?: readonly string[];
         readonly sources?: readonly CoverageSource[];
         readonly declaredEvent?: typeof event | null;
         readonly trialPlanDays?: number | null;
@@ -155,6 +156,14 @@ export function makeHarness(
             expect(locked).toBe(true);
             calls.push('read');
             return { ...listing, publicationStatus: statuses.get(listingId) ?? status };
+        },
+        async readIncompleteListingIds({ listingIds }) {
+            const incomplete = new Set(args.incompleteListingIds ?? []);
+            return new Map(
+                listingIds.flatMap((id) =>
+                    incomplete.has(id) ? [[id, ['featured image']] as const] : []
+                )
+            );
         },
         async readRetentionListing() {
             expect(locked).toBe(true);

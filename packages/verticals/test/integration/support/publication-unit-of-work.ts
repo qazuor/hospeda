@@ -168,6 +168,9 @@ export function createPublicationTestAdapter(args: {
                             }),
                         readArchiveOrigins: (input) =>
                             listingRetentionModel.readArchiveOrigins({ ...input, tx }),
+                        async readIncompleteListingIds() {
+                            return new Map();
+                        },
                         readModerationOrigin: (input) =>
                             listingModerationModel.readModerationOrigin({ ...input, tx }),
                         readOpenFixRequest: (input) =>

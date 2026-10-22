@@ -63,6 +63,11 @@ export type RetentionBilling = Pick<BillingForVerticals, 'coverage' | 'retention
 
 /** All publication reads and writes happen in a locked transaction. */
 export interface PublicationTransaction extends TrialStartTransaction {
+    /** HOS-1744: composition evaluates candidates with the same completeness predicate as PB1. */
+    readIncompleteListingIds(args: {
+        readonly vertical: PublicationVertical;
+        readonly listingIds: readonly string[];
+    }): Promise<ReadonlyMap<string, readonly string[]>>;
     /** Deletes listing-owned content and records remote rows for post-commit deletion. */
     purgeListingContent(args: {
         readonly vertical: PublicationVertical;

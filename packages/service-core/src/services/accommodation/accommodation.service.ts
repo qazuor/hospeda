@@ -1621,6 +1621,25 @@ export class AccommodationService extends BaseCrudService<
         readonly accommodation: Accommodation;
         readonly ctx?: ServiceContext;
     }): Promise<void> {
+        const completeness = await this.readPublishCompleteness(args);
+        if (completeness.missing.length > 0) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                `Cannot publish accommodation: missing ${completeness.missing.join(', ')}`,
+                undefined,
+                buildPublishRequirementsReason({ missing: completeness.missing })
+            );
+        }
+    }
+
+    /** Reads the existing accommodation publish requirements without changing their predicate. */
+    public async readPublishCompleteness(args: {
+        readonly accommodation: Accommodation;
+        readonly ctx?: ServiceContext;
+    }): Promise<{
+        readonly complete: boolean;
+        readonly missing: ReturnType<typeof resolveMissingPublishRequirements>;
+    }> {
         const { accommodation, ctx } = args;
         const mediaRowsById = await this._accommodationMediaModel.findByAccommodations({
             accommodationIds: [accommodation.id],
@@ -1641,14 +1660,7 @@ export class AccommodationService extends BaseCrudService<
                 hasMainImage: Boolean(composedMedia.featuredImage?.url)
             }
         });
-        if (missingRequirements.length > 0) {
-            throw new ServiceError(
-                ServiceErrorCode.VALIDATION_ERROR,
-                `Cannot publish accommodation: missing ${missingRequirements.join(', ')}`,
-                undefined,
-                buildPublishRequirementsReason({ missing: missingRequirements })
-            );
-        }
+        return { complete: missingRequirements.length === 0, missing: missingRequirements };
     }
 
     /**

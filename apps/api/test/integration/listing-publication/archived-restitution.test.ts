@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
     AccommodationModel,
+    accommodationMedia,
     accommodations,
     destinations,
     domainEventModel,
@@ -158,10 +159,22 @@ async function createArchivedPair(): Promise<{ ownerId: string; pb4: string; pb5
                 ownerId: owner.id,
                 destinationId: destination.id,
                 type: 'CABIN',
-                publicationStatus: status
+                publicationStatus: status,
+                ...(status === PublicationStatusEnum.PUBLISHED
+                    ? { extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 } }
+                    : {})
             } as Partial<Accommodation>,
             db
         );
+        if (status === PublicationStatusEnum.PUBLISHED)
+            await db.insert(accommodationMedia).values({
+                accommodationId: row.id,
+                url: 'https://example.test/archived-featured.jpg',
+                moderationState: 'APPROVED',
+                state: 'visible',
+                isFeatured: true,
+                sortOrder: 0
+            });
         await db
             .update(accommodations)
             .set({ inactiveSince: new Date(now.getTime() - 120 * 86_400_000) })
