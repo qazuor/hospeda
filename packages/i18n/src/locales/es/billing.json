@@ -215,6 +215,14 @@
             "body": "Por el momento pausamos la publicación de fichas nuevas. Tu ficha queda guardada como borrador y vas a poder publicarla cuando se reanuden."
         },
         "signup": {
+            "pendingAttempt": {
+                "title": "Tenés un intento de alta pendiente",
+                "body": "Empezaste el alta de {{plan}} ({{amount}}, {{cycle}}) y todavía no la autorizaste en Mercado Pago. Para elegir esta otra opción, primero cancelá ese intento. Vence el {{date}}.",
+                "resume": "Retomar ese intento",
+                "cancel": "Cancelar ese intento",
+                "cancelling": "Cancelando…",
+                "cancelled": "Cancelamos tu intento anterior. Ya podés elegir esta opción."
+            },
             "title": "Confirmá tu suscripción",
             "intro": "Vas a autorizar el pago en Mercado Pago.",
             "planSummary": "{{plan}} · {{amount}} {{cycle}}",

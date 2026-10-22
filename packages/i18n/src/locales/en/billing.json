@@ -215,6 +215,14 @@
             "body": "We've temporarily paused publishing new listings. Your listing is saved as a draft and you'll be able to publish it once we resume."
         },
         "signup": {
+            "pendingAttempt": {
+                "title": "You have a pending signup attempt",
+                "body": "You started signing up for {{plan}} ({{amount}}, {{cycle}}) and have not authorized it with Mercado Pago yet. To choose this other option, cancel that attempt first. It expires on {{date}}.",
+                "resume": "Resume that attempt",
+                "cancel": "Cancel that attempt",
+                "cancelling": "Canceling…",
+                "cancelled": "We canceled your previous attempt. You can choose this option now."
+            },
             "title": "Confirm your subscription",
             "intro": "You will authorize the payment with Mercado Pago.",
             "planSummary": "{{plan}} · {{amount}} {{cycle}}",
