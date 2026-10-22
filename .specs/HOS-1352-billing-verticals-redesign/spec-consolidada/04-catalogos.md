@@ -4418,6 +4418,18 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 
 Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1768, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:139
 
+<a id="trans-b-p8"></a>
+
+### `TRANS:B:P8` · `P8` — `PENDING` → `FAILED`
+
+- **Pieza dueña** (su AC vive en el archivo de la pieza): [B5](10-corte/B5.md#pieza-b5)
+- **Fuente de la asignación**: HOS-1734 (decisión del owner, 2026-10-21)
+- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
+- **desde** (estado origen): `PENDING`
+- **evento** (disparador): **el proveedor reporta el cobro rechazado y el cobro no tiene ventana de reintentos** —su registro no trae `expire_date`, que es el del alta (`RC-7`)—, leído por id al registrar el hecho
+- **hacia** (estado destino): `FAILED`
+- **nota** (guardas y efectos): **convive con `P2`**: un cobro rechazado **con** ventana sigue en `PENDING` mientras el proveedor lo reintenta en el mismo registro y con el mismo id del hecho (`RP8`, `GR-1`), y si un reintento se aprueba corre `P1` sobre la misma fila; ese lo cierra `P2` al vencer la ventana. Corre **después** de `S4`/`S16`, que releen el cobro y no el estado del hecho; un cobro `pending` (`in_process` incluido) no lo dispara; repetido, no escribe
+
 <a id="trans-b-p3"></a>
 
 ### `TRANS:B:P3` · `P3` — `SUCCEEDED` → `REFUNDED`
