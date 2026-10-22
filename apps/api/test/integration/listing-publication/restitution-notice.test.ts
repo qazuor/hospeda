@@ -53,6 +53,47 @@ beforeEach(async () => {
 afterAll(async () => testDb.teardown());
 
 describe('TEST:V6:5 restitution notice outbox', () => {
+    it('HOS-1744 leaves an incomplete billing-unpublished listing out when coverage activates', async () => {
+        const { ownerId, listingIds } = await createFixture();
+        const db = getDb();
+        const completeId = listingIds[3];
+        const incompleteId = listingIds[4];
+        if (!completeId || !incompleteId) throw new Error('Fixture candidates missing');
+        await db
+            .update(accommodations)
+            .set({ publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING })
+            .where(and(eq(accommodations.id, completeId), eq(accommodations.ownerId, ownerId)));
+        await db
+            .update(accommodations)
+            .set({
+                publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+                extraInfo: null
+            })
+            .where(and(eq(accommodations.id, incompleteId), eq(accommodations.ownerId, ownerId)));
+
+        const stop = subscribeListingCoverageRecalculation();
+        try {
+            accessState.limit = 4;
+            accessState.listener?.({ userId: ownerId, vertical: VerticalEnum.ACCOMMODATION });
+            await waitForPublished(ownerId, 4);
+            const statuses = await db
+                .select({
+                    id: accommodations.id,
+                    publicationStatus: accommodations.publicationStatus
+                })
+                .from(accommodations)
+                .where(and(eq(accommodations.ownerId, ownerId)));
+            expect(statuses.find((row) => row.id === completeId)?.publicationStatus).toBe(
+                PublicationStatusEnum.PUBLISHED
+            );
+            expect(statuses.find((row) => row.id === incompleteId)?.publicationStatus).toBe(
+                PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+            );
+        } finally {
+            stop();
+        }
+    });
+
     it('queues one pending notice with returned ids and deduplicates a no-change pass', async () => {
         const { ownerId, listingIds } = await createFixture();
         const stop = subscribeListingCoverageRecalculation();
