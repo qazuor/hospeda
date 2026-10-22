@@ -120,13 +120,14 @@ describe('HOS-1731 pending first charge rejection', () => {
             outcome: 'DECLINED',
             decline: { outcome: 'DECLINED', cancelCall: 'NOT_NEEDED' }
         });
-        // TEST:1731:5 (D3): S16 leaves the rejected payment to P2.
+        // TEST:1731:5 (D3): P8 replaces this pending-payment expectation (AC:1734:1).
         if (result.outcome !== 'DECLINED') throw new Error('Expected a declined charge result');
         const [payment] = await getServiceTestDb()
             .select({ status: payments.status })
             .from(payments)
             .where(eq(payments.id, result.paymentId));
-        expect(payment?.status).toBe('PENDING');
+        // AC:1734:1 — P8 fails a rejected signup charge without a retry window.
+        expect(payment?.status).toBe('FAILED');
         const [row] = await getServiceTestDb()
             .select()
             .from(subscriptions)

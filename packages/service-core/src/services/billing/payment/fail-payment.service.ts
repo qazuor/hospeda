@@ -8,7 +8,8 @@ export interface FailPaymentResult {
 }
 
 /**
- * P2: fails a pending payment after its charge-record window expired without collection.
+ * P2 fails a pending payment after its charge-record window expires; P8 fails a rejected
+ * charge without a retry window (HOS-1734). Both share the pending-to-failed write.
  * The caller must have read that fact by payment id. The B7.1 expiry surface is not wired here.
  */
 export async function failPayment(
