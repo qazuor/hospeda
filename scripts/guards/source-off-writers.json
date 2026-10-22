@@ -41,6 +41,14 @@
     },
     {
         "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "abandonReplacedPendingAuthorization",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S39 moves PENDING_AUTHORIZATION to ABANDONED; neither emits a coverage source (03-contrato-de-cobertura.md:466-467; I-6)."
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
         "symbol": "abandonPendingAuthorization",
         "table": "courtesyGrants",
         "effect": "turns-off",
@@ -272,5 +280,13 @@
         "effect": "neutral",
         "via": null,
         "reason": "A COMPLEMENTO emits no subscription source and its addon instance does not change; S12 orphanhood on the principal turns it off."
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "mintKeyAfterRejectedCreation",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-1732: after the provider rejected the creation, the retry updates the declared payer email on the same PENDING_AUTHORIZATION row (no provider link yet); the row stays uncovered, so coverage does not change."
     }
 ]

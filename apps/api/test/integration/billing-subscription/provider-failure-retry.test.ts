@@ -84,7 +84,8 @@ describe('TEST:1723:4 provider failure retry route', () => {
         const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
         const authorize = vi.spyOn(fake, 'authorize').mockRejectedValueOnce(
             new PaymentProviderError({
-                code: 'REJECTED',
+                // HOS-1732: a REJECTED creation is recreated on retry; UNAVAILABLE still waits for the sweep.
+                code: 'UNAVAILABLE',
                 capability: 'authorize',
                 message: 'Rejected by fake provider'
             })

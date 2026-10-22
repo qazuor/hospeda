@@ -427,7 +427,7 @@ describe('TEST:B3:6 race and reuse', () => {
         expect(await counts(choice.user.id)).toEqual({ subscriptions: 1, keys: 1, links: 0 });
     });
 
-    it('refuses a live row whose creation did not apply (applied false)', async () => {
+    it('propagates the failed re-read of a creation that did not apply (AC:1732:3)', async () => {
         const choice = await seedChoice();
         const fake = new FakePaymentProvider({
             idNamespace: crypto.randomUUID(),
@@ -458,7 +458,7 @@ describe('TEST:B3:6 race and reuse', () => {
                 { userId: choice.user.id, billingOptionId: choice.billingOptionId, returnUrl },
                 ports(provider)
             )
-        ).rejects.toMatchObject({ reason: 'COMMITMENT_TAKEN' });
+        ).rejects.toMatchObject({ name: 'PaymentProviderError', code: 'NOT_FOUND' });
         expect(authorize).not.toHaveBeenCalled();
         expect(await counts(choice.user.id)).toEqual({ subscriptions: 1, keys: 1, links: 1 });
     });

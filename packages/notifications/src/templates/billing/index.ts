@@ -4,6 +4,7 @@
 
 export * from './addon-cancelled.js';
 export * from './arrears-suspension.js';
+export * from './attempt-replaced-cancel.js';
 export * from './closed-subscription-authorization-cancel.js';
 export * from './direct-cancellation.js';
 export * from './duplicate-charge-detected.js';

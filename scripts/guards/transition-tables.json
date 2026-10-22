@@ -449,7 +449,8 @@
                 "subscription.class",
                 "subscription.payment_method",
                 "subscription.authorization_window_ends_at",
-                "subscription.authorization_window_deadline_version"
+                "subscription.authorization_window_deadline_version",
+                "subscription.declared_payer_email"
             ]
         },
         {
@@ -1010,6 +1011,22 @@
                 "subscription.plan_version_id",
                 "subscription.billing_option_id"
             ]
+        },
+        {
+            "id": "TRANS:B:S39",
+            "machine": "subscription",
+            "from": ["PENDING_AUTHORIZATION"],
+            "events": ["signup_attempt_replaced"],
+            "to": ["ABANDONED"],
+            "guard": {},
+            "reads": [
+                "subscription.status",
+                "subscription.billing_option_id",
+                "subscription.authorization_window_ends_at",
+                "subscription.declared_payer_email"
+            ],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["subscription.status", "domain_event.changes"]
         },
         {
             "id": "TRANS:B:P1",

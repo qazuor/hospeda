@@ -102,7 +102,8 @@ describe('HOS-1448 corrida 2b - exhaustive billing transition annotations', () =
         // 2026-10-12, HOS-1560: 146 reads (S7 reads subscription.succeeds_id and succeeded_by_id, H9).
         // 2026-10-13, HOS-1561: 147 reads (S6 reads succession_retained_payment.released_at, H15).
         // 2026-10-19, HOS-1667: 167 reads (S1 declares the six columns it fixes at creation; 20 retired reads return).
-        expect(corpus.transitions.reduce((total, row) => total + row.reads.length, 0)).toBe(167);
+        // 2026-10-21, HOS-1732: 171 reads (S39 adds four decision reads).
+        expect(corpus.transitions.reduce((total, row) => total + row.reads.length, 0)).toBe(171);
     });
 });
 

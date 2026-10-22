@@ -35,7 +35,7 @@ function isCommercialKey(input: { key: string; keyClasses: ReadonlyMap<string, s
  *
  * Cause (a) covers only `pre_trial` and `floor` — the two non-sellable plans
  * that are not the trial plan (the trial plan's entitlements are derived, never
- * stored), per `G-R3` (04-catalogos.md:7774-7780, V2.md:507-520).
+ * stored), per `G-R3` (04-catalogos.md:7787-7793, V2.md:507-520).
  */
 export function validatePublication(input: { context: PublicationContext }): void {
     const {

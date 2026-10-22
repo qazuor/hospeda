@@ -15,6 +15,7 @@ import {
     assertFreshForAct,
     confirmAuthorizationCreation,
     type PaymentProvider,
+    PaymentProviderError,
     sanitizeApprovalUrl
 } from '@repo/payments';
 import { BILLING_CYCLE_MONTHS, type BillingCycle, ServiceErrorCode } from '@repo/schemas';
@@ -25,7 +26,13 @@ import { readAnchoredBillingOption } from '../read-anchored-billing-option';
 import type { ArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
 import type { BeforeCancelNoticeKind } from './before-cancel-notice-kinds';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
-import { appliedAuthorizationResult, resolveLiveCommitmentReuse } from './resolve-live-commitment';
+import { replacePendingAttempt } from './replace-pending-attempt.service';
+import {
+    appliedAuthorizationResult,
+    previousAttemptInProgress,
+    rejectedCreationResult,
+    resolveLiveCommitmentReuse
+} from './resolve-live-commitment';
 
 const logger = createLogger('subscription-start');
 
@@ -174,7 +181,25 @@ export async function authorizePendingSubscription(input: {
     };
     const act = { kind: 'decision' as const, startedAt: input.clock.now() };
     actStartInstant({ act });
-    const created = await input.provider.authorize(sent);
+    let created: Awaited<ReturnType<PaymentProvider['authorize']>>;
+    try {
+        created = await input.provider.authorize(sent);
+    } catch (error) {
+        if (
+            error instanceof PaymentProviderError &&
+            error.code === 'REJECTED' &&
+            error.capability === 'authorize' &&
+            !input.paymentToken
+        ) {
+            await subscriptionModel.recordCreationRejected({
+                idempotencyKey: pending.idempotencyKey,
+                subscriptionId: pending.subscription.id,
+                result: rejectedCreationResult(),
+                completedAt: input.clock.now()
+            });
+        }
+        throw error;
+    }
     const confirmation = await confirmAuthorizationCreation({
         provider: input.provider,
         authorizationId: created.authorizationId,
@@ -293,12 +318,34 @@ export async function startSubscription(
         userId: input.userId,
         vertical: choice.vertical
     });
-    if (existing)
-        return resolveLiveCommitmentReuse({
+    if (existing) {
+        const resolution = await resolveLiveCommitmentReuse({
             commitment: existing,
             billingOptionId: choice.id,
-            clock: ports.clock
+            clock: ports.clock,
+            payerEmail: input.payerEmail
         });
+        if (resolution.kind === 'REUSE') return resolution.result;
+        if (resolution.kind === 'RECREATE') {
+            const minted = await subscriptionModel.mintKeyAfterRejectedCreation({
+                subscriptionId: existing.subscription.id,
+                rejectedKey: resolution.rejectedKey,
+                declaredPayerEmail: input.payerEmail,
+                createdAt: ports.clock.now()
+            });
+            if (!minted) throw previousAttemptInProgress();
+            return authorizePendingSubscription({
+                pending: { subscription: existing.subscription, idempotencyKey: minted.key },
+                provider: ports.provider,
+                clock: ports.clock,
+                reason: choice.planName,
+                returnUrl: input.returnUrl,
+                payerEmail: input.payerEmail,
+                paymentToken: input.paymentToken
+            });
+        }
+        await replacePendingAttempt({ commitment: existing, userId: input.userId }, ports);
+    }
 
     const deadlines = await getCurrentBillingDeadlines();
     const authorizationWindowEndsAt = new Date(
@@ -327,11 +374,15 @@ export async function startSubscription(
             vertical: choice.vertical
         });
         if (!raced) throw error;
-        return resolveLiveCommitmentReuse({
+        const resolution = await resolveLiveCommitmentReuse({
             commitment: raced,
             billingOptionId: choice.id,
-            clock: ports.clock
+            clock: ports.clock,
+            payerEmail: input.payerEmail
         });
+        if (resolution.kind === 'REPLACE') throw previousAttemptInProgress();
+        if (resolution.kind === 'RECREATE') throw previousAttemptInProgress();
+        return resolution.result;
     }
     return authorizePendingSubscription({
         pending,
