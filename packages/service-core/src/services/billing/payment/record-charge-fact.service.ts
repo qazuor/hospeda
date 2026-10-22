@@ -29,7 +29,10 @@ import { reactivateSuspendedOnCreditedPayment } from '../subscription/reactivate
 import type { ScheduledChangeApplier } from '../subscription/subscription-billing-ports';
 import type { CreditPaymentResult } from './credit-payment.service';
 import { creditPayment } from './credit-payment.service';
+import type { FailPaymentResult } from './fail-payment.service';
+import { failPayment } from './fail-payment.service';
 import type { CoverageNotices, PromoChargePolicy, PromoExhaustion } from './payment-ports';
+import { isRejectedWithoutRetryWindow } from './rejected-charge-terminal';
 
 const logger = createLogger('record-charge-fact');
 const PAYMENT_FACT_CONSTRAINT = 'uq_payment_provider_fact';
@@ -91,8 +94,16 @@ export type RecordChargeFactResult =
           readonly outcome: 'DECLINED';
           readonly paymentId: string;
           readonly decline: DeclineFirstChargeResult;
+          /** P8 (HOS-1734): present only when the rejected charge has no provider retry window. */
+          readonly terminalRejection?: FailPaymentResult;
       }
-    | { readonly outcome: 'GRACE'; readonly paymentId: string; readonly grace: EnterGraceResult }
+    | {
+          readonly outcome: 'GRACE';
+          readonly paymentId: string;
+          readonly grace: EnterGraceResult;
+          /** P8 (HOS-1734): present only when the rejected charge has no provider retry window. */
+          readonly terminalRejection?: FailPaymentResult;
+      }
     | {
           /** The charge reads charged back on a credited payment: the interface ran (AC:B11:27). */
           readonly outcome: 'CHARGEBACK_DETECTED';
@@ -285,7 +296,7 @@ export async function recordChargeFact(
         };
     }
     if (charge.status === 'pending') return { outcome: 'RECORDED_PENDING', paymentId };
-    logger.info({ paymentId }, 'Provider charge was rejected; payment fact remains pending');
+    logger.info({ paymentId }, 'Provider charge was rejected');
     const grace = await enterGraceOnRejectedCharge(
         { chargeId: input.chargeId },
         {
@@ -295,12 +306,18 @@ export async function recordChargeFact(
             planPolicy: ports.planPolicy
         }
     );
-    if (grace.outcome !== 'NOT_APPLICABLE') return { outcome: 'GRACE', paymentId, grace };
-    if (
+    let result: Extract<RecordChargeFactResult, { readonly outcome: 'GRACE' | 'DECLINED' }>;
+    if (grace.outcome !== 'NOT_APPLICABLE') result = { outcome: 'GRACE', paymentId, grace };
+    else if (
         grace.reason !== 'NO_CREDITED_PAYMENT' &&
         !(grace.reason === 'NOT_ACTIVE' && linked.subscription.status === 'PENDING_AUTHORIZATION')
     )
-        return { outcome: 'GRACE', paymentId, grace };
-    const decline = await declineFirstCharge({ chargeId: input.chargeId }, ports);
-    return { outcome: 'DECLINED', paymentId, decline };
+        result = { outcome: 'GRACE', paymentId, grace };
+    else {
+        const decline = await declineFirstCharge({ chargeId: input.chargeId }, ports);
+        result = { outcome: 'DECLINED', paymentId, decline };
+    }
+    if (!isRejectedWithoutRetryWindow({ charge })) return result;
+    const terminalRejection = await failPayment({ paymentId }, { clock: ports.clock });
+    return { ...result, terminalRejection };
 }

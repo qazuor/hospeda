@@ -229,7 +229,7 @@ describe('TEST:B5:4 payment window expiration', () => {
     );
 
     it.skipIf(!isServiceTestDbAvailable())(
-        'FAILED blocks later P1 and a rejected fact remains pending until an explicit P2 call',
+        'FAILED blocks later P1 and P8 fails a rejected charge without a retry window',
         async () => {
             const fixture = await paymentFixture();
             const payment = await pendingPayment(fixture);
@@ -271,7 +271,8 @@ describe('TEST:B5:4 payment window expiration', () => {
                 .select()
                 .from(payments)
                 .where(eq(payments.providerFactId, chargeId));
-            expect(rejectedPayment).toMatchObject({ status: 'PENDING', version: 1 });
+            // AC:1734:1 — the rejected signup charge is failed by P8.
+            expect(rejectedPayment).toMatchObject({ status: 'FAILED', version: 2 });
         }
     );
 });

@@ -173,7 +173,8 @@ describe('TEST:1731:8 pending first charge reconciliation', () => {
                 .from(payments)
                 .where(eq(payments.providerFactId, own.chargeId));
             expect(row?.status).toBe('CHARGE_DECLINED');
-            expect(fact?.status).toBe('PENDING');
+            // AC:1734:1 — P8 fails the fact before reconciliation closes the cancelled signup.
+            expect(fact?.status).toBe('FAILED');
             expect(await ownMails(own.userId)).toHaveLength(1);
         }
     );

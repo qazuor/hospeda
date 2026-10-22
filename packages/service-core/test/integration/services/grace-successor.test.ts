@@ -102,13 +102,15 @@ async function expectGraceStarted(fixture: Fixture, graceDays: number) {
             subscriptionId: fixture.successorId,
             graceStartedAt: readAt,
             graceEndsAt
-        }
+        },
+        terminalRejection: { outcome: 'FAILED' }
     });
     const successor = await row(fixture.successorId);
     expect(successor.status).toBe('GRACE_PERIOD');
     expect(successor.graceStartedAt).toEqual(readAt);
     expect(successor.graceEndsAt).toEqual(graceEndsAt);
-    expect(await paymentStatus(chargeId)).toBe('PENDING');
+    // AC:1734:1 — the successor's first charge has no retry window.
+    expect(await paymentStatus(chargeId)).toBe('FAILED');
     // One grace notice and nothing from S16 (no signup-declined notice).
     const sent = await templates(fixture.user.id);
     expect(sent.filter((template) => template === 'billing.grace-started')).toHaveLength(1);
@@ -195,7 +197,8 @@ describe('TEST:B7:2 — the successor of a paying predecessor enters grace (AC:B
             expect(result).toEqual({
                 outcome: 'GRACE',
                 paymentId: expect.any(String),
-                grace: { outcome: 'NOT_APPLICABLE', reason: 'NOT_CARD_PRINCIPAL' }
+                grace: { outcome: 'NOT_APPLICABLE', reason: 'NOT_CARD_PRINCIPAL' },
+                terminalRejection: { outcome: 'FAILED' }
             });
             const successor = await row(manualSuccessor.successorId);
             expect(successor.status).toBe('ACTIVE');

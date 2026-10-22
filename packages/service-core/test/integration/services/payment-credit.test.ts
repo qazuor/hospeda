@@ -325,7 +325,7 @@ describe('TEST:B5:1 P1 payment credit', () => {
     );
 
     it.skipIf(!isServiceTestDbAvailable())(
-        'TEST:B5:1 keeps rejected charge pending and delegates S16 without P1 effects',
+        'TEST:B5:1 fails a rejected first charge by P8 and delegates S16 without P1 effects',
         async () => {
             const fixture = await paymentFixture();
             const { chargeId } = await fixture.provider.declineCharge({
@@ -346,7 +346,8 @@ describe('TEST:B5:1 P1 payment credit', () => {
                 .select()
                 .from(payments)
                 .where(eq(payments.providerFactId, chargeId));
-            expect(payment).toMatchObject({ status: 'PENDING', version: 1 });
+            // AC:1734:1 — P8 fails the rejected first charge after S16.
+            expect(payment).toMatchObject({ status: 'FAILED', version: 2 });
             const [subscription] = await getServiceTestDb()
                 .select()
                 .from(subscriptions)

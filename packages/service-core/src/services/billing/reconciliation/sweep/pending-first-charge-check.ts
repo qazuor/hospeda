@@ -1,4 +1,4 @@
-import { and, asc, eq, getDb, payments } from '@repo/db';
+import { and, asc, eq, getDb, inArray, payments } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { assertFreshForAct } from '@repo/payments';
 import {
@@ -37,7 +37,8 @@ export function createPendingFirstChargeDeclineCheck(
             .where(
                 and(
                     eq(payments.subscriptionId, input.subscription.id),
-                    eq(payments.status, 'PENDING')
+                    // P8 can fail the fact before the provider's cancellation is read.
+                    inArray(payments.status, ['PENDING', 'FAILED'])
                 )
             )
             .orderBy(asc(payments.factAt));

@@ -152,7 +152,8 @@ describe('TEST:1731:7 signed first-charge decline webhook', () => {
             .where(eq(emailOutbox.recipientUserId, first.userId));
         expect(row?.status).toBe('CHARGE_DECLINED');
         expect(link?.cancelledSeenAt).toEqual(clock.now());
-        expect(payment?.status).toBe('PENDING');
+        // TEST:1734:11 / AC:1734:1 — the signed notice records P8's failure.
+        expect(payment?.status).toBe('FAILED');
         expect(
             mails.filter(
                 (mail) =>
