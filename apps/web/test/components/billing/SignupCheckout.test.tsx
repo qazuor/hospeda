@@ -13,7 +13,8 @@ const props = {
     plansHref: '/es/planes/turistas/',
     trialNotice: null,
     touristVipNotice: null,
-    planSummary: null
+    planSummary: null,
+    pendingAttempt: null
 };
 const success = {
     ok: true,

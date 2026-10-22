@@ -38,6 +38,8 @@ describe('signup checkout page — B3 UI (B3.md:1045-1053)', () => {
         expect(indexSrc).toContain('<SignupCheckout');
         expect(indexSrc).toContain('trialNotice={trialNotice}');
         expect(indexSrc).toContain('touristVipNotice={touristVipNotice}');
+        expect(indexSrc).toContain('pendingAttempt={pendingAttempt}');
+        expect(indexSrc).toContain('resolveSignupPendingAttempt({ result })');
         expect(indexSrc).toContain('accountEmail={user.email}');
         expect(indexSrc).toContain('billingSubscriptionApi.signupNotice');
         expect(indexSrc).toContain('noindex={true}');

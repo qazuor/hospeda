@@ -21,6 +21,8 @@ import {
     resolveSignupTouristVipNotice,
     resolveSignupPlanSummary,
     type SignupPlanSummary,
+    resolveSignupPendingAttempt,
+    type SignupPendingAttempt,
     type SignupTouristVipNotice,
     type SignupTrialNotice
 } from '@/lib/billing/signup-checkout';
@@ -61,6 +63,7 @@ const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ roles:
 let trialNotice: SignupTrialNotice | null;
 let touristVipNotice: SignupTouristVipNotice | null;
 let planSummary: SignupPlanSummary | null;
+let pendingAttempt: SignupPendingAttempt | null;
 try {
     const result = await billingSubscriptionApi.signupNotice({
         billingOptionId: optionId,
@@ -69,10 +72,12 @@ try {
     trialNotice = resolveSignupTrialNotice({ result });
     touristVipNotice = resolveSignupTouristVipNotice({ result });
     planSummary = resolveSignupPlanSummary({ result });
+    pendingAttempt = resolveSignupPendingAttempt({ result });
 } catch {
     trialNotice = { kind: 'UNKNOWN' } as const;
     touristVipNotice = { kind: 'UNKNOWN' } as const;
     planSummary = null;
+    pendingAttempt = null;
 }
 ---
 
@@ -87,5 +92,6 @@ try {
         trialNotice={trialNotice}
         touristVipNotice={touristVipNotice}
         planSummary={planSummary}
+        pendingAttempt={pendingAttempt}
     />
 </BaseLayout>

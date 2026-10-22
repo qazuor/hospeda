@@ -42,27 +42,21 @@ export function PlanCardCta({
             className={styles.root}
         >
             {view.kind === 'checkout' &&
-                view.links.map(({ cycle, href }) => (
+                view.links.map(({ cycle, href, resumes }) => (
                     <a
                         key={cycle}
                         href={href}
                         className={styles.link}
                     >
                         {t(
-                            cycle === 'monthly'
-                                ? 'publish.subscribe.checkoutMonthly'
-                                : 'publish.subscribe.checkoutAnnual'
+                            resumes
+                                ? 'publish.subscribe.continuePayment'
+                                : cycle === 'monthly'
+                                  ? 'publish.subscribe.checkoutMonthly'
+                                  : 'publish.subscribe.checkoutAnnual'
                         )}
                     </a>
                 ))}
-            {view.kind === 'continue' && (
-                <a
-                    href={view.href}
-                    className={styles.link}
-                >
-                    {t('publish.subscribe.continuePayment')}
-                </a>
-            )}
             {view.kind === 'current' && (
                 <>
                     <span>

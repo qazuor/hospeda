@@ -4,9 +4,11 @@ import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import {
     formatSignupWindowEnd,
     resolveDeclaredPayerEmail,
+    resolveSignupPendingAttempt,
     resolveSignupRejection,
     SIGNUP_CYCLE_LABEL_KEY,
     SIGNUP_VERTICAL_LABEL_KEY,
+    type SignupPendingAttempt,
     type SignupPlanSummary,
     type SignupTouristVipNotice,
     type SignupTrialNotice
@@ -14,6 +16,7 @@ import {
 import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import { PendingAttemptPanel } from './PendingAttemptPanel';
 import styles from './SignupCheckout.module.css';
 
 /** Props for the minimum protected signup checkout island. */
@@ -25,6 +28,7 @@ export interface SignupCheckoutProps {
     readonly trialNotice: SignupTrialNotice | null;
     readonly touristVipNotice: SignupTouristVipNotice | null;
     readonly planSummary: SignupPlanSummary | null;
+    readonly pendingAttempt: SignupPendingAttempt | null;
 }
 
 const TOURIST_VIP_NOTICE_KEY: Record<SignupTouristVipNotice['kind'], string> = {
@@ -45,9 +49,13 @@ export function SignupCheckout({
     plansHref,
     trialNotice,
     touristVipNotice,
-    planSummary
+    planSummary,
+    pendingAttempt
 }: SignupCheckoutProps) {
     const [view, setView] = useState<CheckoutView>({ state: 'idle' });
+    const [activePendingAttempt, setActivePendingAttempt] = useState(pendingAttempt);
+    const [pendingAttemptCancelled, setPendingAttemptCancelled] = useState(false);
+    const [cancelling, setCancelling] = useState(false);
     const [payerEmail, setPayerEmail] = useState(accountEmail);
     const [payerEmailError, setPayerEmailError] = useState(false);
     const payerEmailInputId = useId();
@@ -69,6 +77,21 @@ export function SignupCheckout({
                 payerEmail: resolvedEmail.email
             });
             if (!result.ok) {
+                if (result.error.status === 409 && result.error.reason === 'COMMITMENT_TAKEN') {
+                    try {
+                        const notice = await billingSubscriptionApi.signupNotice({
+                            billingOptionId
+                        });
+                        const found = resolveSignupPendingAttempt({ result: notice });
+                        if (found) {
+                            setActivePendingAttempt(found);
+                            setView({ state: 'idle' });
+                            return;
+                        }
+                    } catch {
+                        // Preserve the existing rejection when the refresh cannot be read.
+                    }
+                }
                 setView({
                     state: 'rejected',
                     rejection: resolveSignupRejection({ error: result.error })
@@ -78,6 +101,30 @@ export function SignupCheckout({
             setView({ state: 'pending', data: result.data });
         } catch {
             setView({ state: 'rejected', rejection: resolveSignupRejection({}) });
+        }
+    };
+
+    const cancelPendingAttempt = async () => {
+        if (!activePendingAttempt || cancelling) return;
+        setCancelling(true);
+        try {
+            const result = await billingSubscriptionApi.cancelPendingAttempt({
+                subscriptionId: activePendingAttempt.subscriptionId
+            });
+            if (result.ok) {
+                setActivePendingAttempt(null);
+                setPendingAttemptCancelled(true);
+                setView({ state: 'idle' });
+                return;
+            }
+            setView({
+                state: 'rejected',
+                rejection: resolveSignupRejection({ error: result.error })
+            });
+        } catch {
+            setView({ state: 'rejected', rejection: resolveSignupRejection({}) });
+        } finally {
+            setCancelling(false);
         }
     };
 
@@ -93,13 +140,26 @@ export function SignupCheckout({
             data-state={view.state}
             data-tourist-vip={touristVipNotice?.kind ?? 'NOT_AFFECTED'}
         >
-            {view.state !== 'pending' && (
+            {view.state !== 'pending' && !activePendingAttempt && (
                 <>
                     <h1>{t('billing.checkout.signup.title')}</h1>
                     <p>{t('billing.checkout.signup.intro')}</p>
                 </>
             )}
-            {view.state === 'idle' || view.state === 'submitting' ? (
+            {activePendingAttempt && view.state === 'idle' && (
+                <PendingAttemptPanel
+                    attempt={activePendingAttempt}
+                    locale={locale}
+                    busy={cancelling}
+                    onCancel={() => void cancelPendingAttempt()}
+                />
+            )}
+            {pendingAttemptCancelled && (
+                <p data-testid="signup-checkout-pending-attempt-cancelled">
+                    {t('billing.checkout.signup.pendingAttempt.cancelled')}
+                </p>
+            )}
+            {(view.state === 'idle' || view.state === 'submitting') && !activePendingAttempt ? (
                 <>
                     {planSummary && (
                         <div

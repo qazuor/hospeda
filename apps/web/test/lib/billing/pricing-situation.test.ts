@@ -31,33 +31,60 @@ describe('TEST:1621:5 pricing card CTA situation resolver', () => {
     });
 
     it.each([
-        'PENDING_AUTHORIZATION',
         'ACTIVE',
         'GRACE_PERIOD',
         'PAUSED',
         'SUSPENDED',
         'CANCEL_SCHEDULED'
-    ] as const)('maps the anchored plan in %s to current (or pending continuation)', (status) => {
+    ] as const)('maps the anchored plan in %s to current', (status) => {
         const result = resolve({
             situation: 'SUBSCRIBED',
             status,
             planVersionId: plan.planVersionId,
             billingOptionId: 'monthly-a'
         });
-        expect(result.kind).toBe(status === 'PENDING_AUTHORIZATION' ? 'continue' : 'current');
+        expect(result.kind).toBe('current');
         if (result.kind === 'current')
             expect(result.showsPlanChangeNotice).toBe(status === 'ACTIVE');
     });
 
-    it('continues only the anchored billing option and compares the current card by plan version', () => {
+    it('TEST:1735:14 offers all checkout options during a pending authorization', () => {
         const pending: PricingSituationResponse = {
             situation: 'SUBSCRIBED',
             status: 'PENDING_AUTHORIZATION',
             planVersionId: 'version-a',
             billingOptionId: 'annual-a'
         };
-        expect(resolve(pending).kind).toBe('continue');
-        expect(resolve(pending, 'version-b').kind).toBe('none');
+        expect(resolve(pending)).toEqual({
+            kind: 'checkout',
+            links: [
+                {
+                    cycle: 'monthly',
+                    href: '/es/suscriptores/checkout/?opcion=monthly-a',
+                    resumes: false
+                },
+                {
+                    cycle: 'annual',
+                    href: '/es/suscriptores/checkout/?opcion=annual-a',
+                    resumes: true
+                }
+            ]
+        });
+        expect(resolve(pending, 'version-b')).toEqual({
+            kind: 'checkout',
+            links: [
+                {
+                    cycle: 'monthly',
+                    href: '/es/suscriptores/checkout/?opcion=monthly-a',
+                    resumes: false
+                },
+                {
+                    cycle: 'annual',
+                    href: '/es/suscriptores/checkout/?opcion=annual-a',
+                    resumes: false
+                }
+            ]
+        });
         const active: PricingSituationResponse = {
             situation: 'SUBSCRIBED',
             status: 'ACTIVE',
@@ -82,8 +109,16 @@ describe('TEST:1621:5 pricing card CTA situation resolver', () => {
         expect(result).toEqual({
             kind: 'checkout',
             links: [
-                { cycle: 'monthly', href: '/es/suscriptores/checkout/?opcion=monthly-a' },
-                { cycle: 'annual', href: '/es/suscriptores/checkout/?opcion=annual-a' }
+                {
+                    cycle: 'monthly',
+                    href: '/es/suscriptores/checkout/?opcion=monthly-a',
+                    resumes: false
+                },
+                {
+                    cycle: 'annual',
+                    href: '/es/suscriptores/checkout/?opcion=annual-a',
+                    resumes: false
+                }
             ]
         });
     });

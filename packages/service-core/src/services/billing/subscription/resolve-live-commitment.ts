@@ -62,6 +62,16 @@ export function appliedAuthorizationResult(input: {
     };
 }
 
+/** Reads a resumable checkout URL from a live commitment's completed creation key. */
+export function readResumableCheckoutUrl(input: {
+    readonly commitment: LiveCommitment;
+}): string | null {
+    const key = input.commitment.idempotencyKey;
+    if (!key || key.completedAt === null || !input.commitment.providerLink) return null;
+    const parsed = AppliedAuthorizationResultSchema.safeParse(key.result);
+    return parsed.success ? parsed.data.checkoutUrl : null;
+}
+
 /** The today's 409 for an occupied commitment slot (H11). */
 export function commitmentTaken(): ServiceError {
     return new ServiceError(

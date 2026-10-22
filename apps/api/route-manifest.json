@@ -2494,6 +2494,10 @@
             "path": "/api/v1/protected/billing/subscriptions"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/protected/billing/subscriptions/:subscriptionId/pending-attempt-cancellation"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/protected/billing/subscriptions/signup-notice/:billingOptionId"
         },

@@ -73,7 +73,8 @@ export const BEFORE_CANCEL_KIND_BY_TRANSITION: Readonly<
     A3: 'UNDECLARED',
     // No writer records A6 yet: its leaf declares the kind in the same PR.
     A6: 'UNDECLARED',
-    S39: 'ATTEMPT_REPLACED'
+    S39: 'ATTEMPT_REPLACED',
+    S40: 'ATTEMPT_CANCELLED'
 };
 
 /** The retry map's value for a transition read from the database; an unknown one is undeclared. */

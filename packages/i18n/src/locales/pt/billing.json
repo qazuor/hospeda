@@ -215,6 +215,14 @@
             "body": "Pausamos temporariamente a publicação de novos anúncios. Seu anúncio fica salvo como rascunho e você poderá publicá-lo quando retomarmos."
         },
         "signup": {
+            "pendingAttempt": {
+                "title": "Você tem uma tentativa de assinatura pendente",
+                "body": "Você começou a assinatura do plano {{plan}} ({{amount}}, {{cycle}}) e ainda não o autorizou no Mercado Pago. Para escolher esta outra opção, primeiro cancele essa tentativa. Ela vence em {{date}}.",
+                "resume": "Retomar essa tentativa",
+                "cancel": "Cancelar essa tentativa",
+                "cancelling": "Cancelando…",
+                "cancelled": "Cancelamos sua tentativa de assinatura anterior. Agora você pode escolher esta opção."
+            },
             "title": "Confirme sua assinatura",
             "intro": "Você vai autorizar o pagamento no Mercado Pago.",
             "planSummary": "{{plan}} · {{amount}} {{cycle}}",

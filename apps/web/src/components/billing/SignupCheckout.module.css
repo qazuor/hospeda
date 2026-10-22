@@ -123,3 +123,40 @@
 .message time {
     color: var(--core-muted-foreground);
 }
+
+.pendingAttempt {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    background: var(--core-card);
+}
+
+.pendingAttempt h1,
+.pendingAttempt p {
+    margin: 0;
+}
+
+.pendingAttempt a {
+    color: var(--brand-primary);
+    font-weight: 600;
+}
+
+.pendingAttempt button {
+    min-height: 44px;
+    padding: var(--space-3) var(--space-6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+    background: var(--core-card);
+    color: var(--core-foreground);
+    font: inherit;
+    cursor: pointer;
+}
+
+.pendingAttempt button:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}

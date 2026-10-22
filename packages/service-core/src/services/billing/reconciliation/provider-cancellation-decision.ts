@@ -16,7 +16,8 @@ import { ServiceError } from '../../../types';
  * terminal row the provider cancelled after a rejected charge (Coord-351 F3, HOS-1676
  * H-8): B11 §3 says «desde esa relectura la fila entra a la salvedad 4», so that re-read
  * records the decision and starts the 3-day clock. The fourteenth, S39, closes a replaced
- * pending signup whatever happens to the cancellation call (HOS-1732). Local literals on purpose: nothing
+ * pending signup whatever happens to the cancellation call (HOS-1732); the fifteenth, S40,
+ * closes the pending attempt the person cancelled (HOS-1735). Local literals on purpose: nothing
  * from `@repo/db` is evaluated at module level.
  */
 export const SALVEDAD_4_TRANSITIONS = [
@@ -35,7 +36,9 @@ export const SALVEDAD_4_TRANSITIONS = [
     // Coord-351 F3 · B11 §3: «desde esa relectura la fila entra a la salvedad 4».
     'REJECTION_REVIVED',
     // HOS-1732: S39 closes the replaced pending attempt whatever happens to the call.
-    'S39'
+    'S39',
+    // HOS-1735: S40 closes the pending attempt the person cancelled whatever happens to the call.
+    'S40'
 ] as const;
 
 /** The cancellations of the complement of a terminal addon instance (exception 1, B11.md:374-377). */

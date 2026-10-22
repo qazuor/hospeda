@@ -37,9 +37,9 @@ export type PlanCardCtaView =
           readonly links: readonly {
               readonly cycle: 'monthly' | 'annual';
               readonly href: string;
+              readonly resumes: boolean;
           }[];
       }
-    | { readonly kind: 'continue'; readonly href: string }
     | { readonly kind: 'current'; readonly showsPlanChangeNotice: boolean }
     | { readonly kind: 'planChangeUnavailable' }
     | { readonly kind: 'vipInherited' }
@@ -78,22 +78,16 @@ export function resolvePlanCardCta({
         TOURIST_VIP_INHERITED: () => ({ kind: 'vipInherited' }),
         SUBSCRIBED: () => {
             if (parsed.situation !== 'SUBSCRIBED') return none;
+            if (parsed.status === 'PENDING_AUTHORIZATION') {
+                return checkout(
+                    parsed.planVersionId === plan.planVersionId ? parsed.billingOptionId : undefined
+                );
+            }
             if (parsed.planVersionId === plan.planVersionId) {
-                return parsed.status === 'PENDING_AUTHORIZATION' &&
-                    [plan.billingOptions.monthly, plan.billingOptions.annual].includes(
-                        parsed.billingOptionId
-                    )
-                    ? {
-                          kind: 'continue',
-                          href: buildSignupCheckoutHref({
-                              locale,
-                              billingOptionId: parsed.billingOptionId
-                          })
-                      }
-                    : {
-                          kind: 'current',
-                          showsPlanChangeNotice: PRICING_PLAN_CHANGE_NOTICE[parsed.status]
-                      };
+                return {
+                    kind: 'current',
+                    showsPlanChangeNotice: PRICING_PLAN_CHANGE_NOTICE[parsed.status]
+                };
             }
             return PRICING_PLAN_CHANGE_NOTICE[parsed.status]
                 ? { kind: 'planChangeUnavailable' }
@@ -102,14 +96,16 @@ export function resolvePlanCardCta({
     };
     return bySituation[parsed.situation]();
 
-    function checkout(): PlanCardCtaView {
+    function checkout(resumeBillingOptionId?: string): PlanCardCtaView {
+        const monthlyBillingOptionId = plan.billingOptions.monthly;
         const links = [
             {
                 cycle: 'monthly' as const,
                 href: buildSignupCheckoutHref({
                     locale,
-                    billingOptionId: plan.billingOptions.monthly
-                })
+                    billingOptionId: monthlyBillingOptionId
+                }),
+                resumes: monthlyBillingOptionId === resumeBillingOptionId
             },
             ...(plan.billingOptions.annual
                 ? [
@@ -118,7 +114,8 @@ export function resolvePlanCardCta({
                           href: buildSignupCheckoutHref({
                               locale,
                               billingOptionId: plan.billingOptions.annual
-                          })
+                          }),
+                          resumes: plan.billingOptions.annual === resumeBillingOptionId
                       }
                   ]
                 : [])

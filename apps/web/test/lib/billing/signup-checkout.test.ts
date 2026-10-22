@@ -8,6 +8,7 @@ import {
     isDisplayableCheckoutUrl,
     parseSignupOptionId,
     resolveDeclaredPayerEmail,
+    resolveSignupPendingAttempt,
     resolveSignupPlanSummary,
     resolveSignupRejection,
     resolveSignupTouristVipNotice,
@@ -138,6 +139,32 @@ describe('signup checkout helpers — B3 UI (B3.md:1045-1053)', () => {
     });
 });
 
+describe('TEST:1735:11 resolveSignupPendingAttempt', () => {
+    const attempt = {
+        subscriptionId: '123e4567-e89b-42d3-a456-426614174001',
+        plan: { name: 'Básico', amount: 1500000, currency: 'ARS', cycle: 'monthly' },
+        checkoutUrl: 'https://payments.example/continue',
+        authorizationWindowEndsAt: '2026-10-13T02:30:00.000Z'
+    };
+
+    it('parses a valid pending attempt from signupNotice', () => {
+        expect(
+            resolveSignupPendingAttempt({ result: { ok: true, data: { pendingAttempt: attempt } } })
+        ).toEqual(attempt);
+    });
+
+    it.each([
+        ['null', { ok: true, data: { pendingAttempt: null } }],
+        ['legacy missing key', { ok: true, data: {} }],
+        [
+            'invalid attempt',
+            { ok: true, data: { pendingAttempt: { ...attempt, checkoutUrl: 'javascript:bad' } } }
+        ]
+    ])('returns null for %s', (_label, result) => {
+        expect(resolveSignupPendingAttempt({ result })).toBeNull();
+    });
+});
+
 describe('TEST:B13a:21c AC:B13a:5 resolveSignupTrialNotice', () => {
     it('preserves a running trial end and day count', () => {
         expect(
@@ -145,6 +172,7 @@ describe('TEST:B13a:21c AC:B13a:5 resolveSignupTrialNotice', () => {
                 result: {
                     ok: true,
                     data: {
+                        pendingAttempt: null,
                         plan: {
                             name: 'Plan test',
                             amount: 100000,
@@ -174,6 +202,7 @@ describe('TEST:B13a:21c AC:B13a:5 resolveSignupTrialNotice', () => {
                 result: {
                     ok: true,
                     data: {
+                        pendingAttempt: null,
                         plan: {
                             name: 'Plan test',
                             amount: 100000,
@@ -205,6 +234,7 @@ describe('TEST:1623:6 resolveSignupTouristVipNotice', () => {
             {
                 ok: true,
                 data: {
+                    pendingAttempt: null,
                     plan: { name: 'Plan test', amount: 100000, currency: 'ARS', cycle: 'monthly' },
                     vertical: 'tourist',
                     touristVip: { status: 'CANCELLED_ON_RETURN' },
@@ -218,6 +248,7 @@ describe('TEST:1623:6 resolveSignupTouristVipNotice', () => {
             {
                 ok: true,
                 data: {
+                    pendingAttempt: null,
                     plan: { name: 'Plan test', amount: 100000, currency: 'ARS', cycle: 'monthly' },
                     vertical: 'tourist',
                     touristVip: { status: 'NOT_AFFECTED' },
