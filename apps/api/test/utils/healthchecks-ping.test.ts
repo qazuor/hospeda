@@ -34,13 +34,15 @@ import {
 
 const JOB = 'billing-reconciliation-sweep';
 
-function makeFetch(): ReturnType<typeof vi.fn> {
-    return vi.fn(async () => new Response('ok', { status: 200 }));
+type FetchMock = ReturnType<typeof vi.fn<typeof globalThis.fetch>>;
+
+function makeFetch(): FetchMock {
+    return vi.fn<typeof globalThis.fetch>(async () => new Response('ok', { status: 200 }));
 }
 
-function makeNeverResolvingFetch(): ReturnType<typeof vi.fn> {
-    return vi.fn(
-        (_url: string, init?: RequestInit) =>
+function makeNeverResolvingFetch(): FetchMock {
+    return vi.fn<typeof globalThis.fetch>(
+        (_url: string | URL | Request, init?: RequestInit) =>
             new Promise<Response>((_resolve, reject) => {
                 init?.signal?.addEventListener('abort', () => {
                     reject(new DOMException('The operation was aborted.', 'AbortError'));
@@ -233,7 +235,7 @@ describe('pingHealthchecks — swallowed failures (TEST:1742:3, TEST:1742:4)', (
     });
 
     it('swallows a rejecting fetch and warns without the ping key', async () => {
-        const fetchFn = vi.fn(async () => {
+        const fetchFn: FetchMock = vi.fn<typeof globalThis.fetch>(async () => {
             throw new Error('network down');
         });
 
@@ -252,7 +254,9 @@ describe('pingHealthchecks — swallowed failures (TEST:1742:3, TEST:1742:4)', (
     });
 
     it('treats a non-2xx response as a warned failure without the ping key', async () => {
-        const fetchFn = vi.fn(async () => new Response('not found', { status: 404 }));
+        const fetchFn: FetchMock = vi.fn<typeof globalThis.fetch>(
+            async () => new Response('not found', { status: 404 })
+        );
 
         await expect(
             pingHealthchecks({
