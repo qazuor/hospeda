@@ -21,7 +21,7 @@ exports[`ENV_REGISTRY > var count per category > should match expected distribut
   "integrations": 44,
   "messaging": 2,
   "moderation": 5,
-  "monitoring": 8,
+  "monitoring": 10,
   "newsletter": 7,
   "social-automation": 1,
   "system": 5,

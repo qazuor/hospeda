@@ -514,6 +514,12 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_POSTHOG_HOST: z.string().url().optional(),
     HOSPEDA_SENTRY_RELEASE: z.string().optional(),
     HOSPEDA_SENTRY_PROJECT: z.string().optional(),
+    // Healthchecks.io free cron monitors (HOS-1742). Both vars are required for
+    // a ping; with either missing the helper is a deliberate no-op.
+    /** Healthchecks.io project ping key (secret). */
+    HOSPEDA_HEALTHCHECKS_PING_KEY: z.string().min(1).optional(),
+    /** Healthchecks.io check slug prefix; keeps staging and prod apart. */
+    HOSPEDA_HEALTHCHECKS_SLUG_PREFIX: z.enum(['staging', 'prod']).optional(),
     /**
      * Sentry environment tag. When set, takes precedence over NODE_ENV
      * for Sentry event tagging — lets prod and staging both run with

@@ -301,8 +301,13 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * BILLING_RECURRING_ADDONS_ENABLED, TRIAL_DAYS_OVERRIDE, SHOW_TEST_BILLING_PLAN,
  * QZPAY_TEST_CONTROL_ENABLED), MERCADO_PAGO_STATEMENT_DESCRIPTOR and the four
  * API_RATE_LIMIT_BILLING_*. 285 - 14 = 271.
+ *
+ * +2 = HOSPEDA_HEALTHCHECKS_PING_KEY (secret) and
+ * HOSPEDA_HEALTHCHECKS_SLUG_PREFIX (monitoring category, api only) — free
+ * Healthchecks.io cron pings for the three cutover jobs (HOS-1742). Both are
+ * optional; the ping is a no-op when either is absent. 274 + 2 = 276.
  */
-const EXPECTED_VAR_COUNT = 274;
+const EXPECTED_VAR_COUNT = 276;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -522,6 +527,7 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_FACEBOOK_CLIENT_ID',
                 'HOSPEDA_FACEBOOK_CLIENT_SECRET',
                 'HOSPEDA_LINEAR_API_KEY',
+                'HOSPEDA_HEALTHCHECKS_PING_KEY',
                 'HOSPEDA_EXCHANGE_RATE_API_KEY',
                 'HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN',
                 'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET',
@@ -550,6 +556,7 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_COMMIT_SHA',
                 'HOSPEDA_SENTRY_DSN',
                 'HOSPEDA_SENTRY_ENVIRONMENT',
+                'HOSPEDA_HEALTHCHECKS_SLUG_PREFIX',
                 'API_PORT',
                 'API_CORS_ORIGINS',
                 'PUBLIC_API_URL',
