@@ -61,6 +61,23 @@ describe('TEST:1735:11 pending attempt checkout panel', () => {
         expect(island.getByTestId('signup-checkout-pending-attempt-cancel')).toBeInTheDocument();
     });
 
+    it('TEST:1735:11 sanitizes the displayed resume href', () => {
+        render(
+            <SignupCheckout
+                {...props}
+                pendingAttempt={{
+                    ...pendingAttempt,
+                    checkoutUrl: '  https://payments.example/continue  '
+                }}
+            />
+        );
+        const island = within(screen.getByTestId('signup-checkout'));
+        expect(island.getByTestId('signup-checkout-pending-attempt-resume')).toHaveAttribute(
+            'href',
+            pendingAttempt.checkoutUrl
+        );
+    });
+
     it('TEST:1735:12 cancels once and restores the form, or shows API rejection', async () => {
         api.cancelPendingAttempt.mockResolvedValueOnce({
             ok: true,
