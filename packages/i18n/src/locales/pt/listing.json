@@ -54,7 +54,8 @@
                     "label_one": "{{current}} de {{max}} experiência",
                     "label_other": "{{current}} de {{max}} experiências"
                 },
-                "upgrade": "Ampliar cota"
+                "upgrade": "Ampliar cota",
+                "atLimit": "Você atingiu o limite do seu plano. Para publicar outra ficha, amplie sua cota."
             },
             "views": {
                 "title": "Visualizações",

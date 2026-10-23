@@ -54,7 +54,8 @@
                     "label_one": "{{current}} of {{max}} experience listing",
                     "label_other": "{{current}} of {{max}} experience listings"
                 },
-                "upgrade": "Add more capacity"
+                "upgrade": "Add more capacity",
+                "atLimit": "You have reached your plan limit. To publish another listing, add more capacity."
             },
             "views": {
                 "title": "Views",

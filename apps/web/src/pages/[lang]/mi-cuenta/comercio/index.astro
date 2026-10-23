@@ -4,6 +4,7 @@
  * @description Gastronomy/experience owner self-service listing index (SPEC-249 Part A,
  * extended in HOS-166 PR-C with the create CTA and the per-listing state
  * machine — badge, completeness checklist, and publish+pay CTA).
+ * HOS-1757 restores per-vertical published usage badges from effective limits.
  * Lists the authenticated GASTRONOMY_OWNER's own listings across both verticals
  * (gastronomy + experiences) and deep-links each to its operational editor.
  *
@@ -30,6 +31,11 @@ import { webLogger as logger } from '@/lib/logger';
 import { hasListingNavAccess } from '@/lib/nav-gating';
 import { fetchOwnerListingsWithState } from '@/lib/listing/owner-listings';
 import { resolveListingPublishAffordances } from '@/lib/listing/listing-publish-affordance';
+import {
+    buildListingUsage,
+    fetchListingEffectiveSets,
+    resolveUsageUpgradePath
+} from '@/lib/listing/vertical-usage';
 import { UNKNOWN_PUBLISH_AFFORDANCE } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -39,7 +45,7 @@ import { PublicationStatusEnum } from '@repo/schemas';
 export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 const user = Astro.locals.user;
 if (!user) {
@@ -71,7 +77,7 @@ const isPurged = (listing: (typeof listings)[number]): boolean =>
 // once per vertical this page lists. A failed read leaves that vertical's
 // listings without notices (never an invented one) and the page renders.
 const listedVerticals = [...new Set(listings.map((listing) => listing.vertical))];
-const [publishAffordances, noticesByVertical] = await Promise.all([
+const [publishAffordances, noticesByVertical, usageBadges] = await Promise.all([
     resolveListingPublishAffordances({ listings, cookieHeader }),
     (async () => new Map<string, ListingNoticesIndex>(
         await Promise.all(
@@ -92,7 +98,30 @@ const [publishAffordances, noticesByVertical] = await Promise.all([
                 }
             })
         )
-    ))()
+    ))(),
+    (async () => {
+        try {
+            const verticalsWithListings = [...new Set(
+                listings.filter((listing) => !isPurged(listing)).map((listing) => listing.vertical)
+            )];
+            const effectiveSets = await fetchListingEffectiveSets({ verticals: verticalsWithListings, cookieHeader });
+            return verticalsWithListings.flatMap((vertical) => {
+                const usage = buildListingUsage({
+                    vertical,
+                    effectiveSet: effectiveSets.get(vertical) ?? {
+                        entitlements: {}, limits: {}, hasLiveNonTrialTitle: false, failed: true
+                    },
+                    listings
+                });
+                return usage ? [usage] : [];
+            });
+        } catch (error) {
+            logger.warn('[comercio] listing usage read failed', {
+                error: error instanceof Error ? error.message : String(error)
+            });
+            return [];
+        }
+    })()
 ]);
 
 // HOS-1156 retired `/mi-cuenta/comercio/nuevo/`, the vertical picker this
@@ -116,6 +145,32 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
             {t('listing.owner.list.createCta', '+ Nuevo comercio')}
         </a>
     </div>
+
+    {usageBadges.length > 0 && (
+        <div class="mc-usage-row">
+            {usageBadges.map((usage) => (
+                <div class={`mc-usage mc-usage--${usage.threshold}`} role="status">
+                    <span class="mc-usage__label">
+                        {tPlural(`listing.owner.list.usage.${usage.vertical}.label`, usage.maxAllowed, {
+                            current: usage.currentUsage,
+                            max: usage.maxAllowed
+                        })}
+                    </span>
+                    {usage.currentUsage >= usage.maxAllowed && (
+                        <span class="mc-usage__at-limit">{t('listing.owner.list.usage.atLimit')}</span>
+                    )}
+                    {usage.threshold !== 'ok' && (
+                        <a
+                            href={buildUrl({ locale, path: resolveUsageUpgradePath({ vertical: usage.vertical }) })}
+                            class="mc-usage__upgrade"
+                        >
+                            {t('listing.owner.list.usage.upgrade')}
+                        </a>
+                    )}
+                </div>
+            ))}
+        </div>
+    )}
 
     {/* HOS-788: welcome-tour anchor shared by the gastronomy and experience
         welcome tours — both verticals get `VIEW_BASIC_STATS`. See
@@ -213,6 +268,73 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
 </AccountLayout>
 
 <style>
+    .mc-usage-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3, 0.75rem);
+    }
+
+    .mc-usage {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--space-3, 0.75rem);
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-pill, 9999px);
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 500;
+        background-color: var(--surface-warm, oklch(0.96 0.02 60));
+        color: var(--core-foreground);
+        border: 1px solid var(--border);
+    }
+
+    .mc-usage--ok {
+        background-color: oklch(0.95 0.04 145);
+        color: oklch(0.35 0.12 145);
+        border-color: oklch(0.85 0.08 145);
+    }
+
+    .mc-usage--warning {
+        background-color: oklch(0.95 0.05 65);
+        color: oklch(0.40 0.12 65);
+        border-color: oklch(0.85 0.10 65);
+    }
+
+    .mc-usage--critical,
+    .mc-usage--exceeded {
+        background-color: oklch(0.95 0.04 25);
+        color: oklch(0.45 0.15 25);
+        border-color: oklch(0.85 0.10 25);
+    }
+
+    .mc-usage__label {
+        white-space: nowrap;
+    }
+
+    .mc-usage__upgrade {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground, #ffffff);
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: opacity 150ms ease-out;
+    }
+
+    .mc-usage__upgrade:hover {
+        opacity: 0.88;
+    }
+
+    .mc-usage__at-limit {
+        flex-basis: 100%;
+    }
+
     .mc-header {
         display: flex;
         align-items: flex-start;
