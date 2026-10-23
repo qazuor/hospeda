@@ -140,7 +140,7 @@ describe('vertical usage — TEST:1757:1-4,6', () => {
                     readFileSync(
                         resolve(
                             __dirname,
-                            `../../../../packages/i18n/src/locales/${locale}/listing.json`
+                            `../../../../../packages/i18n/src/locales/${locale}/listing.json`
                         ),
                         'utf8'
                     )
