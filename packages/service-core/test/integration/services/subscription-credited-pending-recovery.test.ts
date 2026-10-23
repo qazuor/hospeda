@@ -7,6 +7,7 @@ import {
     activateCreditedPendingAuthorizations,
     expireAuthorizationWindows
 } from '../../../src/services/billing/subscription/expire-authorization-windows.service.js';
+import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service.js';
 import { closeServiceTestPool, getServiceTestDb } from './helpers.js';
 import { noTouristVip } from './support/tourist-vip.js';
 
@@ -86,9 +87,7 @@ async function startPending(provider: PaymentProvider) {
         .values({ planVersionId: version.id, cycle: 'monthly', amount: 250000, currency: 'ARS' })
         .returning();
     if (!option) throw new Error('Expected billing option');
-    const started = await (
-        await import('../../../src/services/billing/subscription/start-subscription.service.js')
-    ).startSubscription(
+    const started = await startSubscription(
         {
             userId: user.id,
             billingOptionId: option.id,
@@ -157,7 +156,7 @@ const ports = (provider: PaymentProvider, coverageNotices = { emitCoverageChange
 describe('HOS-1740 credited pending recovery', () => {
     it('TEST:1740:2 activates the paid pending signup through the existing path exactly once', async () => {
         const provider = newProvider();
-        const { started } = await startPending(provider);
+        const { started, userId } = await startPending(provider);
         await addSucceededPayment(started.subscriptionId);
         await provider.approve({ authorizationId: started.authorizationId });
         await onlyCredited([started.subscriptionId]);
@@ -173,7 +172,7 @@ describe('HOS-1740 credited pending recovery', () => {
         expect(second.activated).toBe(0);
         expect(coverage.emitCoverageChanged).toHaveBeenCalledWith(
             expect.objectContaining({
-                userId: started.userId,
+                userId,
                 vertical: 'accommodation',
                 sourceType: 'SUBSCRIPTION',
                 change: 'ADDED'
@@ -230,11 +229,11 @@ describe('HOS-1740 credited pending recovery', () => {
         await provider.approve({ authorizationId: second.started.authorizationId });
         await onlyCredited([first.started.subscriptionId, second.started.subscriptionId]);
         const failure = new Error('first provider read failed');
+        const originalRead = provider.readAuthorization.bind(provider);
         const read = vi.spyOn(provider, 'readAuthorization');
-        const implementation = read.getMockImplementation();
         read.mockImplementation(async (input) => {
             if (input.authorizationId === first.started.authorizationId) throw failure;
-            return implementation!(input);
+            return originalRead(input);
         });
         const captured: unknown[] = [];
         registerCaptureHook((error) => captured.push(error));
@@ -272,11 +271,11 @@ describe('HOS-1740 credited pending recovery', () => {
                 )
         );
         const failure = new Error('first expiry read failed');
+        const originalRead = provider.readAuthorization.bind(provider);
         const read = vi.spyOn(provider, 'readAuthorization');
-        const implementation = read.getMockImplementation();
         read.mockImplementation(async (input) => {
             if (input.authorizationId === first.started.authorizationId) throw failure;
-            return implementation!(input);
+            return originalRead(input);
         });
         const captured: unknown[] = [];
         registerCaptureHook((error) => captured.push(error));
