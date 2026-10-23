@@ -1,6 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import type { Clock } from '@repo/billing-verticals-contract';
-import { eq, getDb, subscriptionModel, subscriptions } from '@repo/db';
+import {
+    eq,
+    findCreditedPendingAuthorizations,
+    getDb,
+    subscriptionModel,
+    subscriptions
+} from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { VerticalEnumSchema } from '@repo/schemas';
@@ -48,6 +54,110 @@ export interface ExpireAuthorizationWindowsSummary {
     readonly touristVipCancelled: number;
     /** Retained S19 payments of an abandoned successor's predecessor handed to S5/S7 (branch 2). */
     readonly retainedReevaluated: number;
+    readonly failed: number;
+}
+
+export interface ActivateCreditedPendingSummary {
+    readonly candidates: number;
+    readonly activated: number;
+    readonly notActive: number;
+    readonly skipped: number;
+    readonly failed: number;
+    readonly touristVipCancelled: number;
+}
+
+async function activatePendingRow(
+    subscription: (typeof subscriptions)['$inferSelect'],
+    ports: ExpireAuthorizationWindowsPorts
+): Promise<{
+    readonly activated: boolean;
+    readonly skipped: boolean;
+    readonly touristVipCancelled: number;
+}> {
+    const wrote = await activatePendingWithSignupNotice(
+        { subscriptionId: subscription.id, now: ports.clock.now() },
+        { successionCloser: ports.successionCloser }
+    );
+    if (!wrote) return { activated: false, skipped: true, touristVipCancelled: 0 };
+    const vertical = VerticalEnumSchema.safeParse(subscription.vertical);
+    if (subscription.userId && vertical.success) {
+        try {
+            await (ports.coverageNotices ?? unwiredCoverageNotices).emitCoverageChanged({
+                userId: subscription.userId,
+                vertical: vertical.data,
+                sourceType: 'SUBSCRIPTION',
+                change: subscription.succeedsId ? 'CHANGED' : 'ADDED'
+            });
+        } catch (error) {
+            logger.error(
+                { subscriptionId: subscription.id, error },
+                'Coverage changed notice failed after activation commit'
+            );
+        }
+    } else {
+        logger.error(
+            { subscriptionId: subscription.id, vertical: subscription.vertical },
+            'Activated subscription has no coverage subject to notify'
+        );
+    }
+    let touristVipCancelled = 0;
+    if (subscription.userId) {
+        try {
+            touristVipCancelled = (
+                await cancelInheritedTouristVips({ userId: subscription.userId }, ports)
+            ).cancelled;
+        } catch (error) {
+            logger.error(
+                { subscriptionId: subscription.id, error },
+                'Inherited Tourist VIP cancellation will be retried'
+            );
+        }
+    }
+    return { activated: true, skipped: false, touristVipCancelled };
+}
+
+/**
+ * HOS-1740 owner decision: recover paid pending signups before their 72-hour
+ * window expires because a preapproval webhook can fail or never redeliver after
+ * the person has paid. Rows without a locally SUCCEEDED payment are not read
+ * from the provider, avoiding unnecessary provider calls for unpaid signups.
+ */
+export async function activateCreditedPendingAuthorizations(
+    limit: number,
+    ports: ExpireAuthorizationWindowsPorts
+): Promise<ActivateCreditedPendingSummary> {
+    const rows = await findCreditedPendingAuthorizations({ now: ports.clock.now(), limit });
+    let activated = 0,
+        notActive = 0,
+        skipped = 0,
+        failed = 0,
+        touristVipCancelled = 0;
+    for (const row of rows) {
+        try {
+            const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
+            actStartInstant({ act });
+            const read = await ports.provider.readAuthorization({
+                authorizationId: row.providerLink!.providerId
+            });
+            const { snapshot } = assertFreshForAct({ read, act });
+            if (snapshot.status !== 'active') {
+                notActive++;
+                continue;
+            }
+            const result = await activatePendingRow(row.subscription, ports);
+            if (result.activated) activated++;
+            if (result.skipped) skipped++;
+            touristVipCancelled += result.touristVipCancelled;
+        } catch (error) {
+            failed++;
+            logger.error(
+                error,
+                `Credited pending authorization recovery failed (subscription: ${row.subscription.id})`,
+                { capture: true }
+            );
+        }
+    }
+    return { candidates: rows.length, activated, notActive, skipped, failed, touristVipCancelled };
 }
 
 /**
@@ -158,134 +268,104 @@ export async function expireAuthorizationWindows(
     let skipped = 0;
     let touristVipCancelled = 0;
     let retainedReevaluated = 0;
+    let failed = 0;
 
     for (const row of rows) {
-        const { subscription, providerLink } = row;
-        if (subscription.paymentMethod !== 'MANUAL' && providerLink) {
-            const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
-            actStartInstant({ act });
-            const read = await ports.provider.readAuthorization({
-                authorizationId: providerLink.providerId
-            });
-            const { snapshot } = assertFreshForAct({ read, act });
+        try {
+            const { subscription, providerLink } = row;
+            if (subscription.paymentMethod !== 'MANUAL' && providerLink) {
+                const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
+                actStartInstant({ act });
+                const read = await ports.provider.readAuthorization({
+                    authorizationId: providerLink.providerId
+                });
+                const { snapshot } = assertFreshForAct({ read, act });
 
-            if (snapshot.status === 'active') {
-                const wrote = await activatePendingWithSignupNotice(
-                    { subscriptionId: subscription.id, now: ports.clock.now() },
-                    { successionCloser: ports.successionCloser }
-                );
-                if (wrote) activated++;
-                else skipped++;
-                if (wrote) {
-                    // S2 committed: the row now emits its source, replacing the predecessor's when it succeeds one.
-                    const vertical = VerticalEnumSchema.safeParse(subscription.vertical);
-                    if (subscription.userId && vertical.success) {
+                if (snapshot.status === 'active') {
+                    const result = await activatePendingRow(subscription, ports);
+                    if (result.activated) activated++;
+                    if (result.skipped) skipped++;
+                    touristVipCancelled += result.touristVipCancelled;
+                    continue;
+                }
+
+                if (snapshot.status !== 'cancelled') {
+                    const notice = await ports.beforeCancelNotice.beforeCancel({
+                        subscriptionId: subscription.id,
+                        userId: subscription.userId!,
+                        kind: 'AUTHORIZATION_EXPIRED'
+                    });
+                    if (notice === 'NOT_YET_SENT') {
+                        noticePending++;
+                    } else {
+                        if (notice === 'NO_RECIPIENT' || notice === 'DELIVERY_EXHAUSTED') {
+                            logger.warn(
+                                { subscriptionId: subscription.id, notice },
+                                'Before-cancel notice is not deliverable'
+                            );
+                        }
+                        cancelCalls++;
                         try {
-                            await (
-                                ports.coverageNotices ?? unwiredCoverageNotices
-                            ).emitCoverageChanged({
-                                userId: subscription.userId,
-                                vertical: vertical.data,
-                                sourceType: 'SUBSCRIPTION',
-                                change: subscription.succeedsId ? 'CHANGED' : 'ADDED'
+                            await ports.provider.cancel({
+                                authorizationId: providerLink.providerId
                             });
                         } catch (error) {
                             logger.error(
                                 { subscriptionId: subscription.id, error },
-                                'Coverage changed notice failed after activation commit'
+                                'Expired authorization could not be cancelled'
                             );
                         }
-                    } else {
-                        logger.error(
-                            { subscriptionId: subscription.id, vertical: subscription.vertical },
-                            'Activated subscription has no coverage subject to notify'
-                        );
                     }
                 }
-                if (wrote && subscription.userId) {
-                    try {
-                        const result = await cancelInheritedTouristVips(
-                            { userId: subscription.userId },
-                            ports
-                        );
-                        touristVipCancelled += result.cancelled;
-                    } catch (error) {
-                        logger.error(
-                            { subscriptionId: subscription.id, error },
-                            'Inherited Tourist VIP cancellation will be retried'
-                        );
-                    }
-                }
-                continue;
             }
 
-            if (snapshot.status !== 'cancelled') {
-                const notice = await ports.beforeCancelNotice.beforeCancel({
+            const abandonedAt = ports.clock.now();
+            const result = await getDb().transaction(async (tx) => {
+                const wrote = await subscriptionModel.abandonPendingAuthorization({
                     subscriptionId: subscription.id,
-                    userId: subscription.userId!,
-                    kind: 'AUTHORIZATION_EXPIRED'
+                    now: abandonedAt,
+                    tx
                 });
-                if (notice === 'NOT_YET_SENT') {
-                    noticePending++;
-                } else {
-                    if (notice === 'NO_RECIPIENT' || notice === 'DELIVERY_EXHAUSTED') {
-                        logger.warn(
-                            { subscriptionId: subscription.id, notice },
-                            'Before-cancel notice is not deliverable'
-                        );
-                    }
-                    cancelCalls++;
-                    try {
-                        await ports.provider.cancel({ authorizationId: providerLink.providerId });
-                    } catch (error) {
-                        logger.error(
-                            { subscriptionId: subscription.id, error },
-                            'Expired authorization could not be cancelled'
-                        );
-                    }
-                }
-            }
-        }
-
-        const abandonedAt = ports.clock.now();
-        const result = await getDb().transaction(async (tx) => {
-            const wrote = await subscriptionModel.abandonPendingAuthorization({
-                subscriptionId: subscription.id,
-                now: abandonedAt,
-                tx
-            });
-            if (wrote.wrote) {
-                await enqueueSignupIncompleteNotice({
-                    tx,
-                    subscription,
-                    closedCourtesyMonths: wrote.closedCourtesyMonths
-                });
-                // S3 decided the cancellation even when the notice deferred the call: the sweep
-                // finishes it (AC:B11:6). A manual payer had no call, so it records nothing.
-                if (subscription.paymentMethod !== 'MANUAL' && providerLink) {
-                    await recordProviderCancellationDecided({
-                        subscriptionId: subscription.id,
-                        transition: 'S3',
-                        decidedAt: abandonedAt,
-                        actor: { type: 'job' },
-                        correlationId: randomUUID(),
-                        changes: [
-                            { field: 'status', old: 'PENDING_AUTHORIZATION', new: 'ABANDONED' }
-                        ],
-                        tx
+                if (wrote.wrote) {
+                    await enqueueSignupIncompleteNotice({
+                        tx,
+                        subscription,
+                        closedCourtesyMonths: wrote.closedCourtesyMonths
                     });
+                    // S3 decided the cancellation even when the notice deferred the call: the sweep
+                    // finishes it (AC:B11:6). A manual payer had no call, so it records nothing.
+                    if (subscription.paymentMethod !== 'MANUAL' && providerLink) {
+                        await recordProviderCancellationDecided({
+                            subscriptionId: subscription.id,
+                            transition: 'S3',
+                            decidedAt: abandonedAt,
+                            actor: { type: 'job' },
+                            correlationId: randomUUID(),
+                            changes: [
+                                { field: 'status', old: 'PENDING_AUTHORIZATION', new: 'ABANDONED' }
+                            ],
+                            tx
+                        });
+                    }
                 }
-            }
-            return wrote;
-        });
-        if (result.wrote) abandoned++;
-        else skipped++;
-        // Branch 2 (HOS-1561 H9): only after the abandonment committed.
-        if (result.wrote && subscription.succeedsId)
-            retainedReevaluated += await reevaluateRetainedPayments(
-                { predecessorId: subscription.succeedsId },
-                ports
+                return wrote;
+            });
+            if (result.wrote) abandoned++;
+            else skipped++;
+            // Branch 2 (HOS-1561 H9): only after the abandonment committed.
+            if (result.wrote && subscription.succeedsId)
+                retainedReevaluated += await reevaluateRetainedPayments(
+                    { predecessorId: subscription.succeedsId },
+                    ports
+                );
+        } catch (error) {
+            failed++;
+            logger.error(
+                error,
+                `Authorization window expiry failed (subscription: ${row.subscription.id})`,
+                { capture: true }
             );
+        }
     }
 
     return {
@@ -295,6 +375,7 @@ export async function expireAuthorizationWindows(
         noticePending,
         skipped,
         touristVipCancelled,
-        retainedReevaluated
+        retainedReevaluated,
+        failed
     };
 }
