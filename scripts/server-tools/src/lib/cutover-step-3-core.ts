@@ -9,8 +9,18 @@
  * an injected dependency and returns a typed result the command translates.
  */
 
+import { buildStep3ChildEnv, resolveDeployedSha } from './cutover-step-3-env.ts';
 import type { Runner } from './runner.ts';
 import type { Target } from './target.ts';
+
+export type { BuildStep3ChildEnvInput } from './cutover-step-3-env.ts';
+export {
+    buildStep3ChildEnv,
+    readContainerEnvValue,
+    STEP3_CONTAINER_ENV_EXACT_KEYS,
+    STEP3_CONTAINER_ENV_PREFIXES,
+    STEP3_HOST_ENV_ALLOWLIST
+} from './cutover-step-3-env.ts';
 
 /** Which mode the wrapped script runs in. */
 export type CutoverStep3Mode = 'dry-run' | 'write';
@@ -149,83 +159,6 @@ export function isTypedConfirmationValid(input: IsTypedConfirmationValidInput): 
     return input.typed === WRITE_TRIALS_PROD_PHRASE;
 }
 
-/**
- * Read one value out of a `docker inspect .Config.Env` entry list.
- *
- * Entries are `KEY=VALUE`; the split happens on the FIRST `=`, so values that
- * contain `=` survive intact. Malformed entries are ignored.
- *
- * @param input - Env entry list and the key to look up.
- * @returns The value, or `undefined` when the key is absent.
- */
-export function readContainerEnvValue(input: {
-    readonly containerEnv: ReadonlyArray<string>;
-    readonly key: string;
-}): string | undefined {
-    const prefix = `${input.key}=`;
-    const entry = input.containerEnv.find((line) => line.startsWith(prefix));
-    return entry === undefined ? undefined : entry.slice(prefix.length);
-}
-
-/**
- * The only host variables the child gets.
- *
- * The wrapped script is launched through `pnpm` and `node`, so it needs the
- * host's `PATH` (container paths point at the container filesystem), `HOME`
- * (package-manager caches and config) and `LANG` (a sane locale). Nothing
- * else from the host is forwarded — in particular no `HOSPEDA_*` key, so a
- * host value can never shadow the container's.
- */
-export const STEP3_HOST_ENV_ALLOWLIST = ['PATH', 'HOME', 'LANG'] as const;
-
-/** Input for {@link buildStep3ChildEnv}. */
-export interface BuildStep3ChildEnvInput {
-    /** `Config.Env` entries from the target's api container. */
-    readonly containerEnv: ReadonlyArray<string>;
-    /** Host-reachable Postgres URL built from the target's Postgres container. */
-    readonly databaseUrl: string;
-    /** Host process environment; only {@link STEP3_HOST_ENV_ALLOWLIST} is read. */
-    readonly hostEnv: Readonly<Record<string, string | undefined>>;
-}
-
-/**
- * Build the child environment for the wrapped script.
- *
- * The api container's own environment is the only source of the full
- * `validateApiEnv()` surface, but the system entries (`PATH`, `HOME`,
- * `NODE_VERSION`, image-specific values) must never leak: overriding `PATH`
- * with the container's would point the host process at the container's
- * filesystem. Only `NODE_ENV` and `HOSPEDA_*` keys are taken from the
- * container, plus the closed host allowlist in
- * {@link STEP3_HOST_ENV_ALLOWLIST} so `pnpm`/`node` can start. A host
- * `HOSPEDA_*` never enters — the container value always wins — and
- * `HOSPEDA_DATABASE_URL` is replaced with the URL reachable from the host.
- * The caller passes the result to the runner with `inheritEnv: false`, so this
- * object is the child's entire environment. It stays in memory — callers must
- * never log it.
- *
- * @param input - Container env entries, the host DB URL and the host env.
- * @returns A new env object with only the allowed keys.
- */
-export function buildStep3ChildEnv(
-    input: BuildStep3ChildEnvInput
-): Readonly<Record<string, string>> {
-    const env: Record<string, string> = {};
-    for (const entry of input.containerEnv) {
-        const separator = entry.indexOf('=');
-        if (separator <= 0) continue;
-        const key = entry.slice(0, separator);
-        if (key !== 'NODE_ENV' && !key.startsWith('HOSPEDA_')) continue;
-        env[key] = entry.slice(separator + 1);
-    }
-    for (const key of STEP3_HOST_ENV_ALLOWLIST) {
-        const value = input.hostEnv[key];
-        if (value !== undefined) env[key] = value;
-    }
-    env.HOSPEDA_DATABASE_URL = input.databaseUrl;
-    return env;
-}
-
 /** Result of {@link checkDeployedSha}. */
 export type ShaCheckResult =
     | { readonly ok: true; readonly warning?: string }
@@ -235,7 +168,7 @@ export type ShaCheckResult =
 export interface CheckDeployedShaInput {
     /** `git -C <repoRoot> rev-parse HEAD` in the checkout that will run the script. */
     readonly checkoutSha: string;
-    /** `HOSPEDA_COMMIT_SHA` from the target's api container, when present. */
+    /** Deployed SHA from the api container: `HOSPEDA_COMMIT_SHA`, else `SOURCE_COMMIT`. */
     readonly deployedSha: string | undefined;
     /** `--allow-sha-mismatch` in effect. */
     readonly allowMismatch: boolean;
@@ -247,9 +180,11 @@ export interface CheckDeployedShaInput {
  * Short SHAs are compared by their first 10 characters: the container exposes
  * an abbreviated SHA while `git rev-parse HEAD` returns the full one. A missing
  * or `unknown` deployed SHA is treated like a mismatch — the guard cannot prove
- * the checkout is the deployed code, which is the whole point. Mismatches (and
- * an unverifiable SHA) are refused unless `--allow-sha-mismatch` was passed, in
- * which case the caller logs the returned warning and continues.
+ * the checkout is the deployed code, which is the whole point. The caller
+ * resolves that SHA with `resolveDeployedSha`, which falls back from
+ * `HOSPEDA_COMMIT_SHA` to `SOURCE_COMMIT`. Mismatches (and an unverifiable SHA)
+ * are refused unless `--allow-sha-mismatch` was passed, in which case the
+ * caller logs the returned warning and continues.
  *
  * @param input - Checkout SHA, deployed SHA and the override flag.
  * @returns `{ ok: true }` (optionally with a warning), or `{ ok: false, message }`.
@@ -268,7 +203,7 @@ export function checkDeployedSha(input: CheckDeployedShaInput): ShaCheckResult {
         }
         return {
             ok: false,
-            message: `Cannot verify the deployed SHA: the api container exposes no HOSPEDA_COMMIT_SHA. Checkout HEAD is ${checkout}. Refusing to run; pass --allow-sha-mismatch only if you accept an unverified checkout.`
+            message: `Cannot verify the deployed SHA: the api container exposes neither HOSPEDA_COMMIT_SHA nor SOURCE_COMMIT. Checkout HEAD is ${checkout}. Refusing to run; pass --allow-sha-mismatch only if you accept an unverified checkout.`
         };
     }
 
@@ -427,10 +362,7 @@ export type ExecuteCutoverStep3Result =
 export async function executeCutoverStep3(
     input: ExecuteCutoverStep3Input
 ): Promise<ExecuteCutoverStep3Result> {
-    const deployedSha = readContainerEnvValue({
-        containerEnv: input.containerEnv,
-        key: 'HOSPEDA_COMMIT_SHA'
-    });
+    const deployedSha = resolveDeployedSha({ containerEnv: input.containerEnv });
     const checkoutSha = await input.readCheckoutSha({ repoRoot: input.repoRoot });
     const shaCheck = checkDeployedSha({
         checkoutSha,

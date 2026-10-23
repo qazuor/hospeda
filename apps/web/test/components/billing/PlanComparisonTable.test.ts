@@ -38,6 +38,19 @@ describe('PlanComparisonTable.astro — single source of truth (HOS-329)', () =>
         expect(src).toContain("from '@/components/billing/plan-comparison-table.helpers'");
     });
 
+    it('only renders row groups that the i18n sweep also walks', () => {
+        // If you add an audience to the table, add its group to the sweep in
+        // `plan-comparison-rows.test.ts` too — otherwise its rows escape the
+        // label/description/icon guard. (HOS-1750)
+        const groups = [...new Set(src.match(/\b[A-Z]+_GROUPS\b/g) ?? [])].sort();
+        expect(groups).toEqual([
+            'EXPERIENCE_GROUPS',
+            'GASTRONOMY_GROUPS',
+            'OWNER_GROUPS',
+            'TOURIST_GROUPS'
+        ]);
+    });
+
     it('does not re-declare any row constant locally', () => {
         for (const constant of [
             'TOURIST_EXPERIENCE_ROWS',
