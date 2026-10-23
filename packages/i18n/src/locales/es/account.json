@@ -480,7 +480,17 @@
             },
             "loadError": "No pudimos leer tus suscripciones. Recargá la página.",
             "scheduledUntil": "Diste de baja esta suscripción: seguís hasta el {{date}}.",
-            "grace": "No pudimos cobrar tu cuota. Si cambiás la tarjeta con la que pagás en Mercado Pago, el cobro se vuelve a intentar en el momento; no podemos asegurarte que entre. Si el cobro no entra antes del {{date}}, tu suscripción se suspende y vas a tener que volver a suscribirte."
+            "grace": "No pudimos cobrar tu cuota. Si cambiás la tarjeta con la que pagás en Mercado Pago, el cobro se vuelve a intentar en el momento; no podemos asegurarte que entre. Si el cobro no entra antes del {{date}}, tu suscripción se suspende y vas a tener que volver a suscribirte.",
+            "vertical": {
+                "accommodation": "Alojamiento",
+                "gastronomy": "Gastronomía",
+                "experience": "Experiencias",
+                "tourist": "Turista",
+                "partner": "Aliados",
+                "unknown": "Hospeda"
+            },
+            "price": "{{amount}} {{cycle}}",
+            "nextCharge": "Próximo cobro: {{date}}, por {{amount}}."
         },
         "cancel": {
             "open": "Dar de baja",

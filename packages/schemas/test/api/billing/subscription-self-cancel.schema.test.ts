@@ -14,7 +14,15 @@ describe('self cancellation schemas', () => {
         paymentMethod: 'CARD',
         serviceEndsAt: new Date().toISOString(),
         graceEndsAt: null,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        plan: {
+            slug: 'owner-basico',
+            name: 'Basic',
+            amount: 10000,
+            currency: 'ARS',
+            cycle: 'monthly'
+        },
+        nextCharge: null
     };
     it('requires paidAfterCancellation and accepts null or the addon outcome', () => {
         expect(
@@ -74,6 +82,54 @@ describe('self cancellation schemas', () => {
                 ]
             }).success
         ).toBe(false);
+    });
+    describe('TEST:1755:3 own subscription plan and next charge contract', () => {
+        const validRow = { ...ownRow, paidAfterCancellation: null };
+        const parseRow = (row: Record<string, unknown>) =>
+            OwnSubscriptionsResponseSchema.safeParse({
+                ...ownSubscriptions,
+                subscriptions: [row]
+            }).success;
+
+        it('accepts a valid next charge', () => {
+            expect(
+                parseRow({
+                    ...validRow,
+                    nextCharge: {
+                        at: '2026-10-15T12:00:00.000Z',
+                        amount: 8000,
+                        currency: 'ARS'
+                    }
+                })
+            ).toBe(true);
+        });
+
+        it('rejects a missing plan', () => {
+            const { plan: _plan, ...row } = validRow;
+            expect(parseRow(row)).toBe(false);
+        });
+
+        it.each([1.5, -1])('rejects invalid plan amount %s', (amount) => {
+            expect(parseRow({ ...validRow, plan: { ...ownRow.plan, amount } })).toBe(false);
+        });
+
+        it('rejects unsupported plan currency and cycle', () => {
+            expect(parseRow({ ...validRow, plan: { ...ownRow.plan, currency: 'USD' } })).toBe(
+                false
+            );
+            expect(parseRow({ ...validRow, plan: { ...ownRow.plan, cycle: 'weekly' } })).toBe(
+                false
+            );
+        });
+
+        it('rejects a non-datetime next charge', () => {
+            expect(
+                parseRow({
+                    ...validRow,
+                    nextCharge: { at: 'tomorrow', amount: 8000, currency: 'ARS' }
+                })
+            ).toBe(false);
+        });
     });
     it('accepts every preview origin', () => {
         const base = {

@@ -1,4 +1,23 @@
 import { z } from 'zod';
+import { BillingCycleSchema } from '../../catalog/plan-publication.schema.js';
+
+/** The plan and billing option this subscription is ANCHORED to (never the current catalog version); amount in minor units, list price without promotions. */
+export const OwnSubscriptionPlanSchema = z.object({
+    slug: z.string().min(1),
+    name: z.string().min(1),
+    amount: z.number().int().nonnegative(),
+    currency: z.literal('ARS'),
+    cycle: BillingCycleSchema
+});
+
+/** The next charge the provider will make, only for an ACTIVE card subscription whose provider date is known and in the future; amount composes live promotions and a scheduled change effective on that date. Null otherwise. */
+export const OwnSubscriptionNextChargeSchema = z
+    .object({
+        at: z.string().datetime(),
+        amount: z.number().int().nonnegative(),
+        currency: z.literal('ARS')
+    })
+    .nullable();
 
 /** A principal subscription shown on the owner's billing page. */
 export const OwnSubscriptionsResponseSchema = z.object({
@@ -12,7 +31,9 @@ export const OwnSubscriptionsResponseSchema = z.object({
             graceEndsAt: z.string().datetime().nullable(),
             createdAt: z.string().datetime(),
             /** A payment arrived after cancellation was already requested; addon billing outcome. */
-            paidAfterCancellation: z.object({ recurringAddonsCut: z.boolean() }).nullable()
+            paidAfterCancellation: z.object({ recurringAddonsCut: z.boolean() }).nullable(),
+            plan: OwnSubscriptionPlanSchema,
+            nextCharge: OwnSubscriptionNextChargeSchema
         })
     ),
     /** Deferred courtesy terms from glossary §2.6, for display only. */
