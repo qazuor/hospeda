@@ -31,7 +31,7 @@ export function resolveSignupPlanName({
     readonly t: (key: string, fallback?: string) => string;
 }): string {
     if (!plan.slug) return plan.name;
-    return getPlanName({ plan: { slug: plan.slug, name: plan.name, description: '' }, t });
+    return getPlanName({ plan: { slug: plan.slug, name: plan.name }, t });
 }
 
 /** Trial state rendered before an explicit signup confirmation. */
