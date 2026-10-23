@@ -312,3 +312,58 @@ describe('OpeningHoursSection', () => {
         expect(document.getElementById('editor-openingHours')).not.toBeNull();
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-1763 — the seven days open CLOSED (HOS-906) with no way to learn how to
+// fill them and no shortcut to repeat one day across the week. The help line
+// must be visible even with a null value, and the copy-to-all shortcut must
+// exist only where it makes sense (an open day with at least one shift).
+// ---------------------------------------------------------------------------
+
+describe('help and copy-to-all (HOS-1763)', () => {
+    it('shows the always-visible help line with a null value (TEST:1763:3a)', () => {
+        renderSection();
+
+        expect(screen.getByText(/Todos los días arrancan/)).toBeInTheDocument();
+    });
+
+    it('copies the Tuesday schedule to all seven days, keeping the timezone (TEST:1763:3b)', () => {
+        const { onChange } = renderSection({ value: seeded });
+
+        fireEvent.click(screen.getByRole('button', { name: /Copiar a todos los días.*Mar/ }));
+
+        const emitted = lastEmitted(onChange);
+        for (const day of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) {
+            expect(emitted.days[day]).toEqual({
+                closed: false,
+                shifts: [{ open: '10:00', close: '14:00' }]
+            });
+        }
+        expect(emitted.timezone).toBe('America/Montevideo');
+    });
+
+    it('hides the shortcut on a closed day and on an open day with no shifts (TEST:1763:3c)', () => {
+        // Every day falls through `dayOf()`'s HOS-906 default: all closed.
+        renderSection();
+
+        expect(screen.queryByRole('button', { name: /Copiar a todos/ })).toBeNull();
+
+        // ...and an explicitly open day with zero shifts has nothing to copy.
+        const openNoShifts = {
+            timezone: 'America/Argentina/Buenos_Aires',
+            days: { tue: { closed: false, shifts: [] } }
+        } as unknown as OpeningHours;
+        renderSection({ value: openNoShifts });
+
+        expect(screen.queryByRole('button', { name: /Copiar a todos/ })).toBeNull();
+    });
+
+    it('gives every copied day its own shift objects (TEST:1763:3d)', () => {
+        const { onChange } = renderSection({ value: seeded });
+
+        fireEvent.click(screen.getByRole('button', { name: /Copiar a todos los días.*Mar/ }));
+
+        const { days } = lastEmitted(onChange);
+        expect(days.mon.shifts[0]).not.toBe(days.tue.shifts[0]);
+    });
+});

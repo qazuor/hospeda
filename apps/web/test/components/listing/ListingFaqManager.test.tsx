@@ -378,3 +378,46 @@ describe('ListingFaqManager', () => {
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-1763 — the FAQ intro was an ~800 px block of jargon ("JSON-LD",
+// "datos estructurados") sitting between the title and the empty state. It is
+// now ONE always-visible sentence plus the long explanation inside a collapsed
+// `<details>`, and the empty state stays exactly where it was.
+// ---------------------------------------------------------------------------
+
+describe('channel intro (HOS-1763)', () => {
+    const SHORT_INTRO =
+        'Elegí si cada pregunta se ve en la ficha y si el asistente de chat puede usarla.';
+
+    it('shows the short sentence and leaves the details closed by default (TEST:1763:4a)', () => {
+        renderManager([]);
+
+        expect(screen.getByText(SHORT_INTRO)).toBeInTheDocument();
+
+        const details = document.querySelector('details');
+        expect(details).not.toBeNull();
+        expect((details as HTMLDetailsElement).hasAttribute('open')).toBe(false);
+    });
+
+    it('keeps the long explanation in the DOM without technical jargon (TEST:1763:4b)', () => {
+        renderManager([]);
+
+        const details = document.querySelector('details');
+        expect(details).not.toBeNull();
+        const text = details?.textContent ?? '';
+
+        expect(text).toContain('Importante: una pregunta no visible en la ficha');
+        expect(text).not.toMatch(/JSON-LD|estructurad/i);
+    });
+
+    it('renders the empty state after the short sentence in document order (TEST:1763:4c)', () => {
+        renderManager([]);
+
+        const shortIntro = screen.getByText(SHORT_INTRO);
+        const emptyState = screen.getByText('Todavía no hay preguntas. Agregá la primera.');
+
+        const position = shortIntro.compareDocumentPosition(emptyState);
+        expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+});
