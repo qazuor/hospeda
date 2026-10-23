@@ -213,17 +213,21 @@
 }
 
 /*
- * Mobile layout (<= 640px). Unlike the previous iteration — which hid the
- * counter entirely on small screens — the redesign's whole purpose is to
- * teach the user how the feature works, so the counter + guidance text stay
- * visible everywhere. Instead, the row wraps into two stacked rows:
- * (1) counter/guidance + actions, (2) the full-width thumbnail strip. The
- * bar itself is still `position: fixed; bottom: 0` (see `.bar`) with the
- * safe-area inset already applied, so on mobile it anchors flush to the very
- * bottom of the viewport, above the browser chrome and above any other
- * in-page fixed navigation and floating controls (`.bar`'s z-index is
- * `--z-toast + 10` — see the rationale comment on `.bar` above).
+ * Mobile layout (<= 640px). Keep the compact counter/action row and full-width
+ * thumbnail strip when this bar is stacked above the mobile dock.
  */
+@media (max-width: 767px) {
+    .bar {
+        display: none;
+    }
+
+    :global([data-mobile-dock]) .bar {
+        display: block;
+        position: static;
+        padding-bottom: 0.625rem;
+    }
+}
+
 @media (max-width: 640px) {
     .barMobile {
         padding: 0.625rem 0.75rem;
