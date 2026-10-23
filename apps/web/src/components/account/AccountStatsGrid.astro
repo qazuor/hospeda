@@ -12,6 +12,8 @@ import { FavoriteIcon, StarIcon, CreditCardIcon, BuildingIcon, ChatIcon, Briefca
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { getPlanName } from '@/lib/billing-i18n';
+import { DASHBOARD_PLAN_SLUGS } from '@/lib/billing/dashboard-plan-stat';
 import styles from './AccountSection.module.css';
 
 interface Props {
@@ -49,6 +51,12 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
 // `data-label-${planStatus}`, so without this attribute a `comp` subscriber
 // keeps the placeholder and the card reads as if they had nothing (H-130).
 const statCompStatus = t('account.pages.dashboard.stats.compStatus', 'Bonificado');
+const statGracePeriodStatus = t('account.pages.dashboard.stats.gracePeriodStatus', 'Pago pendiente');
+const statSuspendedStatus = t('account.pages.dashboard.stats.suspendedStatus', 'Suspendida');
+const statCancelScheduledStatus = t('account.pages.dashboard.stats.cancelScheduledStatus', 'Baja programada');
+const planNames = Object.fromEntries(
+    DASHBOARD_PLAN_SLUGS.map((slug) => [slug, getPlanName({ plan: { slug, name: slug, description: '' }, t })])
+);
 // HOS-1066: an account can hold more than one active subscription across
 // product domains (e.g. an accommodation host who also runs a gastronomy
 // listing). `/users/me/stats` then reports `plan: null` with
@@ -184,6 +192,7 @@ const statListingsDesc = t('account.pages.dashboard.stats.listingsDesc', 'Fichas
             data-label-free={statFreeStatus}
             data-label-multiple-one={statMultipleSubscriptionsOne}
             data-label-multiple-other={statMultipleSubscriptionsOther}
+            data-plan-names={JSON.stringify(planNames)}
             aria-live="polite"
         >
             {statSubscriptionDesc}
@@ -194,6 +203,9 @@ const statListingsDesc = t('account.pages.dashboard.stats.listingsDesc', 'Fichas
             data-label-active={statActiveStatus}
             data-label-trial={statTrialStatus}
             data-label-comp={statCompStatus}
+            data-label-grace-period={statGracePeriodStatus}
+            data-label-suspended={statSuspendedStatus}
+            data-label-cancel-scheduled={statCancelScheduledStatus}
             data-label-free={statFreeStatus}
             aria-live="polite"
         >

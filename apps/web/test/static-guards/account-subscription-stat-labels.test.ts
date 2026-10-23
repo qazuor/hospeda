@@ -91,6 +91,17 @@ describe('account subscription stat card — labels (H-70 / H-130)', () => {
                 expect(String(comp ?? '').trim().length).toBeGreaterThan(0);
                 expect(comp).not.toBe(stats.freeStatus);
             });
+
+            it.each([
+                'gracePeriodStatus',
+                'suspendedStatus',
+                'cancelScheduledStatus'
+            ])('%s exists, is non-empty, and is distinct from the free-plan label', (key) => {
+                const label = stats[key];
+                expect(typeof label).toBe('string');
+                expect(String(label ?? '').trim().length).toBeGreaterThan(0);
+                expect(label).not.toBe(stats.freeStatus);
+            });
         });
     }
 

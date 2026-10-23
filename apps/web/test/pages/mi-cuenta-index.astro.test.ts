@@ -64,3 +64,13 @@ describe('mi-cuenta/index.astro — role-aware dashboard (H-151)', () => {
         expect(source).toContain('account.pages.dashboard.nav.myMessagesListingDesc');
     });
 });
+
+describe('TEST:1756:12 mi-cuenta subscription stat source', () => {
+    it('uses the dashboard resolver and removes the untyped plan reads', () => {
+        expect(source).toContain(
+            "import { parsePlanNames, resolveDashboardPlanStat } from '@/lib/billing/dashboard-plan-stat';"
+        );
+        expect(source).not.toContain('planStatus');
+        expect(source).not.toContain('statsData.data?.plan?.name');
+    });
+});

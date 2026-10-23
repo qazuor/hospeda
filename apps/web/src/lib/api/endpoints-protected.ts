@@ -43,6 +43,7 @@ import type {
     UserBookmark,
     UserProtected,
     UserPublic,
+    UserStatsResponse,
     VerticalEnum
 } from '@repo/schemas';
 import {
@@ -337,14 +338,7 @@ export const userApi = {
      * if (result.ok) console.log(result.data.bookmarkCount);
      * ```
      */
-    getStats(): Promise<
-        ApiResult<{
-            readonly bookmarkCount: number;
-            readonly reviewCount: number;
-            readonly plan: { readonly name: string; readonly status: string } | null;
-            readonly activeSubscriptionsCount: number;
-        }>
-    > {
+    getStats(): Promise<ApiResult<UserStatsResponse>> {
         return apiClient.getProtected({ path: `${PROTECTED}/users/me/stats` });
     },
 
