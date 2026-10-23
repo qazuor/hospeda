@@ -68,10 +68,11 @@ describe('HOS-1737 reconciliation sweep provider pacing', () => {
     it('TEST:1737:11 leaves the row failed without the decorator', async () => {
         const { fake } = createReconciliationFake();
         const row = await seedSubscription({ status: 'ACTIVE', withLink: true, fake });
-        // Four failures exceed the webhook adapter’s three-attempt policy.
+        // The same four-failure burst reaches the sweep without decorator retries.
         const original = fake.readAuthorization.bind(fake);
+        let failuresLeft = 4;
         vi.spyOn(fake, 'readAuthorization').mockImplementation(async (input) => {
-            if (input.authorizationId === row.providerId) {
+            if (input.authorizationId === row.providerId && failuresLeft-- > 0) {
                 throw new PaymentProviderError({
                     code: 'UNAVAILABLE',
                     capability: 'read',

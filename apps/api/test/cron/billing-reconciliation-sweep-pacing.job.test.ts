@@ -12,11 +12,11 @@ const { mockProvider, pacedProvider, mockPaced, mockSweep, factories } = vi.hois
         factories: {
             period: vi.fn((ports: unknown) => ({ kind: 'period', ports })),
             amount: vi.fn((ports: unknown) => ({ kind: 'amount', ports })),
-            pause: vi.fn((ports: unknown) => async () => undefined),
-            lost: vi.fn((ports: unknown) => async () => undefined),
-            pending: vi.fn((ports: unknown) => async () => undefined),
-            successor: vi.fn((ports: unknown) => async () => undefined),
-            grace: vi.fn((ports: unknown) => async () => undefined),
+            pause: vi.fn((_ports: unknown) => async () => undefined),
+            lost: vi.fn((_ports: unknown) => async () => undefined),
+            pending: vi.fn((_ports: unknown) => async () => undefined),
+            successor: vi.fn((_ports: unknown) => async () => undefined),
+            grace: vi.fn((_ports: unknown) => async () => undefined),
             promo: vi.fn((ports: unknown) => ({ kind: 'promo', ports }))
         }
     };
