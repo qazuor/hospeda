@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import type { OwnerListingSummary } from '@repo/schemas';
 import { LimitKeyEnum, PublicationStatusEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { UNLIMITED_LIMIT_VALUE } from '@/components/billing/plan-card-delta';
 import { effectiveSetApi } from '@/lib/api/endpoints-protected';
 import type { EntitlementsData } from '@/lib/entitlements-cache';
 import {
@@ -78,7 +79,10 @@ describe('vertical usage — TEST:1757:1-4,6', () => {
         ['failed', effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: 3 }, true)],
         ['missing limit', effective({})],
         ['infinite', effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: Infinity })],
-        ['unlimited sentinel', effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: 2147483647 })],
+        [
+            'unlimited sentinel',
+            effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: UNLIMITED_LIMIT_VALUE })
+        ],
         ['zero', effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: 0 })],
         ['negative', effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: -1 })]
     ])('TEST:1757:3 omits a badge for %s capacity', (_case, effectiveSet) => {
