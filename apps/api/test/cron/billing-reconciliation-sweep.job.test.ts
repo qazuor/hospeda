@@ -41,6 +41,7 @@ const {
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
     runReconciliationSweep: mockSweep,
+    createSweepPacedProvider: (input: { readonly provider: unknown }) => input.provider,
     createGraceExpiryCheck: mockGraceExpiryCheck,
     createNextChargeSync: mockNextChargeSync,
     createProviderPauseCheck: mockProviderPauseCheck,
