@@ -158,15 +158,31 @@ describe('TEST:B13a:21a AC:B13a:5 and AC:1735:8 the checkout reads the trial of 
 
         expect(accommodation.response.status).toBe(200);
         expect(accommodation.body.data).toEqual({
-            plan: { name: 'Checkout plan', amount: 1500000, currency: 'ARS', cycle: 'monthly' },
+            plan: {
+                slug: expect.stringMatching(/^b13a-notice-/),
+                name: 'Checkout plan',
+                amount: 1500000,
+                currency: 'ARS',
+                cycle: 'monthly'
+            },
             pendingAttempt: null,
             vertical: 'accommodation',
             touristVip: { status: 'NOT_AFFECTED' },
             trial: { status: 'RUNNING', endsAt: endsAt.toISOString(), daysLeft: 11 }
         });
+        // TEST:1759:2 the notice slug is the plan's persisted catalog slug.
+        const [accommodationPlan] = await getDb()
+            .select({ slug: plans.slug })
+            .from(billingOptions)
+            .innerJoin(planVersions, eq(planVersions.id, billingOptions.planVersionId))
+            .innerJoin(plans, eq(plans.id, planVersions.planId))
+            .where(eq(billingOptions.id, accommodationOption.id))
+            .limit(1);
+        expect(accommodation.body.data.plan.slug).toBe(accommodationPlan?.slug);
         expect(accommodationAnnual.response.status).toBe(200);
         expect(accommodationAnnual.body.data).toEqual({
             plan: {
+                slug: expect.stringMatching(/^b13a-notice-/),
                 name: 'Checkout plan',
                 amount: 15000000,
                 currency: 'ARS',
@@ -179,7 +195,13 @@ describe('TEST:B13a:21a AC:B13a:5 and AC:1735:8 the checkout reads the trial of 
         });
         expect(gastronomy.response.status).toBe(200);
         expect(gastronomy.body.data).toEqual({
-            plan: { name: 'Checkout plan', amount: 100000, currency: 'ARS', cycle: 'monthly' },
+            plan: {
+                slug: expect.stringMatching(/^b13a-notice-/),
+                name: 'Checkout plan',
+                amount: 100000,
+                currency: 'ARS',
+                cycle: 'monthly'
+            },
             pendingAttempt: null,
             vertical: 'gastronomy',
             touristVip: { status: 'NOT_AFFECTED' },
