@@ -210,6 +210,11 @@ const REJECTION_BY_REASON: Record<
         messageKey: 'billing.checkout.signup.rejection.generic',
         retryable: true,
         showPlansLink: false
+    },
+    PROVIDER_REJECTED: {
+        messageKey: 'billing.checkout.signup.rejection.providerRejected',
+        retryable: true,
+        showPlansLink: false
     }
 };
 

@@ -19,7 +19,8 @@ export const StartSubscriptionRejectionReasonSchema = z.enum([
     'COMMITMENT_TAKEN',
     'TOURIST_VIP_INHERITED',
     'CREATION_NOT_APPLIED',
-    'PREVIOUS_ATTEMPT_IN_PROGRESS'
+    'PREVIOUS_ATTEMPT_IN_PROGRESS',
+    'PROVIDER_REJECTED'
 ]);
 
 export type StartSubscriptionRejectionReason = z.infer<

@@ -106,7 +106,8 @@ describe('TEST:1732:19 rejected creation retry route', () => {
         const first = await request(user!.email);
         const secondEmail = 'retry@example.test';
         const retry = await request(secondEmail);
-        expect(first.status).toBeGreaterThanOrEqual(500);
+        // A provider REJECTED is a correctable 422 since HOS-1746, no longer a 5xx.
+        expect(first.status).toBe(422);
         expect(retry.status).toBe(201);
         const body = await retry.json();
         const rows = await getDb()

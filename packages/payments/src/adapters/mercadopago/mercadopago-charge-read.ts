@@ -58,6 +58,7 @@ function toChargeStatus({
 export async function readMercadoPagoCharge(args: {
     readonly chargeId: string;
     readonly send: MercadoPagoSend;
+    readonly sleep?: (ms: number) => Promise<void>;
 }): Promise<ChargeSnapshot> {
     const response = await args.send({
         capability: 'read',
@@ -82,7 +83,8 @@ export async function readMercadoPagoCharge(args: {
                 : await readMercadoPagoChargeWindow({
                       authorizationId,
                       payment: { id: parsed.id, createdAt: parsed.date_created },
-                      send: args.send
+                      send: args.send,
+                      ...(args.sleep ? { sleep: args.sleep } : {})
                   }),
         purpose:
             authorizationId === null &&

@@ -15,6 +15,7 @@ export async function readMercadoPagoChargeWindow(input: {
     readonly authorizationId: string;
     readonly payment: { readonly id: string; readonly createdAt: string };
     readonly send: MercadoPagoSend;
+    readonly sleep?: (ms: number) => Promise<void>;
 }): Promise<string | null> {
     const records = await readMercadoPagoChargeRecords(input);
     const paymentCreatedAt = Date.parse(input.payment.createdAt);

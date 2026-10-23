@@ -140,6 +140,21 @@ describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
         );
     });
 
+    it('shows correctable provider rejection copy and a retry action', async () => {
+        start.mockResolvedValueOnce({
+            ok: false,
+            error: { status: 422, reason: 'PROVIDER_REJECTED', message: 'API English text' }
+        });
+        render(<SignupCheckout {...props} />);
+        fireEvent.click(screen.getByTestId('signup-checkout-confirm'));
+        const rejection = await screen.findByTestId('signup-checkout-rejection');
+        expect(rejection).toHaveTextContent(
+            'Mercado Pago no aceptó los datos del pago. Revisá que el email sea el de tu cuenta de Mercado Pago y volvé a intentar.'
+        );
+        expect(rejection).not.toHaveTextContent('API English text');
+        expect(screen.getByTestId('signup-checkout-retry')).toBeInTheDocument();
+    });
+
     it('TEST:1723:5b shows the translated retry action for an unfinished previous creation', async () => {
         start.mockResolvedValueOnce({
             ok: false,
