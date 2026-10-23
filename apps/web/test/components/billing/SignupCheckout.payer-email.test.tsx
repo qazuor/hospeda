@@ -98,3 +98,53 @@ describe('TEST:1730:5 checkout payer email', () => {
         expect(screen.getByTestId('signup-checkout-payer-email')).toHaveValue('other@example.test');
     });
 });
+
+describe('TEST:1759:5 payer email validation on blur', () => {
+    it.each(['', 'no-es-un-email'])('marks %s invalid on blur without starting', async (value) => {
+        render(<SignupCheckout {...props} />);
+        const input = screen.getByTestId('signup-checkout-payer-email');
+        fireEvent.change(input, { target: { value } });
+        fireEvent.blur(input);
+        expect(await screen.findByRole('alert')).toHaveTextContent('Ingresá un email válido.');
+        expect(input).toHaveAttribute('aria-invalid', 'true');
+        expect(start).not.toHaveBeenCalled();
+    });
+
+    it('keeps valid email clear on blur', () => {
+        render(<SignupCheckout {...props} />);
+        const input = screen.getByTestId('signup-checkout-payer-email');
+        fireEvent.change(input, { target: { value: 'ok@example.test' } });
+        fireEvent.blur(input);
+        expect(screen.queryByRole('alert')).toBeNull();
+        expect(input).toHaveAttribute('aria-invalid', 'false');
+        expect(start).not.toHaveBeenCalled();
+    });
+
+    it('clears blur error after correction', async () => {
+        render(<SignupCheckout {...props} />);
+        const input = screen.getByTestId('signup-checkout-payer-email');
+        fireEvent.change(input, { target: { value: 'no-es-un-email' } });
+        fireEvent.blur(input);
+        await screen.findByRole('alert');
+        fireEvent.change(input, { target: { value: 'ok@example.test' } });
+        await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+        expect(start).not.toHaveBeenCalled();
+    });
+
+    it('starts once with the corrected email after a blur error', async () => {
+        start.mockResolvedValue(success);
+        render(<SignupCheckout {...props} />);
+        const input = screen.getByTestId('signup-checkout-payer-email');
+        fireEvent.change(input, { target: { value: 'no-es-un-email' } });
+        fireEvent.blur(input);
+        await screen.findByRole('alert');
+        fireEvent.change(input, { target: { value: 'ok@example.test' } });
+        fireEvent.click(screen.getByTestId('signup-checkout-confirm'));
+        await screen.findByTestId('signup-checkout-pending');
+        expect(start).toHaveBeenCalledTimes(1);
+        expect(start).toHaveBeenCalledWith({
+            billingOptionId: props.billingOptionId,
+            payerEmail: 'ok@example.test'
+        });
+    });
+});
