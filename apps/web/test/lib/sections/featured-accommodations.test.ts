@@ -1,54 +1,81 @@
 /**
- * HOS-929 regression — `filterFeaturedCards` must drop non-featured cards
- * rather than let them backfill the homepage "Destacados" section.
- *
- * `AccommodationModel.search()` never applies `isFeatured` as a WHERE filter
- * (only `featuredFirst` ordering exists), so before this filter existed the
- * section silently showed non-featured cards whenever fewer than `pageSize`
- * accommodations were genuinely featured — including, in the worst case,
- * ZERO featured accommodations rendering a full page of unrelated ones.
+ * HOS-1764 replaces the HOS-929 rule that non-featured cards must not backfill.
+ * The owner decided to show featured cards first, then fill with the best-rated
+ * cards already ordered by the API.
  */
 import { describe, expect, it } from 'vitest';
-import { filterFeaturedCards } from '@/lib/sections/featured-accommodations';
+import {
+    type HomeFeaturedCandidate,
+    selectHomeAccommodationCards
+} from '@/lib/sections/featured-accommodations';
 
-function card(id: string, isFeatured: boolean) {
+function card(id: string, isFeatured: boolean): HomeFeaturedCandidate {
     return { id, isFeatured };
 }
 
-describe('filterFeaturedCards', () => {
-    it('keeps only cards whose isFeatured is true', () => {
-        const cards = [card('a', true), card('b', false), card('c', true)];
+describe('selectHomeAccommodationCards', () => {
+    it('fills the limit with featured cards first and keeps input order within each group', () => {
+        const cards = [
+            card('a', false),
+            card('b', false),
+            card('c', true),
+            card('d', false),
+            card('e', true)
+        ];
 
-        const result = filterFeaturedCards(cards);
-
-        expect(result).toEqual([card('a', true), card('c', true)]);
+        expect(selectHomeAccommodationCards({ cards, limit: 4 }).map(({ id }) => id)).toEqual([
+            'c',
+            'e',
+            'a',
+            'b'
+        ]);
+        expect(selectHomeAccommodationCards({ cards, limit: 8 })).toEqual([
+            cards[2],
+            cards[4],
+            cards[0],
+            cards[1],
+            cards[3]
+        ]);
     });
 
-    it('returns an empty array when no card is featured (worst case: EmptyState renders)', () => {
+    it('keeps only the first appearance of each id', () => {
+        const first = card('same', false);
+        const later = card('same', true);
+        const other = card('other', true);
+
+        expect(selectHomeAccommodationCards({ cards: [first, later, other], limit: 3 })).toEqual([
+            other,
+            first
+        ]);
+    });
+
+    it('returns original references without changing featured state', () => {
+        const featured = card('featured', true);
+        const regular = card('regular', false);
+
+        const result = selectHomeAccommodationCards({ cards: [regular, featured], limit: 2 });
+
+        expect(result[0]).toBe(featured);
+        expect(result[1]).toBe(regular);
+        expect(result[1]?.isFeatured).toBe(false);
+    });
+
+    it('returns empty only for empty input, and retains cards when none are featured', () => {
         const cards = [card('a', false), card('b', false)];
 
-        const result = filterFeaturedCards(cards);
-
-        expect(result).toEqual([]);
+        expect(selectHomeAccommodationCards({ cards: [], limit: 8 })).toEqual([]);
+        expect(selectHomeAccommodationCards({ cards, limit: 8 })).toEqual(cards);
     });
 
-    it('returns every card when all are featured', () => {
-        const cards = [card('a', true), card('b', true)];
+    it('preserves relative order of featured and non-featured cards and returns empty at limit zero', () => {
+        const cards = [card('n1', false), card('f1', true), card('n2', false), card('f2', true)];
 
-        const result = filterFeaturedCards(cards);
-
-        expect(result).toEqual(cards);
-    });
-
-    it('preserves input order (featured-first, per the forced featuredFirst sort)', () => {
-        const cards = [card('a', true), card('b', true), card('c', false)];
-
-        const result = filterFeaturedCards(cards);
-
-        expect(result.map((c) => c.id)).toEqual(['a', 'b']);
-    });
-
-    it('returns an empty array for an empty input', () => {
-        expect(filterFeaturedCards([])).toEqual([]);
+        expect(selectHomeAccommodationCards({ cards, limit: 4 }).map(({ id }) => id)).toEqual([
+            'f1',
+            'f2',
+            'n1',
+            'n2'
+        ]);
+        expect(selectHomeAccommodationCards({ cards, limit: 0 })).toEqual([]);
     });
 });
