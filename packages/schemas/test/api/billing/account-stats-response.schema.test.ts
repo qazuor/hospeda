@@ -21,7 +21,7 @@ describe('TEST:1756:8 user stats response schema', () => {
     });
 
     it.each([
-        { bookmarkCount: 0, reviewCount: 0 },
+        { ...base },
         { bookmarkCount: 0, reviewCount: 0, plan: null },
         {
             ...base,

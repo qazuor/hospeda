@@ -124,6 +124,23 @@ describe('TEST:1756:1-7 user stats plan summary', () => {
         expect(UserStatsResponseSchema.safeParse(data).success).toBe(true);
     });
 
+    it('TEST:1756:6 parses the actual response body for zero, one, and multiple subscriptions', async () => {
+        const emptyOwner = await seedUser('stats-schema-empty');
+        const emptyData = await readStats(emptyOwner);
+        expect(emptyData).toHaveProperty('plan', null);
+        expect(emptyData).toHaveProperty('activeSubscriptionsCount', 0);
+        expect(UserStatsResponseSchema.safeParse(emptyData).success).toBe(true);
+
+        const one = await seedSelfState('ACTIVE');
+        const oneData = await readStats(one.ownerId);
+        expect(UserStatsResponseSchema.safeParse(oneData).success).toBe(true);
+
+        const multiple = await seedSelfState('ACTIVE');
+        await seedGastronomyPrincipal(multiple.ownerId);
+        const multipleData = await readStats(multiple.ownerId);
+        expect(UserStatsResponseSchema.safeParse(multipleData).success).toBe(true);
+    });
+
     it.each([
         'GRACE_PERIOD',
         'SUSPENDED',
