@@ -139,6 +139,7 @@ async function readPlan(input: {
     if (!currency.success)
         throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Unknown billing option currency');
     return {
+        slug: choice.planSlug,
         name: choice.planName,
         amount: option.amount,
         currency: currency.data,
