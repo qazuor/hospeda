@@ -52,6 +52,7 @@ import {
     unimplementedSuccessionCloser,
     unknownFirstCharge
 } from '../subscription/subscription-billing-ports.js';
+import { logProviderNoticeFailure } from './log-provider-notice-failure.js';
 import { mirrorOurCancellationOnActive } from './mirror-our-cancellation-on-active.js';
 import {
     getProviderNoticeMirror,
@@ -480,9 +481,7 @@ export async function processProviderNotice(
         }
         return { ack: 'OK', outcome: finalOutcome };
     } catch (error) {
-        logger.error(error, `Provider notice processing failed (channel: ${input.channel})`, {
-            capture: true
-        });
+        logProviderNoticeFailure({ error, channel: input.channel });
         return { ack: 'ERROR', outcome: 'FAILED' };
     }
 }

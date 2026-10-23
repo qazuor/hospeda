@@ -25,6 +25,10 @@ export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
                 serviceEndsAt: row.serviceEndsAt?.toISOString() ?? null,
                 graceEndsAt: row.graceEndsAt?.toISOString() ?? null,
                 createdAt: row.createdAt.toISOString(),
+                plan: row.plan,
+                nextCharge: row.nextCharge
+                    ? { ...row.nextCharge, at: row.nextCharge.at.toISOString() }
+                    : null,
                 paidAfterCancellation: row.paidAfterCancellation
             })),
             deferredCourtesies

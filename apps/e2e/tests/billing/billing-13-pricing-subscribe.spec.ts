@@ -128,7 +128,7 @@ test.describe('TEST:B13a:10 TEST:B13a:11 pricing per vertical @p0 @billing', () 
             page.locator(
                 `article[data-testid="my-subscription"][data-subscription-id="${seeded.subscriptionId}"]`
             )
-        ).toContainText('alojamiento');
+        ).toContainText('Alojamiento');
         await page.goto(`${WEB_URL}/es/planes/turistas/precios/`);
         await execSQL(
             "UPDATE subscription SET status = 'CANCELLED', grace_started_at = NULL, grace_ends_at = NULL, updated_at = NOW() WHERE id = $1",
@@ -162,7 +162,7 @@ test.describe('TEST:B13a:10 TEST:B13a:11 pricing per vertical @p0 @billing', () 
             page.locator(
                 `article[data-testid="my-subscription"][data-subscription-id="${seeded.subscriptionId}"]`
             )
-        ).toContainText('alojamiento');
+        ).toContainText('Alojamiento');
     });
 
     test('TEST:B13a:11 running trial permits checkout', async ({ page }) => {

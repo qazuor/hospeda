@@ -11,7 +11,7 @@ import {
     PLAN_CHANGE_UNAVAILABLE,
     PLAN_CHANGE_UNAVAILABLE_KEY
 } from '@/lib/billing/my-subscription-notices';
-import { SIGNUP_VERTICAL_LABEL_KEY } from '@/lib/billing/signup-checkout';
+import { resolveMySubscriptionSummary, resolveMySubscriptionVerticalLabelKey } from '@/lib/billing/my-subscription-summary';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './MySubscriptions.module.css';
 
@@ -34,23 +34,29 @@ const renewalKind = (row: OwnSubscriptionsResult['subscriptions'][number]) => {
     <h2 class={styles.title}>{t('account.subscription.mine.title')}</h2>
     {!result && <p class={styles.line}>{t('account.subscription.mine.loadError')}</p>}
     {result && result.subscriptions.length === 0 && result.deferredCourtesies.length === 0 && <p class={styles.line}>{t('account.subscription.mine.empty')}</p>}
-    {result?.subscriptions.map((row) => (
-        <article class={styles.item} data-testid="my-subscription" data-subscription-id={row.id} data-renewal={renewalKind(row)}>
-            <h3 class={styles.title}>{t(SIGNUP_VERTICAL_LABEL_KEY[row.vertical as keyof typeof SIGNUP_VERTICAL_LABEL_KEY])}</h3>
-            <p class={styles.line}>{t(statusKey(row))}</p>
-            {PLAN_CHANGE_UNAVAILABLE[row.status] && <p class={styles.line} data-testid="my-subscription-plan-change-unavailable">{t(PLAN_CHANGE_UNAVAILABLE_KEY)}</p>}
-            {row.status === 'CANCEL_SCHEDULED' && row.serviceEndsAt && <>
-                <p class={styles.line}>{t(resolveScheduledRenewal({ row }).lineKey, undefined, { date: date(row.serviceEndsAt) })}</p>
-                {resolveScheduledRenewal({ row }).addonsLineKey && <p class={styles.line}>{t(resolveScheduledRenewal({ row }).addonsLineKey as 'account.subscription.mine.paidAfterCancellationAddons', undefined, { date: date(row.serviceEndsAt) })}</p>}
-            </>}
-            {row.status === 'GRACE_PERIOD' && GRACE_NOTICE[row.paymentMethod] && row.graceEndsAt && <p class={styles.line} data-testid="my-subscription-grace">{t('account.subscription.mine.grace', undefined, { date: date(row.graceEndsAt) })}</p>}
-            {CANCELLATION_OFFERED[row.status] && <SubscriptionCancel client:visible subscriptionId={row.id} locale={locale} />}
-            {PROMO_REDEEM_OFFERED[row.status][row.paymentMethod] && <PromoCodeRedeem client:visible vertical={row.vertical as PublishVerticalSlug} locale={locale} offer="SUBSCRIPTION" />}
-        </article>
-    ))}
+    {result?.subscriptions.map((row) => {
+        const summary = resolveMySubscriptionSummary({ row, locale, t });
+        return (
+            <article class={styles.item} data-testid="my-subscription" data-subscription-id={row.id} data-renewal={renewalKind(row)}>
+                <h3 class={styles.title}>{summary.title}</h3>
+                <p class={styles.line} data-testid="my-subscription-vertical">{t(summary.verticalLabelKey)}</p>
+                <p class={styles.line}>{t(statusKey(row))}</p>
+                {summary.priceLine && <p class={styles.line} data-testid="my-subscription-price">{summary.priceLine}</p>}
+                {summary.nextChargeLine && <p class={styles.line} data-testid="my-subscription-next-charge">{summary.nextChargeLine}</p>}
+                {PLAN_CHANGE_UNAVAILABLE[row.status] && <p class={styles.line} data-testid="my-subscription-plan-change-unavailable">{t(PLAN_CHANGE_UNAVAILABLE_KEY)}</p>}
+                {row.status === 'CANCEL_SCHEDULED' && row.serviceEndsAt && <>
+                    <p class={styles.line}>{t(resolveScheduledRenewal({ row }).lineKey, undefined, { date: date(row.serviceEndsAt) })}</p>
+                    {resolveScheduledRenewal({ row }).addonsLineKey && <p class={styles.line}>{t(resolveScheduledRenewal({ row }).addonsLineKey as 'account.subscription.mine.paidAfterCancellationAddons', undefined, { date: date(row.serviceEndsAt) })}</p>}
+                </>}
+                {row.status === 'GRACE_PERIOD' && GRACE_NOTICE[row.paymentMethod] && row.graceEndsAt && <p class={styles.line} data-testid="my-subscription-grace">{t('account.subscription.mine.grace', undefined, { date: date(row.graceEndsAt) })}</p>}
+                {CANCELLATION_OFFERED[row.status] && <SubscriptionCancel client:visible subscriptionId={row.id} locale={locale} />}
+                {PROMO_REDEEM_OFFERED[row.status][row.paymentMethod] && <PromoCodeRedeem client:visible vertical={row.vertical as PublishVerticalSlug} locale={locale} offer="SUBSCRIPTION" />}
+            </article>
+        );
+    })}
     {result?.deferredCourtesies.map((c) => (
         <article class={styles.item} data-testid="my-subscription-deferred-courtesy" data-courtesy-grant-id={c.courtesyGrantId}>
-            <h3 class={styles.title}>{t(SIGNUP_VERTICAL_LABEL_KEY[c.vertical as keyof typeof SIGNUP_VERTICAL_LABEL_KEY])}</h3>
+            <h3 class={styles.title}>{t(resolveMySubscriptionVerticalLabelKey({ vertical: c.vertical }))}</h3>
             <p class={styles.line}>{tPlural(DEFERRED_COURTESY_KEY, c.balanceMonths, { count: c.balanceMonths })}</p>
         </article>
     ))}

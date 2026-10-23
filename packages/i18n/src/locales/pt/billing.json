@@ -251,7 +251,8 @@
                 "previousAttemptInProgress": "Ainda estamos preparando sua tentativa anterior com o Mercado Pago. Tente novamente em alguns minutos.",
                 "touristVipInherited": "Seu plano atual já inclui os benefícios do Turista VIP",
                 "commitmentTaken": "Você já tem uma assinatura em andamento nesta categoria.",
-                "generic": "Não foi possível iniciar sua assinatura. Tente novamente em alguns minutos."
+                "generic": "Não foi possível iniciar sua assinatura. Tente novamente em alguns minutos.",
+                "providerRejected": "O Mercado Pago não aceitou os dados do pagamento. Confira se o e-mail é o da sua conta do Mercado Pago e tente de novo."
             },
             "trialNotice": {
                 "running_one": "Você está no período de teste: resta {{days}} dia, até {{date}}.",
@@ -676,7 +677,22 @@
             "aiImport": "Quantidade mensal de importações de dados com IA de outras plataformas.",
             "aiChatOwner": "Quantidade mensal de consultas à IA disponíveis para o proprietário.",
             "aiSupport": "Assistente com IA para resolver dúvidas sobre a plataforma em tempo real.",
-            "menuQrScanMetrics": "Um QR de mesa que abre seu cardápio, com um painel de escaneamentos: total, por dia, e por dispositivo e idioma."
+            "menuQrScanMetrics": "Um QR de mesa que abre seu cardápio, com um painel de escaneamentos: total, por dia, e por dispositivo e idioma.",
+            "maxGastronomies": "Quantidade de estabelecimentos que você pode ter publicados ao mesmo tempo.",
+            "publishGastronomy": "Publique seu estabelecimento para que os visitantes o encontrem na Hospeda.",
+            "editGastronomyInfo": "Atualize os dados e detalhes do seu estabelecimento quando quiser.",
+            "gastronomyMenu": "Carregue seu cardápio na Hospeda para que apareça na página do seu estabelecimento.",
+            "gastronomyDailySpecial": "Mostre o prato do dia na sua publicação e troque quando quiser.",
+            "gastronomyEvents": "Divulgue na página do seu estabelecimento os eventos que você organiza.",
+            "menuItemPhotos": "Adicione uma foto a cada prato do seu cardápio.",
+            "multilingualMenu": "Ofereça seu cardápio em vários idiomas para visitantes de outros países.",
+            "maxExperiences": "Quantidade de experiências que você pode ter publicadas ao mesmo tempo.",
+            "publishExperience": "Publique sua experiência para que os visitantes a encontrem na Hospeda.",
+            "editExperienceInfo": "Atualize os dados e detalhes da sua experiência quando quiser.",
+            "experienceDirections": "Indique como chegar ao ponto de encontro para que ninguém se perca.",
+            "experienceCertificate": "Emita um certificado para quem participou da sua experiência.",
+            "listingPdf": "Baixe a ficha da sua publicação em PDF para compartilhar ou imprimir.",
+            "aiChatListing": "Quantidade mensal de consultas à IA disponíveis para a sua publicação."
         },
         "note": {
             "aiSearch": "Para usuários registrados",

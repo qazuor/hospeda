@@ -324,6 +324,11 @@ export const AccommodationListItemSchema = AccommodationReadSchema.pick({
     createdAt: true,
     updatedAt: true
 }).extend({
+    // HOS-1748 / HOS-190 / SPEC-143 Finding #9: the admin client re-validates
+    // the list response with this schema; it must accept every value
+    // `AccommodationAdminSchema` accepts for these fields.
+    summary: z.string(),
+    description: z.string(),
     /** Featured state, derived from `featuredByEntitlement` (HOS-1419). */
     isFeatured: z.boolean().optional(),
     // Explicitly make review fields optional since they might not be present in list responses

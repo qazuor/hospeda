@@ -187,6 +187,13 @@ export async function authorizePendingSubscription(input: {
     try {
         created = await input.provider.authorize(sent);
     } catch (error) {
+        if (error instanceof PaymentProviderError) {
+            logger.error(
+                error,
+                `Provider authorization creation failed (subscription: ${pending.subscription.id})`,
+                { capture: true }
+            );
+        }
         if (
             error instanceof PaymentProviderError &&
             error.code === 'REJECTED' &&

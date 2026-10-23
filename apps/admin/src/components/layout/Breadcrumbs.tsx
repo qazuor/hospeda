@@ -1,8 +1,13 @@
 import type { TranslationKey } from '@repo/i18n';
 import { BreadcrumbsIcon } from '@repo/icons';
-import { Link, useRouterState } from '@tanstack/react-router';
+import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { useTranslations } from '@/hooks/use-translations';
-import { breadcrumbLabels, breadcrumbSegmentLabels } from '@/lib/breadcrumb-labels';
+import {
+    breadcrumbLabels,
+    breadcrumbRoutePatternLabels,
+    breadcrumbSegmentLabels
+} from '@/lib/breadcrumb-labels';
+import { getRoutePaths, isRegisteredPath, matchesRoutePattern } from '@/lib/breadcrumb-routes';
 import { menuTree } from '@/lib/menu';
 
 /**
@@ -47,6 +52,14 @@ const getLabelForPath = (path: string, entityContext?: EntityBreadcrumbContext):
         return { type: 'i18n', key: breadcrumbLabels[path] };
     }
 
+    // Fallback to route patterns whose last segment is a dynamic id (e.g.
+    // `/billing/subscriptions/<uuid>` shows «Suscripción», not the uuid).
+    for (const [pattern, key] of Object.entries(breadcrumbRoutePatternLabels)) {
+        if (matchesRoutePattern({ path, pattern })) {
+            return { type: 'i18n', key };
+        }
+    }
+
     // Fallback to the trailing-segment dictionary (e.g. nested routes like
     // `/accommodations/<id>/amenities` where only the suffix is translatable).
     const seg = path.split('/').filter(Boolean).pop() ?? '';
@@ -82,6 +95,8 @@ type BreadcrumbsProps = {
 export const Breadcrumbs = ({ entityContext }: BreadcrumbsProps = {}) => {
     const { t } = useTranslations();
     const { location } = useRouterState();
+    const router = useRouter();
+    const routePaths = getRoutePaths({ router });
     // Use pathname instead of href to exclude query parameters
     const segments = location.pathname.split('/').filter(Boolean);
     const paths: string[] = [];
@@ -104,18 +119,23 @@ export const Breadcrumbs = ({ entityContext }: BreadcrumbsProps = {}) => {
                 const label = getLabelForPath(p, entityContext);
                 const displayText =
                     label.type === 'i18n' ? t(label.key as TranslationKey) : label.value;
+                const registered = isRegisteredPath({ path: p, routePaths });
                 return (
                     <span
                         key={p}
                         className="inline-flex items-center"
                     >
                         <BreadcrumbsIcon className="mx-2 h-4 w-4" />
-                        <Link
-                            to={p}
-                            className="hover:underline"
-                        >
-                            {displayText}
-                        </Link>
+                        {registered ? (
+                            <Link
+                                to={p}
+                                className="hover:underline"
+                            >
+                                {displayText}
+                            </Link>
+                        ) : (
+                            <span className="text-muted-foreground">{displayText}</span>
+                        )}
                     </span>
                 );
             })}

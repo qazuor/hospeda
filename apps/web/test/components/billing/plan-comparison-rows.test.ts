@@ -354,7 +354,12 @@ describe('catalog row guards', () => {
 // module, a missing key would have printed the raw key in production.
 // ---------------------------------------------------------------------------
 
-const ALL_RENDERED_ROWS = [...OWNER_GROUPS, ...TOURIST_GROUPS].flatMap((group) => group.rows);
+const ALL_RENDERED_ROWS = [
+    ...OWNER_GROUPS,
+    ...TOURIST_GROUPS,
+    ...GASTRONOMY_GROUPS,
+    ...EXPERIENCE_GROUPS
+].flatMap((group) => group.rows);
 
 const LOCALES = {
     es: billingEs,
@@ -399,8 +404,10 @@ describe('TEST:1626:5 — catalog-backed comparison rows', () => {
 
 describe('row i18n coverage', () => {
     it('actually collects the rendered rows (guards against a vacuous sweep)', () => {
-        expect(ALL_RENDERED_ROWS.length).toBeGreaterThan(20);
+        expect(ALL_RENDERED_ROWS.length).toBeGreaterThan(30);
         expect(ALL_RENDERED_ROWS.map((r) => r.id)).toContain('calendarSync');
+        expect(ALL_RENDERED_ROWS.map((r) => r.id)).toContain('publishGastronomy');
+        expect(ALL_RENDERED_ROWS.map((r) => r.id)).toContain('experienceCertificate');
     });
 
     for (const [locale, bundle] of Object.entries(LOCALES)) {

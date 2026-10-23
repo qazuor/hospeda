@@ -94,6 +94,9 @@ test.describe('TEST:B13a:6 TEST:B13a:7 Mi Suscripción notices @p0 @billing @clo
         const subscription = page.locator(
             `article[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
         );
+        await expect(subscription).toContainText('Básico');
+        await expect(subscription).toContainText('Alojamiento');
+        await expect(subscription.getByTestId('my-subscription-price')).toContainText('por mes');
         const notice = subscription.getByTestId('my-subscription-plan-change-unavailable');
         await expect(notice).toBeVisible();
         await expect(notice).toHaveText(
@@ -152,7 +155,7 @@ test.describe('TEST:B13a:6 TEST:B13a:7 Mi Suscripción notices @p0 @billing @clo
             `article[data-testid="my-subscription-deferred-courtesy"][data-courtesy-grant-id="${courtesyGrantId}"]`
         );
         await expect(courtesy).toBeVisible();
-        await expect(courtesy).toContainText('alojamiento');
+        await expect(courtesy).toContainText('Alojamiento');
         await expect(courtesy).toContainText(
             'Te quedan 3 meses, que empiezan a correr cuando completes el pago.'
         );

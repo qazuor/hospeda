@@ -480,7 +480,17 @@
             },
             "loadError": "Não conseguimos ler suas assinaturas. Recarregue a página.",
             "scheduledUntil": "Você cancelou esta assinatura: ela continua até {{date}}.",
-            "grace": "Não conseguimos cobrar sua parcela. Se você trocar o cartão com que paga no Mercado Pago, a cobrança é tentada de novo na hora; não podemos garantir que ela passe. Se a cobrança não passar antes de {{date}}, sua assinatura é suspensa e você vai ter que assinar de novo."
+            "grace": "Não conseguimos cobrar sua parcela. Se você trocar o cartão com que paga no Mercado Pago, a cobrança é tentada de novo na hora; não podemos garantir que ela passe. Se a cobrança não passar antes de {{date}}, sua assinatura é suspensa e você vai ter que assinar de novo.",
+            "vertical": {
+                "accommodation": "Hospedagem",
+                "gastronomy": "Gastronomia",
+                "experience": "Experiências",
+                "tourist": "Turista",
+                "partner": "Parceiros",
+                "unknown": "Hospeda"
+            },
+            "price": "{{amount}} {{cycle}}",
+            "nextCharge": "Próxima cobrança: {{date}}, no valor de {{amount}}."
         },
         "cancel": {
             "open": "Cancelar assinatura",

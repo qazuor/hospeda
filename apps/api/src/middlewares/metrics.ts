@@ -199,7 +199,10 @@ class MetricsStore {
     }
 
     /**
-     * Get metrics summary
+     * Get metrics summary.
+     *
+     * `errorRate` (per endpoint) and `summary.globalErrorRate` are
+     * PERCENTAGES in [0, 100], not fractions. Consumers display them as-is.
      */
     getMetrics() {
         const endpointMetrics = Array.from(this.requestCounts.entries()).map(

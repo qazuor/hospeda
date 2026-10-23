@@ -64,7 +64,8 @@ describe('signup checkout helpers — B3 UI (B3.md:1045-1053)', () => {
             false,
             false
         ],
-        ['CREATION_NOT_APPLIED', 'billing.checkout.signup.rejection.generic', true, false]
+        ['CREATION_NOT_APPLIED', 'billing.checkout.signup.rejection.generic', true, false],
+        ['PROVIDER_REJECTED', 'billing.checkout.signup.rejection.providerRejected', true, false]
     ] as const)('maps %s to its localized rejection policy', (reason, messageKey, retryable, showPlansLink) => {
         expect(
             resolveSignupRejection({
@@ -92,6 +93,17 @@ describe('signup checkout helpers — B3 UI (B3.md:1045-1053)', () => {
             showPlansLink: false
         });
         expect(rejection.messageKey).not.toContain(error.message ?? 'Raw API English');
+    });
+
+    it('keeps a provider rejection generic when the HTTP status is a server error', () => {
+        expect(
+            resolveSignupRejection({ error: { status: 500, reason: 'PROVIDER_REJECTED' } })
+        ).toEqual({
+            reason: 'UNKNOWN',
+            messageKey: 'billing.checkout.signup.rejection.generic',
+            retryable: true,
+            showPlansLink: false
+        });
     });
 
     it('parses only UUID option values and builds the localized checkout URL', () => {

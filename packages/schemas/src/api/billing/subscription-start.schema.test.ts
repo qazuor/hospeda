@@ -79,7 +79,8 @@ describe('TEST:B3:2 subscription start request', () => {
             'COMMITMENT_TAKEN',
             'TOURIST_VIP_INHERITED',
             'CREATION_NOT_APPLIED',
-            'PREVIOUS_ATTEMPT_IN_PROGRESS'
+            'PREVIOUS_ATTEMPT_IN_PROGRESS',
+            'PROVIDER_REJECTED'
         ]);
         expect(StartSubscriptionRejectionReasonSchema.safeParse('OTHER').success).toBe(false);
     });

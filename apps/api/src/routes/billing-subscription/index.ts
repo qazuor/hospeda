@@ -1,4 +1,5 @@
 import { planCatalogModel } from '@repo/db';
+import { PaymentProviderError } from '@repo/payments';
 import {
     ServiceErrorCode,
     SignupNoticeResponseSchema,
@@ -75,6 +76,21 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
                 authorizationWindowEndsAt: authorizationWindowEndsAt.toISOString()
             };
         } catch (error) {
+            if (
+                error instanceof PaymentProviderError &&
+                error.code === 'REJECTED' &&
+                error.capability === 'authorize'
+            ) {
+                return createErrorResponse(
+                    {
+                        code: ServiceErrorCode.VALIDATION_ERROR,
+                        message: 'The payment provider rejected the payment details',
+                        reason: 'PROVIDER_REJECTED'
+                    },
+                    ctx,
+                    422
+                );
+            }
             if (error instanceof ServiceError && error.reason === 'PLAN_NOT_FOR_SALE') {
                 return createErrorResponse(
                     {
