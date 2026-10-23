@@ -2,6 +2,7 @@ import * as db from '@repo/db';
 import { registerCaptureHook, unregisterCaptureHook } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
+import type { BillingDeadlineValues } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
     activateCreditedPendingAuthorizations,
@@ -31,7 +32,7 @@ const deadlines = {
     '17': { days: 7 },
     '18': { days: 180 },
     '19': { minutes: 60 }
-};
+} satisfies BillingDeadlineValues;
 
 beforeAll(async () => {
     await getServiceTestDb()
