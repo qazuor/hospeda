@@ -6,9 +6,20 @@ import {
     buildPublishRequirementsReason,
     DRAFT_DESCRIPTION_PLACEHOLDER,
     isDraftDescriptionPlaceholder,
+    LEGACY_DRAFT_DESCRIPTION_PLACEHOLDERS,
     parsePublishRequirementsReason,
     resolveMissingPublishRequirements
 } from '../accommodation.publish-requirements';
+
+// Written by hand on purpose: the legacy text is a data contract stored in rows
+// that already exist, not a value this test can derive from the current code.
+const LEGACY_PLACEHOLDER =
+    'Borrador en progreso. Completá la descripción del alojamiento desde el panel de administración antes de publicarlo.';
+
+// Also written by hand: the owner-facing copy is the AC, so asserting against
+// the exported constant alone would let the constant change silently.
+const OWNER_FACING_PLACEHOLDER =
+    'Descripción pendiente. Contá en pocas líneas cómo es tu alojamiento y qué lo hace especial.';
 
 const READY = {
     description: 'A genuine accommodation description with enough detail.',
@@ -32,6 +43,9 @@ describe('draft description placeholder', () => {
         [DRAFT_DESCRIPTION_PLACEHOLDER, true],
         [`  ${DRAFT_DESCRIPTION_PLACEHOLDER}  `, true],
         [`A real text quoting: ${DRAFT_DESCRIPTION_PLACEHOLDER}`, false],
+        [LEGACY_PLACEHOLDER, true],
+        [`  ${LEGACY_PLACEHOLDER}  `, true],
+        [`A real text quoting: ${LEGACY_PLACEHOLDER}`, false],
         ['', false],
         ['   ', false],
         [null, false],
@@ -40,8 +54,16 @@ describe('draft description placeholder', () => {
         expect(isDraftDescriptionPlaceholder({ description })).toBe(expected);
     });
 
-    it('treats empty values and the placeholder as a missing description', () => {
-        for (const description of [DRAFT_DESCRIPTION_PLACEHOLDER, '', '   ', null, undefined]) {
+    it('treats empty values and every seeded placeholder as a missing description', () => {
+        const missingDescriptions = [
+            DRAFT_DESCRIPTION_PLACEHOLDER,
+            LEGACY_PLACEHOLDER,
+            '',
+            '   ',
+            null,
+            undefined
+        ];
+        for (const description of missingDescriptions) {
             expect(
                 resolveMissingPublishRequirements({ input: { ...READY, description } })
             ).toContain('description');
@@ -58,6 +80,26 @@ describe('draft description placeholder', () => {
     it('uses the exported placeholder in the real draft mapper', () => {
         expect(httpToDomainAccommodationCreateDraft(draft(undefined), 'owner').description).toBe(
             DRAFT_DESCRIPTION_PLACEHOLDER
+        );
+        expect(
+            httpToDomainAccommodationCreateDraft(draft(READY.description), 'owner').description
+        ).toBe(READY.description);
+    });
+
+    it('exposes an owner-facing placeholder within the description bounds (TEST:1767:24)', () => {
+        expect(DRAFT_DESCRIPTION_PLACEHOLDER).toBe(OWNER_FACING_PLACEHOLDER);
+        expect(DRAFT_DESCRIPTION_PLACEHOLDER.length).toBeGreaterThanOrEqual(30);
+        expect(DRAFT_DESCRIPTION_PLACEHOLDER.length).toBeLessThanOrEqual(2000);
+        expect(DRAFT_DESCRIPTION_PLACEHOLDER).not.toMatch(/administraci/i);
+    });
+
+    it('keeps every previously seeded placeholder as a legacy value (TEST:1767:25)', () => {
+        expect(LEGACY_DRAFT_DESCRIPTION_PLACEHOLDERS).toContain(LEGACY_PLACEHOLDER);
+    });
+
+    it('seeds the owner-facing placeholder in the real draft mapper (TEST:1767:28)', () => {
+        expect(httpToDomainAccommodationCreateDraft(draft(undefined), 'owner').description).toBe(
+            OWNER_FACING_PLACEHOLDER
         );
         expect(
             httpToDomainAccommodationCreateDraft(draft(READY.description), 'owner').description
