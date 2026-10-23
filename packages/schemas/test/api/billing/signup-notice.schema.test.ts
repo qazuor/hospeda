@@ -73,3 +73,69 @@ describe('TEST:B13a:21b AC:B13a:5 and AC:1735:8 the signup notice contract', () 
         expect(() => SignupNoticeResponseSchema.parse(value)).toThrow();
     });
 });
+
+describe('TEST:1759:1 the signup notice plan slug', () => {
+    const value = {
+        plan: {
+            slug: 'owner-basico',
+            name: 'Basic',
+            amount: 1500000,
+            currency: 'ARS',
+            cycle: 'monthly'
+        },
+        pendingAttempt: {
+            subscriptionId: '123e4567-e89b-42d3-a456-426614174001',
+            plan: {
+                slug: 'owner-basico',
+                name: 'Basic',
+                amount: 1500000,
+                currency: 'ARS',
+                cycle: 'monthly'
+            },
+            checkoutUrl: 'https://payments.example/continue',
+            authorizationWindowEndsAt: '2026-10-13T02:30:00.000Z'
+        },
+        vertical: 'accommodation',
+        touristVip: { status: 'NOT_AFFECTED' },
+        trial: { status: 'NOT_RUNNING' }
+    };
+
+    it('preserves slug on plan and pending attempt', () => {
+        expect(SignupNoticeResponseSchema.parse(value)).toEqual(value);
+    });
+
+    it('continues to parse without either slug', () => {
+        const { slug: _planSlug, ...plan } = value.plan;
+        const { slug: _attemptSlug, ...attemptPlan } = value.pendingAttempt.plan;
+        expect(
+            SignupNoticeResponseSchema.parse({
+                ...value,
+                plan,
+                pendingAttempt: { ...value.pendingAttempt, plan: attemptPlan }
+            })
+        ).toEqual({
+            ...value,
+            plan,
+            pendingAttempt: { ...value.pendingAttempt, plan: attemptPlan }
+        });
+    });
+
+    it('rejects an empty plan slug', () => {
+        expect(
+            SignupNoticeResponseSchema.safeParse({ ...value, plan: { ...value.plan, slug: '' } })
+                .success
+        ).toBe(false);
+    });
+
+    it('rejects an empty pending attempt plan slug', () => {
+        expect(
+            SignupNoticeResponseSchema.safeParse({
+                ...value,
+                pendingAttempt: {
+                    ...value.pendingAttempt,
+                    plan: { ...value.pendingAttempt.plan, slug: '' }
+                }
+            }).success
+        ).toBe(false);
+    });
+});
