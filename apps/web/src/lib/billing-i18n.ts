@@ -10,6 +10,8 @@
 
 import { EntitlementKeyEnum as EK } from '@repo/schemas';
 
+export { getPlanName } from './billing/plan-name';
+
 export type EntitlementKey = EK;
 type Translator = (key: string, fallback?: string) => string;
 
@@ -49,25 +51,10 @@ const AI_OWNER_ENTITLEMENTS: readonly string[] = [
     EK.AI_ACCOMMODATION_IMPORT
 ];
 
-/**
- * Minimal runtime plan shape required by i18n helpers. `PublicPlanData` from
- * `@/lib/billing/fetch-plans` provides slug, name, and description.
- */
 interface PlanLike {
     readonly slug: string;
     readonly name: string;
     readonly description: string;
-}
-
-/**
- * Get the localized human-readable name for a plan.
- *
- * Tries `billing.plan.<slug>.name`. Falls back to the English `plan.name` from
- * the billing config so missing translations never produce an empty card.
- */
-export function getPlanName(input: { plan: PlanLike; t: Translator }): string {
-    const { plan, t } = input;
-    return t(`billing.plan.${plan.slug}.name`, plan.name);
 }
 
 /**

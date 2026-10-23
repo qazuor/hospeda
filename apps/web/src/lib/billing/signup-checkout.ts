@@ -7,7 +7,7 @@ import {
     type VerticalEnum
 } from '@repo/schemas';
 import { MARKET_TIMEZONE } from '@repo/utils';
-import { getPlanName } from '@/lib/billing-i18n';
+import { getPlanName } from '@/lib/billing/plan-name';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrlWithParams } from '@/lib/urls';
