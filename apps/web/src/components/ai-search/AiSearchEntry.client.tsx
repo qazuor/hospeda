@@ -7,8 +7,7 @@
  * 1. **Search-bar entry point** — a fake search input that looks like a natural
  *    part of the listing page. Clicking it opens the drawer.
  * 2. **Floating FAB** — when the search bar scrolls out of viewport, a floating
- *    action button appears at the bottom-right so the AI search is always
- *    accessible. Positioned above the FeedbackFAB to avoid overlap.
+ *    action button appears in the mobile dock so AI search remains accessible.
  * 3. **Drawer overlay** — right-side on desktop, full-screen on mobile.
  *
  * Revives the previously-dead i18n keys `triggerLabel` (entry point)
@@ -19,6 +18,7 @@
 
 import { FullscreenIcon, MinimizeIcon, SearchIcon, SparkleIcon } from '@repo/icons';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { DockPortal } from '@/components/shared/dock/DockPortal';
 import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 // Shared with every other modal-like surface (Dialog, the AI chat widget).
 // This file used to keep a byte-equivalent private copy of the selector +
@@ -230,22 +230,21 @@ export function AiSearchEntry({
                 </span>
             </button>
 
-            {/* Floating FAB — appears when the search bar is out of viewport.
-                 Desktop layout unchanged (bottom: 5rem, right: 1.5rem).
-                 Mobile gets its own non-overlapping slot above the other two
-                 bottom-right FABs — see .fab's max-width:768px rule in
-                 AiSearchEntry.module.css (BETA-144). */}
-            {isFabVisible && !isOpen && (
-                <button
-                    type="button"
-                    className={styles.fab}
-                    onClick={handleOpen}
-                    aria-label={t('aiSearch.triggerLabel', 'Buscá con IA')}
-                    data-testid="ai-search-fab"
-                >
-                    <AiSearchCompositeIcon />
-                </button>
-            )}
+            {/* Keep the portal mounted as the FAB appears and disappears. */}
+            <DockPortal slot="ai-search">
+                {isFabVisible && !isOpen && (
+                    <button
+                        type="button"
+                        className={styles.fab}
+                        onClick={handleOpen}
+                        aria-label={t('aiSearch.triggerLabel', 'Buscá con IA')}
+                        data-testid="ai-search-fab"
+                        data-dock-item
+                    >
+                        <AiSearchCompositeIcon />
+                    </button>
+                )}
+            </DockPortal>
 
             {/* Drawer overlay — revives panelTitle (SPEC-265 D).
                  Click on backdrop (not drawer) closes; Escape is handled by
