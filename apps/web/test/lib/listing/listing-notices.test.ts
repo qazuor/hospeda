@@ -260,7 +260,7 @@ describe('buildListingNoticeViews — one view per kind (HOS-1492)', () => {
         expect(withBoosts).toContain(
             'Se despublican primero las fichas publicadas más recientemente'
         );
-        expect(withBoosts).toContain('en el momento en que tu plan dejó de cubrirlas');
+        expect(withBoosts).toContain('liberá lugar en tu cupo');
         expect(withBoosts).toContain(
             'Los destaques recurrentes de las fichas que bajaron se siguen cobrando'
         );
@@ -268,7 +268,7 @@ describe('buildListingNoticeViews — one view per kind (HOS-1492)', () => {
         expect(withBoosts).not.toContain('ventana');
         expect(withoutBoosts).not.toContain('Los destaques recurrentes');
         for (const other of othersThan('SURPLUS')) {
-            expect(textOf(other)).not.toContain('en el momento en que tu plan dejó de cubrirlas');
+            expect(textOf(other)).not.toContain('liberá lugar en tu cupo');
         }
     });
 

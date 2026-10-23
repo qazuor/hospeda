@@ -210,7 +210,7 @@ test.describe('Listing notices of V8a @verticals', () => {
             'Se despublican primero las fichas publicadas más recientemente, hasta respetar el límite de tu plan. No se borra nada.'
         );
         await expect(notice).toContainText(
-            'Despublicamos las fichas más recientes en el momento en que tu plan dejó de cubrirlas.'
+            'Despublicamos las fichas más recientes en el momento en que tu plan dejó de cubrirlas. Si querés recuperarlas, cambiá de plan o liberá lugar en tu cupo.'
         );
         await expect(notice).not.toContainText('destaques recurrentes');
         expect(await readPublicationStatus({ listingId })).toBe('UNPUBLISHED_BY_BILLING');
