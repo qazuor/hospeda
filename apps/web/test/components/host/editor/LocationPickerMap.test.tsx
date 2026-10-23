@@ -10,6 +10,7 @@
  * (mirroring the pattern already used in ListingMapInner.client.tsx).
  */
 import { render, waitFor } from '@testing-library/react';
+import * as L from 'leaflet';
 import { describe, expect, it, vi } from 'vitest';
 import { LocationPickerMap } from '@/components/host/editor/LocationPickerMap.client';
 
@@ -32,6 +33,7 @@ const { mockMap, mockMarker } = vi.hoisted(() => {
         addTo: vi.fn(),
         on: vi.fn(),
         setLatLng: vi.fn(),
+        setOpacity: vi.fn(),
         getLatLng: vi.fn(() => ({ lat: 0, lng: 0 }))
     };
     return { mockMap: map, mockMarker: marker };
@@ -76,5 +78,56 @@ describe('LocationPickerMap (BETA-132)', () => {
         });
 
         observeSpy.mockRestore();
+    });
+});
+
+describe('LocationPickerMap — unplaced pin (HOS-1767)', () => {
+    const PLACED_POSITION = { lat: -32.4825, lng: -58.2372 };
+
+    it('TEST:1767:15 — creates the marker semi-transparent until it is placed', async () => {
+        const { unmount } = render(<LocationPickerMap {...DEFAULT_PROPS} />);
+
+        await waitFor(() => {
+            expect(L.marker).toHaveBeenCalled();
+        });
+
+        const unplacedOptions = vi.mocked(L.marker).mock.calls.at(-1)?.[1];
+        expect(unplacedOptions).toMatchObject({ opacity: 0.5 });
+
+        unmount();
+        vi.clearAllMocks();
+
+        render(
+            <LocationPickerMap
+                {...DEFAULT_PROPS}
+                markerPosition={PLACED_POSITION}
+            />
+        );
+
+        await waitFor(() => {
+            expect(L.marker).toHaveBeenCalled();
+        });
+
+        const placedOptions = vi.mocked(L.marker).mock.calls.at(-1)?.[1];
+        expect(placedOptions).toMatchObject({ opacity: 1 });
+    });
+
+    it('TEST:1767:16 — restores full opacity once a position arrives', async () => {
+        const { rerender } = render(<LocationPickerMap {...DEFAULT_PROPS} />);
+
+        await waitFor(() => {
+            expect(L.marker).toHaveBeenCalled();
+        });
+
+        rerender(
+            <LocationPickerMap
+                {...DEFAULT_PROPS}
+                markerPosition={PLACED_POSITION}
+            />
+        );
+
+        await waitFor(() => {
+            expect(mockMarker.setOpacity).toHaveBeenCalledWith(1);
+        });
     });
 });
