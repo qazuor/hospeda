@@ -14,9 +14,11 @@ import {
     createRecordedAmountMutationDecisions,
     createStateComparison,
     createSuccessorGraceCheck,
+    createSweepPacedProvider,
     creditedPaymentsFromLedger,
     noDeterminableRetainedPaymentBranch,
     providerLinkCancellationSeen,
+    RECONCILIATION_SWEEP_PROVIDER_PACING,
     retainedPaymentsFromLedger,
     runReconciliationSweep
 } from '@repo/service-core';
@@ -56,7 +58,11 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
             };
         }
         try {
-            const provider = getPaymentProvider();
+            // HOS-1737 gives this sweep run its own paced provider instance.
+            const provider = createSweepPacedProvider({
+                provider: getPaymentProvider(),
+                pacing: RECONCILIATION_SWEEP_PROVIDER_PACING
+            });
             const clock = getClock().clock;
             const { planPolicy } = createPlanCatalogInverse({ reader: planCatalogModel });
             const { addonPolicy, listing } = buildBillingCoveragePorts({

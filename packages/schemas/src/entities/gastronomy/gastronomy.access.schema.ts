@@ -296,6 +296,12 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
      */
     description: z.string().max(2000, { message: 'zodError.listing.description.max' }),
     /**
+     * HOS-1748: a PURGED row blanks `summary`, so reads must accept it. Same read-side
+     * relaxation as `description` (HOS-190 / SPEC-143 Finding #9); the minimum stays on
+     * input and in `resolveListingCompleteness`.
+     */
+    summary: z.string().max(300, { message: 'zodError.listing.summary.max' }),
+    /**
      * HOS-190: read⊇write — a persisted contactInfo (legacy phone format, missing
      * mobilePhone) must never 500 the response. Format stays strict on write.
      */
@@ -337,6 +343,12 @@ export const GastronomyAdminSchema = GastronomySchema.extend({
      * fetched by the admin panel. See SPEC-143 Finding #9 (accommodation pattern).
      */
     description: z.string().max(2000, { message: 'zodError.listing.description.max' }),
+    /**
+     * HOS-1748: a PURGED row blanks `summary`, so reads must accept it. Same read-side
+     * relaxation as `description` (HOS-190 / SPEC-143 Finding #9); the minimum stays on
+     * input and in `resolveListingCompleteness`.
+     */
+    summary: z.string().max(300, { message: 'zodError.listing.summary.max' }),
     /** HOS-190: read⊇write lenient contactInfo (see GastronomyProtectedSchema). */
     contactInfo: ContactInfoReadSchema.nullish()
 });

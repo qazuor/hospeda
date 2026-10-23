@@ -365,6 +365,43 @@ describe('resolver real-shape contract', () => {
             );
         });
 
+        it('TEST:1751:3 admin.system.health forwards globalErrorRate untouched', async () => {
+            mockFetchApi.mockImplementation(async function ({ path }: { path: string }) {
+                if (path.includes('/system/health')) {
+                    return envelope({
+                        success: true,
+                        data: {
+                            status: 'up',
+                            db: 'connected',
+                            redis: 'connected',
+                            uptime: 3600
+                        }
+                    });
+                }
+                if (path.includes('/admin/metrics')) {
+                    return envelope({
+                        success: true,
+                        data: {
+                            summary: {
+                                totalRequests: 13,
+                                totalErrors: 1,
+                                globalErrorRate: 7.558,
+                                activeConnections: 1
+                            }
+                        }
+                    });
+                }
+                return envelope({ success: true, data: {} });
+            });
+
+            const result = (await runSource('admin.system.health')) as {
+                metrics?: { errorRate?: number };
+            };
+
+            // The API sends a percentage; the resolver must not scale it.
+            expect(result.metrics?.errorRate).toBe(7.558);
+        });
+
         it('returns null when the envelope has no data (renders empty, not crash)', async () => {
             mockFetchApi.mockResolvedValue(envelope({ success: true }));
             const result = await runSource('admin.system.health');

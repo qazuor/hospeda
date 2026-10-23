@@ -16,6 +16,7 @@ export const breadcrumbLabels: Readonly<Record<string, string>> = {
     // reconciliation/invoices/promo-codes/metrics/settings entries were
     // removed with the deleted billing pages)
     '/billing': 'admin-menu.billing.title',
+    '/billing/subscriptions': 'admin-menu.billing.subscriptions',
     '/billing/sponsorships': 'admin-menu.billing.sponsorships',
     '/billing/owner-promotions': 'admin-menu.billing.ownerPromotions',
     '/billing/exchange-rates': 'admin-menu.billing.exchangeRates',
@@ -36,6 +37,20 @@ export const breadcrumbLabels: Readonly<Record<string, string>> = {
 };
 
 /**
+ * Route `fullPath` pattern → i18n key map for breadcrumb paths whose last
+ * segment is a dynamic id.
+ *
+ * Keys are route patterns, not concrete pathnames: a `$name` segment accepts
+ * any value (e.g. `/billing/subscriptions/<uuid>` resolves through
+ * `/billing/subscriptions/$subscriptionId` to show «Suscripción» instead of
+ * the raw uuid). Used after `breadcrumbLabels` and before the trailing-segment
+ * dictionary.
+ */
+export const breadcrumbRoutePatternLabels: Readonly<Record<string, string>> = {
+    '/billing/subscriptions/$subscriptionId': 'admin-menu.billing.subscription'
+};
+
+/**
  * Segment-only suffix labels appended after an entity ID in breadcrumbs.
  *
  * Used for nested routes like `/accommodations/:id/amenities` where the path
@@ -51,5 +66,7 @@ export const breadcrumbSegmentLabels: Readonly<Record<string, string>> = {
     pricing: 'admin-menu.accommodations.pricing',
     reviews: 'admin-menu.accommodations.reviews',
     activity: 'admin-menu.access.activity',
-    permissions: 'admin-menu.access.permissions'
+    permissions: 'admin-menu.access.permissions',
+    cancellation: 'admin-menu.billing.subscriptionCancellation',
+    revocation: 'admin-menu.billing.subscriptionRevocation'
 };
