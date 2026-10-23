@@ -313,6 +313,38 @@ export function validateAllianceLeadSpecificFields({
     return errors;
 }
 
+/**
+ * Hides the schema's `message` error for the kinds where the free text is
+ * optional (HOS-1767 AC:1767:4).
+ *
+ * `AllianceLeadCreateInputSchema` validates `message` with `.min(10)`, but the
+ * form serializes the kind-specific fields (with their labels) into that same
+ * string. For `partner`, `sponsor` and `editor` only the free text lives in
+ * `message`, so with an empty form the schema's error is really about the
+ * serialized text being empty — not about the optional box the applicant left
+ * blank. `service_provider` is the exception (see `isMessageRequired`): there
+ * the free text is genuinely required, so its error must stay visible.
+ *
+ * Returns a NEW map in every case; the argument is never mutated.
+ *
+ * @param params - The lead `kind` and the field errors collected for it.
+ * @returns A copy of `errors` without `message` unless the kind makes it required.
+ */
+export function omitOptionalMessageError({
+    kind,
+    errors
+}: {
+    readonly kind: AllianceLeadKind;
+    readonly errors: Readonly<Record<string, string>>;
+}): Record<string, string> {
+    if (kind === 'service_provider') {
+        return { ...errors };
+    }
+
+    const { message: _omitted, ...rest } = errors;
+    return rest;
+}
+
 /** Returns `true` when `value` parses as an absolute `http(s)` URL. */
 function isValidUrl(value: string): boolean {
     try {
