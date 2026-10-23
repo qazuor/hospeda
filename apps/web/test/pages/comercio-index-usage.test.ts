@@ -1,4 +1,4 @@
-/** @file TEST:1757:5-6 commerce index usage badge SSR wiring. */
+/** @file TEST:1757:5-6 owner index usage badge SSR wiring. */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';

@@ -6,7 +6,7 @@ import type { EntitlementsData } from '@/lib/entitlements-cache';
 import { getUsageThreshold } from '@/lib/host/usage-badge';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
-/** One of the two listing verticals shown in the commerce index. */
+/** One of the two listing verticals shown in the owner index. */
 export type ListingVertical = 'gastronomy' | 'experience';
 
 /** Usage and effective capacity for one listing vertical. */
