@@ -2,9 +2,11 @@ import { and, asc, eq, getDb, inArray, plans, planVersions, subscriptions } from
 import { AccountPlanSummarySchema, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { z } from 'zod';
+import { z as zod } from 'zod';
 
 /** Live principal statuses mirrored from read-own-subscriptions.ts. */
 const LIVE_STATUSES = ['ACTIVE', 'GRACE_PERIOD', 'SUSPENDED', 'CANCEL_SCHEDULED'] as const;
+const LiveStatusSchema = zod.enum(LIVE_STATUSES);
 
 type AccountPlanSummary = z.infer<typeof AccountPlanSummarySchema>;
 
@@ -32,6 +34,15 @@ export async function readAccountPlanSummary(input: { readonly userId: string })
             )
         )
         .orderBy(asc(subscriptions.createdAt), asc(subscriptions.id));
+
+    for (const row of rows) {
+        if (!LiveStatusSchema.safeParse(row.status).success) {
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Subscription summary contains an invalid status'
+            );
+        }
+    }
 
     const plan = rows.length === 1 ? rows[0] : null;
     if (plan) {
