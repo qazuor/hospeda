@@ -1,43 +1,49 @@
 /**
  * @file featured-accommodations.ts
- * @description Pure filter for the homepage "Destacados" section (HOS-929).
- *
- * `AccommodationModel.search()` never applies `params.isFeatured` as a WHERE
- * filter — only `featuredFirst` ordering is implemented (see
- * `packages/db/src/models/accommodation/accommodation.model.ts`). So the
- * `isFeatured: true` request param `FeaturedAccommodationsSection.astro`
- * sends is a no-op at the DB layer: without this filter, the section
- * silently backfilled with non-featured cards whenever fewer than `pageSize`
- * accommodations were genuinely featured.
- *
- * Extracted as a pure function (rather than inlined in the `.astro`
- * frontmatter) so it is unit-testable — Astro components in this app are
- * never typechecked and a source-text test on the whole file cannot
- * distinguish "the filter runs" from "the filter is declared".
+ * @description Pure selection for the homepage featured accommodations section (HOS-1764).
+ * The API already forces `featuredFirst` and returns the real `isFeatured` value
+ * for every item. This helper preserves that state, puts featured cards first,
+ * and fills the remaining slots from the best-rated cards in API order.
  */
 
-/** The subset of `AccommodationCardData` this filter needs. */
-export interface FeaturedFilterable {
+/** Maximum number of accommodation cards displayed in the homepage section. */
+export const HOME_FEATURED_ACCOMMODATIONS_LIMIT = 8;
+
+/** Minimum immutable fields needed to select a homepage accommodation card. */
+export interface HomeFeaturedCandidate {
+    /** Stable accommodation identifier used to remove duplicate results. */
+    readonly id: string;
+    /** Whether the public API marks this accommodation as featured. */
     readonly isFeatured: boolean;
 }
 
 /**
- * Keeps only genuinely featured cards.
+ * Selects distinct homepage cards, keeping featured cards first and filling
+ * remaining slots with the other cards in their existing API order.
  *
- * `card.isFeatured` here is the value the public API already ORs with
- * `featuredByEntitlement` (see `apps/api/src/utils/accommodation-featured.ts`),
- * so this filter needs no OR logic of its own — it only has to stop treating
- * "not featured" as "close enough".
+ * The API response is already ordered by featured status and then by rating;
+ * this function only partitions stably, removes repeated IDs (keeping the
+ * first occurrence), and applies the requested limit. It never changes or
+ * copies a card, including its `isFeatured` value.
  *
- * @param cards - Cards as returned by `toAccommodationCardProps`, in the
- *   order the API returned them (featured-first, per the forced
- *   `featuredFirst` sort).
- * @returns Only the cards whose `isFeatured` is `true`, order preserved. Can
- *   return fewer than `cards.length` — including zero — which the caller
- *   renders via `EmptyState`.
+ * @param input - The API-ordered candidate cards and maximum output count.
+ * @returns The selected original card references, with featured cards first.
  */
-export function filterFeaturedCards<T extends FeaturedFilterable>(
-    cards: readonly T[]
-): readonly T[] {
-    return cards.filter((card) => card.isFeatured);
+export function selectHomeAccommodationCards<T extends HomeFeaturedCandidate>(input: {
+    readonly cards: readonly T[];
+    readonly limit: number;
+}): readonly T[] {
+    if (input.limit <= 0) return [];
+
+    const seenIds = new Set<string>();
+    const featured: T[] = [];
+    const other: T[] = [];
+
+    for (const card of input.cards) {
+        if (seenIds.has(card.id)) continue;
+        seenIds.add(card.id);
+        (card.isFeatured ? featured : other).push(card);
+    }
+
+    return [...featured, ...other].slice(0, input.limit);
 }
