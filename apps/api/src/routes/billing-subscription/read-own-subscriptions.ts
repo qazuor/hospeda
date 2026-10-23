@@ -1,6 +1,7 @@
 import {
     and,
     asc,
+    billingOptions,
     courtesyGrants,
     emailOutbox,
     eq,
@@ -8,15 +9,24 @@ import {
     inArray,
     isNotNull,
     isNull,
+    plans,
+    planVersions,
     SUBSCRIPTION_STATUSES,
     sql,
     subscriptions
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { PAID_AFTER_CANCELLATION_TEMPLATE } from '@repo/service-core';
+import { BillingCycleSchema, ServiceErrorCode } from '@repo/schemas';
+import {
+    createCutExpectedAmountPolicy,
+    PAID_AFTER_CANCELLATION_TEMPLATE,
+    ServiceError
+} from '@repo/service-core';
 import { z } from 'zod';
+import { getClock } from '../../utils/clock';
 
 const logger = createLogger('read-own-subscriptions');
+const arsCurrencySchema = z.literal('ARS');
 const paidAfterCancellationPayloadSchema = z
     .object({
         subscriptionId: z.string().uuid(),
@@ -31,15 +41,30 @@ export async function readOwnSubscriptions(userId: string) {
     );
     const rows = await getDb()
         .select({
+            subscription: subscriptions,
             id: subscriptions.id,
             vertical: subscriptions.vertical,
             status: subscriptions.status,
             paymentMethod: subscriptions.paymentMethod,
             serviceEndsAt: subscriptions.serviceEndsAt,
             graceEndsAt: subscriptions.graceEndsAt,
-            createdAt: subscriptions.createdAt
+            createdAt: subscriptions.createdAt,
+            planSlug: plans.slug,
+            planName: plans.name,
+            optionAmount: billingOptions.amount,
+            optionCurrency: billingOptions.currency,
+            optionCycle: billingOptions.cycle
         })
         .from(subscriptions)
+        .innerJoin(planVersions, eq(planVersions.id, subscriptions.planVersionId))
+        .innerJoin(plans, eq(plans.id, planVersions.planId))
+        .innerJoin(
+            billingOptions,
+            and(
+                eq(billingOptions.id, subscriptions.billingOptionId),
+                eq(billingOptions.planVersionId, subscriptions.planVersionId)
+            )
+        )
         .where(
             and(
                 eq(subscriptions.userId, userId),
@@ -80,11 +105,94 @@ export async function readOwnSubscriptions(userId: string) {
             recurringAddonsCut: parsed.data.recurringAddonsCut
         });
     }
-    return rows.map((row) => ({
-        ...row,
-        paidAfterCancellation:
-            row.status === 'CANCEL_SCHEDULED' ? (marksById.get(row.id) ?? null) : null
-    }));
+    const now = getClock().clock.now();
+    const expectedAmountPolicy = createCutExpectedAmountPolicy();
+    return Promise.all(
+        rows.map(async (row) => {
+            const cycle = BillingCycleSchema.safeParse(row.optionCycle);
+            if (!cycle.success)
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Unknown billing option cycle'
+                );
+            const planCurrency = arsCurrencySchema.safeParse(row.optionCurrency);
+            if (!planCurrency.success)
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Unknown billing option currency'
+                );
+            let nextCharge: { at: Date; amount: number; currency: 'ARS' } | null = null;
+            if (
+                row.subscription.nextChargeAt !== null &&
+                isNextChargeShown({
+                    status: row.subscription.status,
+                    paymentMethod: row.subscription.paymentMethod,
+                    nextChargeAt: row.subscription.nextChargeAt,
+                    now
+                })
+            ) {
+                const expected = await expectedAmountPolicy.expectedAmount({
+                    subscription: row.subscription,
+                    purpose: { kind: 'PERIOD', chargeCreatedAt: row.subscription.nextChargeAt }
+                });
+                if (expected.kind === 'NOT_COMPARABLE') {
+                    logger.warn(
+                        { subscriptionId: row.id, reason: expected.reason },
+                        'Could not calculate the next subscription charge'
+                    );
+                } else {
+                    const chargeCurrency = arsCurrencySchema.safeParse(expected.currency);
+                    if (!chargeCurrency.success)
+                        throw new ServiceError(
+                            ServiceErrorCode.INTERNAL_ERROR,
+                            'Unknown next charge currency'
+                        );
+                    nextCharge = {
+                        at: row.subscription.nextChargeAt,
+                        amount: expected.amountMinor,
+                        currency: chargeCurrency.data
+                    };
+                }
+            }
+            return {
+                id: row.id,
+                vertical: row.vertical,
+                status: row.status,
+                paymentMethod: row.paymentMethod,
+                serviceEndsAt: row.serviceEndsAt,
+                graceEndsAt: row.graceEndsAt,
+                createdAt: row.createdAt,
+                plan: {
+                    slug: row.planSlug,
+                    name: row.planName,
+                    amount: row.optionAmount,
+                    currency: planCurrency.data,
+                    cycle: cycle.data
+                },
+                nextCharge,
+                paidAfterCancellation:
+                    row.status === 'CANCEL_SCHEDULED' ? (marksById.get(row.id) ?? null) : null
+            };
+        })
+    );
+}
+
+/**
+ * Mirrors the renewal eligibility predicate in `renewal-notice.ts` for a
+ * principal subscription's stored provider date.
+ */
+export function isNextChargeShown(input: {
+    readonly status: string;
+    readonly paymentMethod: string | null;
+    readonly nextChargeAt: Date | null;
+    readonly now: Date;
+}): boolean {
+    return (
+        input.status === 'ACTIVE' &&
+        input.paymentMethod === 'CARD' &&
+        input.nextChargeAt !== null &&
+        input.nextChargeAt > input.now
+    );
 }
 
 /** Read deferred courtesy terms belonging to the owner, for display only. */
