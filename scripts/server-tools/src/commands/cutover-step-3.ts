@@ -8,8 +8,8 @@
  * requires. Running the script by hand therefore has no working path on the
  * VPS. This command supplies both halves:
  *
- *   1. the api container's own environment (only `HOSPEDA_*` + `NODE_ENV`), so
- *      `validateApiEnv()` passes, and
+ *   1. the api container's own environment (`NODE_ENV`, `PORT`, `API_*` and
+ *      `HOSPEDA_*`), so `validateApiEnv()` passes, and
  *   2. a host-reachable Postgres URL built exactly the way `hops db-migrate`
  *      / `hops db-seed-migrate` build theirs, replacing the container's
  *      internal `HOSPEDA_DATABASE_URL`.
@@ -22,9 +22,10 @@
  *   - On prod, a write requires typing `write-trials-prod`. `--yes` never
  *     skips that typed guard.
  *   - Before running, the checkout's `HEAD` must match the deployed commit
- *     (`HOSPEDA_COMMIT_SHA` in the api container), compared by its 10-char
- *     prefix. `--allow-sha-mismatch` overrides it (and then requires the typed
- *     guard on prod even for a dry-run).
+ *     (`HOSPEDA_COMMIT_SHA` in the api container, falling back to
+ *     `SOURCE_COMMIT` when that variable is empty or `unknown`), compared by
+ *     its 10-char prefix. `--allow-sha-mismatch` overrides it (and then
+ *     requires the typed guard on prod even for a dry-run).
  *   - The script's exit code is propagated unchanged (0, 1 or 2).
  *   - Nothing here runs `git pull` or `pnpm install`: the SHA guard replaces
  *     the pull, and the operator aligns the checkout by hand.
@@ -75,8 +76,9 @@ target database, from the VPS host.
 The script runs as:
   pnpm --filter hospeda-api exec tsx scripts/cutover-v6-step-3.ts <mode>
 
-with the target api container's environment (only HOSPEDA_* and NODE_ENV) and
-a host-reachable HOSPEDA_DATABASE_URL. The environment is never printed.
+with the target api container's environment (NODE_ENV, PORT, API_* and
+HOSPEDA_*) and a host-reachable HOSPEDA_DATABASE_URL. The environment is never
+printed.
 
 Modes:
   --dry-run               Plan only, write nothing. THE DEFAULT.
@@ -85,8 +87,9 @@ Modes:
 
 Version guard:
   The checkout's HEAD must match the deployed SHA (HOSPEDA_COMMIT_SHA in the
-  api container, 10-char prefix). A mismatch stops with exit 1. The command
-  NEVER pulls: align the checkout with git before running.
+  api container, or SOURCE_COMMIT when that variable is empty or unknown;
+  10-char prefix). A mismatch stops with exit 1. The command NEVER pulls:
+  align the checkout with git before running.
 
 Flags:
   --allow-sha-mismatch    Run even when the checkout is not the deployed
