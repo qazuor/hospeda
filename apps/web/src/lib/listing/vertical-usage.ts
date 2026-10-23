@@ -80,17 +80,20 @@ export async function fetchListingEffectiveSets({
     readonly cookieHeader?: string;
 }): Promise<ReadonlyMap<ListingVertical, EntitlementsData>> {
     const entries = await Promise.all(
-        verticals.map(async (vertical) => {
+        verticals.map(async (vertical): Promise<readonly [ListingVertical, EntitlementsData]> => {
             try {
                 const result = await effectiveSetApi.get({ vertical, cookieHeader });
-                if (result.ok) return [vertical, { ...result.data, failed: false }] as const;
+                if (result.ok) {
+                    const effectiveSet: EntitlementsData = { ...result.data, failed: false };
+                    return [vertical, effectiveSet];
+                }
             } catch {
                 // A failed vertical must not prevent the other effective set from rendering.
             }
             return [
                 vertical,
                 { entitlements: {}, limits: {}, hasLiveNonTrialTitle: false, failed: true }
-            ] as const;
+            ];
         })
     );
     return new Map(entries);
