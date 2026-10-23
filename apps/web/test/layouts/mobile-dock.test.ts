@@ -102,3 +102,31 @@ describe('TEST:1768:8 ScrollToTop dock item', () => {
         );
     });
 });
+
+describe('TEST:1768:20 mobile dock auto-hide contract', () => {
+    it('initializes auto-hide with the dock and cleans it up with its measurement', () => {
+        const script = dock.split('<script>')[1] ?? '';
+        expect(script).toContain(
+            "import { initDockAutoHide } from '@/lib/mobile-dock/mobile-dock-autohide'"
+        );
+        expect(script).toMatch(/initDockAutoHide\s*\(/);
+        expect(script).toMatch(/cleanupAutoHide/);
+    });
+
+    it('keeps hidden transform inside the mobile breakpoint and disables its transition for reduced motion', () => {
+        const style = dock.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? '';
+        const mobileStart = style.indexOf('@media (max-width: 767px)');
+        const mobileEnd = style.indexOf('\n\t}', mobileStart);
+        const mobile = style.slice(mobileStart, mobileEnd);
+        expect(mobile).toMatch(
+            /\.mobile-dock\s*\{[^}]*transition:\s*transform var\(--duration-normal\) ease/s
+        );
+        expect(mobile).toMatch(
+            /\.mobile-dock\[data-dock-hidden\]\s*\{[^}]*transform:\s*translateY\(calc\(100% \+ var\(--bottom-safe-inset, 0px\)\)\)/s
+        );
+        expect(style).toMatch(
+            /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.mobile-dock\s*\{[^}]*transition:\s*none/s
+        );
+        expect(dock).not.toContain('style=');
+    });
+});
