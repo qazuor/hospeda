@@ -14,6 +14,7 @@ export const MetricsResponseSchema = z.object({
     summary: z.object({
         totalRequests: z.number(),
         totalErrors: z.number(),
+        /** Percentage in [0, 100], not a fraction. */
         globalErrorRate: z.number(),
         activeConnections: z.number(),
         timestamp: z.string()
@@ -23,6 +24,7 @@ export const MetricsResponseSchema = z.object({
             endpoint: z.string(),
             requests: z.number(),
             errors: z.number(),
+            /** Percentage in [0, 100], not a fraction. */
             errorRate: z.number(),
             avgResponseTime: z.number(),
             maxResponseTime: z.number(),
