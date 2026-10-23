@@ -475,8 +475,25 @@ function formatPriceArs(cents: number): string {
 	}
 
 	@media (max-width: 768px) {
+		/*
+		 * With `table-layout: auto` the label column's width came from its
+		 * content, and `rowDesc` is long text: the column took almost the whole
+		 * width and pushed the plan columns out of view. `table-layout: fixed`
+		 * sizes every column from the FIRST row (the `thead` row), so the width
+		 * goes on `thead .comparison-table__label-col`.
+		 * At 390px the visible width is 366px (390 - 2 * 12px of
+		 * `--space-container-x`); 150px label + 120px plan column = 270px, so
+		 * the label and at least one plan are visible without scrolling.
+		 */
+		.comparison-table {
+			table-layout: fixed;
+		}
+		.comparison-table thead .comparison-table__label-col {
+			width: 150px;
+		}
 		.comparison-table__label-col {
-			min-width: 160px;
+			min-width: 0;
+			padding: var(--space-3) var(--space-2);
 		}
 		.comparison-table__plan-col {
 			min-width: 120px;
