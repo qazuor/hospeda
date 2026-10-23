@@ -27,23 +27,28 @@ export interface PaymentProviderErrorInput {
     readonly capability: PaymentCapability;
     readonly message: string;
     readonly cause?: unknown;
+    readonly incompleteRead?: boolean;
 }
 
 /** A typed refusal from a payment provider. */
 export class PaymentProviderError extends Error {
     readonly code: PaymentProviderErrorCode;
     readonly capability: PaymentCapability;
+    /** The provider answered with a record it is still writing; reading again later is expected to succeed (HOS-1747). */
+    readonly incompleteRead: boolean;
 
     /**
      * @param input.code - Why the provider refused
      * @param input.capability - The capability that was asked for
      * @param input.message - Human-readable detail
      * @param input.cause - The underlying error, when there is one
+     * @param input.incompleteRead - Whether the provider returned a record still being written
      */
     constructor(input: PaymentProviderErrorInput) {
         super(input.message, input.cause === undefined ? undefined : { cause: input.cause });
         this.name = 'PaymentProviderError';
         this.code = input.code;
         this.capability = input.capability;
+        this.incompleteRead = input.incompleteRead ?? false;
     }
 }
