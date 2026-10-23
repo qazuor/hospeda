@@ -3,6 +3,7 @@
  * Schemas for billing-related API requests and responses
  */
 
+export * from './account-stats-response.schema.js';
 export * from './addon.schema.js';
 export * from './admin-billing-view.schema.js';
 export * from './admin-effective-set.schema.js';

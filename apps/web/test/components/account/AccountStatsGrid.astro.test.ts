@@ -111,3 +111,17 @@ describe('AccountStatsGrid.astro — owner branch (HOS-1293)', () => {
         expect(subscriptionCardIndex).toBeGreaterThan(ternaryCloseIndex);
     });
 });
+
+describe('TEST:1756:12 AccountStatsGrid subscription labels', () => {
+    it('declares the translated plan map and all new status labels', () => {
+        const subscription = source.slice(
+            source.indexOf('id="stat-subscription"'),
+            source.indexOf('id="stat-subscription-status"')
+        );
+        const status = source.slice(source.indexOf('id="stat-subscription-status"'));
+        expect(subscription).toContain('data-plan-names=');
+        expect(status).toContain('data-label-grace-period=');
+        expect(status).toContain('data-label-suspended=');
+        expect(status).toContain('data-label-cancel-scheduled=');
+    });
+});

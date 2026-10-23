@@ -512,6 +512,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 <script>
     import { getApiUrl } from '@/lib/env';
+    import type { UserStatsResponse } from '@repo/schemas';
+    import { parsePlanNames, resolveDashboardPlanStat } from '@/lib/billing/dashboard-plan-stat';
 
     /**
      * Fetch user stats from the protected API and update the dashboard counters.
@@ -558,13 +560,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
             // ── Subscription widget (common to both views) ──────────────────
             if (statsRes.ok) {
-                const statsData = (await statsRes.json()) as {
-                    data?: {
-                        bookmarkCount?: number;
-                        plan?: { name?: string; status?: string };
-                        activeSubscriptionsCount?: number;
-                    };
-                };
+                const statsData = (await statsRes.json()) as { data?: UserStatsResponse };
 
                 // Tourist-only: favorites counter.
                 const favEl = document.getElementById('stat-favorites');
@@ -575,63 +571,52 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
                 const subEl = document.getElementById('stat-subscription');
                 const statusEl = document.getElementById('stat-subscription-status');
-                const planName = statsData.data?.plan?.name;
-                const planStatus = statsData.data?.plan?.status;
-                // HOS-1066: more than one active subscription (across product
-                // domains) means the API deliberately returns `plan: null` — the
-                // card becomes a count summary instead of picking one vertical
-                // arbitrarily. See `resolveUserPlanSummary` in stats.ts.
-                const activeSubscriptionsCount = statsData.data?.activeSubscriptionsCount ?? 0;
-                const hasMultipleActiveSubscriptions = activeSubscriptionsCount > 1;
-
-                if (subEl) {
-                    // BETA-32: free-tier users have `plan: null`. The old guard
-                    // (`if plan?.name`) never cleared the shimmer for them, so the
-                    // widget span loaded forever. Always clear on a successful
-                    // fetch — show the plan name, the multi-subscription summary,
-                    // or the "free" label otherwise.
-                    if (hasMultipleActiveSubscriptions) {
-                        // CLDR plural pair (same pattern as
-                        // AccommodationsListingMap.client.tsx's
-                        // resultsCountOne/resultsCountOther): pick the
-                        // template for the actual count, then interpolate it
-                        // — the server only knows the count is ">1", not
-                        // which exact plural form to render.
+                const responseData = statsData.data;
+                const planStat = resolveDashboardPlanStat({
+                    plan: responseData?.plan ?? null,
+                    activeSubscriptionsCount: responseData?.activeSubscriptionsCount ?? 0,
+                    planNames: parsePlanNames(subEl?.getAttribute('data-plan-names') ?? null)
+                });
+                const statusAttributeByKey = {
+                    active: 'data-label-active',
+                    'grace-period': 'data-label-grace-period',
+                    suspended: 'data-label-suspended',
+                    'cancel-scheduled': 'data-label-cancel-scheduled'
+                } as const;
+                let subscriptionValue: string;
+                let statusAttribute: string | null = null;
+                switch (planStat.kind) {
+                    case 'free':
+                        subscriptionValue = subEl?.getAttribute('data-label-free') ?? 'Gratuito';
+                        break;
+                    case 'multiple': {
                         const template =
-                            activeSubscriptionsCount === 1
-                                ? (subEl.getAttribute('data-label-multiple-one') ??
-                                  '{{count}} suscripción activa')
-                                : (subEl.getAttribute('data-label-multiple-other') ??
-                                  '{{count}} suscripciones activas');
-                        subEl.textContent = template
-                            .replace('{{count}}', String(activeSubscriptionsCount))
-                            .replace('{count}', String(activeSubscriptionsCount));
-                    } else if (planName) {
-                        subEl.textContent = planName;
-                    } else {
-                        subEl.textContent = subEl.getAttribute('data-label-free') ?? 'Gratuito';
+                            planStat.count === 1
+                                ? (subEl?.getAttribute('data-label-multiple-one') ?? '{{count}} suscripción activa')
+                                : (subEl?.getAttribute('data-label-multiple-other') ?? '{{count}} suscripciones activas');
+                        subscriptionValue = template
+                            .replace('{{count}}', String(planStat.count))
+                            .replace('{count}', String(planStat.count));
+                        break;
                     }
+                    case 'single':
+                        subscriptionValue = planStat.label;
+                        statusAttribute = statusAttributeByKey[planStat.statusKey];
+                        break;
+                    default: {
+                        const exhaustive: never = planStat;
+                        throw new Error(`Unexpected dashboard plan state: ${exhaustive}`);
+                    }
+                }
+                if (subEl) {
+                    subEl.textContent = subscriptionValue;
                     subEl.classList.remove('stat-value--loading');
                 }
 
                 if (statusEl) {
-                    if (hasMultipleActiveSubscriptions) {
-                        // The summary line above already says how many; a
-                        // single status label doesn't apply to several
-                        // subscriptions in different states, so hide this row
-                        // (same treatment as the free tier below).
-                        statusEl.textContent = '';
-                        statusEl.hidden = true;
-                    } else if (planStatus) {
-                        const label = statusEl.getAttribute(`data-label-${planStatus}`);
-                        if (label) statusEl.textContent = label;
-                    } else {
-                        // Free tier: the value line already reads "Plan Gratuito".
-                        // Hide the status line instead of repeating the same label
-                        // on both rows (was duplicated as "Plan Gratuito" twice).
-                        statusEl.textContent = '';
-                        statusEl.hidden = true;
-                    }
+                    const statusLabel = statusAttribute ? statusEl.getAttribute(statusAttribute) : null;
+                    statusEl.textContent = statusLabel ?? '';
+                    statusEl.hidden = !statusLabel;
                 }
             }
 
