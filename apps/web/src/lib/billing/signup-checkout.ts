@@ -7,6 +7,7 @@ import {
     type VerticalEnum
 } from '@repo/schemas';
 import { MARKET_TIMEZONE } from '@repo/utils';
+import { getPlanName } from '@/lib/billing-i18n';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrlWithParams } from '@/lib/urls';
@@ -19,6 +20,18 @@ export function resolveDeclaredPayerEmail({
 }): { readonly ok: true; readonly email: string } | { readonly ok: false } {
     const parsed = StartSubscriptionRequestSchema.shape.payerEmail.safeParse(value);
     return parsed.success ? { ok: true, email: parsed.data } : { ok: false };
+}
+
+/** Localized plan name for the checkout; falls back to the stored name when the notice has no slug. */
+export function resolveSignupPlanName({
+    plan,
+    t
+}: {
+    readonly plan: Pick<SignupPlanSummary, 'name' | 'slug'>;
+    readonly t: (key: string, fallback?: string) => string;
+}): string {
+    if (!plan.slug) return plan.name;
+    return getPlanName({ plan: { slug: plan.slug, name: plan.name, description: '' }, t });
 }
 
 /** Trial state rendered before an explicit signup confirmation. */
@@ -38,6 +51,8 @@ export type SignupTouristVipNotice =
  * notice without it resolves to `null` and the summary is omitted.
  */
 export type SignupPlanSummary = {
+    /** Stable plan slug; localizes the name through `billing.plan.<slug>.name`. Absent on notices from an API that predates it. */
+    readonly slug?: string;
     /** Display name of the plan. */
     readonly name: string;
     /** Price of the option in minor units (centavos). */

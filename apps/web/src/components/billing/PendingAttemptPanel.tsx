@@ -1,6 +1,7 @@
 import {
     formatSignupWindowEnd,
     isDisplayableCheckoutUrl,
+    resolveSignupPlanName,
     SIGNUP_CYCLE_LABEL_KEY,
     type SignupPendingAttempt
 } from '@/lib/billing/signup-checkout';
@@ -45,7 +46,7 @@ export function PendingAttemptPanel({
             <h1>{t('billing.checkout.signup.pendingAttempt.title')}</h1>
             <p>
                 {t('billing.checkout.signup.pendingAttempt.body', undefined, {
-                    plan: attempt.plan.name,
+                    plan: resolveSignupPlanName({ plan: attempt.plan, t }),
                     amount,
                     cycle,
                     date
