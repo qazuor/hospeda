@@ -71,7 +71,15 @@ describe('resolveMySubscriptionSummary — TEST:1755:7', () => {
             SUSPENDED: false,
             CANCEL_SCHEDULED: false
         });
-        const expected = `${formatPrice({ amount: 180, currency: 'ARS', locale: 'es', showDecimals: false })} monthly`;
+        const expected = `account.subscription.mine.price ${JSON.stringify({
+            amount: formatPrice({
+                amount: 180,
+                currency: 'ARS',
+                locale: 'es',
+                showDecimals: false
+            }),
+            cycle: 'billing.checkout.signup.cycle.monthly'
+        })}`;
         expect(
             resolveMySubscriptionSummary({ row: row(), locale: 'es', t: fallbackT }).priceLine
         ).toBe(expected);
@@ -82,7 +90,15 @@ describe('resolveMySubscriptionSummary — TEST:1755:7', () => {
                 t: fallbackT
             }).priceLine
         ).toBe(
-            `${formatPrice({ amount: 180.5, currency: 'ARS', locale: 'es', showDecimals: true })} monthly`
+            `account.subscription.mine.price ${JSON.stringify({
+                amount: formatPrice({
+                    amount: 180.5,
+                    currency: 'ARS',
+                    locale: 'es',
+                    showDecimals: true
+                }),
+                cycle: 'billing.checkout.signup.cycle.monthly'
+            })}`
         );
         for (const status of ['SUSPENDED', 'CANCEL_SCHEDULED'] as const)
             expect(
