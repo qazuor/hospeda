@@ -85,6 +85,13 @@ describe('resolveMySubscriptionSummary — TEST:1755:7', () => {
         ).toBe(expected);
         expect(
             resolveMySubscriptionSummary({
+                row: row({ status: 'GRACE_PERIOD' }),
+                locale: 'es',
+                t: fallbackT
+            }).priceLine
+        ).toBe(expected);
+        expect(
+            resolveMySubscriptionSummary({
                 row: row({ plan: { ...row().plan, amount: 18050 } }),
                 locale: 'es',
                 t: fallbackT
