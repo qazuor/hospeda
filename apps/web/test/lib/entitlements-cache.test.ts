@@ -63,8 +63,7 @@ describe('HOS-1646 · cliente web de capacidades · entitlements cache', () => {
         } as never);
         await getEntitlementsCached({ vertical: 'tourist' });
         expect(effectiveSetApi.get).toHaveBeenCalledWith({
-            vertical: 'tourist',
-            cookieHeader: undefined
+            vertical: 'tourist'
         });
     });
 });
