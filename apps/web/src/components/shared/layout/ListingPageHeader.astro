@@ -46,10 +46,12 @@ const { tagline, title, subtitle, class: className } = Astro.props;
 		font-family: var(--font-decorative);
 		font-weight: 700;
 		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		line-height: 1.6;
 		color: var(--brand-accent-strong);
 		margin: 0 0 var(--space-1);
 		overflow: hidden;
-		max-height: 2.5em;
+		/* Keep the cap at an exact line-height multiple so clipping never cuts a glyph row; the cap lets wh-compact-hide animate to zero. */
+		max-height: 6.4em;
 		opacity: 1;
 		transition:
 			max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
@@ -70,10 +72,12 @@ const { tagline, title, subtitle, class: className } = Astro.props;
 	.listing-page-header__subtitle {
 		font-family: var(--font-sans);
 		font-size: var(--text-body);
+		line-height: 1.6;
 		color: var(--core-muted-foreground);
 		margin: var(--space-2) 0 0;
 		overflow: hidden;
-		max-height: 3em;
+		/* Keep the cap at an exact line-height multiple so clipping never cuts a glyph row; the cap lets wh-compact-hide animate to zero. */
+		max-height: 6.4em;
 		opacity: 1;
 		transition:
 			max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
