@@ -54,7 +54,8 @@
                     "label_one": "{{current}} de {{max}} experiencia",
                     "label_other": "{{current}} de {{max}} experiencias"
                 },
-                "upgrade": "Ampliar cupo"
+                "upgrade": "Ampliar cupo",
+                "atLimit": "Llegaste al tope de tu plan. Para publicar otra ficha, ampliá tu cupo."
             },
             "views": {
                 "title": "Vistas",
