@@ -197,7 +197,7 @@ export function PracticalInfoSection({
                 min={0}
                 step={1}
                 value={numberInputValue({ value: data.durationHours })}
-                placeholder="2"
+                placeholder={t('listing.owner.editor.sections.durationHoursPlaceholder', 'Ej.: 2')}
                 onChange={(event) => {
                     onFieldChange(
                         'durationHours',
@@ -220,7 +220,10 @@ export function PracticalInfoSection({
                 min={0}
                 step={1}
                 value={numberInputValue({ value: data.durationMinutesPart })}
-                placeholder="30"
+                placeholder={t(
+                    'listing.owner.editor.sections.durationMinutesPlaceholder',
+                    'Ej.: 30'
+                )}
                 onChange={(event) => {
                     onFieldChange(
                         'durationMinutesPart',

@@ -131,7 +131,10 @@ export function PriceSection({
             <TextField
                 prefix={LISTING_FIELD_PREFIX}
                 name="priceFrom"
-                label={t('listing.owner.editor.sections.priceFrom', 'Precio desde')}
+                label={t(
+                    'listing.owner.editor.sections.priceFromWithCurrency',
+                    'Precio desde (ARS)'
+                )}
                 labelClassName={styles.label}
                 className={styles.input}
                 error={errors.priceFrom}

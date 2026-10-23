@@ -186,6 +186,7 @@
                 "fileUnavailable": "Não é possível abrir este arquivo. Exclua-o e envie novamente.",
                 "addFile": "Enviar foto ou PDF",
                 "replaceFile": "Substituir o arquivo",
+                "noFileChosen": "Nenhum arquivo escolhido",
                 "removeFile": "Excluir",
                 "uploaded": "Arquivo do cardápio enviado.",
                 "fileRemoved": "Arquivo do cardápio excluído.",
