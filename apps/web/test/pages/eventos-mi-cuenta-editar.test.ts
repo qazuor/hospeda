@@ -65,7 +65,7 @@ describe('mi-cuenta/eventos/[id]/editar.astro — data path', () => {
         expect(pageSource.indexOf('buildLoginRedirect(')).toBeLessThan(
             pageSource.indexOf('hasEventsNavAccess(')
         );
-        expect(pageSource).toMatch(/canManageEvents\s*\?\s*await\s+eventEditApi\.getById\(/);
+        expect(pageSource).toMatch(/if \(canManageEvents\) \{[\s\S]*eventEditApi\.getById\(/);
         expect(pageSource.indexOf('hasEventsNavAccess(')).toBeLessThan(
             pageSource.indexOf('eventEditApi.getById(')
         );
