@@ -383,6 +383,8 @@ is NOT enforced there is R3-style param validation.
 
 `PLAN_NOT_FOR_SALE` is 422; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. The new rejection is 409 because the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
 
+`PROVIDER_REJECTED` is 422 `VALIDATION_ERROR`: the payment provider refused the data of the signup (HOS-1746); a provider outage or 5xx stays a 5xx and is retried.
+
 ### Pending signup attempt cancellation (HOS-1735)
 
 `GET /api/v1/protected/billing/subscriptions/signup-notice/{billingOptionId}` includes `pendingAttempt`: `null` unless the caller has a live pending attempt for another billing option in the requested vertical; otherwise it contains the attempt plan, authorization-window end, and a resumable checkout URL when the stored creation result is valid.
