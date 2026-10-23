@@ -147,7 +147,7 @@ overrides:
   # here, not something qzpay can prevent.
   # ---------------------------------------------------------------------------
   typescript: "6.0.3"
-  "zod@>=4.0.0 <5": "4.6.6"
+  "zod@>=4.0.0 <5": "4.3.6"
   ws: ">=8.21.0"
   form-data: ">=4.0.6"
   protobufjs: ">=7.6.1"
@@ -390,15 +390,19 @@ auditConfig:
     - GHSA-w3rx-r6r6-pgpr
     - GHSA-5p2g-fcmc-qvqq
     # GHSA-mrhx-c7xc-m3w5: zod <4.6.6 can exhaust memory validating oversized
-    # constrained collections. Every workspace consumer resolves 4.6.6 through
-    # the `zod@>=4.0.0 <5` override. The one copy left is zod@3.25.76, pinned
-    # EXACTLY by @expo/cli (apps/mobile > @better-auth/expo > expo > @expo/cli),
-    # the mobile build-time CLI; it validates the developer's own project config
-    # and never runs in the API, web or admin runtimes. No 3.x release is
-    # patched, and forcing 4.x under a CLI written against the 3.x API is unsafe.
-    # Remove this exception with the Expo SDK bump that moves @expo/cli to zod 4.
-    # Before removing it, confirm with:
-    #   pnpm why zod -r --prod   # no 3.x left
+    # constrained collections. TEMPORARY exception (owner decision, 2026-10-23)
+    # covering two copies:
+    #   - zod@4.3.6, the `zod@>=4.0.0 <5` override above. Moving it to 4.6.6
+    #     breaks the build: 4.6 throws at module load on `.merge()` over a
+    #     refined object schema (first hit: packages/schemas/src/api/api.schema.ts
+    #     ExtendedQuerySchema). The `.merge()` -> `.safeExtend()` migration is
+    #     HOS-1774. Request body size limits bound the exposure until then.
+    #   - zod@3.25.76, pinned EXACTLY by @expo/cli (apps/mobile >
+    #     @better-auth/expo > expo > @expo/cli), the mobile build-time CLI. No
+    #     3.x release is patched; it goes with the Expo SDK bump that moves
+    #     @expo/cli to zod 4.
+    # Remove this exception when both are gone. Before removing it, confirm with:
+    #   pnpm why zod -r --prod   # only >=4.6.6 left
     - GHSA-mrhx-c7xc-m3w5
 
 allowBuilds:
