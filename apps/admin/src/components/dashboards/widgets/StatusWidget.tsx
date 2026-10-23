@@ -192,7 +192,7 @@ export interface StatusMetrics {
     readonly activeConnections?: number;
     /** Total requests served since the process started. */
     readonly totalRequests?: number;
-    /** Global error rate as a decimal (0–1). */
+    /** Global error rate as a percentage (0–100), exactly as the API sends `globalErrorRate`. */
     readonly errorRate?: number;
 }
 
@@ -602,7 +602,7 @@ export function StatusWidget({ widget }: StatusWidgetProps) {
                                 tiles.push({
                                     key: 'errors',
                                     label: 'Errores',
-                                    value: `${(m.errorRate * 100).toFixed(1)}%`
+                                    value: `${m.errorRate.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
                                 });
                             }
                             return tiles.map((t) => (
