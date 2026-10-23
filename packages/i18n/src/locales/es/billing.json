@@ -251,7 +251,8 @@
                 "previousAttemptInProgress": "Todavía estamos preparando tu intento anterior con Mercado Pago. Probá de nuevo en unos minutos.",
                 "touristVipInherited": "Tu plan actual ya incluye los beneficios de Turista VIP",
                 "commitmentTaken": "Ya tenés una suscripción en curso en esta vertical.",
-                "generic": "No pudimos iniciar tu suscripción. Probá de nuevo en unos minutos."
+                "generic": "No pudimos iniciar tu suscripción. Probá de nuevo en unos minutos.",
+                "providerRejected": "Mercado Pago no aceptó los datos del pago. Revisá que el email sea el de tu cuenta de Mercado Pago y volvé a intentar."
             },
             "trialNotice": {
                 "running_one": "Estás en tu período de prueba: te queda {{days}} día, hasta el {{date}}.",
