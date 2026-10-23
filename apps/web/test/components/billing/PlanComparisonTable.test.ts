@@ -164,3 +164,77 @@ describe('PlanComparisonTable.astro — styling', () => {
         expect(src).toContain('var(--core-muted-foreground)');
     });
 });
+
+describe('PlanComparisonTable.astro — mobile layout (HOS-1753)', () => {
+    // The `@media (max-width: 768px)` block is the LAST block in the file: the
+    // mobile overrides are appended after every desktop rule, so everything
+    // from that index to the end is the mobile layer.
+    const mediaIndex = src.lastIndexOf('@media (max-width: 768px)');
+    const mobileBlock = src.slice(mediaIndex);
+    const desktopBlock = src.slice(0, mediaIndex);
+
+    it('TEST:1753:2 — keeps the scroll hint visible only inside the mobile block', () => {
+        // AC:1753:2 — the horizontal-scroll affordance stays `display: none`
+        // by default and becomes `display: flex` on mobile.
+        expect(mobileBlock).toContain('.comparison-table__scroll-hint');
+        expect(mobileBlock).toContain('display: flex');
+    });
+
+    it('TEST:1753:1 — pins a fixed label width that leaves room for one plan column at 390px', () => {
+        // AC:1753:1 with `table-layout: fixed`, every column's width comes from
+        // the FIRST row — the `<thead>` row — so the label width must be set
+        // there. `min-width` alone leaves the auto layout free to size the
+        // column from `rowDesc`, which is what pushes the plans off-screen.
+        const tableRule = mobileBlock.match(/\.comparison-table \{([^}]*)\}/);
+        expect(tableRule).not.toBeNull();
+        expect(tableRule?.[1]).toContain('table-layout: fixed;');
+
+        const labelHeaderRule = mobileBlock.match(
+            /\.comparison-table thead \.comparison-table__label-col \{([^}]*)\}/
+        );
+        expect(labelHeaderRule).not.toBeNull();
+
+        const widthMatch = labelHeaderRule?.[1]?.match(/(?:^|[^-])width:\s*(\d+)px/);
+        expect(widthMatch).not.toBeNull();
+        const labelWidth = Number(widthMatch?.[1]);
+
+        // The visible width at the issue's 390px viewport:
+        //   390 - 2 * 12 = 366px
+        // 12px is `--space-container-x` at 390px: clamp(0.75rem, 3vw, 1.5rem)
+        // resolves to 0.75rem = 12px there (3vw = 11.7px is below the minimum).
+        // 120px is the `min-width` of `.comparison-table__plan-col` on mobile.
+        // The label plus at least one plan column must fit those 366px.
+        const visibleWidth = 390 - 2 * 12;
+        const planColumnWidth = 120;
+        expect(labelWidth + planColumnWidth).toBeLessThanOrEqual(visibleWidth);
+    });
+
+    it('TEST:1753:1 — does not let the label column grow with its content on mobile', () => {
+        // AC:1753:1 — a `min-width` of 160px/200px is what the auto layout
+        // already had, and it is not what made the column wide; letting the
+        // column keep a content-derived minimum on mobile is exactly the defect.
+        expect(mobileBlock).not.toContain('min-width: 160px');
+        expect(mobileBlock).not.toContain('min-width: 200px');
+    });
+
+    it('TEST:1753:3 — leaves the desktop layout untouched', () => {
+        // AC:1753:3 — outside the media query the label keeps its 200px
+        // minimum, the table keeps its 600px minimum, and the auto layout
+        // stays in place.
+        const desktopLabelRule = desktopBlock.match(/\.comparison-table__label-col \{([^}]*)\}/);
+        expect(desktopLabelRule).not.toBeNull();
+        expect(desktopLabelRule?.[1]).toContain('min-width: 200px;');
+        expect(desktopBlock).toContain('min-width: 600px;');
+        expect(desktopBlock).not.toContain('table-layout');
+    });
+
+    it('TEST:1753:4 — has no per-audience branch in the mobile block', () => {
+        // AC:1753:4 — the same component renders all four comparisons, so one
+        // CSS fix covers them; per-audience selectors would mean four fixes.
+        expect(mobileBlock).not.toContain('data-audience');
+        expect(mobileBlock).not.toContain('--gastronomy');
+        expect(mobileBlock).not.toContain('--experience');
+        expect(mobileBlock).not.toContain('--owner');
+        expect(mobileBlock).not.toContain('--tourist');
+    });
+});
