@@ -44,7 +44,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     mockCredited.mockResolvedValue({
         candidates: 0,
-        activated: 0,
+        activated: 1,
         notActive: 0,
         skipped: 0,
         failed: 0,
@@ -103,7 +103,7 @@ describe('subscription-window-expiry cron', () => {
         expect(mockSweep.mock.calls[0]?.[1].coverageNotices).toBe(getCoverageNotices());
         expect(result).toMatchObject({
             success: true,
-            processed: 5,
+            processed: 6,
             errors: 0,
             // HOS-1561 H9: branch 2's re-evaluation count reaches the run's details.
             details: { cancelled: 1, deferred: 2, retainedReevaluated: 1 }
