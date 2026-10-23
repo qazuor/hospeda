@@ -69,7 +69,10 @@
         "cron": "Scheduled Tasks",
         "appLogs": "Application Logs",
         "notificationLogs": "Notification Logs",
-        "webhookEvents": "Webhook Events"
+        "webhookEvents": "Webhook Events",
+        "subscription": "Subscription",
+        "subscriptionCancellation": "Cancellation",
+        "subscriptionRevocation": "Revocation"
     },
     "notifications": "Notifications",
     "access": {
