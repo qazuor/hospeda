@@ -29,11 +29,17 @@ describe('ListingViewToggle source contract', () => {
 
     it('uses two shared controls on the listing and map with dock slots', () => {
         expect(listing.match(/<ListingViewToggle\b/g)).toHaveLength(2);
-        expect(listing).toContain('slot="dock-start"');
+        expect(listing).toMatch(
+            /<ListingViewToggle\b(?=[^>]*slot="dock-start")(?=[^>]*variant="dock")[^>]*>/
+        );
+        expect(listing).toMatch(/<ListingViewToggle\b(?=[^>]*variant="inline")[^>]*>/);
         expect(listing).not.toContain('class="view-toggle"');
         expect(listing).not.toContain('position: fixed');
         expect(map.match(/<ListingViewToggle\b/g)).toHaveLength(2);
-        expect(map).toContain('slot="dock-start"');
+        expect(map).toMatch(
+            /<ListingViewToggle\b(?=[^>]*slot="dock-start")(?=[^>]*variant="dock")[^>]*>/
+        );
+        expect(map).toMatch(/<ListingViewToggle\b(?=[^>]*variant="inline")[^>]*>/);
         expect(map.match(/active="map"/g)).toHaveLength(2);
         expect(map).not.toContain('class="view-toggle"');
         expect(map).not.toContain('position: fixed');

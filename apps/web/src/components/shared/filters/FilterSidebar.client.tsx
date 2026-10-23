@@ -4,7 +4,7 @@
  * range, search, stepper, stars, toggle, dual-range, and select-search filter groups
  * with sort dropdown.
  *
- * On mobile (< 768px): renders as a floating trigger button + full-height drawer.
+ * On mobile (< 768px): renders a dock trigger button + full-height drawer.
  * On desktop (>= 768px): renders as a static sidebar panel.
  *
  * Navigation behavior: every state change triggers a debounced navigation (500ms)
@@ -70,7 +70,7 @@ export interface FilterSidebarProps {
      * - `'left'` (default): static panel to the left of the content grid.
      * - `'top'`: horizontal bar above the content area.
      *
-     * On mobile (<768px) both variants collapse to the same floating-button +
+     * On mobile (<768px) both variants collapse to the same dock-button +
      * left-side drawer.
      */
     readonly position?: 'left' | 'top';

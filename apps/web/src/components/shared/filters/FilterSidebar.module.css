@@ -1,5 +1,5 @@
 /* FilterSidebar.module.css
- * Sidebar shell styles for listing filters: desktop panel layout, mobile floating
+ * Sidebar shell styles for listing filters: desktop panel layout, mobile dock
  * trigger button, position variants (left/top), and sidebar header/body.
  *
  * Collapsible group styles → components/FilterGroup.module.css
@@ -316,6 +316,7 @@
         transition:
             opacity var(--duration-fast) ease,
             transform var(--duration-fast) ease;
+    }
 
     :global([data-mobile-dock]) .floatingTrigger:hover {
         background: none;
