@@ -476,4 +476,44 @@ describe('upload control (HOS-1763)', () => {
         // accessibility tree, leaving the label as a mouse-only target.
         expect(block).not.toContain('display: none');
     });
+
+    it('clears the file input so the same file can be chosen again (TEST:1763:1d)', async () => {
+        const { container } = render(
+            <GastronomyMenuManager
+                listingId={LISTING_ID}
+                locale="es"
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('Ningún archivo elegido')).toBeInTheDocument();
+        });
+
+        const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+
+        // A real browser keeps the chosen path in `value` and skips `change`
+        // when the same file is picked twice, so a failed upload could not be
+        // retried. jsdom never fills `value` from `files`, so that browser
+        // condition is simulated here with an own accessor (jsdom refuses a
+        // non-empty assignment to a file input). Without
+        // `event.target.value = ''` the path would survive and the assertion
+        // below fails.
+        let value = 'C:\\fakepath\\carta.pdf';
+        Object.defineProperty(input, 'value', {
+            configurable: true,
+            get: () => value,
+            set: (next: string) => {
+                value = next;
+            }
+        });
+
+        fireEvent.change(input, {
+            target: {
+                files: [new File(['x'], 'carta.pdf', { type: 'application/pdf' })]
+            }
+        });
+
+        expect(input.value).toBe('');
+        expect(await screen.findByText('carta.pdf')).toBeInTheDocument();
+    });
 });
