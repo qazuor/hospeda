@@ -101,7 +101,7 @@ describe('TEST:1740:1 credited pending selector', () => {
                         paymentMethod: options.paymentMethod ?? 'CARD',
                         status: options.status ?? 'PENDING_AUTHORIZATION',
                         class: options.class ?? 'PRINCIPAL',
-                        authorizationWindowDeadlineVersion: 1,
+                        authorizationWindowDeadlineVersion: options.nullWindow ? null : 1,
                         authorizationWindowEndsAt: options.nullWindow
                             ? null
                             : (options.window ?? new Date(now.getTime() + 100_000))
