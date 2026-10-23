@@ -134,10 +134,14 @@ export async function activateCreditedPendingAuthorizations(
         touristVipCancelled = 0;
     for (const row of rows) {
         try {
+            if (!row.providerLink) {
+                skipped++;
+                continue;
+            }
             const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
             actStartInstant({ act });
             const read = await ports.provider.readAuthorization({
-                authorizationId: row.providerLink!.providerId
+                authorizationId: row.providerLink.providerId
             });
             const { snapshot } = assertFreshForAct({ read, act });
             if (snapshot.status !== 'active') {
