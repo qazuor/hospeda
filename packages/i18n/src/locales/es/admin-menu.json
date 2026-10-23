@@ -69,7 +69,10 @@
         "cron": "Tareas Programadas",
         "appLogs": "Logs de Aplicación",
         "notificationLogs": "Registros de Notificación",
-        "webhookEvents": "Eventos de Webhook"
+        "webhookEvents": "Eventos de Webhook",
+        "subscription": "Suscripción",
+        "subscriptionCancellation": "Baja",
+        "subscriptionRevocation": "Revocación"
     },
     "notifications": "Notificaciones",
     "access": {
