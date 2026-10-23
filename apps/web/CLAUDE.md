@@ -1213,6 +1213,8 @@ only wrapper, so the island does not know the endpoint.
 control row, mounted once by `BaseLayout.astro`. It measures visible
 `data-dock-item` controls and publishes the height reserved by the page.
 
+On mobile, the dock hides while scrolling down and returns while scrolling up, at the top or page end, while focus is inside it, and while CompareBar has a selection. The reserved `--mobile-dock-height` stays unchanged while hidden. `prefers-reduced-motion: reduce` disables the hide transition.
+
 Slots are declared in `src/lib/mobile-dock/mobile-dock-slots.ts` and ordered
 visually as: `above` (comparison bar), `filters`, `start` (list/map), then
 `map-cards`, `ai-search`, `ai-chat`; `ScrollToTop` follows at the right edge.
