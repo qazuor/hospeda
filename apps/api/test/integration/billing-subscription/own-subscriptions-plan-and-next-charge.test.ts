@@ -31,6 +31,7 @@ const fake = routeFake(clock);
 const path = '/api/v1/protected/billing-subscription/';
 const optionAmount = 10000;
 const extraOptions: string[] = [];
+const extraPlanVersions: string[] = [];
 const promoIds: string[] = [];
 const redemptionIds: string[] = [];
 const changeIds: string[] = [];
@@ -65,6 +66,13 @@ afterEach(async () => {
             .where(inArray(subscriptions.id, ownSubscriptionIds.splice(0)));
     if (extraOptions.length)
         await db.delete(billingOptions).where(inArray(billingOptions.id, extraOptions.splice(0)));
+    if (extraPlanVersions.length) {
+        // Retire immutable versions without leaving them current in the shared database.
+        await db
+            .update(planVersions)
+            .set({ current: false })
+            .where(inArray(planVersions.id, extraPlanVersions.splice(0)));
+    }
     await retireSelfCancelRows();
 });
 afterAll(async () => {
@@ -129,6 +137,7 @@ async function extraOption(input: {
         .returning({ id: billingOptions.id });
     if (!option) throw new Error('Expected extra billing option');
     extraOptions.push(option.id);
+    extraPlanVersions.push(version.id);
     return { planVersionId: version.id, optionId: option.id };
 }
 
