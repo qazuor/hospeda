@@ -6,6 +6,8 @@ type Translator = (key: string, fallback?: string) => string;
 interface PlanLike {
     readonly slug: string;
     readonly name: string;
+    /** Accepted so callers holding a full plan can pass it unchanged; not read here. */
+    readonly description?: string;
 }
 
 /**
