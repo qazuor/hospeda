@@ -40,7 +40,9 @@ describe('TEST:1737 sweep provider pacing', () => {
         for (const method of PROVIDER_METHODS) {
             const value = await paced[method](input as never);
             expect(value).toBe(method);
-            expect(provider[method] as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(input);
+            const call = provider[method] as ReturnType<typeof vi.fn>;
+            expect(call).toHaveBeenCalledTimes(1);
+            expect(call.mock.calls[0]?.[0]).toBe(input);
         }
         const fake = new FakePaymentProvider({
             clock: { now: () => new Date('2026-10-11T12:00:00.000Z') }
@@ -90,7 +92,8 @@ describe('TEST:1737 sweep provider pacing', () => {
             (provider.readAuthorization as ReturnType<typeof vi.fn>).mockRejectedValue(failure);
             const paced = createSweepPacedProvider({
                 provider,
-                pacing: RECONCILIATION_SWEEP_PROVIDER_PACING
+                pacing: RECONCILIATION_SWEEP_PROVIDER_PACING,
+                sleep: vi.fn(async (_ms: number) => {})
             });
             await expect(paced.readAuthorization(input as never)).rejects.toBe(failure);
             expect(provider.readAuthorization).toHaveBeenCalledTimes(1);
@@ -154,6 +157,31 @@ describe('TEST:1737 sweep provider pacing', () => {
         const fresh = createSweepPacedProvider({ provider, pacing, sleep: newSleep });
         await expect(fresh.readAuthorization(input as never)).rejects.toThrow('UNAVAILABLE');
         expect(newSleep).toHaveBeenCalled();
+    });
+
+    it('TEST:1737:16 keeps later reads to one attempt after the run delay budget is exhausted', async () => {
+        const provider = providerDouble();
+        (provider.readCharge as ReturnType<typeof vi.fn>).mockRejectedValue(error('UNAVAILABLE'));
+        (provider.readAuthorization as ReturnType<typeof vi.fn>).mockRejectedValue(
+            error('UNAVAILABLE')
+        );
+        const sleep = vi.fn(async (_ms: number) => {});
+        const paced = createSweepPacedProvider({
+            provider,
+            pacing: {
+                maxAttempts: 5,
+                baseDelayMs: 1000,
+                maxDelayMs: 6000,
+                maxRunDelayMs: 4500,
+                minIntervalMs: 0
+            },
+            sleep
+        });
+
+        await expect(paced.readCharge(input as never)).rejects.toThrow('UNAVAILABLE');
+        expect(sleep.mock.calls.map(([ms]) => ms)).toEqual([1000, 2000]);
+        await expect(paced.readAuthorization(input as never)).rejects.toThrow('UNAVAILABLE');
+        expect(provider.readAuthorization).toHaveBeenCalledTimes(1);
     });
 
     it('TEST:1737:17 spaces provider call starts using a wall clock and reserves concurrent slots', async () => {
