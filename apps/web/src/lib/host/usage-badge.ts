@@ -1,4 +1,4 @@
-import { type EntitlementsData, getEntitlementsCached } from '@/lib/entitlements-cache';
+import { type EntitlementsData, fetchEntitlementsUncached } from '@/lib/entitlements-cache';
 
 export const MAX_ACCOMMODATIONS_LIMIT_KEY = 'max_accommodations';
 
@@ -50,7 +50,10 @@ export async function fetchHostUsageBadge({
 }: {
     readonly cookieHeader?: string;
 }): Promise<HostUsageBadgeLoadResult> {
-    const effectiveSet = await getEntitlementsCached({ vertical: 'accommodation', cookieHeader });
+    const effectiveSet = await fetchEntitlementsUncached({
+        vertical: 'accommodation',
+        cookieHeader
+    });
     return {
         usageData: null,
         hasOwnerPlan: !effectiveSet.failed && effectiveSet.hasLiveNonTrialTitle,

@@ -79,7 +79,8 @@ describe('TEST:1769:2 server and browser cache boundaries', () => {
         );
         const cachedReader = source.slice(source.indexOf('export function getEntitlementsCached'));
         expect(cachedReader).not.toContain('cookieHeader');
-        expect(cachedReader).toContain('effectiveSetApi.get({ vertical })');
+        expect(cachedReader).toContain('fetchEntitlementsUncached({ vertical })');
+        expect(source).toContain('effectiveSetApi.get({ vertical, cookieHeader })');
     });
 
     it('does not route the host server reader through the module cache', async () => {
