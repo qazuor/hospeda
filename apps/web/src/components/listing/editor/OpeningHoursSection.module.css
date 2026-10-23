@@ -92,6 +92,22 @@
     background: oklch(0.96 0.02 240 / 0.15);
 }
 
+.copyToAllButton {
+    background: transparent;
+    border: 0;
+    padding: 0 var(--space-1, 0.25rem);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-xs, 0.8125rem);
+    color: var(--brand-primary);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.copyToAllButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
 /*
  * Focus stays visible on both: these are the only controls in the row a
  * keyboard user reaches after the time inputs, and the native ring went away

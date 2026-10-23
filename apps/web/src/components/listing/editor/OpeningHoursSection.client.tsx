@@ -98,6 +98,22 @@ function withDay(value: OpeningHours | null, key: DayKey, schedule: DaySchedule)
     } as unknown as OpeningHours;
 }
 
+/** Rebuild the full OpeningHours by copying one day's schedule to all seven. */
+function withAllDays(value: OpeningHours | null, schedule: DaySchedule): OpeningHours {
+    const next: Record<string, DaySchedule> = {};
+    for (const { key: dayKey } of DAYS) {
+        next[dayKey] = {
+            closed: schedule.closed,
+            shifts: schedule.shifts.map((shift) => ({ ...shift }))
+        };
+    }
+    // TYPE-WORKAROUND: rebuilt OpeningHours from the day map; structurally valid but TS can't infer the schema-derived shape from the plain literal.
+    return {
+        timezone: value?.timezone ?? DEFAULT_TZ,
+        days: next
+    } as unknown as OpeningHours;
+}
+
 export interface OpeningHoursSectionProps {
     readonly locale: SupportedLocale;
     readonly value: OpeningHours | null;
@@ -163,6 +179,10 @@ export function OpeningHoursSection({
     onChange
 }: OpeningHoursSectionProps): JSX.Element {
     const { t } = createTranslations(locale);
+    const copyToAllLabel = t(
+        'listing.owner.editor.sections.openingHoursCopyToAll',
+        'Copiar a todos los días'
+    );
 
     const sectionErrorId = buildFieldErrorId(OPENING_HOURS_FIELD);
     const shiftErrorId = firstShiftErrorId(value, errors);
@@ -181,6 +201,12 @@ export function OpeningHoursSection({
             <span className={fieldStyles.label}>
                 {t('listing.owner.editor.sections.openingHours', 'Horarios de atención')}
             </span>
+            <p className={fieldStyles.hint}>
+                {t(
+                    'listing.owner.editor.sections.openingHoursHint',
+                    'Todos los días arrancan en "Cerrado". Destildá "Cerrado" en un día para cargar sus horarios, y usá "Copiar a todos los días" para repetirlos en el resto de la semana.'
+                )}
+            </p>
             <div className={styles.days}>
                 {DAYS.map(({ key, label }, dayIndex) => {
                     const schedule = dayOf(value, key);
@@ -338,6 +364,17 @@ export function OpeningHoursSection({
                                     }
                                 >
                                     <span aria-hidden="true">+</span>
+                                </button>
+                            )}
+
+                            {!schedule.closed && schedule.shifts.length > 0 && (
+                                <button
+                                    type="button"
+                                    className={styles.copyToAllButton}
+                                    aria-label={`${copyToAllLabel}: ${label}`}
+                                    onClick={() => onChange(withAllDays(value, schedule))}
+                                >
+                                    {copyToAllLabel}
                                 </button>
                             )}
                         </div>

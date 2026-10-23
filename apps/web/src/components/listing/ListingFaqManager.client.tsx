@@ -434,36 +434,44 @@ export function ListingFaqManager({
             </h3>
 
             <div className={styles.channelIntro}>
-                <p className={styles.channelIntroTitle}>
-                    {t(
-                        'listing.owner.editor.faqManager.channelIntro.title',
-                        '¿Por qué ocultar o restringir una pregunta?'
-                    )}
-                </p>
                 <p className={styles.channelIntroBody}>
                     {t(
-                        'listing.owner.editor.faqManager.channelIntro.body1',
-                        '"Visible en la ficha pública" muestra la pregunta en la página del local y en los datos estructurados (JSON-LD) que leen los buscadores. "Usable por la IA" permite que el asistente de chat use esta pregunta para responder consultas.'
+                        'listing.owner.editor.faqManager.channelIntro.summary',
+                        'Elegí si cada pregunta se ve en la ficha y si el asistente de chat puede usarla.'
                     )}
                 </p>
-                <p className={styles.channelIntroBody}>
-                    {t(
-                        'listing.owner.editor.faqManager.channelIntro.body2',
-                        'Destildá "Visible en la ficha pública" para información útil pero que no querés publicar: algo temporal, un margen que preferís no prometer por escrito, o una recomendación que suena mejor en una conversación que en la vidriera.'
-                    )}
-                </p>
-                <p className={styles.channelIntroBody}>
-                    {t(
-                        'listing.owner.editor.faqManager.channelIntro.body3',
-                        'Destildá "Usable por la IA" para contenido que preferís que se muestre tal cual, sin que el asistente lo parafrasee.'
-                    )}
-                </p>
-                <p className={styles.channelIntroNote}>
-                    {t(
-                        'listing.owner.editor.faqManager.channelIntro.body4',
-                        'Importante: una pregunta no visible en la ficha pero usable por la IA no es privada. El asistente se la puede decir a cualquiera que pregunte por chat; solo no aparece publicada en la página.'
-                    )}
-                </p>
+                <details className={styles.channelIntroDetails}>
+                    <summary className={styles.channelIntroTitle}>
+                        {t(
+                            'listing.owner.editor.faqManager.channelIntro.title',
+                            '¿Por qué ocultar o restringir una pregunta?'
+                        )}
+                    </summary>
+                    <p className={styles.channelIntroBody}>
+                        {t(
+                            'listing.owner.editor.faqManager.channelIntro.body1',
+                            '"Visible en la ficha pública" muestra la pregunta en la página del local y en los resultados de los buscadores. "Usable por la IA" permite que el asistente de chat use esta pregunta para responder consultas.'
+                        )}
+                    </p>
+                    <p className={styles.channelIntroBody}>
+                        {t(
+                            'listing.owner.editor.faqManager.channelIntro.body2',
+                            'Destildá "Visible en la ficha pública" para información útil pero que no querés publicar: algo temporal, un margen que preferís no prometer por escrito, o una recomendación que suena mejor en una conversación que en la vidriera.'
+                        )}
+                    </p>
+                    <p className={styles.channelIntroBody}>
+                        {t(
+                            'listing.owner.editor.faqManager.channelIntro.body3',
+                            'Destildá "Usable por la IA" para contenido que preferís que se muestre tal cual, sin que el asistente lo parafrasee.'
+                        )}
+                    </p>
+                    <p className={styles.channelIntroNote}>
+                        {t(
+                            'listing.owner.editor.faqManager.channelIntro.body4',
+                            'Importante: una pregunta no visible en la ficha pero usable por la IA no es privada. El asistente se la puede decir a cualquiera que pregunte por chat; solo no aparece publicada en la página.'
+                        )}
+                    </p>
+                </details>
             </div>
 
             {actionError && (
