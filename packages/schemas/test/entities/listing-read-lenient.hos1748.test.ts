@@ -118,7 +118,7 @@ interface ReadCase {
     };
     readonly purged: object;
     readonly valid: object;
-    readonly commerce: boolean;
+    readonly capped: boolean;
 }
 
 const accommodation = createValidAccommodation();
@@ -136,7 +136,7 @@ const cases: readonly ReadCase[] = [
                 schema,
                 purged: purgedAccommodation,
                 valid: accommodation,
-                commerce: false
+                capped: false
             }) as ReadCase
     )
     .concat(
@@ -151,7 +151,7 @@ const cases: readonly ReadCase[] = [
                     schema,
                     purged: purgedGastronomy,
                     valid: gastronomy,
-                    commerce: true
+                    capped: true
                 }) as ReadCase
         ),
         [
@@ -165,12 +165,12 @@ const cases: readonly ReadCase[] = [
                     schema,
                     purged: purgedExperience,
                     valid: validExperience,
-                    commerce: true
+                    capped: true
                 }) as ReadCase
         )
     );
 
-const commerceCases = cases.filter((c) => c.commerce);
+const cappedCases = cases.filter((c) => c.capped);
 
 describe('TEST:1748:1 listing read schemas accept purged and incomplete content', () => {
     it.each(cases)('$name accepts a PURGED row and keeps its blank texts', (c) => {
@@ -201,7 +201,7 @@ describe('TEST:1748:1 listing read schemas accept purged and incomplete content'
         expect(result.data).toMatchObject({ publicationStatus: 'PURGED' });
     });
 
-    it.each(commerceCases)('$name still rejects a summary over 300 characters', (c) => {
+    it.each(cappedCases)('$name still rejects a summary over 300 characters', (c) => {
         // Arrange / Act
         const result = c.schema.safeParse({ ...c.valid, summary: 'x'.repeat(301) });
 
