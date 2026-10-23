@@ -149,6 +149,40 @@ describe('AllianceLead optional message error', () => {
         expect(global.fetch).not.toHaveBeenCalled();
     });
 
+    it('AC:1767:5 — an empty partner submit never blames the optional free text', async () => {
+        renderForm('partner');
+        submitForm();
+
+        // The required fields prove validation actually ran before we assert
+        // the absence of the free-text error.
+        await waitFor(() => {
+            expect(screen.getByLabelText(/tu nombre/i)).toHaveAttribute('aria-invalid', 'true');
+        });
+        expect(screen.getByLabelText(/^businessName/i)).toHaveAttribute('aria-invalid', 'true');
+
+        const message = screen.getByLabelText(/contanos más \(opcional\)/i);
+        expect(message).toHaveAttribute('aria-invalid', 'false');
+        expect(document.getElementById('al-message-error')).toBeNull();
+        expect(screen.queryByText(/zodError\.allianceLead\.message\.min/)).toBeNull();
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('AC:1767:5 — an empty service_provider submit still flags the required free text', async () => {
+        renderForm('service_provider');
+        submitForm();
+
+        await waitFor(() => {
+            expect(screen.getByLabelText(/contanos sobre tu servicio/i)).toHaveAttribute(
+                'aria-invalid',
+                'true'
+            );
+        });
+
+        expect(screen.getByText('Contanos brevemente sobre tu servicio.')).toBeInTheDocument();
+        expect(document.getElementById('al-message-error')).not.toBeNull();
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
+
     it('AC:1767:2 — keeps the message error for service_provider', async () => {
         renderForm('service_provider');
         await fillGenericRequiredFields();
