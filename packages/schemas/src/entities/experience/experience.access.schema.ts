@@ -360,7 +360,11 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
      * descriptions can still be fetched without tripping `min(20)`.
      */
     description: z.string().max(2000, { message: 'zodError.listing.description.max' }),
-    /** HOS-1748: PURGED rows blank this field; the minimum remains on input and resolveListingCompleteness. */
+    /**
+     * HOS-1748: a PURGED row blanks `summary`, so reads must accept it. Same read-side
+     * relaxation as `description` (HOS-190 / SPEC-143 Finding #9); the minimum stays on
+     * input and in `resolveListingCompleteness`.
+     */
     summary: z.string().max(300, { message: 'zodError.listing.summary.max' }),
     /**
      * HOS-190: read⊇write — a persisted contactInfo (legacy phone format, missing
@@ -420,7 +424,11 @@ export const ExperienceAdminSchema = ExperienceSchema.extend({
      * fetched by the admin panel. See SPEC-143 Finding #9 (gastronomy pattern).
      */
     description: z.string().max(2000, { message: 'zodError.listing.description.max' }),
-    /** HOS-1748: PURGED rows blank this field; the minimum remains on input and resolveListingCompleteness. */
+    /**
+     * HOS-1748: a PURGED row blanks `summary`, so reads must accept it. Same read-side
+     * relaxation as `description` (HOS-190 / SPEC-143 Finding #9); the minimum stays on
+     * input and in `resolveListingCompleteness`.
+     */
     summary: z.string().max(300, { message: 'zodError.listing.summary.max' }),
     /** HOS-190: read⊇write lenient contactInfo (see ExperienceProtectedSchema). */
     contactInfo: ContactInfoReadSchema.nullish()
