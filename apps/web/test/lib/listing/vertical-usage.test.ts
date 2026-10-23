@@ -71,8 +71,8 @@ describe('vertical usage — TEST:1757:1-4,6', () => {
                     [LimitKeyEnum.MAX_EXPERIENCES]: 8
                 }),
                 listings
-            })?.currentUsage
-        ).toBe(1);
+            })
+        ).toMatchObject({ currentUsage: 1, maxAllowed: 8, threshold: 'ok' });
     });
 
     it.each([
