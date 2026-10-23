@@ -126,8 +126,9 @@ describe('TEST:1746:4/5 signup provider rejection route', () => {
         });
         expect(row).toBeTruthy();
         const retry = await request(app, user.id, option.id, `corrected-${user.email}`);
-        expect(retry.status).toBe(200);
-        expect((await retry.json()).subscriptionId).toBe(row!.subscription.id);
+        // POST success is contractually 201; reuse.test.ts asserts the same route contract.
+        expect(retry.status).toBe(201);
+        expect((await retry.json()).data.subscriptionId).toBe(row!.subscription.id);
         expect(authorize).toHaveBeenCalledTimes(2);
     });
 
