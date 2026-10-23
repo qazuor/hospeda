@@ -531,6 +531,7 @@
                 "mapSubtitle": "Localização no mapa",
                 "pinAt": "O pin está em:",
                 "mapHint": "Arraste o pin para ajustar a localização exata.",
+                "pinNotSet": "Você ainda não marcou a localização. O pin está no centro da cidade apenas como ponto de partida: arraste-o ou clique no mapa até a sua acomodação, ou busque o endereço no mapa.",
                 "geolocationUnavailable": "A geolocalização não está disponível neste navegador.",
                 "geolocationDenied": "Permissão negada. Você pode digitar o endereço manualmente.",
                 "geolocationError": "Não foi possível obter a localização. Tente digitar o endereço.",

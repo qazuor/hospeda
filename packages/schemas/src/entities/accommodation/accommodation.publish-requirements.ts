@@ -83,24 +83,40 @@ export interface AccommodationPublishReadinessInput {
 }
 
 /**
- * Text seeded when an accommodation draft omits its long description.
- * Publication rejects this value as a missing description (HOS-1722).
+ * Text seeded when an accommodation draft omits its long description. It is
+ * read by the owner in the editor, so it speaks to the owner. Publication
+ * rejects it as a missing description (HOS-1722).
  */
 export const DRAFT_DESCRIPTION_PLACEHOLDER =
-    'Borrador en progreso. Completá la descripción del alojamiento desde el panel de administración antes de publicarlo.';
+    'Descripción pendiente. Contá en pocas líneas cómo es tu alojamiento y qué lo hace especial.';
 
 /**
- * Whether a draft description is the seeded placeholder.
+ * Placeholders seeded by earlier versions. Existing rows still store these
+ * texts, so publication must keep rejecting them as missing descriptions
+ * (HOS-1767).
+ */
+export const LEGACY_DRAFT_DESCRIPTION_PLACEHOLDERS: readonly string[] = [
+    'Borrador en progreso. Completá la descripción del alojamiento desde el panel de administración antes de publicarlo.'
+] as const;
+
+/**
+ * Whether a draft description is a seeded placeholder.
  *
  * @param params - The description to check.
- * @returns True only when trimming surrounding whitespace yields the exact placeholder.
+ * @returns True only when the trimmed text equals the current placeholder or a
+ *   legacy one.
  */
 export function isDraftDescriptionPlaceholder({
     description
 }: {
     readonly description: string | null | undefined;
 }): boolean {
-    return typeof description === 'string' && description.trim() === DRAFT_DESCRIPTION_PLACEHOLDER;
+    if (typeof description !== 'string') return false;
+    const trimmed = description.trim();
+    return (
+        trimmed === DRAFT_DESCRIPTION_PLACEHOLDER ||
+        LEGACY_DRAFT_DESCRIPTION_PLACEHOLDERS.some((legacy) => legacy === trimmed)
+    );
 }
 
 /** One blocking requirement, and where in the editor it gets resolved. */

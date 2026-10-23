@@ -1250,6 +1250,11 @@
             "create": {
                 "pageTitle": "Nuevo evento",
                 "subtitle": "Completá lo básico ahora — vas a poder sumar fotos y más detalles después en el editor.",
+                "noAccess": {
+                    "title": "Crear eventos es una función de los editores",
+                    "description": "Tu cuenta todavía no tiene permiso para crear eventos. Si querés publicar eventos en Hospeda, completá la solicitud para sumarte como editor.",
+                    "cta": "Quiero ser editor"
+                },
                 "field": {
                     "name": "Nombre",
                     "category": "Categoría",
@@ -1276,6 +1281,11 @@
                 "error": "No pudimos crear el evento. Probá de nuevo.",
                 "submitting": "Creando...",
                 "submit": "Crear evento"
+            },
+            "noAccess": {
+                "title": "Esta sección es para editores",
+                "description": "Tu cuenta todavía no tiene permiso para gestionar eventos. Si querés publicar eventos en Hospeda, completá la solicitud para sumarte como editor.",
+                "cta": "Quiero ser editor"
             },
             "editor": {
                 "pageTitle": "Editar evento",

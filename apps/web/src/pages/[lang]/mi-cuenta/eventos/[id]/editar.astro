@@ -17,8 +17,10 @@
  */
 
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
 import btn from '@/components/account/AccountButton.module.css';
 import { EventEditor } from '@/components/event/editor/EventEditor.client';
+import { LockIcon } from '@repo/icons';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { eventEditApi } from '@/lib/api/endpoints-protected';
 import { transformEventEditDetail } from '@/lib/api/transforms';
@@ -41,32 +43,34 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
 }
 
-if (!hasEventsNavAccess({ roles: user.roles })) {
-    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+const canManageEvents = hasEventsNavAccess({ roles: user.roles });
+
+let event: ReturnType<typeof transformEventEditDetail> | null = null;
+
+if (canManageEvents) {
+    const eventId = Astro.params.id;
+    if (!eventId) {
+        return Astro.redirect(listUrl);
+    }
+
+    // -----------------------------------------------------------------------
+    // Server-side fetch: the event itself, author-scoped by the protected route.
+    // -----------------------------------------------------------------------
+
+    const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+
+    const result = await eventEditApi.getById({ id: eventId, cookieHeader });
+
+    if (!result.ok) {
+        // 403 (not the author) and 404 (no such event) land in the same place on
+        // purpose: telling the two apart would confirm the existence of another
+        // author's event to someone who may not read it.
+        logger.error('[mi-cuenta/eventos/editar] Failed to fetch event', result.error.message);
+        return Astro.redirect(listUrl);
+    }
+
+    event = transformEventEditDetail({ item: result.data });
 }
-
-const eventId = Astro.params.id;
-if (!eventId) {
-    return Astro.redirect(listUrl);
-}
-
-// ---------------------------------------------------------------------------
-// Server-side fetch: the event itself, author-scoped by the protected route.
-// ---------------------------------------------------------------------------
-
-const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-
-const result = await eventEditApi.getById({ id: eventId, cookieHeader });
-
-if (!result.ok) {
-    // 403 (not the author) and 404 (no such event) land in the same place on
-    // purpose: telling the two apart would confirm the existence of another
-    // author's event to someone who may not read it.
-    logger.error('[mi-cuenta/eventos/editar] Failed to fetch event', result.error.message);
-    return Astro.redirect(listUrl);
-}
-
-const event = transformEventEditDetail({ item: result.data });
 
 // ---------------------------------------------------------------------------
 // Capabilities — permission set, never roles (HOS-374 OQ-1).
@@ -85,43 +89,66 @@ const canDelete = permissions.includes('event.delete.own') || permissions.includ
  * `event.publish.own` lifts it, and a broad `event.update` holder is authorized
  * before the predicate is ever consulted.
  */
-const isEditLocked = event.moderationState === 'APPROVED' && !canPublish && !canUpdateAny;
+const isEditLocked = event
+    ? event.moderationState === 'APPROVED' && !canPublish && !canUpdateAny
+    : false;
 
 const title = t('account.myContent.events.editor.pageTitle', 'Editar evento');
 const organizerLabel = t('account.myContent.events.editor.field.organizer', 'Organiza');
 const locationLabel = t('account.myContent.events.editor.field.location', 'Lugar');
 ---
 
-<AccountLayout locale={locale} title={`${title}: ${event.name}`} activeSection="eventos">
-    <AccountPageHeader title={title} description={event.name} />
+{event ? (
+    <AccountLayout locale={locale} title={`${title}: ${event.name}`} activeSection="eventos">
+        <AccountPageHeader title={title} description={event.name} />
 
-    <p class="event-edit-page__meta">
-        <code>/{event.slug}</code>
-        {event.organizerName && <span>{organizerLabel}: {event.organizerName}</span>}
-        {event.locationName && <span>{locationLabel}: {event.locationName}</span>}
-    </p>
-    <p class="event-edit-page__note">
-        {
-            t(
-                'account.myContent.events.editor.readOnlyNotice',
-                'La URL, el organizador y el lugar se definen al crear el evento y no se editan desde acá.'
-            )
-        }
-    </p>
+        <p class="event-edit-page__meta">
+            <code>/{event.slug}</code>
+            {event.organizerName && <span>{organizerLabel}: {event.organizerName}</span>}
+            {event.locationName && <span>{locationLabel}: {event.locationName}</span>}
+        </p>
+        <p class="event-edit-page__note">
+            {
+                t(
+                    'account.myContent.events.editor.readOnlyNotice',
+                    'La URL, el organizador y el lugar se definen al crear el evento y no se editan desde acá.'
+                )
+            }
+        </p>
 
-    <a class:list={['event-edit-page__back', btn.secondary]} href={listUrl}>
-        {t('account.myContent.events.editor.backToList', 'Volver a mis eventos')}
-    </a>
+        <a class:list={['event-edit-page__back', btn.secondary]} href={listUrl}>
+            {t('account.myContent.events.editor.backToList', 'Volver a mis eventos')}
+        </a>
 
-    <EventEditor
-        client:load
-        locale={locale}
-        initialData={event}
-        canPublish={canPublish}
-        canDelete={canDelete}
-        isEditLocked={isEditLocked}
-    />
-</AccountLayout>
+        <EventEditor
+            client:load
+            locale={locale}
+            initialData={event}
+            canPublish={canPublish}
+            canDelete={canDelete}
+            isEditLocked={isEditLocked}
+        />
+    </AccountLayout>
+) : (
+    <AccountLayout locale={locale} title={title} activeSection="eventos">
+        <AccountPageHeader title={title} />
+
+        <AccountEmptyState
+            title={t(
+                'account.myContent.events.noAccess.title',
+                'Esta sección es para editores'
+            )}
+            description={t(
+                'account.myContent.events.noAccess.description',
+                'Tu cuenta todavía no tiene permiso para gestionar eventos. Si querés publicar eventos en Hospeda, completá la solicitud para sumarte como editor.'
+            )}
+            ctaHref={buildUrl({ locale, path: 'colaborar/editores' })}
+            ctaLabel={t('account.myContent.events.noAccess.cta', 'Quiero ser editor')}
+        >
+            <LockIcon slot="icon" size={28} aria-hidden={true} />
+        </AccountEmptyState>
+    </AccountLayout>
+)}
 
 <style>
     .event-edit-page__meta {

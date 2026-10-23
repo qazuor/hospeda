@@ -54,6 +54,25 @@ describe('mi-cuenta/eventos/[id]/editar.astro — data path', () => {
         expect(pageSource).toContain("from '@/lib/nav-gating'");
         expect(pageSource).toContain('hasEventsNavAccess(');
     });
+
+    it('TEST:1767:25 — shows a no-access state instead of redirecting to mi-cuenta', () => {
+        expect(pageSource).toContain('AccountEmptyState');
+        expect(pageSource).toContain('colaborar/editores');
+        expect(pageSource).toContain('account.myContent.events.noAccess.title');
+        expect(pageSource).not.toMatch(
+            /Astro\.redirect\(\s*buildUrl\(\s*\{\s*locale,\s*path:\s*'mi-cuenta'\s*\}\s*\)\s*\)/
+        );
+        expect(pageSource.indexOf('buildLoginRedirect(')).toBeLessThan(
+            pageSource.indexOf('hasEventsNavAccess(')
+        );
+        expect(pageSource).toMatch(/if \(canManageEvents\) \{[\s\S]*eventEditApi\.getById\(/);
+        expect(pageSource.indexOf('hasEventsNavAccess(')).toBeLessThan(
+            pageSource.indexOf('eventEditApi.getById(')
+        );
+        expect(pageSource).toContain('Astro.redirect(listUrl)');
+        expect(template).toContain('{event ?');
+        expect(template.indexOf('<EventEditor')).toBeGreaterThan(template.indexOf('{event ?'));
+    });
 });
 
 describe('mi-cuenta/eventos/[id]/editar.astro — capabilities', () => {

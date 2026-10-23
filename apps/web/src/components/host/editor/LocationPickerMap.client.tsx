@@ -24,6 +24,7 @@ const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const TILE_ATTRIBUTION =
     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 const DEFAULT_ZOOM = 15;
+const UNPLACED_MARKER_OPACITY = 0.5;
 
 /**
  * Raw Leaflet map with a draggable marker.
@@ -96,9 +97,11 @@ export function LocationPickerMap({
             resizeObserverRef.current = ro;
 
             // Add marker
-            const marker = markerPosition
-                ? L.marker([markerPosition.lat, markerPosition.lng], { draggable: !disabled })
-                : L.marker([center.lat, center.lng], { draggable: !disabled });
+            const start = markerPosition ?? center;
+            const marker = L.marker([start.lat, start.lng], {
+                draggable: !disabled,
+                opacity: markerPosition ? 1 : UNPLACED_MARKER_OPACITY
+            });
 
             marker.addTo(map);
 
@@ -138,8 +141,12 @@ export function LocationPickerMap({
     // Update marker position when props change
     useEffect(() => {
         if (!markerRef.current || !markerPosition) return;
-        const marker = markerRef.current as { setLatLng: (pos: [number, number]) => void };
+        const marker = markerRef.current as {
+            setLatLng: (pos: [number, number]) => void;
+            setOpacity: (opacity: number) => void;
+        };
         marker.setLatLng([markerPosition.lat, markerPosition.lng]);
+        marker.setOpacity(1);
     }, [markerPosition]);
 
     // Update map center when props change

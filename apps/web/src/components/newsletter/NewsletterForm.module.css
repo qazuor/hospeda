@@ -138,6 +138,7 @@
     justify-content: center;
     gap: var(--space-1, 0.25rem);
     height: 100%;
+    min-width: 0;
     min-height: 2.75rem;
     padding: var(--space-2, 0.5rem) 0;
 }
@@ -153,7 +154,10 @@
     font-size: var(--text-body-sm, 0.9375rem);
     font-weight: 600;
     color: var(--core-card, #fff);
-    word-break: break-all;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* ---- Submit button ---- */
@@ -299,7 +303,10 @@
 
 .configureLink {
     flex: 0 0 auto;
-    align-self: center;
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
     font-family: var(--font-sans);
     font-size: var(--text-body-xs, 0.8125rem);
     font-weight: 600;

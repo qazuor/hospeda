@@ -51,6 +51,7 @@ import {
     ALLIANCE_LEAD_SPECIFIC_FIELDS,
     type AllianceLeadSpecificValues,
     buildAllianceLeadTypedFields,
+    omitOptionalMessageError,
     serializeAllianceLeadMessage,
     validateAllianceLeadSpecificFields
 } from '@/lib/forms/alliance-lead-message';
@@ -354,7 +355,8 @@ export function AllianceLead({
         // Message is required for `service_provider` (see `isMessageRequired`
         // above). Spread last so this clear "required" message always wins
         // over the schema's generic `.min(10)` wording when the field is
-        // totally empty.
+        // totally empty. For the other kinds only the serialized structured
+        // fields live in `message`, so its schema error is hidden below.
         const freeTextErrors: FieldErrors =
             isMessageRequired && fields.freeText.trim().length === 0
                 ? {
@@ -365,7 +367,11 @@ export function AllianceLead({
                   }
                 : {};
 
-        const combinedErrors = { ...specificErrors, ...schemaErrors, ...freeTextErrors };
+        const messageErrorHidden = !isMessageRequired && schemaErrors.message !== undefined;
+        const combinedErrors = omitOptionalMessageError({
+            kind,
+            errors: { ...specificErrors, ...schemaErrors, ...freeTextErrors }
+        });
 
         if (Object.keys(combinedErrors).length > 0) {
             setErrors(combinedErrors);
@@ -377,6 +383,16 @@ export function AllianceLead({
             // has yet to flip on the next render), so this can run
             // synchronously instead of waiting on an effect.
             focusFirstInvalidField({ fieldNames: Object.keys(combinedErrors), prefix: 'al' });
+            return;
+        }
+
+        if (messageErrorHidden) {
+            setFormError(
+                t(
+                    'alliance-leads.form.error',
+                    'Ocurrió un error al enviar la solicitud. Por favor, intentá de nuevo.'
+                )
+            );
             return;
         }
 

@@ -1250,6 +1250,11 @@
             "create": {
                 "pageTitle": "New event",
                 "subtitle": "Fill in the basics now — you'll be able to add photos and more details later in the editor.",
+                "noAccess": {
+                    "title": "Creating events is an editor feature",
+                    "description": "Your account can't create events yet. If you'd like to publish events on Hospeda, fill in the application to join as an editor.",
+                    "cta": "Become an editor"
+                },
                 "field": {
                     "name": "Name",
                     "category": "Category",
@@ -1276,6 +1281,11 @@
                 "error": "We couldn't create the event. Try again.",
                 "submitting": "Creating...",
                 "submit": "Create event"
+            },
+            "noAccess": {
+                "title": "This section is for editors",
+                "description": "Your account can't manage events yet. If you'd like to publish events on Hospeda, fill in the application to join as an editor.",
+                "cta": "Become an editor"
             },
             "editor": {
                 "pageTitle": "Edit event",

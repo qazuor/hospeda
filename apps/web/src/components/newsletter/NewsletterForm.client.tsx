@@ -793,7 +793,12 @@ export function NewsletterForm({
                                         'Te suscribís con el email de tu cuenta'
                                     )}
                                 </span>
-                                <span className={styles.authedEmailValue}>{resolvedEmail}</span>
+                                <span
+                                    className={styles.authedEmailValue}
+                                    title={resolvedEmail}
+                                >
+                                    {resolvedEmail}
+                                </span>
                             </div>
                         ) : (
                             // Guest: editable controlled input. The visitor types

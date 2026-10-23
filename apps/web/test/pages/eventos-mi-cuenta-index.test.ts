@@ -35,10 +35,22 @@ describe('mi-cuenta/eventos/index.astro', () => {
         expect(pageSource).not.toContain('authorId');
     });
 
-    it('gates on hasEventsNavAccess and redirects to mi-cuenta otherwise', () => {
+    it('TEST:1767:24 — shows a no-access state instead of redirecting to mi-cuenta', () => {
         expect(pageSource).toContain("from '@/lib/nav-gating'");
         expect(pageSource).toContain('hasEventsNavAccess(');
-        expect(pageSource).toContain("path: 'mi-cuenta'");
+        expect(pageSource).toContain('AccountEmptyState');
+        expect(pageSource).toContain('colaborar/editores');
+        expect(pageSource).toContain('account.myContent.events.noAccess.title');
+        expect(pageSource).not.toMatch(
+            /Astro\.redirect\(\s*buildUrl\(\s*\{\s*locale,\s*path:\s*'mi-cuenta'\s*\}\s*\)\s*\)/
+        );
+        expect(pageSource.indexOf('buildLoginRedirect(')).toBeLessThan(
+            pageSource.indexOf('hasEventsNavAccess(')
+        );
+        expect(pageSource).toMatch(/canManageEvents\s*\?\s*await\s+eventEditApi\.listOwn\(/);
+        expect(pageSource.indexOf('hasEventsNavAccess(')).toBeLessThan(
+            pageSource.indexOf('eventEditApi.listOwn(')
+        );
     });
 
     it('redirects unauthenticated visitors to the login page', () => {

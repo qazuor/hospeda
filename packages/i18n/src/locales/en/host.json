@@ -531,6 +531,7 @@
                 "mapSubtitle": "Location on the map",
                 "pinAt": "The pin is at:",
                 "mapHint": "Drag the pin to adjust the exact location.",
+                "pinNotSet": "You haven't set the location yet. The pin sits in the middle of the city only as a starting point: drag it or click the map to place it on your property, or search for the address on the map.",
                 "geolocationUnavailable": "Geolocation is not available in this browser.",
                 "geolocationDenied": "Permission denied. You can type the address manually.",
                 "geolocationError": "Could not get location. Try typing the address.",
