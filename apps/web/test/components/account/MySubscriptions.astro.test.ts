@@ -50,3 +50,23 @@ describe('MySubscriptions SSR block', () => {
         expect(source).toContain('paidAfterCancellationAddons');
     });
 });
+
+describe('MySubscriptions plan summary — TEST:1755:9', () => {
+    it('wires the summary helper, conditional price and next charge lines inside each subscription card', () => {
+        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        expect(source).toContain('resolveMySubscriptionSummary({ row, locale, t })');
+        expect(article).toContain('<h3 class={styles.title}>{summary.title}</h3>');
+        expect(article).toContain('data-testid="my-subscription-price"');
+        expect(article).toContain('{summary.priceLine &&');
+        expect(article).toContain('data-testid="my-subscription-next-charge"');
+        expect(article).toContain('{summary.nextChargeLine &&');
+        expect(article).toContain('data-testid="my-subscription-vertical"');
+    });
+
+    it('uses the account vertical label for deferred courtesy cards (AC:1755:6)', () => {
+        expect(source).toContain('resolveMySubscriptionVerticalLabelKey({ vertical: c.vertical })');
+        expect(source).toContain(
+            '<h3 class={styles.title}>{t(resolveMySubscriptionVerticalLabelKey({ vertical: c.vertical }))}</h3>'
+        );
+    });
+});
