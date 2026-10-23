@@ -225,12 +225,10 @@ const resultsSummaryLabel =
 		}
 
 		/*
-		 * Do NOT use `display: none` here. FilterSidebar renders its mobile UI
-		 * (floating trigger button + drawer dialog, both `position: fixed`) as
-		 * descendants of this <aside>. `display: none` would propagate to those
-		 * fixed descendants and silently kill the mobile filter UX. Collapsing
-		 * to zero size keeps the fixed-positioned children visible because they
-		 * escape the parent's layout box.
+		 * Do NOT use `display: none` here. The FilterSidebar drawer remains inside
+		 * this <aside>; hiding the sidebar would also hide the mobile drawer.
+		 * Collapsing to zero size keeps the drawer visible outside the parent's
+		 * layout box.
 		 */
 		.listing-sidebar {
 			position: static;

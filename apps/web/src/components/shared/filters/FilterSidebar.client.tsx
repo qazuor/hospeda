@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { FilterDockTrigger } from './components/FilterDockTrigger';
 import { FilterGroup } from './components/FilterGroup';
 import { MobileDrawer } from './components/MobileDrawer';
 import { SectionHeader } from './components/SectionHeader';
@@ -472,31 +473,12 @@ export function FilterSidebar({
                 <SidebarPanel {...panelProps} />
             </div>
 
-            {/* Mobile: floating trigger button */}
-            <button
-                type="button"
-                className={styles.floatingTrigger}
-                onClick={() => setIsDrawerOpen(true)}
-                aria-label={t('ui.filter.openFilters', 'Filtros')}
-                aria-expanded={isDrawerOpen}
-                aria-haspopup="dialog"
-            >
-                <span
-                    className={styles.floatingTriggerIcon}
-                    aria-hidden="true"
-                >
-                    ☰
-                </span>
-                <span>{t('ui.filter.openFilters', 'Filtros')}</span>
-                {activeCount > 0 && (
-                    <span
-                        className={styles.floatingBadge}
-                        aria-hidden="true"
-                    >
-                        {activeCount}
-                    </span>
-                )}
-            </button>
+            <FilterDockTrigger
+                label={t('ui.filter.openFilters', 'Filtros')}
+                activeCount={activeCount}
+                isOpen={isDrawerOpen}
+                onOpen={() => setIsDrawerOpen(true)}
+            />
 
             {/* Mobile drawer — focus trap, scroll lock, escape handled inside */}
             <MobileDrawer

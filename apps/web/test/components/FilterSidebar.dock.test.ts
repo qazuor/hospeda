@@ -10,7 +10,10 @@ describe('FilterSidebar dock integration', () => {
     it('uses a portal trigger, retains its drawer, stays within the source size limit, and hides fixed styles', () => {
         expect(component).toContain('FilterDockTrigger');
         expect(component).toMatch(/<MobileDrawer\b/);
-        expect(component).not.toMatch(/<DockPortal[^>]*>[\s\S]*?<MobileDrawer/);
+        expect(component).toMatch(
+            /<FilterDockTrigger\b[\s\S]*?onOpen=\{\(\) => setIsDrawerOpen\(true\)\}\s*\/>/
+        );
+        expect(component).not.toContain('<DockPortal');
         expect(component.split('\n').length).toBeLessThan(500);
         expect(styles).not.toContain('position: fixed');
         const mobile = styles.match(/@media \(max-width: 767px\)\s*\{([\s\S]*?)(?=\n\})/);
