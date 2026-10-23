@@ -39,7 +39,7 @@ describe('TEST:1768:18 resolveDockHidden', () => {
     });
 
     it('keeps the dock visible at the top threshold and hides just below it while descending', () => {
-        expect(resolveDockHidden(input({ previousY: 119, currentY: 120 }))).toEqual({
+        expect(resolveDockHidden(input({ previousY: 110, currentY: 120 }))).toEqual({
             hidden: false
         });
         expect(resolveDockHidden(input({ previousY: 112, currentY: 121 }))).toEqual({
@@ -168,11 +168,13 @@ describe('TEST:1768:19 initDockAutoHide', () => {
 
     it('removes listeners, cancels pending work, and reveals on cleanup', () => {
         const { dock, win, setY, result, rafCallbacks } = setup();
+        const removeEventListener = vi.spyOn(win, 'removeEventListener');
         setY(400);
         dock.setAttribute(MOBILE_DOCK_HIDDEN_ATTR, '');
         win.dispatchEvent(new Event('scroll'));
         expect(rafCallbacks.size).toBe(1);
         result.cleanup();
+        expect(removeEventListener).toHaveBeenCalledWith('scroll', expect.any(Function));
         expect(dock.hasAttribute(MOBILE_DOCK_HIDDEN_ATTR)).toBe(false);
         expect(rafCallbacks.size).toBe(0);
         win.dispatchEvent(new Event('scroll'));
