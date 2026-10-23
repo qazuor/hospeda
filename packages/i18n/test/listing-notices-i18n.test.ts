@@ -40,6 +40,24 @@ describe('TEST:V6:5 listing notices i18n', () => {
         expect(pt.notices.surplus.criterion).toMatch(/mais recentemente/i);
         expect(pt.notices.restitution.criterion).toMatch(/primeiro/i);
     });
+
+    it('does not use design jargon in noWindowDone (HOS-1750)', () => {
+        expect(valueAt(es, 'surplus.noWindowDone')).not.toMatch(/simul|ventana/i);
+        expect(valueAt(en, 'surplus.noWindowDone')).not.toMatch(/simulat|grace period|window/i);
+        expect(valueAt(pt, 'surplus.noWindowDone')).not.toMatch(/simul|carência|janela/i);
+    });
+
+    it('pins the owner-approved noWindowDone copy in es, en and pt (HOS-1750)', () => {
+        expect(valueAt(es, 'surplus.noWindowDone')).toBe(
+            'Despublicamos las fichas más recientes en el momento en que tu plan dejó de cubrirlas. Si querés recuperarlas, cambiá de plan o liberá lugar en tu cupo.'
+        );
+        expect(valueAt(en, 'surplus.noWindowDone')).toBe(
+            'We unpublished the most recent listings at the moment your plan stopped covering them. To get them back, change your plan or free up room in your quota.'
+        );
+        expect(valueAt(pt, 'surplus.noWindowDone')).toBe(
+            'Despublicamos os anúncios mais recentes no momento em que seu plano deixou de cobri-los. Para recuperá-los, mude de plano ou libere espaço na sua cota.'
+        );
+    });
 });
 
 /** Reads a dot path under a JSON root; `''` when absent or not a string. */

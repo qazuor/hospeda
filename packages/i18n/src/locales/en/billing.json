@@ -676,7 +676,22 @@
             "aiImport": "Monthly AI-assisted imports of listing data from external sources.",
             "aiChatOwner": "Monthly AI queries available to you as a host.",
             "aiSupport": "An AI assistant that helps you resolve platform questions in real time.",
-            "menuQrScanMetrics": "A table QR that opens your menu, with a scan panel: total, by day, and by device and language."
+            "menuQrScanMetrics": "A table QR that opens your menu, with a scan panel: total, by day, and by device and language.",
+            "maxGastronomies": "Number of venues you can have published at once.",
+            "publishGastronomy": "Publish your venue so visitors can find it on Hospeda.",
+            "editGastronomyInfo": "Update your venue's details and information whenever you like.",
+            "gastronomyMenu": "Load your menu into Hospeda so it shows on your venue's page.",
+            "gastronomyDailySpecial": "Show the dish of the day on your listing and change it whenever you like.",
+            "gastronomyEvents": "Announce the events you host on your venue's page.",
+            "menuItemPhotos": "Add a photo to every dish on your menu.",
+            "multilingualMenu": "Offer your menu in several languages for visitors from other countries.",
+            "maxExperiences": "Number of experiences you can have published at once.",
+            "publishExperience": "Publish your experience so visitors can find it on Hospeda.",
+            "editExperienceInfo": "Update your experience's details and information whenever you like.",
+            "experienceDirections": "Explain how to reach the meeting point so nobody gets lost.",
+            "experienceCertificate": "Issue a certificate to those who took part in your experience.",
+            "listingPdf": "Download your listing as a PDF to share or print.",
+            "aiChatListing": "Number of monthly AI queries available for your listing."
         },
         "note": {
             "aiSearch": "For registered users",
