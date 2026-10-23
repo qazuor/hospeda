@@ -210,7 +210,7 @@ test.describe('Listing notices of V8a @verticals', () => {
             'Se despublican primero las fichas publicadas más recientemente, hasta respetar el límite de tu plan. No se borra nada.'
         );
         await expect(notice).toContainText(
-            'No hubo ventana de gracia: se despublicaron primero las fichas más recientes; no simulamos una ventana.'
+            'Despublicamos las fichas más recientes en el momento en que tu plan dejó de cubrirlas.'
         );
         await expect(notice).not.toContainText('destaques recurrentes');
         expect(await readPublicationStatus({ listingId })).toBe('UNPUBLISHED_BY_BILLING');

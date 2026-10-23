@@ -347,7 +347,7 @@
         "surplus": {
             "criterion": "The most recently published listings are unpublished first, until your plan limit is met. Nothing is deleted.",
             "recurringFeatured": "Recurring featured placements for listings that were unpublished will keep being charged until you cancel them.",
-            "noWindowDone": "There was no grace period: the most recently published listings were unpublished first; no grace period was simulated."
+            "noWindowDone": "We unpublished the most recent listings at the moment your plan stopped covering them."
         },
         "restitution": {
             "restored": "These listings are back: {{listings}}.",
