@@ -41,8 +41,11 @@ describe('PlanComparisonTable.astro — single source of truth (HOS-329)', () =>
     it('only renders row groups that the i18n sweep also walks', () => {
         // If you add an audience to the table, add its group to the sweep in
         // `plan-comparison-rows.test.ts` too — otherwise its rows escape the
-        // label/description/icon guard. (HOS-1750)
-        const groups = [...new Set(src.match(/\b[A-Z]+_GROUPS\b/g) ?? [])].sort();
+        // label/description/icon guard. (HOS-1750) The groups are wired in the
+        // helpers module since HOS-1753, so both sources are scanned.
+        const groups = [
+            ...new Set(`${src}\n${helperSrc}`.match(/\b[A-Z]+_GROUPS\b/g) ?? [])
+        ].sort();
         expect(groups).toEqual([
             'EXPERIENCE_GROUPS',
             'GASTRONOMY_GROUPS',
