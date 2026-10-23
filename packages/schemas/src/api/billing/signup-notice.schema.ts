@@ -10,6 +10,8 @@ import { VerticalEnumSchema } from '../../enums/vertical.schema.js';
 export const SignupNoticeResponseSchema = z.object({
     /** The plan, amount in minor units and cycle of the selected billing option, shown before the redirect. */
     plan: z.object({
+        /** Stable plan slug, used by clients to localize the plan name. */
+        slug: z.string().min(1).optional(),
         name: z.string().min(1),
         amount: z.number().int().nonnegative(),
         currency: z.literal('ARS'),
@@ -21,6 +23,8 @@ export const SignupNoticeResponseSchema = z.object({
         z.object({
             subscriptionId: z.uuid(),
             plan: z.object({
+                /** Stable plan slug, used by clients to localize the plan name. */
+                slug: z.string().min(1).optional(),
                 name: z.string().min(1),
                 amount: z.number().int().nonnegative(),
                 currency: z.literal('ARS'),

@@ -9,6 +9,7 @@ import {
     parseSignupOptionId,
     resolveDeclaredPayerEmail,
     resolveSignupPendingAttempt,
+    resolveSignupPlanName,
     resolveSignupPlanSummary,
     resolveSignupRejection,
     resolveSignupTouristVipNotice,
@@ -16,6 +17,7 @@ import {
     SIGNUP_CYCLE_LABEL_KEY,
     SIGNUP_VERTICAL_LABEL_KEY
 } from '@/lib/billing/signup-checkout';
+import { createTranslations } from '@/lib/i18n';
 
 const validId = '123e4567-e89b-42d3-a456-426614174000';
 
@@ -28,6 +30,10 @@ describe('signup checkout helpers — B3 UI (B3.md:1045-1053)', () => {
             trial: { status: 'NOT_RUNNING' }
         };
         expect(resolveSignupPlanSummary({ result: { ok: true, data } })).toEqual(data.plan);
+        const withSlug = { ...data, plan: { ...data.plan, slug: 'owner-basico' } };
+        expect(resolveSignupPlanSummary({ result: { ok: true, data: withSlug } })).toEqual(
+            withSlug.plan
+        );
         expect(resolveSignupPlanSummary({ result: { ok: false } })).toBeNull();
         expect(resolveSignupPlanSummary({ result: { ok: true } })).toBeNull();
         expect(
@@ -148,6 +154,29 @@ describe('signup checkout helpers — B3 UI (B3.md:1045-1053)', () => {
             semiannual: 'billing.checkout.signup.cycle.semiannual',
             annual: 'billing.checkout.signup.cycle.annual'
         });
+    });
+});
+
+describe('TEST:1759:3 resolveSignupPlanName', () => {
+    it.each([
+        ['es', 'Básico'],
+        ['en', 'Basic'],
+        ['pt', 'Básico']
+    ] as const)('localizes owner-basico in %s', (locale, expected) => {
+        expect(
+            resolveSignupPlanName({
+                plan: { slug: 'owner-basico', name: 'Basic' },
+                t: createTranslations(locale).t
+            })
+        ).toBe(expected);
+    });
+
+    it('falls back to the stored name for unknown or absent slugs', () => {
+        const t = createTranslations('es').t;
+        expect(resolveSignupPlanName({ plan: { slug: 'no-such-plan', name: 'Raw name' }, t })).toBe(
+            'Raw name'
+        );
+        expect(resolveSignupPlanName({ plan: { name: 'Raw name' }, t })).toBe('Raw name');
     });
 });
 

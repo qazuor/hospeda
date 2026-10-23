@@ -107,13 +107,15 @@ export async function readBillingChoice(input: { readonly billingOptionId: strin
     readonly planVersionId: string;
     readonly vertical: string;
     readonly planName: string;
+    readonly planSlug: string;
 }> {
     const [choice] = await getDb()
         .select({
             id: billingOptions.id,
             planVersionId: billingOptions.planVersionId,
             vertical: planVersions.vertical,
-            planName: plans.name
+            planName: plans.name,
+            planSlug: plans.slug
         })
         .from(billingOptions)
         .innerJoin(planVersions, eq(planVersions.id, billingOptions.planVersionId))

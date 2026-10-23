@@ -30,6 +30,45 @@ const success = {
 beforeEach(() => vi.resetAllMocks());
 
 describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
+    it('TEST:1759:4 shows the localized plan name', () => {
+        const planSummary = {
+            slug: 'owner-basico',
+            name: 'Basic',
+            amount: 1500000,
+            currency: 'ARS' as const,
+            cycle: 'monthly' as const
+        };
+        const { unmount } = render(
+            <SignupCheckout
+                {...props}
+                planSummary={planSummary}
+            />
+        );
+        expect(screen.getByTestId('signup-checkout-plan-summary')).toHaveTextContent(
+            'Básico · $ 15.000 por mes'
+        );
+        expect(screen.getByTestId('signup-checkout-plan-summary')).not.toHaveTextContent('Basic');
+        unmount();
+        const { unmount: unmountEn } = render(
+            <SignupCheckout
+                {...props}
+                locale="en"
+                planSummary={planSummary}
+            />
+        );
+        expect(screen.getByTestId('signup-checkout-plan-summary')).toHaveTextContent('Basic');
+        expect(screen.getByTestId('signup-checkout-plan-summary')).not.toHaveTextContent('Básico');
+        unmountEn();
+        render(
+            <SignupCheckout
+                {...props}
+                locale="pt"
+                planSummary={planSummary}
+            />
+        );
+        expect(screen.getByTestId('signup-checkout-plan-summary')).toHaveTextContent('Básico');
+    });
+
     it('TEST:1723:7 shows the selected plan summary before confirmation when available', () => {
         render(
             <SignupCheckout

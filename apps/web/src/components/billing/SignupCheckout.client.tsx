@@ -5,6 +5,7 @@ import {
     formatSignupWindowEnd,
     resolveDeclaredPayerEmail,
     resolveSignupPendingAttempt,
+    resolveSignupPlanName,
     resolveSignupRejection,
     SIGNUP_CYCLE_LABEL_KEY,
     SIGNUP_VERTICAL_LABEL_KEY,
@@ -167,7 +168,7 @@ export function SignupCheckout({
                             data-testid="signup-checkout-plan-summary"
                         >
                             {t('billing.checkout.signup.planSummary', undefined, {
-                                plan: planSummary.name,
+                                plan: resolveSignupPlanName({ plan: planSummary, t }),
                                 amount: formatPrice({
                                     amount: planSummary.amount / 100,
                                     currency: planSummary.currency,
@@ -198,6 +199,12 @@ export function SignupCheckout({
                             onChange={(event) => {
                                 setPayerEmail(event.currentTarget.value);
                                 setPayerEmailError(false);
+                            }}
+                            onBlur={(event) => {
+                                setPayerEmailError(
+                                    !resolveDeclaredPayerEmail({ value: event.currentTarget.value })
+                                        .ok
+                                );
                             }}
                         />
                         <p

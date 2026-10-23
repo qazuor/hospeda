@@ -27,6 +27,21 @@ const props = {
 beforeEach(() => vi.resetAllMocks());
 
 describe('TEST:1735:11 pending attempt checkout panel', () => {
+    it('TEST:1759:4 shows the localized plan name of the pending attempt', () => {
+        render(
+            <SignupCheckout
+                {...props}
+                pendingAttempt={{
+                    ...pendingAttempt,
+                    plan: { ...pendingAttempt.plan, slug: 'owner-basico', name: 'Basic' }
+                }}
+            />
+        );
+        const panel = screen.getByTestId('signup-checkout-pending-attempt');
+        expect(panel).toHaveTextContent('Básico');
+        expect(panel).not.toHaveTextContent('Basic');
+    });
+
     it('shows pending plan, amount, cycle, date and only resume/cancel actions', () => {
         render(
             <SignupCheckout
