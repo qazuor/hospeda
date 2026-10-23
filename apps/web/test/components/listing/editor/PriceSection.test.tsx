@@ -88,6 +88,12 @@ describe('PriceSection', () => {
             expect(screen.queryByLabelText('Enlace al menú')).toBeNull();
         });
 
+        it('shows the currency next to the price (TEST:1763:2a)', () => {
+            renderSection(experienceProps);
+
+            expect(screen.getByLabelText('Precio desde (ARS)')).toBeInTheDocument();
+        });
+
         it('reports the on-request toggle as a boolean', () => {
             const { onFieldChange } = renderSection(experienceProps);
 

@@ -19,6 +19,8 @@
  *    information, so the API is what decides. Showing "something went wrong"
  *    for a plan refusal turns an upsell into a bug report.
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GastronomyMenuManager } from '../../../src/components/gastronomy/GastronomyMenuManager.client';
@@ -407,5 +409,71 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         await waitFor(() => {
             expect(screen.getByRole('status')).toHaveTextContent('No se pudo guardar la carta.');
         });
+    });
+});
+
+describe('upload control (HOS-1763)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGet.mockResolvedValue(LOADED_MENU as never);
+    });
+
+    it('renders an i18n upload button and no native browser text (TEST:1763:1a)', async () => {
+        const { container } = render(
+            <GastronomyMenuManager
+                listingId={LISTING_ID}
+                locale="es"
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('Subir foto o PDF')).toBeInTheDocument();
+        });
+
+        // The label is ours, not the browser's chrome.
+        expect(screen.queryByText(/Choose File/i)).toBeNull();
+        expect(container.querySelector('input[type="file"]')).not.toBeNull();
+    });
+
+    it('shows the chosen file name, and a placeholder before choosing (TEST:1763:1b)', async () => {
+        const { container } = render(
+            <GastronomyMenuManager
+                listingId={LISTING_ID}
+                locale="es"
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('Ningún archivo elegido')).toBeInTheDocument();
+        });
+
+        const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+
+        fireEvent.change(input, {
+            target: {
+                files: [new File(['x'], 'carta.pdf', { type: 'application/pdf' })]
+            }
+        });
+
+        expect(await screen.findByText('carta.pdf')).toBeInTheDocument();
+    });
+
+    it('hides the input without taking it out of the accessibility tree (TEST:1763:1c)', () => {
+        const css = readFileSync(
+            resolve(
+                __dirname,
+                '../../../src/components/gastronomy/GastronomyMenuManager.module.css'
+            ),
+            'utf8'
+        );
+        const selector = '.uploadLabel input[type="file"]';
+        const start = css.indexOf(selector);
+        expect(start).toBeGreaterThanOrEqual(0);
+
+        const block = css.slice(start, css.indexOf('}', start));
+        expect(block).toContain('clip: rect(0, 0, 0, 0)');
+        // `display: none` would remove it from both the tab order and the
+        // accessibility tree, leaving the label as a mouse-only target.
+        expect(block).not.toContain('display: none');
     });
 });
