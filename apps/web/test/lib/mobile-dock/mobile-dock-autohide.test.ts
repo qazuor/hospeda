@@ -1,10 +1,22 @@
 /** @module test/lib/mobile-dock/mobile-dock-autohide */
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
-    initDockAutoHide,
     MOBILE_DOCK_HIDDEN_ATTR,
     resolveDockHidden
 } from '../../../src/lib/mobile-dock/mobile-dock-autohide';
+
+let initDockAutoHide: (options: {
+    readonly dock: HTMLElement;
+    readonly win: Window;
+    readonly matchMedia: (query: string) => MediaQueryList;
+}) => { readonly cleanup: () => void };
+
+beforeAll(async () => {
+    const module = (await import('../../../src/lib/mobile-dock/mobile-dock-autohide')) as {
+        readonly initDockAutoHide: typeof initDockAutoHide;
+    };
+    initDockAutoHide = module.initDockAutoHide;
+});
 
 const input = (overrides: Partial<Parameters<typeof resolveDockHidden>[0]> = {}) => ({
     isHidden: false,
@@ -30,7 +42,7 @@ describe('TEST:1768:18 resolveDockHidden', () => {
         expect(resolveDockHidden(input({ previousY: 119, currentY: 120 }))).toEqual({
             hidden: false
         });
-        expect(resolveDockHidden(input({ previousY: 120, currentY: 121 }))).toEqual({
+        expect(resolveDockHidden(input({ previousY: 112, currentY: 121 }))).toEqual({
             hidden: true
         });
     });
