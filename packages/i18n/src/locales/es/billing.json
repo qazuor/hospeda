@@ -676,7 +676,22 @@
             "aiImport": "Cantidad de importaciones con IA desde otras plataformas disponibles por mes.",
             "aiChatOwner": "Cantidad de consultas mensuales a la IA disponibles para propietarios.",
             "aiSupport": "Asistente con IA para resolver dudas sobre la plataforma en tiempo real.",
-            "menuQrScanMetrics": "Un QR para la mesa que abre tu carta, con un panel de escaneos: total, por día, y por dispositivo e idioma."
+            "menuQrScanMetrics": "Un QR para la mesa que abre tu carta, con un panel de escaneos: total, por día, y por dispositivo e idioma.",
+            "maxGastronomies": "Cantidad de locales que podés tener publicados al mismo tiempo.",
+            "publishGastronomy": "Publicá tu local para que los visitantes lo encuentren en Hospeda.",
+            "editGastronomyInfo": "Actualizá los datos y detalles de tu local cuando quieras.",
+            "gastronomyMenu": "Cargá tu carta en Hospeda para que se vea en la página de tu local.",
+            "gastronomyDailySpecial": "Mostrá el menú del día en tu publicación y cambialo cuando quieras.",
+            "gastronomyEvents": "Anunciá en la página de tu local los eventos que organizás.",
+            "menuItemPhotos": "Sumá una foto a cada plato de tu carta.",
+            "multilingualMenu": "Ofrecé tu carta en varios idiomas para visitantes de otros países.",
+            "maxExperiences": "Cantidad de experiencias que podés tener publicadas al mismo tiempo.",
+            "publishExperience": "Publicá tu experiencia para que los visitantes la encuentren en Hospeda.",
+            "editExperienceInfo": "Actualizá los datos y detalles de tu experiencia cuando quieras.",
+            "experienceDirections": "Indicá cómo llegar al punto de encuentro, para que nadie se pierda.",
+            "experienceCertificate": "Emití un certificado para quienes participaron de tu experiencia.",
+            "listingPdf": "Descargá la ficha de tu publicación en PDF para compartirla o imprimirla.",
+            "aiChatListing": "Cantidad de consultas mensuales a la IA disponibles para tu publicación."
         },
         "note": {
             "aiSearch": "Para usuarios registrados",
