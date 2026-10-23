@@ -354,7 +354,8 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
             clock: this.clock,
             snapshot: await readMercadoPagoCharge({
                 chargeId: input.chargeId,
-                send: (args) => this.send(args)
+                send: (args) => this.send(args),
+                sleep: this.sleep
             })
         });
     }
@@ -363,7 +364,8 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         parseProviderInput({ schema: AuthorizationRefSchema, input, capability: 'read' });
         return listMercadoPagoCharges({
             authorizationId: input.authorizationId,
-            send: (args) => this.send(args)
+            send: (args) => this.send(args),
+            sleep: this.sleep
         });
     }
 
