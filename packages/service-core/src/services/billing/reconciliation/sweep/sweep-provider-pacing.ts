@@ -41,7 +41,11 @@ function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
 
-/** Creates a per-run paced provider decorator for HOS-1737. */
+/**
+ * Creates a provider decorator with per-run call spacing and retry limits.
+ * Once the run retry-delay budget is exhausted, subsequent reads make one
+ * attempt and propagate their error without retrying.
+ */
 export function createSweepPacedProvider(input: {
     readonly provider: PaymentProvider;
     readonly pacing: SweepProviderPacing;
@@ -56,6 +60,7 @@ export function createSweepPacedProvider(input: {
     const unpaced = new Set<string>(CAPABILITY_METHODS.notify);
     let nextSlotAt = 0;
     let totalRetryDelayMs = 0;
+    let budgetExhausted = false;
     let budgetWarningLogged = false;
     const decorated: Record<string, unknown> = {
         capabilitySupport: input.provider.capabilitySupport
@@ -83,6 +88,7 @@ export function createSweepPacedProvider(input: {
                     if (
                         !(error instanceof PaymentProviderError) ||
                         error.code !== 'UNAVAILABLE' ||
+                        budgetExhausted ||
                         attempt >= pacing.maxAttempts
                     ) {
                         throw error;
@@ -92,6 +98,7 @@ export function createSweepPacedProvider(input: {
                         pacing.baseDelayMs * 2 ** (attempt - 1)
                     );
                     if (totalRetryDelayMs + delayMs > pacing.maxRunDelayMs) {
+                        budgetExhausted = true;
                         if (!budgetWarningLogged) {
                             budgetWarningLogged = true;
                             logger.warn({ method }, 'Sweep provider retry delay budget exhausted');
