@@ -1,3 +1,5 @@
+import { MOBILE_DOCK_MEDIA_QUERY } from './mobile-dock-measure';
+
 /** Minimum scroll position before downward movement may hide the dock. */
 export const MOBILE_DOCK_HIDE_MIN_SCROLL_Y = 120 as const;
 /** Minimum movement in CSS pixels required to change the hidden state. */
@@ -55,4 +57,106 @@ export function resolveDockHidden({
     }
     // Hide while moving down and reveal while moving up.
     return { hidden: currentY > previousY };
+}
+
+/** Dependencies for attaching mobile scroll handling to a dock element. */
+export interface InitDockAutoHideOptions {
+    readonly dock: HTMLElement;
+    readonly win: Window;
+    readonly matchMedia: (query: string) => MediaQueryList;
+}
+
+/** Cleanup operation returned by the dock auto-hide initializer. */
+export interface DockAutoHideCleanup {
+    readonly cleanup: () => void;
+}
+
+/**
+ * Attaches passive, frame-batched scroll handling while the mobile breakpoint
+ * matches. Focus and a visible comparison item keep the dock available; media
+ * changes clear stale hidden state and reset the scroll baseline on return.
+ */
+export function initDockAutoHide({
+    dock,
+    win,
+    matchMedia
+}: InitDockAutoHideOptions): DockAutoHideCleanup {
+    const media = matchMedia(MOBILE_DOCK_MEDIA_QUERY);
+    const requestFrame =
+        typeof win.requestAnimationFrame === 'function'
+            ? win.requestAnimationFrame.bind(win)
+            : null;
+    const cancelFrame =
+        typeof win.cancelAnimationFrame === 'function' ? win.cancelAnimationFrame.bind(win) : null;
+    let previousY = win.scrollY;
+    let frameId: number | null = null;
+    let isHidden = dock.hasAttribute(MOBILE_DOCK_HIDDEN_ATTR);
+    let cleanedUp = false;
+
+    const update = (): void => {
+        frameId = null;
+        if (cleanedUp || !media.matches) return;
+
+        const currentY = win.scrollY;
+        const aboveSlot = dock.querySelector<HTMLElement>('[data-mobile-dock-slot="above"]');
+        const isPinned =
+            aboveSlot !== null &&
+            [...aboveSlot.querySelectorAll<HTMLElement>('[data-dock-item]')].some(
+                (item) => item.getClientRects().length > 0
+            );
+        const result = resolveDockHidden({
+            isHidden,
+            previousY,
+            currentY,
+            viewportHeight: win.innerHeight,
+            documentHeight: win.document.documentElement.scrollHeight,
+            hasFocusWithin: dock.matches(':focus-within'),
+            isPinned
+        });
+
+        isHidden = result.hidden;
+        dock.toggleAttribute(MOBILE_DOCK_HIDDEN_ATTR, isHidden);
+        previousY = currentY;
+    };
+
+    const onScroll = (): void => {
+        if (cleanedUp || !media.matches || frameId !== null || !requestFrame) return;
+        frameId = requestFrame(update);
+    };
+
+    const onFocusIn = (): void => {
+        isHidden = false;
+        dock.removeAttribute(MOBILE_DOCK_HIDDEN_ATTR);
+    };
+
+    const onMediaChange = (event: MediaQueryListEvent): void => {
+        if (!event.matches) {
+            isHidden = false;
+            dock.removeAttribute(MOBILE_DOCK_HIDDEN_ATTR);
+            if (frameId !== null) {
+                cancelFrame?.(frameId);
+                frameId = null;
+            }
+            return;
+        }
+        previousY = win.scrollY;
+    };
+
+    win.addEventListener('scroll', onScroll, { passive: true });
+    dock.addEventListener('focusin', onFocusIn);
+    media.addEventListener('change', onMediaChange);
+    if (!media.matches) dock.removeAttribute(MOBILE_DOCK_HIDDEN_ATTR);
+
+    return {
+        cleanup: () => {
+            cleanedUp = true;
+            win.removeEventListener('scroll', onScroll);
+            dock.removeEventListener('focusin', onFocusIn);
+            media.removeEventListener('change', onMediaChange);
+            if (frameId !== null) cancelFrame?.(frameId);
+            frameId = null;
+            isHidden = false;
+            dock.removeAttribute(MOBILE_DOCK_HIDDEN_ATTR);
+        }
+    };
 }

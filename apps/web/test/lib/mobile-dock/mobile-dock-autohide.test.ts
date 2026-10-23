@@ -100,6 +100,7 @@ describe('TEST:1768:19 initDockAutoHide', () => {
             document: { documentElement: { scrollHeight: 2000 } },
             addEventListener: window.addEventListener.bind(window),
             removeEventListener: window.removeEventListener.bind(window),
+            dispatchEvent: window.dispatchEvent.bind(window),
             requestAnimationFrame: vi.fn((callback: FrameRequestCallback) => {
                 const id = nextId++;
                 rafCallbacks.set(id, callback);

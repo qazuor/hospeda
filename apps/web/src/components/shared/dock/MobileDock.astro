@@ -50,11 +50,22 @@ const { locale } = Astro.props;
 	@media (max-width: 767px) {
 		.mobile-dock {
 			position: fixed;
+			transition: transform var(--duration-normal) ease;
 			inset-inline: 0;
 			bottom: var(--bottom-safe-inset, 0px);
 			z-index: var(--z-floating-dock);
 			display: flex;
 			flex-direction: column;
+		}
+
+		.mobile-dock[data-dock-hidden] {
+			transform: translateY(calc(100% + var(--bottom-safe-inset, 0px)));
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			.mobile-dock {
+				transition: none;
+			}
 		}
 
 		.mobile-dock[data-empty] {
@@ -131,16 +142,26 @@ const { locale } = Astro.props;
 
 <script>
 	import { initMobileDock } from '@/lib/mobile-dock/mobile-dock-measure';
+	import { initDockAutoHide } from '@/lib/mobile-dock/mobile-dock-autohide';
 
-	let cleanup: (() => void) | undefined;
+	let cleanupMeasure: (() => void) | undefined;
+	let cleanupAutoHide: (() => void) | undefined;
 
 	function setupMobileDock(): void {
-		cleanup?.();
+		cleanupMeasure?.();
+		cleanupMeasure = undefined;
+		cleanupAutoHide?.();
+		cleanupAutoHide = undefined;
 		const dock = document.querySelector<HTMLElement>('[data-mobile-dock]');
 		if (!dock) return;
-		cleanup = initMobileDock({
+		cleanupMeasure = initMobileDock({
 			dock,
 			root: document.documentElement,
+			matchMedia: (query) => window.matchMedia(query),
+		}).cleanup;
+		cleanupAutoHide = initDockAutoHide({
+			dock,
+			win: window,
 			matchMedia: (query) => window.matchMedia(query),
 		}).cleanup;
 	}
