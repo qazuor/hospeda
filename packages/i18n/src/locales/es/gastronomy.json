@@ -186,6 +186,7 @@
                 "fileUnavailable": "No se puede abrir este archivo. Eliminalo y subilo de nuevo.",
                 "addFile": "Subir foto o PDF",
                 "replaceFile": "Reemplazar el archivo",
+                "noFileChosen": "Ningún archivo elegido",
                 "removeFile": "Eliminar",
                 "uploaded": "Archivo del menú subido.",
                 "fileRemoved": "Archivo del menú eliminado.",

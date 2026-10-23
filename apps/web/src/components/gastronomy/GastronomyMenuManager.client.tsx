@@ -248,6 +248,12 @@ export function GastronomyMenuManager({
 
     const [sections, setSections] = useState<MenuSectionDraft[]>([]);
     const [file, setFile] = useState<MenuFile | null>(null);
+    /**
+     * HOS-1763. The name of the file chosen in THIS session. The input is
+     * cleared after every pick, so the browser can never show it — and the
+     * upload request is what persists the bytes, not this label.
+     */
+    const [pickedFileName, setPickedFileName] = useState<string | null>(null);
     const [state, setState] = useState<PanelState>('loading');
     const [message, setMessage] = useState<string | null>(null);
     const [isLocked, setIsLocked] = useState(false);
@@ -651,6 +657,7 @@ export function GastronomyMenuManager({
 
         if (result.ok) {
             setFile(null);
+            setPickedFileName(null);
             setMessage(
                 t('gastronomy.owner.editor.menuManager.fileRemoved', 'Archivo del menú eliminado.')
             );
@@ -754,7 +761,7 @@ export function GastronomyMenuManager({
                 ) : null}
 
                 <label className={styles.uploadLabel}>
-                    <span>
+                    <span className={styles.uploadButton}>
                         {file
                             ? t(
                                   'gastronomy.owner.editor.menuManager.replaceFile',
@@ -773,10 +780,21 @@ export function GastronomyMenuManager({
                             // upload could not be retried.
                             event.target.value = '';
                             if (selected) {
+                                setPickedFileName(selected.name);
                                 void uploadFile(selected);
                             }
                         }}
                     />
+                    <span
+                        className={styles.intro}
+                        aria-live="polite"
+                    >
+                        {pickedFileName ??
+                            t(
+                                'gastronomy.owner.editor.menuManager.noFileChosen',
+                                'Ningún archivo elegido'
+                            )}
+                    </span>
                 </label>
             </div>
 
