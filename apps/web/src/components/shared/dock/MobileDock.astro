@@ -1,0 +1,150 @@
+---
+/**
+ * Mobile-only fixed control rail. A dock item is a visible control marked
+ * `data-dock-item`; add one by declaring a slot in `mobile-dock-slots.ts`,
+ * portaling only its button with `DockPortal`, marking its root, and giving it
+ * mobile `position: static` styling. The row simulates the owner order: listing
+ * controls left, map/search/chat actions right, with scroll-to-top last; bars
+ * such as comparison occupy the slot above the row.
+ */
+import type { SupportedLocale } from '@/lib/i18n';
+import ScrollToTop from '@/components/shared/navigation/ScrollToTop.astro';
+
+interface Props {
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+---
+
+<div class="mobile-dock" data-mobile-dock data-empty data-row-empty>
+	<div class="mobile-dock__above" data-mobile-dock-slot="above"></div>
+	<div class="mobile-dock__row">
+		<div class="mobile-dock__start">
+			<div data-mobile-dock-slot="filters"></div>
+			<div data-mobile-dock-slot="start" data-listing-swap="dock-start"><slot name="start" /></div>
+		</div>
+		<div class="mobile-dock__end">
+			<div data-mobile-dock-slot="map-cards"></div>
+			<div data-mobile-dock-slot="ai-search"></div>
+			<div data-mobile-dock-slot="ai-chat"></div>
+			<ScrollToTop locale={locale} />
+		</div>
+	</div>
+</div>
+
+<style>
+	.mobile-dock,
+	.mobile-dock__above,
+	.mobile-dock__row,
+	.mobile-dock__start,
+	.mobile-dock__end,
+	[data-mobile-dock-slot] {
+		display: contents;
+	}
+
+	[data-mobile-dock-slot="start"] {
+		display: none;
+	}
+
+	@media (max-width: 767px) {
+		.mobile-dock {
+			position: fixed;
+			inset-inline: 0;
+			bottom: var(--bottom-safe-inset, 0px);
+			z-index: var(--z-floating-dock);
+			display: flex;
+			flex-direction: column;
+		}
+
+		.mobile-dock[data-empty] {
+			visibility: hidden;
+			pointer-events: none;
+		}
+
+		.mobile-dock__above {
+			display: contents;
+		}
+
+		.mobile-dock__row {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			justify-content: space-between;
+			gap: var(--space-2);
+			padding: var(--space-2) var(--space-container-x) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+			border-block-start: 1px solid var(--frost-border);
+			background: var(--frost-bg-light);
+			backdrop-filter: blur(var(--frost-blur));
+		}
+
+		.mobile-dock[data-row-empty] .mobile-dock__row {
+			gap: 0;
+			padding: 0;
+			border-block-start: 0;
+			background: none;
+			backdrop-filter: none;
+		}
+
+		.mobile-dock__start,
+		.mobile-dock__end {
+			display: flex;
+			align-items: center;
+			gap: var(--space-2);
+		}
+
+		.mobile-dock__start:has([data-dock-item]) {
+			gap: var(--space-2);
+			padding: 2px;
+			border: 1px solid var(--frost-border);
+			border-radius: var(--radius-pill);
+		}
+
+		.mobile-dock__end {
+			margin-inline-start: auto;
+		}
+
+		:global(.mobile-dock__start [data-dock-item]) {
+			background: none;
+			box-shadow: none;
+			backdrop-filter: none;
+		}
+
+		:global(.scroll-to-top) {
+			position: static;
+			height: 44px;
+			width: 44px;
+		}
+
+		:global(.scroll-to-top:not(.scroll-to-top--visible)) {
+			display: none;
+		}
+
+		:global(html[data-mobile-menu-open]) .mobile-dock,
+		:global(html[data-search-panel-open]) .mobile-dock,
+		:global(html[data-filters-drawer-open]) .mobile-dock {
+			visibility: hidden;
+			pointer-events: none;
+		}
+	}
+</style>
+
+<script>
+	import { initMobileDock } from '@/lib/mobile-dock/mobile-dock-measure';
+
+	let cleanup: (() => void) | undefined;
+
+	function setupMobileDock(): void {
+		cleanup?.();
+		const dock = document.querySelector<HTMLElement>('[data-mobile-dock]');
+		if (!dock) return;
+		cleanup = initMobileDock({
+			dock,
+			root: document.documentElement,
+			matchMedia: (query) => window.matchMedia(query),
+		}).cleanup;
+	}
+
+	document.addEventListener('astro:page-load', setupMobileDock);
+	setupMobileDock();
+</script>
