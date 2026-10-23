@@ -40,6 +40,12 @@ describe('TEST:V6:5 listing notices i18n', () => {
         expect(pt.notices.surplus.criterion).toMatch(/mais recentemente/i);
         expect(pt.notices.restitution.criterion).toMatch(/primeiro/i);
     });
+
+    it('does not use design jargon in noWindowDone (HOS-1750)', () => {
+        expect(valueAt(es, 'surplus.noWindowDone')).not.toMatch(/simul|ventana/i);
+        expect(valueAt(en, 'surplus.noWindowDone')).not.toMatch(/simulat|grace period|window/i);
+        expect(valueAt(pt, 'surplus.noWindowDone')).not.toMatch(/simul|carência|janela/i);
+    });
 });
 
 /** Reads a dot path under a JSON root; `''` when absent or not a string. */

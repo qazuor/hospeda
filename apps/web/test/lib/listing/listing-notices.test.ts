@@ -260,13 +260,15 @@ describe('buildListingNoticeViews — one view per kind (HOS-1492)', () => {
         expect(withBoosts).toContain(
             'Se despublican primero las fichas publicadas más recientemente'
         );
-        expect(withBoosts).toContain('No hubo ventana de gracia');
+        expect(withBoosts).toContain('en el momento en que tu plan dejó de cubrirlas');
         expect(withBoosts).toContain(
             'Los destaques recurrentes de las fichas que bajaron se siguen cobrando'
         );
+        expect(withBoosts).not.toContain('simulamos');
+        expect(withBoosts).not.toContain('ventana');
         expect(withoutBoosts).not.toContain('Los destaques recurrentes');
         for (const other of othersThan('SURPLUS')) {
-            expect(textOf(other)).not.toContain('No hubo ventana de gracia');
+            expect(textOf(other)).not.toContain('en el momento en que tu plan dejó de cubrirlas');
         }
     });
 
