@@ -1,17 +1,18 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const component = readFileSync(
-    new URL('../../../src/components/shared/layout/ListingViewToggle.astro', import.meta.url),
+    resolve(process.cwd(), 'src/components/shared/layout/ListingViewToggle.astro'),
     'utf8'
 );
 const listing = readFileSync(
-    new URL('../../../src/pages/[lang]/alojamientos/index.astro', import.meta.url),
+    resolve(process.cwd(), 'src/pages/[lang]/alojamientos/index.astro'),
     'utf8'
 );
 const map = readFileSync(
-    new URL('../../../src/pages/[lang]/alojamientos/mapa.astro', import.meta.url),
+    resolve(process.cwd(), 'src/pages/[lang]/alojamientos/mapa.astro'),
     'utf8'
 );
 

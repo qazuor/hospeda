@@ -1,0 +1,94 @@
+---
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+
+/** Shared list/map control; its dock variant is server-rendered into a named
+ * slot and contains no drawer or sheet overlay. */
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly active: 'list' | 'map';
+	readonly listHref?: string;
+	readonly mapHref?: string;
+	readonly variant: 'inline' | 'dock';
+}
+
+const { locale, active, listHref, mapHref, variant } = Astro.props;
+const { t } = createTranslations(locale);
+const dock = variant === 'dock';
+---
+
+<div
+	class:list={['view-toggle', dock ? 'view-toggle--dock' : 'view-toggle--inline']}
+	role="tablist"
+	aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}
+	data-dock-item={dock ? true : undefined}
+>
+	{active === 'list' ? (
+		<span class="view-toggle__btn view-toggle__btn--active" role="tab" aria-selected="true">
+			{t('accommodations.viewToggle.list', 'Lista')}
+		</span>
+	) : (
+		<a href={listHref} class="view-toggle__btn" role="tab" aria-selected="false">
+			{t('accommodations.viewToggle.list', 'Lista')}
+		</a>
+	)}
+	{active === 'map' ? (
+		<span class="view-toggle__btn view-toggle__btn--active" role="tab" aria-selected="true">
+			{t('accommodations.viewToggle.map', 'Mapa')}
+		</span>
+	) : (
+		<a href={mapHref} class="view-toggle__btn" role="tab" aria-selected="false">
+			{t('accommodations.viewToggle.map', 'Mapa')}
+		</a>
+	)}
+</div>
+
+<style>
+	.view-toggle {
+		display: inline-flex;
+		gap: var(--space-2, 8px);
+		padding: 4px;
+		margin: var(--space-4, 16px) 0;
+		background-color: var(--surface-warm, #faf6f0);
+		border-radius: var(--radius-pill, 9999px);
+		border: 1px solid transparent;
+	}
+
+	.view-toggle__btn {
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		padding: 0.5rem 1rem;
+		border-radius: var(--radius-pill, 9999px);
+		color: var(--core-muted-foreground);
+		text-decoration: none;
+		transition: background-color var(--duration-normal, 0.4s) ease, color var(--duration-normal, 0.4s) ease;
+		cursor: pointer;
+	}
+
+	.view-toggle__btn:hover {
+		color: var(--core-foreground);
+	}
+
+	.view-toggle__btn--active {
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground);
+		font-weight: 500;
+		cursor: default;
+	}
+
+	.view-toggle--inline {
+		flex-shrink: 0;
+		margin: 0;
+	}
+
+	@media (max-width: 767px) {
+		.view-toggle--inline {
+			display: none;
+		}
+
+		.view-toggle--dock {
+			margin: 0;
+			background: none;
+		}
+	}
+</style>
