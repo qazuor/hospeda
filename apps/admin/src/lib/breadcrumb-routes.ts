@@ -25,8 +25,12 @@ type IsRegisteredPathInput = {
 };
 
 type MinimalRouter = {
-    /** TanStack Router route table keyed by each route's `fullPath`. */
-    readonly routesByPath?: Readonly<Record<string, unknown>>;
+    /**
+     * TanStack Router route table keyed by each route's `fullPath`. Typed as
+     * `object` because the generated `FileRoutesByFullPath` has no string
+     * index signature; only its keys are read.
+     */
+    readonly routesByPath?: object;
 };
 
 type GetRoutePathsInput = {
