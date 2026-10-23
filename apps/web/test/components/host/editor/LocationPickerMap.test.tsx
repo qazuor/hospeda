@@ -11,7 +11,7 @@
  */
 import { render, waitFor } from '@testing-library/react';
 import * as L from 'leaflet';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocationPickerMap } from '@/components/host/editor/LocationPickerMap.client';
 
 vi.mock('@/components/host/editor/LocationPicker.module.css', () => ({
@@ -84,6 +84,10 @@ describe('LocationPickerMap (BETA-132)', () => {
 describe('LocationPickerMap — unplaced pin (HOS-1767)', () => {
     const PLACED_POSITION = { lat: -32.4825, lng: -58.2372 };
 
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     it('TEST:1767:15 — creates the marker semi-transparent until it is placed', async () => {
         const { unmount } = render(<LocationPickerMap {...DEFAULT_PROPS} />);
 
@@ -116,7 +120,7 @@ describe('LocationPickerMap — unplaced pin (HOS-1767)', () => {
         const { rerender } = render(<LocationPickerMap {...DEFAULT_PROPS} />);
 
         await waitFor(() => {
-            expect(L.marker).toHaveBeenCalled();
+            expect(mockMap.on).toHaveBeenCalled();
         });
 
         rerender(

@@ -239,3 +239,16 @@
     color: oklch(0.55 0.22 25);
     margin-top: var(--space-1, 0.25rem);
 }
+
+/* Shown while the accommodation has no coordinates yet (HOS-1767): the
+   pin on the map is only a starting point, not a saved location. */
+.pinUnsetNotice {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    background-color: var(--surface-warm);
+    border-left: 3px solid var(--brand-primary);
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    margin-bottom: var(--space-3, 1rem);
+}
