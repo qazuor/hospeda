@@ -147,7 +147,7 @@ overrides:
   # here, not something qzpay can prevent.
   # ---------------------------------------------------------------------------
   typescript: "6.0.3"
-  "zod@>=4.0.0 <5": "4.3.6"
+  "zod@>=4.0.0 <5": "4.6.6"
   ws: ">=8.21.0"
   form-data: ">=4.0.6"
   protobufjs: ">=7.6.1"
@@ -389,6 +389,17 @@ auditConfig:
     #   pnpm why image-size -r --prod   # no 1.x left
     - GHSA-w3rx-r6r6-pgpr
     - GHSA-5p2g-fcmc-qvqq
+    # GHSA-mrhx-c7xc-m3w5: zod <4.6.6 can exhaust memory validating oversized
+    # constrained collections. Every workspace consumer resolves 4.6.6 through
+    # the `zod@>=4.0.0 <5` override. The one copy left is zod@3.25.76, pinned
+    # EXACTLY by @expo/cli (apps/mobile > @better-auth/expo > expo > @expo/cli),
+    # the mobile build-time CLI; it validates the developer's own project config
+    # and never runs in the API, web or admin runtimes. No 3.x release is
+    # patched, and forcing 4.x under a CLI written against the 3.x API is unsafe.
+    # Remove this exception with the Expo SDK bump that moves @expo/cli to zod 4.
+    # Before removing it, confirm with:
+    #   pnpm why zod -r --prod   # no 3.x left
+    - GHSA-mrhx-c7xc-m3w5
 
 allowBuilds:
   # Needed to upload source maps to Sentry from @sentry/esbuild-plugin (api)
