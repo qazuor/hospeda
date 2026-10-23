@@ -1,4 +1,11 @@
-import { billingDeadlineVersions, billingOptions, plans, planVersions, users } from '@repo/db';
+import {
+    billingDeadlineVersions,
+    billingOptions,
+    plans,
+    planVersions,
+    subscriptionModel,
+    users
+} from '@repo/db';
 import { registerCaptureHook, unregisterCaptureHook } from '@repo/logger';
 import { PaymentProviderError } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
@@ -116,10 +123,14 @@ describe('TEST:1746:3 authorize rejection logging', () => {
     ])('captures the provider error and its cause', async (error) => {
         const { promise, captured, user } = await attempt(error);
         await expect(promise).rejects.toBe(error);
+        const row = await subscriptionModel.findLiveCommitment({
+            userId: user.id,
+            vertical: 'accommodation'
+        });
         expect(captured).toHaveLength(1);
         expect(captured[0]?.error).toBe(error);
         if (error.code === 'REJECTED')
             expect(error.cause).toMatchObject({ body: { message: 'invalid payer_email' } });
-        expect(captured[0]?.extra.label).toContain(user.id);
+        expect(captured[0]?.extra.label).toContain(row?.subscription.id);
     });
 });
