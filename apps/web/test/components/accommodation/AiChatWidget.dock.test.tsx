@@ -12,10 +12,16 @@ const CSS_SOURCE = readFileSync(
 );
 
 vi.mock('@/lib/i18n', () => ({
-    createTranslations: () => ({ t: (_key: string, fallback?: string) => fallback ?? '' })
-}));
-vi.mock('@/hooks/use-account-permissions', () => ({
-    useAccountPermissions: () => ({ user: { id: 'signed-in-user' } })
+    createTranslations: () => ({
+        t: (key: string, fallback?: string) =>
+            ({
+                'accommodations.aiChat.fabLabel': 'Ask AI about this accommodation',
+                'accommodations.aiChat.panelLabel': 'AI Chat — Accommodation Questions',
+                'accommodations.aiChat.close': 'Close chat'
+            })[key] ??
+            fallback ??
+            key
+    })
 }));
 vi.mock('@/hooks/useAccommodationChat', () => ({
     useAccommodationChat: () => ({
