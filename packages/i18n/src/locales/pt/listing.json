@@ -347,7 +347,7 @@
         "surplus": {
             "criterion": "Os anúncios publicados mais recentemente são despublicados primeiro, até respeitar o limite do seu plano. Nada é apagado.",
             "recurringFeatured": "Os destaques recorrentes dos anúncios que saíram continuam sendo cobrados até você cancelá-los.",
-            "noWindowDone": "Despublicamos os anúncios mais recentes no momento em que seu plano deixou de cobri-los."
+            "noWindowDone": "Despublicamos os anúncios mais recentes no momento em que seu plano deixou de cobri-los. Para recuperá-los, mude de plano ou libere espaço na sua cota."
         },
         "restitution": {
             "restored": "Estes anúncios voltaram: {{listings}}.",
