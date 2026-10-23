@@ -93,10 +93,10 @@ const purgedExperience = {
     meetingPoint: null,
     meetingPointLat: null,
     meetingPointLong: null,
-    meetingPointDirections: {},
+    meetingPointDirections: [],
     durationMinutes: null,
-    whatToBring: {},
-    requirements: {},
+    whatToBring: [],
+    requirements: [],
     cancellationPolicy: null,
     acceptsPrivateGroups: false,
     openingHours: null
