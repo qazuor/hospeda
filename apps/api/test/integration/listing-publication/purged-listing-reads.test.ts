@@ -42,7 +42,7 @@ const viewAll: Readonly<Record<Vertical, PermissionEnum>> = {
     [VerticalEnum.GASTRONOMY]: PermissionEnum.GASTRONOMY_VIEW_ALL,
     [VerticalEnum.EXPERIENCE]: PermissionEnum.EXPERIENCE_VIEW_ALL
 };
-const commerce = [VerticalEnum.GASTRONOMY, VerticalEnum.EXPERIENCE] as const;
+const staffReadVerticals = [VerticalEnum.GASTRONOMY, VerticalEnum.EXPERIENCE] as const;
 
 interface Fixture {
     readonly ownerId: string;
@@ -220,7 +220,9 @@ describe.each(verticals)('TEST:1748:6 protected reads — %s', (vertical) => {
     });
 });
 
-describe.each(commerce)('TEST:1748:6 staff protected read of a PURGED listing — %s', (vertical) => {
+describe.each(
+    staffReadVerticals
+)('TEST:1748:6 staff protected read of a PURGED listing — %s', (vertical) => {
     it('answers 200 to the actor holding the view-all permission', async () => {
         // Arrange
         const fx = await seedFixture(vertical);
