@@ -21,11 +21,21 @@ const src = readFileSync(
     'utf8'
 );
 
+// The pure helpers live in their own module (HOS-1753) so the `.astro` stays
+// inside the project's file-size budget; the source assertions that pin the
+// shared row model and the active+sorted filter follow the code there.
+const helperSrc = readFileSync(
+    resolve(__dirname, '../../../src/components/billing/plan-comparison-table.helpers.ts'),
+    'utf8'
+);
+
 describe('PlanComparisonTable.astro — single source of truth (HOS-329)', () => {
     it('imports the row model instead of declaring it inline', () => {
         expect(src).toContain("from '@/components/billing/plan-comparison-rows'");
-        expect(src).toContain('OWNER_GROUPS');
-        expect(src).toContain('TOURIST_GROUPS');
+        expect(helperSrc).toContain("from '@/components/billing/plan-comparison-rows'");
+        expect(helperSrc).toContain('OWNER_GROUPS');
+        expect(helperSrc).toContain('TOURIST_GROUPS');
+        expect(src).toContain("from '@/components/billing/plan-comparison-table.helpers'");
     });
 
     it('does not re-declare any row constant locally', () => {
@@ -58,17 +68,18 @@ describe('PlanComparisonTable.astro — single source of truth (HOS-329)', () =>
     });
 
     it('builds its columns with the shared active+sorted plan filter', () => {
-        expect(src).toContain('filterPlansByCategory');
-        expect(src).not.toContain("plans.filter((p) => p.category === 'owner')");
+        expect(src).toContain('getActivePlans({ plans, audience })');
+        expect(helperSrc).toContain('filterPlansByCategory');
+        expect(helperSrc).not.toContain("plans.filter((p) => p.category === 'owner')");
     });
 
     it('filters by the audience it was given, not a hardcoded category', () => {
         // `filterPlansByCategory(plans, 'owner')` written unconditionally would
         // render the tourist comparison page with zero columns, on a live
         // public URL, with the rest of this suite still green.
-        expect(src).toContain('filterPlansByCategory(plans, audience)');
-        expect(src).not.toContain("filterPlansByCategory(plans, 'owner')");
-        expect(src).not.toContain("filterPlansByCategory(plans, 'tourist')");
+        expect(helperSrc).toContain('filterPlansByCategory(plans, audience)');
+        expect(helperSrc).not.toContain("filterPlansByCategory(plans, 'owner')");
+        expect(helperSrc).not.toContain("filterPlansByCategory(plans, 'tourist')");
     });
 });
 

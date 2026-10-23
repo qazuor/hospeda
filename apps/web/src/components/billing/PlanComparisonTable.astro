@@ -22,19 +22,17 @@
 
 import { CheckIcon, MinusIcon } from '@repo/icons';
 import { COMPARISON_ROW_ICONS } from '@/components/billing/comparison-row-icons';
+import { resolveCell } from '@/components/billing/plan-comparison-rows';
 import {
-	EXPERIENCE_GROUPS,
-	GASTRONOMY_GROUPS,
-	OWNER_GROUPS,
-	TOURIST_GROUPS,
-	resolveCell
-} from '@/components/billing/plan-comparison-rows';
+	formatPriceArs,
+	getActivePlans,
+	getComparisonGroups
+} from '@/components/billing/plan-comparison-table.helpers';
 import type { PricingAudience } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getComparisonGroupLabel, getPlanName } from '@/lib/billing-i18n';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
-import { filterPlansByCategory } from '@/lib/billing/fetch-plans';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -73,48 +71,12 @@ const upcomingLabel = t('billing.comparison.upcoming', 'Próximamente');
 const isAccommodationAudience = audience === 'owner' || audience === 'tourist';
 
 // Complex plans are included by the /planes/comparar/ page but must NOT appear
-// as columns in this table. Re-filter through the shared helper so the columns
-// are always active-only and sortOrder-sorted regardless of what the caller
-// passed; we render a teaser for the complex plans below instead.
-//
-// That helper filters on `category`, which only discriminates the two
-// accommodation audiences — every gastronomy/experience and partner plan carries
-// `category: 'owner'` to satisfy `PlanCategory`'s type, and their real
-// discriminator is `product_domain`, applied server-side by `?domain=` before
-// the rows ever reach this component (HOS-1032). Running them through
-// `filterPlansByCategory(plans, 'gastronomy')` would match nothing and render
-// an empty table, so the vertical audiences keep the same active-only,
-// sortOrder-sorted guarantee applied directly instead.
-const activePlans = isAccommodationAudience
-	? filterPlansByCategory(plans, audience)
-	: plans
-			.filter((plan) => plan.isActive)
-			.slice()
-			.sort((a, b) => a.sortOrder - b.sortOrder);
+// as columns here; the helper re-filters so columns are always active-only and
+// sortOrder-sorted, and the teaser below covers the complex plans (HOS-1032).
+const activePlans = getActivePlans({ plans, audience });
+const groups = getComparisonGroups(audience);
 
-const GROUPS_BY_AUDIENCE = {
-	owner: OWNER_GROUPS,
-	tourist: TOURIST_GROUPS,
-	gastronomy: GASTRONOMY_GROUPS,
-	experience: EXPERIENCE_GROUPS
-} as const;
-
-const groups = GROUPS_BY_AUDIENCE[audience];
-
-function formatPriceArs(cents: number): string {
-	if (cents === 0) return t('pricing.free', 'Gratis');
-	const pesos = cents / 100;
-	try {
-		return new Intl.NumberFormat(intlLocale, {
-			style: 'currency',
-			currency: 'ARS',
-			maximumFractionDigits: 0,
-			minimumFractionDigits: 0,
-		}).format(pesos);
-	} catch {
-		return `$${pesos.toLocaleString('es-AR')}`;
-	}
-}
+const freePlanLabel = t('pricing.free', 'Gratis');
 ---
 
 <div class="comparison-table__wrapper" role="region" aria-label={t('pricing.comparison.link', 'Comparativa')} tabindex="0">
@@ -127,7 +89,13 @@ function formatPriceArs(cents: number): string {
 				{activePlans.map((plan) => (
 					<th scope="col" class="comparison-table__plan-col">
 						<span class="comparison-table__plan-name">{getPlanName({ plan, t })}</span>
-						<span class="comparison-table__plan-price">{formatPriceArs(plan.monthlyPriceArs)}</span>
+						<span class="comparison-table__plan-price">
+							{formatPriceArs({
+								cents: plan.monthlyPriceArs,
+								intlLocale,
+								freeLabel: freePlanLabel
+							})}
+						</span>
 						{plan.monthlyPriceArs > 0 && (
 							<span class="comparison-table__plan-period">{t('pricing.period.month', '/mes')}</span>
 						)}
@@ -476,14 +444,9 @@ function formatPriceArs(cents: number): string {
 
 	@media (max-width: 768px) {
 		/*
-		 * With `table-layout: auto` the label column's width came from its
-		 * content, and `rowDesc` is long text: the column took almost the whole
-		 * width and pushed the plan columns out of view. `table-layout: fixed`
-		 * sizes every column from the FIRST row (the `thead` row), so the width
-		 * goes on `thead .comparison-table__label-col`.
-		 * At 390px the visible width is 366px (390 - 2 * 12px of
-		 * `--space-container-x`); 150px label + 120px plan column = 270px, so
-		 * the label and at least one plan are visible without scrolling.
+		 * `table-layout: fixed` takes every width from the FIRST row (the `thead`
+		 * row), so the label width goes on its header cell. At 390px there are
+		 * 366px visible (390 - 2 * 12px); 150px label + 120px plan = 270px.
 		 */
 		.comparison-table {
 			table-layout: fixed;
