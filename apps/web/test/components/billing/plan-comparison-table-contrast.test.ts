@@ -17,6 +17,8 @@ const INK = [
     ['.comparison-table__badge--upcoming', 'var(--core-foreground)']
 ] as const;
 
+const GROUP_HEADER = '.comparison-table__group-header th';
+
 describe('PlanComparisonTable ink tokens', () => {
     it.each(INK)('%s is painted with %s', (selector, expected) => {
         // Arrange / Act
@@ -42,5 +44,21 @@ describe('PlanComparisonTable ink tokens', () => {
             .map((r) => r.selector);
 
         expect(offenders).toEqual([]);
+    });
+
+    it('paints the group header with the text-grade primary, not the fill token', () => {
+        expect(baseValue({ rules, selector: GROUP_HEADER, prop: 'color' })).toBe(
+            'var(--brand-primary-text)'
+        );
+    });
+
+    it('keeps the "not included" glyph at the opacity the contrast guard measured', () => {
+        expect(
+            baseValue({
+                rules,
+                selector: '.comparison-table__icon--not-included',
+                prop: 'opacity'
+            })
+        ).toBe('0.7');
     });
 });

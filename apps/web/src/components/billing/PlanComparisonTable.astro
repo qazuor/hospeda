@@ -329,7 +329,9 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 		font-family: var(--font-heading);
 		font-weight: 700;
 		font-size: var(--text-body);
-		color: var(--brand-primary);
+		/* `--brand-primary` on the warm band measured 3.08:1 in light; the text-grade
+		   step is 9.38:1 there and 5.4:1 in dark (HOS-1766). */
+		color: var(--brand-primary-text);
 		padding: var(--space-3) var(--space-4);
 		text-align: left;
 		border-bottom: 2px solid var(--brand-primary-a15);
@@ -365,7 +367,9 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 
 	.comparison-table__icon--not-included {
 		color: var(--core-muted-foreground);
-		opacity: 0.5;
+		/* 0.5 composited to 2.31:1 (light) / 2.36:1 (dark), under the 3:1 floor for a
+		   graphical object; 0.7 clears it in both themes (HOS-1766). */
+		opacity: 0.7;
 	}
 
 	.comparison-table__cell--limit {

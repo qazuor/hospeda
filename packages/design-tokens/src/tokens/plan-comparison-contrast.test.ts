@@ -39,6 +39,10 @@ import type { OKLCH } from './colors.js';
 const AA_TEXT = 4.5;
 /** WCAG 2.1 AA minimum for graphical objects (the check icon). */
 const AA_GRAPHIC = 3;
+/** Opacity of the "not included" minus glyph (`.comparison-table__icon--not-included`). */
+const NOT_INCLUDED_OPACITY = 0.7;
+/** Opacity the glyph had before HOS-1766. */
+const NOT_INCLUDED_OPACITY_RETIRED = 0.5;
 /** Alpha of `--brand-primary-a15`, the chip fill. */
 const CHIP_ALPHA = 0.15;
 
@@ -181,6 +185,66 @@ describe('HOS-1766 plan comparison table clears WCAG AA', () => {
             });
 
             expect(ratio(ink(webLight, 'brand-accent'), tint)).toBeLessThan(AA_TEXT);
+        });
+    });
+
+    describe('group header band', () => {
+        it.each(
+            THEMES
+        )('--brand-primary-text clears AA text on --surface-warm (%s)', (_name, theme) => {
+            expect(
+                ratio(ink(theme, 'brand-primary-text'), ink(theme, 'surface-warm'))
+            ).toBeGreaterThanOrEqual(AA_TEXT);
+        });
+
+        it('--brand-primary (the retired ink) fails AA text on --surface-warm in light', () => {
+            expect(
+                ratio(ink(webLight, 'brand-primary'), ink(webLight, 'surface-warm'))
+            ).toBeLessThan(AA_TEXT);
+        });
+    });
+
+    describe('inks that were already fine, pinned so a token edit cannot regress them', () => {
+        it.each(
+            cases
+        )('--core-foreground (labels, plan name, limit values) clears AA on --$surface ($themeName)', ({
+            theme,
+            surface
+        }) => {
+            expect(
+                ratio(ink(theme, 'core-foreground'), ink(theme, surface))
+            ).toBeGreaterThanOrEqual(AA_TEXT);
+        });
+
+        it.each(
+            cases
+        )('--core-muted-foreground (period, row description, note) clears AA on --$surface ($themeName)', ({
+            theme,
+            surface
+        }) => {
+            expect(
+                ratio(ink(theme, 'core-muted-foreground'), ink(theme, surface))
+            ).toBeGreaterThanOrEqual(AA_TEXT);
+        });
+    });
+
+    describe('"not included" minus glyph', () => {
+        const glyph = (theme: Theme, opacity: number): number => {
+            const card = ink(theme, 'core-card');
+            return ratio(
+                composite({ fg: ink(theme, 'core-muted-foreground'), bg: card, alpha: opacity }),
+                card
+            );
+        };
+
+        it.each(
+            THEMES
+        )('at the new opacity it clears the graphical-object floor on --core-card (%s)', (_name, theme) => {
+            expect(glyph(theme, NOT_INCLUDED_OPACITY)).toBeGreaterThanOrEqual(AA_GRAPHIC);
+        });
+
+        it.each(THEMES)('at the retired opacity it did not (%s)', (_name, theme) => {
+            expect(glyph(theme, NOT_INCLUDED_OPACITY_RETIRED)).toBeLessThan(AA_GRAPHIC);
         });
     });
 });
