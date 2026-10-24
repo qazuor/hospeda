@@ -24,7 +24,7 @@ describe('TEST:1707:3-4 AC:1707:3-4 grace reminders', () => {
             const startedAt = instant('2099-02-01');
             const endsAt = instant('2099-02-11');
             await insertGraceReminderDeadline({
-                version: 81706999,
+                version: 81707002,
                 createdAt: instant('2099-02-07'),
                 daysBefore: [1]
             });
@@ -46,7 +46,7 @@ describe('TEST:1707:3-4 AC:1707:3-4 grace reminders', () => {
                 deadlinesVersion: 81707001
             });
             await insertGraceReminderDeadline({
-                version: 81707002,
+                version: 81707003,
                 createdAt: instant('2099-02-09'),
                 daysBefore: [1]
             });
@@ -67,7 +67,7 @@ describe('TEST:1707:3-4 AC:1707:3-4 grace reminders', () => {
             expect(await readGraceReminderOutbox(fixture.started.subscriptionId)).toHaveLength(2);
 
             await insertGraceReminderDeadline({
-                version: 81707003,
+                version: 81707004,
                 createdAt: instant('2099-02-12')
             });
             await configureGraceReminderSubscription({
