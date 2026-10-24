@@ -31,4 +31,18 @@ describe('PricingCardsGrid subscribe button (TEST:V8a:3 / TEST:V8a:4)', () => {
             src.indexOf('</div>', src.indexOf('id="pricing-cards-grid"'))
         );
     });
+    it('mounts the CTA inside the padded container in a centered wrapper', () => {
+        const containerStart = src.indexOf('class="pricing-cards__container"');
+        const containerEnd = src.indexOf('</div>', src.indexOf('{!hasPlans ?'));
+        const island = src.indexOf('<SubscribeButton');
+        const wrapperStart = src.lastIndexOf('<div class="pricing-cards__subscribe"', island);
+        const wrapperEnd = src.indexOf('</div>', island);
+
+        expect(island).toBeGreaterThan(containerStart);
+        expect(island).toBeLessThan(containerEnd);
+        expect(wrapperStart).toBeGreaterThan(containerStart);
+        expect(wrapperEnd).toBeLessThan(containerEnd);
+        expect(src).toContain('max-width: 1140px;');
+        expect(src).toContain('padding: 0 var(--space-container-x);');
+    });
 });

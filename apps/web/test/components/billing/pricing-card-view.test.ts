@@ -245,3 +245,34 @@ describe('buildPricingCardViews — the rest of the card', () => {
         expect(cards[0]?.monthlyFormatted).toBe('Gratis');
     });
 });
+
+describe('TEST:1765:1 inherited Tourist VIP benefits', () => {
+    it('collapses VIP entitlement and limit deltas into one leading line for commercial plans', () => {
+        const vipKeys = {
+            entitlements: new Set(['tourist_favorites', 'tourist_collections']),
+            limits: new Set(['max_favorites', 'max_collections'])
+        };
+        const { cards } = buildPricingCardViews({
+            plans: [
+                plan({
+                    slug: 'gastronomy-basic',
+                    inheritsTouristVip: true,
+                    entitlements: ['local_listings', 'tourist_favorites', 'tourist_collections'],
+                    limits: { local_photos: 10, max_favorites: 999, max_collections: 25 }
+                })
+            ],
+            audience: 'gastronomy',
+            intlLocale: 'es-AR',
+            t,
+            touristVipBenefits: vipKeys
+        });
+        const card = cards[0];
+        const items = [...(card?.visibleItems ?? []), ...(card?.hiddenItems ?? [])];
+
+        expect(items.map((item) => item.id)).toEqual([
+            'group-tourist-vip',
+            'local_photos',
+            'local_listings'
+        ]);
+    });
+});

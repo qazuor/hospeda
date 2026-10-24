@@ -252,6 +252,24 @@ describe('plan index — mobile layout (AC-2)', () => {
     });
 });
 
+describe('TEST:1758:5 subscriber plans hub grid', () => {
+    it('uses one column on mobile and two columns at every wider breakpoint', () => {
+        const grid = indexSrc.match(/\.audiences__grid \{([^}]*)\}/)?.[1] ?? '';
+        const mediaBlocks = [
+            ...indexSrc.matchAll(
+                /@media \(min-width: ([^)]+)\) \{\s*\.audiences__grid \{([^}]*)\}/g
+            )
+        ];
+
+        expect(grid).toContain('grid-template-columns: 1fr;');
+        expect(indexSrc).not.toContain('repeat(3, minmax(0, 1fr))');
+        expect(
+            mediaBlocks.map((match) => [match[1], match[2]?.match(/repeat\((\d+)/)?.[1]])
+        ).toEqual([['640px', '2']]);
+        expect(indexSrc).not.toContain('All five cards');
+    });
+});
+
 // ---------------------------------------------------------------------------
 // AC-5 / AC-8 — no redirect, no hardcoded price
 // ---------------------------------------------------------------------------
