@@ -2,7 +2,7 @@
  * Proves the V6 cutover step 3 module graph loads under tsx (HOS-1745).
  *
  * `hops cutover-step-3` runs the script as
- * `pnpm --filter hospeda-api exec tsx scripts/cutover-v6-step-3.ts`, so tsx picks
+ * `pnpm --dir apps/api exec tsx scripts/cutover-v6-step-3.ts`, so tsx picks
  * `apps/api/tsconfig.json` and transpiles every workspace source the script
  * reaches. This test spawns that same invocation over a throwaway entry that
  * imports each module the script imports dynamically. It never runs `main()`,
@@ -45,8 +45,9 @@ describe('TEST:1745d:1 cutover step 3 module graph loads under tsx', () => {
 
             try {
                 // Act
-                const child = spawnSync('pnpm', ['--filter', 'hospeda-api', 'exec', 'tsx', entry], {
+                const child = spawnSync('pnpm', ['--dir', 'apps/api', 'exec', 'tsx', entry], {
                     cwd: REPO_ROOT,
+                    env: { ...process.env, CI: 'true' },
                     encoding: 'utf8',
                     timeout: TIMEOUT_MS
                 });
@@ -61,6 +62,38 @@ describe('TEST:1745d:1 cutover step 3 module graph loads under tsx', () => {
                 expect(child.error, details).toBeUndefined();
                 expect(child.status, details).toBe(0);
                 expect(child.stdout, details).toContain('LOADED');
+            } finally {
+                rmSync(tempDir, { recursive: true, force: true });
+            }
+        },
+        TIMEOUT_MS
+    );
+});
+
+describe('TEST:1745e:2 step 3 invocation exit code', () => {
+    it(
+        'preserves exit code 2 from the child script',
+        () => {
+            const tempDir = mkdtempSync(join(tmpdir(), 'hos-1745-exit-'));
+            const entry = join(tempDir, 'exit-two.ts');
+            writeFileSync(entry, 'process.exit(2);\n', 'utf8');
+
+            try {
+                const child = spawnSync('pnpm', ['--dir', 'apps/api', 'exec', 'tsx', entry], {
+                    cwd: REPO_ROOT,
+                    env: { ...process.env, CI: 'true' },
+                    encoding: 'utf8',
+                    timeout: TIMEOUT_MS
+                });
+                const details = [
+                    `exit=${child.status}`,
+                    `error=${child.error?.message ?? 'none'}`,
+                    `stdout:\n${child.stdout}`,
+                    `stderr:\n${child.stderr}`
+                ].join('\n');
+                expect(child.error, details).toBeUndefined();
+                expect(child.status, details).toBe(2);
+                expect(`${child.stdout}\n${child.stderr}`, details).not.toContain('undefined');
             } finally {
                 rmSync(tempDir, { recursive: true, force: true });
             }

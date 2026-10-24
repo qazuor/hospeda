@@ -446,8 +446,8 @@ describe('runCutoverStep3', () => {
         });
         expect(calls[0]?.argv).toEqual([
             'pnpm',
-            '--filter',
-            'hospeda-api',
+            '--dir',
+            'apps/api',
             'exec',
             'tsx',
             'scripts/cutover-v6-step-3.ts',
@@ -472,8 +472,8 @@ describe('runCutoverStep3', () => {
         });
         expect(calls[0]?.argv).toEqual([
             'pnpm',
-            '--filter',
-            'hospeda-api',
+            '--dir',
+            'apps/api',
             'exec',
             'tsx',
             'scripts/cutover-v6-step-3.ts',

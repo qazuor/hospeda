@@ -39,6 +39,11 @@ and rejects empty or repeated values. `--owner-ids` is rejected on production
 before any container or database lookup. Without the option, step 3 keeps its
 existing unfiltered behavior.
 
+The `hops` command runs the API script from the repository root with
+`pnpm --dir apps/api exec tsx scripts/cutover-v6-step-3.ts`. This keeps the
+API tsconfig and workspace `tsx` while preserving the script's exit code through
+`hops` (0 success, 1 no work/error, 2 refused arguments).
+
 | Flag | Default | Meaning |
 |---|---|---|
 | `--probes <path>` | `packages/payments/src/probes/probes.json` | Probe manifest, `{ "ids": string[] }`, read by file path (a JSON read, never an import) and validated by a local schema. |

@@ -308,8 +308,8 @@ export async function runCutoverStep3(input: RunCutoverStep3Input): Promise<numb
     const result = await input.runner.run(
         [
             'pnpm',
-            '--filter',
-            'hospeda-api',
+            '--dir',
+            'apps/api',
             'exec',
             'tsx',
             'scripts/cutover-v6-step-3.ts',
