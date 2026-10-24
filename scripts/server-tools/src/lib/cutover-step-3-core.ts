@@ -28,6 +28,16 @@ export type CutoverStep3Mode = 'dry-run' | 'write';
 /** The exact phrase an operator must type to confirm a prod write. */
 export const WRITE_TRIALS_PROD_PHRASE = 'write-trials-prod';
 
+/** Refuse owner filtering before any target resources are contacted. */
+export function ownerIdsTargetRefusal(
+    target: Target,
+    ownerIds: string | undefined
+): string | undefined {
+    return target === 'prod' && ownerIds !== undefined
+        ? '--owner-ids is only allowed for staging rehearsals.'
+        : undefined;
+}
+
 /** Normalised command-line options for `hops cutover-step-3`. */
 export interface ParsedCutoverStep3Args {
     /** Dry-run unless `--confirm-write-trials` was passed. */
@@ -36,6 +46,7 @@ export interface ParsedCutoverStep3Args {
     readonly allowShaMismatch: boolean;
     /** `--yes`: parsed for symmetry with other destructive commands; never skips the typed guard. */
     readonly yes: boolean;
+    readonly ownerIds?: string;
 }
 
 /** Result of parsing the command's own argv. */
@@ -47,7 +58,8 @@ const KNOWN_FLAGS = new Set([
     '--dry-run',
     '--confirm-write-trials',
     '--allow-sha-mismatch',
-    '--yes'
+    '--yes',
+    '--owner-ids'
 ]);
 
 /**
@@ -62,13 +74,28 @@ const KNOWN_FLAGS = new Set([
  * @returns `{ ok: true, value }` or `{ ok: false, reason }`.
  */
 export function parseCutoverStep3Args(argv: ReadonlyArray<string>): ParseCutoverStep3ArgsResult {
-    const unknown = argv.find((arg) => !KNOWN_FLAGS.has(arg));
-    if (unknown !== undefined) {
-        return { ok: false, reason: `Unknown flag: ${unknown}` };
+    const seen = new Set<string>();
+    let ownerIds: string | undefined;
+    for (const arg of argv) {
+        const separator = arg.indexOf('=');
+        const flag = separator < 0 ? arg : arg.slice(0, separator);
+        if (!KNOWN_FLAGS.has(flag)) return { ok: false, reason: `Unknown flag: ${arg}` };
+        if (seen.has(flag)) return { ok: false, reason: `Repeated flag: ${flag}` };
+        seen.add(flag);
+        if (flag === '--owner-ids') {
+            if (separator < 0 || arg.slice(separator + 1).length === 0)
+                return {
+                    ok: false,
+                    reason: '--owner-ids requires a non-empty value in --owner-ids=<csv> form.'
+                };
+            ownerIds = arg.slice(separator + 1);
+        } else if (separator >= 0) {
+            return { ok: false, reason: `Malformed flag: ${flag} takes no value.` };
+        }
     }
 
-    const dryRun = argv.includes('--dry-run');
-    const write = argv.includes('--confirm-write-trials');
+    const dryRun = seen.has('--dry-run');
+    const write = seen.has('--confirm-write-trials');
     if (dryRun && write) {
         return {
             ok: false,
@@ -80,8 +107,9 @@ export function parseCutoverStep3Args(argv: ReadonlyArray<string>): ParseCutover
         ok: true,
         value: {
             mode: write ? 'write' : 'dry-run',
-            allowShaMismatch: argv.includes('--allow-sha-mismatch'),
-            yes: argv.includes('--yes')
+            allowShaMismatch: seen.has('--allow-sha-mismatch'),
+            yes: seen.has('--yes'),
+            ...(ownerIds === undefined ? {} : { ownerIds })
         }
     };
 }
@@ -252,6 +280,7 @@ export interface RunCutoverStep3Input {
     readonly mode: CutoverStep3Mode;
     /** Pre-built child env (see {@link buildStep3ChildEnv}). */
     readonly env: Readonly<Record<string, string>>;
+    readonly ownerIds?: string;
 }
 
 /**
@@ -277,7 +306,8 @@ export async function runCutoverStep3(input: RunCutoverStep3Input): Promise<numb
             'exec',
             'tsx',
             'scripts/cutover-v6-step-3.ts',
-            modeFlag
+            modeFlag,
+            ...(input.ownerIds === undefined ? [] : [`--owner-ids=${input.ownerIds}`])
         ],
         { cwd: input.repoRoot, inherit: true, inheritEnv: false, env: input.env }
     );
@@ -410,7 +440,8 @@ export async function executeCutoverStep3(
         runner: input.runner,
         repoRoot: input.repoRoot,
         mode: input.options.mode,
-        env: childEnv
+        env: childEnv,
+        ownerIds: input.options.ownerIds
     });
     return { ok: true, exitCode };
 }
