@@ -10,7 +10,10 @@ import {
 import { runStep4c } from '../src/services/cutover-v6/step-4c.service.js';
 import { env, validateApiEnv } from '../src/utils/env.js';
 
-/** Runs the protected one-time step 4c command. */
+/**
+ * Runs the protected one-time step 4c command.
+ * Run from the repository root with: `pnpm --filter hospeda-api exec tsx scripts/cutover-v6-step-4c.ts --dry-run`.
+ */
 async function main(): Promise<void> {
     loadEnv({ path: resolve(import.meta.dirname, '..', '.env.local'), quiet: true });
     validateApiEnv();
