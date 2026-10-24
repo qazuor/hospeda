@@ -18,12 +18,14 @@
  */
 
 import EditorHub from '@/components/host/editor/EditorHub.astro';
+import ListingNotices from '@/components/listing/ListingNotices.astro';
 import SupportEditNotice from '@/components/listing/SupportEditNotice.astro';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { resolveListingEditorSectionStatuses } from '@/lib/editor/listing-editor-hub-status-model';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 import { readListingEditorHubFacts } from '@/lib/listing/listing-editor-detail';
+import { loadListingNoticesItem } from '@/lib/listing/listing-notices-loader';
 import { loadSupportEdits } from '@/lib/listing/support-edits';
 
 export const prerender = false;
@@ -37,14 +39,26 @@ const { t } = createTranslations(locale);
 
 const facts = readListingEditorHubFacts({ detail });
 
-// Row 26 (HOS-1493): support's content edits on this listing. The vertical comes
-// from the page resolution. Never blocks the hub: any failure degrades to no
-// notice.
-const supportEdits = await loadSupportEdits({
-	vertical,
-	listingId,
-	cookieHeader: Astro.request.headers.get('cookie') ?? undefined,
-});
+// Row 26 (HOS-1493) and the listing notices of HOS-1492 (fix requested,
+// moderated, archived, surplus): support's content edits and the notices of the
+// listing, read together. The vertical comes from the page resolution. Neither
+// blocks the hub: any failure degrades to nothing.
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const [supportEdits, listingNotices] = await Promise.all([
+	loadSupportEdits({
+		vertical,
+		listingId,
+		cookieHeader,
+	}),
+	loadListingNoticesItem({
+		vertical,
+		listingId,
+		cookieHeader,
+	}),
+]);
+
+const hasListingNotices =
+	listingNotices.item !== undefined && listingNotices.item.notices.length > 0;
 const statuses = resolveListingEditorSectionStatuses({
 	input: {
 		vertical,
@@ -73,6 +87,17 @@ const verticalLabel = t(`listing.owner.list.badge.${vertical}`, vertical);
 		<span class="listing-hub__badge">{verticalLabel}</span>
 		<code class="listing-hub__slug">{detail.slug}</code>
 	</div>
+
+	{hasListingNotices && (
+		<div class="listing-hub__notices" data-testid="editor-hub-listing-notices">
+			<ListingNotices
+				locale={locale}
+				vertical={vertical}
+				listingId={listingId}
+				item={listingNotices.item}
+			/>
+		</div>
+	)}
 
 	<SupportEditNotice locale={locale} items={supportEdits.items} />
 
@@ -104,5 +129,12 @@ const verticalLabel = t(`listing.owner.list.badge.${vertical}`, vertical);
 	.listing-hub__slug {
 		font-size: var(--text-caption, 0.75rem);
 		color: var(--core-muted-foreground);
+	}
+
+	.listing-hub__notices {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3, 0.75rem);
+		margin: 0 0 var(--space-5, 1.5rem);
 	}
 </style>
