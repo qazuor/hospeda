@@ -494,6 +494,7 @@
         },
         "cancel": {
             "open": "Cancel subscription",
+            "heading": "You are about to cancel: {{plan}} ({{vertical}})",
             "activeEnds": "If you confirm, we cancel the automatic charge today and you keep the service until {{date}}.",
             "suspendedEnds": "If you confirm, the subscription ends today: it was suspended, so there is no paid period left to keep.",
             "graceEnds": "If you confirm, the service ends today: you lose the service the grace period was giving you until {{date}}. In exchange, we will not claim the installment we could not charge.",
