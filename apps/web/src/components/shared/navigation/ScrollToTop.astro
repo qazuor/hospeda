@@ -142,7 +142,9 @@ const { t } = createTranslations(locale);
      Keep the empty state out of the row until the scroll threshold reveals it. */
   @media (max-width: 767px) {
     .scroll-to-top {
-      position: static;
+      /* Relative, not static: the progress ring is position:absolute and must
+         anchor to this button instead of the fixed dock. */
+      position: relative;
       height: 44px;
       width: 44px;
     }

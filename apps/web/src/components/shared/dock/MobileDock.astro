@@ -48,6 +48,13 @@ const { locale } = Astro.props;
 	}
 
 	@media (max-width: 767px) {
+		/* The start slot is hidden on desktop (its controls are mobile-only);
+		   on mobile it must be a transparent wrapper again or the list/map
+		   toggle never appears. Declared after the base rule so it wins. */
+		[data-mobile-dock-slot="start"] {
+			display: contents;
+		}
+
 		.mobile-dock {
 			position: fixed;
 			transition: transform var(--duration-normal) ease;
@@ -122,7 +129,9 @@ const { locale } = Astro.props;
 		}
 
 		:global(.scroll-to-top) {
-			position: static;
+			/* Relative, not static: the progress ring is absolutely positioned
+			   and must anchor to the button, not to the fixed dock. */
+			position: relative;
 			height: 44px;
 			width: 44px;
 		}

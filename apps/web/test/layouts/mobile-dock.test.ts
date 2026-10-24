@@ -93,7 +93,7 @@ describe('TEST:1768:8 ScrollToTop dock item', () => {
             mobileStart
         );
         const mobile = scrollToTop.slice(mobileStart, mobileEnd);
-        expect(mobile).toMatch(/position:\s*static/);
+        expect(mobile).toMatch(/position:\s*relative/);
         expect(mobile).toMatch(/height:\s*44px/);
         expect(mobile).toMatch(/width:\s*44px/);
         expect(mobile).not.toMatch(/\b(bottom|right):/);

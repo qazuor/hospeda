@@ -173,8 +173,11 @@ describe('mobile floating dock guard (TEST:1768:20)', () => {
 
         const mobileRule = extractMediaBlock(cssSource, '@media (max-width: 767px)');
         expect(mobileRule, `${css} must declare the 767px mobile rule`).not.toBe('');
-        expect(mobileRule, `${css} must become static inside the dock`).toMatch(
-            /position:\s*static\s*;/
+        // ScrollToTop is the one exception: its progress ring is position:absolute,
+        // so the button must be positioned (relative) or the ring anchors to the dock.
+        const expected = component.endsWith('ScrollToTop.astro') ? 'relative' : 'static';
+        expect(mobileRule, `${css} must become ${expected} inside the dock`).toMatch(
+            new RegExp(`position:\\s*${expected}\\s*;`)
         );
     });
 
