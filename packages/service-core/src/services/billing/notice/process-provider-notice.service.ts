@@ -82,6 +82,7 @@ type Outcome =
     | 'PAYMENT_RECORDED'
     | 'WAITING_FIRST_CHARGE_READING'
     | 'UNKNOWN_RESOURCE'
+    | 'UNSUPPORTED_AUTHORIZATION'
     | 'RELINKED'
     | 'UNKNOWN_BECAME_KNOWN'
     | 'TOMBSTONE_WRITTEN'
@@ -165,6 +166,18 @@ async function resolveUnknownAuthorization(
     } catch (error) {
         if (error instanceof PaymentProviderError && error.code === 'NOT_FOUND')
             return { kind: 'OUTCOME', outcome: 'UNKNOWN_RESOURCE' };
+        if (error instanceof PaymentProviderError && error.code === 'UNSUPPORTED') {
+            const unsupported = new UnsupportedProviderAuthorizationError({
+                authorizationId: input.authorizationId,
+                ...(input.arrival.kind === 'CHARGE' ? { chargeId: input.arrival.chargeId } : {}),
+                providerStatus: error.providerStatus,
+                frequencyType: error.frequencyType,
+                correlationId,
+                cause: error
+            });
+            logger.error(unsupported, unsupported.message, { capture: true });
+            return { kind: 'OUTCOME', outcome: 'UNSUPPORTED_AUTHORIZATION' };
+        }
         throw error;
     }
     if (result.outcome === 'RELINKED') return { kind: 'LINKED', outcome: 'RELINKED' };
@@ -182,6 +195,33 @@ async function resolveUnknownAuthorization(
             'Charge of an unknown authorization marked on the named row without a payment'
         );
     return { kind: 'OUTCOME', outcome: 'DIVERGENCE_MARKED' };
+}
+
+class UnsupportedProviderAuthorizationError extends Error {
+    readonly authorizationId: string;
+    readonly chargeId?: string;
+    readonly providerStatus?: string;
+    readonly frequencyType?: string;
+    readonly correlationId: string;
+
+    constructor(input: {
+        readonly authorizationId: string;
+        readonly chargeId?: string;
+        readonly providerStatus?: string;
+        readonly frequencyType?: string;
+        readonly correlationId: string;
+        readonly cause: unknown;
+    }) {
+        super(`Ignored unsupported foreign provider authorization ${input.authorizationId}`, {
+            cause: input.cause
+        });
+        this.name = 'UnsupportedProviderAuthorizationError';
+        this.authorizationId = input.authorizationId;
+        this.chargeId = input.chargeId;
+        this.providerStatus = input.providerStatus;
+        this.frequencyType = input.frequencyType;
+        this.correlationId = input.correlationId;
+    }
 }
 
 /** Processes a provider delivery by re-reading its resource; the delivery never supplies state. */

@@ -11,6 +11,7 @@ import type { PaymentCapability } from './capabilities';
  * - `REJECTED`: the provider refused the operation in this state.
  * - `INVALID_NOTICE`: a delivery that is not a notice this provider sends.
  * - `UNAVAILABLE`: the provider could not be reached; the outcome is unknown.
+ * - `UNSUPPORTED`: the provider answered with a resource shape this adapter does not support.
  * - `NOT_IMPLEMENTED`: the adapter does not implement this capability yet.
  */
 export type PaymentProviderErrorCode =
@@ -19,6 +20,7 @@ export type PaymentProviderErrorCode =
     | 'REJECTED'
     | 'INVALID_NOTICE'
     | 'UNAVAILABLE'
+    | 'UNSUPPORTED'
     | 'NOT_IMPLEMENTED';
 
 /** Constructor input of `PaymentProviderError`. */
@@ -28,6 +30,8 @@ export interface PaymentProviderErrorInput {
     readonly message: string;
     readonly cause?: unknown;
     readonly incompleteRead?: boolean;
+    readonly providerStatus?: string;
+    readonly frequencyType?: string;
 }
 
 /** A typed refusal from a payment provider. */
@@ -36,6 +40,8 @@ export class PaymentProviderError extends Error {
     readonly capability: PaymentCapability;
     /** The provider answered with a record it is still writing; reading again later is expected to succeed (HOS-1747). */
     readonly incompleteRead: boolean;
+    readonly providerStatus?: string;
+    readonly frequencyType?: string;
 
     /**
      * @param input.code - Why the provider refused
@@ -50,5 +56,7 @@ export class PaymentProviderError extends Error {
         this.code = input.code;
         this.capability = input.capability;
         this.incompleteRead = input.incompleteRead ?? false;
+        this.providerStatus = input.providerStatus;
+        this.frequencyType = input.frequencyType;
     }
 }
