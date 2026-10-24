@@ -74,14 +74,14 @@ vi.mock('../../hooks/useModerateListingMutation', () => ({
     useModerateListingMutation: () => ({ mutateAsync, isPending: false })
 }));
 
-const moderationState = vi.hoisted(() => ({ data: undefined as unknown, error: false, calls: 0 }));
+const moderationRead = vi.hoisted(() => ({ data: undefined as unknown, error: false, calls: 0 }));
 vi.mock('../../hooks/useListingModerationStateQuery', () => ({
     useListingModerationStateQuery: () => {
-        moderationState.calls += 1;
+        moderationRead.calls += 1;
         return {
-            data: moderationState.data,
-            isPending: moderationState.data === undefined && !moderationState.error,
-            isError: moderationState.error
+            data: moderationRead.data,
+            isPending: moderationRead.data === undefined && !moderationRead.error,
+            isError: moderationRead.error
         };
     }
 }));
@@ -108,10 +108,10 @@ function renderCard({
     readonly queryError?: boolean;
     readonly statePublicationStatus?: PublicationStatusEnum;
 }) {
-    moderationState.data = publicationStatus
+    moderationRead.data = publicationStatus
         ? { publicationStatus: statePublicationStatus ?? publicationStatus, fixRequest }
         : undefined;
-    moderationState.error = queryError;
+    moderationRead.error = queryError;
     return render(
         React.createElement(ListingModerationCard, {
             vertical,
@@ -136,7 +136,7 @@ const actionButtons = () =>
 
 beforeEach(() => {
     vi.clearAllMocks();
-    moderationState.calls = 0;
+    moderationRead.calls = 0;
     mutateAsync.mockResolvedValue({ publicationStatus: 'MODERATED', fixRequestOpen: false });
     permissions.mockReturnValue([PermissionEnum.LISTING_MODERATE]);
 });
@@ -200,7 +200,7 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
         // Assert
         expect(actionButtons()).toEqual([]);
         expect(screen.getByTestId('listing-moderation')).toBeInTheDocument();
-        expect(moderationState.calls).toBe(0);
+        expect(moderationRead.calls).toBe(0);
     });
 
     it.each([
