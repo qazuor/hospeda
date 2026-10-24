@@ -19,7 +19,7 @@ Order of operations:
 
 On `--target=prod`, `--confirm-write-trials` requires typing `write-trials-prod`. `--yes` does not skip that typed confirmation. A rerun that finds the rows already written writes nothing and reports `already_done`.
 
-The command runs `pnpm --filter hospeda-api exec tsx scripts/cutover-v6-step-3.ts …` in `$HOPS_REPO_ROOT` with the target api container's `NODE_ENV`, `PORT`, `API_*` and `HOSPEDA_*`, plus `PATH`, `HOME` and `LANG` from the host, and a `HOSPEDA_DATABASE_URL` reachable from the host (built like `hops db-migrate`). The `API_*` half is required because the api rejects its default `API_CORS_ORIGINS` (localhost) in production. That environment stays in memory: it is never printed or written to disk.
+The command runs `pnpm --dir apps/api exec tsx scripts/cutover-v6-step-3.ts …` in `$HOPS_REPO_ROOT` with the target api container's `NODE_ENV`, `PORT`, `API_*` and `HOSPEDA_*`, plus `PATH`, `HOME` and `LANG` from the host, and a `HOSPEDA_DATABASE_URL` reachable from the host (built like `hops db-migrate`). The `API_*` half is required because the api rejects its default `API_CORS_ORIGINS` (localhost) in production. That environment stays in memory: it is never printed or written to disk.
 
 Version guard: before running, the command compares the checkout's `HEAD` with the deployed `HOSPEDA_COMMIT_SHA` (10-char prefix). When that variable is empty or `unknown`, the guard falls back to Coolify's `SOURCE_COMMIT` from the api container. A mismatch stops with exit 1 and prints both SHAs. The command never runs `git pull`; align the checkout to the deployed commit first. `--allow-sha-mismatch` overrides the guard, and on prod that override also requires the typed confirmation even for a dry-run.
 
