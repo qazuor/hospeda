@@ -22,45 +22,48 @@ export interface AfterSubscriptionActivatedPorts {
 /** Runs the non-transactional S2 effects after activation has committed. */
 export async function afterSubscriptionActivated(
     input: {
-        readonly subscriptionId: string;
-        readonly userId: string | null;
-        readonly vertical: string | null;
-        readonly succeedsId: string | null;
+        readonly subscription: {
+            readonly id: string;
+            readonly userId: string | null;
+            readonly vertical: string | null;
+            readonly succeedsId: string | null;
+        };
     },
     ports: AfterSubscriptionActivatedPorts
 ): Promise<{ readonly touristVipCancelled: number }> {
-    const vertical = VerticalEnumSchema.safeParse(input.vertical);
-    if (input.userId && vertical.success) {
+    const subscription = input.subscription;
+    const vertical = VerticalEnumSchema.safeParse(subscription.vertical);
+    if (subscription.userId && vertical.success) {
         try {
             await (ports.coverageNotices ?? unwiredCoverageNotices).emitCoverageChanged({
-                userId: input.userId,
+                userId: subscription.userId,
                 vertical: vertical.data,
                 sourceType: 'SUBSCRIPTION',
-                change: input.succeedsId ? 'CHANGED' : 'ADDED'
+                change: subscription.succeedsId ? 'CHANGED' : 'ADDED'
             });
         } catch (error) {
             logger.error(
-                { subscriptionId: input.subscriptionId, error },
+                { subscriptionId: subscription.id, error },
                 'Coverage changed notice failed after activation commit'
             );
         }
     } else {
         logger.error(
-            { subscriptionId: input.subscriptionId, vertical: input.vertical },
+            { subscriptionId: subscription.id, vertical: subscription.vertical },
             'Activated subscription has no coverage subject to notify'
         );
     }
 
-    if (!input.userId || !ports.touristVipInheritance) {
+    if (!subscription.userId || !ports.touristVipInheritance) {
         logger.warn(
-            { subscriptionId: input.subscriptionId, userId: input.userId },
+            { subscriptionId: subscription.id, userId: subscription.userId },
             'Tourist VIP clause not wired; the window-expiry sweep retries'
         );
         return { touristVipCancelled: 0 };
     }
     try {
         const result = await cancelInheritedTouristVips(
-            { userId: input.userId },
+            { userId: subscription.userId },
             {
                 provider: ports.provider,
                 clock: ports.clock,
@@ -72,7 +75,7 @@ export async function afterSubscriptionActivated(
         return { touristVipCancelled: result.cancelled };
     } catch (error) {
         logger.error(
-            { subscriptionId: input.subscriptionId, error },
+            { subscriptionId: subscription.id, error },
             'Inherited Tourist VIP cancellation will be retried'
         );
         return { touristVipCancelled: 0 };

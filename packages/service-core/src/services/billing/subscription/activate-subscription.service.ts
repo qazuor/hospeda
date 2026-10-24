@@ -72,15 +72,7 @@ export async function activateSubscription(
         { successionCloser: ports.successionCloser }
     );
     if (activated) {
-        await afterSubscriptionActivated(
-            {
-                subscriptionId,
-                userId: row.subscription.userId,
-                vertical: row.subscription.vertical,
-                succeedsId: row.subscription.succeedsId
-            },
-            ports
-        );
+        await afterSubscriptionActivated({ subscription: row.subscription }, ports);
     }
     return { activated, subscriptionId };
 }

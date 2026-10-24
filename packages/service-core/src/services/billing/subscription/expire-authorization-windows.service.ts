@@ -76,15 +76,7 @@ async function activatePendingRow(
         { successionCloser: ports.successionCloser }
     );
     if (!wrote) return { activated: false, skipped: true, touristVipCancelled: 0 };
-    const { touristVipCancelled } = await afterSubscriptionActivated(
-        {
-            subscriptionId: subscription.id,
-            userId: subscription.userId,
-            vertical: subscription.vertical,
-            succeedsId: subscription.succeedsId
-        },
-        ports
-    );
+    const { touristVipCancelled } = await afterSubscriptionActivated({ subscription }, ports);
     return { activated: true, skipped: false, touristVipCancelled };
 }
 

@@ -325,15 +325,7 @@ export async function processProviderNotice(
                     { successionCloser: closer }
                 );
                 if (!changed) continue;
-                await afterSubscriptionActivated(
-                    {
-                        subscriptionId: row.id,
-                        userId: row.userId,
-                        vertical: row.vertical,
-                        succeedsId: row.succeedsId
-                    },
-                    ports
-                );
+                await afterSubscriptionActivated({ subscription: row }, ports);
             }
             if (action.kind === 'DIVERGENCE') {
                 await openReconciliationMark({
