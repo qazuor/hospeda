@@ -98,10 +98,10 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
                     422
                 );
             }
-            const reason =
-                error instanceof ServiceError
-                    ? StartSubscriptionRejectionReasonSchema.safeParse(error.reason)
-                    : null;
+            const serviceError = error instanceof ServiceError ? error : null;
+            const reason = serviceError
+                ? StartSubscriptionRejectionReasonSchema.safeParse(serviceError.reason)
+                : null;
             if (
                 reason?.success &&
                 S1_REJECTIONS_WITH_UNPROCESSABLE_ENTITY_STATUS.has(reason.data)
@@ -109,7 +109,7 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
                 return createErrorResponse(
                     {
                         code: ServiceErrorCode.VALIDATION_ERROR,
-                        message: error.message,
+                        message: serviceError?.message ?? '',
                         reason: error.reason
                     },
                     ctx,
