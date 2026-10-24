@@ -152,6 +152,23 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #3775, #3783, #3785
+    {
+        id: '2026-10-24-mobile-floating-dock',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'En el celular, los botones flotantes ya no tapan las tarjetas',
+            en: 'On mobile, floating buttons no longer cover the cards',
+            pt: 'No celular, os botões flutuantes não cobrem mais os cartões'
+        },
+        body: {
+            es: 'Filtros, Lista/Mapa, la búsqueda con IA y «Volver arriba» ahora están juntos en una barra al pie de la pantalla, que se oculta al bajar y vuelve al subir. Al final de cada listado queda espacio libre, así que ningún precio ni botón queda tapado.',
+            en: 'Filters, List/Map, AI search and "Back to top" now sit together in one bar at the bottom of the screen, which hides as you scroll down and returns as you scroll up. Space is left free at the end of every listing, so no price or button is covered.',
+            pt: 'Filtros, Lista/Mapa, a busca com IA e «Voltar ao topo» agora ficam juntos em uma barra no rodapé da tela, que se esconde ao rolar para baixo e volta ao rolar para cima. Sobra espaço livre no final de cada listagem, então nenhum preço ou botão fica coberto.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3373
     {
         id: '2026-09-22-pages-recover-after-an-outage',
