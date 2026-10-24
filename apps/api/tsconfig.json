@@ -7,10 +7,15 @@
     // tsx applies this config's `jsx` option only to files matched by `include`.
     // The `@repo/*` path aliases resolve workspace packages to their `src`, so the
     // API's tsx entry points (dev server and scripts/) reach the React email
-    // templates under packages/notifications. Leaving them out of `include` makes
+    // templates under packages/notifications and packages/email. Leaving them out of `include` makes
     // esbuild fall back to the classic JSX runtime, and those templates throw
     // "React is not defined" because they never import React.
-    "include": ["src/**/*", "test/**/*", "../../packages/notifications/src/**/*"],
+    "include": [
+        "src/**/*",
+        "test/**/*",
+        "../../packages/notifications/src/**/*",
+        "../../packages/email/src/**/*"
+    ],
     "exclude": [
         "dist",
         "node_modules",
