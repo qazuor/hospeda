@@ -6,8 +6,10 @@ import { desc, eq, lte } from 'drizzle-orm';
 import { ServiceError } from '../../../types/index.js';
 
 const logger = createLogger('grace-reminder-notice');
+/** Outbox template key used for grace reminder emails. */
 export const GRACE_REMINDER_TEMPLATE = 'billing.grace-reminder';
 
+/** A due grace reminder milestone and its market-local grace end date. */
 export interface DueGraceReminder {
     readonly daysBefore: number;
     readonly targetDate: string;

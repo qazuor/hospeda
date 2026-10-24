@@ -8,12 +8,14 @@ import { applyGraceReminder, type GraceReminderOutcome } from './grace-reminder-
 
 const logger = createLogger('send-grace-reminders');
 const inputSchema = z.strictObject({ limit: z.number().int().positive().max(10_000) });
+/** Result for one subscription considered during a grace reminder run. */
 export interface GraceReminderRunRow {
     readonly subscriptionId: string;
     readonly outcome: GraceReminderOutcome | 'FAILED';
     readonly milestone: string | null;
     readonly error?: string;
 }
+/** Counts and per-subscription outcomes from a grace reminder run. */
 export interface SendGraceRemindersResult {
     readonly enqueued: number;
     readonly alreadyEnqueued: number;
