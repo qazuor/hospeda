@@ -152,6 +152,18 @@ describe('ownerIdsTargetRefusal', () => {
         expect(ownerIdsTargetRefusal('staging', 'x')).toBeUndefined();
         expect(ownerIdsTargetRefusal('prod', undefined)).toBeUndefined();
     });
+
+    it('is enforced before repository and container/database lookups in the command wrapper', async () => {
+        const source = await Bun.file(
+            `${import.meta.dir}/../src/commands/cutover-step-3.ts`
+        ).text();
+        const guard = source.indexOf('ownerIdsTargetRefusal(target, options.ownerIds)');
+        expect(guard).toBeGreaterThan(-1);
+        expect(guard).toBeLessThan(source.indexOf('resolveRepoRoot()'));
+        expect(guard).toBeLessThan(source.indexOf("findContainer('api')"));
+        expect(guard).toBeLessThan(source.indexOf('dockerInspectEnv(apiContainer)'));
+        expect(guard).toBeLessThan(source.indexOf('buildPostgresUrl({'));
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -456,7 +468,13 @@ describe('runCutoverStep3', () => {
             env,
             ownerIds: '550e8400-e29b-41d4-a716-446655440000,6ba7b810-9dad-41d1-80b4-00c04fd430c8'
         });
-        expect(calls[0]?.argv.slice(-2)).toEqual([
+        expect(calls[0]?.argv).toEqual([
+            'pnpm',
+            '--filter',
+            'hospeda-api',
+            'exec',
+            'tsx',
+            'scripts/cutover-v6-step-3.ts',
             '--dry-run',
             '--owner-ids=550e8400-e29b-41d4-a716-446655440000,6ba7b810-9dad-41d1-80b4-00c04fd430c8'
         ]);
