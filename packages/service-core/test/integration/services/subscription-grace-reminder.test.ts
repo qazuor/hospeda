@@ -60,6 +60,19 @@ describe('TEST:1707:3-4 AC:1707:3-4 grace reminders', () => {
             });
             expect((await run()).enqueued).toBe(0);
             expect(await readGraceReminderOutbox(fixture.started.subscriptionId)).toHaveLength(2);
+
+            await insertGraceReminderDeadline({
+                version: 81707003,
+                createdAt: instant('2099-02-12')
+            });
+            await configureGraceReminderSubscription({
+                subscriptionId: fixture.started.subscriptionId,
+                startedAt: instant('2099-02-13'),
+                endsAt: instant('2099-02-20')
+            });
+            today = instant('2099-02-19');
+            expect((await run()).noDeadline).toBe(1);
+            expect(await readGraceReminderOutbox(fixture.started.subscriptionId)).toHaveLength(2);
         }
     );
 });
