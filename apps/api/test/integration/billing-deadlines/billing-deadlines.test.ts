@@ -155,4 +155,22 @@ describe('HOS-1516 billing deadlines', () => {
         expect(atDay(fresh.values['11'].noticeDays)).toBe(atDay(90));
         expect((await getBillingDeadlinesVersion({ version: 1 })).values['11'].noticeDays).toBe(60);
     });
+
+    it('HOS-1707 publishes and allows changing grace reminder deadlines at key 20', async () => {
+        const confirmation = await previewBillingDeadlineChange({
+            actor,
+            key: 20,
+            value: { daysBefore: [3, 1] }
+        });
+        expect(confirmation.currentValue).toBeUndefined();
+        const version2 = await changeBillingDeadline({
+            actor,
+            key: 20,
+            value: { daysBefore: [3, 1] },
+            expectedVersion: confirmation.currentVersion,
+            confirmed: true
+        });
+        expect(version2).toMatchObject({ version: 2, changedKey: 20 });
+        expect(version2.values['20']).toEqual({ daysBefore: [3, 1] });
+    });
 });

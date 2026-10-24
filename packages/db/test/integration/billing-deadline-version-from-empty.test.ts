@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { asc } from 'drizzle-orm';
 import { Pool } from 'pg';
 import { afterAll, describe, expect, it } from 'vitest';
 import { billingDeadlineVersions } from '../../src/schemas/vertical/billing-deadline-version.dbschema.ts';
@@ -13,9 +14,12 @@ const migration = readFileSync(
 afterAll(async () => closeTestPool());
 
 describe('TEST:B2:8 structural migration from zero', () => {
-    it('creates version 1 with exactly keys 10 through 19 and the owner-approved values', async () => {
-        const rows = await getTestDb().select().from(billingDeadlineVersions);
-        expect(rows).toHaveLength(1);
+    it('creates the base deadline version and publishes grace reminders as the latest version', async () => {
+        const rows = await getTestDb()
+            .select()
+            .from(billingDeadlineVersions)
+            .orderBy(asc(billingDeadlineVersions.version));
+        expect(rows).toHaveLength(2);
         expect(rows[0]?.version).toBe(1);
         expect(Object.keys(rows[0]?.values ?? {}).sort()).toEqual([
             '10',
@@ -42,6 +46,11 @@ describe('TEST:B2:8 structural migration from zero', () => {
             '19': { minutes: 60 }
         });
         expect(rows[0]?.changedKey).toBeNull();
+        expect(rows[1]?.version).toBe(2);
+        expect(rows[1]?.values).toMatchObject({
+            ...rows[0]?.values,
+            '20': { daysBefore: [3, 1] }
+        });
     });
 
     it.each(

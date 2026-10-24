@@ -55,7 +55,7 @@ export const BillingDeadlineValuesSchema = z
     });
 
 /** One billing deadline key, including grace reminders 20. */
-export const BillingDeadlineKeySchema = z.coerce.number().int().min(10).max(19);
+export const BillingDeadlineKeySchema = z.coerce.number().int().min(10).max(20);
 
 /** Request to publish a new billing deadline version. */
 export const ChangeBillingDeadlineSchema = z.strictObject({
