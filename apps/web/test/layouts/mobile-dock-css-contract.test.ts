@@ -118,6 +118,22 @@ describe('HOS-1768 dock CSS contract (rendered behaviour, not source strings)', 
         ]).toContain('relative');
     });
 
+    it('resets the desktop offsets of scroll-to-top on mobile', () => {
+        // Bug 4: once the button became `relative`, the desktop `bottom`/`right`
+        // offsets applied again and shifted it 24px onto the AI-search button.
+        const base = scrollRules.filter((r) => !r.mobile && r.selector === '.scroll-to-top');
+        const offsets = ['top', 'right', 'bottom', 'left'].filter((p) =>
+            base.some((r) => p in r.decls)
+        );
+        expect(offsets.length).toBeGreaterThan(0);
+        for (const rules of [scrollRules, dockRules]) {
+            const inset = mobileValue(rules, '.scroll-to-top', 'inset');
+            for (const prop of offsets) {
+                expect(mobileValue(rules, '.scroll-to-top', prop) ?? inset).toBe('auto');
+            }
+        }
+    });
+
     it('keeps the ring absolutely positioned (it relies on the button being positioned)', () => {
         const ring = scrollRules.find((r) => r.selector === '.scroll-to-top__ring-svg');
         expect(ring?.decls.position).toBe('absolute');
