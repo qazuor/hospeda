@@ -389,6 +389,21 @@ auditConfig:
     #   pnpm why image-size -r --prod   # no 1.x left
     - GHSA-w3rx-r6r6-pgpr
     - GHSA-5p2g-fcmc-qvqq
+    # GHSA-mrhx-c7xc-m3w5: zod <4.6.6 can exhaust memory validating oversized
+    # constrained collections. TEMPORARY exception (owner decision, 2026-10-23)
+    # covering two copies:
+    #   - zod@4.3.6, the `zod@>=4.0.0 <5` override above. Moving it to 4.6.6
+    #     breaks the build: 4.6 throws at module load on `.merge()` over a
+    #     refined object schema (first hit: packages/schemas/src/api/api.schema.ts
+    #     ExtendedQuerySchema). The `.merge()` -> `.safeExtend()` migration is
+    #     HOS-1774. Request body size limits bound the exposure until then.
+    #   - zod@3.25.76, pinned EXACTLY by @expo/cli (apps/mobile >
+    #     @better-auth/expo > expo > @expo/cli), the mobile build-time CLI. No
+    #     3.x release is patched; it goes with the Expo SDK bump that moves
+    #     @expo/cli to zod 4.
+    # Remove this exception when both are gone. Before removing it, confirm with:
+    #   pnpm why zod -r --prod   # only >=4.6.6 left
+    - GHSA-mrhx-c7xc-m3w5
 
 allowBuilds:
   # Needed to upload source maps to Sentry from @sentry/esbuild-plugin (api)
