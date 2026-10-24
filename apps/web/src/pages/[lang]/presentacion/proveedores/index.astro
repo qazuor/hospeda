@@ -49,6 +49,12 @@ import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 
 const locale = Astro.locals.locale as SupportedLocale;
+// Closing button: the label is authored in Spanish like the rest of this page (it is not
+// translated, see "WHY IT IS NOT TRANSLATED" above). The destination is shown as visible text
+// under the button, derived from the same href, so a PDF export still says where it leads.
+const ctaLabel = 'Sumate como proveedor';
+const ctaHref = 'https://hospeda.com.ar/es/sumate/proveedor';
+const ctaUrlText = ctaHref.replace(/^https?:\/\//, '');
 // Brand contact phone, single source of truth (HOS-364) — this page's
 // copy is the owner-approved artifact verbatim; only the phone digits are
 // parameterized so a real number change does not require re-editing prose.
@@ -370,7 +376,8 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/pro
       El formulario tarda cinco minutos y se hace desde el celular. Lo peor que puede pasar es
       que te digamos que no, por email, sin que hayas puesto un peso.
     </p>
-    <a class="cta" href="https://hospeda.com.ar/es/sumate/proveedor">hospeda.com.ar/es/sumate/proveedor</a>
+    <a class="cta" href={ctaHref}>{ctaLabel}</a>
+    <p class="cta-url">{ctaUrlText}</p>
     <div class="phone">
       <span class="fact__k">¿Preferís hablar con alguien?</span>
       <strong>Llamanos o escribinos por WhatsApp al {brandPhone}</strong>

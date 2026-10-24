@@ -161,6 +161,18 @@ import { MoonIcon, SunIcon } from '@repo/icons';
 		}
 	}
 
+	/*
+	 * On a phone a button pinned to the viewport rides over whatever is being
+	 * read (it sat on top of the Profesional column of the tier tables, HOS-1766).
+	 * Let it scroll away with the page: the masthead's top padding leaves room
+	 * for it at the top, which is where a visitor looks for it.
+	 */
+	@media (max-width: 40rem) {
+		.theme-toggle {
+			position: absolute;
+		}
+	}
+
 	@media print {
 		.theme-toggle {
 			display: none;

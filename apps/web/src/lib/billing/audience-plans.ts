@@ -355,6 +355,9 @@ export function resolveAudienceStartingPrices(
  * have had genuinely different trial lengths in this database, and a single
  * generic line would be false for one of them (HOS-525).
  *
+ * An audience whose starting price is `free` resolves to `null` too: its card
+ * advertises the free tier, and a trial badge there contradicts it (HOS-1766).
+ *
  * @param results - The four resolved fetches, see {@link AudiencePlanResults}.
  * @returns Trial days per audience, `null` where no trial may be advertised.
  */
@@ -362,7 +365,17 @@ export function resolveAudienceTrialDays(results: AudiencePlanResults): Audience
     const byAudience = selectAudiencePlans(results);
 
     return Object.fromEntries(
-        AUDIENCE_CARD_ORDER.map((id) => [id, computeMinimumTrialDays({ plans: byAudience[id] })])
+        AUDIENCE_CARD_ORDER.map((id) => [
+            id,
+            // A card that leads with "Gratis" must not also say "30 días de
+            // prueba gratis": the trial belongs to a paid tier the card is not
+            // selling, and the two lines contradict each other (HOS-1766).
+            // Data-driven off the same starting price the card prints, never a
+            // card name, so it follows the catalogue.
+            resolveStartingPrice({ plans: byAudience[id] })?.kind === 'free'
+                ? null
+                : computeMinimumTrialDays({ plans: byAudience[id] })
+        ])
     ) as AudienceTrialDays;
 }
 

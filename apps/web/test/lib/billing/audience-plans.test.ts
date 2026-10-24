@@ -325,7 +325,7 @@ describe('resolveAudienceStartingPrices', () => {
 // ---------------------------------------------------------------------------
 
 describe('resolveAudienceTrialDays', () => {
-    it('answers a DIFFERENT number for every audience that has a trial', () => {
+    it('answers a DIFFERENT number for every paid-start audience that has a trial', () => {
         // The load-bearing test of the whole feature. Four audiences, four
         // distinct answers from one call: no constant, no default and no number
         // copied from a neighbouring card can satisfy this at once.
@@ -336,7 +336,8 @@ describe('resolveAudienceTrialDays', () => {
         // happened to expect the same value, and this shape cannot.
         expect(resolveAudienceTrialDays(ALL_OK)).toEqual({
             host: OWNER_TRIAL,
-            tourist: TOURIST_TRIAL,
+            // Tourist starts at a free tier, so its card carries no trial (HOS-1766).
+            tourist: null,
             gastronomy: GASTRONOMY_TRIAL,
             experience: EXPERIENCE_TRIAL
         });
@@ -377,17 +378,60 @@ describe('resolveAudienceTrialDays', () => {
         expect(uniform.host).toBe(12);
     });
 
-    it('does NOT let a no-trial plan drag its audience to zero (tourist)', () => {
-        // The mixed case, and the one the real catalogue exhibits:
-        // `tourist-free` has no trial (it never expires), `tourist-vip` has one.
-        // Taking a naive `Math.min` over `trialDays` would answer 0 and the card
-        // would lose its line entirely.
+    it('advertises NO trial on an audience whose card leads with the free tier (HOS-1766)', () => {
+        // `tourist-free` (price 0) is the cheapest plan, so the card prints
+        // "Gratis". The VIP trial belongs to a tier that card is not selling:
+        // "Gratis" next to "45 días de prueba gratis" contradicts itself.
         const trials = resolveAudienceTrialDays(ALL_OK);
 
+        expect(resolveAudienceStartingPrices(ALL_OK).tourist).toEqual({ kind: 'free' });
+        expect(trials.tourist).toBeNull();
+    });
+
+    it('follows the catalogue, not the card name: any audience with a free tier loses the badge', () => {
+        // Same rule applied to a different audience, so a hardcoded
+        // `id === 'tourist'` cannot satisfy it.
+        const trials = resolveAudienceTrialDays({
+            ...ALL_OK,
+            experience: ok([
+                makePlan({ slug: 'experience-free', vertical: 'experience', monthlyPriceArs: 0 }),
+                makePlan({
+                    slug: 'experience-pro',
+                    vertical: 'experience',
+                    monthlyPriceArs: 1_000_000,
+                    sortOrder: 2,
+                    hasTrial: true,
+                    trialDays: EXPERIENCE_TRIAL
+                })
+            ])
+        });
+
+        expect(trials.experience).toBeNull();
+        expect(trials.host).toBe(OWNER_TRIAL);
+    });
+
+    it('keeps the trial when the free plan is inactive (the card starts at a paid price)', () => {
+        const trials = resolveAudienceTrialDays({
+            ...ALL_OK,
+            tourist: ok([
+                makePlan({
+                    slug: 'tourist-free',
+                    vertical: 'tourist',
+                    monthlyPriceArs: 0,
+                    isActive: false
+                }),
+                makePlan({
+                    slug: 'tourist-vip',
+                    vertical: 'tourist',
+                    monthlyPriceArs: 1_500_000,
+                    sortOrder: 3,
+                    hasTrial: true,
+                    trialDays: TOURIST_TRIAL
+                })
+            ])
+        });
+
         expect(trials.tourist).toBe(TOURIST_TRIAL);
-        expect(trials.tourist).not.toBe(0);
-        // And it is not the host's number leaking sideways.
-        expect(trials.tourist).not.toBe(trials.host);
     });
 
     it('returns null — never 0 — for an audience where nothing offers a trial', () => {
@@ -440,7 +484,7 @@ describe('resolveAudienceTrialDays', () => {
 
         expect(trials.gastronomy).toBeNull();
         expect(trials.host).toBe(OWNER_TRIAL);
-        expect(trials.tourist).toBe(TOURIST_TRIAL);
+        expect(trials.tourist).toBeNull();
         expect(trials.experience).toBe(EXPERIENCE_TRIAL);
     });
 
