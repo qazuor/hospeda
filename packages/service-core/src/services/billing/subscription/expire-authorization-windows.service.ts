@@ -9,14 +9,11 @@ import {
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
-import { VerticalEnumSchema } from '@repo/schemas';
-import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
+import type { CoverageNotices } from '../payment/payment-ports';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import { activatePendingWithSignupNotice } from './activate-pending-with-signup-notice.js';
-import {
-    cancelInheritedTouristVips,
-    type TouristVipInheritancePort
-} from './cancel-inherited-tourist-vip.service';
+import { afterSubscriptionActivated } from './after-activation-commit.js';
+import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
 import type { ComplementPolicyPorts } from './complement-ports.js';
 import { exitGraceOnCreditedPayment } from './exit-grace.service';
 import { reactivateSuspendedOnCreditedPayment } from './reactivate-suspended.service';
@@ -79,40 +76,15 @@ async function activatePendingRow(
         { successionCloser: ports.successionCloser }
     );
     if (!wrote) return { activated: false, skipped: true, touristVipCancelled: 0 };
-    const vertical = VerticalEnumSchema.safeParse(subscription.vertical);
-    if (subscription.userId && vertical.success) {
-        try {
-            await (ports.coverageNotices ?? unwiredCoverageNotices).emitCoverageChanged({
-                userId: subscription.userId,
-                vertical: vertical.data,
-                sourceType: 'SUBSCRIPTION',
-                change: subscription.succeedsId ? 'CHANGED' : 'ADDED'
-            });
-        } catch (error) {
-            logger.error(
-                { subscriptionId: subscription.id, error },
-                'Coverage changed notice failed after activation commit'
-            );
-        }
-    } else {
-        logger.error(
-            { subscriptionId: subscription.id, vertical: subscription.vertical },
-            'Activated subscription has no coverage subject to notify'
-        );
-    }
-    let touristVipCancelled = 0;
-    if (subscription.userId) {
-        try {
-            touristVipCancelled = (
-                await cancelInheritedTouristVips({ userId: subscription.userId }, ports)
-            ).cancelled;
-        } catch (error) {
-            logger.error(
-                { subscriptionId: subscription.id, error },
-                'Inherited Tourist VIP cancellation will be retried'
-            );
-        }
-    }
+    const { touristVipCancelled } = await afterSubscriptionActivated(
+        {
+            subscriptionId: subscription.id,
+            userId: subscription.userId,
+            vertical: subscription.vertical,
+            succeedsId: subscription.succeedsId
+        },
+        ports
+    );
     return { activated: true, skipped: false, touristVipCancelled };
 }
 
@@ -296,6 +268,8 @@ export async function expireAuthorizationWindows(
                 if (snapshot.status !== 'cancelled') {
                     const notice = await ports.beforeCancelNotice.beforeCancel({
                         subscriptionId: subscription.id,
+                        // This path handles user-owned authorizations; database rows require the owner here.
+                        // biome-ignore lint/style/noNonNullAssertion: the notice port requires the persisted owner id
                         userId: subscription.userId!,
                         kind: 'AUTHORIZATION_EXPIRED'
                     });

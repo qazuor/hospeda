@@ -35,6 +35,7 @@ import {
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port.js';
 import { activatePendingWithSignupNotice } from '../subscription/activate-pending-with-signup-notice.js';
+import { afterSubscriptionActivated } from '../subscription/after-activation-commit.js';
 import type { TouristVipInheritancePort } from '../subscription/cancel-inherited-tourist-vip.service.js';
 import type { ComplementPolicyPorts } from '../subscription/complement-ports.js';
 import { declineFirstCharge } from '../subscription/decline-first-charge.service.js';
@@ -324,30 +325,15 @@ export async function processProviderNotice(
                     { successionCloser: closer }
                 );
                 if (!changed) continue;
-                // S2 committed: the row now emits its source, replacing the predecessor's when it succeeds one.
-                const vertical = VerticalEnumSchema.safeParse(row.vertical);
-                if (row.userId && vertical.success) {
-                    try {
-                        await (ports.coverageNotices ?? unwiredCoverageNotices).emitCoverageChanged(
-                            {
-                                userId: row.userId,
-                                vertical: vertical.data,
-                                sourceType: 'SUBSCRIPTION',
-                                change: row.succeedsId ? 'CHANGED' : 'ADDED'
-                            }
-                        );
-                    } catch (error) {
-                        logger.error(
-                            { subscriptionId: row.id, error },
-                            'Coverage changed notice failed after activation commit'
-                        );
-                    }
-                } else {
-                    logger.error(
-                        { subscriptionId: row.id, vertical: row.vertical },
-                        'Activated subscription has no coverage subject to notify'
-                    );
-                }
+                await afterSubscriptionActivated(
+                    {
+                        subscriptionId: row.id,
+                        userId: row.userId,
+                        vertical: row.vertical,
+                        succeedsId: row.succeedsId
+                    },
+                    ports
+                );
             }
             if (action.kind === 'DIVERGENCE') {
                 await openReconciliationMark({

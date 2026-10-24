@@ -235,4 +235,51 @@ describe('TEST:1741 webhook S2 inherited Tourist VIP', () => {
         expect(notices).toHaveLength(1);
         expect(notices[0]?.template).toBe(vipTemplate);
     });
+
+    it('acknowledges a committed activation when the VIP clause fails and ignores redelivery', async () => {
+        const successful = await fixture();
+        const successfulCancel = vi.spyOn(successful.provider, 'cancel');
+        const successfulPorts = {
+            provider: successful.provider,
+            clock,
+            beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+            touristVipInheritance: inheritance
+        };
+        const successfulInput = {
+            url: `https://api.example.test/webhook?source_news=webhooks&t=${crypto.randomUUID()}`,
+            delivery: successful.delivery
+        };
+        const applied = await receiveProviderDelivery(successfulInput, successfulPorts);
+        expect(applied).toEqual({ ack: 'OK', outcome: 'APPLIED' });
+        const duplicate = await receiveProviderDelivery(successfulInput, successfulPorts);
+        expect(duplicate.ack).toBe('OK');
+        expect(successfulCancel).toHaveBeenCalledTimes(1);
+        expect(await successful.readStatus(successful.vip.id)).toBe('CANCELLED');
+        expect(await successful.vipNotices()).toHaveLength(1);
+
+        const f = await fixture();
+        const originalRead = f.provider.readAuthorization.bind(f.provider);
+        vi.spyOn(f.provider, 'readAuthorization').mockImplementation(async (input) => {
+            if (input.authorizationId === f.vipAuthorization.authorizationId) {
+                throw new Error('simulated VIP authorization read failure');
+            }
+            return originalRead(input);
+        });
+        const ports = {
+            provider: f.provider,
+            clock,
+            beforeCancelNotice: outboxBeforeCancelNotice(),
+            touristVipInheritance: inheritance
+        };
+        const input = {
+            url: `https://api.example.test/webhook?source_news=webhooks&t=${crypto.randomUUID()}`,
+            delivery: f.delivery
+        };
+        const first = await receiveProviderDelivery(input, ports);
+        expect(first).toEqual({ ack: 'OK', outcome: 'APPLIED' });
+        expect(await f.readStatus(f.owner.id)).toBe('ACTIVE');
+        const second = await receiveProviderDelivery(input, ports);
+        expect(second.ack).toBe('OK');
+        expect(await f.vipNotices()).toHaveLength(0);
+    });
 });
