@@ -79,6 +79,8 @@ function statusFor(error: PaymentProviderError): number {
             return 400;
         case 'UNAVAILABLE':
             return 503;
+        case 'UNSUPPORTED':
+            return 422;
         case 'NOT_IMPLEMENTED':
             return 501;
         case 'INVALID_NOTICE':

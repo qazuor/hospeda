@@ -3,7 +3,7 @@
  * validates every input like any adapter, and refuses unsupported capabilities.
  */
 import { createAdjustableClock } from '@repo/test-clock';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { FakePaymentProvider } from '../src/fake/fake-payment-provider';
 import { startFakeProviderServer } from '../src/fake-server/fake-provider-server';
 import {
@@ -78,6 +78,43 @@ function call(args: {
 }
 
 describe('MercadoPagoPaymentProvider', () => {
+    it.each([
+        { status: 'authorized', frequency_type: 'days' },
+        { status: 'finished', frequency_type: 'months' }
+    ])('TEST:1777:1 classifies unsupported authorization shapes as UNSUPPORTED', async (shape) => {
+        const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    id: 'foreign-auth',
+                    external_reference: 'foreign-reference',
+                    status: shape.status,
+                    auto_recurring: {
+                        frequency: 1,
+                        frequency_type: shape.frequency_type,
+                        transaction_amount: 15,
+                        currency_id: 'ARS',
+                        start_date: null
+                    },
+                    summarized: null,
+                    next_payment_date: null
+                }),
+                { status: 200, headers: { 'content-type': 'application/json' } }
+            )
+        );
+        const provider = new MercadoPagoPaymentProvider({
+            clock,
+            fetch,
+            accessToken: 'test-token'
+        });
+
+        await expect(
+            provider.readAuthorization({ authorizationId: 'foreign-auth' })
+        ).rejects.toMatchObject({
+            code: 'UNSUPPORTED',
+            message: expect.stringContaining(shape.status === 'finished' ? 'finished' : 'days')
+        });
+    });
+
     it('covers all fourteen interface methods in this table', () => {
         expect(VALID_CALLS).toHaveLength(14);
     });

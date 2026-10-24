@@ -309,11 +309,13 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
             cancelled: 'cancelled'
         } as const;
         if (!(parsed.status in statuses) || parsed.auto_recurring.frequency_type !== 'months') {
-            throw providerError(
-                'UNAVAILABLE',
-                'read',
-                'Mercado Pago returned an unsupported authorization'
-            );
+            throw new PaymentProviderError({
+                code: 'UNSUPPORTED',
+                capability: 'read',
+                message: `Mercado Pago returned an unsupported authorization (status: ${parsed.status}, frequency_type: ${parsed.auto_recurring.frequency_type})`,
+                providerStatus: parsed.status,
+                providerCadence: parsed.auto_recurring.frequency_type
+            });
         }
         const status = statuses[parsed.status as keyof typeof statuses];
         return stampProviderRead({

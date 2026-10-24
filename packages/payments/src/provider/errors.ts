@@ -11,6 +11,7 @@ import type { PaymentCapability } from './capabilities';
  * - `REJECTED`: the provider refused the operation in this state.
  * - `INVALID_NOTICE`: a delivery that is not a notice this provider sends.
  * - `UNAVAILABLE`: the provider could not be reached; the outcome is unknown.
+ * - `UNSUPPORTED`: the provider answered with a resource shape this adapter does not support.
  * - `NOT_IMPLEMENTED`: the adapter does not implement this capability yet.
  */
 export type PaymentProviderErrorCode =
@@ -19,6 +20,7 @@ export type PaymentProviderErrorCode =
     | 'REJECTED'
     | 'INVALID_NOTICE'
     | 'UNAVAILABLE'
+    | 'UNSUPPORTED'
     | 'NOT_IMPLEMENTED';
 
 /** Constructor input of `PaymentProviderError`. */
@@ -28,6 +30,8 @@ export interface PaymentProviderErrorInput {
     readonly message: string;
     readonly cause?: unknown;
     readonly incompleteRead?: boolean;
+    readonly providerStatus?: string;
+    readonly providerCadence?: string;
 }
 
 /** A typed refusal from a payment provider. */
@@ -36,6 +40,10 @@ export class PaymentProviderError extends Error {
     readonly capability: PaymentCapability;
     /** The provider answered with a record it is still writing; reading again later is expected to succeed (HOS-1747). */
     readonly incompleteRead: boolean;
+    /** The provider's status for an unsupported resource shape, when available. */
+    readonly providerStatus?: string;
+    /** The provider's billing cadence for an unsupported authorization, as the provider spelled it, when available. */
+    readonly providerCadence?: string;
 
     /**
      * @param input.code - Why the provider refused
@@ -43,6 +51,8 @@ export class PaymentProviderError extends Error {
      * @param input.message - Human-readable detail
      * @param input.cause - The underlying error, when there is one
      * @param input.incompleteRead - Whether the provider returned a record still being written
+     * @param input.providerStatus - The provider's status for an unsupported resource shape
+     * @param input.providerCadence - The provider's billing cadence for an unsupported authorization, as the provider spelled it
      */
     constructor(input: PaymentProviderErrorInput) {
         super(input.message, input.cause === undefined ? undefined : { cause: input.cause });
@@ -50,5 +60,7 @@ export class PaymentProviderError extends Error {
         this.code = input.code;
         this.capability = input.capability;
         this.incompleteRead = input.incompleteRead ?? false;
+        this.providerStatus = input.providerStatus;
+        this.providerCadence = input.providerCadence;
     }
 }

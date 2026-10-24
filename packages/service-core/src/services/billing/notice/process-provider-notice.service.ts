@@ -60,6 +60,7 @@ import {
     type ReadState
 } from './provider-notice-mirror.js';
 import { type MirrorDelegates, unregisteredMirrorDelegates } from './provider-notice-ports.js';
+import { UnsupportedProviderAuthorizationError } from './unsupported-provider-authorization.error.js';
 
 const logger = createLogger('process-provider-notice');
 
@@ -82,6 +83,7 @@ type Outcome =
     | 'PAYMENT_RECORDED'
     | 'WAITING_FIRST_CHARGE_READING'
     | 'UNKNOWN_RESOURCE'
+    | 'UNSUPPORTED_AUTHORIZATION'
     | 'RELINKED'
     | 'UNKNOWN_BECAME_KNOWN'
     | 'TOMBSTONE_WRITTEN'
@@ -165,6 +167,18 @@ async function resolveUnknownAuthorization(
     } catch (error) {
         if (error instanceof PaymentProviderError && error.code === 'NOT_FOUND')
             return { kind: 'OUTCOME', outcome: 'UNKNOWN_RESOURCE' };
+        if (error instanceof PaymentProviderError && error.code === 'UNSUPPORTED') {
+            const unsupported = new UnsupportedProviderAuthorizationError({
+                authorizationId: input.authorizationId,
+                ...(input.arrival.kind === 'CHARGE' ? { chargeId: input.arrival.chargeId } : {}),
+                providerStatus: error.providerStatus,
+                providerCadence: error.providerCadence,
+                correlationId,
+                cause: error
+            });
+            logger.error(unsupported, unsupported.message, { capture: true });
+            return { kind: 'OUTCOME', outcome: 'UNSUPPORTED_AUTHORIZATION' };
+        }
         throw error;
     }
     if (result.outcome === 'RELINKED') return { kind: 'LINKED', outcome: 'RELINKED' };
@@ -183,7 +197,6 @@ async function resolveUnknownAuthorization(
         );
     return { kind: 'OUTCOME', outcome: 'DIVERGENCE_MARKED' };
 }
-
 /** Processes a provider delivery by re-reading its resource; the delivery never supplies state. */
 export async function processProviderNotice(
     input: { readonly channel: 'WEBHOOKS' | 'IPN'; readonly delivery: NoticeDelivery },
