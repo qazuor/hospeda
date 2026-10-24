@@ -53,6 +53,7 @@ export interface ListingPurgeOnRequestCardProps {
     readonly entityName: string;
     /** Called after a successful purge. Detail pages navigate to the list. */
     readonly onPurged?: () => void;
+    /** Current listing state used to decide whether purge is available. */
     readonly publicationStatus: PublicationStatusEnum | null | undefined;
 }
 

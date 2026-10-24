@@ -24,7 +24,7 @@ import { isApiError } from '@/lib/errors';
 /** One of the four moderation actions the `/moderate` route accepts. */
 export type ListingModerationActionKind = ListingModerationAction['action'];
 
-/** Actions of the four states that are neither moderated nor purged. */
+/** Listing states where an owner-requested purge is permitted by the API. */
 export const LISTING_PURGE_ON_REQUEST_STATES = [
     PublicationStatusEnum.DRAFT,
     PublicationStatusEnum.PUBLISHED,
@@ -32,6 +32,8 @@ export const LISTING_PURGE_ON_REQUEST_STATES = [
     PublicationStatusEnum.ARCHIVED,
     PublicationStatusEnum.MODERATED
 ] as const;
+
+/** Listing states where editing is permitted by the API. */
 export const LISTING_EDIT_STATES = [
     PublicationStatusEnum.DRAFT,
     PublicationStatusEnum.PUBLISHED,
@@ -76,6 +78,12 @@ export function getAvailableModerationActions({
     return fixRequestOpen ? [...base, 'CLOSE_FIX_REQUEST'] : ['REQUEST_FIX', ...base];
 }
 
+/**
+ * Whether the listing's current publication state permits owner-requested purge.
+ *
+ * @param args.publicationStatus - Current state, or unknown while loading.
+ * @returns Whether the purge control should be available.
+ */
 export function canPurgeListingOnRequest({
     publicationStatus
 }: {
@@ -89,6 +97,12 @@ export function canPurgeListingOnRequest({
     );
 }
 
+/**
+ * Whether the listing's current publication state permits editing.
+ *
+ * @param args.publicationStatus - Current state, or unknown while loading.
+ * @returns Whether the edit control should be available.
+ */
 export function canEditListing({
     publicationStatus
 }: {

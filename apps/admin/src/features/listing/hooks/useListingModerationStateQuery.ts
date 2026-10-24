@@ -6,6 +6,13 @@ import {
     type PurgeListingVertical
 } from './usePurgeListingOnRequestMutation';
 
+/**
+ * Builds the admin moderation-state endpoint for a listing.
+ *
+ * @param args.vertical - Listing vertical used by the admin API.
+ * @param args.id - Listing UUID.
+ * @returns The moderation-state request path.
+ */
 export function buildListingModerationStatePath({
     vertical,
     id
@@ -16,6 +23,13 @@ export function buildListingModerationStatePath({
     return `/api/v1/admin/${PURGE_LISTING_PLURAL[vertical]}/${id}/moderation`;
 }
 
+/**
+ * Reads and validates a listing's moderation state through TanStack Query.
+ *
+ * @param args.vertical - Listing vertical used by the admin API.
+ * @param args.id - Listing UUID.
+ * @returns The query result containing the validated moderation state.
+ */
 export function useListingModerationStateQuery({
     vertical,
     id
