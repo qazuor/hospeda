@@ -39,6 +39,7 @@ import {
     type CutoverStep3Mode,
     executeCutoverStep3,
     isTypedConfirmationValid,
+    ownerIdsTargetRefusal,
     parseCutoverStep3Args,
     readCheckoutSha,
     WRITE_TRIALS_PROD_PHRASE
@@ -62,11 +63,12 @@ export const CUTOVER_STEP_3_ARGV: CommandArgvSpec = {
         '--yes',
         ...HELP_FLAGS
     ],
-    valueFlags: []
+    valueFlags: [{ name: '--owner-ids', syntax: 'equals' }]
 };
 
 const HELP = `
 hops cutover-step-3 --target=prod|staging [--dry-run | --confirm-write-trials]
+                    [--owner-ids=<uuid>[,<uuid>...]]
                     [--allow-sha-mismatch]
                     [--yes]
 
@@ -74,7 +76,7 @@ Run the V6 cutover step 3 script (writes the five cutover trials) against the
 target database, from the VPS host.
 
 The script runs as:
-  pnpm --filter hospeda-api exec tsx scripts/cutover-v6-step-3.ts <mode>
+  pnpm --filter hospeda-api exec tsx scripts/cutover-v6-step-3.ts <mode> [--owner-ids=<csv>]
 
 with the target api container's environment (NODE_ENV, PORT, API_* and
 HOSPEDA_*) and a host-reachable HOSPEDA_DATABASE_URL. The environment is never
@@ -84,6 +86,9 @@ Modes:
   --dry-run               Plan only, write nothing. THE DEFAULT.
   --confirm-write-trials  Write the five trials. On prod this requires typing
                           '${WRITE_TRIALS_PROD_PHRASE}'. Passing both mode flags is refused.
+
+Staging rehearsal:
+  --owner-ids=<csv>       Limit the rehearsal to these owner UUIDs. Rejected on prod.
 
 Version guard:
   The checkout's HEAD must match the deployed SHA (HOSPEDA_COMMIT_SHA in the
@@ -97,6 +102,7 @@ Flags:
                           confirmation, even for a dry-run.
   --yes                   Accepted for symmetry with other destructive
                           commands. It does NOT skip the typed prod guard.
+  --owner-ids=<csv>       Limit a staging rehearsal to these owner UUIDs. Rejected on prod.
   --help, -h              Show this help.
 
 Exit codes (propagated from the script, unchanged):
@@ -157,6 +163,8 @@ export async function cutoverStep3(argv: ReadonlyArray<string>): Promise<void> {
     const options = parsed.value;
 
     const target = getActiveTarget();
+    const targetRefusal = ownerIdsTargetRefusal({ target, ownerIds: options.ownerIds });
+    if (targetRefusal !== undefined) die(targetRefusal, 2);
 
     const repoRoot = resolveRepoRoot();
     if (!existsSync(repoRoot)) {

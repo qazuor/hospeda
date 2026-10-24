@@ -31,6 +31,14 @@ corepack pnpm exec tsx scripts/cutover/cli.ts --abort-inverse <manifest.json> --
 corepack pnpm exec tsx scripts/cutover/cli.ts --step-4b --confirm-step-4b --payment-amount <ARS>
 ```
 
+### V6 step 3 staging rehearsal
+
+`hops --target=staging cutover-step-3 --dry-run --owner-ids=<uuid>[,<uuid>...]`
+limits the rehearsal to the selected owners. The API script validates each UUID
+and rejects empty or repeated values. `--owner-ids` is rejected on production
+before any container or database lookup. Without the option, step 3 keeps its
+existing unfiltered behavior.
+
 | Flag | Default | Meaning |
 |---|---|---|
 | `--probes <path>` | `packages/payments/src/probes/probes.json` | Probe manifest, `{ "ids": string[] }`, read by file path (a JSON read, never an import) and validated by a local schema. |

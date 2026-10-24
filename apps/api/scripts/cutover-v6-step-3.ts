@@ -39,7 +39,8 @@ async function main(): Promise<void> {
         const result = await runStep3({
             db: getDb(),
             clock: systemClock,
-            dryRun: parsed.value.dryRun
+            dryRun: parsed.value.dryRun,
+            ...(parsed.value.ownerIds === undefined ? {} : { ownerIds: parsed.value.ownerIds })
         });
         console.info(JSON.stringify(result));
         process.exitCode = STEP3_EXIT_CODE[result.status];
