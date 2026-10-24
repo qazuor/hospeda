@@ -1,7 +1,6 @@
 /**
  * @file listing-moderation-actions.ts
- * Which administrative moderation actions the panel offers for a listing, and
- * how a refused action reads (HOS-1684).
+ * Administrative listing actions derived from publication and fix-request state.
  *
  * Since HOS-1475 `POST /api/v1/admin/{plural}/{id}/moderate` takes one ACTION
  * with its reason (`REQUEST_FIX`, `TAKE_DOWN`, `LIFT`, `CLOSE_FIX_REQUEST`).
@@ -15,12 +14,6 @@
  * - `CLOSE_FIX_REQUEST` — every state but `PURGED` and `MODERATED`, and only
  *   with an open fix request (`fix-request.ts:114-123`).
  *
- * Two deliberate narrowings (HOS-1684 notes H1/H2):
- * - over `MODERATED` only `LIFT` is offered, because "from take-down to fix
- *   request only" is `LIFT` with `keepFixRequest: true`, not a `REQUEST_FIX`;
- * - `CLOSE_FIX_REQUEST` is offered even though the panel cannot know whether a
- *   fix request is open (no admin GET exposes it); its 409 says so.
- *
  * Pure: no React, no I/O.
  */
 
@@ -32,23 +25,31 @@ import { isApiError } from '@/lib/errors';
 export type ListingModerationActionKind = ListingModerationAction['action'];
 
 /** Actions of the four states that are neither moderated nor purged. */
-const ACTIVE_STATE_ACTIONS: readonly ListingModerationActionKind[] = [
-    'REQUEST_FIX',
-    'TAKE_DOWN',
-    'CLOSE_FIX_REQUEST'
-];
+export const LISTING_PURGE_ON_REQUEST_STATES = [
+    PublicationStatusEnum.DRAFT,
+    PublicationStatusEnum.PUBLISHED,
+    PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+    PublicationStatusEnum.ARCHIVED,
+    PublicationStatusEnum.MODERATED
+] as const;
+export const LISTING_EDIT_STATES = [
+    PublicationStatusEnum.DRAFT,
+    PublicationStatusEnum.PUBLISHED,
+    PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+    PublicationStatusEnum.MODERATED
+] as const;
 
 /**
  * Buttons offered per `publicationStatus`, in display order. A `Record` over
  * the enum, so a seventh state does not compile until its actions are decided.
  */
-export const LISTING_MODERATION_ACTIONS_BY_STATUS: Readonly<
+const LISTING_MODERATION_ACTIONS_BY_STATUS: Readonly<
     Record<PublicationStatusEnum, readonly ListingModerationActionKind[]>
 > = {
-    [PublicationStatusEnum.DRAFT]: ACTIVE_STATE_ACTIONS,
-    [PublicationStatusEnum.PUBLISHED]: ACTIVE_STATE_ACTIONS,
-    [PublicationStatusEnum.UNPUBLISHED_BY_BILLING]: ACTIVE_STATE_ACTIONS,
-    [PublicationStatusEnum.ARCHIVED]: ACTIVE_STATE_ACTIONS,
+    [PublicationStatusEnum.DRAFT]: ['TAKE_DOWN'],
+    [PublicationStatusEnum.PUBLISHED]: ['TAKE_DOWN'],
+    [PublicationStatusEnum.UNPUBLISHED_BY_BILLING]: ['TAKE_DOWN'],
+    [PublicationStatusEnum.ARCHIVED]: ['TAKE_DOWN'],
     [PublicationStatusEnum.MODERATED]: ['LIFT'],
     [PublicationStatusEnum.PURGED]: []
 };
@@ -56,16 +57,47 @@ export const LISTING_MODERATION_ACTIONS_BY_STATUS: Readonly<
 /**
  * The moderation actions the panel offers for a listing in a given state.
  *
- * @param args.publicationStatus - The listing's state; `null`/`undefined` while loading.
+ * @param args.publicationStatus - The listing's state; unknown while loading.
+ * @param args.fixRequestOpen - Whether a fix request is open; unknown while loading.
  * @returns The actions in display order; empty while loading and for `PURGED`.
  */
 export function getAvailableModerationActions({
+    publicationStatus,
+    fixRequestOpen
+}: {
+    readonly publicationStatus: PublicationStatusEnum | null | undefined;
+    readonly fixRequestOpen: boolean | null | undefined;
+}): readonly ListingModerationActionKind[] {
+    if (!publicationStatus || fixRequestOpen == null) return [];
+    const base = LISTING_MODERATION_ACTIONS_BY_STATUS[publicationStatus];
+    if (publicationStatus === PublicationStatusEnum.PURGED) return [];
+    if (publicationStatus === PublicationStatusEnum.MODERATED)
+        return fixRequestOpen ? base : [...base, 'REQUEST_FIX'];
+    return fixRequestOpen ? [...base, 'CLOSE_FIX_REQUEST'] : ['REQUEST_FIX', ...base];
+}
+
+export function canPurgeListingOnRequest({
     publicationStatus
 }: {
     readonly publicationStatus: PublicationStatusEnum | null | undefined;
-}): readonly ListingModerationActionKind[] {
-    if (!publicationStatus) return [];
-    return LISTING_MODERATION_ACTIONS_BY_STATUS[publicationStatus];
+}): boolean {
+    return (
+        publicationStatus != null &&
+        (LISTING_PURGE_ON_REQUEST_STATES as readonly PublicationStatusEnum[]).includes(
+            publicationStatus
+        )
+    );
+}
+
+export function canEditListing({
+    publicationStatus
+}: {
+    readonly publicationStatus: PublicationStatusEnum | null | undefined;
+}): boolean {
+    return (
+        publicationStatus != null &&
+        (LISTING_EDIT_STATES as readonly PublicationStatusEnum[]).includes(publicationStatus)
+    );
 }
 
 /**

@@ -78,6 +78,7 @@ function renderCard(onPurged = vi.fn()) {
             vertical: 'gastronomy',
             entityId: LISTING_ID,
             entityName: LISTING_NAME,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             onPurged
         })
     );
@@ -113,6 +114,25 @@ describe('ListingPurgeOnRequestCard — gated by the action 23 permission', () =
                 entityId={LISTING_ID}
                 entityName={LISTING_NAME}
                 publicationStatus={PublicationStatusEnum.PURGED}
+                onPurged={vi.fn()}
+            />
+        );
+        expect(screen.queryByTestId('listing-purge-on-request')).not.toBeInTheDocument();
+    });
+    it('does not show purge while publication state is unknown', () => {
+        permissions.mockReturnValue([PermissionEnum.LISTING_PURGE_ON_REQUEST]);
+        const CardWithState = ListingPurgeOnRequestCard as React.ComponentType<{
+            vertical: 'gastronomy';
+            entityId: string;
+            entityName: string;
+            publicationStatus?: PublicationStatusEnum;
+            onPurged: () => void;
+        }>;
+        render(
+            <CardWithState
+                vertical="gastronomy"
+                entityId={LISTING_ID}
+                entityName={LISTING_NAME}
                 onPurged={vi.fn()}
             />
         );

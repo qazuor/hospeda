@@ -74,17 +74,44 @@ vi.mock('../../hooks/useModerateListingMutation', () => ({
     useModerateListingMutation: () => ({ mutateAsync, isPending: false })
 }));
 
+const moderationState = vi.hoisted(() => ({ data: undefined as unknown, error: false, calls: 0 }));
+vi.mock('../../hooks/useListingModerationStateQuery', () => ({
+    useListingModerationStateQuery: () => {
+        moderationState.calls += 1;
+        return {
+            data: moderationState.data,
+            isPending: moderationState.data === undefined && !moderationState.error,
+            isError: moderationState.error
+        };
+    }
+}));
+
 const es = esAdminEntities.listingModeration;
 const LISTING_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const LISTING_NAME = 'Cabaña del Río Colón';
 
 function renderCard({
     publicationStatus,
-    vertical = 'gastronomy'
+    vertical = 'gastronomy',
+    fixRequest = null,
+    queryError = false,
+    statePublicationStatus
 }: {
     readonly publicationStatus: PublicationStatusEnum | undefined;
     readonly vertical?: PurgeListingVertical;
+    readonly fixRequest?: {
+        reason: string;
+        suggestedDate: string | null;
+        openedAt: string;
+        ownerReportedFixedAt: string | null;
+    } | null;
+    readonly queryError?: boolean;
+    readonly statePublicationStatus?: PublicationStatusEnum;
 }) {
+    moderationState.data = publicationStatus
+        ? { publicationStatus: statePublicationStatus ?? publicationStatus, fixRequest }
+        : undefined;
+    moderationState.error = queryError;
     return render(
         React.createElement(ListingModerationCard, {
             vertical,
@@ -109,6 +136,7 @@ const actionButtons = () =>
 
 beforeEach(() => {
     vi.clearAllMocks();
+    moderationState.calls = 0;
     mutateAsync.mockResolvedValue({ publicationStatus: 'MODERATED', fixRequestOpen: false });
     permissions.mockReturnValue([PermissionEnum.LISTING_MODERATE]);
 });
@@ -147,6 +175,21 @@ describe('ListingModerationCard — the publication state badge', () => {
 });
 
 describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
+    it('TEST:1760:3 derives actions from the GET state instead of the listing prop', () => {
+        renderCard({
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            statePublicationStatus: PublicationStatusEnum.MODERATED
+        });
+        expect(actionButtons()).toEqual([
+            'listing-moderation-action-LIFT',
+            'listing-moderation-action-REQUEST_FIX'
+        ]);
+    });
+    it('TEST:1760:3 shows an error and no actions when the state GET fails', () => {
+        renderCard({ publicationStatus: PublicationStatusEnum.PUBLISHED, queryError: true });
+        expect(actionButtons()).toEqual([]);
+        expect(screen.getByRole('alert').textContent).toContain(es.stateError);
+    });
     it('shows no button to an admin without LISTING_MODERATE, even with the retired permission', () => {
         // Arrange
         permissions.mockReturnValue([PermissionEnum.ACCOMMODATION_MODERATION_CHANGE]);
@@ -157,15 +200,20 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
         // Assert
         expect(actionButtons()).toEqual([]);
         expect(screen.getByTestId('listing-moderation')).toBeInTheDocument();
+        expect(moderationState.calls).toBe(0);
     });
 
     it.each([
         [
             PublicationStatusEnum.PUBLISHED,
-            ['REQUEST_FIX', 'TAKE_DOWN', 'CLOSE_FIX_REQUEST'],
-            [es.actions.requestFix, es.actions.takeDown, es.actions.closeFixRequest]
+            ['REQUEST_FIX', 'TAKE_DOWN'],
+            [es.actions.requestFix, es.actions.takeDown]
         ],
-        [PublicationStatusEnum.MODERATED, ['LIFT'], [es.actions.lift]],
+        [
+            PublicationStatusEnum.MODERATED,
+            ['LIFT', 'REQUEST_FIX'],
+            [es.actions.lift, es.actions.requestFix]
+        ],
         [PublicationStatusEnum.PURGED, [], []]
     ] as const)('%s shows exactly %j', (publicationStatus, expected, labels) => {
         // Arrange / Act
@@ -176,6 +224,26 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
         expect(
             screen.queryAllByTestId(/^listing-moderation-action-/).map((n) => n.textContent)
         ).toEqual(labels);
+    });
+
+    it('TEST:1760:3 shows only close and take down for an open request and renders its details', () => {
+        renderCard({
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            fixRequest: {
+                reason: 'Fix the photos',
+                suggestedDate: '2026-11-01',
+                openedAt: '2026-10-01T00:00:00.000Z',
+                ownerReportedFixedAt: null
+            }
+        });
+        expect(actionButtons()).toEqual([
+            'listing-moderation-action-TAKE_DOWN',
+            'listing-moderation-action-CLOSE_FIX_REQUEST'
+        ]);
+        expect(screen.getByTestId('listing-moderation').textContent).toContain('Fix the photos');
+        expect(
+            screen.queryByTestId('listing-moderation-action-REQUEST_FIX')
+        ).not.toBeInTheDocument();
     });
 
     it('TAKE_DOWN says what happens and keeps confirm disabled without a real reason', async () => {
@@ -293,7 +361,15 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
 
     it('CLOSE_FIX_REQUEST sends only action and reason, and offers no extra field', async () => {
         // Arrange
-        renderCard({ publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING });
+        renderCard({
+            publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+            fixRequest: {
+                reason: 'Arreglo',
+                suggestedDate: null,
+                openedAt: '2026-10-01T00:00:00.000Z',
+                ownerReportedFixedAt: null
+            }
+        });
         const { user } = await openAction('CLOSE_FIX_REQUEST');
 
         // Assert: neither the date nor the switch belong to this action
@@ -377,7 +453,19 @@ describe('TEST:1684:4 AC-1684:2 the API answer and its typed rejections', () => 
     ] as const)('%s on %s answered %i reads as its own text and closes the dialog', async (action, publicationStatus, status, message, variant) => {
         // Arrange
         mutateAsync.mockRejectedValue(new ApiError('Listing state changed', { status }));
-        renderCard({ publicationStatus });
+        renderCard({
+            publicationStatus,
+            ...(action === 'CLOSE_FIX_REQUEST'
+                ? {
+                      fixRequest: {
+                          reason: 'Arreglo',
+                          suggestedDate: null,
+                          openedAt: '2026-10-01T00:00:00.000Z',
+                          ownerReportedFixedAt: null
+                      }
+                  }
+                : {})
+        });
 
         // Act
         await confirm(action);
