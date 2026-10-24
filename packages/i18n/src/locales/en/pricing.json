@@ -39,6 +39,7 @@
     "baseHighlightText": "Everything essential to begin, no commitment.",
     "group": {
         "tourist": "All tourist features",
+        "touristVip": "Includes every Tourist VIP benefit",
         "ai": "AI suite: text, translation, import and chat"
     },
     "features": {

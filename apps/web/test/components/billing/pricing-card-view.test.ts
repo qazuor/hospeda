@@ -37,6 +37,7 @@ function plan(input: Partial<PricingPlan> & Pick<PricingPlan, 'slug'>): PricingP
         trialDays: 0,
         sortOrder: 1,
         isActive: true,
+        inheritsTouristVip: false,
         entitlements: [],
         limits: {},
         ...input
@@ -49,7 +50,13 @@ function entitlements(n: number): string[] {
 }
 
 function build(plans: readonly PricingPlan[]) {
-    return buildPricingCardViews({ plans, audience: 'tourist', intlLocale: 'es-AR', t });
+    return buildPricingCardViews({
+        plans,
+        audience: 'tourist',
+        intlLocale: 'es-AR',
+        t,
+        touristVipBenefits: null
+    });
 }
 
 describe('buildPricingCardViews — the summary/disclosure cut', () => {
@@ -274,5 +281,63 @@ describe('TEST:1765:1 inherited Tourist VIP benefits', () => {
             'local_photos',
             'local_listings'
         ]);
+    });
+
+    it('TEST:1765:3 preserves itemized benefits for tourist cards', () => {
+        const { cards } = buildPricingCardViews({
+            plans: [
+                plan({
+                    slug: 'tourist-vip',
+                    inheritsTouristVip: true,
+                    entitlements: ['tourist_favorites'],
+                    limits: { max_favorites: 100 }
+                })
+            ],
+            audience: 'tourist',
+            intlLocale: 'es-AR',
+            t,
+            touristVipBenefits: {
+                entitlements: new Set(['tourist_favorites']),
+                limits: new Set(['max_favorites'])
+            }
+        });
+
+        expect(cards[0]?.visibleItems.map((item) => item.id)).toEqual([
+            'max_favorites',
+            'tourist_favorites'
+        ]);
+    });
+
+    it.each([
+        {
+            inheritsTouristVip: false,
+            touristVipBenefits: {
+                entitlements: new Set(['vip_feature']),
+                limits: new Set(['vip_cap'])
+            }
+        },
+        { inheritsTouristVip: true, touristVipBenefits: null }
+    ])('TEST:1765:3 does not collapse a non-inheriting plan or when catalog keys are unavailable', ({
+        inheritsTouristVip,
+        touristVipBenefits
+    }) => {
+        const { cards } = buildPricingCardViews({
+            plans: [
+                plan({
+                    slug: 'gastronomy-basic',
+                    inheritsTouristVip,
+                    entitlements: ['vip_feature', 'local_feature'],
+                    limits: { vip_cap: 10 }
+                })
+            ],
+            audience: 'gastronomy',
+            intlLocale: 'es-AR',
+            t,
+            touristVipBenefits
+        });
+
+        expect(
+            [...cards[0]!.visibleItems, ...cards[0]!.hiddenItems].map((item) => item.id)
+        ).toEqual(['vip_cap', 'vip_feature', 'local_feature']);
     });
 });

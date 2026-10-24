@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanCardCta } from '@/components/billing/PlanCardCta.client';
@@ -10,7 +12,26 @@ beforeEach(() => {
     resetPricingSituationCacheForTests();
 });
 
+const componentSource = readFileSync(
+    resolve(__dirname, '../../../src/components/billing/PlanCardCta.client.tsx'),
+    'utf8'
+);
+const cssSource = readFileSync(
+    resolve(__dirname, '../../../src/components/billing/PlanCardCta.module.css'),
+    'utf8'
+);
+
 describe('PlanCardCta', () => {
+    it('TEST:1758:4 renders checkout links with stacked button styles', () => {
+        expect(componentSource).toContain(
+            "className={cycle === 'monthly' ? styles.primary : styles.secondary}"
+        );
+        expect(cssSource).not.toContain('text-decoration: underline');
+        expect(cssSource).toContain('min-height: 44px;');
+        expect(cssSource).toContain(':focus-visible');
+        expect(cssSource).toContain('flex-direction: column;');
+        expect(cssSource).toContain('width: 100%;');
+    });
     it('TEST:1735:14 labels only the anchored option as payment continuation', async () => {
         pricingSituation.mockResolvedValue({
             ok: true,
@@ -59,6 +80,12 @@ describe('PlanCardCta', () => {
             'href',
             '/es/suscriptores/checkout/?opcion=a1'
         );
+        expect(
+            screen.getByRole('link', { name: 'Suscribirme con pago mensual' }).className
+        ).toBeTruthy();
+        expect(
+            screen.getByRole('link', { name: 'Suscribirme con pago anual' }).className
+        ).toBeTruthy();
     });
 
     it('shares one request across two cards in the same vertical', async () => {

@@ -150,13 +150,13 @@ describe('PricingCardsGrid.astro', () => {
             // `getDisplayFeatures({ keys: plan.entitlements })` renders every
             // tier as a full list under a header promising only differences.
             expect(viewSrc).toContain(
-                'getDisplayFeatures({ keys: delta.addedEntitlements, audience, t })'
+                'getDisplayFeatures({ keys: displayEntitlements, audience, t })'
             );
             expect(viewSrc).not.toContain('getDisplayFeatures({ keys: plan.entitlements');
         });
 
         it('renders limit lines from the delta’s limitChanges', () => {
-            expect(viewSrc).toContain('delta.limitChanges.map(');
+            expect(viewSrc).toContain('delta.limitChanges\n            .filter(');
         });
 
         it('requires `limits` on the plan shape, so a payload without caps cannot compile', () => {

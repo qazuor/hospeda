@@ -12,10 +12,10 @@
  * that case is. `/suscriptores/turistas/`, by contrast, really did move, and
  * 301s to its new home.
  *
- * ## All five cards, always, with no interaction
+ * ## All four audience cards, always, with no interaction
  *
  * There are no tabs, no accordion and no carousel — every card is in the
- * initial HTML (AC-1). A visitor who does not yet know Hospeda sells to five
+ * initial HTML (AC-1). A visitor who does not yet know Hospeda sells to four
  * audiences cannot be expected to discover the other four behind a control, and
  * an interaction is exactly what hides them from a crawler too.
  *
@@ -187,7 +187,7 @@ const headingMain = headingWords.join(' ');
 		titleAccent={headingAccent}
 		subtitle={t(
 			'pricing.index.subtitle',
-			'Hospeda tiene cinco formas de sumarse. Elegí la tuya y mirá qué incluye cada una.'
+			'Hospeda tiene cuatro formas de sumarse. Elegí la tuya y mirá qué incluye cada una.'
 		)}
 	>
 		<Fragment slot="icon-1"><BuildingIcon size="md" weight="duotone" /></Fragment>
@@ -323,12 +323,6 @@ const headingMain = headingWords.join(' ');
 	@media (min-width: 640px) {
 		.audiences__grid {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-	}
-
-	@media (min-width: 1024px) {
-		.audiences__grid {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
 	}
 
