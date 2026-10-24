@@ -54,6 +54,7 @@ const makePlan = (
     trialDays: 14,
     sortOrder: 0,
     isActive: true,
+    inheritsTouristVip: false,
     entitlements: [],
     limits: {},
     ...overrides
