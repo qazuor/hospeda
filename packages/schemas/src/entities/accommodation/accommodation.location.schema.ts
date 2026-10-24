@@ -49,6 +49,18 @@ export const AccommodationLocationSchema = z.object({
 });
 
 /**
+ * HOS-190 / HOS-1770 read overlay: stored postal strings may predate today's
+ * write bounds, while coordinates keep their numeric validation.
+ */
+export const AccommodationLocationReadSchema = z.object({
+    coordinates: CoordinatesSchema.optional(),
+    street: z.string().optional(),
+    number: z.string().optional(),
+    floor: z.string().optional(),
+    apartment: z.string().optional()
+});
+
+/**
  * Inferred TypeScript type for the accommodation postal address.
  */
 export type AccommodationLocationType = z.infer<typeof AccommodationLocationSchema>;
