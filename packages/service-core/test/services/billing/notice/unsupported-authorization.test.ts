@@ -108,4 +108,45 @@ describe('unsupported unknown provider authorization', () => {
         // Assert
         expect(result).toEqual({ ack: 'ERROR', outcome: 'FAILED' });
     });
+
+    it('TEST:1777:3 logs every unsupported authorization field for a charge arrival', async () => {
+        // Arrange
+        vi.mocked(provider.decodeNotice).mockResolvedValueOnce({
+            resourceKind: 'charge',
+            resourceId: 'foreign-charge',
+            version: '1'
+        } as Awaited<ReturnType<PaymentProvider['decodeNotice']>>);
+        const providerError = new PaymentProviderError({
+            code: 'UNSUPPORTED',
+            capability: 'read',
+            message: 'unsupported daily authorization',
+            providerStatus: 'authorized',
+            frequencyType: 'days'
+        });
+        doubles.read.mockRejectedValueOnce(providerError);
+
+        // Act
+        const chargeDelivery = delivery();
+        chargeDelivery.delivery.body = '{"type":"payment"}';
+        const result = await processProviderNotice(chargeDelivery, {
+            provider,
+            clock,
+            beforeCancelNotice: { beforeCancel: async () => 'SENT' }
+        });
+
+        // Assert
+        expect(result).toEqual({ ack: 'OK', outcome: 'UNSUPPORTED_AUTHORIZATION' });
+        expect(doubles.error).toHaveBeenCalledTimes(1);
+        const [logged, message, options] = doubles.error.mock.calls[0] ?? [];
+        expect(logged).toBeInstanceOf(Error);
+        expect(logged).toHaveProperty('name', 'UnsupportedProviderAuthorizationError');
+        expect(logged).toHaveProperty('authorizationId', 'foreign-auth');
+        expect(logged).toHaveProperty('chargeId', 'foreign-charge');
+        expect(logged).toHaveProperty('providerStatus', 'authorized');
+        expect(logged).toHaveProperty('frequencyType', 'days');
+        expect(logged).toHaveProperty('correlationId', expect.any(String));
+        expect(logged).toHaveProperty('cause', providerError);
+        expect(message).toBe('Ignored unsupported foreign provider authorization foreign-auth');
+        expect(options).toEqual({ capture: true });
+    });
 });
