@@ -515,6 +515,16 @@ td.mono {
     white-space: normal;
     overflow-wrap: anywhere;
 }
+.cta-url {
+    /* The destination as plain text under the button, so a print/PDF export still
+       shows where it leads. Pulled up into the flex gap to read as the button's caption. */
+    margin: -0.6rem 0 0;
+    font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
 .cta:hover {
     filter: brightness(1.08);
 }

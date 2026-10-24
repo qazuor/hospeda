@@ -5,11 +5,9 @@
  * with no cue that they scroll, the closing CTA printed a raw URL that ran off
  * the right edge, a third fact sat alone on its own row with no divider, and
  * the floating theme button rode over the table. These parse the real CSS and
- * assert the contract that fixes each, plus that every page's CTA uses an
- * i18n label instead of a URL.
+ * assert the contract that fixes each, plus that every page's CTA uses a
+ * human label and shows its URL as visible text.
  */
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { baseValue, parseFile, parseRules, readSrc, styleOf } from '../helpers/css-contract';
 
@@ -127,46 +125,47 @@ describe('theme toggle does not ride over content on a phone', () => {
     });
 });
 
-describe('closing CTA label', () => {
-    const PAGES = {
-        aliados: 'partners',
-        alojamientos: 'accommodations',
-        editores: 'editors',
-        experiencias: 'seePlans',
-        gastronomia: 'seePlans',
-        proveedores: 'providers'
-    } as const;
-    const LOCALES = ['es', 'en', 'pt'] as const;
-    const pricing = Object.fromEntries(
-        LOCALES.map((l) => [
-            l,
-            JSON.parse(
-                readFileSync(
-                    resolve(__dirname, `../../../../packages/i18n/src/locales/${l}/pricing.json`),
-                    'utf8'
-                )
-            ) as { presentation: { cta: Record<string, string> } }
-        ])
-    );
+describe('closing CTA', () => {
+    const PAGES = [
+        'aliados',
+        'alojamientos',
+        'editores',
+        'experiencias',
+        'gastronomia',
+        'proveedores'
+    ];
 
-    it.each(Object.entries(PAGES))('%s renders an i18n label, not the raw URL', (page, key) => {
+    it.each(PAGES)('%s labels the button with human text, not the raw URL', (page) => {
         // Arrange
         const source = readSrc({ path: `pages/[lang]/presentacion/${page}/index.astro` });
-        const cta = source.match(/<a class="cta" href="[^"]+">([^<]*)<\/a>/);
+        const label = source.match(/const ctaLabel = '([^']+)';/)?.[1];
 
-        // Assert: the link text is the resolved label expression, never literal text
-        expect(cta?.[1]).toBe('{ctaLabel}');
-        expect(source).toContain(`createT('es')('pricing.presentation.cta.${key}')`);
+        // Assert: the button text is the authored label expression and the label is not a URL
+        expect(source).toMatch(/<a class="cta" href=\{ctaHref\}>\{ctaLabel\}<\/a>/);
+        expect(label).toBeTruthy();
+        expect(label).not.toMatch(/https?:|hospeda\.com\.ar|\//);
     });
 
-    it.each(
-        Object.entries(PAGES)
-    )('%s label exists, is human text, in every locale', (_page, key) => {
-        for (const locale of LOCALES) {
-            const label = pricing[locale]?.presentation.cta[key];
+    it.each(PAGES)('%s shows the destination URL as visible text derived from the href', (page) => {
+        // Arrange
+        const source = readSrc({ path: `pages/[lang]/presentacion/${page}/index.astro` });
+        const href = source.match(/const ctaHref = '(https:\/\/[^']+)';/)?.[1];
 
-            expect(label, `${locale}.${key}`).toBeTruthy();
-            expect(label).not.toMatch(/https?:|hospeda\.com\.ar|\//);
-        }
+        // Assert: a visible caption right under the button, computed from the same href
+        expect(href).toBeTruthy();
+        expect(source).toMatch(
+            /<a class="cta" href=\{ctaHref\}>\{ctaLabel\}<\/a>\s*<p class="cta-url">\{ctaUrlText\}<\/p>/
+        );
+        expect(source).toContain("const ctaUrlText = ctaHref.replace(/^https?:\\/\\//, '');");
+        expect(href?.replace(/^https?:\/\//, '')).toMatch(/^hospeda\.com\.ar\/es\//);
+    });
+
+    it('the visible URL wraps on a phone and is not hidden in print', () => {
+        expect(baseValue({ rules, selector: '.cta-url', prop: 'overflow-wrap' })).toBe('anywhere');
+        expect(baseValue({ rules, selector: '.cta-url', prop: 'display' })).toBeUndefined();
+        const hiddenInPrint = rules.filter(
+            (r) => r.media.some((m) => m.includes('print')) && r.selector.includes('cta-url')
+        );
+        expect(hiddenInPrint).toEqual([]);
     });
 });

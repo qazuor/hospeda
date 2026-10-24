@@ -272,14 +272,5 @@
         "partnerPriceQ": "¿Por qué no figura el precio?",
         "partnerPriceA": "Porque no le cobramos lo mismo a una institución que a un comercio de barrio, aunque tomen el mismo nivel. Los valores vigentes te los pasamos en la charla."
     },
-    "presentation": {
-        "cta": {
-            "partners": "Sumate como aliado",
-            "accommodations": "Publicá tu alojamiento",
-            "editors": "Sumate como editor",
-            "providers": "Sumate como proveedor",
-            "seePlans": "Ver planes y precios"
-        }
-    },
     "startConsumesTrialNote": "Empezar consume tu prueba gratis, y la prueba es una sola vez en la vida."
 }
