@@ -163,7 +163,7 @@ export async function cutoverStep3(argv: ReadonlyArray<string>): Promise<void> {
     const options = parsed.value;
 
     const target = getActiveTarget();
-    const targetRefusal = ownerIdsTargetRefusal(target, options.ownerIds);
+    const targetRefusal = ownerIdsTargetRefusal({ target, ownerIds: options.ownerIds });
     if (targetRefusal !== undefined) die(targetRefusal, 2);
 
     const repoRoot = resolveRepoRoot();

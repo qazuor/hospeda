@@ -110,7 +110,9 @@ describe('TEST:1776:4 AC:1776:3 production target guard', () => {
             ),
             'utf8'
         );
-        const guard = source.indexOf('ownerIdsTargetRefusal(target, options.ownerIds)');
+        const guard = source.indexOf(
+            'ownerIdsTargetRefusal({ target, ownerIds: options.ownerIds })'
+        );
         expect(guard).toBeGreaterThan(-1);
         for (const effect of [
             'resolveRepoRoot()',

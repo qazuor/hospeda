@@ -28,12 +28,17 @@ export type CutoverStep3Mode = 'dry-run' | 'write';
 /** The exact phrase an operator must type to confirm a prod write. */
 export const WRITE_TRIALS_PROD_PHRASE = 'write-trials-prod';
 
-/** Refuse owner filtering before any target resources are contacted. */
-export function ownerIdsTargetRefusal(
-    target: Target,
-    ownerIds: string | undefined
-): string | undefined {
-    return target === 'prod' && ownerIds !== undefined
+/**
+ * Refuse owner filtering before any target resources are contacted.
+ *
+ * @param input - Target and optional owner ids requested for the rehearsal.
+ * @returns The refusal reason when owner filtering targets prod; otherwise `undefined`.
+ */
+export function ownerIdsTargetRefusal(input: {
+    readonly target: Target;
+    readonly ownerIds: string | undefined;
+}): string | undefined {
+    return input.target === 'prod' && input.ownerIds !== undefined
         ? '--owner-ids is only allowed for staging rehearsals.'
         : undefined;
 }
@@ -46,6 +51,7 @@ export interface ParsedCutoverStep3Args {
     readonly allowShaMismatch: boolean;
     /** `--yes`: parsed for symmetry with other destructive commands; never skips the typed guard. */
     readonly yes: boolean;
+    /** Raw CSV supplied with `--owner-ids=<csv>`, when present. */
     readonly ownerIds?: string;
 }
 
@@ -280,6 +286,7 @@ export interface RunCutoverStep3Input {
     readonly mode: CutoverStep3Mode;
     /** Pre-built child env (see {@link buildStep3ChildEnv}). */
     readonly env: Readonly<Record<string, string>>;
+    /** Raw CSV forwarded to the step 3 script for a staging rehearsal, when present. */
     readonly ownerIds?: string;
 }
 

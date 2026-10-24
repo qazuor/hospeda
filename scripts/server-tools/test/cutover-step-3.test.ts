@@ -146,18 +146,20 @@ describe('ownerIdsTargetRefusal', () => {
         const parsed = parseCutoverStep3Args(['--yes', '--allow-sha-mismatch', '--owner-ids=x']);
         expect(parsed.ok).toBe(true);
         if (parsed.ok)
-            expect(ownerIdsTargetRefusal('prod', parsed.value.ownerIds)).toContain(
-                'only allowed for staging'
-            );
-        expect(ownerIdsTargetRefusal('staging', 'x')).toBeUndefined();
-        expect(ownerIdsTargetRefusal('prod', undefined)).toBeUndefined();
+            expect(
+                ownerIdsTargetRefusal({ target: 'prod', ownerIds: parsed.value.ownerIds })
+            ).toContain('only allowed for staging');
+        expect(ownerIdsTargetRefusal({ target: 'staging', ownerIds: 'x' })).toBeUndefined();
+        expect(ownerIdsTargetRefusal({ target: 'prod', ownerIds: undefined })).toBeUndefined();
     });
 
     it('is enforced before repository and container/database lookups in the command wrapper', async () => {
         const source = await Bun.file(
             `${import.meta.dir}/../src/commands/cutover-step-3.ts`
         ).text();
-        const guard = source.indexOf('ownerIdsTargetRefusal(target, options.ownerIds)');
+        const guard = source.indexOf(
+            'ownerIdsTargetRefusal({ target, ownerIds: options.ownerIds })'
+        );
         expect(guard).toBeGreaterThan(-1);
         expect(guard).toBeLessThan(source.indexOf('resolveRepoRoot()'));
         expect(guard).toBeLessThan(source.indexOf("findContainer('api')"));
