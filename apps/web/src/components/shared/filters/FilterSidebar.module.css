@@ -1,5 +1,5 @@
 /* FilterSidebar.module.css
- * Sidebar shell styles for listing filters: desktop panel layout, mobile floating
+ * Sidebar shell styles for listing filters: desktop panel layout, mobile dock
  * trigger button, position variants (left/top), and sidebar header/body.
  *
  * Collapsible group styles → components/FilterGroup.module.css
@@ -289,55 +289,38 @@
     border-color: var(--brand-accent-a50);
 }
 
-/* ============================================================
-   Mobile: floating trigger button
-   ============================================================ */
-
 .floatingTrigger {
     display: none;
 }
 
 @media (max-width: 767px) {
     .floatingTrigger {
+        display: none;
+    }
+
+    :global([data-mobile-dock]) .floatingTrigger {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        position: fixed;
-        /* Lift above the cookie banner (or any future bottom overlay) via the
-         * shared --bottom-safe-inset token defined in global.css. */
-        bottom: calc(1.5rem + var(--bottom-safe-inset, 0px));
-        left: 1rem;
-        /* Cap so the trigger can't push past the viewport edge on narrow
-         * screens, and never overlap the sheet trigger on the opposite side.
-         * 50vw - 12px leaves a small gutter in the middle for the pair. */
-        max-width: calc(50vw - 12px);
-        z-index: 200;
+        position: static;
         padding: 0.75rem 1.25rem;
-        /* Frosted-glass surface (see global.css → --frost-* tokens). The
-         * label + icon stay in brand-primary so the trigger still reads as
-         * the filters action, just without the heavy solid-blue patch. */
-        background-color: var(--frost-bg-light);
-        backdrop-filter: blur(var(--frost-blur));
-        -webkit-backdrop-filter: blur(var(--frost-blur));
+        background: none;
         color: var(--brand-primary);
-        border: 1px solid var(--frost-border);
+        border: 0;
         border-radius: var(--radius-pill);
         font-family: var(--font-sans);
         font-size: 0.875rem;
         font-weight: 600;
         cursor: pointer;
-        box-shadow:
-            0 4px 18px oklch(0 0 0 / 0.18),
-            0 1px 3px oklch(0 0 0 / 0.08);
+        box-shadow: none;
         transition:
             opacity var(--duration-fast) ease,
-            transform var(--duration-fast) ease,
-            background-color var(--duration-fast) ease;
+            transform var(--duration-fast) ease;
     }
 
-    .floatingTrigger:hover {
-        background-color: var(--core-card-a85);
-        transform: translateY(-2px);
+    :global([data-mobile-dock]) .floatingTrigger:hover {
+        background: none;
+        transform: none;
     }
 }
 

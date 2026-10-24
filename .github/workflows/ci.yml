@@ -838,8 +838,11 @@ jobs:
     # 20 was the ceiling until the HOS-1352 wave 18: the job ran 14.6-19.6 min
     # and was cut five times in one night with every test already passed.
     # 30 held until wave 23, when green runs took 20-29 min and two runs in a
-    # row were cut at exactly 30 in the last step (cutover DB tests). 45 now.
-    timeout-minutes: 45
+    # row were cut at exactly 30 in the last step (cutover DB tests). 45 held
+    # until 2026-10-24: the integration step alone took 40-43.6 min, and two PRs
+    # (#3776, #3779) were cut at 45 in the cutover DB tests with every prior step
+    # green. 60 now; the growth itself is tracked in HOS-1775.
+    timeout-minutes: 60
     needs: build
 
     services:

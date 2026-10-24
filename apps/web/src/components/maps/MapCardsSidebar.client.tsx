@@ -21,6 +21,7 @@ import type { IconProps } from '@repo/icons';
 import { GalleryIcon, LocationIcon, StarIcon } from '@repo/icons';
 import type { ComponentType } from 'react';
 import { useEffect, useState } from 'react';
+import { MapCardsSheetTrigger } from '@/components/maps/MapCardsSheetTrigger';
 import { CompareButton } from '@/components/shared/compare/CompareButton.client';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { Spinner } from '@/components/shared/feedback/Spinner';
@@ -521,17 +522,15 @@ export function MapCardsSidebar({
     if (isMobile) {
         return (
             <>
-                <button
-                    type="button"
-                    className={sidebarStyles.sheetTrigger}
-                    onClick={() => setIsSheetOpen(true)}
-                    aria-expanded={isSheetOpen}
-                    aria-controls="map-cards-sheet"
-                >
-                    {i18n.openSheetCount
-                        ? i18n.openSheetCount(items.length)
-                        : `${i18n.openSheet} · ${i18n.resultsCount(items.length)}`}
-                </button>
+                <MapCardsSheetTrigger
+                    label={
+                        i18n.openSheetCount
+                            ? i18n.openSheetCount(items.length)
+                            : `${i18n.openSheet} · ${i18n.resultsCount(items.length)}`
+                    }
+                    isSheetOpen={isSheetOpen}
+                    onOpen={() => setIsSheetOpen(true)}
+                />
                 <div
                     id="map-cards-sheet"
                     className={`${sidebarStyles.sheet} ${

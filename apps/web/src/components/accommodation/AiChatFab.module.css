@@ -24,6 +24,19 @@
         box-shadow 0.2s ease;
 }
 
+@media (max-width: 767px) {
+    .fab {
+        display: none;
+    }
+
+    :global([data-mobile-dock]) .fab {
+        display: flex;
+        position: static;
+        width: 44px;
+        height: 44px;
+    }
+}
+
 .fab:hover {
     transform: scale(1.05);
     box-shadow: var(--shadow-card-hover, 0 4px 16px rgba(0, 0, 0, 0.2));

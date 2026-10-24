@@ -19,8 +19,8 @@
  * Reads the {@link useCompareStore} `items` (id + name + thumbnail metadata
  * supplied by the CompareButton) for the selection itself, and
  * {@link useCompareGuard} for the per-plan `maxItems` cap used to size the
- * empty-slot strip and the counter. Renders nothing when the selection is
- * empty.
+ * empty-slot strip and the counter. The dock portal stays mounted while the
+ * selection is empty, and contains the bar when items are selected.
  *
  * Post-review fix (HOS-85): while visible, this bar publishes a
  * `data-compare-bar-visible` flag on `<html>` (cleared on unmount / when the
@@ -42,6 +42,7 @@ import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { clearCompare, removeFromCompare, useCompareStore } from '@/store/compare-store';
+import { DockPortal } from '../dock/DockPortal';
 import styles from './CompareBar.module.css';
 
 /** `<html>` dataset flag published while the bar is visible. See the file header. */
@@ -176,7 +177,7 @@ function computeEmptySlotCount({
  * Floating comparison bar island.
  *
  * @param props - {@link CompareBarProps}
- * @returns The bar, or `null` when the comparison selection is empty.
+ * @returns The mounted dock portal, containing the bar only when selected.
  *
  * @example
  * ```astro
@@ -204,11 +205,6 @@ export const CompareBar: FC<CompareBarProps> = ({ locale = 'es' }) => {
         };
     }, [isVisible]);
 
-    // Hidden entirely when nothing is selected.
-    if (!isVisible) {
-        return null;
-    }
-
     const count = items.length;
     const canCompare = count >= MIN_TO_COMPARE;
     const comparePageHref = `/${locale}/alojamientos/comparar/`;
@@ -231,114 +227,122 @@ export const CompareBar: FC<CompareBarProps> = ({ locale = 'es' }) => {
     };
 
     return (
-        <section
-            // `.barMobile` is the mobile-specific class (HOS-85 T-007): it carries
-            // the `<= 640px` overrides that keep the bar bottom-anchored above the
-            // site's own sticky navigation AND the mobile filters/list-map floating
-            // controls (see the CSS module for the z-index and safe-area
-            // rationale). It is always applied; the overrides themselves are gated
-            // by the media query, not by a runtime viewport check.
-            className={cn(styles.bar, styles.barMobile)}
-            aria-label={t('accommodations.comparison.bar.title', 'Comparar alojamientos')}
-        >
-            <div className={styles.inner}>
-                <div className={styles.info}>
-                    <p className={styles.count}>{counterLabel}</p>
-                    {count === GUIDANCE_THRESHOLD && (
-                        <p className={styles.guidance}>
-                            {t(
-                                'accommodations.comparison.bar.guidance',
-                                'Sumá al menos uno más para comparar'
+        <DockPortal slot="above">
+            {isVisible && (
+                <section
+                    // `.barMobile` is the mobile-specific class (HOS-85 T-007): it carries
+                    // the `<= 640px` overrides that keep the bar bottom-anchored above the
+                    // site's own sticky navigation AND the mobile filters/list-map floating
+                    // controls (see the CSS module for the z-index and safe-area
+                    // rationale). It is always applied; the overrides themselves are gated
+                    // by the media query, not by a runtime viewport check.
+                    className={cn(styles.bar, styles.barMobile)}
+                    data-dock-item
+                    aria-label={t('accommodations.comparison.bar.title', 'Comparar alojamientos')}
+                >
+                    <div className={styles.inner}>
+                        <div className={styles.info}>
+                            <p className={styles.count}>{counterLabel}</p>
+                            {count === GUIDANCE_THRESHOLD && (
+                                <p className={styles.guidance}>
+                                    {t(
+                                        'accommodations.comparison.bar.guidance',
+                                        'Sumá al menos uno más para comparar'
+                                    )}
+                                </p>
                             )}
-                        </p>
-                    )}
-                </div>
+                        </div>
 
-                <ul className={styles.thumbs}>
-                    {items.map((item) => (
-                        <li
-                            key={item.id}
-                            className={styles.thumb}
-                        >
-                            {item.thumbnailUrl ? (
-                                <img
-                                    src={buildThumbUrl(item.thumbnailUrl)}
-                                    alt={item.name ?? ''}
-                                    className={styles.thumbImg}
-                                    loading="lazy"
-                                />
-                            ) : (
-                                <span
-                                    className={styles.thumbPlaceholder}
-                                    aria-hidden="true"
-                                />
-                            )}
+                        <ul className={styles.thumbs}>
+                            {items.map((item) => (
+                                <li
+                                    key={item.id}
+                                    className={styles.thumb}
+                                >
+                                    {item.thumbnailUrl ? (
+                                        <img
+                                            src={buildThumbUrl(item.thumbnailUrl)}
+                                            alt={item.name ?? ''}
+                                            className={styles.thumbImg}
+                                            loading="lazy"
+                                        />
+                                    ) : (
+                                        <span
+                                            className={styles.thumbPlaceholder}
+                                            aria-hidden="true"
+                                        />
+                                    )}
+                                    <button
+                                        type="button"
+                                        className={styles.removeBtn}
+                                        onClick={() => removeFromCompare(item.id)}
+                                        aria-label={t(
+                                            'accommodations.comparison.bar.removeItemAriaLabel',
+                                            'Quitar de la comparación',
+                                            { name: item.name ?? '' }
+                                        )}
+                                    >
+                                        <XIcon
+                                            size={14}
+                                            weight="bold"
+                                            aria-hidden="true"
+                                        />
+                                    </button>
+                                </li>
+                            ))}
+
+                            {Array.from({ length: emptySlotCount }, (_, index) => (
+                                <li
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length placeholder list with no identity beyond position
+                                    key={`empty-slot-${index}`}
+                                    className={styles.emptySlot}
+                                >
+                                    <span className="sr-only">
+                                        {t('accommodations.comparison.bar.emptySlot', 'Vacío')}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <div className={styles.actions}>
                             <button
                                 type="button"
-                                className={styles.removeBtn}
-                                onClick={() => removeFromCompare(item.id)}
-                                aria-label={t(
-                                    'accommodations.comparison.bar.removeItemAriaLabel',
-                                    'Quitar de la comparación',
-                                    { name: item.name ?? '' }
-                                )}
+                                className={styles.clearBtn}
+                                onClick={() => clearCompare()}
                             >
-                                <XIcon
-                                    size={14}
+                                {t('accommodations.comparison.bar.clear', 'Limpiar')}
+                            </button>
+                            <a
+                                href={comparePageHref}
+                                className={styles.cta}
+                                aria-disabled={!canCompare}
+                                data-disabled={canCompare ? undefined : 'true'}
+                                title={
+                                    canCompare
+                                        ? undefined
+                                        : t(
+                                              'accommodations.comparison.bar.minRequired',
+                                              'Elegí al menos 2 para comparar',
+                                              { min: MIN_TO_COMPARE }
+                                          )
+                                }
+                                onClick={handleCtaClick}
+                            >
+                                {t(
+                                    'accommodations.comparison.bar.viewComparison',
+                                    'Ver comparación'
+                                )}
+                                <ArrowRightIcon
+                                    size={16}
                                     weight="bold"
                                     aria-hidden="true"
+                                    className={styles.ctaIcon}
                                 />
-                            </button>
-                        </li>
-                    ))}
-
-                    {Array.from({ length: emptySlotCount }, (_, index) => (
-                        <li
-                            // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length placeholder list with no identity beyond position
-                            key={`empty-slot-${index}`}
-                            className={styles.emptySlot}
-                        >
-                            <span className="sr-only">
-                                {t('accommodations.comparison.bar.emptySlot', 'Vacío')}
-                            </span>
-                        </li>
-                    ))}
-                </ul>
-
-                <div className={styles.actions}>
-                    <button
-                        type="button"
-                        className={styles.clearBtn}
-                        onClick={() => clearCompare()}
-                    >
-                        {t('accommodations.comparison.bar.clear', 'Limpiar')}
-                    </button>
-                    <a
-                        href={comparePageHref}
-                        className={styles.cta}
-                        aria-disabled={!canCompare}
-                        data-disabled={canCompare ? undefined : 'true'}
-                        title={
-                            canCompare
-                                ? undefined
-                                : t(
-                                      'accommodations.comparison.bar.minRequired',
-                                      'Elegí al menos 2 para comparar',
-                                      { min: MIN_TO_COMPARE }
-                                  )
-                        }
-                        onClick={handleCtaClick}
-                    >
-                        {t('accommodations.comparison.bar.viewComparison', 'Ver comparación')}
-                        <ArrowRightIcon
-                            size={16}
-                            weight="bold"
-                            aria-hidden="true"
-                            className={styles.ctaIcon}
-                        />
-                    </a>
-                </div>
-            </div>
-        </section>
+                            </a>
+                        </div>
+                    </div>
+                </section>
+            )}
+        </DockPortal>
     );
 };

@@ -1,4 +1,8 @@
-import { expireAuthorizationWindows, sweepInheritedTouristVips } from '@repo/service-core';
+import {
+    activateCreditedPendingAuthorizations,
+    expireAuthorizationWindows,
+    sweepInheritedTouristVips
+} from '@repo/service-core';
 import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
 import { touristVipInheritance } from '../../routes/billing-subscription/tourist-vip-inheritance.js';
 import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports.js';
@@ -7,10 +11,11 @@ import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.
 import { getPaymentProvider } from '../../utils/payment-provider.js';
 import type { CronJobDefinition } from '../types.js';
 
-/** HOS-1521 / AC:B3:9-10: sweep expired authorization windows every 15 minutes. */
+/** HOS-1521 / HOS-1740: recover credited pending signups, expire windows, then sweep VIP inheritance every 15 minutes. */
 export const subscriptionWindowExpiryJob: CronJobDefinition = {
     name: 'subscription-window-expiry',
-    description: 'Expire authorization windows and cancel pending mandates (HOS-1521, AC:B3:9-10)',
+    description:
+        'Recover credited pending signups and expire authorization windows (HOS-1521, HOS-1740)',
     schedule: '*/15 * * * *',
     enabled: true,
     timeoutMs: 120_000,
@@ -29,43 +34,84 @@ export const subscriptionWindowExpiryJob: CronJobDefinition = {
             };
         }
 
+        let errors = 0;
+        let rejected = false;
+        let creditedPending = {
+            candidates: 0,
+            activated: 0,
+            notActive: 0,
+            skipped: 0,
+            failed: 0,
+            touristVipCancelled: 0
+        };
+        let summary = {
+            abandoned: 0,
+            activated: 0,
+            cancelCalls: 0,
+            noticePending: 0,
+            skipped: 0,
+            touristVipCancelled: 0,
+            retainedReevaluated: 0,
+            failed: 0
+        };
+        let vipSummary = { cancelled: 0, deferred: 0, skipped: 0 };
+        const ports = {
+            provider: getPaymentProvider(),
+            clock: getClock().clock,
+            beforeCancelNotice,
+            touristVipInheritance,
+            coverageNotices: getCoverageNotices(),
+            complements: buildComplementPolicyPorts()
+        };
         try {
-            const summary = await expireAuthorizationWindows(100, {
-                provider: getPaymentProvider(),
-                clock: getClock().clock,
-                beforeCancelNotice,
-                touristVipInheritance,
-                coverageNotices: getCoverageNotices(),
-                complements: buildComplementPolicyPorts()
+            creditedPending = await activateCreditedPendingAuthorizations(100, ports);
+            errors += creditedPending.failed;
+        } catch (error) {
+            rejected = true;
+            errors++;
+            logger.error('Credited pending authorization recovery failed', {
+                error: error instanceof Error ? error.message : String(error)
             });
-            const vipSummary = await sweepInheritedTouristVips(100, {
+        }
+        try {
+            summary = await expireAuthorizationWindows(100, ports);
+            errors += summary.failed;
+        } catch (error) {
+            rejected = true;
+            errors++;
+            logger.error('Authorization window expiry failed', {
+                error: error instanceof Error ? error.message : String(error)
+            });
+        }
+        try {
+            vipSummary = await sweepInheritedTouristVips(100, {
                 provider: getPaymentProvider(),
                 clock: getClock().clock,
                 beforeCancelNotice,
                 touristVipInheritance,
                 coverageNotices: getCoverageNotices()
             });
-            const durationMs = Date.now() - startedAt.getTime();
-            logger.info('Authorization window expiry completed', { ...summary, durationMs });
-            return {
-                success: true,
-                message: `Processed ${summary.abandoned + summary.activated} authorization windows`,
-                processed: summary.abandoned + summary.activated,
-                errors: 0,
-                durationMs,
-                details: { ...summary, ...vipSummary }
-            };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            logger.error('Authorization window expiry failed', { error: message });
-            return {
-                success: false,
-                message: `Authorization window expiry failed: ${message}`,
-                processed: 0,
-                errors: 1,
-                durationMs: Date.now() - startedAt.getTime(),
-                details: { error: message }
-            };
+            rejected = true;
+            errors++;
+            logger.error('Tourist VIP inheritance sweep failed', {
+                error: error instanceof Error ? error.message : String(error)
+            });
         }
+        const durationMs = Date.now() - startedAt.getTime();
+        const processed = creditedPending.activated + summary.abandoned + summary.activated;
+        logger.info('Authorization window expiry completed', {
+            ...summary,
+            creditedPending,
+            durationMs
+        });
+        return {
+            success: !rejected,
+            message: `Processed ${processed} authorization windows`,
+            processed,
+            errors,
+            durationMs,
+            details: { ...summary, creditedPending, ...vipSummary }
+        };
     }
 };

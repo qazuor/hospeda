@@ -4,7 +4,7 @@
  * @description Full HTML shell for all pages. Handles font loading, FOUC prevention,
  * global styles, view transitions (ClientRouter), and page initialization.
  *
- * Renders: SkipToContent > Header > main#main-content > Footer > ScrollToTop
+ * Renders: SkipToContent > Header > main#main-content > Footer > MobileDock
  *
  * Usage:
  * ```astro
@@ -24,7 +24,6 @@ import Header from './Header.astro';
 import Footer from './Footer.astro';
 import GlobalAnnouncements from '@/components/GlobalAnnouncements.astro';
 import SkipToContent from '@/components/shared/navigation/SkipToContent.astro';
-import ScrollToTop from '@/components/shared/navigation/ScrollToTop.astro';
 import NavigationProgress from '@/components/shared/navigation/NavigationProgress.astro';
 import I18nClientData from '@/components/shared/I18nClientData.astro';
 import IconSpriteClientData from '@/components/shared/IconSpriteClientData.astro';
@@ -38,6 +37,7 @@ import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPref
 import { FeedbackHeadlessHost } from '@/components/feedback/FeedbackHeadlessHost.client';
 import { PaginationLoading } from '@/components/shared/feedback/PaginationLoading.client';
 import CriticalStyles from '@/components/shared/CriticalStyles.astro';
+import MobileDock from '@/components/shared/dock/MobileDock.astro';
 // @repo/feedback's package stylesheet and the Hospeda brand-token overrides
 // (`@/styles/feedback-overrides.css`) are NOT imported here (HOS-369 W3-5).
 // `FeedbackHeadlessHost` hydrates with `client:idle` and cannot be interacted
@@ -244,7 +244,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		</main>
 
 		<Footer locale={locale} />
-		<ScrollToTop locale={locale} />
+		<MobileDock locale={locale}><slot name="dock-start" slot="start" /></MobileDock>
 		<CookieConsentBanner
 			client:idle
 			transition:persist="cookie-consent-banner"
