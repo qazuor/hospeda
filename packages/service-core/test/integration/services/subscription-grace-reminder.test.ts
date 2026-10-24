@@ -23,6 +23,11 @@ describe('TEST:1707:3-4 AC:1707:3-4 grace reminders', () => {
             });
             const startedAt = instant('2099-02-01');
             const endsAt = instant('2099-02-11');
+            await insertGraceReminderDeadline({
+                version: 81706999,
+                createdAt: instant('2099-02-07'),
+                daysBefore: [1]
+            });
             await configureGraceReminderSubscription({
                 subscriptionId: fixture.started.subscriptionId,
                 startedAt,
