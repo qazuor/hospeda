@@ -1,4 +1,5 @@
 import type { EmailOutboxRow } from '@repo/db';
+import { getLocalDateString } from '@repo/utils';
 import { GRACE_REMINDER_SUBJECT, GraceReminder } from '../../templates/billing/grace-reminder.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 
@@ -27,7 +28,7 @@ function renderGraceReminder(row: EmailOutboxRow, siteUrl: string) {
         react: (
             <GraceReminder
                 vertical={data.vertical}
-                graceEndDate={data.graceEndsAt}
+                graceEndDate={getLocalDateString({ instant: endDate })}
                 daysBefore={data.daysBefore}
                 subscriptionUrl={`${siteUrl}/es/mi-cuenta/suscripcion/`}
             />

@@ -21,7 +21,7 @@ describe('TEST:1707:5 AC:1707:5 grace reminder renderer', () => {
         const html = renderToStaticMarkup(result.react);
         expect(result.subject).toBe(GRACE_REMINDER_SUBJECT);
         expect(html).toContain('Gastronomía');
-        expect(html).toContain('20 de octubre de 2026');
+        expect(html).toContain('19 de octubre de 2026');
         expect(html).toContain('3 días');
         expect(html).toContain('Mercado Pago');
         expect(html).toContain('https://hospeda.test/es/mi-cuenta/suscripcion/');
