@@ -1,7 +1,7 @@
 /**
  * V6 cutover step 3: writes the five cutover trials with `writeCutoverTrials` and the real campaign adapter.
  * Run during cutover step 3, after `hops db-migrate` and after the new image is up with crons off.
- * First run `pnpm --filter hospeda-api exec tsx scripts/cutover-v6-step-3.ts --dry-run`, check the five rows by hand, then run the same command with `--confirm-write-trials`. A rerun writes nothing and reports `already_done`.
+ * First run `pnpm --dir apps/api exec tsx scripts/cutover-v6-step-3.ts --dry-run`, check the five rows by hand, then run the same command with `--confirm-write-trials`. A rerun writes nothing and reports `already_done`.
  * Exit codes: 0 dry_run/completed/already_done, 1 nothing_planned or error, 2 refused arguments.
  */
 import { resolve } from 'node:path';

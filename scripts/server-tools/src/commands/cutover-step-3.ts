@@ -76,7 +76,7 @@ Run the V6 cutover step 3 script (writes the five cutover trials) against the
 target database, from the VPS host.
 
 The script runs as:
-  pnpm --filter hospeda-api exec tsx scripts/cutover-v6-step-3.ts <mode> [--owner-ids=<csv>]
+  pnpm --dir apps/api exec tsx scripts/cutover-v6-step-3.ts <mode> [--owner-ids=<csv>]
 
 with the target api container's environment (NODE_ENV, PORT, API_* and
 HOSPEDA_*) and a host-reachable HOSPEDA_DATABASE_URL. The environment is never
