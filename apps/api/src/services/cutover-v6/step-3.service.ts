@@ -45,7 +45,7 @@ export interface RunStep3Input {
     readonly db?: DrizzleClient;
     readonly clock: Clock;
     readonly dryRun: boolean;
-    /** Tests only (Coord-680): never passed by the CLI. */
+    /** Owner ids supplied by the CLI for staging rehearsals; production rejects this option. */
     readonly ownerIds?: readonly string[];
     /** Tests only: overrides for the real campaign adapter. */
     readonly campaignDeps?: Partial<TrialCampaignOutboxDependencies>;
