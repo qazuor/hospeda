@@ -263,7 +263,9 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 		font-family: var(--font-heading);
 		font-weight: 700;
 		font-size: var(--text-lg);
-		color: var(--brand-accent);
+		/* `--brand-accent-text` is the orange meant for TEXT on light surfaces;
+		   the fill token measured 2.82:1 on the white header (HOS-1766). */
+		color: var(--brand-accent-text);
 	}
 
 	.comparison-table__plan-period {
@@ -349,8 +351,16 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 		justify-content: center;
 	}
 
+	/*
+	 * HOS-1766: `--brand-tertiary` is a pale-green SURFACE tint (L 0.92), so as
+	 * ink it measured 1.25:1 on the white card and vanished in dark (1.04:1).
+	 * `--hospeda-forest-link` is the AA-safe green TEXT step (the same one the
+	 * pricing toggle badge uses, HOS-943): >= 4.5:1 on card and on the warm row
+	 * hover, in both themes. Pinned by
+	 * `packages/design-tokens/src/tokens/plan-comparison-contrast.test.ts`.
+	 */
 	.comparison-table__icon--included {
-		color: var(--brand-tertiary);
+		color: var(--hospeda-forest-link);
 	}
 
 	.comparison-table__icon--not-included {
@@ -366,7 +376,7 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 	}
 
 	.comparison-table__limit-value--unlimited {
-		color: var(--brand-tertiary);
+		color: var(--hospeda-forest-link);
 		font-weight: 700;
 	}
 
@@ -391,7 +401,9 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 		font-size: var(--text-caption);
 		font-family: var(--font-sans);
 		font-weight: 600;
-		color: var(--brand-accent);
+		/* Foreground ink, not `--brand-accent`: orange on the blue tint measured
+		   2.52:1 in light. The tint and border keep the chip reading as a badge. */
+		color: var(--core-foreground);
 		background-color: var(--brand-primary-a15);
 		border: 1px solid var(--brand-primary-a30);
 		border-radius: var(--radius-pill, 999px);
