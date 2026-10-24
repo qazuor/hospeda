@@ -1,9 +1,10 @@
 /**
  * @module test/layouts/mobile-dock-single-row-contract
- * @description HOS-1780 regressions. Below 400px the mobile dock row used to
- * wrap its round buttons onto a second line (dock height ~64 -> ~123px). The
- * owner decision is: compact spacing below 400px, and an icon-only Filtros
- * trigger at 360px and below. Widths cannot be computed from CSS, so these
+ * @description HOS-1780 regressions. The mobile dock row used to wrap its
+ * round buttons onto a second line (dock height ~64 -> ~123px). The decision
+ * is: compact spacing across the whole mobile dock (<=767px), an icon-only
+ * Filtros trigger at 360px and below, and a results pill on the map view that
+ * degrades full label -> short label -> icon + count (449px / 419px). Widths cannot be computed from CSS, so these
  * parse the cascade and pin the declarations that make the row fit; the real
  * rendered widths were measured in a headless browser (see the HOS-1780 PR).
  */
@@ -14,7 +15,7 @@ import { describe, expect, it } from 'vitest';
 const SRC = resolve(__dirname, '../../src');
 const read = (path: string): string => readFileSync(resolve(SRC, path), 'utf8');
 
-const COMPACT = 'max-width: 399px';
+const COMPACT = 'max-width: 767px';
 const NARROW = 'max-width: 360px';
 
 interface Rule {
@@ -103,17 +104,11 @@ const mapCards = parseRules(read('components/maps/MapCardsSidebar.module.css'));
 const DOCK_TRIGGER = '[data-mobile-dock] .floatingTrigger';
 const DOCK_LABEL = '[data-mobile-dock] .floatingTriggerLabel';
 
-describe('HOS-1780 compact dock below 400px', () => {
+describe('HOS-1780 compact dock across the whole mobile range', () => {
     it('tightens the row gap and lateral padding below the base values', () => {
-        const baseGap = dock
-            .filter(
-                (r) =>
-                    r.selector === '.mobile-dock__row' && !inQuery(r, COMPACT) && 'gap' in r.decls
-            )
-            .map((r) => r.decls.gap)
-            .at(-1);
-        expect(baseGap).toBe('var(--space-2)');
-        expect(valueUnder(dock, '.mobile-dock__row', COMPACT, 'gap')).toBe('var(--space-1)');
+        const gaps = under(dock, '.mobile-dock__row', COMPACT).filter((r) => 'gap' in r.decls);
+        // The base rule keeps `var(--space-2)`; the compact one is declared later.
+        expect(gaps.map((r) => r.decls.gap)).toEqual(['var(--space-2)', 'var(--space-1)']);
         // The base padding is the `--space-container-x` clamp (12px on phones).
         expect(valueUnder(dock, '.mobile-dock__row', COMPACT, 'padding-inline')).toBe(
             'var(--space-2)'
@@ -121,10 +116,16 @@ describe('HOS-1780 compact dock below 400px', () => {
     });
 
     it('declares the compact row rule after the base rules so it wins the cascade', () => {
-        const compact = under(dock, '.mobile-dock__row', COMPACT).at(-1);
-        const base = dock.filter((r) => r.selector === '.mobile-dock__row' && !inQuery(r, COMPACT));
+        const rows = under(dock, '.mobile-dock__row', COMPACT);
+        const base = rows.find((r) => r.decls.gap === 'var(--space-2)');
+        const compact = rows.find((r) => r.decls.gap === 'var(--space-1)');
+        expect(base).toBeDefined();
         expect(compact).toBeDefined();
-        for (const rule of base) expect(compact && compact.order > rule.order).toBe(true);
+        expect(base && compact && compact.order > base.order).toBe(true);
+        // `padding` (shorthand) must precede `padding-inline` or it would reset it.
+        const shorthand = rows.find((r) => 'padding' in r.decls);
+        const inline = rows.find((r) => 'padding-inline' in r.decls);
+        expect(shorthand && inline && inline.order > shorthand.order).toBe(true);
     });
 
     it('tightens the gaps inside the start and end groups', () => {
@@ -135,11 +136,11 @@ describe('HOS-1780 compact dock below 400px', () => {
         expect(pill).toBe('2px');
     });
 
-    it('never wraps the row to a second line by relying on flex-wrap alone', () => {
-        // The row keeps flex-wrap as a safety net for content that genuinely
-        // cannot fit (e.g. the map view CTA), but the compact query must not
-        // re-introduce larger spacing.
-        expect(valueUnder(dock, '.mobile-dock__row', COMPACT, 'flex-wrap')).toBeUndefined();
+    it('keeps flex-wrap only as a safety net and never widens the spacing again', () => {
+        // Wrapping is the failure mode HOS-1780 removed; the compact rule must
+        // stay the LAST word on the row's gap.
+        const gaps = under(dock, '.mobile-dock__row', COMPACT).filter((r) => 'gap' in r.decls);
+        expect(gaps.at(-1)?.decls.gap).toBe('var(--space-1)');
     });
 
     it('compacts the Lista/Mapa pill but keeps a 44px hit area', () => {
@@ -152,16 +153,14 @@ describe('HOS-1780 compact dock below 400px', () => {
         expect(valueUnder(toggle, btn, '(max-width: 767px)', 'min-height')).toBe('36px');
     });
 
-    it('compacts the Filtros trigger below 400px and guarantees its 44px height', () => {
+    it('compacts the Filtros trigger and guarantees its 44px height', () => {
         expect(valueUnder(filters, DOCK_TRIGGER, '(max-width: 767px)', 'min-height')).toBe('44px');
         const compact = valueUnder(filters, DOCK_TRIGGER, COMPACT, 'padding');
         expect(compact).toBe('0.75rem 0.75rem');
         // Declared after the dock rule it overrides (same specificity).
-        const base = under(filters, DOCK_TRIGGER, '(max-width: 767px)').find(
-            (r) => 'padding' in r.decls
-        );
-        const tight = under(filters, DOCK_TRIGGER, COMPACT).find((r) => 'padding' in r.decls);
-        expect(base && tight && tight.order > base.order).toBe(true);
+        const paddings = under(filters, DOCK_TRIGGER, COMPACT).filter((r) => 'padding' in r.decls);
+        expect(paddings).toHaveLength(2);
+        expect(paddings[1].order > paddings[0].order).toBe(true);
     });
 
     it('keeps the map-cards CTA a 44px target inside the dock', () => {
@@ -214,5 +213,81 @@ describe('HOS-1780 icon-only Filtros trigger at 360px and below', () => {
         const tsx = read('components/shared/filters/components/FilterDockTrigger.tsx');
         expect(tsx).toMatch(/<span className=\{styles\.floatingTriggerLabel\}>\{label\}<\/span>/);
         expect(tsx).toMatch(/aria-label=\{label\}/);
+    });
+});
+
+const PILL = '.sheetTrigger';
+const SHORT_Q = 'max-width: 449px';
+const COUNT_Q = 'max-width: 419px';
+
+describe('HOS-1780 map results pill degrades full -> short -> icon + count', () => {
+    const display = (selector: string, query: string): string | undefined =>
+        valueUnder(mapCards, selector, query, 'display');
+
+    it('shows only the full label by default', () => {
+        const base = (sel: string) =>
+            mapCards.filter((r) => r.selector === sel && r.queries.length === 0);
+        expect(base('.sheetTriggerFull')).toEqual([]);
+        expect(base('.sheetTriggerShort').at(-1)?.decls.display).toBe('none');
+        expect(base('.sheetTriggerCount').find((r) => 'display' in r.decls)?.decls.display).toBe(
+            'none'
+        );
+    });
+
+    it('swaps the full label for the short one at 449px and below', () => {
+        expect(display('.sheetTriggerFull', SHORT_Q)).toBe('none');
+        expect(display('.sheetTriggerShort', SHORT_Q)).toBe('inline');
+    });
+
+    it('swaps the short label for icon + count at 419px and below', () => {
+        expect(display('.sheetTriggerShort', COUNT_Q)).toBe('none');
+        expect(display('.sheetTriggerCount', COUNT_Q)).toBe('inline-flex');
+    });
+
+    it('keeps the icon + count variant a 44px-wide target inside the dock', () => {
+        expect(valueUnder(mapCards, `[data-mobile-dock] ${PILL}`, COUNT_Q, 'min-width')).toBe(
+            '44px'
+        );
+        expect(valueUnder(mapCards, `[data-mobile-dock] ${PILL}`, COUNT_Q, 'justify-content')).toBe(
+            'center'
+        );
+    });
+
+    it('declares the swaps after the base display:none so they win the cascade', () => {
+        const base = mapCards.filter(
+            (r) => r.selector === '.sheetTriggerShort' && r.queries.length === 0
+        );
+        const swap = under(mapCards, '.sheetTriggerShort', SHORT_Q);
+        expect(base.length).toBeGreaterThan(0);
+        for (const rule of base) expect(swap[0].order > rule.order).toBe(true);
+    });
+
+    it('wires the three variants and keeps the full label as the accessible name', () => {
+        const tsx = read('components/maps/MapCardsSheetTrigger.tsx');
+        expect(tsx).toMatch(/aria-label=\{label\}/);
+        for (const cls of ['sheetTriggerFull', 'sheetTriggerShort', 'sheetTriggerCount']) {
+            expect(tsx).toContain(`sidebarStyles.${cls}`);
+        }
+        // Each visible part is aria-hidden so the name is not announced twice,
+        // and none is removed from the DOM or hidden with a rule that drops the
+        // button's own name.
+        expect(tsx.match(/aria-hidden="true"/g)?.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('feeds the short label through i18n in es, en and pt', () => {
+        for (const locale of ['es', 'en', 'pt']) {
+            const maps = JSON.parse(
+                readFileSync(
+                    resolve(__dirname, `../../../../packages/i18n/src/locales/${locale}/maps.json`),
+                    'utf8'
+                )
+            ) as { sidebar: Record<string, string> };
+            expect(maps.sidebar.openSheetCountShort_one).toContain('{{count}}');
+            expect(maps.sidebar.openSheetCountShort_other).toContain('{{count}}');
+            expect(maps.sidebar.openSheetCountShort_other).not.toMatch(/^(Ver|View)\b/);
+        }
+        const page = read('pages/[lang]/alojamientos/mapa.astro');
+        expect(page).toContain("t('maps.sidebar.openSheetCountShort_one'");
+        expect(page).toContain("t('maps.sidebar.openSheetCountShort_other'");
     });
 });
