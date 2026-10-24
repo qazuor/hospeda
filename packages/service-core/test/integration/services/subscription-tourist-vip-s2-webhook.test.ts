@@ -13,6 +13,7 @@ import type { NoticeDelivery } from '@repo/payments';
 import { encodeFakeNotice, FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { receiveProviderDelivery } from '../../../src/services/billing/notice/receive-provider-delivery.service.js';
+import { sweepInheritedTouristVips } from '../../../src/services/billing/subscription/cancel-inherited-tourist-vip.service.js';
 import { closeServiceTestPool, getServiceTestDb } from './helpers.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
 
@@ -234,6 +235,22 @@ describe('TEST:1741 webhook S2 inherited Tourist VIP', () => {
         const notices = await f.vipNotices();
         expect(notices).toHaveLength(1);
         expect(notices[0]?.template).toBe(vipTemplate);
+
+        const swept = await sweepInheritedTouristVips(10, {
+            provider: f.provider,
+            clock,
+            beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+            touristVipInheritance: inheritance
+        });
+        expect(swept).toEqual({ cancelled: 1, deferred: 0, skipped: 0 });
+        expect(await f.readStatus(f.vip.id)).toBe('CANCELLED');
+        expect(cancel).toHaveBeenCalledTimes(1);
+        expect(cancel).toHaveBeenCalledWith({
+            authorizationId: f.vipAuthorization.authorizationId
+        });
+        const delivered = await f.vipNotices();
+        expect(delivered).toHaveLength(1);
+        expect(delivered[0]?.status).toBe('sent');
     });
 
     it('acknowledges a committed activation when the VIP clause fails and ignores redelivery', async () => {
