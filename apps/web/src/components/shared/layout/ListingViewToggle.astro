@@ -99,9 +99,9 @@ const dock = variant === 'dock';
 		}
 	}
 
-	/* HOS-1780: below 400px the dock row must fit on one line, so the pill
+	/* HOS-1780: at 767px and below the dock row must fit on one line, so the pill
 	   gives up horizontal padding but keeps both labels and the 44px height. */
-	@media (max-width: 399px) {
+	@media (max-width: 767px) {
 		.view-toggle--dock {
 			gap: 2px;
 			padding: 4px 2px;

@@ -142,24 +142,26 @@ const { locale } = Astro.props;
 			display: none;
 		}
 
-		/* HOS-1780: below 400px the row must stay on ONE line. The controls keep
-		   their text and 44px height; only the spacing around them tightens.
-		   Declared after the base rules so it wins the cascade. */
-		@media (max-width: 399px) {
-			.mobile-dock__row {
-				gap: var(--space-1);
-				padding-inline: var(--space-2);
-			}
+		/* HOS-1780: the row must stay on ONE line across the whole mobile dock
+		   (<=767px). The controls keep their text and 44px height; only the spacing
+		   around them tightens. Measured with the map view's four controls (Filtros,
+		   list/map toggle, results pill, scroll-to-top): at the base spacing the
+		   row wraps below 516px, so the tight spacing has to hold up to the dock's
+		   own breakpoint rather than stop at a phone width. Declared after the base
+		   rules so it wins the cascade. */
+		.mobile-dock__row {
+			gap: var(--space-1);
+			padding-inline: var(--space-2);
+		}
 
-			.mobile-dock__start,
-			.mobile-dock__end {
-				gap: var(--space-1);
-			}
+		.mobile-dock__start,
+		.mobile-dock__end {
+			gap: var(--space-1);
+		}
 
-			.mobile-dock__start:has([data-dock-item]) {
-				gap: 2px;
-				padding: 2px;
-			}
+		.mobile-dock__start:has([data-dock-item]) {
+			gap: 2px;
+			padding: 2px;
 		}
 
 		:global(html[data-mobile-menu-open]) .mobile-dock,

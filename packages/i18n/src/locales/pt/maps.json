@@ -23,6 +23,8 @@
         "openSheet": "Ver cartões",
         "openSheetCount_one": "Ver {{count}} resultado",
         "openSheetCount_other": "Ver {{count}} resultados",
+        "openSheetCountShort_one": "{{count}} resultado",
+        "openSheetCountShort_other": "{{count}} resultados",
         "closeSheet": "Fechar",
         "loading": "Carregando resultados…"
     },
