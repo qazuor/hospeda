@@ -314,7 +314,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
                 capability: 'read',
                 message: `Mercado Pago returned an unsupported authorization (status: ${parsed.status}, frequency_type: ${parsed.auto_recurring.frequency_type})`,
                 providerStatus: parsed.status,
-                frequencyType: parsed.auto_recurring.frequency_type
+                providerCadence: parsed.auto_recurring.frequency_type
             });
         }
         const status = statuses[parsed.status as keyof typeof statuses];

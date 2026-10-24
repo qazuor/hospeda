@@ -5,14 +5,14 @@ export class UnsupportedProviderAuthorizationError extends Error {
     readonly authorizationId: string;
     readonly chargeId?: string;
     readonly providerStatus?: string;
-    readonly frequencyType?: string;
+    readonly providerCadence?: string;
     readonly correlationId: string;
 
     constructor(input: {
         readonly authorizationId: string;
         readonly chargeId?: string;
         readonly providerStatus?: string;
-        readonly frequencyType?: string;
+        readonly providerCadence?: string;
         readonly correlationId: string;
         readonly cause: unknown;
     }) {
@@ -23,7 +23,7 @@ export class UnsupportedProviderAuthorizationError extends Error {
         this.authorizationId = input.authorizationId;
         this.chargeId = input.chargeId;
         this.providerStatus = input.providerStatus;
-        this.frequencyType = input.frequencyType;
+        this.providerCadence = input.providerCadence;
         this.correlationId = input.correlationId;
     }
 }

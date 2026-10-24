@@ -64,7 +64,7 @@ describe('unsupported unknown provider authorization', () => {
                 capability: 'read',
                 message: 'unsupported shape',
                 providerStatus: 'authorized',
-                frequencyType: 'days'
+                providerCadence: 'days'
             })
         );
 
@@ -84,7 +84,7 @@ describe('unsupported unknown provider authorization', () => {
             name: 'UnsupportedProviderAuthorizationError',
             authorizationId: 'foreign-auth',
             providerStatus: 'authorized',
-            frequencyType: 'days',
+            providerCadence: 'days',
             correlationId: expect.any(String),
             cause: expect.objectContaining({ code: 'UNSUPPORTED' })
         });
@@ -129,7 +129,7 @@ describe('unsupported unknown provider authorization', () => {
             capability: 'read',
             message: 'unsupported daily authorization',
             providerStatus: 'authorized',
-            frequencyType: 'days'
+            providerCadence: 'days'
         });
         doubles.read.mockRejectedValueOnce(providerError);
 
@@ -151,7 +151,7 @@ describe('unsupported unknown provider authorization', () => {
         expect(logged).toHaveProperty('authorizationId', 'foreign-auth');
         expect(logged).toHaveProperty('chargeId', 'foreign-charge');
         expect(logged).toHaveProperty('providerStatus', 'authorized');
-        expect(logged).toHaveProperty('frequencyType', 'days');
+        expect(logged).toHaveProperty('providerCadence', 'days');
         expect(logged).toHaveProperty('correlationId', expect.any(String));
         expect(logged).toHaveProperty('cause', providerError);
         expect(message).toBe('Ignored unsupported foreign provider authorization foreign-auth');

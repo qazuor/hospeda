@@ -172,7 +172,7 @@ async function resolveUnknownAuthorization(
                 authorizationId: input.authorizationId,
                 ...(input.arrival.kind === 'CHARGE' ? { chargeId: input.arrival.chargeId } : {}),
                 providerStatus: error.providerStatus,
-                frequencyType: error.frequencyType,
+                providerCadence: error.providerCadence,
                 correlationId,
                 cause: error
             });

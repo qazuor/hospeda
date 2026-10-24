@@ -31,7 +31,7 @@ export interface PaymentProviderErrorInput {
     readonly cause?: unknown;
     readonly incompleteRead?: boolean;
     readonly providerStatus?: string;
-    readonly frequencyType?: string;
+    readonly providerCadence?: string;
 }
 
 /** A typed refusal from a payment provider. */
@@ -42,8 +42,8 @@ export class PaymentProviderError extends Error {
     readonly incompleteRead: boolean;
     /** The provider's status for an unsupported resource shape, when available. */
     readonly providerStatus?: string;
-    /** The provider's billing frequency for an unsupported authorization, when available. */
-    readonly frequencyType?: string;
+    /** The provider's billing cadence for an unsupported authorization, as the provider spelled it, when available. */
+    readonly providerCadence?: string;
 
     /**
      * @param input.code - Why the provider refused
@@ -52,7 +52,7 @@ export class PaymentProviderError extends Error {
      * @param input.cause - The underlying error, when there is one
      * @param input.incompleteRead - Whether the provider returned a record still being written
      * @param input.providerStatus - The provider's status for an unsupported resource shape
-     * @param input.frequencyType - The provider's billing frequency for an unsupported authorization
+     * @param input.providerCadence - The provider's billing cadence for an unsupported authorization, as the provider spelled it
      */
     constructor(input: PaymentProviderErrorInput) {
         super(input.message, input.cause === undefined ? undefined : { cause: input.cause });
@@ -61,6 +61,6 @@ export class PaymentProviderError extends Error {
         this.capability = input.capability;
         this.incompleteRead = input.incompleteRead ?? false;
         this.providerStatus = input.providerStatus;
-        this.frequencyType = input.frequencyType;
+        this.providerCadence = input.providerCadence;
     }
 }
