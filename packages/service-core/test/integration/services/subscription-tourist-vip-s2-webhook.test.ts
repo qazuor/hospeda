@@ -258,18 +258,15 @@ describe('TEST:1741 webhook S2 inherited Tourist VIP', () => {
         expect(await successful.vipNotices()).toHaveLength(1);
 
         const f = await fixture();
-        const originalRead = f.provider.readAuthorization.bind(f.provider);
-        vi.spyOn(f.provider, 'readAuthorization').mockImplementation(async (input) => {
-            if (input.authorizationId === f.vipAuthorization.authorizationId) {
-                throw new Error('simulated VIP authorization read failure');
-            }
-            return originalRead(input);
-        });
         const ports = {
             provider: f.provider,
             clock,
             beforeCancelNotice: outboxBeforeCancelNotice(),
-            touristVipInheritance: inheritance
+            touristVipInheritance: {
+                inherits: async () => {
+                    throw new Error('simulated inheritance read failure');
+                }
+            }
         };
         const input = {
             url: `https://api.example.test/webhook?source_news=webhooks&t=${crypto.randomUUID()}`,
