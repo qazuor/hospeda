@@ -123,6 +123,9 @@ body {
     max-width: 44rem;
     margin-inline: auto;
     padding: 0 1.5rem 5rem;
+    /* A long token (a URL, a hyphen-less compound) must wrap instead of pushing
+       its grid column wider than the viewport on a 320px phone (HOS-1766). */
+    overflow-wrap: break-word;
 }
 .eyebrow {
     font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -310,7 +313,7 @@ ol.steps {
 }
 ol.steps li {
     display: grid;
-    grid-template-columns: 2.6rem 1fr;
+    grid-template-columns: 2.6rem minmax(0, 1fr);
     gap: 1rem;
     padding: 1.2rem 0;
     border-top: 1px solid var(--line);
@@ -376,11 +379,40 @@ ol.steps li:last-child {
 }
 
 /* --- Tablas --- */
+/*
+ * Scroll affordance (HOS-1766). On a phone the tier tables are wider than the
+ * viewport and the scrollbar is invisible, so the Premium column simply looked
+ * absent. Four stacked backgrounds paint the classic "scroll shadows": a shadow
+ * on each edge (`scroll`, always attached to the box) hidden by a surface-
+ * coloured cover (`local`, attached to the content). At scroll position 0 the
+ * left cover sits on the left shadow and only the RIGHT shadow shows; at the
+ * far end it flips; in the middle both show. A table that fits shows neither,
+ * so no JavaScript is needed to know whether it scrolls.
+ */
 .tablewrap {
+    --shadow-edge: color-mix(in srgb, var(--ink) 28%, transparent);
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     border: 1px solid var(--line);
     border-radius: 6px;
-    background: var(--surface);
+    background-color: var(--surface);
+    background-image:
+        linear-gradient(to right, var(--surface) 30%, transparent),
+        linear-gradient(to left, var(--surface) 30%, transparent),
+        linear-gradient(to right, var(--shadow-edge), transparent),
+        linear-gradient(to left, var(--shadow-edge), transparent);
+    background-position:
+        left center,
+        right center,
+        left center,
+        right center;
+    background-repeat: no-repeat;
+    background-size:
+        2rem 100%,
+        2rem 100%,
+        0.9rem 100%,
+        0.9rem 100%;
+    background-attachment: local, local, scroll, scroll;
 }
 table {
     border-collapse: collapse;
@@ -468,14 +500,20 @@ td.mono {
     align-items: center;
     gap: 0.6rem;
     align-self: flex-start;
+    /* Never wider than the column, and free to wrap onto a second line, so a
+       long label cannot run off the right edge of a narrow phone (HOS-1766). */
+    max-width: 100%;
     background: var(--cta-bg);
     color: var(--cta-ink);
     text-decoration: none;
     font-family: "Archivo", sans-serif;
     font-weight: 700;
     font-size: 1.05rem;
+    line-height: 1.35;
     padding: 0.85rem 1.5rem;
     border-radius: 5px;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 .cta:hover {
     filter: brightness(1.08);
@@ -509,4 +547,52 @@ td.mono {
    a selector that matches nothing simply does not apply. */
 .panel--no {
     border-top: 3px solid var(--stop);
+}
+
+/* --- Telefono (HOS-1766) ---
+   Measured at 320 and 375px with the six pages: the tier tables overflow by
+   120-210px, the factsheet strands its third fact on a row of its own with no
+   divider, and the closing CTA ran off the screen. The shadows above tell the
+   reader a table scrolls; this block makes less of it need to. */
+@media (max-width: 40rem) {
+    .wrap {
+        padding-inline: 1.15rem;
+    }
+    th,
+    td {
+        padding: 0.7rem 0.65rem;
+    }
+    table {
+        font-size: 1rem;
+    }
+    th {
+        font-size: 0.72rem;
+        letter-spacing: 0.03em;
+    }
+    td.mono {
+        font-size: 0.88rem;
+    }
+    .factsheet {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .fact {
+        border-bottom: 1px solid var(--line);
+    }
+    .fact:nth-child(even) {
+        border-right: 0;
+    }
+    /* An odd last fact spans the row, so it has no empty neighbour cell. */
+    .fact:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+        border-right: 0;
+    }
+    .fact:last-child,
+    .fact:nth-last-child(2):nth-child(odd) {
+        border-bottom: 0;
+    }
+    .cta {
+        align-self: stretch;
+        justify-content: center;
+        text-align: center;
+    }
 }

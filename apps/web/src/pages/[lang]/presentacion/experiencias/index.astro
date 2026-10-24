@@ -84,6 +84,7 @@ import SEOHead from '@/components/seo/SEOHead.astro';
 
 import '@/styles/presentacion.css';
 import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
+import { createT } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getBrandPhoneLocalDisplay } from '@/lib/brand-phone';
 import { getSiteUrl } from '@/lib/env';
@@ -93,6 +94,11 @@ import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 
 const locale = Astro.locals.locale as SupportedLocale;
+// The presentations are Spanish-only BY DESIGN (see "WHY IT IS NOT TRANSLATED" above), so the
+// closing button label is resolved in `es` whatever the URL locale is: an English label on a
+// Spanish page would be the only mixed-language string on it. The en/pt keys exist for catalogue
+// parity, not for this page.
+const ctaLabel = createT('es')('pricing.presentation.cta.seePlans');
 // Brand contact phone, single source of truth (HOS-364) — only the phone
 // digits are parameterized so a real number change does not require
 // re-editing prose.
@@ -483,7 +489,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/exp
       Cargar la experiencia es gratis y no te compromete. Recién decidís cuando la querés
       publicar, y aun ahí tenés 30 días para arrepentirte sin que se te cobre un peso.
     </p>
-    <a class="cta" href="https://hospeda.com.ar/es/planes/experiencias/precios/">hospeda.com.ar/es/planes/experiencias/precios/</a>
+    <a class="cta" href="https://hospeda.com.ar/es/planes/experiencias/precios/">{ctaLabel}</a>
     <div class="phone">
       <span class="fact__k">¿Preferís que te acompañemos?</span>
       <strong>Llamanos o escribinos por WhatsApp al {brandPhone}</strong>
