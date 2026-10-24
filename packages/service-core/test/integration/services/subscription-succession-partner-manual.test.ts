@@ -1,4 +1,4 @@
-import { billingOptions, eq, getDb, plans, planVersions, subscriptions, users } from '@repo/db';
+import { billingOptions, eq, plans, planVersions, subscriptions, users } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { startSuccession } from '../../../src/services/billing/subscription/start-succession.service';
@@ -11,7 +11,7 @@ afterAll(closeServiceTestPool);
 
 describe('TEST:1739:3 succession rejects manual-only Partner plans', () => {
     it('rejects before admitting the predecessor or calling the provider', async () => {
-        const db = getDb();
+        const db = getServiceTestDb();
         const [user] = await db
             .insert(users)
             .values({
