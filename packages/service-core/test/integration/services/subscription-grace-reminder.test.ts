@@ -14,6 +14,36 @@ const instant = (day: string) => new Date(`${day}T15:00:00.000Z`);
 
 describe('TEST:1707:3-4 AC:1707:3-4 grace reminders', () => {
     it.skipIf(!isServiceTestDbAvailable())(
+        'enqueues with the grace reminder configuration published by the empty-database migration',
+        async () => {
+            const fixture = await graceFixture();
+            await configureGraceReminderSubscription({
+                subscriptionId: fixture.started.subscriptionId,
+                startedAt: instant('2099-03-01'),
+                endsAt: instant('2099-03-20')
+            });
+            const result = await sendGraceReminders(
+                { limit: 1000 },
+                { clock: { now: () => instant('2099-03-17') } }
+            );
+            expect(result.enqueued).toBe(1);
+            const rows = await readGraceReminderOutbox(fixture.started.subscriptionId);
+            expect(rows).toHaveLength(1);
+            expect(rows[0]?.payload).toMatchObject({
+                subscriptionId: fixture.started.subscriptionId,
+                daysBefore: 3,
+                deadlinesVersion: 2
+            });
+            await configureGraceReminderSubscription({
+                subscriptionId: fixture.started.subscriptionId,
+                startedAt: instant('2099-03-01'),
+                endsAt: instant('2099-03-20'),
+                status: 'SUSPENDED'
+            });
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
         'enqueues each frozen milestone once and ignores subscriptions outside grace',
         async () => {
             const fixture = await graceFixture();
@@ -64,6 +94,23 @@ describe('TEST:1707:3-4 AC:1707:3-4 grace reminders', () => {
                 endsAt,
                 status: 'ACTIVE'
             });
+            expect((await run()).enqueued).toBe(0);
+            expect(await readGraceReminderOutbox(fixture.started.subscriptionId)).toHaveLength(2);
+            await configureGraceReminderSubscription({
+                subscriptionId: fixture.started.subscriptionId,
+                startedAt: instant('2099-02-01'),
+                endsAt: instant('2099-02-11'),
+                status: 'SUSPENDED'
+            });
+            expect((await run()).enqueued).toBe(0);
+            expect(await readGraceReminderOutbox(fixture.started.subscriptionId)).toHaveLength(2);
+
+            await configureGraceReminderSubscription({
+                subscriptionId: fixture.started.subscriptionId,
+                startedAt: instant('2099-02-01'),
+                endsAt: instant('2099-02-09')
+            });
+            today = instant('2099-02-10');
             expect((await run()).enqueued).toBe(0);
             expect(await readGraceReminderOutbox(fixture.started.subscriptionId)).toHaveLength(2);
 
