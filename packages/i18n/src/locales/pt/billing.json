@@ -252,7 +252,8 @@
                 "touristVipInherited": "Seu plano atual já inclui os benefícios do Turista VIP",
                 "commitmentTaken": "Você já tem uma assinatura em andamento nesta categoria.",
                 "generic": "Não foi possível iniciar sua assinatura. Tente novamente em alguns minutos.",
-                "providerRejected": "O Mercado Pago não aceitou os dados do pagamento. Confira se o e-mail é o da sua conta do Mercado Pago e tente de novo."
+                "providerRejected": "O Mercado Pago não aceitou os dados do pagamento. Confira se o e-mail é o da sua conta do Mercado Pago e tente de novo.",
+                "partnerManualOnly": "A assinatura de parceiros não é contratada por aqui. Nossa equipe entrará em contato para combinar o pagamento e a ativação."
             },
             "trialNotice": {
                 "running_one": "Você está no período de teste: resta {{days}} dia, até {{date}}.",
