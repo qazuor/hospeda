@@ -47,7 +47,7 @@ describe('TEST:1745d:1 cutover step 3 module graph loads under tsx', () => {
                 // Act
                 const child = spawnSync('pnpm', ['--dir', 'apps/api', 'exec', 'tsx', entry], {
                     cwd: REPO_ROOT,
-                    env: { ...process.env, CI: 'true' },
+                    env: process.env,
                     encoding: 'utf8',
                     timeout: TIMEOUT_MS
                 });
