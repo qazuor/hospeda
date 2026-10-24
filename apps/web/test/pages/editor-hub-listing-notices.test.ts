@@ -35,6 +35,13 @@ function styleBlock(source: string): string {
     return start >= 0 && end > start ? source.slice(start, end) : '';
 }
 
+function callBlock(source: string, callee: string): string {
+    const start = source.indexOf(`${callee}({`);
+    if (start < 0) return '';
+    const end = source.indexOf('})', start);
+    return source.slice(start, end + 2);
+}
+
 describe('TEST:1762:2 accommodation editor hub — the listing notices above the sections', () => {
     it('imports the notices component and its loader', () => {
         expect(ACCOMMODATION_HUB).toContain(
@@ -94,9 +101,12 @@ describe('TEST:1762:3 commerce editor hub — the listing notices above the sect
     });
 
     it('loads the notices with the vertical and id of the page resolution', () => {
-        expect(LISTING_HUB).toContain('loadListingNoticesItem({');
-        expect(LISTING_HUB).toContain('vertical,');
-        expect(LISTING_HUB).toContain('listingId,');
+        const call = callBlock(LISTING_HUB, 'loadListingNoticesItem');
+
+        expect(call).not.toBe('');
+        expect(call).toContain('vertical,');
+        expect(call).toContain('listingId,');
+        expect(call).not.toContain('vertical:');
     });
 
     it('reads the notices and the support edits in the same Promise.all', () => {
