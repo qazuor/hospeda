@@ -178,9 +178,9 @@ describe('HOS-1780 compact dock below 400px', () => {
 
 describe('HOS-1780 icon-only Filtros trigger at 360px and below', () => {
     it('hides the label visually but keeps it in the accessibility tree', () => {
-        const label = under(filters, DOCK_LABEL, NARROW).reduce<Record<string, string>>(
-            (acc, r) => ({ ...acc, ...r.decls }),
-            {}
+        const label: Record<string, string> = Object.assign(
+            {},
+            ...under(filters, DOCK_LABEL, NARROW).map((r) => r.decls)
         );
         expect(label.position).toBe('absolute');
         expect(label.width).toBe('1px');
