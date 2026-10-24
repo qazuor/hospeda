@@ -7,6 +7,7 @@
 import { resolve } from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import { parseStep3Args } from '../src/services/cutover-v6/step-3.args.js';
+import { resolveStep3DatabaseUrl } from '../src/services/cutover-v6/step-3.env.js';
 
 /** Executes the explicitly confirmed V6 step 3 cutover operation. */
 async function main(): Promise<void> {
@@ -17,13 +18,14 @@ async function main(): Promise<void> {
         return;
     }
     loadEnv({ path: resolve(import.meta.dirname, '..', '.env.local'), quiet: true });
-    const { env, validateApiEnv } = await import('../src/utils/env.js');
-    validateApiEnv();
+    const { databaseUrl } = await resolveStep3DatabaseUrl({
+        loadEnvModule: () => import('../src/utils/env.js')
+    });
     const [{ Pool }, { getDb, initializeDb }] = await Promise.all([
         import('pg'),
         import('@repo/db')
     ]);
-    const pool = new Pool({ connectionString: env.HOSPEDA_DATABASE_URL });
+    const pool = new Pool({ connectionString: databaseUrl });
     let serviceErrorClass: typeof import('@repo/service-core').ServiceError | undefined;
     try {
         const serviceCore = await import('@repo/service-core');
