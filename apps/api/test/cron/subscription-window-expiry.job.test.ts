@@ -1,20 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types';
 
-const { mockExpire, mockSweep, mockClock, mockProvider, mockComplementPorts } = vi.hoisted(() => ({
-    mockExpire: vi.fn(),
-    mockSweep: vi.fn(),
-    mockClock: { now: vi.fn(() => new Date('2026-10-08T20:00:00.000Z')) },
-    mockProvider: { readAuthorization: vi.fn() },
-    mockComplementPorts: {
-        addonPolicy: vi.fn(),
-        listing: vi.fn(),
-        liveAnchors: { hasLiveAnchor: vi.fn() }
-    }
-}));
+const { mockCredited, mockExpire, mockSweep, mockClock, mockProvider, mockComplementPorts } =
+    vi.hoisted(() => ({
+        mockCredited: vi.fn(),
+        mockExpire: vi.fn(),
+        mockSweep: vi.fn(),
+        mockClock: { now: vi.fn(() => new Date('2026-10-08T20:00:00.000Z')) },
+        mockProvider: { readAuthorization: vi.fn() },
+        mockComplementPorts: {
+            addonPolicy: vi.fn(),
+            listing: vi.fn(),
+            liveAnchors: { hasLiveAnchor: vi.fn() }
+        }
+    }));
 
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
+    activateCreditedPendingAuthorizations: mockCredited,
     expireAuthorizationWindows: mockExpire,
     sweepInheritedTouristVips: mockSweep
 }));
@@ -39,6 +42,14 @@ const context = (dryRun = false): CronJobContext => ({
 
 beforeEach(() => {
     vi.clearAllMocks();
+    mockCredited.mockResolvedValue({
+        candidates: 0,
+        activated: 1,
+        notActive: 0,
+        skipped: 0,
+        failed: 0,
+        touristVipCancelled: 0
+    });
     mockExpire.mockResolvedValue({
         abandoned: 3,
         activated: 2,
@@ -46,7 +57,8 @@ beforeEach(() => {
         noticePending: 1,
         skipped: 0,
         touristVipCancelled: 0,
-        retainedReevaluated: 1
+        retainedReevaluated: 1,
+        failed: 0
     });
     mockSweep.mockResolvedValue({ cancelled: 1, deferred: 2, skipped: 0 });
 });
@@ -60,6 +72,14 @@ describe('subscription-window-expiry cron', () => {
             timeoutMs: 120_000
         });
         const result = await subscriptionWindowExpiryJob.handler(context());
+        expect(mockCredited).toHaveBeenCalledWith(100, {
+            provider: mockProvider,
+            clock: mockClock,
+            beforeCancelNotice,
+            touristVipInheritance,
+            coverageNotices: getCoverageNotices(),
+            complements: mockComplementPorts
+        });
         expect(mockExpire).toHaveBeenCalledWith(100, {
             provider: mockProvider,
             clock: mockClock,
@@ -76,15 +96,46 @@ describe('subscription-window-expiry cron', () => {
             coverageNotices: getCoverageNotices()
         });
         // HOS-1533: S2 and the VIP closure notify the ONE process-wide registry (identity, not shape).
+        expect(mockCredited.mock.invocationCallOrder[0]).toBeLessThan(
+            mockExpire.mock.invocationCallOrder[0]!
+        );
         expect(mockExpire.mock.calls[0]?.[1].coverageNotices).toBe(getCoverageNotices());
         expect(mockSweep.mock.calls[0]?.[1].coverageNotices).toBe(getCoverageNotices());
         expect(result).toMatchObject({
             success: true,
-            processed: 5,
+            processed: 6,
             errors: 0,
             // HOS-1561 H9: branch 2's re-evaluation count reaches the run's details.
             details: { cancelled: 1, deferred: 2, retainedReevaluated: 1 }
         });
+    });
+
+    it('counts failed rows from credited recovery and continues other sweeps', async () => {
+        mockCredited.mockResolvedValue({
+            candidates: 2,
+            activated: 0,
+            notActive: 0,
+            skipped: 0,
+            failed: 2,
+            touristVipCancelled: 0
+        });
+        const result = await subscriptionWindowExpiryJob.handler(context());
+        expect(mockExpire).toHaveBeenCalled();
+        expect(mockSweep).toHaveBeenCalled();
+        expect(result).toMatchObject({
+            success: true,
+            errors: 2,
+            details: { creditedPending: { failed: 2 } }
+        });
+    });
+
+    it('continues after credited recovery rejects', async () => {
+        mockCredited.mockRejectedValue(new Error('recovery failed'));
+        const result = await subscriptionWindowExpiryJob.handler(context());
+        expect(mockExpire).toHaveBeenCalled();
+        expect(mockSweep).toHaveBeenCalled();
+        expect(result).toMatchObject({ success: false });
+        expect(result.errors).toBeGreaterThanOrEqual(1);
     });
 
     it('does not call the service in dry run', async () => {
