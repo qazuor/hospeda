@@ -89,6 +89,12 @@ vi.mock('../../hooks/useListingModerationStateQuery', () => ({
 const es = esAdminEntities.listingModeration;
 const LISTING_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const LISTING_NAME = 'Cabaña del Río Colón';
+const openFixRequest = {
+    reason: 'Arreglo',
+    suggestedDate: null,
+    openedAt: '2026-10-01T00:00:00.000Z',
+    ownerReportedFixedAt: null
+};
 
 function renderCard({
     publicationStatus,
@@ -363,12 +369,7 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
         // Arrange
         renderCard({
             publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
-            fixRequest: {
-                reason: 'Arreglo',
-                suggestedDate: null,
-                openedAt: '2026-10-01T00:00:00.000Z',
-                ownerReportedFixedAt: null
-            }
+            fixRequest: openFixRequest
         });
         const { user } = await openAction('CLOSE_FIX_REQUEST');
 
@@ -457,12 +458,7 @@ describe('TEST:1684:4 AC-1684:2 the API answer and its typed rejections', () => 
             publicationStatus,
             ...(action === 'CLOSE_FIX_REQUEST'
                 ? {
-                      fixRequest: {
-                          reason: 'Arreglo',
-                          suggestedDate: null,
-                          openedAt: '2026-10-01T00:00:00.000Z',
-                          ownerReportedFixedAt: null
-                      }
+                      fixRequest: openFixRequest
                   }
                 : {})
         });
