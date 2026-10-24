@@ -52,6 +52,24 @@ describe('MarketingLayout breadcrumbs slot', () => {
         expect(paddingInline).toBeTruthy();
         expect(paddingInline).not.toBe('0');
     });
+
+    it('puts the top gap on the trail, so an empty trail adds no band', () => {
+        // Arrange / Act
+        const wrapperTop = baseValue({
+            rules,
+            selector: '.marketing-breadcrumbs',
+            prop: 'padding-top'
+        });
+        const trailTop = baseValue({
+            rules,
+            selector: '.marketing-breadcrumbs .breadcrumbs',
+            prop: 'padding-top'
+        });
+
+        // Assert
+        expect(wrapperTop).toBeUndefined();
+        expect(trailTop).toBeTruthy();
+    });
 });
 
 describe('plans and pricing pages route breadcrumbs through the slot', () => {

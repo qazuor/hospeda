@@ -64,13 +64,21 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 	/*
 	 * Breadcrumb band for the optional `breadcrumbs` slot. Marketing sections
 	 * span the full viewport, so the trail needs its own container or it sits
-	 * flush against the left edge (HOS-1766). Same geometry as the `sumate`
-	 * pages' wrapper so the trail lines up with the section content below.
+	 * flush against the left edge (HOS-1766). Same container tokens as
+	 * WaveHeader and the pricing sections, so the trail lines up with them.
 	 */
 	.marketing-breadcrumbs {
-		max-width: var(--container-max, 1350px);
+		max-width: var(--container-max);
 		margin-inline: auto;
-		padding-inline: var(--space-5, 1.25rem);
+		padding-inline: var(--space-container-x);
+	}
+
+	/*
+	 * The top gap belongs to the trail, not to the wrapper: a one-level trail
+	 * (every landing page) renders NO nav (`buildBreadcrumbTrail` drops a lone
+	 * "Home"), and an empty padded band would push the hero down for nothing.
+	 */
+	.marketing-breadcrumbs :global(.breadcrumbs) {
 		padding-top: var(--space-4, 1rem);
 	}
 </style>
