@@ -115,7 +115,11 @@ export async function applyGraceReminder(input: {
         daysBefore: config.daysBefore
     });
     if (!milestone) return { outcome: 'NOT_DUE', milestone: null };
-    if (!row.userId || !row.email || !row.vertical)
+    if (!row.userId || !row.email) {
+        logger.warn({ subscriptionId: row.id }, 'No user email for grace reminder');
+        return { outcome: 'SKIPPED', milestone: null };
+    }
+    if (!row.vertical)
         throw new ServiceError(
             ServiceErrorCode.CONFIGURATION_ERROR,
             'Grace reminder recipient is incomplete'

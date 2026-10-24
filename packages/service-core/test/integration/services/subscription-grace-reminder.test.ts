@@ -3,6 +3,7 @@ import { sendGraceReminders } from '../../../src/services/billing/subscription/s
 import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers.js';
 import { graceFixture } from './support/grace-fixtures.js';
 import {
+    clearGraceReminderEmail,
     configureGraceReminderSubscription,
     insertGraceReminderDeadline,
     readGraceReminderOutbox
@@ -77,6 +78,21 @@ describe('TEST:1707:3-4 AC:1707:3-4 grace reminders', () => {
             });
             today = instant('2099-02-19');
             expect((await run()).noDeadline).toBe(1);
+            expect(await readGraceReminderOutbox(fixture.started.subscriptionId)).toHaveLength(2);
+
+            await insertGraceReminderDeadline({
+                version: 81707005,
+                createdAt: instant('2099-02-20'),
+                daysBefore: [1]
+            });
+            await configureGraceReminderSubscription({
+                subscriptionId: fixture.started.subscriptionId,
+                startedAt: instant('2099-02-21'),
+                endsAt: instant('2099-02-28')
+            });
+            await clearGraceReminderEmail(fixture.started.subscriptionId);
+            today = instant('2099-02-27');
+            expect((await run()).skipped).toBe(1);
             expect(await readGraceReminderOutbox(fixture.started.subscriptionId)).toHaveLength(2);
         }
     );

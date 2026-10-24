@@ -1,4 +1,4 @@
-import { billingDeadlineVersions, emailOutbox, eq, subscriptions } from '@repo/db';
+import { billingDeadlineVersions, emailOutbox, eq, subscriptions, users } from '@repo/db';
 import type { BillingDeadlineValues } from '@repo/schemas';
 import { getServiceTestDb } from '../helpers.js';
 
@@ -61,4 +61,16 @@ export async function readGraceReminderOutbox(subscriptionId: string) {
             'subscriptionId' in row.payload &&
             row.payload.subscriptionId === subscriptionId
     );
+}
+
+export async function clearGraceReminderEmail(subscriptionId: string): Promise<void> {
+    const [subscription] = await getServiceTestDb()
+        .select({ userId: subscriptions.userId })
+        .from(subscriptions)
+        .where(eq(subscriptions.id, subscriptionId));
+    if (!subscription?.userId) throw new Error('Grace reminder test user missing');
+    await getServiceTestDb()
+        .update(users)
+        .set({ email: '' })
+        .where(eq(users.id, subscription.userId));
 }
