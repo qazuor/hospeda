@@ -39,7 +39,7 @@ function readConfig(configPath: string) {
     );
 }
 
-function tsxConfigs(): string[] {
+function tsxConfigs(): { configPath: string; script: string }[] {
     const packageFiles = [
         join(ROOT, 'package.json'),
         ...['apps', 'packages'].flatMap((group) =>
@@ -49,26 +49,35 @@ function tsxConfigs(): string[] {
                 .filter((file) => ts.sys.fileExists(file))
         )
     ];
-    const configs = new Set<string>();
+    const configs = new Map<string, string>();
     for (const packageFile of packageFiles) {
         const pkg = JSON.parse(readFileSync(packageFile, 'utf8')) as {
             scripts?: Record<string, string>;
         };
         const directory = resolve(packageFile, '..');
-        for (const command of Object.values(pkg.scripts ?? {}).filter((script) =>
+        for (const [scriptName, command] of Object.entries(pkg.scripts ?? {}).filter(([, script]) =>
             /\btsx\b/.test(script)
         )) {
             const option = command.match(/--tsconfig(?:=|\s+)([^\s]+)/)?.[1];
-            configs.add(resolve(directory, option ?? 'tsconfig.json'));
+            const configPath = resolve(directory, option ?? 'tsconfig.json');
+            configs.set(configPath, `${packageFile.slice(ROOT.length + 1)}#${scriptName}`);
         }
     }
-    return [...configs].filter((file) => ts.sys.fileExists(file));
+    return [...configs].map(([configPath, script]) => ({ configPath, script }));
 }
 
 describe('TEST:1779:3 tsx JSX aliases include source templates', () => {
     it('covers every source alias used by tsx scripts', () => {
         // Arrange
-        const failures = tsxConfigs().flatMap((configPath) => {
+        const configs = tsxConfigs();
+        const evaluatedConfigs = configs.filter(
+            ({ configPath }) => ts.sys.fileExists(configPath) && !EXEMPT.has(configPath)
+        );
+        const failures = configs.flatMap(({ configPath, script }) => {
+            if (!ts.sys.fileExists(configPath))
+                return [
+                    `${script} references missing tsconfig ${configPath.slice(ROOT.length + 1)}`
+                ];
             if (EXEMPT.has(configPath)) return [];
             const config = readConfig(configPath);
             return Object.entries(config.options.paths ?? {}).flatMap(([alias, targets]) => {
@@ -98,6 +107,7 @@ describe('TEST:1779:3 tsx JSX aliases include source templates', () => {
         const result = failures;
 
         // Assert
+        expect(evaluatedConfigs.length).toBeGreaterThan(0);
         expect(result).toEqual([]);
     });
 });
