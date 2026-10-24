@@ -389,6 +389,8 @@ auditConfig:
     #   pnpm why image-size -r --prod   # no 1.x left
     - GHSA-w3rx-r6r6-pgpr
     - GHSA-5p2g-fcmc-qvqq
+    # pnpm's GHSA ignore is advisory-wide; the remaining affected resolution is
+    # zod@3.25.76 only. The zod 4 override is patched at 4.6.6.
     # GHSA-mrhx-c7xc-m3w5: zod@3.25.76 is pinned EXACTLY by @expo/cli
     # (apps/mobile > @better-auth/expo > expo > @expo/cli), the mobile
     # build-time CLI. No 3.x release is patched; remove this exception when
