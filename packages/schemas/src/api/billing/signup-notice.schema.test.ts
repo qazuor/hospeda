@@ -37,4 +37,19 @@ describe('TEST:1735:8 pending signup attempt contract', () => {
         ).toBe(false);
         expect(SignupNoticeResponseSchema.safeParse(response).success).toBe(false);
     });
+
+    it('parses the activation cancellation date and its unknown-date form', () => {
+        const paidUntil = '2026-11-01T12:00:00.000Z';
+        for (const date of [paidUntil, null]) {
+            const value = SignupNoticeResponseSchema.parse({
+                ...response,
+                touristVip: { status: 'CANCELLED_ON_ACTIVATION', paidUntil: date },
+                pendingAttempt: null
+            });
+            expect(value.touristVip).toEqual({
+                status: 'CANCELLED_ON_ACTIVATION',
+                paidUntil: date
+            });
+        }
+    });
 });
