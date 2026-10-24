@@ -143,8 +143,11 @@ const { t } = createTranslations(locale);
   @media (max-width: 767px) {
     .scroll-to-top {
       /* Relative, not static: the progress ring is position:absolute and must
-         anchor to this button instead of the fixed dock. */
+         anchor to this button instead of the fixed dock. Relative honours
+         offsets, so the desktop bottom/right must be reset or the button
+         shifts onto its neighbour. */
       position: relative;
+      inset: auto;
       height: 44px;
       width: 44px;
     }

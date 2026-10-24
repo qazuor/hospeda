@@ -130,8 +130,10 @@ const { locale } = Astro.props;
 
 		:global(.scroll-to-top) {
 			/* Relative, not static: the progress ring is absolutely positioned
-			   and must anchor to the button, not to the fixed dock. */
+			   and must anchor to the button, not to the fixed dock. Reset the
+			   desktop offsets, which relative positioning would otherwise apply. */
 			position: relative;
+			inset: auto;
 			height: 44px;
 			width: 44px;
 		}
