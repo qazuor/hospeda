@@ -1,5 +1,20 @@
 import { z } from 'zod';
+import { VerticalEnum } from '../../enums/vertical.enum.js';
 import { VerticalEnumSchema } from '../../enums/vertical.schema.js';
+
+/**
+ * Partner plans are paid manually by the team under US:B3:2 and DEC-SUB-016.
+ * The team payment link does not exist yet (HOS-1739); when it does, this is
+ * the point where an invited checkout can be accepted.
+ */
+export const MANUAL_PAYMENT_ONLY_VERTICALS = [VerticalEnum.PARTNER] as const;
+
+export type ManualPaymentOnlyVertical = (typeof MANUAL_PAYMENT_ONLY_VERTICALS)[number];
+
+/** Whether the vertical requires manual payment instead of card checkout. */
+export function isManualPaymentOnlyVertical({ vertical }: { readonly vertical: string }): boolean {
+    return (MANUAL_PAYMENT_ONLY_VERTICALS as readonly string[]).includes(vertical);
+}
 
 /**
  * The payer declares the provider account email that will authorize this attempt.
@@ -20,7 +35,8 @@ export const StartSubscriptionRejectionReasonSchema = z.enum([
     'TOURIST_VIP_INHERITED',
     'CREATION_NOT_APPLIED',
     'PREVIOUS_ATTEMPT_IN_PROGRESS',
-    'PROVIDER_REJECTED'
+    'PROVIDER_REJECTED',
+    'PARTNER_MANUAL_ONLY'
 ]);
 
 export type StartSubscriptionRejectionReason = z.infer<
