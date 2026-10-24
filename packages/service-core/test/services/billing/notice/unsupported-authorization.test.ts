@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const doubles = vi.hoisted(() => ({
     error: vi.fn(),
     warn: vi.fn(),
-    read: vi.fn()
+    read: vi.fn(),
+    recordChargeFact: vi.fn()
 }));
 vi.mock('@repo/logger', async (importOriginal) => {
     const original = await importOriginal<typeof import('@repo/logger')>();
@@ -27,6 +28,9 @@ vi.mock('@repo/db', async (importOriginal) => {
         })
     };
 });
+vi.mock('../../../../src/services/billing/payment/record-charge-fact.service.js', () => ({
+    recordChargeFact: doubles.recordChargeFact
+}));
 
 import { processProviderNotice } from '../../../../src/services/billing/notice/process-provider-notice.service.js';
 
@@ -111,6 +115,10 @@ describe('unsupported unknown provider authorization', () => {
 
     it('TEST:1777:3 logs every unsupported authorization field for a charge arrival', async () => {
         // Arrange
+        doubles.recordChargeFact.mockResolvedValueOnce({
+            outcome: 'NO_SUBSCRIPTION',
+            authorizationId: 'foreign-auth'
+        });
         vi.mocked(provider.decodeNotice).mockResolvedValueOnce({
             resourceKind: 'charge',
             resourceId: 'foreign-charge',
