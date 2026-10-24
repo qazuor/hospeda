@@ -29,13 +29,19 @@ const LISTING_HUB = readFileSync(
     'utf8'
 );
 
-function styleBlock(source: string): string {
+function styleBlock({ source }: { readonly source: string }): string {
     const start = source.indexOf('<style>');
     const end = source.indexOf('</style>');
     return start >= 0 && end > start ? source.slice(start, end) : '';
 }
 
-function callBlock(source: string, callee: string): string {
+function callBlock({
+    source,
+    callee
+}: {
+    readonly source: string;
+    readonly callee: string;
+}): string {
     const start = source.indexOf(`${callee}({`);
     if (start < 0) return '';
     const end = source.indexOf('})', start);
@@ -84,8 +90,8 @@ describe('TEST:1762:2 accommodation editor hub — the listing notices above the
     });
 
     it('spaces the container from the page stylesheet, never with an inline style', () => {
-        expect(styleBlock(ACCOMMODATION_HUB)).toContain('.editor-hub__notices');
-        expect(styleBlock(ACCOMMODATION_HUB)).toContain('gap:');
+        expect(styleBlock({ source: ACCOMMODATION_HUB })).toContain('.editor-hub__notices');
+        expect(styleBlock({ source: ACCOMMODATION_HUB })).toContain('gap:');
         expect(ACCOMMODATION_HUB).not.toMatch(/\sstyle=/);
     });
 });
@@ -101,7 +107,7 @@ describe('TEST:1762:3 gastronomy/experience editor hub — the listing notices a
     });
 
     it('loads the notices with the vertical and id of the page resolution', () => {
-        const call = callBlock(LISTING_HUB, 'loadListingNoticesItem');
+        const call = callBlock({ source: LISTING_HUB, callee: 'loadListingNoticesItem' });
 
         expect(call).not.toBe('');
         expect(call).toContain('vertical,');
@@ -138,8 +144,8 @@ describe('TEST:1762:3 gastronomy/experience editor hub — the listing notices a
     });
 
     it('spaces the container from the page stylesheet, never with an inline style', () => {
-        expect(styleBlock(LISTING_HUB)).toContain('.listing-hub__notices');
-        expect(styleBlock(LISTING_HUB)).toContain('gap:');
+        expect(styleBlock({ source: LISTING_HUB })).toContain('.listing-hub__notices');
+        expect(styleBlock({ source: LISTING_HUB })).toContain('gap:');
         expect(LISTING_HUB).not.toMatch(/\sstyle=/);
     });
 });
