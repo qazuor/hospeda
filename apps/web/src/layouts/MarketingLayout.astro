@@ -5,6 +5,10 @@
  * Wraps BaseLayout with NO container constraint on the content slot,
  * allowing sections to span the full viewport width.
  *
+ * Optional `breadcrumbs` slot: rendered inside a centered container above the
+ * page content (pass `slot="breadcrumbs"` on a direct child, or on a
+ * `<Fragment>` wrapper; a slot attribute inside an unnamed `<>` is ignored).
+ *
  * Used by: propietarios landing, benefits, tourist pricing, owner pricing.
  */
 
@@ -27,6 +31,7 @@ const {
 	canonicalPath = Astro.url.pathname,
 } = Astro.props;
 
+const hasBreadcrumbs = Astro.slots.has('breadcrumbs');
 const siteBase = getSiteUrl();
 const canonicalUrl = new URL(canonicalPath, siteBase).href;
 
@@ -45,6 +50,27 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 	<slot name="head-extra" slot="head" />
 	<slot name="head-early" slot="head-early" />
 
+	{hasBreadcrumbs && (
+		<div class="marketing-breadcrumbs">
+			<slot name="breadcrumbs" />
+		</div>
+	)}
+
 	<!-- No container wrapper: marketing pages manage their own section widths -->
 	<slot />
 </BaseLayout>
+
+<style>
+	/*
+	 * Breadcrumb band for the optional `breadcrumbs` slot. Marketing sections
+	 * span the full viewport, so the trail needs its own container or it sits
+	 * flush against the left edge (HOS-1766). Same geometry as the `sumate`
+	 * pages' wrapper so the trail lines up with the section content below.
+	 */
+	.marketing-breadcrumbs {
+		max-width: var(--container-max, 1350px);
+		margin-inline: auto;
+		padding-inline: var(--space-5, 1.25rem);
+		padding-top: var(--space-4, 1rem);
+	}
+</style>
