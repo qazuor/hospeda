@@ -122,6 +122,9 @@ describe('HOS-1780 compact dock across the whole mobile range', () => {
         expect(base).toBeDefined();
         expect(compact).toBeDefined();
         expect(base && compact && compact.order > base.order).toBe(true);
+        // Not nested under a narrower query: the tight spacing covers the whole
+        // dock, because the base spacing wraps the map view's row below 516px.
+        expect(compact?.queries).toEqual([base?.queries[0]]);
         // `padding` (shorthand) must precede `padding-inline` or it would reset it.
         const shorthand = rows.find((r) => 'padding' in r.decls);
         const inline = rows.find((r) => 'padding-inline' in r.decls);
