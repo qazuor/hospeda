@@ -96,3 +96,26 @@ describe('TEST:1776:2 AC:1776:1 script wiring', () => {
         expect(source).toContain('dryRun: parsed.value.dryRun');
     });
 });
+
+describe('TEST:1776:4 AC:1776:3 production target guard', () => {
+    it('refuses owner ids before any container or database lookup', () => {
+        const source = readFileSync(
+            new URL(
+                '../../../../../scripts/server-tools/src/commands/cutover-step-3.ts',
+                import.meta.url
+            ),
+            'utf8'
+        );
+        const guard = source.indexOf('ownerIdsTargetRefusal(target, options.ownerIds)');
+        expect(guard).toBeGreaterThan(-1);
+        for (const effect of [
+            'resolveRepoRoot()',
+            "findContainer('api')",
+            'dockerInspectEnv(apiContainer)',
+            'buildPostgresUrl({'
+        ]) {
+            expect(guard).toBeLessThan(source.indexOf(effect));
+        }
+        expect(source).toContain('die(targetRefusal, 2)');
+    });
+});
