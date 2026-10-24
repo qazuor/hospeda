@@ -480,13 +480,17 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		initialParams={initialParams}
 	/>
 
+	{/* Two sibling expressions on purpose: a `slot` attribute on a child of the
+	    bare `<>` shorthand is ignored by Astro, which dumps the dock toggle into
+	    the default slot (the page content) instead of the mobile dock. */}
 	{!hasError && cards.length > 0 && (
-		<>
-			<ListingViewToggle slot="dock-start" locale={locale} active="map" listHref={listHref} variant="dock" />
-			<div class="map-view-toggle">
-				<ListingViewToggle locale={locale} active="map" listHref={listHref} variant="inline" />
-			</div>
-		</>
+		<ListingViewToggle slot="dock-start" locale={locale} active="map" listHref={listHref} variant="dock" />
+	)}
+
+	{!hasError && cards.length > 0 && (
+		<div class="map-view-toggle">
+			<ListingViewToggle locale={locale} active="map" listHref={listHref} variant="inline" />
+		</div>
 	)}
 
 	{hasError && !result.ok && (

@@ -514,6 +514,7 @@
     }
 
     :global([data-mobile-dock]) .sheetTrigger {
+        display: inline-block;
         position: static;
         max-width: none;
         box-shadow: none;
