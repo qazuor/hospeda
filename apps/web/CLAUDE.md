@@ -1207,6 +1207,37 @@ listing moves to `PURGED` and its content is erased for good. The old
 `DELETE /protected/{plural}/{id}` doors are retired; `publishApi.purge` is the
 only wrapper, so the island does not know the endpoint.
 
+### Mobile floating dock (HOS-1768)
+
+`MobileDock.astro` in `src/components/shared/dock/` is the single fixed mobile
+control row, mounted once by `BaseLayout.astro`. It measures visible
+`data-dock-item` controls and publishes the height reserved by the page.
+
+On mobile, the dock hides while scrolling down and returns while scrolling up, at the top or page end, while focus is inside it, and while CompareBar has a selection. The reserved `--mobile-dock-height` stays unchanged while hidden. `prefers-reduced-motion: reduce` disables the hide transition.
+
+Slots are declared in `src/lib/mobile-dock/mobile-dock-slots.ts` and ordered
+visually as: `above` (comparison bar), `filters`, `start` (list/map), then
+`map-cards`, `ai-search`, `ai-chat`; `ScrollToTop` follows at the right edge.
+
+To add a control, add a slot to `MOBILE_DOCK_SLOTS`, keep its `DockPortal`
+mounted around children that appear or disappear, and put `data-dock-item` on
+the measured control root. In its mobile CSS, hide it outside the dock and use
+`position: static` inside `:global([data-mobile-dock])`. Add its source file to
+`FIXED_POSITION_FILES` as `dock` in `test/static-guards/mobile-floating-dock.guard.test.ts`.
+
+Portal only the control or comparison bar. Overlays, drawers, sheets and panels
+stay outside: the dock row uses `backdrop-filter`, which creates a containing
+block for fixed descendants.
+
+The dock hides under `html[data-mobile-menu-open]`,
+`html[data-search-panel-open]` and `html[data-filters-drawer-open]`.
+`--z-floating-dock` is `--z-nav + 5`: above navigation and below dropdown,
+popover, modal, toast and higher overlay layers. `--mobile-dock-height` is
+measured at runtime and added to the mobile page bottom reservation.
+
+Outside the mobile media query, the dock and its wrappers use
+`display: contents`, so desktop controls keep their existing positioning.
+
 ## Common Gotchas
 
 - **Locale param**: Access via `Astro.locals.locale` (validated by middleware), not `Astro.params.lang`

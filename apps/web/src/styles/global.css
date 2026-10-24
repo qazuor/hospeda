@@ -31,6 +31,12 @@
 @import "./components.css";
 @import "./css-var-themes.css";
 
+:root {
+    /* 55 sits above nav at 50 and below dropdowns at 60 in the shared z scale. */
+    --z-floating-dock: calc(var(--z-nav) + 5);
+    --mobile-dock-height: 0px;
+}
+
 /* driver.js styles (host onboarding tour) deliberately do NOT live here — see
    ./driver-tour.css and src/lib/load-driver.ts. They used to be imported at
    this point plus a themed block near the bottom of this file, which put
@@ -110,6 +116,13 @@ body.cookie-banner-open {
 
 body.cookie-banner-open #scroll-to-top {
     bottom: calc(var(--cookie-banner-height, 0px) + 1rem);
+}
+
+@media (max-width: 767px) {
+    body,
+    body.cookie-banner-open {
+        padding-bottom: calc(var(--bottom-safe-inset, 0px) + var(--mobile-dock-height, 0px));
+    }
 }
 
 img,

@@ -45,6 +45,7 @@ export const AiChatFab = forwardRef<HTMLButtonElement, AiChatFabProps>(function 
             className={styles.fab}
             onClick={onClick}
             aria-label={resolveAiChatCopy({ t, entityType, suffix: 'fabLabel' })}
+            data-dock-item
         >
             <ChatIcon
                 size={24}
