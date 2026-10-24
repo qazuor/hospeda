@@ -252,7 +252,8 @@
                 "touristVipInherited": "Tu plan actual ya incluye los beneficios de Turista VIP",
                 "commitmentTaken": "Ya tenés una suscripción en curso en esta vertical.",
                 "generic": "No pudimos iniciar tu suscripción. Probá de nuevo en unos minutos.",
-                "providerRejected": "Mercado Pago no aceptó los datos del pago. Revisá que el email sea el de tu cuenta de Mercado Pago y volvé a intentar."
+                "providerRejected": "Mercado Pago no aceptó los datos del pago. Revisá que el email sea el de tu cuenta de Mercado Pago y volvé a intentar.",
+                "partnerManualOnly": "La suscripción de aliados no se contrata desde acá. Nuestro equipo te va a contactar para coordinar el pago y activarla."
             },
             "trialNotice": {
                 "running_one": "Estás en tu período de prueba: te queda {{days}} día, hasta el {{date}}.",
@@ -472,7 +473,7 @@
         },
         "owner-premium": {
             "name": "Premium",
-            "description": "Todo lo del plan Profesional, branding personalizado, sello de verificación y promociones ilimitadas."
+            "description": "Todo lo del plan Profesional, branding personalizado (próximamente), sello de verificación y promociones ilimitadas."
         },
         "tourist-free": {
             "name": "Gratis",

@@ -494,6 +494,7 @@
         },
         "cancel": {
             "open": "Dar de baja",
+            "heading": "Vas a dar de baja: {{plan}} ({{vertical}})",
             "activeEnds": "Si confirmás, cancelamos hoy el cobro automático y seguís con el servicio hasta el {{date}}.",
             "suspendedEnds": "Si confirmás, la suscripción termina hoy: estaba suspendida, así que no queda período pagado que sostener.",
             "graceEnds": "Si confirmás, el servicio termina hoy: perdés el servicio que el período de gracia te daba hasta el {{date}}. A cambio, no te reclamamos la cuota que no se pudo cobrar.",

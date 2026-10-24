@@ -75,6 +75,12 @@ import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 
 const locale = Astro.locals.locale as SupportedLocale;
+// Closing button: the label is authored in Spanish like the rest of this page (it is not
+// translated, see "WHY IT IS NOT TRANSLATED" above). The destination is shown as visible text
+// under the button, derived from the same href, so a PDF export still says where it leads.
+const ctaLabel = 'Publicá tu alojamiento';
+const ctaHref = 'https://hospeda.com.ar/es/publicar';
+const ctaUrlText = ctaHref.replace(/^https?:\/\//, '');
 // Brand contact phone, single source of truth (HOS-364) — this page's
 // copy is the owner-approved artifact verbatim; only the phone digits are
 // parameterized so a real number change does not require re-editing prose.
@@ -403,7 +409,8 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
       Armar la ficha es gratis y no compromete a nada. Recién decidís cuando la querés publicar,
       y aun ahí tenés 30 días para arrepentirte sin que se te cobre un peso.
     </p>
-    <a class="cta" href="https://hospeda.com.ar/es/publicar">hospeda.com.ar/es/publicar</a>
+    <a class="cta" href={ctaHref}>{ctaLabel}</a>
+    <p class="cta-url">{ctaUrlText}</p>
     <div class="phone">
       <span class="fact__k">¿Preferís que te acompañemos?</span>
       <strong>Llamanos o escribinos por WhatsApp al {brandPhone}</strong>

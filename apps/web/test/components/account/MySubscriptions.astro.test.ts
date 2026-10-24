@@ -70,3 +70,16 @@ describe('MySubscriptions plan summary — TEST:1755:9', () => {
         );
     });
 });
+
+describe('MySubscriptions cancellation confirmation — TEST:1762:5', () => {
+    it('names the plan and the vertical of each subscription on its cancel island', () => {
+        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        const open = article.indexOf('<SubscriptionCancel');
+        const cancel = article.slice(open, article.indexOf('/>', open));
+
+        expect(article).toContain('planName={summary.title}');
+        expect(article).toContain('verticalLabel={t(summary.verticalLabelKey)}');
+        expect(cancel).toContain('planName={summary.title}');
+        expect(cancel).toContain('verticalLabel={t(summary.verticalLabelKey)}');
+    });
+});

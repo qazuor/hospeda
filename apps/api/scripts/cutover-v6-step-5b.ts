@@ -11,7 +11,10 @@ import { getMediaProvider, initializeMediaProvider } from '../src/services/media
 import { env, validateApiEnv } from '../src/utils/env.js';
 import { decryptSecret } from '../src/utils/oauth-vault.js';
 
-/** Runs the protected one-time step 5b command. */
+/**
+ * Runs the protected one-time step 5b command.
+ * Run from the repository root with: `pnpm --filter hospeda-api exec tsx scripts/cutover-v6-step-5b.ts --dry-run`.
+ */
 async function main(): Promise<void> {
     loadEnv({ path: resolve(import.meta.dirname, '..', '.env.local'), quiet: true });
     validateApiEnv();

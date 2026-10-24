@@ -4,6 +4,7 @@
  * --plan-id=<uuid> --floor-plan-version-id=<uuid> --includes-addons=true|false
  * with exactly one of --dry-run or --confirm.
  * Run with --dry-run first; then with --confirm.
+ * Run from the repository root with: `pnpm --filter hospeda-api exec tsx scripts/cutover-b9a-step-3b.ts --dry-run`.
  */
 import { resolve } from 'node:path';
 import { initializeDb } from '@repo/db';

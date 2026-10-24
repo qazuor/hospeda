@@ -34,6 +34,8 @@ describe('SubscriptionCancel island', () => {
             <SubscriptionCancel
                 subscriptionId={id}
                 locale="es"
+                planName="Básico"
+                verticalLabel="Gastronomía"
             />
         );
         fireEvent.click(screen.getByTestId('self-cancel-open'));
@@ -55,6 +57,8 @@ describe('SubscriptionCancel island', () => {
             <SubscriptionCancel
                 subscriptionId={id}
                 locale="es"
+                planName="Básico"
+                verticalLabel="Gastronomía"
             />
         );
         fireEvent.click(screen.getByTestId('self-cancel-open'));
@@ -79,6 +83,8 @@ describe('SubscriptionCancel island', () => {
             <SubscriptionCancel
                 subscriptionId={id}
                 locale="es"
+                planName="Básico"
+                verticalLabel="Gastronomía"
             />
         );
         fireEvent.click(screen.getByTestId('self-cancel-open'));
@@ -112,6 +118,8 @@ describe('SubscriptionCancel island', () => {
             <SubscriptionCancel
                 subscriptionId={id}
                 locale="es"
+                planName="Básico"
+                verticalLabel="Gastronomía"
             />
         );
         fireEvent.click(screen.getByTestId('self-cancel-open'));
@@ -137,6 +145,8 @@ describe('SubscriptionCancel island', () => {
             <SubscriptionCancel
                 subscriptionId={id}
                 locale="es"
+                planName="Básico"
+                verticalLabel="Gastronomía"
             />
         );
         fireEvent.click(screen.getByTestId('self-cancel-open'));
@@ -186,6 +196,8 @@ describe('SubscriptionCancel island', () => {
             <SubscriptionCancel
                 subscriptionId={id}
                 locale="es"
+                planName="Básico"
+                verticalLabel="Gastronomía"
             />
         );
         fireEvent.click(screen.getByTestId('self-cancel-open'));
@@ -221,6 +233,8 @@ describe('SubscriptionCancel island', () => {
             <SubscriptionCancel
                 subscriptionId={id}
                 locale="es"
+                planName="Básico"
+                verticalLabel="Gastronomía"
             />
         );
         fireEvent.click(screen.getByTestId('self-cancel-open'));
@@ -229,5 +243,100 @@ describe('SubscriptionCancel island', () => {
         expect(
             await screen.findByText(/Tu suscripción cambió mientras la mirabas/)
         ).toBeInTheDocument();
+    });
+
+    it('TEST:1762:4 names the subscription and ties the confirmation to its heading', async () => {
+        // Arrange
+        vi.mocked(billingSubscriptionApi.cancellationPreview).mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptionId: id,
+                vertical: 'accommodation',
+                paymentMethod: 'CARD',
+                origin: 'ACTIVE',
+                serviceEndsAt: '2026-11-05T03:00:00.000Z',
+                addons: []
+            }
+        } as never);
+        render(
+            <SubscriptionCancel
+                subscriptionId={id}
+                locale="es"
+                planName="Básico"
+                verticalLabel="Gastronomía"
+            />
+        );
+
+        // Act
+        fireEvent.click(screen.getByTestId('self-cancel-open'));
+        const heading = await screen.findByTestId('self-cancel-heading');
+
+        // Assert
+        expect(heading).toHaveTextContent('Vas a dar de baja: Básico (Gastronomía)');
+        expect(heading.textContent).toBe('Vas a dar de baja: Básico (Gastronomía)');
+        const section = heading.closest('section');
+        expect(section).not.toBeNull();
+        expect(section?.getAttribute('aria-labelledby')).toBe(heading.id);
+        expect(screen.getByTestId('self-cancel-confirm').getAttribute('aria-describedby')).toBe(
+            heading.id
+        );
+        const end = screen.getByTestId('self-cancel-end');
+        expect(
+            heading.compareDocumentPosition(end) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+    });
+
+    it('TEST:1762:4 gives each open confirmation its own heading id', async () => {
+        // Arrange
+        const otherId = '223e4567-e89b-42d3-a456-426614174000';
+        vi.mocked(billingSubscriptionApi.cancellationPreview)
+            .mockResolvedValueOnce({
+                ok: true,
+                data: {
+                    subscriptionId: id,
+                    vertical: 'accommodation',
+                    paymentMethod: 'CARD',
+                    origin: 'ACTIVE',
+                    serviceEndsAt: '2026-11-05T03:00:00.000Z',
+                    addons: []
+                }
+            } as never)
+            .mockResolvedValueOnce({
+                ok: true,
+                data: {
+                    subscriptionId: otherId,
+                    vertical: 'gastronomy',
+                    paymentMethod: 'CARD',
+                    origin: 'ACTIVE',
+                    serviceEndsAt: '2026-11-05T03:00:00.000Z',
+                    addons: []
+                }
+            } as never);
+        render(
+            <>
+                <SubscriptionCancel
+                    subscriptionId={id}
+                    locale="es"
+                    planName="Básico"
+                    verticalLabel="Gastronomía"
+                />
+                <SubscriptionCancel
+                    subscriptionId={otherId}
+                    locale="es"
+                    planName="Pro"
+                    verticalLabel="Alojamiento"
+                />
+            </>
+        );
+
+        // Act
+        const openButtons = screen.getAllByTestId('self-cancel-open');
+        fireEvent.click(openButtons[0]);
+        fireEvent.click(openButtons[1]);
+        await waitFor(() => expect(screen.getAllByTestId('self-cancel-heading')).toHaveLength(2));
+
+        // Assert
+        const headings = screen.getAllByTestId('self-cancel-heading');
+        expect(headings[0].id).not.toBe(headings[1].id);
     });
 });

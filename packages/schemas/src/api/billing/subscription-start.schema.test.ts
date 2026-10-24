@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+    isManualPaymentOnlyVertical,
+    MANUAL_PAYMENT_ONLY_VERTICALS,
     PendingAttemptCancellationResponseSchema,
     StartSubscriptionRejectionReasonSchema,
     StartSubscriptionRequestSchema,
@@ -80,9 +82,18 @@ describe('TEST:B3:2 subscription start request', () => {
             'TOURIST_VIP_INHERITED',
             'CREATION_NOT_APPLIED',
             'PREVIOUS_ATTEMPT_IN_PROGRESS',
-            'PROVIDER_REJECTED'
+            'PROVIDER_REJECTED',
+            'PARTNER_MANUAL_ONLY'
         ]);
         expect(StartSubscriptionRejectionReasonSchema.safeParse('OTHER').success).toBe(false);
+    });
+
+    it('TEST:1739:5 keeps exactly Partner in the manual-payment-only set', () => {
+        expect(MANUAL_PAYMENT_ONLY_VERTICALS).toEqual(['partner']);
+        expect(isManualPaymentOnlyVertical({ vertical: 'partner' })).toBe(true);
+        for (const vertical of ['accommodation', 'gastronomy', 'experience', 'tourist', 'other']) {
+            expect(isManualPaymentOnlyVertical({ vertical })).toBe(false);
+        }
     });
 
     it('publishes only the sanitized checkout link field', () => {
