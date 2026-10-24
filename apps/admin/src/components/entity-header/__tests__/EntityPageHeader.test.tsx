@@ -68,6 +68,22 @@ const avatarMedia: EntityPageHeaderMedia = {
 // ---------------------------------------------------------------------------
 
 describe('EntityPageHeader', () => {
+    it('TEST:1760:5 does not render Edit without onEdit and keeps Back', () => {
+        const HeaderWithoutEdit = EntityPageHeader as React.ComponentType<{
+            mode: 'view';
+            title: string;
+            viewActions: { onBack: () => void; onEdit?: () => void };
+        }>;
+        render(
+            <HeaderWithoutEdit
+                mode="view"
+                title="Hotel Plaza"
+                viewActions={{ onBack: vi.fn() }}
+            />
+        );
+        expect(screen.queryByRole('button', { name: /editar/i })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /volver/i })).toBeInTheDocument();
+    });
     // ---- Basic rendering ----
 
     it('renders the header landmark', () => {

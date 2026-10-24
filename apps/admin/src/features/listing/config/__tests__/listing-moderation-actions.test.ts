@@ -19,6 +19,18 @@ import {
 const ACTIVE = ['REQUEST_FIX', 'TAKE_DOWN', 'CLOSE_FIX_REQUEST'] as const;
 
 describe('TEST:1684:1 AC-1684:1 actions by publication status', () => {
+    it('TEST:1760:2 PUBLISHED without an open request does not offer CLOSE_FIX_REQUEST', () => {
+        const getActions = getAvailableModerationActions as (args: {
+            publicationStatus: PublicationStatusEnum;
+            fixRequestOpen: boolean;
+        }) => readonly string[];
+        expect(
+            getActions({
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
+                fixRequestOpen: false
+            })
+        ).not.toContain('CLOSE_FIX_REQUEST');
+    });
     it.each([
         [PublicationStatusEnum.DRAFT, ACTIVE],
         [PublicationStatusEnum.PUBLISHED, ACTIVE],

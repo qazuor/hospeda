@@ -12,7 +12,7 @@
  */
 
 import esAdminEntities from '@repo/i18n/locales/es/admin-entities.json';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, PublicationStatusEnum } from '@repo/schemas';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
@@ -98,6 +98,26 @@ beforeEach(() => {
 });
 
 describe('ListingPurgeOnRequestCard — gated by the action 23 permission', () => {
+    it('TEST:1760:4 does not show purge for PURGED', () => {
+        permissions.mockReturnValue([PermissionEnum.LISTING_PURGE_ON_REQUEST]);
+        const CardWithState = ListingPurgeOnRequestCard as React.ComponentType<{
+            vertical: 'gastronomy';
+            entityId: string;
+            entityName: string;
+            publicationStatus: PublicationStatusEnum;
+            onPurged: () => void;
+        }>;
+        render(
+            <CardWithState
+                vertical="gastronomy"
+                entityId={LISTING_ID}
+                entityName={LISTING_NAME}
+                publicationStatus={PublicationStatusEnum.PURGED}
+                onPurged={vi.fn()}
+            />
+        );
+        expect(screen.queryByTestId('listing-purge-on-request')).not.toBeInTheDocument();
+    });
     it('renders nothing for an admin without LISTING_PURGE_ON_REQUEST', () => {
         // Arrange
         permissions.mockReturnValue([PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT]);
