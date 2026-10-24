@@ -110,7 +110,7 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
                     {
                         code: ServiceErrorCode.VALIDATION_ERROR,
                         message: serviceError?.message ?? '',
-                        reason: error.reason
+                        reason: reason.data
                     },
                     ctx,
                     422
