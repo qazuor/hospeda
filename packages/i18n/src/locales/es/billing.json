@@ -263,7 +263,10 @@
             },
             "touristVipNotice": {
                 "cancelledOnReturn": "Tenés una suscripción suspendida cuyo plan te daba los beneficios de Turista VIP. Si la regularizás, esta suscripción a Turista VIP se cancela en el momento y lo que hayas pagado no se reembolsa, porque tu plan te los vuelve a dar.",
-                "unknown": "Si tenés una suscripción suspendida cuyo plan te daba los beneficios de Turista VIP y la regularizás, una suscripción a Turista VIP que compres se cancela en el momento, sin reembolso."
+                "unknown": "Si tenés una suscripción suspendida cuyo plan te daba los beneficios de Turista VIP y la regularizás, una suscripción a Turista VIP que compres se cancela en el momento, sin reembolso.",
+                "cancelledOnActivationUntil": "Tenés una suscripción a Turista VIP paga hasta el {{date}}. Este plan ya incluye sus beneficios: cuando se active, esa suscripción se cancela y lo que pagaste no se reembolsa.",
+                "cancelledOnActivation": "Tenés una suscripción a Turista VIP. Este plan ya incluye sus beneficios: cuando se active, esa suscripción se cancela y lo que pagaste no se reembolsa.",
+                "unknownOnActivation": "Si tenés una suscripción a Turista VIP y este plan incluye sus beneficios, esa suscripción se cancela cuando el plan se active, sin reembolso."
             },
             "retry": "Intentar de nuevo",
             "vertical": {

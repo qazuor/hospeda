@@ -285,6 +285,23 @@ describe('TEST:1623:6 resolveSignupTouristVipNotice', () => {
             { kind: 'CANCELLED_ON_RETURN' }
         ],
         [
+            'cancelled on activation',
+            {
+                ok: true,
+                data: {
+                    pendingAttempt: null,
+                    plan: { name: 'Owner', amount: 100000, currency: 'ARS', cycle: 'monthly' },
+                    vertical: 'accommodation',
+                    touristVip: {
+                        status: 'CANCELLED_ON_ACTIVATION',
+                        paidUntil: '2026-11-01T12:00:00.000Z'
+                    },
+                    trial: { status: 'NOT_RUNNING' }
+                }
+            },
+            { kind: 'CANCELLED_ON_ACTIVATION', paidUntil: '2026-11-01T12:00:00.000Z' }
+        ],
+        [
             'unaffected',
             {
                 ok: true,
@@ -317,6 +334,20 @@ describe('TEST:1623:6 resolveSignupTouristVipNotice', () => {
         ]
     ] as const)('resolves %s', (_label, result, expected) => {
         expect(resolveSignupTouristVipNotice({ result })).toEqual(expected);
+    });
+
+    it('preserves an unknown paid-through date', () => {
+        const data = {
+            pendingAttempt: null,
+            plan: { name: 'Owner', amount: 100000, currency: 'ARS', cycle: 'monthly' },
+            vertical: 'accommodation',
+            touristVip: { status: 'CANCELLED_ON_ACTIVATION', paidUntil: null },
+            trial: { status: 'NOT_RUNNING' }
+        };
+        expect(resolveSignupTouristVipNotice({ result: { ok: true, data } })).toEqual({
+            kind: 'CANCELLED_ON_ACTIVATION',
+            paidUntil: null
+        });
     });
 
     it('fails toward a warning when data is missing', () => {
