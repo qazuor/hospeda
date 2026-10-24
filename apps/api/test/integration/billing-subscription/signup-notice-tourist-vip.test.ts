@@ -43,7 +43,7 @@ async function createUser() {
 }
 
 async function createOption(
-    vertical: 'tourist' | 'accommodation' | 'experience',
+    vertical: 'tourist' | 'accommodation' | 'gastronomy' | 'experience',
     inheritsTouristVip: boolean
 ) {
     const [plan] = await getDb()
@@ -112,6 +112,10 @@ async function seedSubscription(input: {
 }
 
 async function readStatus(userId: string, billingOptionId: string) {
+    return (await readNotice(userId, billingOptionId)).touristVip.status;
+}
+
+async function readNotice(userId: string, billingOptionId: string) {
     const response = await app.request(`${path}/${billingOptionId}`, {
         headers: {
             'content-type': 'application/json',
@@ -125,7 +129,32 @@ async function readStatus(userId: string, billingOptionId: string) {
     expect(response.status).toBe(200);
     const parsed = SignupNoticeResponseSchema.parse(body.data);
     expect(parsed.trial).toEqual({ status: 'NOT_RUNNING' });
-    return parsed.touristVip.status;
+    return parsed;
+}
+
+async function seedVip(input: {
+    readonly userId: string;
+    readonly optionId: string;
+    readonly versionId: string;
+    readonly status: 'ACTIVE' | 'GRACE_PERIOD' | 'CANCEL_SCHEDULED';
+    readonly date: Date;
+}) {
+    const [vip] = await getDb()
+        .insert(subscriptions)
+        .values({
+            userId: input.userId,
+            vertical: 'tourist',
+            planVersionId: input.versionId,
+            billingOptionId: input.optionId,
+            paymentMethod: 'CARD',
+            status: input.status,
+            class: 'PRINCIPAL',
+            nextChargeAt: input.status === 'CANCEL_SCHEDULED' ? null : input.date,
+            serviceEndsAt: input.status === 'CANCEL_SCHEDULED' ? input.date : null
+        })
+        .returning();
+    if (!vip) throw new Error('No seeded Tourist VIP');
+    return vip;
 }
 
 const app = initApp({
@@ -169,6 +198,87 @@ afterEach(async () => {
 afterAll(async () => testDb.teardown());
 
 describe('TEST:1623:5 AC:B13a:16 signup Tourist VIP notice', () => {
+    it('warns for an inherited owner plan and uses nextChargeAt as the paid-through date', async () => {
+        const user = await createUser();
+        const owner = await createOption('accommodation', true);
+        const vip = await createOption('tourist', false);
+        const paidUntil = new Date('2026-11-10T12:00:00.000Z');
+        await seedVip({
+            userId: user.id,
+            optionId: vip.option.id,
+            versionId: vip.version.id,
+            status: 'ACTIVE',
+            date: paidUntil
+        });
+
+        expect((await readNotice(user.id, owner.option.id)).touristVip).toEqual({
+            status: 'CANCELLED_ON_ACTIVATION',
+            paidUntil: paidUntil.toISOString()
+        });
+    });
+
+    it('uses serviceEndsAt for a scheduled VIP cancellation', async () => {
+        const user = await createUser();
+        const owner = await createOption('experience', true);
+        const vip = await createOption('tourist', false);
+        const paidUntil = new Date('2026-11-11T12:00:00.000Z');
+        await seedVip({
+            userId: user.id,
+            optionId: vip.option.id,
+            versionId: vip.version.id,
+            status: 'CANCEL_SCHEDULED',
+            date: paidUntil
+        });
+
+        expect((await readNotice(user.id, owner.option.id)).touristVip).toEqual({
+            status: 'CANCELLED_ON_ACTIVATION',
+            paidUntil: paidUntil.toISOString()
+        });
+    });
+
+    it('warns for a gastronomy option that inherits Tourist VIP', async () => {
+        const user = await createUser();
+        const owner = await createOption('gastronomy', true);
+        const vip = await createOption('tourist', false);
+        await seedVip({
+            userId: user.id,
+            optionId: vip.option.id,
+            versionId: vip.version.id,
+            status: 'GRACE_PERIOD',
+            date: now
+        });
+
+        expect((await readNotice(user.id, owner.option.id)).touristVip).toEqual({
+            status: 'CANCELLED_ON_ACTIVATION',
+            paidUntil: now.toISOString()
+        });
+    });
+
+    it('does not warn without an applicable VIP or an inheriting option', async () => {
+        const user = await createUser();
+        const owner = await createOption('accommodation', true);
+        const plain = await createOption('accommodation', false);
+        const vip = await createOption('tourist', false);
+
+        expect((await readNotice(user.id, owner.option.id)).touristVip).toEqual({
+            status: 'NOT_AFFECTED'
+        });
+        await seedVip({
+            userId: user.id,
+            optionId: vip.option.id,
+            versionId: vip.version.id,
+            status: 'ACTIVE',
+            date: now
+        });
+        expect((await readNotice(user.id, plain.option.id)).touristVip).toEqual({
+            status: 'NOT_AFFECTED'
+        });
+        const other = await createUser();
+        expect((await readNotice(other.id, owner.option.id)).touristVip).toEqual({
+            status: 'NOT_AFFECTED'
+        });
+    });
+
     it('marks a suspended inheriting plan for cancellation on return (a)', async () => {
         const user = await createUser();
         const title = await createOption('accommodation', true);
