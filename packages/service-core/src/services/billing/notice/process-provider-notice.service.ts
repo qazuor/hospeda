@@ -60,6 +60,7 @@ import {
     type ReadState
 } from './provider-notice-mirror.js';
 import { type MirrorDelegates, unregisteredMirrorDelegates } from './provider-notice-ports.js';
+import { UnsupportedProviderAuthorizationError } from './unsupported-provider-authorization.error.js';
 
 const logger = createLogger('process-provider-notice');
 
@@ -196,34 +197,6 @@ async function resolveUnknownAuthorization(
         );
     return { kind: 'OUTCOME', outcome: 'DIVERGENCE_MARKED' };
 }
-
-class UnsupportedProviderAuthorizationError extends Error {
-    readonly authorizationId: string;
-    readonly chargeId?: string;
-    readonly providerStatus?: string;
-    readonly frequencyType?: string;
-    readonly correlationId: string;
-
-    constructor(input: {
-        readonly authorizationId: string;
-        readonly chargeId?: string;
-        readonly providerStatus?: string;
-        readonly frequencyType?: string;
-        readonly correlationId: string;
-        readonly cause: unknown;
-    }) {
-        super(`Ignored unsupported foreign provider authorization ${input.authorizationId}`, {
-            cause: input.cause
-        });
-        this.name = 'UnsupportedProviderAuthorizationError';
-        this.authorizationId = input.authorizationId;
-        this.chargeId = input.chargeId;
-        this.providerStatus = input.providerStatus;
-        this.frequencyType = input.frequencyType;
-        this.correlationId = input.correlationId;
-    }
-}
-
 /** Processes a provider delivery by re-reading its resource; the delivery never supplies state. */
 export async function processProviderNotice(
     input: { readonly channel: 'WEBHOOKS' | 'IPN'; readonly delivery: NoticeDelivery },
