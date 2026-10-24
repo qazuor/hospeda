@@ -263,7 +263,7 @@ overrides:
   # GHSA-rfgv-xxqx-mfg5 + BalancedPool TLS bypass (2026-09): <8.10.2. Same trap
   # twice: Dependabot #3413 bumped only the direct paths and left
   # @remix-run/node and unifont on 8.10.0, so the floor moves again.
-  undici: ">=8.10.2 <9"
+  undici: ">=8.12.2 <9"
   # GHSA-587h-7wmj-h5pm (2026-10): every vite line below 8.3.3 on the 8.3 minor
   # (8.2.4 on 8.2) is affected. The floor was ours again: the `>=6.0.0` selector
   # rewrites the direct `^8.3.0` specifiers too, which is how the lock stayed on
