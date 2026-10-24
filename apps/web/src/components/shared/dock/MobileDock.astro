@@ -142,6 +142,26 @@ const { locale } = Astro.props;
 			display: none;
 		}
 
+		/* HOS-1780: below 400px the row must stay on ONE line. The controls keep
+		   their text and 44px height; only the spacing around them tightens.
+		   Declared after the base rules so it wins the cascade. */
+		@media (max-width: 399px) {
+			.mobile-dock__row {
+				gap: var(--space-1);
+				padding-inline: var(--space-2);
+			}
+
+			.mobile-dock__start,
+			.mobile-dock__end {
+				gap: var(--space-1);
+			}
+
+			.mobile-dock__start:has([data-dock-item]) {
+				gap: 2px;
+				padding: 2px;
+			}
+		}
+
 		:global(html[data-mobile-menu-open]) .mobile-dock,
 		:global(html[data-search-panel-open]) .mobile-dock,
 		:global(html[data-filters-drawer-open]) .mobile-dock {
