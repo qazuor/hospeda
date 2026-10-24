@@ -60,8 +60,9 @@ export const PartnerOwnerContentSchema = partnerSchema
  * these three fields carry no cross-field invariant. Each is independently
  * valid or not, and Zod already says so.
  */
-export const PartnerOwnerUpdateSchema =
-    PartnerOwnerOperationalSchema.merge(PartnerOwnerContentSchema);
+export const PartnerOwnerUpdateSchema = PartnerOwnerOperationalSchema.safeExtend(
+    PartnerOwnerContentSchema.shape
+);
 
 /** Inferred type for {@link PartnerOwnerUpdateSchema}. */
 export type PartnerOwnerUpdate = z.infer<typeof PartnerOwnerUpdateSchema>;

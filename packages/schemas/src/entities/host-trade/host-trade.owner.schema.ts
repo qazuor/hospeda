@@ -72,8 +72,8 @@ export const HostTradeOwnerBenefitSchema = z
  * `PERCENTAGE` with no value for review — an invalid benefit should be rejected
  * at the door, not discovered by an admin days later in the review queue.
  */
-export const HostTradeOwnerUpdateSchema = HostTradeOwnerOperationalSchema.merge(
-    HostTradeOwnerBenefitSchema
+export const HostTradeOwnerUpdateSchema = HostTradeOwnerOperationalSchema.safeExtend(
+    HostTradeOwnerBenefitSchema.shape
 ).superRefine(refineHostTradeBenefit);
 
 /** Inferred type for {@link HostTradeOwnerUpdateSchema}. */

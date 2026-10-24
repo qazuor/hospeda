@@ -3,10 +3,19 @@
  * Validates schema generation and coercion logic
  */
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { createHttpSearchSchema } from '../../src/utils/http-schema.factory.js';
 
 describe('HTTP Schema Factory', () => {
     describe('createHttpSearchSchema', () => {
+        it('preserves the custom filter schema unknown-key policy', () => {
+            const schema = createHttpSearchSchema({
+                filterSchema: z.object({ status: z.string() }).strict()
+            });
+
+            expect(schema.safeParse({ status: 'active', extra: true }).success).toBe(false);
+        });
+
         it('should create basic search schema with pagination and sorting', () => {
             const schema = createHttpSearchSchema({});
             const result = schema.safeParse({

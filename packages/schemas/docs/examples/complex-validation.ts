@@ -603,9 +603,9 @@ export type WizardStep4 = z.infer<typeof wizardStep4Schema>;
  * ```
  */
 export const wizardSchema = wizardStep1Schema
-    .merge(wizardStep2Schema)
-    .merge(wizardStep3Schema)
-    .merge(wizardStep4Schema)
+    .safeExtend(wizardStep2Schema.shape)
+    .safeExtend(wizardStep3Schema.shape)
+    .safeExtend(wizardStep4Schema.shape)
     .refine(
         (data) => {
             // Validate guests don't exceed accommodation capacity

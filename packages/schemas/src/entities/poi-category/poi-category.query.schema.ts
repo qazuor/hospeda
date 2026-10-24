@@ -186,7 +186,9 @@ export const PoiCategoryCountOutputSchema = z.object({ count: z.number().int().m
 /**
  * HTTP-compatible POI category search schema with query string coercion
  */
-export const HttpPoiCategorySearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+export const HttpPoiCategorySearchSchema = HttpPaginationSchema.safeExtend(
+    HttpSortingSchema.shape
+).extend({
     // Search
     q: z.string().optional(),
 

@@ -309,7 +309,9 @@ export const EventLocationCountOutputSchema = z.object({ count: z.number().int()
 // HTTP-COMPATIBLE SCHEMAS & OPENAPI METADATA
 // ============================================================================
 
-export const HttpEventLocationSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+export const HttpEventLocationSearchSchema = HttpPaginationSchema.safeExtend(
+    HttpSortingSchema.shape
+).extend({
     q: z.string().optional(),
     name: z.string().optional(),
     city: z.string().optional(),

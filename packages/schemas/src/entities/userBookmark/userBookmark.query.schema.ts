@@ -314,7 +314,9 @@ export const UserBookmarkPaginatedListOutputSchema = UserBookmarkListResponseSch
 /**
  * HTTP-compatible user bookmark search schema with query string coercion
  */
-export const HttpUserBookmarkSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+export const HttpUserBookmarkSearchSchema = HttpPaginationSchema.safeExtend(
+    HttpSortingSchema.shape
+).extend({
     // Search
     q: z.string().optional(),
 

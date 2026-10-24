@@ -199,7 +199,7 @@ export function commonSchemasUsage() {
 	});
 
 	// Merge with exchange rate schema
-	const fullSchema = appSchema.merge(exchangeRate);
+	const fullSchema = appSchema.safeExtend(exchangeRate.shape);
 
 	const config = validateEnv(fullSchema, 'Application');
 	return config;
