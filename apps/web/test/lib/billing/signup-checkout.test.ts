@@ -8,6 +8,7 @@ import {
     isDisplayableCheckoutUrl,
     parseSignupOptionId,
     resolveDeclaredPayerEmail,
+    resolveSignupManualPaymentOnly,
     resolveSignupPendingAttempt,
     resolveSignupPlanName,
     resolveSignupPlanSummary,
@@ -323,6 +324,29 @@ describe('TEST:1623:6 resolveSignupTouristVipNotice', () => {
         expect(resolveSignupTouristVipNotice({ result: { ok: true } })).toEqual({
             kind: 'UNKNOWN'
         });
+    });
+});
+
+describe('TEST:1739:6 resolveSignupManualPaymentOnly', () => {
+    const data = {
+        pendingAttempt: null,
+        plan: { name: 'Partner Gold', amount: 3000000, currency: 'ARS', cycle: 'monthly' },
+        vertical: 'partner',
+        touristVip: { status: 'NOT_AFFECTED' },
+        trial: { status: 'NOT_RUNNING' }
+    };
+
+    it('returns true only for a parsed manual-payment-only notice', () => {
+        expect(resolveSignupManualPaymentOnly({ result: { ok: true, data } })).toBe(true);
+        expect(
+            resolveSignupManualPaymentOnly({
+                result: { ok: true, data: { ...data, vertical: 'tourist' } }
+            })
+        ).toBe(false);
+        expect(resolveSignupManualPaymentOnly({ result: { ok: false } })).toBe(false);
+        expect(
+            resolveSignupManualPaymentOnly({ result: { ok: true, data: { vertical: 'partner' } } })
+        ).toBe(false);
     });
 });
 

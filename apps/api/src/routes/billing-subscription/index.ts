@@ -1,8 +1,10 @@
 import { planCatalogModel } from '@repo/db';
 import { PaymentProviderError } from '@repo/payments';
+import type { StartSubscriptionRejectionReason } from '@repo/schemas';
 import {
     ServiceErrorCode,
     SignupNoticeResponseSchema,
+    StartSubscriptionRejectionReasonSchema,
     StartSubscriptionRequestSchema,
     StartSubscriptionResponseSchema,
     VerticalEnumSchema
@@ -30,6 +32,11 @@ import { protectedReadOwnSubscriptionsRoute } from './read-mine';
 import { readSignupNotice } from './read-signup-notice';
 import { readSignupWindow } from './read-signup-window';
 import { touristVipInheritance } from './tourist-vip-inheritance';
+
+const S1_REJECTIONS_WITH_UNPROCESSABLE_ENTITY_STATUS = new Set<StartSubscriptionRejectionReason>([
+    'PLAN_NOT_FOR_SALE',
+    'PARTNER_MANUAL_ONLY'
+]);
 
 export const protectedStartSubscriptionRoute = createProtectedRoute({
     method: 'post',
@@ -91,12 +98,19 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
                     422
                 );
             }
-            if (error instanceof ServiceError && error.reason === 'PLAN_NOT_FOR_SALE') {
+            const serviceError = error instanceof ServiceError ? error : null;
+            const reason = serviceError
+                ? StartSubscriptionRejectionReasonSchema.safeParse(serviceError.reason)
+                : null;
+            if (
+                reason?.success &&
+                S1_REJECTIONS_WITH_UNPROCESSABLE_ENTITY_STATUS.has(reason.data)
+            ) {
                 return createErrorResponse(
                     {
                         code: ServiceErrorCode.VALIDATION_ERROR,
-                        message: error.message,
-                        reason: error.reason
+                        message: serviceError?.message ?? '',
+                        reason: reason.data
                     },
                     ctx,
                     422
