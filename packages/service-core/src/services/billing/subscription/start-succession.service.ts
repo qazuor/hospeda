@@ -15,6 +15,7 @@ import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.servi
 import type { MirrorDelegates } from '../notice/provider-notice-ports.js';
 import { admitSuccessionPredecessor } from './admit-succession-predecessor.js';
 import {
+    assertCardCheckoutVertical,
     assertPlanForSale,
     assertTouristVipPurchaseAllowed,
     authorizePendingSubscription,
@@ -58,6 +59,7 @@ export async function startSuccession(
     ports: StartSuccessionPorts
 ): Promise<StartSuccessionResult> {
     const choice = await readBillingChoice({ billingOptionId: input.billingOptionId });
+    assertCardCheckoutVertical({ vertical: choice.vertical });
     await assertPlanForSale({ planVersionId: choice.planVersionId, planPolicy: ports.planPolicy });
     await assertTouristVipPurchaseAllowed({
         vertical: choice.vertical,

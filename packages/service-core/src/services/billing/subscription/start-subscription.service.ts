@@ -18,7 +18,12 @@ import {
     PaymentProviderError,
     sanitizeApprovalUrl
 } from '@repo/payments';
-import { BILLING_CYCLE_MONTHS, type BillingCycle, ServiceErrorCode } from '@repo/schemas';
+import {
+    BILLING_CYCLE_MONTHS,
+    type BillingCycle,
+    isManualPaymentOnlyVertical,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
@@ -101,6 +106,18 @@ export async function assertPlanForSale(input: {
     }
 }
 
+/** Rejects verticals that cannot be purchased through the card checkout. */
+export function assertCardCheckoutVertical(input: { readonly vertical: string }): void {
+    if (isManualPaymentOnlyVertical({ vertical: input.vertical })) {
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            'Partner plans are not sold through the card checkout',
+            undefined,
+            'PARTNER_MANUAL_ONLY'
+        );
+    }
+}
+
 /** Reads the selected billing option and its plan identity for an S1 purchase. */
 export async function readBillingChoice(input: { readonly billingOptionId: string }): Promise<{
     readonly id: string;
@@ -157,6 +174,7 @@ export async function authorizePendingSubscription(input: {
     readonly firstChargeAt?: string;
 }): Promise<StartSubscriptionResult> {
     const { pending } = input;
+    assertCardCheckoutVertical({ vertical: pending.subscription.vertical ?? '' });
     const { planVersionId, billingOptionId } = pending.subscription;
     if (!planVersionId || !billingOptionId)
         throw new ServiceError(
@@ -266,6 +284,7 @@ export async function startSubscription(
     ports: StartSubscriptionPorts
 ): Promise<StartSubscriptionResult> {
     const choice = await readBillingChoice({ billingOptionId: input.billingOptionId });
+    assertCardCheckoutVertical({ vertical: choice.vertical });
     await assertPlanForSale({ planVersionId: choice.planVersionId, planPolicy: ports.planPolicy });
     await assertTouristVipPurchaseAllowed({
         vertical: choice.vertical,

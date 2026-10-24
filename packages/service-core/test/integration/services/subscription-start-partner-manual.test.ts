@@ -5,13 +5,17 @@ import {
     idempotencyKeys,
     plans,
     planVersions,
+    subscriptionModel,
     subscriptions,
     users
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
+import {
+    authorizePendingSubscription,
+    startSubscription
+} from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
 import { noTouristVip } from './support/tourist-vip';
 
@@ -76,10 +80,10 @@ async function partnerChoice() {
         .values({ planVersionId: version.id, cycle: 'monthly', amount: 3000000, currency: 'ARS' })
         .returning();
     if (!option) throw new Error('Could not seed partner billing option');
-    return { user, option };
+    return { user, option, planVersionId: version.id };
 }
 
-describe('TEST:1739:1 S1 rejects manual-only Partner plans', () => {
+describe('TEST:1739:1/4 S1 and provider funnel reject manual-only Partner plans', () => {
     it('TEST:1739:1 rejects S1 before rows or provider calls', async () => {
         const { user, option } = await partnerChoice();
         const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
@@ -125,5 +129,38 @@ describe('TEST:1739:1 S1 rejects manual-only Partner plans', () => {
         expect(keys).toHaveLength(0);
         expect(authorize).not.toHaveBeenCalled();
         expect(readAuthorization).not.toHaveBeenCalled();
+    });
+
+    it('TEST:1739:4 rejects a pending Partner row before provider authorization', async () => {
+        const { user, option, planVersionId } = await partnerChoice();
+        const pending = await subscriptionModel.createPendingAuthorization({
+            userId: user.id,
+            vertical: 'partner',
+            planVersionId,
+            billingOptionId: option.id,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date('2026-10-11T20:00:00.000Z')
+        });
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const authorize = vi.spyOn(fake, 'authorize');
+        const result = await authorizePendingSubscription({
+            pending,
+            provider: fake,
+            clock,
+            reason: 'Partner Gold',
+            returnUrl: 'https://example.test'
+        }).then(
+            (value) => ({ value }),
+            (error: unknown) => ({ error })
+        );
+
+        expect('error' in result).toBe(true);
+        if ('error' in result) {
+            expect(result.error).toMatchObject({
+                code: 'VALIDATION_ERROR',
+                reason: 'PARTNER_MANUAL_ONLY'
+            });
+        }
+        expect(authorize).not.toHaveBeenCalled();
     });
 });
