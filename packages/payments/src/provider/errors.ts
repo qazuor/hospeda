@@ -40,7 +40,9 @@ export class PaymentProviderError extends Error {
     readonly capability: PaymentCapability;
     /** The provider answered with a record it is still writing; reading again later is expected to succeed (HOS-1747). */
     readonly incompleteRead: boolean;
+    /** The provider's status for an unsupported resource shape, when available. */
     readonly providerStatus?: string;
+    /** The provider's billing frequency for an unsupported authorization, when available. */
     readonly frequencyType?: string;
 
     /**
@@ -49,6 +51,8 @@ export class PaymentProviderError extends Error {
      * @param input.message - Human-readable detail
      * @param input.cause - The underlying error, when there is one
      * @param input.incompleteRead - Whether the provider returned a record still being written
+     * @param input.providerStatus - The provider's status for an unsupported resource shape
+     * @param input.frequencyType - The provider's billing frequency for an unsupported authorization
      */
     constructor(input: PaymentProviderErrorInput) {
         super(input.message, input.cause === undefined ? undefined : { cause: input.cause });
