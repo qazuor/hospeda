@@ -29,7 +29,7 @@ export function parseStep3Args(input: { readonly argv: readonly string[] }): Par
             const ids = arg.slice(separator + 1).split(',');
             if (ids.some((id) => !z.uuid().safeParse(id).success))
                 return { ok: false, reason: 'Malformed flag: --owner-ids must contain UUIDs.' };
-            if (new Set(ids).size !== ids.length)
+            if (new Set(ids.map((id) => id.toLowerCase())).size !== ids.length)
                 return {
                     ok: false,
                     reason: 'Malformed flag: --owner-ids must not contain duplicate UUIDs.'

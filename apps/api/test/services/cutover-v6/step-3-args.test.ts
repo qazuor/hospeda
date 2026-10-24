@@ -42,6 +42,10 @@ describe('TEST:1776:1 AC:1776:1 strict step 3 arguments and exit codes', () => {
             ],
             [
                 '--dry-run',
+                '--owner-ids=550e8400-e29b-41d4-a716-446655440000,550E8400-E29B-41D4-A716-446655440000'
+            ],
+            [
+                '--dry-run',
                 '--owner-ids=550e8400-e29b-41d4-a716-446655440000',
                 '--owner-ids=6ba7b810-9dad-41d1-80b4-00c04fd430c8'
             ]
