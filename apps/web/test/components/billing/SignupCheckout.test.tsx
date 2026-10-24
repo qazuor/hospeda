@@ -2,6 +2,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignupCheckout } from '@/components/billing/SignupCheckout.client';
+import { resolveSignupManualPaymentOnly } from '@/lib/billing/signup-checkout';
 
 const start = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/api/endpoints-protected', () => ({ billingSubscriptionApi: { start } }));
@@ -35,7 +36,23 @@ describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
         render(
             <SignupCheckout
                 {...props}
-                manualPaymentOnly
+                manualPaymentOnly={resolveSignupManualPaymentOnly({
+                    result: {
+                        ok: true,
+                        data: {
+                            pendingAttempt: null,
+                            plan: {
+                                name: 'Partner Gold',
+                                amount: 100000,
+                                currency: 'ARS',
+                                cycle: 'monthly'
+                            },
+                            vertical: 'partner',
+                            touristVip: { status: 'NOT_AFFECTED' },
+                            trial: { status: 'NOT_RUNNING' }
+                        }
+                    }
+                })}
                 pendingAttempt={{
                     subscriptionId: '123e4567-e89b-42d3-a456-426614174002',
                     plan: { name: 'Pending', amount: 100000, currency: 'ARS', cycle: 'monthly' },
