@@ -1423,21 +1423,10 @@ describe('NewsletterSubscriberService.adminList', () => {
         expect(result.error?.reason).toBe('NEWSLETTER_SUBSCRIBER_PERMISSION_DENIED');
     });
 
-    it('returns paginated list for a valid admin actor', async () => {
-        const { svc } = makeService();
-        const actor = makeAdminActor();
-
-        enqueueResponse([{ total: 2 }]);
-        enqueueResponse([makeSubscriberRow(), makeSubscriberRow({ id: 'aaaa-bbbb' })]);
-
-        const result = await svc.adminList(actor, BASE_ADMIN_PARAMS as never);
-
-        expect(result.error).toBeUndefined();
-        expect(result.data?.total).toBe(2);
-        expect(result.data?.items).toHaveLength(2);
-        expect(result.data?.page).toBe(1);
-        expect(result.data?.pageSize).toBe(50);
-    });
+    // The happy path (typed Drizzle query + camelCase row mapping, filters,
+    // ordering, pagination) lives in newsletter-subscriber.admin-list.test.ts,
+    // which runs a real drizzle instance. This file's `getDb()` stub only
+    // implements `execute`, so it cannot exercise the query builder (HOS-1791).
 });
 
 // ===========================================================================
