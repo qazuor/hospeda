@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #3805
+    {
+        id: '2026-10-25-newsletter-subscribers-list-loads',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'El listado de suscriptores al newsletter vuelve a cargar',
+            en: 'The newsletter subscribers list loads again',
+            pt: 'A lista de assinantes da newsletter volta a carregar'
+        },
+        body: {
+            es: 'En el panel, la lista de suscriptores al newsletter daba error y no mostraba nada. Ahora carga con sus filtros por estado, canal, idioma y búsqueda por email, e incluye a quienes se suscribieron sin tener cuenta.',
+            en: 'In the panel, the newsletter subscribers list failed and showed nothing. It now loads with its filters by status, channel, language and email search, and includes people who subscribed without an account.',
+            pt: 'No painel, a lista de assinantes da newsletter dava erro e não mostrava nada. Agora carrega com seus filtros por status, canal, idioma e busca por email, e inclui quem se inscreveu sem ter conta.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3798
     {
         id: '2026-10-25-owner-plan-warns-about-tourist-vip',
