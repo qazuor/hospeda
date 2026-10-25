@@ -43,6 +43,7 @@ function subtractDays(day: string, days: number): string {
     return `${instant.getUTCFullYear().toString().padStart(4, '0')}-${(instant.getUTCMonth() + 1).toString().padStart(2, '0')}-${instant.getUTCDate().toString().padStart(2, '0')}`;
 }
 
+/** A row outcome from applying one grace reminder within its caller's transaction. */
 export type GraceReminderOutcome =
     | 'SKIPPED'
     | 'NO_DEADLINE'
