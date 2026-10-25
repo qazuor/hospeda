@@ -1,6 +1,7 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
 
 /**
  * Integration tests for destination hierarchy API endpoints.
@@ -11,12 +12,18 @@ import { validateApiEnv } from '../../../src/utils/env';
 describe('Destination Hierarchy API', () => {
     let app: ReturnType<typeof initApp>;
     const base = '/api/v1/public/destinations';
-    const validUuid = '00000000-0000-0000-0000-000000000000';
+    const validUuid = '123e4567-e89b-42d3-a456-426614174000';
 
-    beforeAll(() => {
+    beforeAll(async () => {
+        await testDb.setup();
         // Initialize environment variables before running tests
         validateApiEnv();
         app = initApp();
+    });
+
+    afterAll(async () => {
+        await testDb.clean();
+        await testDb.teardown();
     });
 
     describe('GET /{id}/children', () => {
@@ -27,7 +34,7 @@ describe('Destination Hierarchy API', () => {
 
         it('returns a valid response for a well-formed UUID', async () => {
             const res = await app.request(`${base}/${validUuid}/children`);
-            expect([200, 404]).toContain(res.status);
+            expect(res.status).toBe(404);
         });
 
         it('response has correct content-type', async () => {
@@ -45,17 +52,17 @@ describe('Destination Hierarchy API', () => {
 
         it('returns a valid response for a well-formed UUID', async () => {
             const res = await app.request(`${base}/${validUuid}/descendants`);
-            expect([200, 404]).toContain(res.status);
+            expect(res.status).toBe(404);
         });
 
         it('accepts maxDepth query parameter', async () => {
             const res = await app.request(`${base}/${validUuid}/descendants?maxDepth=5`);
-            expect([200, 404]).toContain(res.status);
+            expect(res.status).toBe(404);
         });
 
         it('accepts destinationType query parameter', async () => {
-            const res = await app.request(`${base}/${validUuid}/descendants?destinationType=city`);
-            expect([200, 404]).toContain(res.status);
+            const res = await app.request(`${base}/${validUuid}/descendants?destinationType=CITY`);
+            expect(res.status).toBe(404);
         });
 
         it('returns 400 for invalid maxDepth (0)', async () => {
@@ -77,7 +84,7 @@ describe('Destination Hierarchy API', () => {
 
         it('returns a valid response for a well-formed UUID', async () => {
             const res = await app.request(`${base}/${validUuid}/ancestors`);
-            expect([200, 404]).toContain(res.status);
+            expect(res.status).toBe(404);
         });
     });
 
@@ -89,7 +96,7 @@ describe('Destination Hierarchy API', () => {
 
         it('returns a valid response for a well-formed UUID', async () => {
             const res = await app.request(`${base}/${validUuid}/breadcrumb`);
-            expect([200, 404]).toContain(res.status);
+            expect(res.status).toBe(404);
         });
     });
 
@@ -111,12 +118,16 @@ describe('Destination Hierarchy API', () => {
 
         it('returns a valid response for a well-formed path', async () => {
             const res = await app.request(`${base}/by-path?path=/argentina/litoral`);
-            expect([200, 404]).toContain(res.status);
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body).toHaveProperty('data');
         });
 
-        it('returns 404 for non-existent path', async () => {
+        it('returns null for a well-formed but non-existent path', async () => {
             const res = await app.request(`${base}/by-path?path=/nonexistent/destination`);
-            expect(res.status).toBe(404);
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data).toBeNull();
         });
     });
 });

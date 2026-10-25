@@ -1,26 +1,31 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
 
 describe('GET /destinations (list)', () => {
     let app: ReturnType<typeof initApp>;
     const base = '/api/v1/public/destinations';
 
-    beforeAll(() => {
+    beforeAll(async () => {
+        await testDb.setup();
         // Initialize environment variables before running tests
         validateApiEnv();
         app = initApp();
     });
 
+    afterAll(async () => {
+        await testDb.clean();
+        await testDb.teardown();
+    });
+
     it('lists destinations with default pagination (happy path)', async () => {
         const res = await app.request(base, { headers: { 'user-agent': 'vitest' } });
-        expect([200, 400]).toContain(res.status);
+        expect(res.status).toBe(200);
         const body = await res.json();
-        if (res.status >= 200 && res.status < 300) {
-            expect(body).toHaveProperty('data');
-            expect(body.data).toHaveProperty('items');
-            expect(body.data).toHaveProperty('pagination');
-        }
+        expect(body).toHaveProperty('data');
+        expect(body.data).toHaveProperty('items');
+        expect(body.data).toHaveProperty('pagination');
     });
 
     it('validates sort params (order must be ASC/DESC)', async () => {
