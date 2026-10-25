@@ -13,6 +13,7 @@ type Common = {
     occurredAt: Date;
 };
 
+/** A committed billing transition that can be forwarded to analytics. */
 export type BillingFact =
     | (Common & {
           kind: 'CHECKOUT_ABANDONED';
@@ -103,8 +104,10 @@ export type BillingFact =
       });
 
 export interface BillingFactSink {
+    /** Receives one committed billing fact. */
     emit(fact: BillingFact): void;
 }
+/** Default sink that logs when billing facts have no configured consumer. */
 export const unwiredBillingFacts: BillingFactSink = {
     emit(fact) {
         logger.error(
@@ -113,6 +116,10 @@ export const unwiredBillingFacts: BillingFactSink = {
         );
     }
 };
+/** Emits a billing fact and logs sink failures without interrupting the transition.
+ * @param input.sink - Optional fact sink; defaults to the unwired logger.
+ * @param input.fact - Committed billing fact to emit.
+ */
 export function emitBillingFact(input: { sink?: BillingFactSink; fact: BillingFact }): void {
     try {
         (input.sink ?? unwiredBillingFacts).emit(input.fact);

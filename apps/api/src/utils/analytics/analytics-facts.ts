@@ -5,11 +5,13 @@ import { deriveAnalyticsEventUuid } from '../../lib/analytics-event-uuid.js';
 import { captureServerAnalyticsEvent } from '../../lib/posthog.js';
 
 const logger = createLogger('analytics-facts');
+/** A persisted trial fact translated into a catalog analytics event. */
 export type TrialFact =
     | {
           kind: 'TRIAL_STARTED';
           userId: string;
           vertical: string;
+          actorKind: 'USER' | 'ADMIN' | 'SYSTEM';
           trialId: string;
           trialDays?: number;
           activationEvent: 'listing_published' | 'start_button_pressed';
@@ -19,6 +21,7 @@ export type TrialFact =
           kind: 'TRIAL_CONVERTED';
           userId: string;
           vertical: string;
+          actorKind: 'USER' | 'ADMIN' | 'SYSTEM';
           trialId: string;
           transition: 'T2' | 'T5' | 'T8';
           trialStateBefore: 'ACTIVE' | 'EXPIRED' | 'NONE';
@@ -30,6 +33,7 @@ export type TrialFact =
           kind: 'TRIAL_EXPIRED';
           userId: string;
           vertical: string;
+          actorKind: 'USER' | 'ADMIN' | 'SYSTEM';
           trialId: string;
           trialDays: number;
           hadPaidIntent?: boolean;
@@ -59,7 +63,7 @@ function toEvent(fact: Fact): {
                   actor_kind: fact.actorKind,
                   subscription_id: fact.subscriptionId
               }
-            : { vertical: fact.vertical, actor_kind: 'SYSTEM' as const };
+            : { vertical: fact.vertical, actor_kind: fact.actorKind };
     switch (fact.kind) {
         case 'CHECKOUT_ABANDONED':
             return {
@@ -220,6 +224,10 @@ function toEvent(fact: Fact): {
     }
 }
 
+/** Creates an analytics sink that converts domain facts to catalog events.
+ * @param options.capture - Transport used to submit the prepared event.
+ * @returns A sink that does not propagate transport failures.
+ */
 export function createAnalyticsFactSink(options: { capture: Capture }): AnyFactSink {
     return {
         emit(fact) {
@@ -285,12 +293,20 @@ export function createAnalyticsFactSink(options: { capture: Capture }): AnyFactS
 
 let testSink: AnyFactSink | undefined;
 const productionSink = createAnalyticsFactSink({ capture: captureServerAnalyticsEvent });
+/** Returns the active billing analytics sink.
+ * @returns The test sink when installed, otherwise the production sink.
+ */
 export function getAnalyticsFactSink(): BillingFactSink {
     return testSink ?? (productionSink as BillingFactSink);
 }
+/** Installs an analytics sink for tests.
+ * @param sink - Sink to use until reset.
+ */
 export function setAnalyticsFactSinkForTests(sink: AnyFactSink): void {
     testSink = sink;
 }
+/** Restores the production analytics sink after a test override.
+ */
 export function resetAnalyticsFactSinkForTests(): void {
     testSink = undefined;
 }

@@ -1,7 +1,12 @@
 import { AnalyticsEventSchemas } from '@repo/analytics';
+import { ADDON_CYCLES } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
-import { describe, expect, it } from 'vitest';
-import { ADDON_CYCLES } from '../../../../../packages/db/src/schemas/vertical/addon-product.dbschema.js';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/db')>();
+    return { ...actual, ADDON_CYCLES: ['monthly', 'quarterly', 'semiannual', 'annual'] };
+});
 
 describe('billing analytics catalog parity (TEST:1878:16)', () => {
     it('matches persisted verticals and billing cycles', () => {

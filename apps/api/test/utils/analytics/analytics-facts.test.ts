@@ -22,6 +22,7 @@ describe('analytics facts (TEST:1878:15, TEST:1878:16)', () => {
                 kind: 'TRIAL_STARTED',
                 userId: 'u-1',
                 vertical: 'accommodation',
+                actorKind: 'USER',
                 trialId: 't-1',
                 activationEvent: 'listing_published',
                 occurredAt: new Date('2026-01-01T00:00:00.000Z')
@@ -41,6 +42,7 @@ describe('analytics facts (TEST:1878:15, TEST:1878:16)', () => {
             kind: 'TRIAL_STARTED',
             userId: 'u-1',
             vertical: 'accommodation',
+            actorKind: 'USER',
             trialId: 't-1',
             activationEvent: 'listing_published',
             occurredAt
@@ -52,7 +54,7 @@ describe('analytics facts (TEST:1878:15, TEST:1878:16)', () => {
         expect(captured?.uuid).toMatch(/^[0-9a-f-]{36}$/);
         expect(captured?.properties).toEqual({
             vertical: 'accommodation',
-            actor_kind: 'SYSTEM',
+            actor_kind: 'USER',
             activation_event: 'listing_published',
             trial_days: undefined
         });
@@ -152,6 +154,7 @@ describe('analytics facts (TEST:1878:15, TEST:1878:16)', () => {
                 kind: 'TRIAL_STARTED' as const,
                 userId: 'u-1',
                 vertical: 'accommodation',
+                actorKind: 'USER' as const,
                 trialId: 't-1',
                 activationEvent: 'listing_published' as const,
                 trialDays: 14,
@@ -161,6 +164,7 @@ describe('analytics facts (TEST:1878:15, TEST:1878:16)', () => {
                 kind: 'TRIAL_CONVERTED' as const,
                 userId: 'u-1',
                 vertical: 'accommodation',
+                actorKind: 'USER' as const,
                 trialId: 't-1',
                 transition: 'T2' as const,
                 trialStateBefore: 'ACTIVE' as const,
@@ -171,6 +175,7 @@ describe('analytics facts (TEST:1878:15, TEST:1878:16)', () => {
                 kind: 'TRIAL_EXPIRED' as const,
                 userId: 'u-1',
                 vertical: 'accommodation',
+                actorKind: 'SYSTEM' as const,
                 trialId: 't-1',
                 trialDays: 14,
                 hadPaidIntent: false,

@@ -60,14 +60,18 @@ export function run(
         allowEntries.some((item) => !item.event || !item.reason || !item.issue)
     )
         violations.push('allowlist entries require event, reason, and issue');
-    const sourceFiles = files.filter((file) => file !== CATALOG);
-    const decoded = sourceFiles.map((file) => ({
+    const catalogValues = new Set(entries.map((entry) => entry.event));
+    for (const item of allowEntries)
+        if (item.event && !catalogValues.has(item.event))
+            violations.push(`allowlist entry has uncatalogued event ${item.event}`);
+    const decoded = files.map((file) => ({
         file,
         source: readFileSync(join(root, file), 'utf8'),
         ...maskSource({ source: readFileSync(join(root, file), 'utf8') })
     }));
+    const emitterFiles = decoded.filter(({ file }) => file !== CATALOG);
     for (const entry of entries) {
-        const emitters = decoded.filter(
+        const emitters = emitterFiles.filter(
             ({ code, strings }) =>
                 new RegExp(`\\bAnalyticsEvents\\.${entry.key}\\b`).test(code) ||
                 strings.some((literal) => literal.value === entry.event)
@@ -86,7 +90,6 @@ export function run(
                 violations.push(`retired event ${old} remains in ${file}`);
         if (docs.includes(old)) violations.push(`retired event ${old} remains in ${DOC}`);
     }
-    const catalogValues = new Set(entries.map((entry) => entry.event));
     for (const event of catalogValues)
         if (/^(billing|trial)_/.test(event) && !docs.includes(`| \`${event}\` |`))
             violations.push(`missing docs row for ${event}`);

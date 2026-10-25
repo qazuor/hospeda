@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AnalyticsEventSchemas } from '../src/catalog.js';
+import { AnalyticsEventSchemas, AnalyticsEvents } from '../src/catalog.js';
 import { prepareAnalyticsEvent } from '../src/shared.js';
 
 const examples: Record<string, Record<string, unknown>> = {
@@ -119,6 +119,18 @@ const examples: Record<string, Record<string, unknown>> = {
 };
 
 describe('billing analytics event schemas (TEST:1878:16)', () => {
+    it('keeps retired event names out of the active catalog (TEST:1878:18)', () => {
+        const retired = [
+            'subscription_checkout_started',
+            'subscription_created',
+            'subscription_payment_succeeded',
+            'subscription_payment_failed',
+            'trial_converted_to_paid'
+        ];
+        expect(Object.values(AnalyticsEvents).filter((event) => retired.includes(event))).toEqual(
+            []
+        );
+    });
     it('parses the complete required example for every new event', () => {
         for (const [name, properties] of Object.entries(examples)) {
             expect(

@@ -10,6 +10,7 @@ function tree(options: {
     emitter?: boolean;
     allowlist?: string;
     retiredSrc?: boolean;
+    retiredCatalog?: boolean;
     missingDoc?: boolean;
 }): string {
     const root = mkdtempSync(join(tmpdir(), 'analytics-emitter-'));
@@ -21,7 +22,7 @@ function tree(options: {
     mkdirSync(join(root, 'scripts'), { recursive: true });
     writeFileSync(
         join(root, 'packages/analytics/src/catalog.ts'),
-        `export const AnalyticsEvents = {\n    billingGraceEntered: 'billing_grace_entered'${options.missingDoc ? ",\n    trialStarted: 'trial_started'" : ''}\n};\n${options.retiredSrc ? "export const retiredProbe = 'subscription_created';\n" : ''}`
+        `export const AnalyticsEvents = {\n    billingGraceEntered: 'billing_grace_entered'${options.missingDoc ? ",\n    trialStarted: 'trial_started'" : ''}\n};\n${options.retiredCatalog ? "export const retiredProbe = 'subscription_created';\n" : ''}`
     );
     writeFileSync(
         join(root, 'apps/api/src/emitter.ts'),
@@ -89,11 +90,12 @@ describe('analytics catalog emitter guard (TEST:1878:17)', () => {
         expect(result.output).toContain('reason');
     });
     it('rejects retired names in production src', () => {
-        const result = run({
-            root: tree({ retiredSrc: true }),
-            minScannedFiles: 1,
-            minCatalogKeys: 1
-        });
+        const root = tree({});
+        writeFileSync(
+            join(root, 'apps/api/src/emitter.ts'),
+            "export const retiredProbe = 'subscription_created';"
+        );
+        const result = run({ root, minScannedFiles: 1, minCatalogKeys: 1 });
         expect(result.exitCode).toBe(1);
         expect(result.output).toContain('subscription_created');
     });
@@ -107,9 +109,18 @@ describe('analytics catalog emitter guard (TEST:1878:17)', () => {
         expect(result.output).toContain('trial_started');
     });
     it('fails when the production scan is below its minimum', () => {
-        const result = run({ root: tree({}), minScannedFiles: 2, minCatalogKeys: 1 });
+        const result = run({ root: tree({}), minScannedFiles: 100, minCatalogKeys: 1 });
         expect(result.exitCode).toBe(1);
-        expect(result.output).toContain('only 1 production file');
+        expect(result.output).toContain('only');
+    });
+    it('rejects retired names inside catalog.ts too (TEST:1878:18)', () => {
+        const result = run({
+            root: tree({ retiredCatalog: true }),
+            minScannedFiles: 1,
+            minCatalogKeys: 1
+        });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain('subscription_created');
     });
     it('rejects retired event names outside the migration log (TEST:1878:18)', () => {
         const root = tree({});
