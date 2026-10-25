@@ -1,4 +1,4 @@
-import type { Gastronomy } from '@repo/schemas';
+import type { Venue } from '@repo/schemas';
 import { and, count, desc, eq, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { gastronomies } from '../../schemas/gastronomy/gastronomy.dbschema.ts';
@@ -29,12 +29,12 @@ interface GastronomySearchInput {
  * and findWithRelations() overrides. Expand with domain-specific query methods
  * as the service layer grows.
  */
-export class GastronomyModel extends BaseModelImpl<Gastronomy> {
+export class GastronomyModel extends BaseModelImpl<Venue> {
     protected table = gastronomies;
     public entityName = 'gastronomies';
 
     /** Creates a gastronomy with its initial publication clock. */
-    override async create(data: Partial<Gastronomy>, tx?: DrizzleClient): Promise<Gastronomy> {
+    override async create(data: Partial<Venue>, tx?: DrizzleClient): Promise<Venue> {
         return super.create(withListingBirthColumns({ data }).data, tx);
     }
 
@@ -93,7 +93,7 @@ export class GastronomyModel extends BaseModelImpl<Gastronomy> {
     async search(
         params: GastronomySearchInput,
         tx?: DrizzleClient
-    ): Promise<{ items: Gastronomy[]; total: number }> {
+    ): Promise<{ items: Venue[]; total: number }> {
         const db = this.getClient(tx);
         const page = params.page ?? 1;
         const pageSize = params.pageSize ?? 10;
@@ -148,7 +148,7 @@ export class GastronomyModel extends BaseModelImpl<Gastronomy> {
                 // DRIZZLE-LIMITATION: select() returns branded Drizzle types; entity type
                 // from @repo/schemas uses unbranded domain types. BaseModelImpl casts
                 // consistently with the same pattern (see base.model.ts `as T[]`).
-                items: items as unknown as Gastronomy[],
+                items: items as unknown as Venue[],
                 total: Number(totalResult[0]?.count ?? 0)
             };
             logQuery(this.entityName, 'search', ctx, { count: result.total });

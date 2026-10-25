@@ -1,4 +1,4 @@
-import type { GastronomyMenuItem } from '@repo/schemas';
+import type { VenueMenuItem } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { gastronomyMenuItems } from '../../schemas/gastronomy/gastronomy_menu_item.dbschema.ts';
 
@@ -9,7 +9,7 @@ import { gastronomyMenuItems } from '../../schemas/gastronomy/gastronomy_menu_it
  * Thin `BaseModelImpl` wrapper. See `GastronomyMenuSectionModel` for why there
  * is no soft delete on this pair of tables.
  */
-export class GastronomyMenuItemModel extends BaseModelImpl<GastronomyMenuItem> {
+export class GastronomyMenuItemModel extends BaseModelImpl<VenueMenuItem> {
     protected table = gastronomyMenuItems;
     public entityName = 'gastronomyMenuItems';
 

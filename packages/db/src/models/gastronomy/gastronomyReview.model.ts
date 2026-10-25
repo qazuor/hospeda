@@ -1,4 +1,4 @@
-import type { GastronomyReview } from '@repo/schemas';
+import type { VenueReview } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { gastronomyReviews } from '../../schemas/gastronomy/gastronomy_review.dbschema.ts';
 
@@ -8,7 +8,7 @@ import { gastronomyReviews } from '../../schemas/gastronomy/gastronomy_review.db
  * Custom relation queries (with user/gastronomy) should be added here as the
  * service layer grows — same pattern as AccommodationReviewModel.findAllWithUser.
  */
-export class GastronomyReviewModel extends BaseModelImpl<GastronomyReview> {
+export class GastronomyReviewModel extends BaseModelImpl<VenueReview> {
     protected table = gastronomyReviews;
     public entityName = 'gastronomyReviews';
 

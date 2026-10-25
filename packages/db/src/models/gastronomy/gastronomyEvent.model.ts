@@ -1,4 +1,4 @@
-import type { GastronomyEvent } from '@repo/schemas';
+import type { VenueEvent } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { gastronomyEvents } from '../../schemas/gastronomy/gastronomy_event.dbschema.ts';
 
@@ -16,7 +16,7 @@ import { gastronomyEvents } from '../../schemas/gastronomy/gastronomy_event.dbsc
  * `isActive: false` instead — that is what that column is for, and it is a
  * different statement from "deleted".
  */
-export class GastronomyEventModel extends BaseModelImpl<GastronomyEvent> {
+export class GastronomyEventModel extends BaseModelImpl<VenueEvent> {
     protected table = gastronomyEvents;
     public entityName = 'gastronomyEvents';
 

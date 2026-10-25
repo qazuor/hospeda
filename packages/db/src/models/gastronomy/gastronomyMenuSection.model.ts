@@ -1,4 +1,4 @@
-import type { GastronomyMenuSection } from '@repo/schemas';
+import type { VenueMenuSection } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { gastronomyMenuSections } from '../../schemas/gastronomy/gastronomy_menu_section.dbschema.ts';
 
@@ -14,7 +14,7 @@ import { gastronomyMenuSections } from '../../schemas/gastronomy/gastronomy_menu
  * whole menu is rewritten transactionally by `replaceGastronomyMenu`, so a
  * tombstoned section would only ever be dead weight the read has to filter.
  */
-export class GastronomyMenuSectionModel extends BaseModelImpl<GastronomyMenuSection> {
+export class GastronomyMenuSectionModel extends BaseModelImpl<VenueMenuSection> {
     protected table = gastronomyMenuSections;
     public entityName = 'gastronomyMenuSections';
 
