@@ -10,6 +10,7 @@ import {
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, describe, expect, it, vi } from 'vitest';
+import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service';
 import { providerLinkCancellationSeen } from '../../../src/services/billing/subscription/provider-link-cancellation-seen';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
@@ -150,6 +151,7 @@ describe('HOS-1731 pending first charge rejection', () => {
         ['authorized', true] as const
     ])('TEST:1731:2 leaves a %s authorization untouched', async (_label, authorize) => {
         const own = await setup({ cancel: false, authorize });
+        const facts: BillingFact[] = [];
         const cancel = vi.spyOn(own.fake, 'cancel');
         const result = await recordChargeFact(
             { chargeId: own.chargeId },
@@ -157,7 +159,8 @@ describe('HOS-1731 pending first charge rejection', () => {
                 provider: own.fake,
                 clock,
                 beforeCancelNotice: own.beforeCancelNotice,
-                cancellationSeen: providerLinkCancellationSeen
+                cancellationSeen: providerLinkCancellationSeen,
+                billingFacts: { emit: (fact) => facts.push(fact) }
             }
         );
         expect(result).toMatchObject({
@@ -174,6 +177,27 @@ describe('HOS-1731 pending first charge rejection', () => {
             .where(eq(subscriptions.id, own.started.subscriptionId));
         expect(row?.status).toBe('PENDING_AUTHORIZATION');
         expect(await ownOutbox(own.started.subscriptionId)).toHaveLength(0);
+        const [payment] = await getServiceTestDb()
+            .select()
+            .from(payments)
+            .where(eq(payments.providerFactId, own.chargeId));
+        expect(facts.filter((fact) => fact.subscriptionId === own.started.subscriptionId)).toEqual([
+            {
+                kind: 'CHARGE_REJECTED',
+                userId: own.userId,
+                vertical: 'accommodation',
+                subscriptionId: own.started.subscriptionId,
+                subscriptionClass: 'PRINCIPAL',
+                actorKind: 'SYSTEM',
+                occurredAt: payment!.factAt,
+                paymentId: payment!.id,
+                amountMinor: payment!.amount,
+                currency: payment!.currency,
+                isFirstCharge: true,
+                nextState: 'UNCHANGED',
+                hasRetryWindow: false
+            }
+        ]);
     });
 
     it('TEST:1731:3 deduplicates redelivery after the row is closed', async () => {

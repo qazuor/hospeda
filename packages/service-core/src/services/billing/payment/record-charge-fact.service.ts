@@ -2,9 +2,11 @@ import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contrac
 import { and, eq, getDb, payments, providerLinks, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
-import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
+import type { BillingFactSink } from '../facts/billing-fact-sink';
+import { emitBillingFact } from '../facts/billing-fact-sink';
 import {
     type ChargebackDetection,
     type ChargebackDetectionResult,
@@ -31,6 +33,7 @@ import type { CreditPaymentResult } from './credit-payment.service';
 import { creditPayment } from './credit-payment.service';
 import type { FailPaymentResult } from './fail-payment.service';
 import { failPayment } from './fail-payment.service';
+import { creditedPaymentsFromLedger } from './payment-ledger';
 import type { CoverageNotices, PromoChargePolicy, PromoExhaustion } from './payment-ports';
 import { isRejectedWithoutRetryWindow } from './rejected-charge-terminal';
 
@@ -44,6 +47,7 @@ export interface RecordChargeFactPorts extends DeclineFirstChargePorts {
     readonly promoCharges?: PromoChargePolicy;
     readonly promoExhaustion?: PromoExhaustion;
     readonly coverageNotices?: CoverageNotices;
+    readonly billingFacts?: BillingFactSink;
     /** Hangs the payment on reason 7 when S5's or S7's conditions 2 or 3 fail (AC:B7:6, AC:B7:13). */
     readonly markPayments?: ReconciliationMarkPayments;
     /** Who brought the charge, for S5's/S7's reason 7 (I-14): the notice (`provider`, default) or the sweep (`job`). */
@@ -229,7 +233,8 @@ export async function recordChargeFact(
                 clock: ports.clock,
                 promoCharges: ports.promoCharges,
                 promoExhaustion: ports.promoExhaustion,
-                coverageNotices: ports.coverageNotices
+                coverageNotices: ports.coverageNotices,
+                billingFacts: ports.billingFacts
             }
         );
         if (credit.outcome !== 'CREDITED' && credit.outcome !== 'ALREADY_CREDITED')
@@ -243,7 +248,8 @@ export async function recordChargeFact(
                     provider: ports.provider,
                     clock: ports.clock,
                     markPayments: ports.markPayments,
-                    actorType: ports.actorType
+                    actorType: ports.actorType,
+                    billingFacts: ports.billingFacts
                 }
             );
             if (
@@ -263,6 +269,7 @@ export async function recordChargeFact(
                     markPayments: ports.markPayments,
                     actorType: ports.actorType,
                     coverageNotices: ports.coverageNotices,
+                    billingFacts: ports.billingFacts,
                     beforeCancelNotice: ports.beforeCancelNotice,
                     touristVipInheritance: ports.touristVipInheritance,
                     scheduledChangeApplier: ports.scheduledChangeApplier,
@@ -303,7 +310,8 @@ export async function recordChargeFact(
             provider: ports.provider,
             clock: ports.clock,
             payments: ports.payments,
-            planPolicy: ports.planPolicy
+            planPolicy: ports.planPolicy,
+            billingFacts: ports.billingFacts
         }
     );
     let result: Extract<RecordChargeFactResult, { readonly outcome: 'GRACE' | 'DECLINED' }>;
@@ -317,7 +325,49 @@ export async function recordChargeFact(
         const decline = await declineFirstCharge({ chargeId: input.chargeId }, ports);
         result = { outcome: 'DECLINED', paymentId, decline };
     }
-    if (!isRejectedWithoutRetryWindow({ charge })) return result;
-    const terminalRejection = await failPayment({ paymentId }, { clock: ports.clock });
-    return { ...result, terminalRejection };
+    if (isRejectedWithoutRetryWindow({ charge })) {
+        const terminalRejection = await failPayment({ paymentId }, { clock: ports.clock });
+        result = { ...result, terminalRejection };
+    }
+    const [recordedPayment] = await getDb()
+        .select({ amount: payments.amount, currency: payments.currency, factAt: payments.factAt })
+        .from(payments)
+        .where(eq(payments.id, paymentId))
+        .limit(1);
+    const vertical = VerticalEnumSchema.safeParse(linked.subscription.vertical);
+    if (
+        recordedPayment &&
+        linked.subscription.class === 'PRINCIPAL' &&
+        linked.subscription.userId &&
+        vertical.success
+    ) {
+        const isFirstCharge = !(await creditedPaymentsFromLedger.hasCreditedPayment({
+            subscriptionId: linked.subscription.id
+        }));
+        const nextState =
+            result.outcome === 'GRACE' && result.grace.outcome === 'GRACE_STARTED'
+                ? 'GRACE_PERIOD'
+                : result.outcome === 'DECLINED' && result.decline.outcome === 'DECLINED'
+                  ? 'CHARGE_DECLINED'
+                  : 'UNCHANGED';
+        emitBillingFact({
+            sink: ports.billingFacts,
+            fact: {
+                kind: 'CHARGE_REJECTED',
+                userId: linked.subscription.userId,
+                vertical: vertical.data,
+                subscriptionId: linked.subscription.id,
+                subscriptionClass: 'PRINCIPAL',
+                actorKind: 'SYSTEM',
+                occurredAt: recordedPayment.factAt,
+                paymentId,
+                amountMinor: recordedPayment.amount,
+                currency: recordedPayment.currency as 'ARS',
+                isFirstCharge,
+                nextState,
+                hasRetryWindow: !isRejectedWithoutRetryWindow({ charge })
+            }
+        });
+    }
+    return result;
 }
