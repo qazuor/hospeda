@@ -106,6 +106,70 @@ describe('analytics facts (TEST:1878:15, TEST:1878:16)', () => {
         );
     });
 
+    it('maps S2 with a predecessor to activation plus an exact plan change (TEST:1878:5)', () => {
+        const capture = vi.fn();
+        const occurredAt = new Date('2026-01-01T00:00:00.000Z');
+        createAnalyticsFactSink({ capture }).emit({
+            kind: 'SUBSCRIPTION_ACTIVATED',
+            userId: 'u-1',
+            vertical: VerticalEnum.ACCOMMODATION,
+            subscriptionId: 's-next',
+            subscriptionClass: 'PRINCIPAL',
+            actorKind: 'SYSTEM',
+            planVersionId: 'pv-next',
+            billingOptionId: 'bo-next',
+            cycle: 'annual',
+            amountMinor: 900,
+            currency: 'ARS',
+            occurredAt,
+            predecessor: {
+                planVersionId: 'pv-prev',
+                cycle: 'monthly',
+                amountMinor: 100,
+                direction: 'UPGRADE'
+            }
+        });
+        expect(capture.mock.calls.map(([event]) => event)).toEqual([
+            {
+                distinctId: 'u-1',
+                name: 'billing_subscription_activated',
+                properties: {
+                    vertical: VerticalEnum.ACCOMMODATION,
+                    subscription_class: 'PRINCIPAL',
+                    actor_kind: 'SYSTEM',
+                    subscription_id: 's-next',
+                    plan_version_id: 'pv-next',
+                    billing_option_id: 'bo-next',
+                    cycle: 'annual',
+                    amount_minor: 900,
+                    currency: 'ARS',
+                    trial_active_at_activation: undefined
+                },
+                uuid: expect.any(String),
+                timestamp: occurredAt
+            },
+            {
+                distinctId: 'u-1',
+                name: 'billing_plan_changed',
+                properties: {
+                    vertical: VerticalEnum.ACCOMMODATION,
+                    subscription_class: 'PRINCIPAL',
+                    actor_kind: 'SYSTEM',
+                    subscription_id: 's-next',
+                    from_plan_version_id: 'pv-prev',
+                    to_plan_version_id: 'pv-next',
+                    from_cycle: 'monthly',
+                    to_cycle: 'annual',
+                    direction: 'UPGRADE',
+                    from_amount_minor: 100,
+                    to_amount_minor: 900
+                },
+                uuid: expect.any(String),
+                timestamp: occurredAt
+            }
+        ]);
+    });
+
     it('maps each fact kind to properties accepted by its catalog schema (TEST:1878:16)', () => {
         const occurredAt = new Date('2026-01-01T00:00:00.000Z');
         const common = {

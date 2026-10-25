@@ -1,4 +1,5 @@
 import { expireDueTrials } from '@repo/verticals';
+import { emitTrialAnalyticsFact } from '../../utils/analytics/analytics-facts.js';
 import { getClock } from '../../utils/clock.js';
 import { getTrialMachinePorts } from '../../utils/trial/trial-machine-ports.js';
 import type { CronJobDefinition } from '../types.js';
@@ -27,7 +28,21 @@ export const trialMachineExpiryJob: CronJobDefinition = {
             const { expired, skipped, failed } = await expireDueTrials({
                 ...getTrialMachinePorts(),
                 clock: getClock().clock,
-                batchSize: 100
+                batchSize: 100,
+                onTrialExpired: ({ userId, vertical, trialId, startedAt, endsAt }) => {
+                    if (!startedAt) return;
+                    emitTrialAnalyticsFact({
+                        kind: 'TRIAL_EXPIRED',
+                        userId,
+                        vertical,
+                        actorKind: 'SYSTEM',
+                        trialId,
+                        trialDays: Math.round(
+                            (endsAt.getTime() - startedAt.getTime()) / 86_400_000
+                        ),
+                        occurredAt: endsAt
+                    });
+                }
             });
             const durationMs = Date.now() - startedAt.getTime();
             logger.info('Trial expiry completed', { expired, skipped, failed, durationMs });

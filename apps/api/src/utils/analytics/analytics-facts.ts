@@ -341,6 +341,15 @@ export function resetAnalyticsFactSinkForTests(): void {
     testSink = undefined;
 }
 
+/** Emits a trial analytics fact without allowing capture failures to affect its caller. */
+export function emitTrialAnalyticsFact(fact: TrialFact): void {
+    try {
+        (testSink ?? productionSink).emit(fact);
+    } catch (error) {
+        logger.warn({ kind: fact.kind, error }, 'Trial analytics capture failed (non-blocking)');
+    }
+}
+
 /** Emits the S1 checkout fact directly from its API edge; the route wires this in the next rollout. */
 export function captureBillingCheckoutStarted(input: {
     distinctId: string;

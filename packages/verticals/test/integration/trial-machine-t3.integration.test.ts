@@ -36,6 +36,55 @@ function ownScanner(scanner: TrialExpiryScanner, userIds: readonly string[]): Tr
 }
 
 describe('TEST:V4:8 - T3 expires due trials and rereads the deadline', () => {
+    it('TEST:1878:14 isolates an analytics callback failure and preserves counters', async () => {
+        const first = await seedActiveTrial({
+            db,
+            vertical,
+            startedAt: new Date(end.getTime() - 10 * day),
+            endsAt: end
+        });
+        const second = await seedActiveTrial({
+            db,
+            vertical,
+            startedAt: new Date(end.getTime() - 5 * day),
+            endsAt: end
+        });
+        current = end.getTime() + 60_000;
+        const adapter = createTrialMachineAdapter({ db, ceilingDays: () => 60 });
+        const emitted: { trialId: string; startedAt: Date | null; endsAt: Date }[] = [];
+        const result = await expireDueTrials({
+            scanner: ownScanner(adapter.scanner, [first.userId, second.userId]),
+            unitOfWork: adapter.unitOfWork,
+            clock,
+            afterCommit,
+            batchSize: 10,
+            onTrialExpired: (fact) => {
+                emitted.push(fact);
+                if (emitted.length === 1) throw new Error('analytics sink failed');
+            }
+        });
+        expect(result).toEqual({ expired: 2, skipped: 0, failed: 0 });
+        expect(emitted).toHaveLength(2);
+        expect(
+            emitted
+                .map(({ trialId, startedAt, endsAt }) => ({ trialId, startedAt, endsAt }))
+                .sort((a, b) => a.trialId.localeCompare(b.trialId))
+        ).toEqual(
+            [
+                {
+                    trialId: first.trialId,
+                    startedAt: new Date(end.getTime() - 10 * day),
+                    endsAt: end
+                },
+                {
+                    trialId: second.trialId,
+                    startedAt: new Date(end.getTime() - 5 * day),
+                    endsAt: end
+                }
+            ].sort((a, b) => a.trialId.localeCompare(b.trialId))
+        );
+    });
+
     it('expires after the clock advances, removes coverage, schedules five milestones and leaves inactive_since untouched', async () => {
         const { userId } = await seedActiveTrial({
             db,
