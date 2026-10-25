@@ -35,6 +35,7 @@ export interface SignupCheckoutProps {
 
 const TOURIST_VIP_NOTICE_KEY: Record<SignupTouristVipNotice['kind'], string> = {
     CANCELLED_ON_RETURN: 'billing.checkout.signup.touristVipNotice.cancelledOnReturn',
+    CANCELLED_ON_ACTIVATION: 'billing.checkout.signup.touristVipNotice.cancelledOnActivation',
     UNKNOWN: 'billing.checkout.signup.touristVipNotice.unknown'
 };
 
@@ -272,7 +273,33 @@ export function SignupCheckout({
                             data-testid="signup-checkout-tourist-vip-notice"
                             role="note"
                         >
-                            <p>{t(TOURIST_VIP_NOTICE_KEY[touristVipNotice.kind])}</p>
+                            {touristVipNotice.kind === 'CANCELLED_ON_ACTIVATION' ? (
+                                <p>
+                                    {touristVipNotice.paidUntil
+                                        ? t(
+                                              'billing.checkout.signup.touristVipNotice.cancelledOnActivationUntil',
+                                              undefined,
+                                              {
+                                                  date: formatSignupWindowEnd({
+                                                      iso: touristVipNotice.paidUntil,
+                                                      locale
+                                                  })
+                                              }
+                                          )
+                                        : t(TOURIST_VIP_NOTICE_KEY[touristVipNotice.kind])}
+                                </p>
+                            ) : touristVipNotice.kind === 'UNKNOWN' ? (
+                                <>
+                                    <p>{t(TOURIST_VIP_NOTICE_KEY[touristVipNotice.kind])}</p>
+                                    <p>
+                                        {t(
+                                            'billing.checkout.signup.touristVipNotice.unknownOnActivation'
+                                        )}
+                                    </p>
+                                </>
+                            ) : (
+                                <p>{t(TOURIST_VIP_NOTICE_KEY[touristVipNotice.kind])}</p>
+                            )}
                         </div>
                     )}
                     <button

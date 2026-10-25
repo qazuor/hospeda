@@ -14,6 +14,7 @@ export type { ListingGalleryManagerProps } from './components/ListingGalleryMana
 
 // Relational gallery manager UI (HOS-382)
 export { ListingGalleryManager } from './components/ListingGalleryManager';
+export { ListingModerationActions } from './components/ListingModerationActions';
 export type { ListingModerationCardProps } from './components/ListingModerationCard';
 // Listing moderation by action, with reason (HOS-1684)
 export { ListingModerationCard } from './components/ListingModerationCard';
@@ -24,6 +25,11 @@ export { ListingPurgeOnRequestCard } from './components/ListingPurgeOnRequestCar
 export { createListingListConfig } from './config/createListingListConfig';
 // HOS-1684
 export type { ListingModerationActionKind } from './config/listing-moderation-actions';
+export {
+    canEditListing,
+    canPurgeListingOnRequest,
+    getAvailableModerationActions
+} from './config/listing-moderation-actions';
 // Shared section builders
 export {
     createListingIdentitySection,
@@ -53,6 +59,10 @@ export {
     useListingMediaRemove,
     useListingMediaSetFeatured
 } from './hooks/useListingMedia';
+export {
+    buildListingModerationStatePath,
+    useListingModerationStateQuery
+} from './hooks/useListingModerationStateQuery';
 // HOS-1684
 export {
     buildModerateListingPath,

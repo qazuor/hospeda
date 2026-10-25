@@ -1,11 +1,33 @@
 .root {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: var(--space-2);
-    align-items: center;
+    align-items: stretch;
 }
-.link {
-    color: var(--brand-primary-link);
+.primary,
+.secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    padding: var(--space-3) var(--space-6);
+    border: 1px solid var(--brand-primary);
+    border-radius: var(--radius-button);
     font-weight: 600;
-    text-decoration: underline;
+    text-align: center;
+    text-decoration: none;
+}
+.primary {
+    background: var(--brand-primary);
+    color: var(--core-card);
+}
+.secondary {
+    background: transparent;
+    color: var(--brand-primary-link);
+}
+.primary:focus-visible,
+.secondary:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 3px;
 }

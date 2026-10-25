@@ -13,7 +13,7 @@
  *
  * ## What "most weight" means, exactly
  *
- * The summary is the FIRST `visibleCount` items of one canonical order, and
+ * Leading items come first, followed by the FIRST `visibleCount` items of one canonical order, and
  * that order is derived, never hand-picked per plan:
  *
  * 1. **Numeric caps first**, in the order `LIMIT_DISPLAY_ORDER` already defines
@@ -93,6 +93,7 @@ export interface PricingCardItemSplit {
  *   order.
  * @param input.limits - Numeric caps from the tier's delta, already ordered by
  *   `LIMIT_DISPLAY_ORDER`.
+ * @param input.leading - Unranked summary lines that must precede the regular list.
  * @param input.visibleCount - How many items to show up front. Defaults to
  *   {@link PRICING_CARD_VISIBLE_ITEMS}; a non-positive or non-finite value is
  *   treated as the default so a bad caller cannot produce a card with an empty
@@ -113,9 +114,10 @@ export interface PricingCardItemSplit {
 export function buildPricingCardItems(input: {
     readonly features: readonly PricingCardFeatureItem[];
     readonly limits: readonly PricingCardLimitItem[];
+    readonly leading?: readonly PricingCardFeatureItem[];
     readonly visibleCount?: number;
 }): PricingCardItemSplit {
-    const { features, limits, visibleCount = PRICING_CARD_VISIBLE_ITEMS } = input;
+    const { features, limits, leading = [], visibleCount = PRICING_CARD_VISIBLE_ITEMS } = input;
 
     const cut =
         Number.isFinite(visibleCount) && visibleCount > 0
@@ -123,7 +125,7 @@ export function buildPricingCardItems(input: {
             : PRICING_CARD_VISIBLE_ITEMS;
 
     // Ranked content first — see the "most weight" note in the file header.
-    const all: readonly PricingCardItem[] = [...limits, ...features];
+    const all: readonly PricingCardItem[] = [...leading, ...limits, ...features];
 
     return {
         all,

@@ -39,6 +39,7 @@
     "baseHighlightText": "Todo lo esencial para arrancar, sin compromiso.",
     "group": {
         "tourist": "Todas las funciones de turista",
+        "touristVip": "Incluye todos los beneficios de Turista VIP",
         "ai": "Suite de IA: textos, traducción, importación y consultas"
     },
     "features": {

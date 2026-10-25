@@ -15,7 +15,7 @@
  */
 
 import { DeleteIcon } from '@repo/icons';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, type PublicationStatusEnum } from '@repo/schemas';
 import { useId, useState } from 'react';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import {
@@ -34,6 +34,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useTranslations } from '@/hooks/use-translations';
 import { isApiError } from '@/lib/errors';
 import { adminLogger } from '@/utils/logger';
+import { canPurgeListingOnRequest } from '../config/listing-moderation-actions';
 import {
     type PurgeListingVertical,
     usePurgeListingOnRequestMutation
@@ -52,6 +53,8 @@ export interface ListingPurgeOnRequestCardProps {
     readonly entityName: string;
     /** Called after a successful purge. Detail pages navigate to the list. */
     readonly onPurged?: () => void;
+    /** Current listing state used to decide whether purge is available. */
+    readonly publicationStatus: PublicationStatusEnum | null | undefined;
 }
 
 /**
@@ -64,7 +67,8 @@ export function ListingPurgeOnRequestCard({
     vertical,
     entityId,
     entityName,
-    onPurged
+    onPurged,
+    publicationStatus
 }: ListingPurgeOnRequestCardProps) {
     const { t } = useTranslations();
     const { addToast } = useToast();
@@ -122,6 +126,8 @@ export function ListingPurgeOnRequestCard({
             });
         }
     };
+
+    if (!canPurgeListingOnRequest({ publicationStatus })) return null;
 
     return (
         <PermissionGate permissions={[PermissionEnum.LISTING_PURGE_ON_REQUEST]}>

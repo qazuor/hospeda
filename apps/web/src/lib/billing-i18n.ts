@@ -85,10 +85,10 @@ export function getEntitlementName(input: { key: EntitlementKey; t: Translator }
  * Turn a plan's raw entitlement keys into the bullets shown on a pricing card.
  *
  * For the tourist audience this is a 1:1 mapping (each entitlement is a bullet).
- * For the owner audience the list is curated to stay short (SPEC-299): the full
- * inherited tourist tier collapses into a single "all tourist features" bullet,
- * and the owner AI entitlements collapse into one "AI suite" bullet. Owner-core
- * entitlements (publish, stats, calendar, …) stay individual. Groups are emitted
+ * For the owner audience, AI entitlements collapse into one "AI suite" bullet.
+ * Owner-core entitlements (publish, stats, calendar, …) stay individual. The
+ * inherited Tourist VIP group is assembled from catalog keys in
+ * `pricing-card-view.ts`. Groups are emitted
  * at the position of their first member, preserving the original ordering.
  *
  * Nothing is hidden — collapsed groups still communicate their contents via the

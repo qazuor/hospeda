@@ -25,6 +25,7 @@ import { adminGetGastronomyFaqsRoute } from './getFaqs';
 import { adminGetGastronomyMediaRoute } from './getMedia';
 import { adminListGastronomiesRoute } from './list';
 import { adminModerateGastronomyRoute } from './moderate';
+import { adminGetGastronomyModerationStateRoute } from './moderation-state';
 import { adminGastronomyOptionsRoute } from './options';
 import { adminPatchGastronomyRoute } from './patch';
 import { adminPurgeOnRequestGastronomyRoute } from './purge';
@@ -71,6 +72,9 @@ app.route('/', adminAssignGastronomyOwnerRoute);
 
 // POST /:id/moderate - ACC:12 two-level publication moderation; the legacy moderation column was retired by V6.9b.
 app.route('/', adminModerateGastronomyRoute);
+
+// GET /:id/moderation - current publication and fix-request state
+app.route('/', adminGetGastronomyModerationStateRoute);
 
 // POST /:id/purge - ACC:23 purge at the owner's request (PB12, mandatory reason).
 app.route('/', adminPurgeOnRequestGastronomyRoute);

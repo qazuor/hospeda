@@ -392,7 +392,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                                 mode === 'view'
                                     ? {
                                           onBack: () => window.history.back(),
-                                          onEdit: canEdit ? goToEdit : () => undefined
+                                          onEdit: canEdit ? goToEdit : undefined
                                       }
                                     : undefined
                             }

@@ -120,6 +120,16 @@ describe('TEST:1684:5 AC-1684:3 the moderation card is on the three detail route
                 }
             });
 
+            it('gates purge and edit from the loaded publication state', () => {
+                const source = read(path);
+                const purge = source.slice(
+                    source.indexOf('<ListingPurgeOnRequestCard'),
+                    source.indexOf('/>', source.indexOf('<ListingPurgeOnRequestCard')) + 2
+                );
+                expect(purge).toMatch(/publicationStatus=/);
+                expect(source).toContain('canEditListing(');
+            });
+
             it('is not driven by the review moderation hooks and reads no retired column', () => {
                 const source = read(path);
                 expect(

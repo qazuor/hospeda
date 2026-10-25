@@ -1045,6 +1045,15 @@
         "statusLabel": "Estado",
         "fixRequestOpen": "Pedido de arreglo: abierto",
         "fixRequestClosed": "Pedido de arreglo: cerrado",
+        "fixRequest": {
+            "none": "Sin pedido de arreglo abierto.",
+            "openedAt": "Pedido de arreglo abierto el {date}.",
+            "reason": "Motivo: {reason}",
+            "suggestedDate": "Fecha sugerida: {date}",
+            "ownerReportedFixed": "El dueño avisó que lo corrigió el {date}."
+        },
+        "stateLoading": "Leyendo la moderación…",
+        "stateError": "No se pudo leer el estado de moderación. Recargá la página.",
         "resultLabel": "Última acción",
         "reasonLabel": "Por qué",
         "reasonHelp": "Le llega al dueño en el aviso y queda en el registro.",

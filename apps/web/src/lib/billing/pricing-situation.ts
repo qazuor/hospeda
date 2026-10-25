@@ -51,6 +51,34 @@ type Plan = {
 };
 type Situation = PricingSituationResponse['situation'];
 
+/** Whether the generic trial offer remains usable for a resolved account situation. */
+export function resolvePlanCardTrialOffer({
+    vertical,
+    result
+}: {
+    readonly vertical: PricingSituationVertical;
+    readonly result: ApiResult<PricingSituationResponse> | null;
+}): boolean {
+    if (!result?.ok) return true;
+
+    const checkoutByVertical: Record<PricingSituationVertical, boolean> = {
+        accommodation: false,
+        gastronomy: false,
+        experience: false,
+        tourist: true
+    };
+    const bySituation: Record<Situation, () => boolean> = {
+        FIRST_USE: () => true,
+        CHECKOUT: () => checkoutByVertical[vertical],
+        TRIAL: () => false,
+        SUBSCRIBED: () => false,
+        COVERED: () => false,
+        NO_PLANS: () => false,
+        TOURIST_VIP_INHERITED: () => false
+    };
+    return bySituation[result.data.situation]();
+}
+
 /** Resolve one card without reproducing any backend authorization rule. */
 export function resolvePlanCardCta({
     locale,

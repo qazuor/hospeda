@@ -115,6 +115,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/accommodations/:id/moderation"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/accommodations/:id/occupancy"
         },
         {
@@ -926,6 +930,10 @@
             "path": "/api/v1/admin/experiences/:id/moderate"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/admin/experiences/:id/moderation"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/admin/experiences/:id/purge"
         },
@@ -1096,6 +1104,10 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/gastronomies/:id/moderate"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/gastronomies/:id/moderation"
         },
         {
             "method": "POST",

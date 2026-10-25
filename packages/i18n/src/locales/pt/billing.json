@@ -264,7 +264,10 @@
             },
             "touristVipNotice": {
                 "cancelledOnReturn": "Você tem uma assinatura suspensa cujo plano lhe dava os benefícios de Turista VIP. Se você regularizá-la, esta assinatura de Turista VIP é cancelada na hora e o que você pagou não é reembolsado, porque seu plano volta a lhe dar esses benefícios.",
-                "unknown": "Se você tem uma assinatura suspensa cujo plano lhe dava os benefícios de Turista VIP e a regulariza, uma assinatura de Turista VIP que você comprar é cancelada na hora, sem reembolso."
+                "unknown": "Se você tem uma assinatura suspensa cujo plano lhe dava os benefícios de Turista VIP e a regulariza, uma assinatura de Turista VIP que você comprar é cancelada na hora, sem reembolso.",
+                "cancelledOnActivationUntil": "Você tem uma assinatura de Turista VIP paga até {{date}}. Este plano já inclui esses benefícios: quando ele for ativado, essa assinatura é cancelada e o que você pagou não é reembolsado.",
+                "cancelledOnActivation": "Você tem uma assinatura de Turista VIP. Este plano já inclui esses benefícios: quando ele for ativado, essa assinatura é cancelada e o que você pagou não é reembolsado.",
+                "unknownOnActivation": "Se você tem uma assinatura de Turista VIP e este plano inclui esses benefícios, essa assinatura é cancelada quando o plano for ativado, sem reembolso."
             },
             "retry": "Tentar novamente",
             "vertical": {

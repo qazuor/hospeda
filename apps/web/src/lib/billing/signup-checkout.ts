@@ -43,6 +43,7 @@ export type SignupTrialNotice =
 /** Tourist VIP return consequence resolved before the signup confirmation. */
 export type SignupTouristVipNotice =
     | { readonly kind: 'CANCELLED_ON_RETURN' }
+    | { readonly kind: 'CANCELLED_ON_ACTIVATION'; readonly paidUntil: string | null }
     | { readonly kind: 'UNKNOWN' };
 
 /**
@@ -155,6 +156,9 @@ export function resolveSignupTouristVipNotice({
     const parsed = SignupNoticeResponseSchema.safeParse(result.data);
     if (!parsed.success) return { kind: 'UNKNOWN' };
     if (parsed.data.touristVip.status === 'NOT_AFFECTED') return null;
+    if (parsed.data.touristVip.status === 'CANCELLED_ON_ACTIVATION') {
+        return { kind: 'CANCELLED_ON_ACTIVATION', paidUntil: parsed.data.touristVip.paidUntil };
+    }
     return { kind: 'CANCELLED_ON_RETURN' };
 }
 

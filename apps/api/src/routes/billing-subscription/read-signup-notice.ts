@@ -16,7 +16,10 @@ import {
 import { readBillingChoice, readResumableCheckoutUrl, ServiceError } from '@repo/service-core';
 import { isTrialRunning } from '../../services/listing-notices/listing-notices.builder';
 import { getClock } from '../../utils/clock';
-import { touristVipCancelledOnReturn } from './tourist-vip-inheritance';
+import {
+    touristVipCancelledOnActivation,
+    touristVipCancelledOnReturn
+} from './tourist-vip-inheritance';
 
 const DAY_MS = 86_400_000;
 
@@ -74,6 +77,11 @@ export async function readSignupNotice(input: {
         case 'accommodation':
         case 'gastronomy':
         case 'experience':
+            touristVip = (await touristVipCancelledOnActivation({
+                userId: input.userId,
+                planVersionId: choice.planVersionId
+            })) ?? { status: 'NOT_AFFECTED' };
+            break;
         case 'partner':
             touristVip = { status: 'NOT_AFFECTED' };
             break;

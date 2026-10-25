@@ -26,6 +26,7 @@ export interface PublicPlanData {
     readonly trialDays: number;
     readonly sortOrder: number;
     readonly isActive: boolean;
+    readonly inheritsTouristVip: boolean;
     readonly entitlements: readonly string[];
     readonly limits: Readonly<Record<string, number>>;
     readonly billingOptions?: { readonly monthly: string; readonly annual: string | null };
@@ -58,6 +59,7 @@ function mapSellablePlan(
         pricingOrder: number;
         rank: number;
         trialDays: number;
+        inheritsTouristVip: boolean;
         entitlements: string[];
         limits: Record<string, number>;
         billingOptions: { id: string; cycle: string; amount: number }[];
@@ -81,6 +83,7 @@ function mapSellablePlan(
         trialDays: plan.trialDays,
         sortOrder: plan.pricingOrder,
         isActive: true,
+        inheritsTouristVip: plan.inheritsTouristVip,
         entitlements: plan.entitlements,
         limits: plan.limits,
         billingOptions: { monthly: monthly.id, annual: annual?.id ?? null }
@@ -100,6 +103,7 @@ function mapFloor(
         pricingOrder: number;
         rank: number;
         trialDays: number;
+        inheritsTouristVip?: boolean;
         entitlements: string[];
         limits: Record<string, number>;
     },
@@ -120,6 +124,7 @@ function mapFloor(
         trialDays: 0,
         sortOrder: Number.NEGATIVE_INFINITY,
         isActive: true,
+        inheritsTouristVip: false,
         entitlements: floor.entitlements,
         limits: floor.limits
     };

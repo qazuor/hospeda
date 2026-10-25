@@ -27,6 +27,7 @@ import {
 } from '@/features/gastronomy';
 import { ListingModerationCard } from '@/features/listing/components/ListingModerationCard';
 import { ListingPurgeOnRequestCard } from '@/features/listing/components/ListingPurgeOnRequestCard';
+import { canEditListing } from '@/features/listing/config/listing-moderation-actions';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
@@ -245,6 +246,7 @@ function GastronomyViewPage() {
                         entityId={id}
                         entityName={gastronomy?.name ?? id}
                         onPurged={() => navigate({ to: '/gastronomies' })}
+                        publicationStatus={gastronomy?.publicationStatus}
                     />
                 </div>
 
@@ -267,7 +269,12 @@ function GastronomyViewPage() {
                 entityType="gastronomy"
                 entityId={id}
                 initialMode="view"
-                entityData={entityData}
+                entityData={{
+                    ...entityData,
+                    canEdit:
+                        entityData.canEdit &&
+                        canEditListing({ publicationStatus: gastronomy?.publicationStatus })
+                }}
             >
                 <Tabs defaultValue="general">
                     <TabsList>
