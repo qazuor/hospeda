@@ -48,7 +48,7 @@ const grantSignerIds: string[] = [];
 const successionCases: SeededSuccession[] = [];
 const grantOnlyBeneficiaries: string[] = [];
 const V = VerticalEnum.ACCOMMODATION;
-const W = VerticalEnum.GASTRONOMY;
+const W = VerticalEnum.VENUE;
 afterEach(async () => {
     await retirePermanentGrantRows(userIds.splice(0));
     for (const beneficiaryUserId of grantOnlyBeneficiaries.splice(0)) {

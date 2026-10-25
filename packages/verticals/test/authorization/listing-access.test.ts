@@ -41,7 +41,7 @@ describe('listing access orchestration', () => {
         const port = ports(true);
         const common = {
             actorId: 'owner',
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             operation: 'REACTIVATE' as const,
             ...port
         };
@@ -70,7 +70,7 @@ describe('listing access orchestration', () => {
         expect(
             await resolveListingAccess({
                 actorId: 'owner',
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 facts: { ownerId: 'owner', publicationStatus: PublicationStatusEnum.DRAFT },
                 operation: 'READ_OWN',
                 ...port
@@ -83,7 +83,7 @@ describe('listing access orchestration', () => {
         const port = ports(true);
         const common = {
             actorId: 'suspended-owner',
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             facts: {
                 ownerId: 'suspended-owner',
                 publicationStatus: PublicationStatusEnum.PUBLISHED
@@ -111,7 +111,7 @@ describe('listing access orchestration', () => {
         expect(
             await resolveListingAccess({
                 actorId: 'owner',
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 declaredVertical: VerticalEnum.ACCOMMODATION,
                 facts: { ownerId: 'owner', publicationStatus: PublicationStatusEnum.ARCHIVED },
                 operation: 'REACTIVATE',
@@ -131,7 +131,7 @@ describe('listing access orchestration', () => {
         expect(
             await resolveListingAccess({
                 actorId: 'owner',
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 facts: { ownerId: 'owner', publicationStatus: PublicationStatusEnum.ARCHIVED },
                 operation,
                 ...port
@@ -144,7 +144,7 @@ describe('listing access orchestration', () => {
         expect(port.coverage).toHaveBeenCalledTimes(operation === 'EXPORT' ? 0 : 1);
         expect(port.effectiveSet).toHaveBeenCalledWith({
             userId: 'owner',
-            vertical: VerticalEnum.GASTRONOMY
+            vertical: VerticalEnum.VENUE
         });
     });
 
@@ -153,7 +153,7 @@ describe('listing access orchestration', () => {
         expect(
             await resolveEntitlementStep({
                 userId: 'owner',
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 keys: ['recover_own_listing'],
                 effectiveSet: port.effectiveSet
             })
@@ -165,7 +165,7 @@ describe('listing access orchestration', () => {
         await expect(
             resolveEntitlementStep({
                 userId: 'owner',
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 keys: ['unknown_key'],
                 effectiveSet: port.effectiveSet
             })

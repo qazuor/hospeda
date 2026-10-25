@@ -36,7 +36,7 @@ const now = new Date('2026-10-14T12:00:00.000Z');
 const clock = { now: () => now };
 const users: string[] = [];
 const subscriptionIds: string[] = [];
-const V = [VerticalEnum.ACCOMMODATION, VerticalEnum.GASTRONOMY, VerticalEnum.EXPERIENCE] as const;
+const V = [VerticalEnum.ACCOMMODATION, VerticalEnum.VENUE, VerticalEnum.EXPERIENCE] as const;
 afterAll(closeServiceTestPool);
 afterEach(async () => {
     if (users.length)

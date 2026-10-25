@@ -23,7 +23,7 @@ const db = drizzle({ client: pool }) as unknown as DrizzleClient;
 const fixtures = createPublicationFixtureTracker(db);
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 const tables: Readonly<Record<DeadlineListingRef['vertical'], string>> = {

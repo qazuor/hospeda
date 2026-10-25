@@ -14,7 +14,7 @@ import {
 
 const LISTING_VERTICALS = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 
@@ -70,13 +70,13 @@ describe('TEST:V6:34 AC:V6:26 listing and listingPurged over the three states', 
         ]) {
             const ownerId = crypto.randomUUID();
             const { inverse, listingId } = single({
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 ownerId,
                 publicationStatus: state
             });
 
             expect(await inverse.listing({ listingId }), state).toEqual({
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 ownerId,
                 acceptsFeature: true
             });

@@ -46,7 +46,7 @@ import {
 afterAll(closeServiceTestPool);
 
 const V = VerticalEnum.ACCOMMODATION;
-const W = VerticalEnum.GASTRONOMY;
+const W = VerticalEnum.VENUE;
 
 describe.skipIf(!isServiceTestDbAvailable())(
     'HOS-1569 TEST:B8a:6 AC:B8a:6 the order of S12 with the orphanhood: principals first, then the complements left',

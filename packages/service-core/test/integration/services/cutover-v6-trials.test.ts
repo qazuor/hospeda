@@ -57,7 +57,7 @@ async function seedPublished(tx: DrizzleClient, kind: Kind): Promise<SeededListi
         const row = await seedGastronomy(tx, overrides);
         userId = row.ownerId;
         listingId = row.gastronomyId;
-        vertical = VerticalEnum.GASTRONOMY;
+        vertical = VerticalEnum.VENUE;
     } else {
         const row = await seedExperience(tx, overrides);
         userId = row.ownerId;

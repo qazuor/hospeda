@@ -306,7 +306,7 @@ describe('TEST:V6:13 PB12 PostgreSQL integration', () => {
         const { userId, destinationId } = await fixtures.owner();
         const admin = await fixtures.owner();
         const listing = await fixtures.listing({
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             userId,
             destinationId,
             status: Status.MODERATED
@@ -336,7 +336,7 @@ describe('TEST:V6:13 PB12 PostgreSQL integration', () => {
                 ownerId: userId,
                 reason: 'Owner requested account erasure'
             },
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             listingId: listing.id,
             correlationId
         });

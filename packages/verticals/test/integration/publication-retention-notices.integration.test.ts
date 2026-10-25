@@ -23,7 +23,7 @@ import { createPublicationTestAdapter } from './support/publication-unit-of-work
 
 type TestVertical =
     | typeof VerticalEnum.ACCOMMODATION
-    | typeof VerticalEnum.GASTRONOMY
+    | typeof VerticalEnum.VENUE
     | typeof VerticalEnum.EXPERIENCE;
 
 const pool = new Pool({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL, max: 4 });
@@ -35,7 +35,7 @@ const now = new Date('2026-10-10T12:00:00.000Z');
 const noCoverage = { value: false };
 const limits = { value: 2 };
 const tableOf = (vertical: TestVertical) =>
-    vertical === VerticalEnum.GASTRONOMY ? 'gastronomies' : `${vertical}s`;
+    vertical === VerticalEnum.VENUE ? 'gastronomies' : `${vertical}s`;
 
 afterEach(async () => {
     for (const ownerId of ownersWithOutbox)
@@ -223,7 +223,7 @@ describe('TEST:V9b:10 AC:V9b:10 retention notices integration', () => {
 
     it.each([
         VerticalEnum.ACCOMMODATION,
-        VerticalEnum.GASTRONOMY,
+        VerticalEnum.VENUE,
         VerticalEnum.EXPERIENCE
     ] as const)('uses the payload vertical %s', async (vertical) => {
         const f = await fixture({

@@ -187,7 +187,7 @@ describe('AC:V6:30 runRemoteDeletionRetry', () => {
             },
             {
                 ...photo,
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 mediaId: 'media-c',
                 publicId: 'remote/c'
             }

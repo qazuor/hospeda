@@ -619,7 +619,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const admin = await seedCoverageUser(getServiceTestDb());
             userIds.push(user.userId, admin.userId);
             const v = VerticalEnum.ACCOMMODATION;
-            const w = VerticalEnum.GASTRONOMY;
+            const w = VerticalEnum.VENUE;
             const addon = await seedS20Addon({
                 fake,
                 userId: user.userId,
@@ -1075,7 +1075,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const admin = await seedCoverageUser(getServiceTestDb());
             userIds.push(user.userId, admin.userId);
             const vertical = VerticalEnum.ACCOMMODATION;
-            const other = VerticalEnum.GASTRONOMY;
+            const other = VerticalEnum.VENUE;
             const targetPlan = await seedCoveragePlanVersion(getServiceTestDb(), other);
             const target = await seedCoverageSubscription(getServiceTestDb(), {
                 userId: user.userId,
@@ -1163,7 +1163,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const admin = await seedCoverageUser(getServiceTestDb());
             userIds.push(user.userId, admin.userId);
             const vertical = VerticalEnum.ACCOMMODATION;
-            const other = VerticalEnum.GASTRONOMY;
+            const other = VerticalEnum.VENUE;
             const targetPlan = await seedCoveragePlanVersion(getServiceTestDb(), vertical);
             const target = await seedCoverageSubscription(getServiceTestDb(), {
                 userId: user.userId,

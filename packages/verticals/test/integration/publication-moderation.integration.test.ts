@@ -35,7 +35,7 @@ describe('TEST:V6:11 listing moderation against PostgreSQL', () => {
         const admin = await fixtures.owner();
         const verticals = [
             VerticalEnum.ACCOMMODATION,
-            VerticalEnum.GASTRONOMY,
+            VerticalEnum.VENUE,
             VerticalEnum.EXPERIENCE
         ] as const;
         for (const vertical of verticals) {

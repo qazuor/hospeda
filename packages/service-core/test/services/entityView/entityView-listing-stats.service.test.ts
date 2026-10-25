@@ -86,7 +86,7 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
     describe('entityType: GASTRONOMY', () => {
         const baseInput: GetStatsForOwnListingsInput = {
             actor: ownerActor,
-            entityType: EntityTypeEnum.GASTRONOMY,
+            entityType: EntityTypeEnum.VENUE,
             window: '30d'
         };
 
@@ -167,7 +167,7 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
                 entityType: string;
             };
             expect(callArg.windowDays).toBe(7);
-            expect(callArg.entityType).toBe(EntityTypeEnum.GASTRONOMY);
+            expect(callArg.entityType).toBe(EntityTypeEnum.VENUE);
         });
 
         it('should return INTERNAL_ERROR when the model throws', async () => {
@@ -239,7 +239,7 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
             // Act
             const result = await service.getStatsForOwnListings({
                 actor: ownerActor,
-                entityType: EntityTypeEnum.GASTRONOMY,
+                entityType: EntityTypeEnum.VENUE,
                 // @ts-expect-error intentionally invalid window
                 window: '90d'
             });

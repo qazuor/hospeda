@@ -30,7 +30,7 @@ type AdminExtension = Parameters<TrialMachineTransaction['recordAdminExtension']
 
 const LISTING_VERTICAL_BY_VERTICAL: Readonly<Record<Vertical, ListingVertical | null>> = {
     [VerticalEnum.ACCOMMODATION]: VerticalEnum.ACCOMMODATION,
-    [VerticalEnum.GASTRONOMY]: VerticalEnum.GASTRONOMY,
+    [VerticalEnum.VENUE]: VerticalEnum.VENUE,
     [VerticalEnum.EXPERIENCE]: VerticalEnum.EXPERIENCE,
     [VerticalEnum.TOURIST]: null,
     [VerticalEnum.PARTNER]: null

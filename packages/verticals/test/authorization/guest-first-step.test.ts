@@ -229,7 +229,7 @@ describe('TEST:V5:19 vertical pre-condition before step 1', () => {
         const port = ports();
         const result = await resolveListingAccess({
             actorId: null,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             declaredVertical: VerticalEnum.ACCOMMODATION,
             facts: { ...FOREIGN_PUBLISHED },
             operation: 'READ_PUBLIC',
@@ -242,7 +242,7 @@ describe('TEST:V5:19 vertical pre-condition before step 1', () => {
         const port = ports();
         const result = await resolveListingAccess({
             actorId: null,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             declaredVertical: VerticalEnum.ACCOMMODATION,
             facts: { ...FOREIGN_PUBLISHED },
             operation: 'WRITE_ABOUT_LISTING',

@@ -101,7 +101,7 @@ async function recordTagListingOwnerAct(input: {
     const model =
         entityType === EntityTypeEnum.ACCOMMODATION
             ? new AccommodationModel()
-            : entityType === EntityTypeEnum.GASTRONOMY
+            : entityType === EntityTypeEnum.VENUE
               ? new GastronomyModel()
               : entityType === EntityTypeEnum.EXPERIENCE
                 ? new ExperienceModel()
@@ -112,7 +112,7 @@ async function recordTagListingOwnerAct(input: {
     const listingType =
         entityType === EntityTypeEnum.ACCOMMODATION
             ? 'accommodation'
-            : entityType === EntityTypeEnum.GASTRONOMY
+            : entityType === EntityTypeEnum.VENUE
               ? 'gastronomy'
               : 'experience';
     await recordListingSubEntityEdit({
@@ -136,7 +136,7 @@ async function writeTagWithOwnerAct(input: {
     // existing write path and avoid opening an unnecessary transaction.
     if (
         input.entityType !== EntityTypeEnum.ACCOMMODATION &&
-        input.entityType !== EntityTypeEnum.GASTRONOMY &&
+        input.entityType !== EntityTypeEnum.VENUE &&
         input.entityType !== EntityTypeEnum.EXPERIENCE
     ) {
         await input.write(input.ctx?.tx);
