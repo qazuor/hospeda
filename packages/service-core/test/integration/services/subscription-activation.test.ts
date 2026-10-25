@@ -15,8 +15,15 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { activateSubscription } from '../../../src/services/billing/subscription/activate-subscription.service';
 import { cancelInheritedTouristVips } from '../../../src/services/billing/subscription/cancel-inherited-tourist-vip.service';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
+import { startSuccession } from '../../../src/services/billing/subscription/start-succession.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
 import { namespaceFake } from './support/payment-provider';
+import {
+    seedPredecessor,
+    seedSuccessionChoice,
+    successionClock,
+    successionPorts
+} from './support/succession-fixtures';
 import { noTouristVip } from './support/tourist-vip.ts';
 
 afterAll(closeServiceTestPool);
@@ -116,6 +123,94 @@ async function status(id: string) {
 // TEST:B3:9 — B4 verifies emission of a source with cobrada: no. B3 can observe
 // ACTIVE without a payment; the payment table is not introduced until B5.
 describe('TEST:B3:9 authorization activation', () => {
+    it('TEST:1878:5 emits the committed S2 fact after direct activation', async () => {
+        const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
+            clock,
+            honestAbout: [{ lie: 'M1', why: 'S2 analytics fixture' }]
+        });
+        const provider = namespaceFake(fake);
+        const { started, fakeId, choice } = await startPending(fake, provider);
+        await fake.approve({ authorizationId: fakeId });
+        const facts: unknown[] = [];
+        await activateSubscription(started.subscriptionId, {
+            provider,
+            clock,
+            beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+            touristVipInheritance: noTouristVip,
+            billingFacts: { emit: (fact) => facts.push(fact) }
+        });
+        expect(facts).toEqual([
+            {
+                kind: 'SUBSCRIPTION_ACTIVATED',
+                userId: choice.userId,
+                vertical: 'accommodation',
+                subscriptionId: started.subscriptionId,
+                subscriptionClass: 'PRINCIPAL',
+                actorKind: 'SYSTEM',
+                planVersionId: choice.planVersionId,
+                billingOptionId: choice.billingOptionId,
+                cycle: 'monthly',
+                amountMinor: 250000,
+                currency: 'ARS',
+                predecessor: undefined,
+                occurredAt: clock.now()
+            }
+        ]);
+    });
+
+    it('TEST:1878:5 emits activation and plan change data for a successor', async () => {
+        const choice = await seedSuccessionChoice();
+        const predecessor = await seedPredecessor({
+            userId: choice.user.id,
+            planVersionId: choice.planVersionId,
+            billingOptionId: choice.predecessorBillingOptionId,
+            status: 'ACTIVE',
+            honestAboutM1: true
+        });
+        const successor = await startSuccession(
+            {
+                userId: choice.user.id,
+                billingOptionId: choice.targetBillingOptionId,
+                predecessorSubscriptionId: predecessor.predecessor.id,
+                returnUrl: 'https://hospeda.example/account'
+            },
+            successionPorts(predecessor.provider)
+        );
+        await predecessor.fake.approve({ authorizationId: successor.authorizationId });
+        const facts: unknown[] = [];
+        await activateSubscription(successor.subscriptionId, {
+            provider: predecessor.provider,
+            clock: successionClock,
+            beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+            touristVipInheritance: noTouristVip,
+            billingFacts: { emit: (fact) => facts.push(fact) },
+            changeDirection: async () => ({ direction: 'UP' })
+        });
+        expect(facts).toEqual([
+            {
+                kind: 'SUBSCRIPTION_ACTIVATED',
+                userId: choice.user.id,
+                vertical: 'accommodation',
+                subscriptionId: successor.subscriptionId,
+                subscriptionClass: 'PRINCIPAL',
+                actorKind: 'SYSTEM',
+                planVersionId: choice.targetPlanVersionId,
+                billingOptionId: choice.targetBillingOptionId,
+                cycle: 'quarterly',
+                amountMinor: 250000,
+                currency: 'ARS',
+                predecessor: {
+                    planVersionId: choice.planVersionId,
+                    cycle: 'monthly',
+                    amountMinor: 250000,
+                    direction: 'UPGRADE'
+                },
+                occurredAt: successionClock.now()
+            }
+        ]);
+    });
+
     it('activates only after a fresh by-id re-read observes authorized, with no payment', async () => {
         const fake = new FakePaymentProvider({
             idNamespace: crypto.randomUUID(),
@@ -155,13 +250,15 @@ describe('TEST:B3:9 authorization activation', () => {
         });
         const provider = namespaceFake(fake);
         const { started } = await startPending(fake, provider);
+        const facts: unknown[] = [];
         expect(
             (
                 await activateSubscription(started.subscriptionId, {
                     provider,
                     clock,
                     beforeCancelNotice: { beforeCancel: async () => 'SENT' },
-                    touristVipInheritance: noTouristVip
+                    touristVipInheritance: noTouristVip,
+                    billingFacts: { emit: (fact) => facts.push(fact) }
                 })
             ).activated
         ).toBe(false);
@@ -183,6 +280,7 @@ describe('TEST:B3:9 authorization activation', () => {
         ).toBe(false);
         expect(read).not.toHaveBeenCalled();
         expect(await status(started.subscriptionId)).toBe('ABANDONED');
+        expect(facts).toHaveLength(0);
     });
 });
 

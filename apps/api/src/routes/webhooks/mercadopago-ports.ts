@@ -8,6 +8,7 @@ import {
     providerLinkCancellationSeen
 } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
+import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts';
 import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports';
 import { getClock } from '../../utils/clock';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices';
@@ -47,8 +48,10 @@ export function buildMercadoPagoNoticePorts() {
     const provider = getPaymentProvider();
     const clock = getClock().clock;
     const coverageNotices = getCoverageNotices();
+    const billingFacts = getAnalyticsFactSink();
     const markPayments = createPaymentReconciliationMarkPayments(clock);
     const planPolicy = createPlanCatalogInverse({ reader: planCatalogModel }).planPolicy;
+    const changeDirection = createPlanCatalogInverse({ reader: planCatalogModel }).changeDirection;
     const complements = buildComplementPolicyPorts();
     return {
         provider,
@@ -57,8 +60,10 @@ export function buildMercadoPagoNoticePorts() {
         promoExhaustion: createPromoExhaustion({ provider, clock }),
         beforeCancelNotice,
         planPolicy,
+        changeDirection,
         payments: creditedPaymentsFromLedger,
         coverageNotices,
+        billingFacts,
         // AC:B7:31: S7, reached through the charge notice, cancels a paid Tourist VIP the plan grants again.
         touristVipInheritance,
         cancellationSeen: providerLinkCancellationSeen,
@@ -69,8 +74,10 @@ export function buildMercadoPagoNoticePorts() {
             clock,
             beforeCancelNotice,
             planPolicy,
+            changeDirection,
             payments: creditedPaymentsFromLedger,
             coverageNotices,
+            billingFacts,
             markPayments,
             complements
         })
