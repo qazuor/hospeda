@@ -63,14 +63,37 @@ export async function readGraceReminderOutbox(subscriptionId: string) {
     );
 }
 
-export async function clearGraceReminderEmail(subscriptionId: string): Promise<void> {
+export async function clearGraceReminderEmail(subscriptionId: string): Promise<string> {
+    const [subscription] = await getServiceTestDb()
+        .select({ userId: subscriptions.userId, email: users.email })
+        .from(subscriptions)
+        .innerJoin(users, eq(users.id, subscriptions.userId))
+        .where(eq(subscriptions.id, subscriptionId));
+    if (!subscription?.userId) throw new Error('Grace reminder test user missing');
+
+    const [existingEmptyEmail] = await getServiceTestDb()
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, ''));
+    if (existingEmptyEmail && existingEmptyEmail.id !== subscription.userId) {
+        throw new Error('Another user already has an empty email');
+    }
+
+    await getServiceTestDb()
+        .update(users)
+        .set({ email: '' })
+        .where(eq(users.id, subscription.userId));
+    return subscription.email;
+}
+
+export async function restoreGraceReminderEmail(
+    subscriptionId: string,
+    email: string
+): Promise<void> {
     const [subscription] = await getServiceTestDb()
         .select({ userId: subscriptions.userId })
         .from(subscriptions)
         .where(eq(subscriptions.id, subscriptionId));
     if (!subscription?.userId) throw new Error('Grace reminder test user missing');
-    await getServiceTestDb()
-        .update(users)
-        .set({ email: '' })
-        .where(eq(users.id, subscription.userId));
+    await getServiceTestDb().update(users).set({ email }).where(eq(users.id, subscription.userId));
 }

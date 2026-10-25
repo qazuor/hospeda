@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { sendGraceReminders } from '../../../src/services/billing/subscription/send-grace-reminders.service.js';
 import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers.js';
 import { graceFixture } from './support/grace-fixtures.js';
@@ -6,10 +6,19 @@ import {
     clearGraceReminderEmail,
     configureGraceReminderSubscription,
     insertGraceReminderDeadline,
-    readGraceReminderOutbox
+    readGraceReminderOutbox,
+    restoreGraceReminderEmail
 } from './support/grace-reminder-fixtures.js';
 
 afterAll(closeServiceTestPool);
+let emailToRestore: { subscriptionId: string; email: string } | undefined;
+afterEach(async () => {
+    if (!emailToRestore) return;
+    const restore = emailToRestore;
+    emailToRestore = undefined;
+    await restoreGraceReminderEmail(restore.subscriptionId, restore.email);
+});
+
 const instant = (day: string) => new Date(`${day}T15:00:00.000Z`);
 
 describe('TEST:1707:3-4 AC:1707:3-4 grace reminders', () => {
@@ -137,7 +146,11 @@ describe('TEST:1707:3-4 AC:1707:3-4 grace reminders', () => {
                 startedAt: instant('2099-02-21'),
                 endsAt: instant('2099-02-28')
             });
-            await clearGraceReminderEmail(fixture.started.subscriptionId);
+            const originalEmail = await clearGraceReminderEmail(fixture.started.subscriptionId);
+            emailToRestore = {
+                subscriptionId: fixture.started.subscriptionId,
+                email: originalEmail
+            };
             today = instant('2099-02-27');
             expect((await run()).skipped).toBe(1);
             expect(await readGraceReminderOutbox(fixture.started.subscriptionId)).toHaveLength(2);
