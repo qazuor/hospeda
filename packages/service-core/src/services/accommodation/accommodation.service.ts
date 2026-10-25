@@ -3423,7 +3423,7 @@ export class AccommodationService extends BaseCrudService<
      *
      * Plan cap enforcement is NOT done here — it is done in the route handler
      * because `checkLimit` requires the Hono `Context` object (populated by
-     * `entitlementMiddleware`). The service receives a pre-screened request.
+     * the retired `entitlementMiddleware`, HOS-1416). The service receives a pre-screened request.
      *
      * `sortOrder` is computed as max(visible sortOrder) + 1 (append to end).
      * When no visible rows exist yet, starts at 0.

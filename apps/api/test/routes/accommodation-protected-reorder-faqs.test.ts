@@ -13,12 +13,12 @@
  * - Route ordering: "reorder" path is not confused with /:faqId
  *
  * Testing strategy: mock `@repo/service-core` (no DB), mock `getActorFromContext`
- * (fixed HOST owner actor), and mock `entitlementMiddleware` to toggle
+ * (fixed HOST owner actor), and mock the retired `entitlementMiddleware` (HOS-1416) to toggle
  * userEntitlements deterministically — mirrors
  * apps/api/test/routes/accommodation-protected-reorder-media.test.ts (actor +
  * service mocking) and
  * apps/api/test/routes/user-bookmark-collection/entitlement-gate.integration.test.ts
- * (real entitlementMiddleware mock for a true 403 ENTITLEMENT_REQUIRED check).
+ * (real entitlementMiddleware mock, since retired, for a true 403 ENTITLEMENT_REQUIRED check).
  *
  * NOTE: raw session authentication (missing/invalid Bearer token) is
  * deliberately NOT covered here — `getActorFromContext` is mocked to a fixed
@@ -96,7 +96,7 @@ vi.mock('../../src/utils/listing-access/ports', () => ({
 }));
 
 /**
- * Whether the mocked entitlementMiddleware grants EDIT_ACCOMMODATION_INFO for
+ * Whether the mocked (retired) entitlementMiddleware grants EDIT_ACCOMMODATION_INFO for
  * the current test. Toggled per-test via `setEntitled`.
  */
 const { setEntitled } = vi.hoisted(() => {

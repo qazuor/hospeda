@@ -169,7 +169,7 @@ type ActorOptions = { id: string; roles: readonly RoleEnum[]; permissions: Permi
 
 /**
  * Builds a minimal Hono app with `actor` and `userEntitlements` injected
- * directly into context (bypassing the real `entitlementMiddleware` — same
+ * directly into context (standing in for the retired `entitlementMiddleware` — same
  * approach as `accommodation-entitlement-gates.test.ts`). Defaults to
  * granting `CAN_USE_CALENDAR` so pre-existing tests unrelated to the
  * entitlement gate keep passing; pass `entitlements: []` (or any array

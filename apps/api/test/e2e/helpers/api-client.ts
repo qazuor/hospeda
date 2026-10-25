@@ -33,7 +33,7 @@ export class E2EApiClient {
      * Make authenticated POST request.
      *
      * Auto-injects `X-Idempotency-Key: <fresh-uuid>` on every call so the
-     * billing endpoints protected by `idempotencyKeyMiddleware` (SPEC-143
+     * retired billing endpoints protected by `idempotencyKeyMiddleware` (SPEC-143
      * T-143-60 — start-paid, addons/:slug/purchase, addons/:id/cancel)
      * accept the request without explicit per-test wiring. The default
      * fresh-uuid produces NO cache hit between calls (matches the

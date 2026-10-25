@@ -7,7 +7,7 @@
  *
  *   actorMiddleware (test harness)
  *     → protectedAuthMiddleware (factory — rejects unauthenticated requests)
- *     → entitlementMiddleware (STUBBED — loads billing context, no AI_SEARCH gate)
+ *     → [entitlementMiddleware: REMOVED by HOS-1416, no longer in the chain]
  *     → createAiRateLimitMiddlewares('search') (REAL — per-user + per-IP burst guard)
  *     → handler (T-004 scaffold — opens empty SSE stream, no LLM call)
  *
@@ -435,8 +435,8 @@ vi.mock('../../../src/services/ai-service.factory', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock: entitlementMiddleware
-// Injects per-test entitlement / limits / billingLoadFailed into Hono context.
+// Former mock: entitlementMiddleware (removed by HOS-1416, see below)
+// It injected per-test entitlement / limits / billingLoadFailed into Hono context.
 // Mirrors the exact pattern used by search-intent.test.ts and chat-route.test.ts.
 // ---------------------------------------------------------------------------
 

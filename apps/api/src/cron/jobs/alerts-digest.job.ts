@@ -15,13 +15,13 @@
  *   that state. This job runs once daily and only sends an idempotent
  *   "here's what changed" summary; a rare double-fire means at most one
  *   duplicate email, not data corruption. Mirrors the simpler structure of
- *   `trial-expiry.ts` instead (no lock, no `withTransaction` wrapper).
+ *   `trial-machine-expiry.job.ts` instead (no lock, no `withTransaction` wrapper).
  * - Users are batched in groups of {@link DIGEST_BATCH_SIZE} via `chunkArray`
  *   from `@repo/utils` before calling `AlertDigestDeliveryService.deliverBatch()`,
  *   to avoid holding the full email-send fan-out in a single unbounded loop.
  * - Dependencies (`PriceDropEvaluatorService`, `UserModel`,
  *   `AlertDigestDeliveryService`, ...) are constructed inline in the handler,
- *   same as `trial-expiry.ts`'s `new TrialService(...)`. Cron jobs in this
+ *   same as `trial-machine-expiry.job.ts`'s `getTrialMachinePorts()`. Cron jobs in this
  *   codebase are plain `CronJobDefinition` objects, not classes — there is no
  *   constructor to inject through, so tests mock the imported modules
  *   directly (`vi.mock('@repo/service-core', ...)`, `vi.mock('@repo/db', ...)`,
@@ -91,8 +91,8 @@ export const alertsDigestJob: CronJobDefinition = {
 
         try {
             // Bail out early when email is not configured — mirrors the
-            // billing-not-configured guard in trial-expiry.ts and the
-            // email-not-configured guard in conversation-notification.job.ts.
+            // email-not-configured guard in conversation-notification.job.ts;
+            // the former billing-not-configured guard of trial-expiry.ts no longer exists.
             if (!env.HOSPEDA_EMAIL_API_KEY) {
                 logger.warn(
                     'HOSPEDA_EMAIL_API_KEY not configured — skipping alerts-digest dispatch'
