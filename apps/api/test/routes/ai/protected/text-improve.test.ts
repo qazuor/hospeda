@@ -6,7 +6,7 @@
  *
  * 1. **Real factory + mocked dependencies**: We let `createProtectedStreamingRoute`
  *    and the body-validation logic run for real, but mock the three route
- *    middlewares (`protectedAuthMiddleware`, `entitlementMiddleware`,
+ *    middlewares (`protectedAuthMiddleware`, the retired `entitlementMiddleware`,
  *    `createAiRateLimitMiddlewares`, `createAiQuotaMiddleware`) to no-op
  *    pass-throughs. The mocked `createConfiguredAiService` returns a stub
  *    `AiService` whose `streamText` is captured for assertions.

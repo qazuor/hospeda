@@ -93,8 +93,8 @@ describe('detail pages — HTML sanitization (XSS regression)', () => {
          * `test/pages/accommodation-description-markdown.test.ts`, which executes
          * that pipeline against `<script>`, `onerror=`, `javascript:` and friends.
          *
-         * The entitlement is enforced upstream at WRITE time by
-         * `gateRichDescription` (apps/api/src/middlewares/accommodation-entitlements.ts),
+         * The entitlement WAS enforced upstream at WRITE time by
+         * `gateRichDescription` (apps/api/src/middlewares/accommodation-entitlements.ts, REMOVED by HOS-1416),
          * so the page needs no entitlement check — and must keep having none.
          */
         it('routes accommodation.description through the sanitizing markdown pipeline (HOS-817)', () => {

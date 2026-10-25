@@ -113,8 +113,8 @@ export const getCorsConfig = () => {
             // override omits one, to prevent a misconfigured deploy from
             // silently breaking browser mutations. Each entry's own reason:
             //
-            // - X-Idempotency-Key: required by `idempotencyKeyMiddleware`
-            //   (SPEC-143 T-143-60) on /billing/subscriptions/start-paid,
+            // - X-Idempotency-Key: formerly required by `idempotencyKeyMiddleware`
+            //   (SPEC-143 T-143-60; removed by HOS-1416) on the retired /billing/subscriptions/start-paid,
             //   /billing/addons/:slug/purchase, /billing/addons/:id/cancel.
             // - X-Client-Locale: sent by apps/web's API client on every
             //   browser-initiated request (HOS-605) so `resolveReturnUrlLocale`

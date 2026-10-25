@@ -26,7 +26,7 @@ export const cronRuns = pgTable(
     'cron_runs',
     {
         id: uuid('id').primaryKey().defaultRandom(),
-        /** Job identifier, matches CronJobDefinition.name (e.g. 'dunning', 'subscription-poll') */
+        /** Job identifier, matches CronJobDefinition.name (e.g. 'trial-machine-expiry', 'billing-reconciliation-sweep') */
         jobName: varchar('job_name', { length: 100 }).notNull(),
         /** Outcome of the run: 'success' | 'partial' | 'failed' | 'timeout' (see CronRunStatusEnum) */
         status: varchar('status', { length: 20 }).notNull(),

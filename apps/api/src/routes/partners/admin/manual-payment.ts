@@ -4,7 +4,7 @@ import { isSystemActor, PartnerService, ServiceError } from '@repo/service-core'
 import { resolveAdministrativeActionStep } from '@repo/verticals';
 /**
  * Admin register manual payment endpoint
- * Registers a manual payment for a partner (activates without QZPay)
+ * Registers a manual payment for a partner (activates without a provider payment)
  */
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
@@ -21,7 +21,7 @@ export const adminManualPaymentRoute = createAdminRoute({
     method: 'post',
     path: '/{id}/manual-payment',
     summary: 'Register manual payment for partner (admin)',
-    description: 'Activates a partner subscription without QZPay payment',
+    description: 'Activates a partner subscription without a provider payment',
     tags: ['Partners'],
     requiredPermissions: [PermissionEnum.PARTNER_MANAGE],
     requestParams: { id: z.string().uuid() },
