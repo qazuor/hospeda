@@ -5,7 +5,7 @@ import { deriveAnalyticsEventUuid } from '../../lib/analytics-event-uuid.js';
 import { captureServerAnalyticsEvent } from '../../lib/posthog.js';
 
 const logger = createLogger('analytics-facts');
-type TrialFact =
+export type TrialFact =
     | {
           kind: 'TRIAL_STARTED';
           userId: string;
