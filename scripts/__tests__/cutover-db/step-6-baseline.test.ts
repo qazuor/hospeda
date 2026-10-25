@@ -58,6 +58,32 @@ describe('TEST:V6:26 step 6 baseline rehearsal', () => {
                     cwd: ROOT,
                     stdio: 'pipe'
                 });
+                await a.query(
+                    'ALTER TABLE public.billing_deadline_version DISABLE TRIGGER billing_deadline_version_immutable'
+                );
+                await a.query(
+                    `UPDATE public.billing_deadline_version
+                     SET changed_key = 20,
+                         previous_value = '{"daysBefore":[5,1]}'::jsonb,
+                         new_value = '{"daysBefore":[3,1]}'::jsonb,
+                         changed_by = $1
+                     WHERE version = 2`,
+                    [randomUUID()]
+                );
+                await a.query(
+                    'ALTER TABLE public.billing_deadline_version ENABLE TRIGGER billing_deadline_version_immutable'
+                );
+                const publishedDeadline = await a.query(
+                    `SELECT changed_key, previous_value, new_value, changed_by, created_at
+                     FROM public.billing_deadline_version WHERE version = 2`
+                );
+                expect(publishedDeadline.rows[0]).toMatchObject({
+                    changed_key: 20,
+                    previous_value: { daysBefore: [5, 1] },
+                    new_value: { daysBefore: [3, 1] }
+                });
+                expect(publishedDeadline.rows[0]?.changed_by).toBeTruthy();
+                expect(publishedDeadline.rows[0]?.created_at).toBeTruthy();
                 await a.query('DROP TABLE cutover_v6_deleted_listing');
 
                 const outDir = mkdtempSync(path.join(tmpdir(), 'step6-baseline-db-'));
@@ -120,14 +146,12 @@ describe('TEST:V6:26 step 6 baseline rehearsal', () => {
                     'vertical_deadline_version'
                 ];
                 for (const table of required) {
-                    const projection = table.endsWith('_deadline_version')
-                        ? 'version, "values"'
-                        : '*';
+                    const orderBy = table.endsWith('_deadline_version') ? 'version' : '1';
                     const rowsA = await a.query(
-                        `SELECT ${projection} FROM public."${table}" ORDER BY 1`
+                        `SELECT * FROM public."${table}" ORDER BY ${orderBy}`
                     );
                     const rowsB = await b.query(
-                        `SELECT ${projection} FROM public."${table}" ORDER BY 1`
+                        `SELECT * FROM public."${table}" ORDER BY ${orderBy}`
                     );
                     expect(rowsB.rows).toEqual(rowsA.rows);
                 }
