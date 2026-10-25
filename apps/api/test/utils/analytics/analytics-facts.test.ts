@@ -236,10 +236,102 @@ describe('analytics facts (TEST:1878:15, TEST:1878:16)', () => {
         const sink = createAnalyticsFactSink({ capture });
         for (const fact of [...billingFacts, ...trialFacts]) sink.emit(fact);
         expect(capture).toHaveBeenCalledTimes(12);
+        const commonProperties = {
+            vertical: 'accommodation',
+            subscription_class: 'PRINCIPAL',
+            actor_kind: 'SYSTEM',
+            subscription_id: 's-1'
+        };
+        const expectedByEvent: Record<string, Record<string, unknown>> = {
+            billing_checkout_abandoned: {
+                ...commonProperties,
+                reason: 'WINDOW_EXPIRED',
+                seconds_in_pending: 3
+            },
+            billing_subscription_activated: {
+                ...commonProperties,
+                plan_version_id: 'pv-1',
+                billing_option_id: 'bo-1',
+                cycle: 'monthly',
+                amount_minor: 100,
+                currency: 'ARS',
+                trial_active_at_activation: true
+            },
+            billing_charge_succeeded: {
+                ...commonProperties,
+                payment_id: 'pay-1',
+                amount_minor: 100,
+                currency: 'ARS',
+                is_first_charge: true,
+                cycle: 'monthly',
+                plan_version_id: 'pv-1',
+                promo_applied: false
+            },
+            billing_charge_declined: {
+                ...commonProperties,
+                payment_id: 'pay-1',
+                amount_minor: 100,
+                currency: 'ARS',
+                is_first_charge: false,
+                next_state: 'UNCHANGED',
+                has_retry_window: true
+            },
+            billing_grace_entered: {
+                ...commonProperties,
+                grace_ends_at: occurredAt.toISOString(),
+                days_of_grace: 7
+            },
+            billing_subscription_suspended: {
+                ...commonProperties,
+                trigger: 'GRACE_EXPIRED',
+                days_in_grace: 7
+            },
+            billing_subscription_recovered: {
+                ...commonProperties,
+                recovered_from: 'SUSPENDED',
+                payment_id: 'pay-1',
+                days_in_state: 2
+            },
+            billing_cancel_scheduled: {
+                ...commonProperties,
+                service_ends_at: occurredAt.toISOString(),
+                basis: 'PAID_PERIOD',
+                reason: 'OTHER'
+            },
+            billing_subscription_cancelled: {
+                ...commonProperties,
+                cancelled_by: 'SYSTEM',
+                path: 'SERVICE_END',
+                was_scheduled: true,
+                lifetime_days: 10,
+                reason: 'OTHER'
+            },
+            trial_started: {
+                vertical: 'accommodation',
+                actor_kind: 'USER',
+                activation_event: 'listing_published',
+                trial_days: 14
+            },
+            trial_converted: {
+                vertical: 'accommodation',
+                actor_kind: 'USER',
+                transition: 'T2',
+                trial_state_before: 'ACTIVE',
+                days_into_trial: 3,
+                days_since_expiry: undefined
+            },
+            trial_expired: {
+                vertical: 'accommodation',
+                actor_kind: 'SYSTEM',
+                trial_days: 14,
+                had_paid_intent: false
+            }
+        };
         for (const [distinctId, name, properties] of capture.mock.calls.map(
             ([call]) => [call.distinctId, call.name, call.properties] as const
         )) {
             expect(distinctId).toBe('u-1');
+            expect(properties).toEqual(expectedByEvent[name]);
             expect(AnalyticsEventSchemas[name].parse(properties)).toEqual(properties);
         }
     });
