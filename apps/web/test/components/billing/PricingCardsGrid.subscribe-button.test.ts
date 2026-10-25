@@ -7,6 +7,10 @@ const src = readFileSync(
     resolve(__dirname, '../../../src/components/billing/PricingCardsGrid.astro'),
     'utf8'
 );
+const subscribeCss = readFileSync(
+    resolve(__dirname, '../../../src/components/billing/SubscribeButton.module.css'),
+    'utf8'
+);
 
 describe('PricingCardsGrid subscribe button (TEST:V8a:3 / TEST:V8a:4)', () => {
     it('mounts one visible island outside the hasPlans conditional and only in checkout mode', () => {
@@ -30,5 +34,24 @@ describe('PricingCardsGrid subscribe button (TEST:V8a:3 / TEST:V8a:4)', () => {
         expect(src.indexOf('<SubscribeButton')).toBeGreaterThan(
             src.indexOf('</div>', src.indexOf('id="pricing-cards-grid"'))
         );
+    });
+    it('mounts the CTA inside the padded container in a centered wrapper', () => {
+        const containerStart = src.indexOf('class="pricing-cards__container"');
+        const containerEnd = src.indexOf('\n</div>\n\n<style>');
+        const island = src.indexOf('<SubscribeButton');
+        const wrapperStart = src.lastIndexOf('<div class="pricing-cards__subscribe"', island);
+        const wrapperEnd = src.indexOf('</div>', island);
+
+        expect(island).toBeGreaterThan(containerStart);
+        expect(island).toBeLessThan(containerEnd);
+        expect(wrapperStart).toBeGreaterThan(containerStart);
+        expect(wrapperEnd).toBeLessThan(containerEnd);
+        const wrapperCss = src.match(/\.pricing-cards__subscribe \{([^}]*)\}/)?.[1] ?? '';
+        expect(wrapperCss).toContain('max-width: 1140px;');
+        expect(wrapperCss).toContain('padding: 0 var(--space-container-x);');
+        const containerCss = subscribeCss.match(/\.container \{([^}]*)\}/)?.[1] ?? '';
+        expect(containerCss).not.toContain('justify-items: start;');
+        expect(containerCss).toContain('justify-items: center;');
+        expect(containerCss).toContain('text-align: center;');
     });
 });

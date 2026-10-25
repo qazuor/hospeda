@@ -70,6 +70,20 @@ describe('TEST:1621:4 fetchPublicPlans', () => {
             { headers: { Accept: 'application/json' } }
         );
         expect(plans.map((plan) => plan.slug)).toEqual(['tourist-vip']);
+        expect(plans[0]?.inheritsTouristVip).toBe(false);
+    });
+
+    it('TEST:1765:4 carries inherited VIP metadata and marks the floor as non-inheriting', async () => {
+        mockCatalog('tourist', [catalogPlan({ inheritsTouristVip: true })], floorPlan());
+
+        const result = await fetchPublicPlans({ vertical: 'tourist' });
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+        expect(result.plans.map((plan) => [plan.slug, plan.inheritsTouristVip])).toEqual([
+            ['tourist-free', false],
+            ['tourist-vip', true]
+        ]);
     });
 
     it('(a) requests the selected vertical catalog', async () => {

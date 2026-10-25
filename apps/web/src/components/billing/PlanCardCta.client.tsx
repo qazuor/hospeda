@@ -46,7 +46,7 @@ export function PlanCardCta({
                     <a
                         key={cycle}
                         href={href}
-                        className={styles.link}
+                        className={cycle === 'monthly' ? styles.primary : styles.secondary}
                     >
                         {t(
                             resumes

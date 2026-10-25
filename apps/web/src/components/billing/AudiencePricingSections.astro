@@ -33,6 +33,7 @@ import FaqSection from '@/components/marketing/FaqSection.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import type { PricingAudience } from '@/lib/billing-i18n';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
+import type { TouristVipBenefitKeys } from '@/lib/billing/tourist-vip-benefits';
 import type { BillingFaqItem } from '@/lib/billing/pricing-page-content';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -44,6 +45,7 @@ interface Props {
     readonly audience: PricingAudience;
     /** The audience's active plans, cheapest-first (`fetchAudiencePlans`). */
     readonly plans: readonly PublicPlanData[];
+    readonly touristVipBenefits: TouristVipBenefitKeys | null;
     /** BCP-47 tag for `Intl.NumberFormat`, from `getIntlLocale`. */
     readonly intlLocale: string;
     /** i18n root for this page's copy, e.g. `pricing.gastronomy`. */
@@ -68,6 +70,7 @@ const {
     locale,
     audience,
     plans,
+    touristVipBenefits,
     intlLocale,
     copyRoot,
     faqs,
@@ -124,6 +127,7 @@ const comparisonAudience = audience === 'partner' ? null : audience;
     <PricingCardsGrid
         locale={locale}
         plans={plans}
+        touristVipBenefits={touristVipBenefits}
         intlLocale={intlLocale}
         audience={audience}
         sectionHeading={t(`${copyRoot}.cardsHeading`)}

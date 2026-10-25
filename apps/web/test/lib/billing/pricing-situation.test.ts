@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
     PLAN_CHANGE_UNAVAILABLE_KEY,
     PRICING_PLAN_CHANGE_NOTICE,
-    resolvePlanCardCta
+    resolvePlanCardCta,
+    resolvePlanCardTrialOffer
 } from '../../../src/lib/billing/pricing-situation';
 
 const plan = {
@@ -153,5 +154,53 @@ describe('TEST:1621:5 pricing card CTA situation resolver', () => {
                 .map(([key]) => key)
         ).toEqual(['ACTIVE']);
         expect(PLAN_CHANGE_UNAVAILABLE_KEY).toBe('account.subscription.mine.planChangeUnavailable');
+    });
+});
+
+describe('TEST:1758:2 pricing card trial offer', () => {
+    const verticals = ['accommodation', 'gastronomy', 'experience', 'tourist'] as const;
+
+    it.each(verticals)('keeps the generic offer for an unread %s situation', (vertical) => {
+        expect(resolvePlanCardTrialOffer({ vertical, result: null })).toBe(true);
+        expect(
+            resolvePlanCardTrialOffer({
+                vertical,
+                result: { ok: false, error: { status: 500, message: 'failed' } }
+            })
+        ).toBe(true);
+        expect(
+            resolvePlanCardTrialOffer({
+                vertical,
+                result: { ok: false, error: { status: 401, message: 'guest' } }
+            })
+        ).toBe(true);
+    });
+
+    it.each(verticals)('resolves trial eligibility exhaustively for %s', (vertical) => {
+        const expected: Record<string, boolean> = {
+            FIRST_USE: true,
+            TRIAL: false,
+            CHECKOUT: vertical === 'tourist',
+            SUBSCRIBED: false,
+            COVERED: false,
+            NO_PLANS: false,
+            TOURIST_VIP_INHERITED: false
+        };
+
+        for (const [situation, eligible] of Object.entries(expected)) {
+            const data =
+                situation === 'SUBSCRIBED'
+                    ? {
+                          situation: 'SUBSCRIBED' as const,
+                          status: 'ACTIVE' as const,
+                          planVersionId: 'version-a',
+                          billingOptionId: 'monthly-a'
+                      }
+                    : ({ situation } as const);
+            expect(
+                resolvePlanCardTrialOffer({ vertical, result: { ok: true, data } }),
+                `${vertical} ${situation}`
+            ).toBe(eligible);
+        }
     });
 });

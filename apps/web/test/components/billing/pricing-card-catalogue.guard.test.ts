@@ -53,6 +53,7 @@ function apiPlan(input: Partial<PublicPlanData> & Pick<PublicPlanData, 'slug'>):
         trialDays: 0,
         sortOrder: 1,
         isActive: true,
+        inheritsTouristVip: false,
         entitlements: [],
         limits: {},
         ...input
