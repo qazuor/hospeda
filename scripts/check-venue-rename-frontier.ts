@@ -44,6 +44,7 @@ export interface FrontierViolation {
     readonly reason: string;
 }
 
+/** The committed exception list and exact per-file hit inventory. */
 export interface FrontierInventory {
     readonly $comment: string;
     readonly outOfScan: readonly string[];
