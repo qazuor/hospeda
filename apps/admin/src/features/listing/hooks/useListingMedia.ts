@@ -33,8 +33,8 @@
 import type {
     ExperienceMedia,
     ExperienceMediaAddPayload,
-    GastronomyMedia,
-    GastronomyMediaAddPayload
+    VenueMedia,
+    VenueMediaAddPayload
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
@@ -55,13 +55,13 @@ export type ListingMediaVertical = 'gastronomy' | 'experience';
  * (`id`, `url`, `isFeatured`, `caption`, `alt`, `state`, `sortOrder`, …) is
  * shared via `BaseListingMediaSchema`, so a union is safe to consume here.
  */
-export type ListingMedia = GastronomyMedia | ExperienceMedia;
+export type ListingMedia = VenueMedia | ExperienceMedia;
 
 /**
  * Payload for adding a single photo to a listing gallery.
  * Identical shape across both verticals (both extend the same base schema).
  */
-export type ListingMediaAddPayload = GastronomyMediaAddPayload | ExperienceMediaAddPayload;
+export type ListingMediaAddPayload = VenueMediaAddPayload | ExperienceMediaAddPayload;
 
 // ---------------------------------------------------------------------------
 // Query key factory

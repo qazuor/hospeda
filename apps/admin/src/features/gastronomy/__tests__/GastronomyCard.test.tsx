@@ -15,7 +15,7 @@
  *  - Calls onSelect when clicked
  */
 
-import { GastronomyTypeEnum, PriceRangeEnum, PublicationStatusEnum } from '@repo/schemas';
+import { PriceRangeEnum, PublicationStatusEnum, VenueTypeEnum } from '@repo/schemas';
 import { fireEvent, render, screen } from '@testing-library/react';
 import * as React from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -51,7 +51,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
 const BASE_GASTRONOMY: GastronomyListItem = {
     id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     name: 'La Parrilla del Sur',
-    type: GastronomyTypeEnum.RESTAURANT,
+    type: VenueTypeEnum.RESTAURANT,
     priceRange: PriceRangeEnum.MID,
     destinationId: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
     ownerId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
@@ -92,7 +92,7 @@ describe('GastronomyCard — rendering', () => {
     });
 
     it('should render the type badge (Restaurante)', () => {
-        renderCard({ type: GastronomyTypeEnum.RESTAURANT });
+        renderCard({ type: VenueTypeEnum.RESTAURANT });
         expect(screen.getByText('Restaurante')).toBeInTheDocument();
     });
 
@@ -135,13 +135,13 @@ describe('GastronomyCard — rendering', () => {
 });
 
 describe('GastronomyCard — type badge labels', () => {
-    const CASES: Array<{ type: GastronomyTypeEnum; label: string }> = [
-        { type: GastronomyTypeEnum.BAR, label: 'Bar' },
-        { type: GastronomyTypeEnum.CAFE, label: 'Café' },
-        { type: GastronomyTypeEnum.PARRILLA, label: 'Parrilla' },
-        { type: GastronomyTypeEnum.CERVECERIA, label: 'Cervecería' },
-        { type: GastronomyTypeEnum.HELADERIA, label: 'Heladería' },
-        { type: GastronomyTypeEnum.FOOD_TRUCK, label: 'Food Truck' }
+    const CASES: Array<{ type: VenueTypeEnum; label: string }> = [
+        { type: VenueTypeEnum.BAR, label: 'Bar' },
+        { type: VenueTypeEnum.CAFE, label: 'Café' },
+        { type: VenueTypeEnum.PARRILLA, label: 'Parrilla' },
+        { type: VenueTypeEnum.CERVECERIA, label: 'Cervecería' },
+        { type: VenueTypeEnum.HELADERIA, label: 'Heladería' },
+        { type: VenueTypeEnum.FOOD_TRUCK, label: 'Food Truck' }
     ];
 
     for (const { type, label } of CASES) {

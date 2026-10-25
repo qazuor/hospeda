@@ -13,10 +13,10 @@
  */
 
 import {
-    GastronomyAdminCreateInputSchema,
-    GastronomyTypeEnum,
-    GastronomyUpdateInputSchema,
-    PriceRangeEnum
+    PriceRangeEnum,
+    VenueAdminCreateInputSchema,
+    VenueTypeEnum,
+    VenueUpdateInputSchema
 } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
@@ -73,7 +73,7 @@ describe('createGastronomyColumns', () => {
 
     it('type column has badge options for all 9 GastronomyTypeEnum values', () => {
         const typeCol = columns.find((c) => c.id === 'type');
-        const enumValues = Object.values(GastronomyTypeEnum);
+        const enumValues = Object.values(VenueTypeEnum);
         expect(typeCol?.badgeOptions).toBeDefined();
         expect(typeCol?.badgeOptions?.length).toBe(enumValues.length);
         for (const val of enumValues) {
@@ -154,7 +154,7 @@ describe('gastronomyListConfig', () => {
         const optionValues = (typeFilter?.type === 'select' ? typeFilter.options : []).map(
             (o) => o.value
         );
-        for (const val of Object.values(GastronomyTypeEnum)) {
+        for (const val of Object.values(VenueTypeEnum)) {
             expect(optionValues).toContain(val);
         }
     });
@@ -264,18 +264,18 @@ describe('GastronomyAdminCreateInputSchema — safeParse', () => {
         summary: 'Parrilla tradicional argentina con las mejores carnes',
         description:
             'La mejor carne de la ciudad, con un ambiente familiar y acogedor en pleno centro.',
-        type: GastronomyTypeEnum.PARRILLA,
+        type: VenueTypeEnum.PARRILLA,
         ownerId: VALID_UUID,
         destinationId: VALID_UUID
     };
 
     it('accepts a minimal valid payload (required fields only)', () => {
-        const result = GastronomyAdminCreateInputSchema.safeParse(VALID_PAYLOAD);
+        const result = VenueAdminCreateInputSchema.safeParse(VALID_PAYLOAD);
         expect(result.success).toBe(true);
     });
 
     it('accepts a full valid payload with all optional fields', () => {
-        const result = GastronomyAdminCreateInputSchema.safeParse({
+        const result = VenueAdminCreateInputSchema.safeParse({
             ...VALID_PAYLOAD,
             priceRange: PriceRangeEnum.MID,
             menuUrl: 'https://laparrilla.com/menu'
@@ -293,7 +293,7 @@ describe('GastronomyAdminCreateInputSchema — safeParse', () => {
 
     it('rejects a payload without ownerId, naming the field (H-88)', () => {
         const { ownerId: _ownerId, ...withoutOwner } = VALID_PAYLOAD;
-        const result = GastronomyAdminCreateInputSchema.safeParse(withoutOwner);
+        const result = VenueAdminCreateInputSchema.safeParse(withoutOwner);
 
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -304,7 +304,7 @@ describe('GastronomyAdminCreateInputSchema — safeParse', () => {
 
     it('rejects a payload without destinationId, naming the field (H-88)', () => {
         const { destinationId: _destinationId, ...withoutDestination } = VALID_PAYLOAD;
-        const result = GastronomyAdminCreateInputSchema.safeParse(withoutDestination);
+        const result = VenueAdminCreateInputSchema.safeParse(withoutDestination);
 
         expect(result.success).toBe(false);
         if (!result.success) {
@@ -315,7 +315,7 @@ describe('GastronomyAdminCreateInputSchema — safeParse', () => {
 
     it('rejects a payload missing the required name field', () => {
         const { name: _name, ...withoutName } = VALID_PAYLOAD;
-        const result = GastronomyAdminCreateInputSchema.safeParse(withoutName);
+        const result = VenueAdminCreateInputSchema.safeParse(withoutName);
         expect(result.success).toBe(false);
         if (!result.success) {
             const paths = result.error.issues.map((i) => i.path.join('.'));
@@ -325,12 +325,12 @@ describe('GastronomyAdminCreateInputSchema — safeParse', () => {
 
     it('rejects a payload missing the required type field', () => {
         const { type: _type, ...withoutType } = VALID_PAYLOAD;
-        const result = GastronomyAdminCreateInputSchema.safeParse(withoutType);
+        const result = VenueAdminCreateInputSchema.safeParse(withoutType);
         expect(result.success).toBe(false);
     });
 
     it('rejects an invalid GastronomyTypeEnum value', () => {
-        const result = GastronomyAdminCreateInputSchema.safeParse({
+        const result = VenueAdminCreateInputSchema.safeParse({
             ...VALID_PAYLOAD,
             type: 'INVALID_TYPE'
         });
@@ -338,7 +338,7 @@ describe('GastronomyAdminCreateInputSchema — safeParse', () => {
     });
 
     it('rejects an invalid PriceRangeEnum value', () => {
-        const result = GastronomyAdminCreateInputSchema.safeParse({
+        const result = VenueAdminCreateInputSchema.safeParse({
             ...VALID_PAYLOAD,
             priceRange: 'INVALID_RANGE'
         });
@@ -352,36 +352,36 @@ describe('GastronomyAdminCreateInputSchema — safeParse', () => {
 
 describe('GastronomyUpdateInputSchema — safeParse', () => {
     it('accepts an empty object (all fields optional in update)', () => {
-        const result = GastronomyUpdateInputSchema.safeParse({});
+        const result = VenueUpdateInputSchema.safeParse({});
         expect(result.success).toBe(true);
     });
 
     it('accepts a partial update with only name', () => {
-        const result = GastronomyUpdateInputSchema.safeParse({ name: 'Nuevo Nombre' });
+        const result = VenueUpdateInputSchema.safeParse({ name: 'Nuevo Nombre' });
         expect(result.success).toBe(true);
     });
 
     it('accepts a partial update with only type', () => {
-        const result = GastronomyUpdateInputSchema.safeParse({
-            type: GastronomyTypeEnum.CAFE
+        const result = VenueUpdateInputSchema.safeParse({
+            type: VenueTypeEnum.CAFE
         });
         expect(result.success).toBe(true);
     });
 
     it('accepts a partial update with only priceRange', () => {
-        const result = GastronomyUpdateInputSchema.safeParse({
+        const result = VenueUpdateInputSchema.safeParse({
             priceRange: PriceRangeEnum.PREMIUM
         });
         expect(result.success).toBe(true);
     });
 
     it('rejects an invalid type value even in a partial update', () => {
-        const result = GastronomyUpdateInputSchema.safeParse({ type: 'NOT_A_TYPE' });
+        const result = VenueUpdateInputSchema.safeParse({ type: 'NOT_A_TYPE' });
         expect(result.success).toBe(false);
     });
 
     it('rejects an invalid priceRange value even in a partial update', () => {
-        const result = GastronomyUpdateInputSchema.safeParse({ priceRange: 'CHEAP' });
+        const result = VenueUpdateInputSchema.safeParse({ priceRange: 'CHEAP' });
         expect(result.success).toBe(false);
     });
 });

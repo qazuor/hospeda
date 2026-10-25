@@ -13,7 +13,7 @@
  */
 
 import type { useTranslations } from '@repo/i18n';
-import { GastronomyTypeEnum, PermissionEnum, PriceRangeEnum } from '@repo/schemas';
+import { PermissionEnum, PriceRangeEnum, VenueTypeEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type {
     ConsolidatedEntityConfig,
@@ -27,15 +27,15 @@ import { createListingIdentitySection, createListingOperationalSection } from '@
 
 /** SELECT options for the gastronomy type field. */
 const GASTRONOMY_TYPE_OPTIONS = [
-    { value: GastronomyTypeEnum.RESTAURANT, label: 'Restaurante' },
-    { value: GastronomyTypeEnum.BAR, label: 'Bar' },
-    { value: GastronomyTypeEnum.CAFE, label: 'Café' },
-    { value: GastronomyTypeEnum.PARRILLA, label: 'Parrilla' },
-    { value: GastronomyTypeEnum.CERVECERIA, label: 'Cervecería' },
-    { value: GastronomyTypeEnum.HELADERIA, label: 'Heladería' },
-    { value: GastronomyTypeEnum.PANADERIA, label: 'Panadería' },
-    { value: GastronomyTypeEnum.ROTISERIA, label: 'Rotisería' },
-    { value: GastronomyTypeEnum.FOOD_TRUCK, label: 'Food Truck' }
+    { value: VenueTypeEnum.RESTAURANT, label: 'Restaurante' },
+    { value: VenueTypeEnum.BAR, label: 'Bar' },
+    { value: VenueTypeEnum.CAFE, label: 'Café' },
+    { value: VenueTypeEnum.PARRILLA, label: 'Parrilla' },
+    { value: VenueTypeEnum.CERVECERIA, label: 'Cervecería' },
+    { value: VenueTypeEnum.HELADERIA, label: 'Heladería' },
+    { value: VenueTypeEnum.PANADERIA, label: 'Panadería' },
+    { value: VenueTypeEnum.ROTISERIA, label: 'Rotisería' },
+    { value: VenueTypeEnum.FOOD_TRUCK, label: 'Food Truck' }
 ] as const;
 
 /** SELECT options for the price-range tier field. */
