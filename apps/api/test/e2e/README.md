@@ -408,6 +408,21 @@ Run `pnpm typecheck` to identify TypeScript issues before running tests.
    - Document discovered issues
    - Create CI/CD integration guide
 
+## Coverage against the real Mercado Pago
+
+This directory holds in-process flows only: they never call Mercado Pago. The old
+suite that ran against the Mercado Pago sandbox was removed with the QZPay billing
+(HOS-1352) and is not coming back as a vitest suite (HOS-1881). Coverage against the
+real provider lives in:
+
+- `packages/payments/src/probes/`: the manifest of the live probe objects that the
+  cutover must leave alone (`probes.json`). It is a list of ids, not tests.
+- `.specs/HOS-1352-billing-verticals-redesign/docs/mp-probes/`: the probe scripts that
+  hit Mercado Pago and their dated results.
+- `docs/billing/smoke-checklist.md`: the manual smoke on a live environment (real
+  checkout in the sandbox, emails, cache, crons).
+- `scripts/cutover/README.md`: the rehearsal against the provider test account.
+
 ## Documentation
 
 - **Architecture:** `/.claude/sessions/planning/P-001-business-model-system/E2E-TESTING-ARCHITECTURE.md`
