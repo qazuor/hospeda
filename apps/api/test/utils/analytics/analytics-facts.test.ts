@@ -55,8 +55,9 @@ describe('analytics facts (TEST:1878:15, TEST:1878:16)', () => {
         resetAnalyticsFactSinkForTests();
     });
     it('does not propagate a failed capture', () => {
+        const failure = new Error('offline');
         const capture = vi.fn(() => {
-            throw new Error('offline');
+            throw failure;
         });
         const sink = createAnalyticsFactSink({ capture });
         expect(() =>
@@ -72,7 +73,7 @@ describe('analytics facts (TEST:1878:15, TEST:1878:16)', () => {
         ).not.toThrow();
         expect(capture).toHaveBeenCalledTimes(1);
         expect(loggerWarn).toHaveBeenCalledWith(
-            expect.objectContaining({ kind: 'TRIAL_STARTED' }),
+            { kind: 'TRIAL_STARTED', error: failure },
             'Analytics fact capture failed (non-blocking)'
         );
     });

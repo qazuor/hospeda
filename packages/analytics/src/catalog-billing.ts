@@ -2,6 +2,14 @@ import { z } from 'zod';
 
 const id = z.string().min(1);
 const cycle = z.enum(['monthly', 'quarterly', 'semiannual', 'annual']);
+/**
+ * Verticals accepted by the billing and trial analytics schemas.
+ *
+ * The values MUST stay identical to `Object.values(VerticalEnum)` from
+ * `@repo/schemas`. `apps/api/test/utils/analytics/catalog-parity.test.ts`
+ * pins that parity, so renaming an enum VALUE (HOS-1801, stage B) must update
+ * this list in the same pull request.
+ */
 const vertical = z.enum(['accommodation', 'gastronomy', 'experience', 'tourist', 'partner']);
 const actorKind = z.enum(['USER', 'ADMIN', 'SYSTEM']);
 const subscriptionClass = z.enum(['PRINCIPAL', 'COMPLEMENTO']);
@@ -15,6 +23,12 @@ const common = {
 };
 const trialCommon = { vertical, actor_kind: actorKind };
 
+/**
+ * Closed Zod schemas for the billing and trial analytics events.
+ *
+ * Each entry validates the `properties` payload of the matching catalog event;
+ * `AnalyticsEventSchemas` spreads this map into the full analytics catalog.
+ */
 export const BillingAnalyticsEventSchemas = {
     billing_checkout_started: z.object({
         ...common,
