@@ -9,6 +9,7 @@ import {
     subscriptions
 } from '@repo/db';
 import { afterAll, describe, expect, it, vi } from 'vitest';
+import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
 import { creditPayment } from '../../../src/services/billing/payment/credit-payment.service.js';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
 import {
@@ -23,6 +24,105 @@ afterAll(closeServiceTestPool);
 const beforeCancelNotice = { beforeCancel: async () => 'SENT' as const };
 
 describe('TEST:B5:1 P1 payment credit', () => {
+    it.skipIf(!isServiceTestDbAvailable())(
+        'TEST:1878:6 emits one principal charge fact after commit and none when the promo transaction rolls back',
+        async () => {
+            const fixture = await paymentFixture();
+            const [payment] = await getServiceTestDb()
+                .insert(payments)
+                .values({
+                    subscriptionId: fixture.started.subscriptionId,
+                    amount: 250000,
+                    currency: 'ARS',
+                    status: 'PENDING',
+                    provider: fixture.link.provider,
+                    providerFactId: `fact-${crypto.randomUUID()}`,
+                    factAt: fixture.clock.now()
+                })
+                .returning();
+            const facts: BillingFact[] = [];
+            const billingFacts = { emit: (fact: BillingFact) => facts.push(fact) };
+            const result = await creditPayment(
+                { paymentId: payment!.id, chargeCreatedAt: fixture.clock.now() },
+                { clock: fixture.clock, billingFacts }
+            );
+            expect(result.outcome).toBe('CREDITED');
+            expect(
+                facts.filter((fact) => fact.subscriptionId === fixture.started.subscriptionId)
+            ).toHaveLength(1);
+            const repeated = await creditPayment(
+                { paymentId: payment!.id, chargeCreatedAt: fixture.clock.now() },
+                { clock: fixture.clock, billingFacts }
+            );
+            expect(repeated.outcome).toBe('ALREADY_CREDITED');
+            expect(
+                facts.filter((fact) => fact.subscriptionId === fixture.started.subscriptionId)
+            ).toHaveLength(1);
+
+            const [code] = await getServiceTestDb()
+                .insert(promoCodes)
+                .values({
+                    code: `ROLLBACK-${crypto.randomUUID()}`,
+                    discountKind: 'PERCENTAGE',
+                    value: 10,
+                    allVerticals: true,
+                    verticals: null,
+                    totalQuota: 10,
+                    validFrom: new Date('2026-01-01T00:00:00.000Z'),
+                    validUntil: new Date('2027-01-01T00:00:00.000Z'),
+                    stackable: false,
+                    usableWithAnotherActive: false,
+                    durationKind: 'N_CHARGES',
+                    durationCharges: 3
+                })
+                .returning();
+            await getServiceTestDb().insert(promoRedemptions).values({
+                promoCodeId: code!.id,
+                userId: fixture.user.id,
+                subscriptionId: fixture.started.subscriptionId,
+                redeemedAt: fixture.clock.now(),
+                remainingCharges: 2
+            });
+            const [pending] = await getServiceTestDb()
+                .insert(payments)
+                .values({
+                    subscriptionId: fixture.started.subscriptionId,
+                    amount: 250000,
+                    currency: 'ARS',
+                    status: 'PENDING',
+                    provider: fixture.link.provider,
+                    providerFactId: `rollback-${crypto.randomUUID()}`,
+                    factAt: fixture.clock.now()
+                })
+                .returning();
+            const before = facts.filter(
+                (fact) => fact.subscriptionId === fixture.started.subscriptionId
+            ).length;
+            await expect(
+                creditPayment(
+                    { paymentId: pending!.id, chargeCreatedAt: fixture.clock.now() },
+                    {
+                        clock: fixture.clock,
+                        billingFacts,
+                        promoCharges: {
+                            chargedWithDiscount: async () => {
+                                throw new Error('promo failure');
+                            }
+                        }
+                    }
+                )
+            ).rejects.toThrow('promo failure');
+            const [rolledBack] = await getServiceTestDb()
+                .select({ status: payments.status })
+                .from(payments)
+                .where(eq(payments.id, pending!.id));
+            expect(rolledBack?.status).toBe('PENDING');
+            expect(
+                facts.filter((fact) => fact.subscriptionId === fixture.started.subscriptionId)
+            ).toHaveLength(before);
+        }
+    );
+
     it.skipIf(!isServiceTestDbAvailable())(
         'TEST:B5:1 credits by the charge record instant and emits coverage after commit',
         async () => {

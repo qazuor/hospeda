@@ -2,6 +2,7 @@ import type { Clock, CoverageChangedEvent } from '@repo/billing-verticals-contra
 import {
     addonInstances,
     and,
+    billingOptions,
     buildEmailDedupKey,
     buildEventOccurrence,
     coveredPeriods,
@@ -17,6 +18,8 @@ import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
+import type { BillingFactSink } from '../facts/billing-fact-sink';
+import { emitBillingFact } from '../facts/billing-fact-sink';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
 import { issueReceipt, readReceiptPayer } from './issue-receipt.js';
 import {
@@ -39,6 +42,7 @@ export interface CreditPaymentPorts {
     readonly promoCharges?: PromoChargePolicy;
     readonly promoExhaustion?: PromoExhaustion;
     readonly coverageNotices?: CoverageNotices;
+    readonly billingFacts?: BillingFactSink;
     readonly markPayments?: import('../reconciliation/reconciliation-mark-payments.port').ReconciliationMarkPayments;
     readonly beforeOptimisticUpdate?: (input: { readonly paymentId: string }) => Promise<void>;
     readonly onOptimisticUpdateMiss?: (input: { readonly paymentId: string }) => Promise<void>;
@@ -51,6 +55,7 @@ export interface CreditPaymentResult {
 
 interface PostCommitEffects {
     readonly coverageEvent?: CoverageChangedEvent;
+    readonly chargeFact?: import('../facts/billing-fact-sink').BillingFact;
     readonly exhaustedPromos: readonly {
         readonly subscriptionId: string;
         readonly redemptionId: string;
@@ -156,6 +161,7 @@ export async function creditPayment(
 
                 let coverage: CreditPaymentResult['coverage'] = 'NOT_APPLICABLE';
                 const exhaustedPromos: { subscriptionId: string; redemptionId: string }[] = [];
+                let promoApplied = false;
                 if (subscription && subscription.class !== 'LAPIDA') {
                     try {
                         await tx.transaction(async (savepoint) => {
@@ -216,6 +222,7 @@ export async function creditPayment(
                             tx
                         });
                         if (!discounted) continue;
+                        promoApplied = true;
                         const [remaining] = await tx
                             .update(promoRedemptions)
                             .set({
@@ -289,9 +296,45 @@ export async function creditPayment(
                               change: 'CHANGED' as const
                           }
                         : undefined;
+                const [billingOption] = subscription?.billingOptionId
+                    ? await tx
+                          .select({ cycle: billingOptions.cycle })
+                          .from(billingOptions)
+                          .where(eq(billingOptions.id, subscription.billingOptionId))
+                          .limit(1)
+                    : [];
+                const chargeFact =
+                    payment.addonInstanceId === null &&
+                    subscription?.class === 'PRINCIPAL' &&
+                    subscription.userId &&
+                    vertical?.success &&
+                    subscription.planVersionId &&
+                    subscription.billingOptionId &&
+                    billingOption
+                        ? {
+                              kind: 'CHARGE_CREDITED' as const,
+                              userId: subscription.userId,
+                              vertical: vertical.data,
+                              subscriptionId: subscription.id,
+                              subscriptionClass: 'PRINCIPAL' as const,
+                              actorKind: 'SYSTEM' as const,
+                              occurredAt: payment.factAt,
+                              paymentId: payment.id,
+                              amountMinor: payment.amount,
+                              currency: payment.currency as 'ARS',
+                              isFirstCharge: firstPayment,
+                              cycle: billingOption.cycle as
+                                  | 'monthly'
+                                  | 'quarterly'
+                                  | 'semiannual'
+                                  | 'annual',
+                              planVersionId: subscription.planVersionId,
+                              promoApplied
+                          }
+                        : undefined;
                 return {
                     result: { outcome: 'CREDITED', coverage },
-                    after: { coverageEvent, exhaustedPromos }
+                    after: { coverageEvent, chargeFact, exhaustedPromos }
                 };
             }
             throw new ServiceError(
@@ -303,6 +346,9 @@ export async function creditPayment(
         }
     );
 
+    if (effects.after.chargeFact) {
+        emitBillingFact({ sink: ports.billingFacts, fact: effects.after.chargeFact });
+    }
     if (effects.after.coverageEvent) {
         try {
             await (ports.coverageNotices ?? unwiredCoverageNotices).emitCoverageChanged(
