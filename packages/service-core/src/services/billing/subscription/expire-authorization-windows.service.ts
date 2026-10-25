@@ -186,7 +186,12 @@ async function reevaluateRetainedPayments(
                 case 'GRACE_PERIOD':
                     await exitGraceOnCreditedPayment(
                         { paymentId },
-                        { provider: ports.provider, clock: ports.clock, actorType: 'job' }
+                        {
+                            provider: ports.provider,
+                            clock: ports.clock,
+                            actorType: 'job',
+                            billingFacts: ports.billingFacts
+                        }
                     );
                     reevaluated++;
                     break;
@@ -197,6 +202,7 @@ async function reevaluateRetainedPayments(
                             provider: ports.provider,
                             clock: ports.clock,
                             actorType: 'job',
+                            billingFacts: ports.billingFacts,
                             ...(ports.coverageNotices
                                 ? { coverageNotices: ports.coverageNotices }
                                 : {}),

@@ -25,6 +25,7 @@ import {
 import { createPlanCatalogInverse } from '@repo/verticals';
 import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
 import { touristVipInheritance } from '../../routes/billing-subscription/tourist-vip-inheritance.js';
+import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts.js';
 import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports.js';
 import { getClock } from '../../utils/clock.js';
 import { createSentryCronMonitorPing } from '../../utils/cron-monitor-ping.js';
@@ -98,6 +99,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             payments: creditedPaymentsFromLedger,
                             planPolicy,
                             coverageNotices: getCoverageNotices(),
+                            billingFacts: getAnalyticsFactSink(),
                             touristVipInheritance,
                             complements
                         }),
@@ -105,7 +107,8 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             provider,
                             clock,
                             payments: creditedPaymentsFromLedger,
-                            planPolicy
+                            planPolicy,
+                            billingFacts: getAnalyticsFactSink()
                         }),
                         createPendingFirstChargeDeclineCheck({
                             provider,
@@ -125,6 +128,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             beforeCancelNotice,
                             payments: creditedPaymentsFromLedger,
                             coverageNotices: getCoverageNotices(),
+                            billingFacts: getAnalyticsFactSink(),
                             complements
                         }),
                         // AC:B7:7/AC:B7:8: S6 when the grace clock ran out, or P1 + S5 when the
@@ -138,6 +142,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             beforeCancelNotice,
                             payments: creditedPaymentsFromLedger,
                             planPolicy,
+                            billingFacts: getAnalyticsFactSink(),
                             coverageNotices: getCoverageNotices(),
                             // AC:B7:31: a charged period settled on a SUSPENDED row runs S7, whose
                             // clause cancels a paid Tourist VIP the restored plan grants again.

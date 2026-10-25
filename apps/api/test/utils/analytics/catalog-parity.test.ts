@@ -1,6 +1,7 @@
 import { AnalyticsEventSchemas } from '@repo/analytics';
 import { ADDON_CYCLES } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
+import { SUSPEND_FOR_ARREARS_EVENTS } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@repo/db', async (importOriginal) => {
@@ -15,6 +16,9 @@ describe('billing analytics catalog parity (TEST:1878:16)', () => {
         );
         expect(AnalyticsEventSchemas.billing_checkout_started.shape.cycle.options).toEqual(
             ADDON_CYCLES
+        );
+        expect(AnalyticsEventSchemas.billing_subscription_suspended.shape.trigger.options).toEqual(
+            SUSPEND_FOR_ARREARS_EVENTS
         );
     });
     it('rejects forbidden analytics property names', () => {
