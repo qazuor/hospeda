@@ -260,8 +260,9 @@ export function buildPricingCardViews(input: BuildPricingCardViewsInput): Pricin
         const hasTouristVipDelta =
             inheritsBenefits && (!showsDelta || previousPlan?.inheritsTouristVip !== true);
         /**
-         * VIP catalog keys are covered by the group line only when the card
-         * presents the full offer. New VIP-keyed benefits in a delta against an
+         * VIP catalog keys are covered by the group line wherever that line is
+         * shown: on a full-offer card, or on a delta against a tier that did not
+         * inherit the VIP offer. New VIP-keyed benefits in a delta against an
          * already-inheriting tier are tier-specific additions and stay visible.
          */
         const filtersTouristVipKeys =
