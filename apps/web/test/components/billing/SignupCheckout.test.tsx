@@ -2,7 +2,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignupCheckout } from '@/components/billing/SignupCheckout.client';
-import { resolveSignupManualPaymentOnly } from '@/lib/billing/signup-checkout';
+import {
+    formatSignupWindowEnd,
+    resolveSignupManualPaymentOnly
+} from '@/lib/billing/signup-checkout';
 
 const start = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/api/endpoints-protected', () => ({ billingSubscriptionApi: { start } }));
@@ -390,6 +393,35 @@ describe('TEST:1623:6 Tourist VIP return warning', () => {
         expect(screen.getByTestId('signup-checkout-tourist-vip-notice')).toHaveTextContent(
             'Si tenés una suscripción suspendida cuyo plan te daba los beneficios de Turista VIP'
         );
+        expect(screen.getByTestId('signup-checkout-tourist-vip-notice')).toHaveTextContent(
+            'Si tenés una suscripción a Turista VIP y este plan incluye sus beneficios'
+        );
+    });
+
+    it('shows the paid-through date when activation cancels an inherited VIP', () => {
+        const paidUntil = '2026-11-01T12:00:00.000Z';
+        render(
+            <SignupCheckout
+                {...props}
+                touristVipNotice={{ kind: 'CANCELLED_ON_ACTIVATION', paidUntil }}
+            />
+        );
+        const notice = screen.getByTestId('signup-checkout-tourist-vip-notice');
+        const date = formatSignupWindowEnd({ iso: paidUntil, locale: 'es' });
+        expect(notice.textContent).toContain(date);
+        expect(notice).toHaveTextContent('lo que pagaste no se reembolsa');
+    });
+
+    it('uses the date-free activation warning when paid-through is unknown', () => {
+        render(
+            <SignupCheckout
+                {...props}
+                touristVipNotice={{ kind: 'CANCELLED_ON_ACTIVATION', paidUntil: null }}
+            />
+        );
+        const notice = screen.getByTestId('signup-checkout-tourist-vip-notice');
+        expect(notice).toHaveTextContent('Este plan ya incluye sus beneficios');
+        expect(notice).toHaveTextContent('lo que pagaste no se reembolsa');
     });
 
     it('marks the checkout unaffected when the API resolved no warning', () => {

@@ -31,6 +31,28 @@ describe('TEST:B13a:21b AC:B13a:5 and AC:1735:8 the signup notice contract', () 
         expect(SignupNoticeResponseSchema.parse(value)).toEqual(value);
     });
 
+    it('accepts an inherited Tourist VIP cancelled on activation with a paid-until date or null', () => {
+        const base = {
+            plan: { name: 'Owner', amount: 1500000, currency: 'ARS', cycle: 'monthly' },
+            pendingAttempt: null,
+            vertical: 'accommodation',
+            trial: { status: 'NOT_RUNNING' }
+        };
+        const paidUntil = '2026-11-01T12:00:00.000Z';
+        expect(
+            SignupNoticeResponseSchema.parse({
+                ...base,
+                touristVip: { status: 'CANCELLED_ON_ACTIVATION', paidUntil }
+            }).touristVip
+        ).toEqual({ status: 'CANCELLED_ON_ACTIVATION', paidUntil });
+        expect(
+            SignupNoticeResponseSchema.parse({
+                ...base,
+                touristVip: { status: 'CANCELLED_ON_ACTIVATION', paidUntil: null }
+            }).touristVip
+        ).toEqual({ status: 'CANCELLED_ON_ACTIVATION', paidUntil: null });
+    });
+
     it.each([
         [
             'running without endsAt',
