@@ -341,6 +341,9 @@ jobs:
         run: pnpm check:approval-url-sanitized
       - name: Check no trial is asked of the provider (GUARD:G11)
         run: pnpm check:no-provider-trial
+      # GUARD:G20 ensures catalog declarations retain a production mention.
+      - name: Check analytics catalog emitters (GUARD:G20)
+        run: pnpm check:analytics-catalog-emitters
       # GUARD:G12, G17 (HOS-1509, AC:B1:8/11). G12: the gateway's SDK is imported
       # or declared only under packages/payments/src/adapters/. G17: no decision
       # comes out of a notice without re-reading by id; its message names which
@@ -379,10 +382,10 @@ jobs:
       # AC:V5:29 requires an independent CI step for the API exit guard.
       - name: Check no transitional gate markers remain in apps/api/src (AC:V5:29)
         run: pnpm check:no-transitional-gate-markers
-      # GUARD:G18 (HOS-1431, AC:V1:4). Its own step, like every guard here. The
+      # GUARD:G20 (HOS-1431, AC:V1:4). Its own step, like every guard here. The
       # reference rows every migration inserts (catalog_key, vertical) are the
       # rows scripts/generate-catalog-sql.ts regenerates from the code catalog.
-      - name: Check migration reference rows match the code catalog (GUARD:G18)
+      - name: Check migration reference rows match the code catalog (GUARD:G20)
         run: pnpm check:catalog-sql
       # GUARD:G3 (HOS-1431, AC:V1:3). Its own step. Every key production code uses
       # (catalog enum members and catalog accessor arguments) is in the key catalog.
