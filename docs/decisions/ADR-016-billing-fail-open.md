@@ -1,8 +1,10 @@
 # ADR-016: Fail-Open Strategy for Billing Entitlement Middleware
 
+> **Superseded by HOS-1352:** the entitlement middleware and QZPay circuit breaker it describes were deleted.
+
 ## Status
 
-Accepted
+Superseded by HOS-1352 (historical record only)
 
 ## Context
 

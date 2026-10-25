@@ -118,7 +118,7 @@ Sentry.captureMessage('moderation.degraded', 'warning');
 
 ## 4. Billing Webhook Failure
 
-> Detecta cuando un webhook de MercadoPago/QZPay falla al procesarse.
+> Detecta cuando un webhook de MercadoPago falla al procesarse.
 
 ### Configuración
 
@@ -156,15 +156,14 @@ Sentry.captureMessage('moderation.degraded', 'warning');
 
 | Cron | Descripción | Frecuencia |
 |------|-------------|------------|
-| `apply-scheduled-plan-changes` | Aplica cambios de plan programados | Cada 15 min |
-| `trial-reconcile` | Concilia trials vencidos contra el proveedor (convierte; NO cancela) | Diario 02:00 |
+| `trial-machine-expiry` | Vence trials en curso cuya fecha de fin pasó | Cada 15 min |
+| `subscription-window-expiry` | Vence ventanas de autorización de suscripción | Cada 15 min |
+| `billing-reconciliation-sweep` | Barrido de conciliación de cobros contra el proveedor | Diario 06:00 |
 | `conversation-notification` | Procesa notificaciones de mensajes | Cada 5 min |
 
-> **Corregido por HOS-1302.** Dos de las cuatro filas nombraban jobs que no
-> existen: `trial-pre-end-notif` lo borró HOS-121, y `trial-reactivate` no está
-> registrado en ninguna parte. Y `apply-scheduled-plan-changes` corre cada 15
-> minutos, no a diario. Los nombres y las frecuencias salen de
-> `apps/api/src/cron/schedules.manifest.ts` — nunca de un nombre de archivo.
+> Los nombres y las frecuencias salen de `apps/api/src/cron/schedules.manifest.ts`,
+> nunca de un nombre de archivo. Los crons de billing del stack anterior
+> (`trial-reconcile`, `apply-scheduled-plan-changes`, dunning) ya no existen.
 
 ---
 

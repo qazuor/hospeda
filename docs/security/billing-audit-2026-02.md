@@ -1,5 +1,7 @@
 # Security Audit Report: Billing/Payment System
 
+> Historical document (dated 2026-02-03). Billing references predate HOS-1352, which replaced the QZPay stack. See the root CLAUDE.md "Billing and verticals" section ([CLAUDE.md](../../CLAUDE.md#billing-and-verticals-hos-1352)).
+
 **Audit Date:** February 3, 2026
 **Auditor:** Tech Lead - Hospeda Security Team
 **Scope:** Billing and payment processing system (Mercado Pago integration)

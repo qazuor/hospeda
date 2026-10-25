@@ -57,7 +57,7 @@ it deliberately excludes and why.
 Every audience section, benefit list, plan-comparison table, addon card, and
 "próximamente" item is sourced from a hardcoded TypeScript module,
 `apps/web/src/lib/features-content.ts` — **not** from the billing plans API
-(the `billing_plans` database catalog) or any other backend call. Copy
+(the `plan` database catalog) or any other backend call. Copy
 strings are resolved through i18n keys under the `features.*` namespace
 (`packages/i18n/src/locales/{es,en,pt}/features.json`); the structural data
 (row counts, cupos/limits, icons) lives in the content module itself.

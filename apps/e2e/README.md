@@ -115,7 +115,9 @@ Cleanup uses `SET LOCAL session_replication_role='replica'` to bypass the pre-ex
 
 | Fixture | Purpose | Notes |
 |---|---|---|
-| `api-helpers.ts` | Programmatic creation of users, accommodations, subscriptions, conversations | Hits real `/api` endpoints. Returns IDs + session cookies. |
+| `api-helpers.ts` | Programmatic creation of users, accommodations, conversations | Hits real `/api` endpoints. Returns IDs + session cookies. Its `createSubscription` / `ensureBillingCustomer` / `resolvePlanIdBySlug` helpers target the legacy billing tables dropped by migration 0125 (HOS-1352) and are deferred; use the fixtures below for subscriptions. |
+| `signup-checkout.ts`, `billing-signup-helpers.ts` | Seed plan holders (`seedActivePlanHolder`, `seedSuspendedPlanHolder`, ...) against the `plan` / `plan_version` / `subscription` tables, open the signup checkout, trigger crons | Used by `tests/billing/*`. |
+| `fake-provider-server.ts` | Starts `@repo/payments/fake-server` on port 18090 with an adjustable clock (`@repo/test-clock`) and delivers signed MercadoPago webhooks to the API | Replaces the old QZPay test-control seam. |
 | `browser-helpers.ts` | `seedCookieConsent(page)` — seed the `cookie-consent` cookie via `addInitScript` so the banner never renders | Call in a `test.beforeEach` for any test that clicks/submits in the web UI. See pitfall #11. |
 | `db-helpers.ts` | Force fixture states the API can't expose (expired trial, past period_end) | Direct SQL via `pg.Pool`. Use sparingly. |
 | `mailpit-client.ts` | Wait for verification / reset / notification emails | Polls `http://localhost:8025/api/v1/messages`. |
@@ -172,7 +174,9 @@ The outbox sender has no E2E cron of its own because `HOSPEDA_CRON_ADAPTER` is
 
 The patterns below were extracted from the 34 specs authored under SPEC-092. Copy these into new tests rather than reinventing.
 
-### Setup paid host with active subscription
+### Setup paid host with active subscription (legacy, deferred)
+
+> This snippet uses the pre-HOS-1352 billing tables (`billing_plans`, `billing_subscriptions`), which migration 0125 dropped. `createSubscription` and the specs that call it are deferred (`test.fixme` via `hasOldBillingSchema`). For a current example see `tests/billing/billing-02-signup-end-to-end.spec.ts` and `fixtures/signup-checkout.ts`.
 
 ```ts
 const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
@@ -270,8 +274,8 @@ const rows = await execSQL<AddonPurchaseRow>(`SELECT id, status, customer_id FRO
 
 1. **`interface` rejected by `execSQL<T>`.** Use `type X = { ... } & Record<string, unknown>` instead. TS 5 does not auto-widen interfaces to satisfy the index-signature constraint.
 2. **Snake-case columns vs camelCase fields.** DB columns are snake_case (`first_name`, `publication_status`); request bodies / API responses are camelCase (`firstName`, `publicationStatus`). Don't mix them in `execSQL` projections.
-3. **`createSubscription` requires a real plan id.** The fixture inserts a `billing_subscriptions` row; the FK to `billing_plans.id` is enforced at the DB level. Always pull the plan id from a `SELECT id FROM billing_plans WHERE is_active = true` first; do NOT pass a hard-coded UUID.
-4. **`drizzle-kit push` is not enough.** Triggers, materialized views, and JSONB CHECK constraints on `billing_addon_purchases` are invisible to Drizzle. After any push, run `packages/db/scripts/apply-postgres-extras.sh`. The E2E seed step does this automatically; manual runs must too.
+3. **Subscription fixtures need a real plan version id.** The `subscription` table's FK to `plan_version` is enforced at the DB level. Resolve the id from the seeded catalog (see `monthlyOptionForSlug` in `fixtures/signup-checkout.ts`); do NOT pass a hard-coded UUID. The legacy `createSubscription` helper (`billing_subscriptions`) is deferred since HOS-1352.
+4. **`drizzle-kit push` is not enough.** Triggers, materialized views, and JSONB CHECK constraints are invisible to Drizzle. After any push, run `packages/db/scripts/apply-postgres-extras.sh`. The E2E seed step does this automatically; manual runs must too.
 5. **Cancellation has TWO bits to flip.** `status='cancelled'` AND `current_period_end` (preserved during grace, forced past for expired). HOST-04 / E2E-8 both exercise this; copy that pattern rather than rolling your own.
 6. **`test.fixme(condition, reason)` accepts a runtime check.** Use it for env-gated test legs (no MP secret, no Cloudinary creds) — the test reports `fixme` in the HTML report rather than `skip`, which is a contract requirement (rule #7).
 7. **Webhook endpoint dispatch by URL segment.** `payment.*` events go to `/api/v1/webhooks/mercadopago/payment`; everything else to `/notifications`. The `mp-webhook-helper.ts` routes correctly — don't override `routeForEvent`.
@@ -283,10 +287,10 @@ const rows = await execSQL<AddonPurchaseRow>(`SELECT id, status, customer_id FRO
 
 ## Performance guidelines
 
-- **Sub-test setup target**: < 2s. Hit a billing plan once (cached via SELECT, not via createPlan); reuse across tests in a describe block where safe.
-- **`waitFor*` ceilings**: 5s for revalidation log, 10s for Mailpit emails, 8s for QZPay-test-control state. Anything longer is almost certainly a bug, not a slow CI runner.
+- **Sub-test setup target**: < 2s. Resolve a plan version once (cached via SELECT); reuse across tests in a describe block where safe.
+- **`waitFor*` ceilings**: 5s for revalidation log, 10s for Mailpit emails, 8s for fake-provider state. Anything longer is almost certainly a bug, not a slow CI runner.
 - **Avoid `page.goto` when API verification suffices**. Cookie-attach + `page.request.get/post` is 5-10× faster than full page navigation. Use UI navigation only when asserting visible DOM state (HOST-01, ACC-01).
-- **Keep cleanup focused**. `cleanupTestUsers` cascades to subscriptions, accommodations, conversations, addon purchases. Don't manually delete those tables — let the support helper do it.
+- **Keep cleanup focused**. `cleanupTestUsers` cascades to subscriptions, accommodations, conversations. Don't manually delete those tables — let the support helper do it.
 - **Parallel tests**. Each test owns its own user; the suite is safe at 4 workers. Tests that touch shared rows (counters, system-wide rate limits) use `test.describe.serial(...)` or run on the burn-in track only.
 
 ## Debugging a failure
