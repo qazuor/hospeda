@@ -1,162 +1,159 @@
 /**
- * @file SSR Memory Leak Guard — Admin Root
+ * @file SSR instantiation guard — Admin Root
  *
- * Static-analysis test for SPEC-209 AC-3.1 / T-007.
- *
- * The admin root component (apps/admin/src/routes/__root.tsx) previously
- * constructed a `createQZPayBilling(` instance inside `useState(() => ...)`
- * at the top level of `RootDocument`. On TanStack Start SSR the root component
- * mounts once PER REQUEST, so `useState` lazy-initializers run server-side
- * and every healthcheck hit produces a fresh QZPayBilling instance (~990
- * "QZPayBilling initialized" log lines / 48h).
- *
- * The ONLY safe guards for client-only code in an SSR root are:
- *   - Inside a `useEffect(` callback (never runs on server)
- *   - Behind `typeof window !== 'undefined'`
- *   - Behind `import.meta.env.SSR` checks
- *
- * `useState(` is NOT a guard: its lazy initializer executes on the server
- * for every request.
- *
- * EXPECTED STATE: this test FAILS on the current (unfixed) __root.tsx because
- * `createQZPayBilling(` appears inside a `useState(` lazy initializer without
- * any client-only guard. The failing test is the TDD regression evidence.
- * Task T-009 applies the fix; that turns this test green.
- *
- * DO NOT add `.skip` / `.fails` / `.only` — the red must be visible in CI.
+ * SPEC-209 traced a per-request QZPayBilling construction to a memory leak in
+ * the admin root. HOS-1416 removed QZPay from admin, so a library-name needle
+ * became vacuous. This guard checks the underlying risk: arbitrary `new X()`
+ * and `createX()` instantiations in the SSR root. A lazy useState initializer
+ * is safe for QueryClient because it gives each SSR request an isolated cache;
+ * it was not safe for the old QZPayBilling construction, which logged and
+ * accumulated a fresh billing client on every healthcheck.
  */
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+const ROOT_PATH = resolve(__dirname, '../../src/routes/__root.tsx');
+// Module-scope route factories are intentionally evaluated once at module load.
+const MODULE_SCOPE_ALLOWLIST = new Set(['createRootRoute', 'createRootRouteWithContext']);
 
-/**
- * Resolves the admin root route source file relative to this test file.
- * Path: <repo>/apps/admin/src/routes/__root.tsx
- */
-function readRootSource(): string {
-    const rootPath = resolve(__dirname, '../../src/routes/__root.tsx');
-    return readFileSync(rootPath, 'utf-8');
+type Finding = { name: string; line: number };
+
+/** Checks whether an expression is the supported browser or Vite SSR guard. */
+function isServerGuard(expression: ts.Expression): boolean {
+    const text = expression.getText();
+    return (
+        /typeof\s+window\s*!==?\s*['"]undefined['"]/.test(text) ||
+        /import\.meta\.env\.SSR/.test(text)
+    );
 }
 
-/**
- * Returns the 1-based line number for a 0-based character offset within
- * `source`.
- */
-function lineAtOffset(source: string, offset: number): number {
-    return source.slice(0, offset).split('\n').length;
-}
+/** Scans root source for unsafe constructor and factory calls. */
+function findUnsafeInstantiations(source: string): Finding[] {
+    const file = ts.createSourceFile(
+        ROOT_PATH,
+        source,
+        ts.ScriptTarget.Latest,
+        true,
+        ts.ScriptKind.TSX
+    );
+    const findings: Finding[] = [];
+    const isWithin = (outer: ts.Node, inner: ts.Node) =>
+        outer.pos <= inner.pos && outer.end >= inner.end;
 
-/**
- * Given a source string and an offset pointing to the `(` after `useEffect`,
- * returns true if the given target offset falls within the body of that
- * useEffect call.
- *
- * Strategy: scan forward from the `useEffect(` opener, tracking brace/paren
- * depth, until we find the matching closing `)` that ends the call. If the
- * target offset is between the opener and the closer, it's inside.
- */
-function isInsideUseEffect(source: string, useEffectOffset: number, targetOffset: number): boolean {
-    if (targetOffset <= useEffectOffset) return false;
-
-    let depth = 0;
-    let i = useEffectOffset;
-
-    // Walk forward from `useEffect(` — the character AT useEffectOffset is `(`
-    for (; i < source.length; i++) {
-        const ch = source[i];
-        if (ch === '(' || ch === '{' || ch === '[') {
-            depth++;
-        } else if (ch === ')' || ch === '}' || ch === ']') {
-            depth--;
-            if (depth === 0) {
-                // i is now at the closing `)` of the useEffect() call
-                return targetOffset < i;
+    function safeByCallback(node: ts.Node, names: Set<string>): boolean {
+        for (let parent = node.parent; parent; parent = parent.parent) {
+            if (
+                ts.isCallExpression(parent) &&
+                ts.isIdentifier(parent.expression) &&
+                names.has(parent.expression.text)
+            ) {
+                const callback = parent.arguments[0];
+                if (
+                    callback &&
+                    (ts.isArrowFunction(callback) || ts.isFunctionExpression(callback)) &&
+                    isWithin(callback, node)
+                ) {
+                    return true;
+                }
             }
         }
+        return false;
     }
-    return false;
-}
 
-/**
- * Returns true when the `createQZPayBilling(` at `targetOffset` is protected
- * by at least one of the accepted client-only guards anywhere in the source
- * text that wraps it:
- *
- *   1. Inside a `useEffect(` callback.
- *   2. After a `typeof window` guard on the same logical block.
- *   3. After an `import.meta.env.SSR` guard.
- *
- * For the simpler guards (2 & 3) we check whether the string appears
- * in the 500-character window before the target offset, which is sufficient
- * for the conditional patterns we expect (`if (typeof window !== 'undefined')`,
- * `if (!import.meta.env.SSR)`, etc.).
- */
-function isClientOnlyGuarded(source: string, targetOffset: number): boolean {
-    // Guard 1: inside a useEffect callback
-    let searchFrom = 0;
-    while (searchFrom < targetOffset) {
-        const useEffectIdx = source.indexOf('useEffect(', searchFrom);
-        if (useEffectIdx === -1 || useEffectIdx >= targetOffset) break;
-        if (isInsideUseEffect(source, useEffectIdx, targetOffset)) {
-            return true;
+    function safeByBranch(node: ts.Node): boolean {
+        for (let parent = node.parent; parent; parent = parent.parent) {
+            if (
+                ts.isIfStatement(parent) &&
+                isWithin(parent.thenStatement, node) &&
+                isServerGuard(parent.expression)
+            )
+                return true;
+            if (
+                ts.isConditionalExpression(parent) &&
+                isWithin(parent.whenTrue, node) &&
+                isServerGuard(parent.condition)
+            )
+                return true;
         }
-        searchFrom = useEffectIdx + 1;
+        return false;
     }
 
-    // Guard 2 & 3: `typeof window` or `import.meta.env.SSR` in the 500-char
-    // window preceding the call (covers if/ternary patterns).
-    const lookback = source.slice(Math.max(0, targetOffset - 500), targetOffset);
-    if (lookback.includes('typeof window') || lookback.includes('import.meta.env.SSR')) {
+    function isModuleScope(node: ts.Node): boolean {
+        for (let parent = node.parent; parent; parent = parent.parent) {
+            if (ts.isFunctionLike(parent) || ts.isClassLike(parent)) return false;
+        }
         return true;
     }
 
-    return false;
+    function visit(node: ts.Node): void {
+        let name: string | undefined;
+        if (ts.isNewExpression(node) && ts.isIdentifier(node.expression))
+            name = `new ${node.expression.text}`;
+        if (
+            ts.isCallExpression(node) &&
+            ts.isIdentifier(node.expression) &&
+            /^create[A-Z0-9_]/.test(node.expression.text)
+        )
+            name = node.expression.text;
+        if (name) {
+            const callName = name.startsWith('new ') ? name.slice(4) : name;
+            const safe =
+                (MODULE_SCOPE_ALLOWLIST.has(callName) && isModuleScope(node)) ||
+                safeByCallback(node, new Set(['useState'])) ||
+                safeByCallback(node, new Set(['useEffect', 'useLayoutEffect'])) ||
+                safeByBranch(node);
+            if (!safe) {
+                const { line } = file.getLineAndCharacterOfPosition(node.getStart(file));
+                findings.push({ name, line: line + 1 });
+            }
+        }
+        ts.forEachChild(node, visit);
+    }
+    visit(file);
+    return findings;
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
-describe('Admin __root.tsx — SSR memory-leak guard (SPEC-209 AC-3.1)', () => {
-    it('createQZPayBilling( must not appear in __root.tsx at all when unguarded (file existence check)', () => {
-        // Arrange
-        const source = readRootSource();
-
-        // Act: collect every occurrence of the dangerous call
-        const NEEDLE = 'createQZPayBilling(';
-        const occurrences: Array<{ line: number; offset: number }> = [];
-        let searchFrom = 0;
-        while (true) {
-            const idx = source.indexOf(NEEDLE, searchFrom);
-            if (idx === -1) break;
-            occurrences.push({ line: lineAtOffset(source, idx), offset: idx });
-            searchFrom = idx + NEEDLE.length;
-        }
-
-        // If there are no occurrences at all the file is already clean.
-        // (Future: if the call is removed entirely the guard still passes.)
-        if (occurrences.length === 0) return;
-
-        // Assert: every occurrence must be inside a client-only guard
-        const unguarded = occurrences.filter(({ offset }) => !isClientOnlyGuarded(source, offset));
-
+describe('Admin __root.tsx — SSR per-request instantiation guard', () => {
+    it('allows only intentional SSR-safe instantiations in the real root', () => {
+        const source = readFileSync(ROOT_PATH, 'utf-8');
+        const findings = findUnsafeInstantiations(source);
+        expect(source).toContain('createRootRoute(');
+        expect(source).toContain('new QueryClient(');
         expect(
-            unguarded,
-            [
-                `Found ${unguarded.length} unguarded createQZPayBilling( call(s) in __root.tsx.`,
-                'This call executes on every SSR request because useState() lazy-initializers',
-                'run server-side, causing a new QZPayBilling instance per healthcheck hit.',
-                '',
-                `Unguarded occurrence(s) at line(s): ${unguarded.map((o) => o.line).join(', ')}`,
-                '',
-                'Fix: move the call inside a useEffect() callback (client-only) or behind',
-                'a typeof window !== "undefined" / import.meta.env.SSR guard.'
-            ].join('\n')
+            findings,
+            `Unsafe SSR instantiations in __root.tsx at ${findings.map((item) => `${item.line} (${item.name})`).join(', ')}. Move construction into useEffect, a lazy useState initializer, or behind typeof window / the Vite SSR check.`
         ).toHaveLength(0);
+    });
+
+    it('detects unsafe instantiations in representative source samples', () => {
+        const samples = [
+            'new QueryClient();',
+            'function RootDocument() { const qc = new QueryClient(); }',
+            'function RootDocument() { useState(new QueryClient()); }',
+            'function RootDocument() { useRef(createX()); }',
+            'function RootDocument() { useMemo(() => new X()); }',
+            'createFoo();'
+        ];
+        for (const sample of samples)
+            expect(findUnsafeInstantiations(sample).length, sample).toBeGreaterThan(0);
+    });
+
+    it('accepts safe positions and ignores comments, strings, and ordinary calls', () => {
+        // Member calls such as `foo.createX()` are deliberately excluded: the
+        // guard targets constructors and unqualified factory functions only.
+        const source = [
+            'function Root() { useState(() => new QueryClient()); }',
+            'function Root() { useEffect(() => { new X(); }, []); }',
+            "if (typeof window !== 'undefined') { new X(); }",
+            'createRootRoute({});',
+            '// new X(); createFoo();',
+            '/* new X(); createFoo(); */',
+            'const text = "new X(); createFoo();";',
+            'validateAdminEnv();'
+        ].join('\n');
+        expect(findUnsafeInstantiations(source)).toEqual([]);
     });
 });
