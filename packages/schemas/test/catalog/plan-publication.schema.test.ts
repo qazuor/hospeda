@@ -3,6 +3,7 @@ import {
     BILLING_CYCLE_MONTHS,
     BILLING_CYCLES,
     CreatePlanRequestSchema,
+    PlanPublicationChangeSchema,
     PlanPublicationConfirmationSchema,
     PlanVersionEntitlementInputSchema,
     PreviewPlanVersionRequestSchema,
@@ -136,4 +137,10 @@ describe('HOS-1436 V2.3 — confirmation and published result shapes', () => {
             }).success
         ).toBe(true);
     });
+});
+
+// HOS-1774: zod 4.6 requires unwrapped `z.unknown()` keys; 4.3.6 accepted omission.
+it('accepts a publication change whose from/to keys are omitted (zod 4.3.6 parity)', () => {
+    const result = PlanPublicationChangeSchema.safeParse({ key: 'rank', kind: 'setting' });
+    expect(result.success).toBe(true);
 });

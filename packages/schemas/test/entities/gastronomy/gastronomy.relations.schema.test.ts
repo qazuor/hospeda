@@ -1,8 +1,10 @@
 import { faker } from '@faker-js/faker';
 import { describe, expect, it } from 'vitest';
 import {
+    GastronomyWithAmenitiesSchema,
     GastronomyWithBasicRelationsSchema,
     GastronomyWithDestinationSchema,
+    GastronomyWithFeaturesSchema,
     GastronomyWithFullRelationsSchema,
     GastronomyWithOwnerSchema
 } from '../../../src/entities/gastronomy/gastronomy.relations.schema.js';
@@ -93,5 +95,19 @@ describe('GastronomyWithFullRelationsSchema', () => {
     it('should validate gastronomy with no optional relations', () => {
         const data = createMinimalGastronomy();
         expect(() => GastronomyWithFullRelationsSchema.parse(data)).not.toThrow();
+    });
+});
+
+// HOS-1774: zod 4.6 requires unwrapped `z.unknown()` keys; 4.3.6 accepted omission.
+describe('feature/amenity summaries without a `name` key (zod 4.3.6 parity)', () => {
+    it.each([
+        ['features', GastronomyWithFeaturesSchema],
+        ['amenities', GastronomyWithAmenitiesSchema]
+    ] as const)('accepts a %s summary that omits name', (field, schema) => {
+        const data = {
+            ...createMinimalGastronomy(),
+            [field]: [{ id: faker.string.uuid(), slug: 'wifi' }]
+        };
+        expect(schema.safeParse(data).success).toBe(true);
     });
 });

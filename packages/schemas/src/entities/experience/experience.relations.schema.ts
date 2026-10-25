@@ -57,7 +57,7 @@ const ExperienceReviewSummarySchema = z.object({
 const FeatureSummarySchema = z.object({
     id: z.string().uuid(),
     slug: z.string(),
-    name: z.unknown(), // i18nText
+    name: z.unknown().optional(), // i18nText
     icon: z.string().optional()
 });
 
@@ -67,7 +67,7 @@ const FeatureSummarySchema = z.object({
 const AmenitySummarySchema = z.object({
     id: z.string().uuid(),
     slug: z.string(),
-    name: z.unknown(), // i18nText
+    name: z.unknown().optional(), // i18nText
     icon: z.string().optional()
 });
 

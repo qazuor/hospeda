@@ -87,8 +87,8 @@ export type CreatePlanRequest = z.infer<typeof CreatePlanRequestSchema>;
 export const PlanPublicationChangeSchema = z.object({
     key: z.string(),
     kind: z.enum(['entitlement', 'limit', 'setting']),
-    from: z.unknown().nullable(),
-    to: z.unknown().nullable()
+    from: z.unknown().nullable().optional(),
+    to: z.unknown().nullable().optional()
 });
 export type PlanPublicationChange = z.infer<typeof PlanPublicationChangeSchema>;
 
