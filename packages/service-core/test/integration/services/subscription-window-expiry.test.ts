@@ -167,7 +167,7 @@ async function seedManual() {
     return { id: pending.subscription.id, paymentId: payment.id };
 }
 
-function setup() {
+function setup(billingFacts?: { emit: (fact: unknown) => void }) {
     // M11 remains enabled: a pending fake authorization never expires by itself.
     const fake = new FakePaymentProvider({
         idNamespace: crypto.randomUUID(),
@@ -188,13 +188,60 @@ function setup() {
         provider,
         clock,
         beforeCancelNotice: { beforeCancel },
-        touristVipInheritance: noTouristVip
+        touristVipInheritance: noTouristVip,
+        billingFacts
     };
     return { fake, provider, events, beforeCancel, cancel, ports };
 }
 
 // TEST:B3:10 — version 1 stores 72 hours for card and seven calendar days for manual.
 describe('TEST:B3:10 authorization window expiry', () => {
+    it('TEST:1878:3 emits only the S3 writer with persisted pending duration', async () => {
+        const { provider, ports } = setup();
+        const pending = await startPending(provider);
+        const [persisted] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, pending.started.subscriptionId));
+        const facts: unknown[] = [];
+        const sink = { emit: (fact: unknown) => facts.push(fact) };
+        ports.billingFacts = sink;
+        advance(72);
+        const summary = await expireOwnAuthorizationWindows(10, ports);
+        expect(summary.abandoned).toBe(1);
+        expect(facts).toEqual([
+            {
+                kind: 'CHECKOUT_ABANDONED',
+                userId: pending.choice.userId,
+                vertical: 'accommodation',
+                subscriptionId: pending.started.subscriptionId,
+                subscriptionClass: 'PRINCIPAL',
+                actorKind: 'SYSTEM',
+                reason: 'WINDOW_EXPIRED',
+                secondsInPending: Math.max(
+                    0,
+                    Math.floor((current.getTime() - persisted!.createdAt.getTime()) / 1000)
+                ),
+                occurredAt: current
+            }
+        ]);
+    });
+
+    it('TEST:1878:3 emits nothing when the S3 write loses its race', async () => {
+        const pending = await seedManual();
+        const facts: unknown[] = [];
+        vi.spyOn(subscriptionModel, 'abandonPendingAuthorization').mockResolvedValue({
+            wrote: false,
+            closedCourtesyMonths: null
+        });
+        const { ports } = setup({ emit: (fact) => facts.push(fact) });
+        advance(7 * 24);
+        const summary = await expireOwnAuthorizationWindows(10, ports);
+        expect(summary.skipped).toBe(1);
+        expect(facts).toHaveLength(0);
+        expect(await status(pending.id)).toBe('PENDING_AUTHORIZATION');
+    });
+
     it('expires card at 72 hours and manual at seven days, closing its awaiting installment', async () => {
         const { provider, ports, beforeCancel, cancel } = setup();
         const card = await startPending(provider);

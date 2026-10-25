@@ -8,8 +8,9 @@ import {
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
-import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
 import { ServiceError } from '../../../types';
+import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink.js';
 import { cancelOurAuthorization } from '../reconciliation/cancel-our-authorization.js';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision.js';
 import { commitmentTaken, previousAttemptInProgress } from './resolve-live-commitment.js';
@@ -27,6 +28,7 @@ export async function cancelPendingAttempt(
         readonly provider: PaymentProvider;
         readonly clock: Clock;
         readonly beforeCancelNotice: BeforeCancelNotice;
+        readonly billingFacts?: BillingFactSink;
     }
 ): Promise<{
     readonly subscriptionId: string;
@@ -92,6 +94,34 @@ export async function cancelPendingAttempt(
     if (writeResult === 'CONFLICT') throw commitmentTaken();
     if (writeResult === 'ALREADY_ABANDONED')
         return { subscriptionId: input.subscriptionId, outcome: 'ALREADY_ABANDONED' };
+
+    if (
+        candidate.subscription.userId &&
+        candidate.subscription.class === 'PRINCIPAL' &&
+        candidate.subscription.vertical
+    ) {
+        const vertical = VerticalEnumSchema.safeParse(candidate.subscription.vertical);
+        if (vertical.success)
+            emitBillingFact({
+                sink: ports.billingFacts,
+                fact: {
+                    kind: 'CHECKOUT_ABANDONED',
+                    userId: candidate.subscription.userId,
+                    vertical: vertical.data,
+                    subscriptionId: candidate.subscription.id,
+                    subscriptionClass: 'PRINCIPAL',
+                    actorKind: 'USER',
+                    reason: 'USER_CANCELLED',
+                    secondsInPending: Math.max(
+                        0,
+                        Math.floor(
+                            (now.getTime() - candidate.subscription.createdAt.getTime()) / 1000
+                        )
+                    ),
+                    occurredAt: now
+                }
+            });
+    }
 
     if (snapshot.status === 'pending') {
         const { outcome } = await cancelOurAuthorization(
