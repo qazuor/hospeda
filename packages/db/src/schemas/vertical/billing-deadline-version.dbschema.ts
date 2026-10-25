@@ -18,7 +18,7 @@ export const billingDeadlineVersions = pgTable(
         versionPositive: check('ck_billing_deadline_version_positive', sql`${t.version} > 0`),
         changedKeyRange: check(
             'ck_billing_deadline_changed_key_range',
-            sql`${t.changedKey} BETWEEN 10 AND 19 OR ${t.changedKey} IS NULL`
+            sql`${t.changedKey} BETWEEN 10 AND 20 OR ${t.changedKey} IS NULL`
         )
     })
 );

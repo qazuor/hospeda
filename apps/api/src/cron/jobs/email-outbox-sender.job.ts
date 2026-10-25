@@ -30,6 +30,7 @@ import {
 } from '@repo/db';
 import {
     BrevoEmailTransport,
+    createBillingGraceReminderRenderers,
     createBillingPromoRenderers,
     createBillingReconciliationRenderers,
     createBillingRenewalRenderers,
@@ -81,6 +82,7 @@ export function buildOutboxSenderRender(input: {
             ...OUTBOX_MAIL_RENDERERS,
             ...createTrialCampaignRenderers({ siteUrl: input.siteUrl }),
             ...createBillingRenewalRenderers({ siteUrl: input.siteUrl }),
+            ...createBillingGraceReminderRenderers({ siteUrl: input.siteUrl }),
             ...createBillingPromoRenderers({ siteUrl: input.siteUrl }),
             ...createBillingReconciliationRenderers({ siteUrl: input.siteUrl }),
             ...createBillingSignupRenderers({ siteUrl: input.siteUrl }),

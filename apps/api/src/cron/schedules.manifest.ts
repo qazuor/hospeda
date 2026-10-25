@@ -44,6 +44,13 @@ export interface CronScheduleEntry {
  */
 export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
     {
+        name: 'subscription-grace-reminder',
+        displayName: 'Recordatorios del grace',
+        category: 'billing',
+        schedule: '0 9 * * *',
+        description: 'Enqueue configured reminders before the end of a subscription grace period.'
+    },
+    {
         name: 'listing-inactivity-archive',
         displayName: 'Archivado de fichas por inactividad',
         category: 'system',

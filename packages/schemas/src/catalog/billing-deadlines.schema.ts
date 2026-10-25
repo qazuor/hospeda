@@ -3,7 +3,7 @@ import { z } from 'zod';
 const positiveMinutes = z.number().int().positive();
 const positiveDays = z.number().int().positive();
 
-/** The closed billing half of the configurable deadline catalog (PLAZO:10–19). */
+/** The closed billing half of the configurable deadline catalog (PLAZO:10–20). */
 export const BillingDeadlineValuesSchema = z
     .strictObject({
         '10': z.strictObject({ cardHours: positiveMinutes, manualDays: positiveDays }),
@@ -21,7 +21,8 @@ export const BillingDeadlineValuesSchema = z
         '16': z.strictObject({ days: positiveDays }),
         '17': z.strictObject({ days: positiveDays }),
         '18': z.strictObject({ days: positiveDays }),
-        '19': z.strictObject({ minutes: positiveMinutes })
+        '19': z.strictObject({ minutes: positiveMinutes }),
+        '20': z.strictObject({ daysBefore: z.array(positiveDays).min(1).max(5) }).optional()
     })
     .superRefine((values, ctx) => {
         for (const key of ['11', '12'] as const) {
@@ -41,10 +42,20 @@ export const BillingDeadlineValuesSchema = z
                 });
             }
         }
+        if (
+            values['20'] &&
+            new Set(values['20'].daysBefore).size !== values['20'].daysBefore.length
+        ) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['20', 'daysBefore'],
+                message: 'Los días no pueden repetirse'
+            });
+        }
     });
 
-/** One billing deadline key, including reconciliation window 19. */
-export const BillingDeadlineKeySchema = z.coerce.number().int().min(10).max(19);
+/** One billing deadline key, including grace reminders 20. */
+export const BillingDeadlineKeySchema = z.coerce.number().int().min(10).max(20);
 
 /** Request to publish a new billing deadline version. */
 export const ChangeBillingDeadlineSchema = z.strictObject({
