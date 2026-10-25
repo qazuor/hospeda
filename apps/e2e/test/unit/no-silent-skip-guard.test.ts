@@ -1,8 +1,8 @@
 /**
- * No-silent-skip regression guard for specs that left hasOldBillingSchema.
+ * No-silent-skip regression guard for migrated billing-related specs.
  *
- * Ensures that every `test.skip` / `test.fixme` occurrence in the onboarding
- * handoff spec is documented, preventing it from returning to a silent fixme.
+ * Ensures that every `test.skip` / `test.fixme` occurrence in the target
+ * scenarios is documented, preventing silent skips from hiding coverage.
  *
  * Convention (see `detectSilentSkips` in skip-detector.ts for the full rule):
  *   - A skip/fixme is ALLOWED when the call supplies a string literal argument
@@ -24,13 +24,20 @@ import { ANNOTATION_KEYWORDS, detectSilentSkips } from './skip-detector.ts';
 
 const E2E_ROOT = join(import.meta.dirname, '..', '..');
 
-// HOST-01 was blocked by hasOldBillingSchema and is now enabled. Keep it here
-// so a later silent fixme cannot make this coverage disappear again.
-const TARGET_SPECS = ['tests/host/host-01-onboarding-handoff.spec.ts'] as const;
+// Keep every migrated billing-related scenario here so a silent skip cannot
+// make its coverage disappear again.
+const TARGET_SPECS = [
+    'tests/host/host-01-onboarding-handoff.spec.ts',
+    'tests/resilience/res-04-webhook-duplicate.spec.ts',
+    'tests/security/sec-03-paywall-bypass.spec.ts',
+    'tests/guest/guest-05-accommodation-compare.spec.ts',
+    'tests/guest/guest-06-exclusive-deals.spec.ts',
+    'tests/spec-098/e2e-07-collections-limit.spec.ts'
+] as const;
 
 // ── Real-file guard tests ──────────────────────────────────────────────────
 
-describe('no-silent-skip guard — onboarding handoff spec', () => {
+describe('no-silent-skip guard — migrated billing scenarios', () => {
     for (const relPath of TARGET_SPECS) {
         it(`${relPath} — no undocumented skip/fixme`, () => {
             const absPath = join(E2E_ROOT, relPath);
