@@ -100,7 +100,7 @@ export function getListingAccessPorts(): ListingAccessPorts {
                     .where(and(eq(accommodations.id, listingId), isNull(accommodations.deletedAt)))
                     .limit(1);
                 break;
-            case VerticalEnum.GASTRONOMY:
+            case VerticalEnum.VENUE:
                 [entity] = await db
                     .select()
                     .from(gastronomies)

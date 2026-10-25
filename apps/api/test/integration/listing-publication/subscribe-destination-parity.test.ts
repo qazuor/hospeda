@@ -37,7 +37,7 @@ vi.mock('../../../src/utils/listing-publication/ports', async (importOriginal) =
 const app = initApp({ clock: { now: () => MATRIX_NOW } });
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 const pathByVertical: Record<(typeof verticals)[number], string> = {
@@ -136,7 +136,7 @@ describe.each(verticals)('TEST:V8a:1 subscribe destination parity — %s', (vert
         const table =
             vertical === VerticalEnum.ACCOMMODATION
                 ? accommodations
-                : vertical === VerticalEnum.GASTRONOMY
+                : vertical === VerticalEnum.VENUE
                   ? gastronomies
                   : experiences;
         const [listing] = await getDb()

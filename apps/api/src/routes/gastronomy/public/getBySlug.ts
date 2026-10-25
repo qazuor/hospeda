@@ -120,7 +120,7 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         // reader could see. See `resolveOwnerGastronomyPlanEntitlements`.
         const ownerGrants = await readEffectiveKeys({
             userId: gastronomy.ownerId,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             keys: [
                 'manage_gastronomy_menu',
                 'menu_item_photos',

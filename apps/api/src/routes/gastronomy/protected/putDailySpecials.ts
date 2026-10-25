@@ -81,7 +81,7 @@ export const protectedPutGastronomyDailySpecialsRoute = createProtectedRoute({
     description:
         'Replaces the listing’s daily specials with the submitted document. Each special carries its own inclusive validity window and stops being shown publicly once it passes — no job runs and nothing has to be taken down by hand. An empty specials array removes them immediately. Owner-only, and requires the manage_gastronomy_daily_special entitlement granted by the professional gastronomy plan and above.',
     listingAccess: {
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
         capabilities: ['manage_gastronomy_daily_special']

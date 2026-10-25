@@ -28,7 +28,7 @@ export const protectedRemoveGastronomyFaqRoute = createProtectedRoute({
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from gastronomy listing',
     description: 'Soft-deletes a FAQ from a gastronomy listing',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy FAQs'],
     protectedTag: false,
     requestParams: {

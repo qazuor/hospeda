@@ -32,7 +32,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminAddGastronomyMediaRoute = createAdminRoute({
     method: 'post',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media',
     summary: 'Add photo to gastronomy listing gallery (admin)',
     description:

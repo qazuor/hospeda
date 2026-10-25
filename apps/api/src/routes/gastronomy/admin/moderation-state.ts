@@ -17,5 +17,5 @@ export const adminGetGastronomyModerationStateRoute = createAdminRoute({
     requestParams: { id: z.string().uuid() },
     responseSchema: ListingModerationStateSchema,
     handler: async (_ctx, params) =>
-        service.readState({ vertical: VerticalEnum.GASTRONOMY, id: params.id as string })
+        service.readState({ vertical: VerticalEnum.VENUE, id: params.id as string })
 });

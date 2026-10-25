@@ -71,7 +71,7 @@ export const protectedUploadGastronomyMenuItemPhotoRoute = createProtectedRoute(
     method: 'post',
     path: '/{id}/menu-item-photo',
     listingAccess: {
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
         capabilities: ['menu_item_photos']

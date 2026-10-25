@@ -80,7 +80,7 @@ export const protectedPutGastronomyEventsRoute = createProtectedRoute({
     description:
         'Replaces the listing’s own events with the submitted document. Each entry is either dated (recurrence "once" with a date) or weekly (recurrence "weekly" with a weekday 0-6, Sunday-based); the two are mutually exclusive and the payload is rejected if an entry declares neither or both. An empty events array takes the agenda down. Owner-only, and requires the manage_gastronomy_events entitlement granted by the professional gastronomy plan and above.',
     listingAccess: {
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
         capabilities: ['manage_gastronomy_events']

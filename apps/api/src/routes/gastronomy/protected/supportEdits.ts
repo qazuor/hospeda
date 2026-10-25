@@ -15,7 +15,7 @@ const ownerAccess: MiddlewareHandler = async (ctx, next) => {
         throw new HTTPException(400, { message: 'Invalid listing id' });
     await ownership.assertOwnerAccess({
         actor: getActorFromContext(ctx),
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         id
     });
     await next();
@@ -29,7 +29,7 @@ const ownerAccess: MiddlewareHandler = async (ctx, next) => {
 export const protectedGastronomySupportEditsRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/support-edits',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'READ_OWN', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'READ_OWN', idParam: 'id' },
     emailUnverifiedOperation: 'READ_OWN',
     options: { middlewares: [ownerAccess] },
     summary: 'List support edits of own gastronomy listing',
@@ -38,5 +38,5 @@ export const protectedGastronomySupportEditsRoute = createProtectedRoute({
     requestParams: { id: z.string().uuid() },
     responseSchema: ListingSupportEditsResponseSchema,
     handler: async (_ctx: Context, params: Record<string, unknown>) =>
-        listSupportEdits({ vertical: VerticalEnum.GASTRONOMY, listingId: params.id as string })
+        listSupportEdits({ vertical: VerticalEnum.VENUE, listingId: params.id as string })
 });

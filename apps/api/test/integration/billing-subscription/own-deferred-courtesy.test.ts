@@ -152,7 +152,7 @@ describe('TEST:1620:1 deferred courtesy list for Mi Suscripción', () => {
         const ownerId = await seedUser('owner');
         const otherId = await seedUser('other');
         const accommodation = await seedPlan(VerticalEnum.ACCOMMODATION);
-        const gastronomy = await seedPlan(VerticalEnum.GASTRONOMY);
+        const gastronomy = await seedPlan(VerticalEnum.VENUE);
         const visibleAccommodationId = await seedGrant({
             beneficiaryUserId: ownerId,
             plan: accommodation,
@@ -181,7 +181,7 @@ describe('TEST:1620:1 deferred courtesy list for Mi Suscripción', () => {
         const visibleGastronomyId = await seedGrant({
             beneficiaryUserId: ownerId,
             plan: gastronomy,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             balanceMonths: 5
         });
 
@@ -210,7 +210,7 @@ describe('TEST:1620:1 deferred courtesy list for Mi Suscripción', () => {
             },
             {
                 courtesyGrantId: visibleGastronomyId,
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 balanceMonths: 5
             }
         ]);

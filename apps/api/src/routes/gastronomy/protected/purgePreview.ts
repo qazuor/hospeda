@@ -14,7 +14,7 @@ const ownerAccess: MiddlewareHandler = async (ctx, next) => {
         throw new HTTPException(400, { message: 'Invalid listing id' });
     await ownership.assertOwnerAccess({
         actor: getActorFromContext(ctx),
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         id
     });
     await next();
@@ -24,7 +24,7 @@ const ownerAccess: MiddlewareHandler = async (ctx, next) => {
 export const protectedGastronomyPurgePreviewRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/purge-preview',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'READ_OWN', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'READ_OWN', idParam: 'id' },
     emailUnverifiedOperation: 'READ_OWN',
     options: { middlewares: [ownerAccess] },
     summary: 'Preview add-ons lost when purging own gastronomy listing',

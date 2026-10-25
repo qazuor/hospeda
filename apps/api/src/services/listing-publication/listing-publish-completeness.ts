@@ -18,7 +18,7 @@ type ListingInput =
           readonly media: Media;
       }
     | {
-          readonly vertical: typeof VerticalEnum.GASTRONOMY;
+          readonly vertical: typeof VerticalEnum.VENUE;
           readonly listing: Venue;
           readonly media: Media;
       }
@@ -76,7 +76,7 @@ export async function readIncompleteListingIds(args: {
             }
             break;
         }
-        case VerticalEnum.GASTRONOMY: {
+        case VerticalEnum.VENUE: {
             const listings = await gastronomyModel.findByIds(args.listingIds);
             for (const listing of listings) {
                 const media = await loadListingMedia({

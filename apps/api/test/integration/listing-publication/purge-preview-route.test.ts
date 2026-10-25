@@ -16,18 +16,15 @@ import {
 import { deletePurgePreviewInstances, seedPurgePreviewAddon } from './purge-preview-fixtures';
 
 const app = initApp();
-type ListingVertical =
-    | VerticalEnum.ACCOMMODATION
-    | VerticalEnum.GASTRONOMY
-    | VerticalEnum.EXPERIENCE;
+type ListingVertical = VerticalEnum.ACCOMMODATION | VerticalEnum.VENUE | VerticalEnum.EXPERIENCE;
 const listingVerticals: readonly ListingVertical[] = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ];
 const plural: Readonly<Record<ListingVertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const instanceIds = new Set<string>();
@@ -277,7 +274,7 @@ describe('TEST:B13a:3a AC:B13a:4 the purge preview names what the listing loses'
     });
 
     it.each([
-        VerticalEnum.GASTRONOMY,
+        VerticalEnum.VENUE,
         VerticalEnum.EXPERIENCE
     ] as const)('is registered for %s and returns its listing add-on', async (vertical) => {
         const owner = await createOwner();

@@ -55,7 +55,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminAddGastronomyFeaturedMediaRoute = createAdminRoute({
     method: 'post',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/featured',
     summary: 'Upload the gastronomy listing cover image (admin)',
     description:

@@ -72,7 +72,7 @@ async function runOwnRetry(ids: ReadonlySet<string>) {
 describe('TEST:1702:3 AC:1702:2 a failed remote deletion of the menu file and dish photos never reverts PB12, is retried and is logged', () => {
     it('keeps both marked rows while down, reports failures, then deletes them when storage recovers', async () => {
         const fixture = await createPurgeAssetFixture(
-            VerticalEnum.GASTRONOMY,
+            VerticalEnum.VENUE,
             PublicationStatusEnum.DRAFT,
             { includeGallery: false }
         );

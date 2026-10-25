@@ -68,7 +68,7 @@ export const protectedAddGastronomyFeaturedMediaRoute = createProtectedRoute({
         'is kept. Unlike POST /:id/media this does not ' +
         'consume a gallery slot, because the cover is not a gallery item ' +
         '(HOS-791). Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
     protectedTag: false,
     requestParams: {

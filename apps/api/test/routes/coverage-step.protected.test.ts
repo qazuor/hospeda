@@ -318,7 +318,7 @@ const cases = [
         path: '/',
         body: gastronomyCreate,
         operation: 'CREATE',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/publish.ts',
@@ -327,7 +327,7 @@ const cases = [
         path: '/{id}/publish',
         body: undefined,
         operation: 'PUBLISH',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/unpublish.ts',
@@ -336,7 +336,7 @@ const cases = [
         path: '/{id}/unpublish',
         body: undefined,
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/deleteMenuFile.ts',
@@ -345,7 +345,7 @@ const cases = [
         path: '/{id}/menu-file',
         body: undefined,
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/patch.ts',
@@ -354,7 +354,7 @@ const cases = [
         path: '/{id}',
         body: { name: 'Updated listing' },
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/uploadMenuFile.ts',
@@ -363,7 +363,7 @@ const cases = [
         path: '/{id}/menu-file',
         body: undefined,
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/uploadMenuItemPhoto.ts',
@@ -372,7 +372,7 @@ const cases = [
         path: '/{id}/menu-item-photo',
         body: undefined,
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'accommodation/protected/addFaq.ts',
@@ -561,7 +561,7 @@ const cases = [
         path: '/{id}/faqs',
         body: faqCreate,
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/addFeaturedMedia.ts',
@@ -570,7 +570,7 @@ const cases = [
         path: '/{id}/media/featured',
         body: mediaAdd,
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/addMedia.ts',
@@ -579,7 +579,7 @@ const cases = [
         path: '/{id}/media',
         body: mediaAdd,
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/putDailySpecials.ts',
@@ -588,7 +588,7 @@ const cases = [
         path: '/{id}/daily-specials',
         body: { specials: [] },
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/putEvents.ts',
@@ -597,7 +597,7 @@ const cases = [
         path: '/{id}/events',
         body: { events: [] },
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/putMenu.ts',
@@ -606,7 +606,7 @@ const cases = [
         path: '/{id}/menu',
         body: { sections: [] },
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/removeFaq.ts',
@@ -615,7 +615,7 @@ const cases = [
         path: '/{id}/faqs/{faqId}',
         body: undefined,
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/removeMedia.ts',
@@ -624,7 +624,7 @@ const cases = [
         path: '/{id}/media/{mediaId}',
         body: undefined,
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/reorderFaqs.ts',
@@ -633,7 +633,7 @@ const cases = [
         path: '/{id}/faqs/reorder',
         body: faqReorder,
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/reorderMedia.ts',
@@ -642,7 +642,7 @@ const cases = [
         path: '/{id}/media/reorder',
         body: mediaReorder,
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/setFeaturedMedia.ts',
@@ -651,7 +651,7 @@ const cases = [
         path: '/{id}/media/{mediaId}/featured',
         body: undefined,
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/updateFaq.ts',
@@ -660,7 +660,7 @@ const cases = [
         path: '/{id}/faqs/{faqId}',
         body: faqUpdate,
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/protected/updateMedia.ts',
@@ -669,7 +669,7 @@ const cases = [
         path: '/{id}/media/{mediaId}',
         body: mediaUpdate,
         operation: 'EDIT',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     }
 ] as const;
 
@@ -780,12 +780,12 @@ describe('TEST:V5:10 protected listing write coverage step', () => {
                 operation === 'CREATE'
                     ? vertical === VerticalEnum.ACCOMMODATION
                         ? mocks.createAccommodation
-                        : vertical === VerticalEnum.GASTRONOMY
+                        : vertical === VerticalEnum.VENUE
                           ? mocks.createGastronomy
                           : mocks.createExperience
                     : vertical === VerticalEnum.ACCOMMODATION
                       ? mocks.deleteAccommodation
-                      : vertical === VerticalEnum.GASTRONOMY
+                      : vertical === VerticalEnum.VENUE
                         ? mocks.deleteGastronomy
                         : mocks.deleteExperience;
             expect(

@@ -45,7 +45,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
 export const protectedPatchGastronomyRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     summary: 'Update gastronomy listing (owner)',
     description:
         'Partially updates operational fields of a gastronomy listing. Requires ownership.',

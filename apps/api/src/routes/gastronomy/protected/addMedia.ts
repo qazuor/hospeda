@@ -40,7 +40,7 @@ export const protectedAddGastronomyMediaRoute = createProtectedRoute({
     description:
         'Registers an already-uploaded URL as a new gastronomy_media row. ' +
         'Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
     protectedTag: false,
     requestParams: {

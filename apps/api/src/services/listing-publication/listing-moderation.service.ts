@@ -20,7 +20,7 @@ import { getListingPublicationPorts } from '../../utils/listing-publication/port
 
 const LISTING_TABLES: Readonly<Record<PublicationVertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 

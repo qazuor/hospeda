@@ -84,7 +84,7 @@ describe('TEST:V8a:7 listListingNotices fails closed', () => {
         // Act
         const result = await listListingNotices({
             userId: OWNER,
-            vertical: VerticalEnum.GASTRONOMY
+            vertical: VerticalEnum.VENUE
         });
 
         // Assert
@@ -92,10 +92,10 @@ describe('TEST:V8a:7 listListingNotices fails closed', () => {
         expect(mocks.coverage).toHaveBeenCalledTimes(1);
         expect(mocks.coverage).toHaveBeenCalledWith({
             userId: OWNER,
-            vertical: VerticalEnum.GASTRONOMY
+            vertical: VerticalEnum.VENUE
         });
         expect(mocks.readOwnerListingNotices).toHaveBeenCalledWith({
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             ownerId: OWNER
         });
     });

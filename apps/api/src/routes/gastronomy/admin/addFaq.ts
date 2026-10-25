@@ -28,7 +28,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminAddGastronomyFaqRoute = createAdminRoute({
     method: 'post',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs',
     summary: 'Add FAQ to gastronomy listing (admin)',
     description:

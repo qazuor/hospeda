@@ -65,7 +65,7 @@ export const protectedUpdateGastronomyMediaRoute = createProtectedRoute({
         'Each field is nullable: omit to leave unchanged, null to clear, a value ' +
         'to replace. At least one field must be present — an empty body is a ' +
         'VALIDATION_ERROR, not a silent 200. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
     protectedTag: false,
     requestParams: {

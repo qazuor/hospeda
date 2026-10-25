@@ -34,7 +34,7 @@ vi.mock('../../src/utils/listing-access/ports', () => ({
             rehydrateEffectiveSet({
                 version: 1,
                 userId,
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 hasLiveNonTrialTitle: false,
                 inheritsTouristVip: false,
                 entries: [{ key: 'edit_gastronomy_info', value: 1, strategy: 'MAX' }]

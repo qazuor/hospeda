@@ -12,7 +12,7 @@ export const protectedReactivateGastronomyRoute = createProtectedRoute({
     method: 'post',
     successStatusCode: 200,
     path: '/{id}/reactivate',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'REACTIVATE', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'REACTIVATE', idParam: 'id' },
     emailUnverifiedOperation: 'REACTIVATE_LISTING',
     summary: 'Reactivate archived gastronomy listing',
     description: 'Moves an archived listing back to DRAFT through PB8.',
@@ -24,7 +24,7 @@ export const protectedReactivateGastronomyRoute = createProtectedRoute({
         return listingPublicationService.reactivate({
             actor,
             id: params.id as string,
-            vertical: VerticalEnum.GASTRONOMY
+            vertical: VerticalEnum.VENUE
         });
     }
 });

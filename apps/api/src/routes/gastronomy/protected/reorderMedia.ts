@@ -47,7 +47,7 @@ export const protectedReorderGastronomyMediaRoute = createProtectedRoute({
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +
         'exactly. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
     protectedTag: false,
     requestParams: {

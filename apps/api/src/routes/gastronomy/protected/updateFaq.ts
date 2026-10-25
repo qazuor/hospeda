@@ -34,7 +34,7 @@ export const protectedUpdateGastronomyFaqRoute = createProtectedRoute({
     path: '/{id}/faqs/{faqId}',
     summary: 'Update FAQ on gastronomy listing',
     description: 'Updates an existing FAQ on a gastronomy listing',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy FAQs'],
     protectedTag: false,
     requestParams: {

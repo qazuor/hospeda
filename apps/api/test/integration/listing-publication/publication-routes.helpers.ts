@@ -171,7 +171,7 @@ function versionsLimiting(key: string) {
 async function ensureVersion(args: {
     readonly vertical:
         | typeof VerticalEnum.ACCOMMODATION
-        | typeof VerticalEnum.GASTRONOMY
+        | typeof VerticalEnum.VENUE
         | typeof VerticalEnum.EXPERIENCE;
     readonly role: string;
     readonly rank: number;
@@ -291,7 +291,7 @@ export async function ensureAccommodationCatalog(): Promise<void> {
 export async function ensurePublicationCatalog(
     vertical:
         | typeof VerticalEnum.ACCOMMODATION
-        | typeof VerticalEnum.GASTRONOMY
+        | typeof VerticalEnum.VENUE
         | typeof VerticalEnum.EXPERIENCE
 ): Promise<void> {
     const publishKey = PUBLISH_KEY_BY_VERTICAL[vertical];
@@ -431,7 +431,7 @@ export async function createListing(args: {
 
 /** Creates a gastronomy or experience listing for TEST:V6:2/3. */
 export async function createVerticalListing(args: {
-    readonly vertical: typeof VerticalEnum.GASTRONOMY | typeof VerticalEnum.EXPERIENCE;
+    readonly vertical: typeof VerticalEnum.VENUE | typeof VerticalEnum.EXPERIENCE;
     readonly ownerId: string;
     readonly destinationId: string;
     readonly status: PublicationStatusEnum;
@@ -448,7 +448,7 @@ export async function createVerticalListing(args: {
         publicationStatus: args.status,
         contactInfo: { workPhone: '+541100000000' }
     };
-    if (args.vertical === VerticalEnum.GASTRONOMY) {
+    if (args.vertical === VerticalEnum.VENUE) {
         const listing = await new GastronomyModel().create(
             {
                 ...common,
@@ -500,10 +500,10 @@ export async function createVerticalListing(args: {
 
 /** Reads a listing's publication status from its vertical table. */
 export async function readVerticalStatus(
-    vertical: typeof VerticalEnum.GASTRONOMY | typeof VerticalEnum.EXPERIENCE,
+    vertical: typeof VerticalEnum.VENUE | typeof VerticalEnum.EXPERIENCE,
     id: string
 ) {
-    if (vertical === VerticalEnum.GASTRONOMY) {
+    if (vertical === VerticalEnum.VENUE) {
         const [row] = await getDb()
             .select({ status: gastronomies.publicationStatus })
             .from(gastronomies)
@@ -522,7 +522,7 @@ export async function createTrial(args: {
     readonly userId: string;
     readonly vertical?:
         | typeof VerticalEnum.ACCOMMODATION
-        | typeof VerticalEnum.GASTRONOMY
+        | typeof VerticalEnum.VENUE
         | typeof VerticalEnum.EXPERIENCE;
     readonly status: 'TRIAL_ACTIVE' | 'TRIAL_EXPIRED';
     readonly emailPseudonym?: string;

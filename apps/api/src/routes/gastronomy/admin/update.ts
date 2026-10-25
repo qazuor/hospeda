@@ -27,7 +27,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminUpdateGastronomyRoute = createAdminRoute({
     method: 'put',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}',
     summary: 'Update gastronomy listing (admin)',
     description: 'Updates a gastronomy listing. Requires GASTRONOMY_EDIT_ALL permission.',

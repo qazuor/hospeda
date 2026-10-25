@@ -33,7 +33,7 @@ export const protectedReorderGastronomyFaqsRoute = createProtectedRoute({
     path: '/{id}/faqs/reorder',
     summary: 'Reorder FAQs on gastronomy listing',
     description: 'Sets a new display order for FAQs belonging to the given gastronomy listing',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy FAQs'],
     protectedTag: false,
     requestParams: {

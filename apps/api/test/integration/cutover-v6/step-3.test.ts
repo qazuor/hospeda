@@ -35,7 +35,7 @@ type Seeded = {
     listingId: string;
     vertical:
         | typeof VerticalEnum.ACCOMMODATION
-        | typeof VerticalEnum.GASTRONOMY
+        | typeof VerticalEnum.VENUE
         | typeof VerticalEnum.EXPERIENCE;
 };
 
@@ -47,7 +47,7 @@ beforeEach(async () => {
     await testDb.clean();
     for (const vertical of [
         VerticalEnum.ACCOMMODATION,
-        VerticalEnum.GASTRONOMY,
+        VerticalEnum.VENUE,
         VerticalEnum.EXPERIENCE
     ] as const)
         await ensurePublicationCatalog(vertical);
@@ -61,8 +61,8 @@ async function seedFive(): Promise<Seeded[]> {
     const kinds = [
         VerticalEnum.ACCOMMODATION,
         VerticalEnum.ACCOMMODATION,
-        VerticalEnum.GASTRONOMY,
-        VerticalEnum.GASTRONOMY,
+        VerticalEnum.VENUE,
+        VerticalEnum.VENUE,
         VerticalEnum.EXPERIENCE
     ] as const;
     for (const kind of kinds) {
@@ -84,7 +84,7 @@ async function seedFive(): Promise<Seeded[]> {
         const table =
             kind === VerticalEnum.ACCOMMODATION
                 ? accommodations
-                : kind === VerticalEnum.GASTRONOMY
+                : kind === VerticalEnum.VENUE
                   ? gastronomies
                   : experiences;
         await getDb().update(table).set({ inactiveSince: CUTOVER }).where(eq(table.id, listingId));

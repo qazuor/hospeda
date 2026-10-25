@@ -57,7 +57,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminUpdateGastronomyMediaRoute = createAdminRoute({
     method: 'patch',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}',
     summary: 'Correct photo text metadata in gastronomy gallery (admin)',
     description:

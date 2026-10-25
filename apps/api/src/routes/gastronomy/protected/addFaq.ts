@@ -34,7 +34,7 @@ export const protectedAddGastronomyFaqRoute = createProtectedRoute({
     path: '/{id}/faqs',
     summary: 'Add FAQ to gastronomy listing',
     description: 'Adds a new frequently asked question to a gastronomy listing',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy FAQs'],
     protectedTag: false,
     requestParams: {

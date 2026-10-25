@@ -79,7 +79,7 @@ export const protectedPutGastronomyMenuRoute = createProtectedRoute({
     description:
         'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above; a document carrying a per-dish photo additionally requires menu_item_photos (premium), and a document carrying a nameI18n/descriptionI18n translation additionally requires multilingual_gastronomy_menu (premium).',
     listingAccess: {
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
         capabilities: ({ body }) => [

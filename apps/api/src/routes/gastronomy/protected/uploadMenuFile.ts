@@ -116,7 +116,7 @@ export const protectedUploadGastronomyMenuFileRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/menu-file',
     listingAccess: {
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
         capabilities: ['manage_gastronomy_menu']

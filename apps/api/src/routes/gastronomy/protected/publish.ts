@@ -11,7 +11,7 @@ const listingPublicationService = new ListingPublicationService();
 export const protectedPublishGastronomyRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/publish',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'PUBLISH', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'PUBLISH', idParam: 'id' },
     summary: 'Publish gastronomy listing',
     description: 'Publishes an owned gastronomy listing immediately through PB1.',
     tags: ['Gastronomy'],
@@ -22,7 +22,7 @@ export const protectedPublishGastronomyRoute = createProtectedRoute({
         return listingPublicationService.publish({
             actor,
             id: params.id as string,
-            vertical: VerticalEnum.GASTRONOMY
+            vertical: VerticalEnum.VENUE
         });
     }
 });

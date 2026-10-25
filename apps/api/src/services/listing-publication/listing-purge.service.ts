@@ -14,7 +14,7 @@ import { apiLogger } from '../../utils/logger';
 
 const LISTING_TABLES: Readonly<Record<PublicationVertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 

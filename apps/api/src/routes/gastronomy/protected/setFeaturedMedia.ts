@@ -48,7 +48,7 @@ export const protectedSetFeaturedGastronomyMediaRoute = createProtectedRoute({
         'featured row (if any). Archived photos cannot be featured — restore the ' +
         'photo to visible first. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff). ' +
         'No request body — ids come from URL params.',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
     protectedTag: false,
     requestParams: {

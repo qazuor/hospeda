@@ -38,7 +38,7 @@ export const adminCreateGastronomyRoute = createAdminRoute({
         [PermissionEnum.GASTRONOMY_CREATE, PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT]
     ],
     listingAccess: {
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         operation: 'CREATE',
         createSubjectFromBody: 'ownerId',
         ownCreatePermission: PermissionEnum.GASTRONOMY_CREATE
