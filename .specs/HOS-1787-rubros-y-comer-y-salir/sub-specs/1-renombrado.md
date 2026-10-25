@@ -1,6 +1,6 @@
 ---
 title: Sub-spec 1 · Renombrado gastronomy → venue
-linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
+linear: HOS-1801 (hijo de HOS-1787)
 statusSource: linear
 created: 2026-10-25
 status: draft
@@ -249,14 +249,15 @@ nace rojo): clave `home.categoryTiles.tiles.gastronomy` → `foodEvents` (nombre
 
 ## Criterio de aceptación
 
-- G-FAC-R1 y G-FAC-R2 en verde, con mutación que los rompe; G-FAC-R1 con las cinco excepciones de «Qué se
+- **AC:1:1** — G-FAC-R1 en verde, con mutación que lo rompe; G-FAC-R1 con las cinco excepciones de «Qué se
   conserva», cada una contada por nombre.
-- **Primero de todo**: `db:migrate` desde cero con las migraciones editadas (es el primer error que aparece,
+- **AC:1:2** — G-FAC-R2 en verde, con mutación que lo rompe.
+- **AC:1:3** — **Primero de todo**: `db:migrate` desde cero con las migraciones editadas (es el primer error que aparece,
   F-V2-001).
-- Migraciones aplicadas desde cero **y** sobre una base con seed **y con los extras aplicados** (es la
+- **AC:1:4** — Migraciones aplicadas desde cero **y** sobre una base con seed **y con los extras aplicados** (es la
   única forma de ver los triggers de `extras/041`); orden de carriles respetado (`db:migrate` →
   `db:apply-extras` → `db:seed:migrate`).
-- **Ensayo del paso 3 del corte sobre un clon de prod-main** (F-V2-003), insumo del «Momento 3 · antes del
+- **AC:1:5** — **Ensayo del paso 3 del corte sobre un clon de prod-main** (F-V2-003), insumo del «Momento 3 · antes del
   ensayo del corte» de HOS-1352: (a) `db:migrate` de **toda la cadena pendiente en el commit del corte** (hoy
   0125…0178, las cinco editadas y la de renombrado; más cualquier migración de los sub-specs 2 o 4 que se mergee a
   staging antes del corte: corre en la misma transacción, F-V3-013), con la `CUT-LIST` real de la 0148 (que sólo
@@ -265,21 +266,21 @@ nace rojo): clave `home.categoryTiles.tiles.gastronomy` → `foodEvents` (nombre
   `0109`, `0110`, `0125` y la de seen-ids); (d) todos los `count(*) = 0` de discovery A §5 **sobre ese clon**,
   incluido `cutover_v6_deleted_listing WHERE entity_type = 'gastronomy'`; (e) `step-6 compare` en verde entre el
   clon migrado y una base construida desde cero (F-V2-004).
-- Una consulta `count(*) … = 0` sobre el valor viejo por cada fila del inventario de discovery A §5,
+- **AC:1:6** — Una consulta `count(*) … = 0` sobre el valor viejo por cada fila del inventario de discovery A §5,
   excluyendo `deleted_at` donde exista.
-- `pg_indexes`, `pg_constraint`, `pg_trigger` y `pg_type` no devuelven ningún nombre con `gastronom`, y hay
+- **AC:1:7** — `pg_indexes`, `pg_constraint`, `pg_trigger` y `pg_type` no devuelven ningún nombre con `gastronom`, y hay
   exactamente un `uq_venue_media_single_featured` y un `trg_set_updated_at_venues`, tanto en el clon de
   prod-main migrado como en una base desde cero.
-- typecheck/lint/test con `CI=true` en cada paquete tocado, **incluido `@repo/seed`**; e2e
+- **AC:1:8** — typecheck/lint/test con `CI=true` en cada paquete tocado, **incluido `@repo/seed`**; e2e
   `listing-owner-*` en verde.
-- Ningún usuario con un id viejo de What's New en `seenIds` lo ve como nuevo después de la migración de
+- **AC:1:9** — Ningún usuario con un id viejo de What's New en `seenIds` lo ve como nuevo después de la migración de
   seen-ids, y ningún dueño con `web.gastronomy.welcome` en `adminTours` vuelve a ver el tour (test sobre el clon).
-- G-FAC-R1 verde con los tests de historia sin tocar y el chequeo de valores de las cinco editadas en verde.
-- Marcha atrás escrita como revert + reset en staging y restauración del backup del paso 2b en prod
+- **AC:1:10** — G-FAC-R1 verde con los tests de historia sin tocar y el chequeo de valores de las cinco editadas en verde.
+- **AC:1:11** — Marcha atrás escrita como revert + reset en staging y restauración del backup del paso 2b en prod
   (DEC-FAC-061), con la lista de lo que no vuelve; sin migración inversa.
-- `db:migrate` desde cero con las **cinco** migraciones editadas en verde (primer chequeo, antes de cualquier otro).
-- Una mutación posterior al renombrado por cada guard atado al nombre.
-- Smoke en staging (`status-needs-smoke-staging`) tras la ventana: redirects 302 (incluido `/carta/` y un
+- **AC:1:12** — `db:migrate` desde cero con las **cinco** migraciones editadas en verde (primer chequeo, antes de cualquier otro).
+- **AC:1:13** — Una mutación posterior al renombrado por cada guard atado al nombre.
+- **AC:1:14** — Smoke en staging (`status-needs-smoke-staging`) tras la ventana: redirects 302 (incluido `/carta/` y un
   escaneo `/qr/<slug>/` de un salto), alta y edición de un local, checkout de un plan de la vertical con el título
   «Comer y salir Básico» en el resumen de MP, Cloudinary (fotos de ejemplo bajo `venues/`), cache.
-- El corte V6 de HOS-1352 no se ejecuta hasta que la etapa B esté mergeada y verificada en staging.
+- **AC:1:15** — El corte V6 de HOS-1352 no se ejecuta hasta que la etapa B esté mergeada y verificada en staging.

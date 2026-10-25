@@ -1,6 +1,6 @@
 ---
 title: Sub-spec 3 · Resolvedor de secciones y paso de autorización
-linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
+linear: HOS-1803 (hijo de HOS-1787)
 statusSource: linear
 created: 2026-10-25
 status: draft
@@ -208,33 +208,35 @@ G-FAC-03 (a y b), G-FAC-04 y G-FAC-06.
 
 ## Criterio de aceptación
 
-- Test de matriz rubro × plan × sección × rasgo para los tres estados, **en las tres verticales**, incluida la fila
+- **AC:3:1** — Test de matriz rubro × plan × sección × rasgo para los tres estados, **en las tres verticales**, incluida la fila
   «sección `locked` → rasgos `locked`» y `multiLine` (resto-bar básico con `menu` `locked` → `true`; boliche → `false`);
   mutación de cada rama.
-- Las rutas de carta, menú del día, eventos y `nightInfo` pasan por el paso 4b y el paso 6: 409 / 403 / 2xx según el
+- **AC:3:2** — Las rutas de carta, menú del día, eventos y `nightInfo` pasan por el paso 4b y el paso 6: 409 / 403 / 2xx según el
   estado; un pedido ajeno sigue en 404; un ajeno en una operación que admite `PUBLISHED` recibe 404, no 409.
-- PATCH que agrega `nightlife` y carga `nightInfo` en el mismo cuerpo → 2xx; que quita `nightlife` y la carga → 409;
+- **AC:3:3** — PATCH que agrega `nightlife` y carga `nightInfo` en el mismo cuerpo → 2xx; que quita `nightlife` y la carga → 409;
   alta de una HELADERIA con campos de `nightInfo` → 409.
-- Borrado en `locked`: `deleteMenuFile` y un PUT vacío pasan sin la clave; un PUT con contenido responde 403.
-- `menuQr` y `menuQrScans` responden igual que hoy por plan (premium), sin 500.
-- Un dueño con la suscripción vencida que abre la carta recibe `NO_COVERAGE`, no `NO_CAPABILITY`.
-- Soporte con plan propio Premium sobre un dueño Básico ve `locked` (acción 15); el personal con `VIEW_ALL` sigue
+- **AC:3:4** — Borrado en `locked`: `deleteMenuFile` y un PUT vacío pasan sin la clave; un PUT con contenido responde 403.
+- **AC:3:5** — `menuQr` y `menuQrScans` responden igual que hoy por plan (premium), sin 500.
+- **AC:3:6** — Un dueño con la suscripción vencida que abre la carta recibe `NO_COVERAGE`, no `NO_CAPABILITY`.
+- **AC:3:7** — Soporte con plan propio Premium sobre un dueño Básico ve `locked` (acción 15); el personal con `VIEW_ALL` sigue
   leyendo carta, menú del día y eventos.
-- La ficha pública **y los listados** de un local con plan sin `manage_venue_menu` no muestran la carta aunque tenga
-  datos; un local que quitó el rubro de la carta no la expone por `getById`, chat de IA, folleto ni `/carta/`.
-- `/carta/` sin carta disponible responde 302 con `Cache-Control: no-store`, también con `menu` `available` y sólo
+- **AC:3:8** — La ficha pública **y los listados** de un local con plan sin `manage_venue_menu` no muestran la
+  carta aunque tenga datos.
+- **AC:3:9** — Un local que quitó el rubro de la carta no la expone por `getById`, chat de IA, folleto ni
+  `/carta/`.
+- **AC:3:10** — `/carta/` sin carta disponible responde 302 con `Cache-Control: no-store`, también con `menu` `available` y sólo
   el enlace.
-- Un local con plan sin `manage_venue_menu` no publica `menuUrl` en la ficha, el listado, el chat, el folleto ni el
+- **AC:3:11** — Un local con plan sin `manage_venue_menu` no publica `menuUrl` en la ficha, el listado, el chat, el folleto ni el
   JSON-LD; con la clave, sí (DEC-FAC-062).
-- Dueño que quitó `food`: `getMenu` y el vaciado de `menu` → 2xx; `putMenu` con contenido → 409
+- **AC:3:12** — Dueño que quitó `food`: `getMenu` y el vaciado de `menu` → 2xx; `putMenu` con contenido → 409
   `SECTION_ABSENT`; un tercero → 404 en las tres (DEC-FAC-063). La exportación trae la carta. Un BOLICHE que manda `menuUrl` en el PATCH → 409.
-- Reseña de un BOLICHE con la dimensión `food` → 400; sin ella → 2xx; reseña de un RESTAURANT con `food` → 2xx
+- **AC:3:13** — Reseña de un BOLICHE con la dimensión `food` → 400; sin ella → 2xx; reseña de un RESTAURANT con `food` → 2xx
   aunque `menu` esté `locked` (DEC-FAC-065); `food: 0` → 400; reseña de experiencia con las cuatro dimensiones → 2xx.
-- Recálculo `votedOnly`: una dimensión sin votos queda sin clave; el promedio de una dimensión ignora las reseñas que
+- **AC:3:14** — Recálculo `votedOnly`: una dimensión sin votos queda sin clave; el promedio de una dimensión ignora las reseñas que
   no la votaron; test golden de experiencia en verde.
-- Un RESTAURANT con votos de comida que pasa a BOLICHE no publica «Comida»; vuelve a RESTAURANT y la publica
+- **AC:3:15** — Un RESTAURANT con votos de comida que pasa a BOLICHE no publica «Comida»; vuelve a RESTAURANT y la publica
   (DEC-FAC-072).
-- Soporte (acción 15) lee una sección `absent` de un dueño y recibe 409 al vaciarla; el dueño la vacía (DEC-FAC-075).
-- Alojamiento y experiencia: salida pública idéntica a la de antes (test de no regresión), incluidas las
+- **AC:3:16** — Soporte (acción 15) lee una sección `absent` de un dueño y recibe 409 al vaciarla; el dueño la vacía (DEC-FAC-075).
+- **AC:3:17** — Alojamiento y experiencia: salida pública idéntica a la de antes (test de no regresión), incluidas las
   indicaciones de experiencia con y sin la clave.
-- Los estados degradados de la tabla tienen su test.
+- **AC:3:18** — Los estados degradados de la tabla tienen su test.

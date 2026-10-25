@@ -1,6 +1,6 @@
 ---
 title: Sub-spec 7 · Admin
-linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
+linear: HOS-1808 (hijo de HOS-1787)
 statusSource: linear
 created: 2026-10-25
 status: draft
@@ -71,14 +71,14 @@ Decisiones: DEC-FAC-005, 019, 026, 031, 034, de la vuelta 2: 047, 048, 056, 057,
 
 ## Criterio de aceptación
 
-- Una edición directa de rubros (soporte o admin, mismo permiso) se refleja en la ficha pública tras la purga,
+- **AC:7:1** — Una edición directa de rubros (soporte o admin, mismo permiso) se refleja en la ficha pública tras la purga,
   queda en la línea de tiempo y el dueño recibe el aviso por correo e in-app; el aviso in-app desaparece a los 30
   días o cuando el dueño edita sus rubros.
-- Un PATCH de admin con campos de `nightInfo` sobre una ficha sin `nightlife` es rechazado por el 4b.
-- La validación de tipo ↔ rubros permitidos rechaza una combinación inválida también desde el admin
+- **AC:7:2** — Un PATCH de admin con campos de `nightInfo` sobre una ficha sin `nightlife` es rechazado por el 4b.
+- **AC:7:3** — La validación de tipo ↔ rubros permitidos rechaza una combinación inválida también desde el admin
   (heladería con `nightlife`).
-- Un REQUEST_FIX sobre los rubros llega al dueño y no modifica la ficha hasta que el dueño responde.
-- Soporte con plan propio Premium que edita la ficha de un dueño Básico ve `locked` donde el dueño la ve.
-- La moderación de una reseña de venue con dimensiones las muestra; una sin dimensiones muestra sólo la general.
-- El formulario de admin de venue no tiene `menuUrl` en ningún modo; un guardado del admin sobre un local básico pasa.
-- Una edición de rubros por la acción 15 se rechaza; la misma por `venue.editAll` pasa y avisa.
+- **AC:7:4** — Un REQUEST_FIX sobre los rubros llega al dueño y no modifica la ficha hasta que el dueño responde.
+- **AC:7:5** — Soporte con plan propio Premium que edita la ficha de un dueño Básico ve `locked` donde el dueño la ve.
+- **AC:7:6** — La moderación de una reseña de venue con dimensiones las muestra; una sin dimensiones muestra sólo la general.
+- **AC:7:7** — El formulario de admin de venue no tiene `menuUrl` en ningún modo; un guardado del admin sobre un local básico pasa.
+- **AC:7:8** — Una edición de rubros por la acción 15 se rechaza; la misma por `venue.editAll` pasa y avisa.

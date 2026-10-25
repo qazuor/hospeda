@@ -1,6 +1,6 @@
 ---
 title: Sub-spec 9 · Copy neutro del embudo de «Comer y salir»
-linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
+linear: HOS-1805 (hijo de HOS-1787)
 statusSource: linear
 created: 2026-10-25
 status: draft
@@ -58,10 +58,10 @@ sub-spec 5. Si aparece otra en la tarea, se corrige acá: desde DEC-FAC-062 el e
 
 ## Criterio de aceptación
 
-- Ningún texto del inventario dice «restaurante», «platos» o «menú» como descripción de la vertical (sí dentro de lo
+- **AC:9:1** — Ningún texto del inventario dice «restaurante», «platos» o «menú» como descripción de la vertical (sí dentro de lo
   que es del rubro gastronomía); revisión del owner sobre las tres lenguas.
-- Los correos de la serie de prueba no varían por rubro; test que renderiza la plantilla para un dueño de un boliche y
+- **AC:9:2** — Los correos de la serie de prueba no varían por rubro; test que renderiza la plantilla para un dueño de un boliche y
   verifica que no menciona carta ni platos.
-- G-FAC-R1 en verde (las claves nuevas no reintroducen la palabra retirada).
-- Smoke en staging (`status-needs-smoke-staging`): recorrer presentación → precios → publicar → alta como boliche y
+- **AC:9:3** — G-FAC-R1 en verde (las claves nuevas no reintroducen la palabra retirada).
+- **AC:9:4** — Smoke en staging (`status-needs-smoke-staging`): recorrer presentación → precios → publicar → alta como boliche y
   recibir el primer correo de prueba.

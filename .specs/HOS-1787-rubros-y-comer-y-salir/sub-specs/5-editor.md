@@ -1,6 +1,6 @@
 ---
 title: Sub-spec 5 · Editor del dueño
-linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
+linear: HOS-1806 (hijo de HOS-1787)
 statusSource: linear
 created: 2026-10-25
 status: draft
@@ -145,15 +145,18 @@ G-FAC-05 (lista cerrada de archivos) y G-FAC-08 (lista manual de alojamiento con
 
 ## Criterio de aceptación
 
-- e2e: alta de un BAR con preselección de los dos rubros; alta de una HELADERIA sin opción de `nightlife`;
-  slug de una sección `absent` → hub; sección `locked` con datos en sólo lectura, upsell visible, vaciado
-  permitido (intención `delete`) y 403 al guardar; tour de un dueño con sólo un boliche sin el paso del QR; quitar `nightlife` oculta `nightInfo` (con aviso y conteo) y volver a
-  agregarlo la recupera con sus datos; quitar el rubro que sostiene al tipo está bloqueado.
-- e2e: dueño Pro de un restaurante con carta, enlace y QR de mesa activos que baja a Básico ve el aviso con los
+- **AC:5:1** — e2e: alta de un BAR con preselección de los dos rubros; alta de una HELADERIA sin opción de
+  `nightlife`.
+- **AC:5:2** — e2e: slug de una sección `absent` → hub; sección `locked` con datos en sólo lectura, upsell
+  visible, vaciado permitido (intención `delete`) y 403 al guardar.
+- **AC:5:3** — e2e: tour de un dueño con sólo un boliche sin el paso del QR.
+- **AC:5:4** — e2e: quitar `nightlife` oculta `nightInfo` (con aviso y conteo) y volver a agregarlo la recupera
+  con sus datos; quitar el rubro que sostiene al tipo está bloqueado.
+- **AC:5:5** — e2e: dueño Pro de un restaurante con carta, enlace y QR de mesa activos que baja a Básico ve el aviso con los
   conteos antes de confirmar; un dueño sin nada que cambie no ve aviso.
-- e2e: dueño que quitó `food` ve en el hub el resumen de la carta guardada y la puede vaciar; no la puede editar.
-- `menuUrl` se edita dentro de la carta; en plan básico está dentro del upsell; en un BOLICHE no existe; los e2e
+- **AC:5:6** — e2e: dueño que quitó `food` ve en el hub el resumen de la carta guardada y la puede vaciar; no la puede editar.
+- **AC:5:7** — `menuUrl` se edita dentro de la carta; en plan básico está dentro del upsell; en un BOLICHE no existe; los e2e
   `listing-owner-01/02` lo prueban en su nuevo lugar.
-- El upsell de la carta en plan básico no promete archivo ni enlace (es/en/pt).
-- Alojamiento y experiencia no muestran selector de rubro; el editor de alojamiento es idéntico al de antes
-  y G-FAC-08 lo prueba.
+- **AC:5:8** — El upsell de la carta en plan básico no promete archivo ni enlace (es/en/pt).
+- **AC:5:9** — Alojamiento y experiencia no muestran selector de rubro.
+- **AC:5:10** — El editor de alojamiento es idéntico al de antes y G-FAC-08 lo prueba.

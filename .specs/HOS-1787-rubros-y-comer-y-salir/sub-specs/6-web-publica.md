@@ -1,6 +1,6 @@
 ---
 title: Sub-spec 6 · Web pública
-linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
+linear: HOS-1807 (hijo de HOS-1787)
 statusSource: linear
 created: 2026-10-25
 status: draft
@@ -159,22 +159,23 @@ paginación; la consume.
 
 ## Criterio de aceptación
 
-- Un resto-bar aparece en `/comer-y-salir/rubro/gastronomia/` y en `/comer-y-salir/rubro/noche/`; un
+- **AC:6:1** — Un resto-bar aparece en `/comer-y-salir/rubro/gastronomia/` y en `/comer-y-salir/rubro/noche/`; un
   boliche sólo en la segunda; `/comer-y-salir/` muestra todo; ambas paginan con el mecanismo de HOS-1797
   (`/page/N/`, página 1 con 301, canónica autorreferente).
-- Las colecciones con fichas están en el sitemap con hreflang; las vacías no, y responden `noindex`; un
+- **AC:6:2** — Las colecciones con fichas están en el sitemap con hreflang; las vacías no, y responden `noindex`; un
   rubro inexistente responde 404; `?businessLine=` del listado no es rastreable.
-- Test: «quitar `nightlife` saca la ficha de `/rubro/noche/` en la siguiente lectura sin cache».
-- Test: «un cambio de plan sin cambio de estado de publicación pide la revalidación de las N fichas del
+- **AC:6:3** — Test: «quitar `nightlife` saca la ficha de `/rubro/noche/` en la siguiente lectura sin cache».
+- **AC:6:4** — Test: «un cambio de plan sin cambio de estado de publicación pide la revalidación de las N fichas del
   dueño».
-- JSON-LD de un BOLICHE es `NightClub`; sin `hasMenu` si `menu` no tiene contenido `available`.
-- `/carta/` sin carta disponible: 302 con `no-store`; un local con slug `rubro` no se puede crear.
-- El badge «abierto ahora» de una colección cacheada se calcula en el cliente (el HTML no lo trae).
-- El chat de un boliche con `min_age: 18` no afirma que un menor puede entrar (test de la regla).
-- La tabla de planes de la vertical se genera desde el catálogo en el web; la fila de la carta incluye el enlace
+- **AC:6:5** — JSON-LD de un BOLICHE es `NightClub`; sin `hasMenu` si `menu` no tiene contenido `available`.
+- **AC:6:6** — `/carta/` sin carta disponible: 302 con `no-store`.
+- **AC:6:7** — Un local con slug `rubro` no se puede crear.
+- **AC:6:8** — El badge «abierto ahora» de una colección cacheada se calcula en el cliente (el HTML no lo trae).
+- **AC:6:9** — El chat de un boliche con `min_age: 18` no afirma que un menor puede entrar (test de la regla).
+- **AC:6:10** — La tabla de planes de la vertical se genera desde el catálogo en el web; la fila de la carta incluye el enlace
   externo (pago, DEC-FAC-062).
-- Reseñas: el formulario de un BOLICHE no ofrece «Comida» y el de un RESTAURANT sí; una dimensión sin votos no se
+- **AC:6:11** — Reseñas: el formulario de un BOLICHE no ofrece «Comida» y el de un RESTAURANT sí; una dimensión sin votos no se
   muestra; un boliche que fue restaurante no muestra «Comida» aunque tenga votos viejos (servidor y golden: sub-spec 3).
-- La colección de noche no ofrece filtros sin fichas; los ítems de noche existen en un entorno vivo después de
-  `db:seed:migrate` (dual-write).
-- La home muestra «Eventos gastronómicos» y G-FAC-R1 queda verde sin la tile en la exención (a).
+- **AC:6:12** — La colección de noche no ofrece filtros sin fichas.
+- **AC:6:13** — Los ítems de noche existen en un entorno vivo después de `db:seed:migrate` (dual-write).
+- **AC:6:14** — La home muestra «Eventos gastronómicos» y G-FAC-R1 queda verde sin la tile en la exención (a).

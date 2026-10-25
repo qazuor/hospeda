@@ -1,6 +1,6 @@
 ---
 title: Sub-spec 2 · Catálogos de rubros y secciones + columna en base
-linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
+linear: HOS-1802 (hijo de HOS-1787)
 statusSource: linear
 created: 2026-10-25
 status: draft
@@ -296,19 +296,21 @@ G-FAC-01 (el CHECK, la matriz y el default coinciden con el catálogo), G-FAC-02
 
 ## Criterio de aceptación
 
-- Catálogos tipados y exportados; ids como unión literal por vertical; G-FAC-01, G-FAC-02, G-FAC-07 y G-FAC-09 en
-  verde con sus mutaciones.
-- Migración aplicada desde cero (con todas las pendientes juntas, incluido el `ADD VALUE`) y sobre seed; toda ficha
+- **AC:2:1** — Catálogos tipados y exportados; ids como unión literal por vertical; G-FAC-02 en verde con sus
+  mutaciones.
+- **AC:2:2** — G-FAC-01 en verde con sus mutaciones.
+- **AC:2:3** — G-FAC-07 y G-FAC-09 en verde con sus mutaciones.
+- **AC:2:4** — Migración aplicada desde cero (con todas las pendientes juntas, incluido el `ADD VALUE`) y sobre seed; toda ficha
   existente, incluidas las borradas, con ≥1 rubro; una inserción con `business_lines = '{}'`, con un valor ajeno a
   la vertical o con BOLICHE `{food}` es rechazada por la base; una inserción directa en `accommodations` sin la
   columna recibe `{standard}`.
-- Test del validador por regla: no vacío, repetidos, valor ajeno, tipo que no admite el rubro (heladería con
+- **AC:2:5** — Test del validador por regla: no vacío, repetidos, valor ajeno, tipo que no admite el rubro (heladería con
   `nightlife`), `maxPerListing` y `excludes` con un catálogo de prueba que los declare; y de
   `resolveBusinessLineOptions` con los mismos casos.
-- Test del `CASE` del backfill contra la lista fija del enum de esa migración, con `ELSE`.
-- `PUB` y `BOLICHE` visibles en el alta con su descripción en es/en/pt, con la frontera de DEC-FAC-067.
-- `menuUrl` pertenece a `menu` (regla 11 de G-FAC-02 en verde, con `price` sin `menuUrl`).
-- Test de `validateReviewDimensions`: `food` en un BOLICHE → `DIMENSION_NOT_APPLICABLE`; en un RESTAURANT con `menu`
+- **AC:2:6** — Test del `CASE` del backfill contra la lista fija del enum de esa migración, con `ELSE`.
+- **AC:2:7** — `PUB` y `BOLICHE` visibles en el alta con su descripción en es/en/pt, con la frontera de DEC-FAC-067.
+- **AC:2:8** — `menuUrl` pertenece a `menu` (regla 11 de G-FAC-02 en verde, con `price` sin `menuUrl`).
+- **AC:2:9** — Test de `validateReviewDimensions`: `food` en un BOLICHE → `DIMENSION_NOT_APPLICABLE`; en un RESTAURANT con `menu`
   `locked` → válido; dimensión ajena a la vertical → rechazo por forma; `food: 0` en venue → rechazo por forma; una
   reseña de experiencia con las cuatro dimensiones → válida (igual que hoy).
-- `ReviewRules` de experiencia declarado con `legacyNullAsZero`; G-FAC-02 regla 12 rojo si se borra.
+- **AC:2:10** — `ReviewRules` de experiencia declarado con `legacyNullAsZero`; G-FAC-02 regla 12 rojo si se borra.

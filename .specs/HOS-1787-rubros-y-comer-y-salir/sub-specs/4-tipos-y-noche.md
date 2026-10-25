@@ -1,6 +1,6 @@
 ---
 title: Sub-spec 4 · Sección nightInfo (los tipos nuevos pasaron al sub-spec 2)
-linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
+linear: HOS-1804 (hijo de HOS-1787)
 statusSource: linear
 created: 2026-10-25
 status: draft
@@ -74,12 +74,15 @@ la fija el servidor, pero es contenido (se borra con el purge) y está en ambas.
 
 ## Criterio de aceptación
 
-- Migraciones aplicadas desde cero con todas las pendientes juntas; tipos visibles en alta, filtros y chips (listas
-  derivadas, con su test).
-- `nightInfo` editable sólo en fichas con rubro `nightlife`: en las demás, 409 `SECTION_ABSENT` al dueño; 404 a un
-  tercero. Renderizada en la ficha pública sólo cuando está `available`, con «De noche» cuando `multiLine`.
-- La insignia «+N» muestra el texto legal fijo; `min_age` vacío no muestra nada; `min_age` 12 o 31 → 400.
-- Reenviar el mismo precio no mueve `entry_price_updated_at`; pasar a `free` borra el precio.
-- «Abierto ahora» con el calendario viernes/sábado de arriba.
-- PB9/PB12 borran `nightInfo`; G-FAC-10 en verde con su mutación.
-- Soporte (acción 15) edita la nota de entrada de un boliche ajeno y el cambio se aplica y queda registrado.
+- **AC:4:1** — Migraciones aplicadas desde cero con todas las pendientes juntas.
+- **AC:4:2** — Tipos visibles en alta, filtros y chips (listas derivadas, con su test).
+- **AC:4:3** — `nightInfo` editable sólo en fichas con rubro `nightlife`: en las demás, 409 `SECTION_ABSENT` al
+  dueño; 404 a un tercero.
+- **AC:4:4** — `nightInfo` renderizada en la ficha pública sólo cuando está `available`, con «De noche» cuando
+  `multiLine`.
+- **AC:4:5** — La insignia «+N» muestra el texto legal fijo; `min_age` vacío no muestra nada.
+- **AC:4:6** — `min_age` 12 o 31 → 400.
+- **AC:4:7** — Reenviar el mismo precio no mueve `entry_price_updated_at`; pasar a `free` borra el precio.
+- **AC:4:8** — «Abierto ahora» con el calendario viernes/sábado de arriba.
+- **AC:4:9** — PB9/PB12 borran `nightInfo`; G-FAC-10 en verde con su mutación.
+- **AC:4:10** — Soporte (acción 15) edita la nota de entrada de un boliche ajeno y el cambio se aplica y queda registrado.
