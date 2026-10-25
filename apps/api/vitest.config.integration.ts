@@ -86,6 +86,8 @@ export default defineConfig({
             'test/integration/billing-reconciliation/**/*.test.ts',
             // TEST:B9a:9 route half (HOS-1584): admin action 2.
             'test/integration/billing-permanent-grant/**/*.test.ts',
+            // HOS-1659: destination integration tests, including admin FAQ routes.
+            'test/integration/destination/**/*.test.ts',
             // HOS-1687: orphan until now (no config ran it).
             'test/integration/cross-cutting/lifecycle-public-endpoints.test.ts',
             // TEST:V5:13 (HOS-1458): the ban gate is the one job the Better
