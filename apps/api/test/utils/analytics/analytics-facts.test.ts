@@ -1,4 +1,5 @@
 import { AnalyticsEventSchemas } from '@repo/analytics';
+import { VerticalEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import {
     captureBillingCheckoutStarted,
@@ -108,7 +109,7 @@ describe('analytics facts (TEST:1878:15, TEST:1878:16)', () => {
         const occurredAt = new Date('2026-01-01T00:00:00.000Z');
         const common = {
             userId: 'u-1',
-            vertical: 'accommodation' as const,
+            vertical: VerticalEnum.ACCOMMODATION,
             subscriptionId: 's-1',
             subscriptionClass: 'PRINCIPAL' as const,
             actorKind: 'SYSTEM' as const,
@@ -223,7 +224,15 @@ describe('analytics facts (TEST:1878:15, TEST:1878:16)', () => {
                 occurredAt
             }
         ];
-        const capture = vi.fn();
+        const capture = vi.fn(
+            (input: {
+                distinctId: string;
+                name: keyof typeof AnalyticsEventSchemas;
+                properties: Record<string, unknown>;
+                uuid: string;
+                timestamp: Date;
+            }) => void input
+        );
         const sink = createAnalyticsFactSink({ capture });
         for (const fact of [...billingFacts, ...trialFacts]) sink.emit(fact);
         expect(capture).toHaveBeenCalledTimes(12);
