@@ -16,6 +16,15 @@ type Common = {
 /** A committed billing transition that can be forwarded to analytics. */
 export type BillingFact =
     | (Common & {
+          kind: 'CHECKOUT_STARTED';
+          planVersionId: string;
+          billingOptionId: string;
+          cycle: 'monthly' | 'quarterly' | 'semiannual' | 'annual';
+          amountMinor: number;
+          currency: 'ARS';
+          isSuccession?: boolean;
+      })
+    | (Common & {
           kind: 'CHECKOUT_ABANDONED';
           reason: 'WINDOW_EXPIRED' | 'USER_CANCELLED';
           secondsInPending?: number;

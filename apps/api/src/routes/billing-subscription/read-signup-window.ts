@@ -1,4 +1,4 @@
-import { and, eq, getDb, subscriptions } from '@repo/db';
+import { and, billingOptions, eq, getDb, subscriptions } from '@repo/db';
 
 /**
  * Read the signup window and vertical from the persisted subscription row,
@@ -13,13 +13,31 @@ export async function readSignupWindow({
 }): Promise<{
     readonly vertical: string | null;
     readonly authorizationWindowEndsAt: Date | null;
+    readonly planVersionId: string | null;
+    readonly billingOptionId: string | null;
+    readonly cycle: string | null;
+    readonly amountMinor: number | null;
+    readonly currency: string | null;
+    readonly subscriptionClass: string;
+    readonly succeedsId: string | null;
+    readonly createdAt: Date;
 } | null> {
     const [row] = await getDb()
         .select({
+            subscriptionId: subscriptions.id,
             vertical: subscriptions.vertical,
-            authorizationWindowEndsAt: subscriptions.authorizationWindowEndsAt
+            authorizationWindowEndsAt: subscriptions.authorizationWindowEndsAt,
+            planVersionId: subscriptions.planVersionId,
+            billingOptionId: subscriptions.billingOptionId,
+            cycle: billingOptions.cycle,
+            amountMinor: billingOptions.amount,
+            currency: billingOptions.currency,
+            subscriptionClass: subscriptions.class,
+            succeedsId: subscriptions.succeedsId,
+            createdAt: subscriptions.createdAt
         })
         .from(subscriptions)
+        .leftJoin(billingOptions, eq(subscriptions.billingOptionId, billingOptions.id))
         .where(and(eq(subscriptions.id, subscriptionId), eq(subscriptions.userId, userId)))
         .limit(1);
 

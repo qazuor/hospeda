@@ -9,11 +9,12 @@ import {
     StartSubscriptionResponseSchema,
     VerticalEnumSchema
 } from '@repo/schemas';
-import { ServiceError, startSubscription } from '@repo/service-core';
+import { emitBillingFact, ServiceError, startSubscription } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext, isGuestActor } from '../../utils/actor';
+import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts';
 import { getClock } from '../../utils/clock';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
@@ -76,6 +77,37 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
                     ServiceErrorCode.INTERNAL_ERROR,
                     'Signup window missing after S1'
                 );
+            }
+            if (
+                signupWindow.subscriptionClass === 'PRINCIPAL' &&
+                signupWindow.planVersionId &&
+                signupWindow.billingOptionId &&
+                signupWindow.cycle &&
+                signupWindow.amountMinor !== null &&
+                signupWindow.currency === 'ARS'
+            ) {
+                emitBillingFact({
+                    sink: getAnalyticsFactSink(),
+                    fact: {
+                        kind: 'CHECKOUT_STARTED',
+                        userId: actor.id,
+                        vertical: vertical.data,
+                        subscriptionId: result.subscriptionId,
+                        subscriptionClass: 'PRINCIPAL',
+                        actorKind: 'USER',
+                        planVersionId: signupWindow.planVersionId,
+                        billingOptionId: signupWindow.billingOptionId,
+                        cycle: signupWindow.cycle as
+                            | 'monthly'
+                            | 'quarterly'
+                            | 'semiannual'
+                            | 'annual',
+                        amountMinor: signupWindow.amountMinor,
+                        currency: 'ARS',
+                        isSuccession: signupWindow.succeedsId ? true : undefined,
+                        occurredAt: signupWindow.createdAt
+                    }
+                });
             }
             return {
                 ...result,
