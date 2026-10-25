@@ -56,6 +56,7 @@ export async function applyGraceReminder(input: {
     readonly tx: DrizzleClient;
     readonly subscriptionId: string;
     readonly now: Date;
+    readonly readRecipientEmail?: (userId: string) => Promise<string | null>;
 }): Promise<{ readonly outcome: GraceReminderOutcome; readonly milestone: string | null }> {
     const db = await import('@repo/db');
     const [row] = await input.tx
@@ -118,7 +119,10 @@ export async function applyGraceReminder(input: {
         daysBefore: config.daysBefore
     });
     if (!milestone) return { outcome: 'NOT_DUE', milestone: null };
-    if (!row.userId || !row.email) {
+    const recipientEmail = row.userId
+        ? await (input.readRecipientEmail?.(row.userId) ?? Promise.resolve(row.email))
+        : null;
+    if (!row.userId || !recipientEmail) {
         logger.warn({ subscriptionId: row.id }, 'No user email for grace reminder');
         return { outcome: 'SKIPPED', milestone: null };
     }
@@ -136,7 +140,7 @@ export async function applyGraceReminder(input: {
     const queued = await db.emailOutboxModel.enqueue(
         {
             recipientUserId: row.userId,
-            recipientEmail: row.email,
+            recipientEmail,
             template: GRACE_REMINDER_TEMPLATE,
             payload: {
                 subscriptionId: row.id,

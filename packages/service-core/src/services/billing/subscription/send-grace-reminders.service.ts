@@ -29,7 +29,10 @@ export interface SendGraceRemindersResult {
 /** Enqueues due grace reminders in stable pages, isolating each subscription transaction. */
 export async function sendGraceReminders(
     input: { readonly limit: number; readonly db?: DrizzleClient },
-    ports: { readonly clock: Clock }
+    ports: {
+        readonly clock: Clock;
+        readonly readRecipientEmail?: (userId: string) => Promise<string | null>;
+    }
 ): Promise<SendGraceRemindersResult> {
     const parsed = inputSchema.safeParse({ limit: input.limit });
     if (!parsed.success)
@@ -65,7 +68,12 @@ export async function sendGraceReminders(
     for (const { id } of selected) {
         try {
             const result = await db.transaction((tx) =>
-                applyGraceReminder({ tx, subscriptionId: id, now })
+                applyGraceReminder({
+                    tx,
+                    subscriptionId: id,
+                    now,
+                    readRecipientEmail: ports.readRecipientEmail
+                })
             );
             if (result.outcome === 'ENQUEUED') counts.enqueued++;
             if (result.outcome === 'ALREADY_ENQUEUED') counts.alreadyEnqueued++;
