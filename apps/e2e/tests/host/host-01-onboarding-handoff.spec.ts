@@ -195,6 +195,8 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
             `${API_URL}/api/v1/protected/accommodations/${result.accommodationId}`,
             {
                 data: {
+                    description:
+                        'Una casa luminosa y cómoda, con espacios amplios para disfrutar la estadía.',
                     latitude: -32.484,
                     longitude: -58.234,
                     address: 'Calle Falsa 123',
@@ -245,9 +247,10 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
                 headers: { cookie: hostSessionCookie }
             }
         );
+        const publishBody = await publishResponse.text();
         expect(
             publishResponse.ok(),
-            `publish POST must succeed (got ${publishResponse.status()})`
+            `publish POST must succeed (got ${publishResponse.status()}): ${publishBody}`
         ).toBe(true);
 
         // Step 13 of spec: PUBLISHED state + role unchanged. Regression
