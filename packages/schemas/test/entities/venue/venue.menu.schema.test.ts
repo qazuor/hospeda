@@ -17,29 +17,29 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-    GASTRONOMY_MENU_MAX_ITEMS_PER_SECTION,
-    GASTRONOMY_MENU_MAX_SECTIONS,
-    GastronomyMenuFileSchema,
-    GastronomyMenuItemPublicSchema,
-    GastronomyMenuReplacePayloadSchema
+    VENUE_MENU_MAX_ITEMS_PER_SECTION,
+    VENUE_MENU_MAX_SECTIONS,
+    VenueMenuFileSchema,
+    VenueMenuItemPublicSchema,
+    VenueMenuReplacePayloadSchema
 } from '../../../src/entities/venue/subtypes/venue.menu.schema.js';
 import {
-    GastronomyAdminCreateInputSchema,
-    GastronomyOwnerCreateInputSchema,
-    GastronomyOwnerUpdateInputSchema,
-    GastronomyUpdateInputSchema
+    VenueAdminCreateInputSchema,
+    VenueOwnerCreateInputSchema,
+    VenueOwnerUpdateInputSchema,
+    VenueUpdateInputSchema
 } from '../../../src/entities/venue/venue.crud.schema.js';
 
 describe('GastronomyMenuReplacePayloadSchema (HOS-895)', () => {
     it('accepts an empty carta — that is how an owner deletes it', () => {
-        const parsed = GastronomyMenuReplacePayloadSchema.safeParse({ sections: [] });
+        const parsed = VenueMenuReplacePayloadSchema.safeParse({ sections: [] });
 
         expect(parsed.success).toBe(true);
         expect(parsed.success && parsed.data.sections).toEqual([]);
     });
 
     it('accepts a section with no dishes — a carta is built over several sittings', () => {
-        const parsed = GastronomyMenuReplacePayloadSchema.safeParse({
+        const parsed = VenueMenuReplacePayloadSchema.safeParse({
             sections: [{ name: 'Entradas' }]
         });
 
@@ -48,7 +48,7 @@ describe('GastronomyMenuReplacePayloadSchema (HOS-895)', () => {
     });
 
     it('keeps a null price as null rather than defaulting it to zero', () => {
-        const parsed = GastronomyMenuReplacePayloadSchema.safeParse({
+        const parsed = VenueMenuReplacePayloadSchema.safeParse({
             sections: [
                 {
                     name: 'Pescados',
@@ -64,7 +64,7 @@ describe('GastronomyMenuReplacePayloadSchema (HOS-895)', () => {
     });
 
     it('keeps a zero price as zero — it is a real price, not "a consultar"', () => {
-        const parsed = GastronomyMenuReplacePayloadSchema.safeParse({
+        const parsed = VenueMenuReplacePayloadSchema.safeParse({
             sections: [
                 {
                     name: 'Menú degustación',
@@ -78,7 +78,7 @@ describe('GastronomyMenuReplacePayloadSchema (HOS-895)', () => {
     });
 
     it('defaults a dish to available', () => {
-        const parsed = GastronomyMenuReplacePayloadSchema.safeParse({
+        const parsed = VenueMenuReplacePayloadSchema.safeParse({
             sections: [{ name: 'Postres', items: [{ name: 'Flan' }] }]
         });
 
@@ -87,7 +87,7 @@ describe('GastronomyMenuReplacePayloadSchema (HOS-895)', () => {
     });
 
     it('rejects a dish with no name', () => {
-        const parsed = GastronomyMenuReplacePayloadSchema.safeParse({
+        const parsed = VenueMenuReplacePayloadSchema.safeParse({
             sections: [{ name: 'Entradas', items: [{ name: '   ' }] }]
         });
 
@@ -95,7 +95,7 @@ describe('GastronomyMenuReplacePayloadSchema (HOS-895)', () => {
     });
 
     it('rejects a fractional price — the column stores integer centavos', () => {
-        const parsed = GastronomyMenuReplacePayloadSchema.safeParse({
+        const parsed = VenueMenuReplacePayloadSchema.safeParse({
             sections: [{ name: 'Entradas', items: [{ name: 'Empanada', priceCents: 250.5 }] }]
         });
 
@@ -103,22 +103,20 @@ describe('GastronomyMenuReplacePayloadSchema (HOS-895)', () => {
     });
 
     it('refuses more sections than one transaction should write', () => {
-        const tooMany = Array.from({ length: GASTRONOMY_MENU_MAX_SECTIONS + 1 }, (_, i) => ({
+        const tooMany = Array.from({ length: VENUE_MENU_MAX_SECTIONS + 1 }, (_, i) => ({
             name: `Sección ${i}`
         }));
 
-        expect(GastronomyMenuReplacePayloadSchema.safeParse({ sections: tooMany }).success).toBe(
-            false
-        );
+        expect(VenueMenuReplacePayloadSchema.safeParse({ sections: tooMany }).success).toBe(false);
     });
 
     it('refuses more dishes in one section than the ceiling allows', () => {
-        const items = Array.from({ length: GASTRONOMY_MENU_MAX_ITEMS_PER_SECTION + 1 }, (_, i) => ({
+        const items = Array.from({ length: VENUE_MENU_MAX_ITEMS_PER_SECTION + 1 }, (_, i) => ({
             name: `Plato ${i}`
         }));
 
         expect(
-            GastronomyMenuReplacePayloadSchema.safeParse({
+            VenueMenuReplacePayloadSchema.safeParse({
                 sections: [{ name: 'Principales', items }]
             }).success
         ).toBe(false);
@@ -128,13 +126,13 @@ describe('GastronomyMenuReplacePayloadSchema (HOS-895)', () => {
 describe('GastronomyMenuFileSchema (HOS-895)', () => {
     it('accepts an image and a pdf', () => {
         expect(
-            GastronomyMenuFileSchema.safeParse({
+            VenueMenuFileSchema.safeParse({
                 url: 'https://cdn.example.com/menu.jpg',
                 kind: 'image'
             }).success
         ).toBe(true);
         expect(
-            GastronomyMenuFileSchema.safeParse({
+            VenueMenuFileSchema.safeParse({
                 url: 'https://cdn.example.com/menu.pdf',
                 kind: 'pdf'
             }).success
@@ -143,7 +141,7 @@ describe('GastronomyMenuFileSchema (HOS-895)', () => {
 
     it('refuses a file whose kind is unknown — the page could not decide how to render it', () => {
         expect(
-            GastronomyMenuFileSchema.safeParse({
+            VenueMenuFileSchema.safeParse({
                 url: 'https://cdn.example.com/menu.docx',
                 kind: 'doc'
             }).success
@@ -152,7 +150,7 @@ describe('GastronomyMenuFileSchema (HOS-895)', () => {
 
     it('refuses a url with no kind — half an attachment is unrepresentable by design', () => {
         expect(
-            GastronomyMenuFileSchema.safeParse({ url: 'https://cdn.example.com/menu.jpg' }).success
+            VenueMenuFileSchema.safeParse({ url: 'https://cdn.example.com/menu.jpg' }).success
         ).toBe(false);
     });
 });
@@ -191,10 +189,10 @@ describe('the menu-file columns are not writable from a listing body (HOS-895)',
     } as const;
 
     it.each([
-        ['GastronomyUpdateInputSchema (admin update)', GastronomyUpdateInputSchema],
-        ['GastronomyAdminCreateInputSchema', GastronomyAdminCreateInputSchema],
-        ['GastronomyOwnerCreateInputSchema', GastronomyOwnerCreateInputSchema],
-        ['GastronomyOwnerUpdateInputSchema (owner PATCH)', GastronomyOwnerUpdateInputSchema]
+        ['GastronomyUpdateInputSchema (admin update)', VenueUpdateInputSchema],
+        ['GastronomyAdminCreateInputSchema', VenueAdminCreateInputSchema],
+        ['GastronomyOwnerCreateInputSchema', VenueOwnerCreateInputSchema],
+        ['GastronomyOwnerUpdateInputSchema (owner PATCH)', VenueOwnerUpdateInputSchema]
     ])('%s drops every menu-file column', (_label, schema) => {
         const parsed = schema.safeParse(HOSTILE);
 
@@ -217,7 +215,7 @@ describe('the per-dish photo (HOS-1045)', () => {
     });
 
     it('accepts a dish photo and carries all three fields through', () => {
-        const parsed = GastronomyMenuReplacePayloadSchema.safeParse(
+        const parsed = VenueMenuReplacePayloadSchema.safeParse(
             withPhoto({
                 photoUrl: 'https://res.cloudinary.com/hospeda/empanada.jpg',
                 photoPublicId: 'hospeda/dev/gastronomies/x/empanada',
@@ -237,7 +235,7 @@ describe('the per-dish photo (HOS-1045)', () => {
     });
 
     it('accepts a dish with NO photo — the ordinary case', () => {
-        const parsed = GastronomyMenuReplacePayloadSchema.safeParse(withPhoto({ photoUrl: null }));
+        const parsed = VenueMenuReplacePayloadSchema.safeParse(withPhoto({ photoUrl: null }));
 
         expect(parsed.success).toBe(true);
     });
@@ -252,15 +250,13 @@ describe('the per-dish photo (HOS-1045)', () => {
         // straight into an `<img src>` on a public page. This is the write-side
         // half of the two-sided guard (`resolveSafeExternalUrl` is the read
         // half) — and it is the half that stops the row being written at all.
-        const parsed = GastronomyMenuReplacePayloadSchema.safeParse(
-            withPhoto({ photoUrl: hostile })
-        );
+        const parsed = VenueMenuReplacePayloadSchema.safeParse(withPhoto({ photoUrl: hostile }));
 
         expect(parsed.success).toBe(false);
     });
 
     it('rejects alt text past its ceiling', () => {
-        const parsed = GastronomyMenuReplacePayloadSchema.safeParse(
+        const parsed = VenueMenuReplacePayloadSchema.safeParse(
             withPhoto({
                 photoUrl: 'https://res.cloudinary.com/hospeda/empanada.jpg',
                 photoAlt: 'a'.repeat(201)
@@ -276,7 +272,7 @@ describe('the per-dish photo (HOS-1045)', () => {
         // decision was taken rather than inherited. Checked with `in`, not
         // `toBeUndefined`: a key copied as `undefined` and a key never copied
         // both read as `undefined`, and only the second is the omission.
-        const parsed = GastronomyMenuItemPublicSchema.safeParse({
+        const parsed = VenueMenuItemPublicSchema.safeParse({
             id: '33333333-3333-4333-8333-333333333333',
             sectionId: '11111111-1111-4111-8111-111111111111',
             gastronomyId: '22222222-2222-4222-8222-222222222222',
@@ -303,7 +299,7 @@ describe('the per-dish photo (HOS-1045)', () => {
 
 describe('GastronomyMenuReplacePayloadSchema — translations (HOS-1043)', () => {
     it('accepts a section and dish carrying a full {es,en,pt} translation', () => {
-        const parsed = GastronomyMenuReplacePayloadSchema.safeParse({
+        const parsed = VenueMenuReplacePayloadSchema.safeParse({
             sections: [
                 {
                     name: 'Entradas',
@@ -337,7 +333,7 @@ describe('GastronomyMenuReplacePayloadSchema — translations (HOS-1043)', () =>
     });
 
     it('accepts a document with no translations at all — the ordinary `-pro` case', () => {
-        const parsed = GastronomyMenuReplacePayloadSchema.safeParse({
+        const parsed = VenueMenuReplacePayloadSchema.safeParse({
             sections: [{ name: 'Entradas', items: [{ name: 'Empanada' }] }]
         });
 
@@ -346,7 +342,7 @@ describe('GastronomyMenuReplacePayloadSchema — translations (HOS-1043)', () =>
     });
 
     it('rejects a translation missing the Portuguese leg — all three locales travel together', () => {
-        const parsed = GastronomyMenuReplacePayloadSchema.safeParse({
+        const parsed = VenueMenuReplacePayloadSchema.safeParse({
             sections: [
                 {
                     name: 'Entradas',
@@ -366,7 +362,7 @@ describe('GastronomyMenuReplacePayloadSchema — translations (HOS-1043)', () =>
     it('never publishes photoPublicId alongside a translation, entitled or not', () => {
         // Guards against a mutation that made the translation gate accidentally
         // widen the public projection's own omission.
-        const parsed = GastronomyMenuItemPublicSchema.safeParse({
+        const parsed = VenueMenuItemPublicSchema.safeParse({
             id: '33333333-3333-4333-8333-333333333333',
             sectionId: '11111111-1111-4111-8111-111111111111',
             gastronomyId: '22222222-2222-4222-8222-222222222222',

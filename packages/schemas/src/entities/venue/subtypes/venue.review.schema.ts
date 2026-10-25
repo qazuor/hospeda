@@ -3,13 +3,13 @@ import { BaseAuditFields } from '../../../common/audit.schema.js';
 import { UserIdSchema } from '../../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../../common/lifecycle.schema.js';
 import { BaseModerationFields } from '../../../common/moderation.schema.js';
-import { GastronomyRatingSchema } from '../../../common/venue-rating.schema.js';
+import { VenueRatingSchema } from '../../../common/venue-rating.schema.js';
 
 /**
  * Gastronomy Review Schema — User review for a gastronomy listing.
  *
  * Mirrors the accommodation review subtype pattern but uses
- * {@link GastronomyRatingSchema} for the rating breakdown (food / service /
+ * {@link VenueRatingSchema} for the rating breakdown (food / service /
  * ambiance / value) instead of accommodation-specific dimensions.
  *
  * Columns match the `gastronomy_reviews` DB table exactly:
@@ -21,7 +21,7 @@ import { GastronomyRatingSchema } from '../../../common/venue-rating.schema.js';
  * Moderation fields are included so the admin can approve or reject reviews
  * before they are surfaced to the public.
  */
-export const GastronomyReviewSchema = z.object({
+export const VenueReviewSchema = z.object({
     // Base ID
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
@@ -61,7 +61,7 @@ export const GastronomyReviewSchema = z.object({
      * so the underlying `rating` column is nullable and reads back NULL when
      * absent — the entity schema must accept both `null` and `undefined`.
      */
-    rating: GastronomyRatingSchema.nullish(),
+    rating: VenueRatingSchema.nullish(),
 
     /**
      * Computed average of all granular rating categories (0.00–5.00).
@@ -110,8 +110,8 @@ export const GastronomyReviewSchema = z.object({
     ...BaseAuditFields
 });
 
-/** TypeScript type for {@link GastronomyReviewSchema}. */
-export type GastronomyReview = z.infer<typeof GastronomyReviewSchema>;
+/** TypeScript type for {@link VenueReviewSchema}. */
+export type VenueReview = z.infer<typeof VenueReviewSchema>;
 
 // ----------------------------------------------------------------------------
 // CRUD Input Schemas
@@ -125,13 +125,13 @@ export type GastronomyReview = z.infer<typeof GastronomyReviewSchema>;
  * `averageRating` is server-computed from the rating breakdown; clients
  * must NOT send it — it is omitted from the create input.
  */
-export const GastronomyReviewCreateInputSchema = z.object({
+export const VenueReviewCreateInputSchema = z.object({
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     overallRating: z
         .number({ message: 'zodError.gastronomy.review.overallRating.required' })
         .min(1, { message: 'zodError.gastronomy.review.overallRating.min' })
         .max(5, { message: 'zodError.gastronomy.review.overallRating.max' }),
-    rating: GastronomyRatingSchema.optional(),
+    rating: VenueRatingSchema.optional(),
     /** Optional review headline (mirrors `title` DB column). */
     title: z
         .string()
@@ -147,15 +147,15 @@ export const GastronomyReviewCreateInputSchema = z.object({
     reviewerName: z.string().max(100).optional()
 });
 
-/** TypeScript type for {@link GastronomyReviewCreateInputSchema}. */
-export type GastronomyReviewCreateInput = z.infer<typeof GastronomyReviewCreateInputSchema>;
+/** TypeScript type for {@link VenueReviewCreateInputSchema}. */
+export type VenueReviewCreateInput = z.infer<typeof VenueReviewCreateInputSchema>;
 
 /**
  * Input schema for updating a gastronomy review (partial).
  */
-export const GastronomyReviewUpdateInputSchema = GastronomyReviewCreateInputSchema.omit({
+export const VenueReviewUpdateInputSchema = VenueReviewCreateInputSchema.omit({
     gastronomyId: true
 }).partial();
 
-/** TypeScript type for {@link GastronomyReviewUpdateInputSchema}. */
-export type GastronomyReviewUpdateInput = z.infer<typeof GastronomyReviewUpdateInputSchema>;
+/** TypeScript type for {@link VenueReviewUpdateInputSchema}. */
+export type VenueReviewUpdateInput = z.infer<typeof VenueReviewUpdateInputSchema>;

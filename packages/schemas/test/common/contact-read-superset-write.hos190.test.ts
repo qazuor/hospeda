@@ -50,10 +50,10 @@ import { PostSponsorCreateInputSchema } from '../../src/entities/postSponsor/pos
 import { UserSelfSchema } from '../../src/entities/user/user.access.schema.js';
 import { UserCreateInputSchema } from '../../src/entities/user/user.crud.schema.js';
 import {
-    GastronomyAdminSchema,
-    GastronomyProtectedSchema
+    VenueAdminSchema,
+    VenueProtectedSchema
 } from '../../src/entities/venue/venue.access.schema.js';
-import { GastronomyAdminCreateInputSchema } from '../../src/entities/venue/venue.crud.schema.js';
+import { VenueAdminCreateInputSchema } from '../../src/entities/venue/venue.crud.schema.js';
 
 /** Minimal structural view of a schema field — all this guardrail needs. */
 interface ParseableSchema {
@@ -89,8 +89,8 @@ const READ_SCHEMAS: ReadonlyArray<{ name: string; schema: z.ZodTypeAny }> = [
     { name: 'PostSponsorAdminSchema', schema: PostSponsorAdminSchema },
     { name: 'ExperienceProtectedSchema', schema: ExperienceProtectedSchema },
     { name: 'ExperienceAdminSchema', schema: ExperienceAdminSchema },
-    { name: 'GastronomyProtectedSchema', schema: GastronomyProtectedSchema },
-    { name: 'GastronomyAdminSchema', schema: GastronomyAdminSchema },
+    { name: 'GastronomyProtectedSchema', schema: VenueProtectedSchema },
+    { name: 'GastronomyAdminSchema', schema: VenueAdminSchema },
     { name: 'UserSelfSchema', schema: UserSelfSchema }
 ];
 
@@ -105,7 +105,7 @@ const WRITE_SCHEMAS: ReadonlyArray<{ name: string; schema: z.ZodTypeAny }> = [
     { name: 'EventCreateInputSchema', schema: EventCreateInputSchema },
     { name: 'PostSponsorCreateInputSchema', schema: PostSponsorCreateInputSchema },
     { name: 'ExperienceAdminCreateInputSchema', schema: ExperienceAdminCreateInputSchema },
-    { name: 'GastronomyAdminCreateInputSchema', schema: GastronomyAdminCreateInputSchema },
+    { name: 'GastronomyAdminCreateInputSchema', schema: VenueAdminCreateInputSchema },
     { name: 'UserCreateInputSchema', schema: UserCreateInputSchema }
 ];
 

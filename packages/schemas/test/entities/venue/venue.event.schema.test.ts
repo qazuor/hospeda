@@ -27,9 +27,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-    GASTRONOMY_EVENTS_MAX_ENTRIES,
-    GastronomyEventInputSchema,
-    GastronomyEventsReplacePayloadSchema
+    VENUE_EVENTS_MAX_ENTRIES,
+    VenueEventInputSchema,
+    VenueEventsReplacePayloadSchema
 } from '../../../src/entities/venue/subtypes/venue.event.schema.js';
 
 /** A valid weekly happy hour, the shape most of these tests vary from. */
@@ -52,7 +52,7 @@ const ONE_OFF_SHOW = {
 describe('GastronomyEventInputSchema — the recurrence refinement (HOS-1042)', () => {
     it('accepts a weekly entry carrying a weekday and no date', () => {
         // Act
-        const result = GastronomyEventInputSchema.safeParse(WEEKLY_HAPPY_HOUR);
+        const result = VenueEventInputSchema.safeParse(WEEKLY_HAPPY_HOUR);
 
         // Assert
         expect(result.success).toBe(true);
@@ -60,7 +60,7 @@ describe('GastronomyEventInputSchema — the recurrence refinement (HOS-1042)', 
 
     it('accepts a one-off entry carrying a date and no weekday', () => {
         // Act
-        const result = GastronomyEventInputSchema.safeParse(ONE_OFF_SHOW);
+        const result = VenueEventInputSchema.safeParse(ONE_OFF_SHOW);
 
         // Assert
         expect(result.success).toBe(true);
@@ -74,7 +74,7 @@ describe('GastronomyEventInputSchema — the recurrence refinement (HOS-1042)', 
         const { date: _omitted, ...withoutDate } = ONE_OFF_SHOW;
 
         // Act
-        const result = GastronomyEventInputSchema.safeParse(withoutDate);
+        const result = VenueEventInputSchema.safeParse(withoutDate);
 
         // Assert
         expect(result.success).toBe(false);
@@ -86,7 +86,7 @@ describe('GastronomyEventInputSchema — the recurrence refinement (HOS-1042)', 
         const { weekday: _omitted, ...withoutWeekday } = WEEKLY_HAPPY_HOUR;
 
         // Act
-        const result = GastronomyEventInputSchema.safeParse(withoutWeekday);
+        const result = VenueEventInputSchema.safeParse(withoutWeekday);
 
         // Assert
         expect(result.success).toBe(false);
@@ -101,7 +101,7 @@ describe('GastronomyEventInputSchema — the recurrence refinement (HOS-1042)', 
         const both = { ...WEEKLY_HAPPY_HOUR, date: '2026-09-12' };
 
         // Act
-        const result = GastronomyEventInputSchema.safeParse(both);
+        const result = VenueEventInputSchema.safeParse(both);
 
         // Assert
         expect(result.success).toBe(false);
@@ -112,7 +112,7 @@ describe('GastronomyEventInputSchema — the recurrence refinement (HOS-1042)', 
         const sunday = { ...WEEKLY_HAPPY_HOUR, weekday: 0 };
 
         // Act
-        const result = GastronomyEventInputSchema.safeParse(sunday);
+        const result = VenueEventInputSchema.safeParse(sunday);
 
         // Assert
         expect(result.success).toBe(true);
@@ -121,7 +121,7 @@ describe('GastronomyEventInputSchema — the recurrence refinement (HOS-1042)', 
 
     it('rejects a weekday outside 0-6', () => {
         // Act
-        const result = GastronomyEventInputSchema.safeParse({
+        const result = VenueEventInputSchema.safeParse({
             ...WEEKLY_HAPPY_HOUR,
             weekday: 7
         });
@@ -134,7 +134,7 @@ describe('GastronomyEventInputSchema — the recurrence refinement (HOS-1042)', 
 describe('GastronomyEventInputSchema — times (HOS-1042)', () => {
     it('accepts an end time EARLIER than the start — a show that crosses midnight', () => {
         // Act
-        const result = GastronomyEventInputSchema.safeParse({
+        const result = VenueEventInputSchema.safeParse({
             ...ONE_OFF_SHOW,
             startTime: '22:00',
             endTime: '02:00'
@@ -146,7 +146,7 @@ describe('GastronomyEventInputSchema — times (HOS-1042)', () => {
 
     it('rejects an end time EQUAL to the start — a zero-length event', () => {
         // Act
-        const result = GastronomyEventInputSchema.safeParse({
+        const result = VenueEventInputSchema.safeParse({
             ...ONE_OFF_SHOW,
             startTime: '22:00',
             endTime: '22:00'
@@ -158,7 +158,7 @@ describe('GastronomyEventInputSchema — times (HOS-1042)', () => {
 
     it('accepts an omitted end time — "desde las 21" is a real announcement', () => {
         // Act
-        const result = GastronomyEventInputSchema.safeParse(ONE_OFF_SHOW);
+        const result = VenueEventInputSchema.safeParse(ONE_OFF_SHOW);
 
         // Assert
         expect(result.success).toBe(true);
@@ -167,7 +167,7 @@ describe('GastronomyEventInputSchema — times (HOS-1042)', () => {
 
     it('rejects a time carrying seconds, so two spellings of one instant cannot coexist', () => {
         // Act
-        const result = GastronomyEventInputSchema.safeParse({
+        const result = VenueEventInputSchema.safeParse({
             ...WEEKLY_HAPPY_HOUR,
             startTime: '18:00:00'
         });
@@ -178,7 +178,7 @@ describe('GastronomyEventInputSchema — times (HOS-1042)', () => {
 
     it('rejects a 24-hour clock past 23:59', () => {
         // Act
-        const result = GastronomyEventInputSchema.safeParse({
+        const result = VenueEventInputSchema.safeParse({
             ...WEEKLY_HAPPY_HOUR,
             startTime: '24:00'
         });
@@ -191,7 +191,7 @@ describe('GastronomyEventInputSchema — times (HOS-1042)', () => {
 describe('GastronomyEventsReplacePayloadSchema (HOS-1042)', () => {
     it('accepts an EMPTY agenda — that is how a venue takes it down', () => {
         // Act
-        const result = GastronomyEventsReplacePayloadSchema.safeParse({ events: [] });
+        const result = VenueEventsReplacePayloadSchema.safeParse({ events: [] });
 
         // Assert
         expect(result.success).toBe(true);
@@ -200,7 +200,7 @@ describe('GastronomyEventsReplacePayloadSchema (HOS-1042)', () => {
 
     it('defaults isActive to true, so a new entry is published without saying so', () => {
         // Act
-        const result = GastronomyEventsReplacePayloadSchema.safeParse({
+        const result = VenueEventsReplacePayloadSchema.safeParse({
             events: [WEEKLY_HAPPY_HOUR]
         });
 
@@ -214,12 +214,12 @@ describe('GastronomyEventsReplacePayloadSchema (HOS-1042)', () => {
         // rows in one transaction — not as a product tier, which is the
         // entitlement's job.
         // Arrange
-        const tooMany = Array.from({ length: GASTRONOMY_EVENTS_MAX_ENTRIES + 1 }, () => ({
+        const tooMany = Array.from({ length: VENUE_EVENTS_MAX_ENTRIES + 1 }, () => ({
             ...WEEKLY_HAPPY_HOUR
         }));
 
         // Act
-        const result = GastronomyEventsReplacePayloadSchema.safeParse({ events: tooMany });
+        const result = VenueEventsReplacePayloadSchema.safeParse({ events: tooMany });
 
         // Assert
         expect(result.success).toBe(false);
@@ -229,12 +229,12 @@ describe('GastronomyEventsReplacePayloadSchema (HOS-1042)', () => {
         // Guards the boundary from the off-by-one that would make the test
         // above pass while refusing a legitimate agenda.
         // Arrange
-        const atLimit = Array.from({ length: GASTRONOMY_EVENTS_MAX_ENTRIES }, () => ({
+        const atLimit = Array.from({ length: VENUE_EVENTS_MAX_ENTRIES }, () => ({
             ...WEEKLY_HAPPY_HOUR
         }));
 
         // Act
-        const result = GastronomyEventsReplacePayloadSchema.safeParse({ events: atLimit });
+        const result = VenueEventsReplacePayloadSchema.safeParse({ events: atLimit });
 
         // Assert
         expect(result.success).toBe(true);
@@ -248,7 +248,7 @@ describe('GastronomyEventsReplacePayloadSchema (HOS-1042)', () => {
         const { weekday: _omitted, ...broken } = WEEKLY_HAPPY_HOUR;
 
         // Act
-        const result = GastronomyEventsReplacePayloadSchema.safeParse({
+        const result = VenueEventsReplacePayloadSchema.safeParse({
             events: [WEEKLY_HAPPY_HOUR, broken]
         });
 

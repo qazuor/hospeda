@@ -1,19 +1,19 @@
 import { faker } from '@faker-js/faker';
 import { describe, expect, it } from 'vitest';
 import {
-    GastronomyWithAmenitiesSchema,
-    GastronomyWithBasicRelationsSchema,
-    GastronomyWithDestinationSchema,
-    GastronomyWithFeaturesSchema,
-    GastronomyWithFullRelationsSchema,
-    GastronomyWithOwnerSchema
+    VenueWithAmenitiesSchema,
+    VenueWithBasicRelationsSchema,
+    VenueWithDestinationSchema,
+    VenueWithFeaturesSchema,
+    VenueWithFullRelationsSchema,
+    VenueWithOwnerSchema
 } from '../../../src/entities/venue/venue.relations.schema.js';
 import { createMinimalGastronomy } from '../../fixtures/venue.fixtures.js';
 
 describe('GastronomyWithDestinationSchema', () => {
     it('should validate gastronomy without destination (optional)', () => {
         const data = createMinimalGastronomy();
-        expect(() => GastronomyWithDestinationSchema.parse(data)).not.toThrow();
+        expect(() => VenueWithDestinationSchema.parse(data)).not.toThrow();
     });
 
     it('should validate gastronomy with destination', () => {
@@ -25,14 +25,14 @@ describe('GastronomyWithDestinationSchema', () => {
                 slug: 'concepcion-del-uruguay'
             }
         };
-        expect(() => GastronomyWithDestinationSchema.parse(data)).not.toThrow();
+        expect(() => VenueWithDestinationSchema.parse(data)).not.toThrow();
     });
 });
 
 describe('GastronomyWithOwnerSchema', () => {
     it('should validate gastronomy without owner (optional)', () => {
         const data = createMinimalGastronomy();
-        expect(() => GastronomyWithOwnerSchema.parse(data)).not.toThrow();
+        expect(() => VenueWithOwnerSchema.parse(data)).not.toThrow();
     });
 
     it('should validate gastronomy with owner summary', () => {
@@ -45,7 +45,7 @@ describe('GastronomyWithOwnerSchema', () => {
                 isActive: true
             }
         };
-        expect(() => GastronomyWithOwnerSchema.parse(data)).not.toThrow();
+        expect(() => VenueWithOwnerSchema.parse(data)).not.toThrow();
     });
 });
 
@@ -61,7 +61,7 @@ describe('GastronomyWithBasicRelationsSchema', () => {
                 isActive: true
             }
         };
-        expect(() => GastronomyWithBasicRelationsSchema.parse(data)).not.toThrow();
+        expect(() => VenueWithBasicRelationsSchema.parse(data)).not.toThrow();
     });
 });
 
@@ -89,20 +89,20 @@ describe('GastronomyWithFullRelationsSchema', () => {
             reviewsCount: 1,
             averageRating: 4.0
         };
-        expect(() => GastronomyWithFullRelationsSchema.parse(data)).not.toThrow();
+        expect(() => VenueWithFullRelationsSchema.parse(data)).not.toThrow();
     });
 
     it('should validate gastronomy with no optional relations', () => {
         const data = createMinimalGastronomy();
-        expect(() => GastronomyWithFullRelationsSchema.parse(data)).not.toThrow();
+        expect(() => VenueWithFullRelationsSchema.parse(data)).not.toThrow();
     });
 });
 
 // HOS-1774: zod 4.6 requires unwrapped `z.unknown()` keys; 4.3.6 accepted omission.
 describe('feature/amenity summaries without a `name` key (zod 4.3.6 parity)', () => {
     it.each([
-        ['features', GastronomyWithFeaturesSchema],
-        ['amenities', GastronomyWithAmenitiesSchema]
+        ['features', VenueWithFeaturesSchema],
+        ['amenities', VenueWithAmenitiesSchema]
     ] as const)('accepts a %s summary that omits name', (field, schema) => {
         const data = {
             ...createMinimalGastronomy(),

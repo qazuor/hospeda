@@ -2,12 +2,12 @@ import { faker } from '@faker-js/faker';
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
-    GastronomyFaqAddInputSchema,
-    GastronomyFaqListInputSchema,
-    GastronomyFaqRemoveInputSchema,
-    GastronomyFaqReorderInputSchema,
-    GastronomyFaqSchema,
-    GastronomyFaqUpdateInputSchema
+    VenueFaqAddInputSchema,
+    VenueFaqListInputSchema,
+    VenueFaqRemoveInputSchema,
+    VenueFaqReorderInputSchema,
+    VenueFaqSchema,
+    VenueFaqUpdateInputSchema
 } from '../../../src/entities/venue/subtypes/venue.faq.schema.js';
 
 const gastronomyId = faker.string.uuid();
@@ -32,12 +32,12 @@ describe('GastronomyFaqSchema', () => {
             id: faqId,
             gastronomyId
         };
-        expect(() => GastronomyFaqSchema.parse(data)).not.toThrow();
+        expect(() => VenueFaqSchema.parse(data)).not.toThrow();
     });
 
     it('should reject invalid gastronomyId', () => {
         const data = { ...validFaqPayload(), id: faqId, gastronomyId: 'not-a-uuid' };
-        expect(() => GastronomyFaqSchema.parse(data)).toThrow(ZodError);
+        expect(() => VenueFaqSchema.parse(data)).toThrow(ZodError);
     });
 });
 
@@ -50,7 +50,7 @@ describe('GastronomyFaqAddInputSchema', () => {
                 answer: 'Yes, free parking is available on the street.'
             }
         };
-        expect(() => GastronomyFaqAddInputSchema.parse(data)).not.toThrow();
+        expect(() => VenueFaqAddInputSchema.parse(data)).not.toThrow();
     });
 
     it('should default isVisibleOnListing and isUsableByAi to true (HOS-400)', () => {
@@ -63,7 +63,7 @@ describe('GastronomyFaqAddInputSchema', () => {
                 answer: 'Yes, free parking is available on the street.'
             }
         };
-        const parsed = GastronomyFaqAddInputSchema.parse(data);
+        const parsed = VenueFaqAddInputSchema.parse(data);
         expect(parsed.faq.isVisibleOnListing).toBe(true);
         expect(parsed.faq.isUsableByAi).toBe(true);
     });
@@ -78,7 +78,7 @@ describe('GastronomyFaqAddInputSchema', () => {
                 isUsableByAi: false
             }
         };
-        const parsed = GastronomyFaqAddInputSchema.parse(data);
+        const parsed = VenueFaqAddInputSchema.parse(data);
         expect(parsed.faq.isVisibleOnListing).toBe(false);
         expect(parsed.faq.isUsableByAi).toBe(false);
     });
@@ -90,7 +90,7 @@ describe('GastronomyFaqAddInputSchema', () => {
                 answer: 'Yes, free parking available.'
             }
         };
-        expect(() => GastronomyFaqAddInputSchema.parse(data)).toThrow(ZodError);
+        expect(() => VenueFaqAddInputSchema.parse(data)).toThrow(ZodError);
     });
 
     it('should reject invalid gastronomyId', () => {
@@ -101,7 +101,7 @@ describe('GastronomyFaqAddInputSchema', () => {
                 answer: 'Yes, free parking available.'
             }
         };
-        expect(() => GastronomyFaqAddInputSchema.parse(data)).toThrow(ZodError);
+        expect(() => VenueFaqAddInputSchema.parse(data)).toThrow(ZodError);
     });
 });
 
@@ -112,12 +112,12 @@ describe('GastronomyFaqUpdateInputSchema', () => {
             faqId,
             faq: { question: 'Updated question about hours?' }
         };
-        expect(() => GastronomyFaqUpdateInputSchema.parse(data)).not.toThrow();
+        expect(() => VenueFaqUpdateInputSchema.parse(data)).not.toThrow();
     });
 
     it('should reject missing faqId', () => {
         const data = { gastronomyId, faq: { question: 'Q?' } };
-        expect(() => GastronomyFaqUpdateInputSchema.parse(data)).toThrow(ZodError);
+        expect(() => VenueFaqUpdateInputSchema.parse(data)).toThrow(ZodError);
     });
 
     it('should leave both flags absent on a partial edit that omits them (HOS-400)', () => {
@@ -125,7 +125,7 @@ describe('GastronomyFaqUpdateInputSchema', () => {
         // reset a hidden FAQ back to public — the exact trap the HOS-393
         // JSDoc documents for FaqWithChannelVisibilityUpdatePayloadSchema.
         const data = { gastronomyId, faqId, faq: { question: 'Updated question about hours?' } };
-        const parsed = GastronomyFaqUpdateInputSchema.parse(data);
+        const parsed = VenueFaqUpdateInputSchema.parse(data);
         expect(Object.hasOwn(parsed.faq, 'isVisibleOnListing')).toBe(false);
         expect(Object.hasOwn(parsed.faq, 'isUsableByAi')).toBe(false);
     });
@@ -134,11 +134,11 @@ describe('GastronomyFaqUpdateInputSchema', () => {
 describe('GastronomyFaqRemoveInputSchema', () => {
     it('should validate a valid remove input', () => {
         const data = { gastronomyId, faqId };
-        expect(() => GastronomyFaqRemoveInputSchema.parse(data)).not.toThrow();
+        expect(() => VenueFaqRemoveInputSchema.parse(data)).not.toThrow();
     });
 
     it('should reject invalid faqId', () => {
-        expect(() => GastronomyFaqRemoveInputSchema.parse({ gastronomyId, faqId: 'bad' })).toThrow(
+        expect(() => VenueFaqRemoveInputSchema.parse({ gastronomyId, faqId: 'bad' })).toThrow(
             ZodError
         );
     });
@@ -146,11 +146,11 @@ describe('GastronomyFaqRemoveInputSchema', () => {
 
 describe('GastronomyFaqListInputSchema', () => {
     it('should validate a valid list input', () => {
-        expect(() => GastronomyFaqListInputSchema.parse({ gastronomyId })).not.toThrow();
+        expect(() => VenueFaqListInputSchema.parse({ gastronomyId })).not.toThrow();
     });
 
     it('should reject missing gastronomyId', () => {
-        expect(() => GastronomyFaqListInputSchema.parse({})).toThrow(ZodError);
+        expect(() => VenueFaqListInputSchema.parse({})).toThrow(ZodError);
     });
 });
 
@@ -163,11 +163,11 @@ describe('GastronomyFaqReorderInputSchema', () => {
                 { faqId: faker.string.uuid(), displayOrder: 1 }
             ]
         };
-        expect(() => GastronomyFaqReorderInputSchema.parse(data)).not.toThrow();
+        expect(() => VenueFaqReorderInputSchema.parse(data)).not.toThrow();
     });
 
     it('should reject empty order array', () => {
-        expect(() => GastronomyFaqReorderInputSchema.parse({ gastronomyId, order: [] })).toThrow(
+        expect(() => VenueFaqReorderInputSchema.parse({ gastronomyId, order: [] })).toThrow(
             ZodError
         );
     });
@@ -177,6 +177,6 @@ describe('GastronomyFaqReorderInputSchema', () => {
             gastronomyId,
             order: [{ faqId: 'not-a-uuid', displayOrder: 0 }]
         };
-        expect(() => GastronomyFaqReorderInputSchema.parse(data)).toThrow(ZodError);
+        expect(() => VenueFaqReorderInputSchema.parse(data)).toThrow(ZodError);
     });
 });

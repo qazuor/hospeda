@@ -6,10 +6,10 @@ import {
     ListingFeaturePublicSchema
 } from '../../common/listing-catalog.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
-import { GastronomyDailySpecialPublicSchema } from './subtypes/venue.daily-special.schema.js';
-import { GastronomyEventPublicSchema } from './subtypes/venue.event.schema.js';
-import { GastronomyMenuSectionPublicSchema } from './subtypes/venue.menu.schema.js';
-import { GastronomySchema } from './venue.schema.js';
+import { VenueDailySpecialPublicSchema } from './subtypes/venue.daily-special.schema.js';
+import { VenueEventPublicSchema } from './subtypes/venue.event.schema.js';
+import { VenueMenuSectionPublicSchema } from './subtypes/venue.menu.schema.js';
+import { VenueSchema } from './venue.schema.js';
 
 /**
  * Gastronomy Access Schemas — Three-Tier Response Projection
@@ -36,7 +36,7 @@ import { GastronomySchema } from './venue.schema.js';
  *   the service strips it server-side for non-entitled owners before
  *   calling `stripWithSchema`, so schema presence is safe.
  */
-export const GastronomyPublicSchema = GastronomySchema.pick({
+export const VenuePublicSchema = VenueSchema.pick({
     // Identification
     id: true,
     slug: true,
@@ -189,7 +189,7 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
      * mechanism `photoUrl` uses for `MENU_ITEM_PHOTOS`. See
      * `venue.menu.schema.ts` for the full mechanism.
      */
-    menuSections: z.array(GastronomyMenuSectionPublicSchema).optional(),
+    menuSections: z.array(VenueMenuSectionPublicSchema).optional(),
     /**
      * The menú del día (HOS-1041), joined from `gastronomy_daily_specials`.
      *
@@ -204,7 +204,7 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
      * `MANAGE_GASTRONOMY_DAILY_SPECIAL` — withheld live, exactly like
      * `menuSections`, without the rows being deleted.
      */
-    dailySpecials: z.array(GastronomyDailySpecialPublicSchema).optional(),
+    dailySpecials: z.array(VenueDailySpecialPublicSchema).optional(),
     /**
      * The venue's own agenda (HOS-1042), read from `gastronomy_events`.
      *
@@ -221,11 +221,11 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
      * gastronomy payload carrying a field by that name would read, to every
      * consumer that already knows the other one, as the wrong thing.
      */
-    venueEvents: z.array(GastronomyEventPublicSchema).optional()
+    venueEvents: z.array(VenueEventPublicSchema).optional()
 });
 
-/** TypeScript type for {@link GastronomyPublicSchema}. */
-export type GastronomyPublic = z.infer<typeof GastronomyPublicSchema>;
+/** TypeScript type for {@link VenuePublicSchema}. */
+export type VenuePublic = z.infer<typeof VenuePublicSchema>;
 
 // ============================================================================
 // PROTECTED ACCESS SCHEMA
@@ -237,7 +237,7 @@ export type GastronomyPublic = z.infer<typeof GastronomyPublicSchema>;
  * Contains data for authenticated users, including ownership and contact info.
  * Used for user dashboards and owner views.
  */
-export const GastronomyProtectedSchema = GastronomySchema.pick({
+export const VenueProtectedSchema = VenueSchema.pick({
     // All public fields
     id: true,
     slug: true,
@@ -323,8 +323,8 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
     featureIds: z.array(z.string().uuid()).optional()
 });
 
-/** TypeScript type for {@link GastronomyProtectedSchema}. */
-export type GastronomyProtected = z.infer<typeof GastronomyProtectedSchema>;
+/** TypeScript type for {@link VenueProtectedSchema}. */
+export type VenueProtected = z.infer<typeof VenueProtectedSchema>;
 
 // ============================================================================
 // ADMIN ACCESS SCHEMA
@@ -337,7 +337,7 @@ export type GastronomyProtected = z.infer<typeof GastronomyProtectedSchema>;
  * Used for admin dashboard, moderation, and full management.
  * Essentially the full schema with a relaxed `description` read constraint.
  */
-export const GastronomyAdminSchema = GastronomySchema.extend({
+export const VenueAdminSchema = VenueSchema.extend({
     /**
      * Description relaxed on the read side so DRAFT listings can still be
      * fetched by the admin panel. See SPEC-143 Finding #9 (accommodation pattern).
@@ -353,18 +353,18 @@ export const GastronomyAdminSchema = GastronomySchema.extend({
     contactInfo: ContactInfoReadSchema.nullish()
 });
 
-/** TypeScript type for {@link GastronomyAdminSchema}. */
-export type GastronomyAdmin = z.infer<typeof GastronomyAdminSchema>;
+/** TypeScript type for {@link VenueAdminSchema}. */
+export type VenueAdmin = z.infer<typeof VenueAdminSchema>;
 
 /**
  * Admin LIST-row schema: the full admin entity plus the eager-loaded `owner`
  * and `destination` relation summaries (the admin list query loads them via
- * `findAllWithRelations`). The base {@link GastronomyAdminSchema} only carries
+ * `findAllWithRelations`). The base {@link VenueAdminSchema} only carries
  * the scalar FKs (`ownerId` / `destinationId`); without these relation fields
  * the response strips them and the admin grid can only show raw UUIDs. Both are
  * `nullish` because a freshly admin-created listing may not have an owner yet.
  */
-export const GastronomyAdminListItemSchema = GastronomyAdminSchema.extend({
+export const VenueAdminListItemSchema = VenueAdminSchema.extend({
     destination: z
         .object({
             id: z.string().uuid(),
@@ -383,5 +383,5 @@ export const GastronomyAdminListItemSchema = GastronomyAdminSchema.extend({
         .nullish()
 });
 
-/** TypeScript type for {@link GastronomyAdminListItemSchema}. */
-export type GastronomyAdminListItem = z.infer<typeof GastronomyAdminListItemSchema>;
+/** TypeScript type for {@link VenueAdminListItemSchema}. */
+export type VenueAdminListItem = z.infer<typeof VenueAdminListItemSchema>;

@@ -29,7 +29,7 @@ import {
     UserProfileSchema
 } from '../../entities/user/user.profile.schema.js';
 import { CompleteProfileBodySchema } from '../../entities/user/user.profile-completion.schema.js';
-import { GastronomyCreateHttpSchema } from '../../entities/venue/venue.http.schema.js';
+import { VenueCreateHttpSchema } from '../../entities/venue/venue.http.schema.js';
 import { ProfileEditSchema } from '../../user/profile.js';
 import { ContactInfoSchema } from '../contact.schema.js';
 
@@ -64,13 +64,13 @@ const INPUT_FIELDS: ReadonlyArray<readonly [string, ZodType]> = [
     ['ExperienceCreateHttp.linkedin', ExperienceCreateHttpSchema.shape.linkedin],
     ['ExperienceCreateHttp.tiktok', ExperienceCreateHttpSchema.shape.tiktok],
     ['ExperienceCreateHttp.youtube', ExperienceCreateHttpSchema.shape.youtube],
-    ['GastronomyCreateHttp.website', GastronomyCreateHttpSchema.shape.website],
-    ['GastronomyCreateHttp.twitter', GastronomyCreateHttpSchema.shape.twitter],
-    ['GastronomyCreateHttp.facebook', GastronomyCreateHttpSchema.shape.facebook],
-    ['GastronomyCreateHttp.instagram', GastronomyCreateHttpSchema.shape.instagram],
-    ['GastronomyCreateHttp.linkedin', GastronomyCreateHttpSchema.shape.linkedin],
-    ['GastronomyCreateHttp.tiktok', GastronomyCreateHttpSchema.shape.tiktok],
-    ['GastronomyCreateHttp.youtube', GastronomyCreateHttpSchema.shape.youtube],
+    ['GastronomyCreateHttp.website', VenueCreateHttpSchema.shape.website],
+    ['GastronomyCreateHttp.twitter', VenueCreateHttpSchema.shape.twitter],
+    ['GastronomyCreateHttp.facebook', VenueCreateHttpSchema.shape.facebook],
+    ['GastronomyCreateHttp.instagram', VenueCreateHttpSchema.shape.instagram],
+    ['GastronomyCreateHttp.linkedin', VenueCreateHttpSchema.shape.linkedin],
+    ['GastronomyCreateHttp.tiktok', VenueCreateHttpSchema.shape.tiktok],
+    ['GastronomyCreateHttp.youtube', VenueCreateHttpSchema.shape.youtube],
     ['SponsorshipCreateHttp.linkUrl', SponsorshipCreateHttpSchema.shape.linkUrl],
     ['SponsorshipCreateInput.linkUrl', SponsorshipCreateInputSchema.shape.linkUrl],
     ['UserProfile.website', UserProfileSchema.shape.website],

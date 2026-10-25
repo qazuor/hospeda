@@ -51,7 +51,7 @@ import { z } from 'zod';
  * rows in one transaction — the same reason `GASTRONOMY_MENU_MAX_SECTIONS`
  * exists next to it.
  */
-export const GASTRONOMY_EVENTS_MAX_ENTRIES = 30;
+export const VENUE_EVENTS_MAX_ENTRIES = 30;
 
 // ----------------------------------------------------------------------------
 // Recurrence
@@ -64,10 +64,10 @@ export const GASTRONOMY_EVENTS_MAX_ENTRIES = 30;
  * `GastronomyMenuFileKindSchema` is: it describes one column of one vertical
  * and has no cross-entity consumer.
  */
-export const GastronomyEventRecurrenceSchema = z.enum(['once', 'weekly'], {
+export const VenueEventRecurrenceSchema = z.enum(['once', 'weekly'], {
     message: 'zodError.gastronomy.eventRecurrence.invalid'
 });
-export type GastronomyEventRecurrence = z.infer<typeof GastronomyEventRecurrenceSchema>;
+export type VenueEventRecurrence = z.infer<typeof VenueEventRecurrenceSchema>;
 
 /**
  * `HH:MM` in 24-hour local venue time, the shape Postgres `time` round-trips.
@@ -80,7 +80,7 @@ export type GastronomyEventRecurrence = z.infer<typeof GastronomyEventRecurrence
  * same instant but two different strings, and a field that accepts both is a
  * field whose equality checks are wrong somewhere downstream.
  */
-export const GastronomyEventTimeSchema = z
+export const VenueEventTimeSchema = z
     .string()
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/, { message: 'zodError.gastronomy.eventTime.invalid' });
 
@@ -91,7 +91,7 @@ export const GastronomyEventTimeSchema = z
  * consumer computing "is it on today" already holds. Any other basis would need
  * a map at both ends, and the two maps would be free to disagree.
  */
-export const GastronomyEventWeekdaySchema = z
+export const VenueEventWeekdaySchema = z
     .number()
     .int({ message: 'zodError.gastronomy.eventWeekday.int' })
     .min(0, { message: 'zodError.gastronomy.eventWeekday.range' })
@@ -105,7 +105,7 @@ export const GastronomyEventWeekdaySchema = z
  * it through a timezone and it becomes Thursday the 11th somewhere, which is
  * the `toISOString()` shift this repo has been bitten by before.
  */
-export const GastronomyEventDateSchema = z
+export const VenueEventDateSchema = z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'zodError.gastronomy.eventDate.invalid' });
 
@@ -128,7 +128,7 @@ const EventAuthorFields = {
 } as const;
 
 /** One agenda entry, as stored. */
-export const GastronomyEventSchema = z.object({
+export const VenueEventSchema = z.object({
     /** Event ID (UUID). */
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** The listing this entry belongs to. */
@@ -138,15 +138,15 @@ export const GastronomyEventSchema = z.object({
     /** Optional blurb. */
     description: z.string().max(500).nullable(),
     /** Whether this entry repeats. */
-    recurrence: GastronomyEventRecurrenceSchema,
+    recurrence: VenueEventRecurrenceSchema,
     /** The calendar day, for a `once` entry; `null` for a `weekly` one. */
-    date: GastronomyEventDateSchema.nullable(),
+    date: VenueEventDateSchema.nullable(),
     /** The weekday, for a `weekly` entry; `null` for a `once` one. */
-    weekday: GastronomyEventWeekdaySchema.nullable(),
+    weekday: VenueEventWeekdaySchema.nullable(),
     /** When it starts, local venue time. */
-    startTime: GastronomyEventTimeSchema,
+    startTime: VenueEventTimeSchema,
     /** When it ends, or `null` when the venue does not say. */
-    endTime: GastronomyEventTimeSchema.nullable(),
+    endTime: VenueEventTimeSchema.nullable(),
     /** Whether the entry is currently shown. */
     isActive: z.boolean(),
     /** Position within the agenda. */
@@ -155,14 +155,14 @@ export const GastronomyEventSchema = z.object({
     updatedAt: z.coerce.date(),
     ...EventAuthorFields
 });
-export type GastronomyEvent = z.infer<typeof GastronomyEventSchema>;
+export type VenueEvent = z.infer<typeof VenueEventSchema>;
 
 /** An agenda entry as a reader sees it — the stored row minus its audit authors. */
-export const GastronomyEventPublicSchema = GastronomyEventSchema.omit({
+export const VenueEventPublicSchema = VenueEventSchema.omit({
     createdById: true,
     updatedById: true
 });
-export type GastronomyEventPublic = z.infer<typeof GastronomyEventPublicSchema>;
+export type VenueEventPublic = z.infer<typeof VenueEventPublicSchema>;
 
 // ----------------------------------------------------------------------------
 // Write payload
@@ -184,7 +184,7 @@ export type GastronomyEventPublic = z.infer<typeof GastronomyEventPublicSchema>;
  */
 function refineRecurrenceShape(
     value: {
-        recurrence: GastronomyEventRecurrence;
+        recurrence: VenueEventRecurrence;
         date?: string | null | undefined;
         weekday?: number | null | undefined;
         startTime: string;
@@ -246,7 +246,7 @@ function refineRecurrenceShape(
  * One agenda entry as the owner submits it.
  *
  * Carries NO id. The agenda is written as a whole document (see
- * {@link GastronomyEventsReplacePayloadSchema}), so an id supplied by the
+ * {@link VenueEventsReplacePayloadSchema}), so an id supplied by the
  * client would be an id the server has to either trust or ignore — and trusting
  * one is how a caller writes an event into somebody else's listing. Same
  * reasoning `GastronomyMenuItemInputSchema` states.
@@ -260,7 +260,7 @@ function refineRecurrenceShape(
  * a person says it. So the refinement rejects only `endTime === startTime`, a
  * zero-length event, which no venue means.
  */
-export const GastronomyEventInputSchema = z
+export const VenueEventInputSchema = z
     .object({
         /** What the event is called. */
         title: z
@@ -275,62 +275,62 @@ export const GastronomyEventInputSchema = z
             .max(500, { message: 'zodError.gastronomy.event.description.max' })
             .nullish(),
         /** Whether this entry repeats. */
-        recurrence: GastronomyEventRecurrenceSchema,
+        recurrence: VenueEventRecurrenceSchema,
         /** Required when `recurrence` is `once`, forbidden otherwise. */
-        date: GastronomyEventDateSchema.nullish(),
+        date: VenueEventDateSchema.nullish(),
         /** Required when `recurrence` is `weekly`, forbidden otherwise. */
-        weekday: GastronomyEventWeekdaySchema.nullish(),
+        weekday: VenueEventWeekdaySchema.nullish(),
         /** When it starts, local venue time. */
-        startTime: GastronomyEventTimeSchema,
+        startTime: VenueEventTimeSchema,
         /** When it ends, or omitted when the venue does not say. */
-        endTime: GastronomyEventTimeSchema.nullish(),
+        endTime: VenueEventTimeSchema.nullish(),
         /** Whether the entry is shown. Defaults to `true`. */
         isActive: z.boolean().default(true)
     })
     .superRefine(refineRecurrenceShape);
-export type GastronomyEventInput = z.input<typeof GastronomyEventInputSchema>;
+export type VenueEventInput = z.input<typeof VenueEventInputSchema>;
 
 /**
  * The whole agenda, submitted as ONE document (`PUT .../events`).
  *
  * Replace-the-document rather than per-row endpoints, for the reason
- * {@link GastronomyMenuReplacePayloadSchema} spells out at length and which
+ * {@link VenueMenuReplacePayloadSchema} spells out at length and which
  * applies here unchanged: nothing outside the database is created by an agenda
  * entry, so nothing can be orphaned by a save that never happens; and reordering
  * three entries while deleting a fourth is ONE thought, which as one document is
  * ONE transaction and as four requests is four ways to half-succeed.
  */
-export const GastronomyEventsReplacePayloadSchema = z.object({
+export const VenueEventsReplacePayloadSchema = z.object({
     /**
      * The entries, in order. An EMPTY array is a legitimate submission and
      * means "take the agenda down" — a venue that stopped doing live music
      * needs a way to say so.
      */
     events: z
-        .array(GastronomyEventInputSchema)
-        .max(GASTRONOMY_EVENTS_MAX_ENTRIES, {
+        .array(VenueEventInputSchema)
+        .max(VENUE_EVENTS_MAX_ENTRIES, {
             message: 'zodError.gastronomy.events.max'
         })
         .default([])
 });
-export type GastronomyEventsReplacePayload = z.input<typeof GastronomyEventsReplacePayloadSchema>;
+export type VenueEventsReplacePayload = z.input<typeof VenueEventsReplacePayloadSchema>;
 
 // ----------------------------------------------------------------------------
 // Service input / output
 // ----------------------------------------------------------------------------
 
 /** Service input for reading a listing's agenda. */
-export const GastronomyEventsGetInputSchema = z.object({
+export const VenueEventsGetInputSchema = z.object({
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
-export type GastronomyEventsGetInput = z.infer<typeof GastronomyEventsGetInputSchema>;
+export type VenueEventsGetInput = z.infer<typeof VenueEventsGetInputSchema>;
 
 /** Service input for replacing a listing's agenda. */
-export const GastronomyEventsReplaceInputSchema = z.object({
+export const VenueEventsReplaceInputSchema = z.object({
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    agenda: GastronomyEventsReplacePayloadSchema
+    agenda: VenueEventsReplacePayloadSchema
 });
-export type GastronomyEventsReplaceInput = z.input<typeof GastronomyEventsReplaceInputSchema>;
+export type VenueEventsReplaceInput = z.input<typeof VenueEventsReplaceInputSchema>;
 
 /**
  * What an agenda read answers with.
@@ -339,8 +339,8 @@ export type GastronomyEventsReplaceInput = z.input<typeof GastronomyEventsReplac
  * hard way that a payload which is literally a list cannot grow a sibling field
  * later without breaking every consumer that indexed into it.
  */
-export const GastronomyEventsOutputSchema = z.object({
+export const VenueEventsOutputSchema = z.object({
     /** The agenda, ordered by `displayOrder`. Empty when the venue has none. */
-    events: z.array(GastronomyEventPublicSchema)
+    events: z.array(VenueEventPublicSchema)
 });
-export type GastronomyEventsOutput = z.infer<typeof GastronomyEventsOutputSchema>;
+export type VenueEventsOutput = z.infer<typeof VenueEventsOutputSchema>;

@@ -19,8 +19,8 @@ import { ModerationStatusEnumSchema } from '../../../enums/index.js';
  *
  * @see packages/db/src/schemas/venue/gastronomy_media.dbschema.ts
  */
-export const GastronomyMediaStateSchema = ListingMediaStateSchema;
-export type GastronomyMediaState = z.infer<typeof GastronomyMediaStateSchema>;
+export const VenueMediaStateSchema = ListingMediaStateSchema;
+export type VenueMediaState = z.infer<typeof VenueMediaStateSchema>;
 
 /**
  * Zod schema for a single row in the `gastronomy_media` table.
@@ -32,7 +32,7 @@ export type GastronomyMediaState = z.infer<typeof GastronomyMediaStateSchema>;
  *
  * @see packages/db/src/schemas/venue/gastronomy_media.dbschema.ts
  */
-export const GastronomyMediaSchema = BaseListingMediaSchema.extend({
+export const VenueMediaSchema = BaseListingMediaSchema.extend({
     /** UUID primary key for this media row. */
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** UUID of the parent gastronomy listing (FK → gastronomies.id). */
@@ -46,7 +46,7 @@ export const GastronomyMediaSchema = BaseListingMediaSchema.extend({
  * type) so the model generic `BaseModelImpl<GastronomyMedia>` typechecks
  * without casts.
  */
-export type GastronomyMedia = z.infer<typeof GastronomyMediaSchema>;
+export type VenueMedia = z.infer<typeof VenueMediaSchema>;
 
 // ----------------------------------------------------------------------------
 // Command Input Schemas
@@ -71,7 +71,7 @@ export type GastronomyMedia = z.infer<typeof GastronomyMediaSchema>;
  * - `archivedAt`    — null on create (set when archiving)
  * - Audit timestamps — set by the DB
  */
-export const GastronomyMediaAddPayloadSchema = z.object({
+export const VenueMediaAddPayloadSchema = z.object({
     /**
      * Full public URL of the photo (Cloudinary delivery URL or external CDN).
      * Required — the upload endpoint returns this URL before this call is made.
@@ -125,21 +125,21 @@ export const GastronomyMediaAddPayloadSchema = z.object({
 });
 
 /** Inferred type for the add-media payload. */
-export type GastronomyMediaAddPayload = z.infer<typeof GastronomyMediaAddPayloadSchema>;
+export type VenueMediaAddPayload = z.infer<typeof VenueMediaAddPayloadSchema>;
 
 /**
  * Full service input for `GastronomyService.addMedia`.
  * Combines the URL param `gastronomyId` with the photo payload.
  */
-export const GastronomyMediaAddInputSchema = z.object({
+export const VenueMediaAddInputSchema = z.object({
     /** UUID of the parent gastronomy listing (from URL param `/:id`). */
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** Photo payload received from the caller. */
-    media: GastronomyMediaAddPayloadSchema
+    media: VenueMediaAddPayloadSchema
 });
 
 /** Inferred type for the full add-media service input. */
-export type GastronomyMediaAddInput = z.infer<typeof GastronomyMediaAddInputSchema>;
+export type VenueMediaAddInput = z.infer<typeof VenueMediaAddInputSchema>;
 
 // ----------------------------------------------------------------------------
 // Born-featured cover upload (HOS-803)
@@ -157,15 +157,15 @@ export type GastronomyMediaAddInput = z.infer<typeof GastronomyMediaAddInputSche
  * listings have no per-plan photo allowance — only the fixed per-entity cap
  * from `getGalleryCap`, which the service reads itself.
  */
-export const GastronomyFeaturedMediaAddInputSchema = z.object({
+export const VenueFeaturedMediaAddInputSchema = z.object({
     /** UUID of the parent gastronomy listing (from URL param `/:id`). */
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** Photo payload received from the caller — identical to add-media. */
-    media: GastronomyMediaAddPayloadSchema
+    media: VenueMediaAddPayloadSchema
 });
 
 /** Inferred type for the featured-media service input. */
-export type GastronomyFeaturedMediaAddInput = z.infer<typeof GastronomyFeaturedMediaAddInputSchema>;
+export type VenueFeaturedMediaAddInput = z.infer<typeof VenueFeaturedMediaAddInputSchema>;
 
 /**
  * Response shape for the born-featured cover endpoint.
@@ -175,17 +175,15 @@ export type GastronomyFeaturedMediaAddInput = z.infer<typeof GastronomyFeaturedM
  * transaction. Naming the deleted id is what lets a client holding that row
  * learn it is gone instead of keeping it on screen.
  */
-export const GastronomyFeaturedMediaAddOutputSchema = z.object({
+export const VenueFeaturedMediaAddOutputSchema = z.object({
     /** The newly created row, already featured. */
-    media: GastronomyMediaSchema,
+    media: VenueMediaSchema,
     /** The cover this one replaced and deleted, or `null` when there was none. */
     previousFeatured: PreviousFeaturedOutcomeSchema.nullable()
 });
 
 /** Inferred type for the featured-media response. */
-export type GastronomyFeaturedMediaAddOutput = z.infer<
-    typeof GastronomyFeaturedMediaAddOutputSchema
->;
+export type VenueFeaturedMediaAddOutput = z.infer<typeof VenueFeaturedMediaAddOutputSchema>;
 
 // ----------------------------------------------------------------------------
 // Command Output Schemas
@@ -196,24 +194,24 @@ export type GastronomyFeaturedMediaAddOutput = z.infer<
  * Wraps the created/updated `GastronomyMedia` row in a `media` key, mirroring
  * the `{ faq: ... }` envelope used by FAQ endpoints.
  */
-export const GastronomyMediaSingleOutputSchema = z.object({
-    media: GastronomyMediaSchema
+export const VenueMediaSingleOutputSchema = z.object({
+    media: VenueMediaSchema
 });
 
 /** Inferred type for a single-media response. */
-export type GastronomyMediaSingleOutput = z.infer<typeof GastronomyMediaSingleOutputSchema>;
+export type VenueMediaSingleOutput = z.infer<typeof VenueMediaSingleOutputSchema>;
 
 /**
  * List output schema for `GET /:id/media` responses.
  * Wraps an ordered array of `GastronomyMedia` rows in a `media` key, mirroring
  * the `{ faqs: [...] }` envelope used by FAQ list endpoints.
  */
-export const GastronomyMediaListOutputSchema = z.object({
-    media: z.array(GastronomyMediaSchema)
+export const VenueMediaListOutputSchema = z.object({
+    media: z.array(VenueMediaSchema)
 });
 
 /** Inferred type for a media list response. */
-export type GastronomyMediaListOutput = z.infer<typeof GastronomyMediaListOutputSchema>;
+export type VenueMediaListOutput = z.infer<typeof VenueMediaListOutputSchema>;
 
 // ----------------------------------------------------------------------------
 // Remove Input Schema
@@ -224,7 +222,7 @@ export type GastronomyMediaListOutput = z.infer<typeof GastronomyMediaListOutput
  * listing gallery. The row is soft-deleted and the remaining visible rows
  * are resequenced.
  */
-export const GastronomyMediaRemoveInputSchema = z.object({
+export const VenueMediaRemoveInputSchema = z.object({
     /** UUID of the parent gastronomy listing (from URL param `/:id`). */
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** UUID of the media row to remove (from URL param `/:mediaId`). */
@@ -232,7 +230,7 @@ export const GastronomyMediaRemoveInputSchema = z.object({
 });
 
 /** Inferred type for the remove-media service input. */
-export type GastronomyMediaRemoveInput = z.infer<typeof GastronomyMediaRemoveInputSchema>;
+export type VenueMediaRemoveInput = z.infer<typeof VenueMediaRemoveInputSchema>;
 
 // ----------------------------------------------------------------------------
 // Reorder Input Schema
@@ -244,7 +242,7 @@ export type GastronomyMediaRemoveInput = z.infer<typeof GastronomyMediaRemoveInp
  * service validates that this set matches the current visible rows exactly
  * and then applies the new `sortOrder` positions.
  */
-export const GastronomyMediaReorderPayloadSchema = z.object({
+export const VenueMediaReorderPayloadSchema = z.object({
     /**
      * Ordered array of `gastronomy_media` UUIDs.
      * Must contain exactly the same IDs as the current visible rows — no
@@ -259,21 +257,21 @@ export const GastronomyMediaReorderPayloadSchema = z.object({
 });
 
 /** Inferred type for the reorder payload. */
-export type GastronomyMediaReorderPayload = z.infer<typeof GastronomyMediaReorderPayloadSchema>;
+export type VenueMediaReorderPayload = z.infer<typeof VenueMediaReorderPayloadSchema>;
 
 /**
  * Service input schema for reordering a gastronomy listing's gallery.
  * Combines the URL param `gastronomyId` with the ordered-ids payload.
  */
-export const GastronomyMediaReorderInputSchema = z.object({
+export const VenueMediaReorderInputSchema = z.object({
     /** UUID of the parent gastronomy listing (from URL param `/:id`). */
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** Ordered array of visible media UUIDs. */
-    orderedIds: GastronomyMediaReorderPayloadSchema.shape.orderedIds
+    orderedIds: VenueMediaReorderPayloadSchema.shape.orderedIds
 });
 
 /** Inferred type for the reorder service input. */
-export type GastronomyMediaReorderInput = z.infer<typeof GastronomyMediaReorderInputSchema>;
+export type VenueMediaReorderInput = z.infer<typeof VenueMediaReorderInputSchema>;
 
 // ----------------------------------------------------------------------------
 // List Input Schema
@@ -283,7 +281,7 @@ export type GastronomyMediaReorderInput = z.infer<typeof GastronomyMediaReorderI
  * Service input schema for listing a gastronomy listing's media rows.
  * Supports an optional `state` filter (defaults to `'visible'`).
  */
-export const GastronomyMediaListInputSchema = z.object({
+export const VenueMediaListInputSchema = z.object({
     /** UUID of the parent gastronomy listing (from URL param `/:id`). */
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /**
@@ -291,11 +289,11 @@ export const GastronomyMediaListInputSchema = z.object({
      * Defaults to `'visible'` (active gallery photos).
      * Pass `'archived'` to list photos moved out of the gallery.
      */
-    state: GastronomyMediaStateSchema.optional()
+    state: VenueMediaStateSchema.optional()
 });
 
 /** Inferred type for the list-media service input. */
-export type GastronomyMediaListInput = z.infer<typeof GastronomyMediaListInputSchema>;
+export type VenueMediaListInput = z.infer<typeof VenueMediaListInputSchema>;
 
 // ----------------------------------------------------------------------------
 // Set Featured Input Schema
@@ -314,7 +312,7 @@ export type GastronomyMediaListInput = z.infer<typeof GastronomyMediaListInputSc
  * The service validates that the target row is `state = 'visible'` before
  * writing to avoid tripping the CHECK constraint.
  */
-export const GastronomyMediaSetFeaturedInputSchema = z.object({
+export const VenueMediaSetFeaturedInputSchema = z.object({
     /** UUID of the parent gastronomy listing (from URL param `/:id`). */
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** UUID of the media row to promote as featured (from URL param `/:mediaId`). */
@@ -322,7 +320,7 @@ export const GastronomyMediaSetFeaturedInputSchema = z.object({
 });
 
 /** Inferred type for the set-featured service input. */
-export type GastronomyMediaSetFeaturedInput = z.infer<typeof GastronomyMediaSetFeaturedInputSchema>;
+export type VenueMediaSetFeaturedInput = z.infer<typeof VenueMediaSetFeaturedInputSchema>;
 
 // ----------------------------------------------------------------------------
 // Archive Photo Input Schema
@@ -336,7 +334,7 @@ export type GastronomyMediaSetFeaturedInput = z.infer<typeof GastronomyMediaSetF
  * `NOT (is_featured AND state = 'archived')`. The service rejects the request
  * before reaching the DB when `isFeatured = true`.
  */
-export const GastronomyMediaArchiveInputSchema = z.object({
+export const VenueMediaArchiveInputSchema = z.object({
     /** UUID of the parent gastronomy listing (from URL param `/:id`). */
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** UUID of the media row to archive (from URL param `/:mediaId`). */
@@ -344,7 +342,7 @@ export const GastronomyMediaArchiveInputSchema = z.object({
 });
 
 /** Inferred type for the archive-media service input. */
-export type GastronomyMediaArchiveInput = z.infer<typeof GastronomyMediaArchiveInputSchema>;
+export type VenueMediaArchiveInput = z.infer<typeof VenueMediaArchiveInputSchema>;
 
 // ----------------------------------------------------------------------------
 // Restore Photo Input Schema
@@ -356,7 +354,7 @@ export type GastronomyMediaArchiveInput = z.infer<typeof GastronomyMediaArchiveI
  * Flips `state = 'visible'`, clears `archivedAt = NULL`, and appends the row
  * at the END of the current visible gallery (`sortOrder = max visible + 1`).
  */
-export const GastronomyMediaRestoreInputSchema = z.object({
+export const VenueMediaRestoreInputSchema = z.object({
     /** UUID of the parent gastronomy listing (from URL param `/:id`). */
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** UUID of the archived media row to restore (from URL param `/:mediaId`). */
@@ -364,36 +362,36 @@ export const GastronomyMediaRestoreInputSchema = z.object({
 });
 
 /** Inferred type for the restore-media service input. */
-export type GastronomyMediaRestoreInput = z.infer<typeof GastronomyMediaRestoreInputSchema>;
+export type VenueMediaRestoreInput = z.infer<typeof VenueMediaRestoreInputSchema>;
 
 // ----------------------------------------------------------------------------
 // Update Text Metadata (HOS-1036 — PATCH /gastronomies/:id/media/:mediaId)
 // ----------------------------------------------------------------------------
 
 /** HTTP payload for `PATCH /gastronomies/:id/media/:mediaId`. Alias of the shared listing payload. */
-export const GastronomyMediaUpdatePayloadSchema = ListingMediaUpdatePayloadSchema;
+export const VenueMediaUpdatePayloadSchema = ListingMediaUpdatePayloadSchema;
 /** Inferred type for the update-media HTTP payload. */
-export type GastronomyMediaUpdatePayload = z.infer<typeof GastronomyMediaUpdatePayloadSchema>;
+export type VenueMediaUpdatePayload = z.infer<typeof VenueMediaUpdatePayloadSchema>;
 
 /**
  * Service input for `updateGastronomyMedia`.
  *
  * Combines the URL params (`gastronomyId`, `mediaId`) with the four payload fields
- * spread from {@link GastronomyMediaUpdatePayloadSchema}'s shape, then adds the
+ * spread from {@link VenueMediaUpdatePayloadSchema}'s shape, then adds the
  * cross-field rule the flat payload cannot express: at least one editable field
  * must be present. An all-omitted body is a no-op PATCH and is rejected as
  * `VALIDATION_ERROR` rather than silently answering 200.
  */
-export const GastronomyMediaUpdateInputSchema = z
+export const VenueMediaUpdateInputSchema = z
     .object({
         /** UUID of the parent gastronomy listing (from URL param `/:id`). */
         gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         /** UUID of the media row to update (from URL param `/:mediaId`). */
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-        ...GastronomyMediaUpdatePayloadSchema.shape
+        ...VenueMediaUpdatePayloadSchema.shape
     })
     .refine(hasAtLeastOneMediaTextField, {
         message: 'zodError.common.listingMedia.update.atLeastOneField'
     });
 /** Inferred type for the update-media service input. */
-export type GastronomyMediaUpdateInput = z.infer<typeof GastronomyMediaUpdateInputSchema>;
+export type VenueMediaUpdateInput = z.infer<typeof VenueMediaUpdateInputSchema>;

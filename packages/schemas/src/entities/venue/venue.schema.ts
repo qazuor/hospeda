@@ -10,11 +10,11 @@ import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
 import { SocialNetworkFields } from '../../common/social.schema.js';
 import { TagsFields } from '../../common/tags.schema.js';
-import { GastronomyRatingSchema } from '../../common/venue-rating.schema.js';
-import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/index.js';
+import { VenueRatingSchema } from '../../common/venue-rating.schema.js';
+import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js';
 import { PublicationStatusEnumSchema } from '../../enums/publication-status.schema.js';
-import { GastronomyFaqSchema } from './subtypes/venue.faq.schema.js';
-import { GastronomyMenuFileKindSchema } from './subtypes/venue.menu.schema.js';
+import { VenueFaqSchema } from './subtypes/venue.faq.schema.js';
+import { VenueMenuFileKindSchema } from './subtypes/venue.menu.schema.js';
 
 /**
  * Gastronomy Entity Schema — listing for food and beverage venues.
@@ -39,7 +39,7 @@ import { GastronomyMenuFileKindSchema } from './subtypes/venue.menu.schema.js';
  * const gastronomy: Gastronomy = GastronomySchema.parse(raw);
  * ```
  */
-export const GastronomySchema = z.object({
+export const VenueSchema = z.object({
     // Entity ID
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
@@ -48,7 +48,7 @@ export const GastronomySchema = z.object({
 
     // Gastronomy-specific fields
     /** Gastronomy sub-category (RESTAURANT, BAR, CAFE, PARRILLA, etc.). */
-    type: GastronomyTypeEnumSchema,
+    type: VenueTypeEnumSchema,
 
     /**
      * Price-range tier for this venue.
@@ -77,7 +77,7 @@ export const GastronomySchema = z.object({
     menuFileUrl: z.string().url({ message: 'zodError.gastronomy.menuFileUrl.invalid' }).nullish(),
 
     /** Whether {@link menuFileUrl} is an image or a PDF. */
-    menuFileKind: GastronomyMenuFileKindSchema.nullish(),
+    menuFileKind: VenueMenuFileKindSchema.nullish(),
 
     /**
      * Provider-side id of the uploaded menu file, kept so the delete route can
@@ -146,15 +146,15 @@ export const GastronomySchema = z.object({
      *    id must keep parsing; the same call was made for `pointsOfInterest`'s
      *    `relation` in HOS-146.
      */
-    faqs: z.array(GastronomyFaqSchema.partial({ id: true, gastronomyId: true })).optional(),
+    faqs: z.array(VenueFaqSchema.partial({ id: true, gastronomyId: true })).optional(),
 
     /**
      * Granular rating breakdown (food / service / ambiance / value).
      * Aggregate of individual `GastronomyReview` records. Null when no
      * reviews have been submitted yet.
      */
-    rating: GastronomyRatingSchema.nullish()
+    rating: VenueRatingSchema.nullish()
 });
 
-/** TypeScript type inferred from {@link GastronomySchema}. */
-export type Gastronomy = z.infer<typeof GastronomySchema>;
+/** TypeScript type inferred from {@link VenueSchema}. */
+export type Venue = z.infer<typeof VenueSchema>;

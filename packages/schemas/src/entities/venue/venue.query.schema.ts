@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
-import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/index.js';
-import { GastronomySchema } from './venue.schema.js';
+import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js';
+import { VenueSchema } from './venue.schema.js';
 
 /**
  * Gastronomy Query Schemas
@@ -21,11 +21,11 @@ import { GastronomySchema } from './venue.schema.js';
  * Gastronomy-specific filter schema.
  * Used as a building block for search schemas.
  */
-export const GastronomyFiltersSchema = z.object({
+export const VenueFiltersSchema = z.object({
     /** Filter by destination UUID. */
     destinationId: z.string().uuid().optional(),
     /** Filter by gastronomy sub-type. */
-    type: GastronomyTypeEnumSchema.optional(),
+    type: VenueTypeEnumSchema.optional(),
     /** Filter by price-range tier. */
     priceRange: PriceRangeEnumSchema.optional(),
     /** Filter listings that have a given amenity. Accepts a list of amenity UUIDs. */
@@ -46,8 +46,8 @@ export const GastronomyFiltersSchema = z.object({
     createdBefore: z.date().optional()
 });
 
-/** TypeScript type for {@link GastronomyFiltersSchema}. */
-export type GastronomyFilters = z.infer<typeof GastronomyFiltersSchema>;
+/** TypeScript type for {@link VenueFiltersSchema}. */
+export type VenueFilters = z.infer<typeof VenueFiltersSchema>;
 
 // ============================================================================
 // SEARCH SCHEMAS
@@ -68,11 +68,11 @@ export type GastronomyFilters = z.infer<typeof GastronomyFiltersSchema>;
  * });
  * ```
  */
-export const GastronomySearchSchema = BaseSearchSchema.extend({
+export const VenueSearchSchema = BaseSearchSchema.extend({
     /** Filter by destination UUID. */
     destinationId: z.string().uuid().optional(),
     /** Filter by gastronomy sub-type. */
-    type: GastronomyTypeEnumSchema.optional(),
+    type: VenueTypeEnumSchema.optional(),
     /** Filter by price-range tier. */
     priceRange: PriceRangeEnumSchema.optional(),
     /** Filter listings that have all these amenity UUIDs. */
@@ -97,19 +97,19 @@ export const GastronomySearchSchema = BaseSearchSchema.extend({
     includeFeatures: z.boolean().optional()
 });
 
-/** TypeScript type for {@link GastronomySearchSchema}. */
-export type GastronomySearch = z.infer<typeof GastronomySearchSchema>;
-/** Alias for {@link GastronomySearch}. */
-export type GastronomySearchInput = GastronomySearch;
+/** TypeScript type for {@link VenueSearchSchema}. */
+export type VenueSearch = z.infer<typeof VenueSearchSchema>;
+/** Alias for {@link VenueSearch}. */
+export type VenueSearchInput = VenueSearch;
 
 /**
  * Standard gastronomy search result schema.
  * Wraps an array of full gastronomy schemas with pagination metadata.
  */
-export const GastronomySearchResultSchema = PaginationResultSchema(GastronomySchema);
+export const VenueSearchResultSchema = PaginationResultSchema(VenueSchema);
 
-/** TypeScript type for {@link GastronomySearchResultSchema}. */
-export type GastronomySearchResult = z.infer<typeof GastronomySearchResultSchema>;
+/** TypeScript type for {@link VenueSearchResultSchema}. */
+export type VenueSearchResult = z.infer<typeof VenueSearchResultSchema>;
 
 // ============================================================================
 // LIST ITEM SCHEMA
@@ -118,7 +118,7 @@ export type GastronomySearchResult = z.infer<typeof GastronomySearchResultSchema
 /**
  * Gastronomy list item — public-safe minimal projection for listing pages.
  */
-export const GastronomyListItemSchema = GastronomySchema.pick({
+export const VenueListItemSchema = VenueSchema.pick({
     id: true,
     name: true,
     slug: true,
@@ -140,8 +140,8 @@ export const GastronomyListItemSchema = GastronomySchema.pick({
     averageRating: z.number().min(0).max(5).default(0)
 });
 
-/** TypeScript type for {@link GastronomyListItemSchema}. */
-export type GastronomyListItem = z.infer<typeof GastronomyListItemSchema>;
+/** TypeScript type for {@link VenueListItemSchema}. */
+export type VenueListItem = z.infer<typeof VenueListItemSchema>;
 
 // ============================================================================
 // SUMMARY SCHEMA
@@ -150,7 +150,7 @@ export type GastronomyListItem = z.infer<typeof GastronomyListItemSchema>;
 /**
  * Gastronomy summary — essential fields for cards and relation selectors.
  */
-export const GastronomySummarySchema = GastronomySchema.pick({
+export const VenueSummarySchema = VenueSchema.pick({
     id: true,
     name: true,
     slug: true,
@@ -168,8 +168,8 @@ export const GastronomySummarySchema = GastronomySchema.pick({
     averageRating: z.number().min(0).max(5).default(0)
 });
 
-/** TypeScript type for {@link GastronomySummarySchema}. */
-export type GastronomySummary = z.infer<typeof GastronomySummarySchema>;
+/** TypeScript type for {@link VenueSummarySchema}. */
+export type VenueSummary = z.infer<typeof VenueSummarySchema>;
 
 // ============================================================================
 // STATS SCHEMA
@@ -179,7 +179,7 @@ export type GastronomySummary = z.infer<typeof GastronomySummarySchema>;
  * Gastronomy statistics schema.
  * Used for admin dashboards and platform metrics.
  */
-export const GastronomyStatsSchema = z.object({
+export const VenueStatsSchema = z.object({
     /** Total number of gastronomy listings. */
     total: z.number(),
     /** Number of featured listings. */
@@ -192,5 +192,5 @@ export const GastronomyStatsSchema = z.object({
     totalByPriceRange: z.record(z.string(), z.number())
 });
 
-/** TypeScript type for {@link GastronomyStatsSchema}. */
-export type GastronomyStats = z.infer<typeof GastronomyStatsSchema>;
+/** TypeScript type for {@link VenueStatsSchema}. */
+export type VenueStats = z.infer<typeof VenueStatsSchema>;

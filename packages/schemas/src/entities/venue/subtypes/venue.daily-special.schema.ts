@@ -44,7 +44,7 @@ import { z } from 'zod';
  * A ceiling, not a product tier. The tier decision (`gastronomy-pro` and above)
  * is an ENTITLEMENT, checked at the route — the same split the carta makes.
  */
-export const GASTRONOMY_DAILY_SPECIALS_MAX = 10;
+export const VENUE_DAILY_SPECIALS_MAX = 10;
 
 /**
  * The highest price a special may carry, in centavos (ARS 1.000.000).
@@ -54,7 +54,7 @@ export const GASTRONOMY_DAILY_SPECIALS_MAX = 10;
  * person, where a slipped decimal point is three orders of magnitude and
  * nothing else stands between the keyboard and the public page.
  */
-export const GASTRONOMY_DAILY_SPECIAL_MAX_PRICE_CENTS = 100_000_000;
+export const VENUE_DAILY_SPECIAL_MAX_PRICE_CENTS = 100_000_000;
 
 /**
  * The longest window a single special may span, in days (inclusive of both
@@ -65,7 +65,7 @@ export const GASTRONOMY_DAILY_SPECIAL_MAX_PRICE_CENTS = 100_000_000;
  * anyone's memory of setting it is the rotting free-text field this replaces,
  * wearing an expiry date it will never reach.
  */
-export const GASTRONOMY_DAILY_SPECIAL_MAX_WINDOW_DAYS = 31;
+export const VENUE_DAILY_SPECIAL_MAX_WINDOW_DAYS = 31;
 
 // ----------------------------------------------------------------------------
 // Calendar-date primitive
@@ -138,7 +138,7 @@ const DailySpecialAuthorFields = {
 } as const;
 
 /** One special, as stored. */
-export const GastronomyDailySpecialSchema = z.object({
+export const VenueDailySpecialSchema = z.object({
     /** Daily-special ID (UUID). */
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** The listing this special belongs to. */
@@ -148,7 +148,7 @@ export const GastronomyDailySpecialSchema = z.object({
     /** Optional detail. */
     description: z.string().max(500).nullable(),
     /** Price in centavos, or `null` for "a consultar". */
-    priceCents: z.number().int().min(0).max(GASTRONOMY_DAILY_SPECIAL_MAX_PRICE_CENTS).nullable(),
+    priceCents: z.number().int().min(0).max(VENUE_DAILY_SPECIAL_MAX_PRICE_CENTS).nullable(),
     /** First day the special is shown, inclusive. */
     validFrom: calendarDate('zodError.gastronomy.dailySpecial.validFrom.invalid'),
     /** Last day the special is shown, inclusive. */
@@ -159,14 +159,14 @@ export const GastronomyDailySpecialSchema = z.object({
     updatedAt: z.coerce.date(),
     ...DailySpecialAuthorFields
 });
-export type GastronomyDailySpecial = z.infer<typeof GastronomyDailySpecialSchema>;
+export type VenueDailySpecial = z.infer<typeof VenueDailySpecialSchema>;
 
 /** A special as a reader sees it — the stored row minus its audit authors. */
-export const GastronomyDailySpecialPublicSchema = GastronomyDailySpecialSchema.omit({
+export const VenueDailySpecialPublicSchema = VenueDailySpecialSchema.omit({
     createdById: true,
     updatedById: true
 });
-export type GastronomyDailySpecialPublic = z.infer<typeof GastronomyDailySpecialPublicSchema>;
+export type VenueDailySpecialPublic = z.infer<typeof VenueDailySpecialPublicSchema>;
 
 // ----------------------------------------------------------------------------
 // Write payload
@@ -180,7 +180,7 @@ export type GastronomyDailySpecialPublic = z.infer<typeof GastronomyDailySpecial
  * one the server has to either trust or ignore, and trusting one is how a
  * caller writes into somebody else's listing.
  */
-export const GastronomyDailySpecialInputSchema = z
+export const VenueDailySpecialInputSchema = z
     .object({
         /** The dish, as the venue announces it. */
         title: z
@@ -203,7 +203,7 @@ export const GastronomyDailySpecialInputSchema = z
             .number()
             .int({ message: 'zodError.gastronomy.dailySpecial.priceCents.int' })
             .min(0, { message: 'zodError.gastronomy.dailySpecial.priceCents.min' })
-            .max(GASTRONOMY_DAILY_SPECIAL_MAX_PRICE_CENTS, {
+            .max(VENUE_DAILY_SPECIAL_MAX_PRICE_CENTS, {
                 message: 'zodError.gastronomy.dailySpecial.priceCents.max'
             })
             .nullish(),
@@ -228,7 +228,7 @@ export const GastronomyDailySpecialInputSchema = z
 
         if (
             inclusiveDaySpan(value.validFrom, value.validUntil) >
-            GASTRONOMY_DAILY_SPECIAL_MAX_WINDOW_DAYS
+            VENUE_DAILY_SPECIAL_MAX_WINDOW_DAYS
         ) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
@@ -237,7 +237,7 @@ export const GastronomyDailySpecialInputSchema = z
             });
         }
     });
-export type GastronomyDailySpecialInput = z.input<typeof GastronomyDailySpecialInputSchema>;
+export type VenueDailySpecialInput = z.input<typeof VenueDailySpecialInputSchema>;
 
 /**
  * The whole set of specials, submitted as ONE document
@@ -252,21 +252,21 @@ export type GastronomyDailySpecialInput = z.input<typeof GastronomyDailySpecialI
  * write replaces the listing's specials wholesale, last week's expired rows are
  * cleared out the next time the owner saves. Nothing accumulates.
  */
-export const GastronomyDailySpecialsReplacePayloadSchema = z.object({
+export const VenueDailySpecialsReplacePayloadSchema = z.object({
     /**
      * The specials, in display order. An EMPTY array is a legitimate submission
      * and means "take the menú del día down" — which is the manual escape hatch
      * beside the automatic one, for the owner who sold out at 13:00.
      */
     specials: z
-        .array(GastronomyDailySpecialInputSchema)
-        .max(GASTRONOMY_DAILY_SPECIALS_MAX, {
+        .array(VenueDailySpecialInputSchema)
+        .max(VENUE_DAILY_SPECIALS_MAX, {
             message: 'zodError.gastronomy.dailySpecials.max'
         })
         .default([])
 });
-export type GastronomyDailySpecialsReplacePayload = z.input<
-    typeof GastronomyDailySpecialsReplacePayloadSchema
+export type VenueDailySpecialsReplacePayload = z.input<
+    typeof VenueDailySpecialsReplacePayloadSchema
 >;
 
 // ----------------------------------------------------------------------------
@@ -274,7 +274,7 @@ export type GastronomyDailySpecialsReplacePayload = z.input<
 // ----------------------------------------------------------------------------
 
 /** Service input for reading a listing's specials. */
-export const GastronomyDailySpecialsGetInputSchema = z.object({
+export const VenueDailySpecialsGetInputSchema = z.object({
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /**
      * When set, only the specials valid on this day are returned — the public
@@ -284,20 +284,18 @@ export const GastronomyDailySpecialsGetInputSchema = z.object({
      */
     validOn: calendarDate('zodError.gastronomy.dailySpecial.validOn.invalid').optional()
 });
-export type GastronomyDailySpecialsGetInput = z.infer<typeof GastronomyDailySpecialsGetInputSchema>;
+export type VenueDailySpecialsGetInput = z.infer<typeof VenueDailySpecialsGetInputSchema>;
 
 /** Service input for replacing a listing's specials. */
-export const GastronomyDailySpecialsReplaceInputSchema = z.object({
+export const VenueDailySpecialsReplaceInputSchema = z.object({
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    specials: GastronomyDailySpecialsReplacePayloadSchema
+    specials: VenueDailySpecialsReplacePayloadSchema
 });
-export type GastronomyDailySpecialsReplaceInput = z.input<
-    typeof GastronomyDailySpecialsReplaceInputSchema
->;
+export type VenueDailySpecialsReplaceInput = z.input<typeof VenueDailySpecialsReplaceInputSchema>;
 
 /** What a daily-specials read answers with. */
-export const GastronomyDailySpecialsOutputSchema = z.object({
+export const VenueDailySpecialsOutputSchema = z.object({
     /** The specials, ordered. Empty when the venue has published none. */
-    specials: z.array(GastronomyDailySpecialPublicSchema)
+    specials: z.array(VenueDailySpecialPublicSchema)
 });
-export type GastronomyDailySpecialsOutput = z.infer<typeof GastronomyDailySpecialsOutputSchema>;
+export type VenueDailySpecialsOutput = z.infer<typeof VenueDailySpecialsOutputSchema>;

@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { GastronomyTypeEnum } from '../../src/enums/index.js';
+import { VenueTypeEnum } from '../../src/enums/index.js';
 import {
     createBaseAdminFields,
     createBaseAuditFields,
@@ -96,7 +96,7 @@ export const createValidGastronomy = () => ({
     ...createBaseIdFields(),
     ...createBaseAuditFields(),
     ...createGastronomyIdentityFields(),
-    type: faker.helpers.arrayElement(Object.values(GastronomyTypeEnum)),
+    type: faker.helpers.arrayElement(Object.values(VenueTypeEnum)),
     priceRange: faker.helpers.maybe(
         () => faker.helpers.arrayElement(['BUDGET', 'MID', 'HIGH', 'PREMIUM'] as const),
         { probability: 0.8 }
@@ -129,7 +129,7 @@ export const createMinimalGastronomy = () => ({
     name: 'La Parrilla de Juan',
     summary: 'Parrilla tradicional argentina',
     description: faker.lorem.paragraphs(2).slice(0, 2000),
-    type: GastronomyTypeEnum.PARRILLA,
+    type: VenueTypeEnum.PARRILLA,
     destinationId: faker.string.uuid(),
     ownerId: faker.string.uuid(),
     isFeatured: false,

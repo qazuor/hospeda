@@ -24,7 +24,7 @@ import { z } from 'zod';
  * };
  * ```
  */
-export const GastronomyRatingSchema = z.object({
+export const VenueRatingSchema = z.object({
     /**
      * Food/product quality score.
      * @minimum 0
@@ -74,7 +74,7 @@ export const GastronomyRatingSchema = z.object({
         .max(5, { message: 'zodError.common.listingRating.value.max' })
 });
 
-export type GastronomyRating = z.infer<typeof GastronomyRatingSchema>;
+export type VenueRating = z.infer<typeof VenueRatingSchema>;
 
 /**
  * Spread const for embedding the gastronomy rating block into entity schemas.
@@ -87,7 +87,7 @@ export type GastronomyRating = z.infer<typeof GastronomyRatingSchema>;
  * });
  * ```
  */
-export const GastronomyRatingFields = {
+export const VenueRatingFields = {
     /** Granular rating breakdown for this gastronomy listing. */
-    rating: GastronomyRatingSchema.optional()
+    rating: VenueRatingSchema.optional()
 } as const;

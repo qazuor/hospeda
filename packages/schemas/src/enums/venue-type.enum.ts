@@ -11,7 +11,7 @@
  * - ROTISERIA: Deli / rotisserie / prepared-food shop.
  * - FOOD_TRUCK: Mobile food vendor.
  */
-export enum GastronomyTypeEnum {
+export enum VenueTypeEnum {
     RESTAURANT = 'RESTAURANT',
     BAR = 'BAR',
     CAFE = 'CAFE',

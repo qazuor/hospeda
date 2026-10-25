@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
-import { GastronomyRatingSchema } from '../../src/common/venue-rating.schema.js';
+import { VenueRatingSchema } from '../../src/common/venue-rating.schema.js';
 
 // ============================================================================
 // GastronomyRatingSchema — SPEC-239 T-005
@@ -12,7 +12,7 @@ describe('GastronomyRatingSchema', () => {
             // Arrange
             const input = { food: 4.5, service: 5, ambiance: 4, value: 3.5 };
             // Act
-            const result = GastronomyRatingSchema.safeParse(input);
+            const result = VenueRatingSchema.safeParse(input);
             // Assert
             expect(result.success).toBe(true);
         });
@@ -21,7 +21,7 @@ describe('GastronomyRatingSchema', () => {
             // Arrange
             const input = { food: 0, service: 0, ambiance: 0, value: 0 };
             // Act
-            const result = GastronomyRatingSchema.safeParse(input);
+            const result = VenueRatingSchema.safeParse(input);
             // Assert
             expect(result.success).toBe(true);
         });
@@ -30,13 +30,13 @@ describe('GastronomyRatingSchema', () => {
             // Arrange
             const input = { food: 5, service: 5, ambiance: 5, value: 5 };
             // Act
-            const result = GastronomyRatingSchema.safeParse(input);
+            const result = VenueRatingSchema.safeParse(input);
             // Assert
             expect(result.success).toBe(true);
         });
 
         it('should accept 0 for food', () => {
-            const result = GastronomyRatingSchema.safeParse({
+            const result = VenueRatingSchema.safeParse({
                 food: 0,
                 service: 3,
                 ambiance: 3,
@@ -46,7 +46,7 @@ describe('GastronomyRatingSchema', () => {
         });
 
         it('should accept 5 for service', () => {
-            const result = GastronomyRatingSchema.safeParse({
+            const result = VenueRatingSchema.safeParse({
                 food: 3,
                 service: 5,
                 ambiance: 3,
@@ -61,7 +61,7 @@ describe('GastronomyRatingSchema', () => {
             // Arrange
             const input = { food: 6, service: 4, ambiance: 4, value: 4 };
             // Act
-            const result = GastronomyRatingSchema.safeParse(input);
+            const result = VenueRatingSchema.safeParse(input);
             // Assert
             expect(result.success).toBe(false);
             if (!result.success) {
@@ -73,13 +73,13 @@ describe('GastronomyRatingSchema', () => {
             // Arrange
             const input = { food: 4, service: -1, ambiance: 4, value: 4 };
             // Act
-            const result = GastronomyRatingSchema.safeParse(input);
+            const result = VenueRatingSchema.safeParse(input);
             // Assert
             expect(result.success).toBe(false);
         });
 
         it('should reject ambiance score above 5', () => {
-            const result = GastronomyRatingSchema.safeParse({
+            const result = VenueRatingSchema.safeParse({
                 food: 4,
                 service: 4,
                 ambiance: 5.1,
@@ -89,7 +89,7 @@ describe('GastronomyRatingSchema', () => {
         });
 
         it('should reject value score below 0', () => {
-            const result = GastronomyRatingSchema.safeParse({
+            const result = VenueRatingSchema.safeParse({
                 food: 4,
                 service: 4,
                 ambiance: 4,
@@ -101,7 +101,7 @@ describe('GastronomyRatingSchema', () => {
 
     describe('invalid inputs — missing fields', () => {
         it('should reject missing food field', () => {
-            const result = GastronomyRatingSchema.safeParse({
+            const result = VenueRatingSchema.safeParse({
                 service: 4,
                 ambiance: 4,
                 value: 4
@@ -110,7 +110,7 @@ describe('GastronomyRatingSchema', () => {
         });
 
         it('should reject missing service field', () => {
-            const result = GastronomyRatingSchema.safeParse({
+            const result = VenueRatingSchema.safeParse({
                 food: 4,
                 ambiance: 4,
                 value: 4
@@ -119,7 +119,7 @@ describe('GastronomyRatingSchema', () => {
         });
 
         it('should reject empty object', () => {
-            const result = GastronomyRatingSchema.safeParse({});
+            const result = VenueRatingSchema.safeParse({});
             expect(result.success).toBe(false);
         });
     });

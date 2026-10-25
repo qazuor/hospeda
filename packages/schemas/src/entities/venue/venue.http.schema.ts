@@ -8,18 +8,18 @@
 import { z } from 'zod';
 import { BaseHttpSearchSchema, createBooleanQueryParam } from '../../api/http/base-http.schema.js';
 import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
-import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/index.js';
+import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible gastronomy search schema with automatic coercion.
  * Handles conversion from HTTP query parameters (strings) to typed domain objects.
  */
-export const GastronomySearchHttpSchema = BaseHttpSearchSchema.extend({
+export const VenueSearchHttpSchema = BaseHttpSearchSchema.extend({
     /** Filter by destination UUID. */
     destinationId: z.string().uuid().optional(),
     /** Filter by gastronomy sub-type. */
-    type: GastronomyTypeEnumSchema.optional(),
+    type: VenueTypeEnumSchema.optional(),
     /** Filter by price-range tier. */
     priceRange: PriceRangeEnumSchema.optional(),
     /** Filter by featured status (coerced from query string). */
@@ -77,13 +77,13 @@ export const GastronomySearchHttpSchema = BaseHttpSearchSchema.extend({
     includeFeatures: createBooleanQueryParam('Include gastronomy features in response')
 });
 
-export type GastronomySearchHttp = z.infer<typeof GastronomySearchHttpSchema>;
+export type VenueSearchHttp = z.infer<typeof VenueSearchHttpSchema>;
 
 /**
  * HTTP-compatible gastronomy creation schema.
  * Handles form data and JSON input for creating gastronomy listings via HTTP.
  */
-export const GastronomyCreateHttpSchema = z.object({
+export const VenueCreateHttpSchema = z.object({
     /** Display name of the gastronomy listing. */
     name: z.string().min(2, { message: 'zodError.listing.name.min' }).max(100),
     /** Short marketing summary. */
@@ -99,7 +99,7 @@ export const GastronomyCreateHttpSchema = z.object({
         .max(2000, { message: 'zodError.listing.description.max' })
         .optional(),
     /** Gastronomy sub-type. */
-    type: GastronomyTypeEnumSchema,
+    type: VenueTypeEnumSchema,
     /** Price-range tier. */
     priceRange: PriceRangeEnumSchema.optional(),
     /** Online menu URL (must be HTTPS). */
@@ -142,49 +142,47 @@ export const GastronomyCreateHttpSchema = z.object({
     youtube: safeExternalUrl('zodError.common.social.youtube.invalid').nullish()
 });
 
-export type GastronomyCreateHttp = z.infer<typeof GastronomyCreateHttpSchema>;
+export type VenueCreateHttp = z.infer<typeof VenueCreateHttpSchema>;
 
 /**
  * HTTP-compatible gastronomy update schema.
  * Handles partial updates via HTTP PATCH requests.
  * Strips defaults to preserve "absent key = no change" PATCH semantics.
  */
-export const GastronomyUpdateHttpSchema = z
-    .object(stripShapeDefaults(GastronomyCreateHttpSchema.shape))
+export const VenueUpdateHttpSchema = z
+    .object(stripShapeDefaults(VenueCreateHttpSchema.shape))
     .partial()
     .omit({
         ownerId: true // Owner cannot be changed after creation via HTTP
     });
 
-export type GastronomyUpdateHttp = z.infer<typeof GastronomyUpdateHttpSchema>;
+export type VenueUpdateHttp = z.infer<typeof VenueUpdateHttpSchema>;
 
 /**
  * HTTP-compatible query parameters for single gastronomy retrieval.
  * Used for GET /venue/:id type requests.
  */
-export const GastronomyGetHttpSchema = z.object({
+export const VenueGetHttpSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     includeReviews: createBooleanQueryParam('Include gastronomy reviews'),
     includeAmenities: createBooleanQueryParam('Include gastronomy amenities'),
     includeFeatures: createBooleanQueryParam('Include gastronomy features')
 });
 
-export type GastronomyGetHttp = z.infer<typeof GastronomyGetHttpSchema>;
+export type VenueGetHttp = z.infer<typeof VenueGetHttpSchema>;
 
 // ============================================================================
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
-import type { GastronomyAdminCreateInput, GastronomyUpdateInput } from './venue.crud.schema.js';
-import type { GastronomySearch } from './venue.query.schema.js';
+import type { VenueAdminCreateInput, VenueUpdateInput } from './venue.crud.schema.js';
+import type { VenueSearch } from './venue.query.schema.js';
 
 /**
  * Convert HTTP search parameters to domain search object.
  * Only maps fields that exist in both HTTP and domain schemas.
  */
-export const httpToDomainGastronomySearch = (
-    httpParams: GastronomySearchHttp
-): GastronomySearch => ({
+export const httpToDomainVenueSearch = (httpParams: VenueSearchHttp): VenueSearch => ({
     // Base pagination and sorting
     page: httpParams.page,
     pageSize: httpParams.pageSize,
@@ -224,9 +222,7 @@ export const httpToDomainGastronomySearch = (
  * authenticated actor — no route ever did, so the field simply went missing and
  * the insert died on a 23502.
  */
-export const httpToDomainGastronomyCreate = (
-    httpData: GastronomyCreateHttp
-): GastronomyAdminCreateInput => ({
+export const httpToDomainVenueCreate = (httpData: VenueCreateHttp): VenueAdminCreateInput => ({
     // Identity fields
     name: httpData.name,
     summary: httpData.summary ?? httpData.description?.substring(0, 300) ?? httpData.name,
@@ -285,9 +281,7 @@ export const httpToDomainGastronomyCreate = (
  * Convert HTTP update data to domain update input.
  * Transforms HTTP PATCH data (all fields optional) to domain object.
  */
-export const httpToDomainGastronomyUpdate = (
-    httpData: GastronomyUpdateHttp
-): GastronomyUpdateInput => ({
+export const httpToDomainVenueUpdate = (httpData: VenueUpdateHttp): VenueUpdateInput => ({
     name: httpData.name,
     summary: httpData.summary,
     description: httpData.description,
@@ -308,7 +302,7 @@ export const httpToDomainGastronomyUpdate = (
                   ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
                   ...(httpData.email === undefined ? {} : { personalEmail: httpData.email }),
                   ...(httpData.website === undefined ? {} : { website: httpData.website })
-              } as GastronomyUpdateInput['contactInfo']
+              } as VenueUpdateInput['contactInfo']
           }
         : {}),
 
@@ -363,57 +357,49 @@ export const httpToDomainGastronomyUpdate = (
  */
 
 // Check 1: All domain search fields are mapped in HTTP conversion
-type DomainSearchFields = keyof GastronomySearch;
-type HttpConversionFields = keyof ReturnType<typeof httpToDomainGastronomySearch>;
+type DomainSearchFields = keyof VenueSearch;
+type HttpConversionFields = keyof ReturnType<typeof httpToDomainVenueSearch>;
 type MissingSearchFields = Exclude<DomainSearchFields, HttpConversionFields>;
 
 const _searchFieldsCheck: MissingSearchFields extends never ? true : never =
     true as MissingSearchFields extends never ? true : never;
 
 // Check 2: HTTP search conversion output is compatible with domain type
-const _searchTypeCheck: ReturnType<typeof httpToDomainGastronomySearch> extends GastronomySearch
+const _searchTypeCheck: ReturnType<typeof httpToDomainVenueSearch> extends VenueSearch
     ? true
-    : never = true as ReturnType<typeof httpToDomainGastronomySearch> extends GastronomySearch
-    ? true
-    : never;
+    : never = true as ReturnType<typeof httpToDomainVenueSearch> extends VenueSearch ? true : never;
 
 // Check 3: All domain create fields are mapped in HTTP conversion
 // (Non-never MissingCreateFields is expected for rich-content + server-managed fields;
 //  the critical gate is Check 4.)
-type DomainCreateFields = keyof GastronomyAdminCreateInput;
-type HttpCreateConversionFields = keyof ReturnType<typeof httpToDomainGastronomyCreate>;
+type DomainCreateFields = keyof VenueAdminCreateInput;
+type HttpCreateConversionFields = keyof ReturnType<typeof httpToDomainVenueCreate>;
 type MissingCreateFields = Exclude<DomainCreateFields, HttpCreateConversionFields>;
 
 const _createFieldsCheck: MissingCreateFields extends never ? true : never =
     true as MissingCreateFields extends never ? true : never;
 
 // Check 4: HTTP create conversion output is compatible with domain create type
-const _createTypeCheck: ReturnType<
-    typeof httpToDomainGastronomyCreate
-> extends GastronomyAdminCreateInput
+const _createTypeCheck: ReturnType<typeof httpToDomainVenueCreate> extends VenueAdminCreateInput
     ? true
-    : never = true as ReturnType<
-    typeof httpToDomainGastronomyCreate
-> extends GastronomyAdminCreateInput
+    : never = true as ReturnType<typeof httpToDomainVenueCreate> extends VenueAdminCreateInput
     ? true
     : never;
 
 // Check 5: All domain update fields are mapped in HTTP conversion
 // (Non-never MissingUpdateFields is expected for rich-content + server-managed fields;
 //  the critical gate is Check 6.)
-type DomainUpdateFields = keyof GastronomyUpdateInput;
-type HttpUpdateConversionFields = keyof ReturnType<typeof httpToDomainGastronomyUpdate>;
+type DomainUpdateFields = keyof VenueUpdateInput;
+type HttpUpdateConversionFields = keyof ReturnType<typeof httpToDomainVenueUpdate>;
 type MissingUpdateFields = Exclude<DomainUpdateFields, HttpUpdateConversionFields>;
 
 const _updateFieldsCheck: MissingUpdateFields extends never ? true : never =
     true as MissingUpdateFields extends never ? true : never;
 
 // Check 6: HTTP update conversion output is compatible with domain update type
-const _updateTypeCheck: ReturnType<
-    typeof httpToDomainGastronomyUpdate
-> extends GastronomyUpdateInput
+const _updateTypeCheck: ReturnType<typeof httpToDomainVenueUpdate> extends VenueUpdateInput
     ? true
-    : never = true as ReturnType<typeof httpToDomainGastronomyUpdate> extends GastronomyUpdateInput
+    : never = true as ReturnType<typeof httpToDomainVenueUpdate> extends VenueUpdateInput
     ? true
     : never;
 
@@ -429,7 +415,7 @@ void _updateTypeCheck;
  * Runtime validation function for development/testing.
  * Validates that conversion functions work correctly.
  */
-export const validateGastronomySchemaConsistency = () => {
+export const validateVenueSchemaConsistency = () => {
     const searchCheck: typeof _searchFieldsCheck = true;
     const searchTypeCheck: typeof _searchTypeCheck = true;
     const createCheck: typeof _createFieldsCheck = true;

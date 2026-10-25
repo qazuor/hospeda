@@ -72,7 +72,7 @@ export enum ProductDomainEnum {
  * Spelled as the members' string values so a plain `'gastronomy'` literal and
  * a `ProductDomainEnum.GASTRONOMY` member are both assignable to it.
  */
-export type GastronomyOrExperience =
+export type VenueOrExperience =
     | `${ProductDomainEnum.GASTRONOMY}`
     | `${ProductDomainEnum.EXPERIENCE}`;
 

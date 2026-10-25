@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GastronomySchema } from './venue.schema.js';
+import { VenueSchema } from './venue.schema.js';
 
 /**
  * Gastronomy Batch Schemas
@@ -18,7 +18,7 @@ import { GastronomySchema } from './venue.schema.js';
  * };
  * ```
  */
-export const GastronomyBatchRequestSchema = z.object({
+export const VenueBatchRequestSchema = z.object({
     /**
      * Array of gastronomy listing IDs to retrieve.
      * Limited to 100 IDs per request for performance.
@@ -39,14 +39,14 @@ export const GastronomyBatchRequestSchema = z.object({
 /**
  * Batch item schema: all fields optional except `id` (always emitted).
  */
-export const GastronomyBatchItemSchema = GastronomySchema.partial().required({ id: true });
+export const VenueBatchItemSchema = VenueSchema.partial().required({ id: true });
 
 /**
  * Batch response schema — array of gastronomy items or null for not-found entries.
  */
-export const GastronomyBatchResponseSchema = z.array(GastronomyBatchItemSchema.nullable());
+export const VenueBatchResponseSchema = z.array(VenueBatchItemSchema.nullable());
 
 /** TypeScript types for batch operations. */
-export type GastronomyBatchRequest = z.infer<typeof GastronomyBatchRequestSchema>;
-export type GastronomyBatchItem = z.infer<typeof GastronomyBatchItemSchema>;
-export type GastronomyBatchResponse = z.infer<typeof GastronomyBatchResponseSchema>;
+export type VenueBatchRequest = z.infer<typeof VenueBatchRequestSchema>;
+export type VenueBatchItem = z.infer<typeof VenueBatchItemSchema>;
+export type VenueBatchResponse = z.infer<typeof VenueBatchResponseSchema>;

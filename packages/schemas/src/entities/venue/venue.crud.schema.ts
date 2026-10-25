@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
-import { GastronomySchema } from './venue.schema.js';
+import { VenueSchema } from './venue.schema.js';
 
 /**
  * Gastronomy CRUD Schemas
@@ -33,7 +33,7 @@ import { GastronomySchema } from './venue.schema.js';
  *
  * These are **write-only inputs** and do not appear in read responses.
  */
-export const GastronomyAdminCreateInputSchema = GastronomySchema.omit({
+export const VenueAdminCreateInputSchema = VenueSchema.omit({
     id: true,
     createdAt: true,
     updatedAt: true,
@@ -106,17 +106,17 @@ export const GastronomyAdminCreateInputSchema = GastronomySchema.omit({
         .optional()
 });
 
-/** TypeScript type for {@link GastronomyAdminCreateInputSchema}. */
-export type GastronomyAdminCreateInput = z.infer<typeof GastronomyAdminCreateInputSchema>;
+/** TypeScript type for {@link VenueAdminCreateInputSchema}. */
+export type VenueAdminCreateInput = z.infer<typeof VenueAdminCreateInputSchema>;
 
 /**
  * Schema for the admin create response.
  * Returns the complete gastronomy object.
  */
-export const GastronomyAdminCreateOutputSchema = GastronomySchema;
+export const VenueAdminCreateOutputSchema = VenueSchema;
 
-/** TypeScript type for {@link GastronomyAdminCreateOutputSchema}. */
-export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOutputSchema>;
+/** TypeScript type for {@link VenueAdminCreateOutputSchema}. */
+export type VenueAdminCreateOutput = z.infer<typeof VenueAdminCreateOutputSchema>;
 
 // ============================================================================
 // OWNER UPDATE SCHEMAS (operational only)
@@ -175,7 +175,7 @@ export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOu
  *   HOS-1641), `ownerId` (control fields — HOS-166 §6.2)
  * - `priceFrom`, `priceUnit` (gastronomy uses `priceRange` + `menuUrl` instead)
  */
-export const GastronomyOwnerUpdateInputSchema = GastronomySchema.pick({
+export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
     // HOS-166 D-1: identity fields the owner now controls.
     name: true,
     description: true,
@@ -218,8 +218,8 @@ export const GastronomyOwnerUpdateInputSchema = GastronomySchema.pick({
         refreshSlugFromName: z.boolean().optional()
     });
 
-/** TypeScript type for {@link GastronomyOwnerUpdateInputSchema}. */
-export type GastronomyOwnerUpdateInput = z.infer<typeof GastronomyOwnerUpdateInputSchema>;
+/** TypeScript type for {@link VenueOwnerUpdateInputSchema}. */
+export type VenueOwnerUpdateInput = z.infer<typeof VenueOwnerUpdateInputSchema>;
 
 // ============================================================================
 // OWNER CREATE SCHEMA (HOS-166 §7.2)
@@ -229,7 +229,7 @@ export type GastronomyOwnerUpdateInput = z.infer<typeof GastronomyOwnerUpdateInp
  * Schema for a `GASTRONOMY_OWNER` self-service listing create
  * (`POST /api/v1/protected/gastronomies/`, HOS-166 §7.2).
  *
- * Unlike {@link GastronomyAdminCreateInputSchema} (which trusts the caller for
+ * Unlike {@link VenueAdminCreateInputSchema} (which trusts the caller for
  * `ownerId`/`slug` because only staff can reach it), this
  * schema **omits every server-forced or control field** so the route handler
  * is the only place those values can come from:
@@ -249,7 +249,7 @@ export type GastronomyOwnerUpdateInput = z.infer<typeof GastronomyOwnerUpdateInp
  * gate evaluated by `resolveListingCompleteness` at checkout time, not by this
  * schema (HOS-166 §6.6).
  */
-export const GastronomyOwnerCreateInputSchema = GastronomySchema.omit({
+export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     id: true,
     createdAt: true,
     updatedAt: true,
@@ -324,8 +324,8 @@ export const GastronomyOwnerCreateInputSchema = GastronomySchema.omit({
         .optional()
 });
 
-/** TypeScript type for {@link GastronomyOwnerCreateInputSchema}. */
-export type GastronomyOwnerCreateInput = z.infer<typeof GastronomyOwnerCreateInputSchema>;
+/** TypeScript type for {@link VenueOwnerCreateInputSchema}. */
+export type VenueOwnerCreateInput = z.infer<typeof VenueOwnerCreateInputSchema>;
 
 // ============================================================================
 // GENERAL UPDATE SCHEMAS (admin path)
@@ -354,7 +354,7 @@ export type GastronomyOwnerCreateInput = z.infer<typeof GastronomyOwnerCreateInp
  * `publicationStatus` is omitted for the same reason: only the PB publication
  * transitions write it (HOS-1641).
  */
-export const GastronomyUpdateInputSchema = z
+export const VenueUpdateInputSchema = z
     .object(
         // Zod 4's `.partial()` does NOT strip `.default()` (unlike Zod 3): without
         // this, a PATCH like `{ name: 'x' }` would arrive at the service carrying
@@ -362,7 +362,7 @@ export const GastronomyUpdateInputSchema = z
         // silently overwriting server state. Stripping the top-level defaults
         // restores correct "absent key = no change" PATCH semantics. See `stripShapeDefaults`.
         stripShapeDefaults(
-            GastronomySchema.omit({
+            VenueSchema.omit({
                 id: true,
                 createdAt: true,
                 updatedAt: true,
@@ -430,25 +430,25 @@ export const GastronomyUpdateInputSchema = z
         refreshSlugFromName: z.boolean().optional()
     });
 
-/** TypeScript type for {@link GastronomyUpdateInputSchema}. */
-export type GastronomyUpdateInput = z.infer<typeof GastronomyUpdateInputSchema>;
+/** TypeScript type for {@link VenueUpdateInputSchema}. */
+export type VenueUpdateInput = z.infer<typeof VenueUpdateInputSchema>;
 
 /**
- * Alias of {@link GastronomyUpdateInputSchema} for explicit PATCH semantics.
+ * Alias of {@link VenueUpdateInputSchema} for explicit PATCH semantics.
  */
-export const GastronomyPatchInputSchema = GastronomyUpdateInputSchema;
+export const VenuePatchInputSchema = VenueUpdateInputSchema;
 
-/** TypeScript type for {@link GastronomyPatchInputSchema}. */
-export type GastronomyPatchInput = z.infer<typeof GastronomyPatchInputSchema>;
+/** TypeScript type for {@link VenuePatchInputSchema}. */
+export type VenuePatchInput = z.infer<typeof VenuePatchInputSchema>;
 
 /**
  * Schema for gastronomy update response.
  * Returns the complete updated gastronomy object.
  */
-export const GastronomyUpdateOutputSchema = GastronomySchema;
+export const VenueUpdateOutputSchema = VenueSchema;
 
-/** TypeScript type for {@link GastronomyUpdateOutputSchema}. */
-export type GastronomyUpdateOutput = z.infer<typeof GastronomyUpdateOutputSchema>;
+/** TypeScript type for {@link VenueUpdateOutputSchema}. */
+export type VenueUpdateOutput = z.infer<typeof VenueUpdateOutputSchema>;
 
 // ============================================================================
 // DELETE SCHEMAS
@@ -458,7 +458,7 @@ export type GastronomyUpdateOutput = z.infer<typeof GastronomyUpdateOutputSchema
  * Schema for gastronomy deletion input.
  * Requires ID and optional force flag for hard delete.
  */
-export const GastronomyDeleteInputSchema = z.object({
+export const VenueDeleteInputSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     // Use `.default(false)` only — `.optional().default(false)` is a dead chain:
     // `.default()` already supplies the value when the key is absent; the outer
@@ -466,20 +466,20 @@ export const GastronomyDeleteInputSchema = z.object({
     force: z.boolean({ message: 'zodError.gastronomy.delete.force.invalidType' }).default(false)
 });
 
-/** TypeScript type for {@link GastronomyDeleteInputSchema}. */
-export type GastronomyDeleteInput = z.infer<typeof GastronomyDeleteInputSchema>;
+/** TypeScript type for {@link VenueDeleteInputSchema}. */
+export type VenueDeleteInput = z.infer<typeof VenueDeleteInputSchema>;
 
 /**
  * Schema for gastronomy deletion response.
  * Returns success status and deletion timestamp.
  */
-export const GastronomyDeleteOutputSchema = z.object({
+export const VenueDeleteOutputSchema = z.object({
     success: z.boolean({ message: 'zodError.gastronomy.delete.success.required' }).default(true),
     deletedAt: z.date({ message: 'zodError.gastronomy.delete.deletedAt.invalidType' }).optional()
 });
 
-/** TypeScript type for {@link GastronomyDeleteOutputSchema}. */
-export type GastronomyDeleteOutput = z.infer<typeof GastronomyDeleteOutputSchema>;
+/** TypeScript type for {@link VenueDeleteOutputSchema}. */
+export type VenueDeleteOutput = z.infer<typeof VenueDeleteOutputSchema>;
 
 // ============================================================================
 // RESTORE SCHEMAS
@@ -489,18 +489,18 @@ export type GastronomyDeleteOutput = z.infer<typeof GastronomyDeleteOutputSchema
  * Schema for gastronomy restoration input.
  * Requires only the gastronomy ID.
  */
-export const GastronomyRestoreInputSchema = z.object({
+export const VenueRestoreInputSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
 
-/** TypeScript type for {@link GastronomyRestoreInputSchema}. */
-export type GastronomyRestoreInput = z.infer<typeof GastronomyRestoreInputSchema>;
+/** TypeScript type for {@link VenueRestoreInputSchema}. */
+export type VenueRestoreInput = z.infer<typeof VenueRestoreInputSchema>;
 
 /**
  * Schema for gastronomy restoration response.
  * Returns the complete restored gastronomy object.
  */
-export const GastronomyRestoreOutputSchema = GastronomySchema;
+export const VenueRestoreOutputSchema = VenueSchema;
 
-/** TypeScript type for {@link GastronomyRestoreOutputSchema}. */
-export type GastronomyRestoreOutput = z.infer<typeof GastronomyRestoreOutputSchema>;
+/** TypeScript type for {@link VenueRestoreOutputSchema}. */
+export type VenueRestoreOutput = z.infer<typeof VenueRestoreOutputSchema>;

@@ -6,7 +6,7 @@
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/index.js';
+import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js';
 import { PublicationStatusEnum } from '../../enums/publication-status.enum.js';
 
 /**
@@ -23,7 +23,7 @@ import { PublicationStatusEnum } from '../../enums/publication-status.enum.js';
  * });
  * ```
  */
-export const GastronomyAdminSearchSchema = AdminSearchBaseSchema.extend({
+export const VenueAdminSearchSchema = AdminSearchBaseSchema.extend({
     /**
      * Filter by `publicationStatus` (HOS-1641). REPLACES the base `status`,
      * which is a `LifecycleStatusEnum` filter: gastronomy listings no longer carry a
@@ -37,7 +37,7 @@ export const GastronomyAdminSearchSchema = AdminSearchBaseSchema.extend({
         .describe('Filter by publication status. Use "all" to show all statuses'),
 
     /** Filter by gastronomy sub-type. */
-    type: GastronomyTypeEnumSchema.optional().describe('Filter by gastronomy type'),
+    type: VenueTypeEnumSchema.optional().describe('Filter by gastronomy type'),
 
     /** Filter by destination UUID. */
     destinationId: z
@@ -60,7 +60,7 @@ export const GastronomyAdminSearchSchema = AdminSearchBaseSchema.extend({
 });
 
 /**
- * Type inferred from {@link GastronomyAdminSearchSchema}.
+ * Type inferred from {@link VenueAdminSearchSchema}.
  * Represents the validated admin search parameters for gastronomy listings.
  */
-export type GastronomyAdminSearch = z.infer<typeof GastronomyAdminSearchSchema>;
+export type VenueAdminSearch = z.infer<typeof VenueAdminSearchSchema>;

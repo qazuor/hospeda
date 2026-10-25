@@ -7,12 +7,12 @@
  */
 import { z } from 'zod';
 import { EntityOptionsItemSchema } from '../../common/entity-options.schema.js';
-import { GastronomyTypeEnumSchema } from '../../enums/index.js';
+import { VenueTypeEnumSchema } from '../../enums/index.js';
 
 /**
  * Minimal destination descriptor embedded in a gastronomy option item.
  */
-export const GastronomyOptionsDestinationSchema = z.object({
+export const VenueOptionsDestinationSchema = z.object({
     /** Destination id (UUID). */
     id: z.string().describe('Destination id'),
     /** Destination display name. */
@@ -24,28 +24,28 @@ export const GastronomyOptionsDestinationSchema = z.object({
 /**
  * Gastronomy option item: base `{ id, label, slug }` plus `type` and `destination`.
  */
-export const GastronomyOptionsItemSchema = EntityOptionsItemSchema.extend({
+export const VenueOptionsItemSchema = EntityOptionsItemSchema.extend({
     /** Gastronomy sub-type (RESTAURANT, BAR, CAFE, etc.). */
-    type: GastronomyTypeEnumSchema.describe('Gastronomy type'),
+    type: VenueTypeEnumSchema.describe('Gastronomy type'),
     /** The gastronomy listing's destination, or null when unresolved. */
-    destination: GastronomyOptionsDestinationSchema.nullable().describe(
+    destination: VenueOptionsDestinationSchema.nullable().describe(
         'Destination summary (id, name, slug)'
     )
 });
 
 /**
- * Type inferred from {@link GastronomyOptionsItemSchema}.
+ * Type inferred from {@link VenueOptionsItemSchema}.
  */
-export type GastronomyOptionsItem = z.infer<typeof GastronomyOptionsItemSchema>;
+export type VenueOptionsItem = z.infer<typeof VenueOptionsItemSchema>;
 
 /**
  * Wrapper schema for the gastronomy `/options` response payload.
  */
-export const GastronomyOptionsListSchema = z.object({
-    items: z.array(GastronomyOptionsItemSchema).describe('Matching gastronomy options')
+export const VenueOptionsListSchema = z.object({
+    items: z.array(VenueOptionsItemSchema).describe('Matching gastronomy options')
 });
 
 /**
- * Type inferred from {@link GastronomyOptionsListSchema}.
+ * Type inferred from {@link VenueOptionsListSchema}.
  */
-export type GastronomyOptionsList = z.infer<typeof GastronomyOptionsListSchema>;
+export type VenueOptionsList = z.infer<typeof VenueOptionsListSchema>;

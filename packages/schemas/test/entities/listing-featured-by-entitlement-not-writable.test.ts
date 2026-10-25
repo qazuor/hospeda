@@ -33,10 +33,10 @@ import {
     ExperienceUpdateInputSchema
 } from '../../src/entities/experience/experience.crud.schema.js';
 import {
-    GastronomyAdminCreateInputSchema,
-    GastronomyOwnerCreateInputSchema,
-    GastronomyOwnerUpdateInputSchema,
-    GastronomyUpdateInputSchema
+    VenueAdminCreateInputSchema,
+    VenueOwnerCreateInputSchema,
+    VenueOwnerUpdateInputSchema,
+    VenueUpdateInputSchema
 } from '../../src/entities/venue/venue.crud.schema.js';
 
 /** Minimal `safeParse` surface — the schemas differ in their generics. */
@@ -93,19 +93,19 @@ const WRITE_SCHEMAS: ReadonlyArray<{
     {
         vertical: 'gastronomy',
         name: 'GastronomyOwnerCreateInputSchema',
-        schema: GastronomyOwnerCreateInputSchema as unknown as Parseable,
+        schema: VenueOwnerCreateInputSchema as unknown as Parseable,
         plausibleBody: { ...DEFAULT_PLAUSIBLE_BODY, type: 'RESTAURANT' }
     },
     {
         vertical: 'gastronomy',
         name: 'GastronomyOwnerUpdateInputSchema',
-        schema: GastronomyOwnerUpdateInputSchema as unknown as Parseable,
+        schema: VenueOwnerUpdateInputSchema as unknown as Parseable,
         plausibleBody: DEFAULT_PLAUSIBLE_BODY
     },
     {
         vertical: 'gastronomy',
         name: 'GastronomyAdminCreateInputSchema',
-        schema: GastronomyAdminCreateInputSchema as unknown as Parseable,
+        schema: VenueAdminCreateInputSchema as unknown as Parseable,
         plausibleBody: {
             ...DEFAULT_PLAUSIBLE_BODY,
             type: 'RESTAURANT',
@@ -116,7 +116,7 @@ const WRITE_SCHEMAS: ReadonlyArray<{
     {
         vertical: 'gastronomy',
         name: 'GastronomyUpdateInputSchema',
-        schema: GastronomyUpdateInputSchema as unknown as Parseable,
+        schema: VenueUpdateInputSchema as unknown as Parseable,
         plausibleBody: DEFAULT_PLAUSIBLE_BODY
     },
     {
@@ -198,7 +198,7 @@ describe('HOS-1286 — featuredByEntitlement is never accepted from a request bo
         // that stripped every field would pass every assertion above while
         // quietly removing the update path. (The admin-curated `isFeatured`
         // this case used to check was dropped by HOS-1419.)
-        const result = GastronomyUpdateInputSchema.safeParse({ name: 'La Parrilla' });
+        const result = VenueUpdateInputSchema.safeParse({ name: 'La Parrilla' });
 
         expect(result.success).toBe(true);
         expect(result.data).toMatchObject({ name: 'La Parrilla' });

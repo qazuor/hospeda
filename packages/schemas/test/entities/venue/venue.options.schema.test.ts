@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
-import { GastronomyOptionsItemSchema } from '../../../src/entities/venue/venue.options.schema.js';
+import { VenueOptionsItemSchema } from '../../../src/entities/venue/venue.options.schema.js';
 
 describe('GastronomyOptionsItemSchema', () => {
     it('should validate a minimal options item (type and destination are required)', () => {
@@ -13,7 +13,7 @@ describe('GastronomyOptionsItemSchema', () => {
             type: 'PARRILLA',
             destination: null // nullable is allowed
         };
-        expect(() => GastronomyOptionsItemSchema.parse(data)).not.toThrow();
+        expect(() => VenueOptionsItemSchema.parse(data)).not.toThrow();
     });
 
     it('should validate a full options item with type and destination', () => {
@@ -28,12 +28,12 @@ describe('GastronomyOptionsItemSchema', () => {
                 slug: 'concepcion-del-uruguay'
             }
         };
-        expect(() => GastronomyOptionsItemSchema.parse(data)).not.toThrow();
+        expect(() => VenueOptionsItemSchema.parse(data)).not.toThrow();
     });
 
     it('should reject when id is missing', () => {
         const data = { label: 'Test', slug: 'test', type: 'CAFE', destination: null };
-        expect(() => GastronomyOptionsItemSchema.parse(data)).toThrow(ZodError);
+        expect(() => VenueOptionsItemSchema.parse(data)).toThrow(ZodError);
     });
 
     it('should accept any string id (EntityOptionsItemSchema uses z.string() not z.string().uuid())', () => {
@@ -46,7 +46,7 @@ describe('GastronomyOptionsItemSchema', () => {
             type: 'CAFE',
             destination: null
         };
-        expect(() => GastronomyOptionsItemSchema.parse(data)).not.toThrow();
+        expect(() => VenueOptionsItemSchema.parse(data)).not.toThrow();
     });
 
     it('should reject invalid type enum value', () => {
@@ -57,6 +57,6 @@ describe('GastronomyOptionsItemSchema', () => {
             type: 'PIZZERIA',
             destination: null
         };
-        expect(() => GastronomyOptionsItemSchema.parse(data)).toThrow(ZodError);
+        expect(() => VenueOptionsItemSchema.parse(data)).toThrow(ZodError);
     });
 });

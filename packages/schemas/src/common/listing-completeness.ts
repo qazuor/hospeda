@@ -33,7 +33,7 @@
  * @module common/listing-completeness
  */
 
-import { type GastronomyOrExperience, ProductDomainEnum } from '../enums/product-domain.enum.js';
+import { ProductDomainEnum, type VenueOrExperience } from '../enums/product-domain.enum.js';
 import type { ContactInfo } from './contact.schema.js';
 import type { Media } from './media.schema.js';
 import type { OpeningHours } from './opening-hours.schema.js';
@@ -118,7 +118,7 @@ export interface ListingCompletenessListing {
 /** Input to {@link resolveListingCompleteness}. */
 export interface ResolveListingCompletenessInput {
     /** Which gastronomy or experience vertical the listing belongs to. Drives per-vertical rules. */
-    readonly entityType: GastronomyOrExperience;
+    readonly entityType: VenueOrExperience;
     /** The listing snapshot to evaluate. See {@link ListingCompletenessListing}. */
     readonly listing: ListingCompletenessListing;
 }
@@ -187,7 +187,7 @@ type ReachableContactChannel =
  *   there, not something to do first.
  */
 const REACHABLE_CONTACT_CHANNELS: Readonly<
-    Record<GastronomyOrExperience, readonly ReachableContactChannel[]>
+    Record<VenueOrExperience, readonly ReachableContactChannel[]>
 > = {
     [ProductDomainEnum.EXPERIENCE]: ['workPhone', 'mobilePhone', 'workEmail'],
     [ProductDomainEnum.GASTRONOMY]: [
@@ -209,7 +209,7 @@ const REACHABLE_CONTACT_CHANNELS: Readonly<
  * wrong answer here publishes an unreachable listing — cheaper to refuse.
  */
 function hasReachableContactChannel(
-    entityType: GastronomyOrExperience,
+    entityType: VenueOrExperience,
     contactInfo: ContactInfo | null | undefined
 ): boolean {
     if (!contactInfo) {

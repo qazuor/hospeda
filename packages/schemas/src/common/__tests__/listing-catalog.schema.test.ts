@@ -13,9 +13,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { ExperiencePublicSchema } from '../../entities/experience/experience.access.schema.js';
-import { GastronomyPublicSchema } from '../../entities/venue/venue.access.schema.js';
+import { VenuePublicSchema } from '../../entities/venue/venue.access.schema.js';
 import { ExperiencePriceUnitEnum, ExperienceTypeEnum } from '../../enums/index.js';
-import { GastronomyTypeEnum } from '../../enums/venue-type.enum.js';
+import { VenueTypeEnum } from '../../enums/venue-type.enum.js';
 
 const ENTITY_UUID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 const AMENITY_UUID = '3f1a6b2c-1111-4d3e-8a90-2b7c4d5e6f70';
@@ -41,7 +41,7 @@ const buildGastronomy = (overrides: Record<string, unknown> = {}): Record<string
     id: ENTITY_UUID,
     slug: 'parrilla-el-fogon',
     name: 'Parrilla El Fogón',
-    type: GastronomyTypeEnum.PARRILLA,
+    type: VenueTypeEnum.PARRILLA,
     summary: 'Parrilla de barrio con mesas en la vereda y carta corta.',
     description:
         'Una parrilla de barrio en Concepción del Uruguay, con achuras, tira y una carta corta que cambia por semana.',
@@ -81,7 +81,7 @@ describe('GastronomyPublicSchema — amenities/features reach the public tier (H
         const raw = buildGastronomy({ amenities: [AMENITY_ROW] });
 
         // Act
-        const result = GastronomyPublicSchema.safeParse(raw);
+        const result = VenuePublicSchema.safeParse(raw);
 
         // Assert
         expect(result.success).toBe(true);
@@ -94,7 +94,7 @@ describe('GastronomyPublicSchema — amenities/features reach the public tier (H
         const raw = buildGastronomy({ features: [FEATURE_ROW] });
 
         // Act
-        const result = GastronomyPublicSchema.safeParse(raw);
+        const result = VenuePublicSchema.safeParse(raw);
 
         // Assert
         expect(result.success).toBe(true);
@@ -107,7 +107,7 @@ describe('GastronomyPublicSchema — amenities/features reach the public tier (H
         const raw = buildGastronomy();
 
         // Act
-        const result = GastronomyPublicSchema.safeParse(raw);
+        const result = VenuePublicSchema.safeParse(raw);
 
         // Assert: "not loaded" must stay distinguishable from "has none".
         expect(result.success).toBe(true);
@@ -124,7 +124,7 @@ describe('GastronomyPublicSchema — amenities/features reach the public tier (H
         });
 
         // Act
-        const result = GastronomyPublicSchema.safeParse(raw);
+        const result = VenuePublicSchema.safeParse(raw);
 
         // Assert
         expect(result.success).toBe(true);
@@ -137,7 +137,7 @@ describe('GastronomyPublicSchema — amenities/features reach the public tier (H
         const raw = buildGastronomy({ amenities: [{ amenityId: AMENITY_UUID, icon: null }] });
 
         // Act
-        const result = GastronomyPublicSchema.safeParse(raw);
+        const result = VenuePublicSchema.safeParse(raw);
 
         // Assert
         expect(result.success).toBe(false);

@@ -17,14 +17,14 @@
  */
 import { describe, expect, it } from 'vitest';
 import { ExperienceOwnerUpdateInputSchema } from '../../src/entities/experience/experience.crud.schema.js';
-import { GastronomyOwnerUpdateInputSchema } from '../../src/entities/venue/venue.crud.schema.js';
+import { VenueOwnerUpdateInputSchema } from '../../src/entities/venue/venue.crud.schema.js';
 import { PublicationStatusEnum } from '../../src/enums/index.js';
 
 /** Fields an owner must never move through their own update payload. */
 const CONTROL_FIELDS = ['publicationStatus', 'isFeatured'] as const;
 
 const OWNER_SCHEMAS = [
-    { name: 'GastronomyOwnerUpdateInputSchema', schema: GastronomyOwnerUpdateInputSchema },
+    { name: 'GastronomyOwnerUpdateInputSchema', schema: VenueOwnerUpdateInputSchema },
     { name: 'ExperienceOwnerUpdateInputSchema', schema: ExperienceOwnerUpdateInputSchema }
 ] as const;
 

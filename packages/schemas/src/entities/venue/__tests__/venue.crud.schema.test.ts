@@ -10,14 +10,14 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { GastronomyTypeEnum } from '../../../enums/venue-type.enum.js';
+import { VenueTypeEnum } from '../../../enums/venue-type.enum.js';
 import {
-    GastronomyAdminCreateInputSchema,
-    GastronomyDeleteInputSchema,
-    GastronomyOwnerCreateInputSchema,
-    GastronomyOwnerUpdateInputSchema,
-    GastronomyRestoreInputSchema,
-    GastronomyUpdateInputSchema
+    VenueAdminCreateInputSchema,
+    VenueDeleteInputSchema,
+    VenueOwnerCreateInputSchema,
+    VenueOwnerUpdateInputSchema,
+    VenueRestoreInputSchema,
+    VenueUpdateInputSchema
 } from '../venue.crud.schema.js';
 
 // ============================================================================
@@ -33,7 +33,7 @@ const buildAdminCreateInput = (
     summary: 'La mejor parrilla de la ciudad, con productos de campo.',
     description:
         'Un espacio único para disfrutar de la mejor gastronomía rioplatense con carnes seleccionadas y vinos de la región.',
-    type: GastronomyTypeEnum.PARRILLA,
+    type: VenueTypeEnum.PARRILLA,
     destinationId: VALID_UUID,
     // H-88: `owner_id` is NOT NULL with no default on `gastronomies`, so a
     // create input without it is not a valid create — it is the payload that
@@ -53,13 +53,13 @@ describe('GastronomyAdminCreateInputSchema', () => {
     describe('required vs optional fields', () => {
         it('should parse a valid admin create input', () => {
             const raw = buildAdminCreateInput();
-            const result = GastronomyAdminCreateInputSchema.safeParse(raw);
+            const result = VenueAdminCreateInputSchema.safeParse(raw);
             expect(result.success).toBe(true);
         });
 
         it('should allow omitting slug (auto-generated)', () => {
             const raw = buildAdminCreateInput({ slug: undefined });
-            const result = GastronomyAdminCreateInputSchema.safeParse(raw);
+            const result = VenueAdminCreateInputSchema.safeParse(raw);
             expect(result.success).toBe(true);
         });
 
@@ -70,7 +70,7 @@ describe('GastronomyAdminCreateInputSchema', () => {
         // it surfaced as 500 "A database error occurred" naming no field.
         it('should REJECT omitting ownerId, naming the field (H-88)', () => {
             const raw = buildAdminCreateInput({ ownerId: undefined });
-            const result = GastronomyAdminCreateInputSchema.safeParse(raw);
+            const result = VenueAdminCreateInputSchema.safeParse(raw);
 
             expect(result.success).toBe(false);
             if (!result.success) {
@@ -80,7 +80,7 @@ describe('GastronomyAdminCreateInputSchema', () => {
 
         it('should REJECT omitting destinationId, naming the field (H-88)', () => {
             const raw = buildAdminCreateInput({ destinationId: undefined });
-            const result = GastronomyAdminCreateInputSchema.safeParse(raw);
+            const result = VenueAdminCreateInputSchema.safeParse(raw);
 
             expect(result.success).toBe(false);
             if (!result.success) {
@@ -93,13 +93,13 @@ describe('GastronomyAdminCreateInputSchema', () => {
                 amenityIds: [VALID_UUID],
                 featureIds: [VALID_UUID]
             });
-            const result = GastronomyAdminCreateInputSchema.safeParse(raw);
+            const result = VenueAdminCreateInputSchema.safeParse(raw);
             expect(result.success).toBe(true);
         });
 
         it('should reject a non-UUID in amenityIds', () => {
             const raw = buildAdminCreateInput({ amenityIds: ['not-a-uuid'] });
-            const result = GastronomyAdminCreateInputSchema.safeParse(raw);
+            const result = VenueAdminCreateInputSchema.safeParse(raw);
             expect(result.success).toBe(false);
         });
     });
@@ -112,7 +112,7 @@ describe('GastronomyAdminCreateInputSchema', () => {
 describe('GastronomyOwnerUpdateInputSchema', () => {
     it('should parse an empty update (all fields optional)', () => {
         // Arrange / Act
-        const result = GastronomyOwnerUpdateInputSchema.safeParse({});
+        const result = VenueOwnerUpdateInputSchema.safeParse({});
 
         // Assert
         expect(result.success).toBe(true);
@@ -125,27 +125,27 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
     describe('newly owner-editable fields (SPEC-253 T-013)', () => {
         it('should accept type (SPEC-253 D1: now owner-editable, removed from identity-strip)', () => {
             // Arrange
-            const input = { type: GastronomyTypeEnum.CAFE };
+            const input = { type: VenueTypeEnum.CAFE };
 
             // Act
-            const result = GastronomyOwnerUpdateInputSchema.safeParse(input);
+            const result = VenueOwnerUpdateInputSchema.safeParse(input);
 
             // Assert
             expect(result.success).toBe(true);
             if (result.success) {
-                expect(result.data.type).toBe(GastronomyTypeEnum.CAFE);
+                expect(result.data.type).toBe(VenueTypeEnum.CAFE);
             }
         });
 
         it('should accept all gastronomy type enum values', () => {
-            for (const type of Object.values(GastronomyTypeEnum)) {
-                const result = GastronomyOwnerUpdateInputSchema.safeParse({ type });
+            for (const type of Object.values(VenueTypeEnum)) {
+                const result = VenueOwnerUpdateInputSchema.safeParse({ type });
                 expect(result.success).toBe(true);
             }
         });
 
         it('should reject an invalid type value', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({ type: 'INVALID_TYPE' });
+            const result = VenueOwnerUpdateInputSchema.safeParse({ type: 'INVALID_TYPE' });
             expect(result.success).toBe(false);
         });
 
@@ -154,7 +154,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
             const input = { summary: 'Un resumen válido con más de diez caracteres para el test.' };
 
             // Act
-            const result = GastronomyOwnerUpdateInputSchema.safeParse(input);
+            const result = VenueOwnerUpdateInputSchema.safeParse(input);
 
             // Assert
             expect(result.success).toBe(true);
@@ -164,12 +164,12 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
         });
 
         it('should reject summary shorter than 10 characters', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({ summary: 'Corto' });
+            const result = VenueOwnerUpdateInputSchema.safeParse({ summary: 'Corto' });
             expect(result.success).toBe(false);
         });
 
         it('should reject summary longer than 300 characters', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({
+            const result = VenueOwnerUpdateInputSchema.safeParse({
                 summary: 'A'.repeat(301)
             });
             expect(result.success).toBe(false);
@@ -185,7 +185,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
             const input = { nameI18n: i18nValue };
 
             // Act
-            const result = GastronomyOwnerUpdateInputSchema.safeParse(input);
+            const result = VenueOwnerUpdateInputSchema.safeParse(input);
 
             // Assert
             expect(result.success).toBe(true);
@@ -196,13 +196,13 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
 
         it('should accept summaryI18n with valid locale keys', () => {
             const i18nValue = { es: 'Resumen ES', en: 'Summary EN', pt: 'Resumo PT' };
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({ summaryI18n: i18nValue });
+            const result = VenueOwnerUpdateInputSchema.safeParse({ summaryI18n: i18nValue });
             expect(result.success).toBe(true);
         });
 
         it('should accept descriptionI18n with valid locale keys', () => {
             const i18nValue = { es: 'Descripción ES', en: 'Description EN', pt: 'Descrição PT' };
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({
+            const result = VenueOwnerUpdateInputSchema.safeParse({
                 descriptionI18n: i18nValue
             });
             expect(result.success).toBe(true);
@@ -214,7 +214,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
                 en: '<p>Rich EN</p>',
                 pt: '<p>PT</p>'
             };
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({
+            const result = VenueOwnerUpdateInputSchema.safeParse({
                 richDescriptionI18n: i18nValue
             });
             expect(result.success).toBe(true);
@@ -222,7 +222,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
 
         it('should accept all four i18n fields simultaneously', () => {
             const i18nValue = { es: 'Texto ES', en: 'Text EN', pt: 'Texto PT' };
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({
+            const result = VenueOwnerUpdateInputSchema.safeParse({
                 nameI18n: i18nValue,
                 summaryI18n: i18nValue,
                 descriptionI18n: i18nValue,
@@ -238,31 +238,31 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
 
     describe('previously-permitted operational sections (regression guard)', () => {
         it('should accept priceRange (gastronomy-specific operational field)', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({ priceRange: 'MID' });
+            const result = VenueOwnerUpdateInputSchema.safeParse({ priceRange: 'MID' });
             expect(result.success).toBe(true);
         });
 
         it('should accept menuUrl as a valid HTTPS URL', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({
+            const result = VenueOwnerUpdateInputSchema.safeParse({
                 menuUrl: 'https://example.com/menu'
             });
             expect(result.success).toBe(true);
         });
 
         it('should reject menuUrl that is not an HTTPS URL', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({
+            const result = VenueOwnerUpdateInputSchema.safeParse({
                 menuUrl: 'http://example.com/menu'
             });
             expect(result.success).toBe(false);
         });
 
         it('should accept amenityIds as an array of UUIDs', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({ amenityIds: [VALID_UUID] });
+            const result = VenueOwnerUpdateInputSchema.safeParse({ amenityIds: [VALID_UUID] });
             expect(result.success).toBe(true);
         });
 
         it('should accept featureIds as an array of UUIDs', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({ featureIds: [VALID_UUID] });
+            const result = VenueOwnerUpdateInputSchema.safeParse({ featureIds: [VALID_UUID] });
             expect(result.success).toBe(true);
         });
     });
@@ -276,7 +276,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
         it('should strip priceFrom silently (experience-only field — not valid for gastronomy)', () => {
             // Arrange: priceFrom is experience-only; if present in a gastronomy payload
             // it must be stripped by Zod's unknown-key stripping behaviour.
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({
+            const result = VenueOwnerUpdateInputSchema.safeParse({
                 priceFrom: 100000 // experience-only — must be stripped
             } as Record<string, unknown>);
 
@@ -289,7 +289,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
         });
 
         it('should strip priceUnit silently (experience-only field — not valid for gastronomy)', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({
+            const result = VenueOwnerUpdateInputSchema.safeParse({
                 priceUnit: 'per_person' // experience-only — must be stripped
             } as Record<string, unknown>);
 
@@ -306,7 +306,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
 
     describe('owner-editable identity fields (HOS-166 D-1)', () => {
         it('should accept and persist "name" (owner now controls identity)', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({ name: 'New Name' });
+            const result = VenueOwnerUpdateInputSchema.safeParse({ name: 'New Name' });
             expect(result.success).toBe(true);
             if (result.success) {
                 expect(result.data.name).toBe('New Name');
@@ -316,7 +316,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
         it('should accept and persist "description" (owner now controls identity)', () => {
             const description =
                 'A long base description that is now valid for an owner-submitted payload.';
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({ description });
+            const result = VenueOwnerUpdateInputSchema.safeParse({ description });
             expect(result.success).toBe(true);
             if (result.success) {
                 expect(result.data.description).toBe(description);
@@ -324,7 +324,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
         });
 
         it('should accept and persist "destinationId" (owner now controls identity)', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({
+            const result = VenueOwnerUpdateInputSchema.safeParse({
                 destinationId: VALID_UUID
             });
             expect(result.success).toBe(true);
@@ -340,7 +340,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
 
     describe('admin-only control + immutable-identity fields are still stripped (AC-19)', () => {
         it('should strip "slug" (immutable post-create — HOS-166 OQ-3)', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({ slug: 'new-slug' });
+            const result = VenueOwnerUpdateInputSchema.safeParse({ slug: 'new-slug' });
             expect(result.success).toBe(true);
             if (result.success) {
                 expect((result.data as Record<string, unknown>).slug).toBeUndefined();
@@ -348,7 +348,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
         });
 
         it('should strip "ownerId" (admin-only)', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({ ownerId: VALID_UUID });
+            const result = VenueOwnerUpdateInputSchema.safeParse({ ownerId: VALID_UUID });
             expect(result.success).toBe(true);
             if (result.success) {
                 expect((result.data as Record<string, unknown>).ownerId).toBeUndefined();
@@ -356,7 +356,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
         });
 
         it('should strip "isFeatured" (admin-only)', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({ isFeatured: true });
+            const result = VenueOwnerUpdateInputSchema.safeParse({ isFeatured: true });
             expect(result.success).toBe(true);
             if (result.success) {
                 expect((result.data as Record<string, unknown>).isFeatured).toBeUndefined();
@@ -364,7 +364,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
         });
 
         it('should strip "publicationStatus" (control field — only the PB transitions write it)', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({
+            const result = VenueOwnerUpdateInputSchema.safeParse({
                 publicationStatus: 'PUBLISHED'
             });
             expect(result.success).toBe(true);
@@ -387,24 +387,24 @@ describe('GastronomyOwnerCreateInputSchema', () => {
         summary: 'La mejor parrilla de la ciudad, con productos de campo.',
         description:
             'Un espacio único para disfrutar de la mejor gastronomía rioplatense con carnes seleccionadas y vinos de la región.',
-        type: GastronomyTypeEnum.PARRILLA,
+        type: VenueTypeEnum.PARRILLA,
         ...overrides
     });
 
     it('should parse a valid owner create input', () => {
-        const result = GastronomyOwnerCreateInputSchema.safeParse(buildOwnerCreateInput());
+        const result = VenueOwnerCreateInputSchema.safeParse(buildOwnerCreateInput());
         expect(result.success).toBe(true);
     });
 
     it('should allow omitting destinationId (checked at publish time, not create — §6.6)', () => {
-        const result = GastronomyOwnerCreateInputSchema.safeParse(
+        const result = VenueOwnerCreateInputSchema.safeParse(
             buildOwnerCreateInput({ destinationId: undefined })
         );
         expect(result.success).toBe(true);
     });
 
     it('should strip "ownerId" even if supplied — the route forces actor.id (D-3)', () => {
-        const result = GastronomyOwnerCreateInputSchema.safeParse(
+        const result = VenueOwnerCreateInputSchema.safeParse(
             buildOwnerCreateInput({ ownerId: VALID_UUID })
         );
         expect(result.success).toBe(true);
@@ -414,7 +414,7 @@ describe('GastronomyOwnerCreateInputSchema', () => {
     });
 
     it('should strip "slug" even if supplied — derived server-side from name (OQ-3)', () => {
-        const result = GastronomyOwnerCreateInputSchema.safeParse(
+        const result = VenueOwnerCreateInputSchema.safeParse(
             buildOwnerCreateInput({ slug: 'owner-chosen-slug' })
         );
         expect(result.success).toBe(true);
@@ -424,7 +424,7 @@ describe('GastronomyOwnerCreateInputSchema', () => {
     });
 
     it('should strip "publicationStatus" even if supplied — a listing is born DRAFT (D-3, HOS-1641)', () => {
-        const result = GastronomyOwnerCreateInputSchema.safeParse(
+        const result = VenueOwnerCreateInputSchema.safeParse(
             buildOwnerCreateInput({ publicationStatus: 'PUBLISHED' })
         );
         expect(result.success).toBe(true);
@@ -434,7 +434,7 @@ describe('GastronomyOwnerCreateInputSchema', () => {
     });
 
     it('should strip "isFeatured" even if supplied (control field)', () => {
-        const result = GastronomyOwnerCreateInputSchema.safeParse(
+        const result = VenueOwnerCreateInputSchema.safeParse(
             buildOwnerCreateInput({ isFeatured: true })
         );
         expect(result.success).toBe(true);
@@ -444,7 +444,7 @@ describe('GastronomyOwnerCreateInputSchema', () => {
     });
 
     it('should accept optional amenityIds and featureIds (write-only)', () => {
-        const result = GastronomyOwnerCreateInputSchema.safeParse(
+        const result = VenueOwnerCreateInputSchema.safeParse(
             buildOwnerCreateInput({ amenityIds: [VALID_UUID], featureIds: [VALID_UUID] })
         );
         expect(result.success).toBe(true);
@@ -457,24 +457,24 @@ describe('GastronomyOwnerCreateInputSchema', () => {
 
 describe('GastronomyUpdateInputSchema', () => {
     it('should parse an empty partial update', () => {
-        const result = GastronomyUpdateInputSchema.safeParse({});
+        const result = VenueUpdateInputSchema.safeParse({});
         expect(result.success).toBe(true);
     });
 
     it('should allow partial update of type', () => {
-        const result = GastronomyUpdateInputSchema.safeParse({
-            type: GastronomyTypeEnum.RESTAURANT
+        const result = VenueUpdateInputSchema.safeParse({
+            type: VenueTypeEnum.RESTAURANT
         });
         expect(result.success).toBe(true);
     });
 
     it('should allow partial update of priceRange', () => {
-        const result = GastronomyUpdateInputSchema.safeParse({ priceRange: 'HIGH' });
+        const result = VenueUpdateInputSchema.safeParse({ priceRange: 'HIGH' });
         expect(result.success).toBe(true);
     });
 
     it('should strip ownerId (server-managed — use dedicated endpoint)', () => {
-        const result = GastronomyUpdateInputSchema.safeParse({ name: 'Updated Name' });
+        const result = VenueUpdateInputSchema.safeParse({ name: 'Updated Name' });
         if (result.success) {
             expect((result.data as Record<string, unknown>).ownerId).toBeUndefined();
         }
@@ -489,7 +489,7 @@ describe('GastronomyUpdateInputSchema', () => {
         // than failing validation. That silent-strip behaviour is exactly what let
         // uploaded photos vanish: the binary reached Cloudinary but the DB write
         // never happened, and neither the client nor the server ever saw an error.
-        const result = GastronomyUpdateInputSchema.safeParse({
+        const result = VenueUpdateInputSchema.safeParse({
             name: 'Updated Name',
             media: {
                 featuredImage: { url: 'https://example.com/photo.jpg' },
@@ -511,7 +511,7 @@ describe('GastronomyUpdateInputSchema', () => {
 describe('GastronomyDeleteInputSchema', () => {
     it('should parse with id and default force=false', () => {
         // Arrange / Act
-        const result = GastronomyDeleteInputSchema.safeParse({ id: VALID_UUID });
+        const result = VenueDeleteInputSchema.safeParse({ id: VALID_UUID });
 
         // Assert
         expect(result.success).toBe(true);
@@ -521,7 +521,7 @@ describe('GastronomyDeleteInputSchema', () => {
     });
 
     it('should parse with force=true for hard delete', () => {
-        const result = GastronomyDeleteInputSchema.safeParse({ id: VALID_UUID, force: true });
+        const result = VenueDeleteInputSchema.safeParse({ id: VALID_UUID, force: true });
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.data.force).toBe(true);
@@ -529,7 +529,7 @@ describe('GastronomyDeleteInputSchema', () => {
     });
 
     it('should reject a non-UUID id', () => {
-        const result = GastronomyDeleteInputSchema.safeParse({ id: 'invalid' });
+        const result = VenueDeleteInputSchema.safeParse({ id: 'invalid' });
         expect(result.success).toBe(false);
     });
 });
@@ -540,12 +540,12 @@ describe('GastronomyDeleteInputSchema', () => {
 
 describe('GastronomyRestoreInputSchema', () => {
     it('should parse a valid UUID id', () => {
-        const result = GastronomyRestoreInputSchema.safeParse({ id: VALID_UUID });
+        const result = VenueRestoreInputSchema.safeParse({ id: VALID_UUID });
         expect(result.success).toBe(true);
     });
 
     it('should reject a non-UUID id', () => {
-        const result = GastronomyRestoreInputSchema.safeParse({ id: 'bad-id' });
+        const result = VenueRestoreInputSchema.safeParse({ id: 'bad-id' });
         expect(result.success).toBe(false);
     });
 });

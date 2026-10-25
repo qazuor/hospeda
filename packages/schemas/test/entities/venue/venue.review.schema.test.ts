@@ -2,9 +2,9 @@ import { faker } from '@faker-js/faker';
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
-    GastronomyReviewCreateInputSchema,
-    GastronomyReviewSchema,
-    GastronomyReviewUpdateInputSchema
+    VenueReviewCreateInputSchema,
+    VenueReviewSchema,
+    VenueReviewUpdateInputSchema
 } from '../../../src/entities/venue/subtypes/venue.review.schema.js';
 
 const gastronomyId = faker.string.uuid();
@@ -28,7 +28,7 @@ const validReviewBase = () => ({
 describe('GastronomyReviewSchema', () => {
     it('should validate a valid review', () => {
         const data = validReviewBase();
-        expect(() => GastronomyReviewSchema.parse(data)).not.toThrow();
+        expect(() => VenueReviewSchema.parse(data)).not.toThrow();
     });
 
     it('should validate a review with rating breakdown', () => {
@@ -41,48 +41,48 @@ describe('GastronomyReviewSchema', () => {
                 value: 4
             }
         };
-        expect(() => GastronomyReviewSchema.parse(data)).not.toThrow();
+        expect(() => VenueReviewSchema.parse(data)).not.toThrow();
     });
 
     it('should validate a guest review with null userId', () => {
         const data = { ...validReviewBase(), userId: null, reviewerName: 'Anonymous Guest' };
-        expect(() => GastronomyReviewSchema.parse(data)).not.toThrow();
+        expect(() => VenueReviewSchema.parse(data)).not.toThrow();
     });
 
     it('should reject overallRating below 1', () => {
         const data = { ...validReviewBase(), overallRating: 0 };
-        expect(() => GastronomyReviewSchema.parse(data)).toThrow(ZodError);
+        expect(() => VenueReviewSchema.parse(data)).toThrow(ZodError);
     });
 
     it('should reject overallRating above 5', () => {
         const data = { ...validReviewBase(), overallRating: 6 };
-        expect(() => GastronomyReviewSchema.parse(data)).toThrow(ZodError);
+        expect(() => VenueReviewSchema.parse(data)).toThrow(ZodError);
     });
 
     it('should reject content shorter than 10 characters', () => {
         const data = { ...validReviewBase(), content: 'Good' };
-        expect(() => GastronomyReviewSchema.parse(data)).toThrow(ZodError);
+        expect(() => VenueReviewSchema.parse(data)).toThrow(ZodError);
     });
 
     it('should accept null title and null content (both nullable)', () => {
         const data = { ...validReviewBase(), title: null, content: null };
-        expect(() => GastronomyReviewSchema.parse(data)).not.toThrow();
+        expect(() => VenueReviewSchema.parse(data)).not.toThrow();
     });
 
     it('should carry averageRating field (mirrors DB average_rating column)', () => {
         const data = { ...validReviewBase(), averageRating: 4.25 };
-        const result = GastronomyReviewSchema.parse(data);
+        const result = VenueReviewSchema.parse(data);
         expect(result.averageRating).toBe(4.25);
     });
 
     it('should default averageRating to 0 when absent', () => {
-        const result = GastronomyReviewSchema.parse(validReviewBase());
+        const result = VenueReviewSchema.parse(validReviewBase());
         expect(result.averageRating).toBe(0);
     });
 
     it('should reject invalid gastronomyId', () => {
         const data = { ...validReviewBase(), gastronomyId: 'not-a-uuid' };
-        expect(() => GastronomyReviewSchema.parse(data)).toThrow(ZodError);
+        expect(() => VenueReviewSchema.parse(data)).toThrow(ZodError);
     });
 
     it('should reject a rating with an out-of-range dimension (GastronomyRatingSchema enforced on entity schema)', () => {
@@ -92,7 +92,7 @@ describe('GastronomyReviewSchema', () => {
             ...validReviewBase(),
             rating: { food: 6, service: 4, ambiance: 3, value: 4 }
         };
-        expect(() => GastronomyReviewSchema.parse(data)).toThrow(ZodError);
+        expect(() => VenueReviewSchema.parse(data)).toThrow(ZodError);
     });
 
     it('should accept a null rating breakdown (SPEC-259: column is nullable, reads back NULL)', () => {
@@ -101,7 +101,7 @@ describe('GastronomyReviewSchema', () => {
         // validation on the create route) must accept null — not only undefined —
         // or the create response would fail validation after a successful insert.
         const data = { ...validReviewBase(), rating: null };
-        expect(() => GastronomyReviewSchema.parse(data)).not.toThrow();
+        expect(() => VenueReviewSchema.parse(data)).not.toThrow();
     });
 });
 
@@ -111,7 +111,7 @@ describe('GastronomyReviewCreateInputSchema', () => {
             gastronomyId,
             overallRating: 5
         };
-        expect(() => GastronomyReviewCreateInputSchema.parse(data)).not.toThrow();
+        expect(() => VenueReviewCreateInputSchema.parse(data)).not.toThrow();
     });
 
     it('should validate a full create input', () => {
@@ -123,16 +123,16 @@ describe('GastronomyReviewCreateInputSchema', () => {
             content: 'Great dining experience!',
             reviewerName: 'Juan'
         };
-        expect(() => GastronomyReviewCreateInputSchema.parse(data)).not.toThrow();
+        expect(() => VenueReviewCreateInputSchema.parse(data)).not.toThrow();
     });
 
     it('should validate create with title and content both absent (both optional)', () => {
         const data = { gastronomyId, overallRating: 5 };
-        expect(() => GastronomyReviewCreateInputSchema.parse(data)).not.toThrow();
+        expect(() => VenueReviewCreateInputSchema.parse(data)).not.toThrow();
     });
 
     it('should not have comment field (replaced by title + content)', () => {
-        const keys = Object.keys(GastronomyReviewCreateInputSchema.shape);
+        const keys = Object.keys(VenueReviewCreateInputSchema.shape);
         expect(keys).not.toContain('comment');
         expect(keys).toContain('title');
         expect(keys).toContain('content');
@@ -140,33 +140,31 @@ describe('GastronomyReviewCreateInputSchema', () => {
 
     it('should reject missing gastronomyId', () => {
         const data = { overallRating: 4 };
-        expect(() => GastronomyReviewCreateInputSchema.parse(data)).toThrow(ZodError);
+        expect(() => VenueReviewCreateInputSchema.parse(data)).toThrow(ZodError);
     });
 
     it('should reject missing overallRating', () => {
         const data = { gastronomyId };
-        expect(() => GastronomyReviewCreateInputSchema.parse(data)).toThrow(ZodError);
+        expect(() => VenueReviewCreateInputSchema.parse(data)).toThrow(ZodError);
     });
 });
 
 describe('GastronomyReviewUpdateInputSchema', () => {
     it('should allow an empty update (all optional)', () => {
-        expect(() => GastronomyReviewUpdateInputSchema.parse({})).not.toThrow();
+        expect(() => VenueReviewUpdateInputSchema.parse({})).not.toThrow();
     });
 
     it('should validate a partial update with just overallRating', () => {
         const data = { overallRating: 3 };
-        expect(() => GastronomyReviewUpdateInputSchema.parse(data)).not.toThrow();
+        expect(() => VenueReviewUpdateInputSchema.parse(data)).not.toThrow();
     });
 
     it('should reject overallRating out of range on update', () => {
-        expect(() => GastronomyReviewUpdateInputSchema.parse({ overallRating: 0 })).toThrow(
-            ZodError
-        );
+        expect(() => VenueReviewUpdateInputSchema.parse({ overallRating: 0 })).toThrow(ZodError);
     });
 
     it('should not include gastronomyId in update (FK is immutable)', () => {
-        const keys = Object.keys(GastronomyReviewUpdateInputSchema.shape ?? {});
+        const keys = Object.keys(VenueReviewUpdateInputSchema.shape ?? {});
         expect(keys).not.toContain('gastronomyId');
     });
 });

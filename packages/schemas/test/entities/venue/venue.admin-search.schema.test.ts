@@ -1,11 +1,11 @@
 import { faker } from '@faker-js/faker';
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
-import { GastronomyAdminSearchSchema } from '../../../src/entities/venue/venue.admin-search.schema.js';
+import { VenueAdminSearchSchema } from '../../../src/entities/venue/venue.admin-search.schema.js';
 
 describe('GastronomyAdminSearchSchema', () => {
     it('should validate an empty admin search (all defaults)', () => {
-        const result = GastronomyAdminSearchSchema.parse({});
+        const result = VenueAdminSearchSchema.parse({});
         expect(result.page).toBe(1);
         // AdminSearchBaseSchema defaults pageSize to 20 (not 10 — different from BaseSearchSchema)
         expect(result.pageSize).toBe(20);
@@ -23,31 +23,31 @@ describe('GastronomyAdminSearchSchema', () => {
             priceRange: 'MID',
             isFeatured: true
         };
-        expect(() => GastronomyAdminSearchSchema.parse(data)).not.toThrow();
+        expect(() => VenueAdminSearchSchema.parse(data)).not.toThrow();
     });
 
     it('should accept includeDeleted flag', () => {
-        const result = GastronomyAdminSearchSchema.parse({ includeDeleted: true });
+        const result = VenueAdminSearchSchema.parse({ includeDeleted: true });
         expect(result.includeDeleted).toBe(true);
     });
 
     it('should reject invalid type enum value', () => {
-        expect(() => GastronomyAdminSearchSchema.parse({ type: 'TAQUERIA' })).toThrow(ZodError);
+        expect(() => VenueAdminSearchSchema.parse({ type: 'TAQUERIA' })).toThrow(ZodError);
     });
 
     it('should reject invalid destinationId', () => {
-        expect(() => GastronomyAdminSearchSchema.parse({ destinationId: 'not-a-uuid' })).toThrow(
+        expect(() => VenueAdminSearchSchema.parse({ destinationId: 'not-a-uuid' })).toThrow(
             ZodError
         );
     });
 
     it('should coerce string page to number', () => {
-        const result = GastronomyAdminSearchSchema.parse({ page: '3' });
+        const result = VenueAdminSearchSchema.parse({ page: '3' });
         expect(result.page).toBe(3);
     });
 
     it('should coerce string pageSize to number', () => {
-        const result = GastronomyAdminSearchSchema.parse({ pageSize: '50' });
+        const result = VenueAdminSearchSchema.parse({ pageSize: '50' });
         expect(result.pageSize).toBe(50);
     });
 });

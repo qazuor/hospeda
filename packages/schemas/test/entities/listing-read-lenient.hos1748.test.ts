@@ -10,9 +10,9 @@ import {
     ExperienceProtectedSchema
 } from '../../src/entities/experience/experience.access.schema.js';
 import {
-    GastronomyAdminListItemSchema,
-    GastronomyAdminSchema,
-    GastronomyProtectedSchema
+    VenueAdminListItemSchema,
+    VenueAdminSchema,
+    VenueProtectedSchema
 } from '../../src/entities/venue/venue.access.schema.js';
 import { ExperiencePriceUnitEnum } from '../../src/enums/experience-price-unit.enum.js';
 import { ExperienceTypeEnum } from '../../src/enums/experience-type.enum.js';
@@ -141,9 +141,9 @@ const cases: readonly ReadCase[] = [
     )
     .concat(
         [
-            ['GastronomyAdminSchema', GastronomyAdminSchema],
-            ['GastronomyAdminListItemSchema', GastronomyAdminListItemSchema],
-            ['GastronomyProtectedSchema', GastronomyProtectedSchema]
+            ['GastronomyAdminSchema', VenueAdminSchema],
+            ['GastronomyAdminListItemSchema', VenueAdminListItemSchema],
+            ['GastronomyProtectedSchema', VenueProtectedSchema]
         ].map(
             ([name, schema]) =>
                 ({
