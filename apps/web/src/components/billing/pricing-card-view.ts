@@ -251,16 +251,27 @@ export function buildPricingCardViews(input: BuildPricingCardViewsInput): Pricin
             collapseTouristVip[audience] && plan.inheritsTouristVip && touristVipBenefits != null;
         const touristVipEntitlements = new Set(touristVipBenefits?.entitlements ?? []);
         const touristVipLimits = new Set(touristVipBenefits?.limits ?? []);
+        /**
+         * The VIP line represents the inherited offer, so its presence follows
+         * the inheritance flags rather than matching benefit keys. A full-offer
+         * card needs the line; a delta needs it only when the previous tier did
+         * not already inherit the VIP offer.
+         */
         const hasTouristVipDelta =
-            inheritsBenefits &&
-            (delta.addedEntitlements.some((key) => touristVipEntitlements.has(key)) ||
-                delta.limitChanges.some((change) => touristVipLimits.has(change.key)));
-        const displayEntitlements = inheritsBenefits
+            inheritsBenefits && (!showsDelta || previousPlan?.inheritsTouristVip !== true);
+        /**
+         * VIP catalog keys are covered by the group line only when the card
+         * presents the full offer. New VIP-keyed benefits in a delta against an
+         * already-inheriting tier are tier-specific additions and stay visible.
+         */
+        const filtersTouristVipKeys =
+            inheritsBenefits && (!showsDelta || previousPlan?.inheritsTouristVip !== true);
+        const displayEntitlements = filtersTouristVipKeys
             ? delta.addedEntitlements.filter((key) => !touristVipEntitlements.has(key))
             : delta.addedEntitlements;
         const features = getDisplayFeatures({ keys: displayEntitlements, audience, t });
         const limitLines: PricingCardLimitItem[] = delta.limitChanges
-            .filter((change) => !inheritsBenefits || !touristVipLimits.has(change.key))
+            .filter((change) => !filtersTouristVipKeys || !touristVipLimits.has(change.key))
             .map((change) => ({
                 kind: 'limit',
                 id: change.key,

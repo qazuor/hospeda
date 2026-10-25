@@ -254,6 +254,139 @@ describe('buildPricingCardViews — the rest of the card', () => {
 });
 
 describe('TEST:1765:1 inherited Tourist VIP benefits', () => {
+    it('shows the VIP line once across a gastronomy ladder and keeps Premium ai_chat', () => {
+        const vipKeys = {
+            entitlements: new Set(['tourist_vip_only', 'ai_chat']),
+            limits: new Set<string>()
+        };
+        const { cards } = buildPricingCardViews({
+            plans: [
+                plan({
+                    slug: 'basic',
+                    sortOrder: 1,
+                    inheritsTouristVip: true,
+                    entitlements: ['tourist_vip_only']
+                }),
+                plan({
+                    slug: 'professional',
+                    sortOrder: 2,
+                    inheritsTouristVip: true,
+                    entitlements: ['tourist_vip_only', 'professional_feature']
+                }),
+                plan({
+                    slug: 'premium',
+                    sortOrder: 3,
+                    inheritsTouristVip: true,
+                    entitlements: ['tourist_vip_only', 'professional_feature', 'ai_chat']
+                })
+            ],
+            audience: 'gastronomy',
+            intlLocale: 'es-AR',
+            t,
+            touristVipBenefits: vipKeys
+        });
+
+        expect(cards[0]?.visibleItems[0]?.id).toBe('group-tourist-vip');
+        expect(cards[1]?.visibleItems.map((item) => item.id)).not.toContain('group-tourist-vip');
+        expect(cards[2]?.visibleItems.map((item) => item.id)).not.toContain('group-tourist-vip');
+        expect(cards[2]?.visibleItems.map((item) => item.id)).toContain('ai_chat');
+    });
+
+    it('shows the VIP line only on Basic for the owner ladder', () => {
+        const { cards } = buildPricingCardViews({
+            plans: [
+                plan({
+                    slug: 'basic',
+                    sortOrder: 1,
+                    inheritsTouristVip: true,
+                    entitlements: ['vip_feature']
+                }),
+                plan({
+                    slug: 'professional',
+                    sortOrder: 2,
+                    inheritsTouristVip: true,
+                    entitlements: ['vip_feature', 'pro_feature']
+                }),
+                plan({
+                    slug: 'premium',
+                    sortOrder: 3,
+                    inheritsTouristVip: true,
+                    entitlements: ['vip_feature', 'pro_feature', 'ai_chat']
+                })
+            ],
+            audience: 'owner',
+            intlLocale: 'es-AR',
+            t,
+            touristVipBenefits: {
+                entitlements: new Set(['vip_feature', 'ai_chat']),
+                limits: new Set()
+            }
+        });
+
+        expect(
+            cards.map((card) => card.visibleItems.some((item) => item.id === 'group-tourist-vip'))
+        ).toEqual([true, false, false]);
+    });
+
+    it('shows the VIP line when the preceding tier does not inherit it', () => {
+        const { cards } = buildPricingCardViews({
+            plans: [
+                plan({ slug: 'basic', sortOrder: 1, entitlements: ['base_feature'] }),
+                plan({
+                    slug: 'upper',
+                    sortOrder: 2,
+                    inheritsTouristVip: true,
+                    entitlements: ['base_feature', 'vip_feature']
+                })
+            ],
+            audience: 'gastronomy',
+            intlLocale: 'es-AR',
+            t,
+            touristVipBenefits: { entitlements: new Set(['vip_feature']), limits: new Set() }
+        });
+
+        expect(cards[1]?.visibleItems[0]?.id).toBe('group-tourist-vip');
+    });
+
+    it('shows the VIP line on a full-offer fallback for an empty delta', () => {
+        const { cards } = buildPricingCardViews({
+            plans: [
+                plan({
+                    slug: 'basic',
+                    sortOrder: 1,
+                    inheritsTouristVip: true,
+                    entitlements: ['vip_feature']
+                }),
+                plan({
+                    slug: 'upper',
+                    sortOrder: 2,
+                    inheritsTouristVip: true,
+                    entitlements: ['vip_feature']
+                })
+            ],
+            audience: 'gastronomy',
+            intlLocale: 'es-AR',
+            t,
+            touristVipBenefits: { entitlements: new Set(['vip_feature']), limits: new Set() }
+        });
+
+        expect(cards[1]?.visibleItems[0]?.id).toBe('group-tourist-vip');
+    });
+
+    it('never collapses the VIP benefits on tourist cards', () => {
+        const { cards } = buildPricingCardViews({
+            plans: [
+                plan({ slug: 'tourist', inheritsTouristVip: true, entitlements: ['vip_feature'] })
+            ],
+            audience: 'tourist',
+            intlLocale: 'es-AR',
+            t,
+            touristVipBenefits: { entitlements: new Set(['vip_feature']), limits: new Set() }
+        });
+
+        expect(cards[0]?.visibleItems.map((item) => item.id)).toEqual(['vip_feature']);
+    });
+
     it('collapses VIP entitlement and limit deltas into one leading line for commercial plans', () => {
         const vipKeys = {
             entitlements: new Set(['tourist_favorites', 'tourist_collections']),
