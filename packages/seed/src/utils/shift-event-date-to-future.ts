@@ -11,6 +11,7 @@ interface EventDateWithIsoStrings {
  * @param input.date - Event date with ISO string values and optional metadata.
  * @param input.now - Clock used to determine whether the event has passed.
  * @returns The original date object when it has not passed, otherwise a copy with shifted dates.
+ * @throws Error when start or end is not a parseable ISO date.
  */
 export function shiftEventDateToFuture<T extends EventDateWithIsoStrings>({
     date,
@@ -19,12 +20,21 @@ export function shiftEventDateToFuture<T extends EventDateWithIsoStrings>({
     readonly date: T;
     readonly now: Date;
 }): T {
+    const validateDate = (value: string): void => {
+        if (!/^\d{4}-\d{2}-\d{2}/.test(value) || Number.isNaN(Date.parse(value))) {
+            throw new Error(`Event date is not an ISO date: ${value}`);
+        }
+    };
+
+    validateDate(date.start);
+    if (date.end !== undefined) validateDate(date.end);
+
     const end = date.end ?? date.start;
     if (Date.parse(end) >= now.getTime()) return date;
 
     const shiftByYears = (value: string, years: number): string => {
         const match = /^(\d{4})-(\d{2})-(\d{2})(.*)$/.exec(value);
-        if (!match) return value;
+        if (!match) throw new Error(`Event date is not an ISO date: ${value}`);
 
         const year = Number(match[1]) + years;
         const month = Number(match[2]);

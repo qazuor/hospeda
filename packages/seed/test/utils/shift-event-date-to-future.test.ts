@@ -55,6 +55,22 @@ describe('shiftEventDateToFuture', () => {
         );
     });
 
+    it('rejects a parseable non-ISO past date', { timeout: 2000 }, () => {
+        const date = { start: 'October 25, 2020' };
+
+        expect(() =>
+            shiftEventDateToFuture({ date, now: new Date('2026-10-25T00:00:00-03:00') })
+        ).toThrow(new Error('Event date is not an ISO date: October 25, 2020'));
+    });
+
+    it('rejects an unparseable date', { timeout: 2000 }, () => {
+        const date = { start: 'not-a-date' };
+
+        expect(() =>
+            shiftEventDateToFuture({ date, now: new Date('2026-10-25T00:00:00-03:00') })
+        ).toThrow(new Error('Event date is not an ISO date: not-a-date'));
+    });
+
     it('moves February 29 to February 28 in a non-leap target year', () => {
         const date = { start: '2024-02-29T10:30:00-03:00', end: '2024-03-01T10:30:00-03:00' };
 
