@@ -21,7 +21,7 @@
  *
  * @module test/services/gastronomy/gastronomy.events
  */
-import { GastronomyEventPublicSchema } from '@repo/schemas';
+import { VenueEventPublicSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { projectEvent, toClockTime } from '../../../src/services/gastronomy/gastronomy.events.js';
 
@@ -68,8 +68,8 @@ describe('projectEvent (HOS-1042)', () => {
         // The assertion that would have caught the bug: the RAW row fails and
         // the projected one passes. Asserting only the projected half would
         // stay green if the schema were loosened instead of the read fixed.
-        expect(GastronomyEventPublicSchema.safeParse(storedRow).success).toBe(false);
-        expect(GastronomyEventPublicSchema.safeParse(projectEvent(storedRow)).success).toBe(true);
+        expect(VenueEventPublicSchema.safeParse(storedRow).success).toBe(false);
+        expect(VenueEventPublicSchema.safeParse(projectEvent(storedRow)).success).toBe(true);
     });
 
     it('leaves the calendar date exactly as stored', () => {

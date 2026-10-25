@@ -40,12 +40,12 @@
 
 import { GastronomyEventModel, type GastronomyModel, withTransaction } from '@repo/db';
 import {
-    type GastronomyEventsGetInput,
-    GastronomyEventsGetInputSchema,
-    type GastronomyEventsOutput,
-    type GastronomyEventsReplaceInput,
-    GastronomyEventsReplaceInputSchema,
-    ServiceErrorCode
+    ServiceErrorCode,
+    type VenueEventsGetInput,
+    VenueEventsGetInputSchema,
+    type VenueEventsOutput,
+    type VenueEventsReplaceInput,
+    VenueEventsReplaceInputSchema
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -143,11 +143,11 @@ export function projectEvent<T extends { startTime: string; endTime: string | nu
  */
 export async function getGastronomyEvents(
     model: GastronomyModel,
-    data: GastronomyEventsGetInput,
+    data: VenueEventsGetInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyEventsOutput>> {
+): Promise<ServiceOutput<VenueEventsOutput>> {
     try {
-        const parseResult = GastronomyEventsGetInputSchema.safeParse(data);
+        const parseResult = VenueEventsGetInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)
@@ -215,11 +215,11 @@ export async function getGastronomyEvents(
 export async function replaceGastronomyEvents(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyEventsReplaceInput,
+    data: VenueEventsReplaceInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyEventsOutput>> {
+): Promise<ServiceOutput<VenueEventsOutput>> {
     try {
-        const parseResult = GastronomyEventsReplaceInputSchema.safeParse(data);
+        const parseResult = VenueEventsReplaceInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)

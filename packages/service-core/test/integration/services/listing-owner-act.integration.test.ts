@@ -17,10 +17,10 @@ import { accommodations, domainEventModel, eq, type SelectDomainEvent } from '@r
 import {
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
-    GastronomyTypeEnum,
     PermissionEnum,
     PublicationStatusEnum,
-    RoleEnum
+    RoleEnum,
+    VenueTypeEnum
 } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -109,7 +109,7 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                         name: 'Parrilla del Dueño',
                         summary: 'Resumen de la parrilla del dueño',
                         description: 'Descripción de la parrilla creada por su dueño.',
-                        type: GastronomyTypeEnum.PARRILLA,
+                        type: VenueTypeEnum.PARRILLA,
                         ownerId: ownerId as Uuid,
                         destinationId: destinationId as Uuid,
                         averageRating: 0,
