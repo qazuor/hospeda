@@ -136,6 +136,23 @@ describe('TEST:1813:3 AC:1:15 T1 scans the committed repository', () => {
     });
 });
 
+describe('TEST:1813:9 AC:1:15 the run-2 inventory is exact and lower than run 1', () => {
+    // Totals recorded when run 1 (identifier renames) closed; run 2 renames the enum keys on top.
+    const RUN_1_TOTALS = { files: 1804, occurrences: 16015 } as const;
+
+    it('TEST:1813:9 AC:1:15 records the scanned tree exactly and below the run-1 totals', () => {
+        const inventory = JSON.parse(
+            readFileSync(resolve(ROOT, 'scripts/guards/venue-rename-frontier.json'), 'utf8')
+        ) as { files: Record<string, number> };
+        const counts = Object.values(inventory.files);
+        const occurrences = counts.reduce((sum, count) => sum + count, 0);
+
+        expect(run({ root: ROOT, baseInventory: null }).exitCode).toBe(0);
+        expect(counts.length).toBeLessThan(RUN_1_TOTALS.files);
+        expect(occurrences).toBeLessThan(RUN_1_TOTALS.occurrences);
+    });
+});
+
 describe('TEST:1813:4 AC:1:15 T1 is wired to guards CI and package scripts', () => {
     it('TEST:1813:4 AC:1:15 wires the dedicated package command and CI Guards step', () => {
         const packageJson = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')) as {
