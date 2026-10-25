@@ -23,6 +23,8 @@
         "openSheet": "View cards",
         "openSheetCount_one": "View {{count}} result",
         "openSheetCount_other": "View {{count}} results",
+        "openSheetCountShort_one": "{{count}} result",
+        "openSheetCountShort_other": "{{count}} results",
         "closeSheet": "Close",
         "loading": "Loading results…"
     },

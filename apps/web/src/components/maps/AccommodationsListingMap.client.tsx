@@ -49,6 +49,12 @@ interface SidebarI18n {
      */
     readonly openSheetCountOne: string;
     readonly openSheetCountOther: string;
+    /**
+     * Short pluralised templates ("12 resultados") for the dock trigger where
+     * the full label does not fit on one row (HOS-1780).
+     */
+    readonly openSheetCountShortOne: string;
+    readonly openSheetCountShortOther: string;
     readonly closeSheet: string;
     /** Spinner label shown while a viewport refetch is in flight (A1). */
     readonly loading?: string;
@@ -324,6 +330,17 @@ export function AccommodationsListingMap({
         [sidebarI18n?.openSheetCountOne, sidebarI18n?.openSheetCountOther]
     );
 
+    const openSheetCountShortFn = useCallback(
+        (n: number) => {
+            const tpl =
+                n === 1
+                    ? (sidebarI18n?.openSheetCountShortOne ?? '{{count}} resultado')
+                    : (sidebarI18n?.openSheetCountShortOther ?? '{{count}} resultados');
+            return tpl.replace('{{count}}', String(n)).replace('{count}', String(n));
+        },
+        [sidebarI18n?.openSheetCountShortOne, sidebarI18n?.openSheetCountShortOther]
+    );
+
     if (!showSidebar || !sidebarI18n) {
         return (
             <ListingMap
@@ -375,6 +392,7 @@ export function AccommodationsListingMap({
                         emptyState: sidebarI18n.emptyState,
                         openSheet: sidebarI18n.openSheet,
                         openSheetCount: openSheetCountFn,
+                        openSheetCountShort: openSheetCountShortFn,
                         closeSheet: sidebarI18n.closeSheet,
                         loading: sidebarI18n.loading ?? 'Cargando resultados…'
                     }}

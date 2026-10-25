@@ -32,7 +32,7 @@ export function FilterDockTrigger({ label, activeCount, isOpen, onOpen }: Filter
                 >
                     ☰
                 </span>
-                <span>{label}</span>
+                <span className={styles.floatingTriggerLabel}>{label}</span>
                 {activeCount > 0 && (
                     <span
                         className={styles.floatingBadge}
