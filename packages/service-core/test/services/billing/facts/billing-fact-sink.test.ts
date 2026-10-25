@@ -32,6 +32,7 @@ describe('billing fact sink (TEST:1878:15, TEST:1878:19)', () => {
         ).not.toThrow();
     });
     it('uses the loud default when no sink is wired', () => {
+        logError.mockClear();
         emitBillingFact({ fact });
         expect(logError).toHaveBeenCalledWith(
             { kind: 'CHECKOUT_ABANDONED', subscriptionId: 's1' },
