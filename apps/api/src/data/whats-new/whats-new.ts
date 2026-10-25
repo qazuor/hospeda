@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #3798
+    {
+        id: '2026-10-25-owner-plan-warns-about-tourist-vip',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['USER', 'HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Antes de pagar un plan de dueño, te avisamos qué pasa con tu Turista VIP',
+            en: 'Before you pay for an owner plan, we tell you what happens to your Tourist VIP',
+            pt: 'Antes de pagar um plano de proprietário, avisamos o que acontece com seu Turista VIP'
+        },
+        body: {
+            es: 'Los planes para publicar ya incluyen todos los beneficios de Turista VIP. Si tenés una suscripción VIP paga, el checkout te lo dice antes de pagar: cuando el plan nuevo se activa, la VIP se cancela y te llega un correo avisándote.',
+            en: 'Publishing plans already include every Tourist VIP benefit. If you have a paid VIP subscription, the checkout tells you before you pay: when the new plan activates, the VIP is cancelled and you get an email about it.',
+            pt: 'Os planos para publicar já incluem todos os benefícios do Turista VIP. Se você tem uma assinatura VIP paga, o checkout avisa antes de pagar: quando o novo plano é ativado, a VIP é cancelada e você recebe um e-mail avisando.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3797
     {
         id: '2026-10-25-clearer-plan-pages',
