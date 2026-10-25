@@ -1,9 +1,8 @@
 /**
- * T-015: No-silent-skip regression guard for SPEC-217 target specs.
+ * No-silent-skip regression guard for specs that left hasOldBillingSchema.
  *
- * Ensures that every `test.skip` / `test.fixme` occurrence in the six
- * SPEC-217 target spec files is documented, preventing silent regression back
- * to "skipped forever" without explanation.
+ * Ensures that every `test.skip` / `test.fixme` occurrence in the onboarding
+ * handoff spec is documented, preventing it from returning to a silent fixme.
  *
  * Convention (see `detectSilentSkips` in skip-detector.ts for the full rule):
  *   - A skip/fixme is ALLOWED when the call supplies a string literal argument
@@ -25,24 +24,13 @@ import { ANNOTATION_KEYWORDS, detectSilentSkips } from './skip-detector.ts';
 
 const E2E_ROOT = join(import.meta.dirname, '..', '..');
 
-// host-07d-tx-compensation.spec.ts was on this list and is deliberately gone
-// (HOS-171): its premise — publish starting a trial, then compensating via
-// cancelTrial when a later step failed — died with the no-card trial, and the spec
-// had already stopped giving signal, self-skipping via test.fixme() the moment the
-// flow stopped calling startTrial. Which is exactly what this guard exists to
-// catch, and could not: the guard only inspects the files named here, and a
-// self-skip driven by runtime state is invisible to a source scan. Rebuilding it
-// on the post-create compensation path is HOS-184. host-07c and res-01 left the
-// list with the QZPay test-control adapter they needed (HOS-1419).
-const TARGET_SPECS = [
-    'tests/host/host-03-trial-expired.spec.ts',
-    'tests/host/host-04-cancellation-grace.spec.ts',
-    'tests/host/host-07b-subscription-required.spec.ts'
-] as const;
+// HOST-01 was blocked by hasOldBillingSchema and is now enabled. Keep it here
+// so a later silent fixme cannot make this coverage disappear again.
+const TARGET_SPECS = ['tests/host/host-01-onboarding-handoff.spec.ts'] as const;
 
 // ── Real-file guard tests ──────────────────────────────────────────────────
 
-describe('T-015: no-silent-skip guard — SPEC-217 target specs', () => {
+describe('no-silent-skip guard — onboarding handoff spec', () => {
     for (const relPath of TARGET_SPECS) {
         it(`${relPath} — no undocumented skip/fixme`, () => {
             const absPath = join(E2E_ROOT, relPath);
