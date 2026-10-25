@@ -39,7 +39,22 @@ export type TrialFact =
           hadPaidIntent?: boolean;
           occurredAt: Date;
       };
-type Fact = BillingFact | TrialFact;
+type CheckoutStartedFact = {
+    kind: 'CHECKOUT_STARTED';
+    userId: string;
+    vertical: string;
+    subscriptionId: string;
+    subscriptionClass: 'PRINCIPAL' | 'COMPLEMENTO';
+    actorKind: 'USER' | 'ADMIN' | 'SYSTEM';
+    planVersionId: string;
+    billingOptionId: string;
+    cycle: 'monthly' | 'quarterly' | 'semiannual' | 'annual';
+    amountMinor: number;
+    currency: 'ARS';
+    isSuccession?: boolean;
+    occurredAt: Date;
+};
+type Fact = BillingFact | TrialFact | CheckoutStartedFact;
 type Capture = (input: {
     distinctId: string;
     name: AnalyticsEventName;
@@ -65,6 +80,21 @@ function toEvent(fact: Fact): {
               }
             : { vertical: fact.vertical, actor_kind: fact.actorKind };
     switch (fact.kind) {
+        case 'CHECKOUT_STARTED':
+            return {
+                event: AnalyticsEvents.billingCheckoutStarted,
+                dedupeKey: fact.subscriptionId,
+                properties: {
+                    ...common,
+                    plan_version_id: fact.planVersionId,
+                    billing_option_id: fact.billingOptionId,
+                    cycle: fact.cycle,
+                    amount_minor: fact.amountMinor,
+                    currency: fact.currency,
+                    is_succession: fact.isSuccession
+                },
+                timestamp: fact.occurredAt
+            };
         case 'CHECKOUT_ABANDONED':
             return {
                 event: AnalyticsEvents.billingCheckoutAbandoned,
@@ -328,16 +358,20 @@ export function captureBillingCheckoutStarted(input: {
     };
     occurredAt: Date;
 }): void {
-    const event = AnalyticsEvents.billingCheckoutStarted;
-    try {
-        captureServerAnalyticsEvent({
-            distinctId: input.distinctId,
-            name: event,
-            properties: input.properties as never,
-            uuid: deriveAnalyticsEventUuid({ event, dedupeKey: input.properties.subscription_id }),
-            timestamp: input.occurredAt
-        });
-    } catch (error) {
-        logger.warn({ error }, 'Analytics checkout capture failed (non-blocking)');
-    }
+    const { properties } = input;
+    (testSink ?? productionSink).emit({
+        kind: 'CHECKOUT_STARTED',
+        userId: input.distinctId,
+        vertical: properties.vertical,
+        subscriptionId: properties.subscription_id,
+        subscriptionClass: properties.subscription_class,
+        actorKind: properties.actor_kind,
+        planVersionId: properties.plan_version_id,
+        billingOptionId: properties.billing_option_id,
+        cycle: properties.cycle,
+        amountMinor: properties.amount_minor,
+        currency: properties.currency,
+        isSuccession: properties.is_succession,
+        occurredAt: input.occurredAt
+    });
 }
