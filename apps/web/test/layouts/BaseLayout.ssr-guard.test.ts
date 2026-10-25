@@ -32,7 +32,7 @@ function mask(source: string): string {
     return source.replace(/[^\n]/g, ' ');
 }
 
-function isClientGuard(condition: ts.Expression): boolean | undefined {
+function isClientGuard({ condition }: { readonly condition: ts.Expression }): boolean | undefined {
     const text = condition.getText().replace(/\s+/g, '');
     const ssr = /^(?:!?)import\.meta\.env\.SSR$/.test(text);
     if (ssr) return text.startsWith('!');
@@ -41,7 +41,13 @@ function isClientGuard(condition: ts.Expression): boolean | undefined {
     return windowCheck[1].startsWith('!');
 }
 
-function findInTs(source: string, lineOffset: number): ScanResult {
+function findInTs({
+    source,
+    lineOffset
+}: {
+    readonly source: string;
+    readonly lineOffset: number;
+}): ScanResult {
     const file = ts.createSourceFile(
         'layout-frontmatter.ts',
         source,
@@ -57,14 +63,14 @@ function findInTs(source: string, lineOffset: number): ScanResult {
     function safeBranch(node: ts.Node): boolean {
         for (let parent = node.parent; parent; parent = parent.parent) {
             if (ts.isIfStatement(parent)) {
-                const polarity = isClientGuard(parent.expression);
+                const polarity = isClientGuard({ condition: parent.expression });
                 if (polarity === undefined) continue;
                 if (polarity && contains(parent.thenStatement, node)) return true;
                 if (!polarity && parent.elseStatement && contains(parent.elseStatement, node))
                     return true;
             }
             if (ts.isConditionalExpression(parent)) {
-                const polarity = isClientGuard(parent.condition);
+                const polarity = isClientGuard({ condition: parent.condition });
                 if (polarity !== undefined && polarity && contains(parent.whenTrue, node))
                     return true;
             }
@@ -106,7 +112,10 @@ function findInTs(source: string, lineOffset: number): ScanResult {
     return { findings, seen };
 }
 
-function extractFrontmatter(source: string): { code: string; lineOffset: number } {
+function extractFrontmatter({ source }: { readonly source: string }): {
+    code: string;
+    lineOffset: number;
+} {
     const match = /^---\s*\n([\s\S]*?)\n---/m.exec(source);
     if (!match || match.index === undefined) return { code: '', lineOffset: 0 };
     return { code: match[1], lineOffset: source.slice(0, match.index).split('\n').length };
@@ -119,7 +128,10 @@ function maskClientAndComments(source: string): string {
     return clean;
 }
 
-function templateExpressions(source: string): Array<{ code: string; offset: number }> {
+function templateExpressions({ source }: { readonly source: string }): Array<{
+    code: string;
+    offset: number;
+}> {
     let clean = maskClientAndComments(source);
     const fm = /^---\s*\n[\s\S]*?\n---/m.exec(clean);
     if (fm?.index !== undefined)
@@ -146,23 +158,32 @@ function templateExpressions(source: string): Array<{ code: string; offset: numb
     return expressions;
 }
 
-function scanLayout(source: string): ScanResult {
-    const frontmatter = extractFrontmatter(source);
-    const front = findInTs(frontmatter.code, frontmatter.lineOffset);
+function scanLayout({ source }: { readonly source: string }): ScanResult {
+    const frontmatter = extractFrontmatter({ source });
+    const front = findInTs({
+        source: frontmatter.code,
+        lineOffset: frontmatter.lineOffset
+    });
     const findings = [...front.findings];
     let seen = front.seen;
-    for (const expression of templateExpressions(source)) {
-        const result = findInTs(
-            expression.code,
-            source.slice(0, expression.offset).split('\n').length - 1
-        );
+    for (const expression of templateExpressions({ source })) {
+        const result = findInTs({
+            source: expression.code,
+            lineOffset: source.slice(0, expression.offset).split('\n').length - 1
+        });
         findings.push(...result.findings);
         seen += result.seen;
     }
     return { findings, seen };
 }
 
-function failureMessage(filename: string, findings: Finding[]): string {
+function failureMessage({
+    filename,
+    findings
+}: {
+    readonly filename: string;
+    readonly findings: Finding[];
+}): string {
     return `${filename}: unsafe SSR instantiation(s) at ${findings.map((item) => `${item.line} (${item.name})`).join(', ')}. Allow only disposable constructors or move code into the client-only branch.`;
 }
 
@@ -171,12 +192,14 @@ describe('Web root layouts — Astro SSR instantiation guard', () => {
         ROOT_LAYOUT_FILES
     )('%s has no unsafe request-scoped instantiations and scanner sees real constructs', (filename) => {
         const source = readFileSync(resolve(LAYOUTS_DIR, filename), 'utf8');
-        const result = scanLayout(source);
+        const result = scanLayout({ source });
         expect(
             result.seen,
             `${filename}: scanner must see at least one instantiation`
         ).toBeGreaterThan(0);
-        expect(result.findings, failureMessage(filename, result.findings)).toEqual([]);
+        expect(result.findings, failureMessage({ filename, findings: result.findings })).toEqual(
+            []
+        );
     });
 
     it('detects unsafe frontmatter and template instantiations, including server-side Vite branches', () => {
@@ -188,7 +211,7 @@ describe('Web root layouts — Astro SSR instantiation guard', () => {
             '---\nconst leak = new Payloads.Client();\n---'
         ];
         for (const sample of samples)
-            expect(scanLayout(sample).findings.length, sample).toBeGreaterThan(0);
+            expect(scanLayout({ source: sample }).findings.length, sample).toBeGreaterThan(0);
     });
 
     it('allows disposable values and client branches while ignoring non-code and client content', () => {
@@ -201,13 +224,14 @@ describe('Web root layouts — Astro SSR instantiation guard', () => {
             '<!-- new Foo(); createX() -->\n<div>{/* new Foo() */}</div>',
             '<script>new IntersectionObserver(() => {}); createBrowserOnly();</script><style>.x { color: red }</style>'
         ];
-        for (const sample of safe) expect(scanLayout(sample).findings, sample).toEqual([]);
+        for (const sample of safe)
+            expect(scanLayout({ source: sample }).findings, sample).toEqual([]);
     });
 
     it('reports the source file, line, and remediation in the real-layout failure message', () => {
         const filename = 'SyntheticLayout.astro';
         const finding: Finding = { name: 'createLeak', line: 9 };
-        const message = failureMessage(filename, [finding]);
+        const message = failureMessage({ filename, findings: [finding] });
         expect(message).toContain(filename);
         expect(message).toContain('9 (createLeak)');
         expect(message).toContain('move code');

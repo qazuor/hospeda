@@ -22,7 +22,11 @@ const MODULE_SCOPE_ALLOWLIST = new Set(['createRootRoute', 'createRootRouteWithC
 type Finding = { name: string; line: number };
 
 /** True when the condition's true branch executes only in the browser. */
-function isClientBranch(expression: ts.Expression): boolean | undefined {
+function isClientBranch({
+    expression
+}: {
+    readonly expression: ts.Expression;
+}): boolean | undefined {
     const text = expression.getText().replace(/\s+/g, '');
     if (/^!?import\.meta\.env\.SSR$/.test(text)) return text.startsWith('!');
     const windowCheck = /^typeofwindow(!==|!=|===|==)['"]undefined['"]$/.exec(text);
@@ -31,7 +35,7 @@ function isClientBranch(expression: ts.Expression): boolean | undefined {
 }
 
 /** Scans root source for unsafe constructor and factory calls. */
-function findUnsafeInstantiations(source: string): Finding[] {
+function findUnsafeInstantiations({ source }: { readonly source: string }): Finding[] {
     const file = ts.createSourceFile(
         ROOT_PATH,
         source,
@@ -66,7 +70,7 @@ function findUnsafeInstantiations(source: string): Finding[] {
     function safeByBranch(node: ts.Node): boolean {
         for (let parent = node.parent; parent; parent = parent.parent) {
             if (ts.isIfStatement(parent)) {
-                const clientThen = isClientBranch(parent.expression);
+                const clientThen = isClientBranch({ expression: parent.expression });
                 if (clientThen === true && isWithin(parent.thenStatement, node)) return true;
                 if (
                     clientThen === false &&
@@ -78,7 +82,7 @@ function findUnsafeInstantiations(source: string): Finding[] {
             if (
                 ts.isConditionalExpression(parent) &&
                 isWithin(parent.whenTrue, node) &&
-                isClientBranch(parent.condition) === true
+                isClientBranch({ expression: parent.condition }) === true
             )
                 return true;
         }
@@ -126,10 +130,10 @@ function findUnsafeInstantiations(source: string): Finding[] {
 describe('Admin __root.tsx — SSR per-request instantiation guard', () => {
     it('allows only intentional SSR-safe instantiations in the real root', () => {
         const source = readFileSync(ROOT_PATH, 'utf-8');
-        const findings = findUnsafeInstantiations(source);
+        const findings = findUnsafeInstantiations({ source });
         expect(source).toContain('createRootRoute(');
         expect(source).toContain('new QueryClient(');
-        expect(findings, formatFailureMessage(findings)).toHaveLength(0);
+        expect(findings, formatFailureMessage({ findings })).toHaveLength(0);
     });
 
     it('detects unsafe instantiations in representative source samples', () => {
@@ -142,24 +146,26 @@ describe('Admin __root.tsx — SSR per-request instantiation guard', () => {
             'createFoo();'
         ];
         for (const sample of samples)
-            expect(findUnsafeInstantiations(sample).length, sample).toBeGreaterThan(0);
+            expect(findUnsafeInstantiations({ source: sample }).length, sample).toBeGreaterThan(0);
     });
 
     it('treats only the client branch of a Vite SSR check as safe', () => {
         const unsafe = 'if (import.meta.env.SSR) { new X(); }';
         const safe = 'if (!import.meta.env.SSR) { new X(); }';
-        expect(findUnsafeInstantiations(unsafe).length, unsafe).toBeGreaterThan(0);
-        expect(findUnsafeInstantiations(safe), safe).toEqual([]);
+        expect(findUnsafeInstantiations({ source: unsafe }).length, unsafe).toBeGreaterThan(0);
+        expect(findUnsafeInstantiations({ source: safe }), safe).toEqual([]);
         const bothBranches = 'if (import.meta.env.SSR) { new X(); } else { new Y(); }';
-        expect(findUnsafeInstantiations(bothBranches)).toEqual([{ name: 'new X', line: 1 }]);
+        expect(findUnsafeInstantiations({ source: bothBranches })).toEqual([
+            { name: 'new X', line: 1 }
+        ]);
     });
 
     it('detects namespace constructors and formats file, line, and remediation', () => {
         const namespaceConstructor = 'const leak = new Payloads.Client();';
-        expect(findUnsafeInstantiations(namespaceConstructor)).toEqual([
+        expect(findUnsafeInstantiations({ source: namespaceConstructor })).toEqual([
             { name: 'new Client', line: 1 }
         ]);
-        const message = formatFailureMessage([{ name: 'new Client', line: 7 }]);
+        const message = formatFailureMessage({ findings: [{ name: 'new Client', line: 7 }] });
         expect(message).toContain('__root.tsx');
         expect(message).toContain('7 (new Client)');
         expect(message).toContain('Move construction');
@@ -179,10 +185,10 @@ describe('Admin __root.tsx — SSR per-request instantiation guard', () => {
             'const text = "new X(); createFoo();";',
             'validateAdminEnv();'
         ].join('\n');
-        expect(findUnsafeInstantiations(source)).toEqual([]);
+        expect(findUnsafeInstantiations({ source })).toEqual([]);
     });
 });
 
-function formatFailureMessage(findings: Finding[]): string {
+function formatFailureMessage({ findings }: { readonly findings: Finding[] }): string {
     return `Unsafe SSR instantiations in __root.tsx at ${findings.map((item) => `${item.line} (${item.name})`).join(', ')}. Move construction into useEffect, a lazy useState initializer, or behind typeof window / the Vite SSR check.`;
 }
