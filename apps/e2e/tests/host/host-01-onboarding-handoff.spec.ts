@@ -8,7 +8,7 @@
  *   - Email address does not exist in `users`.
  *   - At least one CITY destination in `destinations`.
  *   - Mailpit reachable at localhost:8025.
- *   - QZPay stub OR test-control adapter available.
+ *   - Test-control adapter available for trial setup.
  *
  * What this test validates (per SPEC-092 spec.md):
  *  1. Inline signup on /publicar creates a USER (not HOST).
@@ -38,12 +38,7 @@ import {
     startHostOnboarding
 } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
-import {
-    execSQL,
-    getDbPool,
-    getUserRoles,
-    hasOldBillingSchema
-} from '../../fixtures/db-helpers.ts';
+import { execSQL, getDbPool, getUserRoles } from '../../fixtures/db-helpers.ts';
 import { extractFirstLink, waitForEmail } from '../../fixtures/mailpit-client.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -72,16 +67,6 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         page,
         context: _context
     }) => {
-        // POST /accommodations/:id/publish answers 500 on the epic: its publish
-        // dependencies (eligibility + trial) went down with the old billing (HOS-1416),
-        // and `AccommodationService.publish()` throws without them. Deferred until the
-        // new billing wires publishing again; the billing queries are already gone from
-        // the body, so only that step is blocking.
-        test.fixme(
-            !(await hasOldBillingSchema()),
-            'HOS-1352: publish deps removed with old billing in U1.1 (POST /publish 500); re-enabled with the new billing (B units)'
-        );
-
         // ───────────────────────────────────────────────────────────────────
         // Web leg: signup + email verification + mini-form
         // ───────────────────────────────────────────────────────────────────
@@ -233,11 +218,9 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         // now satisfies the publish capacity-completeness guard — no test-only SQL
         // workaround needed.
 
-        // The publish POST is what transitions DRAFT → PUBLISHED and creates
-        // the trial subscription (HOS-110 dedicated endpoint — the protected
-        // PATCH schema has no publication field, so publishing goes
-        // through the dedicated endpoint instead of the generic update).
-        // Publishing needs no subscription any more (HOS-1352: old billing removed in U1.1).
+        // The publish POST transitions DRAFT → PUBLISHED through the dedicated
+        // endpoint (the protected PATCH schema has no publication field). The
+        // first publish activates the owner's trial (see trial-01-end-to-end).
 
         // Publishing also requires a main image (owner decision 14/08, H-101).
         // The onboarding flow does NOT collect photos — `/publicar/nueva` has no
