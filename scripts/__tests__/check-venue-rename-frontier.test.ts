@@ -34,7 +34,7 @@ const inv = (files: Record<string, number>) => ({
 const token = ['Gastronom', 'y'].join('');
 
 describe('TEST:1813:1 AC:1:15 T1 counts exact in-scope hits', () => {
-    it('accepts matching counts and counts both content and path', () => {
+    it('TEST:1813:1 AC:1:15 accepts matching counts and counts both content and path', () => {
         const content = `${token}Foo`;
         expect(countFrontierHits({ file: `packages/${token}.ts`, content })).toBe(2);
         const scanned = scanFrontier({ files: [{ file: `packages/${token}.ts`, content }] });
@@ -44,7 +44,7 @@ describe('TEST:1813:1 AC:1:15 T1 counts exact in-scope hits', () => {
         );
     });
 
-    it('does not match Spanish accented forms and skips closed out-of-scan paths', () => {
+    it('TEST:1813:1 AC:1:15 skips accented forms and closed out-of-scan paths', () => {
         const scanned = scanFrontier({
             files: [
                 { file: 'packages/a.ts', content: 'gastronomía Gastronomía' },
@@ -59,7 +59,7 @@ describe('TEST:1813:1 AC:1:15 T1 counts exact in-scope hits', () => {
 });
 
 describe('TEST:1813:2 AC:1:15 T1 rejects inventory and base mutations', () => {
-    it('reports a new hit, raised or lowered count, and stale inventory file', () => {
+    it('TEST:1813:2 AC:1:15 rejects mismatches and inventory growth', () => {
         const base = inv({ 'a.ts': 2 });
         const cases = [
             {
@@ -111,7 +111,7 @@ describe('TEST:1813:2 AC:1:15 T1 rejects inventory and base mutations', () => {
 });
 
 describe('TEST:1813:3 AC:1:15 T1 scans the committed repository', () => {
-    it('has no self literals, meets the floor, and passes the real inventory', () => {
+    it('TEST:1813:3 AC:1:15 scans the real repository and excludes its own literals', () => {
         const result = run({ root: ROOT, baseInventory: null });
         expect(result.exitCode, result.output).toBe(0);
         expect(FRONTIER_FLOOR).toBe(10000);
@@ -126,7 +126,7 @@ describe('TEST:1813:3 AC:1:15 T1 scans the committed repository', () => {
 });
 
 describe('TEST:1813:4 AC:1:15 T1 is wired to guards CI and package scripts', () => {
-    it('has a dedicated package command and a dedicated CI Guards step', () => {
+    it('TEST:1813:4 AC:1:15 wires the dedicated package command and CI Guards step', () => {
         const packageJson = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')) as {
             scripts: Record<string, string>;
         };
