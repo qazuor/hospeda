@@ -70,7 +70,7 @@ atados al nombre» al final).
   test entra si aplica migraciones hasta un tag anterior al renombrado (`journal.entries` o tag fijo, p. ej.
   `cut-migration-over-data.test.ts`, `retire-user-impersonate-over-data.test.ts`) o importa un módulo de
   `src/data-migrations/` (p. ej. `whats-new-seen-ids-rename.integration.test.ts` y el test de la data-migration de
-  seen-ids nueva); specs de HOS-1352/1353/1354 y esta spec. Con el corte V6 la historia de migraciones se reemplaza
+  seen-ids nueva); todas las carpetas de `.specs/` (DEC-FAC-086). Con el corte V6 la historia de migraciones se reemplaza
   por el baseline.
 - **Chequeo de valores de las cinco editadas** (DEC-FAC-070): en 0129, 0132, 0139, 0144 y 0176 no queda ningún
   literal de **valor** viejo: `'gastronomy'` como vertical, `{gastronomy}`, claves `*_gastronomy_*` y

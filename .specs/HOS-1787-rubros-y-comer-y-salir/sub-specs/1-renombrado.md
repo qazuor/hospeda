@@ -130,8 +130,8 @@ Fuera del escaneo (historia, no es una excepción del código; DEC-FAC-070): tod
 anteriores a la de renombrado, **incluidas las cinco editadas**, con sus `meta/` (la 0132 tiene que seguir diciendo
 `ALTER TABLE "gastronomies"`); **la migración de renombrado y su `meta/`**; **los módulos de data-migration del seed**
 (el paso 6 del corte los borra); los **tests de historia** (los que aplican migraciones hasta un tag anterior al
-renombrado o importan un módulo de data-migration; lista derivada por el guard); las specs de HOS-1352/1353/1354 y esta
-spec (F-V2-015, F-V3-001). Las cinco editadas tienen además un **chequeo de valores**: ningún literal de valor viejo
+renombrado o importan un módulo de data-migration; lista derivada por el guard); **todas las carpetas de `.specs/`**
+(F-V2-015, F-V3-001, DEC-FAC-086). Las cinco editadas tienen además un **chequeo de valores**: ningún literal de valor viejo
 (vertical, claves, planes, slugs, títulos); los nombres de tabla y enum de ese momento quedan.
 
 **Inventario de valores i18n que nombran la vertical** (F-V2-015): cada clave cuyo **valor** dice

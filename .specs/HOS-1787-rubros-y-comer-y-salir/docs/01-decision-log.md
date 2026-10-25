@@ -1095,3 +1095,12 @@ sobre una sección que ya existe: la carta (`menu`, ligada al rubro `food`; BOLI
 versión con `nightInfo` (agregar `nightlife` y cargarla en el mismo PATCH, quitarla y cargarla, alta de una HELADERIA con
 sus campos) pasa a `AC:4:3`.
 **Por qué**: el sub-spec 4 depende del 3, así que un AC del 3 que nombra `nightInfo` no se podía cumplir en su hoja.
+
+## DEC-FAC-086 · Todas las carpetas de `.specs/` quedan fuera del escaneo de G-FAC-T1/R1
+**Fecha**: 2026-10-25 · **Decidió**: orquestador.
+**Qué**: lo fuera del escaneo deja de ser la lista cerrada «specs de HOS-1352/1353/1354 y esta spec» y pasa a ser el
+prefijo `.specs/` entero.
+**Por qué**: una spec es un registro histórico que nombra la vertical vieja a propósito. Con la lista cerrada, cada spec
+nueva que mergea a staging rompe el guard (pasó con `.specs/HOS-1878-billing-analytics-events/spec.md` al mergear staging
+en HOS-1813) y obliga a editar el guard por algo que no es código.
+**Reemplaza**: la enumeración de specs en «Fuera del escaneo» de `06-guards.md` y del sub-spec 1.
