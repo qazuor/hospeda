@@ -13,14 +13,7 @@ import {
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 const inv = (files: Record<string, number>) => ({
     $comment: 'fixture',
-    outOfScan: [
-        '.specs/HOS-1352-*',
-        '.specs/HOS-1353-*',
-        '.specs/HOS-1354-*',
-        '.specs/HOS-1787-*',
-        'packages/db/src/migrations/',
-        'packages/seed/src/data-migrations/'
-    ],
+    outOfScan: ['.specs/', 'packages/db/src/migrations/', 'packages/seed/src/data-migrations/'],
     exempt: {
         files: [
             'scripts/__tests__/check-venue-rename-frontier.test.ts',
@@ -51,7 +44,8 @@ describe('TEST:1813:1 AC:1:15 T1 counts exact in-scope hits', () => {
                 { file: 'packages/db/src/migrations/old.sql', content: token },
                 { file: 'packages/db/src/migrations/extras/live.sql', content: token },
                 { file: 'packages/seed/src/data-migrations/old.ts', content: token },
-                { file: '.specs/HOS-1787-x/a.md', content: token }
+                { file: '.specs/HOS-1787-x/a.md', content: token },
+                { file: '.specs/HOS-9999-any-other-spec/spec.md', content: token }
             ]
         });
         expect([...scanned]).toEqual([['packages/db/src/migrations/extras/live.sql', 1]]);

@@ -18,10 +18,7 @@ const HIT = new RegExp(`(?:${LOWER}|${TITLE}|${UPPER})`, 'g');
 const EXPECTED_OUT = [
     'packages/db/src/migrations/',
     'packages/seed/src/data-migrations/',
-    '.specs/HOS-1352-*',
-    '.specs/HOS-1353-*',
-    '.specs/HOS-1354-*',
-    '.specs/HOS-1787-*'
+    '.specs/'
 ].sort();
 const THEME_ACCESS = new RegExp(
     `(?:EventCategoryEnum|PostCategoryEnum)\\.${PARTS[0].toUpperCase()}Y`,
@@ -143,9 +140,8 @@ function isOutOfScan(file: string): boolean {
     if (file.startsWith('packages/db/src/migrations/'))
         return !file.startsWith('packages/db/src/migrations/extras/');
     if (file.startsWith('packages/seed/src/data-migrations/')) return true;
-    return EXPECTED_OUT.filter((entry) => entry.startsWith('.specs/')).some((pattern) =>
-        file.startsWith(pattern.slice(0, -1))
-    );
+    // Spec folders are historical records: they keep the old vertical name on purpose.
+    return file.startsWith('.specs/');
 }
 
 function applyThemeExemptions(file: string, content: string): string {
