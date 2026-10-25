@@ -15,6 +15,7 @@ import {
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { resolveSubscriptionSources } from '../../../src/services/billing/coverage/subscription-sources.js';
+import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
 import { creditedPaymentsFromLedger } from '../../../src/services/billing/payment/payment-ledger.js';
 import type { CoverageNotices } from '../../../src/services/billing/payment/payment-ports.js';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
@@ -254,7 +255,7 @@ describe('TEST:B7:8 — S7 from SUSPENDED (AC:B7:13)', () => {
     );
 
     it.skipIf(!isServiceTestDbAvailable())(
-        'b — an authorization reactivated by hand returns the row to ACTIVE and it emits a source again',
+        'TEST:1878:10 S7 recovery emits only after reactivation; an authorization reactivated by hand returns ACTIVE',
         async () => {
             // Arrange
             const s = await suspendedByHand({ approveOnAttempt: 2 });
@@ -264,7 +265,11 @@ describe('TEST:B7:8 — S7 from SUSPENDED (AC:B7:13)', () => {
             s.fixture.advanceToAttempt(2);
 
             // Act
-            const result = await recordChargeFact({ chargeId: s.fixture.chargeId }, s.ports);
+            const facts: BillingFact[] = [];
+            const result = await recordChargeFact(
+                { chargeId: s.fixture.chargeId },
+                { ...s.ports, billingFacts: { emit: (fact) => facts.push(fact) } }
+            );
 
             // Assert
             expect(result).toMatchObject({
@@ -282,6 +287,22 @@ describe('TEST:B7:8 — S7 from SUSPENDED (AC:B7:13)', () => {
             expect(row.graceEndsAt).toBeNull();
             expect(s.spy.added()).toHaveLength(1);
             expect(s.spy.added()[0]?.statusAtEmit).toBe('ACTIVE');
+            const recovered = facts.filter(
+                (fact) => fact.kind === 'RECOVERED' && fact.subscriptionId === s.subscriptionId
+            );
+            expect(recovered).toEqual([
+                {
+                    kind: 'RECOVERED',
+                    userId: s.fixture.user.id,
+                    vertical: 'accommodation',
+                    subscriptionId: s.subscriptionId,
+                    subscriptionClass: 'PRINCIPAL',
+                    actorKind: 'SYSTEM',
+                    occurredAt: s.fixture.clock.now(),
+                    recoveredFrom: 'SUSPENDED',
+                    paymentId: (await paymentFor(s.fixture.chargeId)).id
+                }
+            ]);
             const { sources } = await resolveSubscriptionSources({
                 userId: s.fixture.user.id,
                 vertical: VerticalEnum.ACCOMMODATION,
@@ -402,6 +423,8 @@ describe('TEST:B7:8 — S7 from SUSPENDED (AC:B7:13)', () => {
             // Arrange
             const s = await suspendedByHand();
             track(s.fixture);
+            const facts: BillingFact[] = [];
+            const billingFacts = { emit: (fact: BillingFact) => facts.push(fact) };
             const before = await subscriptionRow(s.subscriptionId);
             const previous = await paymentFor(s.fixture.initialChargeId);
             expect(previous.status).toBe('SUCCEEDED');
@@ -410,11 +433,11 @@ describe('TEST:B7:8 — S7 from SUSPENDED (AC:B7:13)', () => {
             // Act
             const replayed = await recordChargeFact(
                 { chargeId: s.fixture.initialChargeId },
-                s.ports
+                { ...s.ports, billingFacts }
             );
             const direct = await reactivateSuspendedOnCreditedPayment(
                 { paymentId: previous.id },
-                s.ports
+                { ...s.ports, billingFacts }
             );
 
             // Assert
@@ -427,6 +450,9 @@ describe('TEST:B7:8 — S7 from SUSPENDED (AC:B7:13)', () => {
             expect(await subscriptionRow(s.subscriptionId)).toEqual(before);
             expect(await openMarks(s.subscriptionId)).toHaveLength(0);
             expect(s.spy.added()).toHaveLength(0);
+            expect(facts.filter((fact) => fact.subscriptionId === s.subscriptionId)).toHaveLength(
+                0
+            );
         }
     );
 
