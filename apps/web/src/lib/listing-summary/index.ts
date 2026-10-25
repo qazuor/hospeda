@@ -22,7 +22,7 @@
  *     counts: { shown: 3, total: 4 },
  *     sort: { sortKey: 'featured' },
  *     catalogs: {
- *         destinations: [{ key: 'colon-id', label: { es: 'Colón', en: 'Colón' } }],
+ *         destinations: [{ key: 'colon-id', label: { es: 'Colón', en: 'Colón', pt: 'Colón' } }],
  *         types: DEFAULT_GASTRONOMY_TYPES
  *     }
  * });
@@ -56,16 +56,24 @@ export type {
 /** Fixed entity config for gastronomy listings — masculine noun, supports `priceRange`. */
 const GASTRONOMY_ENTITY: ListingEntityConfig = {
     gender: 'masculine',
-    subjectSingular: { es: 'establecimiento gastronómico', en: 'gastronomic establishment' },
-    subjectPlural: { es: 'establecimientos gastronómicos', en: 'gastronomic establishments' },
+    subjectSingular: {
+        es: 'establecimiento gastronómico',
+        en: 'gastronomic establishment',
+        pt: 'estabelecimento gastronômico'
+    },
+    subjectPlural: {
+        es: 'establecimientos gastronómicos',
+        en: 'gastronomic establishments',
+        pt: 'estabelecimentos gastronômicos'
+    },
     hasPriceRange: true
 };
 
 /** Fixed entity config for experience listings — feminine noun, no `priceRange` facet. */
 const EXPERIENCE_ENTITY: ListingEntityConfig = {
     gender: 'feminine',
-    subjectSingular: { es: 'experiencia', en: 'experience' },
-    subjectPlural: { es: 'experiencias', en: 'experiences' },
+    subjectSingular: { es: 'experiencia', en: 'experience', pt: 'experiência' },
+    subjectPlural: { es: 'experiencias', en: 'experiences', pt: 'experiências' },
     hasPriceRange: false
 };
 
