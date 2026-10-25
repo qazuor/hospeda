@@ -8,7 +8,7 @@
  * PUBLIC key and that every enum member resolves to a real translated value.
  */
 
-import { GastronomyTypeEnum } from '@repo/schemas';
+import { VenueTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     buildGastronomyTypeLabelKey,
@@ -17,7 +17,7 @@ import {
 import { createTranslations, type SupportedLocale } from '../../../src/lib/i18n';
 
 const LOCALES: readonly SupportedLocale[] = ['es', 'en', 'pt'];
-const GASTRONOMY_TYPES = Object.values(GastronomyTypeEnum);
+const GASTRONOMY_TYPES = Object.values(VenueTypeEnum);
 
 describe('buildGastronomyTypeLabelKey', () => {
     it('points at the public gastronomy namespace', () => {

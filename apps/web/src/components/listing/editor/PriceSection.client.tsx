@@ -32,7 +32,7 @@ import type { JSX } from 'react';
 import { TextField } from '@/components/ui/TextField';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { GastronomyOrExperience } from '@/lib/listing/owner-listings';
+import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
 import styles from './editor-fields.module.css';
 import { LISTING_FIELD_PREFIX } from './field-ids';
@@ -43,7 +43,7 @@ const PRICE_UNIT_OPTIONS = Object.values(ExperiencePriceUnitEnum);
 
 export interface PriceSectionProps {
     readonly locale: SupportedLocale;
-    readonly vertical: GastronomyOrExperience;
+    readonly vertical: VenueOrExperience;
     readonly data: ListingEditData;
     readonly errors: Readonly<{
         menuUrl?: string;

@@ -33,7 +33,7 @@
  * recurrence uses into the payload.
  */
 
-import { GASTRONOMY_EVENTS_MAX_ENTRIES } from '@repo/schemas';
+import { VENUE_EVENTS_MAX_ENTRIES } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api/client';
@@ -155,7 +155,7 @@ export function GastronomyVenueEventsManager({
 
     const addEntry = useCallback(() => {
         setEntries((prev) =>
-            prev.length >= GASTRONOMY_EVENTS_MAX_ENTRIES ? prev : [...prev, { ...EMPTY_DRAFT }]
+            prev.length >= VENUE_EVENTS_MAX_ENTRIES ? prev : [...prev, { ...EMPTY_DRAFT }]
         );
     }, []);
 
@@ -256,7 +256,7 @@ export function GastronomyVenueEventsManager({
     }, [basePath, entries, t]);
 
     const busy = state !== 'idle';
-    const atMax = entries.length >= GASTRONOMY_EVENTS_MAX_ENTRIES;
+    const atMax = entries.length >= VENUE_EVENTS_MAX_ENTRIES;
 
     return (
         <section
@@ -310,8 +310,8 @@ export function GastronomyVenueEventsManager({
                      */}
                     {tPlural(
                         'gastronomy.owner.editor.venueEventsManager.maxReached',
-                        GASTRONOMY_EVENTS_MAX_ENTRIES,
-                        { max: GASTRONOMY_EVENTS_MAX_ENTRIES }
+                        VENUE_EVENTS_MAX_ENTRIES,
+                        { max: VENUE_EVENTS_MAX_ENTRIES }
                     )}
                 </p>
             ) : null}

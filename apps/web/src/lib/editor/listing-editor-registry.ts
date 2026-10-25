@@ -18,7 +18,7 @@ import {
     buildGastronomyEditorRegistry,
     buildGastronomyEditorSections
 } from '@/lib/editor/gastronomy-editor-sections';
-import type { GastronomyOrExperience } from '@/lib/listing/owner-listings';
+import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 
 /**
  * Builds the section list for one vertical, in nav order.
@@ -29,7 +29,7 @@ import type { GastronomyOrExperience } from '@/lib/listing/owner-listings';
 export function buildListingEditorSections({
     vertical
 }: {
-    readonly vertical: GastronomyOrExperience;
+    readonly vertical: VenueOrExperience;
 }): readonly EditorSection[] {
     return vertical === 'experience'
         ? buildExperienceEditorSections()
@@ -45,7 +45,7 @@ export function buildListingEditorSections({
 export function buildListingEditorRegistry({
     vertical
 }: {
-    readonly vertical: GastronomyOrExperience;
+    readonly vertical: VenueOrExperience;
 }): EditorRegistry {
     return vertical === 'experience'
         ? buildExperienceEditorRegistry()

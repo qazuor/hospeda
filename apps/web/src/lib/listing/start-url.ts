@@ -55,7 +55,7 @@
 import type { SupportedLocale } from '../i18n';
 import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '../publish/publish-page-paths';
 import { buildUrl } from '../urls';
-import type { GastronomyOrExperience } from './owner-listings';
+import type { VenueOrExperience } from './owner-listings';
 
 /**
  * The vertical's publish page, locale-prefixed.
@@ -75,7 +75,7 @@ export function buildListingCreateUrl({
     vertical
 }: {
     readonly locale: SupportedLocale;
-    readonly vertical: GastronomyOrExperience;
+    readonly vertical: VenueOrExperience;
 }): string {
     return buildUrl({ locale, path: PUBLISH_PAGE_PATH_BY_VERTICAL[vertical] });
 }
@@ -97,7 +97,7 @@ export function buildListingStartUrl({
     vertical
 }: {
     readonly locale: SupportedLocale;
-    readonly vertical: GastronomyOrExperience;
+    readonly vertical: VenueOrExperience;
 }): string {
     const returnUrl = encodeURIComponent(buildListingCreateUrl({ locale, vertical }));
     return `${buildUrl({ locale, path: 'auth/signup' })}?returnUrl=${returnUrl}`;
