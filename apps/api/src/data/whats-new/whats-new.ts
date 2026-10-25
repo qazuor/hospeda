@@ -223,7 +223,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
-    // origin: #3775, #3783, #3785
+    // origin: #3801
+    {
+        id: '2026-10-25-safer-data-validation',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Actualizamos la validación de datos con un parche de seguridad',
+            en: 'We updated data validation with a security patch',
+            pt: 'Atualizamos a validação de dados com um patch de segurança'
+        },
+        body: {
+            es: 'La plataforma ahora valida lo que se envía con una versión corregida que no se puede saturar con listas muy grandes. No cambia nada en cómo usás el sitio ni el panel.',
+            en: 'The platform now validates what is submitted with a patched version that cannot be overwhelmed by very large lists. Nothing changes in how you use the site or the panel.',
+            pt: 'A plataforma agora valida o que é enviado com uma versão corrigida que não pode ser sobrecarregada com listas muito grandes. Nada muda na forma como você usa o site ou o painel.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3775, #3783, #3785, #3792
     {
         id: '2026-10-24-mobile-floating-dock',
         publishedAt: 'on-promotion',
@@ -234,9 +251,9 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             pt: 'No celular, os botões flutuantes não cobrem mais os cartões'
         },
         body: {
-            es: 'Filtros, Lista/Mapa, la búsqueda con IA y «Volver arriba» ahora están juntos en una barra al pie de la pantalla, que se oculta al bajar y vuelve al subir. Al final de cada listado queda espacio libre, así que ningún precio ni botón queda tapado.',
-            en: 'Filters, List/Map, AI search and "Back to top" now sit together in one bar at the bottom of the screen, which hides as you scroll down and returns as you scroll up. Space is left free at the end of every listing, so no price or button is covered.',
-            pt: 'Filtros, Lista/Mapa, a busca com IA e «Voltar ao topo» agora ficam juntos em uma barra no rodapé da tela, que se esconde ao rolar para baixo e volta ao rolar para cima. Sobra espaço livre no final de cada listagem, então nenhum preço ou botão fica coberto.'
+            es: 'Filtros, Lista/Mapa, la búsqueda con IA y «Volver arriba» ahora están juntos en una barra al pie de la pantalla, que se oculta al bajar y vuelve al subir. Al final de cada listado queda espacio libre, así que ningún precio ni botón queda tapado. Hasta en los celulares más angostos la barra entra en una sola fila.',
+            en: 'Filters, List/Map, AI search and "Back to top" now sit together in one bar at the bottom of the screen, which hides as you scroll down and returns as you scroll up. Space is left free at the end of every listing, so no price or button is covered. Even on the narrowest phones the bar fits on a single row.',
+            pt: 'Filtros, Lista/Mapa, a busca com IA e «Voltar ao topo» agora ficam juntos em uma barra no rodapé da tela, que se esconde ao rolar para baixo e volta ao rolar para cima. Sobra espaço livre no final de cada listagem, então nenhum preço ou botão fica coberto. Mesmo nos celulares mais estreitos a barra cabe em uma só linha.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },

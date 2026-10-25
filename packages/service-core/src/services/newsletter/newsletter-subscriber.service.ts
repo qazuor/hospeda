@@ -52,7 +52,7 @@
  */
 
 import type { InsertNewsletterSubscriber, SelectNewsletterSubscriber } from '@repo/db';
-import { getDb } from '@repo/db';
+import { getDb, newsletterSubscribers, safeIlike } from '@repo/db';
 import type {
     NewsletterContentPreferences,
     NewsletterSubscriberAdminSearch,
@@ -67,7 +67,7 @@ import {
     NewsletterSubscriberStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import { sql } from 'drizzle-orm';
+import { and, count, desc, eq, isNull, type SQL, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
@@ -1845,55 +1845,42 @@ export class NewsletterSubscriberService extends BaseService {
 
                 const db = getDb();
 
-                // Build WHERE conditions
-                const conditions: ReturnType<typeof sql>[] = [sql`deleted_at IS NULL`];
+                // Typed Drizzle (not raw `db.execute`): raw rows are snake_case and
+                // would reach the route's camelCase response schema unmapped (HOS-1791).
+                const t = newsletterSubscribers;
+                const conditions: SQL[] = [isNull(t.deletedAt)];
 
                 if (validated.subscriberStatus) {
-                    conditions.push(sql`status = ${validated.subscriberStatus}`);
+                    conditions.push(eq(t.status, validated.subscriberStatus));
                 }
                 if (validated.channel) {
-                    conditions.push(sql`channel = ${validated.channel}`);
+                    conditions.push(eq(t.channel, validated.channel));
                 }
                 if (validated.locale) {
-                    conditions.push(sql`locale = ${validated.locale}`);
+                    conditions.push(eq(t.locale, validated.locale));
                 }
                 if (validated.source) {
-                    conditions.push(sql`source = ${validated.source}`);
+                    conditions.push(eq(t.source, validated.source));
                 }
                 if (validated.emailSearch) {
-                    // safeIlike escapes LIKE metacharacters
-                    // We inline the escaped pattern here since we're using raw sql
-                    const escaped = validated.emailSearch
-                        .replace(/\\/g, '\\\\')
-                        .replace(/%/g, '\\%')
-                        .replace(/_/g, '\\_');
-                    conditions.push(sql`email ILIKE ${`%${escaped}%`}`);
+                    conditions.push(safeIlike(t.email, validated.emailSearch));
                 }
 
-                const whereClause = conditions.reduce((acc, cond, idx) =>
-                    idx === 0 ? cond : sql`${acc} AND ${cond}`
-                );
-
+                const whereClause = and(...conditions);
                 const offset = (validated.page - 1) * validated.pageSize;
 
-                const [countResult, itemsResult] = await Promise.all([
-                    db.execute(sql`
-                        SELECT COUNT(*)::int AS total
-                        FROM newsletter_subscribers
-                        WHERE ${whereClause}
-                    `),
-                    db.execute(sql`
-                        SELECT *
-                        FROM newsletter_subscribers
-                        WHERE ${whereClause}
-                        ORDER BY created_at DESC
-                        LIMIT ${validated.pageSize}
-                        OFFSET ${offset}
-                    `)
+                const [countRows, items] = await Promise.all([
+                    db.select({ total: count() }).from(t).where(whereClause),
+                    db
+                        .select()
+                        .from(t)
+                        .where(whereClause)
+                        .orderBy(desc(t.createdAt))
+                        .limit(validated.pageSize)
+                        .offset(offset)
                 ]);
 
-                const total = Number((countResult.rows[0] as { total: number }).total ?? 0);
-                const items = itemsResult.rows as SelectNewsletterSubscriber[];
+                const total = Number(countRows[0]?.total ?? 0);
 
                 return {
                     items,
