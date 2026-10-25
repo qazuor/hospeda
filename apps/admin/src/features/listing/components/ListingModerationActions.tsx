@@ -4,6 +4,7 @@ import type {
     ListingModerationResponse,
     PublicationStatusEnum
 } from '@repo/schemas';
+import { formatCalendarDate } from '@repo/utils';
 import { useState } from 'react';
 import type { ColumnTFunction } from '@/components/entity-list/types';
 import { Button } from '@/components/ui/button';
@@ -38,9 +39,16 @@ export function ListingModerationActions({
     readonly entityName: string;
 }) {
     const { t, locale } = useTranslations();
-    const displayDate = (date: string) =>
+    const displayInstant = (date: string) =>
         formatDate({
             date: new Date(date),
+            locale,
+            options: { year: 'numeric', month: 'short', day: 'numeric' }
+        });
+    /** Calendar dates have no timezone; parsing them as instants shifts the displayed day. */
+    const displayCalendarDate = (value: string) =>
+        formatCalendarDate({
+            value,
             locale,
             options: { year: 'numeric', month: 'short', day: 'numeric' }
         });
@@ -59,6 +67,9 @@ export function ListingModerationActions({
               publicationStatus: state.data?.publicationStatus,
               fixRequestOpen: state.data ? state.data.fixRequest !== null : undefined
           });
+    const suggestedDate = state.data?.fixRequest?.suggestedDate
+        ? displayCalendarDate(state.data.fixRequest.suggestedDate)
+        : null;
     const onConfirm = async (body: ListingModerationAction) => {
         try {
             const response = await mutation.mutateAsync({ vertical, id: entityId, body });
@@ -126,20 +137,20 @@ export function ListingModerationActions({
                     </p>
                     <p>
                         {t('admin-entities.listingModeration.fixRequest.openedAt', {
-                            date: displayDate(state.data.fixRequest.openedAt)
+                            date: displayInstant(state.data.fixRequest.openedAt)
                         })}
                     </p>
-                    {state.data.fixRequest.suggestedDate ? (
+                    {suggestedDate ? (
                         <p>
                             {t('admin-entities.listingModeration.fixRequest.suggestedDate', {
-                                date: displayDate(state.data.fixRequest.suggestedDate)
+                                date: suggestedDate
                             })}
                         </p>
                     ) : null}
                     {state.data.fixRequest.ownerReportedFixedAt ? (
                         <p>
                             {t('admin-entities.listingModeration.fixRequest.ownerReportedFixed', {
-                                date: displayDate(state.data.fixRequest.ownerReportedFixedAt)
+                                date: displayInstant(state.data.fixRequest.ownerReportedFixedAt)
                             })}
                         </p>
                     ) : null}

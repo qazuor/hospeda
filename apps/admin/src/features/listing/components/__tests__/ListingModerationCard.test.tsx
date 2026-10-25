@@ -15,6 +15,9 @@
  */
 
 import esAdminEntities from '@repo/i18n/locales/es/admin-entities.json';
+
+process.env.TZ = 'America/Argentina/Buenos_Aires';
+
 import { PermissionEnum, PublicationStatusEnum } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -181,6 +184,28 @@ describe('ListingModerationCard — the publication state badge', () => {
 });
 
 describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
+    it('shows a suggested calendar date on its intended day in Argentina', () => {
+        // Arrange
+        const suggestedDate = '2026-11-05';
+        expect(new Date(suggestedDate).getDate()).toBe(4);
+
+        // Act
+        renderCard({
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            fixRequest: {
+                reason: 'Fix the photos',
+                suggestedDate,
+                openedAt: '2026-10-01T00:00:00.000Z',
+                ownerReportedFixedAt: null
+            }
+        });
+
+        // Assert
+        const cardText = screen.getByTestId('listing-moderation').textContent ?? '';
+        expect(cardText).toMatch(/5.*nov/i);
+        expect(cardText).not.toMatch(/4.*nov/i);
+    });
+
     it('TEST:1760:3 derives actions from the GET state instead of the listing prop', () => {
         renderCard({
             publicationStatus: PublicationStatusEnum.PUBLISHED,
