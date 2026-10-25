@@ -1,10 +1,13 @@
 # Billing Advisory Locks — Operational Runbook
 
-This runbook covers all PostgreSQL advisory locks used in the Hospeda billing system, how to
-inspect them in production, and what to do when something goes wrong.
+This runbook covers how to inspect and release the PostgreSQL advisory locks used by Hospeda
+cron jobs and the trial/publication/quota services, and what to do when something goes wrong.
+The billing model itself no longer takes advisory locks of its own for crons: the legacy
+billing crons (webhook retry, dunning, addon expiry, trial reconcile) were deleted by HOS-1352.
+See [Billing and verticals](../../CLAUDE.md#billing-and-verticals-hos-1352).
 
-Advisory locks are the mechanism used to guarantee mutual exclusion for cron jobs and per-customer
-serialization across multiple Vercel instances. See
+Advisory locks are the mechanism used to guarantee mutual exclusion for cron jobs and per-key
+serialization across multiple API instances. See
 [ADR-019](../decisions/ADR-019-billing-transaction-isolation.md) for the design rationale.
 
 ---
@@ -14,19 +17,26 @@ serialization across multiple Vercel instances. See
 The canonical registry is maintained at `packages/db/docs/advisory-locks.md`. The table below
 is a quick operational reference. **Always check the registry for the authoritative list.**
 
-| Lock ID | Variant | Owner | Purpose |
+| Lock key | Variant | Owner | Purpose |
 |---------|---------|-------|---------|
-| `43001` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/cron/jobs/addon-expiry.job.ts` | Prevent overlapping addon expiry cron executions |
-| `43010` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/cron/jobs/archive-expired-promotions.job.ts` | Prevent overlapping promotion archive cron executions |
-| `1001` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/cron/jobs/webhook-retry.job.ts` | Prevent overlapping webhook retry cron executions |
-| `1002` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/cron/jobs/notification-schedule.job.ts` | Prevent overlapping notification schedule cron executions |
-| `1003` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/cron/jobs/dunning.job.ts` | Prevent overlapping dunning cron executions |
-| `1004` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/services/trial.service.ts` (`TrialService.reconcileExpiredTrials`, run by the `trial-reconcile` cron) | Prevent concurrent trial-reconciliation batch runs across instances. **`blockExpiredTrials` no longer exists** — HOS-171 deleted it and `reconcileExpiredTrials` replaced it; only the constant `BLOCK_EXPIRED_TRIALS_LOCK_KEY` still carries the dead name. That job CONVERTS elapsed trials, it does not cancel them. |
-| hash-derived | `pg_advisory_xact_lock` (blocking) | `apps/api/src/services/addon-plan-change.service.ts` | Per-customer addon recalculation serialization |
+| `1008` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/cron/jobs/exchange-rate-fetch.job.ts` | Prevent overlapping exchange rate fetch runs |
+| `43010` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/cron/jobs/archive-expired-promotions.job.ts` | Prevent overlapping promotion archive runs |
+| `43022` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/cron/jobs/conversation-token-cleanup.job.ts` | Prevent overlapping token cleanup runs |
+| `43031` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/cron/jobs/destination-weather-fetch.job.ts` | Prevent overlapping weather fetch runs |
+| `43032` | `pg_try_advisory_xact_lock` (non-blocking) | `apps/api/src/cron/jobs/social-publish-dispatch.job.ts` | Prevent overlapping social publish dispatch runs |
+| `(1479, 22)` | `pg_advisory_xact_lock` (blocking) | `packages/service-core/src/services/vertical-deadlines/vertical-deadlines.service.ts` | Serialize publishing vertical deadline versions |
+| `(1516, 22)` | `pg_advisory_xact_lock` (blocking) | `packages/service-core/src/services/billing/deadlines/billing-deadlines.service.ts` | Serialize publishing billing deadline versions |
+| hash-derived | `pg_advisory_xact_lock` (blocking) | `apps/api/src/utils/trial/trial-machine-ports.ts`, `apps/api/src/utils/listing-publication/ports.ts` | Trial machine / publication transitions per user + vertical |
+| hash-derived | `pg_advisory_xact_lock` (blocking) | `packages/db/src/models/listing/listing-publication.model.ts` (`lock()`) | Listing publication row per key |
+| hash-derived | `pg_advisory_xact_lock` (blocking) | `packages/db/src/models/quota-window/quota-window.model.ts` (+ trigger `048`) | Quota window per user + vertical + key |
+| hash-derived | `pg_advisory_xact_lock` (blocking) | `packages/service-core/src/services/tag/tag.service.ts` | USER tag quota per owner |
 
-Hash-derived lock IDs are computed from the customer UUID using `hashCustomerId()` from
-`@repo/service-core`. Each customer gets a unique lock ID, so two concurrent plan changes for
-different customers do not block each other.
+Hash-derived keys are computed in SQL with `hashtextextended(<string>, 0)` (the tag quota uses
+`hashtext`) from stable ids such as the user id and vertical, so unrelated users do not block
+each other. They are 64-bit (or 32-bit) hashes, not small integers: to find one in `pg_locks`,
+compute the same hash in SQL, for example
+`SELECT hashtextextended('trial-start:<userId>:<vertical>', 0)`, and split it into
+`classid = k >> 32` and `objid = k & 0xFFFFFFFF`.
 
 ---
 
@@ -79,14 +89,14 @@ WHERE locktype = 'advisory';
 `classid` and `objid` together represent the 64-bit lock key. For a single `bigint` key `k`,
 PostgreSQL splits it as `classid = k >> 32` and `objid = k & 0xFFFFFFFF`.
 
-For a known integer key like `43001`:
+For a known integer key like `43010`:
 
 ```sql
 SELECT *
 FROM pg_locks
 WHERE locktype = 'advisory'
   AND classid = 0
-  AND objid = 43001;
+  AND objid = 43010;
 ```
 
 ### List all locks with associated query text
@@ -110,13 +120,13 @@ ORDER BY a.query_start;
 ### Check if a specific cron lock is held
 
 ```sql
--- addon-expiry lock (43001)
+-- archive-expired-promotions lock (43010)
 SELECT pid, granted, now() - query_start AS held_for
 FROM pg_locks
 JOIN pg_stat_activity USING (pid)
 WHERE locktype = 'advisory'
   AND classid = 0
-  AND objid = 43001;
+  AND objid = 43010;
 ```
 
 ---
@@ -183,7 +193,7 @@ WHERE locktype = 'advisory'
 ### Cron job logs "skipped: lock not acquired"
 
 This is **expected behavior** when a previous run of the same job is still in progress (or when
-the Vercel scheduler fires two invocations close together). The non-blocking variant
+the scheduler fires two invocations close together). The non-blocking variant
 (`pg_try_advisory_xact_lock`) returns `false` immediately rather than queuing.
 
 **Action**: No action needed if this is occasional. Investigate if it happens on every invocation,
@@ -208,22 +218,23 @@ likely hung. Follow the "Releasing Stuck Locks" procedure above.
 ### Cron job never acquires lock (stuck for > 5 minutes)
 
 1. Identify the blocking PID using the queries above.
-2. Check whether the blocking query is waiting on an external resource (network, QZPay API,
+2. Check whether the blocking query is waiting on an external resource (network, MercadoPago API,
    Neon cold start).
 3. If the cause is a slow external API call inside a transaction, that is a code bug. External
    API calls MUST NOT be made inside a `withTransaction` callback. File an incident.
 4. Cancel or terminate the blocking backend using `pg_cancel_backend` or `pg_terminate_backend`.
 
-### Per-customer addon lock blocks for too long
+### A blocking lock waits for too long
 
-The blocking variant (`pg_advisory_xact_lock`) used for per-customer plan changes waits until the
-lock is available. A `SET LOCAL statement_timeout` should be set at the start of the transaction
-to cap the wait. If the operation times out, PostgreSQL rolls back and returns an error.
+The blocking variant (`pg_advisory_xact_lock`) used for trial machine, publication, quota and
+deadline serialization waits until the lock is available. A `SET LOCAL statement_timeout` should
+be set at the start of the transaction to cap the wait. If the operation times out, PostgreSQL
+rolls back and returns an error.
 
-If a customer is seeing repeated timeouts on addon plan changes:
+If a user is seeing repeated timeouts on trial or publication transitions:
 
-1. Check whether a prior plan-change transaction for that customer is genuinely in progress or hung.
-2. Use the lock registry query above with the hash-derived lock ID to find the blocking PID.
+1. Check whether a prior transaction for that user and vertical is genuinely in progress or hung.
+2. Compute the hash-derived key as shown in the registry section and find the blocking PID.
 3. Cancel with `pg_cancel_backend` if the prior run is hung.
 
 ### No advisory locks showing in pg_locks

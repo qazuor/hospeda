@@ -343,7 +343,8 @@ file there is named after its job. The billing and verticals jobs are:
 - **Payments and reconciliation:** `payment-window-expiry`,
   `billing-creations-sweep`, `billing-reconciliation-sweep`,
   `billing-reconciliation-summary`.
-- **Promos:** `billing-promo-ending-notice`.
+- **Promos:** `billing-promo-ending-notice`, `archive-expired-promotions`.
+- **Retention:** `provider-notification-retention`.
 
 None of the pre-HOS-1352 job names survive. Examples are `dunning`,
 `trial-reconcile`, `entity-subscription-cache-reconcile` and
@@ -973,7 +974,6 @@ Each app/package has its own `CLAUDE.md` with detailed instructions:
 - [Admin App](apps/admin/CLAUDE.md) - TanStack Start dashboard
 - [API App](apps/api/CLAUDE.md) - Hono REST API
 - [Web App](apps/web/CLAUDE.md) - Astro frontend
-- [Web App Docs](apps/web/docs/README.md) - Web app guides and deployment
 - [Database](packages/db/CLAUDE.md) - Drizzle ORM
 - [Schemas](packages/schemas/CLAUDE.md) - Zod validation
 - [Service Core](packages/service-core/CLAUDE.md) - Business logic

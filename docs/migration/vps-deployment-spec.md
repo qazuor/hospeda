@@ -1,5 +1,7 @@
 # SPEC: Deploy de Hospeda a VPS Self-Hosted con Coolify
 
+> Historical document (dated 2026-05-06). Billing references predate HOS-1352, which replaced the QZPay stack. See the root CLAUDE.md "Billing and verticals" section ([CLAUDE.md](../../CLAUDE.md#billing-and-verticals-hos-1352)).
+
 > **Versión**: 3.0
 > **Fecha**: 2026-05-06 (revisión 3)
 > **Autor**: qazuor + Claude

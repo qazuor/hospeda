@@ -11,10 +11,10 @@ Operational runbook for PostgreSQL advisory locks used in the Hospeda API.
 
 ## Overview
 
-The Hospeda API uses `pg_try_advisory_xact_lock` (transaction-scoped, non-blocking) for two purposes:
+The Hospeda API uses transaction-scoped advisory locks for two purposes:
 
-1. **Cron job deduplication** — prevents two API instances from running the same job concurrently.
-2. **Per-customer mutual exclusion** — serializes plan-change addon recalculations for the same customer.
+1. **Cron job deduplication** (`pg_try_advisory_xact_lock`, non-blocking) — prevents two API instances from running the same job concurrently.
+2. **Per-subject serialization** (`pg_advisory_xact_lock`, blocking) — serializes trial-machine and publication transitions per user and vertical, quota-window reads and writes, deadline-settings updates and tag quota checks.
 
 All locks are automatically released when the enclosing transaction commits or rolls back. No manual
 `pg_advisory_unlock` call is ever needed. This is safe for Neon transaction-pooling mode (PgBouncer).
@@ -161,8 +161,8 @@ open transaction, releasing all held locks (including advisory locks).
 
 All cron jobs use the **non-blocking** variant (`pg_try_advisory_xact_lock`). If the lock is
 already held, the function returns `false` and the job exits immediately with `status: 'skipped'`.
-Blocking behavior is only expected for the per-customer plan-change lock (uses
-`pg_advisory_xact_lock`, the blocking variant).
+Blocking behavior is only expected for the per-subject serialization locks (they use
+`pg_advisory_xact_lock`, the blocking variant; see the registry).
 
 If you observe multiple cron invocations waiting on the same advisory lock, verify which variant
 is actually in use:
@@ -215,14 +215,11 @@ A spike in `idle in transaction` connections indicates open transactions that ar
 
 ### Log-based alerting
 
-Cron jobs log a structured message on lock skip:
-
-```json
-{ "level": "info", "msg": "... lock not acquired, skipping", "lockId": 1001 }
-```
-
-If the same lock ID skips more than 3 consecutive scheduled runs, the prior run is likely stuck.
-Set up a log-based alert on the `lock not acquired` message grouped by `lockId`.
+A cron job that does not get its lock returns a `skipped` result with a message such as
+`Skipped: previous run still active (advisory lock not acquired)` (see
+`apps/api/src/cron/jobs/exchange-rate-fetch.job.ts`). If the same job skips more than 3 consecutive
+scheduled runs, the prior run is likely stuck. Alert on repeated `skipped` runs per job name in the
+cron run history.
 
 ---
 

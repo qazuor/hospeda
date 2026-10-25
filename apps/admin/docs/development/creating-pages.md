@@ -12,7 +12,7 @@ The admin dashboard uses TanStack Start with file-based routing. Pages are locat
 
 ```
 src/routes/
-├── __root.tsx                          # Root layout (QueryClient, QZPay, Toast)
+├── __root.tsx                          # Root layout (QueryClient, Toast)
 ├── _authed.tsx                         # Auth layout (beforeLoad guard + AppLayout)
 ├── _authed/
 │   ├── dashboard.tsx                   # /dashboard

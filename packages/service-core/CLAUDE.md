@@ -966,7 +966,7 @@ await withServiceTransaction(async (ctx) => {
 
 - `ctx.tx` is **always defined** inside the callback. Callers that need the raw Drizzle transaction use `ctx.tx!` with a `// biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction` comment.
 - The `timeoutMs` option is applied as a `SET LOCAL statement_timeout` pragma at the start of the transaction. Default: `30000` ms.
-- External API calls (QZPay, MercadoPago, third-party HTTP) MUST stay OUTSIDE the callback — they are not rollback-able. The established pattern is: external call first, then `withServiceTransaction` to persist the results.
+- External API calls (MercadoPago, third-party HTTP) MUST stay OUTSIDE the callback — they are not rollback-able. The established pattern is: external call first, then `withServiceTransaction` to persist the results.
 
 **Nested behavior**: calling `withServiceTransaction` inside another `withServiceTransaction` creates a NEW, independent boundary (no savepoint join). Rolling back the inner call does not roll back the outer one, and vice versa. If you need true nested atomicity, refactor to a single top-level transaction that performs all the work.
 
@@ -1039,110 +1039,17 @@ See `packages/service-core/src/base/base.crud.read.ts` for the reference impleme
 - Services are the single source of truth for business logic
 - All database access goes through services, not directly to models
 
-## Promo Code Effect Engine (SPEC-262)
+## Billing services (HOS-1352)
 
-The engine is fully DB-backed. All effect state lives in extras-carril columns
-(added via `pnpm db:apply-extras`); no config-file-only effects remain.
+The old promo effect engine (effect kinds, comp subscriptions, multi-cycle renewal counters) was deleted with the legacy billing stack. Billing logic now lives under `src/services/billing/`, deliberately outside `BaseCrudService`. See [Billing and verticals](../../CLAUDE.md#billing-and-verticals-hos-1352) for the model.
 
-### Effect kinds
-
-Three discriminated kinds, controlled by `billing_promo_codes.effect_kind` (varchar, `'discount' | 'trial_extension' | 'comp'`):
-
-| Kind | Parameters | What it does |
-|---|---|---|
-| `discount` | `value_kind` (`'percentage'`\|`'fixed'`), `value` (int), `duration_cycles` (int\|null) | Reduces the charge amount for N billing cycles, or forever when `duration_cycles = NULL`. |
-| `trial_extension` | `extra_days` (int) | Adds N days to the subscription trial period at signup or via `extendExistingSubscriptionTrial`. |
-| `comp` | — | Permanently comps the subscription; no MercadoPago preapproval is ever created. |
-
-### Seam files (relative to `packages/service-core/src/services/billing/promo-code/`)
-
-| File | Responsibility |
+| Directory | Responsibility |
 |---|---|
-| `effect-reducer.ts` | Pure function `calculatePromoCodeEffect` — all monetary math, no DB access. Single source of truth for discount amounts and remaining-cycle computation. |
-| `promo-code.validation.ts` | Best-effort validation (`validatePromoCode`) — business-rule checks (expiry, maxUses, plan restrictions, minAmount). NOT race-safe; use for UI preview only. |
-| `promo-code.redemption.ts` | Atomic redemption (`tryRedeemAtomically` — SELECT FOR UPDATE), usage recording (`redeemAndRecordUsage`), and `applyPromoCode` (dispatches per effect kind). |
-| `promo-code.renewal.ts` | Multi-cycle discount renewal (`resolveRenewalPromoEffect`) — called on each `subscription_authorized_payment.created` webhook; decrements `promo_effect_remaining_cycles` and returns a typed `RenewalPromoDecision`. |
-| `promo-code.trial-extension.ts` | `extendExistingSubscriptionTrial` — applies a `trial_extension` promo to an already-active subscription (pushes `trial_end` on the DB row; MP date reconciliation is done by the caller). |
-| `promo-code.crud.ts` | CRUD operations and mapping of extras-carril columns to the typed `PromoEffect` discriminated union. |
-| `promo-code.service.ts` | Facade — re-exports all public functions and types so consumers import from a single entry point. |
+| `services/billing/promo/` | Promo codes: admin CRUD (`promo-code-admin.service.ts`), redemption (`redeem-discount-code.service.ts`, `redeem-trial-extension-code.service.ts`, `redeem-promo-code.service.ts`), exhaustion and ending notices |
+| `services/billing/grant/` | Permanent grants and courtesy handling (`permanent-grant.service.ts`, `permanent-grant-courtesy.ts`) |
+| `services/billing/subscription/`, `payment/`, `refund/`, `coverage/`, `reconciliation/`, `addon/` | Subscription lifecycle, payments, refunds, coverage periods, reconciliation sweeps, add-ons |
 
-### Checkout-side resolution
-
-`apps/api/src/services/subscription-checkout-promo.service.ts` exports `resolveCheckoutPromoPlan`, which maps a raw code string to the `CheckoutPromoPlan` discriminated union:
-
-```
-{ kind: 'none' }        — no code supplied
-{ kind: 'trial' }       — trial_extension. STILL IN THE UNION, BUT DEAD: checkout
-                          never branches on it (HOS-1012 removed the card-first
-                          trial, so nothing is forwarded to qzpay)
-{ kind: 'discount' }    — discount → discounted amount + cycle-counter seed inputs
-{ kind: 'invalid' }     — validation failed (caller maps to INVALID_PROMO_CODE)
-```
-
-Two corrections worth keeping in view, because the type still models more than
-the code does:
-
-- **`{ kind: 'comp' }` no longer exists.** HOS-1171 removed the member; a `comp`
-  code is now refused at checkout and comes back as `{ kind: 'invalid' }`. The
-  union at `subscription-checkout-promo.service.ts:47-68` has four members, not
-  five.
-- **`{ kind: 'trial' }` is declared but unreachable.** `subscription-checkout.service.ts`
-  only ever tests `promoPlan.kind === 'invalid'` (lines 463, 1556) and
-  `=== 'discount'` (lines 522, 1581). No branch reads `'trial'`, so its
-  `freeTrialDays` is never forwarded anywhere. The variant's own docstring still
-  claims it is — a stale reason under a type that still compiles.
-
-### Comp subscription: why no MercadoPago preapproval
-
-**A comp is granted by an ADMIN, not by a promo code at checkout.** HOS-1171
-removed the checkout branch; the live entry point is
-`POST` on `apps/api/src/routes/billing/admin/subscription-comp.ts` →
-`grantCompSubscription` (`services/subscription-comp-grant.service.ts:348`),
-which wraps `createCompSubscription`
-(`services/subscription-comp-create.service.ts:92`, still the only inserter,
-called at `subscription-comp-grant.service.ts:563`). It inserts a
-`billing_subscriptions` row with `status = 'comp'` (the
-`SubscriptionStatusEnum.COMP` value) directly in DB, skipping qzpay entirely.
-Key consequences:
-
-- `mp_subscription_id` is NULL — no preapproval is created or charged.
-- The dunning cron excludes `status='comp'` rows.
-- `loadEntitlements` treats `comp` as an active subscription, so full plan entitlements are retained. Note it resolves the customer's plan over `accommodation` **or `tourist`** since HOS-1233, not accommodation alone.
-- The insert, promo stamp, and redemption record are wrapped in one transaction for atomicity.
-
-### Multi-cycle discount: how the renewal counter works
-
-The extras-carril column `billing_subscriptions.promo_effect_remaining_cycles` (integer, nullable) is the cycle countdown:
-
-- `NULL` — forever discount (`duration_cycles = NULL` on the promo code); counter never decremented.
-- `N > 0` — N more discounted cycles remain.
-- `0` — discount exhausted; full price is already in effect for the next cycle.
-
-The counter is seeded at apply time and decremented exactly once per confirmed charge on the `subscription_authorized_payment.created` webhook path (via `resolveRenewalPromoEffect`). When decrement reaches 0, `resolveRenewalPromoEffect` returns action `restore-full` and the API layer calls `paymentAdapter.subscriptions.update(mpSubscriptionId, { transactionAmount: fullMajor })` to restore the preapproval amount. The full plan price (from `billing_prices.unit_amount` in centavos) is the source of truth — never a value read back from MercadoPago.
-
-### MP preapproval mutation spike
-
-The feasibility of mutating a live MercadoPago preapproval's `auto_recurring.transaction_amount` (required for the multi-cycle discount mechanism) was verified in:
-
-`packages/service-core/src/services/billing/promo-code/docs/mp-preapproval-mutation-spike.md`
-
-**Outcome A — GO.** The mutation is confirmed viable: Hospeda already performs this exact `PUT /preapproval/{id}` call in production (plan upgrade/downgrade cron). One staging verification remains (that restoring to the original authorized amount never requires payer re-authorization), but the mechanism is proven.
-
-### DB migration files
-
-`effect_kind`, `value_kind`, `duration_cycles`, `extra_days` (`billing_promo_codes`) and
-`promo_effect_remaining_cycles` (`billing_subscriptions`) are typed Drizzle columns as of
-`@qazuor/qzpay-drizzle` 1.11.0 (HOS-73) — added via the normal Carril 1 migration
-(`packages/db/src/migrations/0044_adorable_longshot.sql`), not the extras carril. The old
-extras files (`016`-`019`) that originally added these columns before they were
-promoted upstream have been removed. HOS-75 replaced the remaining raw-SQL reads/writes
-of these columns across the billing services/routes/crons with typed Drizzle queries.
-
-| File | What it adds |
-|---|---|
-| `packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql` | CHECK constraints + backfill of existing rows to the correct `effect_kind` (still extras — Drizzle can't declare CHECK constraints) |
-
-Apply with `pnpm db:apply-extras` (or `hops db-migrate --target=staging|prod`). Never use `drizzle-kit push` against staging/prod.
+Tables are the singular ones in `packages/db/src/schemas/vertical/` (`promo_code`, `promo_redemption`, `courtesy_grant`, `permanent_grant`, ...).
 
 ## Review Moderation (SPEC-166)
 

@@ -1,5 +1,7 @@
 # Auditoría de PostHog en Hospeda
 
+> Historical document (dated undated). Billing references predate HOS-1352, which replaced the QZPay stack. See the root CLAUDE.md "Billing and verticals" section ([CLAUDE.md](../../CLAUDE.md#billing-and-verticals-hos-1352)).
+
 ## Estado actual
 
 - `apps/web` usa el snippet inline oficial de PostHog en `apps/web/src/components/analytics/PostHogScript.astro`.
