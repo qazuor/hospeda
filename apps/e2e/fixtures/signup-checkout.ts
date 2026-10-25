@@ -4,7 +4,41 @@ import { execSQL } from './db-helpers.ts';
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
 
 /** The 0144 catalog plans these fixtures hold a monthly option of. */
-export type CatalogSlug = 'owner-basico' | 'owner-premium' | 'tourist-vip' | 'partner-silver';
+export type CatalogSlug =
+    | 'owner-basico'
+    | 'owner-pro'
+    | 'owner-premium'
+    | 'tourist-vip'
+    | 'partner-silver';
+
+/**
+ * Reads a limit value from the current version of a catalog plan without writing.
+ *
+ * @param options.slug - Catalog plan slug to read
+ * @param options.key - Limit key to return
+ * @returns The configured numeric limit; throws when the current version has no row
+ */
+export async function readCurrentPlanLimit(options: {
+    readonly slug: CatalogSlug;
+    readonly key: string;
+}): Promise<number> {
+    const rows = await execSQL<{ value: number }>(
+        `SELECT plan_version_limit.value
+           FROM plan
+           JOIN plan_version ON plan_version.plan_id = plan.id
+           JOIN plan_version_limit ON plan_version_limit.plan_version_id = plan_version.id
+          WHERE plan.slug = $1 AND plan_version.current = true AND plan_version_limit.key = $2
+          LIMIT 1`,
+        [options.slug, options.key]
+    );
+    const value = rows[0]?.value;
+    if (value === undefined) {
+        throw new Error(
+            `signup-checkout: current ${options.slug} catalog version has no ${options.key} limit`
+        );
+    }
+    return value;
+}
 
 /**
  * The monthly billing option of the current catalog version of `slug`,
