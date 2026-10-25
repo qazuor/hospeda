@@ -56,6 +56,23 @@ describe('TEST:1813:1 AC:1:15 T1 counts exact in-scope hits', () => {
         });
         expect([...scanned]).toEqual([['packages/db/src/migrations/extras/live.sql', 1]]);
     });
+
+    it('TEST:1813:1 AC:1:15 excludes the exact theme accesses and declarations', () => {
+        const theme = token.toUpperCase();
+        const scanned = scanFrontier({
+            files: [
+                {
+                    file: 'apps/web/src/lib/facet-slugs.ts',
+                    content: `const event = EventCategoryEnum.${theme};\n`
+                },
+                {
+                    file: 'packages/schemas/src/enums/event-category.enum.ts',
+                    content: `enum EventCategoryEnum {\n    ${theme} = '${theme}',\n}\n`
+                }
+            ]
+        });
+        expect([...scanned]).toEqual([]);
+    });
 });
 
 describe('TEST:1813:2 AC:1:15 T1 rejects inventory and base mutations', () => {
