@@ -40,10 +40,8 @@ import type { Pool } from 'pg';
  * `user_role_audit` is deliberately NOT listed: its `user_id` FK is
  * `ON DELETE SET NULL` precisely so the trail outlives a hard-deleted account.
  *
- * (HOS-1416: the billing tables — `billing_customers` / `billing_subscriptions`
- * / `billing_addon_purchases` — were dropped from the schema along with the
- * legacy billing surface, so their entries and the dedicated
- * `billing_customers` pre-delete were removed.)
+ * Retired billing-specific cleanup entries were removed when their schema
+ * and legacy billing fixtures were deleted.
  */
 const CLEANUP_TABLES = [
     'accommodation_reviews',
