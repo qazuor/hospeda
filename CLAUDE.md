@@ -194,7 +194,7 @@ Hospeda billing is built on **QZPay** (`@qazuor/qzpay-core`) with a MercadoPago 
 
 - **Routes**: `apps/api/src/routes/billing/` (start-paid, plan-change, subscription-cancel, addons, webhooks, etc.)
 - **Services**: `packages/service-core/src/services/billing/` (subscription, addon, promo-code, settings — deliberately outside `BaseCrudService`)
-- **Cron jobs**: `apps/api/src/cron/jobs/` (dunning, webhook-retry, finalize-cancelled-subs, trial-reconcile, addon-expiry, apply-scheduled-plan-changes, subscription-poll, abandoned-pending-subs, exchange-rate-fetch — **a partial list**; `preapproval-less-expiry`, `entity-subscription-cache-reconcile`, `addon-subscription-reconcile`, `courtesy-expiry`, `partner-expiry`, `partner-unpaid-reaper`, `propagate-plan-price-changes` and `reactivation-supersession-reconcile` are billing-side too). These are JOB NAMES, not filenames — `trial-reconcile` lives in `trial-expiry.ts`, so `ls` will not find it. `apps/api/src/cron/schedules.manifest.ts` is the authoritative name → schedule list.
+- **Cron jobs**: `apps/api/src/cron/jobs/`; `apps/api/src/cron/schedules.manifest.ts` is the authoritative job name → schedule list. The pre-HOS-1352 billing crons (dunning, webhook-retry, finalize-cancelled-subs, trial-reconcile, addon-expiry, apply-scheduled-plan-changes, subscription-poll, abandoned-pending-subs, preapproval-less-expiry, entity-subscription-cache-reconcile, addon-subscription-reconcile, courtesy-expiry, partner-expiry, partner-unpaid-reaper, propagate-plan-price-changes, reactivation-supersession-reconcile) have no file under `jobs/` on staging; the billing-side ones now are e.g. `subscription-window-expiry`, `subscription-service-end`, `trial-machine-expiry`, `payment-window-expiry`, `billing-reconciliation-sweep`. Job names are not always filenames: check the manifest.
 - **Catalog and providers** (`packages/billing/` was deleted by HOS-1626): plan, price and limit VALUES live in the database catalog (`billing_plans`, `billing_prices`), not in code; entitlement and limit KEYS live in `packages/schemas/src/catalog/` (`entitlement-keys.ts`, `limit-keys.ts`, `key-enums.ts`); the payment provider interface and the Mercado Pago adapter live in `packages/payments/`; the vertical rules (effective set, publication, quota, trial) in `packages/verticals/`; their shared contracts in `packages/billing-verticals-contract/`
 - **DB adapter**: `packages/db/src/billing/drizzle-adapter.ts` (QZPay Drizzle storage adapter)
 
@@ -287,151 +287,36 @@ yet, which is why anything that depends on a confirmed payment (see
 Three distinct grace mechanisms exist:
 past-due dunning grace (7 days, `past_due` status), cron-lag grace (6h, `active` status), and soft-cancel grace (until `currentPeriodEnd`).
 
-#### Gastronomy and experience subscription isolation (SPEC-239)
+#### Gastronomy and experience subscription isolation (SPEC-239) — superseded by HOS-1352
 
-Gastronomy and experience listings use a **separate billing domain** that must never pollute the
-accommodation entitlement engine:
+The SPEC-239 mechanics described here until HOS-1795 no longer exist on `staging`.
+Migration `packages/db/src/migrations/0125_robust_cassandra_nova.sql` (U1 billing
+cleanup) drops the whole QZPay billing schema, including `billing_subscriptions`,
+`billing_plans`, `entity_subscriptions` (line 68), `partner_subscriptions` and
+`featured_listing_addon_grants`. `scripts/check-no-legacy-billing-tables.ts`
+(HOS-1638) fails CI if production code in `apps/api`, `apps/admin` or `packages/db`
+names any of the 41 dropped tables.
 
-- `billing_subscriptions.product_domain` — **one domain per vertical**, not a single
-  shared legacy bucket. `ProductDomainEnum` holds six values:
-  `'accommodation'` (host subscriptions), `'gastronomy'`, `'experience'`,
-  `'partner'`, `'tourist'` (HOS-1233 — the tourist tiers, which own no listings
-  at all; before that spec they were filed as `'accommodation'`, so every read
-  that wanted "the plan this person pays for" matched them BY ACCIDENT), and
-  `'addon'` (HOS-847 — a recurring add-on's own MercadoPago preapproval,
-  isolated from the customer's real plan subscription). The entitlement engine
-  counts `'accommodation'` **and `'tourist'`** — since HOS-1233 `loadEntitlements`
-  (`apps/api/src/middlewares/entitlement.ts:626`) matches either, because both are
-  "the plan this person pays for". It counts no other domain, so a user who is at
-  once a host, a restaurant owner and a partner keeps correct accommodation
-  entitlements regardless of the other subscriptions' state.
-- **The former shared domain value is RETIRED** (release B / HOS-692) that survives only on
-  legacy rows. HOS-695 narrowed the match on purpose: a row still carrying
-  that retired value satisfies **neither** `'gastronomy'` **nor** `'experience'`, so it
-  goes dark rather than silently matching a vertical it was never resolved to. Do
-  not "fix" that by widening the comparison — a dark listing is the intended
-  failure mode.
-- `subscriptionMatchesDomain()`
-  (`packages/service-core/src/services/billing/subscription/subscription-product-domain.ts`)
-  is the ONLY place in the codebase that compares a subscription's domain, and it
-  reads asymmetrically by design: **`accommodation` fails open** (a missing object,
-  or a `null`/`undefined` column, counts as accommodation, because the column
-  post-dates most rows), while **every other domain fails closed**. To test
-  membership across all gastronomy and experience verticals at once, call it once per domain —
-  there is no union helper, and there deliberately is not one: `HOS-1081`
-  (`ebfd413e0`) deleted the removed shared-domain subscription helper because it had zero callers
-  outside its own file and tests. Do not reintroduce it without a consumer, and
-  do not reach for `isAccommodationSubscription()` as a substitute — it answers
-  a different question and, unlike the rest, fails OPEN.
-- **When you build that pair by hand, ORDER it — never match "either" (HOS-1233).**
-  The reads that resolve *the plan this person pays for* need `accommodation` OR
-  `tourist`, and the tempting shape is one `find` whose predicate accepts both.
-  That shape is a bug: a HOST auto-promoted by host-onboarding legitimately holds
-  BOTH subscriptions at once — the case the HOS-217 discard in `loadEntitlements`
-  exists for — so an unordered match lets the storage adapter's row ordering
-  decide which subscription is read, or which one a plan change MUTATES. That is
-  HOS-259 wearing a new domain, and it is indistinguishable from correct
-  behaviour from outside. Try the domain the surface actually governs first and
-  use the other as a FALLBACK: ordered, it can only ever turn a `null` into an
-  answer, so every account holding the primary domain is byte-identical to
-  before. Only **two** call sites actually implement the ordered shape:
-  `services/billing/plan-domain-guard.ts:277` (`find(accommodation) ?? find(tourist)`)
-  and `routes/user/protected/subscription.ts:315`. The other two —
-  `middlewares/entitlement.ts:626` and `routes/user/protected/entitlements.ts:164` —
-  still use the single unordered `find` with `isAccommodationSubscription(sub) ||
-  subscriptionMatchesDomain(sub, TOURIST)`. Copy the first pair, not the second.
-  (NOT VERIFIED: whether the unordered shape is actually harmful in those two —
-  `entitlement.ts` runs the HOS-217 HOST discard immediately afterwards, which may
-  or may not neutralise it. Nobody has measured it.)
-  Two corollaries that bite:
-  - A route scoped by an EXPLICIT `?productDomain=` must stay strict — a caller
-    that names a domain means it, and must never pick up the fallback. Only the
-    DEFAULT falls back.
-  - **`'tourist'` IS in `SUBSCRIPTION_SCOPE_DOMAINS` since HOS-1282**
-    (`apps/api/src/schemas/product-domain-query.schema.ts:54-58`), so
-    `?productDomain=tourist` is a **200**. This paragraph previously said the
-    opposite — it was left out at HOS-1233 on purpose and HOS-1282 widened it —
-    and the stale version is what makes a reader "fix" a caller that is already
-    correct. What the tuple still excludes is **`partner` and `addon`**, because
-    neither owns a trial site, so `?productDomain=partner` is a 400 and
-    `/planes/aliados/precios/` reads no clock at all. There is still no
-    client-side workaround for a default that resolves the wrong domain — fix
-    the default, and widen that tuple only with its `routes/billing/usage.ts`
-    consumers in view.
-- **Hydrate before you compare.** `getByCustomerId()` does not populate
-  `productDomain` (QZPay's mapper drops it — HOS-934), so
-  `subscriptionMatchesDomain` over a raw result reads `undefined` and fails
-  closed for every non-accommodation domain: every listing goes dark and nothing
-  errors. Call `hydrateSubscriptionProductDomains()` first, or read the column
-  straight from Drizzle. `scripts/check-subscription-domain-hydration.sh` (HOS-1176)
-  fails CI on a comparison whose file does neither.
-- The gastronomy and experience plans in `billing_plans` carry their own
-  `product_domain` and are intentionally kept OUT of `ALL_PLANS`, so the
-  accommodation seed loop, `GET /api/v1/public/plans` and the grant-matrix
-  snapshot tests all stay accommodation-only.
-- `entity_subscriptions` (renamed from the former listing-subscription table by
-  HOS-1084) — **ONE subscription-status cache for the three verticals**, not a
-  vertical-specific link table. One row per LISTING, `UNIQUE(entity_type, entity_id)`,
-  where `entity_type` is `'accommodation' | 'gastronomy' | 'experience'`. It does
-  two jobs and not every vertical needs both: it maps a subscription to the
-  listings it covers (gastronomy and experience need this; accommodation resolves its listings
-  from `accommodations.owner_id`), and it lets a public request read the status
-  without joining `billing_subscriptions` (both need this). The listing
-  visibility reconciler reads it to decide whether a listing is public;
-  `owner-entitlement.ts` reads it to resolve a host's entitlements without
-  walking QZPay.
-  Three things not to break:
-  - the UNIQUE is per **listing**, never per subscription — one subscription
-    legitimately owns many rows (a host's whole portfolio, a gastronomy or experience owner's
-    1/3/10 cap), and a unique on `subscription_id` would reject the second
-    property of every multi-property host;
-  - a row with `subscription_id = NULL` and `status = 'none'` is a **negative
-    cache** entry, not a broken row. It is how an unsubscribed host — the most
-    common one on the platform — stays a cache HIT instead of falling through to
-    the live billing walk on every request;
-  - a **missing** row is never a wrong answer: the public read falls back to the
-    live resolution. Only a row that is present AND wrong can lie, which is what
-    the write-through path and the reconcile cron defend.
-- **TWO reconcilers, and the second one is partners.** `reconcileSubscriptionLinkedEntities`
-  (`apps/api/src/services/subscription-linked-entities.service.ts`) drives listing
-  visibility AND the accommodation `entity_subscriptions` cache. It does **not**
-  touch partners: `reconcilePartnerForSubscription`
-  (`apps/api/src/services/partner-reconcile.service.ts`) is a separate bridge
-  writing its own `partner_subscriptions` table (partners are NOT in
-  `entity_subscriptions`), and neither reconciler calls the other. So "did every
-  site get wired?" has TWO answers, and an audit that reads only the first
-  reconciler skips the partner vertical entirely.
-  **Do not look for the count here** — this bullet twice carried a number that was
-  wrong by the time it was read ("six sites", then "nine ... wired at five").
-  `apps/api/test/services/subscription-linked-entities-bridge.guard.test.ts` holds
-  the live tally, and since HOS-1306 it also enforces the pairing: every file
-  calling the entity bridge must either call the partner reconciler too, or appear
-  in `BRIDGE_ONLY_SITES` with the measured reason a partner cannot reach it. A new
-  call site cannot be born with the gap silently.
-  HOS-1306 measured the four then-unwired sites and found **zero real gaps** —
-  `subscription-comp-grant` had already been wired by HOS-1160, and a partner
-  subscription cannot reach the other three (the listing attach path is closed by
-  the two listing vertical types plus `subscriptionMatchesDomain`'s
-  fail-closed; `trial-local-expiry` because no partner plan has a trial;
-  `preapproval-less-expiry` because no writer produces an `active` partner row with
-  a null preapproval). That last one is the fragile one: it holds by the ABSENCE of
-  a producing write, not by an invariant, and **HOS-1062 (activating a partner
-  without MercadoPago) is building the population that breaks it** — that change
-  must wire the partner reconciler into `preapproval-less-expiry` in the same PR.
-  Note also that the daily `partner-expiry` cron only archives partners whose
-  `endsAt` has passed while still ACTIVE, and nothing outside the admin edit form
-  ever writes `partners.endsAt` — it is NOT a general backstop for a missed partner
-  reconcile. The accommodation half ignores
-  the status it was handed and **re-derives** the owner's current subscription
-  from the DB, so a late webhook for a superseded subscription cannot un-publish
-  the one they are paying for. Backstop: the 6-hourly
-  `entity-subscription-cache-reconcile` cron re-derives every accommodation row
-  and prunes orphans.
-- The `product_domain` columns on `billing_plans` and `billing_subscriptions` are
-  typed Drizzle columns as of `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73) — accessed via
-  normal typed queries (HOS-75), not raw SQL or the extras carril. The old
-  extras/017 column-creation file was deleted once the typed columns landed.
-  See ADR-035, the gastronomy/experience separation decision, under `docs/decisions/`.
+Gone with them, do not look for them or re-create them:
+
+- `entity_subscriptions` (the per-listing subscription-status cache and its
+  negative-cache rows) and `owner-entitlement.ts` reading it;
+- `reconcileSubscriptionLinkedEntities` / `reconcilePartnerForSubscription`, their
+  bridge guard test and the `entity-subscription-cache-reconcile` cron;
+- `subscriptionMatchesDomain()`, `isAccommodationSubscription()`,
+  `hydrateSubscriptionProductDomains()` and `scripts/check-subscription-domain-hydration.sh`;
+- the `loadEntitlements` middleware (`apps/api/src/middlewares/entitlement.ts`) and
+  the subscription/entitlement routes under `apps/api/src/routes/user/protected/`.
+
+What remains of the idea: `ProductDomainEnum` (`packages/schemas/src/enums/product-domain.enum.ts`)
+still lists `accommodation`, `gastronomy`, `experience`, `partner`, `tourist` and
+`addon`. The replacement model is the HOS-1352 program: vertical rules (effective
+set, publication, quota, trial, listing-access authorization) live in
+`packages/verticals/`, the provider side in `packages/payments/`. See
+`.specs/HOS-1352-billing-verticals-redesign/` and
+`.specs/HOS-1353-verticales-capacidades-y-autorizacion/`. ADR-035,
+`docs/decisions/ADR-035-gastronomy-experience-separation.md`, records the original
+separation decision.
 
 #### Promo code effect engine (SPEC-262)
 
@@ -886,7 +771,7 @@ Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.m
 
 - **Amenity/feature catalog (SPEC-266)**: the `name` column was DROPPED. Display labels come from `@repo/i18n` (`accommodations.amenityNames.<slug>` / `accommodations.featureNames.<slug>`), keyed by `slug`. The amenity/feature slug regex now allows underscores (`^[a-z0-9]+(?:[-_][a-z0-9]+)*$`) — the slug IS the i18n key. Both tables carry `applicable_verticals text[]`; public catalog endpoints (`/api/v1/public/amenities|features`) accept `?applicableVertical=accommodation|gastronomy|experience` to scope results. **BETA-90** (remove `name` → i18n by slug) is ABSORBED by SPEC-266 — do not plan it separately.
 - **Points of interest (POI) catalog (HOS-113 → HOS-138/146)**: `points_of_interest` has NO `name` column (like SPEC-266's amenities/features). Display names come from the admin-editable multilang `nameI18n` column, degrading to a humanized slug when absent — resolve them with `translatePoiName()` (`apps/web/src/lib/poi-labels.ts`), NEVER by i18n key: **HOS-138 removed the legacy `destinations.poiNames.<slug>` keys entirely**. Only `type` (closed 9-value `PointOfInterestTypeEnum`) still resolves via i18n (`destinations.poiTypeLabels.<TYPE>`). Coordinates are plain `doublePrecision` `lat`/`long` columns, **nullable since HOS-138** — NOT the JSONB/string shape `accommodations`/`destinations` use elsewhere, so no `::numeric` casts or `long`/`lng` naming confusion. Relation to destinations is **many-to-many** via `r_destination_point_of_interest` (a POI can belong to several destinations; coordinates live on the POI row, not the join table). The destination detail page renders POIs **twice**: the SSR `list/grid` (`DestinationPOISection.astro`) stays the indexable content source, and **HOS-146** added a multi-marker map (`DestinationPOIMap.client.tsx`) below it as enrichment. Three things to know before touching that map: (1) `LocationMap` now has a `mode: 'multi'`, implemented in a SIBLING chunk (`MultiMarkerMapInner.client.tsx`), NOT by extending `LocationMapInner.client.tsx` — POI pins pull in `react-dom/server` + the icon table, and the split is what keeps the approximate/exact maps from paying for it; (2) the destination payload is **PRIMARY-only** — `NEARBY` POIs are fetched client-side from `GET /api/v1/public/destinations/:id/points-of-interest?relation=NEARBY` (Colón alone has 57; bundling them would inflate every consumer's payload for one toggle); (3) the initial frame is **destination-centre + p90 radius clamped to [1.5, 8]km**, NOT the POI bbox — HOS-141's pipeline marks POIs up to 39km away as PRIMARY, so a bbox fit yields 100-200km viewports on 20 of 22 destinations.
-- **Partner tiers are gold/silver, and only gold has a page (HOS-294)**: `/{lang}/partners/<slug>/` is what separates the two paid partner plans — a silver partner has carousel presence and nothing else, and its logo links OUT to its own site with `rel="sponsored nofollow noopener"`. The old filtered directory at `/{lang}/partners/` was retired by owner decision and does not come back; that URL now 404s. The tier is never rendered publicly. Public reads answer 200/410/404, where **410 means `partner.revokedAt` is set and nothing else** (HOS-562, `packages/service-core/src/services/partner/partner.service.ts:608`) — a gold partner who merely stopped paying answers 404, not 410, because "stopped paying" is not "permanently gone" and they can come back. Partners are also their own billing vertical: they live in `partner_subscriptions` (not `entity_subscriptions`) and are reconciled by `reconcilePartnerForSubscription`, not by `reconcileSubscriptionLinkedEntities`. Full reference: [apps/web/CLAUDE.md](apps/web/CLAUDE.md).
+- **Partner tiers are gold/silver, and only gold has a page (HOS-294)**: `/{lang}/partners/<slug>/` is what separates the two paid partner plans — a silver partner has carousel presence and nothing else, and its logo links OUT to its own site with `rel="sponsored nofollow noopener"`. The old filtered directory at `/{lang}/partners/` was retired by owner decision and does not come back; that URL now 404s. The tier is never rendered publicly. Public reads answer 200/410/404, where **410 means `partner.revokedAt` is set and nothing else** (HOS-562, `packages/service-core/src/services/partner/partner.service.ts:608`) — a gold partner who merely stopped paying answers 404, not 410, because "stopped paying" is not "permanently gone" and they can come back. `partner_subscriptions` and its reconciler were removed in 0125 (HOS-1352). Full reference: [apps/web/CLAUDE.md](apps/web/CLAUDE.md).
 - **Benefit usages are the repo's first "A declares, B confirms" flow (HOS-376)**: one party opens a `host_trade_benefit_usages` row and the COUNTERPART resolves it; only a `CONFIRMED` row counts for anything. Four things have no precedent elsewhere and are easy to break by analogy with code that looks similar. (1) `confirm`/`reject`/`reject/undo` are **role-blind** — the row's `declaredBy` decides who may answer, never the actor's role, because an account can be host AND provider at once (`host-provider@local.test` is seeded to prove it). They declare no `requiredPermissions`, and a static guard fails CI if one appears. (2) **Every foreign path answers 404, never 403**, including the declarant answering their own declaration (AC-6) — a 403 would confirm the id exists. On the admin side the same rule means the permission gate runs BEFORE the row lookup. (3) A provider is an ordinary account with no `HOST_TRADE_*` permission, so provider routes authorise by **row ownership**; the QR declaration is the one exception (`HOST_TRADE_VIEW`, which is what stops a passer-by who scanned a sticker). (4) Rejecting is **cheap on purpose** — the note is optional — because it is the only control keeping the public counters honest. Full reference: [apps/api/docs/route-architecture.md](apps/api/docs/route-architecture.md); the moderation asymmetry (host review APPROVED by default, provider reply always PENDING) is in [docs/guides/review-moderation.md](docs/guides/review-moderation.md).
 - **Biome `useDefaultParameterLast`**: Params with defaults MUST come after required params
 - **Biome `noExplicitAny`**: `biome-ignore` on interface/type properties does NOT work.. use proper types
