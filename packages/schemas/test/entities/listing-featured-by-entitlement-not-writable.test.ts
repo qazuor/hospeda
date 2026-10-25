@@ -37,7 +37,7 @@ import {
     GastronomyOwnerCreateInputSchema,
     GastronomyOwnerUpdateInputSchema,
     GastronomyUpdateInputSchema
-} from '../../src/entities/gastronomy/gastronomy.crud.schema.js';
+} from '../../src/entities/venue/venue.crud.schema.js';
 
 /** Minimal `safeParse` surface — the schemas differ in their generics. */
 interface Parseable {

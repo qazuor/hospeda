@@ -17,7 +17,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { ExperienceOwnerUpdateInputSchema } from '../../src/entities/experience/experience.crud.schema.js';
-import { GastronomyOwnerUpdateInputSchema } from '../../src/entities/gastronomy/gastronomy.crud.schema.js';
+import { GastronomyOwnerUpdateInputSchema } from '../../src/entities/venue/venue.crud.schema.js';
 import { PublicationStatusEnum } from '../../src/enums/index.js';
 
 /** Fields an owner must never move through their own update payload. */

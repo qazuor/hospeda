@@ -32,7 +32,7 @@
  *  4. ALL OF THE CONTACT — the whole "Cómo te van a contactar" section, the "Teléfono, WhatsApp, email, redes" bullet in "Qué
  *     más podés mostrar", the venue-events CTA sentence, step 02's requirement list, and the masthead lede's "te llama
  *     directo". The biggest gap: a gastronomy listing publishes NO channel today. `GastronomyPublicSchema` omits `contactInfo`
- *     (`packages/schemas/src/entities/gastronomy/gastronomy.access.schema.ts`) and `socialNetworks.whatsapp` was removed
+ *     (`packages/schemas/src/entities/venue/venue.access.schema.ts`) and `socialNetworks.whatsapp` was removed
  *     outright — four files plus a guard test (`test/components/gastronomy/gastronomy-contact-block-whatsapp.guard.test.ts`)
  *     say it must not return through that field. HOS-1088 is where the owner decided (2026-09-05) that gastronomy DOES get
  *     contact, the way accommodation has it.

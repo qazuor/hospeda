@@ -1,0 +1,506 @@
+import { z } from 'zod';
+import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
+import { GastronomySchema } from './venue.schema.js';
+
+/**
+ * Gastronomy CRUD Schemas
+ *
+ * This file contains all schemas related to CRUD operations for gastronomy listings:
+ * - Admin create (full identity control)
+ * - Owner update (operational fields only — no identity manipulation)
+ * - Patch / partial update (alias of owner update for clarity)
+ * - Delete (soft by default, optional hard delete)
+ * - Restore
+ */
+
+// ============================================================================
+// ADMIN CREATE SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for creating a new gastronomy listing (admin path).
+ *
+ * Admins control identity fields (name, slug, type, destinationId) and can
+ * optionally assign an owner on creation.
+ *
+ * ### Junction sync fields (write-only)
+ *
+ * - `amenityIds` — Optional list of amenity UUIDs to associate with the new
+ *   listing. When provided, the service inserts rows in the junction table
+ *   transactionally. Omitting is a no-op.
+ * - `featureIds` — Same contract for the feature junction table.
+ *
+ * These are **write-only inputs** and do not appear in read responses.
+ */
+export const GastronomyAdminCreateInputSchema = GastronomySchema.omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    createdById: true,
+    updatedById: true,
+    deletedAt: true,
+    deletedById: true,
+    // HOS-1286: server-managed billing flag. Written ONLY by the
+    // featured-by-entitlement sync primitives — never from a request body, not
+    // even an admin's. Same treatment as `accommodations.featuredByEntitlement`.
+    featuredByEntitlement: true,
+    // HOS-1641: server-managed. Only the PB publication transitions write the
+    // publication state — never a request body, not even an admin's.
+    publicationStatus: true,
+    // HOS-895: the uploaded menu photo/PDF. Written ONLY by
+    // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
+    // request that stores or destroys the Cloudinary asset — never
+    // from a listing body. Omitted here because these schemas are
+    // built with `.omit(...)`, so a field is accepted unless it is
+    // named: leaving them in let a request body set `menuFileUrl`
+    // to `javascript:…` (a stored-XSS sink, since `z.string().url()`
+    // does not restrict the scheme) and set `menuFilePublicId` to
+    // ANOTHER listing's Cloudinary id, which `DELETE /menu-file`
+    // would then destroy. Same rule, same reason as `media` below.
+    menuFileUrl: true,
+    menuFilePublicId: true,
+    menuFileKind: true
+}).extend({
+    /** Optional slug override; auto-generated from name when absent. */
+    slug: z
+        .string()
+        .min(2, { message: 'zodError.listing.slug.min' })
+        .max(100, { message: 'zodError.listing.slug.max' })
+        .optional(),
+    /**
+     * Owning user UUID. REQUIRED (H-88): `gastronomies.owner_id` is NOT NULL
+     * with no default, so a create without it cannot produce a row — the insert
+     * fails with a 23502 and the caller gets an opaque 500 "A database error
+     * occurred" that names nothing. Declaring it required rejects the payload at
+     * the boundary with a 400 that names the field instead.
+     *
+     * Deliberately NOT defaulted to the acting admin: the documented flow is
+     * "admins create the listing and provision the owner", so the owner is a
+     * real merchant account rather than whoever filled in the form. The owner
+     * self-create route (`routes/venue/protected/create.ts`) already supplies
+     * `ownerId: actor.id` explicitly and is unaffected.
+     */
+    ownerId: UserIdSchema,
+    /**
+     * Destination UUID for the listing. REQUIRED for the same reason as
+     * {@link ownerId} — `gastronomies.destination_id` is NOT NULL with no
+     * default (H-88).
+     */
+    destinationId: DestinationIdSchema,
+    /**
+     * Optional list of amenity UUIDs to associate on create (write-only).
+     * Syncs the junction table transactionally alongside the gastronomy row.
+     * Undefined → no junction rows written.
+     */
+    amenityIds: z
+        .array(z.string().uuid({ message: 'zodError.gastronomy.amenityIds.invalidUuid' }))
+        .optional(),
+    /**
+     * Optional list of feature UUIDs to associate on create (write-only).
+     * Syncs the junction table transactionally alongside the gastronomy row.
+     * Undefined → no junction rows written.
+     */
+    featureIds: z
+        .array(z.string().uuid({ message: 'zodError.gastronomy.featureIds.invalidUuid' }))
+        .optional()
+});
+
+/** TypeScript type for {@link GastronomyAdminCreateInputSchema}. */
+export type GastronomyAdminCreateInput = z.infer<typeof GastronomyAdminCreateInputSchema>;
+
+/**
+ * Schema for the admin create response.
+ * Returns the complete gastronomy object.
+ */
+export const GastronomyAdminCreateOutputSchema = GastronomySchema;
+
+/** TypeScript type for {@link GastronomyAdminCreateOutputSchema}. */
+export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOutputSchema>;
+
+// ============================================================================
+// OWNER UPDATE SCHEMAS (operational only)
+// ============================================================================
+
+/**
+ * Schema for owner-managed updates to a gastronomy listing.
+ *
+ * **HOS-166 D-1 — SPEC-239 decision #5 is deliberately REVERSED here.** That
+ * decision was coherent only under SPEC-239's decision #1 (admin creates every
+ * listing) — once the admin's only action is approving a lead, somebody has to
+ * type the identity in, and the only remaining candidate is the owner. So the
+ * owner now loads their own identity: `name`, `description`, `destinationId`
+ * are owner-editable, on top of the operational sections. Do NOT "restore" the
+ * old admin-only identity-strip — that would silently re-weld the admin into
+ * every listing's core content, which is the exact regression this reversal
+ * exists to prevent.
+ *
+ * **`slug` stays out of this schema on purpose (HOS-166 OQ-3).** It is
+ * owner-*visible* but not owner-*editable* directly: the server derives it from
+ * `name`, now auto-syncs it while the listing is still unpublished (HOS-784
+ * stage 1), and keeps it out of the PATCH body so the owner cannot forge an
+ * arbitrary URL. Once the listing is published, a free rename vector would
+ * enable slug-squatting and break indexed links. Any `slug` key in an owner
+ * PATCH body is silently stripped (Zod's default unknown-key behaviour).
+ *
+ * **Control fields stay out (HOS-166 §6.2 / AC-19, HOS-1641):** `publicationStatus`
+ * and `ownerId` are **intentionally
+ * absent** from this schema — these are the *control* fields (as opposed to
+ * *identity*), and the reversal above is scoped to identity only. Any of these
+ * keys in an owner PATCH body is silently stripped.
+ *
+ * Per SPEC-253 §3, the following fields are also owner-editable:
+ * - `type`             — listing sub-category (SPEC-253 D1: YES; removed from
+ *                        identity-strip guard, AC-5)
+ * - `summary`          — short marketing summary
+ * - `nameI18n`         — localized name translations (SPEC-212 pattern)
+ * - `summaryI18n`      — localized summary translations
+ * - `descriptionI18n`  — localized description translations
+ * - `richDescriptionI18n` — localized rich-text translations
+ *
+ * Previously-permitted operational sections (unchanged):
+ * - `openingHours`   — schedule (gated by `the vertical's EDIT_OWN`)
+ * - `contactInfo`    — contact details (gated by `the vertical's EDIT_OWN`)
+ * - `socialNetworks` — social links (gated by `the vertical's EDIT_OWN`)
+ * - `media`          — featured image, gallery, videos (gated by `the vertical's EDIT_OWN`)
+ * - `menuUrl`        — online menu URL (gated by `the vertical's EDIT_OWN`)
+ * - `priceRange`     — price-range tier (gated by `the vertical's EDIT_OWN`)
+ * - `richDescription`— rich-text description (gated by `the vertical's EDIT_OWN`)
+ * - `amenityIds`     — junction sync (gated by `the vertical's EDIT_OWN`)
+ * - `featureIds`     — junction sync (gated by `the vertical's EDIT_OWN`)
+ *
+ * NOT permitted for owner (admin-only — control fields + immutable identity):
+ * - `slug` (not owner-editable directly — HOS-166 OQ-3)
+ * - `publicationStatus` (written only by the PB publication transitions —
+ *   HOS-1641), `ownerId` (control fields — HOS-166 §6.2)
+ * - `priceFrom`, `priceUnit` (gastronomy uses `priceRange` + `menuUrl` instead)
+ */
+export const GastronomyOwnerUpdateInputSchema = GastronomySchema.pick({
+    // HOS-166 D-1: identity fields the owner now controls.
+    name: true,
+    description: true,
+    destinationId: true,
+    // Previously owner-editable (SPEC-253 §3 / operational sections).
+    type: true,
+    summary: true,
+    openingHours: true,
+    contactInfo: true,
+    socialNetworks: true,
+    // HOS-372: `media` is not writable — the `media` JSONB column was dropped.
+    // Photos are written through the relational `gastronomy_media` endpoints and
+    // videos through this top-level column.
+    videos: true,
+    menuUrl: true,
+    priceRange: true,
+    richDescription: true,
+    nameI18n: true,
+    summaryI18n: true,
+    descriptionI18n: true,
+    richDescriptionI18n: true
+})
+    .partial()
+    .extend({
+        /**
+         * Optional amenity UUID list for junction sync on update (write-only).
+         * undefined → no change | [] → clear all | [ids] → sync to exact set.
+         */
+        amenityIds: z
+            .array(z.string().uuid({ message: 'zodError.gastronomy.amenityIds.invalidUuid' }))
+            .optional(),
+        /**
+         * Optional feature UUID list for junction sync on update (write-only).
+         * undefined → no change | [] → clear all | [ids] → sync to exact set.
+         */
+        featureIds: z
+            .array(z.string().uuid({ message: 'zodError.gastronomy.featureIds.invalidUuid' }))
+            .optional(),
+        /** Published rename opt-in (HOS-784 stage 2). */
+        refreshSlugFromName: z.boolean().optional()
+    });
+
+/** TypeScript type for {@link GastronomyOwnerUpdateInputSchema}. */
+export type GastronomyOwnerUpdateInput = z.infer<typeof GastronomyOwnerUpdateInputSchema>;
+
+// ============================================================================
+// OWNER CREATE SCHEMA (HOS-166 §7.2)
+// ============================================================================
+
+/**
+ * Schema for a `GASTRONOMY_OWNER` self-service listing create
+ * (`POST /api/v1/protected/gastronomies/`, HOS-166 §7.2).
+ *
+ * Unlike {@link GastronomyAdminCreateInputSchema} (which trusts the caller for
+ * `ownerId`/`slug` because only staff can reach it), this
+ * schema **omits every server-forced or control field** so the route handler
+ * is the only place those values can come from:
+ *
+ * - `ownerId` — never accepted from the body; the route always sets it to
+ *   `actor.id` (D-3 — an owner can only ever create a listing for themselves).
+ * - `slug` — never accepted from the body; derived server-side from `name` at
+ *   create time by `BaseListingService._beforeCreate` (HOS-166 OQ-3).
+ * - `publicationStatus` — control field; a listing is born `DRAFT` and only
+ *   the PB publication transitions move it (HOS-166 D-3 — complete first, pay
+ *   after; HOS-1641).
+ * - `reviewsCount`, `averageRating`, `rating` — server-computed aggregates;
+ *   nonsensical on a brand-new listing with no reviews yet.
+ *
+ * `destinationId` stays `.optional()` (mirrors the admin create schema): the
+ * create schema is deliberately permissive — publish-readiness is a SEPARATE
+ * gate evaluated by `resolveListingCompleteness` at checkout time, not by this
+ * schema (HOS-166 §6.6).
+ */
+export const GastronomyOwnerCreateInputSchema = GastronomySchema.omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    createdById: true,
+    updatedById: true,
+    deletedAt: true,
+    deletedById: true,
+    // HOS-895: the uploaded menu photo/PDF. Written ONLY by
+    // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
+    // request that stores or destroys the Cloudinary asset — never
+    // from a listing body. Omitted here because these schemas are
+    // built with `.omit(...)`, so a field is accepted unless it is
+    // named: leaving them in let a request body set `menuFileUrl`
+    // to `javascript:…` (a stored-XSS sink, since `z.string().url()`
+    // does not restrict the scheme) and set `menuFilePublicId` to
+    // ANOTHER listing's Cloudinary id, which `DELETE /menu-file`
+    // would then destroy. Same rule, same reason as `media` below.
+    menuFileUrl: true,
+    menuFilePublicId: true,
+    menuFileKind: true,
+    // HOS-1113: three more that the owner PATCH already refuses and this
+    // create silently accepted, because a `.omit()` schema takes every base
+    // field it does not name. The owner-create body is spread verbatim into
+    // `GastronomyAdminCreateInputSchema.parse(...)` by the route handler and
+    // inserted, so "accepted here" means "written to the row".
+    //
+    // - `adminInfo` — the `admin_info` jsonb column: internal staff notes plus
+    //   a `favorite` flag. It has its own permission-gated write path
+    //   (`BaseCrudAdminService.setAdminInfo`) and is stripped from every public
+    //   projection, so a merchant filling it in on create is writing into the
+    //   staff surface from an unauthenticated-role body.
+    // - `translationMeta` — SPEC-212 curation metadata, written by the AI
+    //   translation pipeline and documented "exposed on admin responses only".
+    //   No `translation_meta` column exists on `gastronomies` today, so this is
+    //   inert rather than live — it is omitted so it cannot become live the day
+    //   the column lands.
+    // - `media` — the `media` jsonb column was DROPPED (HOS-372); photos live in
+    //   `gastronomy_media`. `GastronomyUpdateInputSchema` omits it for exactly
+    //   this reason (see HOS-382 below); accepting it here reproduces the same
+    //   silently-vanishing-photo path on the owner's first save.
+    adminInfo: true,
+    translationMeta: true,
+    media: true,
+    // Server-forced — never accepted from the owner's request body.
+    ownerId: true,
+    slug: true,
+    publicationStatus: true,
+    // HOS-1286: server-managed. Written ONLY by the featured-by-entitlement sync
+    // primitives, never through create/update — the same treatment
+    // `accommodation.crud.schema.ts` gives its twin.
+    featuredByEntitlement: true,
+    // Server-computed aggregates — nonsensical on create.
+    reviewsCount: true,
+    averageRating: true,
+    rating: true
+}).extend({
+    /** Optional at create — publish-readiness is checked separately (§6.6). */
+    destinationId: DestinationIdSchema.optional(),
+    /**
+     * Optional list of amenity UUIDs to associate on create (write-only).
+     * Syncs the junction table transactionally alongside the gastronomy row.
+     */
+    amenityIds: z
+        .array(z.string().uuid({ message: 'zodError.gastronomy.amenityIds.invalidUuid' }))
+        .optional(),
+    /**
+     * Optional list of feature UUIDs to associate on create (write-only).
+     * Syncs the junction table transactionally alongside the gastronomy row.
+     */
+    featureIds: z
+        .array(z.string().uuid({ message: 'zodError.gastronomy.featureIds.invalidUuid' }))
+        .optional()
+});
+
+/** TypeScript type for {@link GastronomyOwnerCreateInputSchema}. */
+export type GastronomyOwnerCreateInput = z.infer<typeof GastronomyOwnerCreateInputSchema>;
+
+// ============================================================================
+// GENERAL UPDATE SCHEMAS (admin path)
+// ============================================================================
+
+/**
+ * Schema for admin full / partial updates to a gastronomy listing (PATCH).
+ *
+ * All entity fields are partial so the admin may update any subset.
+ * Uses `stripShapeDefaults` (same as accommodation) to prevent Zod 4's
+ * `.partial()` from injecting defaults for absent keys.
+ *
+ * ### Why server-managed fields are explicitly omitted
+ *
+ * Even though `stripShapeDefaults` removes `.default()` wrappers, fields like
+ * `ownerId`, `reviewsCount`, and `averageRating` must never arrive at the service
+ * from a generic PATCH body:
+ *
+ * - `ownerId` — immutable after creation; ownership change requires a dedicated
+ *   admin action, not a generic update payload.
+ * - `reviewsCount` / `averageRating` — server-computed aggregates updated by
+ *   the review subsystem, not by the admin CRUD path.
+ *
+ * Explicitly omitting them here enforces that constraint at the schema boundary,
+ * matching the spirit of accommodation's omit of its server-managed flags.
+ * `publicationStatus` is omitted for the same reason: only the PB publication
+ * transitions write it (HOS-1641).
+ */
+export const GastronomyUpdateInputSchema = z
+    .object(
+        // Zod 4's `.partial()` does NOT strip `.default()` (unlike Zod 3): without
+        // this, a PATCH like `{ name: 'x' }` would arrive at the service carrying
+        // injected defaults (`featuredByEntitlement:false`, review stats, etc.),
+        // silently overwriting server state. Stripping the top-level defaults
+        // restores correct "absent key = no change" PATCH semantics. See `stripShapeDefaults`.
+        stripShapeDefaults(
+            GastronomySchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true,
+                // Server-managed (HOS-1286): written ONLY by the
+                // featured-by-entitlement sync primitives, the addon checkout
+                // confirmation and the reconcile cron — never through the generic
+                // PATCH path. Omitted here because these schemas are built with
+                // `.omit(...)`, so a field is accepted unless it is named: leaving
+                // it in would let an owner send `featuredByEntitlement: true` in
+                // their own update and feature their listing without buying the
+                // add-on, which is the exact product HOS-1286 exists to sell.
+                featuredByEntitlement: true,
+                // Server-managed (HOS-1641): only the PB publication transitions
+                // write the publication state.
+                publicationStatus: true,
+                // Server-managed: ownership change requires a dedicated admin action,
+                // not a generic PATCH body.
+                ownerId: true,
+                // Server-computed aggregates — updated by the review subsystem only.
+                reviewsCount: true,
+                averageRating: true,
+                // HOS-895: the uploaded menu photo/PDF. Written ONLY by
+                // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
+                // request that stores or destroys the Cloudinary asset — never
+                // from a listing body. Omitted here because these schemas are
+                // built with `.omit(...)`, so a field is accepted unless it is
+                // named: leaving them in let a request body set `menuFileUrl`
+                // to `javascript:…` (a stored-XSS sink, since `z.string().url()`
+                // does not restrict the scheme) and set `menuFilePublicId` to
+                // ANOTHER listing's Cloudinary id, which `DELETE /menu-file`
+                // would then destroy. Same rule, same reason as `media` below.
+                menuFileUrl: true,
+                menuFilePublicId: true,
+                menuFileKind: true,
+                // HOS-372: the `media` JSONB column was dropped. Photos live in
+                // `gastronomy_media` and are written through the relational media
+                // endpoints; videos travel as the top-level `videos` column, which
+                // stays writable here. `media` remains a RESPONSE field, composed
+                // from the rows on the way out — it is only the write side that goes.
+                media: true
+            }).shape
+        )
+    )
+    .partial()
+    .extend({
+        /**
+         * Optional amenity UUID list for junction sync on update (write-only).
+         * undefined → no change | [] → clear all | [ids] → sync to exact set.
+         */
+        amenityIds: z
+            .array(z.string().uuid({ message: 'zodError.gastronomy.amenityIds.invalidUuid' }))
+            .optional(),
+        /**
+         * Optional feature UUID list for junction sync on update (write-only).
+         * undefined → no change | [] → clear all | [ids] → sync to exact set.
+         */
+        featureIds: z
+            .array(z.string().uuid({ message: 'zodError.gastronomy.featureIds.invalidUuid' }))
+            .optional(),
+        /** Published rename opt-in (HOS-784 stage 2). */
+        refreshSlugFromName: z.boolean().optional()
+    });
+
+/** TypeScript type for {@link GastronomyUpdateInputSchema}. */
+export type GastronomyUpdateInput = z.infer<typeof GastronomyUpdateInputSchema>;
+
+/**
+ * Alias of {@link GastronomyUpdateInputSchema} for explicit PATCH semantics.
+ */
+export const GastronomyPatchInputSchema = GastronomyUpdateInputSchema;
+
+/** TypeScript type for {@link GastronomyPatchInputSchema}. */
+export type GastronomyPatchInput = z.infer<typeof GastronomyPatchInputSchema>;
+
+/**
+ * Schema for gastronomy update response.
+ * Returns the complete updated gastronomy object.
+ */
+export const GastronomyUpdateOutputSchema = GastronomySchema;
+
+/** TypeScript type for {@link GastronomyUpdateOutputSchema}. */
+export type GastronomyUpdateOutput = z.infer<typeof GastronomyUpdateOutputSchema>;
+
+// ============================================================================
+// DELETE SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for gastronomy deletion input.
+ * Requires ID and optional force flag for hard delete.
+ */
+export const GastronomyDeleteInputSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    // Use `.default(false)` only — `.optional().default(false)` is a dead chain:
+    // `.default()` already supplies the value when the key is absent; the outer
+    // `.optional()` is redundant and confusing. Matches accommodation's pattern.
+    force: z.boolean({ message: 'zodError.gastronomy.delete.force.invalidType' }).default(false)
+});
+
+/** TypeScript type for {@link GastronomyDeleteInputSchema}. */
+export type GastronomyDeleteInput = z.infer<typeof GastronomyDeleteInputSchema>;
+
+/**
+ * Schema for gastronomy deletion response.
+ * Returns success status and deletion timestamp.
+ */
+export const GastronomyDeleteOutputSchema = z.object({
+    success: z.boolean({ message: 'zodError.gastronomy.delete.success.required' }).default(true),
+    deletedAt: z.date({ message: 'zodError.gastronomy.delete.deletedAt.invalidType' }).optional()
+});
+
+/** TypeScript type for {@link GastronomyDeleteOutputSchema}. */
+export type GastronomyDeleteOutput = z.infer<typeof GastronomyDeleteOutputSchema>;
+
+// ============================================================================
+// RESTORE SCHEMAS
+// ============================================================================
+
+/**
+ * Schema for gastronomy restoration input.
+ * Requires only the gastronomy ID.
+ */
+export const GastronomyRestoreInputSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+});
+
+/** TypeScript type for {@link GastronomyRestoreInputSchema}. */
+export type GastronomyRestoreInput = z.infer<typeof GastronomyRestoreInputSchema>;
+
+/**
+ * Schema for gastronomy restoration response.
+ * Returns the complete restored gastronomy object.
+ */
+export const GastronomyRestoreOutputSchema = GastronomySchema;
+
+/** TypeScript type for {@link GastronomyRestoreOutputSchema}. */
+export type GastronomyRestoreOutput = z.infer<typeof GastronomyRestoreOutputSchema>;

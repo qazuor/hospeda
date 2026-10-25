@@ -358,7 +358,7 @@
             "reason": "Image/video fixtures keep their own moderationState."
         },
         {
-            "file": "packages/schemas/test/entities/gastronomy/gastronomy.schema.test.ts",
+            "file": "packages/schemas/test/entities/venue/venue.schema.test.ts",
             "name": "visibility",
             "count": 1,
             "table": "none (test title)",

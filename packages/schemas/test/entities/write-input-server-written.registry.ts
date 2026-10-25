@@ -34,8 +34,8 @@ import {
     GastronomyOwnerCreateInputSchema,
     GastronomyOwnerUpdateInputSchema,
     GastronomyUpdateInputSchema
-} from '../../src/entities/gastronomy/gastronomy.crud.schema.js';
-import { GastronomySchema } from '../../src/entities/gastronomy/gastronomy.schema.js';
+} from '../../src/entities/venue/venue.crud.schema.js';
+import { GastronomySchema } from '../../src/entities/venue/venue.schema.js';
 
 /** The parse surface the guard needs. Avoids depending on Zod's exported types. */
 export interface Parseable {

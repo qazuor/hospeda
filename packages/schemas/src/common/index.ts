@@ -35,8 +35,6 @@ export * from './experience-rating.schema.js';
 export * from './faq.schema.js';
 // Shared shapes for the born-featured cover endpoints (HOS-803)
 export * from './featured-media.schema.js';
-// Per-vertical rating breakdowns (the dimensions only make sense per vertical)
-export * from './gastronomy-rating.schema.js';
 export * from './helpers.schema.js';
 // Structured service-provider benefit, shared by alliance leads and host trades
 export * from './host-trade-benefit.schema.js';
@@ -82,6 +80,8 @@ export * from './safe-external-url.schema.js';
 export * from './seo.schema.js';
 export * from './social.schema.js';
 export * from './tags.schema.js';
+// Per-vertical rating breakdowns (the dimensions only make sense per vertical)
+export * from './venue-rating.schema.js';
 export * from './visibility.schema.js';
 
 // Migration completed ✅

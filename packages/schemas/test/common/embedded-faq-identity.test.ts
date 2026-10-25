@@ -29,7 +29,7 @@ import { FaqCreatePayloadSchema } from '../../src/common/faq.schema.js';
 import { AccommodationSchema } from '../../src/entities/accommodation/accommodation.schema.js';
 import { DestinationSchema } from '../../src/entities/destination/destination.schema.js';
 import { ExperienceSchema } from '../../src/entities/experience/experience.schema.js';
-import { GastronomySchema } from '../../src/entities/gastronomy/gastronomy.schema.js';
+import { GastronomySchema } from '../../src/entities/venue/venue.schema.js';
 
 const FAQ_ID = '34b02cb0-e06a-51c4-b742-04e8ff79299f';
 const OWNER_ID = '686b70d4-aa3f-57c6-8958-a83eca33cd69';

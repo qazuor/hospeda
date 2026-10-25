@@ -13,11 +13,11 @@ import {
     GastronomyAdminListItemSchema,
     GastronomyAdminSchema,
     GastronomyProtectedSchema
-} from '../../src/entities/gastronomy/gastronomy.access.schema.js';
+} from '../../src/entities/venue/venue.access.schema.js';
 import { ExperiencePriceUnitEnum } from '../../src/enums/experience-price-unit.enum.js';
 import { ExperienceTypeEnum } from '../../src/enums/experience-type.enum.js';
 import { createValidAccommodation } from '../fixtures/accommodation.fixtures.js';
-import { createMinimalGastronomy } from '../fixtures/gastronomy.fixtures.js';
+import { createMinimalGastronomy } from '../fixtures/venue.fixtures.js';
 
 /**
  * HOS-1748: a PURGED listing keeps its row with `summary = ''` and

@@ -43,17 +43,17 @@ import {
 } from '../../src/entities/experience/experience.access.schema.js';
 import { ExperienceAdminCreateInputSchema } from '../../src/entities/experience/experience.crud.schema.js';
 import {
-    GastronomyAdminSchema,
-    GastronomyProtectedSchema
-} from '../../src/entities/gastronomy/gastronomy.access.schema.js';
-import { GastronomyAdminCreateInputSchema } from '../../src/entities/gastronomy/gastronomy.crud.schema.js';
-import {
     PostSponsorAdminSchema,
     PostSponsorProtectedSchema
 } from '../../src/entities/postSponsor/postSponsor.access.schema.js';
 import { PostSponsorCreateInputSchema } from '../../src/entities/postSponsor/postSponsor.crud.schema.js';
 import { UserSelfSchema } from '../../src/entities/user/user.access.schema.js';
 import { UserCreateInputSchema } from '../../src/entities/user/user.crud.schema.js';
+import {
+    GastronomyAdminSchema,
+    GastronomyProtectedSchema
+} from '../../src/entities/venue/venue.access.schema.js';
+import { GastronomyAdminCreateInputSchema } from '../../src/entities/venue/venue.crud.schema.js';
 
 /** Minimal structural view of a schema field — all this guardrail needs. */
 interface ParseableSchema {

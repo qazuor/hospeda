@@ -13,9 +13,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { ExperiencePublicSchema } from '../../entities/experience/experience.access.schema.js';
-import { GastronomyPublicSchema } from '../../entities/gastronomy/gastronomy.access.schema.js';
-import { GastronomyTypeEnum } from '../../enums/gastronomy-type.enum.js';
+import { GastronomyPublicSchema } from '../../entities/venue/venue.access.schema.js';
 import { ExperiencePriceUnitEnum, ExperienceTypeEnum } from '../../enums/index.js';
+import { GastronomyTypeEnum } from '../../enums/venue-type.enum.js';
 
 const ENTITY_UUID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 const AMENITY_UUID = '3f1a6b2c-1111-4d3e-8a90-2b7c4d5e6f70';

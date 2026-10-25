@@ -16,9 +16,9 @@ import {
     GastronomyOwnerCreateInputSchema,
     GastronomyOwnerUpdateInputSchema,
     GastronomyUpdateInputSchema
-} from '../../src/entities/gastronomy/gastronomy.crud.schema.js';
+} from '../../src/entities/venue/venue.crud.schema.js';
 import { createValidAccommodation } from '../fixtures/accommodation.fixtures.js';
-import { createMinimalGastronomy } from '../fixtures/gastronomy.fixtures.js';
+import { createMinimalGastronomy } from '../fixtures/venue.fixtures.js';
 
 /**
  * HOS-1748 lock: relaxing the READ schemas must not relax the INPUT or the

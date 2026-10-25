@@ -28,7 +28,7 @@ import {
     EventOrganizerUpdateHttpSchema,
     httpToDomainEventOrganizerUpdate
 } from '../../src/entities/eventOrganizer/eventOrganizer.http.schema.js';
-import { GastronomyUpdateHttpSchema } from '../../src/entities/gastronomy/gastronomy.http.schema.js';
+import { GastronomyUpdateHttpSchema } from '../../src/entities/venue/venue.http.schema.js';
 
 /** Every key of the shared social JSONB value. */
 const SOCIAL_FIELDS = [

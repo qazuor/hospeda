@@ -12,7 +12,6 @@ import {
 } from '../../entities/accommodation/accommodation.http.schema.js';
 import { EventOrganizerCreateHttpSchema } from '../../entities/eventOrganizer/eventOrganizer.http.schema.js';
 import { ExperienceCreateHttpSchema } from '../../entities/experience/experience.http.schema.js';
-import { GastronomyCreateHttpSchema } from '../../entities/gastronomy/gastronomy.http.schema.js';
 import { PartnerOwnerUpdateSchema } from '../../entities/partner/partner.owner.schema.js';
 import { partnerSchema } from '../../entities/partner/partner.schema.js';
 import { updatePartnerSchema } from '../../entities/partner/partner.update.schema.js';
@@ -30,6 +29,7 @@ import {
     UserProfileSchema
 } from '../../entities/user/user.profile.schema.js';
 import { CompleteProfileBodySchema } from '../../entities/user/user.profile-completion.schema.js';
+import { GastronomyCreateHttpSchema } from '../../entities/venue/venue.http.schema.js';
 import { ProfileEditSchema } from '../../user/profile.js';
 import { ContactInfoSchema } from '../contact.schema.js';
 
