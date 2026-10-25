@@ -190,7 +190,7 @@ const REACHABLE_CONTACT_CHANNELS: Readonly<
     Record<VenueOrExperience, readonly ReachableContactChannel[]>
 > = {
     [ProductDomainEnum.EXPERIENCE]: ['workPhone', 'mobilePhone', 'workEmail'],
-    [ProductDomainEnum.GASTRONOMY]: [
+    [ProductDomainEnum.VENUE]: [
         'homePhone',
         'workPhone',
         'mobilePhone',
@@ -311,7 +311,7 @@ export function resolveListingCompleteness(
     }
 
     // ── Gastronomy-specific required fields ───────────────────────────────
-    if (entityType === ProductDomainEnum.GASTRONOMY) {
+    if (entityType === ProductDomainEnum.VENUE) {
         if (!hasAtLeastOneOpeningShift(listing.openingHours)) {
             missing.push('openingHours');
         }

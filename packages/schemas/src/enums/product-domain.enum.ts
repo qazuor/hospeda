@@ -53,7 +53,7 @@
  */
 export enum ProductDomainEnum {
     ACCOMMODATION = 'accommodation',
-    GASTRONOMY = 'gastronomy',
+    VENUE = 'gastronomy',
     EXPERIENCE = 'experience',
     PARTNER = 'partner',
     TOURIST = 'tourist',
@@ -70,11 +70,9 @@ export enum ProductDomainEnum {
  * entry), so it stays exactly two members.
  *
  * Spelled as the members' string values so a plain `'gastronomy'` literal and
- * a `ProductDomainEnum.GASTRONOMY` member are both assignable to it.
+ * a `ProductDomainEnum.VENUE` member are both assignable to it.
  */
-export type VenueOrExperience =
-    | `${ProductDomainEnum.GASTRONOMY}`
-    | `${ProductDomainEnum.EXPERIENCE}`;
+export type VenueOrExperience = `${ProductDomainEnum.VENUE}` | `${ProductDomainEnum.EXPERIENCE}`;
 
 /**
  * The subset of {@link ProductDomainEnum} members that represent an actual
@@ -104,7 +102,7 @@ export type VenueOrExperience =
  */
 export const BUSINESS_VERTICAL_PRODUCT_DOMAINS = [
     ProductDomainEnum.ACCOMMODATION,
-    ProductDomainEnum.GASTRONOMY,
+    ProductDomainEnum.VENUE,
     ProductDomainEnum.EXPERIENCE,
     ProductDomainEnum.PARTNER,
     // TOURIST belongs here despite owning no listings (HOS-1233). The test this

@@ -4,6 +4,20 @@ import { VerticalEnum } from '../../src/enums/vertical.enum.js';
 import { VerticalEnumSchema } from '../../src/enums/vertical.schema.js';
 
 describe('VerticalEnum', () => {
+    it('TEST:1813:7 AC:1:15 keeps VENUE at the persisted gastronomy value', () => {
+        expect(VerticalEnum.VENUE).toBe('gastronomy');
+    });
+
+    it('TEST:1813:7 AC:1:15 exposes the complete renamed key set', () => {
+        expect(Object.keys(VerticalEnum)).toEqual([
+            'ACCOMMODATION',
+            'VENUE',
+            'EXPERIENCE',
+            'TOURIST',
+            'PARTNER'
+        ]);
+    });
+
     it('has exactly the five verticals', () => {
         expect(Object.values(VerticalEnum).sort()).toEqual([
             'accommodation',

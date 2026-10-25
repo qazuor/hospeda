@@ -29,7 +29,7 @@ export const TRACKABLE_ENTITY_TYPES = [
     EntityTypeEnum.ACCOMMODATION,
     EntityTypeEnum.POST,
     EntityTypeEnum.EVENT,
-    EntityTypeEnum.GASTRONOMY,
+    EntityTypeEnum.VENUE,
     EntityTypeEnum.EXPERIENCE,
     EntityTypeEnum.PARTNER
 ] as const;
@@ -54,7 +54,7 @@ export const TrackableEntityTypeSchema = z.enum(
         EntityTypeEnum.ACCOMMODATION,
         EntityTypeEnum.POST,
         EntityTypeEnum.EVENT,
-        EntityTypeEnum.GASTRONOMY,
+        EntityTypeEnum.VENUE,
         EntityTypeEnum.EXPERIENCE,
         EntityTypeEnum.PARTNER
     ],

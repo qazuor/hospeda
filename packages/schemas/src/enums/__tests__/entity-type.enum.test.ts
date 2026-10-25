@@ -63,8 +63,26 @@ describe('EntityTypeEnum', () => {
             expect(EntityTypeEnum.EXPERIENCE).toBe('EXPERIENCE');
         });
 
-        it('should include GASTRONOMY', () => {
-            expect(EntityTypeEnum.GASTRONOMY).toBe('GASTRONOMY');
+        it('TEST:1813:7 AC:1:15 should include VENUE with the persisted GASTRONOMY value', () => {
+            expect(EntityTypeEnum.VENUE).toBe('GASTRONOMY');
+        });
+
+        it('TEST:1813:7 AC:1:15 exposes the complete renamed key set', () => {
+            expect(Object.keys(EntityTypeEnum)).toEqual([
+                'ACCOMMODATION',
+                'DESTINATION',
+                'USER',
+                'POST',
+                'EVENT',
+                'CONVERSATION',
+                'REVIEW',
+                'BILLING_SUBSCRIPTION',
+                'PAYMENT',
+                'EXPERIENCE',
+                'VENUE',
+                'HOST_TRADE',
+                'PARTNER'
+            ]);
         });
     });
 

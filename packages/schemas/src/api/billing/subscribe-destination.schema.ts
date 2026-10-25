@@ -3,7 +3,7 @@ import { VerticalEnum } from '../../enums/vertical.enum';
 
 export const SubscribeDestinationVerticalSchema = z.enum([
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ]);
 const TrialStartDeniedReasonSchema = z.enum([
