@@ -2,7 +2,9 @@
 
 ## Purpose
 
-This directory contains End-to-End (E2E) tests that exercise the **real MercadoPago Sandbox API** through the QZPay billing SDK. These tests verify that our integration with MercadoPago works correctly in a controlled test environment before deploying to production.
+> **Status:** the suite is currently empty. This directory holds only `sandbox-config.ts` (helpers) and `vitest.config.sandbox.ts` (the `test:sandbox` config, which includes `test/e2e/sandbox/**/*.test.ts`). The `mercadopago-sandbox.test.ts` file referenced below no longer exists and nothing replaces it yet; the examples below describe the intended shape.
+
+This directory contains End-to-End (E2E) tests that exercise the **real MercadoPago Sandbox API** through the MercadoPago adapter of `@repo/payments` (`packages/payments/src/adapters/`). These tests verify that our integration with MercadoPago works correctly in a controlled test environment before deploying to production.
 
 **Important:** These are NOT unit tests or integration tests. They make real network calls to MercadoPago's sandbox environment and may take several seconds to complete.
 
@@ -336,7 +338,7 @@ jobs:
 
 - [MercadoPago Developer Portal](https://www.mercadopago.com.ar/developers)
 - [MercadoPago API Reference](https://www.mercadopago.com.ar/developers/en/reference)
-- [QZPay Documentation](https://github.com/qazuor/qzpay)
+- `packages/payments/` - provider port (`PaymentProvider`), MercadoPago adapter and fake
 
 ## Support
 

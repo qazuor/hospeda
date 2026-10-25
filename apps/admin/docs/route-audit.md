@@ -1,5 +1,7 @@
 # Admin App (TanStack Start) - Route Audit
 
+> Historical (dated 2026-02-16). References to `@repo/billing` / `ALL_PLANS` predate HOS-1352, which deleted that package.
+>
 > **Date:** 2026-02-16
 > **App:** `apps/admin` (port 3000)
 > **Framework:** TanStack Start (full-stack React 19)

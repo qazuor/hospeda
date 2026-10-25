@@ -178,6 +178,9 @@ you should hand-edit around.
 
 ### Raw-Drizzle example
 
+> The `0001`-`0003` files cited here were removed with the old billing stack (HOS-1352); the
+> excerpt shows the pattern, not a file you can open.
+
 The billing `0001`-`0003` migrations (ported from the now-superseded `extras/023-025-*.plan.sql`
 files) are the reference examples for a direct-SQL, OR-PRESERVE-style update. From
 `packages/seed/src/data-migrations/0001-billing-plans-ai-consumer-search-limits.ts`:
@@ -252,7 +255,7 @@ Behavior:
   predicate, withholds the delete and returns `{ deleted: false, skipped: true, reason }`
   instead of cascading. `isOperatorEdited` receives the row keyed by its raw snake_case DB
   column names (not the Drizzle camelCase JS properties) — pass one only for tables with a
-  real operator-edit provenance signal (e.g. `billing_plans`'s Model C commercial layer);
+  real operator-edit provenance signal (none of the current catalog tables ships one);
   omit it for catalog tables with no such surface (amenities, features, tags, ...).
 
 ---
@@ -374,6 +377,9 @@ value should be X" (a plan's limit, a catalog entry's existence), it belongs in
 
 ### Worked example: the billing 023/024/025 → 0001/0002/0003 port
 
+> Historical. The three extras files and their `0001`-`0003` ports were removed with the old
+> billing stack (HOS-1352); the example is kept for the boundary it illustrates.
+
 Three pre-existing hand-written extras files were exactly this kind of DATA change wearing
 the wrong carril's clothes:
 
@@ -401,9 +407,9 @@ the other a no-op:
 Do not delete a superseded `extras/*.plan.sql` file just because its logic moved — leave the
 header marker as the historical record and let both guards keep each other honest.
 
-The one exception so far: HOS-1418 deleted `023` and `024`. Both target `billing_plans`, a
-table the HOS-1352 program removed, so they no longer describe anything to change; `025`
-is still in place.
+The one exception so far: HOS-1418 deleted `023` and `024`, and HOS-1419 deleted `025`. They
+targeted the old QZPay plan table, which the HOS-1352 program removed, so they no longer
+describe anything to change.
 
 ### Example migrations and deterministic fixture ids
 
@@ -531,9 +537,9 @@ credential that `--exclude=users` exists to keep off the box. Run it too early a
 with `no SUPER_ADMIN account`; that is the guard, not a bug. See
 `requireSuperAdminActor` in `packages/seed/src/data-migrations/runner.ts`.
 
-Caveat, current as of the `0001`-`0033` migrations: apart from the ordering above, this is
+Caveat, current as of the shipped `required`-group migrations: apart from the ordering above, this is
 safe **only because no currently-shipped `required`-group migration depends on data the
-excluded `users` step would have seeded** — they target `billing_plans` rows the curated seed
+excluded `users` step would have seeded** — they target rows the curated seed
 already creates, or content they insert themselves. If a future required migration is added
 that depends on an excluded step, re-verify this before baseline-stamping blindly. When in
 doubt, run `pnpm db:seed:migrate:status` first and read which migrations would actually

@@ -1,27 +1,58 @@
 # Managing Billing Plans
 
-This guide is for operators (super-admins) who manage Hospeda's subscription
-plans from the admin panel. Since SPEC-168, plans are stored in the database and
-are **editable at runtime** — you no longer need a developer or a deploy to
-change a price, an entitlement, or a limit.
+This guide is for operators (super-admins) who change Hospeda's subscription
+plans. The plan catalog lives in the database and is edited at runtime, with no
+deploy. Since HOS-1352 it follows an **immutable version** model: a plan is a
+stable identity, and everything that has an effect (entitlements, limits, trial
+days, grace days) lives in a **version** that is published, never edited.
 
-> **Who can do this**: only super-admins. The whole admin billing surface is
-> super-admin-only (SPEC-164). If you do not see the plans page, you do not have
-> the required role.
+For the overall billing model see
+[Billing and verticals](../../CLAUDE.md#billing-and-verticals-hos-1352).
+
+> **Who can do this**: only super-admins. The plan-catalog endpoints require
+> `PermissionEnum.MAINTENANCE_MODE_WRITE`, which is provisional and held by
+> `SUPER_ADMIN` only (see the comment at the top of
+> `apps/api/src/routes/plan-catalog/admin/index.ts`).
+>
+> **There is no admin screen for plans yet.** `apps/admin/src/routes` has no
+> plans page; the catalog is managed through the admin API below. The previous
+> "Comercial → Planes" screen belonged to the deleted QZPay stack.
 
 ---
 
 ## Where plans live
 
-- The catalog of plans is the source of truth in the database (the qzpay
-  `billing_plans` table, with prices in `billing_prices`).
-- There is no source-code plan config any more: `@repo/billing`, which was read
-  once to seed an empty database, was deleted by HOS-1626. Every change is made
-  from the admin panel and is never overwritten by a re-seed.
-- The web pricing pages and the checkout both read from this same database
-  catalog, so what a visitor sees is always what they are charged.
+| Table | Holds | Mutable? |
+|---|---|---|
+| `plan` | Identity and cosmetics: `vertical`, `slug`, `name`, `description`, `pricingOrder`, `role` | Everything except `role` (set at creation only, enforced by a trigger) |
+| `plan_version` | One published version: `rank`, `sellable`, `trialDays`, `graceDays`, `allowsPause`, `inheritsTouristVip`, `current` | **Immutable**, except the `current` flag |
+| `plan_version_entitlement` | Entitlements a version grants (`key`, `planQuota`, `trialQuota`) | Immutable with its version |
+| `plan_version_limit` | Numeric caps a version sets (`key`, `value`) | Immutable with its version |
+| `billing_option` | A cycle (`monthly`, `quarterly`, `semiannual`, `annual`) and its ARS price, attached to one version | Immutable with its version |
 
-You reach the plans page from the admin sidebar under **Comercial → Planes**.
+All of them are defined in `packages/db/src/schemas/vertical/`
+(`plan-catalog.dbschema.ts`, `billing-option.dbschema.ts`). There is no
+source-code plan config: the database is the only catalog.
+
+Money is always an **integer** (`billing_option.amount`, ARS only), never a float.
+
+---
+
+## Admin API
+
+Mounted at `/api/v1/admin/plan-catalog` (`apps/api/src/routes/plan-catalog/admin/index.ts`):
+
+| Action | Endpoint | Notes |
+|---|---|---|
+| Create a plan | `POST /plans` | Body: `vertical`, `slug`, `name`, optional `description`, `pricingOrder`, `role`. `role` marks the three non-sellable plans each vertical declares (`trial`, `pre_trial`, `floor`) and is accepted only here. |
+| Preview a version | `POST /plans/{planId}/versions/preview` | Writes nothing. Returns the key-by-key diff against the current version and how many customers are anchored to it. |
+| Publish a version | `POST /plans/{planId}/versions` | Same body as the preview plus `confirmed: true`. Makes the new version the plan's `current` one, invalidates the effective-set cache, and writes an audit entry. |
+
+The version body (`PlanVersionContentSchema` in
+`packages/schemas/src/catalog/plan-publication.schema.ts`) carries `rank`,
+`sellable`, `trialDays`, `graceDays`, `allowsPause`, `inheritsTouristVip`,
+`entitlements`, `limits` and an optional `cycles` subset. It carries **no
+prices**: the price of a cycle is a `billing_option` row of the version.
 
 ---
 
@@ -29,28 +60,16 @@ You reach the plans page from the admin sidebar under **Comercial → Planes**.
 
 | Field | What it is | Editable after creation? |
 |---|---|---|
-| **Slug** | The stable identifier of the plan (e.g. `host-pro`). Code, the web, and entitlements resolve plans by this slug. | **No — immutable.** It is set on creation and locked afterwards. |
-| **Display name** | The human-facing name shown in the UI (e.g. "Host Pro"). | Yes |
-| **Description** | Short marketing description shown on pricing pages. | Yes |
-| **Monthly price** | Price per month, stored as an **integer in centavos ARS** (e.g. `499000` = ARS 4 990,00). | Yes |
-| **Annual price** | Price per year, also in centavos ARS. Leave at `0` to offer monthly billing only. | Yes |
-| **Entitlements** | The list of features the plan unlocks (checkbox list in the form). | Yes |
-| **Limits** | Numeric caps per feature (e.g. max accommodations), keyed by name. | Yes |
-| **Trial** | Whether the plan offers a trial and for how many days. **Not HOST-only**: `tourist-vip` and the six gastronomy/experience plans all carry a 30-day trial, `complex-*` is the only tier still at 14, and the three partner plans have none. Live values in `packages/billing/src/constants/billing.constants.ts`. (ADR-009 still says "14 days, HOST-only" — it is superseded.) | Yes |
-| **Default** | Marks the plan assigned by default for its role tier. Only one default per tier. | **No — set at creation only.** Changing which plan is the tier default is a structural/config decision, not an operator edit; it is not exposed on the edit form. |
-| **Sort order** | Controls the order plans appear in on the pricing pages and lists. | Yes |
-| **Active** | Whether the plan is offered. Inactive plans disappear from the public pricing pages but existing subscriptions keep working. | Yes |
-
-> **Money is always integer centavos.** A price of ARS 4 990 is stored as
-> `499000`, never `4990` and never `4990.00`. The form handles the conversion —
-> just be aware of the unit when reading the audit log or the database directly.
->
-> **Your edits survive the next deploy.** Every field marked "Yes" above is
-> yours to keep changed — a code deploy or a re-seed never reverts it. (There
-> was a brief window, fixed under HOS-39, where **Entitlements**, **Trial**,
-> and **Sort order** looked editable in this panel but were silently reset to
-> the code default on the next deploy. That is fixed: those three fields now
-> behave the same as price and description always did.)
+| **Slug** | Stable identifier of the plan inside its vertical (`UNIQUE(vertical, slug)`). | Cosmetic row, but treat it as stable: code and the web resolve plans by slug. |
+| **Name / Description / Pricing order** | What the pricing page shows and the order it shows plans in. | Yes (they have no effect on what a person gets) |
+| **Role** | `trial`, `pre_trial`, `floor`, or none for a sellable plan. At most one plan per role per vertical. | **No.** Set at creation only. |
+| **Rank** | The plan's position in the ladder, used to tell an upgrade from a downgrade. | Only by publishing a new version |
+| **Sellable** | Whether the version can be bought. | Only by publishing a new version |
+| **Trial days** | Length of the trial the version grants. | Only by publishing a new version |
+| **Grace days** | Grace after a failed payment before coverage ends. | Only by publishing a new version |
+| **Allows pause** | Whether a subscription on the version may be paused. | Only by publishing a new version |
+| **Inherits tourist VIP** | Whether the version includes the tourist VIP benefits. | Only by publishing a new version |
+| **Entitlements / Limits** | Features unlocked and numeric caps. | Only by publishing a new version |
 
 ---
 
@@ -58,114 +77,50 @@ You reach the plans page from the admin sidebar under **Comercial → Planes**.
 
 ### Create a plan
 
-1. Go to **Comercial → Planes** and click **Crear**.
-2. Fill in the slug (choose carefully — it cannot be changed later), display
-   name, description, prices, entitlements, limits, trial, and sort order.
-3. Save. The plan is written to the database and, if `Active` is on, appears on
-   the public pricing pages after the cache revalidates (see below).
+`POST /plans` with the vertical, slug and name. The plan exists but has no
+version, so it grants nothing until a version is published.
 
-### Edit a plan
+### Change what a plan grants (the normal edit)
 
-1. Open the plan from the list and click **Editar**.
-2. Change any field except the slug (the slug input is disabled on edit).
-3. Save. Price changes take effect immediately for new checkouts and surface on
-   the web after revalidation.
+1. `POST /plans/{planId}/versions/preview` with the new content. Read the
+   returned `changes` (each entitlement, limit or setting with its `from` and
+   `to`) and `anchoredCustomers`.
+2. If the diff and the reach are what you intended, send the same body to
+   `POST /plans/{planId}/versions` with `confirmed: true`.
 
-### Deactivate a plan
+Publishing never rewrites history: the old version stays as it was. The preview
+reports how many customers are anchored to the current version
+(`anchoredCustomers`) so you can see who the change reaches.
 
-Toggle **Active** off (or use **Desactivar**). The plan is removed from the
-public pricing pages but is **not deleted**: existing subscriptions on that plan
-continue to be billed and served. Re-activate it any time by toggling **Active**
-back on.
+### Retire a plan
 
-### Delete a plan
-
-See [Delete semantics](#delete-semantics) below — deletion has two modes and
-the destructive one is guarded.
-
----
-
-## How price changes reach the web
-
-The public pricing pages are served through Cloudflare's cache. When you save a
-plan, the admin triggers a **cache revalidation** for the pricing URLs so the new
-price shows up without a redeploy. This is automatic and best-effort:
-
-- Allow a few seconds for the cache to refresh after saving.
-- If a visitor still sees an old price briefly, it is the stale-while-revalidate
-  window; it self-corrects on the next request.
-- The revalidation uses the platform's existing revalidation system (not an
-  ad-hoc Cloudflare call), so it follows the same path as other content updates.
-
-Checkout always reads the live database value, so a customer is never charged a
-stale price even during the cache window.
+Publish a new version with `sellable: false`. There is no delete endpoint: the
+old versions are referenced by subscriptions and must stay.
 
 ---
 
 ## Audit log
 
-**Every plan mutation is recorded.** Each create, edit, activate/deactivate, and
-delete writes an entry to the billing audit log (`billing_audit_logs`) capturing:
-
-- **who** made the change (the acting super-admin's `actor.id`),
-- **what** changed, as a **before/after** diff of the affected fields (price,
-  entitlements, limits, active, metadata),
-- **when** it happened.
-
-This gives you a full, independent history of pricing changes — you do not need
-git or a developer to answer "who changed this price and when". Reads are not
-audited; only mutations are.
-
----
-
-## Delete semantics
-
-There are two ways to remove a plan, and they behave very differently.
-
-### Soft-delete (default, reversible)
-
-The standard delete marks the plan inactive (`active: false`) and **keeps the
-row** in the database. This is reversible: re-activate the plan and it returns.
-Existing subscriptions referencing the plan keep working. Use this in almost all
-cases.
-
-### Hard-delete (permanent, guarded)
-
-Hard-delete permanently removes the plan row. It is **blocked** if any
-subscription still references the plan: the operation returns a `409 Conflict`
-and nothing is deleted. The admin UI hides the hard-delete option when references
-exist. Only a plan that no subscription points to can be hard-deleted.
-
-> **Rule of thumb**: prefer deactivation. Reach for hard-delete only to clean up a
-> plan that was created by mistake and never sold.
+Creating a plan and publishing a version each write an audit entry
+(`AuditEventType.BILLING_MUTATION`, resource type `plan` or `plan-version`)
+with the acting super-admin's id and the key fields of the change. Because
+versions are immutable, the version history itself is also a complete record
+of what each plan granted and when.
 
 ---
 
 ## Rolling back a change
 
-If a plan edit was wrong, you have two complementary options:
-
-1. **Re-edit to the previous values.** Open the audit log entry for the change,
-   read the **before** side of the diff, and re-enter those values in the edit
-   form. Save. Because the audit log records the prior state of every field, you
-   always have the exact values to restore.
-2. **Reactivate after an accidental deactivation.** If you toggled a plan off by
-   mistake, just toggle **Active** back on — soft-delete is non-destructive.
-
-For an accidental **hard-delete**, there is no in-panel undo (the row is gone).
-Recreate the plan from the audit log's last-known state — but note the new plan
-gets a new internal id, so this is genuinely a last resort. This is why
-hard-delete is guarded and discouraged.
+You cannot edit or delete a published version. To roll back, publish a **new**
+version whose content equals the previous one. Preview it first to see the
+reach.
 
 ---
 
 ## Related documentation
 
-- [ADR-020: Billing Plans — Source of Truth](../decisions/ADR-020-billing-plans-source-of-truth.md)
-  (superseded by SPEC-168; explains the prior code-only model)
+- [Billing and verticals](../../CLAUDE.md#billing-and-verticals-hos-1352)
 - [ADR-006: Integer Monetary Values](../decisions/ADR-006-integer-monetary-values.md)
+- [ADR-020: Billing Plans — Source of Truth](../decisions/ADR-020-billing-plans-source-of-truth.md)
+  (historical; superseded by the versioned catalog)
 - [ADR-009: Trial Host-Only](../decisions/ADR-009-trial-host-only.md) — **superseded**; kept as a historical record only
-- SPEC-168: `.claude/specs/SPEC-168-admin-plan-management/spec.md`
-- HOS-39: `.specs/HOS-39-plans-limits-entitlements-editable/spec.md` — narrowed
-  the Model C admin-editable field policy (entitlements/trial/sort-order
-  edits now persist; `category`/`isDefault` are not admin-editable)

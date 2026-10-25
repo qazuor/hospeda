@@ -56,8 +56,7 @@ Cross-cutting development guides. App-specific guides (adding pages, deployment,
 - [Mocking](testing/mocking.md)
 - [Test Factories](testing/test-factories.md)
 - [Coverage](testing/coverage.md)
-- [Billing QA Checklist](testing/billing-qa-checklist.md)
-- [Billing E2E Checklist](testing/billing-e2e-checklist.md)
+- [Billing Smoke Checklist](billing/smoke-checklist.md)
 - [Billing Manual Testing](testing/billing-manual-testing.md)
 
 ## Deployment

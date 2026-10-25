@@ -109,9 +109,11 @@ This document lists known security risks that have been reviewed and accepted. E
 
 ---
 
-## SEC-007: QZPay Library Routes Lack Per-Resource Ownership Verification
+## SEC-007: QZPay Library Routes Lack Per-Resource Ownership Verification (RESOLVED)
 
 **Source:** SPEC-019
+
+**Status:** Resolved (not applicable since HOS-1352): the `@qazuor/qzpay-hono` routes were removed along with the QZPay stack, and `apps/api/src/routes/index.ts` mounts no such library routes. The text below is kept as a historical record.
 
 **Description:** Routes provided by `@qazuor/qzpay-hono` (customers, subscriptions, invoices, payments, entitlements, checkout) only verify that the user is authenticated via `billingAuthMiddleware`. They do not verify that the authenticated user owns the specific resource being accessed. An authenticated user could potentially access another user's billing data by changing resource IDs in the URL.
 
