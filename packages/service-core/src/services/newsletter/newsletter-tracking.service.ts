@@ -157,7 +157,7 @@ export class NewsletterTrackingService extends BaseService {
             methodName: 'processBrevoWebhookEvent',
             input: { actor: SYSTEM_ACTOR, ...input },
             schema: ProcessBrevoWebhookEventInputSchema.extend({
-                actor: z.any()
+                actor: z.any().optional()
             }),
             execute: async (validated) => {
                 switch (validated.event) {

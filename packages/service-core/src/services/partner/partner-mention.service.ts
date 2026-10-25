@@ -346,7 +346,7 @@ export class PartnerMentionService extends BaseCrudService<
             input: { ...input, actor },
             schema: createPartnerMentionBatchSchema.extend({
                 partnerId: z.string().uuid(),
-                actor: z.any()
+                actor: z.any().optional()
             }),
             ctx,
             execute: async (validated, a) => {

@@ -707,7 +707,7 @@ export class TagService extends BaseCrudRelatedService<
         return this.runWithLoggingAndValidation({
             methodName: 'getImpactCount',
             input: { actor, tagId },
-            schema: z.object({ actor: z.any(), tagId: z.string().uuid() }),
+            schema: z.object({ actor: z.any().optional(), tagId: z.string().uuid() }),
             ctx,
             execute: async (validated, _actorArg, execCtx) => {
                 const tag = await this.model.findById(validated.tagId, execCtx?.tx);
@@ -747,7 +747,7 @@ export class TagService extends BaseCrudRelatedService<
         return this.runWithLoggingAndValidation({
             methodName: 'deleteTag',
             input: { actor, tagId },
-            schema: z.object({ actor: z.any(), tagId: z.string().uuid() }),
+            schema: z.object({ actor: z.any().optional(), tagId: z.string().uuid() }),
             ctx,
             execute: async (validated, _actorArg, execCtx) => {
                 const tag = await this.model.findById(validated.tagId, execCtx?.tx);
@@ -840,7 +840,7 @@ export class TagService extends BaseCrudRelatedService<
             methodName: 'getPickerTags',
             input: { actor, query: query ?? {} },
             schema: z.object({
-                actor: z.any(),
+                actor: z.any().optional(),
                 query: z.object({ search: z.string().optional() }).optional()
             }),
             ctx,
@@ -1139,7 +1139,7 @@ export class TagService extends BaseCrudRelatedService<
             methodName: 'assignTag',
             input: { actor, ...params },
             schema: z.object({
-                actor: z.any(),
+                actor: z.any().optional(),
                 tagId: z.string().uuid(),
                 entityId: z.string().uuid(),
                 entityType: z.nativeEnum(EntityTypeEnum)
@@ -1252,7 +1252,7 @@ export class TagService extends BaseCrudRelatedService<
             methodName: 'removeAssignment',
             input: { actor, ...params },
             schema: z.object({
-                actor: z.any(),
+                actor: z.any().optional(),
                 tagId: z.string().uuid(),
                 entityId: z.string().uuid(),
                 entityType: z.nativeEnum(EntityTypeEnum)
@@ -1320,7 +1320,7 @@ export class TagService extends BaseCrudRelatedService<
             methodName: 'listOwnTags',
             input: { actor, query: query ?? {} },
             schema: z.object({
-                actor: z.any(),
+                actor: z.any().optional(),
                 query: z
                     .object({
                         search: z.string().optional(),
@@ -1418,7 +1418,7 @@ export class TagService extends BaseCrudRelatedService<
             input: { actor, tagId, ...input },
             schema: z
                 .object({
-                    actor: z.any(),
+                    actor: z.any().optional(),
                     tagId: z.string().uuid()
                 })
                 .passthrough(),
@@ -1488,7 +1488,7 @@ export class TagService extends BaseCrudRelatedService<
         return this.runWithLoggingAndValidation({
             methodName: 'getOwnTagImpactCount',
             input: { actor, tagId },
-            schema: z.object({ actor: z.any(), tagId: z.string().uuid() }),
+            schema: z.object({ actor: z.any().optional(), tagId: z.string().uuid() }),
             ctx,
             execute: async (_validated, _actorArg, execCtx) => {
                 // Verify the tag exists and belongs to this actor.
@@ -1550,7 +1550,7 @@ export class TagService extends BaseCrudRelatedService<
         return this.runWithLoggingAndValidation({
             methodName: 'getQuotaStatus',
             input: { actor },
-            schema: z.object({ actor: z.any() }),
+            schema: z.object({ actor: z.any().optional() }),
             ctx,
             execute: async (_validated, _actorArg, execCtx) => {
                 const used = await this.model.countActiveByOwner(actor.id, execCtx?.tx);

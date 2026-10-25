@@ -403,7 +403,7 @@ export class QrCodeService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'resolveBySlug',
             input: { actor, slug },
-            schema: ResolveBySlugInputSchema.extend({ actor: z.any() }),
+            schema: ResolveBySlugInputSchema.extend({ actor: z.any().optional() }),
             ctx,
             execute: async () => {
                 const found = await this.model.findOne({ slug });
@@ -460,7 +460,7 @@ export class QrCodeService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'registerScan',
             input: { actor, qrCodeId, ...(context ?? {}) },
-            schema: RegisterScanInputSchema.extend({ actor: z.any() }),
+            schema: RegisterScanInputSchema.extend({ actor: z.any().optional() }),
             ctx,
             execute: async (validated) => {
                 // Spread from the VALIDATED object, never from `context`. The
@@ -526,7 +526,7 @@ export class QrCodeService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'findLiveCodeForEntity',
             input: { actor, entityType, entityId, purpose },
-            schema: EntityRefInputSchema.extend({ actor: z.any() }),
+            schema: EntityRefInputSchema.extend({ actor: z.any().optional() }),
             ctx,
             execute: async () => this._findLiveCodeForEntity({ entityType, entityId, purpose, ctx })
         });
@@ -623,7 +623,7 @@ export class QrCodeService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'getOrCreateForEntity',
             input: { actor, entityType, entityId, purpose, targetUrl, label },
-            schema: GetOrCreateForEntityInputSchema.extend({ actor: z.any() }),
+            schema: GetOrCreateForEntityInputSchema.extend({ actor: z.any().optional() }),
             ctx,
             execute: async (validated, validActor) => {
                 const existing = await this._findLiveCodeForEntity({
@@ -709,7 +709,7 @@ export class QrCodeService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'setEntityTargetUrl',
             input: { actor, entityType, entityId, purpose, targetUrl },
-            schema: SetEntityTargetUrlInputSchema.extend({ actor: z.any() }),
+            schema: SetEntityTargetUrlInputSchema.extend({ actor: z.any().optional() }),
             ctx,
             execute: async (validated, validActor) => {
                 const existing = await this._findLiveCodeForEntity({
@@ -776,7 +776,7 @@ export class QrCodeService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'getScanStatsForCode',
             input: { actor, qrCodeId, window },
-            schema: GetScanStatsForCodeInputSchema.extend({ actor: z.any() }),
+            schema: GetScanStatsForCodeInputSchema.extend({ actor: z.any().optional() }),
             ctx,
             execute: async (validated) => {
                 const windowDays = QR_SCAN_WINDOW_DAYS[validated.window];

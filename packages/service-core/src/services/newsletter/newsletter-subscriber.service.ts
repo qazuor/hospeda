@@ -2014,7 +2014,7 @@ export class NewsletterSubscriberService extends BaseService {
         return this.runWithLoggingAndValidation({
             methodName: 'getStatsByPreference',
             input: { actor },
-            schema: z.object({ actor: z.unknown() }),
+            schema: z.object({ actor: z.unknown().optional() }),
             ctx,
             execute: async () => {
                 checkCanViewSubscribers(actor);
