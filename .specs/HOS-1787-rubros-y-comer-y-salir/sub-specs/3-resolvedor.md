@@ -211,10 +211,10 @@ G-FAC-03 (a y b), G-FAC-04 y G-FAC-06.
 - **AC:3:1** — Test de matriz rubro × plan × sección × rasgo para los tres estados, **en las tres verticales**, incluida la fila
   «sección `locked` → rasgos `locked`» y `multiLine` (resto-bar básico con `menu` `locked` → `true`; boliche → `false`);
   mutación de cada rama.
-- **AC:3:2** — Las rutas de carta, menú del día, eventos y `nightInfo` pasan por el paso 4b y el paso 6: 409 / 403 / 2xx según el
+- **AC:3:2** — Las rutas de carta, menú del día y eventos pasan por el paso 4b y el paso 6: 409 / 403 / 2xx según el
   estado; un pedido ajeno sigue en 404; un ajeno en una operación que admite `PUBLISHED` recibe 404, no 409.
-- **AC:3:3** — PATCH que agrega `nightlife` y carga `nightInfo` en el mismo cuerpo → 2xx; que quita `nightlife` y la carga → 409;
-  alta de una HELADERIA con campos de `nightInfo` → 409.
+- **AC:3:3** — PATCH que agrega `food` y carga la carta en el mismo cuerpo → 2xx; que quita `food` y la carga → 409; alta
+  de un `BOLICHE` con campos de carta → 409 (DEC-FAC-085).
 - **AC:3:4** — Borrado en `locked`: `deleteMenuFile` y un PUT vacío pasan sin la clave; un PUT con contenido responde 403.
 - **AC:3:5** — `menuQr` y `menuQrScans` responden igual que hoy por plan (premium), sin 500.
 - **AC:3:6** — Un dueño con la suscripción vencida que abre la carta recibe `NO_COVERAGE`, no `NO_CAPABILITY`.

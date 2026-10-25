@@ -77,7 +77,8 @@ la fija el servidor, pero es contenido (se borra con el purge) y está en ambas.
 - **AC:4:1** — Migraciones aplicadas desde cero con todas las pendientes juntas.
 - **AC:4:2** — Tipos visibles en alta, filtros y chips (listas derivadas, con su test).
 - **AC:4:3** — `nightInfo` editable sólo en fichas con rubro `nightlife`: en las demás, 409 `SECTION_ABSENT` al
-  dueño; 404 a un tercero.
+  dueño; 404 a un tercero. PATCH que agrega `nightlife` y carga `nightInfo` en el mismo cuerpo → 2xx; que la quita y
+  la carga → 409; alta de una HELADERIA con campos de `nightInfo` → 409 (DEC-FAC-085).
 - **AC:4:4** — `nightInfo` renderizada en la ficha pública sólo cuando está `available`, con «De noche» cuando
   `multiLine`.
 - **AC:4:5** — La insignia «+N» muestra el texto legal fijo; `min_age` vacío no muestra nada.

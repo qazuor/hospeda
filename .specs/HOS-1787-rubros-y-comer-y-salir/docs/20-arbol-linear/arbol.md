@@ -139,11 +139,9 @@ label de la etapa más temprana de sus hojas: HOS-1801 +pre-corte-1352, HOS-1802
 
 ## Contradicciones que quedan en la spec
 
-1. **3 ↔ 4**: `AC:3:2` y `AC:3:3` nombran `nightInfo`, que nace en el sub-spec 4, y el 4 depende del 3. El árbol prueba
-   esos ACs en el 3 con secciones que ya existen y deja la parte literal de `nightInfo` en `AC:4:3`.
-2. `AC:6:13` verifica la tile de la home, que se renombra en el sub-spec 1 (`1.B5`): es una verificación, no trabajo del 6.
+1. `AC:6:13` verifica la tile de la home, que se renombra en el sub-spec 1 (`1.B5`): es una verificación, no trabajo del 6.
 
-Resueltas en esta vuelta: 7 sin el 4 (DEC-FAC-078), smoke del 9 (DEC-FAC-080), G-FAC-05 (incremental), alta entre la columna
+Resueltas en esta vuelta: 3 ↔ 4 (el literal de `nightInfo` pasó de `AC:3:2`/`AC:3:3` a `AC:4:3`, DEC-FAC-085), 7 sin el 4 (DEC-FAC-078), smoke del 9 (DEC-FAC-080), G-FAC-05 (incremental), alta entre la columna
 y el selector (DEC-FAC-079), etapa A sin criterio (ACs y G-FAC-T1), duplicados, 400 sin AC (`AC:2:12`) y la regla «una ficha
 = un local físico» (HOS-1810, DEC-FAC-081).
 

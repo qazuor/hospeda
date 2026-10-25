@@ -1088,3 +1088,10 @@ diseño y su criterio (`AC:5:5`) se conservan en el sub-spec 5. La hoja `5.6` de
 si falta.
 **Por qué**: el renombrado es bloqueante del corte V6 (DEC-FAC-028); hasta ahora sólo lo decía el texto.
 
+## DEC-FAC-085 · El literal de `nightInfo` sale del sub-spec 3
+**Fecha**: 2026-10-25 · **Decidió**: orquestador.
+**Qué**: `AC:3:2` deja de nombrar las rutas de `nightInfo` (quedan carta, menú del día y eventos) y `AC:3:3` se reescribe
+sobre una sección que ya existe: la carta (`menu`, ligada al rubro `food`; BOLICHE es `{nightlife}`, sub-spec 2). La
+versión con `nightInfo` (agregar `nightlife` y cargarla en el mismo PATCH, quitarla y cargarla, alta de una HELADERIA con
+sus campos) pasa a `AC:4:3`.
+**Por qué**: el sub-spec 4 depende del 3, así que un AC del 3 que nombra `nightInfo` no se podía cumplir en su hoja.
