@@ -692,7 +692,7 @@ export class EventService extends BaseCrudService<
     // shape consumers expect. These are the standard chokepoints:
     // `getById`/`getBySlug` go through `_afterGetByField`, `list()` and
     // `search()` through their own hooks, and `adminList` through
-    // `_afterAdminList`, which delegates to `_afterSearch` by default.
+    // `_afterAdminList`, which delegates to `_afterList` by default.
     //
     // WITHOUT this wiring the relational rows are written but never read: the
     // author persists photos successfully and they appear nowhere.
@@ -763,7 +763,7 @@ export class EventService extends BaseCrudService<
      * The JSONB column uses `start` and `end` keys as defined by EventDateSchema.
      *
      * The base admin-list lifecycle composes media through `_afterAdminList`,
-     * which delegates to `_afterSearch` (HOS-390).
+     * which delegates to `_afterList` (HOS-390).
      *
      * @param params - The assembled admin search parameters from the base class.
      * @returns A paginated list of events matching the criteria.

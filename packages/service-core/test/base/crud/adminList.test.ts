@@ -101,7 +101,7 @@ class AdminListWithRelationsService extends AdminListTestService {
     }
 }
 
-/** Test service that marks the paginated result from the search projection hook. */
+/** Test service that marks the paginated result from the `_afterList` projection hook. */
 class AdminListProjectionService extends AdminListTestService {
     protected override async _afterList(
         result: import('../../../src/types').PaginatedListOutput<TestEntity>
@@ -137,7 +137,7 @@ describe('BaseCrudRead: adminList', () => {
         service = createServiceTestInstance(AdminListTestService, modelMock);
     });
 
-    it('runs the post-search projection hook for admin results', async () => {
+    it('runs the list projection hook for admin results', async () => {
         // Arrange
         const projectionService = createServiceTestInstance(AdminListProjectionService, modelMock);
         asMock(modelMock.findAll).mockResolvedValue({ items: [], total: 2 });

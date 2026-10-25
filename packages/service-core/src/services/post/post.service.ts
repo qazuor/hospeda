@@ -378,7 +378,7 @@ export class PostService extends BaseCrudService<
     // expect. These are the standard chokepoints: `getById`/`getBySlug` go
     // through `_afterGetByField`, `list()` and `search()` through their own
     // hooks, and `adminList` through `_afterAdminList`, which delegates to
-    // `_afterSearch` by default.
+    // `_afterList` by default.
     //
     // WITHOUT this wiring the relational rows are written but never read: the
     // author persists photos successfully and they appear nowhere.

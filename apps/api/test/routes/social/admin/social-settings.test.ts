@@ -216,9 +216,7 @@ describe('admin social settings routes — SPEC-254 T-019', () => {
             expect(result.pagination).toBeDefined();
         });
 
-        it('secret values are masked (***) in list response', async () => {
-            // The service layer masks secret values before returning; the route
-            // simply passes through whatever the service returns.
+        it('returns the service result for list response', async () => {
             mockAdminList.mockResolvedValue({
                 data: { items: [SECRET_SETTING_MASKED_FIXTURE], total: 1 },
                 error: undefined
@@ -230,9 +228,7 @@ describe('admin social settings routes — SPEC-254 T-019', () => {
                 items: Array<{ key: string; value: string }>;
             };
 
-            const secretItem = result.items.find((i) => i.key === 'make_webhook_url');
-            expect(secretItem?.value).toBe('***');
-            expect(JSON.stringify(result)).not.toContain(SECRET_SETTING_RAW_FIXTURE.value);
+            expect(result.items).toEqual([SECRET_SETTING_MASKED_FIXTURE]);
         });
 
         it('throws ServiceError when service returns an error', async () => {

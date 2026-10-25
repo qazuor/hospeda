@@ -11,14 +11,19 @@
  * So the admin list rendered no cover images at all while `accommodation_media` held
  * the real rows.
  *
- * This is a true regression test: bypassing the admin projection leaves relational
- * photos absent.
+ * This is a regression test for the public adminList lifecycle wiring: it verifies
+ * that relational photos are present in the service response.
  */
 import { AccommodationModel } from '@repo/db';
+import type { Accommodation } from '@repo/schemas';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
-import type { ServiceConfig } from '../../../src/types';
+import type {
+    AdminSearchExecuteParams,
+    PaginatedListOutput,
+    ServiceConfig
+} from '../../../src/types';
 import { makeMediaModelStub } from '../../utils/modelMockFactory';
 
 vi.mock('../../../src/services/destination/destination.service', () => ({
@@ -75,32 +80,24 @@ const mockAdminActor = {
     permissions: Object.values(PermissionEnum)
 };
 
-function callAfterAdminList(
-    service: AccommodationService,
-    result: { items: ReturnType<typeof buildAccommodationRow>[]; total: number }
-): Promise<{ items: { media?: Record<string, unknown> }[]; total: number }> {
-    type WithAdminListProjection = {
-        _afterAdminList: (
-            page: { items: ReturnType<typeof buildAccommodationRow>[]; total: number },
-            actor: typeof mockAdminActor,
-            ctx: Record<string, never>
-        ) => Promise<{ items: { media?: Record<string, unknown> }[]; total: number }>;
-    };
-    return (service as unknown as WithAdminListProjection)._afterAdminList(
-        result,
-        mockAdminActor,
-        {}
-    );
+class AccommodationAdminListFixture extends AccommodationService {
+    public rows: ReturnType<typeof buildAccommodationRow>[] = [];
+
+    protected override async _executeAdminSearch(
+        _params: AdminSearchExecuteParams
+    ): Promise<PaginatedListOutput<Accommodation>> {
+        return { items: this.rows as unknown as Accommodation[], total: this.rows.length };
+    }
 }
 
 describe('AccommodationService admin list — relational media composition (HOS-372)', () => {
-    let service: AccommodationService;
+    let service: AccommodationAdminListFixture;
     let mediaModel: ReturnType<typeof makeMediaModelStub>;
 
     beforeEach(() => {
         vi.clearAllMocks();
         mediaModel = makeMediaModelStub();
-        service = new AccommodationService(
+        service = new AccommodationAdminListFixture(
             {} as ServiceConfig,
             new AccommodationModel() as never,
             undefined,
@@ -136,12 +133,10 @@ describe('AccommodationService admin list — relational media composition (HOS-
             ])
         );
 
-        const result = await callAfterAdminList(service, {
-            items: [buildAccommodationRow()],
-            total: 1
-        });
+        service.rows = [buildAccommodationRow()];
+        const result = await service.adminList(mockAdminActor, {});
 
-        const media = result.items[0]?.media as
+        const media = result.data?.items?.[0]?.media as
             | { featuredImage?: { url?: string }; gallery?: { url?: string }[] }
             | undefined;
         expect(media?.featuredImage?.url).toBe(RELATIONAL_FEATURED_URL);
@@ -151,13 +146,11 @@ describe('AccommodationService admin list — relational media composition (HOS-
 
     it('batches the media lookup into a single query for the whole page (no N+1)', async () => {
         const secondId = '00000000-0000-4000-8000-000000000302';
-        await callAfterAdminList(service, {
-            items: [
-                buildAccommodationRow(),
-                buildAccommodationRow({ id: secondId, slug: 'otra-cabana' })
-            ],
-            total: 2
-        });
+        service.rows = [
+            buildAccommodationRow(),
+            buildAccommodationRow({ id: secondId, slug: 'otra-cabana' })
+        ];
+        await service.adminList(mockAdminActor, {});
 
         expect(mediaModel.findByAccommodations).toHaveBeenCalledTimes(1);
         expect(mediaModel.findByAccommodations).toHaveBeenCalledWith(
@@ -166,9 +159,10 @@ describe('AccommodationService admin list — relational media composition (HOS-
     });
 
     it('returns an empty result untouched without hitting the media model', async () => {
-        const result = await callAfterAdminList(service, { items: [], total: 0 });
+        service.rows = [];
+        const result = await service.adminList(mockAdminActor, {});
 
-        expect(result.items).toHaveLength(0);
+        expect(result.data?.items).toHaveLength(0);
         expect(mediaModel.findByAccommodations).not.toHaveBeenCalled();
     });
 });
