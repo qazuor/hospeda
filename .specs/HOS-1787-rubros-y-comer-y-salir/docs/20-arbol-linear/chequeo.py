@@ -18,6 +18,11 @@ de verdad de los guards) y el árbol propuesto. Falla con exit 1 si:
   (i) una hoja no declara «**Sub-spec:** sub-specs/<archivo> § «…»» con su archivo y
       secciones reales.
 
+  (j) una hoja no declara `etapa` válida (`pre-corte`, `mvp`, `post-mvp`, DEC-FAC-082), su
+      label de etapa no coincide, una hoja `pre-corte` depende de una `mvp`/`post-mvp` o una
+      `mvp` depende de una `post-mvp`; o el label que se agrega a un hijo existente no es el
+      de la etapa más temprana de sus hojas.
+
 Extras defensivos: texto verbatim de cada AC en la descripción de su hoja, «Fuera de
 alcance» presente, ids DEC-FAC existentes, hojas sin AC sólo con «Sin AC propio», hojas de
 más de 4 ACs, labels fuera del conjunto permitido, existentes duplicadas o fuera del
@@ -40,13 +45,15 @@ AC_TOKEN = re.compile(r"\*\*(AC:\d+:\d+)\*\* — ")
 
 # Snapshot informado por el orquestador el 2026-10-25 (issues y relaciones ya en Linear).
 LINEAR_CONOCIDAS = {"HOS-1787", *(f"HOS-{n}" for n in range(1801, 1810))}
-EXTERNAS_CONOCIDAS = {"HOS-1798", "HOS-1797"}
+EXTERNAS_CONOCIDAS = {"HOS-1798", "HOS-1797", "HOS-1352"}
+RELACIONADAS_CONOCIDAS = {"HOS-1810"}
+ETAPAS = ("pre-corte", "mvp", "post-mvp")   # en orden: una etapa sólo puede depender de sí misma o de las anteriores
 RELACIONES_LINEAR = {  # (dependiente, bloqueante) en claves del árbol
     ("1", "HOS-1798"), ("2", "1"), ("3", "2"), ("4", "2"), ("4", "3"), ("9", "1"), ("9", "2"),
     ("5", "3"), ("5", "4"), ("5", "9"), ("6", "3"), ("6", "4"), ("6", "9"), ("6", "HOS-1797"),
     ("7", "2"), ("7", "3"), ("8", "3"),
 }
-LABELS_OK = {"kind-spec", "source-owner", "status-needs-smoke-staging", "area-web", "area-admin", "area-api",
+LABELS_OK = {"kind-spec", "source-agent", "status-needs-smoke-staging", "pre-corte-1352", "pre_v1_product", "post_v1", "area-web", "area-admin", "area-api",
              "area-db", "area-auth", "area-billing", "area-content", "area-devops"}
 
 
@@ -77,7 +84,7 @@ def spec_acs():
 
 def spec_guards():
     text = GUARDS_MD.read_text(encoding="utf-8")
-    return {m.group(1): int(m.group(2)) for m in re.finditer(r"^\| (G-FAC-[0-9R]+) \| sub-spec (\d) \|", text, re.M)}
+    return {m.group(1): int(m.group(2)) for m in re.finditer(r"^\| (G-FAC-[0-9A-Z]+) \| sub-spec (\d) \|", text, re.M)}
 
 
 def headings(fname):
@@ -91,6 +98,9 @@ def main():
     externas = set(data.get("externas", {}))
     fallos = []
 
+    relacionadas = set(data.get("relacionadas", {}))
+    if relacionadas - RELACIONADAS_CONOCIDAS:
+        fallos.append(f"relacionadas desconocidas: {sorted(relacionadas - RELACIONADAS_CONOCIDAS)}")
     if externas - EXTERNAS_CONOCIDAS:
         fallos.append(f"externas desconocidas: {sorted(externas - EXTERNAS_CONOCIDAS)}")
     claves = [n["clave"] for n in nodos]
@@ -163,9 +173,14 @@ def main():
     hoja_claves = {n["clave"] for n in hojas}
     conteo_ac, conteo_g = Counter(), Counter()
     for n in nodos:
-        for lab in n["labels"]:
+        for lab in n["labels"] + n.get("labels_agregar", []):
             if lab not in LABELS_OK:
                 fallos.append(f"label no permitido en {n['clave']}: {lab}")
+        if not n["existente"] and "source-agent" not in n["labels"]:
+            fallos.append(f"nodo nuevo sin `source-agent`: {n['clave']}")
+        for d in n["depende_de"]:
+            if d in relacionadas:
+                fallos.append(f"{n['clave']} depende de una issue sólo relacionada: {d}")
         if (n["acs"] or n.get("guards")) and n["clave"] not in hoja_claves:
             fallos.append(f"(g) nodo no-hoja con ACs o guards: {n['clave']}")
     sin_hojas = set(data.get("sin_hojas", {}))
@@ -241,12 +256,16 @@ def main():
         fallos.append(f"sub-specs sin hojas: {sorted(subspecs - con_hoja)}")
 
     # (h) orden entre hijos
-    rel = {(r["dependiente"], r["bloqueante"]) for r in data.get("relaciones_hijo", [])}
-    prop = {(r["dependiente"], r["bloqueante"]) for r in data.get("relaciones_hijo_propuestas", [])}
+    rel = {(r["dependiente"], r["bloqueante"]) for r in data.get("relaciones_hijo", []) if r.get("existe_en_linear")}
+    prop = {(r["dependiente"], r["bloqueante"]) for r in data.get("relaciones_hijo", []) if not r.get("existe_en_linear")}
     if rel != RELACIONES_LINEAR:
-        fallos.append(f"(h) relaciones_hijo ≠ snapshot de Linear: faltan {sorted(RELACIONES_LINEAR - rel)}; sobran {sorted(rel - RELACIONES_LINEAR)}")
-    if prop & rel:
-        fallos.append(f"(h) relaciones propuestas que ya existen: {sorted(prop & rel)}")
+        fallos.append(f"(h) relaciones_hijo existentes ≠ snapshot de Linear: faltan {sorted(RELACIONES_LINEAR - rel)}; sobran {sorted(rel - RELACIONES_LINEAR)}")
+    if prop & RELACIONES_LINEAR:
+        fallos.append(f"(h) relaciones a crear que ya existen en Linear: {sorted(prop & RELACIONES_LINEAR)}")
+    for a, b in prop:
+        for x in (a, b):
+            if x not in externas and not (x in by and by[x]["padre"] == raiz and by[x]["existente"]):
+                fallos.append(f"(h) relación a crear con un extremo que no es hijo existente ni externa: {a} ← {b}")
     grafo = {}
     for a, b in rel | prop:
         grafo.setdefault(a, set()).add(b)
@@ -276,11 +295,44 @@ def main():
             elif (hx, hy) in rel | prop:
                 materializadas.add((hx, hy))
     for par in sorted((rel | prop) - materializadas):
-        if par[0] not in sin_hojas:
+        if par[0] not in sin_hojas and par[0] not in externas:
             fallos.append(f"(h) relación de hijos sin arista entre hojas: {par[0]} ← {par[1]}")
     for n in nodos:
-        if n["existente"] and n["padre"] == raiz and set(n["depende_de"]) != {b for a, b in rel if a == n["clave"]}:
+        if n["existente"] and n["padre"] == raiz and set(n["depende_de"]) != {b for a, b in rel | prop if a == n["clave"]}:
             fallos.append(f"(h) depende_de del hijo {n['clave']} ≠ relaciones_hijo")
+
+    # (j) etapas
+    etapa_label = data.get("etapa_label", {})
+    if set(etapa_label) != set(ETAPAS):
+        fallos.append(f"(j) etapa_label no cubre {ETAPAS}: {sorted(etapa_label)}")
+    etapa_de = {}
+    for n in hojas:
+        if n["existente"]:
+            continue
+        e = n.get("etapa")
+        if e not in ETAPAS:
+            fallos.append(f"(j) hoja sin etapa válida: {n['clave']} ({e!r})")
+            continue
+        etapa_de[n["clave"]] = e
+        de_etapa = [l for l in n["labels"] if l in etapa_label.values()]
+        if de_etapa != [etapa_label.get(e)]:
+            fallos.append(f"(j) {n['clave']}: labels de etapa {de_etapa}, esperaba [{etapa_label.get(e)}]")
+        if f"**Etapa:** `{e}`" not in n["descripcion"]:
+            fallos.append(f"(j) {n['clave']}: la descripción no declara su etapa")
+    for k, e in etapa_de.items():
+        for d in by[k]["depende_de"]:
+            if d in etapa_de and ETAPAS.index(etapa_de[d]) > ETAPAS.index(e):
+                fallos.append(f"(j) {k} ({e}) depende de {d} ({etapa_de[d]})")
+    for n in nodos:
+        if n["existente"] and n["padre"] == raiz:
+            mias = [etapa_de[h["clave"]] for h in hojas if h["clave"] in etapa_de and hijo_de(h["clave"]) == n["clave"]]
+            agrega = n.get("labels_agregar", [])
+            if len(agrega) != 1 or agrega[0] not in etapa_label.values():
+                fallos.append(f"(j) hijo {n['clave']}: labels_agregar debe ser un label de etapa: {agrega}")
+            elif mias and agrega[0] != etapa_label[min(mias, key=ETAPAS.index)]:
+                fallos.append(f"(j) hijo {n['clave']}: agrega {agrega[0]}, pero su etapa más temprana es {min(mias, key=ETAPAS.index)}")
+            elif not mias and n["clave"] not in sin_hojas:
+                fallos.append(f"(j) hijo {n['clave']} sin hojas con etapa")
 
     # existentes
     vistos = Counter(n["existente"] for n in nodos if n["existente"])
@@ -296,12 +348,13 @@ def main():
             print("  ·", f)
         sys.exit(1)
     sin_ac = sum(1 for n in hojas if not n["existente"] and not n["acs"] and not n.get("guards"))
+    por_etapa = {e: sum(1 for v in etapa_de.values() if v == e) for e in ETAPAS}
     print(f"✓ árbol sano: {len(nodos)} nodos · {len([h for h in hojas if not h['existente']])} hojas de PR "
           f"({sin_ac} sin AC propio) · {len(conteo_ac)}/{len(acs)} ACs y {len(conteo_g)}/{len(guards)} guards cubiertos, "
-          f"cada uno en una sola hoja · {len(subspecs)} sub-specs · sin ciclos · orden de hijos respetado")
+          f"cada uno en una sola hoja · {len(subspecs)} sub-specs · sin ciclos · orden de hijos y de etapas respetado · "
+          + " / ".join(f"{e}: {c}" for e, c in por_etapa.items()))
     if prop:
-        print("  ⚠ relaciones de hijos PROPUESTAS (no existen en Linear, decide el owner): "
-              + "; ".join(f"{a} ← {b}" for a, b in sorted(prop)))
+        print("  relaciones de hijos a crear en Linear: " + "; ".join(f"{a} ← {b}" for a, b in sorted(prop)))
     sys.exit(0)
 
 

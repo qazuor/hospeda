@@ -11,7 +11,8 @@ revised: 2026-10-25 (resolución de la vuelta 3)
 
 Decisiones: DEC-FAC-005, 019, 026, 031, 034, de la vuelta 2: 047, 048, 056, 057, y de las respuestas del owner:
 065 (dimensiones de reseña) y 067 (frontera de tipos), y de la vuelta 3: 074 (`businessLines` es no-contenido) y 075
-(soporte no vacía secciones `absent`). Depende de 2 y 3.
+(soporte no vacía secciones `absent`). Depende de 2, 3 y **4** (DEC-FAC-078: el PATCH de admin con campos de
+`nightInfo` y el selector de tipo derivado del enum vienen del 4).
 
 - Los rubros aparecen en el formulario consolidado de la ficha (grupo de checkboxes derivado del
   catálogo; las opciones habilitadas salen de `resolveBusinessLineOptions`, DEC-FAC-047; mínimo uno; misma

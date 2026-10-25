@@ -47,11 +47,21 @@ Prod casi no tiene datos de la vertical (el owner confirma que no hay fichas rea
 **Etapa A · renombrado lógico (varios PRs).** Nombres en el código, carpetas y tipos (`Gastronomy*` →
 `Venue*`, `GastronomyVenueEvents*` → `VenueEvents*`, hooks, componentes, namespace i18n), con los
 identificadores que tocan base o contratos todavía **apuntando a lo viejo** (`pgTable('gastronomies', …)`,
-valores de enum, rutas, URLs). Sin migración ni cambio de contrato; cada PR deja staging sano. Un guard
-temporal de frontera (lista de los literales viejos que quedan) baja a cero al cerrar la etapa B.
+valores de enum, rutas, URLs). Sin migración ni cambio de contrato; cada PR deja staging sano. Cada PR renombra **una familia de símbolos con
+todos sus consumidores**, sin alias temporales. Un guard temporal de frontera, **G-FAC-T1** (`../docs/06-guards.md`;
+lista contada de los literales viejos que quedan), nace en el primer PR, baja PR a PR y se retira al cerrar la etapa B,
+cuando nace G-FAC-R1.
 
 **Etapa B · renombrado físico (UN PR atómico).** Migración física, valores persistidos, contratos de API
 (`/api/v1/*/venues`), URLs y redirects, edición de las cinco migraciones 0129/0132/0139/0144/0176 (DEC-FAC-029, 060) y reset de staging.
+
+**La etapa B se integra en una umbrella** (DEC-FAC-077), con la convención `epic/**` del repo (DEC-CI-001, sección
+«Umbrella integration branches» del CLAUDE.md): `epic/HOS-1801-renombrado-fisico`, cortada de `staging` después de la
+etapa A. Los tramos de revisión son PRs a la umbrella; `staging` se mergea en la umbrella periódicamente; el **único**
+PR a `staging` es el de la propia umbrella, y `scripts/check-umbrella-branch-target.sh` cierra cualquier otro camino.
+Entre tramos la umbrella puede estar en rojo (un tramo solo no compila contra la base renombrada); el PR de la umbrella
+exige CI completo en verde. Hoy ese guard vigila **una** umbrella (`UMBRELLA_BRANCH`, default
+`epic/HOS-1352-verticales-billing`): se extiende para vigilar también esta, en un PR a `staging` **antes** de cortarla.
 
 **Ventana de mantenimiento en staging, orden fijo**:
 1. cancelar las preapprovals huérfanas del sandbox de MercadoPago (antes de perder el ancla local);
@@ -278,9 +288,25 @@ nace rojo): clave `home.categoryTiles.tiles.gastronomy` → `foodEvents` (nombre
 - **AC:1:10** — G-FAC-R1 verde con los tests de historia sin tocar y el chequeo de valores de las cinco editadas en verde.
 - **AC:1:11** — Marcha atrás escrita como revert + reset en staging y restauración del backup del paso 2b en prod
   (DEC-FAC-061), con la lista de lo que no vuelve; sin migración inversa.
-- **AC:1:12** — `db:migrate` desde cero con las **cinco** migraciones editadas en verde (primer chequeo, antes de cualquier otro).
-- **AC:1:13** — Una mutación posterior al renombrado por cada guard atado al nombre.
-- **AC:1:14** — Smoke en staging (`status-needs-smoke-staging`) tras la ventana: redirects 302 (incluido `/carta/` y un
+- **AC:1:12** — Una mutación posterior al renombrado por cada guard atado al nombre.
+- **AC:1:13** — Smoke en staging (`status-needs-smoke-staging`) tras la ventana: redirects 302 (incluido `/carta/` y un
   escaneo `/qr/<slug>/` de un salto), alta y edición de un local, checkout de un plan de la vertical con el título
   «Comer y salir Básico» en el resumen de MP, Cloudinary (fotos de ejemplo bajo `venues/`), cache.
-- **AC:1:15** — El corte V6 de HOS-1352 no se ejecuta hasta que la etapa B esté mergeada y verificada en staging.
+- **AC:1:14** — El corte V6 de HOS-1352 no se ejecuta hasta que la etapa B esté mergeada y verificada en staging.
+- **AC:1:15** — Etapa A, PR 1: nace G-FAC-T1 (frontera temporal) en verde, con su lista contada de literales viejos y una
+  mutación que lo rompe; los identificadores de `@repo/schemas` pasan a `Venue*` con todos sus consumidores, sin
+  alias temporales; CI verde en el PR.
+- **AC:1:16** — Etapa A, PR 2: modelos, servicios y utilidades de dominio (`packages/db`, `service-core`, `verticals`,
+  `apps/api`) en `Venue*` con todos sus consumidores, sin alias temporales; G-FAC-T1 en verde con un conteo
+  menor que el del PR anterior; CI verde en el PR.
+- **AC:1:17** — Etapa A, PR 3: componentes, hooks, islas y archivos de `apps/web` en `Venue*`, sin alias temporales; G-FAC-T1 en
+  verde con un conteo menor que el del PR anterior; CI verde en el PR.
+- **AC:1:18** — Etapa A, PR 4: config consolidada, formularios y componentes de `apps/admin` en `Venue*`, sin alias temporales;
+  G-FAC-T1 en verde con un conteo menor que el del PR anterior; CI verde en el PR.
+- **AC:1:19** — Etapa A, PR 5: el namespace i18n `gastronomy` pasa a `venue` (`packages/i18n`, `config.shared.ts`,
+  `check-locales.ts`) con todos sus consumidores, sin alias temporales; G-FAC-T1 en verde con un conteo menor
+  que el del PR anterior; CI verde en el PR.
+- **AC:1:20** — Cuando nace G-FAC-R1, G-FAC-T1 llega a cero y se retira (script, test y paso de CI) en el mismo tramo.
+- **AC:1:21** — `scripts/check-umbrella-branch-target.sh` vigila también `epic/HOS-1801-renombrado-fisico` sin dejar de vigilar
+  la umbrella de HOS-1352: un PR a `staging` desde una rama con commits propios de esa umbrella es rojo
+  (mutación) y el PR de la propia umbrella pasa.

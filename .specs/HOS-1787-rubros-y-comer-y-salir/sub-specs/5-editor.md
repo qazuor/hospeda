@@ -102,13 +102,17 @@ cambia lo que ve el público.
   llevando al hub, y el hub muestra un resumen «guardado y oculto por tus rubros» con conteos y el botón «vaciar»
   (intención `delete`, admitida en `absent` sólo cuando el actor es el dueño, no para soporte, DEC-FAC-075). No se edita: para editar, se vuelve a
   agregar el rubro. La exportación del dueño incluye todo lo guardado.
-- **Aviso antes de bajar de plan** (DEC-FAC-064, Q-15, MVP). Ver la sección de abajo.
+- **Aviso antes de bajar de plan** (DEC-FAC-064, Q-15; **post-MVP** por DEC-FAC-083). Ver la sección de abajo.
 - El hub (`listing-editor-hub-status-model.ts`) distingue «bloqueada con datos (cargada pero oculta por tu
   plan)» de «bloqueada vacía».
 - Aviso en el editor y en la vista previa del dueño cuando una sección tiene datos que no se publican, con
   el motivo (plan o rubro).
 
 ## Aviso antes de bajar de plan (DEC-FAC-064)
+
+> **Post-MVP** (DEC-FAC-083): el diseño queda y su criterio de aceptación sigue en este sub-spec, pero se implementa
+> después del lanzamiento v1. Ninguna otra parte de este hijo depende de él; cuando entre, suma su archivo al escaneo de
+> G-FAC-05.
 
 - **Dónde**: en la confirmación de bajada del web (`mi-cuenta`, flujo de cambio de plan), antes de llamar a la ruta
   de billing. Billing **no** lee rubros ni secciones (G-FAC-07): el aviso lo arma el lado de verticales.
@@ -135,13 +139,16 @@ seen-ids (DEC-FAC-054).
 
 ## Dependencia de producto
 
-La regla «una ficha = un local físico = una dirección» (issue aparte) tiene que definir la clave (¿dirección
-+ unidad o piso?) y las excepciones (dos negocios con marcas y horarios distintos en el mismo número, patios
-gastronómicos, restaurante abierto al público de un hotel) antes de implementar este sub-spec (F-V1-046).
+La regla «una ficha = un local físico = una dirección» va en una issue aparte (**HOS-1810**), **relacionada** con HOS-1787 y **sin
+bloquear** nada (DEC-FAC-081): define la clave (¿dirección + unidad o piso?) y las excepciones (dos negocios con marcas y
+horarios distintos en el mismo número, patios gastronómicos, restaurante abierto al público de un hotel) (F-V1-046).
+Este sub-spec no la espera.
 
 ## Guards
 
-G-FAC-05 (lista cerrada de archivos) y G-FAC-08 (lista manual de alojamiento congelada).
+G-FAC-05 (lista cerrada de archivos) y G-FAC-08 (lista manual de alojamiento congelada). G-FAC-05 nace en este hijo
+con los archivos del editor; los PRs de los sub-specs 6 y 7 que migran superficies de su lista suman sus archivos al
+escaneo (ver `../docs/06-guards.md`).
 
 ## Criterio de aceptación
 
@@ -160,3 +167,5 @@ G-FAC-05 (lista cerrada de archivos) y G-FAC-08 (lista manual de alojamiento con
 - **AC:5:8** — El upsell de la carta en plan básico no promete archivo ni enlace (es/en/pt).
 - **AC:5:9** — Alojamiento y experiencia no muestran selector de rubro.
 - **AC:5:10** — El editor de alojamiento es idéntico al de antes y G-FAC-08 lo prueba.
+- **AC:5:11** — Smoke en staging (`status-needs-smoke-staging`): alta como boliche desde publicar y recibir el primer correo de
+  la serie de prueba (movido del sub-spec 9, DEC-FAC-080).

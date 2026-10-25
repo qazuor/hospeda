@@ -4,83 +4,121 @@
  "fuente": "sub-specs tokenizados + docs/06-guards.md + relaciones de Linear informadas por el orquestador (sin consulta remota)",
  "externas": {
   "HOS-1798": "reescribir el bloque de billing del CLAUDE.md (bloquea el arranque del 1)",
-  "HOS-1797": "paginación compartida (bloquea el 6)"
+  "HOS-1797": "paginación compartida (bloquea el 6)",
+  "HOS-1352": "el programa cuyo corte V6 bloquea el renombrado (DEC-FAC-084)"
  },
+ "relacionadas": {
+  "HOS-1810": "«una ficha = un local físico = una dirección», relacionada sin bloquear (DEC-FAC-081)"
+ },
+ "etapa_label": {
+  "pre-corte": "pre-corte-1352",
+  "mvp": "pre_v1_product",
+  "post-mvp": "post_v1"
+ },
+ "labels_a_crear": [
+  {
+   "nombre": "pre-corte-1352",
+   "color": "#DC2626",
+   "descripcion": "Debe estar mergeado antes de que HOS-1352 promocione staging → main"
+  }
+ ],
  "relaciones_hijo": [
   {
    "dependiente": "1",
-   "bloqueante": "HOS-1798"
+   "bloqueante": "HOS-1798",
+   "existe_en_linear": true
   },
   {
    "dependiente": "2",
-   "bloqueante": "1"
+   "bloqueante": "1",
+   "existe_en_linear": true
   },
   {
    "dependiente": "3",
-   "bloqueante": "2"
+   "bloqueante": "2",
+   "existe_en_linear": true
   },
   {
    "dependiente": "4",
-   "bloqueante": "2"
+   "bloqueante": "2",
+   "existe_en_linear": true
   },
   {
    "dependiente": "4",
-   "bloqueante": "3"
+   "bloqueante": "3",
+   "existe_en_linear": true
   },
   {
    "dependiente": "9",
-   "bloqueante": "1"
+   "bloqueante": "1",
+   "existe_en_linear": true
   },
   {
    "dependiente": "9",
-   "bloqueante": "2"
+   "bloqueante": "2",
+   "existe_en_linear": true
   },
   {
    "dependiente": "5",
-   "bloqueante": "3"
+   "bloqueante": "3",
+   "existe_en_linear": true
   },
   {
    "dependiente": "5",
-   "bloqueante": "4"
+   "bloqueante": "4",
+   "existe_en_linear": true
   },
   {
    "dependiente": "5",
-   "bloqueante": "9"
+   "bloqueante": "9",
+   "existe_en_linear": true
   },
   {
    "dependiente": "6",
-   "bloqueante": "3"
+   "bloqueante": "3",
+   "existe_en_linear": true
   },
   {
    "dependiente": "6",
-   "bloqueante": "4"
+   "bloqueante": "4",
+   "existe_en_linear": true
   },
   {
    "dependiente": "6",
-   "bloqueante": "9"
+   "bloqueante": "9",
+   "existe_en_linear": true
   },
   {
    "dependiente": "6",
-   "bloqueante": "HOS-1797"
+   "bloqueante": "HOS-1797",
+   "existe_en_linear": true
   },
   {
    "dependiente": "7",
-   "bloqueante": "2"
+   "bloqueante": "2",
+   "existe_en_linear": true
   },
   {
    "dependiente": "7",
-   "bloqueante": "3"
+   "bloqueante": "3",
+   "existe_en_linear": true
   },
   {
    "dependiente": "8",
-   "bloqueante": "3"
-  }
- ],
- "relaciones_hijo_propuestas": [
+   "bloqueante": "3",
+   "existe_en_linear": true
+  },
   {
    "dependiente": "7",
    "bloqueante": "4",
-   "motivo": "AC:7:2 (PATCH de admin con campos de `nightInfo`) necesita las columnas de `4.2`, y el selector de tipo derivado del admin lo hace `4.1`; hoy 1808 sólo está bloqueado por 1802 y 1803."
+   "existe_en_linear": false,
+   "motivo": "DEC-FAC-078: el admin necesita las columnas y el selector derivado del 4."
+  },
+  {
+   "dependiente": "HOS-1352",
+   "bloqueante": "1",
+   "existe_en_linear": false,
+   "motivo": "DEC-FAC-084: el renombrado bloquea el corte V6 de HOS-1352."
   }
  ],
  "sin_hojas": {
@@ -97,7 +135,7 @@
    "depende_de": [],
    "labels": [
     "kind-spec",
-    "source-owner"
+    "source-agent"
    ],
    "existente": "HOS-1787"
   },
@@ -113,7 +151,10 @@
    ],
    "labels": [
     "kind-spec",
-    "source-owner"
+    "source-agent"
+   ],
+   "labels_agregar": [
+    "pre-corte-1352"
    ],
    "existente": "HOS-1801"
   },
@@ -129,7 +170,10 @@
    ],
    "labels": [
     "kind-spec",
-    "source-owner"
+    "source-agent"
+   ],
+   "labels_agregar": [
+    "pre_v1_product"
    ],
    "existente": "HOS-1802"
   },
@@ -145,7 +189,10 @@
    ],
    "labels": [
     "kind-spec",
-    "source-owner"
+    "source-agent"
+   ],
+   "labels_agregar": [
+    "pre_v1_product"
    ],
    "existente": "HOS-1803"
   },
@@ -162,7 +209,10 @@
    ],
    "labels": [
     "kind-spec",
-    "source-owner"
+    "source-agent"
+   ],
+   "labels_agregar": [
+    "pre_v1_product"
    ],
    "existente": "HOS-1804"
   },
@@ -179,7 +229,10 @@
    ],
    "labels": [
     "kind-spec",
-    "source-owner"
+    "source-agent"
+   ],
+   "labels_agregar": [
+    "pre_v1_product"
    ],
    "existente": "HOS-1805"
   },
@@ -197,7 +250,10 @@
    ],
    "labels": [
     "kind-spec",
-    "source-owner"
+    "source-agent"
+   ],
+   "labels_agregar": [
+    "pre_v1_product"
    ],
    "existente": "HOS-1806"
   },
@@ -216,7 +272,10 @@
    ],
    "labels": [
     "kind-spec",
-    "source-owner"
+    "source-agent"
+   ],
+   "labels_agregar": [
+    "pre_v1_product"
    ],
    "existente": "HOS-1807"
   },
@@ -229,11 +288,15 @@
    "guards": [],
    "depende_de": [
     "2",
-    "3"
+    "3",
+    "4"
    ],
    "labels": [
     "kind-spec",
-    "source-owner"
+    "source-agent"
+   ],
+   "labels_agregar": [
+    "pre_v1_product"
    ],
    "existente": "HOS-1808"
   },
@@ -249,7 +312,10 @@
    ],
    "labels": [
     "kind-spec",
-    "source-owner"
+    "source-agent"
+   ],
+   "labels_agregar": [
+    "post_v1"
    ],
    "existente": "HOS-1809"
   },
@@ -257,27 +323,29 @@
    "clave": "1.A",
    "padre": "1",
    "titulo": "1 · Etapa A · Renombrado lógico, varios PRs verdes (subgrupo)",
-   "descripcion": "Issue intermedia (NUEVA): agrupa los PRs de la etapa A de DEC-FAC-030. Cada hijo se mergea solo a `staging` con CI verde; ninguno toca base, contratos ni URLs. No se programa sola: sus hijos llevan el trabajo.",
+   "descripcion": "Issue intermedia (NUEVA): agrupa los PRs de la etapa A de DEC-FAC-030. Cada hijo se mergea solo a `staging` con CI verde; ninguno toca base, contratos ni URLs; G-FAC-T1 vigila la frontera. No se programa sola: sus hijos llevan el trabajo.",
    "acs": [],
    "guards": [],
    "depende_de": [],
    "labels": [
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
    "existente": null
   },
   {
    "clave": "1.B",
    "padre": "1",
-   "titulo": "1 · Etapa B · Renombrado físico, un único merge a staging (subgrupo)",
-   "descripcion": "Issue intermedia (NUEVA): la etapa B de DEC-FAC-030 es **un PR atómico** a `staging` (migración física, valores, contratos, URLs, las cinco migraciones editadas y reset). Para que se pueda revisar, se trocea en **tramos apilados** sobre una rama de integración `spec/HOS-1801-etapa-b` cortada de `staging` después de la etapa A: cada tramo es un PR a esa rama, revisado por separado; entre tramos la rama **puede estar en rojo** (un tramo solo no compila contra la base renombrada). El único merge a `staging` es el de `1.B9`, con CI completo en verde. El corte V6 nunca cae entre dos tramos porque ninguno llega a `staging` antes que `1.B9`.",
+   "titulo": "1 · Etapa B · Renombrado físico en la umbrella epic/HOS-1801-renombrado-fisico (subgrupo)",
+   "descripcion": "Issue intermedia (NUEVA): la etapa B de DEC-FAC-030 es **un único merge** a `staging` (migración física, valores, contratos, URLs, las cinco migraciones editadas y reset). Se integra en la umbrella `epic/HOS-1801-renombrado-fisico` (DEC-FAC-077, convención `epic/**` de DEC-CI-001): `1.B0` extiende `check-umbrella-branch-target.sh` en `staging` y después se corta la umbrella de `staging`; `1.B1`…`1.B8` son PRs de tramo a la umbrella (CI rojo admitido entre tramos), `staging` se mergea en la umbrella periódicamente, y `1.B9` es el PR de la umbrella a `staging`, con CI completo en verde. El corte V6 nunca cae entre dos tramos porque ninguno llega a `staging` antes que `1.B9`.",
    "acs": [],
    "guards": [],
    "depende_de": [],
    "labels": [
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
    "existente": null
   },
@@ -285,9 +353,13 @@
    "clave": "1.A1",
    "padre": "1.A",
    "titulo": "1 · Guard temporal de frontera y tipos de @repo/schemas a Venue* (etapa A, PR 1/5)",
-   "descripcion": "**Qué entrega:** El guard temporal de frontera (lista contada de literales viejos que quedan, que baja PR a PR y llega a cero en `1.B5`) y el renombrado de identificadores de `@repo/schemas` (`Gastronomy*` → `Venue*`, `GastronomyTypeEnum` → `VenueTypeEnum`, claves de `VerticalEnum`/`ProductDomainEnum`/`EntityTypeEnum` con su **valor** todavía viejo) junto con todos sus consumidores, sin alias.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» · § «Mapa de nombres (final)» — hijo `1` (HOS-1801).\n\n**Sin AC propio:** el sub-spec 1 no declara criterio de aceptación para la etapa A (DEC-FAC-030 sólo pide que cada PR deje staging sano y que el guard temporal de frontera baje). Este PR se verifica con CI verde y con el conteo del guard de frontera, que tiene que bajar respecto del PR anterior. Ver «Huecos de la spec» en `arbol.md`.\n\n**Decisiones:** DEC-FAC-030, DEC-FAC-031, DEC-FAC-032.\n\n**Depende de:** `HOS-1798` (issue externa).\n\n**Fuera de alcance:** base, valores persistidos, nombres de tabla y de enum Postgres, rutas de API, URLs públicas y literales de valor (todo eso es la etapa B).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
-   "acs": [],
-   "guards": [],
+   "descripcion": "**Qué entrega:** El guard temporal de frontera (lista contada de literales viejos que quedan, que baja PR a PR y llega a cero en `1.B5`) y el renombrado de identificadores de `@repo/schemas` (`Gastronomy*` → `Venue*`, `GastronomyTypeEnum` → `VenueTypeEnum`, claves de `VerticalEnum`/`ProductDomainEnum`/`EntityTypeEnum` con su **valor** todavía viejo) junto con todos sus consumidores, sin alias.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» · § «Mapa de nombres (final)» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:15` — Etapa A, PR 1: nace G-FAC-T1 (frontera temporal) en verde, con su lista contada de literales viejos y una mutación que lo rompe; los identificadores de `@repo/schemas` pasan a `Venue*` con todos sus consumidores, sin alias temporales; CI verde en el PR.\n- Guard `G-FAC-T1` — frontera temporal de la etapa A: la lista contada de literales viejos sólo baja (se retira al nacer G-FAC-R1) (definición: `docs/06-guards.md` § «G-FAC-T1 · Frontera temporal del renombrado (etapa A)»)\n\n**Decisiones:** DEC-FAC-030, DEC-FAC-031, DEC-FAC-032.\n\n**Depende de:** `HOS-1798` (issue externa).\n\n**Fuera de alcance:** base, valores persistidos, nombres de tabla y de enum Postgres, rutas de API, URLs públicas y literales de valor (todo eso es la etapa B).\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "acs": [
+    "AC:1:15"
+   ],
+   "guards": [
+    "G-FAC-T1"
+   ],
    "depende_de": [
     "HOS-1798"
    ],
@@ -296,16 +368,20 @@
     "area-api",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
+   "etapa": "pre-corte",
    "existente": null
   },
   {
    "clave": "1.A2",
    "padre": "1.A",
    "titulo": "1 · Modelos, servicios y utilidades de dominio a Venue* (etapa A, PR 2/5)",
-   "descripcion": "**Qué entrega:** Renombrado lógico en `packages/db` (clases de modelo; `pgTable('gastronomies', …)` sigue igual), `service-core`, `verticals` y `apps/api` (servicios, `GastronomyVenueEvents*` → `VenueEvents*`, `gastronomy-hours.ts` → `venue-hours.ts`, `gastronomy-ai-context.ts` → `venue-ai-context.ts`, carpetas de rutas internas sin cambiar la URL).\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» · § «Mapa de nombres (final)» — hijo `1` (HOS-1801).\n\n**Sin AC propio:** el sub-spec 1 no declara criterio de aceptación para la etapa A (DEC-FAC-030 sólo pide que cada PR deje staging sano y que el guard temporal de frontera baje). Este PR se verifica con CI verde y con el conteo del guard de frontera, que tiene que bajar respecto del PR anterior. Ver «Huecos de la spec» en `arbol.md`.\n\n**Decisiones:** DEC-FAC-030, DEC-FAC-032.\n\n**Depende de:** `1.A1` (mismo hijo).\n\n**Fuera de alcance:** base, valores persistidos, nombres de tabla y de enum Postgres, rutas de API, URLs públicas y literales de valor (todo eso es la etapa B). `venueEvents`, `sports_venue` y `venueName` no se tocan.\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
-   "acs": [],
+   "descripcion": "**Qué entrega:** Renombrado lógico en `packages/db` (clases de modelo; `pgTable('gastronomies', …)` sigue igual), `service-core`, `verticals` y `apps/api` (servicios, `GastronomyVenueEvents*` → `VenueEvents*`, `gastronomy-hours.ts` → `venue-hours.ts`, `gastronomy-ai-context.ts` → `venue-ai-context.ts`, carpetas de rutas internas sin cambiar la URL).\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» · § «Mapa de nombres (final)» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:16` — Etapa A, PR 2: modelos, servicios y utilidades de dominio (`packages/db`, `service-core`, `verticals`, `apps/api`) en `Venue*` con todos sus consumidores, sin alias temporales; G-FAC-T1 en verde con un conteo menor que el del PR anterior; CI verde en el PR.\n\n**Decisiones:** DEC-FAC-030, DEC-FAC-032.\n\n**Depende de:** `1.A1` (mismo hijo).\n\n**Fuera de alcance:** base, valores persistidos, nombres de tabla y de enum Postgres, rutas de API, URLs públicas y literales de valor (todo eso es la etapa B). `venueEvents`, `sports_venue` y `venueName` no se tocan.\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "acs": [
+    "AC:1:16"
+   ],
    "guards": [],
    "depende_de": [
     "1.A1"
@@ -314,16 +390,20 @@
     "area-api",
     "area-db",
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
+   "etapa": "pre-corte",
    "existente": null
   },
   {
    "clave": "1.A3",
    "padre": "1.A",
    "titulo": "1 · Web: componentes, hooks y archivos a Venue* (etapa A, PR 3/5)",
-   "descripcion": "**Qué entrega:** Renombrado lógico en `apps/web`: componentes, hooks, islas y archivos (`lib/editor/gastronomy-*` → `venue-*`), con las rutas y URLs todavía viejas.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» · § «Mapa de nombres (final)» — hijo `1` (HOS-1801).\n\n**Sin AC propio:** el sub-spec 1 no declara criterio de aceptación para la etapa A (DEC-FAC-030 sólo pide que cada PR deje staging sano y que el guard temporal de frontera baje). Este PR se verifica con CI verde y con el conteo del guard de frontera, que tiene que bajar respecto del PR anterior. Ver «Huecos de la spec» en `arbol.md`.\n\n**Decisiones:** DEC-FAC-030.\n\n**Depende de:** `1.A2` (mismo hijo).\n\n**Fuera de alcance:** base, valores persistidos, nombres de tabla y de enum Postgres, rutas de API, URLs públicas y literales de valor (todo eso es la etapa B).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
-   "acs": [],
+   "descripcion": "**Qué entrega:** Renombrado lógico en `apps/web`: componentes, hooks, islas y archivos (`lib/editor/gastronomy-*` → `venue-*`), con las rutas y URLs todavía viejas.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» · § «Mapa de nombres (final)» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:17` — Etapa A, PR 3: componentes, hooks, islas y archivos de `apps/web` en `Venue*`, sin alias temporales; G-FAC-T1 en verde con un conteo menor que el del PR anterior; CI verde en el PR.\n\n**Decisiones:** DEC-FAC-030.\n\n**Depende de:** `1.A2` (mismo hijo).\n\n**Fuera de alcance:** base, valores persistidos, nombres de tabla y de enum Postgres, rutas de API, URLs públicas y literales de valor (todo eso es la etapa B).\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "acs": [
+    "AC:1:17"
+   ],
    "guards": [],
    "depende_de": [
     "1.A2"
@@ -331,16 +411,20 @@
    "labels": [
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
+   "etapa": "pre-corte",
    "existente": null
   },
   {
    "clave": "1.A4",
    "padre": "1.A",
    "titulo": "1 · Admin: config consolidada y formularios a Venue* (etapa A, PR 4/5)",
-   "descripcion": "**Qué entrega:** Renombrado lógico en `apps/admin`: config consolidada, formularios y componentes, con las rutas de archivo del router y las URLs todavía viejas.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» · § «Mapa de nombres (final)» — hijo `1` (HOS-1801).\n\n**Sin AC propio:** el sub-spec 1 no declara criterio de aceptación para la etapa A (DEC-FAC-030 sólo pide que cada PR deje staging sano y que el guard temporal de frontera baje). Este PR se verifica con CI verde y con el conteo del guard de frontera, que tiene que bajar respecto del PR anterior. Ver «Huecos de la spec» en `arbol.md`.\n\n**Decisiones:** DEC-FAC-030.\n\n**Depende de:** `1.A3` (mismo hijo).\n\n**Fuera de alcance:** base, valores persistidos, nombres de tabla y de enum Postgres, rutas de API, URLs públicas y literales de valor (todo eso es la etapa B).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
-   "acs": [],
+   "descripcion": "**Qué entrega:** Renombrado lógico en `apps/admin`: config consolidada, formularios y componentes, con las rutas de archivo del router y las URLs todavía viejas.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» · § «Mapa de nombres (final)» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:18` — Etapa A, PR 4: config consolidada, formularios y componentes de `apps/admin` en `Venue*`, sin alias temporales; G-FAC-T1 en verde con un conteo menor que el del PR anterior; CI verde en el PR.\n\n**Decisiones:** DEC-FAC-030.\n\n**Depende de:** `1.A3` (mismo hijo).\n\n**Fuera de alcance:** base, valores persistidos, nombres de tabla y de enum Postgres, rutas de API, URLs públicas y literales de valor (todo eso es la etapa B).\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "acs": [
+    "AC:1:18"
+   ],
    "guards": [],
    "depende_de": [
     "1.A3"
@@ -348,16 +432,20 @@
    "labels": [
     "area-admin",
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
+   "etapa": "pre-corte",
    "existente": null
   },
   {
    "clave": "1.A5",
    "padre": "1.A",
    "titulo": "1 · Namespace i18n gastronomy → venue (etapa A, PR 5/5)",
-   "descripcion": "**Qué entrega:** El namespace i18n `gastronomy` pasa a `venue` (`packages/i18n`, `config.shared.ts`, `check-locales.ts`) con todos sus consumidores; los **valores** visibles no cambian acá.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» · § «Mapa de nombres (final)» — hijo `1` (HOS-1801).\n\n**Sin AC propio:** el sub-spec 1 no declara criterio de aceptación para la etapa A (DEC-FAC-030 sólo pide que cada PR deje staging sano y que el guard temporal de frontera baje). Este PR se verifica con CI verde y con el conteo del guard de frontera, que tiene que bajar respecto del PR anterior. Ver «Huecos de la spec» en `arbol.md`.\n\n**Decisiones:** DEC-FAC-030, DEC-FAC-068.\n\n**Depende de:** `1.A4` (mismo hijo).\n\n**Fuera de alcance:** los textos nuevos de la vertical («Comer y salir») y el inventario de valores i18n (son de `1.B5`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
-   "acs": [],
+   "descripcion": "**Qué entrega:** El namespace i18n `gastronomy` pasa a `venue` (`packages/i18n`, `config.shared.ts`, `check-locales.ts`) con todos sus consumidores; los **valores** visibles no cambian acá.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» · § «Mapa de nombres (final)» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:19` — Etapa A, PR 5: el namespace i18n `gastronomy` pasa a `venue` (`packages/i18n`, `config.shared.ts`, `check-locales.ts`) con todos sus consumidores, sin alias temporales; G-FAC-T1 en verde con un conteo menor que el del PR anterior; CI verde en el PR.\n\n**Decisiones:** DEC-FAC-030, DEC-FAC-068.\n\n**Depende de:** `1.A4` (mismo hijo).\n\n**Fuera de alcance:** los textos nuevos de la vertical («Comer y salir») y el inventario de valores i18n (son de `1.B5`).\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "acs": [
+    "AC:1:19"
+   ],
    "guards": [],
    "depende_de": [
     "1.A4"
@@ -367,36 +455,60 @@
     "area-content",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
+   "etapa": "pre-corte",
    "existente": null
   },
   {
-   "clave": "1.B1",
+   "clave": "1.B0",
    "padre": "1.B",
-   "titulo": "1 · Las cinco migraciones editadas y el catálogo que nace venue (etapa B, tramo 1/9, apilado)",
-   "descripcion": "**Qué entrega:** Edición de 0129, 0132, 0139, 0144 y 0176 para que vertical, claves, planes, slugs y títulos nazcan `venue` (con la regla general de qué otra migración se edita), los valores `'venue'` de `VerticalEnum`/`ProductDomainEnum`/`EntityTypeEnum` y `scripts/production-catalog/catalog.ts` con sus títulos visibles en MP.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Compuerta: el corte V6 de HOS-1352 (DEC-FAC-028)» · § «Mapa de nombres (final)» · § «Mecánica» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:3` — **Primero de todo**: `db:migrate` desde cero con las migraciones editadas (es el primer error que aparece, F-V2-001).\n- `AC:1:12` — `db:migrate` desde cero con las **cinco** migraciones editadas en verde (primer chequeo, antes de cualquier otro).\n\n**Decisiones:** DEC-FAC-029, DEC-FAC-060, DEC-FAC-028.\n\n**Depende de:** `1.A5` (mismo hijo).\n\n**Fuera de alcance:** la migración de renombrado misma (`1.B2`) y el chequeo de valores de G-FAC-R1 (`1.B5`).\n\n**Verificación:** PR apilado a la rama de integración `spec/HOS-1801-etapa-b` (no a `staging`); CI rojo admitido en este tramo, el verde lo exige `1.B9`.",
+   "titulo": "1 · Extender check-umbrella-branch-target.sh y cortar la umbrella epic/HOS-1801-renombrado-fisico (etapa B, PR previo a staging)",
+   "descripcion": "**Qué entrega:** `scripts/check-umbrella-branch-target.sh` pasa de una umbrella (`UMBRELLA_BRANCH`) a vigilar también `epic/HOS-1801-renombrado-fisico`, con su mutación, en un PR normal a `staging`; después se corta la umbrella de `staging`.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:21` — `scripts/check-umbrella-branch-target.sh` vigila también `epic/HOS-1801-renombrado-fisico` sin dejar de vigilar la umbrella de HOS-1352: un PR a `staging` desde una rama con commits propios de esa umbrella es rojo (mutación) y el PR de la propia umbrella pasa.\n\n**Decisiones:** DEC-FAC-077.\n\n**Depende de:** `1.A5` (mismo hijo).\n\n**Fuera de alcance:** cambiar qué workflows corren en `epic/**` (ya lo fija DEC-CI-001).\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
-    "AC:1:3",
-    "AC:1:12"
+    "AC:1:21"
    ],
    "guards": [],
    "depende_de": [
     "1.A5"
    ],
    "labels": [
+    "area-devops",
+    "kind-spec",
+    "pre-corte-1352",
+    "source-agent"
+   ],
+   "etapa": "pre-corte",
+   "existente": null
+  },
+  {
+   "clave": "1.B1",
+   "padre": "1.B",
+   "titulo": "1 · Las cinco migraciones editadas y el catálogo que nace venue (etapa B, tramo 1/9, PR a la umbrella)",
+   "descripcion": "**Qué entrega:** Edición de 0129, 0132, 0139, 0144 y 0176 para que vertical, claves, planes, slugs y títulos nazcan `venue` (con la regla general de qué otra migración se edita), los valores `'venue'` de `VerticalEnum`/`ProductDomainEnum`/`EntityTypeEnum` y `scripts/production-catalog/catalog.ts` con sus títulos visibles en MP.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Compuerta: el corte V6 de HOS-1352 (DEC-FAC-028)» · § «Mapa de nombres (final)» · § «Mecánica» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:3` — **Primero de todo**: `db:migrate` desde cero con las migraciones editadas (es el primer error que aparece, F-V2-001).\n\n**Decisiones:** DEC-FAC-029, DEC-FAC-060, DEC-FAC-028.\n\n**Depende de:** `1.B0` (mismo hijo).\n\n**Fuera de alcance:** la migración de renombrado misma (`1.B2`) y el chequeo de valores de G-FAC-R1 (`1.B5`).\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** PR de tramo a la umbrella `epic/HOS-1801-renombrado-fisico` (no a `staging`; `check-umbrella-branch-target.sh` lo impide); CI rojo admitido en este tramo, el verde lo exige `1.B9`.",
+   "acs": [
+    "AC:1:3"
+   ],
+   "guards": [],
+   "depende_de": [
+    "1.B0"
+   ],
+   "labels": [
     "area-billing",
     "area-db",
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
+   "etapa": "pre-corte",
    "existente": null
   },
   {
    "clave": "1.B2",
    "padre": "1.B",
-   "titulo": "1 · Migración física de renombrado escrita a mano y extras 026/032 (etapa B, tramo 2/9, apilado)",
-   "descripcion": "**Qué entrega:** La migración versionada de renombrado escrita a mano (primera sentencia de guarda de reset, `RENAME` de tablas, columnas, índices, FKs, constraints, secuencias y triggers en sus dos clases, `RENAME VALUE` de enums, CHECKs en tres pasos, conversiones de datos con el orden de F-V2-048), el snapshot generado una vez con TTY, `pgTable` con los nombres nuevos y los extras `026` y `032` reescritos en el mismo tramo.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Mecánica» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:4` — Migraciones aplicadas desde cero **y** sobre una base con seed **y con los extras aplicados** (es la única forma de ver los triggers de `extras/041`); orden de carriles respetado (`db:migrate` → `db:apply-extras` → `db:seed:migrate`).\n- `AC:1:6` — Una consulta `count(*) … = 0` sobre el valor viejo por cada fila del inventario de discovery A §5, excluyendo `deleted_at` donde exista.\n- `AC:1:7` — `pg_indexes`, `pg_constraint`, `pg_trigger` y `pg_type` no devuelven ningún nombre con `gastronom`, y hay exactamente un `uq_venue_media_single_featured` y un `trg_set_updated_at_venues`, tanto en el clon de prod-main migrado como en una base desde cero.\n\n**Decisiones:** DEC-FAC-029, DEC-FAC-061, DEC-FAC-027.\n\n**Depende de:** `1.B1` (mismo hijo).\n\n**Fuera de alcance:** migración inversa (no existe, DEC-FAC-061) y el bug previo HOS-1794 de `extras/032`.\n\n**Verificación:** PR apilado a la rama de integración `spec/HOS-1801-etapa-b` (no a `staging`); CI rojo admitido en este tramo, el verde lo exige `1.B9`.",
+   "titulo": "1 · Migración física de renombrado escrita a mano y extras 026/032 (etapa B, tramo 2/9, PR a la umbrella)",
+   "descripcion": "**Qué entrega:** La migración versionada de renombrado escrita a mano (primera sentencia de guarda de reset, `RENAME` de tablas, columnas, índices, FKs, constraints, secuencias y triggers en sus dos clases, `RENAME VALUE` de enums, CHECKs en tres pasos, conversiones de datos con el orden de F-V2-048), el snapshot generado una vez con TTY, `pgTable` con los nombres nuevos y los extras `026` y `032` reescritos en el mismo tramo.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Mecánica» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:4` — Migraciones aplicadas desde cero **y** sobre una base con seed **y con los extras aplicados** (es la única forma de ver los triggers de `extras/041`); orden de carriles respetado (`db:migrate` → `db:apply-extras` → `db:seed:migrate`).\n- `AC:1:6` — Una consulta `count(*) … = 0` sobre el valor viejo por cada fila del inventario de discovery A §5, excluyendo `deleted_at` donde exista.\n- `AC:1:7` — `pg_indexes`, `pg_constraint`, `pg_trigger` y `pg_type` no devuelven ningún nombre con `gastronom`, y hay exactamente un `uq_venue_media_single_featured` y un `trg_set_updated_at_venues`, tanto en el clon de prod-main migrado como en una base desde cero.\n\n**Decisiones:** DEC-FAC-029, DEC-FAC-061, DEC-FAC-027.\n\n**Depende de:** `1.B1` (mismo hijo).\n\n**Fuera de alcance:** migración inversa (no existe, DEC-FAC-061) y el bug previo HOS-1794 de `extras/032`.\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** PR de tramo a la umbrella `epic/HOS-1801-renombrado-fisico` (no a `staging`; `check-umbrella-branch-target.sh` lo impide); CI rojo admitido en este tramo, el verde lo exige `1.B9`.",
    "acs": [
     "AC:1:4",
     "AC:1:6",
@@ -409,15 +521,17 @@
    "labels": [
     "area-db",
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
+   "etapa": "pre-corte",
    "existente": null
   },
   {
    "clave": "1.B3",
    "padre": "1.B",
-   "titulo": "1 · Contratos de API, URLs, redirects 302 y QR de un salto (etapa B, tramo 3/9, apilado)",
-   "descripcion": "**Qué entrega:** Rutas `/api/v1/*/venues`, páginas `/comer-y-salir/…` y `mi-cuenta/comercio/venue/…`, redirects de un salto en `legacy-redirects.ts` (302 durante el soak, con ruta profunda y query), regex tolerante de QR con su marcador y test de regresión, y G-FAC-R2.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Mapa de nombres (final)» · § «Mecánica» · § «Partición y despliegue (DEC-FAC-030)» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:2` — G-FAC-R2 en verde, con mutación que lo rompe.\n- Guard `G-FAC-R2` — toda ruta pública retirada tiene su redirect de un salto, y los QR llegan en un salto (definición: `docs/06-guards.md` § «G-FAC-R2 · Redirects de rutas retiradas»)\n\n**Decisiones:** DEC-FAC-030, DEC-FAC-042.\n\n**Depende de:** `1.B2` (mismo hijo).\n\n**Fuera de alcance:** el cambio a 301 (va aparte, con un cambio explícito después del soak) y el redirect de estado de `/carta/` (sub-spec 3).\n\n**Verificación:** PR apilado a la rama de integración `spec/HOS-1801-etapa-b` (no a `staging`); CI rojo admitido en este tramo, el verde lo exige `1.B9`.",
+   "titulo": "1 · Contratos de API, URLs, redirects 302 y QR de un salto (etapa B, tramo 3/9, PR a la umbrella)",
+   "descripcion": "**Qué entrega:** Rutas `/api/v1/*/venues`, páginas `/comer-y-salir/…` y `mi-cuenta/comercio/venue/…`, redirects de un salto en `legacy-redirects.ts` (302 durante el soak, con ruta profunda y query), regex tolerante de QR con su marcador y test de regresión, y G-FAC-R2.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Mapa de nombres (final)» · § «Mecánica» · § «Partición y despliegue (DEC-FAC-030)» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:2` — G-FAC-R2 en verde, con mutación que lo rompe.\n- Guard `G-FAC-R2` — toda ruta pública retirada tiene su redirect de un salto, y los QR llegan en un salto (definición: `docs/06-guards.md` § «G-FAC-R2 · Redirects de rutas retiradas»)\n\n**Decisiones:** DEC-FAC-030, DEC-FAC-042.\n\n**Depende de:** `1.B2` (mismo hijo).\n\n**Fuera de alcance:** el cambio a 301 (va aparte, con un cambio explícito después del soak) y el redirect de estado de `/carta/` (sub-spec 3).\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** PR de tramo a la umbrella `epic/HOS-1801-renombrado-fisico` (no a `staging`; `check-umbrella-branch-target.sh` lo impide); CI rojo admitido en este tramo, el verde lo exige `1.B9`.",
    "acs": [
     "AC:1:2"
    ],
@@ -431,15 +545,17 @@
     "area-api",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
+   "etapa": "pre-corte",
    "existente": null
   },
   {
    "clave": "1.B4",
    "padre": "1.B",
-   "titulo": "1 · Seed, fixtures, usuarios de prueba e ids de What's New y del tour (etapa B, tramo 4/9, apilado)",
-   "descripcion": "**Qué entrega:** `data/gastronomy/` → `data/venue/` con dual-write (incluidos los 42 JSON de amenity/feature), `seedKey`/`seedId` de fixtures, usuarios de prueba y sus cinco e2e, carpeta de Cloudinary, data-migrations históricas editadas sólo en imports y literales, y la data-migration nueva de seen-ids encadenada a la 0109 que también renombra la clave del tour en `adminTours`.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Mapa de nombres (final)» · § «Mecánica» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:9` — Ningún usuario con un id viejo de What's New en `seenIds` lo ve como nuevo después de la migración de seen-ids, y ningún dueño con `web.gastronomy.welcome` en `adminTours` vuelve a ver el tour (test sobre el clon).\n\n**Decisiones:** DEC-FAC-054, DEC-FAC-032, DEC-FAC-044.\n\n**Depende de:** `1.B3` (mismo hijo).\n\n**Fuera de alcance:** migración de emails de usuarios (staging se resetea) y tocar las data-migrations 0029/0059.\n\n**Verificación:** PR apilado a la rama de integración `spec/HOS-1801-etapa-b` (no a `staging`); CI rojo admitido en este tramo, el verde lo exige `1.B9`.",
+   "titulo": "1 · Seed, fixtures, usuarios de prueba e ids de What's New y del tour (etapa B, tramo 4/9, PR a la umbrella)",
+   "descripcion": "**Qué entrega:** `data/gastronomy/` → `data/venue/` con dual-write (incluidos los 42 JSON de amenity/feature), `seedKey`/`seedId` de fixtures, usuarios de prueba y sus cinco e2e, carpeta de Cloudinary, data-migrations históricas editadas sólo en imports y literales, y la data-migration nueva de seen-ids encadenada a la 0109 que también renombra la clave del tour en `adminTours`.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Mapa de nombres (final)» · § «Mecánica» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:9` — Ningún usuario con un id viejo de What's New en `seenIds` lo ve como nuevo después de la migración de seen-ids, y ningún dueño con `web.gastronomy.welcome` en `adminTours` vuelve a ver el tour (test sobre el clon).\n\n**Decisiones:** DEC-FAC-054, DEC-FAC-032, DEC-FAC-044.\n\n**Depende de:** `1.B3` (mismo hijo).\n\n**Fuera de alcance:** migración de emails de usuarios (staging se resetea) y tocar las data-migrations 0029/0059.\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** PR de tramo a la umbrella `epic/HOS-1801-renombrado-fisico` (no a `staging`; `check-umbrella-branch-target.sh` lo impide); CI rojo admitido en este tramo, el verde lo exige `1.B9`.",
    "acs": [
     "AC:1:9"
    ],
@@ -452,18 +568,21 @@
     "area-db",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
+   "etapa": "pre-corte",
    "existente": null
   },
   {
    "clave": "1.B5",
    "padre": "1.B",
-   "titulo": "1 · Valores visibles, tile de la home, cache tags y G-FAC-R1 (etapa B, tramo 5/9, apilado)",
-   "descripcion": "**Qué entrega:** Inventario de valores i18n que nombran la vertical (es/en/pt con los textos de DEC-FAC-068), tile de la home a `foodEvents`, cache tags y clases `gastro-` a `venue-`, propiedad PostHog `is_venue_owner`, y G-FAC-R1 con sus cinco exenciones contadas, el chequeo de valores de las cinco editadas y la lista derivada de tests de historia; el guard temporal de frontera llega a cero y se retira.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Qué se conserva (DEC-FAC-032)» · § «Mapa de nombres (final)» · § «Mecánica» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:1` — G-FAC-R1 en verde, con mutación que lo rompe; G-FAC-R1 con las cinco excepciones de «Qué se conserva», cada una contada por nombre.\n- `AC:1:10` — G-FAC-R1 verde con los tests de historia sin tocar y el chequeo de valores de las cinco editadas en verde.\n- Guard `G-FAC-R1` — la palabra retirada no reaparece fuera de las exenciones contadas (definición: `docs/06-guards.md` § «G-FAC-R1 · Palabra retirada»)\n\n**Decisiones:** DEC-FAC-032, DEC-FAC-044, DEC-FAC-068, DEC-FAC-070.\n\n**Depende de:** `1.B4` (mismo hijo).\n\n**Fuera de alcance:** el copy del embudo que habla de restaurante (sub-spec 9, DEC-FAC-069).\n\n**Verificación:** PR apilado a la rama de integración `spec/HOS-1801-etapa-b` (no a `staging`); CI rojo admitido en este tramo, el verde lo exige `1.B9`.",
+   "titulo": "1 · Valores visibles, tile de la home, cache tags y G-FAC-R1 (etapa B, tramo 5/9, PR a la umbrella)",
+   "descripcion": "**Qué entrega:** Inventario de valores i18n que nombran la vertical (es/en/pt con los textos de DEC-FAC-068), tile de la home a `foodEvents`, cache tags y clases `gastro-` a `venue-`, propiedad PostHog `is_venue_owner`, y G-FAC-R1 con sus cinco exenciones contadas, el chequeo de valores de las cinco editadas y la lista derivada de tests de historia; G-FAC-T1 llega a cero y se retira.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Qué se conserva (DEC-FAC-032)» · § «Mapa de nombres (final)» · § «Mecánica» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:1` — G-FAC-R1 en verde, con mutación que lo rompe; G-FAC-R1 con las cinco excepciones de «Qué se conserva», cada una contada por nombre.\n- `AC:1:10` — G-FAC-R1 verde con los tests de historia sin tocar y el chequeo de valores de las cinco editadas en verde.\n- `AC:1:20` — Cuando nace G-FAC-R1, G-FAC-T1 llega a cero y se retira (script, test y paso de CI) en el mismo tramo.\n- Guard `G-FAC-R1` — la palabra retirada no reaparece fuera de las exenciones contadas (definición: `docs/06-guards.md` § «G-FAC-R1 · Palabra retirada»)\n\n**Decisiones:** DEC-FAC-032, DEC-FAC-044, DEC-FAC-068, DEC-FAC-070.\n\n**Depende de:** `1.B4` (mismo hijo).\n\n**Fuera de alcance:** el copy del embudo que habla de restaurante (sub-spec 9, DEC-FAC-069).\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** PR de tramo a la umbrella `epic/HOS-1801-renombrado-fisico` (no a `staging`; `check-umbrella-branch-target.sh` lo impide); CI rojo admitido en este tramo, el verde lo exige `1.B9`.",
    "acs": [
     "AC:1:1",
-    "AC:1:10"
+    "AC:1:10",
+    "AC:1:20"
    ],
    "guards": [
     "G-FAC-R1"
@@ -476,17 +595,19 @@
     "area-devops",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
+   "etapa": "pre-corte",
    "existente": null
   },
   {
    "clave": "1.B6",
    "padre": "1.B",
-   "titulo": "1 · Guards atados al nombre: una mutación posterior por guard (etapa B, tramo 6/9, apilado)",
-   "descripcion": "**Qué entrega:** Actualización de los guards atados al nombre (G2c, G-R9, G1(b), G18 y el resto de discovery A §8) y una mutación posterior al renombrado por cada uno, listada en el PR.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Mecánica» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:13` — Una mutación posterior al renombrado por cada guard atado al nombre.\n\n**Decisiones:** DEC-FAC-030.\n\n**Depende de:** `1.B5` (mismo hijo).\n\n**Fuera de alcance:** guards nuevos de los sub-specs 2 a 5.\n\n**Verificación:** PR apilado a la rama de integración `spec/HOS-1801-etapa-b` (no a `staging`); CI rojo admitido en este tramo, el verde lo exige `1.B9`.",
+   "titulo": "1 · Guards atados al nombre: una mutación posterior por guard (etapa B, tramo 6/9, PR a la umbrella)",
+   "descripcion": "**Qué entrega:** Actualización de los guards atados al nombre (G2c, G-R9, G1(b), G18 y el resto de discovery A §8) y una mutación posterior al renombrado por cada uno, listada en el PR.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Mecánica» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:12` — Una mutación posterior al renombrado por cada guard atado al nombre.\n\n**Decisiones:** DEC-FAC-030.\n\n**Depende de:** `1.B5` (mismo hijo).\n\n**Fuera de alcance:** guards nuevos de los sub-specs 2 a 5.\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** PR de tramo a la umbrella `epic/HOS-1801-renombrado-fisico` (no a `staging`; `check-umbrella-branch-target.sh` lo impide); CI rojo admitido en este tramo, el verde lo exige `1.B9`.",
    "acs": [
-    "AC:1:13"
+    "AC:1:12"
    ],
    "guards": [],
    "depende_de": [
@@ -495,15 +616,17 @@
    "labels": [
     "area-devops",
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
+   "etapa": "pre-corte",
    "existente": null
   },
   {
    "clave": "1.B7",
    "padre": "1.B",
-   "titulo": "1 · Ensayo del paso 3 del corte sobre un clon de prod-main (etapa B, tramo 7/9, apilado)",
-   "descripcion": "**Qué entrega:** Ensayo registrado del paso 3 del corte V6 sobre un clon de prod-main con la cadena pendiente del commit del corte, la `CUT-LIST` real, extras, seed-migrate, los `count(*) = 0` y `step-6 compare`; es insumo del «Momento 3» de HOS-1352.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Compuerta: el corte V6 de HOS-1352 (DEC-FAC-028)» · § «Mecánica» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:5` — **Ensayo del paso 3 del corte sobre un clon de prod-main** (F-V2-003), insumo del «Momento 3 · antes del ensayo del corte» de HOS-1352: (a) `db:migrate` de **toda la cadena pendiente en el commit del corte** (hoy 0125…0178, las cinco editadas y la de renombrado; más cualquier migración de los sub-specs 2 o 4 que se mergee a staging antes del corte: corre en la misma transacción, F-V3-013), con la `CUT-LIST` real de la 0148 (que sólo acepta `entityType` `'accommodation' | 'gastronomy' | 'experience'`, `0148_cut_paso_3.sql:89`: la CUT-LIST se escribe con el vocabulario viejo, nunca `venue`); (b) `db:apply-extras`; (c) `db:seed:migrate` (incluidas `0109`, `0110`, `0125` y la de seen-ids); (d) todos los `count(*) = 0` de discovery A §5 **sobre ese clon**, incluido `cutover_v6_deleted_listing WHERE entity_type = 'gastronomy'`; (e) `step-6 compare` en verde entre el clon migrado y una base construida desde cero (F-V2-004).\n\n**Decisiones:** DEC-FAC-028, DEC-FAC-027.\n\n**Depende de:** `1.B6` (mismo hijo).\n\n**Fuera de alcance:** ejecutar el corte V6 (es de HOS-1352) y cualquier cambio a la 0148.\n\n**Verificación:** Ensayo sobre clon, con salida adjunta al issue; no agrega código salvo scripts de ensayo.",
+   "titulo": "1 · Ensayo del paso 3 del corte sobre un clon de prod-main (etapa B, tramo 7/9, PR a la umbrella)",
+   "descripcion": "**Qué entrega:** Ensayo registrado del paso 3 del corte V6 sobre un clon de prod-main con la cadena pendiente del commit del corte, la `CUT-LIST` real, extras, seed-migrate, los `count(*) = 0` y `step-6 compare`; es insumo del «Momento 3» de HOS-1352.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Compuerta: el corte V6 de HOS-1352 (DEC-FAC-028)» · § «Mecánica» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:5` — **Ensayo del paso 3 del corte sobre un clon de prod-main** (F-V2-003), insumo del «Momento 3 · antes del ensayo del corte» de HOS-1352: (a) `db:migrate` de **toda la cadena pendiente en el commit del corte** (hoy 0125…0178, las cinco editadas y la de renombrado; más cualquier migración de los sub-specs 2 o 4 que se mergee a staging antes del corte: corre en la misma transacción, F-V3-013), con la `CUT-LIST` real de la 0148 (que sólo acepta `entityType` `'accommodation' | 'gastronomy' | 'experience'`, `0148_cut_paso_3.sql:89`: la CUT-LIST se escribe con el vocabulario viejo, nunca `venue`); (b) `db:apply-extras`; (c) `db:seed:migrate` (incluidas `0109`, `0110`, `0125` y la de seen-ids); (d) todos los `count(*) = 0` de discovery A §5 **sobre ese clon**, incluido `cutover_v6_deleted_listing WHERE entity_type = 'gastronomy'`; (e) `step-6 compare` en verde entre el clon migrado y una base construida desde cero (F-V2-004).\n\n**Decisiones:** DEC-FAC-028, DEC-FAC-027.\n\n**Depende de:** `1.B6` (mismo hijo).\n\n**Fuera de alcance:** ejecutar el corte V6 (es de HOS-1352) y cualquier cambio a la 0148.\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** Ensayo sobre clon, con salida adjunta al issue; no agrega código salvo scripts de ensayo.",
    "acs": [
     "AC:1:5"
    ],
@@ -515,15 +638,17 @@
     "area-db",
     "area-devops",
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
+   "etapa": "pre-corte",
    "existente": null
   },
   {
    "clave": "1.B8",
    "padre": "1.B",
-   "titulo": "1 · Marcha atrás escrita y runbook de la ventana de staging (etapa B, tramo 8/9, apilado)",
-   "descripcion": "**Qué entrega:** Runbook de la ventana de mantenimiento de staging en su orden fijo (preapprovals huérfanas, bajar web/admin, apagar API con crons y webhook, reset de `hospeda_dev` antes de la plantilla, deploy, purga y reglas de Cloudflare) y la marcha atrás escrita, con la lista de lo que no vuelve solo.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» · § «Mecánica» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:11` — Marcha atrás escrita como revert + reset en staging y restauración del backup del paso 2b en prod (DEC-FAC-061), con la lista de lo que no vuelve; sin migración inversa.\n\n**Decisiones:** DEC-FAC-061, DEC-FAC-030.\n\n**Depende de:** `1.B7` (mismo hijo).\n\n**Fuera de alcance:** migración inversa (no existe) y la marcha atrás de prod más allá de citar el backup del paso 2b del corte.\n\n**Verificación:** PR apilado a la rama de integración `spec/HOS-1801-etapa-b` (no a `staging`); CI rojo admitido en este tramo, el verde lo exige `1.B9`.",
+   "titulo": "1 · Marcha atrás escrita y runbook de la ventana de staging (etapa B, tramo 8/9, PR a la umbrella)",
+   "descripcion": "**Qué entrega:** Runbook de la ventana de mantenimiento de staging en su orden fijo (preapprovals huérfanas, bajar web/admin, apagar API con crons y webhook, reset de `hospeda_dev` antes de la plantilla, deploy, purga y reglas de Cloudflare) y la marcha atrás escrita, con la lista de lo que no vuelve solo.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» · § «Mecánica» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:11` — Marcha atrás escrita como revert + reset en staging y restauración del backup del paso 2b en prod (DEC-FAC-061), con la lista de lo que no vuelve; sin migración inversa.\n\n**Decisiones:** DEC-FAC-061, DEC-FAC-030.\n\n**Depende de:** `1.B7` (mismo hijo).\n\n**Fuera de alcance:** migración inversa (no existe) y la marcha atrás de prod más allá de citar el backup del paso 2b del corte.\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** PR de tramo a la umbrella `epic/HOS-1801-renombrado-fisico` (no a `staging`; `check-umbrella-branch-target.sh` lo impide); CI rojo admitido en este tramo, el verde lo exige `1.B9`.",
    "acs": [
     "AC:1:11"
    ],
@@ -535,19 +660,21 @@
     "area-db",
     "area-devops",
     "kind-spec",
-    "source-owner"
+    "pre-corte-1352",
+    "source-agent"
    ],
+   "etapa": "pre-corte",
    "existente": null
   },
   {
    "clave": "1.B9",
    "padre": "1.B",
-   "titulo": "1 · PR de integración a staging, ventana de mantenimiento, smoke y compuerta del corte (etapa B, tramo 9/9, merge a staging)",
-   "descripcion": "**Qué entrega:** El único PR de la etapa B a `staging` (la rama de integración entera), con CI completo en verde; la ventana de mantenimiento ejecutada según `1.B8`; el smoke en staging; y la compuerta escrita en HOS-1352 de que el corte V6 espera a esta hoja.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» · § «Compuerta: el corte V6 de HOS-1352 (DEC-FAC-028)» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:8` — typecheck/lint/test con `CI=true` en cada paquete tocado, **incluido `@repo/seed`**; e2e `listing-owner-*` en verde.\n- `AC:1:14` — Smoke en staging (`status-needs-smoke-staging`) tras la ventana: redirects 302 (incluido `/carta/` y un escaneo `/qr/<slug>/` de un salto), alta y edición de un local, checkout de un plan de la vertical con el título «Comer y salir Básico» en el resumen de MP, Cloudinary (fotos de ejemplo bajo `venues/`), cache.\n- `AC:1:15` — El corte V6 de HOS-1352 no se ejecuta hasta que la etapa B esté mergeada y verificada en staging.\n\n**Decisiones:** DEC-FAC-028, DEC-FAC-030.\n\n**Depende de:** `1.B8` (mismo hijo).\n\n**Fuera de alcance:** el 301 definitivo de los redirects y el corte V6 mismo.\n\n**Verificación:** PR `spec/HOS-1801-etapa-b` → `staging`, título `[HOS-1801]`; requiere sign-off de smoke de staging (`/smoke`).",
+   "titulo": "1 · PR de la umbrella a staging, ventana de mantenimiento, smoke y compuerta del corte (etapa B, tramo 9/9, PR de la umbrella a staging)",
+   "descripcion": "**Qué entrega:** El PR de la umbrella `epic/HOS-1801-renombrado-fisico` a `staging`, único de la etapa B, con CI completo en verde; la ventana de mantenimiento ejecutada según `1.B8`; el smoke en staging; y la compuerta escrita en HOS-1352 de que el corte V6 espera a esta hoja.\n\n**Sub-spec:** sub-specs/1-renombrado.md § «Partición y despliegue (DEC-FAC-030)» · § «Compuerta: el corte V6 de HOS-1352 (DEC-FAC-028)» — hijo `1` (HOS-1801).\n\n**Cubre:**\n- `AC:1:8` — typecheck/lint/test con `CI=true` en cada paquete tocado, **incluido `@repo/seed`**; e2e `listing-owner-*` en verde.\n- `AC:1:13` — Smoke en staging (`status-needs-smoke-staging`) tras la ventana: redirects 302 (incluido `/carta/` y un escaneo `/qr/<slug>/` de un salto), alta y edición de un local, checkout de un plan de la vertical con el título «Comer y salir Básico» en el resumen de MP, Cloudinary (fotos de ejemplo bajo `venues/`), cache.\n- `AC:1:14` — El corte V6 de HOS-1352 no se ejecuta hasta que la etapa B esté mergeada y verificada en staging.\n\n**Decisiones:** DEC-FAC-028, DEC-FAC-030, DEC-FAC-077, DEC-FAC-084.\n\n**Depende de:** `1.B8` (mismo hijo).\n\n**Fuera de alcance:** el 301 definitivo de los redirects y el corte V6 mismo.\n\n**Etapa:** `pre-corte` (DEC-FAC-082).\n\n**Verificación:** PR `epic/HOS-1801-renombrado-fisico` → `staging`, título `[HOS-1801]`; requiere sign-off de smoke de staging (`/smoke`). HOS-1352 queda bloqueado por HOS-1801 (DEC-FAC-084).",
    "acs": [
     "AC:1:8",
-    "AC:1:14",
-    "AC:1:15"
+    "AC:1:13",
+    "AC:1:14"
    ],
    "guards": [],
    "depende_de": [
@@ -558,16 +685,18 @@
     "area-db",
     "area-devops",
     "kind-spec",
-    "source-owner",
+    "pre-corte-1352",
+    "source-agent",
     "status-needs-smoke-staging"
    ],
+   "etapa": "pre-corte",
    "existente": null
   },
   {
    "clave": "2.1",
    "padre": "2",
    "titulo": "2 · Tipos PUB y BOLICHE: enum, ADD VALUE, etiquetas y descripciones (PR 1/5)",
-   "descripcion": "**Qué entrega:** `PUB` y `BOLICHE` en el enum TS y `ALTER TYPE … ADD VALUE` (sin usarlos como valor en ninguna migración), los `Record` exhaustivos, etiquetas y `venue.typeDescriptions.*` en es/en/pt con la frontera de DEC-FAC-067, y la descripción debajo del selector de tipo del alta y del admin.\n\n**Sub-spec:** sub-specs/2-catalogos.md § «Contenido inicial» — hijo `2` (HOS-1802).\n\n**Cubre:**\n- `AC:2:7` — `PUB` y `BOLICHE` visibles en el alta con su descripción en es/en/pt, con la frontera de DEC-FAC-067.\n\n**Decisiones:** DEC-FAC-045, DEC-FAC-067, DEC-FAC-038.\n\n**Depende de:** `1.B9` (hijo 1, HOS-1801).\n\n**Fuera de alcance:** las listas planas de tipos que no fallan al compilar (sub-spec 4) y la matriz tipo → rubros (`2.2`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `PUB` y `BOLICHE` en el enum TS y `ALTER TYPE … ADD VALUE` (sin usarlos como valor en ninguna migración), los `Record` exhaustivos, etiquetas y `venue.typeDescriptions.*` en es/en/pt con la frontera de DEC-FAC-067, y la descripción debajo del selector de tipo del alta y del admin.\n\n**Sub-spec:** sub-specs/2-catalogos.md § «Contenido inicial» — hijo `2` (HOS-1802).\n\n**Cubre:**\n- `AC:2:7` — `PUB` y `BOLICHE` visibles en el alta con su descripción en es/en/pt, con la frontera de DEC-FAC-067.\n\n**Decisiones:** DEC-FAC-045, DEC-FAC-067, DEC-FAC-038.\n\n**Depende de:** `1.B9` (hijo 1, HOS-1801).\n\n**Fuera de alcance:** las listas planas de tipos que no fallan al compilar (sub-spec 4) y la matriz tipo → rubros (`2.2`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:2:7"
    ],
@@ -581,15 +710,17 @@
     "area-db",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "2.2",
    "padre": "2",
    "titulo": "2 · Catálogo de secciones, rasgos, campos, rubros y reglas, con G-FAC-02 (PR 2/5)",
-   "descripcion": "**Qué entrega:** Los tipos y el contenido de `ListingSection`, `SectionTrait`, `BusinessLine` y `BusinessLineRules` en `packages/schemas/src/catalog/` (con `fields` tipado contra el schema de update y `menuUrl` en `menu`), `sectionsTouchedByBody`, el mapa de slugs de URL y G-FAC-02 (reglas 1-11).\n\n**Sub-spec:** sub-specs/2-catalogos.md § «En código (`packages/schemas/src/catalog/`)» · § «Contenido inicial» — hijo `2` (HOS-1802).\n\n**Cubre:**\n- `AC:2:1` — Catálogos tipados y exportados; ids como unión literal por vertical; G-FAC-02 en verde con sus mutaciones.\n- `AC:2:8` — `menuUrl` pertenece a `menu` (regla 11 de G-FAC-02 en verde, con `price` sin `menuUrl`).\n- Guard `G-FAC-02` — integridad del catálogo (definición: `docs/06-guards.md` § «G-FAC-02 · Integridad del catálogo»)\n\n**Decisiones:** DEC-FAC-026, DEC-FAC-031, DEC-FAC-034, DEC-FAC-040, DEC-FAC-051, DEC-FAC-062.\n\n**Depende de:** `2.1` (mismo hijo).\n\n**Fuera de alcance:** dimensiones de reseña y regla 12 de G-FAC-02 (`2.5`); la columna en base (`2.3`); el `Record` de presentación del web (sub-spec 5).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Los tipos y el contenido de `ListingSection`, `SectionTrait`, `BusinessLine` y `BusinessLineRules` en `packages/schemas/src/catalog/` (con `fields` tipado contra el schema de update y `menuUrl` en `menu`), `sectionsTouchedByBody`, el mapa de slugs de URL y G-FAC-02 (reglas 1-11).\n\n**Sub-spec:** sub-specs/2-catalogos.md § «En código (`packages/schemas/src/catalog/`)» · § «Contenido inicial» — hijo `2` (HOS-1802).\n\n**Cubre:**\n- `AC:2:1` — Catálogos tipados y exportados; ids como unión literal por vertical; G-FAC-02 en verde con sus mutaciones.\n- `AC:2:8` — `menuUrl` pertenece a `menu` (regla 11 de G-FAC-02 en verde, con `price` sin `menuUrl`).\n- Guard `G-FAC-02` — integridad del catálogo (definición: `docs/06-guards.md` § «G-FAC-02 · Integridad del catálogo»)\n\n**Decisiones:** DEC-FAC-026, DEC-FAC-031, DEC-FAC-034, DEC-FAC-040, DEC-FAC-051, DEC-FAC-062.\n\n**Depende de:** `2.1` (mismo hijo).\n\n**Fuera de alcance:** dimensiones de reseña y regla 12 de G-FAC-02 (`2.5`); la columna en base (`2.3`); el `Record` de presentación del web (sub-spec 5).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:2:1",
     "AC:2:8"
@@ -603,19 +734,22 @@
    "labels": [
     "area-api",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "2.3",
    "padre": "2",
    "titulo": "2 · Columna business_lines: CHECK, default, backfill, GIN y verificación de seed (PR 3/5)",
-   "descripcion": "**Qué entrega:** `business_lines text[] NOT NULL` en `venues`, `accommodations` y `experiences` con la secuencia de `ADD COLUMN` → backfill (incluidas las borradas, `CASE type::text` con `ELSE`) → `SET NOT NULL` → `ADD CHECK` generado desde el catálogo (matriz por tipo en `venues`), default sólo en las verticales de un rubro, índice GIN, la data-migration de verificación del seed, los escritores directos ajustados y G-FAC-01.\n\n**Sub-spec:** sub-specs/2-catalogos.md § «En base (DEC-FAC-026, 046, 047)» · § «En `PURGED` (F-V1-017)» · § «Seed» — hijo `2` (HOS-1802).\n\n**Cubre:**\n- `AC:2:2` — G-FAC-01 en verde con sus mutaciones.\n- `AC:2:4` — Migración aplicada desde cero (con todas las pendientes juntas, incluido el `ADD VALUE`) y sobre seed; toda ficha existente, incluidas las borradas, con ≥1 rubro; una inserción con `business_lines = '{}'`, con un valor ajeno a la vertical o con BOLICHE `{food}` es rechazada por la base; una inserción directa en `accommodations` sin la columna recibe `{standard}`.\n- `AC:2:6` — Test del `CASE` del backfill contra la lista fija del enum de esa migración, con `ELSE`.\n- Guard `G-FAC-01` — el CHECK de `business_lines` en base coincide con el catálogo de código (valores, matriz por tipo, default) (definición: `docs/06-guards.md` § «G-FAC-01 · El CHECK de `business_lines` coincide con el catálogo»)\n\n**Decisiones:** DEC-FAC-026, DEC-FAC-046, DEC-FAC-047.\n\n**Depende de:** `2.2` (mismo hijo).\n\n**Fuera de alcance:** tabla espejo o de relación (no existen, DEC-FAC-026) y el validador (`2.4`).\n\n**Riesgo abierto:** `venues` queda sin default y el alta actual del web no manda `businessLines` hasta `5.6`: verificar en este PR que el alta del web y los e2e `listing-owner-*` sigan verdes (ver «Huecos de la spec» en `arbol.md`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `business_lines text[] NOT NULL` en `venues`, `accommodations` y `experiences` con la secuencia de `ADD COLUMN` → backfill (incluidas las borradas, `CASE type::text` con `ELSE`) → `SET NOT NULL` → `ADD CHECK` generado desde el catálogo (matriz por tipo en `venues`), default sólo en las verticales de un rubro, el servicio de alta que completa la preselección del tipo cuando el pedido omite rubros (DEC-FAC-079), índice GIN, la data-migration de verificación del seed, los escritores directos ajustados y G-FAC-01.\n\n**Sub-spec:** sub-specs/2-catalogos.md § «En base (DEC-FAC-026, 046, 047)» · § «En `PURGED` (F-V1-017)» · § «Seed» — hijo `2` (HOS-1802).\n\n**Cubre:**\n- `AC:2:2` — G-FAC-01 en verde con sus mutaciones.\n- `AC:2:4` — Migración aplicada desde cero (con todas las pendientes juntas, incluido el `ADD VALUE`) y sobre seed; toda ficha existente, incluidas las borradas, con ≥1 rubro; una inserción con `business_lines = '{}'`, con un valor ajeno a la vertical o con BOLICHE `{food}` es rechazada por la base; una inserción directa en `accommodations` sin la columna recibe `{standard}`.\n- `AC:2:6` — Test del `CASE` del backfill contra la lista fija del enum de esa migración, con `ELSE`.\n- `AC:2:11` — Alta sin `business_lines` → la API completa la preselección del tipo; BOLICHE → `{nightlife}`; tipo food-only → `{food}`; los e2e `listing-owner-*` siguen pasando entre este hijo y el selector del sub-spec 5 (DEC-FAC-079).\n- Guard `G-FAC-01` — el CHECK de `business_lines` en base coincide con el catálogo de código (valores, matriz por tipo, default) (definición: `docs/06-guards.md` § «G-FAC-01 · El CHECK de `business_lines` coincide con el catálogo»)\n\n**Decisiones:** DEC-FAC-026, DEC-FAC-046, DEC-FAC-047, DEC-FAC-079, DEC-FAC-010.\n\n**Depende de:** `2.2` (mismo hijo).\n\n**Fuera de alcance:** tabla espejo o de relación (no existen, DEC-FAC-026) y el validador (`2.4`).\n\n**Nota:** La preselección del servidor va en este mismo PR (no en `2.4`) para que el alta actual del web, que no manda rubros hasta `5.6`, y los e2e `listing-owner-*` sigan pasando desde que existe la columna.\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:2:2",
     "AC:2:4",
-    "AC:2:6"
+    "AC:2:6",
+    "AC:2:11"
    ],
    "guards": [
     "G-FAC-01"
@@ -626,18 +760,21 @@
    "labels": [
     "area-db",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "2.4",
    "padre": "2",
    "titulo": "2 · Validador, opciones de rubro y contrato del rechazo 400 (PR 4/5)",
-   "descripcion": "**Qué entrega:** `validateBusinessLines` y `resolveBusinessLineOptions` (RO-RO, error tipado), `businessLines` en los schemas de entrada por vertical (sin `vertical` en el cuerpo, default del servidor), el 400 `VALIDATION_ERROR` con sus razones, claves `zodError.venue.businessLines.*` y fila en `error-contract.md`; G-FAC-09 y G-FAC-07 (como caso de G14).\n\n**Sub-spec:** sub-specs/2-catalogos.md § «En código (`packages/schemas/src/catalog/`)» · § «En base (DEC-FAC-026, 046, 047)» — hijo `2` (HOS-1802).\n\n**Cubre:**\n- `AC:2:3` — G-FAC-07 y G-FAC-09 en verde con sus mutaciones.\n- `AC:2:5` — Test del validador por regla: no vacío, repetidos, valor ajeno, tipo que no admite el rubro (heladería con `nightlife`), `maxPerListing` y `excludes` con un catálogo de prueba que los declare; y de `resolveBusinessLineOptions` con los mismos casos.\n- Guard `G-FAC-07` — billing no lee rubros (F-V1-032) (definición: `docs/06-guards.md` § «G-FAC-07 · Billing no lee rubros»)\n- Guard `G-FAC-09` — ninguna validación de rubros fuera del validador (definición: `docs/06-guards.md` § «G-FAC-09 · Ninguna validación de rubros fuera del validador»)\n\n**Decisiones:** DEC-FAC-026, DEC-FAC-046, DEC-FAC-047, DEC-FAC-006.\n\n**Depende de:** `2.3` (mismo hijo).\n\n**Fuera de alcance:** el límite de rubros por plan (sólo se documenta el punto de extensión, DEC-FAC-006).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `validateBusinessLines` y `resolveBusinessLineOptions` (RO-RO, error tipado), `businessLines` en los schemas de entrada por vertical (sin `vertical` en el cuerpo, default del servidor), el 400 `VALIDATION_ERROR` con sus razones, claves `zodError.venue.businessLines.*` y fila en `error-contract.md`; G-FAC-09 y G-FAC-07 (como caso de G14).\n\n**Sub-spec:** sub-specs/2-catalogos.md § «En código (`packages/schemas/src/catalog/`)» · § «En base (DEC-FAC-026, 046, 047)» — hijo `2` (HOS-1802).\n\n**Cubre:**\n- `AC:2:3` — G-FAC-07 y G-FAC-09 en verde con sus mutaciones.\n- `AC:2:5` — Test del validador por regla: no vacío, repetidos, valor ajeno, tipo que no admite el rubro (heladería con `nightlife`), `maxPerListing` y `excludes` con un catálogo de prueba que los declare; y de `resolveBusinessLineOptions` con los mismos casos.\n- `AC:2:12` — Un alta o un PATCH con `businessLines` inválidos responde 400 `VALIDATION_ERROR` con `details.field = 'businessLines'` y su razón (`EMPTY`, `DUPLICATE`, `NOT_IN_VERTICAL`, `NOT_ALLOWED_FOR_TYPE`, `MAX_EXCEEDED`, `EXCLUDED_PAIR`); un valor ajeno a la vertical se rechaza por forma; claves `zodError.venue.businessLines.*` en es/en/pt y fila en `apps/api/docs/error-contract.md`.\n- Guard `G-FAC-07` — billing no lee rubros (F-V1-032) (definición: `docs/06-guards.md` § «G-FAC-07 · Billing no lee rubros»)\n- Guard `G-FAC-09` — ninguna validación de rubros fuera del validador (definición: `docs/06-guards.md` § «G-FAC-09 · Ninguna validación de rubros fuera del validador»)\n\n**Decisiones:** DEC-FAC-026, DEC-FAC-046, DEC-FAC-047, DEC-FAC-006.\n\n**Depende de:** `2.3` (mismo hijo).\n\n**Fuera de alcance:** el límite de rubros por plan (sólo se documenta el punto de extensión, DEC-FAC-006).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:2:3",
-    "AC:2:5"
+    "AC:2:5",
+    "AC:2:12"
    ],
    "guards": [
     "G-FAC-07",
@@ -650,15 +787,17 @@
     "area-api",
     "area-billing",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "2.5",
    "padre": "2",
    "titulo": "2 · Dimensiones de reseña en el catálogo y validateReviewDimensions (PR 5/5)",
-   "descripcion": "**Qué entrega:** `ReviewDimensionDefinition`/`ReviewRules` por vertical (venue `votedOnly` con `food` ligada a `menu`; experiencia con sus cuatro sin ligar y `legacyNullAsZero`), el schema del desglose derivado, `validateReviewDimensions` con su 400 y claves i18n, y la regla 12 de G-FAC-02.\n\n**Sub-spec:** sub-specs/2-catalogos.md § «Dimensiones de reseña (DEC-FAC-065, Q-16 = 2)» — hijo `2` (HOS-1802).\n\n**Cubre:**\n- `AC:2:9` — Test de `validateReviewDimensions`: `food` en un BOLICHE → `DIMENSION_NOT_APPLICABLE`; en un RESTAURANT con `menu` `locked` → válido; dimensión ajena a la vertical → rechazo por forma; `food: 0` en venue → rechazo por forma; una reseña de experiencia con las cuatro dimensiones → válida (igual que hoy).\n- `AC:2:10` — `ReviewRules` de experiencia declarado con `legacyNullAsZero`; G-FAC-02 regla 12 rojo si se borra.\n\n**Decisiones:** DEC-FAC-065, DEC-FAC-071, DEC-FAC-072, DEC-FAC-073.\n\n**Depende de:** `2.4` (mismo hijo).\n\n**Fuera de alcance:** las rutas de alta de reseña y el recálculo (sub-spec 3), el formulario (sub-spec 6) y la moderación (sub-spec 7).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `ReviewDimensionDefinition`/`ReviewRules` por vertical (venue `votedOnly` con `food` ligada a `menu`; experiencia con sus cuatro sin ligar y `legacyNullAsZero`), el schema del desglose derivado, `validateReviewDimensions` con su 400 y claves i18n, y la regla 12 de G-FAC-02.\n\n**Sub-spec:** sub-specs/2-catalogos.md § «Dimensiones de reseña (DEC-FAC-065, Q-16 = 2)» — hijo `2` (HOS-1802).\n\n**Cubre:**\n- `AC:2:9` — Test de `validateReviewDimensions`: `food` en un BOLICHE → `DIMENSION_NOT_APPLICABLE`; en un RESTAURANT con `menu` `locked` → válido; dimensión ajena a la vertical → rechazo por forma; `food: 0` en venue → rechazo por forma; una reseña de experiencia con las cuatro dimensiones → válida (igual que hoy).\n- `AC:2:10` — `ReviewRules` de experiencia declarado con `legacyNullAsZero`; G-FAC-02 regla 12 rojo si se borra.\n\n**Decisiones:** DEC-FAC-065, DEC-FAC-071, DEC-FAC-072, DEC-FAC-073.\n\n**Depende de:** `2.4` (mismo hijo).\n\n**Fuera de alcance:** las rutas de alta de reseña y el recálculo (sub-spec 3), el formulario (sub-spec 6) y la moderación (sub-spec 7).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:2:9",
     "AC:2:10"
@@ -670,15 +809,17 @@
    "labels": [
     "area-api",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "3.1",
    "padre": "3",
    "titulo": "3 · Resolvedor puro de secciones y predicado isGranted (PR 1/12)",
-   "descripcion": "**Qué entrega:** `resolveListingSections` en `packages/verticals/src/listing-sections/` con la regla única de tres estados y rasgos, `multiLine`, el predicado puro `isGranted` expuesto por `entitlement-step.ts`, y el lanzamiento ante un id desconocido.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «El resolvedor (`packages/verticals/src/listing-sections/`)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:1` — Test de matriz rubro × plan × sección × rasgo para los tres estados, **en las tres verticales**, incluida la fila «sección `locked` → rasgos `locked`» y `multiLine` (resto-bar básico con `menu` `locked` → `true`; boliche → `false`); mutación de cada rama.\n\n**Decisiones:** DEC-FAC-020, DEC-FAC-050, DEC-FAC-051.\n\n**Depende de:** `2.5` (hijo 2, HOS-1802).\n\n**Fuera de alcance:** la integración con la cadena (`3.2`) y los lectores (`3.8`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `resolveListingSections` en `packages/verticals/src/listing-sections/` con la regla única de tres estados y rasgos, `multiLine`, el predicado puro `isGranted` expuesto por `entitlement-step.ts`, y el lanzamiento ante un id desconocido.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «El resolvedor (`packages/verticals/src/listing-sections/`)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:1` — Test de matriz rubro × plan × sección × rasgo para los tres estados, **en las tres verticales**, incluida la fila «sección `locked` → rasgos `locked`» y `multiLine` (resto-bar básico con `menu` `locked` → `true`; boliche → `false`); mutación de cada rama.\n\n**Decisiones:** DEC-FAC-020, DEC-FAC-050, DEC-FAC-051.\n\n**Depende de:** `2.5` (hijo 2, HOS-1802).\n\n**Fuera de alcance:** la integración con la cadena (`3.2`) y los lectores (`3.8`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:3:1"
    ],
@@ -689,15 +830,17 @@
    "labels": [
     "area-api",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "3.2",
    "padre": "3",
    "titulo": "3 · Paso 4b en la cadena de autorización de fichas (PR 2/12)",
-   "descripcion": "**Qué entrega:** `sections` en la firma de `resolveListingAccess`, el 4b después del paso 4 (y en `CREATE`), `SECTION_ABSENT` (409 al dueño, `NOT_FOUND` a un ajeno), `evaluatedSteps` con `'4b'`, claves de sección y rasgo en `requiredKeys` del paso 6 sólo con intención `write`, `businessLines` en `loadFacts`, `createProtectedRoute` que se niega a levantar una sección inexistente, y `error-contract.md`, `runListingContentCall`, `check-step5-declared.ts` y `coverage-step-coverage.guard.test.ts` al día.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Escrituras y lecturas del dueño: dónde entra en la cadena (F-V1-015, DEC-FAC-019)» · § «Respuesta del paso 4b (F-V1-016, DEC-FAC-018, DEC-FAC-048)» · § «Intención de la ruta (DEC-FAC-041, F-V2-007)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:6` — Un dueño con la suscripción vencida que abre la carta recibe `NO_COVERAGE`, no `NO_CAPABILITY`.\n\n**Decisiones:** DEC-FAC-018, DEC-FAC-019, DEC-FAC-041, DEC-FAC-048.\n\n**Depende de:** `3.1` (mismo hijo).\n\n**Fuera de alcance:** migrar rutas concretas (desde `3.3`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `sections` en la firma de `resolveListingAccess`, el 4b después del paso 4 (y en `CREATE`), `SECTION_ABSENT` (409 al dueño, `NOT_FOUND` a un ajeno), `evaluatedSteps` con `'4b'`, claves de sección y rasgo en `requiredKeys` del paso 6 sólo con intención `write`, `businessLines` en `loadFacts`, `createProtectedRoute` que se niega a levantar una sección inexistente, y `error-contract.md`, `runListingContentCall`, `check-step5-declared.ts` y `coverage-step-coverage.guard.test.ts` al día.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Escrituras y lecturas del dueño: dónde entra en la cadena (F-V1-015, DEC-FAC-019)» · § «Respuesta del paso 4b (F-V1-016, DEC-FAC-018, DEC-FAC-048)» · § «Intención de la ruta (DEC-FAC-041, F-V2-007)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:6` — Un dueño con la suscripción vencida que abre la carta recibe `NO_COVERAGE`, no `NO_CAPABILITY`.\n\n**Decisiones:** DEC-FAC-018, DEC-FAC-019, DEC-FAC-041, DEC-FAC-048.\n\n**Depende de:** `3.1` (mismo hijo).\n\n**Fuera de alcance:** migrar rutas concretas (desde `3.3`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:3:6"
    ],
@@ -709,15 +852,17 @@
     "area-api",
     "area-auth",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "3.3",
    "padre": "3",
    "titulo": "3 · Rutas de la carta con sección, rasgos e intención (PR 3/12)",
-   "descripcion": "**Qué entrega:** `putMenu`, `uploadMenuItemPhoto`, `uploadMenuFile`/`deleteMenuFile`, `menuQr` y `menuQrScans` declaran sección + rasgos + intención (vacío = `delete`) en vez de literales de clave; `menuQr`/`menuQrScans` dejan `READ_OWN_COMMERCIAL` por una operación sin `step6Key`.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Intención de la ruta (DEC-FAC-041, F-V2-007)» · § «Rutas y rasgos» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:4` — Borrado en `locked`: `deleteMenuFile` y un PUT vacío pasan sin la clave; un PUT con contenido responde 403.\n- `AC:3:5` — `menuQr` y `menuQrScans` responden igual que hoy por plan (premium), sin 500.\n\n**Decisiones:** DEC-FAC-025, DEC-FAC-041, DEC-FAC-051, DEC-FAC-062.\n\n**Depende de:** `3.2` (mismo hijo).\n\n**Fuera de alcance:** menú del día y eventos (`3.4`); el PATCH de la ficha (`3.6`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `putMenu`, `uploadMenuItemPhoto`, `uploadMenuFile`/`deleteMenuFile`, `menuQr` y `menuQrScans` declaran sección + rasgos + intención (vacío = `delete`) en vez de literales de clave; `menuQr`/`menuQrScans` dejan `READ_OWN_COMMERCIAL` por una operación sin `step6Key`.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Intención de la ruta (DEC-FAC-041, F-V2-007)» · § «Rutas y rasgos» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:4` — Borrado en `locked`: `deleteMenuFile` y un PUT vacío pasan sin la clave; un PUT con contenido responde 403.\n- `AC:3:5` — `menuQr` y `menuQrScans` responden igual que hoy por plan (premium), sin 500.\n\n**Decisiones:** DEC-FAC-025, DEC-FAC-041, DEC-FAC-051, DEC-FAC-062.\n\n**Depende de:** `3.2` (mismo hijo).\n\n**Fuera de alcance:** menú del día y eventos (`3.4`); el PATCH de la ficha (`3.6`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:3:4",
     "AC:3:5"
@@ -729,15 +874,17 @@
    "labels": [
     "area-api",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "3.4",
    "padre": "3",
    "titulo": "3 · Menú del día, eventos y lecturas protegidas por la cadena, con G-FAC-06 (PR 4/12)",
-   "descripcion": "**Qué entrega:** `putDailySpecials` y `putEvents` con sección e intención; `getMenu`, `getDailySpecials` y `getEvents` pasan de `createCRUDRoute` con chequeo a mano a la cadena con `READ_OWN`, conservando el acceso de `VENUE_VIEW_ALL`; G-FAC-06.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Rutas y rasgos» · § «Intención de la ruta (DEC-FAC-041, F-V2-007)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:2` — Las rutas de carta, menú del día, eventos y `nightInfo` pasan por el paso 4b y el paso 6: 409 / 403 / 2xx según el estado; un pedido ajeno sigue en 404; un ajeno en una operación que admite `PUBLISHED` recibe 404, no 409.\n- Guard `G-FAC-06` — toda ruta de subrecurso de contenido declara su sección, usa la cadena y declara su intención (definición: `docs/06-guards.md` § «G-FAC-06 · Toda ruta de contenido declara su sección»)\n\n**Decisiones:** DEC-FAC-041, DEC-FAC-055.\n\n**Depende de:** `3.3` (mismo hijo).\n\n**Fuera de alcance:** nuevas rutas de `nightInfo` (no tiene subrecurso: se escribe por el PATCH, `3.6`).\n\n**Riesgo abierto:** El AC nombra rutas de `nightInfo`, que nace en el sub-spec 4 (downstream): acá se prueba con carta, menú del día y eventos; la parte de `nightInfo` la verifica `AC:4:3` (ver «Contradicciones» en `arbol.md`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `putDailySpecials` y `putEvents` con sección e intención; `getMenu`, `getDailySpecials` y `getEvents` pasan de `createCRUDRoute` con chequeo a mano a la cadena con `READ_OWN`, conservando el acceso de `VENUE_VIEW_ALL`; G-FAC-06.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Rutas y rasgos» · § «Intención de la ruta (DEC-FAC-041, F-V2-007)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:2` — Las rutas de carta, menú del día, eventos y `nightInfo` pasan por el paso 4b y el paso 6: 409 / 403 / 2xx según el estado; un pedido ajeno sigue en 404; un ajeno en una operación que admite `PUBLISHED` recibe 404, no 409.\n- Guard `G-FAC-06` — toda ruta de subrecurso de contenido declara su sección, usa la cadena y declara su intención (definición: `docs/06-guards.md` § «G-FAC-06 · Toda ruta de contenido declara su sección»)\n\n**Decisiones:** DEC-FAC-041, DEC-FAC-055.\n\n**Depende de:** `3.3` (mismo hijo).\n\n**Fuera de alcance:** nuevas rutas de `nightInfo` (no tiene subrecurso: se escribe por el PATCH, `3.6`).\n\n**Riesgo abierto:** El AC nombra rutas de `nightInfo`, que nace en el sub-spec 4 (downstream): acá se prueba con carta, menú del día y eventos; la parte de `nightInfo` la verifica `AC:4:3` (ver «Contradicciones» en `arbol.md`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:3:2"
    ],
@@ -751,15 +898,17 @@
     "area-api",
     "area-auth",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "3.5",
    "padre": "3",
    "titulo": "3 · Endpoint de estados de secciones para el editor del dueño (PR 5/12)",
-   "descripcion": "**Qué entrega:** Endpoint protegido por ficha (o el mismo dato en el detalle del dueño) que devuelve el mapa de estados y `multiLine`, con `listingAccess` `READ_OWN` (admite la acción 15) y cálculo sobre `subjectId`, nunca el actor.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Lecturas para superficies» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:7` — Soporte con plan propio Premium sobre un dueño Básico ve `locked` (acción 15); el personal con `VIEW_ALL` sigue leyendo carta, menú del día y eventos.\n\n**Decisiones:** DEC-FAC-019.\n\n**Depende de:** `3.4` (mismo hijo).\n\n**Fuera de alcance:** la UI del editor (sub-spec 5) y la vista previa de la bajada (sub-spec 5).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Endpoint protegido por ficha (o el mismo dato en el detalle del dueño) que devuelve el mapa de estados y `multiLine`, con `listingAccess` `READ_OWN` (admite la acción 15) y cálculo sobre `subjectId`, nunca el actor.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Lecturas para superficies» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:7` — Soporte con plan propio Premium sobre un dueño Básico ve `locked` (acción 15); el personal con `VIEW_ALL` sigue leyendo carta, menú del día y eventos.\n\n**Decisiones:** DEC-FAC-019.\n\n**Depende de:** `3.4` (mismo hijo).\n\n**Fuera de alcance:** la UI del editor (sub-spec 5) y la vista previa de la bajada (sub-spec 5).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:3:7"
    ],
@@ -771,15 +920,17 @@
     "area-api",
     "area-auth",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "3.6",
    "padre": "3",
    "titulo": "3 · PATCH multisección, migración de experiencia al resolvedor y G-FAC-04 (PR 6/12)",
-   "descripcion": "**Qué entrega:** El PATCH de la ficha de venue y experiencia con `listingSection = sectionsTouchedByBody` sobre los rubros resultantes; experiencia migra `meetingPoint.directions` (deja su `Object.hasOwn`), el `Record` de claves de `chat.ts` se migra entero; G-FAC-04 con la lista cerrada y contada de alojamiento.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Rutas que escriben varias secciones (F-V1-016, DEC-FAC-021, DEC-FAC-040)» · § «El resolvedor (`packages/verticals/src/listing-sections/`)» · § «Rutas y rasgos» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:3` — PATCH que agrega `nightlife` y carga `nightInfo` en el mismo cuerpo → 2xx; que quita `nightlife` y la carga → 409; alta de una HELADERIA con campos de `nightInfo` → 409.\n- `AC:3:17` — Alojamiento y experiencia: salida pública idéntica a la de antes (test de no regresión), incluidas las indicaciones de experiencia con y sin la clave.\n- Guard `G-FAC-04` — ninguna ruta usa literales de clave de una sección o de un rasgo (definición: `docs/06-guards.md` § «G-FAC-04 · Sin literales de clave para secciones ni rasgos»)\n\n**Decisiones:** DEC-FAC-021, DEC-FAC-040, DEC-FAC-049, DEC-FAC-033.\n\n**Depende de:** `3.5` (mismo hijo).\n\n**Fuera de alcance:** el gating por campo de alojamiento (hijo 8).\n\n**Riesgo abierto:** El AC usa campos de `nightInfo` (sub-spec 4, downstream): el detector se prueba con un campo de una sección no común que ya exista (p. ej. `menuUrl` de `menu`) y la versión literal con `nightInfo` queda en `AC:4:3` (ver «Contradicciones» en `arbol.md`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** El PATCH de la ficha de venue y experiencia con `listingSection = sectionsTouchedByBody` sobre los rubros resultantes; experiencia migra `meetingPoint.directions` (deja su `Object.hasOwn`), el `Record` de claves de `chat.ts` se migra entero; G-FAC-04 con la lista cerrada y contada de alojamiento.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Rutas que escriben varias secciones (F-V1-016, DEC-FAC-021, DEC-FAC-040)» · § «El resolvedor (`packages/verticals/src/listing-sections/`)» · § «Rutas y rasgos» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:3` — PATCH que agrega `nightlife` y carga `nightInfo` en el mismo cuerpo → 2xx; que quita `nightlife` y la carga → 409; alta de una HELADERIA con campos de `nightInfo` → 409.\n- `AC:3:17` — Alojamiento y experiencia: salida pública idéntica a la de antes (test de no regresión), incluidas las indicaciones de experiencia con y sin la clave.\n- Guard `G-FAC-04` — ninguna ruta usa literales de clave de una sección o de un rasgo (definición: `docs/06-guards.md` § «G-FAC-04 · Sin literales de clave para secciones ni rasgos»)\n\n**Decisiones:** DEC-FAC-021, DEC-FAC-040, DEC-FAC-049, DEC-FAC-033.\n\n**Depende de:** `3.5` (mismo hijo).\n\n**Fuera de alcance:** el gating por campo de alojamiento (hijo 8).\n\n**Riesgo abierto:** El AC usa campos de `nightInfo` (sub-spec 4, downstream): el detector se prueba con un campo de una sección no común que ya exista (p. ej. `menuUrl` de `menu`) y la versión literal con `nightInfo` queda en `AC:4:3` (ver «Contradicciones» en `arbol.md`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:3:3",
     "AC:3:17"
@@ -793,15 +944,17 @@
    "labels": [
     "area-api",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "3.7",
    "padre": "3",
    "titulo": "3 · Contenido absent para el dueño: lectura y vaciado sólo del dueño (PR 7/12)",
-   "descripcion": "**Qué entrega:** En `absent`, el 4b admite `read` cuando el paso 4 resolvió «dueño» (incluida la acción 15) y `delete` sólo si `actor.id === subjectId`; la acción 15 con `delete` recibe 409; la exportación y `purgePreview` incluyen todo lo guardado.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Intención de la ruta (DEC-FAC-041, F-V2-007)» · § «Lectores de contenido (F-V1-005)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:12` — Dueño que quitó `food`: `getMenu` y el vaciado de `menu` → 2xx; `putMenu` con contenido → 409 `SECTION_ABSENT`; un tercero → 404 en las tres (DEC-FAC-063). La exportación trae la carta. Un BOLICHE que manda `menuUrl` en el PATCH → 409.\n- `AC:3:16` — Soporte (acción 15) lee una sección `absent` de un dueño y recibe 409 al vaciarla; el dueño la vacía (DEC-FAC-075).\n\n**Decisiones:** DEC-FAC-063, DEC-FAC-075.\n\n**Depende de:** `3.6` (mismo hijo).\n\n**Fuera de alcance:** el resumen «guardado y oculto» del hub (sub-spec 5).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** En `absent`, el 4b admite `read` cuando el paso 4 resolvió «dueño» (incluida la acción 15) y `delete` sólo si `actor.id === subjectId`; la acción 15 con `delete` recibe 409; la exportación y `purgePreview` incluyen todo lo guardado.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Intención de la ruta (DEC-FAC-041, F-V2-007)» · § «Lectores de contenido (F-V1-005)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:12` — Dueño que quitó `food`: `getMenu` y el vaciado de `menu` → 2xx; `putMenu` con contenido → 409 `SECTION_ABSENT`; un tercero → 404 en las tres (DEC-FAC-063). La exportación trae la carta. Un BOLICHE que manda `menuUrl` en el PATCH → 409.\n- `AC:3:16` — Soporte (acción 15) lee una sección `absent` de un dueño y recibe 409 al vaciarla; el dueño la vacía (DEC-FAC-075).\n\n**Decisiones:** DEC-FAC-063, DEC-FAC-075.\n\n**Depende de:** `3.6` (mismo hijo).\n\n**Fuera de alcance:** el resumen «guardado y oculto» del hub (sub-spec 5).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:3:12",
     "AC:3:16"
@@ -814,15 +967,17 @@
     "area-api",
     "area-auth",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "3.8",
    "padre": "3",
    "titulo": "3 · Lector público único por vertical y proyector genérico (PR 8/12)",
-   "descripcion": "**Qué entrega:** Un único lector público por vertical para detalle y listados (`getBySlug`, `getById`, `list`, `getByDestination`), con rubros y conjunto efectivo en lote por dueño, y el proyector genérico que reemplaza `menu-projection.ts`, `daily-specials-projection.ts`, `events-projection.ts` y `directions-projection.ts`.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Lectores de contenido (F-V1-005)» · § «El resolvedor (`packages/verticals/src/listing-sections/`)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:8` — La ficha pública **y los listados** de un local con plan sin `manage_venue_menu` no muestran la carta aunque tenga datos.\n\n**Decisiones:** DEC-FAC-040, DEC-FAC-062.\n\n**Depende de:** `3.7` (mismo hijo).\n\n**Fuera de alcance:** el bug previo HOS-1792 más allá de que `getById` pase por el proyector; la purga de cache (sub-spec 6).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Un único lector público por vertical para detalle y listados (`getBySlug`, `getById`, `list`, `getByDestination`), con rubros y conjunto efectivo en lote por dueño, y el proyector genérico que reemplaza `menu-projection.ts`, `daily-specials-projection.ts`, `events-projection.ts` y `directions-projection.ts`.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Lectores de contenido (F-V1-005)» · § «El resolvedor (`packages/verticals/src/listing-sections/`)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:8` — La ficha pública **y los listados** de un local con plan sin `manage_venue_menu` no muestran la carta aunque tenga datos.\n\n**Decisiones:** DEC-FAC-040, DEC-FAC-062.\n\n**Depende de:** `3.7` (mismo hijo).\n\n**Fuera de alcance:** el bug previo HOS-1792 más allá de que `getById` pase por el proyector; la purga de cache (sub-spec 6).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:3:8"
    ],
@@ -833,15 +988,17 @@
    "labels": [
     "area-api",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "3.9",
    "padre": "3",
    "titulo": "3 · Chat de IA, folleto, /carta/, QR de mesa y enlace de carta pago (PR 9/12)",
-   "descripcion": "**Qué entrega:** El contexto del chat de IA (`venue-ai-context.ts`) y el folleto incluyen sólo secciones `available` y `menuUrl` sólo con `menu` `available`; `/carta/` sin carta disponible → 302 `no-store`; JSON-LD `hasMenu`; hoja y widget de QR por el rasgo `menu.qr`; se borra el «enlace gratis» de `menu-projection.ts` con su test invertido.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Lectores de contenido (F-V1-005)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:9` — Un local que quitó el rubro de la carta no la expone por `getById`, chat de IA, folleto ni `/carta/`.\n- `AC:3:10` — `/carta/` sin carta disponible responde 302 con `Cache-Control: no-store`, también con `menu` `available` y sólo el enlace.\n- `AC:3:11` — Un local con plan sin `manage_venue_menu` no publica `menuUrl` en la ficha, el listado, el chat, el folleto ni el JSON-LD; con la clave, sí (DEC-FAC-062).\n\n**Decisiones:** DEC-FAC-042, DEC-FAC-062, DEC-FAC-053.\n\n**Depende de:** `3.8` (mismo hijo).\n\n**Fuera de alcance:** el prompt neutral y las reglas de edad del chat (sub-spec 6).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** El contexto del chat de IA (`venue-ai-context.ts`) y el folleto incluyen sólo secciones `available` y `menuUrl` sólo con `menu` `available`; `/carta/` sin carta disponible → 302 `no-store`; JSON-LD `hasMenu`; hoja y widget de QR por el rasgo `menu.qr`; se borra el «enlace gratis» de `menu-projection.ts` con su test invertido.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Lectores de contenido (F-V1-005)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:9` — Un local que quitó el rubro de la carta no la expone por `getById`, chat de IA, folleto ni `/carta/`.\n- `AC:3:10` — `/carta/` sin carta disponible responde 302 con `Cache-Control: no-store`, también con `menu` `available` y sólo el enlace.\n- `AC:3:11` — Un local con plan sin `manage_venue_menu` no publica `menuUrl` en la ficha, el listado, el chat, el folleto ni el JSON-LD; con la clave, sí (DEC-FAC-062).\n\n**Decisiones:** DEC-FAC-042, DEC-FAC-062, DEC-FAC-053.\n\n**Depende de:** `3.8` (mismo hijo).\n\n**Fuera de alcance:** el prompt neutral y las reglas de edad del chat (sub-spec 6).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:3:9",
     "AC:3:10",
@@ -855,15 +1012,17 @@
     "area-api",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "3.10",
    "padre": "3",
    "titulo": "3 · Validación de reseñas por dimensiones en las rutas de alta (PR 10/12)",
-   "descripcion": "**Qué entrega:** Las rutas de alta de reseña de venue y experiencia validan el desglose con `validateReviewDimensions` sobre los estados de la ficha.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Servidor de reseñas (DEC-FAC-065, 071, 073)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:13` — Reseña de un BOLICHE con la dimensión `food` → 400; sin ella → 2xx; reseña de un RESTAURANT con `food` → 2xx aunque `menu` esté `locked` (DEC-FAC-065); `food: 0` → 400; reseña de experiencia con las cuatro dimensiones → 2xx.\n\n**Decisiones:** DEC-FAC-065, DEC-FAC-071.\n\n**Depende de:** `3.9` (mismo hijo).\n\n**Fuera de alcance:** el formulario público (sub-spec 6) y la moderación (sub-spec 7).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Las rutas de alta de reseña de venue y experiencia validan el desglose con `validateReviewDimensions` sobre los estados de la ficha.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Servidor de reseñas (DEC-FAC-065, 071, 073)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:13` — Reseña de un BOLICHE con la dimensión `food` → 400; sin ella → 2xx; reseña de un RESTAURANT con `food` → 2xx aunque `menu` esté `locked` (DEC-FAC-065); `food: 0` → 400; reseña de experiencia con las cuatro dimensiones → 2xx.\n\n**Decisiones:** DEC-FAC-065, DEC-FAC-071.\n\n**Depende de:** `3.9` (mismo hijo).\n\n**Fuera de alcance:** el formulario público (sub-spec 6) y la moderación (sub-spec 7).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:3:13"
    ],
@@ -874,15 +1033,17 @@
    "labels": [
     "area-api",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "3.11",
    "padre": "3",
    "titulo": "3 · Recálculo votedOnly, test golden de experiencia y publicación de dimensiones (PR 11/12)",
-   "descripcion": "**Qué entrega:** `recomputeRating` lee `ReviewRules.dimensionAveraging` (`legacyNullAsZero` movido sin cambios; `votedOnly` sin imputación, se borra la de `gastronomy.review.service.ts`), test golden de experiencia contra el valor capturado antes, y el lector que no publica el promedio de una dimensión ligada a una sección `absent`.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Servidor de reseñas (DEC-FAC-065, 071, 073)» · § «Lectores de contenido (F-V1-005)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:14` — Recálculo `votedOnly`: una dimensión sin votos queda sin clave; el promedio de una dimensión ignora las reseñas que no la votaron; test golden de experiencia en verde.\n- `AC:3:15` — Un RESTAURANT con votos de comida que pasa a BOLICHE no publica «Comida»; vuelve a RESTAURANT y la publica (DEC-FAC-072).\n\n**Decisiones:** DEC-FAC-071, DEC-FAC-072, DEC-FAC-073.\n\n**Depende de:** `3.10` (mismo hijo).\n\n**Fuera de alcance:** pasar experiencia a `votedOnly` (cambio visible, va aparte).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `recomputeRating` lee `ReviewRules.dimensionAveraging` (`legacyNullAsZero` movido sin cambios; `votedOnly` sin imputación, se borra la de `gastronomy.review.service.ts`), test golden de experiencia contra el valor capturado antes, y el lector que no publica el promedio de una dimensión ligada a una sección `absent`.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Servidor de reseñas (DEC-FAC-065, 071, 073)» · § «Lectores de contenido (F-V1-005)» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:14` — Recálculo `votedOnly`: una dimensión sin votos queda sin clave; el promedio de una dimensión ignora las reseñas que no la votaron; test golden de experiencia en verde.\n- `AC:3:15` — Un RESTAURANT con votos de comida que pasa a BOLICHE no publica «Comida»; vuelve a RESTAURANT y la publica (DEC-FAC-072).\n\n**Decisiones:** DEC-FAC-071, DEC-FAC-072, DEC-FAC-073.\n\n**Depende de:** `3.10` (mismo hijo).\n\n**Fuera de alcance:** pasar experiencia a `votedOnly` (cambio visible, va aparte).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:3:14",
     "AC:3:15"
@@ -895,15 +1056,17 @@
     "area-api",
     "area-db",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "3.12",
    "padre": "3",
    "titulo": "3 · Estados degradados del resolvedor y G-FAC-03 (PR 12/12)",
-   "descripcion": "**Qué entrega:** Los tres estados degradados con su test (cero rubros, fallo del conjunto efectivo en lo público con `no-store`, 503 en el editor) y G-FAC-03 (a) con el checker de TypeScript y (b) con el inventario contado de lectores de `business_lines`.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Estados degradados (F-V1-034)» · § «Guards» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:18` — Los estados degradados de la tabla tienen su test.\n- Guard `G-FAC-03` — (a) sólo el resolvedor decide secciones por rubro; (b) lista cerrada de lectores de rubros (definición: `docs/06-guards.md` § «G-FAC-03 · Rubros: quién decide y quién lee»)\n\n**Decisiones:** DEC-FAC-026, DEC-FAC-043.\n\n**Depende de:** `3.11` (mismo hijo).\n\n**Fuera de alcance:** lectores nuevos de los sub-specs 5 a 7 (entran al inventario en su propio PR).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Los tres estados degradados con su test (cero rubros, fallo del conjunto efectivo en lo público con `no-store`, 503 en el editor) y G-FAC-03 (a) con el checker de TypeScript y (b) con el inventario contado de lectores de `business_lines`.\n\n**Sub-spec:** sub-specs/3-resolvedor.md § «Estados degradados (F-V1-034)» · § «Guards» — hijo `3` (HOS-1803).\n\n**Cubre:**\n- `AC:3:18` — Los estados degradados de la tabla tienen su test.\n- Guard `G-FAC-03` — (a) sólo el resolvedor decide secciones por rubro; (b) lista cerrada de lectores de rubros (definición: `docs/06-guards.md` § «G-FAC-03 · Rubros: quién decide y quién lee»)\n\n**Decisiones:** DEC-FAC-026, DEC-FAC-043.\n\n**Depende de:** `3.11` (mismo hijo).\n\n**Fuera de alcance:** lectores nuevos de los sub-specs 5 a 7 (entran al inventario en su propio PR).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:3:18"
    ],
@@ -917,15 +1080,17 @@
     "area-api",
     "area-devops",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "4.1",
    "padre": "4",
    "titulo": "4 · Listas planas de tipos derivadas del enum (PR 1/5)",
-   "descripcion": "**Qué entrega:** `GASTRONOMY_TYPES` de la página de la vertical, `DEFAULT_GASTRONOMY_TYPES` de `summary.catalogs.ts` y el selector de tipo de la config consolidada del admin pasan a derivarse del enum, con un test contra `Object.values`.\n\n**Sub-spec:** sub-specs/4-tipos-y-noche.md § «Tipos nuevos: se movieron» — hijo `4` (HOS-1804).\n\n**Cubre:**\n- `AC:4:2` — Tipos visibles en alta, filtros y chips (listas derivadas, con su test).\n\n**Decisiones:** DEC-FAC-045.\n\n**Depende de:** `2.5` (hijo 2, HOS-1802).\n\n**Fuera de alcance:** agregar tipos (ya nacieron en `2.1`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `GASTRONOMY_TYPES` de la página de la vertical, `DEFAULT_GASTRONOMY_TYPES` de `summary.catalogs.ts` y el selector de tipo de la config consolidada del admin pasan a derivarse del enum, con un test contra `Object.values`.\n\n**Sub-spec:** sub-specs/4-tipos-y-noche.md § «Tipos nuevos: se movieron» — hijo `4` (HOS-1804).\n\n**Cubre:**\n- `AC:4:2` — Tipos visibles en alta, filtros y chips (listas derivadas, con su test).\n\n**Decisiones:** DEC-FAC-045.\n\n**Depende de:** `2.5` (hijo 2, HOS-1802).\n\n**Fuera de alcance:** agregar tipos (ya nacieron en `2.1`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:4:2"
    ],
@@ -937,15 +1102,17 @@
     "area-admin",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "4.2",
    "padre": "4",
    "titulo": "4 · Columnas de nightInfo, schemas Zod y validación en servidor (PR 2/5)",
-   "descripcion": "**Qué entrega:** Las siete columnas de `nightInfo` en `venues` (sin usar `BOLICHE`/`PUB` como valor en la migración), sus `fields` en el catálogo, schemas Zod en `@repo/schemas` y las reglas de servidor: `min_age` 13-30, CHECKs de precio, `entry_price_updated_at` que sólo se mueve si cambia el valor y que se borra al dejar `paid`.\n\n**Sub-spec:** sub-specs/4-tipos-y-noche.md § «Sección `nightInfo` (forma final, DEC-FAC-036, DEC-FAC-058)» — hijo `4` (HOS-1804).\n\n**Cubre:**\n- `AC:4:1` — Migraciones aplicadas desde cero con todas las pendientes juntas.\n- `AC:4:3` — `nightInfo` editable sólo en fichas con rubro `nightlife`: en las demás, 409 `SECTION_ABSENT` al dueño; 404 a un tercero.\n- `AC:4:6` — `min_age` 12 o 31 → 400.\n- `AC:4:7` — Reenviar el mismo precio no mueve `entry_price_updated_at`; pasar a `free` borra el precio.\n\n**Decisiones:** DEC-FAC-036, DEC-FAC-058, DEC-FAC-040.\n\n**Depende de:** `4.1` (mismo hijo), `3.6` (hijo 3, HOS-1803).\n\n**Fuera de alcance:** presentación en la ficha (`4.5`) y el editor del dueño (sub-spec 5).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Las siete columnas de `nightInfo` en `venues` (sin usar `BOLICHE`/`PUB` como valor en la migración), sus `fields` en el catálogo, schemas Zod en `@repo/schemas` y las reglas de servidor: `min_age` 13-30, CHECKs de precio, `entry_price_updated_at` que sólo se mueve si cambia el valor y que se borra al dejar `paid`.\n\n**Sub-spec:** sub-specs/4-tipos-y-noche.md § «Sección `nightInfo` (forma final, DEC-FAC-036, DEC-FAC-058)» — hijo `4` (HOS-1804).\n\n**Cubre:**\n- `AC:4:1` — Migraciones aplicadas desde cero con todas las pendientes juntas.\n- `AC:4:3` — `nightInfo` editable sólo en fichas con rubro `nightlife`: en las demás, 409 `SECTION_ABSENT` al dueño; 404 a un tercero.\n- `AC:4:6` — `min_age` 12 o 31 → 400.\n- `AC:4:7` — Reenviar el mismo precio no mueve `entry_price_updated_at`; pasar a `free` borra el precio.\n\n**Decisiones:** DEC-FAC-036, DEC-FAC-058, DEC-FAC-040.\n\n**Depende de:** `4.1` (mismo hijo), `3.6` (hijo 3, HOS-1803).\n\n**Fuera de alcance:** presentación en la ficha (`4.5`) y el editor del dueño (sub-spec 5).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:4:1",
     "AC:4:3",
@@ -961,15 +1128,17 @@
     "area-api",
     "area-db",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "4.3",
    "padre": "4",
    "titulo": "4 · nightInfo en el purge, en la lista de la acción 15 y G-FAC-10 (PR 3/5)",
-   "descripcion": "**Qué entrega:** Las columnas de `nightInfo` en el `SET` del purge (PB9/PB12) y en `LISTING_SUPPORT_EDIT_CONTENT_FIELDS`, `business_lines` en `LISTING_NON_CONTENT_FIELDS`, y G-FAC-10.\n\n**Sub-spec:** sub-specs/4-tipos-y-noche.md § «En `PURGED` (F-V1-017, F-V2-023)» — hijo `4` (HOS-1804).\n\n**Cubre:**\n- `AC:4:9` — PB9/PB12 borran `nightInfo`; G-FAC-10 en verde con su mutación.\n- `AC:4:10` — Soporte (acción 15) edita la nota de entrada de un boliche ajeno y el cambio se aplica y queda registrado.\n- Guard `G-FAC-10` — toda columna de contenido de una ficha está en el `SET` del purge (F-V2-023) (definición: `docs/06-guards.md` § «G-FAC-10 · El purge cubre las columnas de contenido»)\n\n**Decisiones:** DEC-FAC-074.\n\n**Depende de:** `4.2` (mismo hijo).\n\n**Fuera de alcance:** contenido en tablas hijas (G-R9) y almacenamiento externo.\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Las columnas de `nightInfo` en el `SET` del purge (PB9/PB12) y en `LISTING_SUPPORT_EDIT_CONTENT_FIELDS`, `business_lines` en `LISTING_NON_CONTENT_FIELDS`, y G-FAC-10.\n\n**Sub-spec:** sub-specs/4-tipos-y-noche.md § «En `PURGED` (F-V1-017, F-V2-023)» — hijo `4` (HOS-1804).\n\n**Cubre:**\n- `AC:4:9` — PB9/PB12 borran `nightInfo`; G-FAC-10 en verde con su mutación.\n- `AC:4:10` — Soporte (acción 15) edita la nota de entrada de un boliche ajeno y el cambio se aplica y queda registrado.\n- Guard `G-FAC-10` — toda columna de contenido de una ficha está en el `SET` del purge (F-V2-023) (definición: `docs/06-guards.md` § «G-FAC-10 · El purge cubre las columnas de contenido»)\n\n**Decisiones:** DEC-FAC-074.\n\n**Depende de:** `4.2` (mismo hijo).\n\n**Fuera de alcance:** contenido en tablas hijas (G-R9) y almacenamiento externo.\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:4:9",
     "AC:4:10"
@@ -984,15 +1153,17 @@
     "area-api",
     "area-db",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "4.4",
    "padre": "4",
    "titulo": "4 · «Abierto ahora» con turnos que cruzan la medianoche (PR 4/5)",
-   "descripcion": "**Qué entrega:** `venue-hours.ts`: un turno pertenece al día en que empieza; abierto si el turno de hoy contiene `now` o el de ayer envuelve y `now < close`, con el test del calendario viernes/sábado y el docblock corregido.\n\n**Sub-spec:** sub-specs/4-tipos-y-noche.md § «Sección `nightInfo` (forma final, DEC-FAC-036, DEC-FAC-058)» — hijo `4` (HOS-1804).\n\n**Cubre:**\n- `AC:4:8` — «Abierto ahora» con el calendario viernes/sábado de arriba.\n\n**Decisiones:** DEC-FAC-052.\n\n**Depende de:** `4.3` (mismo hijo).\n\n**Fuera de alcance:** cómo se muestra el badge en páginas cacheadas (sub-spec 6).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `venue-hours.ts`: un turno pertenece al día en que empieza; abierto si el turno de hoy contiene `now` o el de ayer envuelve y `now < close`, con el test del calendario viernes/sábado y el docblock corregido.\n\n**Sub-spec:** sub-specs/4-tipos-y-noche.md § «Sección `nightInfo` (forma final, DEC-FAC-036, DEC-FAC-058)» — hijo `4` (HOS-1804).\n\n**Cubre:**\n- `AC:4:8` — «Abierto ahora» con el calendario viernes/sábado de arriba.\n\n**Decisiones:** DEC-FAC-052.\n\n**Depende de:** `4.3` (mismo hijo).\n\n**Fuera de alcance:** cómo se muestra el badge en páginas cacheadas (sub-spec 6).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:4:8"
    ],
@@ -1004,15 +1175,17 @@
     "area-api",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "4.5",
    "padre": "4",
    "titulo": "4 · nightInfo en la ficha pública: «De noche» e insignia +N (PR 5/5)",
-   "descripcion": "**Qué entrega:** El componente de `nightInfo` en la ficha pública, renderizado sólo con la sección `available`, con el título de `headingWhenMultiLineKey` cuando `multiLine` y la insignia «+N» con el texto legal fijo traducido.\n\n**Sub-spec:** sub-specs/4-tipos-y-noche.md § «Sección `nightInfo` (forma final, DEC-FAC-036, DEC-FAC-058)» — hijo `4` (HOS-1804).\n\n**Cubre:**\n- `AC:4:4` — `nightInfo` renderizada en la ficha pública sólo cuando está `available`, con «De noche» cuando `multiLine`.\n- `AC:4:5` — La insignia «+N» muestra el texto legal fijo; `min_age` vacío no muestra nada.\n\n**Decisiones:** DEC-FAC-050, DEC-FAC-068.\n\n**Depende de:** `4.4` (mismo hijo), `3.12` (hijo 3, HOS-1803).\n\n**Fuera de alcance:** el orden de secciones por catálogo de la ficha entera (sub-spec 6) y el chat (sub-spec 6).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** El componente de `nightInfo` en la ficha pública, renderizado sólo con la sección `available`, con el título de `headingWhenMultiLineKey` cuando `multiLine` y la insignia «+N» con el texto legal fijo traducido.\n\n**Sub-spec:** sub-specs/4-tipos-y-noche.md § «Sección `nightInfo` (forma final, DEC-FAC-036, DEC-FAC-058)» — hijo `4` (HOS-1804).\n\n**Cubre:**\n- `AC:4:4` — `nightInfo` renderizada en la ficha pública sólo cuando está `available`, con «De noche» cuando `multiLine`.\n- `AC:4:5` — La insignia «+N» muestra el texto legal fijo; `min_age` vacío no muestra nada.\n\n**Decisiones:** DEC-FAC-050, DEC-FAC-068.\n\n**Depende de:** `4.4` (mismo hijo), `3.12` (hijo 3, HOS-1803).\n\n**Fuera de alcance:** el orden de secciones por catálogo de la ficha entera (sub-spec 6) y el chat (sub-spec 6).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:4:4",
     "AC:4:5"
@@ -1026,15 +1199,17 @@
     "area-content",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "9.1",
    "padre": "9",
    "titulo": "9 · Copy neutro del embudo en la web (es/en/pt) (PR 1/3)",
-   "descripcion": "**Qué entrega:** Presentación, planes, precios, publicar, intro de la vertical, footer, puertas de descubrimiento e ícono de la vertical con el copy neutro de vertical (es/en/pt), según el inventario cerrado.\n\n**Sub-spec:** sub-specs/9-copy-del-embudo.md § «Regla» · § «Inventario cerrado» · § «Consecuencia del enlace de carta pago (DEC-FAC-062)» — hijo `9` (HOS-1805).\n\n**Cubre:**\n- `AC:9:1` — Ningún texto del inventario dice «restaurante», «platos» o «menú» como descripción de la vertical (sí dentro de lo que es del rubro gastronomía); revisión del owner sobre las tres lenguas.\n- `AC:9:3` — G-FAC-R1 en verde (las claves nuevas no reintroducen la palabra retirada).\n\n**Decisiones:** DEC-FAC-069, DEC-FAC-068, DEC-FAC-067.\n\n**Depende de:** `1.B9` (hijo 1, HOS-1801), `2.1` (hijo 2, HOS-1802).\n\n**Fuera de alcance:** la comparativa de planes generada desde el catálogo (sub-spec 6) y el upsell del editor (sub-spec 5).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Presentación, planes, precios, publicar, intro de la vertical, footer, puertas de descubrimiento e ícono de la vertical con el copy neutro de vertical (es/en/pt), según el inventario cerrado.\n\n**Sub-spec:** sub-specs/9-copy-del-embudo.md § «Regla» · § «Inventario cerrado» · § «Consecuencia del enlace de carta pago (DEC-FAC-062)» — hijo `9` (HOS-1805).\n\n**Cubre:**\n- `AC:9:1` — Ningún texto del inventario dice «restaurante», «platos» o «menú» como descripción de la vertical (sí dentro de lo que es del rubro gastronomía); revisión del owner sobre las tres lenguas.\n- `AC:9:3` — G-FAC-R1 en verde (las claves nuevas no reintroducen la palabra retirada).\n\n**Decisiones:** DEC-FAC-069, DEC-FAC-068, DEC-FAC-067.\n\n**Depende de:** `1.B9` (hijo 1, HOS-1801), `2.1` (hijo 2, HOS-1802).\n\n**Fuera de alcance:** la comparativa de planes generada desde el catálogo (sub-spec 6) y el upsell del editor (sub-spec 5).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:9:1",
     "AC:9:3"
@@ -1048,15 +1223,17 @@
     "area-content",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "9.2",
    "padre": "9",
    "titulo": "9 · Correos neutros: serie de prueba y recordatorio de renovación (PR 2/3)",
-   "descripcion": "**Qué entrega:** `product-domain-copy.ts` (serie de prueba y línea de cierre del recordatorio de renovación) neutro de vertical, con el test que renderiza la plantilla para el dueño de un boliche.\n\n**Sub-spec:** sub-specs/9-copy-del-embudo.md § «Regla» · § «Inventario cerrado» — hijo `9` (HOS-1805).\n\n**Cubre:**\n- `AC:9:2` — Los correos de la serie de prueba no varían por rubro; test que renderiza la plantilla para un dueño de un boliche y verifica que no menciona carta ni platos.\n\n**Decisiones:** DEC-FAC-069.\n\n**Depende de:** `9.1` (mismo hijo).\n\n**Fuera de alcance:** ramificar correos por rubro (prohibido por la regla 1).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `product-domain-copy.ts` (serie de prueba y línea de cierre del recordatorio de renovación) neutro de vertical, con el test que renderiza la plantilla para el dueño de un boliche.\n\n**Sub-spec:** sub-specs/9-copy-del-embudo.md § «Regla» · § «Inventario cerrado» — hijo `9` (HOS-1805).\n\n**Cubre:**\n- `AC:9:2` — Los correos de la serie de prueba no varían por rubro; test que renderiza la plantilla para un dueño de un boliche y verifica que no menciona carta ni platos.\n\n**Decisiones:** DEC-FAC-069.\n\n**Depende de:** `9.1` (mismo hijo).\n\n**Fuera de alcance:** ramificar correos por rubro (prohibido por la regla 1).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:9:2"
    ],
@@ -1067,15 +1244,17 @@
    "labels": [
     "area-content",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "9.3",
    "padre": "9",
    "titulo": "9 · What's New de lanzamiento y smoke del embudo en staging (PR 3/3)",
-   "descripcion": "**Qué entrega:** La entrada de What's New de «Comer y salir» por el flujo de HOS-1214 (`publishedAt: 'on-promotion'`) y el smoke del embudo en staging.\n\n**Sub-spec:** sub-specs/9-copy-del-embudo.md § «Inventario cerrado» — hijo `9` (HOS-1805).\n\n**Cubre:**\n- `AC:9:4` — Smoke en staging (`status-needs-smoke-staging`): recorrer presentación → precios → publicar → alta como boliche y recibir el primer correo de prueba.\n\n**Decisiones:** DEC-FAC-069.\n\n**Depende de:** `9.2` (mismo hijo).\n\n**Fuera de alcance:** escribir la entrada a mano fuera del flujo del smoke.\n\n**Riesgo abierto:** El smoke incluye «alta como boliche», que necesita el selector de rubros de `5.6`, y el 5 no se mergea antes que el 9: este smoke sólo puede firmarse después de `5.6` (ver «Contradicciones» en `arbol.md`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** La entrada de What's New de «Comer y salir» por el flujo de HOS-1214 (`publishedAt: 'on-promotion'`) y el smoke del embudo en staging.\n\n**Sub-spec:** sub-specs/9-copy-del-embudo.md § «Inventario cerrado» — hijo `9` (HOS-1805).\n\n**Cubre:**\n- `AC:9:4` — Smoke en staging (`status-needs-smoke-staging`): recorrer presentación → precios → publicar. El alta como boliche y el primer correo de prueba se smokean con el sub-spec 5 (DEC-FAC-080).\n\n**Decisiones:** DEC-FAC-069, DEC-FAC-080.\n\n**Depende de:** `9.2` (mismo hijo).\n\n**Fuera de alcance:** escribir la entrada a mano fuera del flujo del smoke.\n\n**Nota:** El alta como boliche y el primer correo de prueba se smokean en `5.6` (DEC-FAC-080).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:9:4"
    ],
@@ -1086,16 +1265,18 @@
    "labels": [
     "area-content",
     "kind-spec",
-    "source-owner",
+    "pre_v1_product",
+    "source-agent",
     "status-needs-smoke-staging"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "5.1",
    "padre": "5",
    "titulo": "5 · Registro del editor derivado del catálogo y G-FAC-08 (PR 1/8)",
-   "descripcion": "**Qué entrega:** Las secciones del editor de venue y experiencia salen del catálogo filtradas por el mapa de estados (desaparecen `*_ONLY_SECTIONS` y el ternario), el `Record` de presentación exhaustivo del web, `LISTING_SECTION_PAYLOAD_KEYS` derivado de `fields`, y G-FAC-08 sobre la lista manual de alojamiento.\n\n**Sub-spec:** sub-specs/5-editor.md § «Registros derivados» · § «Guards» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- `AC:5:10` — El editor de alojamiento es idéntico al de antes y G-FAC-08 lo prueba.\n- Guard `G-FAC-08` — la lista manual de secciones de alojamiento está congelada y coincide con el catálogo (definición: `docs/06-guards.md` § «G-FAC-08 · Lista manual de secciones de alojamiento congelada»)\n\n**Decisiones:** DEC-FAC-033, DEC-FAC-040.\n\n**Depende de:** `3.12` (hijo 3, HOS-1803), `4.5` (hijo 4, HOS-1804).\n\n**Fuera de alcance:** migrar alojamiento al catálogo (hijo 8).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Las secciones del editor de venue y experiencia salen del catálogo filtradas por el mapa de estados (desaparecen `*_ONLY_SECTIONS` y el ternario), el `Record` de presentación exhaustivo del web, `LISTING_SECTION_PAYLOAD_KEYS` derivado de `fields`, y G-FAC-08 sobre la lista manual de alojamiento.\n\n**Sub-spec:** sub-specs/5-editor.md § «Registros derivados» · § «Guards» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- `AC:5:10` — El editor de alojamiento es idéntico al de antes y G-FAC-08 lo prueba.\n- Guard `G-FAC-08` — la lista manual de secciones de alojamiento está congelada y coincide con el catálogo (definición: `docs/06-guards.md` § «G-FAC-08 · Lista manual de secciones de alojamiento congelada»)\n\n**Decisiones:** DEC-FAC-033, DEC-FAC-040.\n\n**Depende de:** `3.12` (hijo 3, HOS-1803), `4.5` (hijo 4, HOS-1804).\n\n**Fuera de alcance:** migrar alojamiento al catálogo (hijo 8).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:5:10"
    ],
@@ -1109,15 +1290,17 @@
    "labels": [
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "5.2",
    "padre": "5",
    "titulo": "5 · Estados absent y locked en el editor y en el hub (PR 2/8)",
-   "descripcion": "**Qué entrega:** `absent` → slug al hub; `locked` → sólo lectura + upsell proactivo que nombra la sección o el rasgo + botón «vaciar» (intención `delete`); el hub distingue «bloqueada con datos» de «bloqueada vacía»; aviso de datos que no se publican.\n\n**Sub-spec:** sub-specs/5-editor.md § «`locked` y `absent` vistas por el dueño (F-V1-037, DEC-FAC-025, aceptada)» · § «Registros derivados» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- `AC:5:2` — e2e: slug de una sección `absent` → hub; sección `locked` con datos en sólo lectura, upsell visible, vaciado permitido (intención `delete`) y 403 al guardar.\n\n**Decisiones:** DEC-FAC-025, DEC-FAC-041.\n\n**Depende de:** `5.1` (mismo hijo).\n\n**Fuera de alcance:** el resumen de `absent` del hub (`5.7`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `absent` → slug al hub; `locked` → sólo lectura + upsell proactivo que nombra la sección o el rasgo + botón «vaciar» (intención `delete`); el hub distingue «bloqueada con datos» de «bloqueada vacía»; aviso de datos que no se publican.\n\n**Sub-spec:** sub-specs/5-editor.md § «`locked` y `absent` vistas por el dueño (F-V1-037, DEC-FAC-025, aceptada)» · § «Registros derivados» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- `AC:5:2` — e2e: slug de una sección `absent` → hub; sección `locked` con datos en sólo lectura, upsell visible, vaciado permitido (intención `delete`) y 403 al guardar.\n\n**Decisiones:** DEC-FAC-025, DEC-FAC-041.\n\n**Depende de:** `5.1` (mismo hijo).\n\n**Fuera de alcance:** el resumen de `absent` del hub (`5.7`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:5:2"
    ],
@@ -1128,15 +1311,17 @@
    "labels": [
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "5.3",
    "padre": "5",
    "titulo": "5 · menuUrl dentro de la carta y upsell de la carta corregido (PR 3/8)",
-   "descripcion": "**Qué entrega:** `menuUrl` se mueve de `PriceSection.client.tsx` a la sección de la carta; el texto del upsell (`owner.editor.menuManager.locked`, es/en/pt) deja de prometer archivo y enlace; e2e `listing-owner-01/02` y `listing-owner-self-service.md` al día.\n\n**Sub-spec:** sub-specs/5-editor.md § «Registros derivados» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- `AC:5:7` — `menuUrl` se edita dentro de la carta; en plan básico está dentro del upsell; en un BOLICHE no existe; los e2e `listing-owner-01/02` lo prueban en su nuevo lugar.\n- `AC:5:8` — El upsell de la carta en plan básico no promete archivo ni enlace (es/en/pt).\n\n**Decisiones:** DEC-FAC-062.\n\n**Depende de:** `5.2` (mismo hijo).\n\n**Fuera de alcance:** copy del embudo (sub-spec 9).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `menuUrl` se mueve de `PriceSection.client.tsx` a la sección de la carta; el texto del upsell (`owner.editor.menuManager.locked`, es/en/pt) deja de prometer archivo y enlace; e2e `listing-owner-01/02` y `listing-owner-self-service.md` al día.\n\n**Sub-spec:** sub-specs/5-editor.md § «Registros derivados» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- `AC:5:7` — `menuUrl` se edita dentro de la carta; en plan básico está dentro del upsell; en un BOLICHE no existe; los e2e `listing-owner-01/02` lo prueban en su nuevo lugar.\n- `AC:5:8` — El upsell de la carta en plan básico no promete archivo ni enlace (es/en/pt).\n\n**Decisiones:** DEC-FAC-062.\n\n**Depende de:** `5.2` (mismo hijo).\n\n**Fuera de alcance:** copy del embudo (sub-spec 9).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:5:7",
     "AC:5:8"
@@ -1149,15 +1334,17 @@
     "area-content",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "5.4",
    "padre": "5",
    "titulo": "5 · Widget de QR de mesa y paso del tour según el rasgo menu.qr (PR 4/8)",
-   "descripcion": "**Qué entrega:** `VenueMenuQrWidget` y el paso `venue-qr` consultan el mapa; el paso se salta si su target no está en la página, con test del dueño con un solo boliche.\n\n**Sub-spec:** sub-specs/5-editor.md § «Registros derivados» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- `AC:5:3` — e2e: tour de un dueño con sólo un boliche sin el paso del QR.\n\n**Decisiones:** DEC-FAC-054, DEC-FAC-051.\n\n**Depende de:** `5.3` (mismo hijo).\n\n**Fuera de alcance:** renombrar el id del tour (sub-spec 1).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `VenueMenuQrWidget` y el paso `venue-qr` consultan el mapa; el paso se salta si su target no está en la página, con test del dueño con un solo boliche.\n\n**Sub-spec:** sub-specs/5-editor.md § «Registros derivados» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- `AC:5:3` — e2e: tour de un dueño con sólo un boliche sin el paso del QR.\n\n**Decisiones:** DEC-FAC-054, DEC-FAC-051.\n\n**Depende de:** `5.3` (mismo hijo).\n\n**Fuera de alcance:** renombrar el id del tour (sub-spec 1).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:5:3"
    ],
@@ -1168,57 +1355,65 @@
    "labels": [
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "5.5",
    "padre": "5",
    "titulo": "5 · Aviso antes de bajar de plan con el resolvedor simulado (PR 5/8)",
-   "descripcion": "**Qué entrega:** `GET /api/v1/protected/listings/section-preview?targetPlanId=` (lado verticales, no billing) con el conjunto efectivo simulado y conteos de ítems y QR, y el aviso en la confirmación de bajada de `mi-cuenta`.\n\n**Sub-spec:** sub-specs/5-editor.md § «Aviso antes de bajar de plan (DEC-FAC-064)» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- `AC:5:5` — e2e: dueño Pro de un restaurante con carta, enlace y QR de mesa activos que baja a Básico ve el aviso con los conteos antes de confirmar; un dueño sin nada que cambie no ve aviso.\n\n**Decisiones:** DEC-FAC-064.\n\n**Depende de:** `5.4` (mismo hijo).\n\n**Fuera de alcance:** que billing lea rubros o secciones (G-FAC-07) y alojamiento (hijo 8).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `GET /api/v1/protected/listings/section-preview?targetPlanId=` (lado verticales, no billing) con el conjunto efectivo simulado y conteos de ítems y QR, y el aviso en la confirmación de bajada de `mi-cuenta`.\n\n**Sub-spec:** sub-specs/5-editor.md § «Aviso antes de bajar de plan (DEC-FAC-064)» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- `AC:5:5` — e2e: dueño Pro de un restaurante con carta, enlace y QR de mesa activos que baja a Básico ve el aviso con los conteos antes de confirmar; un dueño sin nada que cambie no ve aviso.\n\n**Decisiones:** DEC-FAC-064, DEC-FAC-083.\n\n**Depende de:** `3.12` (hijo 3, HOS-1803).\n\n**Fuera de alcance:** que billing lea rubros o secciones (G-FAC-07) y alojamiento (hijo 8).\n\n**Nota:** Post-MVP (DEC-FAC-083): ninguna hoja `mvp` depende de esta; depende sólo del resolvedor. Al entrar, suma su archivo al escaneo de G-FAC-05.\n\n**Etapa:** `post-mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:5:5"
    ],
    "guards": [],
    "depende_de": [
-    "5.4"
+    "3.12"
    ],
    "labels": [
     "area-api",
     "area-billing",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "post_v1",
+    "source-agent"
    ],
+   "etapa": "post-mvp",
    "existente": null
   },
   {
    "clave": "5.6",
    "padre": "5",
    "titulo": "5 · Alta y rubros: preselección, opciones y mensajes de rechazo (PR 6/8)",
-   "descripcion": "**Qué entrega:** Preselección de rubros y `fieldDefaults` por tipo, opciones de `resolveBusinessLineOptions` con su `reason`, descripción del tipo debajo del selector, selector sólo si la vertical tiene más de un rubro, y los mapeos del 409 `SECTION_ABSENT` y del 400 de rubros.\n\n**Sub-spec:** sub-specs/5-editor.md § «Alta y rubros» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- `AC:5:1` — e2e: alta de un BAR con preselección de los dos rubros; alta de una HELADERIA sin opción de `nightlife`.\n- `AC:5:9` — Alojamiento y experiencia no muestran selector de rubro.\n\n**Decisiones:** DEC-FAC-034, DEC-FAC-047, DEC-FAC-050, DEC-FAC-076.\n\n**Depende de:** `5.5` (mismo hijo), `9.2` (hijo 9, HOS-1805).\n\n**Fuera de alcance:** la regla «una ficha = un local físico» (issue aparte, ver «Dependencia de producto»).\n\n**Riesgo abierto:** DEC-FAC-076: no se mergea antes que el copy del sub-spec 9 (por eso depende de `9.2`). La sección «Dependencia de producto» pide la regla «una ficha = un local físico» antes de implementar el sub-spec, y esa issue no tiene clave en Linear.\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Preselección de rubros y `fieldDefaults` por tipo, opciones de `resolveBusinessLineOptions` con su `reason`, descripción del tipo debajo del selector, selector sólo si la vertical tiene más de un rubro, y los mapeos del 409 `SECTION_ABSENT` y del 400 de rubros.\n\n**Sub-spec:** sub-specs/5-editor.md § «Alta y rubros» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- `AC:5:1` — e2e: alta de un BAR con preselección de los dos rubros; alta de una HELADERIA sin opción de `nightlife`.\n- `AC:5:9` — Alojamiento y experiencia no muestran selector de rubro.\n- `AC:5:11` — Smoke en staging (`status-needs-smoke-staging`): alta como boliche desde publicar y recibir el primer correo de la serie de prueba (movido del sub-spec 9, DEC-FAC-080).\n\n**Decisiones:** DEC-FAC-034, DEC-FAC-047, DEC-FAC-050, DEC-FAC-076, DEC-FAC-080.\n\n**Depende de:** `5.4` (mismo hijo), `9.2` (hijo 9, HOS-1805).\n\n**Fuera de alcance:** la regla «una ficha = un local físico» (issue aparte, ver «Dependencia de producto»).\n\n**Nota:** DEC-FAC-076: no se mergea antes que el copy del sub-spec 9 (por eso depende de `9.2`). La regla «una ficha = un local físico» es HOS-1810, relacionada y sin bloquear (DEC-FAC-081).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:5:1",
-    "AC:5:9"
+    "AC:5:9",
+    "AC:5:11"
    ],
    "guards": [],
    "depende_de": [
-    "5.5",
+    "5.4",
     "9.2"
    ],
    "labels": [
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent",
+    "status-needs-smoke-staging"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "5.7",
    "padre": "5",
    "titulo": "5 · Ciclo de vida de los rubros en edición y resumen de lo oculto (PR 7/8)",
-   "descripcion": "**Qué entrega:** Cambio de tipo con revalidación, bloqueo de quitar el rubro que sostiene al tipo, aviso con conteos y QR al quitar un rubro, recuperación al volver a agregarlo, `businessLines ≥ 1` en el gate de publicación, retiro de la regla del addon dependiente y el resumen «guardado y oculto por tus rubros» con «vaciar» sólo del dueño.\n\n**Sub-spec:** sub-specs/5-editor.md § «Ciclo de vida en edición (F-V1-034)» · § «`locked` y `absent` vistas por el dueño (F-V1-037, DEC-FAC-025, aceptada)» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- `AC:5:4` — e2e: quitar `nightlife` oculta `nightInfo` (con aviso y conteo) y volver a agregarlo la recupera con sus datos; quitar el rubro que sostiene al tipo está bloqueado.\n- `AC:5:6` — e2e: dueño que quitó `food` ve en el hub el resumen de la carta guardada y la puede vaciar; no la puede editar.\n\n**Decisiones:** DEC-FAC-024, DEC-FAC-063, DEC-FAC-075.\n\n**Depende de:** `5.6` (mismo hijo).\n\n**Fuera de alcance:** el aviso de cambios de un tercero (sub-spec 7).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Cambio de tipo con revalidación, bloqueo de quitar el rubro que sostiene al tipo, aviso con conteos y QR al quitar un rubro, recuperación al volver a agregarlo, `businessLines ≥ 1` en el gate de publicación, retiro de la regla del addon dependiente y el resumen «guardado y oculto por tus rubros» con «vaciar» sólo del dueño.\n\n**Sub-spec:** sub-specs/5-editor.md § «Ciclo de vida en edición (F-V1-034)» · § «`locked` y `absent` vistas por el dueño (F-V1-037, DEC-FAC-025, aceptada)» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- `AC:5:4` — e2e: quitar `nightlife` oculta `nightInfo` (con aviso y conteo) y volver a agregarlo la recupera con sus datos; quitar el rubro que sostiene al tipo está bloqueado.\n- `AC:5:6` — e2e: dueño que quitó `food` ve en el hub el resumen de la carta guardada y la puede vaciar; no la puede editar.\n\n**Decisiones:** DEC-FAC-024, DEC-FAC-063, DEC-FAC-075.\n\n**Depende de:** `5.6` (mismo hijo).\n\n**Fuera de alcance:** el aviso de cambios de un tercero (sub-spec 7).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:5:4",
     "AC:5:6"
@@ -1230,15 +1425,17 @@
    "labels": [
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "5.8",
    "padre": "5",
    "titulo": "5 · What's New de rubros y G-FAC-05 (PR 8/8)",
-   "descripcion": "**Qué entrega:** La entrada de What's New para dueños (qué son los rubros y cómo se eligen) y G-FAC-05 sobre la lista cerrada de archivos que el mecanismo reemplaza.\n\n**Sub-spec:** sub-specs/5-editor.md § «Comunicación» · § «Guards» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- Guard `G-FAC-05` — sin despacho por vertical ni por id de sección en los archivos que el mecanismo reemplaza (definición: `docs/06-guards.md` § «G-FAC-05 · Sin despacho por vertical ni por sección en web y admin»)\n\n**Decisiones:** DEC-FAC-033, DEC-FAC-065.\n\n**Depende de:** `5.7` (mismo hijo).\n\n**Fuera de alcance:** migrar el admin o la ficha pública (sub-specs 6 y 7).\n\n**Riesgo abierto:** La lista cerrada de G-FAC-05 incluye archivos que cambian en los sub-specs 6 (formulario de reseña) y 7 (config consolidada y moderación del admin), que no están upstream del 5: el guard nace con los archivos del 5 y los demás se suman en el PR que los migra (ver «Contradicciones» en `arbol.md`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** La entrada de What's New para dueños (qué son los rubros y cómo se eligen) y G-FAC-05 sobre la lista cerrada de archivos que el mecanismo reemplaza.\n\n**Sub-spec:** sub-specs/5-editor.md § «Comunicación» · § «Guards» — hijo `5` (HOS-1806).\n\n**Cubre:**\n- Guard `G-FAC-05` — sin despacho por vertical ni por id de sección en los archivos que el mecanismo reemplaza (definición: `docs/06-guards.md` § «G-FAC-05 · Sin despacho por vertical ni por sección en web y admin»)\n\n**Decisiones:** DEC-FAC-033, DEC-FAC-065.\n\n**Depende de:** `5.7` (mismo hijo).\n\n**Fuera de alcance:** migrar el admin o la ficha pública (sub-specs 6 y 7).\n\n**Nota:** G-FAC-05 nace incremental: con los archivos del editor y los de los sub-specs 6 y 7 que ya estén migrados; los demás (y el de `5.5`, post-MVP) se suman en el PR que los migra (`docs/06-guards.md`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [],
    "guards": [
     "G-FAC-05"
@@ -1250,18 +1447,19 @@
     "area-content",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "6.1",
    "padre": "6",
    "titulo": "6 · Ficha por catálogo, breadcrumb y JSON-LD por tipo (PR 1/12)",
-   "descripcion": "**Qué entrega:** La ficha renderiza las secciones `available` en el orden del catálogo, breadcrumb «Comer y salir › <local>», `@type` del JSON-LD desde un `Record<Tipo, …>` exhaustivo y `hasMenu` sólo con `menu` `available` y contenido; verificación del 302 `no-store` de `/carta/`.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Ficha» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:5` — JSON-LD de un BOLICHE es `NightClub`; sin `hasMenu` si `menu` no tiene contenido `available`.\n- `AC:6:6` — `/carta/` sin carta disponible: 302 con `no-store`.\n\n**Decisiones:** DEC-FAC-011, DEC-FAC-042, DEC-FAC-050, DEC-FAC-062.\n\n**Depende de:** `3.12` (hijo 3, HOS-1803), `4.5` (hijo 4, HOS-1804).\n\n**Fuera de alcance:** colecciones (`6.8`) y el badge (`6.3`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** La ficha renderiza las secciones `available` en el orden del catálogo, breadcrumb «Comer y salir › <local>», `@type` del JSON-LD desde un `Record<Tipo, …>` exhaustivo y `hasMenu` sólo con `menu` `available` y contenido (el 302 `no-store` de `/carta/` lo implementa y prueba `3.9`, `AC:3:10`).\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Ficha» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:5` — JSON-LD de un BOLICHE es `NightClub`; sin `hasMenu` si `menu` no tiene contenido `available`.\n\n**Decisiones:** DEC-FAC-011, DEC-FAC-042, DEC-FAC-050, DEC-FAC-062.\n\n**Depende de:** `3.12` (hijo 3, HOS-1803), `4.5` (hijo 4, HOS-1804).\n\n**Fuera de alcance:** colecciones (`6.8`) y el badge (`6.3`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
-    "AC:6:5",
-    "AC:6:6"
+    "AC:6:5"
    ],
    "guards": [],
    "depende_de": [
@@ -1271,17 +1469,19 @@
    "labels": [
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "6.2",
    "padre": "6",
    "titulo": "6 · Slugs reservados por los segmentos estáticos de cada vertical (PR 2/12)",
-   "descripcion": "**Qué entrega:** El generador de slugs de ficha reserva `rubro` y `page` en venue y los segmentos estáticos de cada vertical, con test.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Ficha» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:7` — Un local con slug `rubro` no se puede crear.\n\n**Decisiones:** DEC-FAC-011.\n\n**Depende de:** `6.1` (mismo hijo).\n\n**Fuera de alcance:** renombrar slugs existentes.\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** El generador de slugs de ficha reserva `rubro` y `page` en venue y los segmentos estáticos de cada vertical, con test.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Ficha» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:6` — Un local con slug `rubro` no se puede crear.\n\n**Decisiones:** DEC-FAC-011.\n\n**Depende de:** `6.1` (mismo hijo).\n\n**Fuera de alcance:** renombrar slugs existentes.\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
-    "AC:6:7"
+    "AC:6:6"
    ],
    "guards": [],
    "depende_de": [
@@ -1291,17 +1491,19 @@
     "area-api",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "6.3",
    "padre": "6",
    "titulo": "6 · Badge «abierto ahora» calculado en el cliente (PR 3/12)",
-   "descripcion": "**Qué entrega:** Isla chica `client:idle` que calcula el badge en HTML cacheado (colecciones, listado general y ficha cacheable); el SSR no lo emite.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Ficha» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:8` — El badge «abierto ahora» de una colección cacheada se calcula en el cliente (el HTML no lo trae).\n\n**Decisiones:** DEC-FAC-052.\n\n**Depende de:** `6.2` (mismo hijo).\n\n**Fuera de alcance:** el cálculo del turno (sub-spec 4).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Isla chica `client:idle` que calcula el badge en HTML cacheado (colecciones, listado general y ficha cacheable); el SSR no lo emite.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Ficha» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:7` — El badge «abierto ahora» de una colección cacheada se calcula en el cliente (el HTML no lo trae).\n\n**Decisiones:** DEC-FAC-052.\n\n**Depende de:** `6.2` (mismo hijo).\n\n**Fuera de alcance:** el cálculo del turno (sub-spec 4).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
-    "AC:6:8"
+    "AC:6:7"
    ],
    "guards": [],
    "depende_de": [
@@ -1310,17 +1512,19 @@
    "labels": [
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "6.4",
    "padre": "6",
    "titulo": "6 · Chat de IA de la ficha: prompt neutral y reglas duras de edad (PR 4/12)",
-   "descripcion": "**Qué entrega:** Prompt neutral en `default-prompts.ts`, reglas de edad y alcohol en `DEFAULT_RULES.chat_venue` movidas entre prompt y reglas (invariante de multiset), y la actualización del prompt guardado en `ai_settings` sólo si sigue igual al default viejo.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Chat de IA de la ficha (F-V1-039)» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:9` — El chat de un boliche con `min_age: 18` no afirma que un menor puede entrar (test de la regla).\n\n**Decisiones:** DEC-FAC-053.\n\n**Depende de:** `6.3` (mismo hijo).\n\n**Fuera de alcance:** qué secciones entran al contexto (sub-spec 3).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Prompt neutral en `default-prompts.ts`, reglas de edad y alcohol en `DEFAULT_RULES.chat_venue` movidas entre prompt y reglas (invariante de multiset), y la actualización del prompt guardado en `ai_settings` sólo si sigue igual al default viejo.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Chat de IA de la ficha (F-V1-039)» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:8` — El chat de un boliche con `min_age: 18` no afirma que un menor puede entrar (test de la regla).\n\n**Decisiones:** DEC-FAC-053.\n\n**Depende de:** `6.3` (mismo hijo).\n\n**Fuera de alcance:** qué secciones entran al contexto (sub-spec 3).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
-    "AC:6:9"
+    "AC:6:8"
    ],
    "guards": [],
    "depende_de": [
@@ -1330,17 +1534,19 @@
     "area-api",
     "area-db",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "6.5",
    "padre": "6",
    "titulo": "6 · Comparativa de planes generada desde el catálogo en el web (PR 5/12)",
-   "descripcion": "**Qué entrega:** `PlanComparisonTable.astro` y sus helpers arman las filas desde el catálogo de secciones y rasgos, marcadas por rubro, con el cruce hecho en el web; el upsell nombra lo que desbloquea.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Planes y reseñas (DEC-FAC-035)» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:10` — La tabla de planes de la vertical se genera desde el catálogo en el web; la fila de la carta incluye el enlace externo (pago, DEC-FAC-062).\n\n**Decisiones:** DEC-FAC-035, DEC-FAC-062.\n\n**Depende de:** `6.4` (mismo hijo).\n\n**Fuera de alcance:** precios y la respuesta de `routes/plan-catalog` (G-FAC-07).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `PlanComparisonTable.astro` y sus helpers arman las filas desde el catálogo de secciones y rasgos, marcadas por rubro, con el cruce hecho en el web; el upsell nombra lo que desbloquea.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Planes y reseñas (DEC-FAC-035)» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:9` — La tabla de planes de la vertical se genera desde el catálogo en el web; la fila de la carta incluye el enlace externo (pago, DEC-FAC-062).\n\n**Decisiones:** DEC-FAC-035, DEC-FAC-062.\n\n**Depende de:** `6.4` (mismo hijo).\n\n**Fuera de alcance:** precios y la respuesta de `routes/plan-catalog` (G-FAC-07).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
-    "AC:6:10"
+    "AC:6:9"
    ],
    "guards": [],
    "depende_de": [
@@ -1350,17 +1556,19 @@
     "area-billing",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "6.6",
    "padre": "6",
    "titulo": "6 · Reseñas en la web: formulario con dimensiones y promedios en la ficha (PR 6/12)",
-   "descripcion": "**Qué entrega:** El formulario público ofrece las dimensiones opcionales según el mapa público de estados, y la ficha muestra el promedio de cada dimensión con votos salvo las ligadas a una sección `absent`.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Planes y reseñas (DEC-FAC-035)» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:11` — Reseñas: el formulario de un BOLICHE no ofrece «Comida» y el de un RESTAURANT sí; una dimensión sin votos no se muestra; un boliche que fue restaurante no muestra «Comida» aunque tenga votos viejos (servidor y golden: sub-spec 3).\n\n**Decisiones:** DEC-FAC-065, DEC-FAC-071, DEC-FAC-072.\n\n**Depende de:** `6.5` (mismo hijo).\n\n**Fuera de alcance:** servidor, recálculo y golden (sub-spec 3).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** El formulario público ofrece las dimensiones opcionales según el mapa público de estados, y la ficha muestra el promedio de cada dimensión con votos salvo las ligadas a una sección `absent`.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Planes y reseñas (DEC-FAC-035)» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:10` — Reseñas: el formulario de un BOLICHE no ofrece «Comida» y el de un RESTAURANT sí; una dimensión sin votos no se muestra; un boliche que fue restaurante no muestra «Comida» aunque tenga votos viejos (servidor y golden: sub-spec 3).\n\n**Decisiones:** DEC-FAC-065, DEC-FAC-071, DEC-FAC-072.\n\n**Depende de:** `6.5` (mismo hijo).\n\n**Fuera de alcance:** servidor, recálculo y golden (sub-spec 3).\n\n**Nota:** Si G-FAC-05 ya existe (`5.8` mergeada), este PR suma a su escaneo los archivos que migra; si no, los incluye `5.8` al nacer (G-FAC-05 incremental, `docs/06-guards.md`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
-    "AC:6:11"
+    "AC:6:10"
    ],
    "guards": [],
    "depende_de": [
@@ -1369,17 +1577,19 @@
    "labels": [
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "6.7",
    "padre": "6",
    "titulo": "6 · Comodidades y características de noche en el seed con dual-write (PR 7/12)",
-   "descripcion": "**Qué entrega:** Los ítems de noche propuestos (`dance_floor`, `vip_area`, `cloakroom`, `outdoor_smoking_area`, `dj_sets`, `karaoke`) con `applicable_verticals = ['venue']`, fila en el baseline, data-migration y etiquetas es/en/pt.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Colecciones» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:13` — Los ítems de noche existen en un entorno vivo después de `db:seed:migrate` (dual-write).\n\n**Decisiones:** DEC-FAC-066.\n\n**Depende de:** `6.6` (mismo hijo).\n\n**Fuera de alcance:** el diferencial de noche pro/premium (HOS-1796).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Los ítems de noche propuestos (`dance_floor`, `vip_area`, `cloakroom`, `outdoor_smoking_area`, `dj_sets`, `karaoke`) con `applicable_verticals = ['venue']`, fila en el baseline, data-migration y etiquetas es/en/pt.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Colecciones» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:12` — Los ítems de noche existen en un entorno vivo después de `db:seed:migrate` (dual-write).\n\n**Decisiones:** DEC-FAC-066.\n\n**Depende de:** `6.6` (mismo hijo).\n\n**Fuera de alcance:** el diferencial de noche pro/premium (HOS-1796).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
-    "AC:6:13"
+    "AC:6:12"
    ],
    "guards": [],
    "depende_de": [
@@ -1389,15 +1599,17 @@
     "area-content",
     "area-db",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "6.8",
    "padre": "6",
    "titulo": "6 · Colecciones /rubro/[rubro]/ y listado general con la paginación compartida (PR 8/12)",
-   "descripcion": "**Qué entrega:** La ruta `/{lang}/comer-y-salir/rubro/[rubro]/` con el slug resuelto por el mapa del catálogo (404 si no existe o no es público), JSON-LD de colección, cache class `catalog` con tag por rubro, el listado general sobre la paginación de HOS-1797 y el filtro `businessLine` de la API pública.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Dependencia: paginación compartida (HOS-1797)» · § «Colecciones» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:1` — Un resto-bar aparece en `/comer-y-salir/rubro/gastronomia/` y en `/comer-y-salir/rubro/noche/`; un boliche sólo en la segunda; `/comer-y-salir/` muestra todo; ambas paginan con el mecanismo de HOS-1797 (`/page/N/`, página 1 con 301, canónica autorreferente).\n\n**Decisiones:** DEC-FAC-011, DEC-FAC-039, DEC-FAC-076.\n\n**Depende de:** `6.7` (mismo hijo), `HOS-1797` (issue externa), `9.2` (hijo 9, HOS-1805).\n\n**Fuera de alcance:** construir paginación propia (la consume de HOS-1797) y una colección de venue por destino.\n\n**Riesgo abierto:** DEC-FAC-076: la colección `/rubro/noche/` no se mergea antes que el copy del sub-spec 9 (por eso depende de `9.2`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** La ruta `/{lang}/comer-y-salir/rubro/[rubro]/` con el slug resuelto por el mapa del catálogo (404 si no existe o no es público), JSON-LD de colección, cache class `catalog` con tag por rubro, el listado general sobre la paginación de HOS-1797 y el filtro `businessLine` de la API pública.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Dependencia: paginación compartida (HOS-1797)» · § «Colecciones» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:1` — Un resto-bar aparece en `/comer-y-salir/rubro/gastronomia/` y en `/comer-y-salir/rubro/noche/`; un boliche sólo en la segunda; `/comer-y-salir/` muestra todo; ambas paginan con el mecanismo de HOS-1797 (`/page/N/`, página 1 con 301, canónica autorreferente).\n\n**Decisiones:** DEC-FAC-011, DEC-FAC-039, DEC-FAC-076.\n\n**Depende de:** `6.7` (mismo hijo), `HOS-1797` (issue externa), `9.2` (hijo 9, HOS-1805).\n\n**Fuera de alcance:** construir paginación propia (la consume de HOS-1797) y una colección de venue por destino.\n\n**Riesgo abierto:** DEC-FAC-076: la colección `/rubro/noche/` no se mergea antes que el copy del sub-spec 9 (por eso depende de `9.2`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:6:1"
    ],
@@ -1411,15 +1623,17 @@
     "area-api",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "6.9",
    "padre": "6",
    "titulo": "6 · Crawl, sitemap y colección vacía (PR 9/12)",
-   "descripcion": "**Qué entrega:** El parámetro de rubro en `FACET_QUERY_PARAM_KEYS` con `Disallow` y en la canónica promovida, sitemap sólo con colecciones con fichas publicadas y hreflang, y la colección vacía con `noindex,follow` y su copy.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Colecciones» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:2` — Las colecciones con fichas están en el sitemap con hreflang; las vacías no, y responden `noindex`; un rubro inexistente responde 404; `?businessLine=` del listado no es rastreable.\n\n**Decisiones:** DEC-FAC-014.\n\n**Depende de:** `6.8` (mismo hijo).\n\n**Fuera de alcance:** colecciones por destino.\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** El parámetro de rubro en `FACET_QUERY_PARAM_KEYS` con `Disallow` y en la canónica promovida, sitemap sólo con colecciones con fichas publicadas y hreflang, y la colección vacía con `noindex,follow` y su copy.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Colecciones» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:2` — Las colecciones con fichas están en el sitemap con hreflang; las vacías no, y responden `noindex`; un rubro inexistente responde 404; `?businessLine=` del listado no es rastreable.\n\n**Decisiones:** DEC-FAC-014.\n\n**Depende de:** `6.8` (mismo hijo).\n\n**Fuera de alcance:** colecciones por destino.\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:6:2"
    ],
@@ -1430,17 +1644,19 @@
    "labels": [
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "6.10",
    "padre": "6",
    "titulo": "6 · Filtros por colección y chips de tipo según fichas reales (PR 10/12)",
-   "descripcion": "**Qué entrega:** Filtros de comodidades y características sólo con ≥1 ficha publicada en la colección, calculados con la página y cacheados con su tag, y chips de `?type=` derivados de los tipos permitidos del rubro con fichas reales.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Colecciones» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:12` — La colección de noche no ofrece filtros sin fichas.\n\n**Decisiones:** DEC-FAC-066, DEC-FAC-034.\n\n**Depende de:** `6.9` (mismo hijo).\n\n**Fuera de alcance:** el catálogo que ve el editor del dueño (entero, aceptado).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Filtros de comodidades y características sólo con ≥1 ficha publicada en la colección, calculados con la página y cacheados con su tag, y chips de `?type=` derivados de los tipos permitidos del rubro con fichas reales.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Colecciones» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:11` — La colección de noche no ofrece filtros sin fichas.\n\n**Decisiones:** DEC-FAC-066, DEC-FAC-034.\n\n**Depende de:** `6.9` (mismo hijo).\n\n**Fuera de alcance:** el catálogo que ve el editor del dueño (entero, aceptado).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
-    "AC:6:12"
+    "AC:6:11"
    ],
    "guards": [],
    "depende_de": [
@@ -1450,15 +1666,17 @@
     "area-api",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "6.11",
    "padre": "6",
    "titulo": "6 · Cache: purga por cambio de rubros y revalidación por cambio de plan (PR 11/12)",
-   "descripcion": "**Qué entrega:** Un cambio de rubros purga detalle, colecciones viejas ∪ nuevas y listado general; un cambio del conjunto efectivo de `user + vertical` revalida todas las fichas `PUBLISHED` del dueño en esa vertical.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Cache (F-V1-029)» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:3` — Test: «quitar `nightlife` saca la ficha de `/rubro/noche/` en la siguiente lectura sin cache».\n- `AC:6:4` — Test: «un cambio de plan sin cambio de estado de publicación pide la revalidación de las N fichas del dueño».\n\n**Decisiones:** DEC-FAC-023.\n\n**Depende de:** `6.10` (mismo hijo).\n\n**Fuera de alcance:** resolver HOS-1793 entero (si se resuelve antes, se reusa).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Un cambio de rubros purga detalle, colecciones viejas ∪ nuevas y listado general; un cambio del conjunto efectivo de `user + vertical` revalida todas las fichas `PUBLISHED` del dueño en esa vertical.\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Cache (F-V1-029)» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:3` — Test: «quitar `nightlife` saca la ficha de `/rubro/noche/` en la siguiente lectura sin cache».\n- `AC:6:4` — Test: «un cambio de plan sin cambio de estado de publicación pide la revalidación de las N fichas del dueño».\n\n**Decisiones:** DEC-FAC-023.\n\n**Depende de:** `6.10` (mismo hijo).\n\n**Fuera de alcance:** resolver HOS-1793 entero (si se resuelve antes, se reusa).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:6:3",
     "AC:6:4"
@@ -1471,17 +1689,19 @@
     "area-api",
     "area-devops",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "6.12",
    "padre": "6",
    "titulo": "6 · Menú «Comer y salir», textos aprobados y tile de la home (PR 12/12)",
-   "descripcion": "**Qué entrega:** El ítem «Comer y salir» del menú con acceso a las colecciones y los textos aprobados de DEC-FAC-068 (title, description, H1, intro y OG de cada colección), y la verificación de la tile «Eventos gastronómicos».\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Colecciones» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:14` — La home muestra «Eventos gastronómicos» y G-FAC-R1 queda verde sin la tile en la exención (a).\n\n**Decisiones:** DEC-FAC-068.\n\n**Depende de:** `6.11` (mismo hijo).\n\n**Fuera de alcance:** copy del embudo (sub-spec 9); renombrar la clave de la tile (sub-spec 1).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** El ítem «Comer y salir» del menú con acceso a las colecciones y los textos aprobados de DEC-FAC-068 (title, description, H1, intro y OG de cada colección), y la verificación de la tile «Eventos gastronómicos».\n\n**Sub-spec:** sub-specs/6-web-publica.md § «Colecciones» — hijo `6` (HOS-1807).\n\n**Cubre:**\n- `AC:6:13` — La home muestra «Eventos gastronómicos» y G-FAC-R1 queda verde sin la tile en la exención (a).\n\n**Decisiones:** DEC-FAC-068.\n\n**Depende de:** `6.11` (mismo hijo).\n\n**Fuera de alcance:** copy del embudo (sub-spec 9); renombrar la clave de la tile (sub-spec 1).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
-    "AC:6:14"
+    "AC:6:13"
    ],
    "guards": [],
    "depende_de": [
@@ -1491,15 +1711,17 @@
     "area-content",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "7.1",
    "padre": "7",
    "titulo": "7 · Rubros en el formulario consolidado y en el listado del admin (PR 1/5)",
-   "descripcion": "**Qué entrega:** Grupo de checkboxes de rubros con las opciones de `resolveBusinessLineOptions` (sólo si la vertical tiene más de un rubro), validación con el validador genérico, columna y filtro del listado, y permiso `venue.editAll` sobre una ficha ajena.\n\n**Sub-spec:** sub-specs/7-admin.md § «7 · Admin (`apps/admin`)» — hijo `7` (HOS-1808).\n\n**Cubre:**\n- `AC:7:3` — La validación de tipo ↔ rubros permitidos rechaza una combinación inválida también desde el admin (heladería con `nightlife`).\n\n**Decisiones:** DEC-FAC-026, DEC-FAC-047, DEC-FAC-005.\n\n**Depende de:** `2.5` (hijo 2, HOS-1802), `3.12` (hijo 3, HOS-1803).\n\n**Fuera de alcance:** UI de carta, menú del día o eventos en el admin.\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Grupo de checkboxes de rubros con las opciones de `resolveBusinessLineOptions` (sólo si la vertical tiene más de un rubro), validación con el validador genérico, columna y filtro del listado, y permiso `venue.editAll` sobre una ficha ajena.\n\n**Sub-spec:** sub-specs/7-admin.md § «7 · Admin (`apps/admin`)» — hijo `7` (HOS-1808).\n\n**Cubre:**\n- `AC:7:3` — La validación de tipo ↔ rubros permitidos rechaza una combinación inválida también desde el admin (heladería con `nightlife`).\n\n**Decisiones:** DEC-FAC-026, DEC-FAC-047, DEC-FAC-005.\n\n**Depende de:** `2.5` (hijo 2, HOS-1802), `3.12` (hijo 3, HOS-1803).\n\n**Fuera de alcance:** UI de carta, menú del día o eventos en el admin.\n\n**Nota:** Si G-FAC-05 ya existe (`5.8` mergeada), este PR suma a su escaneo los archivos que migra; si no, los incluye `5.8` al nacer (G-FAC-05 incremental, `docs/06-guards.md`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:7:3"
    ],
@@ -1511,15 +1733,17 @@
    "labels": [
     "area-admin",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "7.2",
    "padre": "7",
    "titulo": "7 · menuUrl fuera del admin y nightInfo no editable desde el admin (PR 2/5)",
-   "descripcion": "**Qué entrega:** `menuUrl` sale de la config consolidada (modos `view`, `edit`, `create`), de `VenueForm.tsx` y del alta, con sus tests; el formulario no muestra `nightInfo` y el PATCH de admin hereda el 4b.\n\n**Sub-spec:** sub-specs/7-admin.md § «7 · Admin (`apps/admin`)» — hijo `7` (HOS-1808).\n\n**Cubre:**\n- `AC:7:2` — Un PATCH de admin con campos de `nightInfo` sobre una ficha sin `nightlife` es rechazado por el 4b.\n- `AC:7:7` — El formulario de admin de venue no tiene `menuUrl` en ningún modo; un guardado del admin sobre un local básico pasa.\n\n**Decisiones:** DEC-FAC-057, DEC-FAC-062.\n\n**Depende de:** `7.1` (mismo hijo), `4.2` (hijo 4, HOS-1804).\n\n**Fuera de alcance:** UI de `nightInfo` en el admin.\n\n**Riesgo abierto:** El AC necesita las columnas de `nightInfo` (`4.2`), pero en Linear el 1808 no está bloqueado por el 1804: el árbol propone esa relación (ver `relaciones_hijo_propuestas`).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** `menuUrl` sale de la config consolidada (modos `view`, `edit`, `create`), de `VenueForm.tsx` y del alta, con sus tests; el formulario no muestra `nightInfo` y el PATCH de admin hereda el 4b.\n\n**Sub-spec:** sub-specs/7-admin.md § «7 · Admin (`apps/admin`)» — hijo `7` (HOS-1808).\n\n**Cubre:**\n- `AC:7:2` — Un PATCH de admin con campos de `nightInfo` sobre una ficha sin `nightlife` es rechazado por el 4b.\n- `AC:7:7` — El formulario de admin de venue no tiene `menuUrl` en ningún modo; un guardado del admin sobre un local básico pasa.\n\n**Decisiones:** DEC-FAC-057, DEC-FAC-062, DEC-FAC-078.\n\n**Depende de:** `7.1` (mismo hijo), `4.2` (hijo 4, HOS-1804).\n\n**Fuera de alcance:** UI de `nightInfo` en el admin.\n\n**Nota:** Necesita las columnas de `nightInfo` (`4.2`): por eso HOS-1808 queda bloqueado por HOS-1804 (DEC-FAC-078). Si G-FAC-05 ya existe (`5.8` mergeada), este PR suma a su escaneo los archivos que migra; si no, los incluye `5.8` al nacer (G-FAC-05 incremental, `docs/06-guards.md`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:7:2",
     "AC:7:7"
@@ -1533,15 +1757,17 @@
     "area-admin",
     "area-api",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "7.3",
    "padre": "7",
    "titulo": "7 · Registro y aviso al dueño de un cambio de rubros de un tercero (PR 3/5)",
-   "descripcion": "**Qué entrega:** Evento en `domain_event` para la línea de tiempo, plantilla de correo nueva por `email_outbox` y tipo nuevo de aviso in-app en `listing-notices.builder.ts` (30 días, colapsa en el último, desaparece cuando el dueño edita), con el mismo patrón que REQUEST_FIX; la acción 15 no cambia rubros.\n\n**Sub-spec:** sub-specs/7-admin.md § «7 · Admin (`apps/admin`)» — hijo `7` (HOS-1808).\n\n**Cubre:**\n- `AC:7:1` — Una edición directa de rubros (soporte o admin, mismo permiso) se refleja en la ficha pública tras la purga, queda en la línea de tiempo y el dueño recibe el aviso por correo e in-app; el aviso in-app desaparece a los 30 días o cuando el dueño edita sus rubros.\n- `AC:7:8` — Una edición de rubros por la acción 15 se rechaza; la misma por `venue.editAll` pasa y avisa.\n\n**Decisiones:** DEC-FAC-034, DEC-FAC-056, DEC-FAC-074.\n\n**Depende de:** `7.2` (mismo hijo).\n\n**Fuera de alcance:** un canal de avisos nuevo.\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** Evento en `domain_event` para la línea de tiempo, plantilla de correo nueva por `email_outbox` y tipo nuevo de aviso in-app en `listing-notices.builder.ts` (30 días, colapsa en el último, desaparece cuando el dueño edita), con el mismo patrón que REQUEST_FIX; la acción 15 no cambia rubros.\n\n**Sub-spec:** sub-specs/7-admin.md § «7 · Admin (`apps/admin`)» — hijo `7` (HOS-1808).\n\n**Cubre:**\n- `AC:7:1` — Una edición directa de rubros (soporte o admin, mismo permiso) se refleja en la ficha pública tras la purga, queda en la línea de tiempo y el dueño recibe el aviso por correo e in-app; el aviso in-app desaparece a los 30 días o cuando el dueño edita sus rubros.\n- `AC:7:8` — Una edición de rubros por la acción 15 se rechaza; la misma por `venue.editAll` pasa y avisa.\n\n**Decisiones:** DEC-FAC-034, DEC-FAC-056, DEC-FAC-074.\n\n**Depende de:** `7.2` (mismo hijo).\n\n**Fuera de alcance:** un canal de avisos nuevo.\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:7:1",
     "AC:7:8"
@@ -1555,15 +1781,17 @@
     "area-api",
     "area-web",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "7.4",
    "padre": "7",
    "titulo": "7 · Corrección de rubros por REQUEST_FIX y vista de soporte sobre el dueño (PR 4/5)",
-   "descripcion": "**Qué entrega:** REQUEST_FIX sobre los rubros (política operativa, `ALREADY_OPEN` si ya hay una abierta) y la vista de soporte que ve `locked` según el plan del dueño.\n\n**Sub-spec:** sub-specs/7-admin.md § «7 · Admin (`apps/admin`)» — hijo `7` (HOS-1808).\n\n**Cubre:**\n- `AC:7:4` — Un REQUEST_FIX sobre los rubros llega al dueño y no modifica la ficha hasta que el dueño responde.\n- `AC:7:5` — Soporte con plan propio Premium que edita la ficha de un dueño Básico ve `locked` donde el dueño la ve.\n\n**Decisiones:** DEC-FAC-057, DEC-FAC-019.\n\n**Depende de:** `7.3` (mismo hijo).\n\n**Fuera de alcance:** un bloqueo del sistema que distinga admin de soporte.\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** REQUEST_FIX sobre los rubros (política operativa, `ALREADY_OPEN` si ya hay una abierta) y la vista de soporte que ve `locked` según el plan del dueño.\n\n**Sub-spec:** sub-specs/7-admin.md § «7 · Admin (`apps/admin`)» — hijo `7` (HOS-1808).\n\n**Cubre:**\n- `AC:7:4` — Un REQUEST_FIX sobre los rubros llega al dueño y no modifica la ficha hasta que el dueño responde.\n- `AC:7:5` — Soporte con plan propio Premium que edita la ficha de un dueño Básico ve `locked` donde el dueño la ve.\n\n**Decisiones:** DEC-FAC-057, DEC-FAC-019.\n\n**Depende de:** `7.3` (mismo hijo).\n\n**Fuera de alcance:** un bloqueo del sistema que distinga admin de soporte.\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:7:4",
     "AC:7:5"
@@ -1576,15 +1804,17 @@
     "area-admin",
     "area-api",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   },
   {
    "clave": "7.5",
    "padre": "7",
    "titulo": "7 · Moderación de reseñas de venue con dimensiones votadas (PR 5/5)",
-   "descripcion": "**Qué entrega:** La vista de moderación muestra las dimensiones votadas con las etiquetas de `ReviewRules`, sin lista propia ni comparación por rubro.\n\n**Sub-spec:** sub-specs/7-admin.md § «7 · Admin (`apps/admin`)» — hijo `7` (HOS-1808).\n\n**Cubre:**\n- `AC:7:6` — La moderación de una reseña de venue con dimensiones las muestra; una sin dimensiones muestra sólo la general.\n\n**Decisiones:** DEC-FAC-065.\n\n**Depende de:** `7.4` (mismo hijo).\n\n**Fuera de alcance:** editar dimensiones desde el admin.\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
+   "descripcion": "**Qué entrega:** La vista de moderación muestra las dimensiones votadas con las etiquetas de `ReviewRules`, sin lista propia ni comparación por rubro.\n\n**Sub-spec:** sub-specs/7-admin.md § «7 · Admin (`apps/admin`)» — hijo `7` (HOS-1808).\n\n**Cubre:**\n- `AC:7:6` — La moderación de una reseña de venue con dimensiones las muestra; una sin dimensiones muestra sólo la general.\n\n**Decisiones:** DEC-FAC-065.\n\n**Depende de:** `7.4` (mismo hijo).\n\n**Fuera de alcance:** editar dimensiones desde el admin.\n\n**Nota:** Si G-FAC-05 ya existe (`5.8` mergeada), este PR suma a su escaneo los archivos que migra; si no, los incluye `5.8` al nacer (G-FAC-05 incremental, `docs/06-guards.md`).\n\n**Etapa:** `mvp` (DEC-FAC-082).\n\n**Verificación:** typecheck/lint/test con `CI=true` en los paquetes tocados; PR chico a `staging`, título con `[HOS-<n>]` (objetivo ~400 líneas authored).",
    "acs": [
     "AC:7:6"
    ],
@@ -1595,8 +1825,10 @@
    "labels": [
     "area-admin",
     "kind-spec",
-    "source-owner"
+    "pre_v1_product",
+    "source-agent"
    ],
+   "etapa": "mvp",
    "existente": null
   }
  ]

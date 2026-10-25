@@ -63,5 +63,5 @@ sub-spec 5. Si aparece otra en la tarea, se corrige acá: desde DEC-FAC-062 el e
 - **AC:9:2** — Los correos de la serie de prueba no varían por rubro; test que renderiza la plantilla para un dueño de un boliche y
   verifica que no menciona carta ni platos.
 - **AC:9:3** — G-FAC-R1 en verde (las claves nuevas no reintroducen la palabra retirada).
-- **AC:9:4** — Smoke en staging (`status-needs-smoke-staging`): recorrer presentación → precios → publicar → alta como boliche y
-  recibir el primer correo de prueba.
+- **AC:9:4** — Smoke en staging (`status-needs-smoke-staging`): recorrer presentación → precios → publicar. El alta como
+  boliche y el primer correo de prueba se smokean con el sub-spec 5 (DEC-FAC-080).

@@ -22,6 +22,7 @@ Revisado en las resoluciones de las vueltas 1 y 2: los cambios citan su hallazgo
 |---|---|---|
 | G-FAC-R1 | sub-spec 1 | la palabra retirada no reaparece fuera de las exenciones contadas |
 | G-FAC-R2 | sub-spec 1 | toda ruta pública retirada tiene su redirect de un salto, y los QR llegan en un salto |
+| G-FAC-T1 | sub-spec 1 | frontera temporal de la etapa A: la lista contada de literales viejos sólo baja (se retira al nacer G-FAC-R1) |
 | G-FAC-01 | sub-spec 2 | el CHECK de `business_lines` en base coincide con el catálogo de código (valores, matriz por tipo, default) |
 | G-FAC-02 | sub-spec 2 | integridad del catálogo |
 | G-FAC-03 | sub-spec 3 | (a) sólo el resolvedor decide secciones por rubro; (b) lista cerrada de lectores de rubros |
@@ -87,6 +88,18 @@ atados al nombre» al final).
   `const x = 'gastronomy'` en un test que no aplica migraciones ni importa una data-migration → rojo. **Control
   negativo**: la migración de renombrado (`ALTER TABLE "gastronomies" RENAME TO …`), el `ALTER TABLE "gastronomies"`
   de la 0132 y `entityType: 'gastronomy'` en `cut-migration-over-data.test.ts` → verde.
+
+## G-FAC-T1 · Frontera temporal del renombrado (etapa A)
+- **Prueba**: durante la etapa A del sub-spec 1 (DEC-FAC-030), las ocurrencias de la forma de identificador de la
+  vertical vieja (regla 1 de G-FAC-R1) fuera de las exenciones y de lo fuera del escaneo de G-FAC-R1 coinciden
+  **exactamente** con un inventario JSON contado por archivo, y ningún PR sube un conteo ni agrega un archivo. Cada PR de
+  la etapa A baja el inventario en lo que renombró; un alias temporal (`export type Gastronomy = Venue`) también cuenta.
+- **Nace** en la primera hoja de la etapa A (`1.A1` del árbol). **Se retira** en el tramo de la etapa B que hace nacer
+  G-FAC-R1 (`1.B5`): el inventario llega a cero y se borran script, test y paso de CI en el mismo tramo.
+- **Lo que NO verifica**: rutas, URLs y valores persistidos (todavía viejos por diseño en la etapa A) ni los valores
+  visibles de i18n (regla 5 de G-FAC-R1, que nace después).
+- **Se rompe**: agregar `GastronomyFoo` en `packages/*/src` sin subir el inventario → rojo; subir el conteo de un archivo
+  → rojo; un alias temporal nuevo → rojo; un archivo que bajó a cero y sigue en el inventario → rojo.
 
 ## G-FAC-R2 · Redirects de rutas retiradas
 - **Prueba**: para cada ruta pública retirada (`/{lang}/gastronomia/`, `/{lang}/gastronomia/<slug>/`,
@@ -215,6 +228,12 @@ catálogo») prohibía lo que los sub-specs 5, 6 y 7 exigen, y no veía `listing
   `sectionId === 'meetingPoint' && vertical === 'experience'` → rojo; `type !== 'BOLICHE' && <FoodRating/>` o
   `dim === 'food' && hasMenu` en el formulario de reseña → rojo; `vertical === 'experience' ? legacy : voted` en el
   recálculo → rojo (el modo sale de `ReviewRules`).
+- **Nace incremental** (arreglo del árbol de PRs): G-FAC-05 nace en el sub-spec 5 (`5.8`) con los archivos del editor y
+  los de otras superficies ya migradas. Los archivos de su lista que cambian en los sub-specs 6 y 7 (formulario de reseña
+  de venue, config consolidada y moderación de reseñas del admin) y el aviso de bajada de plan (post-MVP,
+  DEC-FAC-083), que no están upstream de `5.8`, entran al escaneo en el
+  PR que los migra si G-FAC-05 ya existe, o los incluye `5.8` al nacer si ya están migrados. La lista cerrada final es
+  la misma; sólo cambia cuándo entra cada archivo.
 
 ## G-FAC-06 · Toda ruta de contenido declara su sección
 - **Prueba** (F-V1-019): inventario cerrado `ruta → sección` (modelo `scripts/check-step5-declared.ts`).

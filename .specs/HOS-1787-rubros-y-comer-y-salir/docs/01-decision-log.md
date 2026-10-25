@@ -1021,3 +1021,70 @@ se mergean antes que él. El 9 depende sólo de 1 y 2: no hay ciclo.
 sobre todo lo acumulado; un orden de merge se hace cumplir solo.
 **Descartado**: interruptor que apague `nightlife` hasta que llegue el 9 (es un parche intermedio).
 **Reemplaza**: el bloqueo de DEC-FAC-069 («ninguna superficie que ofrezca `nightlife` llega a prod sin él»).
+
+## DEC-FAC-077 · La etapa B del renombrado va en la umbrella `epic/HOS-1801-renombrado-fisico`
+**Fecha**: 2026-10-25 · **Decidió**: owner (al revisar el árbol de PRs).
+**Qué**: la etapa B del sub-spec 1 se integra en la umbrella `epic/HOS-1801-renombrado-fisico`, con la convención `epic/**`
+del repo (DEC-CI-001): cortada de `staging` después de la etapa A, los tramos de revisión son PRs a la umbrella, `staging`
+se mergea en ella periódicamente y el único PR a `staging` es el de la umbrella (la hoja `1.B9` del árbol), con CI completo
+en verde. Entre tramos la umbrella puede estar en rojo. `scripts/check-umbrella-branch-target.sh`, que hoy vigila una sola
+umbrella (`UMBRELLA_BRANCH`), se extiende para vigilar también esta antes de cortarla (hoja `1.B0`).
+**Por qué**: la etapa B es un único merge a `staging` (DEC-FAC-030) pero no se puede revisar entera; la umbrella da el
+camino ya conocido y protegido por guard para trocearla sin que ningún tramo llegue a `staging` suelto.
+**Descartado**: rama de integración `spec/HOS-1801-etapa-b` sin guard (propuesta del árbol, nadie impedía un `--base staging`).
+
+## DEC-FAC-078 · HOS-1808 (admin) queda bloqueado por HOS-1804 (`nightInfo`)
+**Fecha**: 2026-10-25 · **Decidió**: owner.
+**Qué**: se agrega la relación de hijos 7 ← 4: el admin depende de 2, 3 **y 4**.
+**Por qué**: el criterio del admin con `nightInfo` (PATCH rechazado por el paso 4b) necesita las columnas del 4, y el
+selector de tipo derivado del enum de la config consolidada lo hace el 4.
+
+## DEC-FAC-079 · El servidor completa los rubros con la preselección del tipo
+**Fecha**: 2026-10-25 · **Decidió**: owner.
+**Qué**: si un alta omite `businessLines`, el servicio de alta completa `typeRules[type].preselect` (DEC-FAC-010) en toda
+vertical: BOLICHE → `{nightlife}`, un tipo sólo de comida → `{food}`, alojamiento y experiencia → `{standard}`. Es
+comportamiento permanente para web, admin, seed y cualquier cliente de la API. Va en el mismo PR que crea la columna.
+**Por qué**: `venues` no tiene default en base (DEC-FAC-046) y el alta del web no manda rubros hasta el sub-spec 5; sin
+esto el alta se rompía entre la columna y el selector. La preselección ya es la respuesta del catálogo para «qué rubros
+tiene este tipo por defecto».
+**Descartado**: un default en la base de `venues` (DEC-FAC-046: el rubro no se adivina en la base) y un parche temporal.
+**Reemplaza**: en el sub-spec 2, «Default del servidor» sólo para verticales de un rubro.
+
+## DEC-FAC-080 · El smoke del alta como boliche va con el sub-spec 5
+**Fecha**: 2026-10-25 · **Decidió**: owner.
+**Qué**: la parte «alta como boliche y recibir el primer correo de prueba» del smoke del sub-spec 9 pasa a un criterio
+nuevo del sub-spec 5 (smoke de staging del alta); el 9 conserva presentación → precios → publicar.
+**Por qué**: el alta como boliche necesita el selector de rubros del 5, y el 5 no se mergea antes que el 9
+(DEC-FAC-076): el smoke del 9 no se podía firmar.
+
+## DEC-FAC-081 · «Una ficha = un local físico = una dirección»: issue relacionada, sin bloquear
+**Fecha**: 2026-10-25 · **Decidió**: owner.
+**Qué**: la regla va en una issue aparte (HOS-1810), relacionada con HOS-1787 y sin bloquear ningún hijo; el sub-spec 5 no la espera
+y el árbol de PRs no la modela.
+**Reemplaza**: en el sub-spec 5, «antes de implementar este sub-spec».
+
+## DEC-FAC-082 · Cada hoja del árbol lleva su etapa
+**Fecha**: 2026-10-25 · **Decidió**: owner.
+**Qué**: toda hoja del árbol (`docs/20-arbol-linear/arbol.json`) declara `etapa`: `pre-corte` (mergeada antes de que
+HOS-1352 promueva `staging` → `main`), `mvp` (antes del lanzamiento v1, puede caer después del corte) o `post-mvp`. Una
+hoja `pre-corte` nunca depende de una `mvp`/`post-mvp`, y una `mvp` nunca de una `post-mvp`; `chequeo.py` lo hace cumplir.
+Todo HOS-1801 es `pre-corte`; el resto, `mvp`, salvo `5.5` (`post-mvp`, DEC-FAC-083). De las tres candidatas que se
+consultaron, `7.3` (registro y aviso al dueño) y `7.4` (REQUEST_FIX y vista de soporte) quedan `mvp`.
+**Labels de Linear**: `pre-corte` → `pre-corte-1352` (label nuevo del team Hospeda, color `#DC2626`, «Debe estar
+mergeado antes de que HOS-1352 promocione staging → main»), `mvp` → `pre_v1_product`, `post-mvp` → `post_v1`. Los hijos
+existentes también lo llevan: HOS-1801 `pre-corte-1352`, HOS-1802…1808 `pre_v1_product`, HOS-1809 `post_v1`;
+`crear_arbol.py` los **agrega** sin quitar los labels que ya tienen.
+
+## DEC-FAC-083 · El aviso antes de bajar de plan pasa a post-MVP
+**Fecha**: 2026-10-25 · **Decidió**: owner.
+**Qué**: la hoja `5.5` (endpoint `section-preview` y aviso en la confirmación de bajada, DEC-FAC-064) es `post-mvp`. El
+diseño y su criterio (`AC:5:5`) se conservan en el sub-spec 5. La hoja `5.6` deja de depender de ella (pasa a depender de
+`5.4`) y `5.5` depende sólo del resolvedor (`3.12`). G-FAC-05 nace sin su archivo y lo suma cuando entre.
+**Reemplaza**: en DEC-FAC-064, «MVP».
+
+## DEC-FAC-084 · HOS-1801 bloquea a HOS-1352
+**Fecha**: 2026-10-25 · **Decidió**: owner.
+**Qué**: relación `blocks` real en Linear: HOS-1352 queda bloqueado por HOS-1801 (el renombrado). `crear_arbol.py` la crea
+si falta.
+**Por qué**: el renombrado es bloqueante del corte V6 (DEC-FAC-028); hasta ahora sólo lo decía el texto.
+

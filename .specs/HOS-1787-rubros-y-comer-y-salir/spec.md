@@ -52,13 +52,17 @@ Por qué y con qué alternativas: [`docs/00-PDR.md`](docs/00-PDR.md) y
 | 1 | [Renombrado `gastronomy` → `venue`](sub-specs/1-renombrado.md) | **HOS-1798** (bloque de billing del CLAUDE.md, bloquea el arranque) | todas |
 | 2 | [Catálogos + columna `business_lines` + tipos `PUB`/`BOLICHE`](sub-specs/2-catalogos.md) | 1 | 3, 4 |
 | 3 | [Resolvedor + paso de autorización](sub-specs/3-resolvedor.md) | 2 | 4, 5, 6, 7 |
-| 4 | [Sección `nightInfo`](sub-specs/4-tipos-y-noche.md) | 2, **3** (su criterio es el 409 del paso 4b, F-V2-041) | 5, 6 |
+| 4 | [Sección `nightInfo`](sub-specs/4-tipos-y-noche.md) | 2, **3** (su criterio es el 409 del paso 4b, F-V2-041) | 5, 6, 7 |
 | 5 | [Editor del dueño](sub-specs/5-editor.md) | 3, 4, **9** (DEC-FAC-076) | — |
 | 6 | [Web pública](sub-specs/6-web-publica.md) | 3, 4, **9** (DEC-FAC-076), **HOS-1797** (paginación compartida) | — |
-| 7 | [Admin](sub-specs/7-admin.md) | 2, 3 | — |
+| 7 | [Admin](sub-specs/7-admin.md) | 2, 3, **4** (DEC-FAC-078) | — |
 | 9 | [Copy neutro del embudo](sub-specs/9-copy-del-embudo.md) | 1, 2 | **5 y 6** (no se mergean antes, DEC-FAC-076) |
 
-Relacionadas, aparte: **HOS-1798** (reescribir el bloque de billing del CLAUDE.md; bloquea el arranque; relación tomada del revisor, no consultada en Linear); «una ficha = un local físico = una dirección»; **hijo 8** (migración del editor de alojamiento al catálogo, pendiente de crear en Linear); HOS-1797 (paginación compartida); HOS-1796 (diferencial de noche, post-MVP).
+Relacionadas, aparte: **HOS-1798** (reescribir el bloque de billing del CLAUDE.md; bloquea el arranque; relación tomada del revisor, no consultada en Linear); «una ficha = un local físico = una dirección» (HOS-1810, relacionada con HOS-1787 sin bloquear nada, DEC-FAC-081); **hijo 8** (migración del editor de alojamiento al catálogo, pendiente de crear en Linear); HOS-1797 (paginación compartida); HOS-1796 (diferencial de noche, post-MVP).
+
+El árbol de issues de PR de cada hijo, con su etapa (`pre-corte`, `mvp`, `post-mvp`; DEC-FAC-082), vive en
+[`docs/20-arbol-linear/`](docs/20-arbol-linear/arbol.md). La etapa B del renombrado se integra en la umbrella
+`epic/HOS-1801-renombrado-fisico` (DEC-FAC-077), y HOS-1801 bloquea a HOS-1352 (DEC-FAC-084).
 
 ## Contexto de arquitectura
 

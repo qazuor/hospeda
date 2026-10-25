@@ -4,9 +4,14 @@
 Uso: python3 crear_arbol.py [--dry-run | --apply]
 En --apply requiere LINEAR_API_KEY; no carga archivos .env.
 
-Las issues externas (`externas` de arbol.json: HOS-1798, HOS-1797) sólo se usan como
-bloqueantes de hojas nuevas; nunca se mutan. Las `relaciones_hijo_propuestas` se informan
-y NO se crean: son una decisión del owner sobre issues existentes.
+Qué muta en --apply, en este orden y sólo si falta (idempotente):
+  1. los labels de `labels_a_crear` (p. ej. `pre-corte-1352`) en el team HOS;
+  2. las issues nuevas, de padres a hijos, con sus labels (incluido el de su etapa);
+  3. las relaciones `blocked by` de las issues nuevas (también hacia `externas`) y las
+     `relaciones_hijo` con `existe_en_linear: false` entre issues existentes
+     (DEC-FAC-078: HOS-1808 ← HOS-1804; DEC-FAC-084: HOS-1352 ← HOS-1801);
+  4. los `labels_agregar` de los hijos existentes, sin quitar ningún label que ya tengan.
+Fuera de eso, las issues existentes y las externas no se tocan.
 """
 
 import argparse
@@ -98,7 +103,7 @@ def remote_snapshot(key, team_id):
     issues = []
     after = None
     while True:
-        data = graphql("query($id:String!,$first:Int!,$after:String){team(id:$id){issues(first:$first,after:$after){nodes{id identifier title description} pageInfo{hasNextPage endCursor}}}}",
+        data = graphql("query($id:String!,$first:Int!,$after:String){team(id:$id){issues(first:$first,after:$after){nodes{id identifier title description labels{nodes{id name}}} pageInfo{hasNextPage endCursor}}}}",
                        {"id": team_id, "first": 250, "after": after}, key)["team"]["issues"]
         issues.extend(data["nodes"])
         if not data["pageInfo"]["hasNextPage"]:
@@ -119,6 +124,7 @@ def main():
     tree = json.loads(TREE.read_text(encoding="utf-8"))
     nodes, by = ordered(tree["nodos"])
     external = set(tree.get("externas", {}))
+    label_specs = tree.get("labels_a_crear", [])
     state = json.loads(CREATED.read_text(encoding="utf-8")) if CREATED.exists() else {"creados": {}, "relaciones": []}
     made = state["creados"]
     if set(made) - set(by) or any(by[k]["existente"] for k in made):
@@ -141,7 +147,9 @@ def main():
             raise ValueError("No existe exactamente un team con key HOS")
         team_id = matches[0]["id"]
         labels, remote = remote_snapshot(key, team_id)
-        missing = sorted({label for n in nodes if not n["existente"] for label in n["labels"]} - set(labels))
+        wanted = {label for n in nodes if not n["existente"] for label in n["labels"]}
+        wanted |= {label for n in nodes for label in n.get("labels_agregar", [])}
+        missing = sorted(wanted - set(labels) - {spec["nombre"] for spec in label_specs})
         if missing:
             raise ValueError(f"Labels inexistentes en team HOS: {missing}")
         identifiers = {issue["identifier"]: issue for issue in remote}
@@ -173,6 +181,12 @@ def main():
     # las hojas de entrada/salida; no se muta ningún issue existente.
     relations = [(n["clave"], d) for n in nodes if not n["existente"]
                  for d in n["depende_de"] if d in external or not by[d]["existente"]]
+    child_relations = [(r["dependiente"], r["bloqueante"]) for r in tree.get("relaciones_hijo", []) if not r["existe_en_linear"]]
+    relations += child_relations
+    labels_to_create = [spec for spec in label_specs if spec["nombre"] not in labels]
+    current = {i["identifier"]: {lab["name"] for lab in (i.get("labels") or {}).get("nodes", [])} for i in remote}
+    additions = [(n, label) for n in nodes if n["existente"] for label in n.get("labels_agregar", [])
+                 if not key or label not in current.get(n["existente"], set())]
     print(f"{'APPLY' if args.apply else 'DRY-RUN'} · team HOS · {len(planned)} nodos por crear · {len(relations)} relaciones blocked by")
     if not key:
         print("Preflight remoto pendiente: labels, padres y duplicados se validarán en --apply.")
@@ -184,14 +198,30 @@ def main():
     hacia_externas = [pair for pair in relations if pair[1] in external]
     if hacia_externas:
         print("  relaciones hacia issues externas: " + ", ".join(f"{a} blocked by {b}" for a, b in hacia_externas))
-    for prop in tree.get("relaciones_hijo_propuestas", []):
-        print(f"  PROPUESTA (no se crea, decide el owner): hijo {prop['dependiente']} blocked by hijo {prop['bloqueante']}: {prop['motivo']}")
+    def name(k):
+        return by[k]["existente"] if k in by and by[k]["existente"] else k
+    if child_relations:
+        print("  relaciones entre issues existentes: " + ", ".join(f"{name(a)} blocked by {name(b)}" for a, b in child_relations))
+    for spec in labels_to_create:
+        print(f"  label a crear en HOS: {spec['nombre']} ({spec['color']}, «{spec['descripcion']}»)"
+              + ("" if key else " — si falta; sin preflight remoto no se sabe"))
+    if additions:
+        print("  labels a agregar a issues existentes (sin quitar los actuales): "
+              + ", ".join(f"{n['existente']} +{label}" for n, label in additions))
     if not args.apply:
         return
 
     # Todo el preflight anterior termina antes de la primera mutación.
     if made and not CREATED.exists():
         save_state(state)
+    for spec in labels_to_create:
+        response = graphql("mutation($input:IssueLabelCreateInput!){issueLabelCreate(input:$input){success issueLabel{id}}}",
+                           {"input": {"teamId": team_id, "name": spec["nombre"], "color": spec["color"],
+                                      "description": spec["descripcion"]}}, key)["issueLabelCreate"]
+        if not response["success"] or not response["issueLabel"]:
+            raise RuntimeError(f"Linear no creó el label {spec['nombre']}")
+        labels[spec["nombre"]] = response["issueLabel"]["id"]
+        print(f"label creado {spec['nombre']}")
     existing = {n["clave"]: next(i["id"] for i in remote if i["identifier"] == n["existente"])
                 for n in nodes if n["existente"]}
     existing.update({ident: next(i["id"] for i in remote if i["identifier"] == ident) for ident in external})
@@ -234,6 +264,13 @@ def main():
         recorded.add(pair)
         save_state(state)
         print(f"relación {dependent} blocked by {blocker}")
+    # issueAddLabel suma un label sin tocar los demás.
+    for n, label in additions:
+        response = graphql("mutation($id:String!,$labelId:String!){issueAddLabel(id:$id,labelId:$labelId){success}}",
+                           {"id": ids[n["clave"]], "labelId": labels[label]}, key)["issueAddLabel"]
+        if not response["success"]:
+            raise RuntimeError(f"No se agregó {label} a {n['existente']}")
+        print(f"label {label} agregado a {n['existente']}")
 
 
 if __name__ == "__main__":

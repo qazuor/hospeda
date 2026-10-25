@@ -260,8 +260,13 @@ interface ReviewRules<V extends ListingVertical = ListingVertical> {
   «rubro principal», el primer elemento lo es (punto de extensión documentado, sin uso hoy).
 - **Entrada**: `businessLines: BusinessLineValue<V>[]`. La vertical **no** viaja en el cuerpo: la pone el servidor
   (G2c pone rojo una propiedad `vertical` en un schema de update de ficha, F-V1-047).
-- **Default del servidor**: si la vertical tiene exactamente un rubro y el cliente no manda rubros, queda el de la
-  base (`standard`). El schema de alta de alojamiento y experiencia no pasa a exigir `businessLines` (F-V1-036).
+- **Default del servidor** (DEC-FAC-079): si el pedido de alta omite `businessLines`, el servicio de alta completa la
+  **preselección del tipo** (`typeRules[type].preselect`, DEC-FAC-010), en todas las verticales: BOLICHE → `{nightlife}`,
+  un tipo sólo de comida → `{food}`, BAR → `{food, nightlife}`, alojamiento y experiencia → `{standard}`. Es
+  comportamiento **permanente**, no un parche: vale para el web, el admin, el seed que pasa por los servicios y cualquier
+  cliente de la API, y es lo que mantiene andando el alta actual del web (y los e2e `listing-owner-*`) entre la columna
+  de este hijo y el selector del sub-spec 5. El schema de alta de alojamiento y experiencia no pasa a exigir
+  `businessLines` (F-V1-036). Los escritores directos a la base (fábricas, tests) siguen sin default en `venues`.
 - **Backfill** (F-V1-017): en la **migración versionada** que crea la columna, no en el carril de seed (si no, entre
   el deploy y `db:seed:migrate` toda ficha tendría cero rubros y el resolvedor ocultaría la carta). Incluye las
   fichas con `deleted_at`. El `CASE type::text` del SQL usa la **preselección** del tipo y termina en `ELSE` (sin
@@ -314,3 +319,9 @@ G-FAC-01 (el CHECK, la matriz y el default coinciden con el catálogo), G-FAC-02
   `locked` → válido; dimensión ajena a la vertical → rechazo por forma; `food: 0` en venue → rechazo por forma; una
   reseña de experiencia con las cuatro dimensiones → válida (igual que hoy).
 - **AC:2:10** — `ReviewRules` de experiencia declarado con `legacyNullAsZero`; G-FAC-02 regla 12 rojo si se borra.
+- **AC:2:11** — Alta sin `business_lines` → la API completa la preselección del tipo; BOLICHE → `{nightlife}`; tipo food-only →
+  `{food}`; los e2e `listing-owner-*` siguen pasando entre este hijo y el selector del sub-spec 5 (DEC-FAC-079).
+- **AC:2:12** — Un alta o un PATCH con `businessLines` inválidos responde 400 `VALIDATION_ERROR` con `details.field =
+  'businessLines'` y su razón (`EMPTY`, `DUPLICATE`, `NOT_IN_VERTICAL`, `NOT_ALLOWED_FOR_TYPE`, `MAX_EXCEEDED`,
+  `EXCLUDED_PAIR`); un valor ajeno a la vertical se rechaza por forma; claves `zodError.venue.businessLines.*`
+  en es/en/pt y fila en `apps/api/docs/error-contract.md`.

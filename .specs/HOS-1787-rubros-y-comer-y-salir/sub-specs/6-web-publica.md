@@ -41,8 +41,8 @@ paginación; la consume.
   `menu` (pago, DEC-FAC-062), así que en el plan básico no sale ni en el bloque de contacto ni en el JSON-LD.
 - `/carta/` sin carta estructurada ni archivo en un `menu` `available` (incluido el caso de sólo enlace, que la ficha
   muestra) → **302 con `Cache-Control: no-store`** a la ficha (DEC-FAC-042,
-  F-V2-013): plan, rubro y carta son reversibles, y un 301 queda grabado en el teléfono del comensal. Test del
-  código y del header.
+  F-V2-013): plan, rubro y carta son reversibles, y un 301 queda grabado en el teléfono del comensal. Lo implementa
+  y lo prueba el sub-spec 3 (`AC:3:10`); acá se consume.
 - **Slugs reservados** (F-V2-052): `/comer-y-salir/rubro/…` y `/comer-y-salir/page/…` son segmentos estáticos que
   Astro prioriza, así que un local con slug `rubro` o `page` perdería su `/carta/`. El generador de slugs de ficha
   reserva `rubro` y `page` en venue (y los segmentos estáticos de cada vertical: `tipo`, `page`, … en las
@@ -168,14 +168,13 @@ paginación; la consume.
 - **AC:6:4** — Test: «un cambio de plan sin cambio de estado de publicación pide la revalidación de las N fichas del
   dueño».
 - **AC:6:5** — JSON-LD de un BOLICHE es `NightClub`; sin `hasMenu` si `menu` no tiene contenido `available`.
-- **AC:6:6** — `/carta/` sin carta disponible: 302 con `no-store`.
-- **AC:6:7** — Un local con slug `rubro` no se puede crear.
-- **AC:6:8** — El badge «abierto ahora» de una colección cacheada se calcula en el cliente (el HTML no lo trae).
-- **AC:6:9** — El chat de un boliche con `min_age: 18` no afirma que un menor puede entrar (test de la regla).
-- **AC:6:10** — La tabla de planes de la vertical se genera desde el catálogo en el web; la fila de la carta incluye el enlace
+- **AC:6:6** — Un local con slug `rubro` no se puede crear.
+- **AC:6:7** — El badge «abierto ahora» de una colección cacheada se calcula en el cliente (el HTML no lo trae).
+- **AC:6:8** — El chat de un boliche con `min_age: 18` no afirma que un menor puede entrar (test de la regla).
+- **AC:6:9** — La tabla de planes de la vertical se genera desde el catálogo en el web; la fila de la carta incluye el enlace
   externo (pago, DEC-FAC-062).
-- **AC:6:11** — Reseñas: el formulario de un BOLICHE no ofrece «Comida» y el de un RESTAURANT sí; una dimensión sin votos no se
+- **AC:6:10** — Reseñas: el formulario de un BOLICHE no ofrece «Comida» y el de un RESTAURANT sí; una dimensión sin votos no se
   muestra; un boliche que fue restaurante no muestra «Comida» aunque tenga votos viejos (servidor y golden: sub-spec 3).
-- **AC:6:12** — La colección de noche no ofrece filtros sin fichas.
-- **AC:6:13** — Los ítems de noche existen en un entorno vivo después de `db:seed:migrate` (dual-write).
-- **AC:6:14** — La home muestra «Eventos gastronómicos» y G-FAC-R1 queda verde sin la tile en la exención (a).
+- **AC:6:11** — La colección de noche no ofrece filtros sin fichas.
+- **AC:6:12** — Los ítems de noche existen en un entorno vivo después de `db:seed:migrate` (dual-write).
+- **AC:6:13** — La home muestra «Eventos gastronómicos» y G-FAC-R1 queda verde sin la tile en la exención (a).
