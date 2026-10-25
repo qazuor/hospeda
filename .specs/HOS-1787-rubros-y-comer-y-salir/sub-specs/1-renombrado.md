@@ -1,10 +1,10 @@
 ---
 title: Sub-spec 1 · Renombrado gastronomy → venue
-linear: HOS-1787 (hijo pendiente de crear)
+linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
 statusSource: linear
 created: 2026-10-25
 status: draft
-revised: 2026-10-25 (respuestas del owner a la vuelta 2)
+revised: 2026-10-25 (resolución de la vuelta 3)
 ---
 
 # 1 · Renombrado `gastronomy` → `venue`
@@ -13,7 +13,8 @@ revised: 2026-10-25 (respuestas del owner a la vuelta 2)
 [discovery A](../docs/05-discovery-a-renombrado.md). Decisiones: DEC-FAC-016, 027, 028, 029, 030, 031, 032.
 Hallazgos `F-V1-NNN` en `../docs/10-revision-vuelta-1/00-consolidado.md` y `F-V2-NNN` en
 `../docs/12-revision-vuelta-2/00-consolidado.md`; DEC-FAC-044, 045, 054 de la vuelta 2; DEC-FAC-060 (cinco
-migraciones editadas), 061 (marcha atrás) y 068 (textos y tile de la home) de las respuestas del owner.
+migraciones editadas), 061 (marcha atrás) y 068 (textos y tile de la home) de las respuestas del owner; DEC-FAC-070
+(G-FAC-R1: historia frente a valores) de la vuelta 3.
 
 ## Objetivo
 
@@ -50,7 +51,7 @@ valores de enum, rutas, URLs). Sin migración ni cambio de contrato; cada PR dej
 temporal de frontera (lista de los literales viejos que quedan) baja a cero al cerrar la etapa B.
 
 **Etapa B · renombrado físico (UN PR atómico).** Migración física, valores persistidos, contratos de API
-(`/api/v1/*/venues`), URLs y redirects, edición de 0129/0144/0176 (DEC-FAC-029) y reset de staging.
+(`/api/v1/*/venues`), URLs y redirects, edición de las cinco migraciones 0129/0132/0139/0144/0176 (DEC-FAC-029, 060) y reset de staging.
 
 **Ventana de mantenimiento en staging, orden fijo**:
 1. cancelar las preapprovals huérfanas del sandbox de MercadoPago (antes de perder el ancla local);
@@ -97,9 +98,10 @@ historial y correos ya enviados, índices de buscadores, redirects ya cacheados 
 | `mi-cuenta/comercio/gastronomy/…` | `mi-cuenta/comercio/venue/…` | segmento `[vertical]` |
 | cache tags `gastro-<slug>`, `list-gastro` y clases CSS `gastro-*` | prefijo `venue-` (verificar colisión con clases y tags existentes en la tarea) | `packages/cache-tags/src/vocabulary.ts`, CSS; se purgan en el deploy |
 | propiedad PostHog `is_gastronomy_owner` | `is_venue_owner` | `packages/analytics/src/shared.ts` |
-| ids de What's New (3, incluidos los publicados) y del tour (`web.gastronomy.welcome`, paso `gastronomy-qr`) | ids `venue`; tour `web.venue.welcome`, paso `venue-qr` (único lugar donde se fija el id) | **nadie vuelve a ver la entrada**: data-migration de seen-ids encadenada a la `0109`, con su mismo patrón; ídem el mapa de progreso de tours si guarda el id (DEC-FAC-054, F-V2-029) |
+| ids de What's New (3, incluidos los publicados) y del tour (`web.gastronomy.welcome`, paso `gastronomy-qr`) | ids `venue`; tour `web.venue.welcome`, paso `venue-qr` (único lugar donde se fija el id) | **nadie vuelve a ver la entrada**: data-migration de seen-ids encadenada a la `0109`, con su mismo patrón (DEC-FAC-054, F-V2-029). **El mapa de tours sí guarda el id** (verificado, F-V3-009): `settings.onboarding.adminTours` es `tourId → version` también para los tours del web (`apps/api/src/routes/user/protected/tourProgress.ts:8,57`); la misma data-migration renombra la clave `web.gastronomy.welcome` → `web.venue.welcome` conservando la versión. El paso (`gastronomy-qr`) no se guarda |
 | carpeta Cloudinary `hospeda/<env>/gastronomies/<id>` | `hospeda/<env>/venues/<id>` | el seed resube las fotos de ejemplo bajo la carpeta nueva; las viejas quedan huérfanas |
 | fixtures: `deterministicFixtureId({ seedKey: 'gastronomy:${seedId}' })` y los `seedId` | `venue:${seedId}` y `seedId` sin la palabra | cambia el UUID de cada ficha de ejemplo, FAQ y reseña: staging se resetea (DEC-FAC-029), sin migración |
+| usuarios de prueba `gastronomy-owner@local.test`, `host-gastronomy@local.test` y de fixture `gastro-owner-julieta`, `gastro-owner-rodrigo`, `gastro-owner-valentina` (`@local.test`) | `venue-owner@local.test`, `host-venue@local.test`, `venue-owner-julieta/rodrigo/valentina@local.test` (nombres propuestos; F-V3-014) | `testUsers.seed.ts`, fixtures de ejemplo, los cinco e2e `listing-owner-0[1-5]`, `packages/seed/CLAUDE.md`, skills que los citan. Las data-migrations 0029 y 0059 los nombran y no se editan (fuera del escaneo); staging se resetea, así que no hay migración de emails |
 | nombres nuevos de esta spec | `BusinessLine`, `ListingSection`, `SectionTrait` | ver sub-spec 2 y DEC-FAC-031 |
 
 ## Qué se conserva (DEC-FAC-032)
@@ -114,9 +116,13 @@ Lista cerrada, y es la misma que G-FAC-R1 cuenta por nombre:
 | d | el propio guard de palabra retirada | tiene que nombrar lo que prohíbe |
 | e | eventos pasados de PostHog y correos ya enviados | historia externa que no se reescribe |
 
-Fuera del escaneo (historia, no es una excepción del código): las migraciones versionadas que no se editan,
-**la migración de renombrado y su `meta/`**, **los módulos de data-migration del seed** (el paso 6 del corte los
-borra), las specs de HOS-1352/1353/1354 y esta spec (F-V2-015).
+Fuera del escaneo (historia, no es una excepción del código; DEC-FAC-070): todas las migraciones versionadas
+anteriores a la de renombrado, **incluidas las cinco editadas**, con sus `meta/` (la 0132 tiene que seguir diciendo
+`ALTER TABLE "gastronomies"`); **la migración de renombrado y su `meta/`**; **los módulos de data-migration del seed**
+(el paso 6 del corte los borra); los **tests de historia** (los que aplican migraciones hasta un tag anterior al
+renombrado o importan un módulo de data-migration; lista derivada por el guard); las specs de HOS-1352/1353/1354 y esta
+spec (F-V2-015, F-V3-001). Las cinco editadas tienen además un **chequeo de valores**: ningún literal de valor viejo
+(vertical, claves, planes, slugs, títulos); los nombres de tabla y enum de ese momento quedan.
 
 **Inventario de valores i18n que nombran la vertical** (F-V2-015): cada clave cuyo **valor** dice
 «Gastronomía»/«Gastronomia» como vertical recibe texto nuevo en es/en/pt. Piso: `nav.gastronomy` (es y pt),
@@ -213,7 +219,9 @@ nace rojo): clave `home.categoryTiles.tiles.gastronomy` → `foodEvents` (nombre
      `db:seed:migrate`): todo valor de enum que escriban tiene que ser el nuevo (`VENUE_OWNER`). La 0109 se
      deja como está: la data-migration nueva de seen-ids (DEC-FAC-054) se numera después y lleva sus ids al
      nombre final. Los módulos quedan **fuera del escaneo** de G-FAC-R1 (DEC-FAC-044). El paso 6 del corte los
-     borra.
+     borra. Sus **tests** (`packages/seed/test/data-migrations/`) y los tests de `packages/db/test/integration/` que
+     aplican migraciones hasta un tag histórico (`cut-migration-over-data`, `retire-user-impersonate-over-data`)
+     conservan los nombres viejos: son tests de historia, fuera del escaneo (DEC-FAC-070).
 4. **Redirects y QR** (F-V1-007):
    - Redirect de un salto en `apps/web/src/lib/legacy-redirects.ts` para cada ruta retirada; los de
      `mi-cuenta` conservan ruta profunda y query. **302** durante el soak, 301 con un cambio explícito.
@@ -249,8 +257,11 @@ nace rojo): clave `home.categoryTiles.tiles.gastronomy` → `foodEvents` (nombre
   única forma de ver los triggers de `extras/041`); orden de carriles respetado (`db:migrate` →
   `db:apply-extras` → `db:seed:migrate`).
 - **Ensayo del paso 3 del corte sobre un clon de prod-main** (F-V2-003), insumo del «Momento 3 · antes del
-  ensayo del corte» de HOS-1352: (a) `db:migrate` de la cadena entera 0125…0178 con las migraciones editadas y
-  la de renombrado, con la `CUT-LIST` real de la 0148; (b) `db:apply-extras`; (c) `db:seed:migrate` (incluidas
+  ensayo del corte» de HOS-1352: (a) `db:migrate` de **toda la cadena pendiente en el commit del corte** (hoy
+  0125…0178, las cinco editadas y la de renombrado; más cualquier migración de los sub-specs 2 o 4 que se mergee a
+  staging antes del corte: corre en la misma transacción, F-V3-013), con la `CUT-LIST` real de la 0148 (que sólo
+  acepta `entityType` `'accommodation' | 'gastronomy' | 'experience'`, `0148_cut_paso_3.sql:89`: la CUT-LIST se escribe
+  con el vocabulario viejo, nunca `venue`); (b) `db:apply-extras`; (c) `db:seed:migrate` (incluidas
   `0109`, `0110`, `0125` y la de seen-ids); (d) todos los `count(*) = 0` de discovery A §5 **sobre ese clon**,
   incluido `cutover_v6_deleted_listing WHERE entity_type = 'gastronomy'`; (e) `step-6 compare` en verde entre el
   clon migrado y una base construida desde cero (F-V2-004).
@@ -262,7 +273,8 @@ nace rojo): clave `home.categoryTiles.tiles.gastronomy` → `foodEvents` (nombre
 - typecheck/lint/test con `CI=true` en cada paquete tocado, **incluido `@repo/seed`**; e2e
   `listing-owner-*` en verde.
 - Ningún usuario con un id viejo de What's New en `seenIds` lo ve como nuevo después de la migración de
-  seen-ids (test sobre el clon).
+  seen-ids, y ningún dueño con `web.gastronomy.welcome` en `adminTours` vuelve a ver el tour (test sobre el clon).
+- G-FAC-R1 verde con los tests de historia sin tocar y el chequeo de valores de las cinco editadas en verde.
 - Marcha atrás escrita como revert + reset en staging y restauración del backup del paso 2b en prod
   (DEC-FAC-061), con la lista de lo que no vuelve; sin migración inversa.
 - `db:migrate` desde cero con las **cinco** migraciones editadas en verde (primer chequeo, antes de cualquier otro).

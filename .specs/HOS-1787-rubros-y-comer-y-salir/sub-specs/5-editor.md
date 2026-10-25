@@ -1,17 +1,18 @@
 ---
 title: Sub-spec 5 · Editor del dueño
-linear: HOS-1787 (hijo pendiente de crear)
+linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
 statusSource: linear
 created: 2026-10-25
 status: draft
-revised: 2026-10-25 (respuestas del owner a la vuelta 2)
+revised: 2026-10-25 (resolución de la vuelta 3)
 ---
 
 # 5 · Editor del dueño (`apps/web`)
 
 Decisiones: DEC-FAC-005, 009, 018, 024, 025, 031, 033, 034, 037, de la vuelta 2: 040, 041, 047, 050, 054, y de las
-respuestas del owner: 062 (enlace de carta pago), 063 (contenido `absent`), 064 (aviso de bajada de plan), 067.
-Depende de 3 y 4.
+respuestas del owner: 062 (enlace de carta pago), 063 (contenido `absent`), 064 (aviso de bajada de plan), 067, y de
+la vuelta 3: 075 (vaciar `absent`) y 076. Depende de 3, 4 **y 9** (DEC-FAC-076: el alta ofrece `nightlife`, así que no
+se mergea antes que el copy neutro del embudo).
 
 ## Registros derivados
 
@@ -33,6 +34,14 @@ cambia lo que ve el público.
   campos traducibles de `nightInfo` se editan dentro de su sección. **`menuUrl` se mueve de
   `PriceSection.client.tsx` a la sección de la carta** (DEC-FAC-062): es pago con el resto de la carta, así que en el
   plan básico aparece dentro del upsell de `menu` y en un BOLICHE no aparece.
+- **Texto del upsell de la carta** (F-V3-005): `gastronomy.json:216` (`owner.editor.menuManager.locked`, es/en/pt, →
+  namespace `venue`) dice hoy «Mientras tanto podés subir una foto o un PDF del menú, o dejar el enlace.». Es falso
+  (el archivo ya exige `manage_venue_menu`, `uploadMenuFile.ts:122`, y desde DEC-FAC-062 el enlace también): se
+  reescribe nombrando lo que desbloquea el plan (carta, archivo y enlace), sin prometer nada en el plan básico.
+- **Tests y docs que mueven `menuUrl`** (F-V3-004): los e2e `listing-owner-01-owner-edits-listings.spec.ts:207-243`
+  (edita `menuUrl` en `precio`) y `listing-owner-02-access-control.spec.ts:184-189` (`#ce-menuUrl`) pasan a editarlo
+  en la carta, con un dueño cuyo plan otorga `manage_venue_menu`; `apps/web/docs/listing-owner-self-service.md` se
+  actualiza.
 - `absent` → la sección no existe (slug → hub, como hoy).
 - `locked` → upsell **proactivo** (hoy el upsell sólo aparece tras un 403) que nombra la sección o el
   rasgo que desbloquea, no el plan genérico.
@@ -91,7 +100,7 @@ cambia lo que ve el público.
   403: el botón de la UI es «vaciar», no «quitar este plato».
 - `absent` vista por el dueño (DEC-FAC-063, Q-14): el mismo trato que `locked`. El slug de la sección sigue
   llevando al hub, y el hub muestra un resumen «guardado y oculto por tus rubros» con conteos y el botón «vaciar»
-  (intención `delete`, admitida en `absent` sólo para el dueño, sub-spec 3). No se edita: para editar, se vuelve a
+  (intención `delete`, admitida en `absent` sólo cuando el actor es el dueño, no para soporte, DEC-FAC-075). No se edita: para editar, se vuelve a
   agregar el rubro. La exportación del dueño incluye todo lo guardado.
 - **Aviso antes de bajar de plan** (DEC-FAC-064, Q-15, MVP). Ver la sección de abajo.
 - El hub (`listing-editor-hub-status-model.ts`) distingue «bloqueada con datos (cargada pero oculta por tu
@@ -143,6 +152,8 @@ G-FAC-05 (lista cerrada de archivos) y G-FAC-08 (lista manual de alojamiento con
 - e2e: dueño Pro de un restaurante con carta, enlace y QR de mesa activos que baja a Básico ve el aviso con los
   conteos antes de confirmar; un dueño sin nada que cambie no ve aviso.
 - e2e: dueño que quitó `food` ve en el hub el resumen de la carta guardada y la puede vaciar; no la puede editar.
-- `menuUrl` se edita dentro de la carta; en plan básico está dentro del upsell; en un BOLICHE no existe.
+- `menuUrl` se edita dentro de la carta; en plan básico está dentro del upsell; en un BOLICHE no existe; los e2e
+  `listing-owner-01/02` lo prueban en su nuevo lugar.
+- El upsell de la carta en plan básico no promete archivo ni enlace (es/en/pt).
 - Alojamiento y experiencia no muestran selector de rubro; el editor de alojamiento es idéntico al de antes
   y G-FAC-08 lo prueba.

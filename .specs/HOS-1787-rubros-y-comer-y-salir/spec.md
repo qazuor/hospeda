@@ -11,8 +11,10 @@ status: draft
 > **Estado**: especificándose. Vuelta 1 de revisión adversarial consolidada (48 hallazgos) y respondida por el
 > owner (DEC-FAC-026…039). Vuelta 2 consolidada (69 → 58 hallazgos), con los arreglos aplicados
 > (DEC-FAC-040…059, objetables) y **respondida por el owner** (Q-11…Q-20 → DEC-FAC-060…069; OD-17…OD-26
-> cerradas). Próximo: descomposición en tareas. El estado macro vive en Linear (HOS-1787); este archivo es
-> el índice técnico.
+> cerradas). Vuelta 3, acotada a los deltas, con **0 CRÍTICA** (3 ALTA, 5 MEDIA, 7 BAJA), toda aplicada sin necesitar
+> al owner (DEC-FAC-070…076, objetables). **Revisiones cerradas.** Próximo: crear en Linear los hijos 1-9 de HOS-1787
+> (los crea el orquestador al cerrar la revisión) y descomponer en tareas. El estado macro vive en Linear (HOS-1787);
+> este archivo es el índice técnico.
 
 ## Qué es
 
@@ -25,7 +27,7 @@ status: draft
    y `venue` en código y base, con renombrado total; arranca con los rubros `food` (URL `gastronomia`) y `nightlife` (URL `noche`).
 
 Por qué y con qué alternativas: [`docs/00-PDR.md`](docs/00-PDR.md) y
-[`docs/01-decision-log.md`](docs/01-decision-log.md) (DEC-FAC-001…069).
+[`docs/01-decision-log.md`](docs/01-decision-log.md) (DEC-FAC-001…076).
 
 ## Índice
 
@@ -40,7 +42,8 @@ Por qué y con qué alternativas: [`docs/00-PDR.md`](docs/00-PDR.md) y
 | `docs/06-guards.md` | lista cerrada de guards |
 | `docs/10-revision-vuelta-1/` · `docs/11-resolucion-vuelta-1/` | vuelta 1: `00-consolidado.md`, `00-arreglos-aplicados.md`, `10-decisiones-del-owner.md` |
 | `docs/12-revision-vuelta-2/` · `docs/13-resolucion-vuelta-2/` | vuelta 2: revisiones A/B/C, `00-consolidado.md`, `00-arreglos-aplicados.md`, `10-decisiones-del-owner.md` (Q-11…Q-20, respondidas) |
-| `sub-specs/1-renombrado.md` … `7-admin.md`, `9-copy-del-embudo.md` | una por hijo de Linear (el 8, migración del editor de alojamiento, todavía no tiene sub-spec) |
+| `docs/14-revision-vuelta-3/` · `docs/15-resolucion-vuelta-3/` | vuelta 3 (deltas): `R-deltas.md`, `00-arreglos-aplicados.md` |
+| `sub-specs/1-renombrado.md` … `7-admin.md`, `9-copy-del-embudo.md` | una por hijo de Linear (el 8, migración del editor de alojamiento, todavía no tiene sub-spec). Los hijos de Linear se crean al cerrar la revisión |
 
 ## Fases (hijos de HOS-1787)
 
@@ -50,10 +53,10 @@ Por qué y con qué alternativas: [`docs/00-PDR.md`](docs/00-PDR.md) y
 | 2 | [Catálogos + columna `business_lines` + tipos `PUB`/`BOLICHE`](sub-specs/2-catalogos.md) | 1 | 3, 4 |
 | 3 | [Resolvedor + paso de autorización](sub-specs/3-resolvedor.md) | 2 | 4, 5, 6, 7 |
 | 4 | [Sección `nightInfo`](sub-specs/4-tipos-y-noche.md) | 2, **3** (su criterio es el 409 del paso 4b, F-V2-041) | 5, 6 |
-| 5 | [Editor del dueño](sub-specs/5-editor.md) | 3, 4 | — |
-| 6 | [Web pública](sub-specs/6-web-publica.md) | 3, 4, **HOS-1797** (paginación compartida) | — |
+| 5 | [Editor del dueño](sub-specs/5-editor.md) | 3, 4, **9** (DEC-FAC-076) | — |
+| 6 | [Web pública](sub-specs/6-web-publica.md) | 3, 4, **9** (DEC-FAC-076), **HOS-1797** (paginación compartida) | — |
 | 7 | [Admin](sub-specs/7-admin.md) | 2, 3 | — |
-| 9 | [Copy neutro del embudo](sub-specs/9-copy-del-embudo.md) | 1, 2 | **lanzamiento de la noche en prod** (DEC-FAC-069) |
+| 9 | [Copy neutro del embudo](sub-specs/9-copy-del-embudo.md) | 1, 2 | **5 y 6** (no se mergean antes, DEC-FAC-076) |
 
 Relacionadas, aparte: **HOS-1798** (reescribir el bloque de billing del CLAUDE.md; bloquea el arranque; relación tomada del revisor, no consultada en Linear); «una ficha = un local físico = una dirección»; **hijo 8** (migración del editor de alojamiento al catálogo, pendiente de crear en Linear); HOS-1797 (paginación compartida); HOS-1796 (diferencial de noche, post-MVP).
 

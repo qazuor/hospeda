@@ -1,17 +1,18 @@
 ---
 title: Sub-spec 3 · Resolvedor de secciones y paso de autorización
-linear: HOS-1787 (hijo pendiente de crear)
+linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
 statusSource: linear
 created: 2026-10-25
 status: draft
-revised: 2026-10-25 (respuestas del owner a la vuelta 2)
+revised: 2026-10-25 (resolución de la vuelta 3)
 ---
 
 # 3 · Resolvedor + paso de autorización
 
 Decisiones: DEC-FAC-008, 009, 018, 019, 020, 021, 023, 031, 033, 037, y de la vuelta 2: 040, 041, 042, 048, 049,
 050, 051, 055, y de las respuestas del owner a la vuelta 2: 062 (enlace de carta pago), 063 (contenido `absent`),
-064 (vista previa de la bajada) y 065 (dimensiones de reseña). Depende de 2. Base: [discovery B §3-4](../docs/05-discovery-b-superficies.md). Vocabulario de
+064 (vista previa de la bajada) y 065 (dimensiones de reseña), y de la vuelta 3: 071, 072, 073 (servidor de
+reseñas, que vive acá) y 075 (vaciar `absent`). Depende de 2. Base: [discovery B §3-4](../docs/05-discovery-b-superficies.md). Vocabulario de
 DEC-FAC-031: **sección** (`ListingSection`), **rasgo** (`SectionTrait`), estados `absent | locked | available` (en
 UI y docs: AUSENTE / BLOQUEADA / DISPONIBLE). «Capacidad» sólo significa clave de entitlement; el código de error
 `NO_CAPABILITY` del paso 6 es el existente de HOS-1353 y no se renombra.
@@ -109,10 +110,11 @@ no aplica a los rubros de tu local», no al manejador genérico de 404.
 - **Borrado en `locked`** (DEC-FAC-025): una ruta `DELETE` o de vaciado declara `delete` y pasa sin la clave. Un PUT
   de reemplazo clasifica el cuerpo: vacío = `delete`; si no, `write`. Borrar ítems sueltos de una sección `locked`
   (un PUT con menos platos) es `write` y responde 403: queda fuera, y lo dice el upsell.
-- **Contenido `absent` para el dueño** (DEC-FAC-063, Q-14): en `absent` el 4b **admite `read` y `delete` cuando el
-  paso 4 resolvió «dueño»** (incluida la acción 15), para que el editor muestre el resumen «guardado y oculto» y el
-  dueño pueda vaciar la sección; `write` sigue en 409 `SECTION_ABSENT`. A un sujeto ajeno, `absent` sigue siendo
-  `NOT_FOUND` para cualquier intención, y ningún lector público lo publica.
+- **Contenido `absent` para el dueño** (DEC-FAC-063, Q-14; DEC-FAC-075): en `absent` el 4b **admite `read` cuando el
+  paso 4 resolvió «dueño»** (incluida la acción 15, para que soporte vea lo que ve el dueño) y **`delete` sólo si el
+  actor es el dueño** (`actor.id === subjectId`); la acción 15 con `delete` en `absent` recibe 409 `SECTION_ABSENT`, igual
+  que `write`. Así el editor muestra el resumen «guardado y oculto» y el dueño, y sólo él, puede vaciar la sección. A un
+  sujeto ajeno, `absent` sigue siendo `NOT_FOUND` para cualquier intención, y ningún lector público lo publica.
 - Lecturas: siguen sin gatearse por plan (decisión vigente: «construir» ≠ «mirar»).
 
 ### Rutas que escriben varias secciones (F-V1-016, DEC-FAC-021, DEC-FAC-040)
@@ -164,14 +166,31 @@ conservan. Un lector nuevo entra a esta tabla y al inventario de G-FAC-03(b).
 | enlace externo `menuUrl` (bloque de contacto, chat, folleto, `menu-projection.ts`) | gratis en todo plan, nunca gateado (`menu-projection.ts:101-103`, a propósito) | **pago** (DEC-FAC-062, Q-13 = 3): es un campo de `menu` y sale sólo con `menu` `available`; el proyector genérico lo quita en `absent` y `locked`. Se borra el comportamiento de «enlace gratis» de `menu-projection.ts` y su docblock, con el test que lo fijaba invertido. Un local sólo de noche no tiene enlace de carta (`menu` es `absent`) |
 | hoja y widget de QR de mesa | sin rubro | rasgo `menu.qr`: no se ofrece si no está `available` |
 | página `/carta/` | 404 si no hay carta proyectada | sin carta estructurada ni archivo en un `menu` `available` (`absent`, `locked`, vacía, o `available` con sólo el enlace externo, que se muestra en la ficha) → **302 `no-store` a la ficha** (DEC-FAC-042, F-V2-013); el header se escribe a mano como en `qr/[slug].astro:117-130` |
-| JSON-LD `hasMenu`, sitemap | presencia de datos | sólo con `menu` `available` y algún contenido (carta, archivo o enlace: `hasMenu` admite una URL) |
+| JSON-LD `hasMenu` | presencia de datos | sólo con `menu` `available` y algún contenido (carta, archivo o enlace: `hasMenu` admite una URL) |
+| sitemap | hoy lista sólo la ficha (`sitemap-dynamic.xml.ts:414-419`), no `/carta/` | sigue sin listar `/carta/`; si algún día lo hace, sólo con `menu` `available` y carta estructurada o archivo, nunca con sólo el enlace (esa URL responde 302, DEC-FAC-062; F-V3-011) |
 | exportación del dueño (`EXPORT`) y vista previa de purga (`purgePreview.ts`) | — | **incluyen todo lo guardado**, también lo `absent` y `locked` (DEC-FAC-063, Q-14); son del dueño y no se proyectan |
 | formulario de reseña y su validación (DEC-FAC-065, Q-16) | no pide dimensiones | lee el mapa público de estados de la ficha: una dimensión ligada a una sección se ofrece y se acepta sólo si esa sección **no** es `absent`; las no ligadas, siempre. Nunca compara rubros |
+| promedios por dimensión de la ficha (agregado `rating` de la fila; ficha, listados, JSON-LD si algún día los publica) (DEC-FAC-072, F-V3-002) | se publican siempre | el promedio y el conteo de una dimensión cuya `boundSection` está `absent` **no se publican**; los votos se conservan y vuelven si vuelve el rubro. `locked` no oculta. El agregado no está en los `fields` de ninguna sección (no es un campo de update), por eso es una regla propia del lector y no del proyector |
 | vista previa de la bajada de plan (DEC-FAC-064, Q-15) | — | corre el resolvedor con el conjunto efectivo **simulado** del plan destino (sub-spec 5) |
 
 Alojamiento (`entitlement-filter.ts`, 9 lectores, gating por **campo**) **no se reemplaza** en esta spec
 (DEC-FAC-033, 049): el resolvedor gobierna secciones, y los rasgos de campo de alojamiento no son secciones del
 catálogo. Su migración es el hijo 8 (pendiente de crear en Linear).
+
+## Servidor de reseñas (DEC-FAC-065, 071, 073)
+
+Vive en este hijo (no en el 6, que bloquea HOS-1797); el 6 se queda con el formulario y la ficha.
+- **Rutas de alta de reseña** (venue y experiencia): validan el desglose con `validateReviewDimensions` (sub-spec 2)
+  sobre los estados de la ficha (sólo `absent` importa, que depende de los rubros, no del plan). Experiencia declara
+  sus cuatro dimensiones sin ligar, así que acepta exactamente lo de hoy.
+- **Recálculo**: `recomputeRating` de la base compartida (`base-listing.service.ts:999-1046`) lee
+  `ReviewRules.dimensionAveraging` de la vertical. `legacyNullAsZero` = el código de hoy movido sin cambios
+  (experiencia). `votedOnly` (venue): por dimensión, promedio y conteo sólo de los votos; clave ausente si no hay
+  votos; `averageRating` = promedio de `overallRating`. Se borra la imputación de `overallRating` a las dimensiones del
+  servicio de reseñas de venue (`gastronomy.review.service.ts:671-684`). Formas de datos en el sub-spec 2
+  (DEC-FAC-071).
+- **Test golden de experiencia**: corre el recálculo sobre un fixture con y sin desglose (incluido `null`) y compara
+  contra el valor capturado **antes** del cambio; tiene que dar idéntico.
 
 ## Lecturas para superficies
 
@@ -210,7 +229,12 @@ G-FAC-03 (a y b), G-FAC-04 y G-FAC-06.
 - Dueño que quitó `food`: `getMenu` y el vaciado de `menu` → 2xx; `putMenu` con contenido → 409
   `SECTION_ABSENT`; un tercero → 404 en las tres (DEC-FAC-063). La exportación trae la carta. Un BOLICHE que manda `menuUrl` en el PATCH → 409.
 - Reseña de un BOLICHE con la dimensión `food` → 400; sin ella → 2xx; reseña de un RESTAURANT con `food` → 2xx
-  aunque `menu` esté `locked` (DEC-FAC-065).
+  aunque `menu` esté `locked` (DEC-FAC-065); `food: 0` → 400; reseña de experiencia con las cuatro dimensiones → 2xx.
+- Recálculo `votedOnly`: una dimensión sin votos queda sin clave; el promedio de una dimensión ignora las reseñas que
+  no la votaron; test golden de experiencia en verde.
+- Un RESTAURANT con votos de comida que pasa a BOLICHE no publica «Comida»; vuelve a RESTAURANT y la publica
+  (DEC-FAC-072).
+- Soporte (acción 15) lee una sección `absent` de un dueño y recibe 409 al vaciarla; el dueño la vacía (DEC-FAC-075).
 - Alojamiento y experiencia: salida pública idéntica a la de antes (test de no regresión), incluidas las
   indicaciones de experiencia con y sin la clave.
 - Los estados degradados de la tabla tienen su test.

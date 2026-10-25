@@ -7,33 +7,33 @@ created: 2026-10-25
 
 # 03 · Handoff
 
-**Estado**: vueltas 1 y 2 de revisión adversarial **cerradas**. Vuelta 2: 58 hallazgos, 47 arreglos técnicos
-(DEC-FAC-040…059, todavía objetables: el owner no las objetó ni las aceptó explícitamente) y las diez preguntas
-respondidas (DEC-FAC-060…069). No queda ninguna decisión abierta en `04-open-decisions.md`.
+**Estado**: revisiones **cerradas**. Vuelta 3 (deltas de la vuelta 2): 15 hallazgos, **0 CRÍTICA** (3 ALTA, 5 MEDIA,
+7 BAJA), todos aplicados sin necesitar al owner (DEC-FAC-070…076, objetables). Las vueltas 1 y 2 ya estaban cerradas
+(DEC-FAC-018…069). No queda ninguna decisión abierta en `04-open-decisions.md`.
 
-Dos respuestas fueron contra la recomendada y cambiaron el diseño:
-- **Q-13 = 3** (DEC-FAC-062): `menuUrl` pasa de `price` a `menu` y es pago; se borra el «enlace gratis» de
-  `menu-projection.ts`; el rasgo `file` desaparece; `menu` puede estar `locked` entera.
-- **Q-16 = 2** (DEC-FAC-065): `ReviewRules` en el catálogo (dimensiones ligadas a secciones, modo de promedio); la
-  base compartida de reseñas gana un modo con default = el cálculo de hoy, para que experiencia no cambie.
+Lo que cambió la vuelta 3, en una línea cada uno:
+- G-FAC-R1 separa historia (editadas, `meta/`, tests de migraciones viejas, fuera del escaneo) de valores (chequeo
+  propio de las cinco editadas) (DEC-FAC-070).
+- Reseñas: forma de datos con «no votó» = clave ausente (071); promedio de una dimensión con sección `absent` no se
+  publica (072); servidor en el sub-spec 3, experiencia declara `ReviewRules`, modo `legacyNullAsZero` (073).
+- `nightInfo` en la lista de la acción 15 y `businessLines` como no-contenido (074); soporte no vacía `absent` (075).
+- Los sub-specs 5 y 6 dependen del 9 (076). `menuUrl` sale del admin; el upsell de la carta deja de prometer el enlace.
 
-**Próximo paso**: descomposición en tareas de cada hijo (1-7 y 9), o una vuelta 3 acotada sobre lo que cambiaron
-Q-13 y Q-16 si el owner la quiere.
+**Próximo paso**: crear en Linear los hijos 1-9 de HOS-1787 (incluido el **hijo 8**, migración del editor de
+alojamiento, sin sub-spec todavía) — los crea el orquestador — y descomponer en tareas cada hijo.
 
 **Verificaciones que quedaron para la tarea**: conteo de escritores directos de `business_lines` (A-007); si algo
-parsea el rol de la cookie de sesión (A-022); qué hace hoy el recálculo de experiencia con `null` (lo fija el test
-golden); si la bajada de plan cancela addons en el mismo acto (DEC-FAC-064); si alojamiento usa la base compartida de
-reseñas; ubicación de los correos de bienvenida y de textos que prometan el enlace de carta gratis (sub-spec 9); la
-relación «HOS-1798 bloquea HOS-1787» en Linear; si el mapa de progreso de tours guarda ids.
+parsea el rol de la cookie de sesión (A-022); si la bajada de plan cancela addons en el mismo acto (DEC-FAC-064); la
+relación «HOS-1798 bloquea HOS-1787» en Linear; nombres propuestos (endpoint `section-preview`, clave `foodEvents`,
+ícono, ítems de noche, emails nuevos de los usuarios de fixture).
 
 **Pendientes de seguimiento** (fuera de este repo):
-- Crear en Linear los hijos 1-7 y 9 de HOS-1787, y el **hijo 8** (migración del editor de alojamiento al catálogo).
-- **HOS-1798** bloquea el arranque; **HOS-1797** bloquea el sub-spec 6; el sub-spec 9 bloquea el lanzamiento de la
-  noche en prod. **HOS-1796** (diferencial de noche, post-MVP). Bugs previos: HOS-1792, 1793, 1794 (post-MVP) y 1795.
+- Crear en Linear los hijos 1-9 de HOS-1787 (el 8 es la migración del editor de alojamiento al catálogo).
+- **HOS-1798** bloquea el arranque; **HOS-1797** bloquea el sub-spec 6; el sub-spec 9 bloquea el merge de 5 y 6
+  (DEC-FAC-076). **HOS-1796** (diferencial de noche, post-MVP). Bugs previos: HOS-1792, 1793, 1794 (post-MVP) y 1795.
 - Relacionar HOS-1787 con V6 de HOS-1352: el sub-spec 1 es bloqueante del corte (DEC-FAC-028) y prod ejecuta la
   migración de renombrado en el paso 3 del corte.
 
-**Dónde**: worktree `/home/qazuor/projects/WEBS/hospeda-spec-hos-1787-docs`. La carpeta
-`.specs/HOS-1787-rubros-y-comer-y-salir/` sigue **sin trackear y sin commitear**.
+**Dónde**: worktree `/home/qazuor/projects/WEBS/hospeda-spec-hos-1787-docs`, branch `spec/HOS-1787-docs`, PR #3812.
 
-**Leer primero**: `01-decision-log.md` (DEC-FAC-060…069), después `sub-specs/1-renombrado.md`.
+**Leer primero**: `01-decision-log.md` (DEC-FAC-060…076), después `sub-specs/1-renombrado.md`.

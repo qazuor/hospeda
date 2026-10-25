@@ -36,7 +36,7 @@ DEC-FAC-031 fija los nombres finales y su equivalencia, y es lo que rige en sub-
 | DEC-FAC-017 | VIGENTE | Paraguas + hijos; el renombrado bloquea a todos; regla de dirección aparte |
 | DEC-FAC-018 | VIGENTE, aceptada (la razón SUPERSEDED por DEC-FAC-031: `SECTION_ABSENT`) | AUSENTE frente al dueño: 409 `ALREADY_EXISTS` con `reason: CAPABILITY_ABSENT` |
 | DEC-FAC-019 | VIGENTE | AUSENTE es el paso 4b; BLOQUEADA entra a `requiredKeys` del paso 6 |
-| DEC-FAC-020 | VIGENTE | Rasgos dentro de una capacidad para las claves que viven dentro de una sección |
+| DEC-FAC-020 | VIGENTE (el rasgo `menu.file` SUPERSEDED por DEC-FAC-062: se retira) | Rasgos dentro de una capacidad para las claves que viven dentro de una sección |
 | DEC-FAC-021 | VIGENTE | La capacidad se detecta por campos no nulos y se evalúa sobre los rubros resultantes |
 | DEC-FAC-022 | VIGENTE | Aclara DEC-FAC-015: la etiqueta visible del rubro sale de i18n; el slug sólo es URL |
 | DEC-FAC-023 | VIGENTE (el código 301 SUPERSEDED por DEC-FAC-042: 302 `no-store`) | `/carta/` sin carta disponible redirige a la ficha, no 404 |
@@ -60,7 +60,7 @@ DEC-FAC-031 fija los nombres finales y su equivalencia, y es lo que rige en sub-
 | DEC-FAC-041 | VIGENTE, objetable (`delete` en `absent`: resuelto por DEC-FAC-063) | La ruta declara la intención (`read`/`write`/`delete`) sobre su sección |
 | DEC-FAC-042 | VIGENTE, objetable | `/carta/` sin carta: 302 con `no-store`, nunca 301 |
 | DEC-FAC-043 | VIGENTE, objetable | G-FAC-03(a) se ancla en el operando tipado `BusinessLine`, no en el literal |
-| DEC-FAC-044 | VIGENTE, objetable (la tile de la home sale de la exención (a) por DEC-FAC-068) | G-FAC-R1: historia ampliada, tema por lista cerrada, valores visibles; aclara la (b) de DEC-FAC-032 |
+| DEC-FAC-044 | VIGENTE, objetable (la tile de la home sale de la exención (a) por DEC-FAC-068; «fuera del escaneo» AMPLIADO por DEC-FAC-070) | G-FAC-R1: historia ampliada, tema por lista cerrada, valores visibles; aclara la (b) de DEC-FAC-032 |
 | DEC-FAC-045 | VIGENTE, objetable | Ninguna migración usa un valor recién agregado al enum; `PUB`/`BOLICHE` nacen en el sub-spec 2 |
 | DEC-FAC-046 | VIGENTE, objetable | Default de `business_lines` generado para verticales de un rubro; G-FAC-09 reformulado |
 | DEC-FAC-047 | VIGENTE, objetable | Matriz tipo → rubros también en el CHECK; helper de opciones; sin repetidos |
@@ -76,16 +76,23 @@ DEC-FAC-031 fija los nombres finales y su equivalencia, y es lo que rige en sub-
 | DEC-FAC-057 | VIGENTE, objetable | Admin sin `nightInfo`; REQUEST_FIX es política, no un bloqueo del sistema |
 | DEC-FAC-058 | VIGENTE, objetable | Reglas de forma de `nightInfo` |
 | DEC-FAC-059 | VIGENTE | Vocabulario: sección del catálogo ≠ sección del formulario del admin ≠ `EditorSection` |
-| DEC-FAC-060 | VIGENTE | Se editan cinco migraciones (0129, 0132, 0139, 0144, 0176) con una regla general |
+| DEC-FAC-060 | VIGENTE (cómo las escanea G-FAC-R1: DEC-FAC-070) | Se editan cinco migraciones (0129, 0132, 0139, 0144, 0176) con una regla general |
 | DEC-FAC-061 | VIGENTE | Marcha atrás: revert + reset en staging; backup del paso 2b en prod; sin migración inversa |
 | DEC-FAC-062 | VIGENTE | El enlace externo a la carta pasa a ser pago, dentro de `menu` |
-| DEC-FAC-063 | VIGENTE | Contenido `absent`: el dueño ve el resumen y lo puede vaciar; la exportación trae todo |
+| DEC-FAC-063 | VIGENTE (`delete` en `absent` con la acción 15 SUPERSEDED por DEC-FAC-075: sólo el dueño real) | Contenido `absent`: el dueño ve el resumen y lo puede vaciar; la exportación trae todo |
 | DEC-FAC-064 | VIGENTE | Aviso antes de bajar de plan en el MVP, simulado con el resolvedor |
-| DEC-FAC-065 | VIGENTE | Dimensiones de reseña opcionales, declaradas en el catálogo y ligadas a secciones |
+| DEC-FAC-065 | VIGENTE (forma de datos: DEC-FAC-071; promedio con sección `absent`: DEC-FAC-072; el default implícito `legacyImputed`, su nombre y el lugar del servidor SUPERSEDED por DEC-FAC-073) | Dimensiones de reseña opcionales, declaradas en el catálogo y ligadas a secciones |
 | DEC-FAC-066 | VIGENTE | Ítems de noche en el catálogo de comodidades y filtros sólo con fichas |
 | DEC-FAC-067 | VIGENTE | Frontera de tipos: BAR tragos, PUB cerveza tirada, CERVECERIA productora |
 | DEC-FAC-068 | VIGENTE | Textos es/en/pt aprobados; tile de la home «Eventos gastronómicos» |
-| DEC-FAC-069 | VIGENTE | Copy neutro del embudo en este programa, en un hijo propio (sub-spec 9) |
+| DEC-FAC-069 | VIGENTE (el bloqueo «lanzamiento en prod» SUPERSEDED por DEC-FAC-076: 9 bloquea el merge de 5 y 6) | Copy neutro del embudo en este programa, en un hijo propio (sub-spec 9) |
+| DEC-FAC-070 | VIGENTE, objetable | G-FAC-R1: historia frente a valores; editadas y tests de migraciones viejas fuera del escaneo de identificadores |
+| DEC-FAC-071 | VIGENTE, objetable | Forma de las dimensiones derivada del catálogo: opcional, entero 1-5, «sin voto» = clave ausente; agregado `{ average, count }` |
+| DEC-FAC-072 | VIGENTE, objetable | El promedio de una dimensión ligada no se publica si su sección es `absent` |
+| DEC-FAC-073 | VIGENTE, objetable | Servidor de reseñas en el sub-spec 3; experiencia declara `ReviewRules`; modo `legacyNullAsZero` |
+| DEC-FAC-074 | VIGENTE, objetable | Columnas de `nightInfo` en la lista de la acción 15; `businessLines` es no-contenido; G-FAC-10 compara las dos listas |
+| DEC-FAC-075 | VIGENTE, objetable | `delete` en `absent` sólo para el dueño real; la acción 15 sólo lee |
+| DEC-FAC-076 | VIGENTE, objetable | El sub-spec 9 bloquea el merge de los sub-specs 5 y 6 |
 
 ---
 
@@ -915,3 +922,102 @@ no en el 6: toca correos y superficies que el 6 no toca, no depende de HOS-1797 
 Depende de 1 y 2; ninguna superficie que ofrezca `nightlife` llega a prod sin él.
 **Descartado**: issue post-MVP; correos por rubro (viola la regla 1).
 
+
+---
+
+## Decisiones de la resolución de la vuelta 3
+
+Tomadas por el agente al resolver la vuelta 3 (`14-revision-vuelta-3/R-deltas.md`). Ninguna necesitó al owner: cada
+una se deriva de una regla ya decidida. Todas son **objetables** y están en
+`15-resolucion-vuelta-3/00-arreglos-aplicados.md`.
+
+## DEC-FAC-070 · G-FAC-R1: historia frente a valores
+**Fecha**: 2026-10-25 · **Decidió**: resolución vuelta 3 (agente), objetable. **Hallazgo**: F-V3-001.
+**Qué**: (1) las cinco migraciones editadas (0129, 0132, 0139, 0144, 0176) y sus `meta/` salen del escaneo de las
+reglas 1-5 de G-FAC-R1, como historia: describen el esquema de un momento en que la tabla se llama `gastronomies`
+(`0132_noisy_marvel_boy.sql:26-29` no se puede editar). En su lugar, un **chequeo de valores** propio: en esos cinco
+archivos no queda ningún literal de valor viejo (`'gastronomy'` como vertical, `{gastronomy}`, claves
+`*_gastronomy_*`/`*_gastronomies*`, slugs `gastronomy-*`/`*-gastronomy-*`/`*-gastronomies-*`, títulos
+«Gastronomía»/«Gastronomy»); los nombres de tabla, columna, índice y enum quedan permitidos. (2) Salen también del
+escaneo, como historia, los **tests de historia**: los que aplican migraciones hasta un tag anterior a la migración de
+renombrado (uso de `journal.entries` o de un tag fijo, p. ej. `cut-migration-over-data.test.ts`,
+`retire-user-impersonate-over-data.test.ts`) y los que importan un módulo de `packages/seed/src/data-migrations/`
+(p. ej. `whats-new-seen-ids-rename.integration.test.ts`). La lista es cerrada, contada y **derivada** por el guard
+(no escrita a mano): un test entra si y sólo si cumple uno de los dos predicados. Siguen siendo cinco exenciones.
+**Mutaciones**: devolver `'gastronomy'` al `ck_vertical_id` de la 0129 → rojo (chequeo de valores); `const x =
+'gastronomy'` en un test que no aplica migraciones ni importa una data-migration → rojo.
+**Por qué**: con la versión de DEC-FAC-044 el guard nacía rojo y la única salida era angostarlo a mano.
+**Descartado**: una sexta exención (rompe la regla de las cinco); reescribir los tests de historia (probarían un
+esquema que no existió).
+**Amplía**: DEC-FAC-044 («fuera del escaneo») y precisa cómo DEC-FAC-060 se escanea.
+
+## DEC-FAC-071 · Forma de datos de las dimensiones de reseña
+**Fecha**: 2026-10-25 · **Decidió**: resolución vuelta 3 (agente), objetable. **Hallazgo**: F-V3-003.
+**Qué**: para una vertical con `dimensionAveraging: 'votedOnly'`: (1) el schema del desglose de la reseña se
+**deriva** del catálogo (`ReviewDimensionId<V>`), cada dimensión **opcional**, entero de **1 a 5**; «no votó» es la
+**clave ausente**, nunca `0` ni `null` (un `0` se rechaza por forma); (2) el agregado de la ficha es
+`Partial<Record<ReviewDimensionId<V>, { average: number; count: number }>>`: clave ausente = cero votos;
+(3) `recomputeRating` recibe filas genéricas `Partial<Record<id, number>>` y la lista de dimensiones del catálogo;
+(4) `averageRating` de la ficha = promedio de `overallRating`. `GastronomyRatingSchema` (→ venue) deja de existir como
+lista escrita a mano de las cuatro claves. Experiencia sigue en el modo legado con su schema y su firma de hoy. Sin
+migración de datos: prod tiene cero fichas de venue (DEC-FAC-027) y staging se resetea.
+**Por qué**: hoy el schema exige las cuatro y admite `0` (`gastronomy-rating.schema.ts:27-75`), y sirve a la vez
+para la entrada y el agregado (`gastronomy.review.schema.ts:64,134`, `gastronomy.schema.ts:156`): con `votedOnly`
+la ficha mostraría «0» o rechazaría el agregado.
+**Descartado**: `null` como «sin voto» (el código de hoy ya trata `null` como 0 en la base).
+
+## DEC-FAC-072 · Promedio de una dimensión con su sección `absent`
+**Fecha**: 2026-10-25 · **Decidió**: resolución vuelta 3 (agente), objetable. **Hallazgo**: F-V3-002.
+**Qué**: el lector público no publica el promedio ni el conteo de una dimensión cuya `boundSection` esté `absent` en
+el mapa de la ficha; los votos se conservan en las reseñas y en el agregado y vuelven a verse si vuelve el rubro.
+`locked` no oculta (el turista sí comió). Es una fila nueva de la lista cerrada de lectores (sub-spec 3). El agregado no
+se recalcula al cambiar rubros: la decisión es de lectura.
+**Por qué**: el agregado vive en la fila de la ficha y no es un campo de update, así que no está en los `fields` de
+ninguna sección y el proyector genérico no lo quitaba; un restaurante que pasa a boliche mostraba «Comida». Lo
+manda la regla 5.
+
+## DEC-FAC-073 · Dónde vive el servidor de reseñas y qué hace experiencia
+**Fecha**: 2026-10-25 · **Decidió**: resolución vuelta 3 (agente), objetable. **Hallazgo**: F-V3-006.
+**Qué**: (1) la validación en las rutas de alta de reseña (`validateReviewDimensions`), el recálculo `votedOnly` y el
+test golden pasan al **sub-spec 3** (no los bloquea HOS-1797); el 6 se queda con formulario y ficha. (2) **Toda
+vertical cuyas reseñas recalcula la base compartida declara `ReviewRules`**: experiencia declara sus cuatro
+dimensiones de hoy (`food`, `service`, `ambiance`, `value`), **sin ligar**, con el modo legado; ya no hay default
+implícito. Con eso el validador de experiencia acepta exactamente lo que acepta hoy. Alojamiento no usa la base
+(sólo `GastronomyService` y `ExperienceService` extienden `BaseListingService`, `gastronomy.service.ts:124`,
+`experience.service.ts:115`) y no declara nada. (3) El modo legado se llama **`legacyNullAsZero`**: es lo que hace la
+base hoy (suma `null` como 0 y promedia las cuatro, `base-listing.service.ts:1022-1040`); la imputación de
+`overallRating` vivía en el servicio de reseñas de venue (`gastronomy.review.service.ts:671-684`) y se borra con
+`votedOnly`. El código de la base se mueve sin cambios a la rama `legacyNullAsZero`; el golden lo prueba.
+**Por qué**: el 400 del boliche estaba exigido por el sub-spec 3 y construido en el 6; un validador genérico sin
+dimensiones declaradas rechazaba el desglose que experiencia acepta hoy; y el nombre `legacyImputed` describía mal a
+experiencia.
+**Reemplaza**: en DEC-FAC-065, el default implícito, el nombre del modo y la ubicación del servidor.
+
+## DEC-FAC-074 · `nightInfo`, `businessLines` y la lista de la acción 15
+**Fecha**: 2026-10-25 · **Decidió**: resolución vuelta 3 (agente), objetable. **Hallazgo**: F-V3-007.
+**Qué**: las columnas de `nightInfo` entran a `LISTING_SUPPORT_EDIT_CONTENT_FIELDS`
+(`listing-support-edit.ts:141-183`) además del `SET` del purge. `businessLines` entra a `LISTING_NON_CONTENT_FIELDS`
+(`listing-owner-act.ts:68`): es **clasificación**, como en `PURGED` (sub-spec 2), así que la acción 15 no cambia rubros
+y el cambio de rubros de un tercero sigue sólo por `venue.editAll`, con su registro y su aviso (sub-spec 7). G-FAC-10
+compara también el `SET` del purge con `LISTING_SUPPORT_EDIT_CONTENT_FIELDS` (mismas columnas de contenido).
+**Por qué**: la lista de la acción 15 es copia a mano del purge y nadie la vigilaba; sin esta regla, soporte no podía
+corregir la nota de entrada, o alguien sumaba `businessLines` y abría un camino de cambio de rubros sin aviso.
+**Descartado**: `businessLines` como contenido de la acción 15 (duplica el camino de `editAll` sin el aviso).
+
+## DEC-FAC-075 · Vaciar una sección `absent`: sólo el dueño real
+**Fecha**: 2026-10-25 · **Decidió**: resolución vuelta 3 (agente), objetable. **Hallazgo**: F-V3-012.
+**Qué**: en `absent`, el paso 4b admite `read` cuando el paso 4 resolvió «dueño» (incluida la acción 15, para que
+soporte vea lo que ve el dueño) y admite `delete` **sólo si el actor es el dueño** (`actor.id === subjectId`). La
+acción 15 con `delete` en `absent` recibe 409 `SECTION_ABSENT`. En `locked` no cambia nada.
+**Por qué**: DEC-FAC-063 se tomó porque «el dueño controla sus datos»; dejar que soporte borre datos que el dueño ni
+siquiera ve publicados contradice la razón, y el sub-spec 7 ya no le ofrece secciones `absent`.
+**Reemplaza**: en DEC-FAC-063, la inclusión de la acción 15 para `delete`.
+
+## DEC-FAC-076 · El sub-spec 9 bloquea el merge de 5 y 6
+**Fecha**: 2026-10-25 · **Decidió**: resolución vuelta 3 (agente), objetable. **Hallazgo**: F-V3-008.
+**Qué**: los sub-specs 5 (editor, ofrece `nightlife` en el alta) y 6 (colección `/rubro/noche/`) dependen del 9 y no
+se mergean antes que él. El 9 depende sólo de 1 y 2: no hay ciclo.
+**Por qué**: «no llega a prod sin el 9» dependía de recordarlo al promover `staging` → `main`, que es un gesto manual
+sobre todo lo acumulado; un orden de merge se hace cumplir solo.
+**Descartado**: interruptor que apague `nightlife` hasta que llegue el 9 (es un parche intermedio).
+**Reemplaza**: el bloqueo de DEC-FAC-069 («ninguna superficie que ofrezca `nightlife` llega a prod sin él»).

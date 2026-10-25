@@ -1,16 +1,17 @@
 ---
 title: Sub-spec 7 · Admin
-linear: HOS-1787 (hijo pendiente de crear)
+linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
 statusSource: linear
 created: 2026-10-25
 status: draft
-revised: 2026-10-25 (respuestas del owner a la vuelta 2)
+revised: 2026-10-25 (resolución de la vuelta 3)
 ---
 
 # 7 · Admin (`apps/admin`)
 
 Decisiones: DEC-FAC-005, 019, 026, 031, 034, de la vuelta 2: 047, 048, 056, 057, y de las respuestas del owner:
-065 (dimensiones de reseña) y 067 (frontera de tipos). Depende de 2 y 3.
+065 (dimensiones de reseña) y 067 (frontera de tipos), y de la vuelta 3: 074 (`businessLines` es no-contenido) y 075
+(soporte no vacía secciones `absent`). Depende de 2 y 3.
 
 - Los rubros aparecen en el formulario consolidado de la ficha (grupo de checkboxes derivado del
   catálogo; las opciones habilitadas salen de `resolveBusinessLineOptions`, DEC-FAC-047; mínimo uno; misma
@@ -46,6 +47,11 @@ Decisiones: DEC-FAC-005, 019, 026, 031, 034, de la vuelta 2: 047, 048, 056, 057,
   ya hay una fix request abierta, `requestListingFix` responde `ALREADY_OPEN`
   (`packages/verticals/src/publication/fix-request.ts:55`): el admin espera a que se resuelva o suma la corrección
   de rubros a la abierta.
+- **`menuUrl` sale del admin** (F-V3-004, DEC-FAC-057 + 062): el enlace externo ahora es campo de `menu` (pago), y el
+  admin no muestra la carta. Se quita de la config consolidada (`gastronomy-consolidated.config.ts:117`, modos `view`,
+  `edit` y `create`, → `venue-…`), de `GastronomyForm.tsx:349` y del alta (`routes/_authed/gastronomies/new.tsx`), con
+  sus tests (`gastronomy.test.ts:200-204`, `gastronomy-consolidated.config.test.ts`). Si quedara, un guardado del admin
+  sobre un local básico con enlace cargado respondería 403 por el paso 6, y sobre un BOLICHE 409.
 - **`nightInfo` en el admin** (DEC-FAC-057): el formulario consolidado **no** muestra sus campos (como no muestra la
   carta). El PATCH de admin (`routes/gastronomy/admin/patch.ts:30` → `venue`) ya pasa por la cadena, así que el
   paso 4b frena una escritura de `nightInfo` en una ficha sin `nightlife` igual que para el dueño.
@@ -57,7 +63,10 @@ Decisiones: DEC-FAC-005, 019, 026, 031, 034, de la vuelta 2: 047, 048, 056, 057,
   edita dimensiones.
 - **Coordinación con HOS-1362 (V8)**: las rutas de la acción 15 (editar el contenido de una ficha ajena)
   **heredan** el paso 4b y el paso 6 de la cadena, que ya evalúan sobre el dueño (`subjectId`); no hay una
-  «consulta al resolvedor» aparte. No se ofrecen secciones `absent` (F-V1-035).
+  «consulta al resolvedor» aparte. No se ofrecen secciones `absent` (F-V1-035), y la API tampoco deja vaciarlas:
+  la acción 15 sólo **lee** una sección `absent`; `delete` en `absent` es sólo del dueño (DEC-FAC-075).
+- **Rubros y acción 15** (DEC-FAC-074): `businessLines` está en `LISTING_NON_CONTENT_FIELDS` (es clasificación), así que
+  la acción 15 no cambia rubros; el único camino de un tercero es `venue.editAll`, con registro y aviso.
 - El admin hoy no tiene UI de carta, menú del día ni eventos; esta spec no la agrega.
 
 ## Criterio de aceptación
@@ -71,3 +80,5 @@ Decisiones: DEC-FAC-005, 019, 026, 031, 034, de la vuelta 2: 047, 048, 056, 057,
 - Un REQUEST_FIX sobre los rubros llega al dueño y no modifica la ficha hasta que el dueño responde.
 - Soporte con plan propio Premium que edita la ficha de un dueño Básico ve `locked` donde el dueño la ve.
 - La moderación de una reseña de venue con dimensiones las muestra; una sin dimensiones muestra sólo la general.
+- El formulario de admin de venue no tiene `menuUrl` en ningún modo; un guardado del admin sobre un local básico pasa.
+- Una edición de rubros por la acción 15 se rechaza; la misma por `venue.editAll` pasa y avisa.

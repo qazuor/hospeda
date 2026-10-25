@@ -1,17 +1,18 @@
 ---
 title: Sub-spec 2 · Catálogos de rubros y secciones + columna en base
-linear: HOS-1787 (hijo pendiente de crear)
+linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
 statusSource: linear
 created: 2026-10-25
 status: draft
-revised: 2026-10-25 (respuestas del owner a la vuelta 2)
+revised: 2026-10-25 (resolución de la vuelta 3)
 ---
 
 # 2 · Catálogos de rubros y secciones + columna `business_lines`
 
 Decisiones: DEC-FAC-004, 005, 007 (parte de código), 008, 015, 020, 022, 024, 026, 031, 033, 034, 036, 038, y
 de la vuelta 2: 040, 043, 045, 046, 047, 049, 050, 051, 058, 059, y de las respuestas del owner: 062 (enlace de carta
-pago), 065 (dimensiones de reseña), 067 (frontera de tipos) y 068 (textos). Depende de 1. Vocabulario final en
+pago), 065 (dimensiones de reseña), 067 (frontera de tipos) y 068 (textos), y de la vuelta 3: 071, 072 y 073
+(dimensiones de reseña). Depende de 1. Vocabulario final en
 DEC-FAC-031: **rubro = `BusinessLine`**, **sección de contenido = `ListingSection`**, **rasgo = `SectionTrait`**.
 La palabra «capacidad/capability» queda sólo para la clave de entitlement (HOS-1353). «Sección» es siempre la
 sección del catálogo, no la del formulario del admin ni `EditorSection` del web (DEC-FAC-059).
@@ -211,16 +212,27 @@ interface ReviewDimensionDefinition<V extends ListingVertical = ListingVertical>
 interface ReviewRules<V extends ListingVertical = ListingVertical> {
   readonly vertical: V;
   readonly dimensions: readonly ReviewDimensionDefinition<V>[];
-  readonly dimensionAveraging: 'votedOnly' | 'legacyImputed';  // ver abajo
+  readonly dimensionAveraging: 'votedOnly' | 'legacyNullAsZero';  // ver abajo (DEC-FAC-073)
 }
 ```
 
 - **venue**: `food` (ligada a `menu`), `service`, `ambiance`, `value` (relación precio-calidad, el nombre que ya
   usa el código; no «precio»). `dimensionAveraging: 'votedOnly'`.
-- **Default = `legacyImputed`**: una vertical que no declara `ReviewRules` conserva **exactamente** el cálculo de hoy
-  de la base compartida (`base-listing.service.ts`). Así **experience** (que comparte esa base) y **accommodation**
-  (si la usa; se confirma en la tarea) no cambian sus promedios visibles en esta spec (DEC-FAC-065). Pasarlas a
-  `votedOnly` es un cambio visible y va aparte, con su smoke.
+- **experience** (DEC-FAC-073): declara sus cuatro dimensiones de hoy (`food`, `service`, `ambiance`, `value`), **sin
+  ligar**, con `dimensionAveraging: 'legacyNullAsZero'`. No hay default implícito: toda vertical cuyas reseñas recalcula
+  la base compartida declara `ReviewRules` (G-FAC-02 regla 12). `legacyNullAsZero` es el cálculo de hoy de la base
+  (`base-listing.service.ts:1022-1040`: suma `null` como 0 y promedia las cuatro), movido sin cambios; así experiencia
+  no cambia sus promedios visibles (test golden, sub-spec 3). Pasarla a `votedOnly` es un cambio visible y va aparte.
+- **accommodation**: no usa la base compartida (sólo `GastronomyService` y `ExperienceService` extienden
+  `BaseListingService`, `gastronomy.service.ts:124`, `experience.service.ts:115`) y no declara `ReviewRules`.
+- **Forma de datos en `votedOnly`** (DEC-FAC-071): el schema del desglose se **deriva** de las dimensiones declaradas
+  (no hay una lista escrita a mano como la de `gastronomy-rating.schema.ts:27-75`); cada dimensión es **opcional**,
+  entero de **1 a 5**; «no votó» es la **clave ausente** (un `0` o un `null` se rechazan por forma). El agregado de la
+  ficha es `Partial<Record<ReviewDimensionId<V>, { average: number; count: number }>>` (clave ausente = cero votos) y
+  `averageRating` = promedio de `overallRating`. `recomputeRating` recibe filas `Partial<Record<id, number>>` y la
+  lista de dimensiones del catálogo. Sin migración de datos (cero fichas de venue en prod; staging se resetea).
+- **Publicación con la sección `absent`** (DEC-FAC-072): el promedio de una dimensión ligada a una sección `absent`
+  no se publica; los votos se conservan (lector en la tabla del sub-spec 3).
 - Reglas: una dimensión ligada apunta a una sección **no común** de su vertical (ligar a una común no cambiaría nada);
   la regla es «se ofrece si la sección ligada no es `absent`», así que un RESTAURANT básico (carta `locked`) sí
   puntúa la comida; un BOLICHE no. Las no ligadas se ofrecen siempre.
@@ -297,4 +309,6 @@ G-FAC-01 (el CHECK, la matriz y el default coinciden con el catálogo), G-FAC-02
 - `PUB` y `BOLICHE` visibles en el alta con su descripción en es/en/pt, con la frontera de DEC-FAC-067.
 - `menuUrl` pertenece a `menu` (regla 11 de G-FAC-02 en verde, con `price` sin `menuUrl`).
 - Test de `validateReviewDimensions`: `food` en un BOLICHE → `DIMENSION_NOT_APPLICABLE`; en un RESTAURANT con `menu`
-  `locked` → válido; dimensión ajena a la vertical → rechazo por forma.
+  `locked` → válido; dimensión ajena a la vertical → rechazo por forma; `food: 0` en venue → rechazo por forma; una
+  reseña de experiencia con las cuatro dimensiones → válida (igual que hoy).
+- `ReviewRules` de experiencia declarado con `legacyNullAsZero`; G-FAC-02 regla 12 rojo si se borra.

@@ -1,18 +1,19 @@
 ---
 title: Sub-spec 6 · Web pública
-linear: HOS-1787 (hijo pendiente de crear)
+linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
 statusSource: linear
 created: 2026-10-25
 status: draft
-revised: 2026-10-25 (respuestas del owner a la vuelta 2)
+revised: 2026-10-25 (resolución de la vuelta 3)
 ---
 
 # 6 · Web pública (`apps/web` + API pública)
 
 Decisiones: DEC-FAC-011, 014, 022, 023, 031, 034, 035, 038, 039, de la vuelta 2: 042, 044, 050, 052, 053, y de las
 respuestas del owner: 062 (enlace de carta pago), 065 (dimensiones de reseña), 066 (comodidades de noche), 068
-(textos y tile de la home) y 069 (el copy del embudo va al **sub-spec 9**). Depende de 3 y 4, y **está bloqueado
-por HOS-1797** (paginación compartida, DEC-FAC-039).
+(textos y tile de la home) y 069 (el copy del embudo va al **sub-spec 9**), y de la vuelta 3: 072 y 073 (reseñas) y
+076. Depende de 3, 4 **y 9** (DEC-FAC-076: la colección `/rubro/noche/` no se mergea antes que el copy neutro), y
+**está bloqueado por HOS-1797** (paginación compartida, DEC-FAC-039).
 
 ## Dependencia: paginación compartida (HOS-1797)
 
@@ -125,26 +126,22 @@ paginación; la consume.
   desbloquea** (la sección o el rasgo), no el plan genérico. Los precios no cambian.
 - **Reseñas con dimensiones opcionales** (DEC-FAC-065, Q-16 = 2). Punto de partida verificado: el formulario
   público pide sólo `overallRating` (`GastronomyReviewForm.client.tsx:7-10`); nadie muestra dimensiones; el recálculo
-  de venue **imputa** `overallRating` a las cuatro dimensiones (`gastronomy.review.service.ts:671-684`) y vive en la
-  base compartida con experiencia (`base-listing.service.ts:1021-1040`). Lo nuevo, todo leído del catálogo
+  de venue **imputa** `overallRating` a las cuatro dimensiones en su propio servicio de reseñas
+  (`gastronomy.review.service.ts:671-684`) y después llama a la base compartida con experiencia
+  (`base-listing.service.ts:1021-1040`), que suma `null` como 0 (DEC-FAC-073). Lo nuevo, todo leído del catálogo
   (sub-spec 2, `ReviewRules`):
   - **Formulario**: además de la calificación general (obligatoria, como hoy), ofrece cada dimensión de la vertical
     como **opcional**. Una dimensión ligada a una sección se ofrece sólo si el mapa público de estados de la ficha
     dice que esa sección **no** es `absent` (`food` ↔ `menu`: un BOLICHE no ve «Comida», un RESTAURANT básico sí);
     las no ligadas (`service`, `ambiance`, `value`), siempre. El componente lee el mapa del lector público; nunca
     compara rubros ni tipos (G-FAC-03, G-FAC-05).
-  - **Servidor**: `validateReviewDimensions` con los mismos estados; una dimensión no aplicable → 400 (sub-spec 2).
-  - **Recálculo de venue** (`dimensionAveraging: 'votedOnly'`): **se quita la imputación**; el promedio de cada
-    dimensión se calcula **sólo sobre las reseñas que la votaron** (sin votos = no se muestra); `averageRating` de la
-    ficha = promedio de `overallRating`, independiente de las dimensiones.
-  - **Aislamiento de experiencia**: la base compartida se cambia para leer `dimensionAveraging` de la vertical, con
-    default `legacyImputed` = el código de hoy, movido sin cambios a una función propia. Experiencia no declara
-    nada y queda en el default. **Prueba**: un test *golden* que corre el recálculo de experiencia sobre un fixture
-    de reseñas con y sin dimensiones (incluido `null`) y compara el resultado con el valor capturado **antes** del
-    cambio; tiene que dar idéntico. (Que hoy experiencia sume `null` como 0, B-008, queda fijado por ese test sin
-    tener que adivinarlo.)
-  - **Ficha**: muestra el promedio de cada dimensión con al menos un voto, con su etiqueta i18n
-    (`review.dimensions.<id>`); `value` se rotula «Relación precio-calidad».
+  - **Servidor, recálculo y test golden**: viven en el **sub-spec 3** (DEC-FAC-073), no acá: no dependen de la
+    paginación de HOS-1797. Venue pasa a `votedOnly` (sin imputación); experiencia declara su `ReviewRules` con
+    `legacyNullAsZero` y no cambia. Formas de datos: sub-spec 2 (DEC-FAC-071).
+  - **Ficha**: muestra el promedio de cada dimensión con al menos un voto (clave presente en el agregado, DEC-FAC-071),
+    con su etiqueta i18n (`review.dimensions.<id>`), **salvo** las ligadas a una sección `absent` de la ficha, que no
+    se publican aunque tengan votos (DEC-FAC-072: el lector público las saca); `value` se rotula «Relación
+    precio-calidad».
   - Prod tiene cero fichas de la vertical (DEC-FAC-027): no hay promedios que recalcular.
 - El diferencial de noche para pro/premium es **post-MVP** (HOS-1796); no entra acá.
 
@@ -177,7 +174,7 @@ paginación; la consume.
 - La tabla de planes de la vertical se genera desde el catálogo en el web; la fila de la carta incluye el enlace
   externo (pago, DEC-FAC-062).
 - Reseñas: el formulario de un BOLICHE no ofrece «Comida» y el de un RESTAURANT sí; una dimensión sin votos no se
-  muestra; el promedio de una dimensión ignora las reseñas que no la votaron; el test golden de experiencia en verde.
+  muestra; un boliche que fue restaurante no muestra «Comida» aunque tenga votos viejos (servidor y golden: sub-spec 3).
 - La colección de noche no ofrece filtros sin fichas; los ítems de noche existen en un entorno vivo después de
   `db:seed:migrate` (dual-write).
 - La home muestra «Eventos gastronómicos» y G-FAC-R1 queda verde sin la tile en la exención (a).

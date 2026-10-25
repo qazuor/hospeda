@@ -1,16 +1,16 @@
 ---
 title: Sub-spec 4 · Sección nightInfo (los tipos nuevos pasaron al sub-spec 2)
-linear: HOS-1787 (hijo pendiente de crear)
+linear: HOS-1787 (hijo: lo crea el orquestador al cerrar la revisión)
 statusSource: linear
 created: 2026-10-25
 status: draft
-revised: 2026-10-25 (respuestas del owner a la vuelta 2)
+revised: 2026-10-25 (resolución de la vuelta 3)
 ---
 
 # 4 · `nightInfo` (los tipos `PUB`/`BOLICHE` nacen en el sub-spec 2)
 
 Decisiones: DEC-FAC-010 (preselección), 015, 018, 021, 031, 034, 036, 038, y de la vuelta 2: 040, 045, 050, 052,
-058. **Depende de 2 y 3** (F-V2-041): su criterio de aceptación es el 409 `SECTION_ABSENT` del paso 4b, que nace en
+058, y de la vuelta 3: 074 (lista de la acción 15). **Depende de 2 y 3** (F-V2-041): su criterio de aceptación es el 409 `SECTION_ABSENT` del paso 4b, que nace en
 el 3.
 
 ## Tipos nuevos: se movieron
@@ -67,6 +67,11 @@ Los campos de `nightInfo` son contenido del dueño: PB9/PB12 los borran junto co
 (`listing-purge.model.ts:84-99`) es el guard nuevo **G-FAC-10** (toda columna de una tabla de ficha está en el
 `SET` del purge o en la lista cerrada de columnas de sistema/clasificación).
 
+**Acción 15** (DEC-FAC-074, F-V3-007): las siete columnas de `nightInfo` entran también a
+`LISTING_SUPPORT_EDIT_CONTENT_FIELDS` (`packages/service-core/src/services/listing/listing-support-edit.ts:141-183`),
+la copia a mano del purge que decide qué puede escribir soporte; G-FAC-10 compara las dos listas. `entry_price_updated_at`
+la fija el servidor, pero es contenido (se borra con el purge) y está en ambas.
+
 ## Criterio de aceptación
 
 - Migraciones aplicadas desde cero con todas las pendientes juntas; tipos visibles en alta, filtros y chips (listas
@@ -77,3 +82,4 @@ Los campos de `nightInfo` son contenido del dueño: PB9/PB12 los borran junto co
 - Reenviar el mismo precio no mueve `entry_price_updated_at`; pasar a `free` borra el precio.
 - «Abierto ahora» con el calendario viernes/sábado de arriba.
 - PB9/PB12 borran `nightInfo`; G-FAC-10 en verde con su mutación.
+- Soporte (acción 15) edita la nota de entrada de un boliche ajeno y el cambio se aplica y queda registrado.

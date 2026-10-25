@@ -60,11 +60,21 @@ atados al nombre» al final).
   | c | el mapa de redirects legacy `/gastronomia/…` → `/comer-y-salir/…` y sus tests (`legacy-redirects.ts`, `public-redirect-paths.guard.test.ts`), más la regex tolerante de QR de códigos MANUAL | archivos nombrados; la regex de QR con marcador en línea `legacy-name-allowed: <motivo>` contado |
   | d | el propio guard y su test | archivos nombrados |
   | e | eventos pasados de PostHog y correos ya enviados (historia externa) | sólo donde un archivo del repo tiene que nombrar el evento o el correo histórico; marcador en línea contado |
-- **Fuera del escaneo** (historia, no son exenciones del código; F-V2-015): migraciones versionadas sin
-  editar (incluye `meta/`; 0129, 0132, 0139, 0144 y 0176 **sí** se editan y se escanean, DEC-FAC-060), **la migración
-  de renombrado y su `meta/`** (tiene que nombrar `gastronomies` para renombrarla), **los módulos de
-  data-migration del seed** (`packages/seed/src/data-migrations/`, que el paso 6 del corte borra), specs de
-  HOS-1352/1353/1354 y esta spec. Con el corte V6 la historia de migraciones se reemplaza por el baseline.
+- **Fuera del escaneo** (historia, no son exenciones del código; F-V2-015, F-V3-001, DEC-FAC-070): todas las
+  migraciones versionadas anteriores a la de renombrado **incluidas las cinco editadas** (0129, 0132, 0139, 0144 y
+  0176) y sus `meta/` (describen un esquema donde la tabla se llama `gastronomies`: la 0132 hace `ALTER TABLE
+  "gastronomies"`, `:26-29`); **la migración de renombrado y su `meta/`** (tiene que nombrar `gastronomies` para
+  renombrarla); **los módulos de data-migration del seed** (`packages/seed/src/data-migrations/`, que el paso 6 del
+  corte borra); los **tests de historia**, lista cerrada y contada que el guard **deriva** (no se escribe a mano): un
+  test entra si aplica migraciones hasta un tag anterior al renombrado (`journal.entries` o tag fijo, p. ej.
+  `cut-migration-over-data.test.ts`, `retire-user-impersonate-over-data.test.ts`) o importa un módulo de
+  `src/data-migrations/` (p. ej. `whats-new-seen-ids-rename.integration.test.ts` y el test de la data-migration de
+  seen-ids nueva); specs de HOS-1352/1353/1354 y esta spec. Con el corte V6 la historia de migraciones se reemplaza
+  por el baseline.
+- **Chequeo de valores de las cinco editadas** (DEC-FAC-070): en 0129, 0132, 0139, 0144 y 0176 no queda ningún
+  literal de **valor** viejo: `'gastronomy'` como vertical, `{gastronomy}`, claves `*_gastronomy_*` y
+  `*_gastronomies*`, slugs `gastronomy-*`/`*-gastronomy-*`/`*-gastronomies-*`, títulos «Gastronomía»/«Gastronomy».
+  Los nombres de tabla, columna, índice y enum quedan permitidos (todavía no se renombraron).
 - **No son exenciones** (se renombran, DEC-FAC-032): ids y semillas de fixtures, carpetas de Cloudinary,
   cache tags y clases `gastro-`, propiedad PostHog, ids de What's New y del tour (con su migración de ids
   vistos, DEC-FAC-054). Ya no hay marcadores para semillas congeladas ni para alias de `catalogId`.
@@ -73,8 +83,10 @@ atados al nombre» al final).
   subir el conteo → rojo; agregar `/es/gastronomia/` a un componente → rojo; volver a escribir
   `gastro-<slug>` como cache tag o `seedKey: 'gastronomy:…'` → rojo; dejar `"gastronomy": "Gastronomía"` como
   valor de `nav.json` → rojo (regla 5); renombrar la dimensión de destino a `venue` → la lista de (a) no
-  cierra → rojo; volver a escribir `home.categoryTiles.tiles.gastronomy` → rojo (regla 1, ya no exento). **Control negativo**: la migración de renombrado (`ALTER TABLE "gastronomies" RENAME TO …`)
-  → verde.
+  cierra → rojo; volver a escribir `home.categoryTiles.tiles.gastronomy` → rojo (regla 1, ya no exento); devolver `'gastronomy'` al `ck_vertical_id` de la 0129 → rojo (chequeo de valores);
+  `const x = 'gastronomy'` en un test que no aplica migraciones ni importa una data-migration → rojo. **Control
+  negativo**: la migración de renombrado (`ALTER TABLE "gastronomies" RENAME TO …`), el `ALTER TABLE "gastronomies"`
+  de la 0132 y `entityType: 'gastronomy'` en `cut-migration-over-data.test.ts` → verde.
 
 ## G-FAC-R2 · Redirects de rutas retiradas
 - **Prueba**: para cada ruta pública retirada (`/{lang}/gastronomia/`, `/{lang}/gastronomia/<slug>/`,
@@ -138,14 +150,15 @@ Test de `@repo/schemas`. Prueba que:
     DEC-FAC-040); es la invariante que hoy prueba `listing-section-payload.test.ts` en el web, movida a su
     dueño. Dos rasgos **pueden** compartir clave (`menu.qr` y `menu.qrMetrics`, DEC-FAC-051): la regla 7
     exige ids únicos, no claves únicas. `menuUrl` es de `menu`, no de `price` (DEC-FAC-062);
-12. dimensiones de reseña (DEC-FAC-065): ids únicos por vertical; toda `boundSection` existe en su vertical y
-    **no** es común; toda dimensión tiene `labelKey` con valor en es/en/pt; una vertical sin `ReviewRules` queda en
-    `legacyImputed`.
+12. dimensiones de reseña (DEC-FAC-065, 071, 073): ids únicos por vertical; toda `boundSection` existe en su
+    vertical y **no** es común; toda dimensión tiene `labelKey` con valor en es/en/pt; **toda vertical cuyas reseñas
+    recalcula la base compartida (hoy venue y experiencia) declara `ReviewRules`** (no hay default implícito); el
+    schema del desglose de una vertical `votedOnly` se deriva de sus dimensiones.
 - **Se rompe**: una mutación por regla (sacar `menu` de `food`, agregar un valor de tipo sin
   `typeRules`, apuntar una sección a una clave inexistente o de otra vertical, duplicar un id, vaciar las
   secciones de una vertical, declarar público un rubro único, una preselección que viole un `excludes`, un
   campo del schema de update sin sección o en dos, `menuUrl` de vuelta en `price`, ligar `food` a una sección
-  común o inexistente) → cada una en rojo por separado.
+  común o inexistente, borrar el `ReviewRules` de experiencia) → cada una en rojo por separado.
 
 ## G-FAC-03 · Rubros: quién decide y quién lee
 Partido en dos predicados con nombre propio (F-V1-018). El de antes («sólo el resolvedor importa el
@@ -253,10 +266,13 @@ catálogo») prohibía lo que los sub-specs 5, 6 y 7 exigen, y no veía `listing
   lee las columnas de `venues`, `accommodations` y `experiences` desde su `dbschema` y exige que cada una esté
   en el `SET` del purge de su vertical **o** en una lista cerrada y contada de columnas de
   sistema/clasificación (`id`, `owner_id`, `type`, `business_lines`, `publication_status`, `created_at`, …).
+  Además (F-V3-007, DEC-FAC-074): las columnas de contenido del `SET` del purge coinciden con
+  `LISTING_SUPPORT_EDIT_CONTENT_FIELDS` (`packages/service-core/src/services/listing/listing-support-edit.ts`, la lista
+  de la acción 15, copia a mano del purge) y `business_lines` está en `LISTING_NON_CONTENT_FIELDS`.
   Piso mínimo de columnas por tabla y test de control positivo.
 - **Lo que NO verifica**: el contenido en tablas hijas (lo cubre G-R9) ni en el almacenamiento externo.
-- **Se rompe**: agregar `entry_note_i18n` a `venues` sin sumarla al `SET` → rojo; agregar una columna a la
-  lista de sistema sin subir el conteo → rojo.
+- **Se rompe**: agregar `entry_note_i18n` a `venues` sin sumarla al `SET` → rojo; sumarla al `SET` y no a la lista
+  de la acción 15 → rojo; agregar una columna a la lista de sistema sin subir el conteo → rojo.
 
 ## Guards existentes que tocan las tablas nuevas
 - **G-R9** (`scripts/check-purged-closed-list.ts`): toda tabla nueva con FK a una ficha entra a
