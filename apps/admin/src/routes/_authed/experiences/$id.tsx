@@ -29,6 +29,7 @@ import {
 } from '@/features/experience';
 import { ListingModerationCard } from '@/features/listing/components/ListingModerationCard';
 import { ListingPurgeOnRequestCard } from '@/features/listing/components/ListingPurgeOnRequestCard';
+import { canEditListing } from '@/features/listing/config/listing-moderation-actions';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
@@ -233,6 +234,7 @@ function ExperienceViewPage() {
                     entityId={id}
                     entityName={experience?.name ?? id}
                     onPurged={() => navigate({ to: '/experiences' })}
+                    publicationStatus={experience?.publicationStatus}
                 />
             </div>
 
@@ -254,7 +256,12 @@ function ExperienceViewPage() {
                 entityType="experience"
                 entityId={id}
                 initialMode="view"
-                entityData={entityData}
+                entityData={{
+                    ...entityData,
+                    canEdit:
+                        entityData.canEdit &&
+                        canEditListing({ publicationStatus: experience?.publicationStatus })
+                }}
             >
                 <Tabs defaultValue="general">
                     <TabsList>

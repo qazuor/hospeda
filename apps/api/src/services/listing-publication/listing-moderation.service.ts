@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { getDb } from '@repo/db';
+import { getDb, listingModerationModel } from '@repo/db';
 import {
     type ListingModerationAction,
     type PublicationStatusEnum,
@@ -112,6 +112,35 @@ export class ListingModerationService {
         const current = after.rows[0];
         if (!current) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');
         return current;
+    }
+
+    /** Reads a listing's current publication and open fix-request state. */
+    async readState(args: { readonly vertical: PublicationVertical; readonly id: string }) {
+        const table = LISTING_TABLES[args.vertical];
+        const result = await getDb().execute(
+            sql<{
+                publicationStatus: PublicationStatusEnum;
+            }>`SELECT publication_status AS "publicationStatus" FROM ${sql.identifier(table)} WHERE id = ${args.id}::uuid AND deleted_at IS NULL`
+        );
+        const row = result.rows[0];
+        if (!row) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');
+        const tx = getDb();
+        const request = await listingModerationModel.readOpenFixRequest({
+            tx,
+            vertical: args.vertical,
+            listingId: args.id
+        });
+        return {
+            publicationStatus: row.publicationStatus,
+            fixRequest: request
+                ? {
+                      reason: request.reason,
+                      suggestedDate: request.suggestedDate,
+                      openedAt: request.openedAt.toISOString(),
+                      ownerReportedFixedAt: request.ownerReportedFixedAt?.toISOString() ?? null
+                  }
+                : null
+        };
     }
 }
 

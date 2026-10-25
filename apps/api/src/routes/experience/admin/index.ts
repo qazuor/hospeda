@@ -25,6 +25,7 @@ import { adminGetExperienceFaqsRoute } from './getFaqs';
 import { adminGetExperienceMediaRoute } from './getMedia';
 import { adminListExperiencesRoute } from './list';
 import { adminModerateExperienceRoute } from './moderate';
+import { adminGetExperienceModerationStateRoute } from './moderation-state';
 import { adminExperienceOptionsRoute } from './options';
 import { adminPatchExperienceRoute } from './patch';
 import { adminPurgeOnRequestExperienceRoute } from './purge';
@@ -71,6 +72,9 @@ app.route('/', adminAssignExperienceOwnerRoute);
 
 // POST /:id/moderate - ACC:12 two-level publication moderation; the legacy moderation column was retired by V6.9b.
 app.route('/', adminModerateExperienceRoute);
+
+// GET /:id/moderation - current publication and fix-request state
+app.route('/', adminGetExperienceModerationStateRoute);
 
 // POST /:id/purge - ACC:23 purge at the owner's request (PB12, mandatory reason).
 app.route('/', adminPurgeOnRequestExperienceRoute);

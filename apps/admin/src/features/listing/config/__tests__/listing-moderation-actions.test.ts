@@ -11,48 +11,84 @@ import { PublicationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '@/lib/errors';
 import {
+    canEditListing,
+    canPurgeListingOnRequest,
     describeModerationError,
     getAvailableModerationActions,
+    LISTING_EDIT_STATES,
+    LISTING_PURGE_ON_REQUEST_STATES,
     type ListingModerationActionKind
 } from '../listing-moderation-actions';
 
-const ACTIVE = ['REQUEST_FIX', 'TAKE_DOWN', 'CLOSE_FIX_REQUEST'] as const;
-
-describe('TEST:1684:1 AC-1684:1 actions by publication status', () => {
-    it.each([
-        [PublicationStatusEnum.DRAFT, ACTIVE],
-        [PublicationStatusEnum.PUBLISHED, ACTIVE],
-        [PublicationStatusEnum.UNPUBLISHED_BY_BILLING, ACTIVE],
-        [PublicationStatusEnum.ARCHIVED, ACTIVE],
-        [PublicationStatusEnum.MODERATED, ['LIFT']],
-        [PublicationStatusEnum.PURGED, []]
-    ] as const)('%s offers exactly %j, in that order', (publicationStatus, expected) => {
-        // Arrange / Act
-        const actions = getAvailableModerationActions({ publicationStatus });
-
-        // Assert
-        expect(actions).toEqual(expected);
-    });
-
-    it('covers every publication state', () => {
-        // Arrange
-        const states = Object.values(PublicationStatusEnum);
-
-        // Act
-        const covered = states.filter((publicationStatus) =>
-            Array.isArray(getAvailableModerationActions({ publicationStatus }))
+describe('TEST:1760:2 AC:1760:2 action state matrix', () => {
+    const states = Object.values(PublicationStatusEnum);
+    const matrix: Record<string, Record<string, readonly string[]>> = {
+        DRAFT: {
+            open: ['TAKE_DOWN', 'CLOSE_FIX_REQUEST'],
+            closed: ['REQUEST_FIX', 'TAKE_DOWN'],
+            unknown: []
+        },
+        PUBLISHED: {
+            open: ['TAKE_DOWN', 'CLOSE_FIX_REQUEST'],
+            closed: ['REQUEST_FIX', 'TAKE_DOWN'],
+            unknown: []
+        },
+        UNPUBLISHED_BY_BILLING: {
+            open: ['TAKE_DOWN', 'CLOSE_FIX_REQUEST'],
+            closed: ['REQUEST_FIX', 'TAKE_DOWN'],
+            unknown: []
+        },
+        ARCHIVED: {
+            open: ['TAKE_DOWN', 'CLOSE_FIX_REQUEST'],
+            closed: ['REQUEST_FIX', 'TAKE_DOWN'],
+            unknown: []
+        },
+        MODERATED: { open: ['LIFT'], closed: ['LIFT', 'REQUEST_FIX'], unknown: [] },
+        PURGED: { open: [], closed: [], unknown: [] }
+    };
+    it.each(
+        states.flatMap(
+            (state) =>
+                [
+                    [state, 'open', true],
+                    [state, 'closed', false],
+                    [state, 'unknown', undefined]
+                ] as const
+        )
+    )('%s with %s request offers its exact actions', (publicationStatus, state, fixRequestOpen) => {
+        expect(getAvailableModerationActions({ publicationStatus, fixRequestOpen })).toEqual(
+            matrix[publicationStatus][state]
         );
-
-        // Assert
-        expect(covered).toHaveLength(6);
     });
-
-    it.each([undefined, null])('offers nothing while the state is %s', (publicationStatus) => {
-        // Arrange / Act
-        const actions = getAvailableModerationActions({ publicationStatus });
-
-        // Assert
-        expect(actions).toEqual([]);
+    it('does not offer CLOSE_FIX_REQUEST to PUBLISHED without an open request', () => {
+        expect(
+            getAvailableModerationActions({
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
+                fixRequestOpen: false
+            })
+        ).toEqual(['REQUEST_FIX', 'TAKE_DOWN']);
+    });
+    it.each([
+        undefined,
+        null
+    ])('returns no actions when publication state is unknown (%s)', (publicationStatus) => {
+        expect(getAvailableModerationActions({ publicationStatus, fixRequestOpen: false })).toEqual(
+            []
+        );
+    });
+    it.each(
+        Object.values(PublicationStatusEnum)
+    )('derives purge/edit eligibility for %s', (publicationStatus) => {
+        expect(canPurgeListingOnRequest({ publicationStatus })).toBe(
+            LISTING_PURGE_ON_REQUEST_STATES.includes(publicationStatus as never)
+        );
+        expect(canEditListing({ publicationStatus })).toBe(
+            LISTING_EDIT_STATES.includes(publicationStatus as never)
+        );
+    });
+    it('treats unknown listing state as ineligible', () => {
+        expect(canPurgeListingOnRequest({ publicationStatus: null })).toBe(false);
+        expect(canEditListing({ publicationStatus: undefined })).toBe(false);
     });
 });
 

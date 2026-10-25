@@ -16,6 +16,7 @@ import { adminGetMediaRoute } from './getMedia';
 import { adminGetOccupancyRoute } from './getOccupancy';
 import { adminListAccommodationsRoute } from './list';
 import { adminModerateAccommodationRoute } from './moderate';
+import { adminGetAccommodationModerationStateRoute } from './moderation-state';
 import { adminAccommodationOptionsRoute } from './options';
 import { adminPatchAccommodationRoute } from './patch';
 import { adminPurgeOnRequestAccommodationRoute } from './purge';
@@ -64,6 +65,9 @@ app.route('/', adminVerifyAccommodationRoute);
 
 // POST /:id/moderate - ACC:12 two-level publication moderation; the legacy moderation column was retired by V6.9b.
 app.route('/', adminModerateAccommodationRoute);
+
+// GET /:id/moderation - current publication and fix-request state
+app.route('/', adminGetAccommodationModerationStateRoute);
 
 // POST /:id/purge - ACC:23 purge at the owner's request (PB12, mandatory reason).
 app.route('/', adminPurgeOnRequestAccommodationRoute);

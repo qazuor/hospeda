@@ -1045,6 +1045,15 @@
         "statusLabel": "Status",
         "fixRequestOpen": "Fix request: open",
         "fixRequestClosed": "Fix request: closed",
+        "fixRequest": {
+            "none": "No open fix request.",
+            "openedAt": "Fix request opened on {date}.",
+            "reason": "Reason: {reason}",
+            "suggestedDate": "Suggested date: {date}.",
+            "ownerReportedFixed": "The owner reported it fixed on {date}."
+        },
+        "stateLoading": "Loading moderation…",
+        "stateError": "Could not load the moderation state. Reload the page.",
         "resultLabel": "Last action",
         "reasonLabel": "Why",
         "reasonHelp": "The owner gets it in the notice and it is kept in the audit log.",
