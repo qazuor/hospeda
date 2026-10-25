@@ -280,9 +280,13 @@ export function run({
         const violations = checkFrontier({ scanned, inventory, base });
         if (violations.length)
             return { exitCode: 1, output: violations.map(formatViolation).join('\n') };
+        const baseNote =
+            base === undefined && baseInventory !== null
+                ? '; base inventory absent (G-FAC-T1 birth commit)'
+                : '';
         return {
             exitCode: 0,
-            output: `G-FAC-T1 clean: ${scanned.size} files / ${[...scanned.values()].reduce((sum, count) => sum + count, 0)} occurrences`
+            output: `G-FAC-T1 clean: ${scanned.size} files / ${[...scanned.values()].reduce((sum, count) => sum + count, 0)} occurrences${baseNote}`
         };
     } catch (error) {
         return { exitCode: 1, output: error instanceof Error ? error.message : String(error) };
