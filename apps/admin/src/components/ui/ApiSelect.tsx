@@ -46,7 +46,7 @@ type ApiSelectProps = {
     limit?: number;
     /**
      * Query string parameter name used for the page-size limit.
-     * Defaults to `'limit'` for back-compat with qzpay-hono billing routes.
+     * Defaults to `'limit'` for back-compat with the retired qzpay-hono billing routes (HOS-1416).
      * Admin tier routes reject `limit` and require `'pageSize'`.
      */
     paramName?: string;

@@ -30,7 +30,7 @@
  * This guard does NOT verify that an allowlisted file calls
  * `resolveDisplayLocale`/`matchAcceptLanguage` correctly (that is what the
  * unit tests in `packages/i18n/test/locale-resolution.test.ts`,
- * `apps/admin/test/lib/*.test.ts`, and `apps/api/test/routes/start-paid.test.ts`
+ * and `apps/admin/test/lib/*.test.ts`
  * are for) — only that no UNLISTED file has started reading the header at
  * all. Outbound `Accept-Language` headers this codebase SENDS to third-party
  * APIs (scrapers, geocoding clients) are a different concept entirely — this

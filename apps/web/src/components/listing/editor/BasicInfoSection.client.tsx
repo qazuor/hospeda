@@ -299,7 +299,7 @@ export function BasicInfoSection({
                 having to hand-write it.
 
                 Deliberately NOT behind a `PlanEntitlementGate`: that gate reads
-                the ACCOMMODATION entitlement set (`loadEntitlements` filters to
+                the ACCOMMODATION entitlement set (the retired `loadEntitlements` filtered to
                 `product_domain = 'accommodation'`), so gating a listing field on
                 it would deny the field to every listing owner. Gastronomy and experience billing
                 is a separate domain — see the root CLAUDE.md, SPEC-239.

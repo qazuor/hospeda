@@ -30,9 +30,9 @@ import type { CronJobDefinition } from '../types.js';
  * `packages/db/docs/advisory-locks.md`).
  *
  * Lock key 1008 is next in the billing/cron sequence (SPEC-194 T-020):
- *   1001 webhook-retry  | 1002 notification-schedule | 1003 dunning
- *   1004 block-expired-trials | 1005 (free — trial-pre-end-notif retired, HOS-121)
- *   1006 abandoned-pending-subs | 1007 subscription-poll
+ *   1001 webhook-retry (retired) | 1002 notification-schedule | 1003 dunning (retired)
+ *   1004 block-expired-trials (retired) | 1005 (free — trial-pre-end-notif retired, HOS-121)
+ *   1006 abandoned-pending-subs (retired) | 1007 subscription-poll (retired)
  *   1008 exchange-rate-fetch  ← this job
  */
 const ADVISORY_LOCK_KEY = 1008;

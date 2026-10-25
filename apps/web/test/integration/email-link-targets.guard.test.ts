@@ -9,7 +9,7 @@
  * `/es/precios/propietarios`, `/es/cuenta/alojamientos` and
  * `/es/cuenta/facturacion` — paths that never existed, since there is no
  * `precios` and no `cuenta` directory under `src/pages/[lang]`. They were not
- * dormant templates: the dunning cron and the MercadoPago webhook send them, so
+ * dormant templates: the (since retired) dunning cron and the MercadoPago webhook sent them, so
  * a customer whose payment had just failed opened an email whose only button
  * dead-ended.
  *
