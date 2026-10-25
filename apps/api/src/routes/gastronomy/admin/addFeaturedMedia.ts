@@ -30,10 +30,10 @@
  * same gate via `checkGastronomyCanEditMedia`.
  */
 import {
-    type GastronomyFeaturedMediaAddInput,
-    GastronomyFeaturedMediaAddOutputSchema,
-    type GastronomyMediaAddPayload,
-    GastronomyMediaAddPayloadSchema,
+    type VenueFeaturedMediaAddInput,
+    VenueFeaturedMediaAddOutputSchema,
+    type VenueMediaAddPayload,
+    VenueMediaAddPayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { addGastronomyFeaturedMedia, GastronomyService, ServiceError } from '@repo/service-core';
@@ -72,8 +72,8 @@ export const adminAddGastronomyFeaturedMediaRoute = createAdminRoute({
     // The SAME payload the gallery endpoint accepts. A cover differs in what the
     // server does with it, not in what the caller sends — which is why neither
     // `isFeatured` nor the cap is reachable from this body.
-    requestBody: GastronomyMediaAddPayloadSchema,
-    responseSchema: GastronomyFeaturedMediaAddOutputSchema,
+    requestBody: VenueMediaAddPayloadSchema,
+    responseSchema: VenueFeaturedMediaAddOutputSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -81,9 +81,9 @@ export const adminAddGastronomyFeaturedMediaRoute = createAdminRoute({
     ) => {
         const actor = getActorFromContext(ctx);
 
-        const input: GastronomyFeaturedMediaAddInput = {
+        const input: VenueFeaturedMediaAddInput = {
             gastronomyId: params.id as string,
-            media: body as GastronomyMediaAddPayload
+            media: body as VenueMediaAddPayload
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`

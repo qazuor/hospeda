@@ -8,8 +8,8 @@
 import {
     type FaqReorderPayload,
     FaqReorderPayloadSchema,
-    GastronomyFaqReorderInputSchema,
     SuccessSchema,
+    VenueFaqReorderInputSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, reorderGastronomyFaqs, ServiceError } from '@repo/service-core';
@@ -49,7 +49,7 @@ export const adminReorderGastronomyFaqsRoute = createAdminRoute({
     ) => {
         const actor = getActorFromContext(ctx);
 
-        const reorderInput = GastronomyFaqReorderInputSchema.parse({
+        const reorderInput = VenueFaqReorderInputSchema.parse({
             gastronomyId: params.id as string,
             order: (body as FaqReorderPayload).order
         });

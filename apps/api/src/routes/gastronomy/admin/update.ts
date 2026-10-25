@@ -3,9 +3,9 @@
  * Allows admins to update any gastronomy listing.
  */
 import {
-    GastronomyAdminSchema,
-    type GastronomyUpdateInput,
-    GastronomyUpdateInputSchema,
+    VenueAdminSchema,
+    type VenueUpdateInput,
+    VenueUpdateInputSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
@@ -35,8 +35,8 @@ export const adminUpdateGastronomyRoute = createAdminRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyUpdateInputSchema,
-    responseSchema: GastronomyAdminSchema,
+    requestBody: VenueUpdateInputSchema,
+    responseSchema: VenueAdminSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -44,7 +44,7 @@ export const adminUpdateGastronomyRoute = createAdminRoute({
     ) => {
         const actor = getActorFromContext(ctx);
         const { id } = params;
-        const data = body as GastronomyUpdateInput;
+        const data = body as VenueUpdateInput;
 
         const result = await runListingContentCall({
             ctx,

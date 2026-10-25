@@ -6,7 +6,7 @@
  * `update()` path intentionally omits `ownerId` (ownership is immutable there),
  * so routing assignment through it silently dropped the change.
  */
-import { GastronomyAdminSchema, PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, VenueAdminSchema } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -41,7 +41,7 @@ export const adminAssignGastronomyOwnerRoute = createAdminRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     requestBody: AssignOwnerBodySchema,
-    responseSchema: GastronomyAdminSchema,
+    responseSchema: VenueAdminSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

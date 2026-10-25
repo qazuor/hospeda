@@ -9,10 +9,10 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
 }));
 
 import {
-    GastronomySchema,
     PublicationStatusEnum,
     RoleEnum,
     ServiceErrorCode,
+    VenueSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { assertListingReadable, GastronomyService, ServiceError } from '@repo/service-core';
@@ -44,7 +44,7 @@ vi.mock('../../src/utils/listing-access/ports', () => ({
 
 const LISTING_ID = '33333333-3333-4333-8333-333333333333';
 const MISSING_ID = '44444444-4444-4444-8444-444444444444';
-const row = GastronomySchema.parse({
+const row = VenueSchema.parse({
     id: LISTING_ID,
     slug: 'test-listing',
     name: 'Test Listing',

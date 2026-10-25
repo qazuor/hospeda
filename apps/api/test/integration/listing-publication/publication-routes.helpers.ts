@@ -41,13 +41,13 @@ import {
     type Accommodation,
     type Experience,
     FLOOR_PLAN_ROLE,
-    type Gastronomy,
     PermissionEnum,
     PRE_TRIAL_PLAN_ROLE,
     type PublicationStatusEnum,
     RoleEnum,
     TRIAL_PLAN_ROLE,
     VERTICAL_ACTIVATION_KEY,
+    type Venue,
     VerticalEnum
 } from '@repo/schemas';
 import { vi } from 'vitest';
@@ -466,7 +466,7 @@ export async function createVerticalListing(args: {
                         sun: { closed: true, shifts: [] }
                     }
                 }
-            } as unknown as Partial<Gastronomy>,
+            } as unknown as Partial<Venue>,
             getDb()
         );
         if (args.complete !== false) {

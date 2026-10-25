@@ -6,11 +6,7 @@
  * `sortOrder ASC`. Supports an optional `state` query filter (defaults to
  * `'visible'`).
  */
-import {
-    GastronomyMediaListOutputSchema,
-    GastronomyMediaStateSchema,
-    PermissionEnum
-} from '@repo/schemas';
+import { PermissionEnum, VenueMediaListOutputSchema, VenueMediaStateSchema } from '@repo/schemas';
 import { GastronomyService, getGastronomyMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -42,16 +38,16 @@ export const adminGetGastronomyMediaRoute = createAdminRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     requestQuery: {
-        state: GastronomyMediaStateSchema.optional()
+        state: VenueMediaStateSchema.optional()
     },
-    responseSchema: GastronomyMediaListOutputSchema,
+    responseSchema: VenueMediaListOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 
         // Extract optional state query param.
         const rawState = ctx.req.query('state');
         const stateParsed = rawState
-            ? GastronomyMediaStateSchema.safeParse(rawState)
+            ? VenueMediaStateSchema.safeParse(rawState)
             : { success: false as const };
         const state = stateParsed.success ? stateParsed.data : undefined;
 

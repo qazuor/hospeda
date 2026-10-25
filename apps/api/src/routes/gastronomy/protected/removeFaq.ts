@@ -6,7 +6,7 @@
  * The FAQ must belong to the specified gastronomy (enforced inside removeGastronomyFaq).
  */
 
-import { GastronomyFaqRemoveOutputSchema, VerticalEnum } from '@repo/schemas';
+import { VenueFaqRemoveOutputSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService, removeGastronomyFaq, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -35,7 +35,7 @@ export const protectedRemoveGastronomyFaqRoute = createProtectedRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: GastronomyFaqRemoveOutputSchema,
+    responseSchema: VenueFaqRemoveOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 

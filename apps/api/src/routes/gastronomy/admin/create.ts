@@ -3,10 +3,10 @@
  * Allows admins to create new gastronomy listings.
  */
 import {
-    type GastronomyAdminCreateInput,
-    GastronomyAdminCreateInputSchema,
-    GastronomyAdminSchema,
     PermissionEnum,
+    type VenueAdminCreateInput,
+    VenueAdminCreateInputSchema,
+    VenueAdminSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
@@ -43,15 +43,15 @@ export const adminCreateGastronomyRoute = createAdminRoute({
         createSubjectFromBody: 'ownerId',
         ownCreatePermission: PermissionEnum.GASTRONOMY_CREATE
     },
-    requestBody: GastronomyAdminCreateInputSchema,
-    responseSchema: GastronomyAdminSchema,
+    requestBody: VenueAdminCreateInputSchema,
+    responseSchema: VenueAdminSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        const data = body as GastronomyAdminCreateInput;
+        const data = body as VenueAdminCreateInput;
 
         const result = await runListingContentCall({
             ctx,

@@ -23,7 +23,7 @@
  *
  * @module routes/gastronomy/protected/getEvents
  */
-import { GastronomyEventsOutputSchema, PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, VenueEventsOutputSchema } from '@repo/schemas';
 import { entityNotFoundError, GastronomyService, getGastronomyEvents } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
 // `ServiceError` from the package ROOT yields a DIFFERENT class under the test
@@ -93,7 +93,7 @@ export const protectedGetGastronomyEventsRoute = createCRUDRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: GastronomyEventsOutputSchema,
+    responseSchema: VenueEventsOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleGetGastronomyEvents(ctx, params)
 });

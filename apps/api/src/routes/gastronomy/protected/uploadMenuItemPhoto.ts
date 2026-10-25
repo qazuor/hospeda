@@ -37,11 +37,7 @@
  * @module routes/gastronomy/protected/uploadMenuItemPhoto
  */
 
-import {
-    GastronomyMenuItemPhotoUploadOutputSchema,
-    PermissionEnum,
-    VerticalEnum
-} from '@repo/schemas';
+import { PermissionEnum, VenueMenuItemPhotoUploadOutputSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -87,7 +83,7 @@ export const protectedUploadGastronomyMenuItemPhotoRoute = createProtectedRoute(
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: GastronomyMenuItemPhotoUploadOutputSchema,
+    responseSchema: VenueMenuItemPhotoUploadOutputSchema,
     successStatusCode: 200,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         ctx.header('Cache-Control', 'no-store');

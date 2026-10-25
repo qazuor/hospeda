@@ -2,9 +2,9 @@ import { accommodationModel, experienceModel, gastronomyModel } from '@repo/db';
 import {
     type Accommodation,
     type Experience,
-    type Gastronomy,
     type Media,
     resolveListingCompleteness,
+    type Venue,
     VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
@@ -19,7 +19,7 @@ type ListingInput =
       }
     | {
           readonly vertical: typeof VerticalEnum.GASTRONOMY;
-          readonly listing: Gastronomy;
+          readonly listing: Venue;
           readonly media: Media;
       }
     | {

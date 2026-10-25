@@ -36,9 +36,9 @@
  */
 
 import {
-    GastronomyMediaSingleOutputSchema,
-    type GastronomyMediaUpdatePayload,
-    GastronomyMediaUpdatePayloadSchema,
+    VenueMediaSingleOutputSchema,
+    type VenueMediaUpdatePayload,
+    VenueMediaUpdatePayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError, updateGastronomyMedia } from '@repo/service-core';
@@ -72,15 +72,15 @@ export const protectedUpdateGastronomyMediaRoute = createProtectedRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyMediaUpdatePayloadSchema,
-    responseSchema: GastronomyMediaSingleOutputSchema,
+    requestBody: VenueMediaUpdatePayloadSchema,
+    responseSchema: VenueMediaSingleOutputSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        const payload = body as GastronomyMediaUpdatePayload;
+        const payload = body as VenueMediaUpdatePayload;
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         // (mirrors the sibling media routes).

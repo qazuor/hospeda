@@ -1,4 +1,4 @@
-import { GastronomyProtectedSchema, VerticalEnum } from '@repo/schemas';
+import { VenueProtectedSchema, VerticalEnum } from '@repo/schemas';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { ListingPublicationService } from '../../../services/listing-publication/listing-publication.service';
@@ -18,7 +18,7 @@ export const protectedReactivateGastronomyRoute = createProtectedRoute({
     description: 'Moves an archived listing back to DRAFT through PB8.',
     tags: ['Gastronomy'],
     requestParams: { id: z.string().uuid() },
-    responseSchema: GastronomyProtectedSchema,
+    responseSchema: VenueProtectedSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         return listingPublicationService.reactivate({

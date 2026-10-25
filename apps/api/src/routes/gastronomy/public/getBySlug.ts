@@ -4,7 +4,7 @@
  * Returns null (404) when the listing is not found or not publicly visible.
  */
 
-import { GastronomyPublicSchema, VerticalEnum } from '@repo/schemas';
+import { VenuePublicSchema, VerticalEnum } from '@repo/schemas';
 import {
     GastronomyService,
     getGastronomyDailySpecials,
@@ -48,7 +48,7 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
     requestParams: {
         slug: z.string().min(1).max(255)
     },
-    responseSchema: GastronomyPublicSchema.nullable(),
+    responseSchema: VenuePublicSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await gastronomyService.getBySlug(actor, params.slug as string);

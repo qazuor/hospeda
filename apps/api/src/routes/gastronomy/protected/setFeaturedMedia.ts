@@ -22,7 +22,7 @@
  * (mirrors the reorder-route note).
  */
 
-import { GastronomyMediaSingleOutputSchema, VerticalEnum } from '@repo/schemas';
+import { VenueMediaSingleOutputSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService, ServiceError, setFeaturedGastronomyMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -55,7 +55,7 @@ export const protectedSetFeaturedGastronomyMediaRoute = createProtectedRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: GastronomyMediaSingleOutputSchema,
+    responseSchema: VenueMediaSingleOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 

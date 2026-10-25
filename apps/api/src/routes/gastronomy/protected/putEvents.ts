@@ -24,9 +24,9 @@
  */
 
 import {
-    GastronomyEventsOutputSchema,
-    type GastronomyEventsReplacePayload,
-    GastronomyEventsReplacePayloadSchema,
+    VenueEventsOutputSchema,
+    type VenueEventsReplacePayload,
+    VenueEventsReplacePayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, replaceGastronomyEvents } from '@repo/service-core';
@@ -63,7 +63,7 @@ export async function handlePutGastronomyEvents(
         // against `GastronomyEventsReplacePayloadSchema` by the route; the
         // service re-parses it anyway, so the cast asserts nothing the next line
         // does not verify.
-        agenda: body as unknown as GastronomyEventsReplacePayload
+        agenda: body as unknown as VenueEventsReplacePayload
     });
 
     if (result.error) {
@@ -90,8 +90,8 @@ export const protectedPutGastronomyEventsRoute = createProtectedRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyEventsReplacePayloadSchema,
-    responseSchema: GastronomyEventsOutputSchema,
+    requestBody: VenueEventsReplacePayloadSchema,
+    responseSchema: VenueEventsOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
         handlePutGastronomyEvents(ctx, params, body)
 });

@@ -11,7 +11,7 @@
  * When a dedicated `findOptions` is added to GastronomyService, replace the
  * inline mapping with the service call.
  */
-import { EntityOptionsQuerySchema, GastronomyOptionsListSchema } from '@repo/schemas';
+import { EntityOptionsQuerySchema, VenueOptionsListSchema } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -38,7 +38,7 @@ export const adminGastronomyOptionsRoute = createAdminRoute({
         'Returns lightweight {id, label, slug, type, destination} options for relation selectors. Admin-panel access only; DRAFT-inclusive.',
     tags: ['Gastronomy'],
     requestQuery: EntityOptionsQuerySchema.shape,
-    responseSchema: GastronomyOptionsListSchema,
+    responseSchema: VenueOptionsListSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

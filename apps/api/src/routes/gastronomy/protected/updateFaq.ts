@@ -9,8 +9,8 @@
 import {
     FaqWithChannelVisibilityUpdatePayloadSchema,
     type FaqWithChannelVisibilityUpdatePayloadType,
-    GastronomyFaqSingleOutputSchema,
-    type GastronomyFaqUpdateInput,
+    VenueFaqSingleOutputSchema,
+    type VenueFaqUpdateInput,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError, updateGastronomyFaq } from '@repo/service-core';
@@ -42,7 +42,7 @@ export const protectedUpdateGastronomyFaqRoute = createProtectedRoute({
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     requestBody: FaqWithChannelVisibilityUpdatePayloadSchema,
-    responseSchema: GastronomyFaqSingleOutputSchema,
+    responseSchema: VenueFaqSingleOutputSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -50,7 +50,7 @@ export const protectedUpdateGastronomyFaqRoute = createProtectedRoute({
     ) => {
         const actor = getActorFromContext(ctx);
 
-        const input: GastronomyFaqUpdateInput = {
+        const input: VenueFaqUpdateInput = {
             gastronomyId: params.id as string,
             faqId: params.faqId as string,
             faq: body as FaqWithChannelVisibilityUpdatePayloadType

@@ -25,11 +25,11 @@
  *
  * @module routes/gastronomy/public/events-projection
  */
-import type { GastronomyEventPublic } from '@repo/schemas';
+import type { VenueEventPublic } from '@repo/schemas';
 
 /** The projected field, ready to spread into the public response. */
 export interface GastronomyEventsGateResult {
-    readonly venueEvents: readonly GastronomyEventPublic[] | undefined;
+    readonly venueEvents: readonly VenueEventPublic[] | undefined;
 }
 
 /**
@@ -47,7 +47,7 @@ export interface GastronomyEventsGateResult {
  *   this schema.
  */
 export function applyGastronomyVenueEventsGate(input: {
-    readonly events: readonly GastronomyEventPublic[];
+    readonly events: readonly VenueEventPublic[];
     readonly ownerGrantsVenueEvents: boolean;
 }): GastronomyEventsGateResult {
     const { events, ownerGrantsVenueEvents } = input;
