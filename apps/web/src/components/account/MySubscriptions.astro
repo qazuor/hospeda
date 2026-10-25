@@ -49,7 +49,7 @@ const renewalKind = (row: OwnSubscriptionsResult['subscriptions'][number]) => {
                     {resolveScheduledRenewal({ row }).addonsLineKey && <p class={styles.line}>{t(resolveScheduledRenewal({ row }).addonsLineKey as 'account.subscription.mine.paidAfterCancellationAddons', undefined, { date: date(row.serviceEndsAt) })}</p>}
                 </>}
                 {row.status === 'GRACE_PERIOD' && GRACE_NOTICE[row.paymentMethod] && row.graceEndsAt && <p class={styles.line} data-testid="my-subscription-grace">{t('account.subscription.mine.grace', undefined, { date: date(row.graceEndsAt) })}</p>}
-                {CANCELLATION_OFFERED[row.status] && <SubscriptionCancel client:visible subscriptionId={row.id} locale={locale} />}
+                {CANCELLATION_OFFERED[row.status] && <SubscriptionCancel client:visible subscriptionId={row.id} locale={locale} planName={summary.title} verticalLabel={t(summary.verticalLabelKey)} />}
                 {PROMO_REDEEM_OFFERED[row.status][row.paymentMethod] && <PromoCodeRedeem client:visible vertical={row.vertical as PublishVerticalSlug} locale={locale} offer="SUBSCRIPTION" />}
             </article>
         );

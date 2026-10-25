@@ -30,6 +30,7 @@ export interface SignupCheckoutProps {
     readonly touristVipNotice: SignupTouristVipNotice | null;
     readonly planSummary: SignupPlanSummary | null;
     readonly pendingAttempt: SignupPendingAttempt | null;
+    readonly manualPaymentOnly: boolean;
 }
 
 const TOURIST_VIP_NOTICE_KEY: Record<SignupTouristVipNotice['kind'], string> = {
@@ -51,10 +52,22 @@ export function SignupCheckout({
     trialNotice,
     touristVipNotice,
     planSummary,
-    pendingAttempt
+    pendingAttempt,
+    manualPaymentOnly
 }: SignupCheckoutProps) {
-    const [view, setView] = useState<CheckoutView>({ state: 'idle' });
-    const [activePendingAttempt, setActivePendingAttempt] = useState(pendingAttempt);
+    const [view, setView] = useState<CheckoutView>(() =>
+        manualPaymentOnly
+            ? {
+                  state: 'rejected',
+                  rejection: resolveSignupRejection({
+                      error: { status: 422, reason: 'PARTNER_MANUAL_ONLY' }
+                  })
+              }
+            : { state: 'idle' }
+    );
+    const [activePendingAttempt, setActivePendingAttempt] = useState(
+        manualPaymentOnly ? null : pendingAttempt
+    );
     const [pendingAttemptCancelled, setPendingAttemptCancelled] = useState(false);
     const [cancelling, setCancelling] = useState(false);
     const [payerEmail, setPayerEmail] = useState(accountEmail);

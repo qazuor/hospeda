@@ -82,6 +82,12 @@ import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 
 const locale = Astro.locals.locale as SupportedLocale;
+// Closing button: the label is authored in Spanish like the rest of this page (it is not
+// translated, see "WHY IT IS NOT TRANSLATED" above). The destination is shown as visible text
+// under the button, derived from the same href, so a PDF export still says where it leads.
+const ctaLabel = 'Sumate como editor';
+const ctaHref = 'https://hospeda.com.ar/es/colaborar/editores';
+const ctaUrlText = ctaHref.replace(/^https?:\/\//, '');
 // Brand contact phone, single source of truth (HOS-364) — this page's
 // copy is the owner-approved artifact verbatim; only the phone digits are
 // parameterized so a real number change does not require re-editing prose.
@@ -414,7 +420,8 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
       ciudad, o las dos cosas &mdash; escribinos. No hace falta que seas periodista ni que tengas
       experiencia publicando: hace falta que conozcas el lugar y que te guste contarlo.
     </p>
-    <a class="cta" href="https://hospeda.com.ar/es/colaborar/editores">hospeda.com.ar/es/colaborar/editores</a>
+    <a class="cta" href={ctaHref}>{ctaLabel}</a>
+    <p class="cta-url">{ctaUrlText}</p>
     <div class="phone">
       <span class="fact__k">¿Dudas antes de postularte?</span>
       <strong>Escribinos por WhatsApp al {brandPhone}</strong>

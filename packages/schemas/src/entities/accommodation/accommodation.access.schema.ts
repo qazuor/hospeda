@@ -1,20 +1,15 @@
 import { z } from 'zod';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
-import { ApproximateLocationSchema, CoordinatesSchema } from '../../common/location.schema.js';
+import { ApproximateLocationSchema } from '../../common/location.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { PreferredContactEnumSchema } from '../../enums/index.js';
 import { AmenityAdminSchema, AmenityProtectedSchema } from '../amenity/amenity.access.schema.js';
 import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
 import { FeatureAdminSchema, FeatureProtectedSchema } from '../feature/feature.access.schema.js';
 import { UserAdminSchema, UserProtectedSchema } from '../user/user.access.schema.js';
+import { AccommodationLocationReadSchema } from './accommodation.location.schema.js';
 import { AccommodationReadSlugSchema, AccommodationSchema } from './accommodation.schema.js';
-import {
-    AccommodationPriceSchema,
-    AdditionalFeesInfoSchema,
-    DiscountInfoSchema,
-    OtherAdditionalFeesSchema,
-    OtherDiscountSchema
-} from './subtypes/accommodation.price.schema.js';
+import { AccommodationPriceReadSchema } from './subtypes/accommodation.price.schema.js';
 
 // ============================================================================
 // READ⊇WRITE LENIENT SHAPES (HOS-190)
@@ -110,15 +105,6 @@ const AccommodationSocialNetworksReadSchema = z.object({
     youtube: z.string().nullish()
 });
 
-/** Location read shape — postal string fields drop min/max (coordinates keep their numeric validation; they only ever come from the map picker). */
-const AccommodationLocationReadSchema = z.object({
-    coordinates: CoordinatesSchema.optional(),
-    street: z.string().optional(),
-    number: z.string().optional(),
-    floor: z.string().optional(),
-    apartment: z.string().optional()
-});
-
 /**
  * i18n read shape (HOS-190 / BETA-186) — each locale is individually optional and
  * nullable, unlike the strict `I18nTextSchema` which requires a complete
@@ -177,60 +163,6 @@ const LenientCatalogRowFields = {
 };
 const AccommodationAmenityReadSchema = AmenityProtectedSchema.extend(LenientCatalogRowFields);
 const AccommodationFeatureReadSchema = FeatureProtectedSchema.extend(LenientCatalogRowFields);
-
-/**
- * Price read shape — drops `.positive()` on the nightly amount AND on every
- * nested fee/discount amount, so a legacy/"consultar precio" `0` never 500s the
- * response at ANY nesting level (the shared `PriceSchema.price` positivity is a
- * WRITE constraint asserted by an existing test, so it stays strict; the
- * relaxation is contained to this read overlay). The `.extend({ price })` on each
- * info schema overrides only the amount, preserving every fee/discount flag.
- */
-const LenientPriceAmount = z.number().optional();
-const AdditionalFeesInfoReadSchema = AdditionalFeesInfoSchema.extend({ price: LenientPriceAmount });
-const DiscountInfoReadSchema = DiscountInfoSchema.extend({ price: LenientPriceAmount });
-const AccommodationPriceReadSchema = AccommodationPriceSchema.extend({
-    price: LenientPriceAmount,
-    additionalFees: z
-        .object({
-            cleaning: AdditionalFeesInfoReadSchema.optional(),
-            tax: AdditionalFeesInfoReadSchema.optional(),
-            lateCheckout: AdditionalFeesInfoReadSchema.optional(),
-            pets: AdditionalFeesInfoReadSchema.optional(),
-            bedlinen: AdditionalFeesInfoReadSchema.optional(),
-            towels: AdditionalFeesInfoReadSchema.optional(),
-            babyCrib: AdditionalFeesInfoReadSchema.optional(),
-            babyHighChair: AdditionalFeesInfoReadSchema.optional(),
-            extraBed: AdditionalFeesInfoReadSchema.optional(),
-            securityDeposit: AdditionalFeesInfoReadSchema.optional(),
-            extraGuest: AdditionalFeesInfoReadSchema.optional(),
-            parking: AdditionalFeesInfoReadSchema.optional(),
-            earlyCheckin: AdditionalFeesInfoReadSchema.optional(),
-            lateCheckin: AdditionalFeesInfoReadSchema.optional(),
-            luggageStorage: AdditionalFeesInfoReadSchema.optional(),
-            // `name` is also relaxed (drops min2/max100, stays required) so a
-            // legacy custom fee with a short name never 500s either.
-            others: z
-                .array(
-                    OtherAdditionalFeesSchema.extend({
-                        price: LenientPriceAmount,
-                        name: z.string()
-                    })
-                )
-                .optional()
-        })
-        .optional(),
-    discounts: z
-        .object({
-            weekly: DiscountInfoReadSchema.optional(),
-            monthly: DiscountInfoReadSchema.optional(),
-            lastMinute: DiscountInfoReadSchema.optional(),
-            others: z
-                .array(OtherDiscountSchema.extend({ price: LenientPriceAmount, name: z.string() }))
-                .optional()
-        })
-        .optional()
-});
 
 /**
  * PUBLIC ACCESS SCHEMA

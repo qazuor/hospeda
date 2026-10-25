@@ -126,7 +126,7 @@ const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.touri
 <MarketingLayout locale={locale} title={title} description={description}>
     <JsonLd slot="head-extra" data={faqJsonLd} />
 
-    <Breadcrumbs locale={locale} items={[{ label: title }]} />
+    <Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: title }]} />
 
     <MarketingHero
         tagline={t('pricing.tourist.hero.tagline')}

@@ -90,5 +90,25 @@ const dock = variant === 'dock';
 			margin: 0;
 			background: none;
 		}
+
+		/* The dock hit area is 44px tall: 4px padding + 36px buttons. */
+		.view-toggle--dock .view-toggle__btn {
+			display: inline-flex;
+			align-items: center;
+			min-height: 36px;
+		}
+	}
+
+	/* HOS-1780: at 767px and below the dock row must fit on one line, so the pill
+	   gives up horizontal padding but keeps both labels and the 44px height. */
+	@media (max-width: 767px) {
+		.view-toggle--dock {
+			gap: 2px;
+			padding: 4px 2px;
+		}
+
+		.view-toggle--dock .view-toggle__btn {
+			padding: 0.5rem 0.625rem;
+		}
 	}
 </style>

@@ -118,7 +118,10 @@ describe('TEST:V8a:8 SupportEditNotice — row 26 in the owner account', () => {
 
     it('both editor hubs load the support edits and render the notice above the hub', () => {
         for (const hub of [ACCOMMODATION_HUB, LISTING_HUB]) {
-            expect(hub).toContain('await loadSupportEdits({');
+            const parallel = hub.indexOf('Promise.all([');
+            expect(parallel).toBeGreaterThanOrEqual(0);
+            expect(parallel).toBeLessThan(hub.indexOf('loadSupportEdits({'));
+            expect(hub).toContain('loadSupportEdits({');
             expect(hub).toContain(
                 '<SupportEditNotice locale={locale} items={supportEdits.items} />'
             );

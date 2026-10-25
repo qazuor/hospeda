@@ -19,6 +19,7 @@ import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import {
     resolveSignupTrialNotice,
     resolveSignupTouristVipNotice,
+    resolveSignupManualPaymentOnly,
     resolveSignupPlanSummary,
     type SignupPlanSummary,
     resolveSignupPendingAttempt,
@@ -64,6 +65,7 @@ let trialNotice: SignupTrialNotice | null;
 let touristVipNotice: SignupTouristVipNotice | null;
 let planSummary: SignupPlanSummary | null;
 let pendingAttempt: SignupPendingAttempt | null;
+let manualPaymentOnly: boolean;
 try {
     const result = await billingSubscriptionApi.signupNotice({
         billingOptionId: optionId,
@@ -71,6 +73,7 @@ try {
     });
     trialNotice = resolveSignupTrialNotice({ result });
     touristVipNotice = resolveSignupTouristVipNotice({ result });
+    manualPaymentOnly = resolveSignupManualPaymentOnly({ result });
     planSummary = resolveSignupPlanSummary({ result });
     pendingAttempt = resolveSignupPendingAttempt({ result });
 } catch {
@@ -78,6 +81,7 @@ try {
     touristVipNotice = { kind: 'UNKNOWN' } as const;
     planSummary = null;
     pendingAttempt = null;
+    manualPaymentOnly = false;
 }
 ---
 
@@ -93,5 +97,6 @@ try {
         touristVipNotice={touristVipNotice}
         planSummary={planSummary}
         pendingAttempt={pendingAttempt}
+        manualPaymentOnly={manualPaymentOnly}
     />
 </BaseLayout>

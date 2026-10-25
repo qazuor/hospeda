@@ -141,7 +141,7 @@ const headingMain = headingWords.join(' ');
     <JsonLd slot="head-extra" data={buildBillingFaqJsonLd({ faqs })} />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbs.jsonLd} />
 
-    <Breadcrumbs locale={locale} items={breadcrumbs.visible} />
+    <Breadcrumbs slot="breadcrumbs" locale={locale} items={breadcrumbs.visible} />
 
     <MarketingHero
         tagline={t(`${copyRoot}.tagline`)}

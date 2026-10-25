@@ -124,6 +124,13 @@ describe('NewsletterForm authed email CSS', () => {
         expect(configureLink).toMatch(/align-items:\s*center;/);
         expect(configureLink).toMatch(/min-height:\s*2\.75rem;/);
     });
+
+    it('HOS-1773 — the row wraps and the actions group is a single non-shrinking item', () => {
+        expect(ruleBody('.inputRow')).toMatch(/flex-wrap:\s*wrap;/);
+        const actions = ruleBody('.actions');
+        expect(actions).toMatch(/display:\s*flex;/);
+        expect(actions).toMatch(/flex:\s*0 0 auto;/);
+    });
 });
 
 describe('NewsletterForm authed email', () => {
@@ -157,5 +164,28 @@ describe('NewsletterForm authed email', () => {
             expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
         });
         expect(screen.getByText(USER_EMAIL)).toHaveAttribute('title', USER_EMAIL);
+    });
+
+    it('HOS-1773 — groups "Configurar" with the button, apart from the email block', async () => {
+        seedAuthMeCache({ isAuthenticated: true, email: USER_EMAIL });
+
+        render(
+            <NewsletterForm
+                isAuthenticated={true}
+                userEmail={USER_EMAIL}
+                apiUrl={API_URL}
+                locale="es"
+            />
+        );
+
+        const link = await screen.findByRole('link', { name: 'Configurar' });
+        const button = screen.getByRole('button', { name: 'Suscribirme' });
+        const group = link.parentElement;
+
+        // Same dedicated wrapper (so they wrap together), which must not be the
+        // whole input row that also holds the email block.
+        expect(group).toBe(button.parentElement);
+        expect(group?.children).toHaveLength(2);
+        expect(group).not.toContainElement(screen.getByText(USER_EMAIL));
     });
 });

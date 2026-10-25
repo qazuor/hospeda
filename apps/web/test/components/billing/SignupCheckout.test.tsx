@@ -2,6 +2,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignupCheckout } from '@/components/billing/SignupCheckout.client';
+import { resolveSignupManualPaymentOnly } from '@/lib/billing/signup-checkout';
 
 const start = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/api/endpoints-protected', () => ({ billingSubscriptionApi: { start } }));
@@ -14,7 +15,8 @@ const props = {
     trialNotice: null,
     touristVipNotice: null,
     planSummary: null,
-    pendingAttempt: null
+    pendingAttempt: null,
+    manualPaymentOnly: false
 };
 const success = {
     ok: true,
@@ -30,6 +32,49 @@ const success = {
 beforeEach(() => vi.resetAllMocks());
 
 describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
+    it('TEST:1739:7 rejects Partner before showing email or payment controls', () => {
+        render(
+            <SignupCheckout
+                {...props}
+                manualPaymentOnly={resolveSignupManualPaymentOnly({
+                    result: {
+                        ok: true,
+                        data: {
+                            pendingAttempt: null,
+                            plan: {
+                                name: 'Partner Gold',
+                                amount: 100000,
+                                currency: 'ARS',
+                                cycle: 'monthly'
+                            },
+                            vertical: 'partner',
+                            touristVip: { status: 'NOT_AFFECTED' },
+                            trial: { status: 'NOT_RUNNING' }
+                        }
+                    }
+                })}
+                pendingAttempt={{
+                    subscriptionId: '123e4567-e89b-42d3-a456-426614174002',
+                    plan: { name: 'Pending', amount: 100000, currency: 'ARS', cycle: 'monthly' },
+                    checkoutUrl: null,
+                    authorizationWindowEndsAt: '2026-10-13T02:30:00.000Z'
+                }}
+            />
+        );
+        expect(screen.getByTestId('signup-checkout')).toHaveAttribute('data-state', 'rejected');
+        expect(screen.getByTestId('signup-checkout-rejection')).toHaveAttribute(
+            'data-reason',
+            'PARTNER_MANUAL_ONLY'
+        );
+        expect(screen.getByTestId('signup-checkout-rejection')).toHaveTextContent(
+            'La suscripción de aliados no se contrata desde acá. Nuestro equipo te va a contactar para coordinar el pago y activarla.'
+        );
+        expect(screen.queryByTestId('signup-checkout-payer-email')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('signup-checkout-confirm')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('signup-checkout-pending-attempt')).not.toBeInTheDocument();
+        expect(start).not.toHaveBeenCalled();
+    });
+
     it('TEST:1759:4 shows the localized plan name', () => {
         const planSummary = {
             slug: 'owner-basico',

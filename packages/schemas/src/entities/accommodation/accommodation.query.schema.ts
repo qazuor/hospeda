@@ -11,7 +11,9 @@ import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enum
 import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
+import { AccommodationLocationReadSchema } from './accommodation.location.schema.js';
 import { AccommodationReadSchema } from './accommodation.schema.js';
+import { AccommodationPriceReadSchema } from './subtypes/accommodation.price.schema.js';
 
 /**
  * Accommodation Query Schemas - Standardized Implementation
@@ -326,11 +328,14 @@ export const AccommodationListItemSchema = AccommodationReadSchema.pick({
     createdAt: true,
     updatedAt: true
 }).extend({
-    // HOS-1748 / HOS-190 / SPEC-143 Finding #9: the admin client re-validates
+    // HOS-1748 / HOS-1770 / HOS-190 / SPEC-143 Finding #9: the admin client re-validates
     // the list response with this schema; it must accept every value
     // `AccommodationAdminSchema` accepts for these fields.
     summary: z.string(),
     description: z.string(),
+    name: z.string(),
+    price: AccommodationPriceReadSchema.nullish(),
+    location: AccommodationLocationReadSchema.nullish(),
     /** Featured state, derived from `featuredByEntitlement` (HOS-1419). */
     isFeatured: z.boolean().optional(),
     // Explicitly make review fields optional since they might not be present in list responses

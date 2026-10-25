@@ -111,6 +111,11 @@ interface MapCardsSidebarProps {
          * when not provided, preserving the previous behavior.
          */
         readonly openSheetCount?: (n: number) => string;
+        /**
+         * Short "{{count}} resultados" label shown on the dock trigger where the
+         * full "Ver {{count}} resultados" does not fit on one row (HOS-1780).
+         */
+        readonly openSheetCountShort?: (n: number) => string;
         readonly closeSheet: string;
     };
 }
@@ -528,6 +533,8 @@ export function MapCardsSidebar({
                             ? i18n.openSheetCount(items.length)
                             : `${i18n.openSheet} · ${i18n.resultsCount(items.length)}`
                     }
+                    shortLabel={i18n.openSheetCountShort?.(items.length)}
+                    count={items.length}
                     isSheetOpen={isSheetOpen}
                     onOpen={() => setIsSheetOpen(true)}
                 />
