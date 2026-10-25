@@ -43,6 +43,7 @@ export interface CreditPaymentPorts {
     readonly promoExhaustion?: PromoExhaustion;
     readonly coverageNotices?: CoverageNotices;
     readonly billingFacts?: BillingFactSink;
+    readonly beforeCommit?: () => Promise<void>;
     readonly markPayments?: import('../reconciliation/reconciliation-mark-payments.port').ReconciliationMarkPayments;
     readonly beforeOptimisticUpdate?: (input: { readonly paymentId: string }) => Promise<void>;
     readonly onOptimisticUpdateMiss?: (input: { readonly paymentId: string }) => Promise<void>;
@@ -332,6 +333,7 @@ export async function creditPayment(
                               promoApplied
                           }
                         : undefined;
+                await ports.beforeCommit?.();
                 return {
                     result: { outcome: 'CREDITED', coverage },
                     after: { coverageEvent, chargeFact, exhaustedPromos }

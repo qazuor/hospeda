@@ -25,7 +25,7 @@ const beforeCancelNotice = { beforeCancel: async () => 'SENT' as const };
 
 describe('TEST:B5:1 P1 payment credit', () => {
     it.skipIf(!isServiceTestDbAvailable())(
-        'TEST:1878:6 emits one principal charge fact after commit and none when the promo transaction rolls back',
+        'TEST:1878:6 emits one principal charge fact after commit and none when the transaction rolls back after preparing it',
         async () => {
             const fixture = await paymentFixture();
             const [payment] = await getServiceTestDb()
@@ -59,30 +59,6 @@ describe('TEST:B5:1 P1 payment credit', () => {
                 facts.filter((fact) => fact.subscriptionId === fixture.started.subscriptionId)
             ).toHaveLength(1);
 
-            const [code] = await getServiceTestDb()
-                .insert(promoCodes)
-                .values({
-                    code: `ROLLBACK-${crypto.randomUUID()}`,
-                    discountKind: 'PERCENTAGE',
-                    value: 10,
-                    allVerticals: true,
-                    verticals: null,
-                    totalQuota: 10,
-                    validFrom: new Date('2026-01-01T00:00:00.000Z'),
-                    validUntil: new Date('2027-01-01T00:00:00.000Z'),
-                    stackable: false,
-                    usableWithAnotherActive: false,
-                    durationKind: 'N_CHARGES',
-                    durationCharges: 3
-                })
-                .returning();
-            await getServiceTestDb().insert(promoRedemptions).values({
-                promoCodeId: code!.id,
-                userId: fixture.user.id,
-                subscriptionId: fixture.started.subscriptionId,
-                redeemedAt: fixture.clock.now(),
-                remainingCharges: 2
-            });
             const [pending] = await getServiceTestDb()
                 .insert(payments)
                 .values({
@@ -104,14 +80,12 @@ describe('TEST:B5:1 P1 payment credit', () => {
                     {
                         clock: fixture.clock,
                         billingFacts,
-                        promoCharges: {
-                            chargedWithDiscount: async () => {
-                                throw new Error('promo failure');
-                            }
+                        beforeCommit: async () => {
+                            throw new Error('transaction failure before commit');
                         }
                     }
                 )
-            ).rejects.toThrow('promo failure');
+            ).rejects.toThrow('transaction failure before commit');
             const [rolledBack] = await getServiceTestDb()
                 .select({ status: payments.status })
                 .from(payments)
