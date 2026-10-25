@@ -152,6 +152,77 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #3798
+    {
+        id: '2026-10-25-owner-plan-warns-about-tourist-vip',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['USER', 'HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Antes de pagar un plan de dueño, te avisamos qué pasa con tu Turista VIP',
+            en: 'Before you pay for an owner plan, we tell you what happens to your Tourist VIP',
+            pt: 'Antes de pagar um plano de proprietário, avisamos o que acontece com seu Turista VIP'
+        },
+        body: {
+            es: 'Los planes para publicar ya incluyen todos los beneficios de Turista VIP. Si tenés una suscripción VIP paga, el checkout te lo dice antes de pagar: cuando el plan nuevo se activa, la VIP se cancela y te llega un correo avisándote.',
+            en: 'Publishing plans already include every Tourist VIP benefit. If you have a paid VIP subscription, the checkout tells you before you pay: when the new plan activates, the VIP is cancelled and you get an email about it.',
+            pt: 'Os planos para publicar já incluem todos os benefícios do Turista VIP. Se você tem uma assinatura VIP paga, o checkout avisa antes de pagar: quando o novo plano é ativado, a VIP é cancelada e você recebe um e-mail avisando.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3797
+    {
+        id: '2026-10-25-clearer-plan-pages',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las páginas de planes son más claras',
+            en: 'The plan pages are clearer',
+            pt: 'As páginas de planos estão mais claras'
+        },
+        body: {
+            es: 'El botón para empezar quedó centrado debajo de las tarjetas, y la prueba gratis ya no se ofrece sobre el plan que ya tenés ni sobre beneficios que tu plan ya incluye. En la página de turistas, las dos formas de pago ahora son botones.',
+            en: 'The button to get started now sits centred below the cards, and the free trial is no longer offered on the plan you already have or on benefits your plan already includes. On the travellers page, both payment options are now buttons.',
+            pt: 'O botão para começar ficou centralizado abaixo dos cartões, e o teste grátis não é mais oferecido no plano que você já tem nem em benefícios que seu plano já inclui. Na página de turistas, as duas formas de pagamento agora são botões.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3794
+    {
+        id: '2026-10-24-fix-request-notice-on-editor',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Si te piden un arreglo, lo ves al entrar a editar tu ficha',
+            en: 'If a fix is requested, you see it as soon as you open your listing editor',
+            pt: 'Se pedirem uma correção, você vê ao entrar para editar seu anúncio'
+        },
+        body: {
+            es: 'El aviso con el motivo y la fecha sugerida ahora aparece arriba de todo en la pantalla de edición de tu ficha. Además, al dar de baja una suscripción, la confirmación te dice exactamente cuál estás dando de baja.',
+            en: 'The notice with the reason and the suggested date now appears at the top of your listing editor. Also, when you cancel a subscription, the confirmation tells you exactly which one you are cancelling.',
+            pt: 'O aviso com o motivo e a data sugerida agora aparece no topo da tela de edição do seu anúncio. Além disso, ao cancelar uma assinatura, a confirmação diz exatamente qual você está cancelando.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3793
+    {
+        id: '2026-10-24-admin-accommodation-list-stable',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'La lista de alojamientos ya no se vacía por una ficha con datos viejos',
+            en: 'The accommodation list no longer goes blank because of one listing with old data',
+            pt: 'A lista de hospedagens não fica mais vazia por causa de um anúncio com dados antigos'
+        },
+        body: {
+            es: 'Una ficha guardada con un precio o una ubicación fuera de rango ya no deja en blanco la página del listado: la lista se muestra completa.',
+            en: 'A listing saved with an out-of-range price or location no longer blanks the list page: the list is shown in full.',
+            pt: 'Um anúncio salvo com preço ou localização fora do intervalo não deixa mais a página da lista em branco: a lista aparece completa.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3801
     {
         id: '2026-10-25-safer-data-validation',
