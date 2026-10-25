@@ -112,7 +112,7 @@ Restricciones verificadas: service-core, verticals y payments no pueden depender
 
 El owner decidió capturar el motivo **ya**, como lista cerrada (sin texto libre, por P-6). Esto agrega un cambio de contrato de API y UI a esta spec.
 
-- **Schema:** `CancellationReasonEnum` nuevo en `@repo/schemas` (`packages/schemas/src/enums/`), exportado y reusado por la API, la web y el admin. **Valores propuestos (D-6, confirmar con el owner antes de implementar):** `TOO_EXPENSIVE`, `NOT_ENOUGH_RESULTS` (pocas reservas o contactos), `MISSING_FEATURES`, `SEASONAL_PAUSE`, `CLOSING_BUSINESS`, `SWITCHING_PLATFORM`, `TECHNICAL_PROBLEMS`, `OTHER`.
+- **Schema:** `CancellationReasonEnum` nuevo en `@repo/schemas` (`packages/schemas/src/enums/`), exportado y reusado por la API, la web y el admin. **Valores (D-6, confirmados por el owner el 25/10):** `TOO_EXPENSIVE`, `NOT_ENOUGH_RESULTS` (pocas reservas o contactos), `MISSING_FEATURES`, `SEASONAL_PAUSE`, `CLOSING_BUSINESS`, `SWITCHING_PLATFORM`, `TECHNICAL_PROBLEMS`, `OTHER`.
 - **API:**
   - La cancelación del usuario (`apps/api/src/routes/billing-subscription/cancellation.ts:100-110`) hoy no recibe cuerpo. Pasa a aceptar un cuerpo opcional `{ reason?: CancellationReason }`, estricto (`z.strictObject`). Sin cuerpo sigue funcionando igual: compatible hacia atrás.
   - La cancelación de admin (`AdminSubscriptionCancellationRequestSchema`, `packages/schemas/src/api/billing/subscription-admin-cancel.schema.ts:15`) suma el mismo `reason?` opcional.
@@ -130,7 +130,7 @@ El owner decidió capturar el motivo **ya**, como lista cerrada (sin texto libre
 | D-3 | ¿Se captura el motivo de cancelación? | **Sí, lista cerrada, en esta spec** (sección 7b) | Owner |
 | D-4 | ¿COMPLEMENTO y add-ons? | **Solo PRINCIPAL ahora.** El resto va en HOS-1883 (hijo de HOS-1352, bloqueado por esta spec). `subscription_class` queda en los schemas para ampliar sin migrar | Owner |
 | D-5 | `distinct_id` de eventos de cron o sistema | El `user_id` dueño de la suscripción; `actor_kind` distingue quién actuó. LAPIDA no emite | Coordinador (no cambia el diseño) |
-| D-6 | Valores del enum de motivos | Lista propuesta en 7b; **pendiente de confirmación del owner** antes de implementar | Pendiente |
+| D-6 | Valores del enum de motivos | La lista de 7b, tal cual | Owner |
 | D-7 | ¿`$set` de propiedades de persona? | No. El plan vigente se deriva de los eventos | Coordinador (no cambia el diseño) |
 
 ## 9. Criterios de aceptación
