@@ -75,6 +75,7 @@ export * from './billing/coverage/grant-sources.js';
 export * from './billing/coverage/retention-stopped.js';
 export * from './billing/coverage/subscription-sources.js';
 export * from './billing/deadlines/billing-deadlines.service.js';
+export * from './billing/facts/billing-fact-sink.js';
 export * from './billing/grant/permanent-grant.service.js';
 export * from './billing/grant/permanent-grant-authorization.js';
 export * from './billing/grant/permanent-grant-floor.js';
