@@ -232,6 +232,7 @@ describe('admin social settings routes — SPEC-254 T-019', () => {
 
             const secretItem = result.items.find((i) => i.key === 'make_webhook_url');
             expect(secretItem?.value).toBe('***');
+            expect(JSON.stringify(result)).not.toContain(SECRET_SETTING_RAW_FIXTURE.value);
         });
 
         it('throws ServiceError when service returns an error', async () => {
