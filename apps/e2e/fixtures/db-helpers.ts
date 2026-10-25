@@ -79,26 +79,6 @@ export async function execSQL<T extends Record<string, unknown> = Record<string,
 }
 
 /**
- * Reports whether the retired billing schema (`billing_plans`, `billing_customers`,
- * `billing_subscriptions`, ...) still exists in the E2E database.
- *
- * Migration 0125 (HOS-1416) dropped those tables with the old billing engine
- * (HOS-1352 U1.1). Specs whose subject IS that engine (checkout, plan change,
- * dunning, add-ons, tier gates) call this to defer themselves at RUNTIME with
- * `test.fixme(!(await hasOldBillingSchema()), ...)` until the new billing (B units)
- * brings its own fixtures. It is a real precondition probe, not a hard-coded
- * switch, so a spec that gets a schema back runs again without being touched.
- *
- * @returns `true` when `billing_plans` exists in the `public` schema.
- */
-export async function hasOldBillingSchema(): Promise<boolean> {
-    const rows = await execSQL<{ present: boolean }>(
-        "SELECT to_regclass('public.billing_plans') IS NOT NULL AS present"
-    );
-    return rows[0]?.present === true;
-}
-
-/**
  * Reads the set of roles a user holds, from the `user_role` junction table.
  *
  * HOS-296 dropped `users.role`; the hats now live one row each in `user_role`.
@@ -149,44 +129,4 @@ export async function demoteHostToUser(userId: string): Promise<void> {
     await execSQL(`DELETE FROM user_role WHERE user_id = $1 AND role = 'HOST'::role_enum`, [
         userId
     ]);
-}
-
-/**
- * Forces a user's trial subscription to be expired by setting trial_end_date
- * to a past timestamp.
- *
- * The actual table name and column shape live in the @qazuor/qzpay-core
- * package. This helper hits whatever the running schema exposes; if the
- * billing tables are not present in `hospeda_e2e` yet (HOST-02 onboarding
- * hasn't seeded them), the UPDATE is a no-op (0 rows affected).
- *
- * @param userId - UUID of the user whose trial to expire
- */
-export async function forceTrialExpired(userId: string): Promise<void> {
-    // The column is `trial_end` (QZPay schema), not `trial_end_date`.
-    await execSQL(
-        `UPDATE billing_subscriptions
-         SET trial_end = NOW() - INTERVAL '1 day',
-             current_period_end = NOW() - INTERVAL '1 day'
-         WHERE customer_id IN (
-             SELECT id FROM billing_customers WHERE external_id = $1
-         )
-           AND status = 'trialing'`,
-        [userId]
-    );
-}
-
-/**
- * Forces the current period_end on an active paid subscription to be in
- * the past, simulating expiration after cancellation grace period.
- *
- * @param subscriptionId - UUID of billing_subscriptions row
- */
-export async function forcePeriodEndPast(subscriptionId: string): Promise<void> {
-    await execSQL(
-        `UPDATE billing_subscriptions
-         SET current_period_end = NOW() - INTERVAL '1 hour'
-         WHERE id = $1`,
-        [subscriptionId]
-    );
 }
