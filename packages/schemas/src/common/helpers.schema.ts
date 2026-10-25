@@ -110,6 +110,8 @@ type SystemManagedKeys = keyof typeof SYSTEM_MANAGED_FIELDS;
 // with keys that TypeScript cannot statically prove exist in the generic shape T.
 // We use z.util.omit() which performs the same runtime operation without the strict
 // generic type constraint, then cast the result to preserve proper typing.
+// Since zod 4.6, omit() also throws at runtime on a mask key the shape lacks, so the
+// mask is filtered down to the system-managed fields this schema actually declares.
 export const NewEntityInputSchema = <T extends z.ZodRawShape>(schema: z.ZodObject<T>) => {
     const presentSystemManagedFields = Object.fromEntries(
         Object.keys(SYSTEM_MANAGED_FIELDS)
