@@ -203,4 +203,6 @@ export async function openSignupCheckout(options: {
     await options.page.goto(
         `${baseUrl}/es/suscriptores/checkout/?opcion=${encodeURIComponent(options.billingOptionId)}`
     );
+    // The island is server-rendered: wait until React has attached (HOS-1890).
+    await options.page.locator('[data-testid="signup-checkout"][data-hydrated="true"]').waitFor();
 }
