@@ -395,8 +395,8 @@ export type AccommodationReviewWithUserListWrapper = z.infer<
 // HTTP-COMPATIBLE SCHEMAS & OPENAPI METADATA
 // ============================================================================
 
-export const HttpAccommodationReviewSearchSchema = HttpPaginationSchema.merge(
-    HttpSortingSchema
+export const HttpAccommodationReviewSearchSchema = HttpPaginationSchema.safeExtend(
+    HttpSortingSchema.shape
 ).extend({
     q: z.string().optional(),
     accommodationId: z.string().uuid().optional(),

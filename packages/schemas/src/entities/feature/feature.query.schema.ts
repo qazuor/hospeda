@@ -368,7 +368,9 @@ export const PopularFeaturesOutputSchema = z.object({
 /**
  * HTTP-compatible feature search schema with query string coercion
  */
-export const HttpFeatureSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+export const HttpFeatureSearchSchema = HttpPaginationSchema.safeExtend(
+    HttpSortingSchema.shape
+).extend({
     // Search
     q: z.string().optional(),
 

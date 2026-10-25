@@ -148,7 +148,7 @@ export async function fetchPublicPlans({
             return { ok: false, error: `Public plan catalog returned HTTP ${response.status}` };
         }
         const envelope = z
-            .object({ success: z.literal(true), data: z.unknown() })
+            .object({ success: z.literal(true), data: z.unknown().optional() })
             .safeParse(await response.json());
         if (!envelope.success) {
             return { ok: false, error: 'Unexpected public plan catalog response envelope' };

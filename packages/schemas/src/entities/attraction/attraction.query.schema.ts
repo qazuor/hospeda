@@ -243,7 +243,9 @@ export const AttractionCountOutputSchema = z.object({ count: z.number().int().mi
 /**
  * HTTP-compatible attraction search schema with query string coercion
  */
-export const HttpAttractionSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+export const HttpAttractionSearchSchema = HttpPaginationSchema.safeExtend(
+    HttpSortingSchema.shape
+).extend({
     // Search
     q: z.string().optional(),
 

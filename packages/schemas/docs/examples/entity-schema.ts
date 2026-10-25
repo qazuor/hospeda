@@ -379,7 +379,7 @@ export const ProductPaginationSchema = z.object({
  * Complete Search Product Schema
  */
 export const SearchProductSchema =
-    ProductFilterSchema.merge(ProductSortSchema).merge(ProductPaginationSchema);
+    ProductFilterSchema.safeExtend(ProductSortSchema.shape).safeExtend(ProductPaginationSchema.shape);
 
 /**
  * Search Product input type

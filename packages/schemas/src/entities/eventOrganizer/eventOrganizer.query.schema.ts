@@ -257,7 +257,9 @@ export const EventOrganizerSummaryParamsSchema = z.object({
 // HTTP-COMPATIBLE SCHEMAS & OPENAPI METADATA
 // ============================================================================
 
-export const HttpEventOrganizerSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+export const HttpEventOrganizerSearchSchema = HttpPaginationSchema.safeExtend(
+    HttpSortingSchema.shape
+).extend({
     q: z.string().optional(),
     name: z.string().optional(),
     isVerified: HttpQueryFields.isVerified(),

@@ -440,7 +440,9 @@ export type EventSummaryOutput = z.infer<typeof EventSummaryOutputSchema>;
 /**
  * HTTP-compatible event search schema with query string coercion
  */
-export const HttpEventSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+export const HttpEventSearchSchema = HttpPaginationSchema.safeExtend(
+    HttpSortingSchema.shape
+).extend({
     // Search
     q: z.string().optional(),
 

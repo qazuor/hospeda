@@ -126,7 +126,7 @@ export abstract class BaseCrudRead<
         return this.runWithLoggingAndValidation({
             methodName,
             input: { actor, field, value },
-            schema: z.object({ field: z.string(), value: z.unknown() }),
+            schema: z.object({ field: z.string(), value: z.unknown().optional() }),
             ctx: resolvedCtx,
             execute: async (
                 { field: validatedField, value: validatedValue },

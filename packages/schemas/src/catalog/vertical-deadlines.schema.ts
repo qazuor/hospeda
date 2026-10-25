@@ -88,7 +88,7 @@ export const VerticalDeadlineKeySchema = z.coerce.number().int().min(1).max(9);
 /** Request to publish a new vertical deadline version. */
 export const ChangeVerticalDeadlineSchema = z.strictObject({
     key: VerticalDeadlineKeySchema,
-    value: z.unknown(),
+    value: z.unknown().optional(),
     expectedVersion: z.number().int().positive(),
     confirmed: z.literal(true)
 });

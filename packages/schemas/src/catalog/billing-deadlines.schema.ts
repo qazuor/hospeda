@@ -60,7 +60,7 @@ export const BillingDeadlineKeySchema = z.coerce.number().int().min(10).max(20);
 /** Request to publish a new billing deadline version. */
 export const ChangeBillingDeadlineSchema = z.strictObject({
     key: BillingDeadlineKeySchema,
-    value: z.unknown(),
+    value: z.unknown().optional(),
     expectedVersion: z.number().int().positive(),
     confirmed: z.literal(true)
 });

@@ -196,7 +196,9 @@ export type AccommodationSearchResult = z.infer<typeof AccommodationSearchResult
  * preserved only to avoid breaking an inferred re-export chain; it is a removal
  * candidate in a follow-up cleanup.
  */
-export const HttpAccommodationSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+export const HttpAccommodationSearchSchema = HttpPaginationSchema.safeExtend(
+    HttpSortingSchema.shape
+).extend({
     // Search
     q: z.string().optional(),
 

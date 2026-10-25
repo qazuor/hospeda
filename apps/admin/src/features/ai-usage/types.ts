@@ -78,8 +78,8 @@ export const AiUsagePaginationSchema = z.object({
  * Optional filters: `feature`, `provider`, `userId`.
  * Time window: `year`+`month` OR `since`/`until`.
  */
-export const AiUsageByModelSearchSchema = AiUsageTimeWindowSchema.merge(
-    AiUsagePaginationSchema
+export const AiUsageByModelSearchSchema = AiUsageTimeWindowSchema.safeExtend(
+    AiUsagePaginationSchema.shape
 ).extend({
     /** Narrow to a specific AI feature (one of the `AiFeature` enum values). */
     feature: z
@@ -110,8 +110,8 @@ export type AiUsageByModelSearch = z.infer<typeof AiUsageByModelSearchSchema>;
  * Optional filters: `feature`, `userId`.
  * Time window: `year`+`month` OR `since`/`until`.
  */
-export const AiUsageByProviderSearchSchema = AiUsageTimeWindowSchema.merge(
-    AiUsagePaginationSchema
+export const AiUsageByProviderSearchSchema = AiUsageTimeWindowSchema.safeExtend(
+    AiUsagePaginationSchema.shape
 ).extend({
     /** Narrow to a specific AI feature (one of the `AiFeature` enum values). */
     feature: z
@@ -140,8 +140,8 @@ export type AiUsageByProviderSearch = z.infer<typeof AiUsageByProviderSearchSche
  * Optional filters: `userId`.
  * Time window: `year`+`month` OR `since`/`until`.
  */
-export const AiUsageByFeatureModelSearchSchema = AiUsageTimeWindowSchema.merge(
-    AiUsagePaginationSchema
+export const AiUsageByFeatureModelSearchSchema = AiUsageTimeWindowSchema.safeExtend(
+    AiUsagePaginationSchema.shape
 ).extend({
     /** Narrow to a single user UUID. */
     userId: z.string().uuid().optional().catch(undefined)
@@ -157,8 +157,8 @@ export type AiUsageByFeatureModelSearch = z.infer<typeof AiUsageByFeatureModelSe
  * Optional filters: `feature`, `model`, `provider`, `userId`.
  * Time window: `year`+`month` OR `since`/`until`.
  */
-export const AiUsageDailySearchSchema = AiUsageTimeWindowSchema.merge(
-    AiUsagePaginationSchema
+export const AiUsageDailySearchSchema = AiUsageTimeWindowSchema.safeExtend(
+    AiUsagePaginationSchema.shape
 ).extend({
     /** Narrow to a specific AI feature (one of the `AiFeature` enum values). */
     feature: z

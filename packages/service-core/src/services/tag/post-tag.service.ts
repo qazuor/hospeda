@@ -215,7 +215,7 @@ export class PostTagService extends BaseService {
         return this.runWithLoggingAndValidation({
             methodName: 'update',
             input: { actor, id, ...input },
-            schema: idSchema.merge(UpdatePostTagSchema),
+            schema: idSchema.safeExtend(UpdatePostTagSchema.shape),
             ctx,
             execute: async (validated, _actor, execCtx) => {
                 assertCanUpdatePostTag(actor);

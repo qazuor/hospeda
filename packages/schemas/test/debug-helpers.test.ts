@@ -24,14 +24,12 @@ describe('NewEntityInputSchema Debug', () => {
         expect(() => NewSchema.parse({})).toThrow();
     });
 
-    test('should fail at parse time when schema lacks system fields referenced by omit', () => {
+    test('should leave schemas without system fields unchanged', () => {
         const SimpleSchema = z.object({
             name: z.string()
         });
 
-        // NewEntityInputSchema creates a schema, but omitting non-existent keys
-        // causes Zod v4 to throw "Unrecognized key" errors at parse time
         const NewSchema = NewEntityInputSchema(SimpleSchema);
-        expect(() => NewSchema.parse({ name: 'test' })).toThrow(/Unrecognized key/);
+        expect(NewSchema.parse({ name: 'test' })).toEqual({ name: 'test' });
     });
 });

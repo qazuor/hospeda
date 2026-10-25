@@ -145,7 +145,7 @@ const paginationStateSchema = z.object({
 
 const columnFilterSchema = z.object({
     id: z.string(),
-    value: z.unknown()
+    value: z.unknown().optional()
 });
 
 const tableStateSchema = z.object({

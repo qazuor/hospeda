@@ -16,8 +16,8 @@ const versionSchema = z.object({
     version: z.number().int(),
     values: z.record(z.string(), z.unknown()),
     changedKey: z.number().int().nullable(),
-    previousValue: z.unknown().nullable(),
-    newValue: z.unknown().nullable(),
+    previousValue: z.unknown().nullable().optional(),
+    newValue: z.unknown().nullable().optional(),
     changedBy: z.string().uuid().nullable(),
     createdAt: z.string().datetime({ offset: true })
 });
@@ -48,7 +48,10 @@ export const adminGetVerticalDeadlineVersionRoute = createAdminRoute({
         serialize(await getVerticalDeadlinesVersion({ version: Number(params.version) }))
 });
 
-const previewSchema = z.object({ key: ChangeVerticalDeadlineSchema.shape.key, value: z.unknown() });
+const previewSchema = z.object({
+    key: ChangeVerticalDeadlineSchema.shape.key,
+    value: z.unknown().optional()
+});
 
 /** Preview the old and new values and the rule protecting existing clocks. */
 export const adminPreviewVerticalDeadlineRoute = createAdminRoute({
@@ -62,8 +65,8 @@ export const adminPreviewVerticalDeadlineRoute = createAdminRoute({
     responseSchema: z.object({
         key: z.number(),
         currentVersion: z.number(),
-        currentValue: z.unknown(),
-        newValue: z.unknown(),
+        currentValue: z.unknown().optional(),
+        newValue: z.unknown().optional(),
         message: z.string()
     }),
     handler: async (
@@ -94,9 +97,12 @@ export const adminChangeVerticalDeadlineRoute = createAdminRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
+        const change = ChangeVerticalDeadlineSchema.parse(body);
         const row = await changeVerticalDeadline({
             actor,
-            ...ChangeVerticalDeadlineSchema.parse(body)
+            ...change,
+            // The schema keeps value omittable (zod 4.3.6 parity, HOS-1774); the service wants the key present.
+            value: change.value
         });
         auditLog({
             auditEvent: AuditEventType.BILLING_MUTATION,

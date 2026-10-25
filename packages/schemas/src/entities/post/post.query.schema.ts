@@ -370,47 +370,49 @@ export const PostSearchResultSchema = PostSearchResponseSchema;
 /**
  * HTTP-compatible post search schema with query string coercion
  */
-export const HttpPostSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
-    // Search
-    q: z.string().optional(),
+export const HttpPostSearchSchema = HttpPaginationSchema.safeExtend(HttpSortingSchema.shape).extend(
+    {
+        // Search
+        q: z.string().optional(),
 
-    // Basic filters
-    status: LifecycleStatusEnumSchema.optional(),
-    category: PostCategoryEnumSchema.optional(),
-    isFeatured: HttpQueryFields.isFeatured(),
-    isPublished: HttpQueryFields.isPublished(),
+        // Basic filters
+        status: LifecycleStatusEnumSchema.optional(),
+        category: PostCategoryEnumSchema.optional(),
+        isFeatured: HttpQueryFields.isFeatured(),
+        isPublished: HttpQueryFields.isPublished(),
 
-    // Author filters
-    authorId: z.string().uuid().optional(),
+        // Author filters
+        authorId: z.string().uuid().optional(),
 
-    // Date filters with coercion
-    createdAfter: HttpQueryFields.createdAfter(),
-    createdBefore: HttpQueryFields.createdBefore(),
-    publishedAfter: HttpQueryFields.publishedAfter(),
-    publishedBefore: HttpQueryFields.publishedBefore(),
+        // Date filters with coercion
+        createdAfter: HttpQueryFields.createdAfter(),
+        createdBefore: HttpQueryFields.createdBefore(),
+        publishedAfter: HttpQueryFields.publishedAfter(),
+        publishedBefore: HttpQueryFields.publishedBefore(),
 
-    // Content filters with coercion
-    hasMedia: HttpQueryFields.hasMedia(),
-    hasExcerpt: HttpQueryFields.hasExcerpt(),
+        // Content filters with coercion
+        hasMedia: HttpQueryFields.hasMedia(),
+        hasExcerpt: HttpQueryFields.hasExcerpt(),
 
-    // Engagement filters with coercion
-    minViews: HttpQueryFields.minViews(),
-    maxViews: HttpQueryFields.maxViews(),
-    minLikes: HttpQueryFields.minLikes(),
-    maxLikes: HttpQueryFields.maxLikes(),
-    minComments: HttpQueryFields.minComments(),
-    maxComments: HttpQueryFields.maxComments(),
+        // Engagement filters with coercion
+        minViews: HttpQueryFields.minViews(),
+        maxViews: HttpQueryFields.maxViews(),
+        minLikes: HttpQueryFields.minLikes(),
+        maxLikes: HttpQueryFields.maxLikes(),
+        minComments: HttpQueryFields.minComments(),
+        maxComments: HttpQueryFields.maxComments(),
 
-    // Array filters (comma-separated)
-    tags: z
-        .string()
-        .transform((val) => val.split(',').filter(Boolean))
-        .optional(),
-    authorIds: z
-        .string()
-        .transform((val) => val.split(',').filter(Boolean))
-        .optional()
-});
+        // Array filters (comma-separated)
+        tags: z
+            .string()
+            .transform((val) => val.split(',').filter(Boolean))
+            .optional(),
+        authorIds: z
+            .string()
+            .transform((val) => val.split(',').filter(Boolean))
+            .optional()
+    }
+);
 
 export type HttpPostSearch = z.infer<typeof HttpPostSearchSchema>;
 

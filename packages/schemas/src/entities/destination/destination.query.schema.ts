@@ -316,7 +316,9 @@ export const DestinationSummaryExtendedSchema = DestinationSchema.pick({
 /**
  * HTTP-compatible destination search schema with query string coercion
  */
-export const HttpDestinationSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+export const HttpDestinationSearchSchema = HttpPaginationSchema.safeExtend(
+    HttpSortingSchema.shape
+).extend({
     // Search
     q: z.string().optional(),
 

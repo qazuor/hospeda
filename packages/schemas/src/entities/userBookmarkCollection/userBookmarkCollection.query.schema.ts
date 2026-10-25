@@ -265,8 +265,8 @@ export const UserBookmarkCollectionPaginatedListOutputSchema =
  * HTTP-compatible user bookmark collection search schema with query string coercion.
  * Booleans use the `'true'/'false'` string coercion pattern from `createBooleanQueryParam`.
  */
-export const HttpUserBookmarkCollectionSearchSchema = HttpPaginationSchema.merge(
-    HttpSortingSchema
+export const HttpUserBookmarkCollectionSearchSchema = HttpPaginationSchema.safeExtend(
+    HttpSortingSchema.shape
 ).extend({
     // Search
     q: z.string().optional(),

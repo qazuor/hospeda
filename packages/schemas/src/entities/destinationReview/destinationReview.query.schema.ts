@@ -401,8 +401,8 @@ export const DestinationReviewSearchFiltersSchema = DestinationReviewFiltersSche
 // HTTP-COMPATIBLE SCHEMAS & OPENAPI METADATA
 // ============================================================================
 
-export const HttpDestinationReviewSearchSchema = HttpPaginationSchema.merge(
-    HttpSortingSchema
+export const HttpDestinationReviewSearchSchema = HttpPaginationSchema.safeExtend(
+    HttpSortingSchema.shape
 ).extend({
     q: z.string().optional(),
     destinationId: z.string().uuid().optional(),

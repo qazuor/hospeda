@@ -179,12 +179,14 @@ export function createHttpSearchSchema(options: HttpSearchSchemaOptions = {}): z
 
     // Add text search if enabled
     if (includeTextSearch) {
-        baseSchema = baseSchema.merge(textSearchSchema);
+        baseSchema = baseSchema.safeExtend(textSearchSchema.shape);
     }
 
     // Merge custom filter schema if provided
     if (filterSchema) {
-        return baseSchema.merge(filterSchema);
+        const extendedSchema = baseSchema.safeExtend(filterSchema.shape);
+        const catchall = filterSchema._zod.def.catchall;
+        return catchall ? extendedSchema.catchall(catchall) : extendedSchema;
     }
 
     return baseSchema;
@@ -203,12 +205,14 @@ export function createHttpFilterSchema(options: HttpFilterSchemaOptions = {}): z
 
     // Add text search if enabled
     if (includeTextSearch) {
-        baseSchema = baseSchema.merge(textSearchSchema);
+        baseSchema = baseSchema.safeExtend(textSearchSchema.shape);
     }
 
     // Merge custom filter schema if provided
     if (filterSchema) {
-        return baseSchema.merge(filterSchema);
+        const extendedSchema = baseSchema.safeExtend(filterSchema.shape);
+        const catchall = filterSchema._zod.def.catchall;
+        return catchall ? extendedSchema.catchall(catchall) : extendedSchema;
     }
 
     return baseSchema;

@@ -365,7 +365,7 @@ export type StreamTextFinalMeta = z.infer<typeof StreamTextFinalMetaSchema>;
  * `GenerateObjectResponseMetaSchema`. The typed `object: T` field is a generic
  * type parameter known only at the engine call-site; callers compose the full
  * response type by merging their target schema with the meta schema:
- * `z.object({ object: MyOutputSchema }).merge(GenerateObjectResponseMetaSchema)`.
+ * `z.object({ object: MyOutputSchema }).safeExtend(GenerateObjectResponseMetaSchema.shape)`.
  * This avoids runtime schema-from-JSON reconstruction and keeps the schemas
  * layer free of domain-specific output shapes. `messages` support for
  * `generateObject` is omitted in V1 (structured output is one-shot); a child
@@ -394,7 +394,7 @@ export type GenerateObjectRequest = z.infer<typeof GenerateObjectRequestSchema>;
  * Callers compose the full response type by merging their target schema with
  * this meta schema:
  * ```ts
- * const FullSchema = z.object({ object: MyOutputSchema }).merge(GenerateObjectResponseMetaSchema);
+ * const FullSchema = z.object({ object: MyOutputSchema }).safeExtend(GenerateObjectResponseMetaSchema.shape);
  * ```
  */
 export const GenerateObjectResponseMetaSchema = z.object({

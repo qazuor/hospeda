@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { VerticalDeadlineValuesSchema } from '../../src/catalog/vertical-deadlines.schema.js';
+import { ChangeBillingDeadlineSchema } from '../../src/catalog/billing-deadlines.schema.js';
+import {
+    ChangeVerticalDeadlineSchema,
+    VerticalDeadlineValuesSchema
+} from '../../src/catalog/vertical-deadlines.schema.js';
 
 // HOS-1479 Coord-61 D-1: keys 3, 4, 7, 8 and 9 are final.
 const versionOne = {
@@ -67,5 +71,17 @@ describe('TEST:V6:9 G-R5-B PB5 month bound', () => {
             expect(result.error.issues.some((issue) => issue.path.join('.') === '3.months')).toBe(
                 true
             );
+    });
+});
+
+// HOS-1774: zod 4.6 requires a key whose schema accepts `undefined` unless it is
+// wrapped in `.optional()`; zod 4.3.6 accepted the omission. These pin 4.3.6 parity.
+describe('deadline change requests without a `value` key (zod 4.3.6 parity)', () => {
+    it.each([
+        ['vertical', ChangeVerticalDeadlineSchema, 1],
+        ['billing', ChangeBillingDeadlineSchema, 10]
+    ] as const)('%s schema accepts an omitted value', (_name, schema, key) => {
+        const result = schema.safeParse({ key, expectedVersion: 1, confirmed: true });
+        expect(result.success).toBe(true);
     });
 });
