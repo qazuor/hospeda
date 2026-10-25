@@ -1,5 +1,4 @@
 import {
-    billingDeadlineVersions,
     billingOptions,
     buildEmailDedupKey,
     buildEventOccurrence,
@@ -17,13 +16,14 @@ import {
     subscriptions
 } from '@repo/db';
 import type { FakePaymentProvider } from '@repo/payments/fake';
-import { type BillingDeadlineValues, VerticalEnum } from '@repo/schemas';
+import { VerticalEnum } from '@repo/schemas';
 import {
     BEFORE_CANCEL_TEMPLATE_BY_KIND,
     createChargebackDetection,
     createPaymentReconciliationMarkPayments,
     startSubscription
 } from '@repo/service-core';
+import { ensureBillingDeadlineVersion1 } from '../helpers/billing-deadline-version.js';
 import {
     actorHeaders,
     CHARGED_12_DAYS_AGO,
@@ -45,27 +45,6 @@ import {
     seedSelfComplement,
     seedSelfState
 } from './self-cancel-fixtures';
-
-const deadlineValues = {
-    '10': { cardHours: 72, manualDays: 7 },
-    '11': { noticeDays: 60, contactDays: [30, 7] },
-    '12': { noticeDays: 60, contactDays: [30, 7] },
-    '13': { daysBefore: [5, 1] },
-    '14': { daysBefore: 7 },
-    '15': { hoursRemaining: 24 },
-    '16': { days: 7 },
-    '17': { days: 7 },
-    '18': { days: 180 },
-    '19': { minutes: 60 }
-} satisfies BillingDeadlineValues;
-
-/** Ensure startSubscription's version 1 deadlines exist despite other suites truncating them. */
-export async function ensureBillingDeadlineVersion1(): Promise<void> {
-    await getDb()
-        .insert(billingDeadlineVersions)
-        .values({ version: 1, values: deadlineValues })
-        .onConflictDoNothing();
-}
 
 const chargebacks: Array<{
     subscriptionId: string;
