@@ -13,10 +13,10 @@
  * per-entity wrappers from `index.ts`.
  */
 
-/** Supported locales for summary generation. Portuguese falls back to `es` at the call site, mirroring `post-listing-summary` / `event-listing-summary`. */
-export type SummaryLocale = 'es' | 'en';
+/** Supported locales for summary generation (HOS-1778: `pt` added, matching `accommodation-listing-summary`). */
+export type SummaryLocale = 'es' | 'en' | 'pt';
 
-/** Grammatical gender of the entity's subject noun, driving "ordenados/ordenadas" and "solo destacados/destacadas" agreement in Spanish. */
+/** Grammatical gender of the entity's subject noun, driving "ordenados/ordenadas" and "solo destacados/destacadas" agreement in Spanish and Portuguese. */
 export type EntityGender = 'masculine' | 'feminine';
 
 /** A catalog entry mapping a key to a localized label. */
@@ -67,8 +67,8 @@ export interface SummaryCounts {
 }
 
 /**
- * Fixed per-entity configuration: the subject noun (singular/plural, in both
- * locales), its grammatical gender, and whether the `priceRange` facet
+ * Fixed per-entity configuration: the subject noun (singular/plural, in every
+ * supported locale), its grammatical gender, and whether the `priceRange` facet
  * applies. Supplied by the thin per-entity wrapper functions in `index.ts` —
  * page authors never construct this directly.
  */

@@ -13,8 +13,8 @@ import {
 import type { SummaryCatalogs } from '../summary.types';
 
 const DESTINATIONS: SummaryCatalogs['destinations'] = [
-    { key: 'colon-id', label: { es: 'Colón', en: 'Colón' } },
-    { key: 'concordia-id', label: { es: 'Concordia', en: 'Concordia' } }
+    { key: 'colon-id', label: { es: 'Colón', en: 'Colón', pt: 'Colón' } },
+    { key: 'concordia-id', label: { es: 'Concordia', en: 'Concordia', pt: 'Concordia' } }
 ];
 
 describe('buildGastronomyListingSummary', () => {
@@ -442,5 +442,174 @@ describe('buildExperienceListingSummary', () => {
                 'Mostrando 2 de 3 experiencias de paseo en lancha en Concordia, que contienen "atardecer" en el nombre o la descripción, con calificación mínima de 4,5, solo destacadas, ordenadas por más recientes.'
             );
         });
+    });
+});
+
+describe('buildGastronomyListingSummary (pt)', () => {
+    it('should render the plural subject with no filters', () => {
+        const result = buildGastronomyListingSummary({
+            locale: 'pt',
+            filters: {},
+            counts: { shown: 9, total: 18 }
+        });
+        expect(result).toBe(
+            'Mostrando 9 de 18 estabelecimentos gastronômicos, sem filtros ativos.'
+        );
+    });
+
+    it('should use the singular subject when total is 1', () => {
+        const result = buildGastronomyListingSummary({
+            locale: 'pt',
+            filters: {},
+            counts: { shown: 1, total: 1 }
+        });
+        expect(result).toBe('Mostrando 1 de 1 estabelecimento gastronômico, sem filtros ativos.');
+    });
+
+    it('should append the masculine featured-first sort phrase', () => {
+        const result = buildGastronomyListingSummary({
+            locale: 'pt',
+            filters: {},
+            counts: { shown: 9, total: 18 },
+            sort: { sortKey: 'featured' }
+        });
+        expect(result).toBe(
+            'Mostrando 9 de 18 estabelecimentos gastronômicos, sem filtros ativos, ordenados com os destacados primeiro.'
+        );
+    });
+
+    it.each([
+        ['ratingDesc', 'ordenados por melhor avaliação'],
+        ['newest', 'ordenados por mais recentes'],
+        ['nameAsc', 'ordenados por nome, de A a Z']
+    ])('should render the %s sort phrase', (sortKey, expected) => {
+        const result = buildGastronomyListingSummary({
+            locale: 'pt',
+            filters: {},
+            counts: { shown: 2, total: 2 },
+            sort: { sortKey }
+        });
+        expect(result).toBe(
+            `Mostrando 2 de 2 estabelecimentos gastronômicos, sem filtros ativos, ${expected}.`
+        );
+    });
+
+    it('should render type, destination and price range', () => {
+        const result = buildGastronomyListingSummary({
+            locale: 'pt',
+            filters: { type: 'PARRILLA', destinationId: 'colon-id', priceRange: 'BUDGET' },
+            counts: { shown: 1, total: 1 },
+            catalogs: {
+                types: DEFAULT_GASTRONOMY_TYPES,
+                destinations: DESTINATIONS,
+                priceRanges: DEFAULT_PRICE_RANGES
+            }
+        });
+        expect(result).toBe(
+            'Mostrando 1 de 1 estabelecimento gastronômico de churrascaria em Colón, com preços econômicos.'
+        );
+    });
+
+    it('should render the full filter combination with the pt decimal comma', () => {
+        const result = buildGastronomyListingSummary({
+            locale: 'pt',
+            filters: {
+                type: 'RESTAURANT',
+                destinationId: 'colon-id',
+                text: 'centro',
+                priceRange: 'MID',
+                minRating: 4.5,
+                isFeatured: true
+            },
+            counts: { shown: 2, total: 5 },
+            sort: { sortKey: 'ratingDesc' },
+            catalogs: {
+                types: DEFAULT_GASTRONOMY_TYPES,
+                destinations: DESTINATIONS,
+                priceRanges: DEFAULT_PRICE_RANGES
+            }
+        });
+        expect(result).toBe(
+            'Mostrando 2 de 5 estabelecimentos gastronômicos de restaurante em Colón, que contêm "centro" no nome ou na descrição, com preços moderados, com avaliação mínima de 4,5, somente destacados, ordenados por melhor avaliação.'
+        );
+    });
+
+    it('should render the zero-results sentence', () => {
+        const result = buildGastronomyListingSummary({
+            locale: 'pt',
+            filters: { text: 'xyz' },
+            counts: { shown: 0, total: 0 }
+        });
+        expect(result).toBe(
+            'Nenhum resultado encontrado para estabelecimentos gastronômicos que contêm "xyz" no nome ou na descrição.'
+        );
+    });
+});
+
+describe('buildExperienceListingSummary (pt)', () => {
+    it('should render the plural subject with no filters', () => {
+        const result = buildExperienceListingSummary({
+            locale: 'pt',
+            filters: {},
+            counts: { shown: 5, total: 5 }
+        });
+        expect(result).toBe('Mostrando 5 de 5 experiências, sem filtros ativos.');
+    });
+
+    it('should use the singular subject when total is 1', () => {
+        const result = buildExperienceListingSummary({
+            locale: 'pt',
+            filters: {},
+            counts: { shown: 1, total: 1 }
+        });
+        expect(result).toBe('Mostrando 1 de 1 experiência, sem filtros ativos.');
+    });
+
+    it('should append the feminine featured-first sort phrase', () => {
+        const result = buildExperienceListingSummary({
+            locale: 'pt',
+            filters: {},
+            counts: { shown: 5, total: 5 },
+            sort: { sortKey: 'featured' }
+        });
+        expect(result).toBe(
+            'Mostrando 5 de 5 experiências, sem filtros ativos, ordenadas com as destacadas primeiro.'
+        );
+    });
+
+    it('should render type and destination, ignoring a stray priceRange', () => {
+        const result = buildExperienceListingSummary({
+            locale: 'pt',
+            filters: { type: 'KAYAK_RENTAL', destinationId: 'concordia-id', priceRange: 'BUDGET' },
+            counts: { shown: 3, total: 4 },
+            sort: { sortKey: 'newest' },
+            catalogs: { types: DEFAULT_EXPERIENCE_TYPES, destinations: DESTINATIONS }
+        });
+        expect(result).toBe(
+            'Mostrando 3 de 4 experiências de aluguel de caiaque em Concordia, ordenadas por mais recentes.'
+        );
+    });
+
+    it('should render the feminine featured-only filter with rating', () => {
+        const result = buildExperienceListingSummary({
+            locale: 'pt',
+            filters: { isFeatured: true, minRating: 4 },
+            counts: { shown: 2, total: 2 },
+            sort: { sortKey: 'nameAsc' }
+        });
+        expect(result).toBe(
+            'Mostrando 2 de 2 experiências, com avaliação mínima de 4, somente destacadas, ordenadas por nome, de A a Z.'
+        );
+    });
+
+    it('should render the zero-results sentence', () => {
+        const result = buildExperienceListingSummary({
+            locale: 'pt',
+            filters: { text: 'kayak' },
+            counts: { shown: 0, total: 0 }
+        });
+        expect(result).toBe(
+            'Nenhum resultado encontrado para experiências que contêm "kayak" no nome ou na descrição.'
+        );
     });
 });
