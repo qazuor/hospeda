@@ -70,6 +70,33 @@ describe('analytics shared package', () => {
         });
     });
 
+    it('omits server capture metadata when it is absent', () => {
+        const capture = vi.fn();
+        const server = createServerAnalytics({ enabled: true, getClient: () => ({ capture }) });
+        server.capture({
+            distinctId: 'user-1',
+            name: AnalyticsEvents.billingCheckoutAbandoned,
+            properties: {
+                vertical: 'accommodation',
+                subscription_class: 'PRINCIPAL',
+                actor_kind: 'USER',
+                subscription_id: 'sub-1',
+                reason: 'USER_CANCELLED'
+            }
+        });
+        expect(capture).toHaveBeenCalledWith({
+            distinctId: 'user-1',
+            event: AnalyticsEvents.billingCheckoutAbandoned,
+            properties: {
+                vertical: 'accommodation',
+                subscription_class: 'PRINCIPAL',
+                actor_kind: 'USER',
+                subscription_id: 'sub-1',
+                reason: 'USER_CANCELLED'
+            }
+        });
+    });
+
     it('captures server analytics with validated payloads', () => {
         const capture = vi.fn();
         const server = createServerAnalytics({
@@ -78,28 +105,43 @@ describe('analytics shared package', () => {
             getGlobalProperties: () => ({ app: 'api', environment: 'production' })
         });
 
+        const timestamp = new Date('2026-01-01T00:00:00.000Z');
         server.capture({
             distinctId: 'user-1',
-            name: AnalyticsEvents.subscriptionCheckoutStarted,
+            name: AnalyticsEvents.billingCheckoutStarted,
             properties: {
-                plan_slug: 'owner-pro',
-                billing_period: 'monthly',
-                amount: 10,
+                vertical: 'accommodation',
+                subscription_class: 'PRINCIPAL',
+                actor_kind: 'USER',
+                subscription_id: 'sub-1',
+                plan_version_id: 'plan-1',
+                billing_option_id: 'option-1',
+                cycle: 'monthly',
+                amount_minor: 1000,
                 currency: 'ARS'
-            }
+            },
+            uuid: 'f7b1d28a-55f4-5d6f-9b2e-d5f4d3b7c6a1',
+            timestamp
         });
 
         expect(capture).toHaveBeenCalledWith({
             distinctId: 'user-1',
-            event: AnalyticsEvents.subscriptionCheckoutStarted,
+            event: AnalyticsEvents.billingCheckoutStarted,
             properties: {
                 app: 'api',
                 environment: 'production',
-                plan_slug: 'owner-pro',
-                billing_period: 'monthly',
-                amount: 10,
+                vertical: 'accommodation',
+                subscription_class: 'PRINCIPAL',
+                actor_kind: 'USER',
+                subscription_id: 'sub-1',
+                plan_version_id: 'plan-1',
+                billing_option_id: 'option-1',
+                cycle: 'monthly',
+                amount_minor: 1000,
                 currency: 'ARS'
-            }
+            },
+            uuid: 'f7b1d28a-55f4-5d6f-9b2e-d5f4d3b7c6a1',
+            timestamp
         });
     });
 });
