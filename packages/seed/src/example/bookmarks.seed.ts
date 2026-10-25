@@ -57,7 +57,7 @@ const preProcessBookmark = async (item: unknown, context: SeedContext) => {
         case EntityTypeEnum.USER:
             realEntityId = context.idMapper.getMappedUserId(seedEntityId);
             break;
-        case EntityTypeEnum.GASTRONOMY:
+        case EntityTypeEnum.VENUE:
             // Gastronomies register their mapping under the 'gastronomies' namespace.
             realEntityId = context.idMapper.getRealId('gastronomies', seedEntityId);
             break;

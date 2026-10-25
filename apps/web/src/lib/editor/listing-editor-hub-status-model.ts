@@ -146,7 +146,7 @@ function resolveBlockingStatuses({
     const { missing } = resolveListingCompleteness({
         entityType:
             input.vertical === 'gastronomy'
-                ? ProductDomainEnum.GASTRONOMY
+                ? ProductDomainEnum.VENUE
                 : ProductDomainEnum.EXPERIENCE,
         listing: input.listing
     });
