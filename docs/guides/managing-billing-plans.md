@@ -13,7 +13,7 @@ For the overall billing model see
 > `PermissionEnum.MAINTENANCE_MODE_WRITE`, which is provisional and held by
 > `SUPER_ADMIN` only (see the comment at the top of
 > `apps/api/src/routes/plan-catalog/admin/index.ts`).
-
+>
 > **There is no admin screen for plans yet.** `apps/admin/src/routes` has no
 > plans page; the catalog is managed through the admin API below. The previous
 > "Comercial → Planes" screen belonged to the deleted QZPay stack.
