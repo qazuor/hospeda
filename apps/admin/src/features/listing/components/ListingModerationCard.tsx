@@ -16,39 +16,15 @@
  * `DRAFT`, `UNPUBLISHED_BY_BILLING` or `PUBLISHED`.
  */
 
-import type { TranslationKey } from '@repo/i18n';
-import {
-    type ListingModerationAction,
-    type ListingModerationResponse,
-    PermissionEnum,
-    type PublicationStatusEnum
-} from '@repo/schemas';
-import { useState } from 'react';
+import { PermissionEnum, type PublicationStatusEnum } from '@repo/schemas';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import type { ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeCell } from '@/components/table/cells/BadgeCell';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
-import { adminLogger } from '@/utils/logger';
-import {
-    describeModerationError,
-    getAvailableModerationActions,
-    type ListingModerationActionKind
-} from '../config/listing-moderation-actions';
 import { getPublicationStatusBadgeOptions } from '../config/publication-status-options';
-import { useModerateListingMutation } from '../hooks/useModerateListingMutation';
 import type { PurgeListingVertical } from '../hooks/usePurgeListingOnRequestMutation';
-import { ListingModerationActionDialog } from './ListingModerationActionDialog';
-
-/** Button label per action. */
-const ACTION_LABEL: Readonly<Record<ListingModerationActionKind, TranslationKey>> = {
-    REQUEST_FIX: 'admin-entities.listingModeration.actions.requestFix',
-    TAKE_DOWN: 'admin-entities.listingModeration.actions.takeDown',
-    LIFT: 'admin-entities.listingModeration.actions.lift',
-    CLOSE_FIX_REQUEST: 'admin-entities.listingModeration.actions.closeFixRequest'
-};
+import { ListingModerationActions } from './ListingModerationActions';
 
 /** Props for {@link ListingModerationCard}. RO-RO pattern. */
 export interface ListingModerationCardProps {
@@ -75,57 +51,8 @@ export function ListingModerationCard({
     publicationStatus
 }: ListingModerationCardProps) {
     const { t } = useTranslations();
-    const { addToast } = useToast();
-    const mutation = useModerateListingMutation();
-    const [dialogAction, setDialogAction] = useState<ListingModerationActionKind | null>(null);
-    const [open, setOpen] = useState(false);
-    const [result, setResult] = useState<ListingModerationResponse | null>(null);
 
     const badgeOptions = getPublicationStatusBadgeOptions({ t: t as ColumnTFunction });
-    const statusLabel = (status: PublicationStatusEnum): string =>
-        badgeOptions.find((option) => option.value === status)?.label ?? status;
-    const actions = getAvailableModerationActions({ publicationStatus });
-
-    const openDialog = (action: ListingModerationActionKind) => {
-        setDialogAction(action);
-        setOpen(true);
-    };
-
-    const handleConfirm = async (body: ListingModerationAction) => {
-        try {
-            const response = await mutation.mutateAsync({ vertical, id: entityId, body });
-            setOpen(false);
-            setResult(response);
-            addToast({
-                title: t('admin-entities.listingModeration.successTitle'),
-                message: t('admin-entities.listingModeration.successMessage', {
-                    status: statusLabel(response.publicationStatus)
-                }),
-                variant: 'success'
-            });
-        } catch (error) {
-            adminLogger.error('[ListingModerationCard] Failed to moderate', {
-                vertical,
-                entityId,
-                action: body.action,
-                error
-            });
-            setOpen(false);
-            const { messageKey, variant } = describeModerationError({
-                action: body.action,
-                error
-            });
-            const useServerMessage =
-                messageKey === 'admin-entities.listingModeration.errors.generic' &&
-                error instanceof Error &&
-                error.message.length > 0;
-            addToast({
-                title: t('admin-entities.listingModeration.errors.title'),
-                message: useServerMessage ? error.message : t(messageKey),
-                variant
-            });
-        }
-    };
 
     return (
         <Card data-testid="listing-moderation">
@@ -142,45 +69,12 @@ export function ListingModerationCard({
                     />
                 ) : null}
 
-                {result ? (
-                    <p
-                        className="text-muted-foreground text-sm"
-                        data-testid="listing-moderation-result"
-                    >
-                        {t('admin-entities.listingModeration.resultLabel')}:{' '}
-                        {statusLabel(result.publicationStatus)} ·{' '}
-                        {result.fixRequestOpen
-                            ? t('admin-entities.listingModeration.fixRequestOpen')
-                            : t('admin-entities.listingModeration.fixRequestClosed')}
-                    </p>
-                ) : null}
-
                 <PermissionGate permissions={[PermissionEnum.LISTING_MODERATE]}>
-                    <div className="flex flex-wrap gap-2">
-                        {actions.map((action) => (
-                            <Button
-                                key={action}
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                disabled={mutation.isPending}
-                                onClick={() => openDialog(action)}
-                                data-testid={`listing-moderation-action-${action}`}
-                            >
-                                {t(ACTION_LABEL[action])}
-                            </Button>
-                        ))}
-                    </div>
-                    {dialogAction ? (
-                        <ListingModerationActionDialog
-                            action={dialogAction}
-                            entityName={entityName}
-                            open={open}
-                            onOpenChange={setOpen}
-                            isPending={mutation.isPending}
-                            onConfirm={handleConfirm}
-                        />
-                    ) : null}
+                    <ListingModerationActions
+                        vertical={vertical}
+                        entityId={entityId}
+                        entityName={entityName}
+                    />
                 </PermissionGate>
             </CardContent>
         </Card>

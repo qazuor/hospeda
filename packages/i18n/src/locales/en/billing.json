@@ -252,7 +252,8 @@
                 "touristVipInherited": "Your current plan already includes Turista VIP benefits",
                 "commitmentTaken": "You already have an active subscription in this vertical.",
                 "generic": "We could not start your subscription. Please try again in a few minutes.",
-                "providerRejected": "Mercado Pago didn't accept the payment details. Check that the email is the one on your Mercado Pago account and try again."
+                "providerRejected": "Mercado Pago didn't accept the payment details. Check that the email is the one on your Mercado Pago account and try again.",
+                "partnerManualOnly": "Partner subscriptions cannot be purchased here. Our team will contact you to coordinate payment and activation."
             },
             "trialNotice": {
                 "running_one": "You are on your trial: {{days}} day left, until {{date}}.",
@@ -263,7 +264,10 @@
             },
             "touristVipNotice": {
                 "cancelledOnReturn": "You have a suspended subscription whose plan gave you the Tourist VIP benefits. If you bring it up to date, this Tourist VIP subscription is cancelled right away and what you paid is not refunded, because your plan gives you those benefits again.",
-                "unknown": "If you have a suspended subscription whose plan gave you the Tourist VIP benefits and you bring it up to date, a Tourist VIP subscription you buy is cancelled right away, with no refund."
+                "unknown": "If you have a suspended subscription whose plan gave you the Tourist VIP benefits and you bring it up to date, a Tourist VIP subscription you buy is cancelled right away, with no refund.",
+                "cancelledOnActivationUntil": "You have a Tourist VIP subscription paid until {{date}}. This plan already includes its benefits: once it is active, that subscription is cancelled and what you paid is not refunded.",
+                "cancelledOnActivation": "You have a Tourist VIP subscription. This plan already includes its benefits: once it is active, that subscription is cancelled and what you paid is not refunded.",
+                "unknownOnActivation": "If you have a Tourist VIP subscription and this plan includes its benefits, that subscription is cancelled once the plan is active, with no refund."
             },
             "retry": "Try again",
             "vertical": {

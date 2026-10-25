@@ -12,6 +12,7 @@ import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccomm
 import { EffectiveSetSubjectProvider } from '@/features/billing/effective-set-subject';
 import { ListingModerationCard } from '@/features/listing/components/ListingModerationCard';
 import { ListingPurgeOnRequestCard } from '@/features/listing/components/ListingPurgeOnRequestCard';
+import { canEditListing } from '@/features/listing/config/listing-moderation-actions';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 /**
@@ -86,6 +87,7 @@ function AccommodationViewContent({
                         entityId={id}
                         entityName={name}
                         onPurged={() => navigate({ to: '/accommodations' })}
+                        publicationStatus={publicationStatus}
                     />
                 </div>
 
@@ -104,7 +106,12 @@ function AccommodationViewContent({
                 entityType="accommodation"
                 entityId={id}
                 initialMode="view"
-                entityData={entityData}
+                entityData={{
+                    ...entityData,
+                    canEdit:
+                        entityData.canEdit &&
+                        canEditListing({ publicationStatus: publicationStatus })
+                }}
                 headerMedia={headerProps.media}
                 headerSubtitle={headerProps.subtitle}
                 headerBadges={headerProps.badges}

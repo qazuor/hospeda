@@ -39,6 +39,11 @@ export const SignupNoticeResponseSchema = z.object({
     /** Tourist VIP status after a suspended plan holder returns to service. */
     touristVip: z.discriminatedUnion('status', [
         z.object({ status: z.literal('CANCELLED_ON_RETURN') }),
+        /** The selected owner plan inherits Tourist VIP and cancels the paid VIP on activation. */
+        z.object({
+            status: z.literal('CANCELLED_ON_ACTIVATION'),
+            paidUntil: z.iso.datetime().nullable()
+        }),
         z.object({ status: z.literal('NOT_AFFECTED') })
     ]),
     /** Trial state for this user in the selected vertical. */

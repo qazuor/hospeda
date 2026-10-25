@@ -102,3 +102,31 @@ export async function touristVipCancelledOnReturn({
     if (!suspended.inherits) return false;
     return !(await touristVipInheritance.inherits({ userId }));
 }
+
+/** Resolves the Tourist VIP cancellation warning for the owner option being purchased. */
+export async function touristVipCancelledOnActivation({
+    userId,
+    planVersionId
+}: {
+    readonly userId: string;
+    readonly planVersionId: string;
+}): Promise<{
+    readonly status: 'CANCELLED_ON_ACTIVATION';
+    readonly paidUntil: string | null;
+} | null> {
+    const version = await planCatalogModel.findPlanVersion({ id: planVersionId });
+    if (!version?.inheritsTouristVip) return null;
+    const [row] = await touristVipModel.findCancellableRows({ userId });
+    if (!row) return null;
+
+    const paidUntil =
+        row.subscription.status === 'CANCEL_SCHEDULED'
+            ? row.subscription.serviceEndsAt
+            : row.subscription.status === 'ACTIVE' || row.subscription.status === 'GRACE_PERIOD'
+              ? row.subscription.nextChargeAt
+              : null;
+    return {
+        status: 'CANCELLED_ON_ACTIVATION',
+        paidUntil: paidUntil?.toISOString() ?? null
+    };
+}

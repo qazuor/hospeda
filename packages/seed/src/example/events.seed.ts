@@ -8,6 +8,7 @@ import { logger } from '../utils/logger.js';
 import type { FixtureMediaBlock } from '../utils/media-rows-builder.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';
+import { shiftEventDateToFuture } from '../utils/shift-event-date-to-future.js';
 
 /**
  * Normalizer for event data.
@@ -28,7 +29,10 @@ const eventNormalizer = (data: Record<string, unknown>) => {
         tagIds?: unknown[];
         [key: string]: unknown;
     };
-    return cleanData;
+    const date = cleanData.date as Parameters<typeof shiftEventDateToFuture>[0]['date'] | undefined;
+    return date
+        ? { ...cleanData, date: shiftEventDateToFuture({ date, now: new Date() }) }
+        : cleanData;
 };
 
 /**

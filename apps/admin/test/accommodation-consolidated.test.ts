@@ -31,8 +31,11 @@ describe('AccommodationConsolidatedConfig', () => {
             );
 
             expect(config).toBeDefined();
-            // 8 sections: import-from-url (SPEC-222) + the 7 standard consolidated sections
-            expect(config.sections).toHaveLength(8);
+            // 7 sections: import-from-url (SPEC-222) + the 6 standard consolidated sections
+            expect(config.sections).toHaveLength(7);
+            expect(config.sections.some((section) => section.id === 'states-moderation')).toBe(
+                false
+            );
             expect(config.metadata).toBeDefined();
             // mockT returns the i18n key verbatim; the real translated value is 'Accommodation'
             expect(config.metadata?.title).toBe('admin-entities.entities.accommodation.singular');
@@ -76,7 +79,7 @@ describe('AccommodationConsolidatedConfig', () => {
             );
             const viewSections = filterSectionsByMode(config.sections, 'view');
 
-            expect(viewSections).toHaveLength(7);
+            expect(viewSections).toHaveLength(6);
             expect(viewSections[0].id).toBe('basic-info');
 
             // All fields must be present in view mode
@@ -90,8 +93,8 @@ describe('AccommodationConsolidatedConfig', () => {
             );
             const editSections = filterSectionsByMode(config.sections, 'edit');
 
-            // 7 = 6 standard edit sections + import-from-url (SPEC-222, edit+create only)
-            expect(editSections).toHaveLength(7);
+            // 6 = 5 standard edit sections + import-from-url (SPEC-222, edit+create only)
+            expect(editSections).toHaveLength(6);
             // import-from-url is positioned first so admins can prefill before editing
             expect(editSections[0].id).toBe('import-from-url');
 

@@ -13,7 +13,6 @@ import { createBasicInfoConsolidatedSection } from './sections/basic-info.consol
 import { createContactInfoConsolidatedSection } from './sections/contact-info.consolidated';
 import { createGalleryConsolidatedSection } from './sections/gallery.consolidated';
 import { createLocationInfoConsolidatedSection } from './sections/location-info.consolidated';
-import { createStatesModerationConsolidatedSection } from './sections/states-moderation.consolidated';
 import { createStatisticsConsolidatedSection } from './sections/statistics.consolidated';
 
 /**
@@ -65,7 +64,6 @@ export const createAccommodationConsolidatedConfig = (
         createBasicInfoConsolidatedSection(t, accommodationTypeOptions),
         createContactInfoConsolidatedSection(t),
         createLocationInfoConsolidatedSection(t),
-        createStatesModerationConsolidatedSection(t),
         createAmenitiesConsolidatedSection(t),
         createGalleryConsolidatedSection(t),
         createStatisticsConsolidatedSection(t)

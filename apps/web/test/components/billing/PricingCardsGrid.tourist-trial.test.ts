@@ -33,7 +33,7 @@ function readNote(locale: 'es' | 'en' | 'pt'): string {
 
 /** The note's gate exactly as the card writes it. */
 const NOTE_GATE =
-    'showsTrialConsumesNote && card.plan.hasTrial && card.plan.trialDays > 0 && (\n\t\t\t\t\t\t\t<p class="pricing-card__trial-note">{trialConsumesNote}</p>';
+    'showsTrialConsumesNote && card.plan.hasTrial && card.plan.trialDays > 0 && (\n\t\t\t\t\t\t\t\t\t<p class="pricing-card__trial-note">{trialConsumesNote}</p>';
 
 /** Evaluates the card's gate for one plan, mirroring {@link NOTE_GATE}. */
 function cardShowsNote(params: {

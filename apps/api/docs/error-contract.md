@@ -381,7 +381,7 @@ is NOT enforced there is R3-style param validation.
 
 ## S1 rejections (B3)
 
-`PLAN_NOT_FOR_SALE` is 422; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. The new rejection is 409 because the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
+`PLAN_NOT_FOR_SALE` and `PARTNER_MANUAL_ONLY` are 422 `VALIDATION_ERROR`; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409 `ALREADY_EXISTS`; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. `PARTNER_MANUAL_ONLY` means Partner is a manual payer and cannot start card checkout until the team's payment link exists. `TOURIST_VIP_INHERITED` means the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
 
 `PROVIDER_REJECTED` is 422 `VALIDATION_ERROR`: the payment provider refused the data of the signup (HOS-1746); a provider outage or 5xx stays a 5xx and is retried.
 

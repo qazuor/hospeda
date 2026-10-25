@@ -1,20 +1,14 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import { eq, getDb, providerLinks, subscriptions } from '@repo/db';
-import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
-import { VerticalEnumSchema } from '@repo/schemas';
-import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
+import type { CoverageNotices } from '../payment/payment-ports';
 import { activatePendingWithSignupNotice } from './activate-pending-with-signup-notice.js';
-import {
-    cancelInheritedTouristVips,
-    type TouristVipInheritancePort
-} from './cancel-inherited-tourist-vip.service';
+import { afterSubscriptionActivated } from './after-activation-commit.js';
+import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
 import { refuseUndeclaredSubscriptionTransition } from './refuse-undeclared-transition.js';
 import type { BeforeCancelNotice } from './start-subscription.service';
 import type { SuccessionCloser } from './subscription-billing-ports';
 import { findSubscriptionProhibition } from './subscription-prohibited-transitions.js';
-
-const logger = createLogger('subscription-activation');
 
 export interface ActivateSubscriptionPorts {
     readonly provider: PaymentProvider;
@@ -78,38 +72,7 @@ export async function activateSubscription(
         { successionCloser: ports.successionCloser }
     );
     if (activated) {
-        // S2 committed: the row now emits its source, replacing the predecessor's when it succeeds one.
-        const vertical = VerticalEnumSchema.safeParse(row.subscription.vertical);
-        if (row.subscription.userId && vertical.success) {
-            try {
-                await (ports.coverageNotices ?? unwiredCoverageNotices).emitCoverageChanged({
-                    userId: row.subscription.userId,
-                    vertical: vertical.data,
-                    sourceType: 'SUBSCRIPTION',
-                    change: row.subscription.succeedsId ? 'CHANGED' : 'ADDED'
-                });
-            } catch (error) {
-                logger.error(
-                    { subscriptionId, error },
-                    'Coverage changed notice failed after activation commit'
-                );
-            }
-        } else {
-            logger.error(
-                { subscriptionId, vertical: row.subscription.vertical },
-                'Activated subscription has no coverage subject to notify'
-            );
-        }
-    }
-    if (activated && row.subscription.userId) {
-        try {
-            await cancelInheritedTouristVips({ userId: row.subscription.userId }, ports);
-        } catch (error) {
-            logger.error(
-                { subscriptionId, error },
-                'Inherited Tourist VIP cancellation will be retried'
-            );
-        }
+        await afterSubscriptionActivated({ subscription: row.subscription }, ports);
     }
     return { activated, subscriptionId };
 }

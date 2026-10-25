@@ -494,6 +494,7 @@
         },
         "cancel": {
             "open": "Cancelar assinatura",
+            "heading": "Você vai cancelar: {{plan}} ({{vertical}})",
             "activeEnds": "Se você confirmar, cancelamos hoje a cobrança automática e você continua com o serviço até {{date}}.",
             "suspendedEnds": "Se você confirmar, a assinatura termina hoje: ela estava suspensa, então não resta período pago.",
             "graceEnds": "Se você confirmar, o serviço termina hoje: você perde o serviço que o período de carência lhe dava até {{date}}. Em troca, não cobramos a parcela que não conseguimos cobrar.",

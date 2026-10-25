@@ -1,6 +1,21 @@
 import { z } from 'zod';
 import { PublicationStatusEnumSchema } from '../enums/publication-status.schema.js';
 
+/** Read-only listing and open fix-request state for moderation controls. */
+export const ListingModerationStateSchema = z.object({
+    publicationStatus: PublicationStatusEnumSchema,
+    fixRequest: z
+        .object({
+            reason: z.string(),
+            suggestedDate: z.string().date().nullable(),
+            openedAt: z.iso.datetime(),
+            ownerReportedFixedAt: z.iso.datetime().nullable()
+        })
+        .nullable()
+});
+
+export type ListingModerationState = z.infer<typeof ListingModerationStateSchema>;
+
 const reason = z
     .string()
     .trim()

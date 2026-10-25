@@ -41,6 +41,7 @@ import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { getPlanDescription, getPlanName } from '@/lib/billing-i18n';
 import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import { fetchTouristVipBenefitKeys } from '@/lib/billing/tourist-vip-benefits';
 import {
     buildBillingFaqJsonLd,
     buildPricingBreadcrumbs,
@@ -65,7 +66,9 @@ applyCacheHeaders({
     tags: [CACHE_TAG_PRICING]
 });
 
+const touristVipBenefitsPromise = fetchTouristVipBenefitKeys();
 const plans = await fetchAudiencePlans({ audience: 'host' });
+const touristVipBenefits = await touristVipBenefitsPromise;
 const { copyRoot, faqs, hasComparison, priceMode } = resolvePricingPageContent({
     audience: 'owner',
     plans,
@@ -140,6 +143,7 @@ const headingMain = headingWords.join(' ');
         locale={locale}
         audience="owner"
         plans={plans}
+        touristVipBenefits={touristVipBenefits}
         intlLocale={intlLocale}
         copyRoot={copyRoot}
         faqs={faqs}

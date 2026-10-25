@@ -22,9 +22,48 @@
     margin: 0;
     color: var(--core-muted-foreground);
 }
-.danger {
-    composes: dangerCompact from "./AccountButton.module.css";
+.open {
+    composes: danger from "./AccountButton.module.css";
+    align-self: flex-start;
 }
-.secondary {
-    composes: secondaryCompact from "./AccountButton.module.css";
+.confirm {
+    composes: dangerSolid from "./AccountButton.module.css";
+}
+.back {
+    composes: ghost from "./AccountButton.module.css";
+}
+.retry {
+    composes: secondary from "./AccountButton.module.css";
+}
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+}
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background-color: var(--surface-warm);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--destructive);
+    border-radius: var(--radius-md, 12px);
+    color: var(--core-foreground);
+}
+.panel p,
+.panel h4 {
+    margin: 0;
+    line-height: 1.5;
+}
+.panel ul {
+    width: 100%;
+    margin: 0;
+    padding-inline-start: 1.25rem;
+}
+.heading {
+    font-size: 1rem;
+    font-weight: 600;
 }

@@ -1,6 +1,7 @@
 /** Pure URL, rejection, vertical, and date helpers for the signup checkout. */
 import {
     type BillingCycle,
+    isManualPaymentOnlyVertical,
     SignupNoticeResponseSchema,
     type StartSubscriptionRejectionReason,
     StartSubscriptionRequestSchema,
@@ -42,6 +43,7 @@ export type SignupTrialNotice =
 /** Tourist VIP return consequence resolved before the signup confirmation. */
 export type SignupTouristVipNotice =
     | { readonly kind: 'CANCELLED_ON_RETURN' }
+    | { readonly kind: 'CANCELLED_ON_ACTIVATION'; readonly paidUntil: string | null }
     | { readonly kind: 'UNKNOWN' };
 
 /**
@@ -154,7 +156,20 @@ export function resolveSignupTouristVipNotice({
     const parsed = SignupNoticeResponseSchema.safeParse(result.data);
     if (!parsed.success) return { kind: 'UNKNOWN' };
     if (parsed.data.touristVip.status === 'NOT_AFFECTED') return null;
+    if (parsed.data.touristVip.status === 'CANCELLED_ON_ACTIVATION') {
+        return { kind: 'CANCELLED_ON_ACTIVATION', paidUntil: parsed.data.touristVip.paidUntil };
+    }
     return { kind: 'CANCELLED_ON_RETURN' };
+}
+
+/** Whether a readable signup notice identifies a vertical that uses manual payment. */
+export function resolveSignupManualPaymentOnly({ result }: { readonly result: unknown }): boolean {
+    if (!result || typeof result !== 'object' || !('ok' in result) || result.ok !== true) {
+        return false;
+    }
+    if (!('data' in result)) return false;
+    const parsed = SignupNoticeResponseSchema.safeParse(result.data);
+    return parsed.success && isManualPaymentOnlyVertical({ vertical: parsed.data.vertical });
 }
 
 /** Query parameter that identifies the billing option selected for signup. */
@@ -229,6 +244,11 @@ const REJECTION_BY_REASON: Record<
     PROVIDER_REJECTED: {
         messageKey: 'billing.checkout.signup.rejection.providerRejected',
         retryable: true,
+        showPlansLink: false
+    },
+    PARTNER_MANUAL_ONLY: {
+        messageKey: 'billing.checkout.signup.rejection.partnerManualOnly',
+        retryable: false,
         showPlansLink: false
     }
 };

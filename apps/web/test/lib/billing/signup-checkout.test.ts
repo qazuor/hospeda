@@ -8,6 +8,7 @@ import {
     isDisplayableCheckoutUrl,
     parseSignupOptionId,
     resolveDeclaredPayerEmail,
+    resolveSignupManualPaymentOnly,
     resolveSignupPendingAttempt,
     resolveSignupPlanName,
     resolveSignupPlanSummary,
@@ -285,6 +286,23 @@ describe('TEST:1623:6 resolveSignupTouristVipNotice', () => {
             { kind: 'CANCELLED_ON_RETURN' }
         ],
         [
+            'cancelled on activation',
+            {
+                ok: true,
+                data: {
+                    pendingAttempt: null,
+                    plan: { name: 'Owner', amount: 100000, currency: 'ARS', cycle: 'monthly' },
+                    vertical: 'accommodation',
+                    touristVip: {
+                        status: 'CANCELLED_ON_ACTIVATION',
+                        paidUntil: '2026-11-01T12:00:00.000Z'
+                    },
+                    trial: { status: 'NOT_RUNNING' }
+                }
+            },
+            { kind: 'CANCELLED_ON_ACTIVATION', paidUntil: '2026-11-01T12:00:00.000Z' }
+        ],
+        [
             'unaffected',
             {
                 ok: true,
@@ -319,10 +337,47 @@ describe('TEST:1623:6 resolveSignupTouristVipNotice', () => {
         expect(resolveSignupTouristVipNotice({ result })).toEqual(expected);
     });
 
+    it('preserves an unknown paid-through date', () => {
+        const data = {
+            pendingAttempt: null,
+            plan: { name: 'Owner', amount: 100000, currency: 'ARS', cycle: 'monthly' },
+            vertical: 'accommodation',
+            touristVip: { status: 'CANCELLED_ON_ACTIVATION', paidUntil: null },
+            trial: { status: 'NOT_RUNNING' }
+        };
+        expect(resolveSignupTouristVipNotice({ result: { ok: true, data } })).toEqual({
+            kind: 'CANCELLED_ON_ACTIVATION',
+            paidUntil: null
+        });
+    });
+
     it('fails toward a warning when data is missing', () => {
         expect(resolveSignupTouristVipNotice({ result: { ok: true } })).toEqual({
             kind: 'UNKNOWN'
         });
+    });
+});
+
+describe('TEST:1739:6 resolveSignupManualPaymentOnly', () => {
+    const data = {
+        pendingAttempt: null,
+        plan: { name: 'Partner Gold', amount: 3000000, currency: 'ARS', cycle: 'monthly' },
+        vertical: 'partner',
+        touristVip: { status: 'NOT_AFFECTED' },
+        trial: { status: 'NOT_RUNNING' }
+    };
+
+    it('returns true only for a parsed manual-payment-only notice', () => {
+        expect(resolveSignupManualPaymentOnly({ result: { ok: true, data } })).toBe(true);
+        expect(
+            resolveSignupManualPaymentOnly({
+                result: { ok: true, data: { ...data, vertical: 'tourist' } }
+            })
+        ).toBe(false);
+        expect(resolveSignupManualPaymentOnly({ result: { ok: false } })).toBe(false);
+        expect(
+            resolveSignupManualPaymentOnly({ result: { ok: true, data: { vertical: 'partner' } } })
+        ).toBe(false);
     });
 });
 

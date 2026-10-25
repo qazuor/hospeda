@@ -37,7 +37,7 @@ export interface ViewModeActions {
     /** Called when the "Volver" button is clicked. */
     readonly onBack: () => void;
     /** Called when the "Editar" button is clicked. */
-    readonly onEdit: () => void;
+    readonly onEdit?: () => void;
 }
 
 /**
@@ -206,15 +206,17 @@ function ViewActions({ actions }: { readonly actions: ViewModeActions }) {
             >
                 <span className="hidden sm:inline">Volver</span>
             </Button>
-            <Button
-                variant="default"
-                size="sm"
-                onClick={actions.onEdit}
-                leftIcon={<EditIcon className="h-4 w-4" />}
-                aria-label="Editar entidad"
-            >
-                <span className="hidden sm:inline">Editar</span>
-            </Button>
+            {actions.onEdit ? (
+                <Button
+                    variant="default"
+                    size="sm"
+                    onClick={actions.onEdit}
+                    leftIcon={<EditIcon className="h-4 w-4" />}
+                    aria-label="Editar entidad"
+                >
+                    <span className="hidden sm:inline">Editar</span>
+                </Button>
+            ) : null}
         </>
     );
 }

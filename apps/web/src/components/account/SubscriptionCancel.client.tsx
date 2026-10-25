@@ -20,17 +20,30 @@ type State =
     | 'done'
     | 'actError'
     | 'stateChanged';
+/** Props of the inline cancellation flow. */
 export interface SubscriptionCancelProps {
+    /** The subscription being cancelled. */
     readonly subscriptionId: string;
+    /** Page locale. */
     readonly locale: SupportedLocale;
+    /** The localized plan name shown on the card. */
+    readonly planName: string;
+    /** The localized vertical label shown on the card. */
+    readonly verticalLabel: string;
 }
 
 /** Inline cancellation flow; confirmation presents consequences and fails closed without a valid preview. */
-export function SubscriptionCancel({ subscriptionId, locale }: SubscriptionCancelProps) {
+export function SubscriptionCancel({
+    subscriptionId,
+    locale,
+    planName,
+    verticalLabel
+}: SubscriptionCancelProps) {
     const { t } = createTranslations(locale);
     const [state, setState] = useState<State>('idle');
     const [preview, setPreview] = useState<Preview | null>(null);
     const [endDate, setEndDate] = useState<string | null>(null);
+    const headingId = `self-cancel-heading-${subscriptionId}`;
 
     async function loadPreview() {
         setState('loading');
@@ -89,7 +102,7 @@ export function SubscriptionCancel({ subscriptionId, locale }: SubscriptionCance
         return (
             <button
                 type="button"
-                className={styles.danger}
+                className={styles.open}
                 data-testid="self-cancel-open"
                 onClick={() => void loadPreview()}
             >
@@ -103,18 +116,22 @@ export function SubscriptionCancel({ subscriptionId, locale }: SubscriptionCance
                 aria-busy="true"
             >
                 <p>{t('account.subscription.cancel.pending')}</p>
-                <button
-                    type="button"
-                    disabled
-                >
-                    {t('account.subscription.cancel.confirm')}
-                </button>
-                <button
-                    type="button"
-                    disabled
-                >
-                    {t('account.subscription.cancel.back')}
-                </button>
+                <div className={styles.actions}>
+                    <button
+                        type="button"
+                        className={styles.confirm}
+                        disabled
+                    >
+                        {t('account.subscription.cancel.confirm')}
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.back}
+                        disabled
+                    >
+                        {t('account.subscription.cancel.back')}
+                    </button>
+                </div>
             </div>
         );
     if (state === 'done')
@@ -139,6 +156,7 @@ export function SubscriptionCancel({ subscriptionId, locale }: SubscriptionCance
                 <p>{t('account.subscription.cancel.actError')}</p>
                 <button
                     type="button"
+                    className={styles.confirm}
                     onClick={() => void confirmCancellation()}
                 >
                     {t('account.subscription.cancel.retry')}
@@ -152,24 +170,40 @@ export function SubscriptionCancel({ subscriptionId, locale }: SubscriptionCance
                 className={styles.flow}
             >
                 <p>{t('account.subscription.cancel.loadError')}</p>
-                <button
-                    type="button"
-                    onClick={() => void loadPreview()}
-                >
-                    {t('account.subscription.cancel.retry')}
-                </button>
-                <button
-                    type="button"
-                    className={styles.secondary}
-                    onClick={() => setState('idle')}
-                >
-                    {t('account.subscription.cancel.back')}
-                </button>
+                <div className={styles.actions}>
+                    <button
+                        type="button"
+                        className={styles.retry}
+                        onClick={() => void loadPreview()}
+                    >
+                        {t('account.subscription.cancel.retry')}
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.back}
+                        onClick={() => setState('idle')}
+                    >
+                        {t('account.subscription.cancel.back')}
+                    </button>
+                </div>
             </div>
         );
     if (!preview) return null;
     return (
-        <section className={styles.flow}>
+        <section
+            className={styles.panel}
+            aria-labelledby={headingId}
+        >
+            <h4
+                id={headingId}
+                className={styles.heading}
+                data-testid="self-cancel-heading"
+            >
+                {t('account.subscription.cancel.heading', undefined, {
+                    plan: planName,
+                    vertical: verticalLabel
+                })}
+            </h4>
             <p data-testid="self-cancel-end">{endLine(preview)}</p>
             <p>{t('account.subscription.cancel.noMoreCharges')}</p>
             {preview.addons.length > 0 && (
@@ -208,25 +242,28 @@ export function SubscriptionCancel({ subscriptionId, locale }: SubscriptionCance
                     <p>{t('account.subscription.cancel.addonsComeBack')}</p>
                 </>
             )}
-            {preview.origin === 'CANCEL_SCHEDULED' ? (
-                <p>{endLine(preview)}</p>
-            ) : (
+            <div className={styles.actions}>
+                {preview.origin === 'CANCEL_SCHEDULED' ? (
+                    <p>{endLine(preview)}</p>
+                ) : (
+                    <button
+                        type="button"
+                        className={styles.confirm}
+                        data-testid="self-cancel-confirm"
+                        aria-describedby={headingId}
+                        onClick={() => void confirmCancellation()}
+                    >
+                        {t('account.subscription.cancel.confirm')}
+                    </button>
+                )}
                 <button
                     type="button"
-                    className={styles.danger}
-                    data-testid="self-cancel-confirm"
-                    onClick={() => void confirmCancellation()}
+                    className={styles.back}
+                    onClick={() => setState('idle')}
                 >
-                    {t('account.subscription.cancel.confirm')}
+                    {t('account.subscription.cancel.back')}
                 </button>
-            )}
-            <button
-                type="button"
-                className={styles.secondary}
-                onClick={() => setState('idle')}
-            >
-                {t('account.subscription.cancel.back')}
-            </button>
+            </div>
         </section>
     );
 }

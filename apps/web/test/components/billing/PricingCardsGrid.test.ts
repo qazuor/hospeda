@@ -150,13 +150,13 @@ describe('PricingCardsGrid.astro', () => {
             // `getDisplayFeatures({ keys: plan.entitlements })` renders every
             // tier as a full list under a header promising only differences.
             expect(viewSrc).toContain(
-                'getDisplayFeatures({ keys: delta.addedEntitlements, audience, t })'
+                'getDisplayFeatures({ keys: displayEntitlements, audience, t })'
             );
             expect(viewSrc).not.toContain('getDisplayFeatures({ keys: plan.entitlements');
         });
 
         it('renders limit lines from the delta’s limitChanges', () => {
-            expect(viewSrc).toContain('delta.limitChanges.map(');
+            expect(viewSrc).toContain('delta.limitChanges\n            .filter(');
         });
 
         it('requires `limits` on the plan shape, so a payload without caps cannot compile', () => {
@@ -166,14 +166,27 @@ describe('PricingCardsGrid.astro', () => {
         });
 
         it('carries no hand-written per-plan feature or delta list', () => {
-            // AC-11. Any literal plan slug in either file would be the start of
-            // exactly the curated table this feature exists to avoid. Both are
-            // swept: the build moved out of the component, so checking only the
-            // component would leave the curated list a file away.
-            for (const slug of ['owner-basico', 'owner-pro', 'owner-premium', 'tourist-vip']) {
+            // AC-11. Any occurrence of a plan slug in either file would be the
+            // start of exactly the curated table this feature avoids. Both
+            // files are swept because the build moved out of the component.
+            for (const slug of ['owner-basico', 'owner-pro', 'owner-premium']) {
                 expect(src, `component / ${slug}`).not.toContain(slug);
                 expect(viewSrc, `view builder / ${slug}`).not.toContain(slug);
             }
+
+            // This substring now appears in the required catalogue import and
+            // grouped benefit id. Exempt only those references; keep the
+            // original substring prohibition for every other occurrence.
+            const componentWithoutVipImport = src.replace('@/lib/billing/tourist-vip-benefits', '');
+            const viewWithoutVipReferences = viewSrc
+                .replace('@/lib/billing/tourist-vip-benefits', '')
+                .replace("'group-tourist-vip'", '');
+            expect(componentWithoutVipImport, 'component / tourist-vip').not.toContain(
+                'tourist-vip'
+            );
+            expect(viewWithoutVipReferences, 'view builder / tourist-vip').not.toContain(
+                'tourist-vip'
+            );
         });
     });
 

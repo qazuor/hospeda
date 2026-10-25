@@ -1,8 +1,9 @@
 .container {
     display: grid;
-    justify-items: start;
+    justify-items: center;
     gap: var(--space-3);
     margin-block-start: var(--space-6);
+    text-align: center;
 }
 
 .primary {
