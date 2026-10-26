@@ -667,26 +667,11 @@ export class AccommodationService extends BaseCrudService<
             extraConditions.push(sql`(${accommodations.price}->>'price')::numeric <= ${maxPrice}`);
         }
 
-        const result = await super._executeAdminSearch({
+        return super._executeAdminSearch({
             ...rest,
             entityFilters: simpleFilters,
             extraConditions
         });
-
-        if (!result?.items) return result;
-
-        // SPEC-204 T-024: `adminList` returns `_executeAdminSearch` output verbatim —
-        // unlike `list()`/`search()`, it never routes through `_afterList`/`_afterSearch`,
-        // so the relational media read has to happen here. Without it the admin list
-        // ships the raw `accommodations.media` JSONB, whose photo keys were stripped by
-        // the `021-accommodation-media-strip-blob-photos` data migration.
-        const items = await attachComposedMediaList({
-            items: projectAccommodationCityDestinationList(result.items),
-            mediaModel: this._accommodationMediaModel,
-            tx: params.ctx?.tx
-        });
-
-        return { ...result, items };
     }
 
     /**

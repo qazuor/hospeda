@@ -336,6 +336,24 @@ export abstract class BaseCrudHooks<
     }
 
     /**
+     * Lifecycle hook executed after an admin list has been fetched.
+     * By default, admin results use the same projection as list results.
+     * Override when an admin list needs a distinct projection.
+     *
+     * @param result - The paginated admin list.
+     * @param actor - The actor performing the operation.
+     * @param ctx - Service execution context carrying transaction and hookState.
+     * @returns The projected paginated admin list.
+     */
+    protected async _afterAdminList(
+        result: PaginatedListOutput<TEntity>,
+        actor: Actor,
+        ctx: ServiceContext
+    ): Promise<PaginatedListOutput<TEntity>> {
+        return this._afterList(result, actor, ctx);
+    }
+
+    /**
      * Lifecycle hook executed before counting entities.
      * Override to transform filter parameters before the count query.
      *
