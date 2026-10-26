@@ -5,7 +5,7 @@ import { gastronomyEvents } from '../../schemas/venue/venue_event.dbschema.ts';
 /**
  * VenueEventModel — DB access for a venue's own agenda (HOS-1042).
  *
- * Thin `BaseModelImpl` wrapper, exactly like `GastronomyMenuSectionModel`.
+ * Thin `BaseModelImpl` wrapper, exactly like `VenueMenuSectionModel`.
  * Ordering (`display_order ASC`) is applied by the caller, which is the same
  * convention the FAQ and menu models document.
  *

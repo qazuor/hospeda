@@ -7,7 +7,7 @@
  * contact fields at once (see `ContactInfoSchema` in `@repo/schemas`).
  * `BaseModelImpl.update()` replaces a JSONB column wholesale unless the model
  * opts the column into merge semantics via `mergeableJsonbColumns` — before
- * this fix `GastronomyModel` never did, so a patch of
+ * this fix `VenueModel` never did, so a patch of
  * `{ contactInfo: { mobilePhone: '...' } }` would have silently deleted every
  * other stored contact field. The table held ZERO rows in production when this
  * shipped — soft-deleted ones included — so there was nothing to backfill
@@ -22,7 +22,7 @@
  * object — mirroring `test/models/user.model.settings-merge.test.ts`.
  *
  * Mutation checks, both measured against this file:
- *   - removing `contactInfo` from `GastronomyModel.mergeableJsonbColumns` turns
+ *   - removing `contactInfo` from `VenueModel.mergeableJsonbColumns` turns
  *     8 of the 9 tests red. The ninth is the negative control — "still
  *     replaces a non-mergeable column" — which asserts the UNCHANGED
  *     replacement path and is green by design; a header claiming "every
@@ -50,8 +50,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as clientModule from '../../../src/client';
 import { setDb } from '../../../src/client';
-import { GastronomyModel } from '../../../src/models/venue/gastronomy.model';
-import { gastronomies } from '../../../src/schemas/venue/gastronomy.dbschema';
+import { VenueModel } from '../../../src/models/venue/venue.model';
+import { gastronomies } from '../../../src/schemas/venue/venue.dbschema';
 import type { DrizzleClient } from '../../../src/types';
 import { buildMergeSetClause } from '../../../src/utils/jsonb-merge';
 
@@ -127,7 +127,7 @@ function sqlShape(fragment: unknown): string[] {
     });
 }
 
-describe('GastronomyModel — `contactInfo` is a mergeable JSONB column', () => {
+describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         setDb(null as unknown as DrizzleClient);
@@ -139,7 +139,7 @@ describe('GastronomyModel — `contactInfo` is a mergeable JSONB column', () => 
         // may legitimately grow (owner decision) without this test needing to
         // be touched. What must never regress is `contactInfo`'s presence.
         const mergeable = (
-            new GastronomyModel() as unknown as { mergeableJsonbColumns: readonly string[] }
+            new VenueModel() as unknown as { mergeableJsonbColumns: readonly string[] }
         ).mergeableJsonbColumns;
 
         expect([...mergeable]).toContain('contactInfo');
@@ -154,7 +154,7 @@ describe('GastronomyModel — `contactInfo` is a mergeable JSONB column', () => 
         setDb({} as unknown as DrizzleClient);
 
         // Act
-        await new GastronomyModel().update({ id: 'gastronomy-1' }, { contactInfo: PHONE_PATCH });
+        await new VenueModel().update({ id: 'gastronomy-1' }, { contactInfo: PHONE_PATCH });
 
         // Assert — the merge path is the one that locks the row first.
         expect(withTransaction).toHaveBeenCalledOnce();
@@ -188,10 +188,10 @@ describe('GastronomyModel — `contactInfo` is a mergeable JSONB column', () => 
         setDb(buildMockPlainDb() as unknown as DrizzleClient);
 
         // Act
-        await new GastronomyModel().update({ id: 'gastronomy-1' }, {
+        await new VenueModel().update({ id: 'gastronomy-1' }, {
             contactInfo: PHONE_PATCH,
             updatedById: ACTOR_ID
-        } as unknown as Parameters<GastronomyModel['update']>[1]);
+        } as unknown as Parameters<VenueModel['update']>[1]);
 
         // Assert — the merge path, not the replacement path.
         expect(withTransaction).toHaveBeenCalledOnce();
@@ -212,7 +212,7 @@ describe('GastronomyModel — `contactInfo` is a mergeable JSONB column', () => 
         setDb({} as unknown as DrizzleClient);
 
         // Act
-        await new GastronomyModel().update({ id: 'gastronomy-1' }, { contactInfo: PHONE_PATCH });
+        await new VenueModel().update({ id: 'gastronomy-1' }, { contactInfo: PHONE_PATCH });
 
         // Assert — a plain object here would wipe every other contact field.
         const setPayload = innerTx.set.mock.calls[0]?.[0] as Record<string, unknown>;
@@ -228,7 +228,7 @@ describe('GastronomyModel — `contactInfo` is a mergeable JSONB column', () => 
     it('serialises ONLY the sent key — sibling contact fields are never named, so they survive the `||` merge', () => {
         // Arrange: the real `gastronomies` table and the real mergeable list.
         const mergeable = (
-            new GastronomyModel() as unknown as { mergeableJsonbColumns: readonly string[] }
+            new VenueModel() as unknown as { mergeableJsonbColumns: readonly string[] }
         ).mergeableJsonbColumns;
 
         // Act
@@ -262,7 +262,7 @@ describe('GastronomyModel — `contactInfo` is a mergeable JSONB column', () => 
         //     `{..., "mobilePhone": "OLD"}`. The PATCH silently does nothing.
         // The assertion below kills both; only this comment was wrong.
         const mergeable = (
-            new GastronomyModel() as unknown as { mergeableJsonbColumns: readonly string[] }
+            new VenueModel() as unknown as { mergeableJsonbColumns: readonly string[] }
         ).mergeableJsonbColumns;
 
         const result = buildMergeSetClause({ contactInfo: PHONE_PATCH }, gastronomies, mergeable);
@@ -278,7 +278,7 @@ describe('GastronomyModel — `contactInfo` is a mergeable JSONB column', () => 
 
     it('carries an explicit per-key `null` through, so a contact field stays clearable', () => {
         const mergeable = (
-            new GastronomyModel() as unknown as { mergeableJsonbColumns: readonly string[] }
+            new VenueModel() as unknown as { mergeableJsonbColumns: readonly string[] }
         ).mergeableJsonbColumns;
 
         const result = buildMergeSetClause(
@@ -298,9 +298,9 @@ describe('GastronomyModel — `contactInfo` is a mergeable JSONB column', () => 
         );
         setDb({} as unknown as DrizzleClient);
 
-        await new GastronomyModel().update({ id: 'gastronomy-1' }, {
+        await new VenueModel().update({ id: 'gastronomy-1' }, {
             contactInfo: null
-        } as unknown as Parameters<GastronomyModel['update']>[1]);
+        } as unknown as Parameters<VenueModel['update']>[1]);
 
         const setPayload = innerTx.set.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(setPayload?.contactInfo).toBeNull();
@@ -314,9 +314,9 @@ describe('GastronomyModel — `contactInfo` is a mergeable JSONB column', () => 
 
         // Act — `openingHours` is NOT declared mergeable on this model (HOS-1262 moved
         // `socialNetworks` into the mergeable set, so it can no longer be the control).
-        await new GastronomyModel().update({ id: 'gastronomy-1' }, {
+        await new VenueModel().update({ id: 'gastronomy-1' }, {
             openingHours: { monday: [] }
-        } as unknown as Parameters<GastronomyModel['update']>[1]);
+        } as unknown as Parameters<VenueModel['update']>[1]);
 
         // Assert
         expect(withTransaction).not.toHaveBeenCalled();

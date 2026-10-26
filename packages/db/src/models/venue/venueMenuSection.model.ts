@@ -6,7 +6,7 @@ import { gastronomyMenuSections } from '../../schemas/venue/venue_menu_section.d
  * VenueMenuSectionModel — DB access for the course headings of a venue's
  * menu (HOS-895).
  *
- * Thin `BaseModelImpl` wrapper, exactly like `GastronomyFaqModel`. Ordering
+ * Thin `BaseModelImpl` wrapper, exactly like `VenueFaqModel`. Ordering
  * (`display_order ASC`) is applied by the caller, which is the same convention
  * the FAQ model documents.
  *

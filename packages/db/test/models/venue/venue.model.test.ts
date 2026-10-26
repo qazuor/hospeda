@@ -1,5 +1,5 @@
 /**
- * Unit tests for `GastronomyModel.findIdsByOwnerId` (HOS-734).
+ * Unit tests for `VenueModel.findIdsByOwnerId` (HOS-734).
  *
  * Mirrors `AccommodationModel.findIdsByOwnerId`: resolves the IDs of every
  * non-deleted gastronomy listing owned by a given user, used by
@@ -12,7 +12,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../../src/client';
-import { GastronomyModel } from '../../../src/models/venue/gastronomy.model';
+import { VenueModel } from '../../../src/models/venue/venue.model';
 import * as logger from '../../../src/utils/logger';
 
 vi.mock('../../../src/utils/logger', () => ({
@@ -20,14 +20,14 @@ vi.mock('../../../src/utils/logger', () => ({
     logError: vi.fn()
 }));
 
-describe('GastronomyModel.findIdsByOwnerId', () => {
-    let model: GastronomyModel;
+describe('VenueModel.findIdsByOwnerId', () => {
+    let model: VenueModel;
     let getDb: ReturnType<typeof vi.fn>;
     let logQuery: ReturnType<typeof vi.fn>;
     let logError: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-        model = new GastronomyModel();
+        model = new VenueModel();
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();

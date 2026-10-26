@@ -23,9 +23,9 @@
  * that was not already there. `test/db-utils-barrel-stays-schema-free.test.ts`
  * is the guard that keeps the invariant from being broken silently again.
  *
- * ## Why these live here and not in `GastronomyModel.search`
+ * ## Why these live here and not in `VenueModel.search`
  *
- * `GastronomyService._executeSearch` does not call `GastronomyModel.search` — it
+ * `GastronomyService._executeSearch` does not call `VenueModel.search` — it
  * calls the base `findAllWithRelations` (to load `destination`/`owner` for the
  * card transform) and `count`. Both take an `additionalConditions: SQL[]`
  * escape hatch, so the service composes the clause rather than the model

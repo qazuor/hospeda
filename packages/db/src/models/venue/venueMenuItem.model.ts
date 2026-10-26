@@ -6,7 +6,7 @@ import { gastronomyMenuItems } from '../../schemas/venue/venue_menu_item.dbschem
  * VenueMenuItemModel — DB access for the dishes on a venue's menu
  * (HOS-895).
  *
- * Thin `BaseModelImpl` wrapper. See `GastronomyMenuSectionModel` for why there
+ * Thin `BaseModelImpl` wrapper. See `VenueMenuSectionModel` for why there
  * is no soft delete on this pair of tables.
  */
 export class VenueMenuItemModel extends BaseModelImpl<VenueMenuItem> {

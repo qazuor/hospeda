@@ -81,7 +81,7 @@ function describeSql(clause: unknown): string {
     return `${query.sql} -- ${JSON.stringify(query.params)}`;
 }
 
-describe('GastronomyDailySpecialModel.findValidOn', () => {
+describe('VenueDailySpecialModel.findValidOn', () => {
     it('filters on BOTH bounds of the window, in the RIGHT direction', () => {
         // The operators are the assertion, not the column names. A predicate
         // that merely MENTIONS both columns is satisfied by the inverted pair

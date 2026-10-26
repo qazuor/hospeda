@@ -4,9 +4,9 @@ import { experienceReviews } from '../../schemas/experience/experience_review.db
 
 /**
  * ExperienceReviewModel — DB access for experience reviews (SPEC-240).
- * Mirrors GastronomyReviewModel: extends BaseModelImpl for standard CRUD.
+ * Mirrors VenueReviewModel: extends BaseModelImpl for standard CRUD.
  * Custom relation queries (with user/experience) should be added here as the
- * service layer grows — same pattern as GastronomyReviewModel.
+ * service layer grows — same pattern as VenueReviewModel.
  */
 export class ExperienceReviewModel extends BaseModelImpl<ExperienceReview> {
     protected table = experienceReviews;

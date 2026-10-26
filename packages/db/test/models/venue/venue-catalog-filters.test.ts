@@ -23,10 +23,10 @@
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 import {
-    buildGastronomyAmenityIntersectionClause,
-    buildGastronomyCatalogConditions,
-    buildGastronomyFeatureIntersectionClause
-} from '../../../src/models/venue/gastronomy-catalog-filters';
+    buildVenueAmenityIntersectionClause,
+    buildVenueCatalogConditions,
+    buildVenueFeatureIntersectionClause
+} from '../../../src/models/venue/venue-catalog-filters';
 
 const dialect = new PgDialect();
 
@@ -35,16 +35,16 @@ const compile = (clause: Parameters<typeof dialect.sqlToQuery>[0]) => dialect.sq
 const GLUTEN_FREE_ID = '11111111-1111-4111-8111-111111111111';
 const LACTOSE_FREE_ID = '22222222-2222-4222-8222-222222222222';
 
-describe('buildGastronomyFeatureIntersectionClause', () => {
+describe('buildVenueFeatureIntersectionClause', () => {
     it('correlates the subquery against the gastronomies table', () => {
-        const { sql } = compile(buildGastronomyFeatureIntersectionClause([GLUTEN_FREE_ID]));
+        const { sql } = compile(buildVenueFeatureIntersectionClause([GLUTEN_FREE_ID]));
 
         expect(sql).toContain('"gastronomies"."id" IN (');
         expect(sql).toContain('FROM "r_gastronomy_feature"');
     });
 
     it('reads the junction columns as raw identifiers, not outer-table aliases', () => {
-        const { sql } = compile(buildGastronomyFeatureIntersectionClause([GLUTEN_FREE_ID]));
+        const { sql } = compile(buildVenueFeatureIntersectionClause([GLUTEN_FREE_ID]));
 
         expect(sql).toContain('"r_gastronomy_feature"."gastronomy_id"');
         expect(sql).toContain('"r_gastronomy_feature"."feature_id"');
@@ -55,7 +55,7 @@ describe('buildGastronomyFeatureIntersectionClause', () => {
 
     it('requires ALL requested features — HAVING COUNT equals the id count', () => {
         const { sql, params } = compile(
-            buildGastronomyFeatureIntersectionClause([GLUTEN_FREE_ID, LACTOSE_FREE_ID])
+            buildVenueFeatureIntersectionClause([GLUTEN_FREE_ID, LACTOSE_FREE_ID])
         );
 
         expect(sql).toContain('HAVING COUNT(DISTINCT "r_gastronomy_feature"."feature_id") =');
@@ -64,17 +64,17 @@ describe('buildGastronomyFeatureIntersectionClause', () => {
     });
 
     it('binds the ids as parameters instead of interpolating them', () => {
-        const { sql, params } = compile(buildGastronomyFeatureIntersectionClause([GLUTEN_FREE_ID]));
+        const { sql, params } = compile(buildVenueFeatureIntersectionClause([GLUTEN_FREE_ID]));
 
         expect(sql).not.toContain(GLUTEN_FREE_ID);
         expect(params).toContain(GLUTEN_FREE_ID);
     });
 });
 
-describe('buildGastronomyAmenityIntersectionClause', () => {
+describe('buildVenueAmenityIntersectionClause', () => {
     it('targets the amenity junction with the same intersection semantics', () => {
         const { sql, params } = compile(
-            buildGastronomyAmenityIntersectionClause([GLUTEN_FREE_ID, LACTOSE_FREE_ID])
+            buildVenueAmenityIntersectionClause([GLUTEN_FREE_ID, LACTOSE_FREE_ID])
         );
 
         expect(sql).toContain('FROM "r_gastronomy_amenity"');
@@ -84,22 +84,22 @@ describe('buildGastronomyAmenityIntersectionClause', () => {
     });
 });
 
-describe('buildGastronomyCatalogConditions', () => {
+describe('buildVenueCatalogConditions', () => {
     it('returns nothing when neither filter is present', () => {
-        expect(buildGastronomyCatalogConditions({})).toEqual([]);
+        expect(buildVenueCatalogConditions({})).toEqual([]);
     });
 
     it('treats an empty array as "no filter", not as "match nothing"', () => {
         // A stray `?features=` must not compile to `HAVING COUNT(...) = 0`, which
         // matches no row at all and would blank the listing.
-        expect(buildGastronomyCatalogConditions({ features: [], amenities: [] })).toEqual([]);
+        expect(buildVenueCatalogConditions({ features: [], amenities: [] })).toEqual([]);
     });
 
     it('emits one condition per active filter', () => {
-        expect(buildGastronomyCatalogConditions({ features: [GLUTEN_FREE_ID] })).toHaveLength(1);
-        expect(buildGastronomyCatalogConditions({ amenities: [GLUTEN_FREE_ID] })).toHaveLength(1);
+        expect(buildVenueCatalogConditions({ features: [GLUTEN_FREE_ID] })).toHaveLength(1);
+        expect(buildVenueCatalogConditions({ amenities: [GLUTEN_FREE_ID] })).toHaveLength(1);
         expect(
-            buildGastronomyCatalogConditions({
+            buildVenueCatalogConditions({
                 features: [GLUTEN_FREE_ID],
                 amenities: [LACTOSE_FREE_ID]
             })
@@ -107,7 +107,7 @@ describe('buildGastronomyCatalogConditions', () => {
     });
 
     it('puts the amenity condition before the feature condition', () => {
-        const [first, second] = buildGastronomyCatalogConditions({
+        const [first, second] = buildVenueCatalogConditions({
             features: [GLUTEN_FREE_ID],
             amenities: [LACTOSE_FREE_ID]
         });

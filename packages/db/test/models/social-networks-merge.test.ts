@@ -31,14 +31,14 @@ import { ExperienceModel } from '../../src/models/experience/experience.model';
 import { PartnerModel } from '../../src/models/partner/partner.model';
 import { PostSponsorModel } from '../../src/models/post/postSponsor.model';
 import { UserModel } from '../../src/models/user/user.model';
-import { GastronomyModel } from '../../src/models/venue/gastronomy.model';
+import { VenueModel } from '../../src/models/venue/venue.model';
 import { accommodations } from '../../src/schemas/accommodation/accommodation.dbschema';
 import { eventOrganizers } from '../../src/schemas/event/event_organizer.dbschema';
 import { experiences } from '../../src/schemas/experience/experiences.dbschema';
 import { partners } from '../../src/schemas/partner/partner.dbschema';
 import { postSponsors } from '../../src/schemas/post/post_sponsor.dbschema';
 import { users } from '../../src/schemas/user/user.dbschema';
-import { gastronomies } from '../../src/schemas/venue/gastronomy.dbschema';
+import { gastronomies } from '../../src/schemas/venue/venue.dbschema';
 import type { DrizzleClient } from '../../src/types';
 import { buildMergeSetClause } from '../../src/utils/jsonb-merge';
 
@@ -61,8 +61,8 @@ const CASES: readonly Case[] = [
         dbColumn: 'social_networks'
     },
     {
-        label: 'GastronomyModel',
-        create: () => new GastronomyModel() as never,
+        label: 'VenueModel',
+        create: () => new VenueModel() as never,
         table: gastronomies,
         dbColumn: 'social_networks'
     },
