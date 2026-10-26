@@ -123,7 +123,7 @@ describe('DELETE /admin/event-organizers/:id/hard (hard delete)', () => {
         expect(await countRows(rowId)).toBe(0);
     });
 
-    // HOS-TODO-hard-delete-soft-deleted-noop: BaseCrudService.hardDelete returns
+    // HOS-1903: BaseCrudService.hardDelete returns
     // { count: 0 } for a soft-deleted row (base.crud.write.ts:322), so the route
     // answers success while the row stays in the table.
     it.fails('permanently deletes an event organizer that was soft-deleted first', async () => {

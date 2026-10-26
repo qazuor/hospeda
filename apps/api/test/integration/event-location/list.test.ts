@@ -81,7 +81,7 @@ describe('GET /event-locations (list)', () => {
         expect(body.data.pagination).toHaveProperty('pageSize');
     });
 
-    // HOS-TODO-event-location-pagesize: EventLocationService._executeSearch reads page/pageSize from
+    // HOS-1904: EventLocationService._executeSearch reads page/pageSize from
     // params (eventLocation.service.ts:327), but BaseCrudRead.search strips them first (base.crud.read.ts:408-411).
     // Same mechanism as HOS-1900. Drop `.fails` once fixed.
     it.fails('respects pageSize query parameter', async () => {

@@ -145,7 +145,7 @@ describe('Admin Sponsorship List Route', () => {
         expect(body.data.items[0].sponsorshipStatus).toBe('active');
     });
 
-    // HOS-TODO-sponsorship-admin-list-null-package: SponsorshipAdminSchema declares
+    // HOS-1905: SponsorshipAdminSchema declares
     // `package: SponsorshipPackageSchema.optional()` (sponsorship.access.schema.ts:122) but
     // sponsorships.package_id is nullable and the relation loader emits `package: null`
     // (sponsorship.service.ts:52), so response stripping throws and the list answers 500

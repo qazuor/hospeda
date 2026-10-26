@@ -142,7 +142,7 @@ describe('Destination Hierarchy API', () => {
             expect(body.data.children).toEqual([]);
         });
 
-        // HOS-TODO-destination-hierarchy-unknown-id: findChildren (destination.model.ts:785) never
+        // HOS-1906: findChildren (destination.model.ts:785) never
         // checks that the parent exists, so an unknown id answers 200 with an empty list, while
         // getBreadcrumb on the same id answers 404. error-contract.md puts existence at 404.
         it.fails('answers 404 for a destination that does not exist', async () => {
@@ -207,7 +207,7 @@ describe('Destination Hierarchy API', () => {
             expect(res.status).toBe(400);
         });
 
-        // HOS-TODO-destination-hierarchy-unknown-id: findDescendants (destination.model.ts:817) returns []
+        // HOS-1906: findDescendants (destination.model.ts:817) returns []
         // when the parent is missing instead of surfacing a 404.
         it.fails('answers 404 for a destination that does not exist', async () => {
             const res = await app.request(`${base}/${NONEXISTENT_UUID}/descendants`, { headers });
@@ -238,7 +238,7 @@ describe('Destination Hierarchy API', () => {
             expect(body.data.ancestors).toEqual([]);
         });
 
-        // HOS-TODO-destination-hierarchy-unknown-id: findAncestors (destination.model.ts:876) returns []
+        // HOS-1906: findAncestors (destination.model.ts:876) returns []
         // when the destination is missing instead of surfacing a 404.
         it.fails('answers 404 for a destination that does not exist', async () => {
             const res = await app.request(`${base}/${NONEXISTENT_UUID}/ancestors`, { headers });
