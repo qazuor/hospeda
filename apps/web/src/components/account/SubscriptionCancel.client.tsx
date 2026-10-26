@@ -1,3 +1,4 @@
+import { CancellationReasonEnum } from '@repo/schemas';
 import { useState } from 'react';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import {
@@ -43,6 +44,7 @@ export function SubscriptionCancel({
     const [state, setState] = useState<State>('idle');
     const [preview, setPreview] = useState<Preview | null>(null);
     const [endDate, setEndDate] = useState<string | null>(null);
+    const [reason, setReason] = useState<CancellationReasonEnum | ''>('');
     const headingId = `self-cancel-heading-${subscriptionId}`;
 
     async function loadPreview() {
@@ -65,7 +67,10 @@ export function SubscriptionCancel({
         if (!preview || preview.origin === 'CANCEL_SCHEDULED') return;
         setState('pending');
         try {
-            const result = await billingSubscriptionApi.cancel({ subscriptionId });
+            const result = await billingSubscriptionApi.cancel({
+                subscriptionId,
+                ...(reason ? { reason } : {})
+            });
             if (!result.ok) {
                 setState(result.error?.status === 409 ? 'stateChanged' : 'actError');
                 return;
@@ -206,6 +211,31 @@ export function SubscriptionCancel({
             </h4>
             <p data-testid="self-cancel-end">{endLine(preview)}</p>
             <p>{t('account.subscription.cancel.noMoreCharges')}</p>
+            {preview.origin === 'CANCEL_SCHEDULED' ? null : (
+                <div className={styles.reason}>
+                    <label htmlFor={`${headingId}-reason`}>
+                        {t('account.subscription.cancel.reason.label')}
+                    </label>
+                    <select
+                        id={`${headingId}-reason`}
+                        value={reason}
+                        onChange={(event) =>
+                            setReason(event.target.value as CancellationReasonEnum | '')
+                        }
+                        data-testid="self-cancel-reason"
+                    >
+                        <option value="">{t('account.subscription.cancel.reason.none')}</option>
+                        {Object.values(CancellationReasonEnum).map((value) => (
+                            <option
+                                key={value}
+                                value={value}
+                            >
+                                {t(`account.subscription.cancel.reason.${value}`)}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
             {preview.addons.length > 0 && (
                 <>
                     <h3>{t('account.subscription.cancel.addonsTitle')}</h3>
