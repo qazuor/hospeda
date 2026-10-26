@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { getDb, sponsorshipLevels, sponsorshipPackages, sponsorships } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { clearCache } from '../../../src/middlewares/cache';
@@ -9,7 +10,7 @@ import {
     ADMIN_GATE_PERMISSIONS,
     buildMockActorHeaders,
     createMockActorUser
-} from '../helpers/mock-admin-actor';
+} from '../helpers/mock-actor';
 
 // The mock-actor headers are only honoured when CI is unset.
 delete process.env.CI;
@@ -46,7 +47,7 @@ describe('Admin Sponsorship List Route', () => {
 
     beforeEach(async () => {
         actorId = (await createMockActorUser({ label: 'sponsorship-list' })).id;
-        const suffix = crypto.randomUUID().slice(0, 8);
+        const suffix = randomUUID().slice(0, 8);
         const db = getDb();
         const [level] = await db
             .insert(sponsorshipLevels)
@@ -77,7 +78,7 @@ describe('Admin Sponsorship List Route', () => {
                 slug: `sponsorship-${index}-${suffix}`,
                 sponsorUserId: actorId,
                 targetType: 'event' as const,
-                targetId: crypto.randomUUID(),
+                targetId: randomUUID(),
                 levelId,
                 packageId,
                 // One active row, the rest keep the column default (pending).
@@ -107,7 +108,7 @@ describe('Admin Sponsorship List Route', () => {
     }) =>
         app.request(`${base}${query}`, {
             headers: withActor
-                ? buildMockActorHeaders({ actorId, permissions })
+                ? buildMockActorHeaders({ actorId, permissions, role: RoleEnum.ADMIN })
                 : { 'user-agent': 'vitest' }
         });
 
@@ -145,22 +146,33 @@ describe('Admin Sponsorship List Route', () => {
         expect(body.data.items[0].sponsorshipStatus).toBe('active');
     });
 
+    const seedUnpackagedSponsorship = async (): Promise<void> => {
+        await getDb()
+            .insert(sponsorships)
+            .values({
+                slug: `no-package-${randomUUID().slice(0, 8)}`,
+                sponsorUserId: actorId,
+                targetType: 'event',
+                targetId: randomUUID(),
+                levelId,
+                startsAt: new Date()
+            });
+    };
+
     // HOS-1905: SponsorshipAdminSchema declares
     // `package: SponsorshipPackageSchema.optional()` (sponsorship.access.schema.ts:122) but
     // sponsorships.package_id is nullable and the relation loader emits `package: null`
     // (sponsorship.service.ts:52), so response stripping throws and the list answers 500
-    // (response-helpers.ts:201). Drop `.fails` once the schema accepts null.
-    it.fails('lists a sponsorship that has no package', async () => {
-        await getDb()
-            .insert(sponsorships)
-            .values({
-                slug: `no-package-${crypto.randomUUID().slice(0, 8)}`,
-                sponsorUserId: actorId,
-                targetType: 'event',
-                targetId: crypto.randomUUID(),
-                levelId,
-                startsAt: new Date()
-            });
+    // (response-helpers.ts:201).
+    it('currently answers 500 when a listed sponsorship has no package (HOS-1905)', async () => {
+        await seedUnpackagedSponsorship();
+        const res = await list({ query: '?page=1&pageSize=10', permissions: lister });
+        expect(res.status).toBe(500);
+    });
+
+    // Drop `.fails` (and the test above) once HOS-1905 is fixed.
+    it.fails('lists a sponsorship that has no package (HOS-1905)', async () => {
+        await seedUnpackagedSponsorship();
         const res = await list({ query: '?page=1&pageSize=10', permissions: lister });
         expect(res.status).toBe(200);
         const body = await res.json();
