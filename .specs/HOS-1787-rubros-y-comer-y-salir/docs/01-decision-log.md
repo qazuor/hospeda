@@ -741,7 +741,7 @@ invariante de `default-rules-equivalence.test.ts`; test de la regla presente.
 **Qué**: los ids de What's New con la palabra se renombran (DEC-FAC-032), incluidos los publicados, y una
 data-migration nueva (numerada después de la `0109`, que en prod todavía no corrió) reescribe
 `users.settings.onboarding.whatsNew.seenIds` del id viejo al nuevo, con el mismo patrón idempotente de la 0109. La
-cadena 0109 → nueva cubre `2026-09-05-commerce-…` → `…-gastronomy-…` → `…-venue-…` sin editar la 0109. Mismo trato
+cadena 0109 → nueva cubre `2026-09-05-<palabra retirada de G8>-…` → `…-gastronomy-…` → `…-venue-…` sin editar la 0109. Mismo trato
 para el mapa de progreso de tours (`tourProgress.ts`) si guarda el id del tour (verificar en la tarea).
 **Por qué**: el precedente 0109 existe justamente para renombrar sin que nadie vuelva a ver la entrada; con él,
 renombrar todo no le cuesta nada a ningún usuario.

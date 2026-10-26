@@ -179,7 +179,7 @@ espejo de vertical, ~17 guards de API, ~13 de web, 1 de admin, integración de D
 
 ## 9. Precedente: GUARD:G8
 
-`scripts/check-old-grouping-word.sh` (palabra retirada «commerce»): arma la palabra en partes para no
+`scripts/check-old-grouping-word.sh` (la palabra retirada de G8, que tampoco se escribe acá): arma la palabra en partes para no
 matchearse, escanea contenido y rutas trackeadas, **una** exención por ruta exacta (el PDR) y una
 allowlist de **exactamente tres** entradas con auto-chequeo (migraciones sin `extras/`,
 data-migrations del seed, specs de HOS-1352/3/4); reglas temporales `STEP6_RULE`/`CLOSURE_RULE`; paso

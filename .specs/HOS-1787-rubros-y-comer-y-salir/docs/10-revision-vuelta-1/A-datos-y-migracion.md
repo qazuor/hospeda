@@ -346,10 +346,10 @@ ledger)»); discovery A §6.
 - El checksum **no se verifica**: `packages/seed/src/data-migrations/ledger.ts:16` («the
   checksum-drift check is not yet wired»).
 - Data-migrations históricas que importan símbolos que el renombrado borra:
-  `0079-hos-1077-vertical-commerce-permissions.ts:75` (`gastronomies` de `@repo/db`), `:93-98,147-148`
+  `0079-hos-1077-vertical-…-permissions.ts:75` (`gastronomies` de `@repo/db`), `:93-98,147-148`
   (`PermissionEnum.GASTRONOMY_*`), `:163,179` (`RoleEnum.GASTRONOMY_OWNER`);
   `0110-hos1457-v53-permissions.ts:33` (`RoleEnum.GASTRONOMY_OWNER`);
-  `0034-hos-372-commerce-media-to-relational.ts:53` (`gastronomyMedia`).
+  `0034-hos-372-…-media-to-relational.ts:53` (`gastronomyMedia`).
 - `0109`, `0110` y `0125` (que mencionan la palabra) **no están en `origin/main`**: van a correr en prod
   por primera vez con el deploy del corte.
 
