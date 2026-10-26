@@ -2,6 +2,10 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import {
+    apiIntegrationCollection,
+    integrationJobRunsBothSuites
+} from './helpers/api-integration-collection';
 
 /**
  * TEST:V8a:16 (AC:V8a:14, HOS-1495, V8a.4) pins the V8a exit evidence in the
@@ -338,12 +342,12 @@ describe('TEST:V8a:16 AC:V8a:14 - V8a exit: LISTA:V8 evidence in the tree, every
 
     describe('(e) the integration suite is included and CI Pass waits for its jobs', () => {
         it('API, db, and service-core integration configs include the piece suites', () => {
+            for (const dir of ['account-closure', 'listing-publication', 'outbox']) {
+                const api = apiIntegrationCollection({ target: `test/integration/${dir}` });
+                expect(api.collected.length, dir).toBeGreaterThan(0);
+                expect(api.excluded, dir).toEqual([]);
+            }
             const includes: Readonly<Record<string, readonly string[]>> = {
-                'apps/api/vitest.config.integration.ts': [
-                    'test/integration/account-closure/**/*.test.ts',
-                    'test/integration/listing-publication/**/*.test.ts',
-                    'test/integration/outbox/**/*.test.ts'
-                ],
                 'packages/db/vitest.config.integration.ts': ['test/integration/**/*.test.ts'],
                 'packages/service-core/vitest.integration.config.ts': [
                     'test/integration/services/**/*.test.ts'
@@ -363,7 +367,7 @@ describe('TEST:V8a:16 AC:V8a:14 - V8a exit: LISTA:V8 evidence in the tree, every
                 block: jobBlock({ source: ciYml, job: 'test-integration' })
             });
             expect(guards).toContain('pnpm test:scripts');
-            expect(integration).toContain('pnpm test:integration');
+            expect(integrationJobRunsBothSuites({ runs: integration })).toBe(true);
         });
         it('CI Pass needs guards, test-unit, and test-integration', () => {
             const needs = needsOf({ block: jobBlock({ source: ciYml, job: 'ci-pass' }) });

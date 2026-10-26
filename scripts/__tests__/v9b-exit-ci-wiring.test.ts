@@ -2,6 +2,10 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import {
+    apiIntegrationCollection,
+    integrationJobRunsBothSuites
+} from './helpers/api-integration-collection';
 
 /**
  * Static exit evidence for V9b (AC:V9b:13, HOS-1505, V9b.5). The spec assigns
@@ -388,10 +392,12 @@ describe('AC:V9b:13 - V9b exit: LISTA:V9b evidence in the tree, from-empty base 
     });
     describe('(g) integration configs and CI Pass collect the suite', () => {
         it('includes API, db, service-core, and verticals integration tests', () => {
+            for (const dir of ['listing-publication']) {
+                const api = apiIntegrationCollection({ target: `test/integration/${dir}` });
+                expect(api.collected.length, dir).toBeGreaterThan(0);
+                expect(api.excluded, dir).toEqual([]);
+            }
             const includes: Readonly<Record<string, readonly string[]>> = {
-                'apps/api/vitest.config.integration.ts': [
-                    'test/integration/listing-publication/**/*.test.ts'
-                ],
                 'packages/db/vitest.config.integration.ts': ['test/integration/**/*.test.ts'],
                 'packages/service-core/vitest.integration.config.ts': [
                     'test/integration/services/**/*.test.ts'
@@ -417,8 +423,10 @@ describe('AC:V9b:13 - V9b exit: LISTA:V9b evidence in the tree, from-empty base 
         });
         it('test-integration runs and CI Pass needs guards, unit, and integration', () => {
             expect(
-                stepRuns({ block: jobBlock({ source: ciYml, job: 'test-integration' }) })
-            ).toContain('pnpm test:integration');
+                integrationJobRunsBothSuites({
+                    runs: stepRuns({ block: jobBlock({ source: ciYml, job: 'test-integration' }) })
+                })
+            ).toBe(true);
             const needs = needsOf({ block: jobBlock({ source: ciYml, job: 'ci-pass' }) });
             for (const job of ['guards', 'test-unit', 'test-integration'])
                 expect(needs).toContain(job);

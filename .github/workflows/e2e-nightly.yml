@@ -237,8 +237,9 @@ jobs:
       #    named the same directory, so the intersection was empty by
       #    construction and `--passWithNoTests` turned the zero into a pass.
       #    Switching to `test:integration` does NOT fix it either:
-      #    `vitest.config.integration.ts` only includes
-      #    `test/integration/ai/**`. `vitest.config.e2e.ts` is the one config
+      #    `vitest.config.integration.ts` then listed only a few folders
+      #    (HOS-1891 later widened it to the whole tree; that suite runs in
+      #    ci.yml's test-integration job). `vitest.config.e2e.ts` is the one config
       #    whose `include` covers `test/integration/**`. It is invoked
       #    directly rather than through the `test:e2e` script because that
       #    script prepends `build:deps`, and this job already built the apps.

@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { apiIntegrationCollection } from './helpers/api-integration-collection';
 
 /**
  * TEST:B7:15 (AC:B7:24, HOS-1567, B7.9), the exit-evidence half. Its other
@@ -442,17 +443,16 @@ describe('TEST:B7:15 AC:B7:24 - B7 exit: LISTA:B7 evidence in the tree, guards w
 
     describe('(h) integration configs collect the suite and CI Pass waits for its gates', () => {
         it('the API integration config includes all required billing suites', () => {
-            const config = readFileSync(
-                path.join(repoRoot, 'apps/api/vitest.config.integration.ts'),
-                'utf8'
-            );
             for (const dir of [
                 'webhooks',
                 'plan-publication',
                 'billing-subscription',
                 'billing-refund'
-            ])
-                expect(config).toContain(`'test/integration/${dir}/**/*.test.ts'`);
+            ]) {
+                const api = apiIntegrationCollection({ target: `test/integration/${dir}` });
+                expect(api.collected.length, dir).toBeGreaterThan(0);
+                expect(api.excluded, dir).toEqual([]);
+            }
         });
 
         it('service-core and db integration configs collect their suites', () => {
