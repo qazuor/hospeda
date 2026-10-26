@@ -21,7 +21,9 @@ const success = {
     data: {
         subscriptionId: '123e4567-e89b-42d3-a456-426614174001',
         authorizationId: 'authorization-1',
-        checkoutUrl: 'https://payments.example/continue',
+        // No safe URL keeps this suite on the pending fallback while it checks
+        // the declared payer email; HOS-1896 covers the redirect elsewhere.
+        checkoutUrl: null,
         vertical: 'tourist',
         authorizationWindowEndsAt: '2026-10-13T02:30:00.000Z'
     }

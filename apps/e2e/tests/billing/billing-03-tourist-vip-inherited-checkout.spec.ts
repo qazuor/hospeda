@@ -41,10 +41,9 @@ test.describe('TEST:B3:30 AC:B3:28 the inherited Tourist VIP checkout shows the 
         await expect(rejection).toContainText(
             'Tu plan actual ya incluye los beneficios de Turista VIP'
         );
-        await expect(page.getByTestId('signup-checkout-resume-link')).toHaveCount(0);
+        expect(page.url()).toBe(pageUrl);
         await expect(page.getByTestId('signup-checkout-confirm')).toHaveCount(0);
         await expect(page.getByTestId('signup-checkout-retry')).toHaveCount(0);
-        expect(page.url()).toBe(pageUrl);
 
         const rows = await execSQL<{ id: string }>(
             `SELECT id FROM subscription WHERE user_id = $1 AND vertical = 'tourist'`,

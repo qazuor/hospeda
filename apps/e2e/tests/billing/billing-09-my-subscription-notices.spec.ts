@@ -17,6 +17,7 @@ import { startE2eFakeProvider } from '../../fixtures/fake-provider-server.ts';
 import { startE2eMailCapture } from '../../fixtures/mail-capture-server.ts';
 import {
     attachSession,
+    confirmSignupCheckout,
     monthlyOptionForSlug,
     openSignupCheckout
 } from '../../fixtures/signup-checkout.ts';
@@ -72,11 +73,7 @@ test.describe('TEST:B13a:6 TEST:B13a:7 Mi Suscripción notices @p0 @billing @clo
         await attachSession(page, subscriber.user.sessionCookie);
         const billingOptionId = await monthlyOptionForSlug('owner-basico');
         await openSignupCheckout({ page, webUrl: WEB_URL, billingOptionId });
-        await page.getByTestId('signup-checkout-confirm').click();
-        const pending = page.getByTestId('signup-checkout-pending');
-        await expect(pending).toBeVisible();
-        const subscriptionId = await pending.getAttribute('data-subscription-id');
-        if (!subscriptionId) throw new Error('Expected subscription created by checkout.');
+        const { subscriptionId } = await confirmSignupCheckout({ page });
         const providerRows = await execSQL<{ provider_id: string }>(
             'SELECT provider_id FROM provider_link WHERE subscription_id = $1',
             [subscriptionId]

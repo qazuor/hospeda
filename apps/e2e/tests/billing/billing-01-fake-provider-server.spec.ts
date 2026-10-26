@@ -12,7 +12,11 @@ import {
     E2E_FAKE_PROVIDER_URL,
     startE2eFakeProvider
 } from '../../fixtures/fake-provider-server.ts';
-import { attachSession, openSignupCheckout } from '../../fixtures/signup-checkout.ts';
+import {
+    attachSession,
+    confirmSignupCheckout,
+    openSignupCheckout
+} from '../../fixtures/signup-checkout.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
@@ -256,7 +260,7 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
         );
     });
 
-    test('the web checkout shows the sanitized link and moved authorization window', async ({
+    test('the web checkout navigates to the sanitized link and moved authorization window', async ({
         page
     }) => {
         if (!fakeServer) throw new Error('TEST:B3:43 fake provider server was not started');
@@ -271,16 +275,11 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
             webUrl: process.env.HOSPEDA_E2E_WEB_URL,
             billingOptionId: monthlyOptionId
         });
-        await page.getByTestId('signup-checkout-confirm').click();
-
-        const pending = page.getByTestId('signup-checkout-pending');
-        await expect(pending).toBeVisible();
-        const subscriptionId = await pending.getAttribute('data-subscription-id');
+        const { subscriptionId, checkoutUrl, authorizationWindowEndsAt } =
+            await confirmSignupCheckout({ page });
         expect(subscriptionId).toBeTruthy();
-        const resumeLink = page.getByTestId('signup-checkout-resume-link');
-        const checkoutUrl = await resumeLink.getAttribute('href');
-        expect(checkoutUrl).toBeTruthy();
         expect(checkoutUrl).not.toContain('activation');
+        expect(page.url()).toBe(checkoutUrl);
 
         const rows = await execSQL<{
             authorization_window_ends_at: string;
@@ -300,10 +299,7 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
         const serverBody = (await serverRead.json()) as { init_point?: string };
         expect(serverBody.init_point).toContain('activation');
 
-        const dateTime = await page
-            .getByTestId('signup-checkout-window-ends')
-            .getAttribute('dateTime');
-        const windowEnd = new Date(dateTime ?? '').getTime();
+        const windowEnd = new Date(authorizationWindowEndsAt).getTime();
         const persistedWindowEnd = new Date(row?.authorization_window_ends_at ?? '').getTime();
         expect(Math.abs(windowEnd - persistedWindowEnd)).toBeLessThanOrEqual(1000);
         expect(Math.abs(windowEnd - (Date.now() + 72 * 60 * 60 * 1000))).toBeGreaterThan(
@@ -327,11 +323,7 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
         });
         await page.getByTestId('signup-checkout-payer-email').fill(declaredEmail);
         await expect(page.getByTestId('signup-checkout-payer-email')).toHaveValue(declaredEmail);
-        await page.getByTestId('signup-checkout-confirm').click();
-
-        const pending = page.getByTestId('signup-checkout-pending');
-        await expect(pending).toBeVisible();
-        const subscriptionId = await pending.getAttribute('data-subscription-id');
+        const { subscriptionId } = await confirmSignupCheckout({ page });
         expect(subscriptionId).toBeTruthy();
         const declaredSearch = await fetch(
             `${E2E_FAKE_PROVIDER_URL}/preapproval/search?payer_email=${encodeURIComponent(declaredEmail)}`,
