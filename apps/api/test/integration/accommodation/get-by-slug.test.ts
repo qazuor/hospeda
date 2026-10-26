@@ -1,24 +1,51 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
+import {
+    type SeededPublicAccommodation,
+    seedPublicAccommodation
+} from '../helpers/seed-public-accommodation';
 
 describe('GET /accommodations/slug/:slug (getBySlug)', () => {
     let app: ReturnType<typeof initApp>;
+    let seeded: SeededPublicAccommodation;
     const base = '/api/v1/public/accommodations/slug';
 
-    beforeAll(() => {
+    beforeAll(async () => {
+        await testDb.setup();
         // Initialize environment variables before running tests
         validateApiEnv();
         app = initApp();
     });
 
-    it('returns 200 or 404 depending on existence', async () => {
-        const res = await app.request(`${base}/sample-slug`, {
+    beforeEach(async () => {
+        seeded = await seedPublicAccommodation();
+    });
+
+    afterEach(async () => {
+        await testDb.clean();
+    });
+
+    afterAll(async () => {
+        await testDb.teardown();
+    });
+
+    it('returns 200 and the accommodation for an existing slug', async () => {
+        const res = await app.request(`${base}/${seeded.slug}`, {
             headers: { 'user-agent': 'vitest' }
         });
         expect(res.status).toBe(200);
         const body = await res.json();
-        expect(body).toHaveProperty('data');
-        expect(body.data).toHaveProperty('slug');
+        expect(body.data).toMatchObject({ id: seeded.id, slug: seeded.slug });
+    });
+
+    it('returns 404 for a slug that does not exist', async () => {
+        const res = await app.request(`${base}/sample-slug-that-does-not-exist`, {
+            headers: { 'user-agent': 'vitest' }
+        });
+        expect(res.status).toBe(404);
+        const body = await res.json();
+        expect(body).toMatchObject({ success: false, error: { code: 'NOT_FOUND' } });
     });
 });

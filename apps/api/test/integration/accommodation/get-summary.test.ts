@@ -3,17 +3,38 @@
  * Tests response data validation against AccommodationSummarySchema
  */
 import { AccommodationSummarySchema } from '@repo/schemas';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
+import {
+    type SeededPublicAccommodation,
+    seedPublicAccommodation
+} from '../helpers/seed-public-accommodation';
 
 describe('GET /accommodations/:id/summary', () => {
     let app: ReturnType<typeof initApp>;
     const baseUrl = '/api/v1/public/accommodations';
-    const validUuid = '12345678-1234-4567-8901-123456789012';
     const nonExistentUuid = '87654321-4321-4321-8765-876543218765';
+    let seeded: SeededPublicAccommodation;
+    /** Id of the accommodation seeded before each test. */
+    let validUuid: string;
 
-    beforeAll(() => {
+    afterAll(async () => {
+        await testDb.teardown();
+    });
+
+    afterEach(async () => {
+        await testDb.clean();
+    });
+
+    beforeEach(async () => {
+        seeded = await seedPublicAccommodation();
+        validUuid = seeded.id;
+    });
+
+    beforeAll(async () => {
+        await testDb.setup();
         // Initialize environment variables before running tests
         validateApiEnv();
         app = initApp();
@@ -67,7 +88,8 @@ describe('GET /accommodations/:id/summary', () => {
                 expect(typeof summary.isFeatured).toBe('boolean');
 
                 // Value constraints validation
-                expect(summary.id).toBe(validUuid);
+                expect(summary.id).toBe(seeded.id);
+                expect(summary.name).toBe(seeded.name);
                 expect(summary.name.length).toBeGreaterThan(0);
                 expect(summary.summary.length).toBeGreaterThanOrEqual(10); // Min length from schema
                 expect(
@@ -106,7 +128,7 @@ describe('GET /accommodations/:id/summary', () => {
             }
         });
 
-        it('should return null for non-existent accommodation', async () => {
+        it('should return 404 for non-existent accommodation', async () => {
             const response = await app.request(`${baseUrl}/${nonExistentUuid}/summary`, {
                 headers: {
                     'user-agent': 'vitest',
@@ -114,11 +136,11 @@ describe('GET /accommodations/:id/summary', () => {
                 }
             });
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(404);
 
             const data = await response.json();
-            expect(data).toHaveProperty('success', true);
-            expect(data.data).toBeNull();
+            expect(data).toHaveProperty('success', false);
+            expect(data.error).toHaveProperty('code', 'NOT_FOUND');
             expect(data).toHaveProperty('metadata');
         });
     });
@@ -147,9 +169,10 @@ describe('GET /accommodations/:id/summary', () => {
                 const data = await response.json();
                 expect(data).toHaveProperty('success', false);
                 expect(data).toHaveProperty('error');
-                expect(data.error).toHaveProperty('name', 'ZodError');
-                expect(data.error).toHaveProperty('message');
-                expect(data.error.message).toContain('zodError.common.id.invalidUuid');
+                expect(data.error).toHaveProperty('code', 'VALIDATION_ERROR');
+                expect(JSON.stringify(data.error.details)).toContain(
+                    'zodError.common.id.invalidUuid'
+                );
             }
         });
 
@@ -233,8 +256,7 @@ describe('GET /accommodations/:id/summary', () => {
                 }
             });
 
-            expect(response.status).toBeLessThan(500);
-            expect([200, 429]).toContain(response.status); // 429 if rate limited
+            expect(response.status).toBe(200);
         });
     });
 
@@ -250,14 +272,10 @@ describe('GET /accommodations/:id/summary', () => {
                 }
             });
 
-            // Should either return 200 with null data or appropriate error status
-            expect([200, 404, 500]).toContain(response.status);
-
-            if (response.status === 200) {
-                const data = await response.json();
-                expect(data).toHaveProperty('success', true);
-                // Data can be null for non-existent accommodation
-            }
+            // A well-formed id that matches no row answers 404 NOT_FOUND, never a 5xx
+            expect(response.status).toBe(404);
+            const data = await response.json();
+            expect(data.error).toHaveProperty('code', 'NOT_FOUND');
         });
     });
 });

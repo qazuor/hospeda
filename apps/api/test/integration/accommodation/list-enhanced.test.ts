@@ -2,17 +2,19 @@
  * Enhanced integration tests for GET /accommodations (list) endpoint
  * Tests comprehensive filtering, pagination, sorting and response validation
  */
-import { AccommodationListItemSchema } from '@repo/schemas';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { AccommodationPublicSchema, AccommodationTypeEnum } from '@repo/schemas';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
+import { seedPublicAccommodation } from '../helpers/seed-public-accommodation';
 
 // Response schema for list endpoint
 const AccommodationListResponseSchema = z.object({
     success: z.boolean(),
     data: z.object({
-        items: z.array(AccommodationListItemSchema),
+        items: z.array(AccommodationPublicSchema),
         pagination: z.object({
             page: z.number().min(1),
             pageSize: z.number().min(1),
@@ -30,7 +32,27 @@ describe('GET /accommodations (Enhanced List)', () => {
     let app: ReturnType<typeof initApp>;
     const baseUrl = '/api/v1/public/accommodations';
 
-    beforeAll(() => {
+    afterAll(async () => {
+        await testDb.teardown();
+    });
+
+    afterEach(async () => {
+        await testDb.clean();
+    });
+
+    beforeEach(async () => {
+        const first = await seedPublicAccommodation({ name: 'Enhanced List Fixture 0' });
+        for (const index of [1, 2]) {
+            await seedPublicAccommodation({
+                name: `Enhanced List Fixture ${index}`,
+                ownerId: first.ownerId,
+                destinationId: first.destinationId
+            });
+        }
+    });
+
+    beforeAll(async () => {
+        await testDb.setup();
         // Initialize environment variables before running tests
         validateApiEnv();
         app = initApp();
@@ -63,8 +85,9 @@ describe('GET /accommodations (Enhanced List)', () => {
                 // Pagination validation
                 expect(responseData.data.pagination.page).toBe(1); // Default page
                 expect(responseData.data.pagination.pageSize).toBeGreaterThan(0);
-                expect(responseData.data.pagination.total).toBeGreaterThanOrEqual(0);
-                expect(responseData.data.pagination.totalPages).toBeGreaterThanOrEqual(0);
+                expect(responseData.data.pagination.total).toBe(3);
+                expect(responseData.data.items).toHaveLength(3);
+                expect(responseData.data.pagination.totalPages).toBe(1);
 
                 // Metadata validation
                 expect(typeof responseData.metadata.timestamp).toBe('string');
@@ -95,11 +118,7 @@ describe('GET /accommodations (Enhanced List)', () => {
                         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
                     );
                     expect(item.name.length).toBeGreaterThan(0);
-                    expect(
-                        ['hotel', 'apartment', 'villa', 'hostel', 'resort', 'guesthouse'].includes(
-                            item.type
-                        )
-                    ).toBe(true);
+                    expect(Object.values(AccommodationTypeEnum)).toContain(item.type);
                     expect(item.reviewsCount).toBeGreaterThanOrEqual(0);
                     expect(item.averageRating).toBeGreaterThanOrEqual(0);
                     expect(item.averageRating).toBeLessThanOrEqual(5);
@@ -108,8 +127,8 @@ describe('GET /accommodations (Enhanced List)', () => {
         });
 
         it('should handle empty results gracefully', async () => {
-            // Use filter that likely returns no results
-            const response = await app.request(`${baseUrl}?name=NonExistentAccommodation123`, {
+            // Full-text search (`q`) with a term no seeded row contains
+            const response = await app.request(`${baseUrl}?q=NonExistentAccommodation123`, {
                 headers: {
                     'user-agent': 'vitest',
                     Accept: 'application/json'
