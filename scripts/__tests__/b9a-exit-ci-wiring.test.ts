@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { apiIntegrationCollection } from './helpers/api-integration-collection';
 
 /**
  * B9a exit evidence (AC:B9a:16, HOS-1587, B9a.5): the static half of the
@@ -329,16 +330,18 @@ describe('AC:B9a:16 - B9a exit: LISTA:B9a evidence in the tree, BL deferred, sui
     describe('(e) the suite is collected and gated', () => {
         it('the integration configs collect the B9a suites', () => {
             // Arrange
-            const api = read('apps/api/vitest.config.integration.ts');
             const serviceCore = read('packages/service-core/vitest.integration.config.ts');
             const db = read('packages/db/vitest.config.integration.ts');
             // Act
-            const includes = [
-                'test/integration/billing-permanent-grant/**/*.test.ts',
-                'test/integration/billing-subscription/**/*.test.ts'
-            ];
+            const api = ['billing-permanent-grant', 'billing-subscription'].map((dir) => ({
+                dir,
+                ...apiIntegrationCollection({ target: `test/integration/${dir}` })
+            }));
             // Assert
-            for (const dir of includes) expect(api).toContain(`'${dir}'`);
+            for (const { dir, collected, excluded } of api) {
+                expect(collected.length, dir).toBeGreaterThan(0);
+                expect(excluded, dir).toEqual([]);
+            }
             expect(serviceCore).toContain("'test/integration/services/**/*.test.ts'");
             expect(db).toContain("'test/integration/**/*.test.ts'");
         });

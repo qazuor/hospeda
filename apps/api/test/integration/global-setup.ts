@@ -1,5 +1,6 @@
 /**
- * Global setup for `apps/api`'s `test/integration/ai/**` suite (HOS-247).
+ * Global setup for `apps/api`'s integration suite, `test/integration/**`
+ * (HOS-247; widened to the whole tree by HOS-1891).
  *
  * Runs ONCE before any worker starts and ONCE after all workers finish.
  * Modeled directly on `packages/db/test/integration/global-setup.ts` — see

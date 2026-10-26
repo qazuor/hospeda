@@ -2,6 +2,10 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import {
+    apiIntegrationCollection,
+    integrationJobRunsBothSuites
+} from './helpers/api-integration-collection';
 
 /**
  * TEST:V5:27 (AC:V5:23, HOS-1464, V5.10) pins the V5 exit evidence in the
@@ -405,17 +409,14 @@ describe('TEST:V5:27 AC:V5:23 - V5 exit: LISTA:V5 evidence in the tree, six guar
 
     describe('(f) integration suites are included and CI Pass waits for their job', () => {
         it('the API integration config includes the V5 suites', () => {
-            const config = readFileSync(
-                path.join(repoRoot, 'apps/api/vitest.config.integration.ts'),
-                'utf8'
-            );
-            for (const include of [
-                'test/integration/partners/**/*.test.ts',
-                'test/integration/super-admin/**/*.test.ts',
-                'test/integration/ai/**/*.test.ts',
-                'test/integration/auth/banned-user-signin.test.ts'
-            ])
-                expect(config).toContain(`'${include}'`);
+            for (const dir of ['partners', 'super-admin', 'auth/banned-user-signin.test.ts']) {
+                const api = apiIntegrationCollection({ target: `test/integration/${dir}` });
+                expect(api.collected.length, dir).toBeGreaterThan(0);
+                expect(api.excluded, dir).toEqual([]);
+            }
+            const ai = apiIntegrationCollection({ target: 'test/integration/ai' });
+            expect(ai.collected.length).toBeGreaterThan(0);
+            expect(ai.excluded).toEqual(['test/integration/ai/vault-roundtrip.test.ts']);
         });
         it('verticals and db collect integration tests', () => {
             for (const file of [
@@ -437,8 +438,10 @@ describe('TEST:V5:27 AC:V5:23 - V5 exit: LISTA:V5 evidence in the tree, six guar
         });
         it('test-integration runs pnpm test:integration', () => {
             expect(
-                stepRuns({ block: jobBlock({ source: ciYml, job: 'test-integration' }) })
-            ).toContain('pnpm test:integration');
+                integrationJobRunsBothSuites({
+                    runs: stepRuns({ block: jobBlock({ source: ciYml, job: 'test-integration' }) })
+                })
+            ).toBe(true);
         });
         it('CI Pass waits on guards, test-unit, and test-integration', () => {
             const needs = needsOf({ block: jobBlock({ source: ciYml, job: 'ci-pass' }) });
