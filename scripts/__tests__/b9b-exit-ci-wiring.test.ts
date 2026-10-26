@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { apiIntegrationCollection } from './helpers/api-integration-collection';
 
 /**
  * Exit evidence for the B9b slice that went to cut (owner letter DB, B9b.md:99-100):
@@ -300,9 +301,11 @@ describe('B9b cut slice exit: LISTA:B9 clauses of the slice, action 21 and row 7
 
     describe('(e) integration and CI collect the evidence', () => {
         it('integration configs include the promo suites', () => {
-            expect(read('apps/api/vitest.config.integration.ts')).toContain(
-                "'test/integration/billing-promo/**/*.test.ts'"
-            );
+            for (const dir of ['billing-promo']) {
+                const api = apiIntegrationCollection({ target: `test/integration/${dir}` });
+                expect(api.collected.length, dir).toBeGreaterThan(0);
+                expect(api.excluded, dir).toEqual([]);
+            }
             expect(read('packages/service-core/vitest.integration.config.ts')).toContain(
                 "'test/integration/services/**/*.test.ts'"
             );
