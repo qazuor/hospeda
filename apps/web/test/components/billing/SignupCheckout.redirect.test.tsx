@@ -106,6 +106,9 @@ describe('HOS-1896 signup checkout redirect', () => {
         fireEvent.click(confirm);
         await waitFor(() => expect(confirm).toBeDisabled());
         fireEvent.click(confirm);
+        // The second click must be inert because the button itself is disabled,
+        // not only because `start` has its own guard.
+        expect(confirm).toBeDisabled();
 
         expect(start).toHaveBeenCalledTimes(1);
         resolveStart(successWith(safeCheckoutUrl));
