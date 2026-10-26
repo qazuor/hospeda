@@ -550,7 +550,7 @@
         "apps/web/src/components/listing/editor/PriceSection.client.tsx": 2,
         "apps/web/src/components/listing/ListingActions.client.tsx": 5,
         "apps/web/src/components/listing/ListingCreateForm.client.tsx": 20,
-        "apps/web/src/components/listing/ListingEditor.client.tsx": 19,
+        "apps/web/src/components/listing/ListingEditor.client.tsx": 20,
         "apps/web/src/components/listing/ListingFaqManager.client.tsx": 6,
         "apps/web/src/components/listing/ListingTranslationPanel.client.tsx": 1,
         "apps/web/src/components/listing/ListingViewsWidget.client.tsx": 6,
