@@ -1,6 +1,5 @@
 import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contract';
 import type { PaymentProvider } from '@repo/payments';
-import type { BillingFactSink } from '../facts/billing-fact-sink.js';
 import { creditedPaymentsFromLedger } from '../payment/payment-ledger.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port.js';
@@ -38,7 +37,6 @@ export interface ProviderNoticeMirrorDelegatesPorts {
     readonly beforeCancelNotice: BeforeCancelNotice;
     /** Receives the post-commit coverage notices; defaults to the unwired logger. */
     readonly coverageNotices?: CoverageNotices;
-    readonly billingFacts?: BillingFactSink;
     /** Hangs payments from the marks `LIVE_PREAPPROVAL_ON_CLOSED_ROW` opens. */
     readonly markPayments?: ReconciliationMarkPayments;
     /** S18's interface (B8b); defaults to `unimplementedSuccessionCloser`, like the receiver. */

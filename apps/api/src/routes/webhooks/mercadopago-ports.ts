@@ -77,7 +77,6 @@ export function buildMercadoPagoNoticePorts() {
             changeDirection,
             payments: creditedPaymentsFromLedger,
             coverageNotices,
-            billingFacts,
             markPayments,
             complements
         })
