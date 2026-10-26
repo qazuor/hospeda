@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { attractions, eq, getDb } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { clearCache } from '../../../src/middlewares/cache';
@@ -9,7 +10,7 @@ import {
     ADMIN_GATE_PERMISSIONS,
     buildMockActorHeaders,
     createMockActorUser
-} from '../helpers/mock-admin-actor';
+} from '../helpers/mock-actor';
 
 // The mock-actor headers are only honoured when CI is unset.
 delete process.env.CI;
@@ -21,11 +22,13 @@ describe('DELETE /admin/attractions/:id/hard (hard delete)', () => {
     let app: ReturnType<typeof initApp>;
     const base = '/api/v1/admin/attractions';
     const NONEXISTENT_UUID = 'a0000000-0000-4000-8000-000000000001';
-    const deleter = [
+    const deleter: readonly PermissionEnum[] = [
         ...ADMIN_GATE_PERMISSIONS,
         PermissionEnum.ATTRACTION_HARD_DELETE,
         PermissionEnum.DESTINATION_DELETE
     ];
+    const without = (permission: PermissionEnum): readonly PermissionEnum[] =>
+        deleter.filter((candidate) => candidate !== permission);
     let actorId: string;
     let rowId: string;
 
@@ -57,7 +60,7 @@ describe('DELETE /admin/attractions/:id/hard (hard delete)', () => {
     }: {
         readonly deleted?: boolean;
     }): Promise<string> => {
-        const suffix = crypto.randomUUID().slice(0, 8);
+        const suffix = randomUUID().slice(0, 8);
         const rows = await getDb()
             .insert(attractions)
             .values({
@@ -66,7 +69,9 @@ describe('DELETE /admin/attractions/:id/hard (hard delete)', () => {
                 ...(deleted ? { deletedAt: new Date() } : {})
             })
             .returning({ id: attractions.id });
-        return rows[0]?.id ?? '';
+        const id = rows[0]?.id;
+        if (!id) throw new Error('seed attraction: insert failed');
+        return id;
     };
 
     const hardDelete = ({
@@ -81,7 +86,7 @@ describe('DELETE /admin/attractions/:id/hard (hard delete)', () => {
         app.request(`${base}/${id}/hard`, {
             method: 'DELETE',
             headers: withActor
-                ? buildMockActorHeaders({ actorId, permissions })
+                ? buildMockActorHeaders({ actorId, permissions, role: RoleEnum.ADMIN })
                 : { 'user-agent': 'vitest' }
         });
 
@@ -99,8 +104,20 @@ describe('DELETE /admin/attractions/:id/hard (hard delete)', () => {
         expect(await countRows(rowId)).toBe(1);
     });
 
-    it('answers 403 when the actor lacks the hard-delete permission', async () => {
-        const res = await hardDelete({ id: rowId, permissions: ADMIN_GATE_PERMISSIONS });
+    it('answers 403 when the actor lacks the route permission (ATTRACTION_HARD_DELETE)', async () => {
+        const res = await hardDelete({
+            id: rowId,
+            permissions: without(PermissionEnum.ATTRACTION_HARD_DELETE)
+        });
+        expect(res.status).toBe(403);
+        expect(await countRows(rowId)).toBe(1);
+    });
+
+    it('answers 403 when the actor lacks the service permission (DESTINATION_DELETE)', async () => {
+        const res = await hardDelete({
+            id: rowId,
+            permissions: without(PermissionEnum.DESTINATION_DELETE)
+        });
         expect(res.status).toBe(403);
         expect(await countRows(rowId)).toBe(1);
     });
@@ -123,10 +140,17 @@ describe('DELETE /admin/attractions/:id/hard (hard delete)', () => {
         expect(await countRows(rowId)).toBe(0);
     });
 
-    // HOS-1903: BaseCrudService.hardDelete returns
-    // { count: 0 } for a soft-deleted row (base.crud.write.ts:322), so the route
-    // answers success while the row stays in the table.
-    it.fails('permanently deletes an attraction that was soft-deleted first', async () => {
+    // HOS-1903: BaseCrudService.hardDelete returns { count: 0 } for a soft-deleted row
+    // (base.crud.write.ts:322), so the route answers success while the row stays.
+    it('currently answers 200 but keeps a soft-deleted attraction in the table (HOS-1903)', async () => {
+        const softDeletedId = await seedRow({ deleted: true });
+        const res = await hardDelete({ id: softDeletedId, permissions: deleter });
+        expect(res.status).toBe(200);
+        expect(await countRows(softDeletedId)).toBe(1);
+    });
+
+    // Drop `.fails` (and the test above) once HOS-1903 is fixed.
+    it.fails('permanently deletes an attraction that was soft-deleted first (HOS-1903)', async () => {
         const softDeletedId = await seedRow({ deleted: true });
         const res = await hardDelete({ id: softDeletedId, permissions: deleter });
         expect(res.status).toBe(200);
