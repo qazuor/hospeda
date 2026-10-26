@@ -191,6 +191,20 @@ describe('TEST:V5:26 - G2 (a) and (b): the vertical context is declared and take
         );
     });
 
+    it('TEST:1814:4 AC:1:16 checks a venue route against its folder vertical', () => {
+        const root = tempTree();
+        write(
+            root,
+            'apps/api/src/routes/venue/protected/example.ts',
+            "export const route = { listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'READ' } };\n"
+        );
+        expectFailure(
+            root,
+            'G2 (b): apps/api/src/routes/venue/protected/example.ts:',
+            'route under routes/venue declares vertical ACCOMMODATION'
+        );
+    });
+
     it('accepts a resource-read vertical, a route outside the three folders and a bare resource step', () => {
         const root = tempTree();
         write(
