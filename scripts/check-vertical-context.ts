@@ -67,6 +67,15 @@ export const REQUEST_NAMES = ['body', 'params', 'query', 'headers', 'request', '
 export const UPLOAD_ENTITY_FILE = 'apps/api/src/routes/media/protected/upload-entity.ts';
 /** Fewer `listingAccess` route configs than this means the scan is broken. */
 export const MIN_ROUTE_CONFIGS = 100;
+/**
+ * Minimum listing route configs per route folder. Measured on 2026-10-26:
+ * accommodation 45, venue 42, experience 37; each floor is 50%, rounded down.
+ */
+export const MIN_ROUTE_CONFIGS_BY_VERTICAL = {
+    accommodation: 22,
+    venue: 21,
+    experience: 18
+} as const;
 /** Fewer production files than this means the file listing is broken. */
 export const MIN_SCANNED_FILES = 500;
 
@@ -259,11 +268,16 @@ export function run(
     args: {
         readonly root?: string;
         readonly minRouteConfigs?: number;
+        readonly minRouteConfigsByVertical?: Readonly<
+            Record<keyof typeof MIN_ROUTE_CONFIGS_BY_VERTICAL, number>
+        >;
         readonly minScannedFiles?: number;
     } = {}
 ): { readonly exitCode: number; readonly output: string } {
     const root = args.root ?? resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
     const minRouteConfigs = args.minRouteConfigs ?? MIN_ROUTE_CONFIGS;
+    const minRouteConfigsByVertical =
+        args.minRouteConfigsByVertical ?? MIN_ROUTE_CONFIGS_BY_VERTICAL;
     const minScannedFiles = args.minScannedFiles ?? MIN_SCANNED_FILES;
     const problems: string[] = [];
 
@@ -287,11 +301,19 @@ export function run(
         findOperationSites({ file, source: readFileSync(join(root, file), 'utf8') })
     );
     let routeConfigs = 0;
+    const routeConfigsByVertical: Record<keyof typeof MIN_ROUTE_CONFIGS_BY_VERTICAL, number> = {
+        accommodation: 0,
+        venue: 0,
+        experience: 0
+    };
     let resolverCalls = 0;
     for (const site of sites) {
         const where = `${site.file}:${site.line}`;
         if (site.kind === 'route-config') {
             routeConfigs += 1;
+            const folder = ROUTE_FOLDER.exec(site.file)?.[1];
+            if (folder && folder in routeConfigsByVertical)
+                routeConfigsByVertical[folder as keyof typeof routeConfigsByVertical] += 1;
             problems.push(...checkRouteConfig(site, where));
         }
         if (site.kind === 'resolver-call') resolverCalls += 1;
@@ -302,6 +324,16 @@ export function run(
         problems.push(
             `G2 (a, b): found ${routeConfigs} listingAccess route configs; expected at least ${minRouteConfigs}`
         );
+    for (const [vertical, minimum] of Object.entries(minRouteConfigsByVertical) as [
+        keyof typeof MIN_ROUTE_CONFIGS_BY_VERTICAL,
+        number
+    ][]) {
+        const found = routeConfigsByVertical[vertical];
+        if (found < minimum)
+            problems.push(
+                `G2 (a, b): found ${found} listingAccess route configs under routes/${vertical}/; expected at least ${minimum}`
+            );
+    }
     if (resolverCalls === 0)
         problems.push('G2 (a, b): found no resolveListingAccess call in production code');
     problems.push(...checkUploadEntity(readFile(root, UPLOAD_ENTITY_FILE), sites));

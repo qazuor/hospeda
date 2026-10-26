@@ -39,6 +39,11 @@ function tempTree(): string {
     dirs.push(root);
     execFileSync('git', ['init', '-q'], { cwd: root, stdio: 'pipe' });
     for (const file of TREE_FILES) write(root, file, readFileSync(path.join(ROOT, file), 'utf8'));
+    write(
+        root,
+        'apps/api/src/routes/venue/protected/example.ts',
+        "export const route = { listingAccess: { vertical: VerticalEnum.VENUE, operation: 'READ' } };\n"
+    );
     return root;
 }
 
@@ -54,7 +59,12 @@ function mutate(root: string, file: string, from: string, to: string): void {
 }
 
 function runTree(root: string): { readonly exitCode: number; readonly output: string } {
-    return run({ root, minScannedFiles: 1, minRouteConfigs: 1 });
+    return run({
+        root,
+        minScannedFiles: 1,
+        minRouteConfigs: 1,
+        minRouteConfigsByVertical: { accommodation: 1, venue: 1, experience: 1 }
+    });
 }
 
 function expectFailure(root: string, ...fragments: readonly string[]): string {
@@ -203,6 +213,15 @@ describe('TEST:V5:26 - G2 (a) and (b): the vertical context is declared and take
             'G2 (b): apps/api/src/routes/venue/protected/example.ts:',
             'route under routes/venue declares vertical ACCOMMODATION'
         );
+    });
+
+    it('TEST:1814:4 AC:1:16 fails when the route tree has no venue configs', () => {
+        const root = tempTree();
+        unlinkSync(path.join(root, 'apps/api/src/routes/venue/protected/example.ts'));
+        const result = runTree(root);
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain('routes/venue/');
+        expect(result.output).toContain('expected at least 1');
     });
 
     it('accepts a resource-read vertical, a route outside the three folders and a bare resource step', () => {
