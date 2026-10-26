@@ -5,7 +5,7 @@ import { initApp } from '../../../src/app';
 import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
-import { buildMockActorHeaders, createMockActorUser } from '../helpers/mock-admin-actor';
+import { buildMockActorHeaders, createMockActorUser } from '../helpers/mock-actor';
 import {
     type SeededOwnedAccommodation,
     seedOwnedAccommodation

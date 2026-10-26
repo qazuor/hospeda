@@ -1,11 +1,11 @@
-import { accommodationFaqs, eq, getDb } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
+import { accommodationFaqs, accommodations, eq, getDb } from '@repo/db';
+import { PermissionEnum, PublicationStatusEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
-import { buildMockActorHeaders, createMockActorUser } from '../helpers/mock-admin-actor';
+import { buildMockActorHeaders, createMockActorUser } from '../helpers/mock-actor';
 import {
     type SeededOwnedAccommodation,
     seedOwnedAccommodation
@@ -82,6 +82,35 @@ describe('GET /protected/accommodations/:id/faqs', () => {
         });
     });
 
+    it('lists the FAQs ordered by displayOrder', async () => {
+        const [first, second] = seeded.faqIds;
+        // Invert the seeded order so insertion order and displayOrder disagree.
+        await getDb()
+            .update(accommodationFaqs)
+            .set({ displayOrder: 9 })
+            .where(eq(accommodationFaqs.id, first ?? ''));
+        await getDb()
+            .update(accommodationFaqs)
+            .set({ displayOrder: 1 })
+            .where(eq(accommodationFaqs.id, second ?? ''));
+        const res = await getFaqs({ id: seeded.id, actorId: seeded.ownerId });
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data.faqs.map((faq: { id: string }) => faq.id)).toEqual([second, first]);
+    });
+
+    it('does not list soft-deleted FAQs', async () => {
+        const [deletedId, keptId] = seeded.faqIds;
+        await getDb()
+            .update(accommodationFaqs)
+            .set({ deletedAt: new Date() })
+            .where(eq(accommodationFaqs.id, deletedId ?? ''));
+        const res = await getFaqs({ id: seeded.id, actorId: seeded.ownerId });
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data.faqs.map((faq: { id: string }) => faq.id)).toEqual([keptId]);
+    });
+
     it('returns an empty list for an accommodation without FAQs', async () => {
         await getDb()
             .delete(accommodationFaqs)
@@ -95,6 +124,27 @@ describe('GET /protected/accommodations/:id/faqs', () => {
     it('lets another signed-in user read the FAQs of a published accommodation', async () => {
         const other = await createMockActorUser({ label: 'faq-reader' });
         const res = await getFaqs({ id: seeded.id, actorId: other.id });
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data.faqs).toHaveLength(2);
+    });
+
+    it('hides the FAQs of an unpublished accommodation from a user who does not own it', async () => {
+        await getDb()
+            .update(accommodations)
+            .set({ publicationStatus: PublicationStatusEnum.DRAFT })
+            .where(eq(accommodations.id, seeded.id));
+        const other = await createMockActorUser({ label: 'faq-reader' });
+        const res = await getFaqs({ id: seeded.id, actorId: other.id });
+        expect(res.status).toBe(404);
+    });
+
+    it('still shows the FAQs of an unpublished accommodation to its owner', async () => {
+        await getDb()
+            .update(accommodations)
+            .set({ publicationStatus: PublicationStatusEnum.DRAFT })
+            .where(eq(accommodations.id, seeded.id));
+        const res = await getFaqs({ id: seeded.id, actorId: seeded.ownerId });
         expect(res.status).toBe(200);
         const body = await res.json();
         expect(body.data.faqs).toHaveLength(2);
