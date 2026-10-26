@@ -84,6 +84,22 @@ describe('TEST:1878:11, TEST:1878:21, TEST:1878:23 cancellation analytics', () =
         expect(capture.mock.calls[0]?.[0].properties).not.toHaveProperty('reason');
     });
 
+    it('AC-22 rejects a reason outside the enum without changing the subscription', async () => {
+        const seeded = await seedSelfActive(fake, clock);
+        const response = await app.request(url(seeded.subscriptionId), {
+            method: 'POST',
+            headers: { ...headers(seeded.ownerId), 'content-type': 'application/json' },
+            body: JSON.stringify({ reason: 'NOT_AN_ACCEPTED_REASON' })
+        });
+        expect(response.status).toBe(400);
+        const [row] = await getDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, seeded.subscriptionId));
+        expect(row?.status).toBe('ACTIVE');
+        expect(row?.cancellationReason).toBeNull();
+    });
+
     it('TEST:1878:11 persists and emits a direct S23 cancellation', async () => {
         const seeded = await seedSelfDirectCard('SUSPENDED', fake, clock);
         const capture = vi.fn();
