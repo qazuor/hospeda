@@ -28,7 +28,6 @@ vi.mock('@repo/db', async (importOriginal) => {
 });
 
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
-import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
 import {
     assertOutsideAction15Scope,
     assertSupportCreateIsDraft,
@@ -39,6 +38,7 @@ import {
     type RecordListingSupportEditInput,
     recordListingSupportEdit
 } from '../../../src/services/listing/listing-support-edit';
+import { VenueService } from '../../../src/services/venue/venue.service';
 import type { Actor, ServiceContext } from '../../../src/types';
 import {
     _resetActionReasonResolver,
@@ -401,7 +401,7 @@ describe('ACC:15 scope never opens a non-content operation (coordinator, corrida
         [
             'gastronomy',
             (model: ReturnType<typeof ownedListingModel>) =>
-                Object.assign(new GastronomyService({ logger } as never), { model })
+                Object.assign(new VenueService({ logger } as never), { model })
         ]
     ])('%s: setAdminInfo (admin metadata) is refused inside the owner ACC_15 scope', async (_v, build) => {
         // Arrange

@@ -4,7 +4,7 @@
  * Extracted out of the public routes so the withholding rule has a direct
  * unit-test surface, independent of building a full `ExperiencePublicSchema`
  * fixture through the route/HTTP layer. Same purpose as
- * `routes/gastronomy/public/menu-projection.ts`.
+ * `routes/venue/public/menu-projection.ts`.
  *
  * ## It REMOVES the key; it does not set it to `undefined`
  *

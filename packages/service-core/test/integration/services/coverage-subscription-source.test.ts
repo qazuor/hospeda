@@ -332,7 +332,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     ports,
                     tx
                 });
-                const gastronomy = await resolveSubscriptionSources({
+                const venue = await resolveSubscriptionSources({
                     userId: seeded.userId,
                     vertical: VerticalEnum.VENUE,
                     ports,
@@ -341,7 +341,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
 
                 // Assert
                 expect(accommodation.sources).toEqual([]);
-                expect(gastronomy.sources).toEqual([
+                expect(venue.sources).toEqual([
                     expectedSource({ ...seeded, until: 'NO_KNOWN_DATE', charged: false })
                 ]);
             });

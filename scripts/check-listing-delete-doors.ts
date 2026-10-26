@@ -11,7 +11,7 @@
  *
  * Predicates (each failure names its own):
  * - (p1) no `retired[].file` exists in the tree (`git ls-files -co --exclude-standard`);
- * - (p2) in the direct `.ts` children of `apps/api/src/routes/{accommodation,gastronomy,experience}/
+ * - (p2) in the direct `.ts` children of `apps/api/src/routes/{accommodation,venue,experience}/
  *   {admin,protected}/`, no route config (the first argument of a `create*Route(...)` call) has
  *   `method: 'delete'` with `path: '/{id}'` or `'/{id}/hard'`, nor `path: '/{id}/restore'` with any
  *   method; and in `apps/api/src/routes/user/admin/`, none has `path: '/{id}/hard'`;
@@ -42,20 +42,20 @@ export const MIN_SCANNED_FILES = 100;
 export const DOORS_INVENTORY_PATH = 'scripts/guards/listing-delete-doors.json';
 
 const LISTING_ROUTE_DIR =
-    /^apps\/api\/src\/routes\/(?:accommodation|gastronomy|experience)\/(?:admin|protected)\/[^/]+\.ts$/;
+    /^apps\/api\/src\/routes\/(?:accommodation|venue|experience)\/(?:admin|protected)\/[^/]+\.ts$/;
 const USER_ADMIN_ROUTE_DIR = /^apps\/api\/src\/routes\/user\/admin\/[^/]+\.ts$/;
 const SOURCE_FILE = /^(?:apps|packages)\/[^/]+\/src\/.+\.tsx?$/;
 const TEST_FILE = /(?:\.(?:test|spec)\.tsx?$)|(?:^|\/)(?:test|tests|__tests__)\//;
 const ROUTE_FACTORY = /^create\w*Route$/;
 const LISTING_RECEIVERS: ReadonlySet<string> = new Set([
     'accommodationservice',
-    'gastronomyservice',
+    'venueservice',
     'experienceservice',
     'accommodationmodel',
-    'gastronomymodel',
+    'venuemodel',
     'experiencemodel'
 ]);
-const LISTING_CLASS = /^(?:Accommodation|Gastronomy|Experience)(?:Service|Model)$/;
+const LISTING_CLASS = /^(?:Accommodation|Venue|Experience)(?:Service|Model)$/;
 const USER_RECEIVERS: ReadonlySet<string> = new Set(['userservice', 'usermodel']);
 const USER_CLASS = /^User(?:Service|Model)$/;
 const LISTING_METHODS: ReadonlySet<string> = new Set([

@@ -4,7 +4,7 @@ import { rExperienceFeature } from '../../schemas/experience/r_experience_featur
 
 /**
  * RExperienceFeatureModel — DB access for experience-feature junction (SPEC-240).
- * Mirrors RGastronomyFeatureModel: thin BaseModelImpl wrapper.
+ * Mirrors RVenueFeatureModel: thin BaseModelImpl wrapper.
  */
 export class RExperienceFeatureModel extends BaseModelImpl<ExperienceFeatureRelation> {
     protected table = rExperienceFeature;

@@ -79,7 +79,7 @@ export async function writeCutoverTrials({
             'V6 cutover ownerIds must not be empty'
         );
     }
-    const [accommodationRows, gastronomyRows, experienceRows] = await Promise.all([
+    const [accommodationRows, venueRows, experienceRows] = await Promise.all([
         db
             .select({
                 listingId: accommodations.id,
@@ -125,7 +125,7 @@ export async function writeCutoverTrials({
     ]);
     const listings = [
         ...accommodationRows.map((row) => ({ ...row, vertical: VerticalEnum.ACCOMMODATION })),
-        ...gastronomyRows.map((row) => ({ ...row, vertical: VerticalEnum.VENUE })),
+        ...venueRows.map((row) => ({ ...row, vertical: VerticalEnum.VENUE })),
         ...experienceRows.map((row) => ({ ...row, vertical: VerticalEnum.EXPERIENCE }))
     ];
     if (listings.length > 5) {

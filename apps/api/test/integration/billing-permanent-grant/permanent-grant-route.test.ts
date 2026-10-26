@@ -216,7 +216,7 @@ describe('TEST:B9a:9 admin action 2 routes (AC:B9a:8, AC:B9a:9)', () => {
             grantedBy: actorId,
             anchor: accommodation
         });
-        const gastronomy = await seedGrantPlan(VerticalEnum.VENUE);
+        const venue = await seedGrantPlan(VerticalEnum.VENUE);
         const revokedBeneficiary = await seedGrantUser('revoked-beneficiary');
         const revoked = await seedGrant({
             beneficiaryUserId: revokedBeneficiary,
@@ -228,19 +228,13 @@ describe('TEST:B9a:9 admin action 2 routes (AC:B9a:8, AC:B9a:9)', () => {
         const otherVerticalGrant = await seedGrant({
             beneficiaryUserId: otherVerticalBeneficiary,
             grantedBy: actorId,
-            anchor: gastronomy
+            anchor: venue
         });
         const missingPath = `/api/v1/admin/billing-permanent-grants/${crypto.randomUUID()}/anchors`;
         const path = (id: string) => `/api/v1/admin/billing-permanent-grants/${id}/anchors`;
         const answers = [
-            [missingPath, gastronomy, 404, 'NOT_FOUND', 'PERMANENT_GRANT_NOT_FOUND'],
-            [
-                path(revoked.grantId),
-                gastronomy,
-                422,
-                'VALIDATION_ERROR',
-                'PERMANENT_GRANT_NOT_LIVE'
-            ],
+            [missingPath, venue, 404, 'NOT_FOUND', 'PERMANENT_GRANT_NOT_FOUND'],
+            [path(revoked.grantId), venue, 422, 'VALIDATION_ERROR', 'PERMANENT_GRANT_NOT_LIVE'],
             [
                 path(grant.grantId),
                 accommodation,
@@ -250,7 +244,7 @@ describe('TEST:B9a:9 admin action 2 routes (AC:B9a:8, AC:B9a:9)', () => {
             ],
             [
                 path(otherVerticalGrant.grantId),
-                { ...gastronomy, vertical: VerticalEnum.ACCOMMODATION },
+                { ...venue, vertical: VerticalEnum.ACCOMMODATION },
                 422,
                 'VALIDATION_ERROR',
                 'PERMANENT_GRANT_REFERENCE_NOT_FOUND'

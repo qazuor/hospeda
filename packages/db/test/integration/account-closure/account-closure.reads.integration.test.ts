@@ -4,7 +4,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../../src/models/accommodation/accommodation.model.ts';
 import { accountClosureModel } from '../../../src/models/account-closure/account-closure.model.ts';
 import { ExperienceModel } from '../../../src/models/experience/experience.model.ts';
-import { GastronomyModel } from '../../../src/models/gastronomy/gastronomy.model.ts';
+import { VenueModel } from '../../../src/models/venue/venue.model.ts';
 import { destinations } from '../../../src/schemas/destination/destination.dbschema.ts';
 import { users } from '../../../src/schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../../src/types.ts';
@@ -30,7 +30,7 @@ const CREATE: Record<
     accommodation: ({ tx, base }) =>
         new AccommodationModel().create({ ...base, type: 'CABIN' } as Partial<Accommodation>, tx),
     gastronomy: ({ tx, base }) =>
-        new GastronomyModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx),
+        new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx),
     experience: ({ tx, base }) =>
         new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx)
 };

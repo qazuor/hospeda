@@ -35,7 +35,7 @@
 import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExperienceService } from '../../../src/services/experience/experience.service';
-import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
+import { VenueService } from '../../../src/services/venue/venue.service';
 import type { Actor } from '../../../src/types';
 
 const OWNER_ID = '00000000-0000-4000-a000-000000000002';
@@ -62,11 +62,11 @@ function makeModel(count: number) {
     };
 }
 
-function makeGastronomyService(count = 0) {
-    const service: AnyService = new GastronomyService({});
+function makeVenueService(count = 0) {
+    const service: AnyService = new VenueService({});
     const model = makeModel(count);
     service.model = model;
-    return { service: service as GastronomyService, model };
+    return { service: service as VenueService, model };
 }
 
 function makeExperienceService(count = 0) {
@@ -82,7 +82,7 @@ beforeEach(() => {
 
 describe("countOwn — counts the owner's listings in EVERY state (HOS-1247)", () => {
     it('gastronomy: scopes to the owner and narrows by nothing else', async () => {
-        const { service, model } = makeGastronomyService(3);
+        const { service, model } = makeVenueService(3);
 
         const result = await service.countOwn(ownerActor);
 
@@ -108,7 +108,7 @@ describe("countOwn — counts the owner's listings in EVERY state (HOS-1247)", (
     });
 
     it('refuses an actor with no id rather than counting the whole platform', async () => {
-        const { service, model } = makeGastronomyService(99);
+        const { service, model } = makeVenueService(99);
 
         const result = await service.countOwn({ id: '', roles: [], permissions: [] } as Actor);
 
@@ -120,7 +120,7 @@ describe("countOwn — counts the owner's listings in EVERY state (HOS-1247)", (
 
 describe('the trap countOwn exists to avoid: _executeCount forces PUBLISHED', () => {
     it('gastronomy: the public count narrows by publication status', async () => {
-        const { service, model } = makeGastronomyService(0);
+        const { service, model } = makeVenueService(0);
 
         await (
             service as unknown as { _executeCount: (...args: unknown[]) => unknown }

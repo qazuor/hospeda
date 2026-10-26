@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { schema } from '../../src/client';
 import { AccommodationReviewModel } from '../../src/models/accommodation/accommodationReview.model';
 import { ExperienceReviewModel } from '../../src/models/experience/experienceReview.model';
-import { GastronomyReviewModel } from '../../src/models/gastronomy/gastronomyReview.model';
+import { VenueReviewModel } from '../../src/models/venue/venueReview.model';
 
 /**
  * BETA-150 regression.
@@ -26,8 +26,8 @@ const getTableName = (model: unknown): string =>
 describe('Review model getTableName() (BETA-150 regression)', () => {
     const cases = [
         {
-            name: 'GastronomyReviewModel',
-            model: new GastronomyReviewModel(),
+            name: 'VenueReviewModel',
+            model: new VenueReviewModel(),
             expected: 'gastronomyReviews'
         },
         {

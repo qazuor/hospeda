@@ -65,7 +65,7 @@ export function createEntityResolver(): EntityResolver {
                         return await resolvePostById({ entityId });
                     case 'gastronomy':
                     case 'experience':
-                        return await resolveGastronomyOrExperienceById({ entityType, entityId });
+                        return await resolveVenueOrExperienceById({ entityType, entityId });
                     case 'accommodation_review':
                     case 'destination_review':
                     case 'tag':
@@ -188,7 +188,7 @@ async function resolveEventById(params: {
  * @param params.entityId - The listing's UUID.
  * @returns The change data for the listing, or `null` when no such row exists.
  */
-async function resolveGastronomyOrExperienceById(params: {
+async function resolveVenueOrExperienceById(params: {
     readonly entityType: 'gastronomy' | 'experience';
     readonly entityId: string;
 }): Promise<EntityChangeData | null> {

@@ -5,7 +5,7 @@ const { addMedia } = vi.hoisted(() => ({ addMedia: vi.fn() }));
 
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
-    addGastronomyMedia: addMedia
+    addVenueMedia: addMedia
 }));
 
 import {
@@ -15,7 +15,7 @@ import {
     VenueSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { assertListingReadable, GastronomyService, ServiceError } from '@repo/service-core';
+import { assertListingReadable, ServiceError, VenueService } from '@repo/service-core';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import type { AppBindings } from '../../src/types';
@@ -80,8 +80,8 @@ describe('TEST:V5:6 published foreign gastronomy writes', () => {
     it('pairs PATCH and POST media refusals with an invented id', async () => {
         const { initApp } = await import('../../src/app.js');
         const app = initApp();
-        vi.spyOn(GastronomyService.prototype, 'getById').mockResolvedValue({ data: row });
-        const updateOwn = vi.spyOn(GastronomyService.prototype, 'updateOwn');
+        vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({ data: row });
+        const updateOwn = vi.spyOn(VenueService.prototype, 'updateOwn');
         updateOwn.mockResolvedValue({
             error: { code: ServiceErrorCode.NOT_FOUND, message: 'gastronomy not found' }
         });
@@ -155,8 +155,8 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('TEST:V5:6 public gastronomy detail', () => {
     it('shows only PUBLISHED and pairs every hidden state with an invented id', async () => {
-        const { publicGetGastronomyByIdRoute } = await import(
-            '../../src/routes/gastronomy/public/getById.js'
+        const { publicGetVenueByIdRoute } = await import(
+            '../../src/routes/venue/public/getById.js'
         );
         const app = new Hono<AppBindings>();
         app.use((c, next) => {
@@ -167,9 +167,9 @@ describe('TEST:V5:6 public gastronomy detail', () => {
             });
             return next();
         });
-        app.route('/', publicGetGastronomyByIdRoute);
+        app.route('/', publicGetVenueByIdRoute);
         let publicationStatus: PublicationStatusEnum | null = null;
-        vi.spyOn(GastronomyService.prototype, 'getById').mockImplementation(async (actor, id) => {
+        vi.spyOn(VenueService.prototype, 'getById').mockImplementation(async (actor, id) => {
             if (id === MISSING_ID) {
                 return {
                     error: { code: ServiceErrorCode.NOT_FOUND, message: 'gastronomy not found' }
@@ -177,7 +177,7 @@ describe('TEST:V5:6 public gastronomy detail', () => {
             }
             const entity = { ...row, publicationStatus };
             try {
-                assertListingReadable({ actor, entity, entityName: GastronomyService.ENTITY_NAME });
+                assertListingReadable({ actor, entity, entityName: VenueService.ENTITY_NAME });
             } catch (error) {
                 if (error instanceof ServiceError) {
                     return { error: { code: error.code, message: error.message } };

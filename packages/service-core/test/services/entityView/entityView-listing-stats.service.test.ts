@@ -8,9 +8,9 @@
  * Verifies:
  *  - No `PermissionEnum` gate here (unlike accommodation's
  *    `ACCOMMODATION_VIEW_OWN`) — ownership scoping via `findIdsByOwnerId`
- *    IS the security boundary, matching `GastronomyService.listOwn`'s
+ *    IS the security boundary, matching `VenueService.listOwn`'s
  *    existing convention.
- *  - Correct model dispatch: GASTRONOMY → `GastronomyModel`, EXPERIENCE →
+ *  - Correct model dispatch: GASTRONOMY → `VenueModel`, EXPERIENCE →
  *    `ExperienceModel`.
  *  - Scope isolation: actor.id (never a caller-supplied id) is passed to
  *    `findIdsByOwnerId`.
@@ -24,7 +24,7 @@
  * Every test follows the AAA (Arrange / Act / Assert) pattern.
  */
 
-import { EntityViewModel, ExperienceModel, GastronomyModel } from '@repo/db';
+import { EntityViewModel, ExperienceModel, VenueModel } from '@repo/db';
 import { EntityTypeEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -57,7 +57,7 @@ const ownerActor = createActor({
 describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
     let service: EntityViewService;
     let modelMock: EntityViewModel;
-    let gastronomyModelMock: GastronomyModel;
+    let venueModelMock: VenueModel;
     let experienceModelMock: ExperienceModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
 
@@ -67,14 +67,14 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
             'getStatsForEntities',
             'purgeOlderThan'
         ]);
-        gastronomyModelMock = createTypedModelMock(GastronomyModel, ['findIdsByOwnerId']);
+        venueModelMock = createTypedModelMock(VenueModel, ['findIdsByOwnerId']);
         experienceModelMock = createTypedModelMock(ExperienceModel, ['findIdsByOwnerId']);
         loggerMock = createLoggerMock();
         service = new EntityViewService(
             { logger: loggerMock },
             modelMock,
             undefined,
-            gastronomyModelMock,
+            venueModelMock,
             experienceModelMock
         );
     });
@@ -92,7 +92,7 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
 
         it('should return stats for all owned gastronomy listings', async () => {
             // Arrange
-            asMock(gastronomyModelMock.findIdsByOwnerId).mockResolvedValue([
+            asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([
                 UUID_LISTING_1,
                 UUID_LISTING_2
             ]);
@@ -113,19 +113,19 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
 
         it('should pass actor.id (not a caller-supplied id) to GastronomyModel.findIdsByOwnerId', async () => {
             // Arrange
-            asMock(gastronomyModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
+            asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
             asMock(modelMock.getStatsForEntities).mockResolvedValue([]);
 
             // Act
             await service.getStatsForOwnListings(baseInput);
 
             // Assert
-            expect(asMock(gastronomyModelMock.findIdsByOwnerId)).toHaveBeenCalledWith(UUID_OWNER);
+            expect(asMock(venueModelMock.findIdsByOwnerId)).toHaveBeenCalledWith(UUID_OWNER);
         });
 
         it('should normalize zero-view listings to {unique:0, total:0}', async () => {
             // Arrange — UUID_LISTING_2 absent from model result
-            asMock(gastronomyModelMock.findIdsByOwnerId).mockResolvedValue([
+            asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([
                 UUID_LISTING_1,
                 UUID_LISTING_2
             ]);
@@ -142,7 +142,7 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
 
         it('should return empty array and skip the model call when actor owns no listings', async () => {
             // Arrange
-            asMock(gastronomyModelMock.findIdsByOwnerId).mockResolvedValue([]);
+            asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([]);
 
             // Act
             const result = await service.getStatsForOwnListings(baseInput);
@@ -155,7 +155,7 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
 
         it('should map window 7d to windowDays=7', async () => {
             // Arrange
-            asMock(gastronomyModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
+            asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
             asMock(modelMock.getStatsForEntities).mockResolvedValue([]);
 
             // Act
@@ -172,7 +172,7 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
 
         it('should return INTERNAL_ERROR when the model throws', async () => {
             // Arrange
-            asMock(gastronomyModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
+            asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
             asMock(modelMock.getStatsForEntities).mockRejectedValue(new Error('DB error'));
 
             // Act
@@ -208,7 +208,7 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
             // Assert
             expect(result.error).toBeUndefined();
             expect(result.data).toContainEqual({ entityId: UUID_LISTING_1, unique: 4, total: 9 });
-            expect(asMock(gastronomyModelMock.findIdsByOwnerId)).not.toHaveBeenCalled();
+            expect(asMock(venueModelMock.findIdsByOwnerId)).not.toHaveBeenCalled();
             const callArg = asMock(modelMock.getStatsForEntities).mock.calls[0]?.[0] as {
                 entityType: string;
             };

@@ -15,7 +15,7 @@ import { PermissionEnum, PublicationStatusEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { ExperienceService } from '../../../src/services/experience/experience.service';
-import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
+import { VenueService } from '../../../src/services/venue/venue.service';
 import type { Actor } from '../../../src/types';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 import {
@@ -23,7 +23,7 @@ import {
     isServiceTestDbAvailable,
     seedAccommodation,
     seedExperience,
-    seedGastronomy,
+    seedVenue,
     withServiceTestTransaction
 } from './helpers';
 
@@ -93,14 +93,14 @@ function expectPostCutOwnerEdit(input: {
 
 describe('HOS-1500 V9a — owner-act register starts at the cut (integration)', () => {
     let accommodationService: AccommodationService;
-    let gastronomyService: GastronomyService;
+    let venueService: VenueService;
     let experienceService: ExperienceService;
 
     beforeAll(() => {
         if (!dbAvailable) return;
         const config = { logger: createLoggerMock() };
         accommodationService = new AccommodationService(config);
-        gastronomyService = new GastronomyService(config);
+        venueService = new VenueService(config);
         experienceService = new ExperienceService(config);
     });
 
@@ -168,7 +168,7 @@ describe('HOS-1500 V9a — owner-act register starts at the cut (integration)', 
         'TEST:V9a:4 — gastronomy first owner edit after cut is the latest recorded act',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                const { ownerId, gastronomyId } = await seedGastronomy(tx, {
+                const { ownerId, gastronomyId } = await seedVenue(tx, {
                     publicationStatus: PublicationStatusEnum.PUBLISHED,
                     inactiveSince: CUT_INSTANT,
                     deadlinesVersion: 1
@@ -182,7 +182,7 @@ describe('HOS-1500 V9a — owner-act register starts at the cut (integration)', 
                     await findLatestOwnerAct({ entityType, entityId: gastronomyId, tx })
                 ).toBeNull();
 
-                const edited = await gastronomyService.updateOwn(
+                const edited = await venueService.updateOwn(
                     gastronomyId,
                     { summary: 'Resumen editado después del corte' },
                     ownerActor(ownerId),

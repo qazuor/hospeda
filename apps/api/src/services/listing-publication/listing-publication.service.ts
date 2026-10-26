@@ -11,8 +11,8 @@ import {
     AccommodationService,
     computeTrialEmailPseudonym,
     ExperienceService,
-    GastronomyService,
-    ServiceError
+    ServiceError,
+    VenueService
 } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import type { PublicationVertical } from '../../../../../packages/verticals/src/publication/publication-types';
@@ -25,7 +25,7 @@ import { evaluateListingPublishCompleteness } from './listing-publish-completene
 import { resolveSubscribeDestinationForUser } from './subscribe-destination.service';
 
 const accommodationService = new AccommodationService({});
-const gastronomyService = new GastronomyService({});
+const venueService = new VenueService({});
 const experienceService = new ExperienceService({});
 
 /** API composition shared by the three listing verticals for PB1 and PB6. */
@@ -63,7 +63,7 @@ export class ListingPublicationService {
                 break;
             }
             case VerticalEnum.VENUE: {
-                const existing = await gastronomyService.getById(args.actor, args.id);
+                const existing = await venueService.getById(args.actor, args.id);
                 if (existing.error)
                     throw new ServiceError(existing.error.code, existing.error.message);
                 if (!existing.data)
@@ -252,7 +252,7 @@ export class ListingPublicationService {
                 return result.data ? { ownerId: result.data.ownerId } : null;
             }
             case VerticalEnum.VENUE: {
-                const result = await gastronomyService.getById(actor, id);
+                const result = await venueService.getById(actor, id);
                 if (result.error) throw new ServiceError(result.error.code, result.error.message);
                 return result.data ? { ownerId: result.data.ownerId } : null;
             }
@@ -274,11 +274,11 @@ export class ListingPublicationService {
         vertical: Exclude<PublicationVertical, typeof VerticalEnum.ACCOMMODATION>
     ) {
         if (vertical === VerticalEnum.VENUE) {
-            const result = await gastronomyService.getById(actor, id);
+            const result = await venueService.getById(actor, id);
             if (result.error) throw new ServiceError(result.error.code, result.error.message);
             if (!result.data)
                 throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy not found');
-            const { amenityIds, featureIds } = await gastronomyService.loadJunctionIds(id);
+            const { amenityIds, featureIds } = await venueService.loadJunctionIds(id);
             return { ...result.data, amenityIds, featureIds };
         }
         const result = await experienceService.getById(actor, id);

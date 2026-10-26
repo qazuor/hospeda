@@ -266,7 +266,7 @@ function describeUploadError(err: unknown, t: Translate): string {
  * never reject on this path — but a concurrent edit in another tab can still
  * fill the remaining slots between that client-side check and this file's
  * turn in the sequential loop, and the server enforces the same cap with
- * `ServiceErrorCode.QUOTA_EXCEEDED` (`packages/service-core/src/services/gastronomy/gastronomy.media.ts`,
+ * `ServiceErrorCode.QUOTA_EXCEEDED` (`packages/service-core/src/services/venue/venue.media.ts`,
  * `packages/service-core/src/services/experience/experience.media.ts`,
  * mapped to HTTP 429 — `apps/api/src/middlewares/response.ts`). Once that
  * happens every remaining file in the batch would fail identically, so the

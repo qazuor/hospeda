@@ -3,9 +3,9 @@ import { eq, sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model.ts';
 import { ExperienceModel } from '../../src/models/experience/experience.model.ts';
-import { GastronomyModel } from '../../src/models/gastronomy/gastronomy.model.ts';
 import type { ListingVertical } from '../../src/models/listing/listing-publication.model.ts';
 import { listingPurgeModel } from '../../src/models/listing/listing-purge.model.ts';
+import { VenueModel } from '../../src/models/venue/venue.model.ts';
 import { accommodationReviews } from '../../src/schemas/accommodation/accommodation_review.dbschema.ts';
 import { accommodationCalendarSync } from '../../src/schemas/accommodation/accommodationCalendarSync.dbschema.ts';
 import { touristPriceAlerts } from '../../src/schemas/alert/tourist_price_alerts.dbschema.ts';
@@ -41,7 +41,7 @@ async function createListing(
             tx
         );
     if (vertical === 'gastronomy')
-        return new GastronomyModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
+        return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
     return new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx);
 }
 

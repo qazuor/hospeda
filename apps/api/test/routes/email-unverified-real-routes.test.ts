@@ -3,8 +3,8 @@ import { PermissionEnum, RoleEnum, ServiceErrorCode, UserSchema } from '@repo/sc
 import {
     AccommodationService,
     ExperienceService,
-    GastronomyService,
-    UserService
+    UserService,
+    VenueService
 } from '@repo/service-core';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -15,8 +15,8 @@ import {
     protectedBillingSubscriptionRoutes
 } from '../../src/routes/billing-subscription/index';
 import { protectedExperienceRoutes } from '../../src/routes/experience/protected/index';
-import { protectedGastronomyRoutes } from '../../src/routes/gastronomy/protected/index';
 import { protectedUserRoutes } from '../../src/routes/user/protected/index';
+import { protectedVenueRoutes } from '../../src/routes/venue/protected/index';
 import type { AppBindings } from '../../src/types';
 
 const cancellationRouteMocks = vi.hoisted(() => ({
@@ -57,7 +57,7 @@ const app = (options: {
         return next();
     });
     result.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
-    result.route('/api/v1/protected/gastronomies', protectedGastronomyRoutes);
+    result.route('/api/v1/protected/gastronomies', protectedVenueRoutes);
     result.route('/api/v1/protected/experiences', protectedExperienceRoutes);
     result.route('/api/v1/protected/users', protectedUserRoutes);
     result.route('/api/v1/protected/billing/subscriptions', protectedBillingSubscriptionRoutes);
@@ -102,8 +102,8 @@ describe('TEST:V5:3 TEST:1692:1 the closed list passes step 2 on the real router
         const userSpy = vi
             .spyOn(UserService.prototype, 'getById')
             .mockResolvedValue({ data: profile });
-        const gastronomySpy = vi
-            .spyOn(GastronomyService.prototype, 'listOwn')
+        const venueSpy = vi
+            .spyOn(VenueService.prototype, 'listOwn')
             .mockResolvedValue({ data: { listings: [] } } as never);
         const experienceSpy = vi
             .spyOn(ExperienceService.prototype, 'listOwn')
@@ -113,7 +113,7 @@ describe('TEST:V5:3 TEST:1692:1 the closed list passes step 2 on the real router
             .mockResolvedValue({ data: { items: [], total: 0 } } as never);
         for (const [path, spy] of [
             [`/api/v1/protected/users/${OWNER_ID}`, userSpy],
-            ['/api/v1/protected/gastronomies/mine', gastronomySpy],
+            ['/api/v1/protected/gastronomies/mine', venueSpy],
             ['/api/v1/protected/experiences/mine', experienceSpy],
             ['/api/v1/protected/accommodations', accommodationSpy]
         ] as const) {

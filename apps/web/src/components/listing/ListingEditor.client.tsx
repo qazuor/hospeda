@@ -224,7 +224,7 @@ function nullWhenEmpty(value: string): string | null {
  * `current`/`baseline` always hold the REAL stored i18n values, nothing
  * fabricated — but `nameI18n`/`summaryI18n`/`descriptionI18n`/
  * `richDescriptionI18n` are each a single JSONB column replaced WHOLESALE on
- * save, not merged per locale (`gastronomy.model.ts`/`experience.model.ts`
+ * save, not merged per locale (`venue.model.ts`/`experience.model.ts`
  * do not list them in `mergeableJsonbColumns`, only `contactInfo` is there —
  * see `packages/db/src/base/base.model.ts:387-393`). So a per-FIELD diff
  * (not per-locale) is exactly right: it must still send the whole

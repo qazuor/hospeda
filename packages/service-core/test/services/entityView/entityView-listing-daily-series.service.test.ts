@@ -17,7 +17,7 @@
  * Every test follows the AAA (Arrange / Act / Assert) pattern.
  */
 
-import { EntityViewModel, ExperienceModel, GastronomyModel } from '@repo/db';
+import { EntityViewModel, ExperienceModel, VenueModel } from '@repo/db';
 import { EntityTypeEnum, RoleEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -54,7 +54,7 @@ const baseInput: GetStatsForOwnListingsInput = {
 describe('EntityViewService.getDailySeriesForOwnListings (HOS-734)', () => {
     let service: EntityViewService;
     let modelMock: EntityViewModel;
-    let gastronomyModelMock: GastronomyModel;
+    let venueModelMock: VenueModel;
     let experienceModelMock: ExperienceModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
 
@@ -65,14 +65,14 @@ describe('EntityViewService.getDailySeriesForOwnListings (HOS-734)', () => {
             'getDailySeriesForEntityIds',
             'purgeOlderThan'
         ]);
-        gastronomyModelMock = createTypedModelMock(GastronomyModel, ['findIdsByOwnerId']);
+        venueModelMock = createTypedModelMock(VenueModel, ['findIdsByOwnerId']);
         experienceModelMock = createTypedModelMock(ExperienceModel, ['findIdsByOwnerId']);
         loggerMock = createLoggerMock();
         service = new EntityViewService(
             { logger: loggerMock },
             modelMock,
             undefined,
-            gastronomyModelMock,
+            venueModelMock,
             experienceModelMock
         );
 
@@ -121,7 +121,7 @@ describe('EntityViewService.getDailySeriesForOwnListings (HOS-734)', () => {
     describe('when owner has zero listings', () => {
         it('should return a gap-filled all-zero series without calling getDailySeriesForEntityIds', async () => {
             // Arrange
-            asMock(gastronomyModelMock.findIdsByOwnerId).mockResolvedValue([]);
+            asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([]);
 
             // Act
             const result = await service.getDailySeriesForOwnListings(baseInput);
@@ -135,7 +135,7 @@ describe('EntityViewService.getDailySeriesForOwnListings (HOS-734)', () => {
 
         it('should return exactly 7 items for window 7d', async () => {
             // Arrange
-            asMock(gastronomyModelMock.findIdsByOwnerId).mockResolvedValue([]);
+            asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([]);
 
             // Act
             const result = await service.getDailySeriesForOwnListings({
@@ -151,7 +151,7 @@ describe('EntityViewService.getDailySeriesForOwnListings (HOS-734)', () => {
     describe('when owner has listings (GASTRONOMY)', () => {
         it('should call getDailySeriesForEntityIds with the actor-owned IDs', async () => {
             // Arrange
-            asMock(gastronomyModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
+            asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
             asMock(modelMock.getDailySeriesForEntityIds).mockResolvedValue([]);
 
             // Act
@@ -174,7 +174,7 @@ describe('EntityViewService.getDailySeriesForOwnListings (HOS-734)', () => {
             // Arrange — model returns only one day; all others must be gap-filled.
             // Local today = 2026-06-14 (see beforeEach); with window=7d, the local
             // window is [2026-06-08 .. 2026-06-14], so the oldest date is 2026-06-08.
-            asMock(gastronomyModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
+            asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
             asMock(modelMock.getDailySeriesForEntityIds).mockResolvedValue([
                 { date: '2026-06-12', total: 8 }
             ]);
@@ -206,7 +206,7 @@ describe('EntityViewService.getDailySeriesForOwnListings (HOS-734)', () => {
 
             // Assert
             expect(asMock(experienceModelMock.findIdsByOwnerId)).toHaveBeenCalledWith(UUID_OWNER);
-            expect(asMock(gastronomyModelMock.findIdsByOwnerId)).not.toHaveBeenCalled();
+            expect(asMock(venueModelMock.findIdsByOwnerId)).not.toHaveBeenCalled();
             const callArg = asMock(modelMock.getDailySeriesForEntityIds).mock.calls[0]?.[0] as {
                 entityType: string;
             };
@@ -217,7 +217,7 @@ describe('EntityViewService.getDailySeriesForOwnListings (HOS-734)', () => {
     describe('when model throws', () => {
         it('should return INTERNAL_ERROR', async () => {
             // Arrange
-            asMock(gastronomyModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
+            asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
             asMock(modelMock.getDailySeriesForEntityIds).mockRejectedValue(new Error('DB timeout'));
 
             // Act

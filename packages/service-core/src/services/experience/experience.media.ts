@@ -369,7 +369,7 @@ export async function removeExperienceMedia(
  * 4. Batch-update each row's `sortOrder` to its index in `orderedIds`.
  *    All updates run in a single transaction.
  *
- * See `gastronomy.media.ts::reorderGastronomyMedia` for the full rationale on
+ * See `gastronomy.media.ts::reorderVenueMedia` for the full rationale on
  * why a pure set-difference check is not sufficient to catch duplicates on its
  * own, and why an explicit array-length-vs-set-size check is added here too.
  *

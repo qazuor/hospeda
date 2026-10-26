@@ -17,7 +17,7 @@ import { ModerationStatusEnumSchema } from '../../../enums/index.js';
  * Re-exports the shared {@link ListingMediaStateSchema} under the
  * per-vertical name used by gastronomy media endpoints/services.
  *
- * @see packages/db/src/schemas/venue/gastronomy_media.dbschema.ts
+ * @see packages/db/src/schemas/venue/venue_media.dbschema.ts
  */
 export const VenueMediaStateSchema = ListingMediaStateSchema;
 export type VenueMediaState = z.infer<typeof VenueMediaStateSchema>;
@@ -30,7 +30,7 @@ export type VenueMediaState = z.infer<typeof VenueMediaStateSchema>;
  * (`gastronomyId`). See the base schema's JSDoc for the full field-level
  * documentation shared by both verticals.
  *
- * @see packages/db/src/schemas/venue/gastronomy_media.dbschema.ts
+ * @see packages/db/src/schemas/venue/venue_media.dbschema.ts
  */
 export const VenueMediaSchema = BaseListingMediaSchema.extend({
     /** UUID primary key for this media row. */
@@ -128,7 +128,7 @@ export const VenueMediaAddPayloadSchema = z.object({
 export type VenueMediaAddPayload = z.infer<typeof VenueMediaAddPayloadSchema>;
 
 /**
- * Full service input for `GastronomyService.addMedia`.
+ * Full service input for `VenueService.addMedia`.
  * Combines the URL param `gastronomyId` with the photo payload.
  */
 export const VenueMediaAddInputSchema = z.object({
@@ -146,7 +146,7 @@ export type VenueMediaAddInput = z.infer<typeof VenueMediaAddInputSchema>;
 // ----------------------------------------------------------------------------
 
 /**
- * Full service input for `addGastronomyFeaturedMedia`.
+ * Full service input for `addVenueFeaturedMedia`.
  *
  * The payload is the SAME one the gallery endpoint accepts — a cover differs in
  * what the server does with it, not in what the client sends. Reusing it
@@ -374,7 +374,7 @@ export const VenueMediaUpdatePayloadSchema = ListingMediaUpdatePayloadSchema;
 export type VenueMediaUpdatePayload = z.infer<typeof VenueMediaUpdatePayloadSchema>;
 
 /**
- * Service input for `updateGastronomyMedia`.
+ * Service input for `updateVenueMedia`.
  *
  * Combines the URL params (`gastronomyId`, `mediaId`) with the four payload fields
  * spread from {@link VenueMediaUpdatePayloadSchema}'s shape, then adds the

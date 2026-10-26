@@ -29,7 +29,7 @@ vi.mock('../../../src/services/listing-publication/listing-moderation.service', 
 }));
 
 await import('../../../src/routes/accommodation/admin/moderate');
-await import('../../../src/routes/gastronomy/admin/moderate');
+await import('../../../src/routes/venue/admin/moderate');
 await import('../../../src/routes/experience/admin/moderate');
 
 describe('TEST:V6:12 listing moderation route adapters', () => {

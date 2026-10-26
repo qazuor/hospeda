@@ -116,7 +116,7 @@ class GenericMockModel {
  * mocked DB, so route-level tests assert true gate + routing behaviour instead of a spurious
  * 400 from the sort guard.
  */
-const GASTRONOMY_TABLE_COLUMNS = {
+const VENUE_TABLE_COLUMNS = {
     id: 'id',
     slug: 'slug',
     name: 'name',
@@ -141,12 +141,12 @@ const GASTRONOMY_TABLE_COLUMNS = {
 
 /**
  * Gastronomy model stub that exposes the real column set via `getTable()` so the
- * (real) GastronomyService admin list/options/sort validation runs faithfully against
+ * (real) VenueService admin list/options/sort validation runs faithfully against
  * the mocked DB. All data methods stay no-op (inherited from GenericMockModel).
  */
-class GastronomyMockModel extends GenericMockModel {
+class VenueMockModel extends GenericMockModel {
     override getTable() {
-        return GASTRONOMY_TABLE_COLUMNS;
+        return VENUE_TABLE_COLUMNS;
     }
     override getTableName() {
         return 'gastronomies';
@@ -339,7 +339,7 @@ export function createDbMock() {
          * hard vitest error ("No <x> export is defined on the @repo/db mock")
          * the moment the importing line runs.
          *
-         * That is not a cosmetic gap. `GastronomyService._executeCount` is on the
+         * That is not a cosmetic gap. `VenueService._executeCount` is on the
          * path the gastronomy and experience limits middleware takes to count an owner's listings,
          * and since HOS-1078 that middleware fails CLOSED — so a missing export
          * here surfaces as a **503 on listing creation**, which reads as a broken
@@ -348,20 +348,20 @@ export function createDbMock() {
          *
          * Shape-only stubs, mirroring `safeIlike`: enough for a WHERE builder to
          * hold, and inspectable by a test that asserts on the emitted condition.
-         * `buildGastronomyCatalogConditions` reproduces the real contract that
+         * `buildVenueCatalogConditions` reproduces the real contract that
          * matters to callers — an EMPTY array when no filter is active, so the
          * no-filter path (every limits-middleware count) stays identical to
          * before the filter existed.
          */
-        buildGastronomyFeatureIntersectionClause: vi.fn((featureIds: readonly string[]) => ({
+        buildVenueFeatureIntersectionClause: vi.fn((featureIds: readonly string[]) => ({
             type: 'gastronomyFeatureIntersection',
             featureIds
         })),
-        buildGastronomyAmenityIntersectionClause: vi.fn((amenityIds: readonly string[]) => ({
+        buildVenueAmenityIntersectionClause: vi.fn((amenityIds: readonly string[]) => ({
             type: 'gastronomyAmenityIntersection',
             amenityIds
         })),
-        buildGastronomyCatalogConditions: vi.fn(
+        buildVenueCatalogConditions: vi.fn(
             ({
                 amenities,
                 features
@@ -1522,14 +1522,14 @@ export function createDbMock() {
         },
 
         // HOS-372: relational gastronomy or experience media singletons, the gastronomy/experience
-        // twins of accommodationMediaModel above. GastronomyService and
+        // twins of accommodationMediaModel above. VenueService and
         // ExperienceService resolve them in their constructors
-        // (`mediaModel ?? gastronomyMediaModel`), so a mock without them fails at
+        // (`mediaModel ?? venueMediaModel`), so a mock without them fails at
         // MODULE LOAD for every test that touches the gastronomy and experience routes — the suite
         // reports "0 tests" rather than a failure, which reads like a pass.
-        gastronomyMediaModel: {
-            findByGastronomy: vi.fn().mockResolvedValue({ items: [], total: 0 }),
-            findByGastronomies: vi.fn().mockResolvedValue(new Map()),
+        venueMediaModel: {
+            findByVenue: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+            findByVenues: vi.fn().mockResolvedValue(new Map()),
             findFeatured: vi.fn().mockResolvedValue(null),
             create: vi.fn().mockResolvedValue(null),
             hardDelete: vi.fn().mockResolvedValue(undefined)
@@ -1542,39 +1542,39 @@ export function createDbMock() {
             hardDelete: vi.fn().mockResolvedValue(undefined)
         },
 
-        // SPEC-239: Gastronomy singleton model instances. GastronomyService,
-        // GastronomyReviewService, and the standalone FAQ helpers access these at module
+        // SPEC-239: Venue singleton model instances. VenueService,
+        // VenueReviewService, and the standalone FAQ helpers access these at module
         // scope (via service constructor or direct import). They are exported as singleton
         // instances (not classes) in @repo/db — mirror that here with GenericMockModel
         // instances so initApp() can construct all gastronomy routes without a real DB.
-        gastronomyModel: new GastronomyMockModel(),
-        gastronomyReviewModel: new GenericMockModel(),
-        rGastronomyAmenityModel: new GenericMockModel(),
-        rGastronomyFeatureModel: new GenericMockModel(),
+        venueModel: new VenueMockModel(),
+        venueReviewModel: new GenericMockModel(),
+        rVenueAmenityModel: new GenericMockModel(),
+        rVenueFeatureModel: new GenericMockModel(),
 
-        // GastronomyFaqModel is also exported as a class (used by gastronomy.faq.ts
-        // helpers which accept a GastronomyModel instance and internally call a new
-        // GastronomyFaqModel for FAQ CRUD). Expose both the class and singleton.
-        GastronomyFaqModel: GenericMockModel,
-        gastronomyFaqModel: new GenericMockModel(),
+        // VenueFaqModel is also exported as a class (used by gastronomy.faq.ts
+        // helpers which accept a VenueModel instance and internally call a new
+        // VenueFaqModel for FAQ CRUD). Expose both the class and singleton.
+        VenueFaqModel: GenericMockModel,
+        venueFaqModel: new GenericMockModel(),
 
         // HOS-895: the carta. `gastronomy.menu.ts` constructs both of these
-        // itself, exactly as the FAQ helper constructs `GastronomyFaqModel`, so
+        // itself, exactly as the FAQ helper constructs `VenueFaqModel`, so
         // the CLASS has to be here or the menu routes throw "not a constructor"
         // at request time rather than failing a visible assertion. This object
         // is an explicit inventory of `@repo/db`: an export missing from it
         // arrives as `undefined`, not as an import error.
-        GastronomyMenuSectionModel: GenericMockModel,
-        gastronomyMenuSectionModel: new GenericMockModel(),
-        GastronomyMenuItemModel: GenericMockModel,
-        gastronomyMenuItemModel: new GenericMockModel(),
+        VenueMenuSectionModel: GenericMockModel,
+        venueMenuSectionModel: new GenericMockModel(),
+        VenueMenuItemModel: GenericMockModel,
+        venueMenuItemModel: new GenericMockModel(),
 
         // HOS-1042: the venue agenda. `gastronomy.events.ts` constructs the
         // CLASS itself, same as the carta above, so it has to be in this
-        // inventory or `new GastronomyEventModel()` throws "not a constructor"
+        // inventory or `new VenueEventModel()` throws "not a constructor"
         // at request time instead of failing a visible assertion.
-        GastronomyEventModel: GenericMockModel,
-        gastronomyEventModel: new GenericMockModel(),
+        VenueEventModel: GenericMockModel,
+        venueEventModel: new GenericMockModel(),
 
         // HOS-277: AllianceLeadModel — instantiated at module scope by
         // AllianceLeadService when the alliance lead routes load. A GenericMockModel

@@ -114,7 +114,10 @@ describe.each(verticals)('TEST:V6:13 PB12 owner route — %s', (vertical) => {
 
     it('TEST:V6:13 conceals foreign listings from owners and action 15 admins', async () => {
         const routeSource = readFileSync(
-            new URL(`../../../src/routes/${vertical}/protected/purge.ts`, import.meta.url),
+            new URL(
+                `../../../src/routes/${vertical === VerticalEnum.VENUE ? 'venue' : vertical}/protected/purge.ts`,
+                import.meta.url
+            ),
             'utf8'
         );
         expect(routeSource).not.toMatch(/\bbypassPermission\b/);

@@ -252,7 +252,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 };
 
                 // Act
-                const gastronomy = await resolveAddonSources({
+                const venue = await resolveAddonSources({
                     userId,
                     vertical: VerticalEnum.VENUE,
                     ports,
@@ -266,7 +266,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 });
 
                 // Assert
-                expect(gastronomy.sources).toEqual([
+                expect(venue.sources).toEqual([
                     addonSource({
                         addonVersionId: versionId,
                         scope: 'LISTING',
@@ -326,7 +326,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     ports: portsFor(tx),
                     tx
                 });
-                const gastronomy = await resolveAddonSources({
+                const venue = await resolveAddonSources({
                     userId,
                     vertical: VerticalEnum.VENUE,
                     ports: portsFor(tx),
@@ -351,7 +351,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         })
                     ])
                 );
-                expect(gastronomy.sources).toEqual([]);
+                expect(venue.sources).toEqual([]);
             });
         });
     }

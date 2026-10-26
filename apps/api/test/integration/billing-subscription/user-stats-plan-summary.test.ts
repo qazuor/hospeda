@@ -44,7 +44,7 @@ async function readStats(ownerId: string) {
     return ((await response.json()) as { data: Record<string, unknown> }).data;
 }
 
-async function seedGastronomyPrincipal(ownerId: string) {
+async function seedVenuePrincipal(ownerId: string) {
     const db = getDb();
     const [plan] = await db
         .insert(plans)
@@ -117,7 +117,7 @@ describe('TEST:1756:1-7 user stats plan summary', () => {
 
     it('TEST:1756:3 returns no single plan for two live verticals', async () => {
         const row = await seedSelfState('ACTIVE');
-        await seedGastronomyPrincipal(row.ownerId);
+        await seedVenuePrincipal(row.ownerId);
         const data = await readStats(row.ownerId);
         expect(data.plan).toBeNull();
         expect(data.activeSubscriptionsCount).toBe(2);
@@ -136,7 +136,7 @@ describe('TEST:1756:1-7 user stats plan summary', () => {
         expect(UserStatsResponseSchema.safeParse(oneData).success).toBe(true);
 
         const multiple = await seedSelfState('ACTIVE');
-        await seedGastronomyPrincipal(multiple.ownerId);
+        await seedVenuePrincipal(multiple.ownerId);
         const multipleData = await readStats(multiple.ownerId);
         expect(UserStatsResponseSchema.safeParse(multipleData).success).toBe(true);
     });

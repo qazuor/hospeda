@@ -116,7 +116,7 @@ describe('TEST:V6:18 AC:V6:32 no file reads the six old listing columns', () => 
 
         it('(d) listing-file: a module specifier is a path, not a read', () => {
             const content = "import { f } from '../../utils/listing-faq-visibility';";
-            expect(scan('apps/api/src/routes/gastronomy/public/getById.ts', content)).toEqual([]);
+            expect(scan('apps/api/src/routes/venue/public/getById.ts', content)).toEqual([]);
         });
     });
 

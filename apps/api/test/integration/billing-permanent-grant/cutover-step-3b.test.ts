@@ -323,8 +323,8 @@ describe('TEST:B9a:16 — la herramienta del 3b, dos veces', () => {
         const first = await trialUser('i1');
         const second = await trialUser('i2');
         const { seedGrant } = await import('./grant-fixtures');
-        const gastronomy = await seedGrantPlan(VerticalEnum.VENUE);
-        await seedGrant({ beneficiaryUserId: first, grantedBy: operatorId, anchor: gastronomy });
+        const venue = await seedGrantPlan(VerticalEnum.VENUE);
+        await seedGrant({ beneficiaryUserId: first, grantedBy: operatorId, anchor: venue });
         await expect(args([first, second])).rejects.toMatchObject({
             reason: 'PERMANENT_GRANT_ALREADY_LIVE'
         });

@@ -523,7 +523,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         expect(assembler).toHaveBeenCalledWith(
             expect.objectContaining({
                 ownerCapabilities: {
-                    manageGastronomyMenu: testCase.entityType === 'gastronomy' && testCase.enabled,
+                    manageVenueMenu: testCase.entityType === 'gastronomy' && testCase.enabled,
                     manageExperienceDirections:
                         testCase.entityType === 'experience' && testCase.enabled
                 }

@@ -11,7 +11,7 @@
  *
  * HOS-372 **dropped that column**. Photos now live only in the relational
  * `gastronomy_media` / `experience_media` tables, and `media` is recomposed at
- * read time — but that composition is a side effect of `GastronomyService` /
+ * read time — but that composition is a side effect of `VenueService` /
  * `ExperienceService`'s `_afterGetByField` / `_afterList` / `_afterSearch`
  * hooks. Code that reads the raw `@repo/db` model directly therefore gets a row
  * with **no `media` key at all**, and the gate correctly-but-uselessly reports
@@ -21,7 +21,7 @@
  * reason to be reading raw rather than switching to the service:
  *
  * - the retired owner start-subscription route reads raw so a non-owner
- *   gets a uniform 403 (AC-2); `GastronomyService.getById`'s view-tier gating
+ *   gets a uniform 403 (AC-2); `VenueService.getById`'s view-tier gating
  *   would 404 a non-owner on a still-DRAFT listing instead.
  * - the listing visibility reconciler reads raw because it runs inside
  *   the reconciler's transaction with a narrow a narrow entity model.
@@ -52,7 +52,7 @@
  */
 
 import type { DrizzleClient } from '@repo/db';
-import { experienceMediaModel, gastronomyMediaModel } from '@repo/db';
+import { experienceMediaModel, venueMediaModel } from '@repo/db';
 import type { Media, VenueOrExperience } from '@repo/schemas';
 import { composeListingMedia } from '@repo/service-core';
 
@@ -102,13 +102,12 @@ export async function loadListingMedia(input: LoadListingMediaInput): Promise<Me
     // for anything that is not literally 'gastronomy'.
     let grouped: Awaited<
         ReturnType<
-            | typeof gastronomyMediaModel.findByGastronomies
-            | typeof experienceMediaModel.findByExperiences
+            typeof venueMediaModel.findByVenues | typeof experienceMediaModel.findByExperiences
         >
     >;
     switch (entityType) {
         case 'gastronomy':
-            grouped = await gastronomyMediaModel.findByGastronomies({
+            grouped = await venueMediaModel.findByVenues({
                 gastronomyIds: [entityId],
                 tx
             });

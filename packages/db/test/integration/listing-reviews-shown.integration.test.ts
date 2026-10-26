@@ -9,16 +9,16 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model.ts';
 import { accommodationReviewModel } from '../../src/models/accommodation/accommodationReview.model.ts';
 import { ExperienceModel } from '../../src/models/experience/experience.model.ts';
-import { GastronomyModel } from '../../src/models/gastronomy/gastronomy.model.ts';
 import { listingReviewsShownCondition } from '../../src/models/listing/listing-reviews-shown.ts';
+import { VenueModel } from '../../src/models/venue/venue.model.ts';
 import { accommodations } from '../../src/schemas/accommodation/accommodation.dbschema.ts';
 import { accommodationReviews } from '../../src/schemas/accommodation/accommodation_review.dbschema.ts';
 import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
 import { experienceReviews } from '../../src/schemas/experience/experience_review.dbschema.ts';
 import { experiences } from '../../src/schemas/experience/experiences.dbschema.ts';
-import { gastronomies } from '../../src/schemas/gastronomy/gastronomy.dbschema.ts';
-import { gastronomyReviews } from '../../src/schemas/gastronomy/gastronomy_review.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
+import { gastronomies } from '../../src/schemas/venue/venue.dbschema.ts';
+import { gastronomyReviews } from '../../src/schemas/venue/venue_review.dbschema.ts';
 import { closeTestPool, testData, withTestTransaction } from './helpers.ts';
 
 afterAll(async () => closeTestPool());
@@ -46,7 +46,7 @@ describe('TEST:1686:1 AC:1686:1 AC:1686:4 listingReviewsShownCondition', () => {
                 } as never,
                 tx
             );
-            const gastronomy = await new GastronomyModel().create(
+            const venue = await new VenueModel().create(
                 {
                     ...common,
                     name: `Review visibility ${crypto.randomUUID()}`,
@@ -86,7 +86,7 @@ describe('TEST:1686:1 AC:1686:1 AC:1686:4 listingReviewsShownCondition', () => {
                     table: gastronomies,
                     reviewTable: gastronomyReviews,
                     fk: gastronomyReviews.gastronomyId,
-                    listing: gastronomy,
+                    listing: venue,
                     rating: { food: 5, service: 5, ambiance: 5, value: 5 }
                 },
                 {

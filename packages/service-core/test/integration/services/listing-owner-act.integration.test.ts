@@ -25,7 +25,7 @@ import {
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { ExperienceService } from '../../../src/services/experience/experience.service';
-import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
+import { VenueService } from '../../../src/services/venue/venue.service';
 import type { Actor, ServiceContext } from '../../../src/types';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 import {
@@ -33,7 +33,7 @@ import {
     isServiceTestDbAvailable,
     seedAccommodation,
     seedExperience,
-    seedGastronomy,
+    seedVenue,
     withServiceTestTransaction
 } from './helpers';
 
@@ -77,14 +77,14 @@ function expectMinimumFields(input: {
 
 describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integration)', () => {
     let accommodationService: AccommodationService;
-    let gastronomyService: GastronomyService;
+    let venueService: VenueService;
     let experienceService: ExperienceService;
 
     beforeAll(() => {
         if (!dbAvailable) return;
         const config = { logger: createLoggerMock() };
         accommodationService = new AccommodationService(config);
-        gastronomyService = new GastronomyService(config);
+        venueService = new VenueService(config);
         experienceService = new ExperienceService(config);
     });
 
@@ -98,12 +98,12 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
         'TEST:V9a:1 — gastronomy: creating and editing write one event each, with the minimum fields',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                const { ownerId, destinationId } = await seedGastronomy(tx);
+                const { ownerId, destinationId } = await seedVenue(tx);
                 const actor = ownerActor(ownerId);
                 const correlationId = crypto.randomUUID();
                 const ctx: ServiceContext = { tx, correlationId };
 
-                const created = await gastronomyService.createForOwner(
+                const created = await venueService.createForOwner(
                     actor,
                     {
                         name: 'Parrilla del Dueño',
@@ -120,7 +120,7 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                 expect(created.error).toBeUndefined();
                 const listingId = created.data?.id as string;
 
-                const edited = await gastronomyService.updateOwn(
+                const edited = await venueService.updateOwn(
                     listingId,
                     { summary: 'Un resumen editado por el dueño' },
                     actor,
@@ -282,20 +282,20 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
         'TEST:V9a:1 — an edit that fails after its event was written leaves no event behind',
         async () => {
             /** Fails the write AFTER the base after-hook has written the event. */
-            class FailingAfterEventGastronomyService extends GastronomyService {
+            class FailingAfterEventVenueService extends VenueService {
                 protected override async _afterUpdate(
-                    ...args: Parameters<GastronomyService['_afterUpdate']>
-                ): ReturnType<GastronomyService['_afterUpdate']> {
+                    ...args: Parameters<VenueService['_afterUpdate']>
+                ): ReturnType<VenueService['_afterUpdate']> {
                     await super._afterUpdate(...args);
                     throw new Error('listing write fails after the owner-act event');
                 }
             }
-            const failing = new FailingAfterEventGastronomyService({
+            const failing = new FailingAfterEventVenueService({
                 logger: createLoggerMock()
             });
 
             await withServiceTestTransaction(async (tx) => {
-                const { ownerId, gastronomyId } = await seedGastronomy(tx);
+                const { ownerId, gastronomyId } = await seedVenue(tx);
 
                 // The write runs in a SAVEPOINT of the test transaction: when it
                 // throws, the savepoint rolls back — and with it the event, ONLY
@@ -376,14 +376,14 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
         'TEST:V9a:3 — five description edits leave none of the five texts in any event of the listing',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                const { ownerId, gastronomyId } = await seedGastronomy(tx);
+                const { ownerId, gastronomyId } = await seedVenue(tx);
                 const actor = ownerActor(ownerId);
                 const texts = [1, 2, 3, 4, 5].map(
                     (n) => `Texto de descripción número ${n} — marca única ${crypto.randomUUID()}`
                 );
 
                 for (const description of texts) {
-                    const edited = await gastronomyService.updateOwn(
+                    const edited = await venueService.updateOwn(
                         gastronomyId,
                         { description },
                         actor,

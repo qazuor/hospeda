@@ -5,12 +5,12 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model.ts';
 import { domainEventModel } from '../../src/models/domain-event/domain-event.model.ts';
 import { ExperienceModel } from '../../src/models/experience/experience.model.ts';
-import { GastronomyModel } from '../../src/models/gastronomy/gastronomy.model.ts';
 import { listingModerationModel } from '../../src/models/listing/listing-moderation.model.ts';
 import {
     type ListingVertical,
     listingPublicationModel
 } from '../../src/models/listing/listing-publication.model.ts';
+import { VenueModel } from '../../src/models/venue/venue.model.ts';
 import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../src/types.ts';
@@ -39,7 +39,7 @@ async function createListing(
             tx
         );
     if (vertical === 'gastronomy')
-        return new GastronomyModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
+        return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
     return new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx);
 }
 

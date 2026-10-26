@@ -39,7 +39,7 @@ const db = drizzle({ client: pool }) as unknown as DrizzleClient;
 const VERTICAL = VerticalEnum.ACCOMMODATION;
 const OTHER_VERTICAL = VerticalEnum.VENUE;
 const MAX_PHOTOS = 'max_photos_per_accommodation';
-const MAX_GASTRONOMIES = 'max_gastronomies';
+const MAX_VENUES = 'max_gastronomies';
 const SINCE = new Date('2026-01-01T00:00:00.000Z');
 
 afterAll(async () => {
@@ -219,16 +219,16 @@ describe('TEST:V3:6 — a grant never grants less than its floor', () => {
                 current: true,
                 limitValue: 30
             });
-            const gastronomyPlan = await seedPlan({ tx, vertical: OTHER_VERTICAL });
-            const gastronomyVersion = await seedVersion({
+            const venuePlan = await seedPlan({ tx, vertical: OTHER_VERTICAL });
+            const venueVersion = await seedVersion({
                 tx,
-                planId: gastronomyPlan,
+                planId: venuePlan,
                 vertical: OTHER_VERTICAL,
                 rank: 10,
                 sellable: true,
                 current: true,
                 limitValue: 99,
-                limitKey: MAX_GASTRONOMIES
+                limitKey: MAX_VENUES
             });
             const billing = new BillingForVerticalsSimulator();
             billing.setCoverage({
@@ -252,9 +252,7 @@ describe('TEST:V3:6 — a grant never grants less than its floor', () => {
                 vertical: OTHER_VERTICAL,
                 response: {
                     covered: true,
-                    sources: [
-                        ...grantSource({ reference: gastronomyVersion, floor: gastronomyVersion })
-                    ]
+                    sources: [...grantSource({ reference: venueVersion, floor: venueVersion })]
                 }
             });
 
@@ -291,7 +289,7 @@ describe('TEST:V3:6 — a grant never grants less than its floor', () => {
             ).toBe(30);
             expect(
                 otherVertical?.limits.get({
-                    key: MAX_GASTRONOMIES,
+                    key: MAX_VENUES,
                     userId: 'user-a',
                     vertical: OTHER_VERTICAL
                 })

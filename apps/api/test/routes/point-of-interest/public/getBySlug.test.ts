@@ -4,7 +4,7 @@
  * Covers: route registration, public access, underscore-slug format
  * acceptance (HOS-113 slugs are the i18n key and allow underscores, unlike
  * attraction's hyphen-only slugs), and response shape. Mirrors
- * `test/routes/gastronomy/public/getBySlug.test.ts`.
+ * `test/routes/venue/public/getBySlug.test.ts`.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';

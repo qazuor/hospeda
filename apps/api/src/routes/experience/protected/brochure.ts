@@ -5,7 +5,7 @@
  * GET /api/v1/protected/experiences/{id}/brochure
  * ```
  *
- * The gastronomy twin (`routes/gastronomy/protected/brochure.ts`) carries the
+ * The gastronomy twin (`routes/venue/protected/brochure.ts`) carries the
  * full reasoning for the order of the checks, for why the response is a raw
  * `Response`, and for why the projection is explicit. Two things differ here,
  * both because the two verticals publish different things:

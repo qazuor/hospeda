@@ -44,8 +44,8 @@ import { type PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import {
     AccommodationService,
     ExperienceService,
-    GastronomyService,
-    UserService
+    UserService,
+    VenueService
 } from '@repo/service-core';
 import { Hono } from 'hono';
 import type { AppBindings } from '../../src/types';
@@ -218,10 +218,10 @@ const OWNED_ENTITY_CASES = [
     },
     {
         label: 'gastronomy',
-        service: GastronomyService,
+        service: VenueService,
         importRoute: async () => {
-            const mod = await import('../../src/routes/gastronomy/protected/getById.js');
-            return mod.protectedGetGastronomyByIdRoute;
+            const mod = await import('../../src/routes/venue/protected/getById.js');
+            return mod.protectedGetVenueByIdRoute;
         }
     }
 ] as const;
@@ -294,10 +294,10 @@ const QR_SHEET_CASES = [
     },
     {
         label: 'gastronomy',
-        service: GastronomyService,
+        service: VenueService,
         importRoute: async () => {
-            const mod = await import('../../src/routes/gastronomy/protected/qrSheet.js');
-            return mod.protectedGetGastronomyQrSheetRoute;
+            const mod = await import('../../src/routes/venue/protected/qrSheet.js');
+            return mod.protectedGetVenueQrSheetRoute;
         }
     }
 ] as const;
@@ -395,10 +395,10 @@ const QR_CODE_CASES = [
     },
     {
         label: 'gastronomy',
-        service: GastronomyService,
+        service: VenueService,
         importRoute: async () => {
-            const mod = await import('../../src/routes/gastronomy/protected/qrCode.js');
-            return mod.protectedGetGastronomyQrCodeRoute;
+            const mod = await import('../../src/routes/venue/protected/qrCode.js');
+            return mod.protectedGetVenueQrCodeRoute;
         }
     }
 ] as const;

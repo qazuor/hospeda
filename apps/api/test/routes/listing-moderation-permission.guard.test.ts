@@ -4,10 +4,10 @@ import { describe, expect, it } from 'vitest';
 
 const ROUTES = [
     join(import.meta.dirname, '../../src/routes/accommodation/admin/moderate.ts'),
-    join(import.meta.dirname, '../../src/routes/gastronomy/admin/moderate.ts'),
+    join(import.meta.dirname, '../../src/routes/venue/admin/moderate.ts'),
     join(import.meta.dirname, '../../src/routes/experience/admin/moderate.ts'),
     join(import.meta.dirname, '../../src/routes/accommodation/admin/moderation-state.ts'),
-    join(import.meta.dirname, '../../src/routes/gastronomy/admin/moderation-state.ts'),
+    join(import.meta.dirname, '../../src/routes/venue/admin/moderation-state.ts'),
     join(import.meta.dirname, '../../src/routes/experience/admin/moderation-state.ts')
 ];
 

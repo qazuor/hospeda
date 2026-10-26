@@ -46,7 +46,7 @@
             ]
         },
         {
-            "file": "apps/api/src/routes/gastronomy/admin/delete.ts",
+            "file": "apps/api/src/routes/venue/admin/delete.ts",
             "method": "DELETE",
             "path": "/api/v1/admin/gastronomies/:id",
             "door": "admin soft delete",
@@ -57,7 +57,7 @@
             ]
         },
         {
-            "file": "apps/api/src/routes/gastronomy/admin/hardDelete.ts",
+            "file": "apps/api/src/routes/venue/admin/hardDelete.ts",
             "method": "DELETE",
             "path": "/api/v1/admin/gastronomies/:id/hard",
             "door": "admin hard delete",
@@ -68,7 +68,7 @@
             ]
         },
         {
-            "file": "apps/api/src/routes/gastronomy/admin/restore.ts",
+            "file": "apps/api/src/routes/venue/admin/restore.ts",
             "method": "POST",
             "path": "/api/v1/admin/gastronomies/:id/restore",
             "door": "admin restore",
@@ -112,7 +112,7 @@
             ]
         },
         {
-            "file": "apps/api/src/routes/gastronomy/protected/deleteDraft.ts",
+            "file": "apps/api/src/routes/venue/protected/deleteDraft.ts",
             "method": "DELETE",
             "path": "/api/v1/protected/gastronomies/:id",
             "door": "owner draft soft delete (HOS-1156, after the inventory was written)",
@@ -175,7 +175,7 @@
             ]
         },
         {
-            "file": "apps/api/src/routes/gastronomy/protected/purge.ts",
+            "file": "apps/api/src/routes/venue/protected/purge.ts",
             "method": "POST",
             "path": "/api/v1/protected/gastronomies/:id/purge",
             "door": "PB12, the owner deletes",
@@ -187,7 +187,7 @@
             ]
         },
         {
-            "file": "apps/api/src/routes/gastronomy/admin/purge.ts",
+            "file": "apps/api/src/routes/venue/admin/purge.ts",
             "method": "POST",
             "path": "/api/v1/admin/gastronomies/:id/purge",
             "door": "action 23, support at the owner request (runs PB12)",

@@ -762,7 +762,7 @@ export async function seedEvent(
 // SPEC-239 seed helpers — gastronomy lifecycle
 // ---------------------------------------------------------------------------
 
-interface SeedGastronomyOverrides {
+interface SeedVenueOverrides {
     readonly ownerId?: string;
     readonly destinationId?: string;
     readonly gastronomyId?: string;
@@ -783,9 +783,9 @@ interface SeedGastronomyOverrides {
  * @param overrides - Optional ID / field overrides.
  * @returns Object containing `{ ownerId, destinationId, gastronomyId }`.
  */
-export async function seedGastronomy(
+export async function seedVenue(
     tx: DrizzleClient,
-    overrides: SeedGastronomyOverrides = {}
+    overrides: SeedVenueOverrides = {}
 ): Promise<{
     readonly ownerId: string;
     readonly destinationId: string;
@@ -844,7 +844,7 @@ export async function seedGastronomy(
     return { ownerId, destinationId, gastronomyId };
 }
 
-interface SeedGastronomyReviewOverrides {
+interface SeedVenueReviewOverrides {
     readonly reviewId?: string;
     readonly gastronomyId: string;
     readonly userId: string;
@@ -860,9 +860,9 @@ interface SeedGastronomyReviewOverrides {
  * @param options - Required `gastronomyId` and `userId`.
  * @returns Object containing `{ reviewId }`.
  */
-export async function seedGastronomyReview(
+export async function seedVenueReview(
     tx: DrizzleClient,
-    options: SeedGastronomyReviewOverrides
+    options: SeedVenueReviewOverrides
 ): Promise<{ readonly reviewId: string }> {
     const reviewId = options.reviewId ?? crypto.randomUUID();
 
@@ -884,8 +884,8 @@ export async function seedGastronomyReview(
 // HOS-1269 seed helpers — experience lifecycle
 // ---------------------------------------------------------------------------
 //
-// Mirrors the SPEC-239 gastronomy helpers above ("seedGastronomy" /
-// "seedGastronomyReview") so the
+// Mirrors the SPEC-239 gastronomy helpers above ("seedVenue" /
+// "seedVenueReview") so the
 // experience vertical gets the same real-DB integration coverage. Until this
 // ticket, `experiences` had NO integration-test fixture at all — every helper
 // below is net-new.
@@ -904,11 +904,11 @@ interface SeedExperienceOverrides {
  * Inserts a User (owner), a Destination (CITY), and an Experience listing
  * referencing both. Returns all three IDs.
  *
- * Mirrors `seedGastronomy`: the experience is created `DRAFT` by default so
+ * Mirrors `seedVenue`: the experience is created `DRAFT` by default so
  * reconciliation tests can assert the flip to `PUBLISHED`. `priceFrom` is left at its DB default (0) with
  * `isPriceOnRequest=false`, which is deliberately an incomplete listing for
  * `resolveListingCompleteness` (missing `priceFrom`) — same role
- * `seedGastronomy`'s default row plays for the gastronomy completeness tests.
+ * `seedVenue`'s default row plays for the gastronomy completeness tests.
  *
  * @param tx - Drizzle transaction client (always rolled back after the test).
  * @param overrides - Optional ID / field overrides.

@@ -45,7 +45,7 @@
     },
     "gastronomy": {
         "description": "Vertical de gastronomía",
-        "include": ["**/*gastronom*"]
+        "include": ["**/*gastronom*", "**/*venue*"]
     },
     "experiences": {
         "description": "Vertical de experiencias",

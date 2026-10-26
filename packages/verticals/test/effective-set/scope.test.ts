@@ -81,7 +81,7 @@ describe('TEST:V3:4 — the scope decides how a key resolves', () => {
             userId: 'user-a',
             vertical: 'accommodation'
         });
-        const gastronomy = scopeKeyValues({
+        const venue = scopeKeyValues({
             values: new Map([
                 ['priority_support', 1],
                 ['max_gastronomies', 7]
@@ -93,7 +93,7 @@ describe('TEST:V3:4 — the scope decides how a key resolves', () => {
             accommodation.get({ key: 'priority_support', userId: 'user-a', vertical: 'gastronomy' })
         ).toBe(1);
         expect(
-            gastronomy.get({ key: 'priority_support', userId: 'user-a', vertical: 'accommodation' })
+            venue.get({ key: 'priority_support', userId: 'user-a', vertical: 'accommodation' })
         ).toBe(1);
         expect(
             accommodation.get({
@@ -103,7 +103,7 @@ describe('TEST:V3:4 — the scope decides how a key resolves', () => {
             })
         ).toBeUndefined();
         expect(
-            gastronomy.get({
+            venue.get({
                 key: 'max_gastronomies',
                 userId: 'user-a',
                 vertical: 'accommodation'

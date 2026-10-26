@@ -238,13 +238,13 @@ describe('DB-backed effective-set cache', () => {
             inheritsTouristVip: false,
             globalGrant: null
         });
-        const gastronomy = vi.fn(load(user, VerticalEnum.VENUE));
+        const venue = vi.fn(load(user, VerticalEnum.VENUE));
         await cache.readThrough({
             userId: user,
             vertical: VerticalEnum.VENUE,
-            load: gastronomy
+            load: venue
         });
-        expect(gastronomy).toHaveBeenCalledOnce();
+        expect(venue).toHaveBeenCalledOnce();
         const untouched = vi.fn(load(other, VerticalEnum.TOURIST));
         await cache.readThrough({ userId: other, vertical: VerticalEnum.TOURIST, load: untouched });
         expect(untouched).not.toHaveBeenCalled();

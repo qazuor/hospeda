@@ -224,7 +224,7 @@ describe('whats-new data file', () => {
         });
 
         it('delivers the GASTRONOMY_OWNER/EXPERIENCE_OWNER entry to both owners, not to a HOST', () => {
-            const gastronomyEntries = filterEntriesByRole({
+            const venueEntries = filterEntriesByRole({
                 entries: whatsNewEntries,
                 roles: ['GASTRONOMY_OWNER']
             });
@@ -239,7 +239,7 @@ describe('whats-new data file', () => {
             );
             expect(trialEntry).toBeDefined();
 
-            expect(gastronomyEntries.map((entry) => entry.id)).toContain(trialEntry?.id);
+            expect(venueEntries.map((entry) => entry.id)).toContain(trialEntry?.id);
             expect(experienceEntries.map((entry) => entry.id)).toContain(trialEntry?.id);
             expect(hostEntries.map((entry) => entry.id)).not.toContain(trialEntry?.id);
         });

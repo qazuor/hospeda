@@ -24,7 +24,7 @@ interface ExperienceSearchInput {
 /**
  * ExperienceModel — all DB access for experience listings (SPEC-240).
  *
- * Mirrors GastronomyModel structure: extends BaseModelImpl, provides search()
+ * Mirrors VenueModel structure: extends BaseModelImpl, provides search()
  * override with experience-specific filters (type).
  * Expand with domain-specific query methods as the service layer grows.
  */

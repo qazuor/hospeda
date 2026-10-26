@@ -97,21 +97,21 @@ describe('simultaneous verticals', () => {
                 .returning({ id: users.id });
             const userId = user!.id;
             const accommodation = VerticalEnum.ACCOMMODATION;
-            const gastronomy = VerticalEnum.VENUE;
+            const venue = VerticalEnum.VENUE;
             const bootstrap = createBootstrapCoverageReader(tx);
             const accommodationFloor = await bootstrap.findCurrentVersionByRole({
                 vertical: accommodation,
                 role: FLOOR_PLAN_ROLE
             });
-            const gastronomyFloor = await bootstrap.findCurrentVersionByRole({
-                vertical: gastronomy,
+            const venueFloor = await bootstrap.findCurrentVersionByRole({
+                vertical: venue,
                 role: FLOOR_PLAN_ROLE
             });
-            const gastronomyPreTrial = await bootstrap.findCurrentVersionByRole({
-                vertical: gastronomy,
+            const venuePreTrial = await bootstrap.findCurrentVersionByRole({
+                vertical: venue,
                 role: PRE_TRIAL_PLAN_ROLE
             });
-            if (!accommodationFloor || !gastronomyFloor || !gastronomyPreTrial) {
+            if (!accommodationFloor || !venueFloor || !venuePreTrial) {
                 throw new Error('Migrated catalog must provide floor and pre-trial versions');
             }
             const subscriptionVersion = await seedVersion(
@@ -122,15 +122,15 @@ describe('simultaneous verticals', () => {
             );
             const preTrial = await resolveTrialAndBaseSources({
                 reader: bootstrap,
-                input: { userId, vertical: gastronomy }
+                input: { userId, vertical: venue }
             });
             expect(preTrial.sources.map((source) => [source.type, source.since])).toEqual([
                 ['TRIAL', 'NOT_STARTED'],
                 ['BASE', expect.any(Date)]
             ]);
             expect(preTrial.sources.map((source) => source.reference)).toEqual([
-                { kind: 'PLAN_VERSION', planVersionId: gastronomyPreTrial.id },
-                { kind: 'PLAN_VERSION', planVersionId: gastronomyFloor.id }
+                { kind: 'PLAN_VERSION', planVersionId: venuePreTrial.id },
+                { kind: 'PLAN_VERSION', planVersionId: venueFloor.id }
             ]);
             const subscription = CoverageSourceSchema.parse({
                 type: 'SUBSCRIPTION',
@@ -158,7 +158,7 @@ describe('simultaneous verticals', () => {
                 vertical: accommodation,
                 response: { covered: true, sources: [subscription, base] }
             });
-            billing.setCoverage({ userId, vertical: gastronomy, response: preTrial });
+            billing.setCoverage({ userId, vertical: venue, response: preTrial });
             const redis = new FakeRedis();
             const cache = createEffectiveSetCache({
                 getClient: async () => redis,
@@ -172,7 +172,7 @@ describe('simultaneous verticals', () => {
             const read = (vertical: VerticalEnum) =>
                 readEffectiveSet({ cache, reader, billing, trials: bootstrap, userId, vertical });
             const accommodationBefore = await read(accommodation);
-            const gastronomyBefore = await read(gastronomy);
+            const venueBefore = await read(venue);
             expect(
                 accommodationBefore.entitlements.get({
                     key: 'priority_support',
@@ -181,21 +181,21 @@ describe('simultaneous verticals', () => {
                 })
             ).toBe(Infinity);
             expect(
-                gastronomyBefore.entitlements.get({
+                venueBefore.entitlements.get({
                     key: 'priority_support',
                     userId,
                     vertical: null
                 })
             ).toBeUndefined();
-            const gastronomyValue = gastronomyBefore.entitlements.get({
+            const venueValue = venueBefore.entitlements.get({
                 key: 'activate_trial',
                 userId,
-                vertical: gastronomy
+                vertical: venue
             });
-            expect(gastronomyValue).toBe(Infinity);
+            expect(venueValue).toBe(Infinity);
             expect(coverage).toHaveBeenCalledTimes(2);
             await read(accommodation);
-            await read(gastronomy);
+            await read(venue);
             expect(coverage).toHaveBeenCalledTimes(2);
 
             billing.setCoverage({
@@ -211,16 +211,16 @@ describe('simultaneous verticals', () => {
                     change: 'REMOVED'
                 }
             });
-            const gastronomyAfter = await read(gastronomy);
+            const venueAfter = await read(venue);
             const accommodationAfter = await read(accommodation);
             expect(coverage).toHaveBeenCalledTimes(4);
             expect(
-                gastronomyAfter.entitlements.get({
+                venueAfter.entitlements.get({
                     key: 'activate_trial',
                     userId,
-                    vertical: gastronomy
+                    vertical: venue
                 })
-            ).toBe(gastronomyValue);
+            ).toBe(venueValue);
             expect(
                 accommodationAfter.entitlements.get({
                     key: 'priority_support',
@@ -230,16 +230,16 @@ describe('simultaneous verticals', () => {
             ).toBeUndefined();
 
             redis.failReads = true;
-            const gastronomyLive = await read(gastronomy);
+            const venueLive = await read(venue);
             const accommodationLive = await read(accommodation);
             expect(coverage).toHaveBeenCalledTimes(6);
             expect(
-                gastronomyLive.entitlements.get({
+                venueLive.entitlements.get({
                     key: 'activate_trial',
                     userId,
-                    vertical: gastronomy
+                    vertical: venue
                 })
-            ).toBe(gastronomyValue);
+            ).toBe(venueValue);
             expect(
                 accommodationLive.entitlements.get({
                     key: 'priority_support',

@@ -4,13 +4,13 @@ import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model.ts';
 import { ExperienceModel } from '../../src/models/experience/experience.model.ts';
-import { GastronomyModel } from '../../src/models/gastronomy/gastronomy.model.ts';
+import { VenueModel } from '../../src/models/venue/venue.model.ts';
 import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
 import { closeTestPool, testData, withTestTransaction } from './helpers.ts';
 
 const accommodationModel = new AccommodationModel();
-const gastronomyModel = new GastronomyModel();
+const venueModel = new VenueModel();
 const experienceModel = new ExperienceModel();
 
 afterAll(async () => closeTestPool());
@@ -77,7 +77,7 @@ describe('listing birth model integration (TEST:V6:19)', () => {
             const destination = testData.destination();
             await tx.insert(users).values(user);
             await tx.insert(destinations).values(destination);
-            const row = await gastronomyModel.create(
+            const row = await venueModel.create(
                 {
                     name: 'Birth restaurant',
                     slug: `birth-g-${crypto.randomUUID()}`,

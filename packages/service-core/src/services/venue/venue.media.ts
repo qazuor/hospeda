@@ -1,0 +1,902 @@
+/**
+ * gastronomy.media.ts
+ *
+ * Media (gallery photo) service helpers for gastronomy listings (HOS-372).
+ *
+ * Mirrors the media-management pattern from `AccommodationService.addMedia` /
+ * `removeMedia` / `reorderMedia` / `adminGetMedia` / `setFeaturedMedia`, and the
+ * standalone-function convention established by `gastronomy.faq.ts` (module-level
+ * exported functions taking `(model, actor, data, ctx?)` instead of methods bolted
+ * onto `VenueService`).
+ *
+ * ## Permission model
+ *
+ * All five operations (add / remove / reorder / setFeatured / get) are gated on
+ * `checkVenueCanEditMedia`: `GASTRONOMY_EDIT_OWN` (listing owner) or
+ * `GASTRONOMY_EDIT_ALL` (staff). There is no separate public read path for media —
+ * public consumers read the composed `media` field on the listing itself (via
+ * `gastronomy.media-read.ts`), not this management surface.
+ *
+ * ## No dual-write
+ *
+ * These helpers NEVER read or write the legacy `gastronomy.media` JSONB column.
+ * All photo state lives exclusively in `gastronomy_media` rows.
+ *
+ * @module gastronomy.media
+ */
+
+import { type DrizzleClient, VenueMediaModel, type VenueModel, withTransaction } from '@repo/db';
+import type { ImageProvider } from '@repo/media/server';
+import {
+    getGalleryCap,
+    ModerationStatusEnum,
+    ServiceErrorCode,
+    type VenueFeaturedMediaAddInput,
+    VenueFeaturedMediaAddInputSchema,
+    type VenueFeaturedMediaAddOutput,
+    type VenueMediaAddInput,
+    VenueMediaAddInputSchema,
+    type VenueMediaListInput,
+    VenueMediaListInputSchema,
+    type VenueMediaListOutput,
+    type VenueMediaRemoveInput,
+    VenueMediaRemoveInputSchema,
+    type VenueMediaReorderInput,
+    VenueMediaReorderInputSchema,
+    type VenueMediaSetFeaturedInput,
+    VenueMediaSetFeaturedInputSchema,
+    type VenueMediaSingleOutput,
+    type VenueMediaUpdateInput,
+    VenueMediaUpdateInputSchema
+} from '@repo/schemas';
+import type { Actor, ServiceContext, ServiceOutput } from '../../types';
+import { ServiceError } from '../../types';
+import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
+import { scheduleListingMediaRevalidation } from '../listing/listing-revalidation.js';
+import { assertSupportEditContentOnly } from '../listing/listing-support-edit';
+import { addFeaturedMediaRow } from '../media/add-featured-media';
+import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
+import { buildMediaTextPatch } from '../media/media-text-patch';
+import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
+import { checkVenueCanEditMedia } from './venue.permissions';
+
+// ---------------------------------------------------------------------------
+// Internal helper — load listing or throw NOT_FOUND
+// ---------------------------------------------------------------------------
+
+/**
+ * Loads a gastronomy listing by ID or throws NOT_FOUND.
+ *
+ * @param model - The VenueModel instance.
+ * @param gastronomyId - UUID of the listing.
+ * @param tx - Optional Drizzle transaction client.
+ * @returns The gastronomy DB row.
+ * @throws {ServiceError} NOT_FOUND when no matching row exists.
+ */
+async function requireVenue(model: VenueModel, gastronomyId: string, tx?: ServiceContext['tx']) {
+    const entity = await model.findById(gastronomyId, tx);
+    if (!entity) {
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
+    }
+    return entity;
+}
+
+// ---------------------------------------------------------------------------
+// Media helpers (called by VenueService / route handlers)
+// ---------------------------------------------------------------------------
+
+/**
+ * Adds a photo to a gastronomy listing gallery.
+ *
+ * This is a URL-receiver method: the upload to Cloudinary has already happened
+ * via `POST /api/v1/admin/media/upload`. This function registers the
+ * already-uploaded URL as a new `gastronomy_media` row.
+ *
+ * `sortOrder` is computed as max(visible sortOrder) + 1 (append to end). When
+ * no visible rows exist yet, starts at 0.
+ *
+ * Server-controlled fields set here:
+ * - `state`      → `'visible'` (newly added photos are always visible)
+ * - `isFeatured` → `false` (featured is managed by {@link setFeaturedVenueMedia})
+ * - `sortOrder`  → max(current visible sortOrder) + 1
+ * - `moderationState` → defaults to `ModerationStatusEnum.PENDING` when not supplied
+ *
+ * @param model - VenueModel instance.
+ * @param actor - The actor performing the action.
+ * @param data - Validated add-media input.
+ * @param ctx - Optional service context for transaction propagation.
+ * @returns `ServiceOutput<GastronomyMediaSingleOutput>` containing the created row.
+ */
+export async function addVenueMedia(
+    model: VenueModel,
+    actor: Actor,
+    data: VenueMediaAddInput,
+    ctx?: ServiceContext
+): Promise<ServiceOutput<VenueMediaSingleOutput>> {
+    try {
+        const parseResult = VenueMediaAddInputSchema.safeParse(data);
+        if (!parseResult.success) {
+            const messages = parseResult.error.issues
+                .map((i) => `${i.path.join('.')}: ${i.message}`)
+                .join('; ');
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Validation failed: ${messages}`
+                }
+            };
+        }
+        const validated = parseResult.data;
+
+        // HOS-1642 (AC:V9a:6): the write and its owner-act event share one
+        // transaction — the event commits or rolls back WITH the media row.
+        const run = async (tx: DrizzleClient): Promise<ServiceOutput<VenueMediaSingleOutput>> => {
+            const venue = await requireVenue(model, validated.gastronomyId, tx);
+            checkVenueCanEditMedia(actor, venue);
+            // ACC:15 (HOS-1493): a photo written by action 15 never carries a
+            // moderation verdict; a no-op outside its authorized scope.
+            assertSupportEditContentOnly({ data: { media: validated.media } });
+
+            const mediaModel = new VenueMediaModel();
+
+            // Compute next sortOrder: max(visible sortOrder) + 1, or 0 if none yet.
+            const existing = await mediaModel.findAll(
+                { gastronomyId: validated.gastronomyId, state: 'visible', deletedAt: null },
+                { pageSize: 1, sortBy: 'sortOrder', sortOrder: 'desc' },
+                undefined,
+                tx
+            );
+            const topOrder = existing.items[0]?.sortOrder ?? -1;
+            const nextSortOrder = typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
+
+            // HOS-389 §2: the per-entity cap was enforced only at the UPLOAD routes
+            // — the step that costs a Cloudinary asset. Registering the row was
+            // never capped, so anything reaching this function directly with an
+            // already-uploaded URL walked past the limit. Same `getGalleryCap`
+            // constant those routes read, and the same filter
+            // `resolveVisibleGalleryCount` applies: `state: 'visible'` AND
+            // `isFeatured: false` (HOS-791 — the featured image is not a gallery
+            // item and must not consume a gallery slot).
+            //
+            // This is a SECOND query rather than a reuse of `existing.total`:
+            // `existing` stays unfiltered because it also computes the next
+            // `sortOrder`, and skipping the featured row there would hand out a
+            // `sortOrder` already in use whenever that row holds the maximum.
+            const galleryCount = await mediaModel.count(
+                {
+                    gastronomyId: validated.gastronomyId,
+                    state: 'visible',
+                    isFeatured: false,
+                    deletedAt: null
+                },
+                { tx }
+            );
+            const galleryCap = getGalleryCap('gastronomy');
+            if (galleryCount >= galleryCap) {
+                return {
+                    error: {
+                        code: ServiceErrorCode.QUOTA_EXCEEDED,
+                        message: `Gallery limit of ${galleryCap} photos reached for this listing`
+                    }
+                };
+            }
+
+            const rowToCreate = {
+                ...validated.media,
+                gastronomyId: validated.gastronomyId,
+                moderationState: validated.media.moderationState ?? ModerationStatusEnum.PENDING,
+                state: 'visible' as const,
+                isFeatured: false,
+                sortOrder: nextSortOrder
+            };
+
+            const createdMedia = await mediaModel.create(rowToCreate, tx);
+            // Post-write, inside the tx; the field name only, never the
+            // photo's URL or alt text (DEC-DATA-005).
+            await recordListingSubEntityEdit({
+                entityType: 'gastronomy',
+                listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
+                actor,
+                field: 'media',
+                ctx: { ...ctx, tx }
+            });
+            // HOS-389 §4: the gallery IS the public page's content, so a photo
+            // change has to purge it. Shares one implementation with the service's
+            // create/update path — see `listing-revalidation.ts`.
+            await scheduleListingMediaRevalidation({
+                entityType: 'gastronomy',
+                listing: venue
+            });
+
+            return { data: { media: createdMedia } };
+        };
+        if (ctx?.tx) {
+            return await run(ctx.tx);
+        }
+        return await withTransaction(run);
+    } catch (err) {
+        if (err instanceof ServiceError) {
+            return { error: { code: err.code, message: err.message } };
+        }
+        return {
+            error: {
+                code: ServiceErrorCode.INTERNAL_ERROR,
+                message: err instanceof Error ? err.message : String(err)
+            }
+        };
+    }
+}
+
+/**
+ * Removes a single photo from a gastronomy listing gallery.
+ *
+ * Steps:
+ * 1. Gate on `checkVenueCanEditMedia`.
+ * 2. Verify the media row exists AND belongs to this gastronomy listing.
+ * 3. Soft-delete the row (sets `deletedAt`).
+ * 4. Resequence the remaining visible rows to a dense 0-based `sortOrder`
+ *    (preserves their relative order). Both steps run in a single transaction.
+ *
+ * Deletes the Cloudinary binary too, when a `mediaProvider` is supplied (HOS-372).
+ * That step runs after authorization and row resolution but BEFORE the DB
+ * transaction: a storage failure aborts the removal with the row intact, so the
+ * user can retry and an orphaned asset becomes impossible rather than merely
+ * unlikely. Callers that omit the provider get the previous DB-only behavior.
+ * See `services/media/delete-media-asset.ts` for the full ordering rationale.
+ *
+ * @param model - VenueModel instance.
+ * @param actor - The actor performing the action.
+ * @param data - Validated remove-media input.
+ * @param mediaProvider - Optional ImageProvider used to delete the binary.
+ * @param ctx - Optional service context for transaction propagation.
+ * @returns `ServiceOutput<{ success: true }>` on success.
+ */
+export async function removeVenueMedia(
+    model: VenueModel,
+    actor: Actor,
+    data: VenueMediaRemoveInput,
+    mediaProvider?: ImageProvider | null,
+    ctx?: ServiceContext
+): Promise<ServiceOutput<{ success: true }>> {
+    try {
+        const parseResult = VenueMediaRemoveInputSchema.safeParse(data);
+        if (!parseResult.success) {
+            const messages = parseResult.error.issues
+                .map((i) => `${i.path.join('.')}: ${i.message}`)
+                .join('; ');
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Validation failed: ${messages}`
+                }
+            };
+        }
+        const validated = parseResult.data;
+
+        const venue = await requireVenue(model, validated.gastronomyId, ctx?.tx);
+        checkVenueCanEditMedia(actor, venue);
+
+        const mediaModel = new VenueMediaModel();
+        const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+        if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId || mediaRow.deletedAt) {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_FOUND,
+                'Media not found for this gastronomy listing'
+            );
+        }
+
+        // Binary first, row second. Runs outside the transaction on purpose —
+        // an external call cannot be rolled back, so it must fail before the DB
+        // is touched rather than after (see delete-media-asset.ts).
+        await deleteMediaAssetOrThrow({ provider: mediaProvider ?? null, row: mediaRow });
+
+        // Soft-delete + resequence in a single transaction.
+        const doRemove = async (tx: DrizzleClient): Promise<void> => {
+            await mediaModel.softDelete({ id: validated.mediaId }, actor.id, tx);
+
+            // Reload the remaining visible rows to resequence them.
+            const { items: remaining } = await mediaModel.findByVenue({
+                gastronomyId: validated.gastronomyId,
+                state: 'visible',
+                pageSize: 200,
+                tx
+            });
+
+            // Apply dense 0-based sortOrder in the existing visual order.
+            for (let i = 0; i < remaining.length; i++) {
+                const row = remaining[i];
+                if (row && row.sortOrder !== i) {
+                    await mediaModel.update({ id: row.id }, { sortOrder: i }, tx);
+                }
+            }
+
+            // Post-write, inside the tx; field name only (HOS-1642, AC:V9a:6).
+            await recordListingSubEntityEdit({
+                entityType: 'gastronomy',
+                listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
+                actor,
+                field: 'media',
+                ctx: { ...ctx, tx }
+            });
+        };
+
+        if (ctx?.tx) {
+            await doRemove(ctx.tx);
+        } else {
+            await withTransaction(doRemove);
+        }
+
+        // HOS-389 §4: the gallery IS the public page's content, so a photo
+        // change has to purge it. Shares one implementation with the service's
+        // create/update path — see `listing-revalidation.ts`.
+        await scheduleListingMediaRevalidation({ entityType: 'gastronomy', listing: venue });
+
+        return { data: { success: true } };
+    } catch (err) {
+        if (err instanceof ServiceError) {
+            return { error: { code: err.code, message: err.message } };
+        }
+        return {
+            error: {
+                code: ServiceErrorCode.INTERNAL_ERROR,
+                message: err instanceof Error ? err.message : String(err)
+            }
+        };
+    }
+}
+
+/**
+ * Reorders a gastronomy listing's gallery photos.
+ *
+ * Steps:
+ * 1. Gate on `checkVenueCanEditMedia`.
+ * 2. Load all current VISIBLE rows for the listing.
+ * 3. Validate that `orderedIds` is exactly the set of current visible row ids —
+ *    no missing entries, no extras, no foreign ids, and no duplicates. Rejects
+ *    with `VALIDATION_ERROR` on any mismatch.
+ * 4. Batch-update each row's `sortOrder` to its index in `orderedIds`.
+ *    All updates run in a single transaction.
+ *
+ * NOTE on duplicate detection: comparing SETS cannot see a duplicate. With
+ * `orderedIds = [A, A, B]` against `existingIds = {A, B}`, the input dedupes to
+ * `{A, B}` — nothing missing, nothing extra — so a set-only check passes. The
+ * loop would then write A at index 0 and again at index 1, leaving no row at
+ * `sortOrder` 0, and the response maps over `orderedIds` so the same photo is
+ * returned twice. The payload schema does not guard it either (`orderedIds` is
+ * `array(uuid).min(1)`), so this function compares the raw array length against
+ * the deduplicated set size first.
+ *
+ * @param model - VenueModel instance.
+ * @param actor - The actor performing the action.
+ * @param data - Validated reorder input.
+ * @param ctx - Optional service context for transaction propagation.
+ * @returns `ServiceOutput<GastronomyMediaListOutput>` containing the reordered rows.
+ */
+export async function reorderVenueMedia(
+    model: VenueModel,
+    actor: Actor,
+    data: VenueMediaReorderInput,
+    ctx?: ServiceContext
+): Promise<ServiceOutput<VenueMediaListOutput>> {
+    try {
+        const parseResult = VenueMediaReorderInputSchema.safeParse(data);
+        if (!parseResult.success) {
+            const messages = parseResult.error.issues
+                .map((i) => `${i.path.join('.')}: ${i.message}`)
+                .join('; ');
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Validation failed: ${messages}`
+                }
+            };
+        }
+        const validated = parseResult.data;
+
+        const venue = await requireVenue(model, validated.gastronomyId, ctx?.tx);
+        checkVenueCanEditMedia(actor, venue);
+
+        const mediaModel = new VenueMediaModel();
+
+        // Load all visible rows to validate and resequence.
+        const { items: visibleRows } = await mediaModel.findByVenue({
+            gastronomyId: validated.gastronomyId,
+            state: 'visible',
+            pageSize: 200,
+            tx: ctx?.tx
+        });
+
+        const existingIds = new Set(visibleRows.map((r) => r.id));
+        const inputIds = new Set(validated.orderedIds);
+
+        // Explicit duplicate guard — see JSDoc note above for why a pure
+        // set-difference check is not sufficient on its own.
+        if (validated.orderedIds.length !== inputIds.size) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'orderedIds contains duplicate id(s)'
+            );
+        }
+
+        const missingIds = [...existingIds].filter((id) => !inputIds.has(id));
+        const extraIds = [...inputIds].filter((id) => !existingIds.has(id));
+
+        if (missingIds.length > 0 || extraIds.length > 0) {
+            const details: string[] = [];
+            if (missingIds.length > 0) details.push(`missing: ${missingIds.join(', ')}`);
+            if (extraIds.length > 0) details.push(`unknown/foreign: ${extraIds.join(', ')}`);
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                `orderedIds does not match visible media for this gastronomy listing — ${details.join('; ')}`
+            );
+        }
+
+        // Build a map for fast row lookup so we can return the updated list.
+        const rowById = new Map(visibleRows.map((r) => [r.id, r]));
+
+        // Apply all sortOrder updates in a single transaction.
+        const doReorder = async (tx: DrizzleClient): Promise<void> => {
+            for (let i = 0; i < validated.orderedIds.length; i++) {
+                const id = validated.orderedIds[i];
+                if (id !== undefined) {
+                    await mediaModel.update({ id }, { sortOrder: i }, tx);
+                }
+            }
+            // Post-write, inside the tx: one event for the whole reorder,
+            // field name only (HOS-1642, AC:V9a:6).
+            await recordListingSubEntityEdit({
+                entityType: 'gastronomy',
+                listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
+                actor,
+                field: 'media',
+                ctx: { ...ctx, tx }
+            });
+        };
+
+        if (ctx?.tx) {
+            await doReorder(ctx.tx);
+        } else {
+            await withTransaction(doReorder);
+        }
+
+        // Return the reordered rows with their updated sortOrder values.
+        const reordered = validated.orderedIds
+            .map((id, idx) => {
+                const row = rowById.get(id);
+                return row ? { ...row, sortOrder: idx } : null;
+            })
+            .filter((r): r is NonNullable<typeof r> => r !== null);
+
+        // HOS-389 §4 — see `addVenueMedia` for the rationale.
+        await scheduleListingMediaRevalidation({ entityType: 'gastronomy', listing: venue });
+
+        return { data: { media: reordered } };
+    } catch (err) {
+        if (err instanceof ServiceError) {
+            return { error: { code: err.code, message: err.message } };
+        }
+        return {
+            error: {
+                code: ServiceErrorCode.INTERNAL_ERROR,
+                message: err instanceof Error ? err.message : String(err)
+            }
+        };
+    }
+}
+
+/**
+ * Lists the media rows for a gastronomy listing gallery.
+ *
+ * Returns all non-deleted rows ordered by `sortOrder ASC`. Supports an optional
+ * `state` filter (defaults to `'visible'`). Gated with
+ * `checkVenueCanEditMedia` so an owner sees only their own listing's gallery.
+ *
+ * @param model - VenueModel instance.
+ * @param actor - The actor performing the action.
+ * @param data - Validated list-media input.
+ * @param ctx - Optional service context for transaction propagation.
+ * @returns `ServiceOutput<GastronomyMediaListOutput>` containing the media array.
+ */
+export async function getVenueMedia(
+    model: VenueModel,
+    actor: Actor,
+    data: VenueMediaListInput,
+    ctx?: ServiceContext
+): Promise<ServiceOutput<VenueMediaListOutput>> {
+    try {
+        const parseResult = VenueMediaListInputSchema.safeParse(data);
+        if (!parseResult.success) {
+            const messages = parseResult.error.issues
+                .map((i) => `${i.path.join('.')}: ${i.message}`)
+                .join('; ');
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Validation failed: ${messages}`
+                }
+            };
+        }
+        const validated = parseResult.data;
+
+        const venue = await requireVenue(model, validated.gastronomyId, ctx?.tx);
+        checkVenueCanEditMedia(actor, venue);
+
+        const mediaModel = new VenueMediaModel();
+        const { items } = await mediaModel.findByVenue({
+            gastronomyId: validated.gastronomyId,
+            state: validated.state ?? 'visible',
+            pageSize: 200,
+            tx: ctx?.tx
+        });
+
+        return { data: { media: items } };
+    } catch (err) {
+        if (err instanceof ServiceError) {
+            return { error: { code: err.code, message: err.message } };
+        }
+        return {
+            error: {
+                code: ServiceErrorCode.INTERNAL_ERROR,
+                message: err instanceof Error ? err.message : String(err)
+            }
+        };
+    }
+}
+
+/**
+ * Promotes a single photo to the featured image of a gastronomy listing.
+ *
+ * Steps:
+ * 1. Gate on `checkVenueCanEditMedia`.
+ * 2. Verify the target media row exists AND belongs to this gastronomy listing.
+ * 3. Guard: target row must be `state = 'visible'` — a DB CHECK constraint
+ *    forbids `is_featured = true AND state = 'archived'`, so we reject early
+ *    with a clear ServiceError rather than letting the DB raise.
+ * 4. In a TRANSACTION: clear the previous featured row (`is_featured = false`),
+ *    then set the target row `is_featured = true`. Clear-then-set order is
+ *    mandatory — setting the new one first would briefly violate the partial
+ *    unique index on (gastronomy_id) WHERE is_featured.
+ *
+ * @param model - VenueModel instance.
+ * @param actor - The actor performing the action.
+ * @param data - Validated set-featured input.
+ * @param ctx - Optional service context for transaction propagation.
+ * @returns `ServiceOutput<GastronomyMediaSingleOutput>` containing the updated row.
+ */
+export async function setFeaturedVenueMedia(
+    model: VenueModel,
+    actor: Actor,
+    data: VenueMediaSetFeaturedInput,
+    ctx?: ServiceContext
+): Promise<ServiceOutput<VenueMediaSingleOutput>> {
+    try {
+        const parseResult = VenueMediaSetFeaturedInputSchema.safeParse(data);
+        if (!parseResult.success) {
+            const messages = parseResult.error.issues
+                .map((i) => `${i.path.join('.')}: ${i.message}`)
+                .join('; ');
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Validation failed: ${messages}`
+                }
+            };
+        }
+        const validated = parseResult.data;
+
+        const venue = await requireVenue(model, validated.gastronomyId, ctx?.tx);
+        checkVenueCanEditMedia(actor, venue);
+
+        const mediaModel = new VenueMediaModel();
+        const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+        // `deletedAt`: `findById` does NOT filter soft-deletes and `softDelete`
+        // leaves `is_featured` set, so without this a released cover stays a
+        // promotable target — HOS-803 C-1. Mirrors `updateMedia`'s long-standing
+        // guard on the accommodation side.
+        if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId || mediaRow.deletedAt) {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_FOUND,
+                'Media not found for this gastronomy listing'
+            );
+        }
+
+        // Guard: archived photos cannot be featured (DB CHECK constraint would fire).
+        if (mediaRow.state === 'archived') {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'Cannot feature an archived photo — restore it to visible first'
+            );
+        }
+
+        // Transaction: clear-then-set to avoid briefly having two featured rows,
+        // which would violate the partial unique index on
+        // (gastronomy_id) WHERE is_featured = true AND deleted_at IS NULL.
+        const doSetFeatured = async (tx: DrizzleClient): Promise<void> => {
+            const existing = await mediaModel.findFeatured({
+                gastronomyId: validated.gastronomyId,
+                tx
+            });
+            if (existing && existing.id !== validated.mediaId) {
+                await mediaModel.update({ id: existing.id }, { isFeatured: false }, tx);
+            }
+            await mediaModel.update({ id: validated.mediaId }, { isFeatured: true }, tx);
+            // Post-write, inside the tx; field name only (HOS-1642, AC:V9a:6).
+            await recordListingSubEntityEdit({
+                entityType: 'gastronomy',
+                listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
+                actor,
+                field: 'media',
+                ctx: { ...ctx, tx }
+            });
+        };
+
+        if (ctx?.tx) {
+            await doSetFeatured(ctx.tx);
+        } else {
+            await withTransaction(doSetFeatured);
+        }
+
+        // Re-fetch the updated row to return the current DB state.
+        const updated = await mediaModel.findById(validated.mediaId, ctx?.tx);
+        if (!updated) {
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Failed to retrieve updated media row after set-featured'
+            );
+        }
+        // HOS-389 §4 — see `addVenueMedia` for the rationale.
+        await scheduleListingMediaRevalidation({ entityType: 'gastronomy', listing: venue });
+
+        return { data: { media: updated } };
+    } catch (err) {
+        if (err instanceof ServiceError) {
+            return { error: { code: err.code, message: err.message } };
+        }
+        return {
+            error: {
+                code: ServiceErrorCode.INTERNAL_ERROR,
+                message: err instanceof Error ? err.message : String(err)
+            }
+        };
+    }
+}
+
+/**
+ * Corrects the TEXT metadata of a single photo in a gastronomy listing gallery (HOS-1036).
+ *
+ * The gastronomy/experience twin of `AccommodationService.updateMedia` (HOS-388) and of
+ * `updatePostMedia`. Before this existed the only way to fix — or write for the
+ * first time — a photo's `alt` was to delete it and re-upload, burning a second
+ * Cloudinary asset and losing the row's gallery position.
+ *
+ * Text only: `caption`, `description`, `alt`, `attribution`. `url`, `publicId`,
+ * `moderationState`, `state`, `isFeatured`, `sortOrder` and `gastronomyId` are not
+ * reachable from {@link VenueMediaUpdateInputSchema} even if the client sends
+ * them.
+ *
+ * Each field is three-state — omit to leave unchanged, `null` to clear, a value
+ * to replace — hence `buildMediaTextPatch` rather than a wholesale spread (see
+ * that module for what spreading would erase).
+ *
+ * The MEDIA row is what is protected against existence probing: a row belonging to
+ * another gastronomy listing, a non-existent id, or a soft-deleted row all answer
+ * NOT_FOUND — never FORBIDDEN, so a foreign media id cannot be confirmed to exist.
+ *
+ * The PARENT gastronomy listing is NOT: `checkVenueCanEditMedia` throws FORBIDDEN
+ * on a gastronomy listing the actor may not edit and NOT_FOUND on one that does not
+ * exist, so an ownership-scoped actor (`GASTRONOMY_EDIT_OWN` without `GASTRONOMY_EDIT_ALL`)
+ * can tell a stranger's gastronomy listing from an invented one. Every sibling media
+ * helper shares that same gate, so closing the gap in `update` alone would leave it at
+ * 404 while `remove` stays at 403 on the same parent — a follow-up covers all of them
+ * at once.
+ *
+ * Schedules the same public-page revalidation the add/remove/reorder paths do:
+ * a caption or credit IS rendered content, so a correction that never reaches
+ * the cache is a correction nobody sees.
+ *
+ * @param model - VenueModel instance.
+ * @param actor - The actor performing the action.
+ * @param data - Update input (`gastronomyId` + `mediaId` + the text fields).
+ * @param ctx - Optional service context for transaction propagation.
+ * @returns `ServiceOutput<GastronomyMediaSingleOutput>` containing the updated row.
+ */
+export async function updateVenueMedia(
+    model: VenueModel,
+    actor: Actor,
+    data: VenueMediaUpdateInput,
+    ctx?: ServiceContext
+): Promise<ServiceOutput<VenueMediaSingleOutput>> {
+    try {
+        const parseResult = VenueMediaUpdateInputSchema.safeParse(data);
+        if (!parseResult.success) {
+            const messages = parseResult.error.issues
+                .map((i) => `${i.path.join('.')}: ${i.message}`)
+                .join('; ');
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Validation failed: ${messages}`
+                }
+            };
+        }
+        const validated = parseResult.data;
+
+        // HOS-1642 (AC:V9a:6): the write and its owner-act event share one
+        // transaction.
+        const run = async (tx: DrizzleClient): Promise<ServiceOutput<VenueMediaSingleOutput>> => {
+            const venue = await requireVenue(model, validated.gastronomyId, tx);
+            checkVenueCanEditMedia(actor, venue);
+
+            const mediaModel = new VenueMediaModel();
+            const mediaRow = await mediaModel.findById(validated.mediaId, tx);
+            if (
+                !mediaRow ||
+                mediaRow.gastronomyId !== validated.gastronomyId ||
+                mediaRow.deletedAt
+            ) {
+                throw new ServiceError(
+                    ServiceErrorCode.NOT_FOUND,
+                    'Media not found for this gastronomy listing'
+                );
+            }
+
+            const updated = await mediaModel.update(
+                { id: validated.mediaId },
+                buildMediaTextPatch(validated),
+                tx
+            );
+            if (!updated) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Failed to retrieve updated media row after text update'
+                );
+            }
+
+            // Post-write, inside the tx; field name only — a corrected caption
+            // is content, so no value is ever stored (DEC-DATA-005).
+            await recordListingSubEntityEdit({
+                entityType: 'gastronomy',
+                listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
+                actor,
+                field: 'media',
+                ctx: { ...ctx, tx }
+            });
+
+            await scheduleListingMediaRevalidation({
+                entityType: 'gastronomy',
+                listing: venue
+            });
+
+            return { data: { media: updated } };
+        };
+        if (ctx?.tx) {
+            return await run(ctx.tx);
+        }
+        return await withTransaction(run);
+    } catch (err) {
+        if (err instanceof ServiceError) {
+            return { error: { code: err.code, message: err.message } };
+        }
+        return {
+            error: {
+                code: ServiceErrorCode.INTERNAL_ERROR,
+                message: err instanceof Error ? err.message : String(err)
+            }
+        };
+    }
+}
+
+/**
+ * Registers a photo that is the gastronomy listing's cover from the moment it exists,
+ * replacing the previous cover in the same transaction (HOS-803).
+ *
+ * ## Why this is not `addVenueMedia` plus `setFeaturedVenueMedia`
+ *
+ * That is what the admin gallery used to do, and it could not run when it was
+ * most needed. `addVenueMedia` enforces the gallery cap, and that cap counts the
+ * gallery ALONE because a cover is not a gallery item (HOS-791) — so an owner
+ * whose gallery sat exactly at the cap was refused at the first step and never
+ * reached the promotion in the second. The one action exempt from the quota was
+ * the only one they could not perform.
+ *
+ * ## Why waiving the cap is safe here
+ *
+ * Because the outcome is guaranteed rather than promised. A client-supplied
+ * "treat this upload as the cover" flag on the gallery endpoint would be
+ * unverifiable — nothing obliges the caller to send the follow-up promotion —
+ * so a caller setting it on every upload would have no cap at all. Here the row
+ * is created featured inside a transaction and
+ * `uq_gastronomy_media_single_featured` permits exactly one, so quota-exempt
+ * rows cannot accumulate. The previous cover is SOFT-DELETED in the same
+ * transaction, so one row enters the featured slot, one leaves the table, and
+ * the visible gallery is untouched — the swap is quota-neutral by construction
+ * rather than by exception, and no cap needs consulting at all.
+ *
+ * Promotion of a photo already in the gallery (`setFeaturedVenueMedia`) is a
+ * different operation and is unchanged: it still demotes the old cover into the
+ * gallery, which is quota-neutral on its own.
+ *
+ * @param model - VenueModel instance.
+ * @param actor - The actor performing the action.
+ * @param data - Validated featured-media input.
+ * @param ctx - Optional service context for transaction propagation.
+ * @returns The created cover plus what became of the one it replaced.
+ */
+export async function addVenueFeaturedMedia(
+    model: VenueModel,
+    actor: Actor,
+    data: VenueFeaturedMediaAddInput,
+    ctx?: ServiceContext
+): Promise<ServiceOutput<VenueFeaturedMediaAddOutput>> {
+    try {
+        const parseResult = VenueFeaturedMediaAddInputSchema.safeParse(data);
+        if (!parseResult.success) {
+            const messages = parseResult.error.issues
+                .map((i) => `${i.path.join('.')}: ${i.message}`)
+                .join('; ');
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Validation failed: ${messages}`
+                }
+            };
+        }
+        const validated = parseResult.data;
+
+        const venue = await requireVenue(model, validated.gastronomyId, ctx?.tx);
+        checkVenueCanEditMedia(actor, venue);
+        // ACC:15 (HOS-1493): a photo written by action 15 never carries a
+        // moderation verdict; a no-op outside its authorized scope.
+        assertSupportEditContentOnly({ data: { media: validated.media } });
+
+        const mediaModel = new VenueMediaModel();
+
+        // HOS-1642 (AC:V9a:6): the swap and its owner-act event share one
+        // boundary. The tx is opened HERE (when the caller brought none) and
+        // passed down to the shared primitive — `addFeaturedMediaRow` joins an
+        // existing tx verbatim, so no shared-helper change is needed.
+        const run = async (tx: DrizzleClient) => {
+            const { media, previousFeatured } = await addFeaturedMediaRow({
+                port: buildOwnedMediaFeaturedPort({
+                    mediaModel,
+                    ownerKey: 'gastronomyId',
+                    ownerId: validated.gastronomyId,
+                    media: validated.media,
+                    findFeatured: (tx2) =>
+                        mediaModel.findFeatured({ gastronomyId: validated.gastronomyId, tx: tx2 }),
+                    deletedById: actor.id
+                }),
+                tx
+            });
+            // Post-write, inside the tx; field name only (DEC-DATA-005).
+            await recordListingSubEntityEdit({
+                entityType: 'gastronomy',
+                listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
+                actor,
+                field: 'media',
+                ctx: { ...ctx, tx }
+            });
+            return { media, previousFeatured };
+        };
+
+        const { media, previousFeatured } = ctx?.tx
+            ? await run(ctx.tx)
+            : await withTransaction(run);
+
+        // HOS-389 §4 — see `addVenueMedia` for the rationale. Loudest case: the
+        // cover is what every listing card and social preview renders.
+        await scheduleListingMediaRevalidation({ entityType: 'gastronomy', listing: venue });
+
+        return { data: { media, previousFeatured } };
+    } catch (err) {
+        if (err instanceof ServiceError) {
+            return { error: { code: err.code, message: err.message } };
+        }
+        return {
+            error: {
+                code: ServiceErrorCode.INTERNAL_ERROR,
+                message: err instanceof Error ? err.message : String(err)
+            }
+        };
+    }
+}

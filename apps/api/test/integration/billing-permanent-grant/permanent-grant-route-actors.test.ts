@@ -83,11 +83,11 @@ async function routeCase(name: 'grant' | 'anchor', actorId?: string): Promise<Ro
         grantedBy: signer,
         anchor: accommodation
     });
-    const gastronomy = await seedGrantPlan(VerticalEnum.VENUE);
+    const venue = await seedGrantPlan(VerticalEnum.VENUE);
     return {
         name,
         path: `/api/v1/admin/billing-permanent-grants/${grant.grantId}/anchors`,
-        body: gastronomy,
+        body: venue,
         beneficiaryId
     };
 }
