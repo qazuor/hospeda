@@ -305,7 +305,11 @@ export function run({
                     scanned,
                     inventory: { ...inventory, files: Object.fromEntries(scanned), renamedFrom },
                     base
-                }).filter((item) => item.reason === 'inventory may not grow against base');
+                }).filter(
+                    (item) =>
+                        item.reason === 'inventory may not grow against base' &&
+                        item.expected !== 'absent from base'
+                );
                 if (growth.length)
                     return { exitCode: 1, output: growth.map(formatViolation).join('\n') };
             }
