@@ -1,634 +1,183 @@
-/**
- * Integration tests for DELETE /accommodations/:id/faqs/:faqId endpoint
- * Tests comprehensive FAQ deletion functionality with validation
- */
-import { beforeAll, describe, expect, it } from 'vitest';
+import { accommodationFaqs, eq, getDb } from '@repo/db';
+import { PermissionEnum } from '@repo/schemas';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
+import { buildMockActorHeaders, createMockActorUser } from '../helpers/mock-actor';
+import {
+    type SeededOwnedAccommodation,
+    seedOwnedAccommodation
+} from '../helpers/seed-owned-accommodation';
 
-describe('DELETE /accommodations/:id/faqs/:faqId', () => {
+// The mock-actor headers are only honoured when CI is unset.
+delete process.env.CI;
+
+/**
+ * DELETE /api/v1/protected/accommodations/:id/faqs/:faqId.
+ *
+ * The route lives in the protected tier. Its listing-access gate authorises the
+ * OWNER through the trial plan (see `seedOwnedAccommodation`), and the service
+ * then asks for ACCOMMODATION_UPDATE_OWN on an accommodation the actor owns.
+ * The delete is a soft delete.
+ */
+describe('DELETE /protected/accommodations/:id/faqs/:faqId', () => {
     let app: ReturnType<typeof initApp>;
-    const baseUrl = '/api/v1/public/accommodations';
-    const validAccommodationId = '12345678-1234-4567-8901-123456789012';
-    const validFaqId = 'faq12345-1234-4567-8901-123456789012';
-    const nonExistentAccommodationId = '99999999-9999-9999-9999-999999999999';
-    const nonExistentFaqId = 'faq99999-9999-9999-9999-999999999999';
+    const base = '/api/v1/protected/accommodations';
+    const NONEXISTENT_UUID = 'a0000000-0000-4000-8000-000000000001';
+    const ownerPermissions = [PermissionEnum.ACCOMMODATION_UPDATE_OWN];
+    let seeded: SeededOwnedAccommodation;
 
-    beforeAll(() => {
-        // Initialize environment variables before running tests
+    beforeAll(async () => {
+        await testDb.setup();
+        await testDb.clean();
+        clearCache();
         validateApiEnv();
+        process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
         app = initApp();
     });
 
-    describe('Success Cases (200/204)', () => {
-        it('should delete FAQ with valid IDs', async () => {
-            const response = await app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            // Delete FAQ might return success (200/204), validation error (400), or not found (404)
-            expect([200, 204, 400, 404]).toContain(response.status);
-
-            if (response.status === 200) {
-                const data = await response.json();
-                // Validate response structure
-                expect(data).toHaveProperty('success', true);
-                expect(data).toHaveProperty('metadata');
-                expect(data.metadata).toHaveProperty('timestamp');
-                expect(data.metadata).toHaveProperty('requestId');
-
-                // For deletion, data might be the deleted FAQ or confirmation
-                if (data.data) {
-                    expect(data.data).toHaveProperty('id', validFaqId);
-                    expect(typeof data.data.deletedAt).toBe('string');
-                }
-            }
-        });
-
-        it('should return deletion confirmation', async () => {
-            const response = await app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            // Delete FAQ might return success (200/204), validation error (400), or not found (404)
-            expect([200, 204, 400, 404]).toContain(response.status);
-
-            if (response.status === 200) {
-                const data = await response.json();
-                expect(data.success).toBe(true);
-
-                // May return count of deleted items or deleted FAQ details
-                if (data.data) {
-                    expect(data.data).toHaveProperty('count');
-                    expect(typeof data.data.count).toBe('number');
-                    expect(data.data.count).toBeGreaterThanOrEqual(0);
-                }
-            }
-        });
-
-        it('should handle soft delete vs hard delete appropriately', async () => {
-            const response = await app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            // Delete FAQ might return success (200/204), validation error (400), or not found (404)
-            expect([200, 204, 400, 404]).toContain(response.status);
-
-            if (response.status === 200) {
-                const data = await response.json();
-
-                // If soft delete, should include deletedAt timestamp
-                if (data.data?.deletedAt) {
-                    expect(typeof data.data.deletedAt).toBe('string');
-                    expect(new Date(data.data.deletedAt).toString()).not.toBe('Invalid Date');
-                }
-            }
-        });
+    beforeEach(async () => {
+        seeded = await seedOwnedAccommodation({ faqCount: 2 });
     });
 
-    describe('Validation Errors (400)', () => {
-        it('should return 400 for invalid accommodation UUID format', async () => {
-            const invalidAccommodationIds = [
-                'invalid-uuid',
-                '123',
-                'not-a-uuid',
-                '12345678-1234-1234-1234-123456789012', // Invalid version
-                '00000000-0000-0000-0000-000000000000', // Null UUID
-                ''
-            ];
-
-            for (const invalidId of invalidAccommodationIds) {
-                const response = await app.request(`${baseUrl}/${invalidId}/faqs/${validFaqId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                });
-
-                // UUID validation might be strict (400) or treated as not found (404)
-                expect([400, 404]).toContain(response.status);
-
-                const data = await response.json();
-                expect(data).toHaveProperty('success', false);
-                expect(data).toHaveProperty('error');
-                expect(data.error).toHaveProperty('message');
-                // Error message might be UUID validation or route not found
-                expect(data.error.message).toMatch(/Invalid.*ID.*format|UUID|Route not found/i);
-            }
-        });
-
-        it('should return 400 for invalid FAQ UUID format', async () => {
-            const invalidFaqIds = [
-                'invalid-faq-uuid',
-                '456',
-                'not-a-faq-uuid',
-                'faq12345-1234-1234-1234-123456789012', // Invalid version
-                'faq00000-0000-0000-0000-000000000000', // Null UUID
-                ''
-            ];
-
-            for (const invalidFaqId of invalidFaqIds) {
-                const response = await app.request(
-                    `${baseUrl}/${validAccommodationId}/faqs/${invalidFaqId}`,
-                    {
-                        method: 'DELETE',
-                        headers: {
-                            'user-agent': 'vitest',
-                            Accept: 'application/json'
-                        }
-                    }
-                );
-
-                // UUID validation might be strict (400) or treated as not found (404)
-                expect([400, 404]).toContain(response.status);
-
-                const data = await response.json();
-                expect(data).toHaveProperty('success', false);
-                expect(data).toHaveProperty('error');
-                expect(data.error).toHaveProperty('message');
-            }
-        });
-
-        it('should return 400 for missing path parameters', async () => {
-            const invalidPaths = [
-                `${baseUrl}//faqs/${validFaqId}`, // Missing accommodation ID
-                `${baseUrl}/${validAccommodationId}/faqs/`, // Missing FAQ ID
-                `${baseUrl}//faqs/` // Missing both IDs
-            ];
-
-            for (const path of invalidPaths) {
-                const response = await app.request(path, {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                });
-
-                // UUID validation might be strict (400) or treated as not found (404)
-                expect([400, 404]).toContain(response.status);
-            }
-        });
+    afterEach(async () => {
+        await testDb.clean();
+        clearCache();
     });
 
-    describe('Resource Not Found (404)', () => {
-        it('should return 404 for non-existent accommodation', async () => {
-            const response = await app.request(
-                `${baseUrl}/${nonExistentAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            expect([404, 400]).toContain(response.status);
-
-            if (response.status === 404) {
-                const data = await response.json();
-                expect(data).toHaveProperty('success', false);
-                expect(data).toHaveProperty('error');
-                expect(data.error.message).toMatch(/not found|does not exist/i);
-            }
-        });
-
-        it('should return 404 for non-existent FAQ', async () => {
-            const response = await app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${nonExistentFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            expect([404, 400]).toContain(response.status);
-
-            if (response.status === 404) {
-                const data = await response.json();
-                expect(data).toHaveProperty('success', false);
-                expect(data).toHaveProperty('error');
-                expect(data.error.message).toMatch(/not found|does not exist/i);
-            }
-        });
-
-        it('should return 404 when FAQ does not belong to accommodation', async () => {
-            // Try to delete a FAQ from wrong accommodation
-            const anotherAccommodationId = 'another12-1234-4567-8901-123456789012';
-
-            const response = await app.request(
-                `${baseUrl}/${anotherAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            expect([404, 400, 403]).toContain(response.status);
-
-            const data = await response.json();
-            expect(data).toHaveProperty('success', false);
-            expect(data).toHaveProperty('error');
-        });
+    afterAll(async () => {
+        await testDb.teardown();
     });
 
-    describe('Authorization and Permissions', () => {
-        it('should handle requests without authentication token', async () => {
-            const response = await app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                        // No authorization header
-                    }
-                }
-            );
-
-            // Depending on endpoint configuration, this might return 401, 403, or be allowed
-            // Auth might be bypassed (200/204), forbidden (401/403), not found (404), or validation error (400)
-            expect([200, 204, 400, 401, 403, 404]).toContain(response.status);
+    const deleteFaq = ({
+        id,
+        faqId,
+        actorId,
+        withActor = true
+    }: {
+        readonly id: string;
+        readonly faqId: string;
+        readonly actorId: string;
+        readonly withActor?: boolean;
+    }) =>
+        app.request(`${base}/${id}/faqs/${faqId}`, {
+            method: 'DELETE',
+            headers: withActor
+                ? buildMockActorHeaders({ actorId, permissions: ownerPermissions })
+                : { 'user-agent': 'vitest' }
         });
 
-        it('should validate user permissions for accommodation', async () => {
-            // Test with potentially restricted accommodation
-            const restrictedAccommodationId = 'restrict1-1234-4567-8901-123456789012';
+    const readFaq = async (faqId: string) => {
+        const [row] = await getDb()
+            .select()
+            .from(accommodationFaqs)
+            .where(eq(accommodationFaqs.id, faqId));
+        return row;
+    };
 
-            const response = await app.request(
-                `${baseUrl}/${restrictedAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            // Should return 403 if user doesn't have permission, or proceed normally
-            expect([200, 204, 400, 403, 404]).toContain(response.status);
-
-            if (response.status === 403) {
-                const data = await response.json();
-                expect(data).toHaveProperty('success', false);
-                expect(data).toHaveProperty('error');
-                expect(data.error.message).toMatch(/permission|access|forbidden/i);
-            }
+    it('soft-deletes the FAQ and leaves the others untouched', async () => {
+        const [target, sibling] = seeded.faqIds;
+        const res = await deleteFaq({
+            id: seeded.id,
+            faqId: target ?? '',
+            actorId: seeded.ownerId
         });
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data).toMatchObject({ success: true });
+        expect((await readFaq(target ?? ''))?.deletedAt).toBeInstanceOf(Date);
+        expect((await readFaq(sibling ?? ''))?.deletedAt).toBeNull();
     });
 
-    describe('Idempotency', () => {
-        it('should handle multiple deletion attempts gracefully', async () => {
-            // First deletion attempt
-            const response1 = await app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            // Second deletion attempt (should be idempotent)
-            const response2 = await app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            // First should succeed or return 404
-            // Idempotency: might succeed (200/204), not found (404), or validation error (400)
-            expect([200, 204, 400, 404]).toContain(response1.status);
-
-            // Second should return 404 (already deleted) or same success response
-            // Second deletion: might succeed (idempotent), not found, or validation error
-            expect([200, 204, 400, 404]).toContain(response2.status);
-
-            // If both succeed, they should return similar responses
-            if ([200, 204].includes(response1.status) && [200, 204].includes(response2.status)) {
-                expect(response1.status).toBe(response2.status);
-            }
+    it('answers 400 for an invalid accommodation UUID', async () => {
+        const res = await deleteFaq({
+            id: 'not-a-uuid',
+            faqId: seeded.faqIds[0] ?? '',
+            actorId: seeded.ownerId
         });
-
-        it('should maintain referential integrity', async () => {
-            // After deleting FAQ, verify it's actually gone
-            const deleteResponse = await app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            if ([200, 204].includes(deleteResponse.status)) {
-                // Try to fetch the deleted FAQ via GET
-                const getResponse = await app.request(`${baseUrl}/${validAccommodationId}/faqs`, {
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                });
-
-                if (getResponse.status === 200) {
-                    const data = await getResponse.json();
-                    const deletedFaq = data.data?.find((faq: any) => faq.id === validFaqId);
-
-                    // FAQ should either not exist or be marked as deleted
-                    if (deletedFaq) {
-                        expect(deletedFaq).toHaveProperty('deletedAt');
-                        expect(deletedFaq.deletedAt).not.toBeNull();
-                    } else {
-                        // FAQ completely removed from results
-                        expect(deletedFaq).toBeUndefined();
-                    }
-                }
-            }
-        });
+        expect(res.status).toBe(400);
     });
 
-    describe('Content Negotiation', () => {
-        it('should accept application/json Accept header', async () => {
-            const response = await app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            // Content negotiation: might succeed (200/204), not found (404), or validation error (400)
-            expect([200, 204, 400, 404]).toContain(response.status);
-
-            if (response.status === 200) {
-                expect(response.headers.get('content-type')).toContain('application/json');
-            }
+    it('answers 400 for an invalid FAQ UUID', async () => {
+        const res = await deleteFaq({
+            id: seeded.id,
+            faqId: 'not-a-uuid',
+            actorId: seeded.ownerId
         });
-
-        it('should accept wildcard Accept header', async () => {
-            const response = await app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: '*/*'
-                    }
-                }
-            );
-
-            // Content negotiation: might succeed (200/204), not found (404), or validation error (400)
-            expect([200, 204, 400, 404]).toContain(response.status);
-        });
-
-        it('should not require request body', async () => {
-            const response = await app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                    // No body
-                }
-            );
-
-            // Content negotiation: might succeed (200/204), not found (404), or validation error (400)
-            expect([200, 204, 400, 404]).toContain(response.status);
-        });
-
-        it('should ignore request body if provided', async () => {
-            const response = await app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({ shouldBeIgnored: true })
-                }
-            );
-
-            // Content negotiation: might succeed (200/204), not found (404), or validation error (400)
-            expect([200, 204, 400, 404]).toContain(response.status);
-        });
+        expect(res.status).toBe(400);
     });
 
-    describe('Concurrency and Race Conditions', () => {
-        it('should handle concurrent deletion attempts', async () => {
-            const promises = Array.from({ length: 3 }, () =>
-                app.request(`${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                })
-            );
-
-            const responses = await Promise.all(promises);
-
-            // All should complete without errors
-            for (const response of responses) {
-                // Content negotiation: might succeed (200/204), not found (404), or validation error (400)
-                expect([200, 204, 400, 404]).toContain(response.status);
-            }
-
-            // At least one should succeed, others should return 404 or same success
-            // Count different response types - all should be valid responses
-            const successCount = responses.filter((r) => [200, 204].includes(r.status)).length;
-            const notFoundCount = responses.filter((r) => r.status === 404).length;
-            const validationErrorCount = responses.filter((r) => r.status === 400).length;
-
-            // All responses should be one of the valid status codes
-            expect(successCount + notFoundCount + validationErrorCount).toBe(responses.length);
+    it('answers 404 for an accommodation that does not exist', async () => {
+        const res = await deleteFaq({
+            id: NONEXISTENT_UUID,
+            faqId: seeded.faqIds[0] ?? '',
+            actorId: seeded.ownerId
         });
-
-        it('should handle deletion during other operations', async () => {
-            // Simulate concurrent delete and update operations
-            const deletePromise = app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            const updatePromise = app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'PUT',
-                    headers: {
-                        'content-type': 'application/json',
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    },
-                    body: JSON.stringify({
-                        question: 'Updated during deletion',
-                        answer: 'This should conflict'
-                    })
-                }
-            );
-
-            const [deleteResponse, updateResponse] = await Promise.all([
-                deletePromise,
-                updatePromise
-            ]);
-
-            // Both operations should complete, but one might fail due to the other
-            // Both operations should complete successfully or with appropriate errors
-            expect([200, 204, 400, 404, 409]).toContain(deleteResponse.status);
-            expect([200, 204, 400, 404, 409]).toContain(updateResponse.status);
-        });
+        expect(res.status).toBe(404);
     });
 
-    describe('Error Handling and Edge Cases', () => {
-        it('should handle service errors gracefully', async () => {
-            // Test with edge case UUIDs that might cause service issues
-            const edgeCaseAccommodationId = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
-            const edgeCaseFaqId = 'faqfffff-ffff-4fff-8fff-ffffffffffff';
-
-            const response = await app.request(
-                `${baseUrl}/${edgeCaseAccommodationId}/faqs/${edgeCaseFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            expect([200, 204, 400, 404, 500]).toContain(response.status);
-
-            const data = await response.json();
-
-            if ([200, 204].includes(response.status)) {
-                if (response.status === 200) {
-                    expect(data).toHaveProperty('success', true);
-                }
-            } else {
-                expect(data).toHaveProperty('success', false);
-                expect(data).toHaveProperty('error');
-                expect(data.error).toHaveProperty('message');
-            }
+    it('answers 404 for a FAQ that does not exist', async () => {
+        const res = await deleteFaq({
+            id: seeded.id,
+            faqId: NONEXISTENT_UUID,
+            actorId: seeded.ownerId
         });
-
-        it('should handle database connection issues', async () => {
-            // This test depends on the ability to simulate database issues
-            // In a real scenario, you might mock the service layer
-            const response = await app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            // Should either succeed or return appropriate error
-            // Database issues: might succeed, fail with validation error, not found, or server error
-            expect([200, 204, 400, 404, 500]).toContain(response.status);
-        });
-
-        it('should validate proper error response format', async () => {
-            // Force an error with invalid data
-            const response = await app.request(`${baseUrl}/invalid-id/faqs/invalid-faq-id`, {
-                method: 'DELETE',
-                headers: {
-                    'user-agent': 'vitest',
-                    Accept: 'application/json'
-                }
-            });
-
-            expect(response.status).toBe(400);
-
-            const data = await response.json();
-            expect(data).toHaveProperty('success', false);
-            expect(data).toHaveProperty('error');
-            expect(data.error).toHaveProperty('message');
-            // Metadata might not always be present in error responses
-            if (data.metadata) {
-                expect(data.metadata).toHaveProperty('timestamp');
-                expect(data.metadata).toHaveProperty('requestId');
-            }
-        });
+        expect(res.status).toBe(404);
     });
 
-    describe('Audit and Logging', () => {
-        it('should include proper metadata in response', async () => {
-            const response = await app.request(
-                `${baseUrl}/${validAccommodationId}/faqs/${validFaqId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
-            );
-
-            if (response.status === 200) {
-                const data = await response.json();
-                expect(data).toHaveProperty('metadata');
-                expect(data.metadata).toHaveProperty('timestamp');
-                expect(data.metadata).toHaveProperty('requestId');
-
-                expect(typeof data.metadata.timestamp).toBe('string');
-                expect(typeof data.metadata.requestId).toBe('string');
-                expect(new Date(data.metadata.timestamp).toString()).not.toBe('Invalid Date');
-                expect(data.metadata.requestId.length).toBeGreaterThan(0);
-            }
+    it('answers 404 for a FAQ that belongs to another accommodation', async () => {
+        const other = await seedOwnedAccommodation({ faqCount: 1, ownerId: seeded.ownerId });
+        const res = await deleteFaq({
+            id: seeded.id,
+            faqId: other.faqIds[0] ?? '',
+            actorId: seeded.ownerId
         });
+        expect(res.status).toBe(404);
+        expect((await readFaq(other.faqIds[0] ?? ''))?.deletedAt).toBeNull();
+    });
+
+    it('answers 401 without an authenticated actor', async () => {
+        const faqId = seeded.faqIds[0] ?? '';
+        const res = await deleteFaq({
+            id: seeded.id,
+            faqId,
+            actorId: seeded.ownerId,
+            withActor: false
+        });
+        expect(res.status).toBe(401);
+        expect((await readFaq(faqId))?.deletedAt).toBeNull();
+    });
+
+    it('refuses a user who does not own the accommodation and deletes nothing', async () => {
+        const stranger = await createMockActorUser({ label: 'faq-stranger' });
+        const faqId = seeded.faqIds[0] ?? '';
+        const res = await deleteFaq({ id: seeded.id, faqId, actorId: stranger.id });
+        expect(res.status).toBe(404);
+        expect((await readFaq(faqId))?.deletedAt).toBeNull();
+    });
+
+    // HOS-1907: removeFaq loads the FAQ with BaseModel.findById, which does not filter
+    // deleted rows (accommodation.service.ts:2858), so an already deleted FAQ is found
+    // and soft-deleted again.
+    it('currently answers 200 when an already soft-deleted FAQ is deleted again (HOS-1907)', async () => {
+        const faqId = seeded.faqIds[0] ?? '';
+        const first = await deleteFaq({ id: seeded.id, faqId, actorId: seeded.ownerId });
+        expect(first.status).toBe(200);
+        const second = await deleteFaq({ id: seeded.id, faqId, actorId: seeded.ownerId });
+        expect(second.status).toBe(200);
+    });
+
+    // Drop `.fails` (and the test above) once HOS-1907 is fixed.
+    it.fails('answers 404 and keeps deletedAt when a soft-deleted FAQ is deleted again (HOS-1907)', async () => {
+        const faqId = seeded.faqIds[0] ?? '';
+        const first = await deleteFaq({ id: seeded.id, faqId, actorId: seeded.ownerId });
+        expect(first.status).toBe(200);
+        const deletedAtBefore = (await readFaq(faqId))?.deletedAt;
+        expect(deletedAtBefore).toBeInstanceOf(Date);
+        const second = await deleteFaq({ id: seeded.id, faqId, actorId: seeded.ownerId });
+        expect(second.status).toBe(404);
+        expect((await readFaq(faqId))?.deletedAt).toEqual(deletedAtBefore);
     });
 });

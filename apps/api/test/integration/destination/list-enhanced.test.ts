@@ -149,8 +149,18 @@ describe('GET /destinations (Enhanced List)', () => {
     });
 
     describe('Filtering & Sorting', () => {
-        // HOS-1899: ?city= alone answers 500 DATABASE_ERROR. Drop `.fails` once fixed.
-        it.fails('filters by city', async () => {
+        // HOS-1899: ?city= alone answers 500 DATABASE_ERROR.
+        it('currently answers 500 DATABASE_ERROR for ?city= alone (HOS-1899)', async () => {
+            const response = await app.request(`${baseUrl}?city=CDU`, {
+                headers: { 'user-agent': 'vitest', Accept: 'application/json' }
+            });
+            expect(response.status).toBe(500);
+            const data = await response.json();
+            expect(data.error.code).toBe('DATABASE_ERROR');
+        });
+
+        // Drop `.fails` (and the test above) once HOS-1899 is fixed.
+        it.fails('filters by city (HOS-1899)', async () => {
             const response = await app.request(`${baseUrl}?city=CDU`, {
                 headers: { 'user-agent': 'vitest', Accept: 'application/json' }
             });
@@ -160,8 +170,18 @@ describe('GET /destinations (Enhanced List)', () => {
             expect(data.data.items).toHaveLength(3);
         });
 
-        // HOS-1899: ?country= alone answers 500 DATABASE_ERROR. Drop `.fails` once fixed.
-        it.fails('filters by country', async () => {
+        // HOS-1899: ?country= alone answers 500 DATABASE_ERROR.
+        it('currently answers 500 DATABASE_ERROR for ?country= alone (HOS-1899)', async () => {
+            const response = await app.request(`${baseUrl}?country=AR`, {
+                headers: { 'user-agent': 'vitest', Accept: 'application/json' }
+            });
+            expect(response.status).toBe(500);
+            const data = await response.json();
+            expect(data.error.code).toBe('DATABASE_ERROR');
+        });
+
+        // Drop `.fails` (and the test above) once HOS-1899 is fixed.
+        it.fails('filters by country (HOS-1899)', async () => {
             const response = await app.request(`${baseUrl}?country=AR`, {
                 headers: { 'user-agent': 'vitest', Accept: 'application/json' }
             });
