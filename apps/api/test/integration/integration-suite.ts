@@ -30,8 +30,6 @@ export interface ApiIntegrationExclusion {
     readonly reason: string;
 }
 
-const NO_DB_INIT =
-    'HOS-1891: never ran in CI; the API answers 500 "Database not initialized" because the file never calls testDb.setup().';
 const STALE_STATUS =
     'HOS-1891: never ran in CI; the asserted status list no longer matches what the route answers (mostly 404 for a missing id, 400 on hierarchy). Unverified per file.';
 const WHOLE_MODULE_MOCK =
@@ -57,28 +55,18 @@ export const API_INTEGRATION_EXCLUSIONS: readonly ApiIntegrationExclusion[] = [
         file: 'test/integration/ai/vault-roundtrip.test.ts',
         reason: 'HOS-247: non-deterministically flaky: the credential-create route fires syncAiProviderModels after responding, racing testDb.clean(). Comes back once the create flow is deterministic under test.'
     },
-    ...byReason({
-        reason: NO_DB_INIT,
-        files: [
-            'test/integration/accommodation/get-by-id.test.ts',
-            'test/integration/accommodation/get-by-slug.test.ts',
-            'test/integration/accommodation/get-stats.test.ts',
-            'test/integration/accommodation/get-summary.test.ts',
-            'test/integration/accommodation/list-enhanced.test.ts',
-            'test/integration/accommodation/list-sorts.test.ts',
-            'test/integration/accommodation/list.test.ts',
-            'test/integration/attraction/list.test.ts',
-            'test/integration/destination/list-enhanced.test.ts',
-            'test/integration/destination/list.test.ts',
-            'test/integration/event-organizer/list.test.ts',
-            'test/integration/event/list.test.ts',
-            'test/integration/owner-promotion/public.test.ts',
-            'test/integration/post/list.test.ts',
-            'test/integration/post/middleware-stack.test.ts',
-            'test/integration/post/performance-rate-limit.test.ts',
-            'test/integration/sponsorship/protected.test.ts'
-        ]
-    }),
+    {
+        file: 'test/integration/accommodation/list-enhanced.test.ts',
+        reason: 'HOS-1891: product bug: the public accommodations list silently ignores ?isFeatured=true/false (AccommodationModel.search has no isFeatured clause after the featuredByEntitlement rename), so "should handle boolean filters" returns featured and non-featured rows alike. Comes back when the filter is wired.'
+    },
+    {
+        file: 'test/integration/destination/list-enhanced.test.ts',
+        reason: 'HOS-1891: product bug: GET /api/v1/public/destinations?city=... and ?country=... each answer 500 DATABASE_ERROR instead of filtering, so "filters by city/country" fail (they pass only when combined with a filter that already empties the result). Comes back when the filters are fixed.'
+    },
+    {
+        file: 'test/integration/event-organizer/list.test.ts',
+        reason: 'HOS-1891: product bug: EventOrganizerService._executeSearch reads page/pageSize from params, but BaseCrudRead.search strips them into ctx.pagination (SPEC-088), so ?pageSize=2 returns up to 10 items while reporting pageSize 2. Comes back when the service reads ctx.pagination like AttractionService does.'
+    },
     ...byReason({
         reason: STALE_STATUS,
         files: [
