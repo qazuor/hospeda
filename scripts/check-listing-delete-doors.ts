@@ -53,9 +53,10 @@ const LISTING_RECEIVERS: ReadonlySet<string> = new Set([
     'experienceservice',
     'accommodationmodel',
     'gastronomymodel',
+    'venuemodel',
     'experiencemodel'
 ]);
-const LISTING_CLASS = /^(?:Accommodation|Gastronomy|Experience)(?:Service|Model)$/;
+const LISTING_CLASS = /^(?:Accommodation|Gastronomy|Experience)(?:Service|Model)$|^VenueModel$/;
 const USER_RECEIVERS: ReadonlySet<string> = new Set(['userservice', 'usermodel']);
 const USER_CLASS = /^User(?:Service|Model)$/;
 const LISTING_METHODS: ReadonlySet<string> = new Set([

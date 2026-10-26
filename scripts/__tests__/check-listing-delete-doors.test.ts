@@ -60,6 +60,30 @@ function route(method: string, routePath: string): string {
 }
 
 describe('AC:V6:25 listing delete doors guard', () => {
+    describe('TEST:1814:4 AC:1:16 follows VenueModel while retaining GastronomyModel', () => {
+        it('TEST:1814:4 AC:1:16 detects class and receiver forms for both model names', () => {
+            const venueClass = check({
+                'packages/db/src/models/venue/venue.model.ts':
+                    'new VenueModel({ logger }).hardDelete(actor, id);\n'
+            });
+            expect(venueClass.exitCode).toBe(1);
+            expect(venueClass.output).toContain('new VenueModel({ logger }).hardDelete(...)');
+
+            const venueReceiver = check({
+                'packages/db/src/models/venue/venue.model.ts': 'venueModel.softDelete(actor, id);\n'
+            });
+            expect(venueReceiver.exitCode).toBe(1);
+            expect(venueReceiver.output).toContain('venueModel.softDelete(...)');
+
+            const oldModel = check({
+                'packages/db/src/models/gastronomy/gastronomy.model.ts':
+                    'new GastronomyModel({ logger }).hardDelete(actor, id);\n'
+            });
+            expect(oldModel.exitCode).toBe(1);
+            expect(oldModel.output).toContain('new GastronomyModel({ logger }).hardDelete(...)');
+        });
+    });
+
     it('accepts the repository tree', () => {
         const result = run();
         expect(result.exitCode).toBe(0);
