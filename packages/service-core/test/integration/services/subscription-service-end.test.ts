@@ -51,6 +51,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
             await withServiceTestTransaction(async (tx) => {
                 // Arrange
                 const h = serviceEndHarness();
+                const facts: import('../../../src/services/billing/facts/billing-fact-sink').BillingFact[] =
+                    [];
                 const { userId } = await seedOrphanOwner(tx);
                 const { subscriptionId } = await seedServiceEndPrincipal(tx, {
                     userId,
@@ -60,13 +62,28 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     grace: true
                 });
                 const { ports } = serviceEndPorts(tx, h);
+                const portsWithFacts = {
+                    ...ports,
+                    billingFacts: { emit: (fact: (typeof facts)[number]) => facts.push(fact) }
+                };
 
                 // Act
-                const first = await endScheduledServices({ limit: 100, db: tx }, ports);
+                const first = await endScheduledServices({ limit: 100, db: tx }, portsWithFacts);
 
                 // Assert
                 const row = await readSubscription(tx, subscriptionId);
                 expect(row.status).toBe('CANCELLED');
+                expect(facts).toHaveLength(1);
+                expect(facts[0]).toMatchObject({
+                    kind: 'SUBSCRIPTION_CANCELLED',
+                    userId,
+                    subscriptionId,
+                    subscriptionClass: 'PRINCIPAL',
+                    actorKind: 'SYSTEM',
+                    cancelledBy: 'SYSTEM',
+                    path: 'SERVICE_END',
+                    wasScheduled: true
+                });
                 expect(row.serviceEndsAt).toEqual(serviceEndPast);
                 expect(row.graceStartedAt).toBeNull();
                 expect(row.graceEndsAt).toBeNull();
@@ -94,7 +111,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 const versionAfterFirst = await readRowVersion(tx, subscriptionId);
 
                 // Act (b): the second run over the same rows
-                const second = await endScheduledServices({ limit: 100, db: tx }, ports);
+                const second = await endScheduledServices({ limit: 100, db: tx }, portsWithFacts);
 
                 // Assert (b)
                 const again = await readSubscription(tx, subscriptionId);
@@ -105,6 +122,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     serviceEndPast
                 );
                 expect(h.events).toHaveLength(1);
+                expect(facts).toHaveLength(1);
                 expect(second).toStrictEqual({
                     principals: { cancelled: 0, failed: 0 },
                     complements: { cancelled: 0, failed: 0 },
@@ -117,6 +135,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
             await withServiceTestTransaction(async (tx) => {
                 // Arrange
                 const h = serviceEndHarness();
+                const facts: import('../../../src/services/billing/facts/billing-fact-sink').BillingFact[] =
+                    [];
                 const future = await seedServiceEndPrincipal(tx, {
                     userId: (await seedOrphanOwner(tx)).userId,
                     vertical: V,
@@ -130,9 +150,13 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     serviceEndsAt: null
                 });
                 const { ports } = serviceEndPorts(tx, h);
+                const portsWithFacts = {
+                    ...ports,
+                    billingFacts: { emit: (fact: (typeof facts)[number]) => facts.push(fact) }
+                };
 
                 // Act
-                const result = await endScheduledServices({ limit: 100, db: tx }, ports);
+                const result = await endScheduledServices({ limit: 100, db: tx }, portsWithFacts);
                 const direct = await applyS12ToPrincipal(
                     { tx, subscriptionId: future.subscriptionId, now },
                     { orphanhood: ports, clock: h.clock }
@@ -150,6 +174,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 });
                 expect(result.rows).toStrictEqual([]);
                 expect(h.events).toHaveLength(0);
+                expect(facts).toHaveLength(0);
             });
         });
 

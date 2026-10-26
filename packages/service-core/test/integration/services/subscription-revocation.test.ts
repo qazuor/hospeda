@@ -75,6 +75,60 @@ const EXPECTED_CALLS: Readonly<
 };
 
 describe('TEST:B5:11 AC:B5:20 AC:B5:21 S36 revokes in one act', () => {
+    for (const origin of ['ACTIVE', 'CANCEL_SCHEDULED'] as const) {
+        it.skipIf(live)(
+            `emits one committed REVOKED fact with wasScheduled derived from ${origin}`,
+            async () => {
+                const f = await revocationFixture({ origin });
+                const facts: import('../../../src/services/billing/facts/billing-fact-sink.js').BillingFact[] =
+                    [];
+                const ports = {
+                    ...f.ports,
+                    billingFacts: { emit: (fact: (typeof facts)[number]) => facts.push(fact) }
+                };
+                await revokeSubscription(
+                    { actor: await seedRevocationActor(), subscriptionId: f.subscriptionId },
+                    ports
+                );
+                expect(facts).toHaveLength(1);
+                expect(facts[0]).toMatchObject({
+                    kind: 'SUBSCRIPTION_CANCELLED',
+                    userId: f.userId,
+                    subscriptionId: f.subscriptionId,
+                    subscriptionClass: 'PRINCIPAL',
+                    actorKind: 'ADMIN',
+                    cancelledBy: 'ADMIN',
+                    path: 'REVOKED',
+                    wasScheduled: origin === 'CANCEL_SCHEDULED'
+                });
+            }
+        );
+    }
+
+    it.skipIf(live)(
+        'does not emit a REVOKED fact when the transaction writes nothing',
+        async () => {
+            const f = await revocationFixture({ origin: 'ACTIVE' });
+            const facts: import('../../../src/services/billing/facts/billing-fact-sink.js').BillingFact[] =
+                [];
+            const ports = {
+                ...f.ports,
+                billingFacts: { emit: (fact: (typeof facts)[number]) => facts.push(fact) }
+            };
+            await getServiceTestDb()
+                .update(subscriptions)
+                .set({ status: 'CANCELLED' })
+                .where(eq(subscriptions.id, f.subscriptionId));
+            await expect(
+                revokeSubscription(
+                    { actor: await seedRevocationActor(), subscriptionId: f.subscriptionId },
+                    ports
+                )
+            ).rejects.toThrow();
+            expect(facts).toHaveLength(0);
+        }
+    );
+
     for (const origin of ['ACTIVE', 'GRACE_PERIOD', 'CANCEL_SCHEDULED', 'PAUSED'] as const) {
         it.skipIf(live)(
             `AC:B5:20 (a) from ${origin} on the fifth day: CANCELLED now, RF1 for the total, payment untouched`,
