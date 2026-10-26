@@ -19,6 +19,11 @@ import {
     TrialStatusEnum,
     VerticalEnum
 } from '@repo/schemas';
+
+// This suite uses the explicit test-only mock-actor headers. Match the
+// integration-test convention that keeps those headers available under CI.
+delete process.env.CI;
+
 /**
  * Integration tests for admin destination FAQ routes (SPEC-177 T-028).
  *
@@ -40,7 +45,7 @@ import {
  *   - Foreign faqId in accommodation reorder → 400 (VALIDATION_ERROR → HTTP 400)
  *   - Missing parent destination → 404
  */
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
 import { createTestUser } from '../../e2e/setup/seed-helpers';
@@ -65,7 +70,7 @@ const INVALID_UUID = 'not-a-uuid';
  * (service _canUpdate gate).
  */
 const adminActor = {
-    id: crypto.randomUUID(),
+    id: '',
     roles: [RoleEnum.ADMIN],
     permissions: [
         PermissionEnum.ACCESS_PANEL_ADMIN,
@@ -109,6 +114,14 @@ describe('Admin destination FAQ routes (SPEC-177 T-028)', () => {
         validateApiEnv();
         process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
         app = initApp();
+    });
+
+    beforeEach(async () => {
+        const user = await createTestUser({
+            email: `hos1659-admin-faq-${crypto.randomUUID()}@example.test`,
+            slug: `hos1659-admin-faq-${crypto.randomUUID()}`
+        });
+        adminActor.id = user.id;
     });
 
     afterAll(async () => {
