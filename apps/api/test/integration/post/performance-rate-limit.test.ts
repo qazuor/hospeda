@@ -1,12 +1,22 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
 
 describe('Post - Performance / Rate limit', () => {
     let app: ReturnType<typeof initApp>;
     const base = '/api/v1/public/posts';
 
-    beforeAll(() => {
+    afterAll(async () => {
+        await testDb.teardown();
+    });
+
+    afterEach(async () => {
+        await testDb.clean();
+    });
+
+    beforeAll(async () => {
+        await testDb.setup();
         // Initialize environment variables before running tests
         validateApiEnv();
         app = initApp();
@@ -18,7 +28,7 @@ describe('Post - Performance / Rate limit', () => {
         );
         const responses = await Promise.all(requests);
         for (const res of responses) {
-            expect([200, 400, 429]).toContain(res.status);
+            expect(res.status).toBe(200);
         }
     });
 });
