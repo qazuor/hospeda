@@ -24,7 +24,7 @@ const NON_OWNER_ID = '22222222-2222-4222-a222-222222222222';
 
 // ---------------------------------------------------------------------------
 // Minimal gastronomy fixture that satisfies GastronomyProtectedSchema.
-// Mirrors the shape returned by GastronomyService.getById in the owner-tier
+// Mirrors the shape returned by VenueService.getById in the owner-tier
 // projection. The fixture sets ownerId = OWNER_ID so ownership assertions work.
 // ---------------------------------------------------------------------------
 
@@ -62,7 +62,7 @@ const MOCK_GASTRONOMY = {
 };
 
 // ---------------------------------------------------------------------------
-// Mock GastronomyService: getById returns the fixture; loadJunctionIds returns
+// Mock VenueService: getById returns the fixture; loadJunctionIds returns
 // empty arrays (not under test here).
 // ---------------------------------------------------------------------------
 
@@ -70,26 +70,26 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...orig,
-        GastronomyService: class MockGastronomyService extends orig.GastronomyService {
+        VenueService: class MockGastronomyService extends orig.VenueService {
             // biome-ignore lint/complexity/noUselessConstructor: need to call super
-            constructor(...args: ConstructorParameters<typeof orig.GastronomyService>) {
+            constructor(...args: ConstructorParameters<typeof orig.VenueService>) {
                 super(...args);
             }
 
             override async getById(
-                ..._args: Parameters<typeof orig.GastronomyService.prototype.getById>
-            ): ReturnType<typeof orig.GastronomyService.prototype.getById> {
+                ..._args: Parameters<typeof orig.VenueService.prototype.getById>
+            ): ReturnType<typeof orig.VenueService.prototype.getById> {
                 return {
                     data: MOCK_GASTRONOMY as Awaited<
-                        ReturnType<typeof orig.GastronomyService.prototype.getById>
+                        ReturnType<typeof orig.VenueService.prototype.getById>
                     >['data'] & {},
                     error: undefined
-                } as Awaited<ReturnType<typeof orig.GastronomyService.prototype.getById>>;
+                } as Awaited<ReturnType<typeof orig.VenueService.prototype.getById>>;
             }
 
             override async loadJunctionIds(
-                ..._args: Parameters<typeof orig.GastronomyService.prototype.loadJunctionIds>
-            ): ReturnType<typeof orig.GastronomyService.prototype.loadJunctionIds> {
+                ..._args: Parameters<typeof orig.VenueService.prototype.loadJunctionIds>
+            ): ReturnType<typeof orig.VenueService.prototype.loadJunctionIds> {
                 return { amenityIds: [], featureIds: [] };
             }
         }

@@ -4,7 +4,7 @@
  * Returns 404 when the listing is not visible (non-existent, soft-deleted, or non-public).
  */
 import { VenuePublicSchema } from '@repo/schemas';
-import { GastronomyService, ServiceError } from '@repo/service-core';
+import { ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { withPublicIsFeatured } from '../../../utils/accommodation-featured';
@@ -13,7 +13,7 @@ import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/public/gastronomies/:id

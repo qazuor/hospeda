@@ -69,7 +69,7 @@ export const gastronomyMenuSections = pgTable(
         /**
          * Position of the section within the menu. NOT NULL with no default:
          * the whole menu is written in one transaction by
-         * `replaceGastronomyMenu`, which assigns the index of every section, so
+         * `replaceVenueMenu`, which assigns the index of every section, so
          * there is no path that inserts a section without knowing its place.
          */
         displayOrder: integer('display_order').notNull(),

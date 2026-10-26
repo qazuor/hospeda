@@ -14,7 +14,7 @@
  * No request body — gastronomyId and mediaId come from URL params.
  *
  * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
- * enforced inside `setFeaturedGastronomyMedia` via `checkGastronomyCanEditMedia`.
+ * enforced inside `setFeaturedVenueMedia` via `checkVenueCanEditMedia`.
  *
  * NOTE: `index.ts` registers this before /{id}/media/{mediaId} by convention.
  * That is defensive, not required — the two paths differ in segment count, and
@@ -23,7 +23,7 @@
  */
 
 import { VenueMediaSingleOutputSchema, VerticalEnum } from '@repo/schemas';
-import { GastronomyService, ServiceError, setFeaturedGastronomyMedia } from '@repo/service-core';
+import { ServiceError, setFeaturedVenueMedia, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
@@ -31,7 +31,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Route handler — promotes a photo to featured on a gastronomy listing.
@@ -62,10 +62,10 @@ export const protectedSetFeaturedGastronomyMediaRoute = createProtectedRoute({
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         const model = (
             gastronomyService as unknown as {
-                model: Parameters<typeof setFeaturedGastronomyMedia>[0];
+                model: Parameters<typeof setFeaturedVenueMedia>[0];
             }
         ).model;
-        const result = await setFeaturedGastronomyMedia(model, actor, {
+        const result = await setFeaturedVenueMedia(model, actor, {
             gastronomyId: params.id as string,
             mediaId: params.mediaId as string
         });

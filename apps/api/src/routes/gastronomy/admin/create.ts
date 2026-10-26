@@ -9,14 +9,14 @@ import {
     VenueAdminSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { GastronomyService, ServiceError } from '@repo/service-core';
+import { ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * POST /api/v1/admin/gastronomies

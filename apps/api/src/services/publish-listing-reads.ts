@@ -39,7 +39,7 @@ import {
     AccommodationService,
     type Actor,
     ExperienceService,
-    GastronomyService
+    VenueService
 } from '@repo/service-core';
 import { apiLogger } from '../utils/logger';
 
@@ -73,7 +73,7 @@ export const isGastronomyOrExperienceVertical = (
  * Memoised, so the request path still pays one construction per process.
  */
 let accommodationService: AccommodationService | null = null;
-let gastronomyService: GastronomyService | null = null;
+let gastronomyService: VenueService | null = null;
 let experienceService: ExperienceService | null = null;
 
 const getAccommodationService = (): AccommodationService => {
@@ -81,8 +81,8 @@ const getAccommodationService = (): AccommodationService => {
     return accommodationService;
 };
 
-const getGastronomyService = (): GastronomyService => {
-    gastronomyService ??= new GastronomyService({ logger: apiLogger });
+const getGastronomyService = (): VenueService => {
+    gastronomyService ??= new VenueService({ logger: apiLogger });
     return gastronomyService;
 };
 
@@ -216,7 +216,7 @@ export async function countOwnListings(input: {
     // over three services. Mirrors the assertion the enforcement middleware and
     // the accommodation precheck both already make.
     const result = isGastronomyOrExperienceVertical(vertical)
-        ? await (service as GastronomyService | ExperienceService).countOwn(actor)
+        ? await (service as VenueService | ExperienceService).countOwn(actor)
         : await service.count(actor, { ownerId: actor.id } as never);
 
     if (result.error) {

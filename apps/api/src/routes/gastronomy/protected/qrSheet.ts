@@ -15,7 +15,7 @@
  * ## The publicity check is the publication state, as in accommodation
  *
  * Only `publicationStatus === PUBLISHED` is "published" (V6.9b, HOS-1641).
- * `GastronomyService._canView` answers NOT_FOUND to every non-owner on any other
+ * `VenueService._canView` answers NOT_FOUND to every non-owner on any other
  * state, and `public/list.ts` states the public contract the same way. A listing
  * in any other state would otherwise pass this route, mint a code and be
  * printed, and every scan of that paper would 404 permanently. Paper is not
@@ -37,7 +37,7 @@ import {
     QrCodePurposeEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import { entityNotFoundError, GastronomyService } from '@repo/service-core';
+import { entityNotFoundError, VenueService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
 // `ServiceError` from the package ROOT yields a DIFFERENT class under the test
 // resolver, and `instanceof` then fails — a NOT_FOUND answered as a 500.
@@ -54,7 +54,7 @@ import { apiLogger } from '../../../utils/logger';
 import { resolveReturnUrlLocale } from '../../../utils/return-url-locale';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Builds the PDF.
@@ -82,14 +82,14 @@ export async function handleGetGastronomyQrSheet(
 
     const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
-        throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
+        throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }
 
     // Only PUBLISHED has a public page (V6.9b, HOS-1641). A code printed for
     // any other state 404s on every scan, forever.
     if (entity.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
         // Same canonical message as the branch above, deliberately (HOS-600).
-        throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
+        throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }
 
     if (!entity.slug) {

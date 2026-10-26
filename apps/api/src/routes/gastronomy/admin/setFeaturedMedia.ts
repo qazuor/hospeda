@@ -14,7 +14,7 @@
  * No request body — gastronomyId and mediaId come from URL params.
  */
 import { VenueMediaSingleOutputSchema, VerticalEnum } from '@repo/schemas';
-import { GastronomyService, ServiceError, setFeaturedGastronomyMedia } from '@repo/service-core';
+import { ServiceError, setFeaturedVenueMedia, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { runListingContentCall } from '../../../middlewares/listing-access';
@@ -22,14 +22,14 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * PUT /api/v1/admin/gastronomies/:id/media/:mediaId/featured
  * Set featured photo for gastronomy listing gallery — Admin endpoint.
  *
  * Requires GASTRONOMY_EDIT_ALL permission. The service helper
- * `setFeaturedGastronomyMedia` enforces the same gate via `checkGastronomyCanEditMedia`.
+ * `setFeaturedVenueMedia` enforces the same gate via `checkVenueCanEditMedia`.
  */
 export const adminSetFeaturedGastronomyMediaRoute = createAdminRoute({
     method: 'put',
@@ -53,13 +53,13 @@ export const adminSetFeaturedGastronomyMediaRoute = createAdminRoute({
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         const model = (
             gastronomyService as unknown as {
-                model: Parameters<typeof setFeaturedGastronomyMedia>[0];
+                model: Parameters<typeof setFeaturedVenueMedia>[0];
             }
         ).model;
         const result = await runListingContentCall({
             ctx,
             run: () =>
-                setFeaturedGastronomyMedia(model, actor, {
+                setFeaturedVenueMedia(model, actor, {
                     gastronomyId: params.id as string,
                     mediaId: params.mediaId as string
                 })

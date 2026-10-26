@@ -3,14 +3,14 @@
  * A logged-in tourist (or any authenticated user) submits a review for a gastronomy listing.
  *
  * Behavior:
- * - moderationState is forced to PENDING by GastronomyReviewService._beforeCreate()
+ * - moderationState is forced to PENDING by VenueReviewService._beforeCreate()
  *   (defense-in-depth; any caller-supplied value is silently overridden).
  * - One review per user per listing is enforced (ALREADY_EXISTS on duplicate).
  * - After creation, the listing's denormalized rating fields are recomputed.
  */
 
 import { VenueReviewCreateInputSchema, VenueReviewSchema } from '@repo/schemas';
-import { GastronomyReviewService, ServiceError } from '@repo/service-core';
+import { ServiceError, VenueReviewService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getActorFromContext } from '../../../utils/actor';
@@ -77,7 +77,7 @@ export const protectedCreateGastronomyReviewRoute = createProtectedRoute({
             gastronomyId: params.gastronomyId as string
         };
 
-        const service = new GastronomyReviewService({ logger: apiLogger });
+        const service = new VenueReviewService({ logger: apiLogger });
         const result = await service.create(actor, input);
 
         if (result.error) {

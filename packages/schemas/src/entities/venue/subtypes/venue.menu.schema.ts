@@ -232,7 +232,7 @@ export const VenueMenuSectionSchema = z.object({
      *
      * `.default([])` because this schema doubles as the row type the model is
      * parameterised by, and a `gastronomy_menu_sections` ROW has no `items`
-     * column — the array is assembled by `getGastronomyMenu`.
+     * column — the array is assembled by `getVenueMenu`.
      */
     items: z.array(VenueMenuItemSchema).default([]),
     createdAt: z.coerce.date(),

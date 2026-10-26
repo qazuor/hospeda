@@ -2,19 +2,19 @@
  * POST /api/v1/admin/gastronomies/:id/assign-owner
  * Set or replace the GASTRONOMY_OWNER of a gastronomy listing — Admin endpoint.
  *
- * Uses the dedicated `GastronomyService.assignOwner()` action. The generic
+ * Uses the dedicated `VenueService.assignOwner()` action. The generic
  * `update()` path intentionally omits `ownerId` (ownership is immutable there),
  * so routing assignment through it silently dropped the change.
  */
 import { PermissionEnum, VenueAdminSchema } from '@repo/schemas';
-import { GastronomyService, ServiceError } from '@repo/service-core';
+import { ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /** Body schema for the assign-owner endpoint. */
 const AssignOwnerBodySchema = z.object({
@@ -26,7 +26,7 @@ const AssignOwnerBodySchema = z.object({
  * POST /api/v1/admin/gastronomies/:id/assign-owner
  * Assign owner to gastronomy listing — Admin endpoint.
  *
- * Delegates to `GastronomyService.assignOwner(actor, id, ownerId)`.
+ * Delegates to `VenueService.assignOwner(actor, id, ownerId)`.
  * Requires GASTRONOMY_EDIT_ALL permission.
  */
 export const adminAssignGastronomyOwnerRoute = createAdminRoute({

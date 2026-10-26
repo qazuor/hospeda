@@ -46,20 +46,20 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...orig,
-        GastronomyService: class MockGastronomyService extends orig.GastronomyService {
+        VenueService: class MockGastronomyService extends orig.VenueService {
             // biome-ignore lint/complexity/noUselessConstructor: need to call super
-            constructor(...args: ConstructorParameters<typeof orig.GastronomyService>) {
+            constructor(...args: ConstructorParameters<typeof orig.VenueService>) {
                 super(...args);
             }
 
             override async listOwn(
-                actor: Parameters<typeof orig.GastronomyService.prototype.listOwn>[0]
-            ): ReturnType<typeof orig.GastronomyService.prototype.listOwn> {
+                actor: Parameters<typeof orig.VenueService.prototype.listOwn>[0]
+            ): ReturnType<typeof orig.VenueService.prototype.listOwn> {
                 (globalThis as Record<string, unknown>).__listOwnActorId = actor?.id;
                 return {
                     data: { listings: MOCK_LISTINGS as never },
                     error: undefined
-                } as Awaited<ReturnType<typeof orig.GastronomyService.prototype.listOwn>>;
+                } as Awaited<ReturnType<typeof orig.VenueService.prototype.listOwn>>;
             }
         }
     };

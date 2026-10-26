@@ -2,21 +2,21 @@
  * Admin moderate gastronomy review endpoint — T-046.
  *
  * Approves or rejects a single gastronomy review. Delegates the state
- * transition to `GastronomyReviewService.moderateReview()`, which gates the
+ * transition to `VenueReviewService.moderateReview()`, which gates the
  * action on {@link PermissionEnum.GASTRONOMY_MODERATE_REVIEW}.
  *
  * @module routes/gastronomy/reviews/admin/moderate
  * @see SPEC-239 T-046
  */
 import { PermissionEnum, ReviewModerateInputSchema, VenueReviewSchema } from '@repo/schemas';
-import { GastronomyReviewService, ServiceError } from '@repo/service-core';
+import { ServiceError, VenueReviewService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createAdminRoute } from '../../../../utils/route-factory';
 
-const gastronomyReviewService = new GastronomyReviewService({ logger: apiLogger });
+const gastronomyReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
  * POST /api/v1/admin/gastronomies/reviews/:id/moderate

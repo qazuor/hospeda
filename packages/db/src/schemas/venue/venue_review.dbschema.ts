@@ -87,7 +87,7 @@ export const gastronomyReviews = pgTable(
         gastronomy_reviews_lifecycleState_idx: index('gastronomy_reviews_lifecycleState_idx').on(
             table.lifecycleState
         ),
-        // Composite: most common query is listByGastronomy filtered by lifecycle
+        // Composite: most common query is listByVenue filtered by lifecycle
         gastronomy_reviews_gastronomyId_lifecycleState_idx: index(
             'gastronomy_reviews_gastronomyId_lifecycleState_idx'
         ).on(table.gastronomyId, table.lifecycleState),

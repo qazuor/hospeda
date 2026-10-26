@@ -12,7 +12,7 @@ const PUBLIC_REVIEW_READERS: Readonly<Record<string, string>> = {
     'apps/api/src/routes/testimonials/public/list.ts': 'listingReviewsShownCondition (HOS-1686, S1)'
 };
 const REVIEW_READER_PATTERN =
-    /\b(AccommodationReviewService|GastronomyReviewService|ExperienceReviewService|StatsService)\b|\b(accommodationReviews|gastronomyReviews|experienceReviews)\b/;
+    /\b(AccommodationReviewService|VenueReviewService|ExperienceReviewService|StatsService)\b|\b(accommodationReviews|gastronomyReviews|experienceReviews)\b/;
 
 function sourceFiles(dir: string): string[] {
     return readdirSync(dir).flatMap((name) => {

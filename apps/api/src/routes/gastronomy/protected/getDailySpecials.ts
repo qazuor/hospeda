@@ -26,11 +26,7 @@
  * @module routes/gastronomy/protected/getDailySpecials
  */
 import { PermissionEnum, VenueDailySpecialsOutputSchema } from '@repo/schemas';
-import {
-    entityNotFoundError,
-    GastronomyService,
-    getGastronomyDailySpecials
-} from '@repo/service-core';
+import { entityNotFoundError, getVenueDailySpecials, VenueService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
 // `ServiceError` from the package ROOT yields a DIFFERENT class under the test
 // resolver, and `instanceof` then fails — a NOT_FOUND answered as a 500.
@@ -41,7 +37,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Refuses any listing that is not the caller's, as a 404.
@@ -64,7 +60,7 @@ async function requireOwnedGastronomy(ctx: Context, gastronomyId: string): Promi
 
     const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
     if (!result.data || (!hasViewAll && result.data.ownerId !== actor.id)) {
-        throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
+        throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }
 }
 
@@ -81,10 +77,10 @@ export async function handleGetGastronomyDailySpecials(
     // same accessor the menu, FAQ and media routes use.
     const model = (
         gastronomyService as unknown as {
-            model: Parameters<typeof getGastronomyDailySpecials>[0];
+            model: Parameters<typeof getVenueDailySpecials>[0];
         }
     ).model;
-    const result = await getGastronomyDailySpecials(model, { gastronomyId });
+    const result = await getVenueDailySpecials(model, { gastronomyId });
 
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);

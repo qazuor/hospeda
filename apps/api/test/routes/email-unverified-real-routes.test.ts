@@ -3,8 +3,8 @@ import { PermissionEnum, RoleEnum, ServiceErrorCode, UserSchema } from '@repo/sc
 import {
     AccommodationService,
     ExperienceService,
-    GastronomyService,
-    UserService
+    UserService,
+    VenueService
 } from '@repo/service-core';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -103,7 +103,7 @@ describe('TEST:V5:3 TEST:1692:1 the closed list passes step 2 on the real router
             .spyOn(UserService.prototype, 'getById')
             .mockResolvedValue({ data: profile });
         const gastronomySpy = vi
-            .spyOn(GastronomyService.prototype, 'listOwn')
+            .spyOn(VenueService.prototype, 'listOwn')
             .mockResolvedValue({ data: { listings: [] } } as never);
         const experienceSpy = vi
             .spyOn(ExperienceService.prototype, 'listOwn')

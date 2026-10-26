@@ -15,7 +15,7 @@ vi.mock('@repo/service-core', async (importActual) => {
     const actual = await importActual<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        GastronomyService: Object.assign(
+        VenueService: Object.assign(
             vi.fn().mockImplementation(function () {
                 return { getById: mockGetById };
             }),

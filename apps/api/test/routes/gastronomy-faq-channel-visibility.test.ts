@@ -9,8 +9,8 @@
  * `FaqWithChannelVisibility{Create,Update}PayloadSchema`. It does not prove the
  * flags actually reach the service call — that gap is exactly how H-119
  * survived on accommodation despite every layer testing correctly in
- * isolation. This file spies on what the route hands `addGastronomyFaq` /
- * `updateGastronomyFaq`, not on the HTTP status code.
+ * isolation. This file spies on what the route hands `addVenueFaq` /
+ * `updateVenueFaq`, not on the HTTP status code.
  *
  * @module test/routes/gastronomy-faq-channel-visibility
  */
@@ -31,8 +31,8 @@ vi.mock('@repo/service-core', async () => {
     const actual = await vi.importActual<typeof import('@repo/service-core')>('@repo/service-core');
     return {
         ...actual,
-        addGastronomyFaq: mockAddFaq,
-        updateGastronomyFaq: mockUpdateFaq
+        addVenueFaq: mockAddFaq,
+        updateVenueFaq: mockUpdateFaq
     };
 });
 

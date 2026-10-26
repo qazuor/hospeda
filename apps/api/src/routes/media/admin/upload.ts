@@ -39,9 +39,9 @@ import {
     EventOrganizerService,
     EventService,
     ExperienceService,
-    GastronomyService,
     PostService,
-    PostSponsorService
+    PostSponsorService,
+    VenueService
 } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
 import { resolveLimitStep } from '@repo/verticals';
@@ -105,7 +105,7 @@ const resolveEntityService = (
     | DestinationService
     | EventService
     | PostService
-    | GastronomyService
+    | VenueService
     | ExperienceService
     | PostSponsorService
     | EventOrganizerService
@@ -120,7 +120,7 @@ const resolveEntityService = (
         case 'post':
             return new PostService({ logger: apiLogger });
         case 'gastronomy':
-            return new GastronomyService({ logger: apiLogger });
+            return new VenueService({ logger: apiLogger });
         case 'experience':
             return new ExperienceService({ logger: apiLogger });
         case 'postSponsor':

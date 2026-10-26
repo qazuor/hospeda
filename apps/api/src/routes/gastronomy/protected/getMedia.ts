@@ -7,18 +7,18 @@
  * `'visible'`).
  *
  * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
- * enforced inside `getGastronomyMedia` via `checkGastronomyCanEditMedia`. There
+ * enforced inside `getVenueMedia` via `checkVenueCanEditMedia`. There
  * is no separate public read path for media management.
  */
 import { VenueMediaListOutputSchema, VenueMediaStateSchema } from '@repo/schemas';
-import { GastronomyService, getGastronomyMedia, ServiceError } from '@repo/service-core';
+import { getVenueMedia, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Route handler — lists the gallery photos for a gastronomy listing.
@@ -54,9 +54,9 @@ export const protectedGetGastronomyMediaRoute = createCRUDRoute({
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         const model = (
-            gastronomyService as unknown as { model: Parameters<typeof getGastronomyMedia>[0] }
+            gastronomyService as unknown as { model: Parameters<typeof getVenueMedia>[0] }
         ).model;
-        const result = await getGastronomyMedia(model, actor, {
+        const result = await getVenueMedia(model, actor, {
             gastronomyId: params.id as string,
             state
         });

@@ -25,7 +25,7 @@
  *
  * ## Why these live here and not in `VenueModel.search`
  *
- * `GastronomyService._executeSearch` does not call `VenueModel.search` — it
+ * `VenueService._executeSearch` does not call `VenueModel.search` — it
  * calls the base `findAllWithRelations` (to load `destination`/`owner` for the
  * card transform) and `count`. Both take an `additionalConditions: SQL[]`
  * escape hatch, so the service composes the clause rather than the model

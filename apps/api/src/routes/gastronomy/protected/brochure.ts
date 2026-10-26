@@ -38,7 +38,7 @@ import {
     ServiceErrorCode,
     VerticalEnum
 } from '@repo/schemas';
-import { entityNotFoundError, GastronomyService } from '@repo/service-core';
+import { entityNotFoundError, VenueService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
 // `ServiceError` from the package ROOT yields a DIFFERENT class under the test
 // resolver, and `instanceof` then fails — a NOT_FOUND answered as a 500.
@@ -56,7 +56,7 @@ import { apiLogger } from '../../../utils/logger';
 import { resolveReturnUrlLocale } from '../../../utils/return-url-locale';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /** Builds the PDF. Exported standalone so the route test can call it directly. */
 export async function handleGetGastronomyBrochure(
@@ -76,7 +76,7 @@ export async function handleGetGastronomyBrochure(
     // here would tell a caller that the id they hold is real (HOS-600).
     const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
-        throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
+        throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }
 
     // The brochure is a print of the PUBLIC ficha. A listing with no public
@@ -85,7 +85,7 @@ export async function handleGetGastronomyBrochure(
         // Same canonical message as the branch above, deliberately: the error
         // contract's anti-enumeration rule wants one spelling of a 404, and two
         // would let a caller tell "not yours" from "not published" (HOS-600).
-        throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
+        throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }
 
     const parsed = GastronomyBrochureSourceSchema.safeParse(entity);

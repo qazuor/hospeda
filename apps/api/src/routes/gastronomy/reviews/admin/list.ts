@@ -3,14 +3,14 @@
  * Returns all gastronomy reviews including pending ones.
  */
 import { ModerationStatusEnum, PermissionEnum, VenueReviewSchema } from '@repo/schemas';
-import { GastronomyReviewService, ServiceError } from '@repo/service-core';
+import { ServiceError, VenueReviewService } from '@repo/service-core';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../../utils/pagination';
 import { createAdminListRoute } from '../../../../utils/route-factory';
 
-const gastronomyReviewService = new GastronomyReviewService({ logger: apiLogger });
+const gastronomyReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
  * GET /api/v1/admin/gastronomies/reviews

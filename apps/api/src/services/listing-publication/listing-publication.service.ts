@@ -11,8 +11,8 @@ import {
     AccommodationService,
     computeTrialEmailPseudonym,
     ExperienceService,
-    GastronomyService,
-    ServiceError
+    ServiceError,
+    VenueService
 } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import type { PublicationVertical } from '../../../../../packages/verticals/src/publication/publication-types';
@@ -25,7 +25,7 @@ import { evaluateListingPublishCompleteness } from './listing-publish-completene
 import { resolveSubscribeDestinationForUser } from './subscribe-destination.service';
 
 const accommodationService = new AccommodationService({});
-const gastronomyService = new GastronomyService({});
+const gastronomyService = new VenueService({});
 const experienceService = new ExperienceService({});
 
 /** API composition shared by the three listing verticals for PB1 and PB6. */

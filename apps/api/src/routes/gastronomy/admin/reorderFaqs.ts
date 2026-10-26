@@ -12,7 +12,7 @@ import {
     VenueFaqReorderInputSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { GastronomyService, reorderGastronomyFaqs, ServiceError } from '@repo/service-core';
+import { reorderVenueFaqs, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { runListingContentCall } from '../../../middlewares/listing-access';
@@ -20,7 +20,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * PATCH /api/v1/admin/gastronomies/:id/faqs/reorder
@@ -56,11 +56,11 @@ export const adminReorderGastronomyFaqsRoute = createAdminRoute({
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         const model = (
-            gastronomyService as unknown as { model: Parameters<typeof reorderGastronomyFaqs>[0] }
+            gastronomyService as unknown as { model: Parameters<typeof reorderVenueFaqs>[0] }
         ).model;
         const result = await runListingContentCall({
             ctx,
-            run: () => reorderGastronomyFaqs(model, actor, reorderInput)
+            run: () => reorderVenueFaqs(model, actor, reorderInput)
         });
 
         if (result.error) {

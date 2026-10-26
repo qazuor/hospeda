@@ -128,7 +128,7 @@ export const VenueMediaAddPayloadSchema = z.object({
 export type VenueMediaAddPayload = z.infer<typeof VenueMediaAddPayloadSchema>;
 
 /**
- * Full service input for `GastronomyService.addMedia`.
+ * Full service input for `VenueService.addMedia`.
  * Combines the URL param `gastronomyId` with the photo payload.
  */
 export const VenueMediaAddInputSchema = z.object({
@@ -146,7 +146,7 @@ export type VenueMediaAddInput = z.infer<typeof VenueMediaAddInputSchema>;
 // ----------------------------------------------------------------------------
 
 /**
- * Full service input for `addGastronomyFeaturedMedia`.
+ * Full service input for `addVenueFeaturedMedia`.
  *
  * The payload is the SAME one the gallery endpoint accepts — a cover differs in
  * what the server does with it, not in what the client sends. Reusing it
@@ -374,7 +374,7 @@ export const VenueMediaUpdatePayloadSchema = ListingMediaUpdatePayloadSchema;
 export type VenueMediaUpdatePayload = z.infer<typeof VenueMediaUpdatePayloadSchema>;
 
 /**
- * Service input for `updateGastronomyMedia`.
+ * Service input for `updateVenueMedia`.
  *
  * Combines the URL params (`gastronomyId`, `mediaId`) with the four payload fields
  * spread from {@link VenueMediaUpdatePayloadSchema}'s shape, then adds the

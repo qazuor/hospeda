@@ -43,8 +43,8 @@ import { PermissionEnum, QrCodeErrorCorrectionLevelEnum, RoleEnum } from '@repo/
 import {
     AccommodationService,
     ExperienceService,
-    GastronomyService,
-    QrCodeService
+    QrCodeService,
+    VenueService
 } from '@repo/service-core';
 import { Hono } from 'hono';
 import { QR_ERROR_CORRECTION } from '../../src/services/listing-qr-sheet/qr-sheet-render';
@@ -124,7 +124,7 @@ const CASES = [
     },
     {
         label: 'gastronomy',
-        service: GastronomyService,
+        service: VenueService,
         staffPermission: PermissionEnum.GASTRONOMY_VIEW_ALL,
         segment: 'gastronomia',
         importRoute: async () => {

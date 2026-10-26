@@ -8,7 +8,7 @@
  * `sortOrder` positions in a single transaction.
  *
  * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
- * enforced inside `reorderGastronomyMedia` via `checkGastronomyCanEditMedia`.
+ * enforced inside `reorderVenueMedia` via `checkVenueCanEditMedia`.
  *
  * NOTE: `index.ts` registers this before /{id}/media/{mediaId} by convention.
  * That is defensive, not required — Hono resolves the static `reorder` segment
@@ -23,7 +23,7 @@ import {
     VenueMediaReorderPayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { GastronomyService, reorderGastronomyMedia, ServiceError } from '@repo/service-core';
+import { reorderVenueMedia, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
@@ -31,7 +31,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Route handler — reorders the gallery photos on a gastronomy listing.
@@ -64,9 +64,9 @@ export const protectedReorderGastronomyMediaRoute = createProtectedRoute({
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         const model = (
-            gastronomyService as unknown as { model: Parameters<typeof reorderGastronomyMedia>[0] }
+            gastronomyService as unknown as { model: Parameters<typeof reorderVenueMedia>[0] }
         ).model;
-        const result = await reorderGastronomyMedia(model, actor, {
+        const result = await reorderVenueMedia(model, actor, {
             gastronomyId: params.id as string,
             orderedIds: (body as VenueMediaReorderPayload).orderedIds
         });

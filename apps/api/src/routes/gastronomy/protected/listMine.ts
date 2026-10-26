@@ -3,20 +3,20 @@
  *
  * Returns the authenticated actor's OWN gastronomy listings as lightweight
  * summaries for the web self-service area (`mi-cuenta/comercio`). Ownership is
- * the gate — `GastronomyService.listOwn` hard-scopes to `ownerId = actor.id`,
+ * the gate — `VenueService.listOwn` hard-scopes to `ownerId = actor.id`,
  * so a tourist or another owner simply gets an empty list.
  *
  * MUST be registered BEFORE the `/{id}` route so Hono does not treat the literal
  * `mine` path segment as an `:id` param.
  */
 import { OwnerListingListSchema, ProductDomainEnum, PublicationStatusEnum } from '@repo/schemas';
-import { GastronomyService, ServiceError } from '@repo/service-core';
+import { ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/protected/gastronomies/mine

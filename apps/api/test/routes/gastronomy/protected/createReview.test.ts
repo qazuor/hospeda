@@ -15,7 +15,7 @@ const BASE = '/api/v1/protected/gastronomies';
 const VALID_UUID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 // ---------------------------------------------------------------------------
-// Mock GastronomyReviewService to capture the create input and return a
+// Mock VenueReviewService to capture the create input and return a
 // minimal success shape without real DB calls.
 // ---------------------------------------------------------------------------
 
@@ -23,16 +23,16 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...orig,
-        GastronomyReviewService: class MockGastronomyReviewService extends orig.GastronomyReviewService {
+        VenueReviewService: class MockGastronomyReviewService extends orig.VenueReviewService {
             // biome-ignore lint/complexity/noUselessConstructor: need to call super
-            constructor(...args: ConstructorParameters<typeof orig.GastronomyReviewService>) {
+            constructor(...args: ConstructorParameters<typeof orig.VenueReviewService>) {
                 super(...args);
             }
 
             override async create(
-                actor: Parameters<typeof orig.GastronomyReviewService.prototype.create>[0],
+                actor: Parameters<typeof orig.VenueReviewService.prototype.create>[0],
                 input: Record<string, unknown>
-            ): ReturnType<typeof orig.GastronomyReviewService.prototype.create> {
+            ): ReturnType<typeof orig.VenueReviewService.prototype.create> {
                 (globalThis as Record<string, unknown>).__lastReviewInput = input;
                 return {
                     data: {
@@ -46,10 +46,10 @@ vi.mock('@repo/service-core', async (importOriginal) => {
                         createdAt: new Date(),
                         updatedAt: new Date()
                     } as unknown as Awaited<
-                        ReturnType<typeof orig.GastronomyReviewService.prototype.create>
+                        ReturnType<typeof orig.VenueReviewService.prototype.create>
                     >['data'] & {},
                     error: undefined
-                } as Awaited<ReturnType<typeof orig.GastronomyReviewService.prototype.create>>;
+                } as Awaited<ReturnType<typeof orig.VenueReviewService.prototype.create>>;
             }
         }
     };

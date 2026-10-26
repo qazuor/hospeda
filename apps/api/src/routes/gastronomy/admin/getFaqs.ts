@@ -3,20 +3,20 @@
  * Get all FAQs for a gastronomy listing — Admin endpoint.
  */
 import { PermissionEnum, VenueFaqListOutputSchema } from '@repo/schemas';
-import { GastronomyService, listGastronomyFaqs, ServiceError } from '@repo/service-core';
+import { listVenueFaqs, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/admin/gastronomies/:id/faqs
  * Get gastronomy FAQs — Admin endpoint.
  *
- * Requires GASTRONOMY_VIEW_ALL. Uses the standalone `listGastronomyFaqs` helper
+ * Requires GASTRONOMY_VIEW_ALL. Uses the standalone `listVenueFaqs` helper
  * that mirrors the protected/public FAQ list pattern.
  */
 export const adminGetGastronomyFaqsRoute = createAdminRoute({
@@ -35,10 +35,10 @@ export const adminGetGastronomyFaqsRoute = createAdminRoute({
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         const model = (
-            gastronomyService as unknown as { model: Parameters<typeof listGastronomyFaqs>[0] }
+            gastronomyService as unknown as { model: Parameters<typeof listVenueFaqs>[0] }
         ).model;
 
-        const result = await listGastronomyFaqs(model, actor, {
+        const result = await listVenueFaqs(model, actor, {
             gastronomyId: params.id as string
         });
 

@@ -38,7 +38,7 @@
  */
 
 import { PermissionEnum, VenueMenuItemPhotoUploadOutputSchema, VerticalEnum } from '@repo/schemas';
-import { GastronomyService } from '@repo/service-core';
+import { VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
@@ -54,7 +54,7 @@ import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Upload budget for this route, per user per minute.

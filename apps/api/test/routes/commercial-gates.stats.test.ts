@@ -54,7 +54,7 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
         getHostResponseRate = mocks.service;
         getUnreadCount = mocks.service;
     },
-    GastronomyService: class {
+    VenueService: class {
         static ENTITY_NAME = 'gastronomy';
         getById = mocks.service;
     },

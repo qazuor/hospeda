@@ -8,7 +8,7 @@
  * 1. **Authentication** — `createCRUDRoute` over the protected router.
  * 2. **Listing access** — the write requires manage_gastronomy_events
  *    for the listing owner.
- * 3. **Ownership** — inside `replaceGastronomyEvents`, via the same
+ * 3. **Ownership** — inside `replaceVenueEvents`, via the same
  *    `GASTRONOMY_EDIT_OWN` / `GASTRONOMY_EDIT_ALL` gate the sibling writes use.
  *
  *
@@ -17,7 +17,7 @@
  * The body is the ENTIRE agenda, and an empty `events` array is a legitimate
  * submission meaning "take it down" — a venue that stopped doing live music
  * needs a way to say so. See
- * `packages/service-core/src/services/gastronomy/gastronomy.events.ts` for why
+ * `packages/service-core/src/services/venue/venue.events.ts` for why
  * the agenda is written whole where `gastronomy_media` is written per row.
  *
  * @module routes/gastronomy/protected/putEvents
@@ -29,7 +29,7 @@ import {
     VenueEventsReplacePayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { GastronomyService, replaceGastronomyEvents } from '@repo/service-core';
+import { replaceVenueEvents, VenueService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against — see
 // `brochure.ts` for why the root import breaks `instanceof`.
 import { ServiceError } from '@repo/service-core/types';
@@ -40,7 +40,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /** Writes the agenda. Exported standalone so the route test can call it directly. */
 export async function handlePutGastronomyEvents(
@@ -53,10 +53,10 @@ export async function handlePutGastronomyEvents(
     // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`, the
     // same accessor the FAQ, media and menu routes use.
     const model = (
-        gastronomyService as unknown as { model: Parameters<typeof replaceGastronomyEvents>[0] }
+        gastronomyService as unknown as { model: Parameters<typeof replaceVenueEvents>[0] }
     ).model;
 
-    const result = await replaceGastronomyEvents(model, actor, {
+    const result = await replaceVenueEvents(model, actor, {
         gastronomyId: params.id as string,
         // TYPE-WORKAROUND: the factory hands the handler a
         // `Record<string, unknown>`, but the body has already been validated

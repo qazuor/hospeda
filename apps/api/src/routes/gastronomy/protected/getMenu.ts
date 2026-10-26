@@ -23,7 +23,7 @@
  * @module routes/gastronomy/protected/getMenu
  */
 import { PermissionEnum, VenueMenuOutputSchema } from '@repo/schemas';
-import { entityNotFoundError, GastronomyService, getGastronomyMenu } from '@repo/service-core';
+import { entityNotFoundError, getVenueMenu, VenueService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
 // `ServiceError` from the package ROOT yields a DIFFERENT class under the test
 // resolver, and `instanceof` then fails — a NOT_FOUND answered as a 500.
@@ -34,7 +34,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Refuses any listing that is not the caller's, as a 404.
@@ -58,7 +58,7 @@ async function requireOwnedGastronomy(ctx: Context, gastronomyId: string): Promi
 
     const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
     if (!result.data || (!hasViewAll && result.data.ownerId !== actor.id)) {
-        throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
+        throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }
 }
 
@@ -70,10 +70,9 @@ export async function handleGetGastronomyMenu(ctx: Context, params: Record<strin
 
     // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`, the
     // same accessor the FAQ and media routes use.
-    const model = (
-        gastronomyService as unknown as { model: Parameters<typeof getGastronomyMenu>[0] }
-    ).model;
-    const result = await getGastronomyMenu(model, { gastronomyId });
+    const model = (gastronomyService as unknown as { model: Parameters<typeof getVenueMenu>[0] })
+        .model;
+    const result = await getVenueMenu(model, { gastronomyId });
 
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);

@@ -9,8 +9,8 @@
  * - DELETE /api/v1/protected/gastronomies/:id/media/:mediaId
  *
  * Testing strategy: mock the standalone `@repo/service-core` media helper
- * functions (addGastronomyMedia / removeGastronomyMedia / getGastronomyMedia /
- * reorderGastronomyMedia / setFeaturedGastronomyMedia) so no real DB is
+ * functions (addVenueMedia / removeVenueMedia / getVenueMedia /
+ * reorderVenueMedia / setFeaturedVenueMedia) so no real DB is
  * needed, then exercise the routes via `initApp()` with the `x-mock-actor-*`
  * header triplet (see gastronomy/admin/admin-gastronomy.test.ts convention).
  *
@@ -41,11 +41,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        addGastronomyMedia: mockAddGastronomyMedia,
-        removeGastronomyMedia: mockRemoveGastronomyMedia,
-        getGastronomyMedia: mockGetGastronomyMedia,
-        reorderGastronomyMedia: mockReorderGastronomyMedia,
-        setFeaturedGastronomyMedia: mockSetFeaturedGastronomyMedia
+        addVenueMedia: mockAddGastronomyMedia,
+        removeVenueMedia: mockRemoveGastronomyMedia,
+        getVenueMedia: mockGetGastronomyMedia,
+        reorderVenueMedia: mockReorderGastronomyMedia,
+        setFeaturedVenueMedia: mockSetFeaturedGastronomyMedia
     };
 });
 
@@ -106,13 +106,13 @@ describe('Gastronomy media routes — Protected tier (HOS-372)', () => {
     // ── Service error mapping ──────────────────────────────────────────────
     //
     // NOT an authorization test. Authorization lives in
-    // `checkGastronomyCanEditMedia` (GASTRONOMY_EDIT_OWN / GASTRONOMY_EDIT_ALL) inside the
+    // `checkVenueCanEditMedia` (GASTRONOMY_EDIT_OWN / GASTRONOMY_EDIT_ALL) inside the
     // standalone service function, which is mocked module-wide here — so nothing
     // in this file can prove a guest is refused. These cases only assert that a
     // FORBIDDEN coming back from the service becomes a 4xx instead of a 500.
     //
     // The real gate is covered without mocks in
-    // `packages/service-core/test/services/gastronomy/gastronomy.media.test.ts`
+    // `packages/service-core/test/services/venue/venue.media.test.ts`
     // ('should return FORBIDDEN when actor lacks GASTRONOMY_EDIT_OWN').
 
     describe('Service error mapping', () => {

@@ -5,20 +5,20 @@
  * MUST be registered BEFORE the /{id} route so Hono does not resolve "options"
  * as a UUID param.
  *
- * NOTE: GastronomyService does not (yet) expose a dedicated `findOptions` method
+ * NOTE: VenueService does not (yet) expose a dedicated `findOptions` method
  * like AccommodationService does.  This route uses `adminList` with a small page
  * and projects the result to the `GastronomyOptionsItemSchema` shape inline.
- * When a dedicated `findOptions` is added to GastronomyService, replace the
+ * When a dedicated `findOptions` is added to VenueService, replace the
  * inline mapping with the service call.
  */
 import { EntityOptionsQuerySchema, VenueOptionsListSchema } from '@repo/schemas';
-import { GastronomyService, ServiceError } from '@repo/service-core';
+import { ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/admin/gastronomies/options
@@ -27,7 +27,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * Gated by admin-panel access only (no `requiredPermissions`).
  * Results are DRAFT-inclusive and limited to `limit` items (default 20, max 100).
  *
- * TYPE-WORKAROUND: GastronomyService lacks a dedicated `findOptions` method (unlike
+ * TYPE-WORKAROUND: VenueService lacks a dedicated `findOptions` method (unlike
  * AccommodationService). The route projects `adminList` results into the options shape.
  */
 export const adminGastronomyOptionsRoute = createAdminRoute({

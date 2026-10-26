@@ -24,7 +24,7 @@
  * The initial target is minted at the platform's default locale
  * (`@repo/i18n`'s `defaultLocale`) — the endpoint takes no `lang` parameter,
  * and a QR encodes one destination for the life of the sticker. A later slug
- * rename repoints the SAME code via `GastronomyService._afterUpdate`, which
+ * rename repoints the SAME code via `VenueService._afterUpdate`, which
  * reads the locale back out of the stored target rather than re-guessing it
  * (`gastronomy-qr.ts`).
  *
@@ -41,13 +41,13 @@
 import { defaultLocale } from '@repo/i18n';
 import { ServiceErrorCode, VerticalEnum } from '@repo/schemas';
 import {
-    buildGastronomyMenuQrLabel,
-    buildGastronomyMenuQrTargetUrl,
+    buildVenueMenuQrLabel,
+    buildVenueMenuQrTargetUrl,
     entityNotFoundError,
-    GASTRONOMY_MENU_QR_ENTITY_TYPE,
-    GASTRONOMY_MENU_QR_PURPOSE,
-    GastronomyService,
-    QrCodeService
+    QrCodeService,
+    VENUE_MENU_QR_ENTITY_TYPE,
+    VENUE_MENU_QR_PURPOSE,
+    VenueService
 } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
 // `ServiceError` from the package ROOT yields a DIFFERENT class under the test
@@ -64,7 +64,7 @@ import { apiLogger } from '../../../utils/logger';
 import { renderQrSvg } from '../../../utils/qr-render';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 const qrCodeService = new QrCodeService({ logger: apiLogger });
 
 /**
@@ -98,11 +98,11 @@ export async function handleGetGastronomyMenuQr(
 
     // Listing access has already checked ownership; retain the missing-row 404.
     if (!entity) {
-        throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
+        throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }
 
     const siteUrl = env.HOSPEDA_SITE_URL;
-    const targetUrl = buildGastronomyMenuQrTargetUrl({
+    const targetUrl = buildVenueMenuQrTargetUrl({
         siteUrl,
         lang: defaultLocale,
         slug: entity.slug
@@ -113,11 +113,11 @@ export async function handleGetGastronomyMenuQr(
     // public menu page being viewed.
     const code = await qrCodeService.getOrCreateForEntity({
         actor,
-        entityType: GASTRONOMY_MENU_QR_ENTITY_TYPE,
+        entityType: VENUE_MENU_QR_ENTITY_TYPE,
         entityId: entity.id,
-        purpose: GASTRONOMY_MENU_QR_PURPOSE,
+        purpose: VENUE_MENU_QR_PURPOSE,
         targetUrl,
-        label: buildGastronomyMenuQrLabel({ name: entity.name, slug: entity.slug })
+        label: buildVenueMenuQrLabel({ name: entity.name, slug: entity.slug })
     });
 
     if (code.error) {

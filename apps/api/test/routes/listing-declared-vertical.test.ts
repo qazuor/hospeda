@@ -1,7 +1,7 @@
 /** TEST:V5:4 — a gastronomy id declared as accommodation is absent before media limits. */
 
 import { ServiceErrorCode } from '@repo/schemas';
-import { AccommodationService, GastronomyService } from '@repo/service-core';
+import { AccommodationService, VenueService } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
 
 const { countGallery } = vi.hoisted(() => ({ countGallery: vi.fn() }));
@@ -59,7 +59,7 @@ describe('TEST:V5:4 declared vertical on media upload', () => {
             .mockResolvedValue({
                 error: { code: ServiceErrorCode.NOT_FOUND, message: 'accommodation not found' }
             });
-        const gastronomy = vi.spyOn(GastronomyService.prototype, 'getById');
+        const gastronomy = vi.spyOn(VenueService.prototype, 'getById');
         const foreign = await request(GASTRONOMY_ID);
         const missing = await request(MISSING_ID);
         expect(foreign).toEqual(missing);

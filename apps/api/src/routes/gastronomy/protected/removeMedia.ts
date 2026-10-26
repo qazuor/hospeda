@@ -11,11 +11,11 @@
  * storage fails rather than leaving a permanently-billed orphan.
  *
  * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
- * enforced inside `removeGastronomyMedia` via `checkGastronomyCanEditMedia`.
+ * enforced inside `removeVenueMedia` via `checkVenueCanEditMedia`.
  */
 
 import { SuccessSchema, VerticalEnum } from '@repo/schemas';
-import { GastronomyService, removeGastronomyMedia, ServiceError } from '@repo/service-core';
+import { removeVenueMedia, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
@@ -24,7 +24,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Route handler — soft-deletes a specific photo from a gastronomy listing gallery.
@@ -52,9 +52,9 @@ export const protectedRemoveGastronomyMediaRoute = createProtectedRoute({
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         const model = (
-            gastronomyService as unknown as { model: Parameters<typeof removeGastronomyMedia>[0] }
+            gastronomyService as unknown as { model: Parameters<typeof removeVenueMedia>[0] }
         ).model;
-        const result = await removeGastronomyMedia(
+        const result = await removeVenueMedia(
             model,
             actor,
             {

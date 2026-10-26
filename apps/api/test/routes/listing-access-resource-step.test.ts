@@ -48,7 +48,7 @@ import {
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import { AccommodationService, ExperienceService, GastronomyService } from '@repo/service-core';
+import { AccommodationService, ExperienceService, VenueService } from '@repo/service-core';
 import { Hono } from 'hono';
 import type { AppBindings } from '../../src/types';
 
@@ -123,7 +123,7 @@ const cases = [
     },
     {
         label: 'gastronomy',
-        service: GastronomyService,
+        service: VenueService,
         route: async () =>
             (await import('../../src/routes/gastronomy/protected/getById.js'))
                 .protectedGetGastronomyByIdRoute

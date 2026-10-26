@@ -3,7 +3,7 @@
  * Returns a paginated list of visible gastronomy listings with filtering and sorting.
  *
  * Visibility contract: only listings with publicationStatus=PUBLISHED are returned
- * (V6.9b, HOS-1641). The GastronomyService._executeSearch already applies deletedAt=null;
+ * (V6.9b, HOS-1641). The VenueService._executeSearch already applies deletedAt=null;
  * the route relies on the service's public-tier contract for the remaining gates.
  */
 import {
@@ -12,14 +12,14 @@ import {
     type VenueSearchHttp,
     VenueSearchHttpSchema
 } from '@repo/schemas';
-import { GastronomyService, ServiceError } from '@repo/service-core';
+import { ServiceError, VenueService } from '@repo/service-core';
 import { withPublicIsFeaturedList } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/public/gastronomies

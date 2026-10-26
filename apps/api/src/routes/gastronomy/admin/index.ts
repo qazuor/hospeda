@@ -13,30 +13,30 @@
  *   - /{id}/media/{mediaId}/featured  registered before /{id}/media/{mediaId}
  */
 import { createRouter } from '../../../utils/create-app';
-import { adminGastronomyReviewRoutes } from '../reviews/admin/index.js';
-import { adminAddGastronomyFaqRoute } from './addFaq';
-import { adminAddGastronomyFeaturedMediaRoute } from './addFeaturedMedia';
-import { adminAddGastronomyMediaRoute } from './addMedia';
-import { adminAssignGastronomyOwnerRoute } from './assignOwner';
-import { adminBatchGastronomiesRoute } from './batch';
-import { adminCreateGastronomyRoute } from './create';
-import { adminGetGastronomyByIdRoute } from './getById';
-import { adminGetGastronomyFaqsRoute } from './getFaqs';
-import { adminGetGastronomyMediaRoute } from './getMedia';
-import { adminListGastronomiesRoute } from './list';
-import { adminModerateGastronomyRoute } from './moderate';
-import { adminGetGastronomyModerationStateRoute } from './moderation-state';
-import { adminGastronomyOptionsRoute } from './options';
-import { adminPatchGastronomyRoute } from './patch';
-import { adminPurgeOnRequestGastronomyRoute } from './purge';
-import { adminRemoveGastronomyFaqRoute } from './removeFaq';
-import { adminRemoveGastronomyMediaRoute } from './removeMedia';
-import { adminReorderGastronomyFaqsRoute } from './reorderFaqs';
-import { adminReorderGastronomyMediaRoute } from './reorderMedia';
-import { adminSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
-import { adminUpdateGastronomyRoute } from './update';
-import { adminUpdateGastronomyFaqRoute } from './updateFaq';
-import { adminUpdateGastronomyMediaRoute } from './updateMedia';
+import { adminAddGastronomyFaqRoute } from '../../gastronomy/admin/addFaq';
+import { adminAddGastronomyFeaturedMediaRoute } from '../../gastronomy/admin/addFeaturedMedia';
+import { adminAddGastronomyMediaRoute } from '../../gastronomy/admin/addMedia';
+import { adminAssignGastronomyOwnerRoute } from '../../gastronomy/admin/assignOwner';
+import { adminBatchGastronomiesRoute } from '../../gastronomy/admin/batch';
+import { adminCreateGastronomyRoute } from '../../gastronomy/admin/create';
+import { adminGetGastronomyByIdRoute } from '../../gastronomy/admin/getById';
+import { adminGetGastronomyFaqsRoute } from '../../gastronomy/admin/getFaqs';
+import { adminGetGastronomyMediaRoute } from '../../gastronomy/admin/getMedia';
+import { adminListGastronomiesRoute } from '../../gastronomy/admin/list';
+import { adminModerateGastronomyRoute } from '../../gastronomy/admin/moderate';
+import { adminGetGastronomyModerationStateRoute } from '../../gastronomy/admin/moderation-state';
+import { adminGastronomyOptionsRoute } from '../../gastronomy/admin/options';
+import { adminPatchGastronomyRoute } from '../../gastronomy/admin/patch';
+import { adminPurgeOnRequestGastronomyRoute } from '../../gastronomy/admin/purge';
+import { adminRemoveGastronomyFaqRoute } from '../../gastronomy/admin/removeFaq';
+import { adminRemoveGastronomyMediaRoute } from '../../gastronomy/admin/removeMedia';
+import { adminReorderGastronomyFaqsRoute } from '../../gastronomy/admin/reorderFaqs';
+import { adminReorderGastronomyMediaRoute } from '../../gastronomy/admin/reorderMedia';
+import { adminSetFeaturedGastronomyMediaRoute } from '../../gastronomy/admin/setFeaturedMedia';
+import { adminUpdateGastronomyRoute } from '../../gastronomy/admin/update';
+import { adminUpdateGastronomyFaqRoute } from '../../gastronomy/admin/updateFaq';
+import { adminUpdateGastronomyMediaRoute } from '../../gastronomy/admin/updateMedia';
+import { adminGastronomyReviewRoutes } from '../../gastronomy/reviews/admin/index.js';
 
 const app = createRouter();
 

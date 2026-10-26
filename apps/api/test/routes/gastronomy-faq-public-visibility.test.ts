@@ -2,7 +2,7 @@
  * Regression suite for HOS-400 — the public gastronomy FAQs endpoint must not
  * leak a FAQ marked `isVisibleOnListing: false`.
  *
- * `listGastronomyFaqs` (the service-core helper this route calls) is SHARED
+ * `listVenueFaqs` (the service-core helper this route calls) is SHARED
  * with the admin/owner read, which must stay unfiltered — a hidden FAQ must
  * remain visible in the screen meant to manage it. So the route itself is
  * where the filter has to live, and this file asserts the ROUTE's behaviour,
@@ -27,7 +27,7 @@ vi.mock('@repo/service-core', async () => {
     const actual = await vi.importActual<typeof import('@repo/service-core')>('@repo/service-core');
     return {
         ...actual,
-        listGastronomyFaqs: mockListFaqs
+        listVenueFaqs: mockListFaqs
     };
 });
 

@@ -75,7 +75,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         ...actual,
         updatePostMedia: mockUpdatePost,
         updateEventMedia: mockUpdateEvent,
-        updateGastronomyMedia: mockUpdateGastronomy,
+        updateVenueMedia: mockUpdateGastronomy,
         updateExperienceMedia: mockUpdateExperience,
         // The DELETE on the SAME path is mocked too — not to test removal, but
         // so "did the PATCH swallow the DELETE (or vice versa)?" has a real
@@ -84,7 +84,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         // indistinguishable from "the route was never registered".
         removePostMedia: mockRemovePost,
         removeEventMedia: mockRemoveEvent,
-        removeGastronomyMedia: mockRemoveGastronomy,
+        removeVenueMedia: mockRemoveGastronomy,
         removeExperienceMedia: mockRemoveExperience
     };
 });

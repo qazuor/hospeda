@@ -11,7 +11,7 @@ import { gastronomyMenuSections } from '../../schemas/venue/venue_menu_section.d
  * the FAQ model documents.
  *
  * There is no soft delete here on purpose: a removed course is removed, and the
- * whole menu is rewritten transactionally by `replaceGastronomyMenu`, so a
+ * whole menu is rewritten transactionally by `replaceVenueMenu`, so a
  * tombstoned section would only ever be dead weight the read has to filter.
  */
 export class VenueMenuSectionModel extends BaseModelImpl<VenueMenuSection> {

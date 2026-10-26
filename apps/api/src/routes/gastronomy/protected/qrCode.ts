@@ -31,7 +31,7 @@ import {
     QrCodePurposeEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import { entityNotFoundError, GastronomyService } from '@repo/service-core';
+import { entityNotFoundError, VenueService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
 // `ServiceError` from the package ROOT yields a DIFFERENT class under the test
 // resolver, and `instanceof` then fails — a NOT_FOUND answered as a 500.
@@ -53,7 +53,7 @@ import {
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Resolves (minting on the first call) and renders one venue's listing code.
@@ -77,14 +77,14 @@ export async function handleGetGastronomyQrCode(
 
     const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
-        throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
+        throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }
 
     // Only PUBLISHED has a public page (V6.9b). Checked BEFORE anything is
     // minted, so a listing with no public page leaves no live `qr_codes` row.
     if (entity.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
         // Same canonical message as the branch above, deliberately (HOS-600).
-        throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
+        throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }
 
     if (!entity.slug) {

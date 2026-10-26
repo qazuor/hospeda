@@ -40,11 +40,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        addGastronomyMedia: mockAddGastronomyMedia,
-        removeGastronomyMedia: mockRemoveGastronomyMedia,
-        getGastronomyMedia: mockGetGastronomyMedia,
-        reorderGastronomyMedia: mockReorderGastronomyMedia,
-        setFeaturedGastronomyMedia: mockSetFeaturedGastronomyMedia
+        addVenueMedia: mockAddGastronomyMedia,
+        removeVenueMedia: mockRemoveGastronomyMedia,
+        getVenueMedia: mockGetGastronomyMedia,
+        reorderVenueMedia: mockReorderGastronomyMedia,
+        setFeaturedVenueMedia: mockSetFeaturedGastronomyMedia
     };
 });
 

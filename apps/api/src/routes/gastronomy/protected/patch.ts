@@ -12,7 +12,7 @@
  *   plus the control fields (`lifecycleState`, `visibility`,
  *   `moderationState`, `isFeatured`, `ownerId`) are ABSENT from the schema,
  *   so any forged keys for those are silently stripped by Zod.
- * - GastronomyService.updateOwn() enforces ownership (non-owner → NOT_FOUND) and
+ * - VenueService.updateOwn() enforces ownership (non-owner → NOT_FOUND) and
  *   per-section GASTRONOMY_/EXPERIENCE_EDIT_OWN permission checks.
  * Owner updates require the effective edit_gastronomy_info capability.
  */
@@ -23,7 +23,7 @@ import {
     VenueProtectedSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { GastronomyService, ServiceError } from '@repo/service-core';
+import { ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
@@ -31,7 +31,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * PATCH /api/v1/protected/gastronomies/:id

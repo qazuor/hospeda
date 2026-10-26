@@ -3,14 +3,14 @@
  * Allows admins to soft-delete any gastronomy review.
  */
 import { DeleteResultSchema, PermissionEnum } from '@repo/schemas';
-import { GastronomyReviewService, ServiceError } from '@repo/service-core';
+import { ServiceError, VenueReviewService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createAdminRoute } from '../../../../utils/route-factory';
 
-const gastronomyReviewService = new GastronomyReviewService({ logger: apiLogger });
+const gastronomyReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
  * DELETE /api/v1/admin/gastronomies/reviews/:id

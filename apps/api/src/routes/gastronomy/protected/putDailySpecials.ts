@@ -8,7 +8,7 @@
  * 1. **Authentication** — `createCRUDRoute` over the protected router.
  * 2. **Listing access** — the write requires manage_gastronomy_daily_special
  *    for the listing owner.
- * 3. **Ownership** — inside `replaceGastronomyDailySpecials`, via the same
+ * 3. **Ownership** — inside `replaceVenueDailySpecials`, via the same
  *    `GASTRONOMY_EDIT_OWN` / `GASTRONOMY_EDIT_ALL` gate the sibling writes use.
  *
  *
@@ -17,7 +17,7 @@
  * The body is the ENTIRE menú del día, and an empty `specials` array is a
  * legitimate submission meaning "take it down" — the manual escape hatch beside
  * the automatic expiry, for the venue that sold out at 13:00. See
- * `packages/service-core/src/services/gastronomy/gastronomy.daily-specials.ts`.
+ * `packages/service-core/src/services/venue/venue.daily-specials.ts`.
  *
  * @module routes/gastronomy/protected/putDailySpecials
  */
@@ -28,7 +28,7 @@ import {
     VenueDailySpecialsReplacePayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { GastronomyService, replaceGastronomyDailySpecials } from '@repo/service-core';
+import { replaceVenueDailySpecials, VenueService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against — see
 // `brochure.ts` for why the root import breaks `instanceof`.
 import { ServiceError } from '@repo/service-core/types';
@@ -39,7 +39,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /** Writes the specials. Exported standalone so the route test can call it directly. */
 export async function handlePutGastronomyDailySpecials(
@@ -53,11 +53,11 @@ export async function handlePutGastronomyDailySpecials(
     // same accessor the menu, FAQ and media routes use.
     const model = (
         gastronomyService as unknown as {
-            model: Parameters<typeof replaceGastronomyDailySpecials>[0];
+            model: Parameters<typeof replaceVenueDailySpecials>[0];
         }
     ).model;
 
-    const result = await replaceGastronomyDailySpecials(model, actor, {
+    const result = await replaceVenueDailySpecials(model, actor, {
         gastronomyId: params.id as string,
         // TYPE-WORKAROUND: the factory hands the handler a
         // `Record<string, unknown>`, but the body has already been validated

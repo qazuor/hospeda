@@ -44,24 +44,24 @@ import { protectedSetFeaturedExperienceMediaRoute } from '../../src/routes/exper
 import { protectedUnpublishExperienceRoute } from '../../src/routes/experience/protected/unpublish';
 import { protectedUpdateExperienceFaqRoute } from '../../src/routes/experience/protected/updateFaq.ts';
 import { protectedUpdateExperienceMediaRoute } from '../../src/routes/experience/protected/updateMedia.ts';
-import { protectedAddGastronomyFaqRoute } from '../../src/routes/gastronomy/protected/addFaq.ts';
-import { protectedAddGastronomyFeaturedMediaRoute } from '../../src/routes/gastronomy/protected/addFeaturedMedia.ts';
-import { protectedAddGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/addMedia.ts';
+import { protectedAddGastronomyFaqRoute } from '../../src/routes/gastronomy/protected/addFaq';
+import { protectedAddGastronomyFeaturedMediaRoute } from '../../src/routes/gastronomy/protected/addFeaturedMedia';
+import { protectedAddGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/addMedia';
 import { protectedCreateGastronomyListingRoute } from '../../src/routes/gastronomy/protected/create';
 import { protectedDeleteGastronomyMenuFileRoute } from '../../src/routes/gastronomy/protected/deleteMenuFile';
 import { protectedPatchGastronomyRoute } from '../../src/routes/gastronomy/protected/patch';
 import { protectedPublishGastronomyRoute } from '../../src/routes/gastronomy/protected/publish';
-import { protectedPutGastronomyDailySpecialsRoute } from '../../src/routes/gastronomy/protected/putDailySpecials.ts';
-import { protectedPutGastronomyEventsRoute } from '../../src/routes/gastronomy/protected/putEvents.ts';
-import { protectedPutGastronomyMenuRoute } from '../../src/routes/gastronomy/protected/putMenu.ts';
-import { protectedRemoveGastronomyFaqRoute } from '../../src/routes/gastronomy/protected/removeFaq.ts';
-import { protectedRemoveGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/removeMedia.ts';
-import { protectedReorderGastronomyFaqsRoute } from '../../src/routes/gastronomy/protected/reorderFaqs.ts';
-import { protectedReorderGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/reorderMedia.ts';
-import { protectedSetFeaturedGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/setFeaturedMedia.ts';
+import { protectedPutGastronomyDailySpecialsRoute } from '../../src/routes/gastronomy/protected/putDailySpecials';
+import { protectedPutGastronomyEventsRoute } from '../../src/routes/gastronomy/protected/putEvents';
+import { protectedPutGastronomyMenuRoute } from '../../src/routes/gastronomy/protected/putMenu';
+import { protectedRemoveGastronomyFaqRoute } from '../../src/routes/gastronomy/protected/removeFaq';
+import { protectedRemoveGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/removeMedia';
+import { protectedReorderGastronomyFaqsRoute } from '../../src/routes/gastronomy/protected/reorderFaqs';
+import { protectedReorderGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/reorderMedia';
+import { protectedSetFeaturedGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/setFeaturedMedia';
 import { protectedUnpublishGastronomyRoute } from '../../src/routes/gastronomy/protected/unpublish';
-import { protectedUpdateGastronomyFaqRoute } from '../../src/routes/gastronomy/protected/updateFaq.ts';
-import { protectedUpdateGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/updateMedia.ts';
+import { protectedUpdateGastronomyFaqRoute } from '../../src/routes/gastronomy/protected/updateFaq';
+import { protectedUpdateGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/updateMedia';
 import { protectedUploadGastronomyMenuFileRoute } from '../../src/routes/gastronomy/protected/uploadMenuFile';
 import { protectedUploadGastronomyMenuItemPhotoRoute } from '../../src/routes/gastronomy/protected/uploadMenuItemPhoto';
 import type { AppBindings } from '../../src/types';
@@ -84,7 +84,7 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
         create = mocks.createAccommodation;
         softDelete = mocks.deleteAccommodation;
     },
-    GastronomyService: class {
+    VenueService: class {
         createForOwner = mocks.createGastronomy;
         softDeleteOwnDraft = mocks.deleteGastronomy;
     },

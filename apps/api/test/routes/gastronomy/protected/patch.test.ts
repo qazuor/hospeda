@@ -18,24 +18,24 @@ const BASE = '/api/v1/protected/gastronomies';
 const VALID_UUID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 // ---------------------------------------------------------------------------
-// Mock GastronomyService to capture updateOwn input without real DB calls.
+// Mock VenueService to capture updateOwn input without real DB calls.
 // ---------------------------------------------------------------------------
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...orig,
-        GastronomyService: class MockGastronomyService extends orig.GastronomyService {
+        VenueService: class MockGastronomyService extends orig.VenueService {
             // biome-ignore lint/complexity/noUselessConstructor: need to call super
-            constructor(...args: ConstructorParameters<typeof orig.GastronomyService>) {
+            constructor(...args: ConstructorParameters<typeof orig.VenueService>) {
                 super(...args);
             }
 
             override async updateOwn(
                 gastronomyId: string,
                 data: Record<string, unknown>,
-                _actor: Parameters<typeof orig.GastronomyService.prototype.updateOwn>[2]
-            ): ReturnType<typeof orig.GastronomyService.prototype.updateOwn> {
+                _actor: Parameters<typeof orig.VenueService.prototype.updateOwn>[2]
+            ): ReturnType<typeof orig.VenueService.prototype.updateOwn> {
                 // Capture for assertions
                 (globalThis as Record<string, unknown>).__lastUpdateOwnInput = {
                     gastronomyId,
@@ -43,10 +43,10 @@ vi.mock('@repo/service-core', async (importOriginal) => {
                 };
                 return {
                     data: { id: gastronomyId, name: 'mock' } as unknown as Awaited<
-                        ReturnType<typeof orig.GastronomyService.prototype.updateOwn>
+                        ReturnType<typeof orig.VenueService.prototype.updateOwn>
                     >['data'] & {},
                     error: undefined
-                } as Awaited<ReturnType<typeof orig.GastronomyService.prototype.updateOwn>>;
+                } as Awaited<ReturnType<typeof orig.VenueService.prototype.updateOwn>>;
             }
         }
     };

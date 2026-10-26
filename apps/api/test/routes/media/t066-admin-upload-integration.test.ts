@@ -84,9 +84,9 @@ import {
     EventOrganizerService,
     EventService,
     ExperienceService,
-    GastronomyService,
     PostService,
-    PostSponsorService
+    PostSponsorService,
+    VenueService
 } from '@repo/service-core';
 
 import { initApp } from '../../../src/app';
@@ -184,7 +184,7 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
         vi.spyOn(DestinationService.prototype, 'getById').mockImplementation(stub);
         vi.spyOn(EventService.prototype, 'getById').mockImplementation(stub);
         vi.spyOn(PostService.prototype, 'getById').mockImplementation(stub);
-        vi.spyOn(GastronomyService.prototype, 'getById').mockImplementation(stub);
+        vi.spyOn(VenueService.prototype, 'getById').mockImplementation(stub);
         vi.spyOn(ExperienceService.prototype, 'getById').mockImplementation(stub);
         vi.spyOn(PostSponsorService.prototype, 'getById').mockImplementation(stub);
         vi.spyOn(EventOrganizerService.prototype, 'getById').mockImplementation(stub);

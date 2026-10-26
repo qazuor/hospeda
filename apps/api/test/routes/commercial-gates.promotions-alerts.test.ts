@@ -46,13 +46,13 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         AccommodationService: class {
             getById = mocks.accommodationGet;
         },
-        GastronomyService: class {
+        VenueService: class {
             model = {};
             getBySlug = mocks.gastronomyGetBySlug;
         },
-        getGastronomyMenu: mocks.menu,
-        getGastronomyEvents: mocks.events,
-        getGastronomyDailySpecials: mocks.dailySpecials
+        getVenueMenu: mocks.menu,
+        getVenueEvents: mocks.events,
+        getVenueDailySpecials: mocks.dailySpecials
     };
 });
 

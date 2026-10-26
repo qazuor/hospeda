@@ -19,45 +19,45 @@
  * not verified — do not read them as proven.
  */
 import { createRouter } from '../../../utils/create-app';
-import { protectedAddGastronomyFaqRoute } from './addFaq';
-import { protectedAddGastronomyFeaturedMediaRoute } from './addFeaturedMedia';
-import { protectedAddGastronomyMediaRoute } from './addMedia';
-import { protectedGetGastronomyBrochureRoute } from './brochure';
-import { protectedCreateGastronomyListingRoute } from './create';
-import { protectedCreateGastronomyReviewRoute } from './createReview';
-import { protectedDeleteGastronomyMenuFileRoute } from './deleteMenuFile';
-import { protectedGetGastronomyByIdRoute } from './getById';
-import { protectedGetGastronomyDailySpecialsRoute } from './getDailySpecials';
-import { protectedGetGastronomyEventsRoute } from './getEvents';
-import { protectedGetGastronomyMediaRoute } from './getMedia';
-import { protectedGetGastronomyMenuRoute } from './getMenu';
-import { protectedListMyGastronomyRoute } from './listMine';
-import { protectedGetGastronomyMenuQrRoute } from './menuQr';
-import { protectedGetGastronomyMenuQrScansRoute } from './menuQrScans';
-import { protectedPatchGastronomyRoute } from './patch';
-import { protectedPublishGastronomyRoute } from './publish';
-import { protectedPurgeGastronomyRoute } from './purge';
-import { protectedGastronomyPurgePreviewRoute } from './purgePreview';
-import { protectedPutGastronomyDailySpecialsRoute } from './putDailySpecials';
-import { protectedPutGastronomyEventsRoute } from './putEvents';
-import { protectedPutGastronomyMenuRoute } from './putMenu';
-import { protectedGetGastronomyQrCodeRoute } from './qrCode';
-import { protectedGetGastronomyQrSheetRoute } from './qrSheet';
-import { protectedReactivateGastronomyRoute } from './reactivate';
-import { protectedRemoveGastronomyFaqRoute } from './removeFaq';
-import { protectedRemoveGastronomyMediaRoute } from './removeMedia';
-import { protectedReorderGastronomyFaqsRoute } from './reorderFaqs';
-import { protectedReorderGastronomyMediaRoute } from './reorderMedia';
-import { protectedGastronomyReportFixedRoute } from './reportFixed';
-import { protectedSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
-import { protectedGastronomySupportEditsRoute } from './supportEdits';
-import { protectedUnpublishGastronomyRoute } from './unpublish';
-import { protectedUpdateGastronomyFaqRoute } from './updateFaq';
-import { protectedUpdateGastronomyMediaRoute } from './updateMedia';
-import { protectedUploadGastronomyMenuFileRoute } from './uploadMenuFile';
-import { protectedUploadGastronomyMenuItemPhotoRoute } from './uploadMenuItemPhoto';
-import { protectedGastronomyViewStatsRoute } from './viewStats';
-import { protectedGastronomyViewStatsDailySeriesRoute } from './viewStatsDailySeries';
+import { protectedAddGastronomyFaqRoute } from '../../gastronomy/protected/addFaq';
+import { protectedAddGastronomyFeaturedMediaRoute } from '../../gastronomy/protected/addFeaturedMedia';
+import { protectedAddGastronomyMediaRoute } from '../../gastronomy/protected/addMedia';
+import { protectedGetGastronomyBrochureRoute } from '../../gastronomy/protected/brochure';
+import { protectedCreateGastronomyListingRoute } from '../../gastronomy/protected/create';
+import { protectedCreateGastronomyReviewRoute } from '../../gastronomy/protected/createReview';
+import { protectedDeleteGastronomyMenuFileRoute } from '../../gastronomy/protected/deleteMenuFile';
+import { protectedGetGastronomyByIdRoute } from '../../gastronomy/protected/getById';
+import { protectedGetGastronomyDailySpecialsRoute } from '../../gastronomy/protected/getDailySpecials';
+import { protectedGetGastronomyEventsRoute } from '../../gastronomy/protected/getEvents';
+import { protectedGetGastronomyMediaRoute } from '../../gastronomy/protected/getMedia';
+import { protectedGetGastronomyMenuRoute } from '../../gastronomy/protected/getMenu';
+import { protectedListMyGastronomyRoute } from '../../gastronomy/protected/listMine';
+import { protectedGetGastronomyMenuQrRoute } from '../../gastronomy/protected/menuQr';
+import { protectedGetGastronomyMenuQrScansRoute } from '../../gastronomy/protected/menuQrScans';
+import { protectedPatchGastronomyRoute } from '../../gastronomy/protected/patch';
+import { protectedPublishGastronomyRoute } from '../../gastronomy/protected/publish';
+import { protectedPurgeGastronomyRoute } from '../../gastronomy/protected/purge';
+import { protectedGastronomyPurgePreviewRoute } from '../../gastronomy/protected/purgePreview';
+import { protectedPutGastronomyDailySpecialsRoute } from '../../gastronomy/protected/putDailySpecials';
+import { protectedPutGastronomyEventsRoute } from '../../gastronomy/protected/putEvents';
+import { protectedPutGastronomyMenuRoute } from '../../gastronomy/protected/putMenu';
+import { protectedGetGastronomyQrCodeRoute } from '../../gastronomy/protected/qrCode';
+import { protectedGetGastronomyQrSheetRoute } from '../../gastronomy/protected/qrSheet';
+import { protectedReactivateGastronomyRoute } from '../../gastronomy/protected/reactivate';
+import { protectedRemoveGastronomyFaqRoute } from '../../gastronomy/protected/removeFaq';
+import { protectedRemoveGastronomyMediaRoute } from '../../gastronomy/protected/removeMedia';
+import { protectedReorderGastronomyFaqsRoute } from '../../gastronomy/protected/reorderFaqs';
+import { protectedReorderGastronomyMediaRoute } from '../../gastronomy/protected/reorderMedia';
+import { protectedGastronomyReportFixedRoute } from '../../gastronomy/protected/reportFixed';
+import { protectedSetFeaturedGastronomyMediaRoute } from '../../gastronomy/protected/setFeaturedMedia';
+import { protectedGastronomySupportEditsRoute } from '../../gastronomy/protected/supportEdits';
+import { protectedUnpublishGastronomyRoute } from '../../gastronomy/protected/unpublish';
+import { protectedUpdateGastronomyFaqRoute } from '../../gastronomy/protected/updateFaq';
+import { protectedUpdateGastronomyMediaRoute } from '../../gastronomy/protected/updateMedia';
+import { protectedUploadGastronomyMenuFileRoute } from '../../gastronomy/protected/uploadMenuFile';
+import { protectedUploadGastronomyMenuItemPhotoRoute } from '../../gastronomy/protected/uploadMenuItemPhoto';
+import { protectedGastronomyViewStatsRoute } from '../../gastronomy/protected/viewStats';
+import { protectedGastronomyViewStatsDailySeriesRoute } from '../../gastronomy/protected/viewStatsDailySeries';
 
 const app = createRouter();
 
@@ -181,7 +181,7 @@ app.route('/', protectedRemoveGastronomyFaqRoute);
 app.route('/', protectedCreateGastronomyReviewRoute);
 
 // Media management (HOS-372) — gated on GASTRONOMY_EDIT_OWN/GASTRONOMY_EDIT_ALL
-// inside the service layer via checkGastronomyCanEditMedia.
+// inside the service layer via checkVenueCanEditMedia.
 
 // PATCH /{id}/media/reorder — Must be before /{id}/media/{mediaId} (DELETE).
 app.route('/', protectedReorderGastronomyMediaRoute);

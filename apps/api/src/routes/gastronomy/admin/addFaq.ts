@@ -9,7 +9,7 @@ import {
     VenueFaqSingleOutputSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { addGastronomyFaq, GastronomyService, ServiceError } from '@repo/service-core';
+import { addVenueFaq, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { runListingContentCall } from '../../../middlewares/listing-access';
@@ -17,14 +17,14 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * POST /api/v1/admin/gastronomies/:id/faqs
  * Add FAQ to gastronomy listing — Admin endpoint.
  *
  * Requires GASTRONOMY_EDIT_ALL permission. The service helper
- * `addGastronomyFaq` enforces the same gate via `checkGastronomyCanEditFaqs`.
+ * `addVenueFaq` enforces the same gate via `checkVenueCanEditFaqs`.
  */
 export const adminAddGastronomyFaqRoute = createAdminRoute({
     method: 'post',
@@ -52,12 +52,11 @@ export const adminAddGastronomyFaqRoute = createAdminRoute({
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
-        const model = (
-            gastronomyService as unknown as { model: Parameters<typeof addGastronomyFaq>[0] }
-        ).model;
+        const model = (gastronomyService as unknown as { model: Parameters<typeof addVenueFaq>[0] })
+            .model;
         const result = await runListingContentCall({
             ctx,
-            run: () => addGastronomyFaq(model, actor, input)
+            run: () => addVenueFaq(model, actor, input)
         });
 
         if (result.error) {

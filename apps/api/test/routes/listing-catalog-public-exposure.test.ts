@@ -31,7 +31,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
         ...actual,
-        GastronomyService: vi.fn().mockImplementation(function () {
+        VenueService: vi.fn().mockImplementation(function () {
             return { getBySlug: (...args: unknown[]) => gastronomySvc.getBySlug(...args) };
         }),
         ExperienceService: vi.fn().mockImplementation(function () {

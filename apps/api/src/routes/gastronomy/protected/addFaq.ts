@@ -3,7 +3,7 @@
  * Add a new FAQ to a gastronomy listing (T-044)
  *
  * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).
- * displayOrder is auto-assigned by addGastronomyFaq() as max(existing)+1.
+ * displayOrder is auto-assigned by addVenueFaq() as max(existing)+1.
  */
 
 import {
@@ -13,7 +13,7 @@ import {
     VenueFaqSingleOutputSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { addGastronomyFaq, GastronomyService, ServiceError } from '@repo/service-core';
+import { addVenueFaq, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
@@ -21,7 +21,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Route handler — adds a FAQ to the specified gastronomy listing.
@@ -55,10 +55,9 @@ export const protectedAddGastronomyFaqRoute = createProtectedRoute({
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
-        const model = (
-            gastronomyService as unknown as { model: Parameters<typeof addGastronomyFaq>[0] }
-        ).model;
-        const result = await addGastronomyFaq(model, actor, input);
+        const model = (gastronomyService as unknown as { model: Parameters<typeof addVenueFaq>[0] })
+            .model;
+        const result = await addVenueFaq(model, actor, input);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

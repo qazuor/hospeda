@@ -27,19 +27,19 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        GastronomyService: class MockGastronomyService extends actual.GastronomyService {
+        VenueService: class MockGastronomyService extends actual.VenueService {
             // biome-ignore lint/complexity/noUselessConstructor: need to call super
-            constructor(...args: ConstructorParameters<typeof actual.GastronomyService>) {
+            constructor(...args: ConstructorParameters<typeof actual.VenueService>) {
                 super(...args);
             }
 
             override async getBySlug(
-                ...args: Parameters<typeof actual.GastronomyService.prototype.getBySlug>
-            ): ReturnType<typeof actual.GastronomyService.prototype.getBySlug> {
+                ...args: Parameters<typeof actual.VenueService.prototype.getBySlug>
+            ): ReturnType<typeof actual.VenueService.prototype.getBySlug> {
                 if (args[1] === GONE_SLUG) {
                     return {
                         error: { code: ServiceErrorCode.GONE, message: 'Gastronomy is gone' }
-                    } as Awaited<ReturnType<typeof actual.GastronomyService.prototype.getBySlug>>;
+                    } as Awaited<ReturnType<typeof actual.VenueService.prototype.getBySlug>>;
                 }
                 return super.getBySlug(...args);
             }

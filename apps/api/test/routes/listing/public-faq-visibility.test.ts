@@ -68,7 +68,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const okExperience = async () => ({ data: buildListing('EXCURSION') });
     return {
         ...actual,
-        GastronomyService: class extends actual.GastronomyService {
+        VenueService: class extends actual.VenueService {
             override getBySlug = okGastronomy as never;
             override getById = okGastronomy as never;
         },
@@ -76,11 +76,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             override getBySlug = okExperience as never;
             override getById = okExperience as never;
         },
-        listGastronomyFaqs: async () => ({ data: { faqs: FAQS } }),
+        listVenueFaqs: async () => ({ data: { faqs: FAQS } }),
         listExperienceFaqs: async () => ({ data: { faqs: FAQS } }),
-        getGastronomyMenu: async () => ({ data: { sections: [] } }),
-        getGastronomyEvents: async () => ({ data: { events: [] } }),
-        getGastronomyDailySpecials: async () => ({ data: { specials: [] } }),
+        getVenueMenu: async () => ({ data: { sections: [] } }),
+        getVenueEvents: async () => ({ data: { events: [] } }),
+        getVenueDailySpecials: async () => ({ data: { specials: [] } }),
         resolveOwnerGastronomyPlanEntitlementSet: async () => new Set<string>(),
         resolveOwnerGrantsExperienceDirections: async () => false
     };

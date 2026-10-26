@@ -9,7 +9,7 @@ import {
     type VenueFaqUpdateInput,
     VerticalEnum
 } from '@repo/schemas';
-import { GastronomyService, ServiceError, updateGastronomyFaq } from '@repo/service-core';
+import { ServiceError, updateVenueFaq, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { runListingContentCall } from '../../../middlewares/listing-access';
@@ -17,14 +17,14 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * PUT /api/v1/admin/gastronomies/:id/faqs/:faqId
  * Update FAQ in gastronomy listing — Admin endpoint.
  *
  * Requires GASTRONOMY_EDIT_ALL permission. The service helper
- * `updateGastronomyFaq` enforces the same gate via `checkGastronomyCanEditFaqs`.
+ * `updateVenueFaq` enforces the same gate via `checkVenueCanEditFaqs`.
  */
 export const adminUpdateGastronomyFaqRoute = createAdminRoute({
     method: 'put',
@@ -54,11 +54,11 @@ export const adminUpdateGastronomyFaqRoute = createAdminRoute({
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         const model = (
-            gastronomyService as unknown as { model: Parameters<typeof updateGastronomyFaq>[0] }
+            gastronomyService as unknown as { model: Parameters<typeof updateVenueFaq>[0] }
         ).model;
         const result = await runListingContentCall({
             ctx,
-            run: () => updateGastronomyFaq(model, actor, input)
+            run: () => updateVenueFaq(model, actor, input)
         });
 
         if (result.error) {

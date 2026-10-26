@@ -7,12 +7,12 @@
  * ensure Hono resolves them correctly.
  */
 import { createRouter } from '../../../utils/create-app';
-import { publicGetGastronomiesByDestinationRoute } from './getByDestination';
-import { publicGetGastronomyByIdRoute } from './getById';
-import { publicGetGastronomyBySlugRoute } from './getBySlug';
-import { publicGetGastronomyFaqsRoute } from './getFaqs';
-import { publicListGastronomyReviewsRoute } from './getReviews';
-import { publicListGastronomiesRoute } from './list';
+import { publicGetGastronomiesByDestinationRoute } from '../../gastronomy/public/getByDestination';
+import { publicGetGastronomyByIdRoute } from '../../gastronomy/public/getById';
+import { publicGetGastronomyBySlugRoute } from '../../gastronomy/public/getBySlug';
+import { publicGetGastronomyFaqsRoute } from '../../gastronomy/public/getFaqs';
+import { publicListGastronomyReviewsRoute } from '../../gastronomy/public/getReviews';
+import { publicListGastronomiesRoute } from '../../gastronomy/public/list';
 
 const app = createRouter();
 

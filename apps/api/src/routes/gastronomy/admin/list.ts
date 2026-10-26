@@ -3,20 +3,20 @@
  * Returns all gastronomy listings with full admin access.
  */
 import { VenueAdminListItemSchema, VenueAdminSearchSchema } from '@repo/schemas';
-import { GastronomyService, ServiceError } from '@repo/service-core';
+import { ServiceError, VenueService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createAdminListRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/admin/gastronomies
  * List gastronomy listings — Admin endpoint.
  *
  * Permission model: the entity-specific permission (GASTRONOMY_VIEW_ALL) is
- * enforced in the service (`_canAdminList` → `checkGastronomyCanAdminList`).
+ * enforced in the service (`_canAdminList` → `checkVenueCanAdminList`).
  * The route gate only requires admin-panel access, matching the accommodation
  * admin list pattern.
  */

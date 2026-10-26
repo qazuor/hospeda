@@ -6,11 +6,11 @@
 
 import { VenuePublicSchema, VerticalEnum } from '@repo/schemas';
 import {
-    GastronomyService,
-    getGastronomyDailySpecials,
-    getGastronomyEvents,
-    getGastronomyMenu,
-    ServiceError
+    getVenueDailySpecials,
+    getVenueEvents,
+    getVenueMenu,
+    ServiceError,
+    VenueService
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -25,17 +25,17 @@ import {
 import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
-import { applyGastronomyDailySpecialsGate } from './daily-specials-projection';
-import { applyGastronomyVenueEventsGate } from './events-projection';
-import { applyGastronomyMenuManagementGate } from './menu-projection';
+import { applyGastronomyDailySpecialsGate } from '../../gastronomy/public/daily-specials-projection';
+import { applyGastronomyVenueEventsGate } from '../../gastronomy/public/events-projection';
+import { applyGastronomyMenuManagementGate } from '../../gastronomy/public/menu-projection';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/public/gastronomies/slug/:slug
  * Get gastronomy listing by slug — Public endpoint.
  *
- * Delegates to GastronomyService.getBySlug (inherited from BaseCrudService
+ * Delegates to VenueService.getBySlug (inherited from BaseCrudService
  * via getByField('slug', ...)). Returns null when the slug resolves to no
  * visible listing.
  */
@@ -92,7 +92,7 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`,
         // the same accessor the protected menu routes use.
         const model = (
-            gastronomyService as unknown as { model: Parameters<typeof getGastronomyMenu>[0] }
+            gastronomyService as unknown as { model: Parameters<typeof getVenueMenu>[0] }
         ).model;
 
         // HOS-1041: the menú del día joins the same parallel batch, read with
@@ -134,9 +134,9 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
             await Promise.all([
                 fetchGastronomyAmenities(gastronomy.id),
                 fetchGastronomyFeatures(gastronomy.id),
-                getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
-                getGastronomyEvents(model, { gastronomyId: gastronomy.id }),
-                getGastronomyDailySpecials(model, { gastronomyId: gastronomy.id, validOn: today })
+                getVenueMenu(model, { gastronomyId: gastronomy.id }),
+                getVenueEvents(model, { gastronomyId: gastronomy.id }),
+                getVenueDailySpecials(model, { gastronomyId: gastronomy.id, validOn: today })
             ]);
 
         const menuGate = applyGastronomyMenuManagementGate({

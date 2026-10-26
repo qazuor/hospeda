@@ -2,18 +2,18 @@
  * Public gastronomy FAQs endpoint (T-042)
  * Returns FAQs for a specific gastronomy listing ordered by display_order ASC NULLS LAST.
  *
- * Uses listGastronomyFaqs() which loads the listing with its `faqs` relation
+ * Uses listVenueFaqs() which loads the listing with its `faqs` relation
  * and returns active, non-deleted FAQs. Any authenticated or anonymous actor
  * that can view the listing can read its FAQs (open public).
  *
- * HOS-400: `listGastronomyFaqs` is shared with the admin/owner reads, which must
+ * HOS-400: `listVenueFaqs` is shared with the admin/owner reads, which must
  * stay unfiltered — a hidden FAQ must remain visible in the screen meant to
  * manage it. So the `isVisibleOnListing` filter is applied HERE, server-side,
  * before the row ever leaves this route — filtering only on the client would
  * still ship the private FAQ in the page's payload.
  */
 import { VenueFaqPublicListOutputSchema } from '@repo/schemas';
-import { GastronomyService, listGastronomyFaqs, ServiceError } from '@repo/service-core';
+import { listVenueFaqs, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
@@ -21,8 +21,8 @@ import { filterPublicFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
-/** Gastronomy model instance for FAQ helpers (injected from GastronomyService). */
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+/** Gastronomy model instance for FAQ helpers (injected from VenueService). */
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/public/gastronomies/:gastronomyId/faqs
@@ -49,10 +49,10 @@ export const publicGetGastronomyFaqsRoute = createPublicRoute({
         // to pass to the standalone FAQ helper. The service exposes it via protected
         // `model` — we cast through unknown to satisfy TypeScript without `any`.
         const model = (
-            gastronomyService as unknown as { model: Parameters<typeof listGastronomyFaqs>[0] }
+            gastronomyService as unknown as { model: Parameters<typeof listVenueFaqs>[0] }
         ).model;
 
-        const result = await listGastronomyFaqs(model, actor, {
+        const result = await listVenueFaqs(model, actor, {
             gastronomyId: params.gastronomyId as string
         });
 

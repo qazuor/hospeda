@@ -3,7 +3,7 @@
  * Update an existing FAQ on a gastronomy listing (T-044)
  *
  * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).
- * The FAQ must belong to the specified gastronomy (enforced inside updateGastronomyFaq).
+ * The FAQ must belong to the specified gastronomy (enforced inside updateVenueFaq).
  */
 
 import {
@@ -13,7 +13,7 @@ import {
     type VenueFaqUpdateInput,
     VerticalEnum
 } from '@repo/schemas';
-import { GastronomyService, ServiceError, updateGastronomyFaq } from '@repo/service-core';
+import { ServiceError, updateVenueFaq, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
@@ -21,7 +21,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Route handler — updates a specific FAQ on a gastronomy listing.
@@ -58,9 +58,9 @@ export const protectedUpdateGastronomyFaqRoute = createProtectedRoute({
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         const model = (
-            gastronomyService as unknown as { model: Parameters<typeof updateGastronomyFaq>[0] }
+            gastronomyService as unknown as { model: Parameters<typeof updateVenueFaq>[0] }
         ).model;
-        const result = await updateGastronomyFaq(model, actor, input);
+        const result = await updateVenueFaq(model, actor, input);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

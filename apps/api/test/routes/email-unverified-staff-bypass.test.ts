@@ -2,8 +2,8 @@ import { PermissionEnum, UserSchema } from '@repo/schemas';
 import {
     AccommodationService,
     ExperienceService,
-    GastronomyService,
-    UserService
+    UserService,
+    VenueService
 } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
@@ -211,9 +211,9 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
     describe('K3 GASTRONOMY_VIEW_ALL bypass in gastronomy detail', () => {
         it('unverified with and without the permission gets the same 404', async () => {
             const getById = vi
-                .spyOn(GastronomyService.prototype, 'getById')
+                .spyOn(VenueService.prototype, 'getById')
                 .mockResolvedValue({ data: listing({ ownerId: OTHER_ID }) } as never);
-            vi.spyOn(GastronomyService.prototype, 'loadJunctionIds').mockResolvedValue({
+            vi.spyOn(VenueService.prototype, 'loadJunctionIds').mockResolvedValue({
                 amenityIds: [],
                 featureIds: []
             } as never);
@@ -236,10 +236,10 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
         });
 
         it('verified with the permission differs from the unverified refusal', async () => {
-            vi.spyOn(GastronomyService.prototype, 'getById').mockResolvedValue({
+            vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({
                 data: listing({ ownerId: OTHER_ID })
             } as never);
-            vi.spyOn(GastronomyService.prototype, 'loadJunctionIds').mockResolvedValue({
+            vi.spyOn(VenueService.prototype, 'loadJunctionIds').mockResolvedValue({
                 amenityIds: [],
                 featureIds: []
             } as never);
@@ -260,10 +260,10 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
         });
 
         it('an unverified owner with the permission has the same non-email result as a verified owner', async () => {
-            vi.spyOn(GastronomyService.prototype, 'getById').mockResolvedValue({
+            vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({
                 data: listing({ ownerId: OWNER_ID })
             } as never);
-            vi.spyOn(GastronomyService.prototype, 'loadJunctionIds').mockResolvedValue({
+            vi.spyOn(VenueService.prototype, 'loadJunctionIds').mockResolvedValue({
                 amenityIds: [],
                 featureIds: []
             } as never);

@@ -10,7 +10,7 @@
  * storage fails rather than leaving a permanently-billed orphan.
  */
 import { SuccessSchema, VerticalEnum } from '@repo/schemas';
-import { GastronomyService, removeGastronomyMedia, ServiceError } from '@repo/service-core';
+import { removeVenueMedia, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { runListingContentCall } from '../../../middlewares/listing-access';
@@ -19,14 +19,14 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * DELETE /api/v1/admin/gastronomies/:id/media/:mediaId
  * Remove photo from gastronomy listing gallery — Admin endpoint.
  *
  * Requires GASTRONOMY_EDIT_ALL permission. The service helper
- * `removeGastronomyMedia` enforces the same gate via `checkGastronomyCanEditMedia`.
+ * `removeVenueMedia` enforces the same gate via `checkVenueCanEditMedia`.
  */
 export const adminRemoveGastronomyMediaRoute = createAdminRoute({
     method: 'delete',
@@ -46,12 +46,12 @@ export const adminRemoveGastronomyMediaRoute = createAdminRoute({
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         const model = (
-            gastronomyService as unknown as { model: Parameters<typeof removeGastronomyMedia>[0] }
+            gastronomyService as unknown as { model: Parameters<typeof removeVenueMedia>[0] }
         ).model;
         const result = await runListingContentCall({
             ctx,
             run: () =>
-                removeGastronomyMedia(
+                removeVenueMedia(
                     model,
                     actor,
                     {

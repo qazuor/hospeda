@@ -35,7 +35,7 @@
  *
  * @see SPEC-253 spec.md § AC-2
  * @see apps/api/src/routes/gastronomy/protected/patch.ts
- * @see packages/service-core/src/services/gastronomy/gastronomy.service.ts (updateOwn)
+ * @see packages/service-core/src/services/venue/venue.service.ts (updateOwn)
  */
 
 import { expect, test } from '@playwright/test';

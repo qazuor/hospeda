@@ -7,7 +7,7 @@
  * returned URL + metadata as a new `gastronomy_media` row.
  *
  * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
- * enforced inside `addGastronomyMedia` via `checkGastronomyCanEditMedia`.
+ * enforced inside `addVenueMedia` via `checkVenueCanEditMedia`.
  */
 
 import {
@@ -17,7 +17,7 @@ import {
     VenueMediaSingleOutputSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { addGastronomyMedia, GastronomyService, ServiceError } from '@repo/service-core';
+import { addVenueMedia, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
@@ -25,7 +25,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Route handler — adds a photo to the specified gastronomy listing's gallery.
@@ -62,9 +62,9 @@ export const protectedAddGastronomyMediaRoute = createProtectedRoute({
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         const model = (
-            gastronomyService as unknown as { model: Parameters<typeof addGastronomyMedia>[0] }
+            gastronomyService as unknown as { model: Parameters<typeof addVenueMedia>[0] }
         ).model;
-        const result = await addGastronomyMedia(model, actor, input);
+        const result = await addVenueMedia(model, actor, input);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

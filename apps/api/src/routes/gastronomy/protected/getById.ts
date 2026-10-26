@@ -6,7 +6,7 @@
  * lifecycleState, richDescription, audit dates) are never leaked.
  */
 import { PermissionEnum, VenueProtectedSchema } from '@repo/schemas';
-import { entityNotFoundError, GastronomyService, ServiceError } from '@repo/service-core';
+import { entityNotFoundError, ServiceError, VenueService } from '@repo/service-core';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -14,7 +14,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/protected/gastronomies/:id
@@ -63,7 +63,7 @@ export const protectedGetGastronomyByIdRoute = createProtectedRoute({
                 operation: 'READ_OWN'
             });
             if (!access.allowed) {
-                throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
+                throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
             }
         }
 

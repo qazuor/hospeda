@@ -26,8 +26,8 @@
  * the deletion is reversible at the row level, but callers must not present the
  * old cover as still available.
  *
- * Requires GASTRONOMY_EDIT_ALL. The service helper `addGastronomyFeaturedMedia` enforces the
- * same gate via `checkGastronomyCanEditMedia`.
+ * Requires GASTRONOMY_EDIT_ALL. The service helper `addVenueFeaturedMedia` enforces the
+ * same gate via `checkVenueCanEditMedia`.
  */
 import {
     type VenueFeaturedMediaAddInput,
@@ -36,7 +36,7 @@ import {
     VenueMediaAddPayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { addGastronomyFeaturedMedia, GastronomyService, ServiceError } from '@repo/service-core';
+import { addVenueFeaturedMedia, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { runListingContentCall } from '../../../middlewares/listing-access';
@@ -44,7 +44,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Route handler — registers an uploaded photo as the listing's cover.
@@ -89,12 +89,12 @@ export const adminAddGastronomyFeaturedMediaRoute = createAdminRoute({
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         const model = (
             gastronomyService as unknown as {
-                model: Parameters<typeof addGastronomyFeaturedMedia>[0];
+                model: Parameters<typeof addVenueFeaturedMedia>[0];
             }
         ).model;
         const result = await runListingContentCall({
             ctx,
-            run: () => addGastronomyFeaturedMedia(model, actor, input)
+            run: () => addVenueFeaturedMedia(model, actor, input)
         });
 
         if (result.error) {

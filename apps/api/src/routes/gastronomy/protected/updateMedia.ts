@@ -25,7 +25,7 @@
  * (see `apps/api/docs/error-contract.md`).
  *
  * The PARENT gastronomy is NOT protected that way, and that is deliberate. The gate
- * (`checkGastronomyCanEditMedia`) answers `FORBIDDEN` (403) on a gastronomy the actor
+ * (`checkVenueCanEditMedia`) answers `FORBIDDEN` (403) on a gastronomy the actor
  * may not edit and `NOT_FOUND` (404) on one that does not exist, so an actor whose
  * grant is ownership-scoped (`GASTRONOMY_EDIT_OWN` without `GASTRONOMY_EDIT_ALL`) can tell
  * a stranger's gastronomy id from an invented one. The sibling media helpers — add,
@@ -41,7 +41,7 @@ import {
     VenueMediaUpdatePayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { GastronomyService, ServiceError, updateGastronomyMedia } from '@repo/service-core';
+import { ServiceError, updateVenueMedia, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
@@ -49,12 +49,12 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Route handler — corrects a photo's text metadata on a gastronomy.
  *
- * Permission model: the service helper `updateGastronomyMedia` gates on `checkGastronomyCanEditMedia` — listing owner or staff — exactly like `setFeaturedGastronomyMedia`.
+ * Permission model: the service helper `updateVenueMedia` gates on `checkVenueCanEditMedia` — listing owner or staff — exactly like `setFeaturedVenueMedia`.
  */
 export const protectedUpdateGastronomyMediaRoute = createProtectedRoute({
     method: 'patch',
@@ -86,10 +86,10 @@ export const protectedUpdateGastronomyMediaRoute = createProtectedRoute({
         // (mirrors the sibling media routes).
         const model = (
             gastronomyService as unknown as {
-                model: Parameters<typeof updateGastronomyMedia>[0];
+                model: Parameters<typeof updateVenueMedia>[0];
             }
         ).model;
-        const result = await updateGastronomyMedia(model, actor, {
+        const result = await updateVenueMedia(model, actor, {
             gastronomyId: params.id as string,
             mediaId: params.mediaId as string,
             caption: payload.caption,

@@ -21,8 +21,8 @@ import {
     DestinationService,
     EventService,
     ExperienceService,
-    GastronomyService,
-    PostService
+    PostService,
+    VenueService
 } from '@repo/service-core';
 import type { Context, MiddlewareHandler } from 'hono';
 import { z } from 'zod';
@@ -149,7 +149,7 @@ const resolveEntityService = (
     | DestinationService
     | EventService
     | PostService
-    | GastronomyService
+    | VenueService
     | ExperienceService => {
     switch (entityType) {
         case 'accommodation':
@@ -161,7 +161,7 @@ const resolveEntityService = (
         case 'post':
             return new PostService({ logger: apiLogger });
         case 'gastronomy':
-            return new GastronomyService({ logger: apiLogger });
+            return new VenueService({ logger: apiLogger });
         case 'experience':
             return new ExperienceService({ logger: apiLogger });
         default:

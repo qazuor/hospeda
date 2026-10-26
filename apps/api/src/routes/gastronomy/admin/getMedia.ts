@@ -7,22 +7,22 @@
  * `'visible'`).
  */
 import { PermissionEnum, VenueMediaListOutputSchema, VenueMediaStateSchema } from '@repo/schemas';
-import { GastronomyService, getGastronomyMedia, ServiceError } from '@repo/service-core';
+import { getVenueMedia, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/admin/gastronomies/:id/media
  * List gastronomy listing gallery photos — Admin endpoint.
  *
  * Requires GASTRONOMY_EDIT_ALL permission (mirrors the internal
- * `checkGastronomyCanEditMedia` gate — media management has no separate
- * broader view-only permission). The service helper `getGastronomyMedia`
+ * `checkVenueCanEditMedia` gate — media management has no separate
+ * broader view-only permission). The service helper `getVenueMedia`
  * enforces the same gate.
  */
 export const adminGetGastronomyMediaRoute = createAdminRoute({
@@ -53,9 +53,9 @@ export const adminGetGastronomyMediaRoute = createAdminRoute({
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         const model = (
-            gastronomyService as unknown as { model: Parameters<typeof getGastronomyMedia>[0] }
+            gastronomyService as unknown as { model: Parameters<typeof getVenueMedia>[0] }
         ).model;
-        const result = await getGastronomyMedia(model, actor, {
+        const result = await getVenueMedia(model, actor, {
             gastronomyId: params.id as string,
             state
         });

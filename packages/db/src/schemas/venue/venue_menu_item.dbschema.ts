@@ -30,7 +30,7 @@ import { gastronomyMenuSections } from './venue_menu_section.dbschema.ts';
  *
  * The obvious shape for "a dish has a photo" is a link table keyed by
  * `gastronomy_menu_items.id`. It does not work, and the reason is one file
- * over: `replaceGastronomyMenu` writes the carta as a WHOLE DOCUMENT — it
+ * over: `replaceVenueMenu` writes the carta as a WHOLE DOCUMENT — it
  * hard-deletes the listing's sections and reinserts them, so `CASCADE` takes
  * every item row with them and a NEW id is minted on every save. A link table
  * keyed on that id would be emptied by the owner's next "Guardar carta".

@@ -2,13 +2,13 @@
  * Public get gastronomy listings by destination endpoint (T-042)
  * Returns a paginated list of gastronomy listings for a specific destination.
  *
- * Delegates to GastronomyService.search() with a forced destinationId filter.
- * GastronomyService does not expose a dedicated getByDestination() method
+ * Delegates to VenueService.search() with a forced destinationId filter.
+ * VenueService does not expose a dedicated getByDestination() method
  * (that is AccommodationService-specific); the destinationId scalar filter in
  * _executeSearch provides equivalent behaviour.
  */
 import { VenuePublicSchema } from '@repo/schemas';
-import { GastronomyService, ServiceError } from '@repo/service-core';
+import { ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { withPublicIsFeaturedList } from '../../../utils/accommodation-featured';
@@ -17,13 +17,13 @@ import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/public/gastronomies/destination/:destinationId
  * List gastronomy listings by destination — Public endpoint.
  *
- * Uses GastronomyService.search() with a forced destinationId filter.
+ * Uses VenueService.search() with a forced destinationId filter.
  * Pagination defaults: page=1, pageSize=20.
  */
 export const publicGetGastronomiesByDestinationRoute = createPublicListRoute({

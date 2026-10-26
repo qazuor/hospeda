@@ -8,14 +8,14 @@
  * 1. **Authentication** — `createCRUDRoute` over the protected router.
  * 2. **Listing access** — the owner needs menu management, plus photo or
  *    translation capability when the payload carries those fields.
- * 3. **Ownership** — inside `replaceGastronomyMenu`, via the same
+ * 3. **Ownership** — inside `replaceVenueMenu`, via the same
  *    `GASTRONOMY_EDIT_OWN` / `GASTRONOMY_EDIT_ALL` gate the sibling writes use.
  *
  *
  * ## Whole document, one transaction
  *
  * The body is the ENTIRE carta, and an empty `sections` array is a legitimate
- * submission meaning "delete it". See `packages/service-core/src/services/gastronomy/gastronomy.menu.ts`
+ * submission meaning "delete it". See `packages/service-core/src/services/venue/venue.menu.ts`
  * for why the carta is written whole where `gastronomy_media` is written per row.
  *
  * @module routes/gastronomy/protected/putMenu
@@ -27,7 +27,7 @@ import {
     VenueMenuReplacePayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { GastronomyService, replaceGastronomyMenu } from '@repo/service-core';
+import { replaceVenueMenu, VenueService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against — see
 // `brochure.ts` for why the root import breaks `instanceof`.
 import { ServiceError } from '@repo/service-core/types';
@@ -36,10 +36,10 @@ import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
-import { menuPayloadCarriesItemPhoto } from './menu-item-photo-gate';
-import { menuPayloadCarriesTranslations } from './menu-translations-gate';
+import { menuPayloadCarriesItemPhoto } from '../../gastronomy/protected/menu-item-photo-gate';
+import { menuPayloadCarriesTranslations } from '../../gastronomy/protected/menu-translations-gate';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /** Writes the carta. Exported standalone so the route test can call it directly. */
 export async function handlePutGastronomyMenu(
@@ -52,10 +52,10 @@ export async function handlePutGastronomyMenu(
     // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`, the
     // same accessor the FAQ and media routes use.
     const model = (
-        gastronomyService as unknown as { model: Parameters<typeof replaceGastronomyMenu>[0] }
+        gastronomyService as unknown as { model: Parameters<typeof replaceVenueMenu>[0] }
     ).model;
 
-    const result = await replaceGastronomyMenu(model, actor, {
+    const result = await replaceVenueMenu(model, actor, {
         gastronomyId: params.id as string,
         // TYPE-WORKAROUND: the factory hands the handler a
         // `Record<string, unknown>`, but the body has already been validated

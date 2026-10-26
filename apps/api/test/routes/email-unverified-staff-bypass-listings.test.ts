@@ -1,5 +1,5 @@
 import { PermissionEnum, PublicationStatusEnum } from '@repo/schemas';
-import { AccommodationService, ExperienceService, GastronomyService } from '@repo/service-core';
+import { AccommodationService, ExperienceService, VenueService } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
     clearTestEntityFetchers,
@@ -170,7 +170,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
                 publicationStatus: PublicationStatusEnum.ARCHIVED,
                 ports: listingMocks
             });
-            vi.spyOn(GastronomyService.prototype, 'getById').mockResolvedValue({
+            vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({
                 data: listing({
                     ownerId: OWNER_ID,
                     publicationStatus: PublicationStatusEnum.ARCHIVED

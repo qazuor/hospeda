@@ -40,7 +40,7 @@ vi.mock(
 );
 
 import { type PermissionEnum, PublicationStatusEnum, RoleEnum } from '@repo/schemas';
-import { ExperienceService, GastronomyService } from '@repo/service-core';
+import { ExperienceService, VenueService } from '@repo/service-core';
 import { Hono } from 'hono';
 import type { AppBindings } from '../../src/types';
 
@@ -86,7 +86,7 @@ function buildApp(
 const CASES = [
     {
         label: 'gastronomy',
-        service: GastronomyService,
+        service: VenueService,
         importRoute: async () => {
             const mod = await import('../../src/routes/gastronomy/protected/listMine.js');
             return mod.protectedListMyGastronomyRoute;

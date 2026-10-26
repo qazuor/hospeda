@@ -53,7 +53,7 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
-    GastronomyService: class {
+    VenueService: class {
         getById = mocks.service;
         updateOwn = mocks.service;
         addMedia = mocks.service;
@@ -65,17 +65,17 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
         addMedia = mocks.service;
         addFeaturedMedia = mocks.service;
     },
-    addGastronomyFaq: mocks.service,
-    removeGastronomyFaq: mocks.service,
-    updateGastronomyFaq: mocks.service,
-    reorderGastronomyFaqs: mocks.service,
+    addVenueFaq: mocks.service,
+    removeVenueFaq: mocks.service,
+    updateVenueFaq: mocks.service,
+    reorderVenueFaqs: mocks.service,
     addExperienceFaq: mocks.service,
     removeExperienceFaq: mocks.service,
     updateExperienceFaq: mocks.service,
     reorderExperienceFaqs: mocks.service,
-    replaceGastronomyMenu: mocks.service,
-    replaceGastronomyDailySpecials: mocks.service,
-    replaceGastronomyEvents: mocks.service,
+    replaceVenueMenu: mocks.service,
+    replaceVenueDailySpecials: mocks.service,
+    replaceVenueEvents: mocks.service,
     issueExperienceCertificate: mocks.service,
     listExperienceCertificates: mocks.service,
     getExperienceCertificate: mocks.service

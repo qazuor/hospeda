@@ -156,7 +156,7 @@ export const gastronomyEvents = pgTable(
         isActive: boolean('is_active').default(true).notNull(),
         /**
          * Position within the agenda. NOT NULL with no default: the whole
-         * agenda is written in one transaction by `replaceGastronomyEvents`,
+         * agenda is written in one transaction by `replaceVenueEvents`,
          * which assigns the index of every entry.
          */
         displayOrder: integer('display_order').notNull(),

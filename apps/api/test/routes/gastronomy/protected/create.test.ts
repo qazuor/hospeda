@@ -3,7 +3,7 @@
  * `handleCreateGastronomyListing` behind `POST /api/v1/protected/gastronomies/`.
  *
  * The handler is exported standalone and exercised against a mocked `Context`,
- * with `GastronomyService` replaced by a spy so the exact payload passed to
+ * with `VenueService` replaced by a spy so the exact payload passed to
  * `createForOwner()` can be inspected without a live DB.
  *
  * Covers (AC-19, D-3): `ownerId` is always `actor.id`; no publication state
@@ -61,7 +61,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        GastronomyService: class MockGastronomyService {
+        VenueService: class MockGastronomyService {
             // HOS-687: the owner path MUST go through `createForOwner` (which
             // grants the vertical owner role in the create transaction). The plain
             // `create` is kept as a spy so a regression back to it fails loudly.

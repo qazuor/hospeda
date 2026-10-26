@@ -3,11 +3,11 @@
  * Remove (soft-delete) a FAQ from a gastronomy listing (T-044)
  *
  * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).
- * The FAQ must belong to the specified gastronomy (enforced inside removeGastronomyFaq).
+ * The FAQ must belong to the specified gastronomy (enforced inside removeVenueFaq).
  */
 
 import { VenueFaqRemoveOutputSchema, VerticalEnum } from '@repo/schemas';
-import { GastronomyService, removeGastronomyFaq, ServiceError } from '@repo/service-core';
+import { removeVenueFaq, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
@@ -15,7 +15,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 
 /**
  * Route handler — soft-deletes a specific FAQ from a gastronomy listing.
@@ -41,9 +41,9 @@ export const protectedRemoveGastronomyFaqRoute = createProtectedRoute({
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         const model = (
-            gastronomyService as unknown as { model: Parameters<typeof removeGastronomyFaq>[0] }
+            gastronomyService as unknown as { model: Parameters<typeof removeVenueFaq>[0] }
         ).model;
-        const result = await removeGastronomyFaq(model, actor, {
+        const result = await removeVenueFaq(model, actor, {
             gastronomyId: params.id as string,
             faqId: params.faqId as string
         });

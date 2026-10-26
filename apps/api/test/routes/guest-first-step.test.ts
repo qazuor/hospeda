@@ -27,7 +27,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         AccommodationReviewService: vi.fn().mockImplementation(function () {
             return { create: mockServices.accommodationCreate };
         }),
-        GastronomyReviewService: vi.fn().mockImplementation(function () {
+        VenueReviewService: vi.fn().mockImplementation(function () {
             return { create: mockServices.gastronomyCreate };
         })
     };

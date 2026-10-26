@@ -141,7 +141,7 @@ const GASTRONOMY_TABLE_COLUMNS = {
 
 /**
  * Gastronomy model stub that exposes the real column set via `getTable()` so the
- * (real) GastronomyService admin list/options/sort validation runs faithfully against
+ * (real) VenueService admin list/options/sort validation runs faithfully against
  * the mocked DB. All data methods stay no-op (inherited from GenericMockModel).
  */
 class GastronomyMockModel extends GenericMockModel {
@@ -339,7 +339,7 @@ export function createDbMock() {
          * hard vitest error ("No <x> export is defined on the @repo/db mock")
          * the moment the importing line runs.
          *
-         * That is not a cosmetic gap. `GastronomyService._executeCount` is on the
+         * That is not a cosmetic gap. `VenueService._executeCount` is on the
          * path the gastronomy and experience limits middleware takes to count an owner's listings,
          * and since HOS-1078 that middleware fails CLOSED — so a missing export
          * here surfaces as a **503 on listing creation**, which reads as a broken
@@ -1522,7 +1522,7 @@ export function createDbMock() {
         },
 
         // HOS-372: relational gastronomy or experience media singletons, the gastronomy/experience
-        // twins of accommodationMediaModel above. GastronomyService and
+        // twins of accommodationMediaModel above. VenueService and
         // ExperienceService resolve them in their constructors
         // (`mediaModel ?? venueMediaModel`), so a mock without them fails at
         // MODULE LOAD for every test that touches the gastronomy and experience routes — the suite
@@ -1542,8 +1542,8 @@ export function createDbMock() {
             hardDelete: vi.fn().mockResolvedValue(undefined)
         },
 
-        // SPEC-239: Venue singleton model instances. GastronomyService,
-        // GastronomyReviewService, and the standalone FAQ helpers access these at module
+        // SPEC-239: Venue singleton model instances. VenueService,
+        // VenueReviewService, and the standalone FAQ helpers access these at module
         // scope (via service constructor or direct import). They are exported as singleton
         // instances (not classes) in @repo/db — mirror that here with GenericMockModel
         // instances so initApp() can construct all gastronomy routes without a real DB.

@@ -211,11 +211,11 @@ describe('simultaneous verticals', () => {
                     change: 'REMOVED'
                 }
             });
-            const gastronomyAfter = await read(gastronomy);
+            const venueAfter = await read(gastronomy);
             const accommodationAfter = await read(accommodation);
             expect(coverage).toHaveBeenCalledTimes(4);
             expect(
-                gastronomyAfter.entitlements.get({
+                venueAfter.entitlements.get({
                     key: 'activate_trial',
                     userId,
                     vertical: gastronomy

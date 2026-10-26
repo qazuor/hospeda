@@ -281,12 +281,12 @@ async function seedGastronomyMediaRows({
  * UUIDv5 id derived from a stable seed-key (see `getGastronomyFixtureId` /
  * `getGastronomyFaqFixtureId` / `getGastronomyReviewFixtureId` above), instead
  * of the column's `defaultRandom()`. This was already a model-direct Drizzle
- * insert (never went through `GastronomyService`/`GastronomyFaqService`/
- * `GastronomyReviewService`), so no service lifecycle hook is newly bypassed —
+ * insert (never went through `VenueService`/`GastronomyFaqService`/
+ * `VenueReviewService`), so no service lifecycle hook is newly bypassed —
  * this only replaces a random id with a stable, reproducible one. The
  * `reviewsCount`/`averageRating` denormalized columns on `gastronomies` are
  * static, author-curated values taken directly from the fixture (matching the
- * companion review fixtures), NOT computed via `GastronomyService.recomputeRating`
+ * companion review fixtures), NOT computed via `VenueService.recomputeRating`
  * — unlike `AccommodationReviewService`/`DestinationReviewService`
  * (HOS-25 T-025), there is no bypassed hook here that used to compute them, so
  * no recompute call is introduced.

@@ -23,10 +23,10 @@ import { QrCodeScanStatsSchema, QrCodeScanWindowSchema, VerticalEnum } from '@re
 import {
     buildEmptyQrCodeScanStats,
     entityNotFoundError,
-    GASTRONOMY_MENU_QR_ENTITY_TYPE,
-    GASTRONOMY_MENU_QR_PURPOSE,
-    GastronomyService,
-    QrCodeService
+    QrCodeService,
+    VENUE_MENU_QR_ENTITY_TYPE,
+    VENUE_MENU_QR_PURPOSE,
+    VenueService
 } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
@@ -37,7 +37,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const gastronomyService = new GastronomyService({ logger: apiLogger });
+const gastronomyService = new VenueService({ logger: apiLogger });
 const qrCodeService = new QrCodeService({ logger: apiLogger });
 
 /**
@@ -61,14 +61,14 @@ export async function handleGetGastronomyMenuQrScans(
 
     // Listing access has already checked ownership; retain the missing-row 404.
     if (!entity) {
-        throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
+        throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }
 
     const code = await qrCodeService.findLiveCodeForEntity({
         actor,
-        entityType: GASTRONOMY_MENU_QR_ENTITY_TYPE,
+        entityType: VENUE_MENU_QR_ENTITY_TYPE,
         entityId: entity.id,
-        purpose: GASTRONOMY_MENU_QR_PURPOSE
+        purpose: VENUE_MENU_QR_PURPOSE
     });
 
     if (code.error) {
