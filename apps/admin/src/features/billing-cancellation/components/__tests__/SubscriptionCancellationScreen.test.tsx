@@ -3,6 +3,7 @@ import esAdminBilling from '@repo/i18n/locales/es/admin-billing.json';
 import {
     type AdminSubscriptionCancellationPreviewResponse,
     type AdminSubscriptionCancellationResponse,
+    CancellationReasonEnum,
     PermissionEnum
 } from '@repo/schemas';
 import { render, screen, waitFor, within } from '@testing-library/react';
@@ -213,7 +214,14 @@ describe('TEST:1696:3 AC:1696:3 cancellation screen', () => {
     it('TEST:1878:24b sends a selected reason with the cancellation mutation', async () => {
         const user = userEvent.setup();
         renderScreen();
-        await user.click(card().getByTestId('subscription-cancellation-reason'));
+        const reasonSelect = card().getByTestId('subscription-cancellation-reason');
+        expect(
+            within(reasonSelect)
+                .getAllByRole('option')
+                .slice(1)
+                .map((option) => (option as HTMLOptionElement).value)
+        ).toEqual(Object.values(CancellationReasonEnum));
+        await user.click(reasonSelect);
         await user.click(await screen.findByRole('option', { name: 'Pausa por temporada' }));
         await user.click(card().getByTestId('subscription-cancellation-confirm'));
         await waitFor(() =>

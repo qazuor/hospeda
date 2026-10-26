@@ -80,6 +80,11 @@ describe('SubscriptionCancel island', () => {
         fireEvent.click(screen.getByTestId('self-cancel-open'));
         const select = await screen.findByTestId('self-cancel-reason');
         expect(screen.getByLabelText('¿Por qué cancelás? (opcional)')).toBe(select);
+        expect(
+            Array.from((select as HTMLSelectElement).options)
+                .slice(1)
+                .map((option) => option.value)
+        ).toEqual(Object.values(CancellationReasonEnum));
         fireEvent.click(screen.getByTestId('self-cancel-confirm'));
         await waitFor(() =>
             expect(billingSubscriptionApi.cancel).toHaveBeenCalledWith({ subscriptionId: id })
