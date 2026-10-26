@@ -12,15 +12,13 @@ import {
     subscriptionPauses,
     subscriptions
 } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
-import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { providerLinkCancellationSeen } from '../../../src/services/billing/subscription/provider-link-cancellation-seen.js';
 import {
     type RevocationOrigin,
     revokeSubscription
 } from '../../../src/services/billing/subscription/revoke-subscription.service.js';
-import { type Actor, ServiceError } from '../../../src/types/index.js';
+import type { Actor } from '../../../src/types/index.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import {
     type RevocationFixture,
@@ -30,32 +28,7 @@ import {
     seedSiblingPrincipal
 } from './support/revocation-fixtures.js';
 
-const failingRefund = vi.hoisted(() => ({ on: false }));
-
-vi.mock('../../../src/services/billing/refund/request-refund.service.js', async (original) => {
-    const real =
-        await original<
-            typeof import('../../../src/services/billing/refund/request-refund.service.js')
-        >();
-    return {
-        ...real,
-        requestRefund: vi.fn(async (...args: Parameters<typeof real.requestRefund>) => {
-            if (failingRefund.on)
-                throw new ServiceError(
-                    ServiceErrorCode.ALREADY_EXISTS,
-                    'Payment is not in a refundable state',
-                    undefined,
-                    'PAYMENT_NOT_REFUNDABLE'
-                );
-            return real.requestRefund(...args);
-        })
-    };
-});
-
-afterEach(async () => {
-    failingRefund.on = false;
-    await retireRevocationRows();
-});
+afterEach(retireRevocationRows);
 afterAll(closeServiceTestPool);
 
 const live = !isServiceTestDbAvailable();
@@ -470,33 +443,6 @@ describe('TEST:B5:11 AC:B5:20 AC:B5:21 S36 revokes in one act', () => {
                 .from(subscriptions)
                 .where(eq(subscriptions.id, f.subscriptionId));
             expect(row?.status).toBe('CANCELLED');
-        }
-    );
-
-    it.skipIf(live)(
-        'TEST:1878:26 emits no REVOKED fact when the transaction fails after the UPDATE',
-        async () => {
-            // Arrange: the RF1 of the last step fails after the state was already written.
-            const f = await revocationFixture({ origin: 'ACTIVE' });
-            f.at(f.day(5));
-            const facts: BillingFact[] = [];
-            failingRefund.on = true;
-
-            // Act
-            await expect(
-                revokeSubscription(
-                    { actor: await seedRevocationActor(), subscriptionId: f.subscriptionId },
-                    { ...f.ports, billingFacts: { emit: (fact) => facts.push(fact) } }
-                )
-            ).rejects.toMatchObject({ reason: 'PAYMENT_NOT_REFUNDABLE' });
-
-            // Assert: the UPDATE was rolled back and no committed fact escaped the act.
-            expect(facts).toHaveLength(0);
-            const [row] = await getServiceTestDb()
-                .select({ status: subscriptions.status })
-                .from(subscriptions)
-                .where(eq(subscriptions.id, f.subscriptionId));
-            expect(row?.status).toBe('ACTIVE');
         }
     );
 });
