@@ -6,7 +6,7 @@
  * moderationState=APPROVED so that PENDING / REJECTED reviews never surface here
  * (mirrors the SPEC-166 accommodation review pattern).
  */
-import { GastronomyReviewSchema } from '@repo/schemas';
+import { VenueReviewSchema } from '@repo/schemas';
 import { GastronomyReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -24,7 +24,7 @@ const reviewService = new GastronomyReviewService({ logger: apiLogger });
  * The `user` extension (Bug B7b fix) exposes only safe public fields from the
  * eagerly-loaded user relation: no email, no role, no sensitive audit fields.
  */
-const GastronomyReviewPublicSchema = GastronomyReviewSchema.pick({
+const GastronomyReviewPublicSchema = VenueReviewSchema.pick({
     id: true,
     gastronomyId: true,
     userId: true,

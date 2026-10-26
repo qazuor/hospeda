@@ -2,6 +2,7 @@ import type { CoverageChangedEvent } from '@repo/billing-verticals-contract';
 import { emailOutbox, eq, inArray, providerLinks, subscriptions } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
 import { creditedPaymentsFromLedger } from '../../../src/services/billing/payment/payment-ledger.js';
 import type { CoverageNotices } from '../../../src/services/billing/payment/payment-ports.js';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
@@ -178,10 +179,12 @@ async function suspensionFixture({
 
 describe('TEST:B7:5 — S6 when the grace clock runs out (AC:B7:7)', () => {
     it.skipIf(!isServiceTestDbAvailable())(
-        'a — suspends, keeps the clock as the unpaid-period anchor, cancels once and emits REMOVED after commit',
+        'TEST:1878:9 grace-expiry sweep emits suspension for the owner with SYSTEM actor after commit',
         async () => {
             const s = await suspensionFixture();
-            await s.runCheck();
+            const facts: BillingFact[] = [];
+            const occurredAt = s.fixture.clock.now();
+            await s.runCheck({ billingFacts: { emit: (fact) => facts.push(fact) } });
 
             const row = await subscriptionRow(s.subscriptionId);
             expect(row.status).toBe('SUSPENDED');
@@ -214,6 +217,26 @@ describe('TEST:B7:5 — S6 when the grace clock runs out (AC:B7:7)', () => {
                     statusAtEmit: 'SUSPENDED'
                 }
             ]);
+            expect(facts.filter((fact) => fact.subscriptionId === s.subscriptionId)).toEqual([
+                {
+                    kind: 'SUSPENDED_FOR_ARREARS',
+                    userId: s.fixture.user.id,
+                    vertical: 'accommodation',
+                    subscriptionId: s.subscriptionId,
+                    subscriptionClass: 'PRINCIPAL',
+                    actorKind: 'SYSTEM',
+                    occurredAt,
+                    trigger: 'GRACE_EXPIRED',
+                    occurrenceId: s.occurrenceId,
+                    daysInGrace: Math.floor(
+                        (occurredAt.getTime() - s.graceStartedAt!.getTime()) / DAY_MS
+                    )
+                }
+            ]);
+            expect(await s.runS6()).toEqual({ outcome: 'NOT_APPLICABLE', reason: 'NOT_IN_GRACE' });
+            expect(facts.filter((fact) => fact.subscriptionId === s.subscriptionId)).toHaveLength(
+                1
+            );
         }
     );
 
@@ -264,6 +287,25 @@ describe('TEST:B7:5 — S6 when the grace clock runs out (AC:B7:7)', () => {
             expect(row.status).toBe('GRACE_PERIOD');
             expect(row.graceEndsAt).toEqual(s.graceEndsAt);
             expect(await s.authorizationStatus()).not.toBe('cancelled');
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'TEST:1878:9 LOST_RACE during S6 emits no suspension fact',
+        async () => {
+            const s = await suspensionFixture();
+            const facts: BillingFact[] = [];
+            s.onCancel(async () => {
+                await getServiceTestDb()
+                    .update(subscriptions)
+                    .set({ status: 'CANCELLED' })
+                    .where(eq(subscriptions.id, s.subscriptionId));
+            });
+            const outcome = await s.runS6({ billingFacts: { emit: (fact) => facts.push(fact) } });
+            expect(outcome).toEqual({ outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' });
+            expect(facts.filter((fact) => fact.subscriptionId === s.subscriptionId)).toHaveLength(
+                0
+            );
         }
     );
 

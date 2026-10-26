@@ -53,13 +53,13 @@
 
 import type { DrizzleClient } from '@repo/db';
 import { experienceMediaModel, gastronomyMediaModel } from '@repo/db';
-import type { GastronomyOrExperience, Media } from '@repo/schemas';
+import type { Media, VenueOrExperience } from '@repo/schemas';
 import { composeListingMedia } from '@repo/service-core';
 
 /** Input to {@link loadListingMedia}. */
 export interface LoadListingMediaInput {
     /** Which gastronomy or experience vertical the listing belongs to. Selects the media table. */
-    readonly entityType: GastronomyOrExperience;
+    readonly entityType: VenueOrExperience;
     /** UUID of the gastronomy or experience listing whose media rows to load. */
     readonly entityId: string;
     /** Optional active transaction client, forwarded to the media model. */

@@ -1533,7 +1533,7 @@ casos vecinos, 2026-09-29, caso 46): el §25 los fija (su *«Día 90»*, el soft
 plazos 1 y 2. El PDR no se edita: el apartamiento se registra en `DEC-DATA-008`, donde viven los
 otros.
 
-**La lista es cerrada, y son diecinueve.** Cada mitad es dueña de sus claves, como del resto de su
+**La lista es cerrada, y ~~son diecinueve~~ son veinte** (el 20, los hitos del aviso de gracia, owner 2026-10-24, HOS-1707, [PLAZO:20](#plazo-20))**.** Cada mitad es dueña de sus claves, como del resto de su
 catálogo. Cada plazo dice su mitad, su valor inicial, qué decide y qué reloj guarda la versión de
 plazos con que arrancó.
 
@@ -1706,9 +1706,14 @@ alternativa de una variable de entorno o una constante queda descartada por ir c
 Pieza dueña del AC: [B11](10-corte/B11.md#pieza-b11) · también: [B2](10-corte/B2.md#pieza-b2) (provee).
 Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:191, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:193
 
+<a id="plazo-20"></a>
+**PLAZO:20** — **Los hitos del aviso de fin de gracia.**
+Mitad: billing · valor inicial: **`{"daysBefore": [3, 1]}`: un aviso 3 días antes del fin del período de gracia y otro 1 día antes** (owner 2026-10-24, HOS-1707; [decisión del owner](01-decisiones-vigentes.md#own-hos-1707-plazo-20)) · qué decide: cuántos días antes de que termine la gracia sale cada recordatorio por correo (cron `subscription-grace-reminder`, plantilla `billing.grace-reminder`); el correo sale sólo en español por ahora, como todo correo de billing, y en/pt llegan con el resto de los correos de billing (owner 2026-10-24, HOS-1707) · qué reloj guarda la versión: el inicio de la gracia. **El recordatorio usa la versión de plazos vigente al empezar la gracia** (`created_at <= grace_started_at`), así que una gracia que empezó antes de que se publicara la versión 2 no recibe recordatorio (resultado `NO_DEADLINE`). **Un hito nunca sale el mismo día local en que empieza la gracia**: tiene que caer estrictamente después de la fecha de inicio y a más tardar hoy, día calendario del mercado. **Es una clave más en la tabla versionada de plazos de billing**: la migración `0178` (`packages/db/src/migrations/0178_dry_starhawk.sql`) ensancha el CHECK de la clave a 10..20 y publica `billing_deadline_version` versión 2 con `"20": {"daysBefore": [3, 1]}`, en la misma migración estructural, para que exista en desarrollo, e2e y toda base nueva.
+Origen: HOS-1707 (comentario del owner, 2026-10-24); implementado en el PR #3800 (merge `428b0c4d87`, 2026-10-25, a staging).
+
 ### 4.2 Los valores, cuándo se fijan y dónde nacen
 
-**Son diecinueve** (el 19, la ventana del resumen de conciliación, desde el lote BK a BV del corte
+**~~Son diecinueve~~ Son veinte** (el 20, los hitos del aviso de gracia, owner 2026-10-24, HOS-1707, que se publica en la versión 2 de los plazos de billing; el 19, la ventana del resumen de conciliación, desde el lote BK a BV del corte
 del MVP, owner 2026-10-02, BU: ~~su valor lo fija el owner antes del merge de [B2](10-corte/B2.md#pieza-b2), y no de `B11`~~ **su valor es 60 minutos** (corte del MVP, owner 2026-10-08, [DF](01-decisiones-vigentes.md#own-41-corte-del-mvp-t19-df)); corte del MVP, owner 2026-10-02, BX: así la regla de
 que la versión 1 falla con un plazo vacío vale sin excepciones) (FASE 9 vuelta 3: el 16 por el lote
 K, owner 2026-09-30; el 17 y el 18 por `F-8V3B3-003`, que eran *«configuración»* sin valor, pantalla

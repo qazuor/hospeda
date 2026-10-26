@@ -12,8 +12,8 @@
  *   holding no `PARTNER_*` perk, so demanding one would lock them out of their
  *   own numbers (HOS-278 AC-7).
  * - **No `requireEntitlement`.** The host-side view routes (`daily-series.ts`)
- *   demand `VIEW_BASIC_STATS`; do NOT copy that half. `loadEntitlements`
- *   resolves against the ACCOMMODATION subscription and a partner subscription
+ *   demand `VIEW_BASIC_STATS`; do NOT copy that half. The retired `loadEntitlements`
+ *   resolved against the ACCOMMODATION subscription and a partner subscription
  *   lives in a different product domain, so an entitlement gate here would
  *   refuse every partner who is not also a paying host — and admit a host who is
  *   not a partner, for the wrong reason (spec §5.6, NG-8).

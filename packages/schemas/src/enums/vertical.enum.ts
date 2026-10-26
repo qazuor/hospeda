@@ -17,7 +17,7 @@
  */
 export enum VerticalEnum {
     ACCOMMODATION = 'accommodation',
-    GASTRONOMY = 'gastronomy',
+    VENUE = 'gastronomy',
     EXPERIENCE = 'experience',
     TOURIST = 'tourist',
     PARTNER = 'partner'

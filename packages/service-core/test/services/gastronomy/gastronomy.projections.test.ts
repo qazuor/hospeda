@@ -10,8 +10,8 @@
  * - `projectGastronomyOwnerAvatarList` maps the avatar projection across an array.
  */
 
-import type { Gastronomy } from '@repo/schemas';
-import { GastronomyTypeEnum, PublicationStatusEnum } from '@repo/schemas';
+import type { Venue } from '@repo/schemas';
+import { PublicationStatusEnum, VenueTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     projectGastronomyOwnerAvatar,
@@ -28,22 +28,22 @@ const BASE_ID = '00000000-0000-4000-a000-000000000001';
 const OWNER_ID = '00000000-0000-4000-a000-000000000002';
 const DEST_ID = '00000000-0000-4000-a000-000000000003';
 
-function makeGastronomy(overrides: Partial<Record<string, unknown>> = {}): Gastronomy {
+function makeGastronomy(overrides: Partial<Record<string, unknown>> = {}): Venue {
     return {
         id: BASE_ID,
         name: 'La Parrilla del Centro',
         slug: 'la-parrilla-del-centro',
-        type: GastronomyTypeEnum.PARRILLA,
+        type: VenueTypeEnum.PARRILLA,
         destinationId: DEST_ID,
         ownerId: OWNER_ID,
         publicationStatus: PublicationStatusEnum.PUBLISHED,
         averageRating: 0,
         reviewsCount: 0,
-        adminInfo: { notes: 'internal notes' } as unknown as Gastronomy['adminInfo'],
+        adminInfo: { notes: 'internal notes' } as unknown as Venue['adminInfo'],
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date('2024-01-01'),
         ...overrides
-    } as Gastronomy;
+    } as Venue;
 }
 
 // ---------------------------------------------------------------------------
@@ -69,7 +69,7 @@ describe('projectGastronomyPublic', () => {
         expect(result.id).toBe(BASE_ID);
         expect(result.name).toBe('La Parrilla del Centro');
         expect(result.slug).toBe('la-parrilla-del-centro');
-        expect(result.type).toBe(GastronomyTypeEnum.PARRILLA);
+        expect(result.type).toBe(VenueTypeEnum.PARRILLA);
     });
 
     it('should not mutate the original entity', () => {
@@ -136,7 +136,7 @@ describe('projectGastronomyOwnerAvatar', () => {
                 image: 'https://cdn.test/photo.jpg',
                 profile: { avatar: 'https://cdn.test/old-avatar.jpg' }
             }
-        } as unknown as Gastronomy;
+        } as unknown as Venue;
         const result = projectGastronomyOwnerAvatar(entity) as unknown as {
             owner: Record<string, unknown>;
         };
@@ -151,7 +151,7 @@ describe('projectGastronomyOwnerAvatar', () => {
                 image: null,
                 profile: { avatar: 'https://cdn.test/fallback.jpg' }
             }
-        } as unknown as Gastronomy;
+        } as unknown as Venue;
         const result = projectGastronomyOwnerAvatar(entity) as unknown as {
             owner: Record<string, unknown>;
         };
@@ -162,7 +162,7 @@ describe('projectGastronomyOwnerAvatar', () => {
         const entity = {
             ...makeGastronomy(),
             owner: { id: OWNER_ID, image: null, profile: null }
-        } as unknown as Gastronomy;
+        } as unknown as Venue;
         const result = projectGastronomyOwnerAvatar(entity) as unknown as {
             owner: Record<string, unknown>;
         };
@@ -173,7 +173,7 @@ describe('projectGastronomyOwnerAvatar', () => {
         const entity = {
             ...makeGastronomy(),
             owner: { id: OWNER_ID, image: '', profile: { avatar: 'https://cdn.test/avatar.jpg' } }
-        } as unknown as Gastronomy;
+        } as unknown as Venue;
         const result = projectGastronomyOwnerAvatar(entity) as unknown as {
             owner: Record<string, unknown>;
         };
@@ -190,7 +190,7 @@ describe('projectGastronomyOwnerAvatarList', () => {
         const withOwner = {
             ...makeGastronomy(),
             owner: { id: OWNER_ID, image: 'https://cdn.test/a.jpg', profile: null }
-        } as unknown as Gastronomy;
+        } as unknown as Venue;
         const noOwner = makeGastronomy({ id: '00000000-0000-4000-a000-000000000099' });
         const results = projectGastronomyOwnerAvatarList([withOwner, noOwner]);
         expect(results).toHaveLength(2);

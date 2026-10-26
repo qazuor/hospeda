@@ -285,7 +285,7 @@ describe('TEST:V1:9 the simulators are programmable', () => {
             response: { stopped: true, pauseEndedAt: null, coverageLostAt: new Date(0) }
         });
         billing.setCanCharge({ userId: who.userId, response: { canCharge: true } });
-        const other = { userId: 'user-2', vertical: VerticalEnum.GASTRONOMY };
+        const other = { userId: 'user-2', vertical: VerticalEnum.VENUE };
 
         // Act / Assert
         expect(await billing.coverage(who)).toEqual(RUNNING_TRIAL_RESPONSE);

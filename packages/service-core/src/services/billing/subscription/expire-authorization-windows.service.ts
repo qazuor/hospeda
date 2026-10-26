@@ -9,6 +9,8 @@ import {
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
+import { VerticalEnumSchema } from '@repo/schemas';
+import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink.js';
 import type { CoverageNotices } from '../payment/payment-ports';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import { activatePendingWithSignupNotice } from './activate-pending-with-signup-notice.js';
@@ -31,6 +33,8 @@ export interface ExpireAuthorizationWindowsPorts {
     readonly touristVipInheritance: TouristVipInheritancePort;
     /** Receives the post-commit S2 notice (B4.2); defaults to the unwired logger. */
     readonly coverageNotices?: CoverageNotices;
+    readonly billingFacts?: BillingFactSink;
+    readonly changeDirection?: import('@repo/billing-verticals-contract').VerticalsForBilling['changeDirection'];
     /**
      * S18's interface (B8b), handed to S2 for branch 1 (AC:B7:25): when the
      * activated successor's predecessor holds an S19 retention. Defaults to
@@ -182,7 +186,12 @@ async function reevaluateRetainedPayments(
                 case 'GRACE_PERIOD':
                     await exitGraceOnCreditedPayment(
                         { paymentId },
-                        { provider: ports.provider, clock: ports.clock, actorType: 'job' }
+                        {
+                            provider: ports.provider,
+                            clock: ports.clock,
+                            actorType: 'job',
+                            billingFacts: ports.billingFacts
+                        }
                     );
                     reevaluated++;
                     break;
@@ -193,6 +202,7 @@ async function reevaluateRetainedPayments(
                             provider: ports.provider,
                             clock: ports.clock,
                             actorType: 'job',
+                            billingFacts: ports.billingFacts,
                             ...(ports.coverageNotices
                                 ? { coverageNotices: ports.coverageNotices }
                                 : {}),
@@ -322,6 +332,35 @@ export async function expireAuthorizationWindows(
             });
             if (result.wrote) abandoned++;
             else skipped++;
+            if (
+                result.wrote &&
+                subscription.class === 'PRINCIPAL' &&
+                subscription.userId &&
+                subscription.vertical
+            ) {
+                const vertical = VerticalEnumSchema.safeParse(subscription.vertical);
+                if (vertical.success)
+                    emitBillingFact({
+                        sink: ports.billingFacts,
+                        fact: {
+                            kind: 'CHECKOUT_ABANDONED',
+                            userId: subscription.userId,
+                            vertical: vertical.data,
+                            subscriptionId: subscription.id,
+                            subscriptionClass: 'PRINCIPAL',
+                            actorKind: 'SYSTEM',
+                            reason: 'WINDOW_EXPIRED',
+                            secondsInPending: Math.max(
+                                0,
+                                Math.floor(
+                                    (abandonedAt.getTime() - subscription.createdAt.getTime()) /
+                                        1000
+                                )
+                            ),
+                            occurredAt: abandonedAt
+                        }
+                    });
+            }
             // Branch 2 (HOS-1561 H9): only after the abandonment committed.
             if (result.wrote && subscription.succeedsId)
                 retainedReevaluated += await reevaluateRetainedPayments(

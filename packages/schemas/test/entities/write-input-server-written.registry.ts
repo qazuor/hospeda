@@ -30,12 +30,12 @@ import {
 } from '../../src/entities/experience/experience.crud.schema.js';
 import { ExperienceSchema } from '../../src/entities/experience/experience.schema.js';
 import {
-    GastronomyAdminCreateInputSchema,
-    GastronomyOwnerCreateInputSchema,
-    GastronomyOwnerUpdateInputSchema,
-    GastronomyUpdateInputSchema
-} from '../../src/entities/gastronomy/gastronomy.crud.schema.js';
-import { GastronomySchema } from '../../src/entities/gastronomy/gastronomy.schema.js';
+    VenueAdminCreateInputSchema,
+    VenueOwnerCreateInputSchema,
+    VenueOwnerUpdateInputSchema,
+    VenueUpdateInputSchema
+} from '../../src/entities/venue/venue.crud.schema.js';
+import { VenueSchema } from '../../src/entities/venue/venue.schema.js';
 
 /** The parse surface the guard needs. Avoids depending on Zod's exported types. */
 export interface Parseable {
@@ -301,7 +301,7 @@ export const ENTITIES: readonly EntityEntry[] = [
     },
     {
         entity: 'gastronomy',
-        base: GastronomySchema as unknown as Shaped,
+        base: VenueSchema as unknown as Shaped,
         writableProbe: 'name',
         neverFromBody: {
             ...AUDIT_COLUMNS,
@@ -317,7 +317,7 @@ export const ENTITIES: readonly EntityEntry[] = [
         writeSchemas: [
             {
                 name: 'GastronomyAdminCreateInputSchema',
-                schema: GastronomyAdminCreateInputSchema as unknown as Parseable,
+                schema: VenueAdminCreateInputSchema as unknown as Parseable,
                 tier: 'admin',
                 accepts: fields(`
                     adminInfo averageRating contactInfo description descriptionI18n destinationId faqs
@@ -328,7 +328,7 @@ export const ENTITIES: readonly EntityEntry[] = [
             },
             {
                 name: 'GastronomyUpdateInputSchema',
-                schema: GastronomyUpdateInputSchema as unknown as Parseable,
+                schema: VenueUpdateInputSchema as unknown as Parseable,
                 tier: 'admin',
                 accepts: fields(`
                     adminInfo contactInfo description descriptionI18n destinationId faqs menuUrl name
@@ -338,7 +338,7 @@ export const ENTITIES: readonly EntityEntry[] = [
             },
             {
                 name: 'GastronomyOwnerCreateInputSchema',
-                schema: GastronomyOwnerCreateInputSchema as unknown as Parseable,
+                schema: VenueOwnerCreateInputSchema as unknown as Parseable,
                 tier: 'owner',
                 accepts: fields(`
                     contactInfo description descriptionI18n destinationId faqs menuUrl name
@@ -348,7 +348,7 @@ export const ENTITIES: readonly EntityEntry[] = [
             },
             {
                 name: 'GastronomyOwnerUpdateInputSchema',
-                schema: GastronomyOwnerUpdateInputSchema as unknown as Parseable,
+                schema: VenueOwnerUpdateInputSchema as unknown as Parseable,
                 tier: 'owner',
                 accepts: fields(`
                     contactInfo description descriptionI18n destinationId menuUrl name nameI18n

@@ -37,10 +37,10 @@
  */
 
 import {
-    GastronomyAdminCreateInputSchema,
-    type GastronomyOwnerCreateInput,
-    GastronomyOwnerCreateInputSchema,
-    GastronomyProtectedSchema,
+    VenueAdminCreateInputSchema,
+    type VenueOwnerCreateInput,
+    VenueOwnerCreateInputSchema,
+    VenueProtectedSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
@@ -59,7 +59,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export async function handleCreateGastronomyListing(ctx: Context, body: Record<string, unknown>) {
     const actor = getActorFromContext(ctx);
-    const data = body as GastronomyOwnerCreateInput;
+    const data = body as VenueOwnerCreateInput;
 
     // Re-parse through the FULL admin create schema so every other
     // .default() field (isFeatured, reviewsCount,
@@ -67,7 +67,7 @@ export async function handleCreateGastronomyListing(ctx: Context, body: Record<s
     // `create()` re-validates against this exact schema internally, so this
     // is a cheap, type-correct way to merge the server-forced fields without
     // hand-listing every default (D-3).
-    const createInput = GastronomyAdminCreateInputSchema.parse({
+    const createInput = VenueAdminCreateInputSchema.parse({
         ...data,
         ownerId: actor.id
     });
@@ -92,7 +92,7 @@ export async function handleCreateGastronomyListing(ctx: Context, body: Record<s
 export const protectedCreateGastronomyListingRoute = createProtectedRoute({
     method: 'post',
     path: '/',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'CREATE' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'CREATE' },
     summary: 'Create a gastronomy listing (owner self-service)',
     description:
         'Creates a gastronomy listing owned by the authenticated caller and grants them the GASTRONOMY_OWNER role in the same transaction. Starts hidden (DRAFT) until the owner completes it. Requires an authenticated session and no gastronomy permission.',
@@ -101,8 +101,8 @@ export const protectedCreateGastronomyListingRoute = createProtectedRoute({
     // account BECOMES a gastronomy owner, so demanding the owner's permission
     // to reach it made the role unreachable. Authentication is still enforced
     // by the factory — see the module docstring.
-    requestBody: GastronomyOwnerCreateInputSchema,
-    responseSchema: GastronomyProtectedSchema,
+    requestBody: VenueOwnerCreateInputSchema,
+    responseSchema: VenueProtectedSchema,
     successStatusCode: 201,
     handler: async (
         ctx: Context,

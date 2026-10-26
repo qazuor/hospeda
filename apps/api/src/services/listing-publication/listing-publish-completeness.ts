@@ -2,9 +2,9 @@ import { accommodationModel, experienceModel, gastronomyModel } from '@repo/db';
 import {
     type Accommodation,
     type Experience,
-    type Gastronomy,
     type Media,
     resolveListingCompleteness,
+    type Venue,
     VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
@@ -18,8 +18,8 @@ type ListingInput =
           readonly media: Media;
       }
     | {
-          readonly vertical: typeof VerticalEnum.GASTRONOMY;
-          readonly listing: Gastronomy;
+          readonly vertical: typeof VerticalEnum.VENUE;
+          readonly listing: Venue;
           readonly media: Media;
       }
     | {
@@ -76,7 +76,7 @@ export async function readIncompleteListingIds(args: {
             }
             break;
         }
-        case VerticalEnum.GASTRONOMY: {
+        case VerticalEnum.VENUE: {
             const listings = await gastronomyModel.findByIds(args.listingIds);
             for (const listing of listings) {
                 const media = await loadListingMedia({

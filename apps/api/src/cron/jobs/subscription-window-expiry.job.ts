@@ -1,10 +1,13 @@
+import { planCatalogModel } from '@repo/db';
 import {
     activateCreditedPendingAuthorizations,
     expireAuthorizationWindows,
     sweepInheritedTouristVips
 } from '@repo/service-core';
+import { createPlanCatalogInverse } from '@repo/verticals';
 import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
 import { touristVipInheritance } from '../../routes/billing-subscription/tourist-vip-inheritance.js';
+import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts.js';
 import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports.js';
 import { getClock } from '../../utils/clock.js';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
@@ -61,6 +64,8 @@ export const subscriptionWindowExpiryJob: CronJobDefinition = {
             beforeCancelNotice,
             touristVipInheritance,
             coverageNotices: getCoverageNotices(),
+            billingFacts: getAnalyticsFactSink(),
+            changeDirection: createPlanCatalogInverse({ reader: planCatalogModel }).changeDirection,
             complements: buildComplementPolicyPorts()
         };
         try {

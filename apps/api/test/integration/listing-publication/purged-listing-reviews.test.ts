@@ -17,28 +17,28 @@ import {
 
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 type Vertical = (typeof verticals)[number];
 const listingTables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const reviewTables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodation_reviews',
-    [VerticalEnum.GASTRONOMY]: 'gastronomy_reviews',
+    [VerticalEnum.VENUE]: 'gastronomy_reviews',
     [VerticalEnum.EXPERIENCE]: 'experience_reviews'
 };
 const reviewListingColumns: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodation_id',
-    [VerticalEnum.GASTRONOMY]: 'gastronomy_id',
+    [VerticalEnum.VENUE]: 'gastronomy_id',
     [VerticalEnum.EXPERIENCE]: 'experience_id'
 };
 const reviewPaths: Readonly<Record<Vertical, (id: string) => string>> = {
     [VerticalEnum.ACCOMMODATION]: (id) => `/api/v1/public/accommodations/${id}/reviews`,
-    [VerticalEnum.GASTRONOMY]: (id) => `/api/v1/public/gastronomies/${id}/reviews`,
+    [VerticalEnum.VENUE]: (id) => `/api/v1/public/gastronomies/${id}/reviews`,
     [VerticalEnum.EXPERIENCE]: (id) => `/api/v1/public/experiences/${id}/reviews`
 };
 const MATRIX_NOW = new Date('2026-10-10T12:00:00.000Z');
@@ -148,7 +148,7 @@ describe.each(verticals)('TEST:V9b:3 AC:V9b:3 reseñas de terceros — %s', (ver
                 .returning();
             if (!review) throw new Error('Accommodation review fixture insert failed');
             reviewId = review.id;
-        } else if (vertical === VerticalEnum.GASTRONOMY) {
+        } else if (vertical === VerticalEnum.VENUE) {
             const [review] = await getDb()
                 .insert(gastronomyReviews)
                 .values({

@@ -1,4 +1,4 @@
-import type { Gastronomy } from '@repo/schemas';
+import type { Venue } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { GastronomyModel } from '../../src/models/gastronomy/gastronomy.model.ts';
@@ -19,7 +19,7 @@ async function createListing(tx: DrizzleClient, ownerId: string, destinationId: 
         ownerId,
         destinationId
     };
-    return new GastronomyModel().create({ ...base, type: 'RESTAURANT' } as Partial<Gastronomy>, tx);
+    return new GastronomyModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
 }
 
 async function seedMenuFileAndVideos(tx: DrizzleClient, listingId: string) {

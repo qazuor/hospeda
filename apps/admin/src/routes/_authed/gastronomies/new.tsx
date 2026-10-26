@@ -7,7 +7,7 @@
  * Gate-protected by GASTRONOMY_CREATE.
  */
 
-import { GastronomyAdminCreateInputSchema, PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, VenueAdminCreateInputSchema } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import type { EntityCreateConfig } from '@/components/entity-pages';
@@ -67,7 +67,7 @@ function GastronomyCreatePage() {
         <RoutePermissionGuard permissions={[PermissionEnum.GASTRONOMY_CREATE]}>
             <EntityCreatePageBase
                 config={createConfig}
-                zodSchema={GastronomyAdminCreateInputSchema}
+                zodSchema={VenueAdminCreateInputSchema}
                 createConsolidatedConfig={() => createGastronomyConsolidatedConfig(t)}
                 configDeps={[t]}
                 createMutation={createMutation}

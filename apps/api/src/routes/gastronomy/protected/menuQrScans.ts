@@ -103,7 +103,7 @@ export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/menu-qr/scans',
     listingAccess: {
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         operation: 'READ_OWN_COMMERCIAL',
         idParam: 'id',
         step6Key: 'menu_qr_scan_metrics'

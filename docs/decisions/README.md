@@ -18,7 +18,7 @@ This directory contains Architecture Decision Records for the Hospeda platform. 
 | [ADR-013](ADR-013-deferred-limit-enforcement.md) | Deferred Limit Enforcement | Accepted |
 | [ADR-014](ADR-014-manual-dispute-handling-v1.md) | Manual Dispute Handling for v1 | Accepted |
 | [ADR-015](ADR-015-redis-rate-limiting.md) | Redis Rate Limiting | Accepted |
-| [ADR-016](ADR-016-billing-fail-open.md) | Billing Fail-Open Policy | Accepted |
+| [ADR-016](ADR-016-billing-fail-open.md) | Billing Fail-Open Policy | Superseded by HOS-1352 |
 | [ADR-017](ADR-017-postgres-specific-features.md) | PostgreSQL-Specific Features via Manual Migrations | Accepted |
 | [ADR-018](ADR-018-transaction-propagation-pattern.md) | Transaction Propagation Pattern | Accepted |
 | [ADR-019](ADR-019-billing-transaction-isolation.md) | Billing Transaction Isolation | Accepted |

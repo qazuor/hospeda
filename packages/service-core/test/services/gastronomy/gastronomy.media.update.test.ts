@@ -54,7 +54,7 @@ vi.mock('@repo/db', async (importOriginal) => {
 
 // ---------------------------------------------------------------------------
 
-import type { GastronomyMedia, GastronomyMediaUpdateInput } from '@repo/schemas';
+import type { VenueMedia, VenueMediaUpdateInput } from '@repo/schemas';
 import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { updateGastronomyMedia } from '../../../src/services/gastronomy/gastronomy.media';
@@ -70,7 +70,7 @@ const MEDIA_ID = '00000000-0000-4000-a000-000000000002';
 const OWNER_ID = '00000000-0000-4000-a000-000000000003';
 const OTHER_GASTRONOMY_ID = '00000000-0000-4000-a000-000000000099';
 
-function makeMediaRow(overrides: Partial<GastronomyMedia> = {}): GastronomyMedia {
+function makeMediaRow(overrides: Partial<VenueMedia> = {}): VenueMedia {
     return {
         id: MEDIA_ID,
         gastronomyId: GASTRONOMY_ID,
@@ -86,7 +86,7 @@ function makeMediaRow(overrides: Partial<GastronomyMedia> = {}): GastronomyMedia
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date('2024-01-01'),
         ...overrides
-    } as GastronomyMedia;
+    } as VenueMedia;
 }
 
 /** A gastronomy listing owned by `ownerActor`. */
@@ -119,11 +119,7 @@ function makeGastronomyModel(entity: Record<string, unknown> | null = null) {
 type ModelArg = Parameters<typeof updateGastronomyMedia>[0];
 
 /** Run the helper against a mocked model, keeping the cast in one place. */
-function run(
-    entity: Record<string, unknown> | null,
-    actor: Actor,
-    input: GastronomyMediaUpdateInput
-) {
+function run(entity: Record<string, unknown> | null, actor: Actor, input: VenueMediaUpdateInput) {
     return updateGastronomyMedia(makeGastronomyModel(entity) as unknown as ModelArg, actor, input);
 }
 
@@ -141,7 +137,7 @@ beforeEach(() => {
     mockMediaModel.findById.mockResolvedValue(makeMediaRow());
     mockMediaModel.update.mockImplementation(
         async (_where: unknown, patch: Record<string, unknown>) =>
-            makeMediaRow(patch as Partial<GastronomyMedia>)
+            makeMediaRow(patch as Partial<VenueMedia>)
     );
 });
 
@@ -214,7 +210,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
     describe('ownership and existence — 404, never 403', () => {
         it('returns NOT_FOUND when the media row belongs to another gastronomy', async () => {
             mockMediaModel.findById.mockResolvedValue(
-                makeMediaRow({ gastronomyId: OTHER_GASTRONOMY_ID } as Partial<GastronomyMedia>)
+                makeMediaRow({ gastronomyId: OTHER_GASTRONOMY_ID } as Partial<VenueMedia>)
             );
 
             const result = await run(makeGastronomy(), ownerActor, {
@@ -283,7 +279,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
             const result = await run(makeGastronomy(), ownerActor, {
                 gastronomyId: GASTRONOMY_ID,
                 mediaId: MEDIA_ID
-            } as GastronomyMediaUpdateInput);
+            } as VenueMediaUpdateInput);
 
             expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
             expect(mockMediaModel.update).not.toHaveBeenCalled();
@@ -316,7 +312,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
                 gastronomyId: GASTRONOMY_ID,
                 mediaId: 'not-a-uuid',
                 alt: 'Cualquier cosa'
-            } as GastronomyMediaUpdateInput);
+            } as VenueMediaUpdateInput);
 
             expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
             expect(mockMediaModel.findById).not.toHaveBeenCalled();

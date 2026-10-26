@@ -23,8 +23,7 @@ This documentation provides comprehensive guides for writing and maintaining tes
 
 | Document | Description | Lines |
 |----------|-------------|-------|
-| [Billing QA Checklist](./billing-qa-checklist.md) | Pre-launch QA checklist for billing flows | ~200 |
-| [Billing E2E Checklist](./billing-e2e-checklist.md) | End-to-end billing test scenarios | ~300 |
+| [Billing Smoke Checklist](../billing/smoke-checklist.md) | Current billing smoke checklist (replaces the retired QA and E2E checklists) | n/a |
 | [Billing Manual Testing](./billing-manual-testing.md) | Manual testing procedures for billing | ~200 |
 
 ## 🎯 Testing Philosophy

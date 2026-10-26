@@ -103,7 +103,7 @@ const OWNER_CHAT_COPY_BY_ENTITY_TYPE = {
 
 const VERTICAL_BY_ENTITY_TYPE = {
     accommodation: VerticalEnum.ACCOMMODATION,
-    gastronomy: VerticalEnum.GASTRONOMY,
+    gastronomy: VerticalEnum.VENUE,
     experience: VerticalEnum.EXPERIENCE
 } as const;
 

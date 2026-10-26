@@ -17,6 +17,8 @@ import {
 import { eq } from 'drizzle-orm';
 import type { PublicationVertical } from '../../../../../packages/verticals/src/publication/publication-types';
 import { PUBLICATION_LIMIT_KEYS } from '../../../../../packages/verticals/src/publication/publication-types';
+import { emitTrialAnalyticsFact } from '../../utils/analytics/analytics-facts';
+import { getClock } from '../../utils/clock';
 import { getListingPublicationPorts } from '../../utils/listing-publication/ports';
 import { loadListingMedia } from '../listing-media';
 import { evaluateListingPublishCompleteness } from './listing-publish-completeness';
@@ -60,7 +62,7 @@ export class ListingPublicationService {
                 ownerId = existing.data.ownerId;
                 break;
             }
-            case VerticalEnum.GASTRONOMY: {
+            case VerticalEnum.VENUE: {
                 const existing = await gastronomyService.getById(args.actor, args.id);
                 if (existing.error)
                     throw new ServiceError(existing.error.code, existing.error.message);
@@ -139,6 +141,17 @@ export class ListingPublicationService {
             }
             throw mapListingPublishDenial(result.reason, vertical);
         }
+
+        if (result.trialStarted)
+            emitTrialAnalyticsFact({
+                kind: 'TRIAL_STARTED',
+                userId: ownerId,
+                vertical,
+                actorKind: 'USER',
+                trialId: `${ownerId}:${vertical}`,
+                activationEvent: 'listing_published',
+                occurredAt: getClock().clock.now()
+            });
 
         if (vertical === VerticalEnum.ACCOMMODATION) {
             const [updated] = await db
@@ -238,7 +251,7 @@ export class ListingPublicationService {
                 if (result.error) throw new ServiceError(result.error.code, result.error.message);
                 return result.data ? { ownerId: result.data.ownerId } : null;
             }
-            case VerticalEnum.GASTRONOMY: {
+            case VerticalEnum.VENUE: {
                 const result = await gastronomyService.getById(actor, id);
                 if (result.error) throw new ServiceError(result.error.code, result.error.message);
                 return result.data ? { ownerId: result.data.ownerId } : null;
@@ -260,7 +273,7 @@ export class ListingPublicationService {
         id: string,
         vertical: Exclude<PublicationVertical, typeof VerticalEnum.ACCOMMODATION>
     ) {
-        if (vertical === VerticalEnum.GASTRONOMY) {
+        if (vertical === VerticalEnum.VENUE) {
             const result = await gastronomyService.getById(actor, id);
             if (result.error) throw new ServiceError(result.error.code, result.error.message);
             if (!result.data)

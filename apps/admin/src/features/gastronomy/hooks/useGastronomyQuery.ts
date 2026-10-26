@@ -10,7 +10,7 @@
  * and column factories.
  */
 
-import type { GastronomyAdmin } from '@repo/schemas';
+import type { VenueAdmin } from '@repo/schemas';
 import { createListingEntityHooks } from '@/features/listing';
 
 // ---------------------------------------------------------------------------
@@ -25,7 +25,7 @@ import { createListingEntityHooks } from '@/features/listing';
  * const { useGetById, useCreate, useUpdate } = gastronomyHooks;
  * ```
  */
-export const gastronomyHooks = createListingEntityHooks<GastronomyAdmin>({
+export const gastronomyHooks = createListingEntityHooks<VenueAdmin>({
     entityName: 'gastronomies',
     apiEndpoint: '/api/v1/admin/gastronomies'
 });

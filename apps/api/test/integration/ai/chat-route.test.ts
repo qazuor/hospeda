@@ -4,8 +4,8 @@
  * Uses the REAL protected streaming route + REAL auth/rate-limit/quota route
  * factory stack. The external seams are stubbed at the module boundary:
  *
- * - `entitlementMiddleware()` injects tourist entitlements/limits into context
- *   (still used by the middleware chain; AI_CHAT gate is now owner-keyed).
+ * - the retired `entitlementMiddleware()` (removed by HOS-1416) used to inject tourist entitlements/limits into context
+ *   (no longer in the middleware chain; AI_CHAT gate is owner-keyed).
  * - `@repo/db` is stubbed so the handler's ownerId lookup does not require a
  *   real DB connection.
  * - `owner-entitlement` helpers are stubbed to control the owner's billing
@@ -68,7 +68,7 @@ const {
     },
     nextStreamError: { current: null as unknown },
     getMonthlyCallCountReturn: { current: 0 },
-    // Tourist-scoped entitlements/limits (still loaded by entitlementMiddleware, now
+    // Tourist-scoped entitlements/limits (formerly loaded by the retired entitlementMiddleware, now
     // only used by non-AI_CHAT middleware; AI_CHAT gate is owner-keyed since SPEC-211).
     currentEntitlementsForTest: { current: new Set<string>() },
     currentLimitsForTest: { current: new Map<string, number>() },
@@ -417,7 +417,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
     beforeEach(() => {
         getMonthlyCallCountReturn.current = 0;
         currentBillingLoadFailedForTest.current = false;
-        // Tourist entitlements — still loaded by entitlementMiddleware; AI_CHAT gate is
+        // Tourist entitlements — formerly loaded by the retired entitlementMiddleware; AI_CHAT gate is
         // now owner-keyed (SPEC-211), but keeping this populated avoids surprises if any
         // future middleware reads `c.get('userEntitlements')`.
         currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_CHAT]);
@@ -938,7 +938,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
     //
     // These tests verify the second inline gate added by SPEC-283: the
     // REQUESTING user's own MAX_AI_CHAT_CONSUMER_PER_MONTH limit loaded from
-    // context (injected by entitlementMiddleware → currentLimitsForTest here).
+    // context (formerly injected by the retired entitlementMiddleware → currentLimitsForTest here).
     //
     // Each test sets the owner side to PASS (owner has AI_CHAT entitlement +
     // quota with headroom) so the consumer path is isolated. The two gates

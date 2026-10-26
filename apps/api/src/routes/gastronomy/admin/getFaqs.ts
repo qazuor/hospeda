@@ -2,7 +2,7 @@
  * GET /api/v1/admin/gastronomies/:id/faqs
  * Get all FAQs for a gastronomy listing — Admin endpoint.
  */
-import { GastronomyFaqListOutputSchema, PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, VenueFaqListOutputSchema } from '@repo/schemas';
 import { GastronomyService, listGastronomyFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -29,7 +29,7 @@ export const adminGetGastronomyFaqsRoute = createAdminRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: GastronomyFaqListOutputSchema,
+    responseSchema: VenueFaqListOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 

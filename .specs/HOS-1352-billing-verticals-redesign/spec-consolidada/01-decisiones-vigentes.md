@@ -14322,3 +14322,27 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-deci
 - **Elegida**: restituir los gates en el MVP
 - **Recomendada**: —
 - **En una línea**: **V5 restituye en lecturas y escrituras cada capacidad y cupo por clave del catálogo sobre el conjunto efectivo de V3; B13a agrega la lectura protegida de capacidades para web y migra sus pantallas.** Se conserva qué función y cuánto permite cada plan; no se agrega una habilitación por defecto. El guard de API exige cero marcadores transitorios y falla con uno reintroducido. Sin lectura válida, web falla cerrado
+
+#### Lote HOS-1707 (2026-10-24)
+
+<a id="own-hos-1707-plazo-20"></a>
+**Letra HOS-1707**
+
+Origen: HOS-1707 (comentario del owner, 2026-10-24)
+
+- **Pregunta**: en qué idiomas sale el aviso de fin de gracia, cuándo sale y en qué versión de plazos nace su configuración (PLAZO:20)
+- **Elegida**: sólo en español por ahora; un aviso 3 días antes del fin de la gracia y otro 1 día antes; la primera versión de plazos con la clave 20 se publica en la misma migración estructural
+- **Recomendada**: —
+- **En una línea**: **el valor inicial del PLAZO:20 es `[3, 1]` días antes del fin de la gracia.** El correo sale sólo en español, como todo correo de billing; en/pt llegan con el resto de los correos de billing. Es un plazo versionado y configurable; la versión que lo lleva (la 2) se publica en la misma migración estructural que ensancha la clave a 10..20 (`0178`), así que existe en desarrollo, e2e y toda base nueva. Una gracia que empezó antes de esa versión no recibe recordatorio. Implementado en el PR #3800
+
+#### Cierre del corte, paso 6 (2026-10-25)
+
+<a id="own-hos-1707-paso-6-plazos"></a>
+**Letra HOS-1707 (paso 6)**
+
+Origen: HOS-1707 (decisión del owner, 2026-10-25, opción 1)
+
+- **Pregunta**: qué filas de las tablas de versiones de plazos copia la foto de la base del paso 6 del corte
+- **Elegida**: 1, todas las versiones, ordenadas por versión
+- **Recomendada**: sí
+- **En una línea**: **la migración de partida copia todas las filas de `billing_deadline_version` y de la tabla de plazos de verticales, ordenadas por versión, y no sólo la versión 1.** Después de `0178`, staging y producción tienen la versión 2 con la clave 20, y una foto con sólo la versión 1 perdería los hitos del aviso de gracia. La herramienta (`scripts/cutover-v6/step-6/reference-rows.ts`) sigue exigiendo exactamente una versión 1 y copia todas las filas. Implementado en el PR #3800

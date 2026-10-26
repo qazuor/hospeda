@@ -21,7 +21,7 @@ import { describe, expect, it } from 'vitest';
 import {
     AccommodationPublicSchema,
     ExperiencePublicSchema,
-    GastronomyPublicSchema
+    VenuePublicSchema
 } from '../../src/index.js';
 
 /** A minimal, valid video entry per `VideoSchema`. */
@@ -45,8 +45,8 @@ describe('videos field exposure on relational-media entities (HOS-372)', () => {
     const cases = [
         {
             name: 'GastronomyPublicSchema',
-            shapeKeys: Object.keys(GastronomyPublicSchema.shape),
-            isolated: GastronomyPublicSchema.pick({ videos: true })
+            shapeKeys: Object.keys(VenuePublicSchema.shape),
+            isolated: VenuePublicSchema.pick({ videos: true })
         },
         {
             name: 'ExperiencePublicSchema',
@@ -76,14 +76,14 @@ describe('videos field exposure on relational-media entities (HOS-372)', () => {
     }
 
     it('accepts a null videos value (column is nullable)', () => {
-        const parsed = GastronomyPublicSchema.pick({ videos: true }).parse({ videos: null });
+        const parsed = VenuePublicSchema.pick({ videos: true }).parse({ videos: null });
         expect(parsed.videos).toBeNull();
     });
 
     it('still parses payloads written before the field existed', () => {
         // Additive-only policy: videos is nullish, so an older payload that never
         // carried the key must keep parsing.
-        const result = GastronomyPublicSchema.pick({ videos: true }).safeParse({});
+        const result = VenuePublicSchema.pick({ videos: true }).safeParse({});
         expect(result.success).toBe(true);
     });
 });

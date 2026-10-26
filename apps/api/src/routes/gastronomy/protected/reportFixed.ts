@@ -15,7 +15,7 @@ const ownerAccess: MiddlewareHandler = async (ctx, next) => {
         throw new HTTPException(400, { message: 'Invalid listing id' });
     await ownership.assertOwnerAccess({
         actor: getActorFromContext(ctx),
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         id
     });
     await next();
@@ -31,7 +31,7 @@ export const protectedGastronomyReportFixedRoute = createProtectedRoute({
     method: 'post',
     successStatusCode: 200,
     path: '/{id}/fix-request/report-fixed',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'READ_OWN', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'READ_OWN', idParam: 'id' },
     options: { middlewares: [ownerAccess] },
     summary: 'Report a fix request as fixed',
     description:
@@ -40,5 +40,5 @@ export const protectedGastronomyReportFixedRoute = createProtectedRoute({
     requestParams: { id: z.string().uuid() },
     responseSchema: ReportFixedResponseSchema,
     handler: async (_ctx: Context, params: Record<string, unknown>) =>
-        reportFixed({ vertical: VerticalEnum.GASTRONOMY, listingId: params.id as string })
+        reportFixed({ vertical: VerticalEnum.VENUE, listingId: params.id as string })
 });

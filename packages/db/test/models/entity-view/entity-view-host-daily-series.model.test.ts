@@ -268,7 +268,7 @@ describe('EntityViewModel.getDailySeriesForEntityIds (SPEC-207)', () => {
 
         it('should return a NON-ZERO total for gastronomy ids', async () => {
             // Arrange
-            const mockDb = buildTypeAwareDb(EntityTypeEnum.GASTRONOMY, [
+            const mockDb = buildTypeAwareDb(EntityTypeEnum.VENUE, [
                 { date: '2026-09-08', total: '4' }
             ]);
             injectDb(model, mockDb);
@@ -276,7 +276,7 @@ describe('EntityViewModel.getDailySeriesForEntityIds (SPEC-207)', () => {
             // Act
             const result = await model.getDailySeriesForEntityIds({
                 ...baseInput,
-                entityType: EntityTypeEnum.GASTRONOMY
+                entityType: EntityTypeEnum.VENUE
             });
 
             // Assert

@@ -20,6 +20,7 @@ import {
 import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss.js';
+import type { BillingFactSink } from '../facts/billing-fact-sink.js';
 import {
     type CoverageNotices,
     type PromoChargePolicy,
@@ -98,6 +99,7 @@ export interface ProcessProviderNoticePorts {
     readonly provider: PaymentProvider;
     readonly clock: Clock;
     readonly planPolicy?: VerticalsForBilling['planPolicy'];
+    readonly changeDirection?: VerticalsForBilling['changeDirection'];
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly payments?: SubscriptionPayments;
     readonly firstCharge?: FirstChargeReader;
@@ -107,6 +109,7 @@ export interface ProcessProviderNoticePorts {
     readonly promoCharges?: PromoChargePolicy;
     readonly promoExhaustion?: PromoExhaustion;
     readonly coverageNotices?: CoverageNotices;
+    readonly billingFacts?: BillingFactSink;
     /** Reaches S7's Tourist VIP clause through `recordChargeFact` (AC:B7:31); unwired skips it. */
     readonly touristVipInheritance?: TouristVipInheritancePort;
     /** S38's interface, reaching S7 through `recordChargeFact` (AC:B7:28); unwired uses its failing default. */
@@ -162,7 +165,8 @@ async function resolveUnknownAuthorization(
                 ...(ports.markPayments === undefined ? {} : { markPayments: ports.markPayments }),
                 ...(ports.coverageNotices === undefined
                     ? {}
-                    : { coverageNotices: ports.coverageNotices })
+                    : { coverageNotices: ports.coverageNotices }),
+                ...(ports.billingFacts === undefined ? {} : { billingFacts: ports.billingFacts })
             }
         );
     } catch (error) {

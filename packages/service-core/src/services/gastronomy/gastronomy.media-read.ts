@@ -28,7 +28,7 @@
  */
 
 import type { DrizzleClient, GastronomyMediaModel } from '@repo/db';
-import type { Gastronomy, GastronomyMedia } from '@repo/schemas';
+import type { Venue, VenueMedia } from '@repo/schemas';
 import { composeListingMedia } from '../listing/listing-media-compose';
 
 // ---------------------------------------------------------------------------
@@ -39,10 +39,7 @@ import { composeListingMedia } from '../listing/listing-media-compose';
  * Returns the entity with its `media` rebuilt from the supplied rows, preserving
  * the original `media` value when there is nothing to compose (see module note).
  */
-function withComposedGastronomyMedia<T extends Gastronomy>(
-    entity: T,
-    rows: readonly GastronomyMedia[]
-): T {
+function withComposedGastronomyMedia<T extends Venue>(entity: T, rows: readonly VenueMedia[]): T {
     const composed = composeListingMedia({ rows, videos: entity.videos });
     const hasContent = Object.keys(composed).length > 0;
     return { ...entity, media: hasContent ? composed : entity.media } as T;
@@ -60,7 +57,7 @@ function withComposedGastronomyMedia<T extends Gastronomy>(
  * @param input.mediaModel - The `gastronomy_media` model.
  * @param input.tx         - Optional active transaction client.
  */
-export async function attachComposedGastronomyMedia<T extends Gastronomy>(input: {
+export async function attachComposedGastronomyMedia<T extends Venue>(input: {
     entity: T | null;
     mediaModel: GastronomyMediaModel;
     tx?: DrizzleClient;
@@ -79,7 +76,7 @@ export async function attachComposedGastronomyMedia<T extends Gastronomy>(input:
  * @param input.mediaModel - The `gastronomy_media` model.
  * @param input.tx         - Optional active transaction client.
  */
-export async function attachComposedGastronomyMediaList<T extends Gastronomy>(input: {
+export async function attachComposedGastronomyMediaList<T extends Venue>(input: {
     items: readonly T[];
     mediaModel: GastronomyMediaModel;
     tx?: DrizzleClient;

@@ -114,7 +114,7 @@ beforeAll(async () => {
     validateApiEnv();
     injectClock({ clock });
     await ensurePublicationCatalog(VerticalEnum.ACCOMMODATION);
-    await ensurePublicationCatalog(VerticalEnum.GASTRONOMY);
+    await ensurePublicationCatalog(VerticalEnum.VENUE);
 });
 
 afterAll(async () => {
@@ -134,7 +134,7 @@ describe('TEST:B13a:21a AC:B13a:5 and AC:1735:8 the checkout reads the trial of 
             cycle: 'annual',
             amount: 15000000
         });
-        const gastronomyOption = await createOption(VerticalEnum.GASTRONOMY);
+        const gastronomyOption = await createOption(VerticalEnum.VENUE);
         await createTrial({ userId: user.id, status: 'TRIAL_ACTIVE' });
         const endsAt = new Date(now.getTime() + 10.5 * 86_400_000);
         await getDb()

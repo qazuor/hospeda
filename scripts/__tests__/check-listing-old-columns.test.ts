@@ -22,6 +22,13 @@ function scan(file: string, content: string, exclusions = NO_EXCLUSIONS) {
 }
 
 describe('TEST:V6:18 AC:V6:32 no file reads the six old listing columns', () => {
+    it('TEST:1813:6 AC:1:15 scans the moved venue schema path', () => {
+        const file = 'packages/schemas/src/entities/venue/venue.crud.schema.ts';
+        expect(scan(file, 'const state = row.lifecycleState;')).toEqual([
+            { file, line: 1, rule: 'listing-file', name: 'lifecycleState' }
+        ]);
+    });
+
     describe('(i) one case per rule', () => {
         it('(a) acc-only: an accommodation-only name fails anywhere', () => {
             expect(

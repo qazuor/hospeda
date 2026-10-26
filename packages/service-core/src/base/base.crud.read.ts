@@ -575,7 +575,7 @@ export abstract class BaseCrudRead<
                     );
                 }
 
-                return this._executeAdminSearch({
+                const result = await this._executeAdminSearch({
                     where,
                     entityFilters,
                     pagination: { page, pageSize },
@@ -589,6 +589,7 @@ export abstract class BaseCrudRead<
                     actor: validatedActor,
                     ctx: execCtx
                 });
+                return this._afterAdminList(result, validatedActor, execCtx);
             }
         });
     }

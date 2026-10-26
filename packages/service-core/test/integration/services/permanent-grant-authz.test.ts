@@ -52,7 +52,7 @@ async function setup(): Promise<Setup> {
             seedCoverageUser(tx)
         ]);
         const coverageA = await seedCoveragePlanVersion(tx, VerticalEnum.ACCOMMODATION);
-        const coverageB = await seedCoveragePlanVersion(tx, VerticalEnum.GASTRONOMY);
+        const coverageB = await seedCoveragePlanVersion(tx, VerticalEnum.VENUE);
         const subscriptionA = await seedCoverageSubscription(tx, {
             userId: beneficiary,
             vertical: VerticalEnum.ACCOMMODATION,
@@ -61,7 +61,7 @@ async function setup(): Promise<Setup> {
         });
         const subscriptionB = await seedCoverageSubscription(tx, {
             userId: beneficiary,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             ...coverageB,
             status: 'ACTIVE'
         });
@@ -70,7 +70,7 @@ async function setup(): Promise<Setup> {
             signer,
             other,
             planA: await seedGrantPlan(tx, VerticalEnum.ACCOMMODATION),
-            planB: await seedGrantPlan(tx, VerticalEnum.GASTRONOMY),
+            planB: await seedGrantPlan(tx, VerticalEnum.VENUE),
             subscriptionA: subscriptionA.subscriptionId,
             subscriptionB: subscriptionB.subscriptionId
         };
@@ -283,7 +283,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         {
                             permanentGrantId: created.permanentGrantId,
                             actor: actor(s.signer, false),
-                            vertical: VerticalEnum.GASTRONOMY,
+                            vertical: VerticalEnum.VENUE,
                             ...s.planB
                         },
                         p2.value
@@ -314,7 +314,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         {
                             permanentGrantId: seeded.grantId,
                             actor: actor(s.beneficiary),
-                            vertical: VerticalEnum.GASTRONOMY,
+                            vertical: VerticalEnum.VENUE,
                             ...s.planB
                         },
                         p.value
@@ -343,7 +343,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         {
                             permanentGrantId: seeded.grantId,
                             actor: system,
-                            vertical: VerticalEnum.GASTRONOMY,
+                            vertical: VerticalEnum.VENUE,
                             ...s.planB
                         },
                         p.value
@@ -361,7 +361,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     {
                         permanentGrantId: id,
                         actor: actor(s.signer, false),
-                        vertical: VerticalEnum.GASTRONOMY,
+                        vertical: VerticalEnum.VENUE,
                         ...s.planB
                     },
                     p.value
@@ -375,7 +375,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     {
                         permanentGrantId: id,
                         actor: actor(s.signer),
-                        vertical: VerticalEnum.GASTRONOMY,
+                        vertical: VerticalEnum.VENUE,
                         ...s.planB
                     },
                     p.value
@@ -396,7 +396,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     {
                         permanentGrantId: seeded.grantId,
                         actor: actor(s.beneficiary),
-                        vertical: VerticalEnum.GASTRONOMY,
+                        vertical: VerticalEnum.VENUE,
                         ...s.planB
                     },
                     p.value

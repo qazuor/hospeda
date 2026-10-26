@@ -33,11 +33,11 @@ import { describe, expect, it } from 'vitest';
 
 import { resolveSafeReturnPath } from '@/lib/auth-redirect';
 import type { SupportedLocale } from '@/lib/i18n';
-import type { GastronomyOrExperience } from '@/lib/listing/owner-listings';
+import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 import { buildListingCreateUrl, buildListingStartUrl } from '@/lib/listing/start-url';
 
 const LOCALES: readonly SupportedLocale[] = ['es', 'en', 'pt'];
-const VERTICALS: readonly GastronomyOrExperience[] = ['gastronomy', 'experience'];
+const VERTICALS: readonly VenueOrExperience[] = ['gastronomy', 'experience'];
 
 /** Read the `returnUrl` a start URL carries, decoded. */
 function readReturnUrl(startUrl: string): string {

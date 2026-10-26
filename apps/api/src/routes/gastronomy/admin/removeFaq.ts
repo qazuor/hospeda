@@ -2,11 +2,7 @@
  * DELETE /api/v1/admin/gastronomies/:id/faqs/:faqId
  * Remove an existing FAQ from a gastronomy listing — Admin endpoint.
  */
-import {
-    type GastronomyFaqRemoveInput,
-    GastronomyFaqRemoveOutputSchema,
-    VerticalEnum
-} from '@repo/schemas';
+import { type VenueFaqRemoveInput, VenueFaqRemoveOutputSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService, removeGastronomyFaq, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -26,7 +22,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminRemoveGastronomyFaqRoute = createAdminRoute({
     method: 'delete',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from gastronomy listing (admin)',
     description: 'Removes a FAQ from a gastronomy listing. Requires GASTRONOMY_EDIT_ALL.',
@@ -35,11 +31,11 @@ export const adminRemoveGastronomyFaqRoute = createAdminRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: GastronomyFaqRemoveOutputSchema,
+    responseSchema: VenueFaqRemoveOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 
-        const input: GastronomyFaqRemoveInput = {
+        const input: VenueFaqRemoveInput = {
             gastronomyId: params.id as string,
             faqId: params.faqId as string
         };

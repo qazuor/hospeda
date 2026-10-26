@@ -5,7 +5,7 @@
  * Every row lives inside `withTestTransaction`, which always rolls back: the
  * suite leaves no listing behind.
  */
-import type { Accommodation, Experience, Gastronomy } from '@repo/schemas';
+import type { Accommodation, Experience, Venue } from '@repo/schemas';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -52,7 +52,7 @@ async function createListing(args: {
               )
             : vertical === 'gastronomy'
               ? await new GastronomyModel().create(
-                    { ...base, type: 'RESTAURANT' } as Partial<Gastronomy>,
+                    { ...base, type: 'RESTAURANT' } as Partial<Venue>,
                     tx
                 )
               : await new ExperienceModel().create(

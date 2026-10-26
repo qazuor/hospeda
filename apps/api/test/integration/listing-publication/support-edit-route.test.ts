@@ -18,13 +18,13 @@ import {
 const app = initApp();
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 type Vertical = (typeof verticals)[number];
 const tables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 /** Each vertical's own permissions: create, "edit any", and the list read its router mounts on `/`. */
@@ -36,7 +36,7 @@ const perms: Readonly<
         editAny: PermissionEnum.ACCOMMODATION_UPDATE_ANY,
         viewAll: PermissionEnum.ACCOMMODATION_VIEW_ALL
     },
-    [VerticalEnum.GASTRONOMY]: {
+    [VerticalEnum.VENUE]: {
         create: PermissionEnum.GASTRONOMY_CREATE,
         editAny: PermissionEnum.GASTRONOMY_EDIT_ALL,
         viewAll: PermissionEnum.GASTRONOMY_VIEW_ALL
@@ -49,7 +49,7 @@ const perms: Readonly<
 };
 const typeFields: Readonly<Record<Vertical, Record<string, unknown>>> = {
     [VerticalEnum.ACCOMMODATION]: { type: 'CABIN' },
-    [VerticalEnum.GASTRONOMY]: { type: 'RESTAURANT' },
+    [VerticalEnum.VENUE]: { type: 'RESTAURANT' },
     [VerticalEnum.EXPERIENCE]: { type: 'EXCURSION', priceFrom: 1000, priceUnit: 'per_person' }
 };
 const REASON = 'La dueña pidió por teléfono que le carguemos la ficha';

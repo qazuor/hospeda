@@ -2,9 +2,11 @@ import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contrac
 import { and, eq, getDb, gte, inArray, payments, providerLinks, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
-import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
+import type { BillingFactSink } from '../facts/billing-fact-sink';
+import { emitBillingFact } from '../facts/billing-fact-sink';
 import { enqueueGraceStartedNotice } from './grace-started-notice';
 import { isSuccessorOfPayingPredecessor } from './paying-predecessor-successor';
 import { noCreditedPayments, type SubscriptionPayments } from './subscription-billing-ports';
@@ -46,6 +48,7 @@ export interface EnterGracePorts {
     readonly clock: Clock;
     readonly payments?: SubscriptionPayments;
     readonly planPolicy?: VerticalsForBilling['planPolicy'];
+    readonly billingFacts?: BillingFactSink;
 }
 
 /**
@@ -147,6 +150,24 @@ export async function enterGraceOnRejectedCharge(
         return true;
     });
     if (!started) return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
+
+    const vertical = VerticalEnumSchema.safeParse(subscription.vertical);
+    if (subscription.userId && vertical.success)
+        emitBillingFact({
+            sink: ports.billingFacts,
+            fact: {
+                kind: 'GRACE_STARTED',
+                userId: subscription.userId,
+                vertical: vertical.data,
+                subscriptionId: subscription.id,
+                subscriptionClass: 'PRINCIPAL',
+                actorKind: 'SYSTEM',
+                occurredAt: graceStartedAt,
+                graceStartedAt,
+                graceEndsAt,
+                daysOfGrace: graceDays
+            }
+        });
 
     logger.info(
         { subscriptionId: subscription.id },

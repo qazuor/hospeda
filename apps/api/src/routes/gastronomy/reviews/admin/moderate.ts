@@ -8,7 +8,7 @@
  * @module routes/gastronomy/reviews/admin/moderate
  * @see SPEC-239 T-046
  */
-import { GastronomyReviewSchema, PermissionEnum, ReviewModerateInputSchema } from '@repo/schemas';
+import { PermissionEnum, ReviewModerateInputSchema, VenueReviewSchema } from '@repo/schemas';
 import { GastronomyReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -46,7 +46,7 @@ export const adminModerateGastronomyReviewRoute = createAdminRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     requestBody: ReviewModerateInputSchema,
-    responseSchema: GastronomyReviewSchema,
+    responseSchema: VenueReviewSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

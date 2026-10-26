@@ -245,7 +245,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 const ports = {
                     ...portsFor(tx),
                     listing: async () => ({
-                        vertical: VerticalEnum.GASTRONOMY,
+                        vertical: VerticalEnum.VENUE,
                         ownerId: userId,
                         acceptsFeature: true
                     })
@@ -254,7 +254,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 // Act
                 const gastronomy = await resolveAddonSources({
                     userId,
-                    vertical: VerticalEnum.GASTRONOMY,
+                    vertical: VerticalEnum.VENUE,
                     ports,
                     tx
                 });
@@ -328,7 +328,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 });
                 const gastronomy = await resolveAddonSources({
                     userId,
-                    vertical: VerticalEnum.GASTRONOMY,
+                    vertical: VerticalEnum.VENUE,
                     ports: portsFor(tx),
                     tx
                 });

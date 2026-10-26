@@ -45,7 +45,7 @@ import type { ApiError } from '@/lib/api/types';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { GastronomyOrExperience } from '@/lib/listing/owner-listings';
+import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 import { webLogger } from '@/lib/logger';
 import type { MediaAttribution } from '@/lib/media';
 import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
@@ -86,7 +86,7 @@ interface ListingMediaItem {
 export interface MediaSectionProps {
     readonly locale: SupportedLocale;
     /** Vertical of the listing (drives the media endpoint path + gallery cap). */
-    readonly vertical: GastronomyOrExperience;
+    readonly vertical: VenueOrExperience;
     /** UUID of the listing being edited (upload entityId). */
     readonly listingId: string;
     /**
@@ -165,7 +165,7 @@ async function uploadEntityImage({
     role
 }: {
     readonly file: File;
-    readonly vertical: GastronomyOrExperience;
+    readonly vertical: VenueOrExperience;
     readonly listingId: string;
     readonly role: 'featured' | 'gallery';
 }): Promise<Image> {

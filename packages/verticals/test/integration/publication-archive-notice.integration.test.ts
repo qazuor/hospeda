@@ -18,7 +18,7 @@ const at = new Date('2026-10-11T12:00:00.000Z');
 const clock = { now: () => new Date(at) };
 const overdue = new Date(at.getTime() - 100 * 86_400_000);
 const overdueDraft = new Date('2026-05-01T00:00:00Z');
-type Vertical = VerticalEnum.ACCOMMODATION | VerticalEnum.GASTRONOMY | VerticalEnum.EXPERIENCE;
+type Vertical = VerticalEnum.ACCOMMODATION | VerticalEnum.VENUE | VerticalEnum.EXPERIENCE;
 const tables = {
     accommodation: 'accommodations',
     gastronomy: 'gastronomies',
@@ -140,7 +140,7 @@ describe('TEST:V6:36 AC:V6:28 the on-archive notice is enqueued in the archive t
 
     it.each([
         {
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             status: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
             inactiveSince: overdue,
             transition: 'PB4'

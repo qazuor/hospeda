@@ -181,7 +181,7 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * are owner-editable, on top of the operational sections. Do NOT "restore" the
  * old admin-only identity-strip — that would silently re-weld the admin into
  * every listing's core content, which is the exact regression this reversal
- * exists to prevent. Mirrors {@link GastronomyOwnerUpdateInputSchema}.
+ * exists to prevent. Mirrors {@link VenueOwnerUpdateInputSchema}.
  *
  * **`slug` stays out of this schema on purpose (HOS-166 OQ-3).** It is
  * owner-*visible* but not owner-*editable* directly: the server derives it from
@@ -318,7 +318,7 @@ export type ExperienceOwnerUpdateInput = z.infer<typeof ExperienceOwnerUpdateInp
 /**
  * Schema for a `EXPERIENCE_OWNER` self-service listing create
  * (`POST /api/v1/protected/experiences/`, HOS-166 §7.2).
- * Mirrors {@link GastronomyOwnerCreateInputSchema} — see that schema's JSDoc
+ * Mirrors {@link VenueOwnerCreateInputSchema} — see that schema's JSDoc
  * for the full rationale on why each field is omitted.
  *
  * - `ownerId` — never accepted; the route forces `actor.id`.

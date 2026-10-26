@@ -197,7 +197,7 @@ describe('TEST:V6:7 daily coverage reconciler', () => {
     it('counts paginated owners and tolerates a failed monitor ping', async () => {
         const pair: { readonly userId: string; readonly vertical: PublicationVertical } = {
             userId: 'u1',
-            vertical: VerticalEnum.GASTRONOMY
+            vertical: VerticalEnum.VENUE
         };
         let calls = 0;
         const h = ports({

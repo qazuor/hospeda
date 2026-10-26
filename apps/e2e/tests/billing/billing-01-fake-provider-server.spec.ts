@@ -326,6 +326,7 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
             billingOptionId: monthlyOptionId
         });
         await page.getByTestId('signup-checkout-payer-email').fill(declaredEmail);
+        await expect(page.getByTestId('signup-checkout-payer-email')).toHaveValue(declaredEmail);
         await page.getByTestId('signup-checkout-confirm').click();
 
         const pending = page.getByTestId('signup-checkout-pending');

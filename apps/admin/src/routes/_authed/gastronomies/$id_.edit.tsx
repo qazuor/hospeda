@@ -13,7 +13,7 @@
  * reachable from the `PageTabs` bar below, mirroring accommodations.
  */
 
-import { GastronomyUpdateInputSchema, PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, VenueUpdateInputSchema } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
@@ -63,7 +63,7 @@ function GastronomyEditPage() {
                     entityId={id}
                     initialMode="edit"
                     entityData={entityData}
-                    zodSchema={GastronomyUpdateInputSchema}
+                    zodSchema={VenueUpdateInputSchema}
                 >
                     <Tabs defaultValue="general">
                         <TabsList>

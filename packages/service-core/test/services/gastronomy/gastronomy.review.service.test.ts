@@ -16,7 +16,7 @@
  * DB interactions are fully mocked — no real DB is touched.
  */
 
-import type { GastronomyReview } from '@repo/schemas';
+import type { VenueReview } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
@@ -45,7 +45,7 @@ const REVIEWER_ID = '00000000-0000-4000-a000-000000000003';
 const STAFF_ID = '00000000-0000-4000-a000-000000000004';
 const OTHER_USER = '00000000-0000-4000-a000-000000000005';
 
-function makeReview(overrides: Partial<Record<string, unknown>> = {}): GastronomyReview {
+function makeReview(overrides: Partial<Record<string, unknown>> = {}): VenueReview {
     return {
         id: REVIEW_ID,
         gastronomyId: GASTRONOMY_ID,
@@ -57,7 +57,7 @@ function makeReview(overrides: Partial<Record<string, unknown>> = {}): Gastronom
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date('2024-01-01'),
         ...overrides
-    } as GastronomyReview;
+    } as VenueReview;
 }
 
 const staffActor: Actor = {
@@ -86,7 +86,7 @@ const unauthActor: Actor = {
 // Mock model factory for review model
 // ---------------------------------------------------------------------------
 
-function makeReviewModel(review: GastronomyReview | null = null) {
+function makeReviewModel(review: VenueReview | null = null) {
     return {
         entityName: 'gastronomy_review',
         findById: vi.fn().mockResolvedValue(review),
@@ -98,17 +98,15 @@ function makeReviewModel(review: GastronomyReview | null = null) {
         findAllWithRelations: vi
             .fn()
             .mockResolvedValue({ items: review ? [review] : [], total: review ? 1 : 0 }),
-        create: vi.fn().mockImplementation(async (data: Partial<GastronomyReview>) => ({
+        create: vi.fn().mockImplementation(async (data: Partial<VenueReview>) => ({
             id: REVIEW_ID,
             ...data
         })),
-        update: vi
-            .fn()
-            .mockImplementation(async (_where: unknown, data: Partial<GastronomyReview>) => ({
-                id: REVIEW_ID,
-                gastronomyId: GASTRONOMY_ID,
-                ...data
-            })),
+        update: vi.fn().mockImplementation(async (_where: unknown, data: Partial<VenueReview>) => ({
+            id: REVIEW_ID,
+            gastronomyId: GASTRONOMY_ID,
+            ...data
+        })),
         softDelete: vi.fn().mockResolvedValue(undefined),
         hardDelete: vi.fn().mockResolvedValue(undefined),
         restore: vi.fn().mockResolvedValue(undefined),
@@ -131,7 +129,7 @@ function makeGastronomyModel() {
 // Service factory
 // ---------------------------------------------------------------------------
 
-function makeService(review: GastronomyReview | null = null): GastronomyReviewService {
+function makeService(review: VenueReview | null = null): GastronomyReviewService {
     const service: AnyService = new GastronomyReviewService({});
     service.model = makeReviewModel(review);
     service._gastronomyModel = makeGastronomyModel();

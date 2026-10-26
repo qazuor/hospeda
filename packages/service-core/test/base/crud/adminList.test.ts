@@ -101,6 +101,15 @@ class AdminListWithRelationsService extends AdminListTestService {
     }
 }
 
+/** Test service that marks the paginated result from the `_afterList` projection hook. */
+class AdminListProjectionService extends AdminListTestService {
+    protected override async _afterList(
+        result: import('../../../src/types').PaginatedListOutput<TestEntity>
+    ): Promise<import('../../../src/types').PaginatedListOutput<TestEntity>> {
+        return { ...result, total: result.total + 1 };
+    }
+}
+
 /**
  * TestService without adminSearchSchema (to test configuration error)
  */
@@ -126,6 +135,18 @@ describe('BaseCrudRead: adminList', () => {
         asMock(modelMock.findAllWithRelations).mockResolvedValue(defaultPaginatedResult);
 
         service = createServiceTestInstance(AdminListTestService, modelMock);
+    });
+
+    it('runs the list projection hook for admin results', async () => {
+        // Arrange
+        const projectionService = createServiceTestInstance(AdminListProjectionService, modelMock);
+        asMock(modelMock.findAll).mockResolvedValue({ items: [], total: 2 });
+
+        // Act
+        const result = await projectionService.adminList(mockAdminActor, {});
+
+        // Assert
+        expect(result.data?.total).toBe(3);
     });
 
     // --- Configuration ---

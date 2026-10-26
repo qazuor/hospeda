@@ -8,7 +8,7 @@ to trigger jobs manually.
 
 | Layer | Scheduler | Where the job code lives | What it does |
 |---|---|---|---|
-| **In-process (API)** | `node-cron` inside the running api container | `apps/api/src/cron/jobs/` | Application logic: trial expiry, dunning, addon expiry, notification fan-out, search-index refresh, conversation cleanup, destination weather refresh, etc. |
+| **In-process (API)** | `node-cron` inside the running api container | `apps/api/src/cron/jobs/` | Application logic: trial expiry, subscription and payment window expiry, billing reconciliation, notification fan-out, search-index refresh, conversation cleanup, destination weather refresh, etc. |
 | **VPS host** | system `cron` on the Vultr host | `scripts/backup/`, `scripts/server-tools/` | Operational maintenance: nightly Postgres backup, weekly app restart. |
 
 Keep them separated mentally. In-process crons are part of the
@@ -22,8 +22,9 @@ container restarts and continue running even if the api is down.
 
 ### Inventory
 
-The authoritative list lives in [`apps/api/src/cron/registry.ts`](../../apps/api/src/cron/registry.ts). As of the
-last audit (2026-05-11) there are **16 jobs** registered. Each job is
+Registration lives in [`apps/api/src/cron/registry.ts`](../../apps/api/src/cron/registry.ts). The
+name and schedule of every job are listed in
+[`apps/api/src/cron/schedules.manifest.ts`](../../apps/api/src/cron/schedules.manifest.ts). Each job is
 defined as a `CronJobDefinition` in `apps/api/src/cron/jobs/<name>.ts`
 with `name`, `schedule`, `description`, `enabled`, and a `handler`.
 
@@ -47,23 +48,22 @@ hops cron-trigger
 hops cron-trigger 3
 
 # By exact name
-hops cron-trigger trial-reconcile
+hops cron-trigger trial-machine-expiry
 
 # Dry-run (does not execute writes — depends on the job honouring the flag)
-hops cron-trigger trial-reconcile --dry-run
+hops cron-trigger trial-machine-expiry --dry-run
 
 # Non-interactive (for wrapper scripts)
-hops cron-trigger trial-reconcile --dry-run --yes
+hops cron-trigger trial-machine-expiry --dry-run --yes
 ```
 
 > **The name is the job's `name:` field, not its filename.** `cron-trigger`
-> matches with `jobs.find(j => j.name === arg)`, so a filename is rejected with
-> "No job named '…'". The trap: the job named `trial-reconcile` lives in
-> `apps/api/src/cron/jobs/trial-expiry.ts`. Run `hops cron-list` — or grep
-> `apps/api/src/cron/schedules.manifest.ts` — for the real names.
-> (This guide said `trial-expiry` until HOS-1302; that command has never worked.
-> The `--help` text in `scripts/server-tools/src/commands/cron-trigger.ts:54`
-> carries the same wrong example.)
+> matches with `jobs.find(j => j.name === arg)`, so a filename or path is
+> rejected with "No job named '…'". Some jobs take their name from a constant
+> rather than a literal, so grepping the job file for `name:` is not reliable.
+> Run `hops cron-list`, or read `apps/api/src/cron/schedules.manifest.ts`,
+> for the real names (e.g. `trial-machine-expiry`, `billing-reconciliation-sweep`,
+> `subscription-window-expiry`).
 
 The triggered run goes through the same `handler(jobContext)` code path
 as the scheduled run, with `jobContext.dryRun` reflecting the flag.

@@ -18,9 +18,9 @@
  */
 
 import {
-    GastronomyMediaListOutputSchema,
-    type GastronomyMediaReorderPayload,
-    GastronomyMediaReorderPayloadSchema,
+    VenueMediaListOutputSchema,
+    type VenueMediaReorderPayload,
+    VenueMediaReorderPayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, reorderGastronomyMedia, ServiceError } from '@repo/service-core';
@@ -47,14 +47,14 @@ export const protectedReorderGastronomyMediaRoute = createProtectedRoute({
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +
         'exactly. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyMediaReorderPayloadSchema,
-    responseSchema: GastronomyMediaListOutputSchema,
+    requestBody: VenueMediaReorderPayloadSchema,
+    responseSchema: VenueMediaListOutputSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -68,7 +68,7 @@ export const protectedReorderGastronomyMediaRoute = createProtectedRoute({
         ).model;
         const result = await reorderGastronomyMedia(model, actor, {
             gastronomyId: params.id as string,
-            orderedIds: (body as GastronomyMediaReorderPayload).orderedIds
+            orderedIds: (body as VenueMediaReorderPayload).orderedIds
         });
 
         if (result.error) {

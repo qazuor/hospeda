@@ -14,14 +14,14 @@
  * DB interactions are fully mocked — no real DB is touched.
  */
 
-import type { Gastronomy } from '@repo/schemas';
+import type { Venue } from '@repo/schemas';
 import {
-    GastronomyTypeEnum,
     PermissionEnum,
     PriceRangeEnum,
     PublicationStatusEnum,
     RoleEnum,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VenueTypeEnum
 } from '@repo/schemas';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -53,12 +53,12 @@ const OWNER_ID = '00000000-0000-4000-a000-000000000002';
 const DEST_ID = '00000000-0000-4000-a000-000000000003';
 const OTHER_USER = '00000000-0000-4000-a000-000000000099';
 
-function makeGastronomyEntity(overrides: Partial<Record<string, unknown>> = {}): Gastronomy {
+function makeGastronomyEntity(overrides: Partial<Record<string, unknown>> = {}): Venue {
     return {
         id: ENTITY_ID,
         name: 'La Parrilla del Sur',
         slug: 'la-parrilla-del-sur',
-        type: GastronomyTypeEnum.PARRILLA,
+        type: VenueTypeEnum.PARRILLA,
         destinationId: DEST_ID,
         ownerId: OWNER_ID,
         publicationStatus: PublicationStatusEnum.PUBLISHED,
@@ -67,7 +67,7 @@ function makeGastronomyEntity(overrides: Partial<Record<string, unknown>> = {}):
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date('2024-01-01'),
         ...overrides
-    } as Gastronomy;
+    } as Venue;
 }
 
 const ownerActor: Actor = {
@@ -99,7 +99,7 @@ const otherUserActor: Actor = {
 // Mock model factory
 // ---------------------------------------------------------------------------
 
-function makeGastronomyModel(entity: Gastronomy | null = null) {
+function makeGastronomyModel(entity: Venue | null = null) {
     return {
         entityName: 'gastronomy',
         findById: vi.fn().mockResolvedValue(entity),
@@ -109,15 +109,15 @@ function makeGastronomyModel(entity: Gastronomy | null = null) {
             .fn()
             .mockResolvedValue({ items: entity ? [entity] : [], total: entity ? 1 : 0 }),
         findAllWithRelations: vi.fn().mockResolvedValue({ items: [], total: 0 }),
-        create: vi.fn().mockImplementation(async (data: Partial<Gastronomy>) => ({
+        create: vi.fn().mockImplementation(async (data: Partial<Venue>) => ({
             id: ENTITY_ID,
             ...data
         })),
-        update: vi.fn().mockImplementation(async (_where: unknown, data: Partial<Gastronomy>) => ({
+        update: vi.fn().mockImplementation(async (_where: unknown, data: Partial<Venue>) => ({
             id: ENTITY_ID,
             ...data
         })),
-        updateById: vi.fn().mockImplementation(async (_id: string, data: Partial<Gastronomy>) => ({
+        updateById: vi.fn().mockImplementation(async (_id: string, data: Partial<Venue>) => ({
             id: ENTITY_ID,
             ...data
         })),
@@ -162,7 +162,7 @@ function makeCatalogModel(validIds: string[] = []) {
 
 type AnyService = any;
 
-function makeService(entity: Gastronomy | null = null): GastronomyService {
+function makeService(entity: Venue | null = null): GastronomyService {
     const service: AnyService = new GastronomyService({});
     const model = makeGastronomyModel(entity);
     service.model = model;
@@ -254,17 +254,13 @@ describe('GastronomyService.updateOwn', () => {
         const service = makeService(entity);
         const mockUpdate = (service as AnyService).model.update;
 
-        const result = await service.updateOwn(
-            ENTITY_ID,
-            { type: GastronomyTypeEnum.CAFE },
-            ownerActor
-        );
+        const result = await service.updateOwn(ENTITY_ID, { type: VenueTypeEnum.CAFE }, ownerActor);
 
         expect(result.error).toBeUndefined();
         expect(mockUpdate).toHaveBeenCalledTimes(1);
         const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
         // type is now owner-editable (SPEC-253 AC-5 — removed from identity-strip set)
-        expect(updatePayload.type).toBe(GastronomyTypeEnum.CAFE);
+        expect(updatePayload.type).toBe(VenueTypeEnum.CAFE);
     });
 
     it('should persist summary when owner updates it (SPEC-253 AC-1)', async () => {
@@ -355,7 +351,7 @@ describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-
         // biome-ignore lint/suspicious/noExplicitAny: simulating a forged HTTP body
         const payload: any = {
             priceRange: PriceRangeEnum.MID, // operational — must persist
-            type: GastronomyTypeEnum.CAFE, // owner-editable (SPEC-253 D1) — must persist
+            type: VenueTypeEnum.CAFE, // owner-editable (SPEC-253 D1) — must persist
             summary: 'Un nuevo resumen válido de diez caracteres o más.', // owner-editable
             name: 'Nuevo nombre del local', // HOS-166 D-1: owner-editable identity — must persist
             description:
@@ -374,7 +370,7 @@ describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-
 
         // Operational and owner-editable identity fields persist.
         expect(updatePayload.priceRange).toBe(PriceRangeEnum.MID);
-        expect(updatePayload.type).toBe(GastronomyTypeEnum.CAFE);
+        expect(updatePayload.type).toBe(VenueTypeEnum.CAFE);
         expect(updatePayload.summary).toBeDefined();
         expect(updatePayload.name).toBe('Nuevo nombre del local');
         expect(updatePayload.description).toBe(payload.description);

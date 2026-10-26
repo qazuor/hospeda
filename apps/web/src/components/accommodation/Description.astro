@@ -12,8 +12,8 @@
  * a paid capability ("descripciones enriquecidas") that was never delivered.
  *
  * ENTITLEMENT: this component does NOT check entitlements, and must not.
- * `gateRichDescription` (`apps/api/src/middlewares/accommodation-entitlements.ts`)
- * neutralizes markdown in `description` at WRITE time for any owner lacking
+ * `gateRichDescription` (`apps/api/src/middlewares/accommodation-entitlements.ts`, REMOVED by HOS-1416: write-time successor planned in V5.11)
+ * neutralized markdown in `description` at WRITE time for any owner lacking
  * `CAN_USE_RICH_DESCRIPTION`. Markdown present in `description` therefore
  * implies an entitled owner; rendering it leaks nothing.
  *

@@ -61,7 +61,7 @@ describe('TEST:B9a:11 — API permanent grant floor policy', () => {
             error: { code: 'VALIDATION_ERROR', reason: 'PERMANENT_GRANT_FLOOR_NOT_CURRENT' }
         });
 
-        const current = await seedGrantPlan(VerticalEnum.GASTRONOMY);
+        const current = await seedGrantPlan(VerticalEnum.VENUE);
         const existing = await seedGrant({
             beneficiaryUserId: beneficiary,
             grantedBy: signer,

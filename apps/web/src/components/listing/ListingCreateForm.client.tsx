@@ -38,14 +38,14 @@
  * of the create page).
  */
 
-import type { ExperienceOwnerCreateInput, GastronomyOwnerCreateInput } from '@repo/schemas';
+import type { ExperienceOwnerCreateInput, VenueOwnerCreateInput } from '@repo/schemas';
 import {
     ExperienceOwnerCreateInputSchema,
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
-    GastronomyOwnerCreateInputSchema,
-    GastronomyTypeEnum,
-    requirePriceUnitUnlessOnRequest
+    requirePriceUnitUnlessOnRequest,
+    VenueOwnerCreateInputSchema,
+    VenueTypeEnum
 } from '@repo/schemas';
 import { type FormEvent, type JSX, useState } from 'react';
 import type { DestinationOption } from '@/components/listing/destination-option';
@@ -55,7 +55,7 @@ import { useZodForm } from '@/lib/forms/use-zod-form';
 import { resolveGastronomyTypeLabel } from '@/lib/gastronomy/type-labels';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { GastronomyOrExperience } from '@/lib/listing/owner-listings';
+import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 import { createOwnerListing } from '@/lib/listing/owner-listings';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
 import { buildUrl } from '@/lib/urls';
@@ -63,7 +63,7 @@ import styles from './ListingCreateForm.module.css';
 
 export interface ListingCreateFormProps {
     /** Which vertical this create form targets. */
-    readonly vertical: GastronomyOrExperience;
+    readonly vertical: VenueOrExperience;
     /** Active locale. */
     readonly locale: SupportedLocale;
     /** Destination options for the (optional) destination select. */
@@ -80,12 +80,12 @@ export interface ListingCreateFormProps {
     readonly destinationsLoadFailed?: boolean;
 }
 
-const GASTRONOMY_TYPE_OPTIONS = Object.values(GastronomyTypeEnum);
+const GASTRONOMY_TYPE_OPTIONS = Object.values(VenueTypeEnum);
 const EXPERIENCE_TYPE_OPTIONS = Object.values(ExperienceTypeEnum);
 const PRICE_UNIT_OPTIONS = Object.values(ExperiencePriceUnitEnum);
 
 /** Fields this form collects for gastronomy — a subset of the real create schema. */
-const GASTRONOMY_FORM_SCHEMA = GastronomyOwnerCreateInputSchema.pick({
+const GASTRONOMY_FORM_SCHEMA = VenueOwnerCreateInputSchema.pick({
     name: true,
     type: true,
     summary: true,
@@ -217,7 +217,7 @@ export function ListingCreateForm({
                 ? {
                       vertical: 'gastronomy',
                       // TYPE-WORKAROUND: narrow form-subset → full owner-create input (see above).
-                      data: parsed.data as unknown as GastronomyOwnerCreateInput
+                      data: parsed.data as unknown as VenueOwnerCreateInput
                   }
                 : {
                       vertical: 'experience',

@@ -43,12 +43,12 @@
 
 import { GastronomyDailySpecialModel, type GastronomyModel, withTransaction } from '@repo/db';
 import {
-    type GastronomyDailySpecialsGetInput,
-    GastronomyDailySpecialsGetInputSchema,
-    type GastronomyDailySpecialsOutput,
-    type GastronomyDailySpecialsReplaceInput,
-    GastronomyDailySpecialsReplaceInputSchema,
-    ServiceErrorCode
+    ServiceErrorCode,
+    type VenueDailySpecialsGetInput,
+    VenueDailySpecialsGetInputSchema,
+    type VenueDailySpecialsOutput,
+    type VenueDailySpecialsReplaceInput,
+    VenueDailySpecialsReplaceInputSchema
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -110,11 +110,11 @@ const byDisplayOrder = <T extends { displayOrder: number; title: string }>(a: T,
  */
 export async function getGastronomyDailySpecials(
     model: GastronomyModel,
-    data: GastronomyDailySpecialsGetInput,
+    data: VenueDailySpecialsGetInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyDailySpecialsOutput>> {
+): Promise<ServiceOutput<VenueDailySpecialsOutput>> {
     try {
-        const parseResult = GastronomyDailySpecialsGetInputSchema.safeParse(data);
+        const parseResult = VenueDailySpecialsGetInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)
@@ -193,11 +193,11 @@ export async function getGastronomyDailySpecials(
 export async function replaceGastronomyDailySpecials(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyDailySpecialsReplaceInput,
+    data: VenueDailySpecialsReplaceInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyDailySpecialsOutput>> {
+): Promise<ServiceOutput<VenueDailySpecialsOutput>> {
     try {
-        const parseResult = GastronomyDailySpecialsReplaceInputSchema.safeParse(data);
+        const parseResult = VenueDailySpecialsReplaceInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)

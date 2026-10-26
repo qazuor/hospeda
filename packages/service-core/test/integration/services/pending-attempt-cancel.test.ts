@@ -12,6 +12,7 @@ import {
 import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
+import { VerticalEnum } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { handleUnknownAuthorization } from '../../../src/services/billing/reconciliation/handle-unknown-authorization.service';
 import { retryOurCancellation } from '../../../src/services/billing/reconciliation/sweep/our-cancellation-retry';
@@ -96,7 +97,8 @@ function providerFor(fake: FakePaymentProvider) {
 function ports(
     fake: FakePaymentProvider,
     beforeCancel = vi.fn(async () => 'SENT' as const),
-    injectedClock = clock
+    injectedClock = clock,
+    billingFacts?: { emit: (fact: unknown) => void }
 ) {
     return {
         provider: providerFor(fake),
@@ -108,7 +110,8 @@ function ports(
             current: true,
             sellable: true
         }),
-        touristVipInheritance: noTouristVip
+        touristVipInheritance: noTouristVip,
+        billingFacts
     };
 }
 
@@ -172,6 +175,48 @@ describe('TEST:1735:1 AC:1735:1 cancelPendingAttempt closes the pending attempt 
         const next = await start(fake, choice.user.id, choice.optionIds[1]!);
         expect(next.subscriptionId).not.toBe(pending.subscriptionId);
         expect(next.checkoutUrl).toBeTruthy();
+    });
+
+    it('TEST:1878:4 emits USER_CANCELLED once only for the S40 writer', async () => {
+        const choice = await seedChoice();
+        const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
+            clock,
+            honestAbout: [{ lie: 'M1', why: 'S40 analytics fixture' }]
+        });
+        const pending = await start(fake, choice.user.id, choice.optionIds[0]!);
+        const before = await saved(pending.subscriptionId);
+        const emitted: unknown[] = [];
+        const sink = { emit: (fact: unknown) => emitted.push(fact) };
+        expect(
+            await cancelPendingAttempt(
+                { subscriptionId: pending.subscriptionId, userId: choice.user.id },
+                ports(fake, undefined, clock, sink)
+            )
+        ).toEqual({ subscriptionId: pending.subscriptionId, outcome: 'ABANDONED' });
+        expect(emitted).toEqual([
+            {
+                kind: 'CHECKOUT_ABANDONED',
+                userId: choice.user.id,
+                vertical: VerticalEnum.ACCOMMODATION,
+                subscriptionId: pending.subscriptionId,
+                subscriptionClass: 'PRINCIPAL',
+                actorKind: 'USER',
+                reason: 'USER_CANCELLED',
+                secondsInPending: Math.max(
+                    0,
+                    Math.floor((clock.now().getTime() - before.row.createdAt.getTime()) / 1000)
+                ),
+                occurredAt: clock.now()
+            }
+        ]);
+        expect(
+            await cancelPendingAttempt(
+                { subscriptionId: pending.subscriptionId, userId: choice.user.id },
+                ports(fake, undefined, clock, sink)
+            )
+        ).toEqual({ subscriptionId: pending.subscriptionId, outcome: 'ALREADY_ABANDONED' });
+        expect(emitted).toHaveLength(1);
     });
 });
 

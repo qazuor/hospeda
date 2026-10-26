@@ -37,7 +37,7 @@ import {
  */
 const LISTING_LOCK_VERTICALS = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 

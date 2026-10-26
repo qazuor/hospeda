@@ -7,7 +7,7 @@
  *
  * @module test/routes/gastronomy/public/events-projection
  */
-import type { GastronomyEventPublic } from '@repo/schemas';
+import type { VenueEventPublic } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { applyGastronomyVenueEventsGate } from '../../../../src/routes/gastronomy/public/events-projection.js';
 
@@ -17,7 +17,7 @@ import { applyGastronomyVenueEventsGate } from '../../../../src/routes/gastronom
  * @param overrides - Fields to override on the default weekly happy hour.
  * @returns A public agenda entry.
  */
-function anEvent(overrides: Partial<GastronomyEventPublic> = {}): GastronomyEventPublic {
+function anEvent(overrides: Partial<VenueEventPublic> = {}): VenueEventPublic {
     return {
         id: '33333333-3333-4333-8333-333333333333',
         gastronomyId: '22222222-2222-4222-8222-222222222222',

@@ -34,7 +34,7 @@ import { grantSignerActor } from './support/permanent-grant-fixtures.js';
 afterAll(closeServiceTestPool);
 
 const V = VerticalEnum.ACCOMMODATION;
-const W = VerticalEnum.GASTRONOMY;
+const W = VerticalEnum.VENUE;
 const listing = async () => ({
     vertical: V,
     ownerId: '00000000-0000-4000-8000-000000000001',

@@ -28,8 +28,8 @@ import {
     AccommodationUpdateInputSchema,
     ExperienceOwnerUpdateInputSchema,
     ExperienceUpdateInputSchema,
-    GastronomyOwnerUpdateInputSchema,
-    GastronomyUpdateInputSchema
+    VenueOwnerUpdateInputSchema,
+    VenueUpdateInputSchema
 } from '../../src/index.js';
 
 /** A minimal, valid video entry per `VideoSchema`. */
@@ -47,8 +47,8 @@ const LEGACY_MEDIA = {
 
 const updateSchemas = [
     { name: 'AccommodationUpdateInputSchema', schema: AccommodationUpdateInputSchema },
-    { name: 'GastronomyUpdateInputSchema', schema: GastronomyUpdateInputSchema },
-    { name: 'GastronomyOwnerUpdateInputSchema', schema: GastronomyOwnerUpdateInputSchema },
+    { name: 'GastronomyUpdateInputSchema', schema: VenueUpdateInputSchema },
+    { name: 'GastronomyOwnerUpdateInputSchema', schema: VenueOwnerUpdateInputSchema },
     { name: 'ExperienceUpdateInputSchema', schema: ExperienceUpdateInputSchema },
     { name: 'ExperienceOwnerUpdateInputSchema', schema: ExperienceOwnerUpdateInputSchema }
 ];

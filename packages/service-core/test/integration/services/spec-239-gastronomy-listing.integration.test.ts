@@ -29,12 +29,12 @@
  */
 
 import {
-    GastronomyTypeEnum,
     ModerationStatusEnum,
     PermissionEnum,
     PriceRangeEnum,
     PublicationStatusEnum,
-    RoleEnum
+    RoleEnum,
+    VenueTypeEnum
 } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -183,7 +183,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                     name: 'La Parrilla Admin',
                     summary: 'Admin-created gastronomy listing summary',
                     description: 'Admin-created gastronomy listing for integration test suite.',
-                    type: GastronomyTypeEnum.PARRILLA,
+                    type: VenueTypeEnum.PARRILLA,
                     ownerId: ownerId as `${string}-${string}-${string}-${string}-${string}`,
                     destinationId:
                         destinationId as `${string}-${string}-${string}-${string}-${string}`,

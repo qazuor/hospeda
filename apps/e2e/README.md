@@ -66,9 +66,9 @@ apps/e2e/
 ├── fixtures/
 │   ├── api-helpers.ts            Real API calls: signup, onboarding, accommodations
 │   ├── browser-helpers.ts        seedCookieConsent — suppress the consent banner backdrop
-│   ├── db-helpers.ts             Direct SQL helpers (force trial expired, demote, etc.)
+│   ├── db-helpers.ts             Direct SQL helpers for states the API can't expose
 │   ├── mailpit-client.ts         Wait for / read / clear emails via Mailpit API
-│   ├── mp-webhook-helper.ts      Sign + post simulated MP webhooks
+│   ├── fake-provider-server.ts   Fake MercadoPago server + signed webhook deliveries
 │   ├── cloudinary-client.ts      Verify asset existence/absence in Cloudinary
 │   └── revalidation-spy.ts       Assert which paths the system scheduled for revalidation
 ├── seeds/
@@ -115,11 +115,12 @@ Cleanup uses `SET LOCAL session_replication_role='replica'` to bypass the pre-ex
 
 | Fixture | Purpose | Notes |
 |---|---|---|
-| `api-helpers.ts` | Programmatic creation of users, accommodations, subscriptions, conversations | Hits real `/api` endpoints. Returns IDs + session cookies. |
+| `api-helpers.ts` | Programmatic creation of users, accommodations, conversations | Hits real `/api` endpoints. Returns IDs + session cookies. Subscriptions are seeded with the fixtures below. |
+| `signup-checkout.ts`, `billing-signup-helpers.ts` | Seed plan holders (`seedActivePlanHolder`, `seedSuspendedPlanHolder`, ...) against the `plan` / `plan_version` / `subscription` tables, open the signup checkout, trigger crons | Used by `tests/billing/*`. |
+| `fake-provider-server.ts` | Starts `@repo/payments/fake-server` on port 18090 with an adjustable clock (`@repo/test-clock`) and delivers signed MercadoPago webhooks to the API | Replaces the old QZPay test-control seam. |
 | `browser-helpers.ts` | `seedCookieConsent(page)` — seed the `cookie-consent` cookie via `addInitScript` so the banner never renders | Call in a `test.beforeEach` for any test that clicks/submits in the web UI. See pitfall #11. |
-| `db-helpers.ts` | Force fixture states the API can't expose (expired trial, past period_end) | Direct SQL via `pg.Pool`. Use sparingly. |
+| `db-helpers.ts` | Force fixture states the API can't expose | Direct SQL via `pg.Pool`. Use sparingly. |
 | `mailpit-client.ts` | Wait for verification / reset / notification emails | Polls `http://localhost:8025/api/v1/messages`. |
-| `mp-webhook-helper.ts` | Simulated MP webhook POSTs (HMAC-signed) | Used by HOST-02/04/05, RES-04. Real MP sandbox checkout in HOST-02 nightly. |
 | `cloudinary-client.ts` | `assetExists` / `getFolderContents` / `deleteFolder` | Used by ACC-01/04 (real Cloudinary uploads under `hospeda/e2e/{run-id}/`). |
 | `revalidation-spy.ts` | Assert which paths the RevalidationService scheduled | Reads from `revalidation_log`. Used by ACC-02 and E2E-10. |
 
@@ -174,28 +175,7 @@ The patterns below were extracted from the 34 specs authored under SPEC-092. Cop
 
 ### Setup paid host with active subscription
 
-```ts
-const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
-userId = host.id;                    // for cleanup
-await forceVerifyEmail(host.id);
-
-const planRows = await execSQL<{ id: string }>(
-    `SELECT id FROM billing_plans WHERE is_active = true ORDER BY created_at ASC LIMIT 1`
-);
-const planId = planRows[0]?.id;
-if (!planId) {
-    test.fixme(true, 'No billing plan in seed — <TEST-ID> cannot run');
-    return;
-}
-await createSubscription({ userId: host.id, planId, status: 'active' });
-
-// import { PublicationStatusEnum } from '@repo/schemas';
-const accommodation = await createAccommodation({
-    ownerId: host.id,
-    publicationStatus: PublicationStatusEnum.PUBLISHED,
-    slugPrefix: '<test-id>'
-});
-```
+Seed the plan holder against the current `plan` / `plan_version` / `subscription` tables with `seedActivePlanHolder` (`fixtures/signup-checkout.ts`), then create the accommodation as usual. For a full example see `tests/billing/billing-02-signup-end-to-end.spec.ts`; for coverage-gated reads and writes see `tests/security/sec-03-paywall-bypass.spec.ts`.
 
 ### Cross-origin session cookie (admin/web from API session)
 
@@ -270,11 +250,11 @@ const rows = await execSQL<AddonPurchaseRow>(`SELECT id, status, customer_id FRO
 
 1. **`interface` rejected by `execSQL<T>`.** Use `type X = { ... } & Record<string, unknown>` instead. TS 5 does not auto-widen interfaces to satisfy the index-signature constraint.
 2. **Snake-case columns vs camelCase fields.** DB columns are snake_case (`first_name`, `publication_status`); request bodies / API responses are camelCase (`firstName`, `publicationStatus`). Don't mix them in `execSQL` projections.
-3. **`createSubscription` requires a real plan id.** The fixture inserts a `billing_subscriptions` row; the FK to `billing_plans.id` is enforced at the DB level. Always pull the plan id from a `SELECT id FROM billing_plans WHERE is_active = true` first; do NOT pass a hard-coded UUID.
-4. **`drizzle-kit push` is not enough.** Triggers, materialized views, and JSONB CHECK constraints on `billing_addon_purchases` are invisible to Drizzle. After any push, run `packages/db/scripts/apply-postgres-extras.sh`. The E2E seed step does this automatically; manual runs must too.
-5. **Cancellation has TWO bits to flip.** `status='cancelled'` AND `current_period_end` (preserved during grace, forced past for expired). HOST-04 / E2E-8 both exercise this; copy that pattern rather than rolling your own.
+3. **Subscription fixtures need a real plan version id.** The `subscription` table's FK to `plan_version` is enforced at the DB level. Resolve the id from the seeded catalog (see `monthlyOptionForSlug` in `fixtures/signup-checkout.ts`); do NOT pass a hard-coded UUID.
+4. **`drizzle-kit push` is not enough.** Triggers, materialized views, and JSONB CHECK constraints are invisible to Drizzle. After any push, run `packages/db/scripts/apply-postgres-extras.sh`. The E2E seed step does this automatically; manual runs must too.
+5. **Drive cancellation and arrears through the fixtures.** `fixtures/cancellation-flow.ts` (`driveToGrace`, `driveToSuspended`, `selfCancelFromMySubscription`) and `fixtures/arrears-cycle.ts` move a subscription through its states with the adjustable clock; copy those rather than writing status columns by hand.
 6. **`test.fixme(condition, reason)` accepts a runtime check.** Use it for env-gated test legs (no MP secret, no Cloudinary creds) — the test reports `fixme` in the HTML report rather than `skip`, which is a contract requirement (rule #7).
-7. **Webhook endpoint dispatch by URL segment.** `payment.*` events go to `/api/v1/webhooks/mercadopago/payment`; everything else to `/notifications`. The `mp-webhook-helper.ts` routes correctly — don't override `routeForEvent`.
+7. **One webhook receiver.** Every MercadoPago delivery goes to a single `POST /api/v1/webhooks/mercadopago`. Use the signed deliveries from `fixtures/fake-provider-server.ts`; a spec that imports it must carry `@clock` (`clock-specs-isolated.test.ts`).
 8. **Soft delete may keep the row visible to admin.** The protected DELETE on accommodations sets `deleted_at`; the public surface returns `404`/`null` but the admin surface may still expose the row (with the deleted flag). When asserting "gone", target the public endpoint, not the admin one.
 9. **Rate limits hit during burst tests.** `createSimpleRoute({customRateLimit: ...})` is enforced before middleware-level pool exhaustion. RES-02's 100-concurrent-burst may saturate the rate limit window before the pool. Both 429 and 503 are accepted — explicitly avoid asserting "exactly 503".
 10. **Cookie cross-origin parsing.** `signupUser` returns `sessionCookie` as a single semicolon-joined header. When attaching to `page.context()`, split on `;` and trim whitespace before passing to `addCookies({name, value, url})`.
@@ -283,10 +263,10 @@ const rows = await execSQL<AddonPurchaseRow>(`SELECT id, status, customer_id FRO
 
 ## Performance guidelines
 
-- **Sub-test setup target**: < 2s. Hit a billing plan once (cached via SELECT, not via createPlan); reuse across tests in a describe block where safe.
-- **`waitFor*` ceilings**: 5s for revalidation log, 10s for Mailpit emails, 8s for QZPay-test-control state. Anything longer is almost certainly a bug, not a slow CI runner.
+- **Sub-test setup target**: < 2s. Resolve a plan version once (cached via SELECT); reuse across tests in a describe block where safe.
+- **`waitFor*` ceilings**: 5s for revalidation log, 10s for Mailpit emails, 8s for fake-provider state. Anything longer is almost certainly a bug, not a slow CI runner.
 - **Avoid `page.goto` when API verification suffices**. Cookie-attach + `page.request.get/post` is 5-10× faster than full page navigation. Use UI navigation only when asserting visible DOM state (HOST-01, ACC-01).
-- **Keep cleanup focused**. `cleanupTestUsers` cascades to subscriptions, accommodations, conversations, addon purchases. Don't manually delete those tables — let the support helper do it.
+- **Keep cleanup focused**. `cleanupTestUsers` cascades to subscriptions, accommodations, conversations. Don't manually delete those tables — let the support helper do it.
 - **Parallel tests**. Each test owns its own user; the suite is safe at 4 workers. Tests that touch shared rows (counters, system-wide rate limits) use `test.describe.serial(...)` or run on the burn-in track only.
 
 ## Debugging a failure
@@ -307,8 +287,7 @@ const rows = await execSQL<AddonPurchaseRow>(`SELECT id, status, customer_id FRO
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| `403` from PATCH protected/accommodations | Subscription not active OR ownership check on a different actor | Confirm `createSubscription({status:'active'})` ran AND the cookie matches `ownerId` |
-| `409` / unique constraint on `idx_addon_purchases_active_unique` | Duplicate active addon row | Reset state in `afterEach`, or use a different `addon_slug` per test |
+| `403` from PATCH protected/accommodations | No coverage (`ENTITLEMENT_REQUIRED`) OR ownership check on a different actor | Seed coverage with `seedActivePlanHolder` AND confirm the cookie matches `ownerId` |
 | `500` from `/admin/billing/...` for super_admin | Permission check missing the right `PermissionEnum` | Confirm `createUser({role:'SUPER_ADMIN'})` was used; `setUserRole` writes the hat to `user_role` and leaves the set at exactly `{USER, <requested>}` |
 | `column "role" does not exist` from any `execSQL` | Query still targets the `users.role` scalar, dropped by HOS-296 | Read hats with `getUserRoles(userId)` (fixtures/db-helpers.ts); write them with `setUserRole` / `demoteHostToUser`. Never `SELECT`/`UPDATE` `users.role` |
 | Mailpit timeout | SMTP transport not wired OR the email subject regex doesn't match locale | Check Mailpit web UI at :8025 for the actual subject line |

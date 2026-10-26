@@ -44,7 +44,7 @@ separately would.
 Examples:
   hops logs api
   hops logs api -n 1000
-  hops logs api -f -g 'billing|qzpay|mercadopago'
+  hops logs api -f -g 'billing|mercadopago'
   hops logs web --since 5m
   hops logs api --since 24h > api-24h.log
 `.trim();

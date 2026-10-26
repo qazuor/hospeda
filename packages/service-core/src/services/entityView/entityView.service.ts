@@ -236,7 +236,7 @@ const GetDailySeriesForHostAccommodationsSchema = z.object({
  */
 const GetStatsForOwnListingsSchema = z.object({
     /** Listing vertical to aggregate. Only GASTRONOMY and EXPERIENCE are allowed. */
-    entityType: z.enum([EntityTypeEnum.GASTRONOMY, EntityTypeEnum.EXPERIENCE] as const, {
+    entityType: z.enum([EntityTypeEnum.VENUE, EntityTypeEnum.EXPERIENCE] as const, {
         message: 'zodError.entityView.listingStats.entityType.invalid'
     }),
     /** Rolling window. Defaults to '30d' when omitted from query params. */
@@ -393,7 +393,7 @@ export interface GetStatsForOwnListingsInput {
     /** Authenticated actor performing the request. */
     readonly actor: Actor;
     /** Listing vertical to aggregate: GASTRONOMY or EXPERIENCE. */
-    readonly entityType: EntityTypeEnum.GASTRONOMY | EntityTypeEnum.EXPERIENCE;
+    readonly entityType: EntityTypeEnum.VENUE | EntityTypeEnum.EXPERIENCE;
     /** Rolling window for the aggregation ('7d' or '30d'). */
     readonly window: EntityViewWindow;
 }
@@ -514,11 +514,9 @@ export class EntityViewService extends BaseService {
      * each re-deriving the GASTRONOMY/EXPERIENCE branch.
      */
     private listingModelFor(
-        entityType: EntityTypeEnum.GASTRONOMY | EntityTypeEnum.EXPERIENCE
+        entityType: EntityTypeEnum.VENUE | EntityTypeEnum.EXPERIENCE
     ): GastronomyModel | ExperienceModel {
-        return entityType === EntityTypeEnum.GASTRONOMY
-            ? this.gastronomyModel
-            : this.experienceModel;
+        return entityType === EntityTypeEnum.VENUE ? this.gastronomyModel : this.experienceModel;
     }
 
     /**

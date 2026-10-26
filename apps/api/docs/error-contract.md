@@ -363,22 +363,6 @@ Two rules specific to this surface:
   correction HOS-682 made on the outbound side, where a 404 or a business-rule
   refusal was being logged as a program fault.
 
-The retired HOS-1416 classifier was
-`src/routes/webhooks/mercadopago/error-classification.ts`;
-the statuses are asserted end-to-end through the real `@qazuor/qzpay-hono`
-router in
-`test/webhooks/webhook-error-disposition.test.ts`.
-
-## Historical exception (retired in HOS-1416)
-
-The `@qazuor/qzpay-hono` admin tier under `/api/v1/admin/billing/*` builds its
-own routes and does not pass through `createAdminRoute`, so the boot assertion
-and the ownership guard do not reach it. Its authentication ordering is covered
-directly by
-`test/middlewares/billing-admin-auth.middleware.test.ts`,
-and its error bodies still land in `createErrorHandler`, so R1 and R4 hold. What
-is NOT enforced there is R3-style param validation.
-
 ## S1 rejections (B3)
 
 `PLAN_NOT_FOR_SALE` and `PARTNER_MANUAL_ONLY` are 422 `VALIDATION_ERROR`; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409 `ALREADY_EXISTS`; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. `PARTNER_MANUAL_ONLY` means Partner is a manual payer and cannot start card checkout until the team's payment link exists. `TOURIST_VIP_INHERITED` means the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).

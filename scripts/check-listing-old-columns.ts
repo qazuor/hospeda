@@ -95,7 +95,7 @@ const LISTING_NAME_PATTERN = new RegExp(
     'g'
 );
 const LISTING_SEGMENT =
-    /(?:^|\/)(?:accommodations?|gastronomy|gastronomies|experiences?|listings?|host|properties|propiedades|comercio)(?:\/|$)/;
+    /(?:^|\/)(?:accommodations?|gastronomy|gastronomies|venues?|experiences?|listings?|host|properties|propiedades|comercio)(?:\/|$)/;
 const SOURCE_EXTENSION = /\.(?:ts|tsx|astro|mjs|cjs)$/;
 const FIXTURE_JSON = /^packages\/seed\/src\/data\/(?:accommodation|gastronomy)\/.+\.json$/;
 const MIGRATIONS_DIR = /^packages\/db\/src\/migrations\//;

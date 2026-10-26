@@ -21,12 +21,7 @@
  * provisioning) for admin-only operations.
  */
 
-import {
-    type GastronomyOrExperience,
-    PermissionEnum,
-    RoleEnum,
-    ServiceErrorCode
-} from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode, type VenueOrExperience } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { isAction15AuthorizedFor } from '../../utils/administrative-authorization';
@@ -71,7 +66,7 @@ const isAnonymousActor = (actor: Actor): boolean =>
  * `partner`, neither of which routes through these listing helpers, and a
  * value here must have a full seven-permission family behind it.
  */
-export type { GastronomyOrExperience };
+export type { VenueOrExperience };
 
 /**
  * The seven authorities every listing vertical needs, named independently of
@@ -94,7 +89,7 @@ export type ListingPermissionSlot =
  * finally be granted one without the other.
  */
 const VERTICAL_PERMISSIONS: Readonly<
-    Record<GastronomyOrExperience, Readonly<Record<ListingPermissionSlot, PermissionEnum>>>
+    Record<VenueOrExperience, Readonly<Record<ListingPermissionSlot, PermissionEnum>>>
 > = {
     gastronomy: {
         editOwn: PermissionEnum.GASTRONOMY_EDIT_OWN,
@@ -122,7 +117,7 @@ const VERTICAL_PERMISSIONS: Readonly<
  *
  * Each listing grants only its vertical's owner role.
  */
-export const VERTICAL_OWNER_ROLES: Readonly<Record<GastronomyOrExperience, RoleEnum>> = {
+export const VERTICAL_OWNER_ROLES: Readonly<Record<VenueOrExperience, RoleEnum>> = {
     gastronomy: RoleEnum.GASTRONOMY_OWNER,
     experience: RoleEnum.EXPERIENCE_OWNER
 };
@@ -138,7 +133,7 @@ export const VERTICAL_OWNER_ROLES: Readonly<Record<GastronomyOrExperience, RoleE
  * @returns The vertical's own permission for that slot.
  */
 export function verticalPermission(
-    vertical: GastronomyOrExperience,
+    vertical: VenueOrExperience,
     slot: ListingPermissionSlot
 ): PermissionEnum {
     return VERTICAL_PERMISSIONS[vertical][slot];
@@ -156,7 +151,7 @@ export function verticalPermission(
 export function hasListingPermission(
     actor: Actor,
     slot: ListingPermissionSlot,
-    vertical: GastronomyOrExperience
+    vertical: VenueOrExperience
 ): boolean {
     return hasPermission(actor, VERTICAL_PERMISSIONS[vertical][slot]);
 }
@@ -207,11 +202,7 @@ export function checkCanCreateListing(actor: Actor, _data: unknown): void {
  * @param vertical - The vertical whose `editAll` permission is required.
  * @throws {ServiceError} FORBIDDEN when the actor lacks the required permission.
  */
-export function checkCanEditAll(
-    actor: Actor,
-    _entity: unknown,
-    vertical: GastronomyOrExperience
-): void {
+export function checkCanEditAll(actor: Actor, _entity: unknown, vertical: VenueOrExperience): void {
     if (!hasListingPermission(actor, 'editAll', vertical)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -237,7 +228,7 @@ export function checkCanEditAll(
 export function checkCanEditOwn(
     actor: Actor,
     entity: { ownerId?: string | null },
-    vertical: GastronomyOrExperience
+    vertical: VenueOrExperience
 ): void {
     if (
         hasListingPermission(actor, 'editAll', vertical) ||
@@ -271,7 +262,7 @@ export function checkCanEditOwn(
 export function checkCanEditOwnOrAll(
     actor: Actor,
     entity: { ownerId?: string | null },
-    vertical: GastronomyOrExperience
+    vertical: VenueOrExperience
 ): void {
     if (hasListingPermission(actor, 'editAll', vertical)) {
         return;
@@ -303,7 +294,7 @@ export function checkCanEditOwnOrAll(
 export function checkCanDeleteListing(
     actor: Actor,
     _entity: unknown,
-    vertical: GastronomyOrExperience
+    vertical: VenueOrExperience
 ): void {
     if (!hasListingPermission(actor, 'delete', vertical)) {
         throw new ServiceError(
@@ -321,7 +312,7 @@ export function checkCanDeleteListing(
  * @param vertical - The vertical whose `viewAll` permission is required.
  * @throws {ServiceError} FORBIDDEN when the actor lacks the required permission.
  */
-export function checkCanViewAll(actor: Actor, vertical: GastronomyOrExperience): void {
+export function checkCanViewAll(actor: Actor, vertical: VenueOrExperience): void {
     if (!hasListingPermission(actor, 'viewAll', vertical)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -347,7 +338,7 @@ export function checkCanViewAll(actor: Actor, vertical: GastronomyOrExperience):
  * @param vertical - The vertical whose `viewAll` permission is required.
  * @throws {ServiceError} FORBIDDEN when the actor lacks the applicable permission.
  */
-export function checkCanAdminListListings(actor: Actor, vertical: GastronomyOrExperience): void {
+export function checkCanAdminListListings(actor: Actor, vertical: VenueOrExperience): void {
     if (!hasListingPermission(actor, 'viewAll', vertical)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -364,7 +355,7 @@ export function checkCanAdminListListings(actor: Actor, vertical: GastronomyOrEx
  * @param vertical - The vertical whose `moderateReview` permission is required.
  * @throws {ServiceError} FORBIDDEN when the actor lacks the required permission.
  */
-export function checkCanModerateReview(actor: Actor, vertical: GastronomyOrExperience): void {
+export function checkCanModerateReview(actor: Actor, vertical: VenueOrExperience): void {
     if (!hasListingPermission(actor, 'moderateReview', vertical)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,

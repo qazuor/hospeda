@@ -76,7 +76,7 @@ export const RICH_DESCRIPTION_PATTERNS: readonly RegExp[] = [
  * gated by the `CAN_USE_RICH_DESCRIPTION` entitlement.
  *
  * Used by:
- * - `gateRichDescription()` middleware (request-time enforcement)
+ * - `gateRichDescription()` middleware (request-time enforcement; removed by HOS-1416)
  * - `computeDowngradeExcess()` service (downgrade preview detection)
  *
  * @param value - The description string to inspect.
@@ -107,8 +107,8 @@ export function containsRichDescription(value: string): boolean {
  * Markers are stripped, not the surrounding text — `**Bold**` becomes
  * `Bold`, `[link](url)` becomes `link`, `- item` becomes `item`. This is a
  * deliberate, logged relaxation of SPEC-143's original "no silent strip"
- * decision (see the `gateRichDescription` doc comment in
- * `accommodation-entitlements.ts` for the full rationale).
+ * decision (the `gateRichDescription` middleware that applied it was removed
+ * with the legacy billing middlewares, HOS-1416).
  *
  * @param value - The description string to neutralize.
  * @returns `value` with all markdown syntax markers removed.
@@ -179,7 +179,7 @@ export const VIDEO_EMBED_PATTERNS: readonly RegExp[] = [
  * gated by the `CAN_EMBED_VIDEO` entitlement.
  *
  * Used by:
- * - `gateVideoEmbed()` middleware (request-time enforcement)
+ * - `gateVideoEmbed()` middleware (request-time enforcement; removed by HOS-1416)
  * - `computeDowngradeExcess()` service (downgrade preview detection)
  *
  * @param value - The description string to inspect.
@@ -200,11 +200,11 @@ export function containsVideoEmbed(value: string): boolean {
  * Removes recognised video embed URLs from `value`, collapsing the leftover
  * whitespace instead of rejecting the whole string.
  *
- * HOS-216: mirrors {@link stripRichDescriptionSyntax} — `gateVideoEmbed()`
- * uses this to neutralize only the video-URL portion of `description` when
- * the actor lacks `CAN_EMBED_VIDEO`, instead of throwing a 403 that aborts
- * the entire PATCH request. See the `gateVideoEmbed` doc comment in
- * `accommodation-entitlements.ts` for the full policy rationale.
+ * HOS-216: mirrors {@link stripRichDescriptionSyntax}. The `gateVideoEmbed()` middleware
+ * (removed with the legacy billing middlewares, HOS-1416) used this to neutralize only the
+ * video-URL portion of `description` when the actor lacked `CAN_EMBED_VIDEO`, instead of
+ * throwing a 403 that aborted the entire PATCH request. It is now consumed by
+ * `filterAccommodationByEntitlements` (`apps/api/src/utils/entitlement-filter.ts`).
  *
  * @param value - The description string to neutralize.
  * @returns `value` with all recognised video embed URLs removed.

@@ -51,13 +51,13 @@ vi.mock('../../../src/utils/listing-publication/ports', async (importOriginal) =
 const app = initApp();
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 type Vertical = (typeof verticals)[number];
 const tables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const createFixture: Readonly<
@@ -68,9 +68,9 @@ const createFixture: Readonly<
 > = {
     [VerticalEnum.ACCOMMODATION]: (ownerId, destinationId, status) =>
         createListing({ ownerId, destinationId, status, complete: false }),
-    [VerticalEnum.GASTRONOMY]: (ownerId, destinationId, status) =>
+    [VerticalEnum.VENUE]: (ownerId, destinationId, status) =>
         createVerticalListing({
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             ownerId,
             destinationId,
             status

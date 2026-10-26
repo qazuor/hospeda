@@ -125,7 +125,7 @@ export async function writeCutoverTrials({
     ]);
     const listings = [
         ...accommodationRows.map((row) => ({ ...row, vertical: VerticalEnum.ACCOMMODATION })),
-        ...gastronomyRows.map((row) => ({ ...row, vertical: VerticalEnum.GASTRONOMY })),
+        ...gastronomyRows.map((row) => ({ ...row, vertical: VerticalEnum.VENUE })),
         ...experienceRows.map((row) => ({ ...row, vertical: VerticalEnum.EXPERIENCE }))
     ];
     if (listings.length > 5) {

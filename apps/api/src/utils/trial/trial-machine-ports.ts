@@ -31,7 +31,7 @@ export { TrialCeilingConfigurationError } from './trial-ceiling';
 function portOf(tx: DrizzleClient): TrialMachineTransaction {
     const listingVerticalByVertical: Readonly<Record<Vertical, ListingVertical | null>> = {
         [VerticalEnum.ACCOMMODATION]: VerticalEnum.ACCOMMODATION,
-        [VerticalEnum.GASTRONOMY]: VerticalEnum.GASTRONOMY,
+        [VerticalEnum.VENUE]: VerticalEnum.VENUE,
         [VerticalEnum.EXPERIENCE]: VerticalEnum.EXPERIENCE,
         [VerticalEnum.TOURIST]: null,
         [VerticalEnum.PARTNER]: null

@@ -89,7 +89,7 @@ function makeCompleteExperienceListing(): ListingCompletenessListing {
 describe('resolveListingCompleteness — gastronomy', () => {
     it('should return complete=true and missing=[] for a fully-complete listing', () => {
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing: makeCompleteGastronomyListing()
         });
 
@@ -100,7 +100,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "name" missing when name is empty', () => {
         const listing = { ...makeCompleteGastronomyListing(), name: '' };
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing
         });
 
@@ -111,7 +111,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "name" missing when name is null', () => {
         const listing = { ...makeCompleteGastronomyListing(), name: null };
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing
         });
 
@@ -121,7 +121,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "summary" missing when summary is below the minimum length', () => {
         const listing = { ...makeCompleteGastronomyListing(), summary: 'too short' };
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing
         });
 
@@ -131,7 +131,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "description" missing when description is below the minimum length', () => {
         const listing = { ...makeCompleteGastronomyListing(), description: 'too short' };
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing
         });
 
@@ -141,7 +141,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "destinationId" missing when destinationId is absent', () => {
         const listing = { ...makeCompleteGastronomyListing(), destinationId: undefined };
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing
         });
 
@@ -151,7 +151,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "ownerId" missing when ownerId is absent', () => {
         const listing = { ...makeCompleteGastronomyListing(), ownerId: null };
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing
         });
 
@@ -161,7 +161,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "type" missing when type is absent', () => {
         const listing = { ...makeCompleteGastronomyListing(), type: undefined };
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing
         });
 
@@ -171,7 +171,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "media.featuredImage" missing when media is absent', () => {
         const listing = { ...makeCompleteGastronomyListing(), media: undefined };
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing
         });
 
@@ -181,7 +181,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "media.featuredImage" missing when featuredImage is absent', () => {
         const listing = { ...makeCompleteGastronomyListing(), media: {} };
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing
         });
 
@@ -194,7 +194,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
             contactInfo: { website: 'https://example.com' }
         };
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing
         });
 
@@ -207,7 +207,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
             contactInfo: { personalEmail: 'owner@example.com' }
         };
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing
         });
 
@@ -231,7 +231,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
             }
         };
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing
         });
 
@@ -241,7 +241,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "openingHours" missing when openingHours is absent', () => {
         const listing = { ...makeCompleteGastronomyListing(), openingHours: undefined };
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing
         });
 
@@ -251,7 +251,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "priceRange" missing when priceRange is absent', () => {
         const listing = { ...makeCompleteGastronomyListing(), priceRange: null };
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing
         });
 
@@ -263,7 +263,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
         // this test documents the deliberate exclusion (spec §6.6) by asserting
         // a listing missing them entirely is still complete.
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing: makeCompleteGastronomyListing()
         });
 
@@ -272,7 +272,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
 
     it('should accumulate every missing field, not stop at the first', () => {
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing: {}
         });
 
@@ -414,7 +414,7 @@ describe('resolveListingCompleteness — experience', () => {
                 isPriceOnRequest: false
             };
             const result = resolveListingCompleteness({
-                entityType: ProductDomainEnum.GASTRONOMY,
+                entityType: ProductDomainEnum.VENUE,
                 listing
             });
 
@@ -527,7 +527,7 @@ describe('HOS-924 — an experience cannot publish on a channel its page never s
         // no `contactInfo` at all. That hole is wider than a mis-calibrated
         // gate and is tracked separately.
         const result = resolveListingCompleteness({
-            entityType: ProductDomainEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.VENUE,
             listing: {
                 ...makeCompleteGastronomyListing(),
                 contactInfo: { whatsapp: SAMPLE_VALUE.whatsapp }

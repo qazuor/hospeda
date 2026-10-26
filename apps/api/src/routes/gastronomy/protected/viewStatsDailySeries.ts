@@ -49,14 +49,14 @@ export const protectedGastronomyViewStatsDailySeriesRoute = createProtectedRoute
         const actor = getActorFromContext(ctx);
         await enforceUserGate({
             userId: actor.id,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             keys: ['view_basic_stats']
         });
         const typedQuery = query as { window: '7d' | '30d' };
 
         const result = await entityViewService.getDailySeriesForOwnListings({
             actor,
-            entityType: EntityTypeEnum.GASTRONOMY,
+            entityType: EntityTypeEnum.VENUE,
             window: typedQuery.window
         });
 

@@ -12,7 +12,13 @@ import { runAfterCommit } from './trial-post-commit';
 
 /** T3 outcome and independent post-commit notice results. */
 export type TrialExpiryResult =
-    | { readonly expired: true; readonly notices: TrialPostCommitNotices }
+    | {
+          readonly expired: true;
+          readonly trialId: string;
+          readonly startedAt: Date | null;
+          readonly endsAt: Date;
+          readonly notices: TrialPostCommitNotices;
+      }
     | { readonly expired: false; readonly reason: 'NO_TRIAL_ROW' | 'NOT_ACTIVE' | 'NOT_DUE' };
 
 /** Expires a due trial after rereading its end date inside the machine lock. */
@@ -44,7 +50,12 @@ export async function expireTrial(args: {
             deadlinesVersion: TRIAL_DEADLINES_VERSION,
             milestones: computeRecoveryMilestones({ expiredAt: trial.endsAt })
         });
-        return { expired: true } as const;
+        return {
+            expired: true,
+            trialId: trial.id,
+            startedAt: trial.startedAt,
+            endsAt: trial.endsAt
+        } as const;
     });
     if (!decision.expired) return decision;
     const notices = await runAfterCommit({
@@ -53,7 +64,13 @@ export async function expireTrial(args: {
         vertical,
         change: 'REMOVED'
     });
-    return { expired: true, notices };
+    return {
+        expired: true,
+        trialId: decision.trialId,
+        startedAt: decision.startedAt,
+        endsAt: decision.endsAt,
+        notices
+    };
 }
 
 /** Processes one unlocked due-trial batch, isolating row failures. */
@@ -63,6 +80,13 @@ export async function expireDueTrials(args: {
     readonly clock: Clock;
     readonly afterCommit: TrialAfterCommit;
     readonly batchSize: number;
+    readonly onTrialExpired?: (trial: {
+        readonly userId: string;
+        readonly vertical: Vertical;
+        readonly trialId: string;
+        readonly startedAt: Date | null;
+        readonly endsAt: Date;
+    }) => void | Promise<void>;
 }): Promise<{ readonly expired: number; readonly skipped: number; readonly failed: number }> {
     if (!Number.isInteger(args.batchSize) || args.batchSize < 1) {
         throw new InvalidTrialMachineInputError({ field: 'batchSize' });
@@ -79,8 +103,22 @@ export async function expireDueTrials(args: {
                 afterCommit: args.afterCommit,
                 input
             });
-            if (result.expired) expired++;
-            else skipped++;
+            if (result.expired) {
+                expired++;
+                if (args.onTrialExpired) {
+                    try {
+                        await args.onTrialExpired({
+                            userId: input.userId,
+                            vertical: input.vertical,
+                            trialId: result.trialId,
+                            startedAt: result.startedAt,
+                            endsAt: result.endsAt
+                        });
+                    } catch {
+                        /* Analytics callback failures do not affect the expiry count. */
+                    }
+                }
+            } else skipped++;
         } catch {
             failed++;
         }

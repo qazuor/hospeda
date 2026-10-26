@@ -32,6 +32,7 @@ vi.mock('../../../src/utils/clock', () => ({
 
 import { touristVipInheritance } from '../../../src/routes/billing-subscription/tourist-vip-inheritance';
 import { buildMercadoPagoNoticePorts } from '../../../src/routes/webhooks/mercadopago-ports';
+import { getAnalyticsFactSink } from '../../../src/utils/analytics/analytics-facts';
 import { getCoverageNotices } from '../../../src/utils/listing-access/coverage-notices';
 
 describe('TEST:B4:2 the provider notice receiver notifies the process-wide registry (HOS-1533)', () => {
@@ -55,6 +56,14 @@ describe("AC:B7:31 the provider notice receiver wires S7's Tourist VIP clause (H
     });
 });
 
+describe('TEST:1878:5 provider notice S2 forwards billing facts', () => {
+    it('wires one sink to both the receiver and its mirror delegates', () => {
+        const ports = buildMercadoPagoNoticePorts();
+        expect(ports.billingFacts).toBe(getAnalyticsFactSink());
+        expect(delegateInputs.at(-1)).toMatchObject({ billingFacts: ports.billingFacts });
+    });
+});
+
 describe('AC:B4:11 the provider notice receiver annotates the cancellation seen in production (HOS-1534)', () => {
     it('wires cancellationSeen to the real provider_link annotator', () => {
         // Arrange / Act
@@ -69,8 +78,10 @@ describe('AC:B4:11 the provider notice receiver annotates the cancellation seen 
         expect(Object.keys(ports).sort()).toEqual(
             [
                 'beforeCancelNotice',
+                'billingFacts',
                 'cancellationSeen',
                 'clock',
+                'changeDirection',
                 'coverageNotices',
                 'complements',
                 'delegates',

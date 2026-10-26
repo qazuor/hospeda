@@ -65,7 +65,7 @@ export interface RealCoverageCaseHarness {
 const SUBSCRIBED_VERTICAL = VerticalEnum.ACCOMMODATION;
 
 /** A second vertical, where the person holds no subscription. */
-const OTHER_VERTICAL = VerticalEnum.GASTRONOMY;
+const OTHER_VERTICAL = VerticalEnum.VENUE;
 
 /** The name of the G-R2-C case (B4 "Lista cuando", clause 7), exact: the exit test looks it up. */
 export const G_R2_C_CASE =

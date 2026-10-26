@@ -15,7 +15,6 @@ import {
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
     ExternalPlatformEnum,
-    GastronomyTypeEnum,
     HostTradeBenefitTypeEnum,
     HostTradeCategoryEnum,
     HostTradeUsageChannelEnum,
@@ -71,6 +70,7 @@ import {
     TagColorEnum,
     TagTypeEnum,
     TouristAudienceEnum,
+    VenueTypeEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { pgEnum } from 'drizzle-orm/pg-core';
@@ -306,7 +306,7 @@ export const NotificationRecipientSidePgEnum = pgEnum(
     enumToTuple(NotificationRecipientSideEnum)
 );
 
-export const GastronomyTypePgEnum = pgEnum('gastronomy_type_enum', enumToTuple(GastronomyTypeEnum));
+export const GastronomyTypePgEnum = pgEnum('gastronomy_type_enum', enumToTuple(VenueTypeEnum));
 
 export const PriceRangePgEnum = pgEnum('price_range_enum', enumToTuple(PriceRangeEnum));
 

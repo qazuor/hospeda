@@ -45,7 +45,7 @@ afterAll(async () => {
 describe('TEST:1702:4 AC:1702:1 PB9 deletes the menu file and dish photos after its commit', () => {
     it('deletes the marked menu, dish, and gallery assets from an expired archived gastronomy', async () => {
         const fixture = await createPurgeAssetFixture(
-            VerticalEnum.GASTRONOMY,
+            VerticalEnum.VENUE,
             PublicationStatusEnum.ARCHIVED
         );
         fixtures.push(fixture);
@@ -66,7 +66,7 @@ describe('TEST:1702:4 AC:1702:1 PB9 deletes the menu file and dish photos after 
             afterCommit: getPurgeAfterCommit(),
             clock: { now: () => now },
             previousPassStartedAt: now,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             listingId: fixture.listingId,
             ownerId: fixture.ownerId,
             correlationId: randomUUID()

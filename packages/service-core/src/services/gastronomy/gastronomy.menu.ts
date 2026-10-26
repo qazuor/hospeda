@@ -53,12 +53,12 @@ import {
     withTransaction
 } from '@repo/db';
 import {
-    type GastronomyMenuGetInput,
-    GastronomyMenuGetInputSchema,
-    type GastronomyMenuOutput,
-    type GastronomyMenuReplaceInput,
-    GastronomyMenuReplaceInputSchema,
-    ServiceErrorCode
+    ServiceErrorCode,
+    type VenueMenuGetInput,
+    VenueMenuGetInputSchema,
+    type VenueMenuOutput,
+    type VenueMenuReplaceInput,
+    VenueMenuReplaceInputSchema
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -119,11 +119,11 @@ const byDisplayOrder = <T extends { displayOrder: number; name: string }>(a: T, 
  */
 export async function getGastronomyMenu(
     model: GastronomyModel,
-    data: GastronomyMenuGetInput,
+    data: VenueMenuGetInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyMenuOutput>> {
+): Promise<ServiceOutput<VenueMenuOutput>> {
     try {
-        const parseResult = GastronomyMenuGetInputSchema.safeParse(data);
+        const parseResult = VenueMenuGetInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)
@@ -229,11 +229,11 @@ export async function getGastronomyMenu(
 export async function replaceGastronomyMenu(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyMenuReplaceInput,
+    data: VenueMenuReplaceInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyMenuOutput>> {
+): Promise<ServiceOutput<VenueMenuOutput>> {
     try {
-        const parseResult = GastronomyMenuReplaceInputSchema.safeParse(data);
+        const parseResult = VenueMenuReplaceInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)

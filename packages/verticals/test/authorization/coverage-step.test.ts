@@ -39,14 +39,14 @@ function ports(
 
 const editKeys: Record<ListingVertical, string> = {
     [VerticalEnum.ACCOMMODATION]: 'edit_accommodation_info',
-    [VerticalEnum.GASTRONOMY]: 'edit_gastronomy_info',
+    [VerticalEnum.VENUE]: 'edit_gastronomy_info',
     [VerticalEnum.EXPERIENCE]: 'edit_experience_info'
 };
 
 describe('AC:V5:9 / TEST:V5:10 coverage and capability steps', () => {
     it.each([
         VerticalEnum.ACCOMMODATION,
-        VerticalEnum.GASTRONOMY,
+        VerticalEnum.VENUE,
         VerticalEnum.EXPERIENCE
     ] as const)('passes BASE coverage but checks %s EDIT capability', async (vertical) => {
         const base = {

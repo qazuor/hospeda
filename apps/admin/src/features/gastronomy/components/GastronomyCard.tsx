@@ -7,7 +7,7 @@
  * replaced by a card grid.
  */
 
-import { GastronomyTypeEnum, PriceRangeEnum } from '@repo/schemas';
+import { PriceRangeEnum, VenueTypeEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -18,16 +18,16 @@ import type { GastronomyListItem } from '../config/gastronomy.config';
 // Label helpers
 // ---------------------------------------------------------------------------
 
-const TYPE_LABELS: Record<GastronomyTypeEnum, string> = {
-    [GastronomyTypeEnum.RESTAURANT]: 'Restaurante',
-    [GastronomyTypeEnum.BAR]: 'Bar',
-    [GastronomyTypeEnum.CAFE]: 'Café',
-    [GastronomyTypeEnum.PARRILLA]: 'Parrilla',
-    [GastronomyTypeEnum.CERVECERIA]: 'Cervecería',
-    [GastronomyTypeEnum.HELADERIA]: 'Heladería',
-    [GastronomyTypeEnum.PANADERIA]: 'Panadería',
-    [GastronomyTypeEnum.ROTISERIA]: 'Rotisería',
-    [GastronomyTypeEnum.FOOD_TRUCK]: 'Food Truck'
+const TYPE_LABELS: Record<VenueTypeEnum, string> = {
+    [VenueTypeEnum.RESTAURANT]: 'Restaurante',
+    [VenueTypeEnum.BAR]: 'Bar',
+    [VenueTypeEnum.CAFE]: 'Café',
+    [VenueTypeEnum.PARRILLA]: 'Parrilla',
+    [VenueTypeEnum.CERVECERIA]: 'Cervecería',
+    [VenueTypeEnum.HELADERIA]: 'Heladería',
+    [VenueTypeEnum.PANADERIA]: 'Panadería',
+    [VenueTypeEnum.ROTISERIA]: 'Rotisería',
+    [VenueTypeEnum.FOOD_TRUCK]: 'Food Truck'
 };
 
 const PRICE_LABELS: Record<PriceRangeEnum, string> = {
@@ -60,7 +60,7 @@ export const GastronomyCard = React.memo(function GastronomyCardComponent({
     onSelect
 }: GastronomyCardProps) {
     const typeLabel = gastronomy.type
-        ? (TYPE_LABELS[gastronomy.type as GastronomyTypeEnum] ?? gastronomy.type)
+        ? (TYPE_LABELS[gastronomy.type as VenueTypeEnum] ?? gastronomy.type)
         : null;
 
     const priceLabel = gastronomy.priceRange

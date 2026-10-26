@@ -35,9 +35,9 @@
  * across the four entities at once.
  */
 import {
-    GastronomyMediaSingleOutputSchema,
-    type GastronomyMediaUpdatePayload,
-    GastronomyMediaUpdatePayloadSchema,
+    VenueMediaSingleOutputSchema,
+    type VenueMediaUpdatePayload,
+    VenueMediaUpdatePayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError, updateGastronomyMedia } from '@repo/service-core';
@@ -57,7 +57,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminUpdateGastronomyMediaRoute = createAdminRoute({
     method: 'patch',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}',
     summary: 'Correct photo text metadata in gastronomy gallery (admin)',
     description:
@@ -70,15 +70,15 @@ export const adminUpdateGastronomyMediaRoute = createAdminRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyMediaUpdatePayloadSchema,
-    responseSchema: GastronomyMediaSingleOutputSchema,
+    requestBody: VenueMediaUpdatePayloadSchema,
+    responseSchema: VenueMediaSingleOutputSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        const payload = body as GastronomyMediaUpdatePayload;
+        const payload = body as VenueMediaUpdatePayload;
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         // (mirrors the sibling media routes).

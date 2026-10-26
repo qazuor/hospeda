@@ -95,7 +95,7 @@ export const GastronomyEventRecurrencePgEnum = pgEnum('gastronomy_event_recurren
  * `display_order` assigned by the whole-document writer, and the full audit
  * block.
  *
- * @see packages/schemas/src/entities/gastronomy/subtypes/gastronomy.event.schema.ts
+ * @see packages/schemas/src/entities/venue/subtypes/venue.event.schema.ts
  */
 export const gastronomyEvents = pgTable(
     'gastronomy_events',

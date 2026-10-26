@@ -29,7 +29,7 @@ import {
     TraditionalGrillIcon,
     TraditionalPubIcon
 } from '@repo/icons';
-import { GastronomyTypeEnum } from '@repo/schemas';
+import { VenueTypeEnum } from '@repo/schemas';
 import type { ComponentType } from 'react';
 
 interface GastronomyTypeParams {
@@ -54,18 +54,17 @@ interface GastronomyTypeParams {
  * - `FOOD_TRUCK` uses `MotorhomeParkingIcon` (a van glyph) — the closest
  *   vehicle icon available; there is no dedicated truck icon.
  */
-export const GASTRONOMY_TYPE_ICONS: Readonly<Record<GastronomyTypeEnum, ComponentType<IconProps>>> =
-    {
-        [GastronomyTypeEnum.RESTAURANT]: RestaurantIcon,
-        [GastronomyTypeEnum.BAR]: BarServiceIcon,
-        [GastronomyTypeEnum.CAFE]: CoffeeIcon,
-        [GastronomyTypeEnum.PARRILLA]: TraditionalGrillIcon,
-        [GastronomyTypeEnum.CERVECERIA]: TraditionalPubIcon,
-        [GastronomyTypeEnum.HELADERIA]: SnowflakeIcon,
-        [GastronomyTypeEnum.PANADERIA]: TraditionalBakeryIcon,
-        [GastronomyTypeEnum.ROTISERIA]: PackageIcon,
-        [GastronomyTypeEnum.FOOD_TRUCK]: MotorhomeParkingIcon
-    };
+export const GASTRONOMY_TYPE_ICONS: Readonly<Record<VenueTypeEnum, ComponentType<IconProps>>> = {
+    [VenueTypeEnum.RESTAURANT]: RestaurantIcon,
+    [VenueTypeEnum.BAR]: BarServiceIcon,
+    [VenueTypeEnum.CAFE]: CoffeeIcon,
+    [VenueTypeEnum.PARRILLA]: TraditionalGrillIcon,
+    [VenueTypeEnum.CERVECERIA]: TraditionalPubIcon,
+    [VenueTypeEnum.HELADERIA]: SnowflakeIcon,
+    [VenueTypeEnum.PANADERIA]: TraditionalBakeryIcon,
+    [VenueTypeEnum.ROTISERIA]: PackageIcon,
+    [VenueTypeEnum.FOOD_TRUCK]: MotorhomeParkingIcon
+};
 
 /**
  * Fallback icon for gastronomy type values not present in the canonical map
@@ -87,6 +86,6 @@ export const GASTRONOMY_TYPE_FALLBACK_ICON: ComponentType<IconProps> = ForkKnife
  * ```
  */
 export function getGastronomyTypeIcon({ type }: GastronomyTypeParams): ComponentType<IconProps> {
-    const normalized = type.toUpperCase() as GastronomyTypeEnum;
+    const normalized = type.toUpperCase() as VenueTypeEnum;
     return GASTRONOMY_TYPE_ICONS[normalized] ?? GASTRONOMY_TYPE_FALLBACK_ICON;
 }

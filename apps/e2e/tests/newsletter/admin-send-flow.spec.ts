@@ -64,6 +64,11 @@ test.describe('NL-03: admin send + cancel newsletter campaign @p2 @admin @newsle
     });
 
     test('create draft → send → cancel transitions through expected states', async ({ page }) => {
+        test.skip(
+            !process.env.HOSPEDA_EMAIL_API_KEY,
+            'Newsletter delivery requires HOSPEDA_EMAIL_API_KEY; this environment only supports signup auto-verification.'
+        );
+
         // ── 1. Setup SUPER_ADMIN + at least one active subscriber ──────────
         const admin = await createUser({ role: 'SUPER_ADMIN' }, { apiBaseUrl: API_URL });
         adminId = admin.id;

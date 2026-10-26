@@ -93,7 +93,7 @@ export interface PlanDeltaSource {
     readonly slug: string;
     /** Entitlement keys the plan grants, as plain strings. */
     readonly entitlements: readonly string[];
-    /** Limits as a key -> numeric-value map (QZPay storage format). */
+    /** Limits as a key -> numeric-value map (the legacy QZPay storage format). */
     readonly limits: Readonly<Record<string, number>>;
 }
 

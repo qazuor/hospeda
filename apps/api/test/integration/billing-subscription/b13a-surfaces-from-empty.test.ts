@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import {
     addonInstances,
-    billingDeadlineVersions,
     courtesyGrants,
     eq,
     getDb,
@@ -11,7 +10,6 @@ import {
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import {
-    type BillingDeadlineValues,
     OwnSubscriptionsResponseSchema,
     PermissionEnum,
     PricingSituationResponseSchema,
@@ -23,6 +21,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
+import { ensureBillingDeadlineVersion1 } from '../helpers/billing-deadline-version.js';
 import {
     actorHeaders,
     NOW,
@@ -36,24 +35,7 @@ const clock = routeClock();
 const fake = new FakePaymentProvider({ clock, idNamespace: randomUUID() });
 const minePath = '/api/v1/protected/billing-subscription';
 const pricingPath = `${minePath}/pricing-situation/accommodation`;
-const deadlines = {
-    '10': { cardHours: 72, manualDays: 7 },
-    '11': { noticeDays: 60, contactDays: [30, 7] },
-    '12': { noticeDays: 60, contactDays: [30, 7] },
-    '13': { daysBefore: [5, 1] },
-    '14': { daysBefore: 7 },
-    '15': { hoursRemaining: 24 },
-    '16': { days: 7 },
-    '17': { days: 7 },
-    '18': { days: 180 },
-    '19': { minutes: 60 }
-} satisfies BillingDeadlineValues;
-const ensureBillingDeadlineVersion1 = async () => {
-    await getDb()
-        .insert(billingDeadlineVersions)
-        .values({ version: 1, values: deadlines })
-        .onConflictDoNothing();
-};
+
 const userHeaders = (args: { readonly id: string }) =>
     actorHeaders({ id: args.id, role: 'USER', permissions: [PermissionEnum.BILLING_VIEW_OWN] });
 let app: ReturnType<typeof initApp>;

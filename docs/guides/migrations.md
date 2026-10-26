@@ -346,28 +346,18 @@ HOSPEDA_TEST_URL="postgresql://user:pass@localhost:5432/hospeda_migration_test" 
 
 ---
 
-## Extras-carril example: CHECK constraints on `billing_promo_codes` (SPEC-262)
+## Extras-carril example: plan catalog immutability trigger (HOS-1434)
 
-`billing_plans` and `billing_subscriptions` are owned by the `@qazuor/qzpay-drizzle`
-library. As of `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73), several columns that
-previously required the extras carril — `product_domain` on both tables,
-`effect_kind` / `value_kind` / `duration_cycles` / `extra_days` on
-`billing_promo_codes`, and `promo_effect_remaining_cycles` on
-`billing_subscriptions` — are now typed Drizzle columns, accessed via normal
-typed queries (see HOS-75). The extras carril remains the right home for
-anything Drizzle genuinely cannot express, such as multi-column CHECK
-constraints:
+Drizzle cannot declare triggers, so the rule "a published `plan_version` is immutable
+except for its `current` flag" lives in the extras carril:
 
 ```
-packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql
+packages/db/src/migrations/extras/041-plan-catalog-immutability.trigger.sql
 ```
 
-This file enforces per-`effect_kind` shape invariants (e.g. a `'discount'` row
-must have a `value_kind`, a `'trial_extension'` row must have `extra_days`) —
-logic that spans multiple columns and cannot be expressed as a single-column
-Drizzle constraint. It is idempotent and re-applied by `pnpm db:apply-extras`
-on every `hops db-migrate` run; the drift guard does not flag it because it is
-not a column declared in the Hospeda TS schema.
+The file is idempotent (`CREATE OR REPLACE FUNCTION`, each trigger dropped and recreated)
+and re-applied by `pnpm db:apply-extras` on every `hops db-migrate` run. The drift guard
+does not flag it because it is not a column declared in the Hospeda TS schema.
 
 After any reset (`hops db-migrate --target=staging --reset`) run
 `pnpm db:apply-extras` to restore it before seeding, or use `hops db-migrate`

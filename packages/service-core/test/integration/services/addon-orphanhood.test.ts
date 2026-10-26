@@ -23,7 +23,7 @@ import { seedCoveragePayment } from './support/coverage-fixtures';
 afterAll(closeServiceTestPool);
 
 const V = VerticalEnum.ACCOMMODATION;
-const W = VerticalEnum.GASTRONOMY;
+const W = VerticalEnum.VENUE;
 
 describe.skipIf(!isServiceTestDbAvailable())(
     'HOS-1545 TEST:B5:13 AC:B5:25 A5 cancels only the effectively orphaned instance',

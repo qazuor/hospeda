@@ -322,7 +322,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 // Arrange
                 const seeded = await seedOne(tx, {
                     status: 'ACTIVE',
-                    vertical: VerticalEnum.GASTRONOMY
+                    vertical: VerticalEnum.VENUE
                 });
 
                 // Act
@@ -334,7 +334,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 });
                 const gastronomy = await resolveSubscriptionSources({
                     userId: seeded.userId,
-                    vertical: VerticalEnum.GASTRONOMY,
+                    vertical: VerticalEnum.VENUE,
                     ports,
                     tx
                 });

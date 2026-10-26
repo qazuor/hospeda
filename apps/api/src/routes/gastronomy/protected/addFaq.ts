@@ -9,8 +9,8 @@
 import {
     FaqWithChannelVisibilityCreatePayloadSchema,
     type FaqWithChannelVisibilityCreatePayloadType,
-    type GastronomyFaqAddInput,
-    GastronomyFaqSingleOutputSchema,
+    type VenueFaqAddInput,
+    VenueFaqSingleOutputSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { addGastronomyFaq, GastronomyService, ServiceError } from '@repo/service-core';
@@ -34,14 +34,14 @@ export const protectedAddGastronomyFaqRoute = createProtectedRoute({
     path: '/{id}/faqs',
     summary: 'Add FAQ to gastronomy listing',
     description: 'Adds a new frequently asked question to a gastronomy listing',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy FAQs'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     requestBody: FaqWithChannelVisibilityCreatePayloadSchema,
-    responseSchema: GastronomyFaqSingleOutputSchema,
+    responseSchema: VenueFaqSingleOutputSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -49,7 +49,7 @@ export const protectedAddGastronomyFaqRoute = createProtectedRoute({
     ) => {
         const actor = getActorFromContext(ctx);
 
-        const input: GastronomyFaqAddInput = {
+        const input: VenueFaqAddInput = {
             gastronomyId: params.id as string,
             faq: body as FaqWithChannelVisibilityCreatePayloadType
         };

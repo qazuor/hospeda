@@ -11,10 +11,10 @@
  */
 
 import {
-    type GastronomyMediaAddInput,
-    type GastronomyMediaAddPayload,
-    GastronomyMediaAddPayloadSchema,
-    GastronomyMediaSingleOutputSchema,
+    type VenueMediaAddInput,
+    type VenueMediaAddPayload,
+    VenueMediaAddPayloadSchema,
+    VenueMediaSingleOutputSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { addGastronomyMedia, GastronomyService, ServiceError } from '@repo/service-core';
@@ -40,14 +40,14 @@ export const protectedAddGastronomyMediaRoute = createProtectedRoute({
     description:
         'Registers an already-uploaded URL as a new gastronomy_media row. ' +
         'Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyMediaAddPayloadSchema,
-    responseSchema: GastronomyMediaSingleOutputSchema,
+    requestBody: VenueMediaAddPayloadSchema,
+    responseSchema: VenueMediaSingleOutputSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -55,9 +55,9 @@ export const protectedAddGastronomyMediaRoute = createProtectedRoute({
     ) => {
         const actor = getActorFromContext(ctx);
 
-        const input: GastronomyMediaAddInput = {
+        const input: VenueMediaAddInput = {
             gastronomyId: params.id as string,
-            media: body as GastronomyMediaAddPayload
+            media: body as VenueMediaAddPayload
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`

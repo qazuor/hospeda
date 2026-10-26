@@ -25,11 +25,7 @@ import { FakeRedis } from '../effective-set-cache/fake-redis';
 
 const pool = new Pool({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL, max: 3 });
 const db = drizzle({ client: pool }) as unknown as DrizzleClient;
-const VERTICALS = [
-    VerticalEnum.ACCOMMODATION,
-    VerticalEnum.TOURIST,
-    VerticalEnum.GASTRONOMY
-] as const;
+const VERTICALS = [VerticalEnum.ACCOMMODATION, VerticalEnum.TOURIST, VerticalEnum.VENUE] as const;
 type Vertical = (typeof VERTICALS)[number];
 const KEY = 'priority_support';
 let nextRank = 4_000;
@@ -242,10 +238,10 @@ describe('DB-backed effective-set cache', () => {
             inheritsTouristVip: false,
             globalGrant: null
         });
-        const gastronomy = vi.fn(load(user, VerticalEnum.GASTRONOMY));
+        const gastronomy = vi.fn(load(user, VerticalEnum.VENUE));
         await cache.readThrough({
             userId: user,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             load: gastronomy
         });
         expect(gastronomy).toHaveBeenCalledOnce();

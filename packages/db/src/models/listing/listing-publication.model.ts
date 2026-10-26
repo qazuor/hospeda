@@ -6,7 +6,7 @@ import { domainEventModel } from '../domain-event/domain-event.model.ts';
 /** The three verticals backed by listing tables. */
 export type ListingVertical =
     | VerticalEnum.ACCOMMODATION
-    | VerticalEnum.GASTRONOMY
+    | VerticalEnum.VENUE
     | VerticalEnum.EXPERIENCE;
 
 /** A non-deleted listing as seen by the publication machine. */

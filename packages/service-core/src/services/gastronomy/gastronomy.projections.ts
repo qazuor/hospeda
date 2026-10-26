@@ -18,7 +18,7 @@
  * on runtime JS objects so callers don't need to re-parse the entity.
  */
 
-import type { Gastronomy } from '@repo/schemas';
+import type { Venue } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Public-tier projection
@@ -43,7 +43,7 @@ import type { Gastronomy } from '@repo/schemas';
  * // safe.ownerId  === undefined
  * ```
  */
-export function projectGastronomyPublic(entity: Gastronomy): Partial<Gastronomy> {
+export function projectGastronomyPublic(entity: Venue): Partial<Venue> {
     const { adminInfo: _adminInfo, ownerId: _ownerId, ...rest } = entity;
     return rest;
 }
@@ -55,7 +55,7 @@ export function projectGastronomyPublic(entity: Gastronomy): Partial<Gastronomy>
  * @param entities - Array of raw gastronomy entities.
  * @returns Array of projected entities without private fields.
  */
-export function projectGastronomyPublicList(entities: Gastronomy[]): Partial<Gastronomy>[] {
+export function projectGastronomyPublicList(entities: Venue[]): Partial<Venue>[] {
     return entities.map(projectGastronomyPublic);
 }
 
@@ -92,7 +92,7 @@ function resolveOwnerImage(owner: Record<string, unknown> | undefined | null): s
  * @param entity - The gastronomy entity (may carry an eager-loaded `owner` relation).
  * @returns A new entity object with the resolved avatar, or the original if unchanged.
  */
-export function projectGastronomyOwnerAvatar<T extends Gastronomy>(entity: T | null): T | null {
+export function projectGastronomyOwnerAvatar<T extends Venue>(entity: T | null): T | null {
     if (!entity) return entity;
     // TYPE-WORKAROUND: projection reads an optionally-loaded relation not present on the base entity type
     const owner = (entity as unknown as { owner?: Record<string, unknown> }).owner;
@@ -108,6 +108,6 @@ export function projectGastronomyOwnerAvatar<T extends Gastronomy>(entity: T | n
  * @param entities - Array of gastronomy entities (may carry eager-loaded `owner`).
  * @returns Array with resolved owner avatars.
  */
-export function projectGastronomyOwnerAvatarList<T extends Gastronomy>(entities: T[]): T[] {
+export function projectGastronomyOwnerAvatarList<T extends Venue>(entities: T[]): T[] {
     return entities.map((e) => projectGastronomyOwnerAvatar(e) as T);
 }

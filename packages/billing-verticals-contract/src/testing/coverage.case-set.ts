@@ -55,7 +55,7 @@ export interface CoverageCaseHarness {
 const TRIAL_VERTICAL = VerticalEnum.ACCOMMODATION;
 
 /** A second vertical, never arranged. */
-const OTHER_VERTICAL = VerticalEnum.GASTRONOMY;
+const OTHER_VERTICAL = VerticalEnum.VENUE;
 
 /** Asserts the response validates against the contract; returns it typed. */
 function expectValid(args: {

@@ -1,5 +1,6 @@
 import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contract';
 import type { PaymentProvider } from '@repo/payments';
+import type { BillingFactSink } from '../facts/billing-fact-sink.js';
 import { creditedPaymentsFromLedger } from '../payment/payment-ledger.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port.js';
@@ -37,6 +38,7 @@ export interface ProviderNoticeMirrorDelegatesPorts {
     readonly beforeCancelNotice: BeforeCancelNotice;
     /** Receives the post-commit coverage notices; defaults to the unwired logger. */
     readonly coverageNotices?: CoverageNotices;
+    readonly billingFacts?: BillingFactSink;
     /** Hangs payments from the marks `LIVE_PREAPPROVAL_ON_CLOSED_ROW` opens. */
     readonly markPayments?: ReconciliationMarkPayments;
     /** S18's interface (B8b); defaults to `unimplementedSuccessionCloser`, like the receiver. */
@@ -45,6 +47,7 @@ export interface ProviderNoticeMirrorDelegatesPorts {
     readonly payments?: SubscriptionPayments;
     /** S5 policy for a credited period found while handling a provider notice. */
     readonly planPolicy?: VerticalsForBilling['planPolicy'];
+    readonly changeDirection?: VerticalsForBilling['changeDirection'];
     /** DEC-OBS-001 notice for an unresolved period. */
     readonly unresolvedPeriodCharges?: UnresolvedPeriodCharges;
     /** Optional S32 policy readers used by S6 on the successor-cancel event. */
@@ -58,6 +61,7 @@ function arrearsPorts(ports: ProviderNoticeMirrorDelegatesPorts): GraceExpiryChe
         beforeCancelNotice: ports.beforeCancelNotice,
         payments: ports.payments ?? creditedPaymentsFromLedger,
         ...(ports.coverageNotices === undefined ? {} : { coverageNotices: ports.coverageNotices }),
+        ...(ports.billingFacts === undefined ? {} : { billingFacts: ports.billingFacts }),
         ...(ports.markPayments === undefined ? {} : { markPayments: ports.markPayments }),
         ...(ports.planPolicy === undefined ? {} : { planPolicy: ports.planPolicy }),
         ...(ports.unresolvedPeriodCharges === undefined

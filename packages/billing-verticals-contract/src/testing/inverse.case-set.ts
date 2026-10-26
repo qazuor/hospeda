@@ -201,7 +201,7 @@ export function listingCaseSet(args: Group<ListingCaseHarness>): void {
                 state: 'PUBLISHED'
             });
             const b = await h.arrangeListing({
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 ownerId: ownerB,
                 state: 'PUBLISHED'
             });
@@ -223,7 +223,7 @@ export function listingCaseSet(args: Group<ListingCaseHarness>): void {
                 VerticalEnum.ACCOMMODATION,
                 ownerA
             ]);
-            expect([answerB.vertical, answerB.ownerId]).toEqual([VerticalEnum.GASTRONOMY, ownerB]);
+            expect([answerB.vertical, answerB.ownerId]).toEqual([VerticalEnum.VENUE, ownerB]);
         });
 
         it('a published listing accepts a feature and a moderated one does not', async () => {

@@ -33,20 +33,20 @@ import {
     withTransaction
 } from '@repo/db';
 import {
-    type GastronomyFaq,
-    type GastronomyFaqAddInput,
-    GastronomyFaqAddInputSchema,
-    type GastronomyFaqListInput,
-    GastronomyFaqListInputSchema,
-    type GastronomyFaqListOutput,
-    type GastronomyFaqRemoveInput,
-    GastronomyFaqRemoveInputSchema,
-    type GastronomyFaqReorderInput,
-    GastronomyFaqReorderInputSchema,
-    type GastronomyFaqSingleOutput,
-    type GastronomyFaqUpdateInput,
-    GastronomyFaqUpdateInputSchema,
-    ServiceErrorCode
+    ServiceErrorCode,
+    type VenueFaq,
+    type VenueFaqAddInput,
+    VenueFaqAddInputSchema,
+    type VenueFaqListInput,
+    VenueFaqListInputSchema,
+    type VenueFaqListOutput,
+    type VenueFaqRemoveInput,
+    VenueFaqRemoveInputSchema,
+    type VenueFaqReorderInput,
+    VenueFaqReorderInputSchema,
+    type VenueFaqSingleOutput,
+    type VenueFaqUpdateInput,
+    VenueFaqUpdateInputSchema
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -97,11 +97,11 @@ async function requireGastronomy(
 export async function addGastronomyFaq(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyFaqAddInput,
+    data: VenueFaqAddInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyFaqSingleOutput>> {
+): Promise<ServiceOutput<VenueFaqSingleOutput>> {
     try {
-        const parseResult = GastronomyFaqAddInputSchema.safeParse(data);
+        const parseResult = VenueFaqAddInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)
@@ -117,9 +117,7 @@ export async function addGastronomyFaq(
 
         // HOS-1642 (AC:V9a:6): the write and its owner-act event share one
         // transaction — the event commits or rolls back WITH the FAQ row.
-        const run = async (
-            tx: DrizzleClient
-        ): Promise<ServiceOutput<GastronomyFaqSingleOutput>> => {
+        const run = async (tx: DrizzleClient): Promise<ServiceOutput<VenueFaqSingleOutput>> => {
             const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
             checkGastronomyCanEditFaqEntries(actor, gastronomy);
 
@@ -151,7 +149,7 @@ export async function addGastronomyFaq(
                 field: 'faqs',
                 ctx: { ...ctx, tx }
             });
-            return { data: { faq: createdFaq as GastronomyFaq } };
+            return { data: { faq: createdFaq as VenueFaq } };
         };
         if (ctx?.tx) {
             return await run(ctx.tx);
@@ -185,11 +183,11 @@ export async function addGastronomyFaq(
 export async function updateGastronomyFaq(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyFaqUpdateInput,
+    data: VenueFaqUpdateInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyFaqSingleOutput>> {
+): Promise<ServiceOutput<VenueFaqSingleOutput>> {
     try {
-        const parseResult = GastronomyFaqUpdateInputSchema.safeParse(data);
+        const parseResult = VenueFaqUpdateInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)
@@ -204,9 +202,7 @@ export async function updateGastronomyFaq(
         const validated = parseResult.data;
 
         // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
-        const run = async (
-            tx: DrizzleClient
-        ): Promise<ServiceOutput<GastronomyFaqSingleOutput>> => {
+        const run = async (tx: DrizzleClient): Promise<ServiceOutput<VenueFaqSingleOutput>> => {
             const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
             checkGastronomyCanEditFaqEntries(actor, gastronomy);
 
@@ -236,7 +232,7 @@ export async function updateGastronomyFaq(
                 field: 'faqs',
                 ctx: { ...ctx, tx }
             });
-            return { data: { faq: updatedFaq as GastronomyFaq } };
+            return { data: { faq: updatedFaq as VenueFaq } };
         };
         if (ctx?.tx) {
             return await run(ctx.tx);
@@ -270,11 +266,11 @@ export async function updateGastronomyFaq(
 export async function removeGastronomyFaq(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyFaqRemoveInput,
+    data: VenueFaqRemoveInput,
     ctx?: ServiceContext
 ): Promise<ServiceOutput<{ success: true }>> {
     try {
-        const parseResult = GastronomyFaqRemoveInputSchema.safeParse(data);
+        const parseResult = VenueFaqRemoveInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)
@@ -345,11 +341,11 @@ export async function removeGastronomyFaq(
 export async function listGastronomyFaqs(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyFaqListInput,
+    data: VenueFaqListInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyFaqListOutput>> {
+): Promise<ServiceOutput<VenueFaqListOutput>> {
     try {
-        const parseResult = GastronomyFaqListInputSchema.safeParse(data);
+        const parseResult = VenueFaqListInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)
@@ -381,7 +377,7 @@ export async function listGastronomyFaqs(
         // TYPE-WORKAROUND: Drizzle widens the entity type when loading relations;
         // `faqs` is not part of the base Gastronomy type.
         const faqs = (gastronomy as unknown as { faqs?: unknown[] }).faqs ?? [];
-        return { data: { faqs: faqs as GastronomyFaq[] } };
+        return { data: { faqs: faqs as VenueFaq[] } };
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };
@@ -415,11 +411,11 @@ export async function listGastronomyFaqs(
 export async function reorderGastronomyFaqs(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyFaqReorderInput,
+    data: VenueFaqReorderInput,
     ctx?: ServiceContext
 ): Promise<ServiceOutput<{ success: true }>> {
     try {
-        const parseResult = GastronomyFaqReorderInputSchema.safeParse(data);
+        const parseResult = VenueFaqReorderInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)

@@ -111,7 +111,7 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
             if (!destination) throw new Error('Destination insert failed');
 
             const fixtureVersions = new Map<string, string>();
-            for (const vertical of [VerticalEnum.GASTRONOMY, VerticalEnum.EXPERIENCE]) {
+            for (const vertical of [VerticalEnum.VENUE, VerticalEnum.EXPERIENCE]) {
                 fixtureVersions.set(
                     `${vertical}:${PRE_TRIAL_PLAN_ROLE}`,
                     await seedVersion(db, vertical, PRE_TRIAL_PLAN_ROLE, false)
@@ -122,7 +122,7 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
                         db,
                         vertical,
                         FLOOR_PLAN_ROLE,
-                        vertical === VerticalEnum.GASTRONOMY
+                        vertical === VerticalEnum.VENUE
                     )
                 );
             }
@@ -213,7 +213,7 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
                 });
             const gastroCoverage = await billing.coverage({
                 userId: user.id,
-                vertical: VerticalEnum.GASTRONOMY
+                vertical: VerticalEnum.VENUE
             });
             expect(gastroCoverage.covered).toBe(false);
             expect(
@@ -242,7 +242,7 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
 
             const common = {
                 actorId: user.id,
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 facts: {
                     ownerId: archived.ownerId,
                     publicationStatus: PublicationStatusEnumSchema.nullable().parse(

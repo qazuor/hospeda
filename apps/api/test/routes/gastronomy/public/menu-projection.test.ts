@@ -12,11 +12,11 @@
  * fields are compared against a NON-empty source so a mutation that always
  * returns "withheld" (or always "granted") fails at least one case.
  */
-import type { GastronomyMenuItemPublic, GastronomyMenuSectionPublic } from '@repo/schemas';
+import type { VenueMenuItemPublic, VenueMenuSectionPublic } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { applyGastronomyMenuManagementGate } from '../../../../src/routes/gastronomy/public/menu-projection';
 
-const SECTION: GastronomyMenuSectionPublic = {
+const SECTION: VenueMenuSectionPublic = {
     id: '11111111-1111-4111-8111-111111111111',
     gastronomyId: '22222222-2222-4222-8222-222222222222',
     name: 'Entradas',
@@ -30,7 +30,7 @@ const SECTION: GastronomyMenuSectionPublic = {
 const PHOTO_URL = 'https://res.cloudinary.com/x/empanada.jpg';
 
 /** One dish CARRYING a photo — the only fixture the HOS-1045 gate can be seen with. */
-const ITEM_WITH_PHOTO: GastronomyMenuItemPublic = {
+const ITEM_WITH_PHOTO: VenueMenuItemPublic = {
     id: '33333333-3333-4333-8333-333333333333',
     sectionId: SECTION.id,
     gastronomyId: SECTION.gastronomyId,
@@ -54,10 +54,10 @@ const ITEM_WITH_PHOTO: GastronomyMenuItemPublic = {
 const SECTION_WITH_PHOTO = {
     ...SECTION,
     items: [{ ...ITEM_WITH_PHOTO, photoPublicId: 'hospeda/dev/empanada' }]
-} as unknown as GastronomyMenuSectionPublic;
+} as unknown as VenueMenuSectionPublic;
 
 /** A dish CARRYING a translation — the only fixture the HOS-1043 gate can be seen with. */
-const ITEM_WITH_TRANSLATION: GastronomyMenuItemPublic = {
+const ITEM_WITH_TRANSLATION: VenueMenuItemPublic = {
     id: '44444444-4444-4444-8444-444444444444',
     sectionId: SECTION.id,
     gastronomyId: SECTION.gastronomyId,
@@ -75,7 +75,7 @@ const ITEM_WITH_TRANSLATION: GastronomyMenuItemPublic = {
 };
 
 /** A section CARRYING a translation, with one translated dish. */
-const SECTION_WITH_TRANSLATION: GastronomyMenuSectionPublic = {
+const SECTION_WITH_TRANSLATION: VenueMenuSectionPublic = {
     ...SECTION,
     nameI18n: { es: 'Entradas', en: 'Starters', pt: 'Entradas' },
     descriptionI18n: null,
@@ -267,7 +267,7 @@ describe('applyGastronomyMenuManagementGate', () => {
         const combined = {
             ...SECTION_WITH_TRANSLATION,
             items: [{ ...ITEM_WITH_TRANSLATION, photoUrl: PHOTO_URL, photoAlt: 'Empanada' }]
-        } as unknown as GastronomyMenuSectionPublic;
+        } as unknown as VenueMenuSectionPublic;
 
         const result = applyGastronomyMenuManagementGate({
             gastronomy: { menuFileUrl: null, menuFileKind: null },

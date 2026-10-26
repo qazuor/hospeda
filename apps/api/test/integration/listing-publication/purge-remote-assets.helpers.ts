@@ -13,7 +13,7 @@ export type PurgeAssetFixture = {
     ownerId: string;
     listingId: string;
     vertical:
-        | typeof VerticalEnum.GASTRONOMY
+        | typeof VerticalEnum.VENUE
         | typeof VerticalEnum.EXPERIENCE
         | typeof VerticalEnum.ACCOMMODATION;
     publicIds: string[];
@@ -50,7 +50,7 @@ export async function createPurgeAssetFixture(
     } else if (vertical === VerticalEnum.EXPERIENCE && options.includeGallery !== false) {
         await getDb().execute(sql`INSERT INTO experience_media (experience_id, url, public_id, sort_order)
             VALUES (${listingId}::uuid, ${`https://assets.example/${galleryPublicId}`}, ${galleryPublicId}, 0)`);
-    } else if (vertical === VerticalEnum.GASTRONOMY) {
+    } else if (vertical === VerticalEnum.VENUE) {
         if (options.includeGallery !== false) {
             const gallery = await getDb().execute(sql<{
                 id: string;
@@ -106,13 +106,13 @@ export async function cleanupPurgeAssetFixtures(
 ): Promise<void> {
     for (const fixture of fixtures) {
         const table =
-            fixture.vertical === VerticalEnum.GASTRONOMY
+            fixture.vertical === VerticalEnum.VENUE
                 ? 'gastronomy_media'
                 : fixture.vertical === VerticalEnum.EXPERIENCE
                   ? 'experience_media'
                   : 'accommodation_media';
         const fk =
-            fixture.vertical === VerticalEnum.GASTRONOMY
+            fixture.vertical === VerticalEnum.VENUE
                 ? 'gastronomy_id'
                 : fixture.vertical === VerticalEnum.EXPERIENCE
                   ? 'experience_id'
@@ -121,7 +121,7 @@ export async function cleanupPurgeAssetFixtures(
             sql`DELETE FROM ${sql.identifier(table)} WHERE ${sql.identifier(fk)} = ${fixture.listingId}::uuid AND remote_deletion_pending_at IS NOT NULL`
         );
         const listingTable =
-            fixture.vertical === VerticalEnum.GASTRONOMY
+            fixture.vertical === VerticalEnum.VENUE
                 ? 'gastronomies'
                 : fixture.vertical === VerticalEnum.EXPERIENCE
                   ? 'experiences'

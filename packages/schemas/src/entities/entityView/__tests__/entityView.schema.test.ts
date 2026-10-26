@@ -47,7 +47,7 @@ describe('TrackableEntityTypeSchema', () => {
 
         // HOS-734: gastronomy/experience basic view stats.
         it('should accept GASTRONOMY', () => {
-            const result = TrackableEntityTypeSchema.safeParse(EntityTypeEnum.GASTRONOMY);
+            const result = TrackableEntityTypeSchema.safeParse(EntityTypeEnum.VENUE);
             expect(result.success).toBe(true);
         });
 

@@ -170,74 +170,71 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
-    // origin: #3798
+    // origin: #3726
     {
-        id: '2026-10-25-owner-plan-warns-about-tourist-vip',
+        id: '2026-10-20-plans-for-every-listing',
         publishedAt: 'on-promotion',
         highlight: false,
-        roles: ['USER', 'HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
         title: {
-            es: 'Antes de pagar un plan de dueño, te avisamos qué pasa con tu Turista VIP',
-            en: 'Before you pay for an owner plan, we tell you what happens to your Tourist VIP',
-            pt: 'Antes de pagar um plano de proprietário, avisamos o que acontece com seu Turista VIP'
+            es: 'Nuevos planes para publicar alojamientos, gastronomía y experiencias',
+            en: 'New plans to list accommodations, food venues and experiences',
+            pt: 'Novos planos para publicar hospedagens, gastronomia e experiências'
         },
         body: {
-            es: 'Los planes para publicar ya incluyen todos los beneficios de Turista VIP. Si tenés una suscripción VIP paga, el checkout te lo dice antes de pagar: cuando el plan nuevo se activa, la VIP se cancela y te llega un correo avisándote.',
-            en: 'Publishing plans already include every Tourist VIP benefit. If you have a paid VIP subscription, the checkout tells you before you pay: when the new plan activates, the VIP is cancelled and you get an email about it.',
-            pt: 'Os planos para publicar já incluem todos os benefícios do Turista VIP. Se você tem uma assinatura VIP paga, o checkout avisa antes de pagar: quando o novo plano é ativado, a VIP é cancelada e você recebe um e-mail avisando.'
+            es: 'Ahora podés publicar tu restaurante o tu experiencia, además de tu alojamiento, cada uno con sus propios planes. Empezás con 30 días de prueba gratis, sin cargar tarjeta, y recién después elegís si pagar. Todos los planes para publicar incluyen los beneficios de Turista VIP.',
+            en: 'You can now list your restaurant or your experience, as well as your accommodation, each with its own plans. You start with a 30-day free trial, with no card required, and only then choose whether to pay. Every publishing plan includes the Tourist VIP benefits.',
+            pt: 'Agora você pode publicar seu restaurante ou sua experiência, além da sua hospedagem, cada um com seus próprios planos. Você começa com 30 dias de teste grátis, sem cadastrar cartão, e só depois escolhe se quer pagar. Todos os planos para publicar incluem os benefícios do Turista VIP.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },
-    // origin: #3797
+    // origin: #3743
     {
-        id: '2026-10-25-clearer-plan-pages',
+        id: '2026-10-21-passwords-accept-any-symbol',
         publishedAt: 'on-promotion',
         highlight: false,
         title: {
-            es: 'Las páginas de planes son más claras',
-            en: 'The plan pages are clearer',
-            pt: 'As páginas de planos estão mais claras'
+            es: 'Tu contraseña puede llevar cualquier símbolo',
+            en: 'Your password can include any symbol',
+            pt: 'Sua senha pode ter qualquer símbolo'
         },
         body: {
-            es: 'El botón para empezar quedó centrado debajo de las tarjetas, y la prueba gratis ya no se ofrece sobre el plan que ya tenés ni sobre beneficios que tu plan ya incluye. En la página de turistas, las dos formas de pago ahora son botones.',
-            en: 'The button to get started now sits centred below the cards, and the free trial is no longer offered on the plan you already have or on benefits your plan already includes. On the travellers page, both payment options are now buttons.',
-            pt: 'O botão para começar ficou centralizado abaixo dos cartões, e o teste grátis não é mais oferecido no plano que você já tem nem em benefícios que seu plano já inclui. Na página de turistas, as duas formas de pagamento agora são botões.'
+            es: 'Antes, una contraseña con un guion u otro símbolo poco común podía mostrarse en verde y después ser rechazada. Ahora se acepta cualquier símbolo, y lo que ves al escribirla es exactamente lo que se valida al registrarte o al cambiarla.',
+            en: 'Previously, a password with a hyphen or another uncommon symbol could show as valid and then be rejected. Now any symbol is accepted, and what you see while typing it is exactly what is checked when you sign up or change it.',
+            pt: 'Antes, uma senha com hífen ou outro símbolo pouco comum podia aparecer como válida e depois ser rejeitada. Agora qualquer símbolo é aceito, e o que você vê ao digitá-la é exatamente o que é validado ao se cadastrar ou alterá-la.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },
-    // origin: #3794
+    // origin: #3774
     {
-        id: '2026-10-24-fix-request-notice-on-editor',
+        id: '2026-10-23-account-and-forms-polish',
         publishedAt: 'on-promotion',
         highlight: false,
-        roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
         title: {
-            es: 'Si te piden un arreglo, lo ves al entrar a editar tu ficha',
-            en: 'If a fix is requested, you see it as soon as you open your listing editor',
-            pt: 'Se pedirem uma correção, você vê ao entrar para editar seu anúncio'
+            es: 'Tu cuenta y los formularios, más prolijos',
+            en: 'Your account and forms, tidier',
+            pt: 'Sua conta e os formulários, mais caprichados'
         },
         body: {
-            es: 'El aviso con el motivo y la fecha sugerida ahora aparece arriba de todo en la pantalla de edición de tu ficha. Además, al dar de baja una suscripción, la confirmación te dice exactamente cuál estás dando de baja.',
-            en: 'The notice with the reason and the suggested date now appears at the top of your listing editor. Also, when you cancel a subscription, the confirmation tells you exactly which one you are cancelling.',
-            pt: 'O aviso com o motivo e a data sugerida agora aparece no topo da tela de edição do seu anúncio. Além disso, ao cancelar uma assinatura, a confirmação diz exatamente qual você está cancelando.'
+            es: 'El mapa de la ubicación deja claro cuándo todavía no marcaste el lugar y que el pin se puede arrastrar. «Mis consultas» se lee bien en el celular, y si entrás a cargar eventos sin permiso te explicamos cómo sumarte como editor en lugar de mandarte a tu cuenta sin aviso.',
+            en: 'The location map makes it clear when you have not placed the spot yet and that the pin can be dragged. «My enquiries» reads well on mobile, and if you open the event pages without access we explain how to become an editor instead of sending you back to your account without a word.',
+            pt: 'O mapa da localização deixa claro quando você ainda não marcou o lugar e que o pino pode ser arrastado. «Minhas consultas» fica legível no celular, e se você abrir as páginas de eventos sem permissão explicamos como virar editor em vez de mandar você para a sua conta sem aviso.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },
-    // origin: #3793
+    // origin: #3759
     {
-        id: '2026-10-24-admin-accommodation-list-stable',
+        id: '2026-10-23-withdrawal-button-readable',
         publishedAt: 'on-promotion',
         highlight: false,
-        roles: ['ADMIN', 'SUPER_ADMIN'],
         title: {
-            es: 'La lista de alojamientos ya no se vacía por una ficha con datos viejos',
-            en: 'The accommodation list no longer goes blank because of one listing with old data',
-            pt: 'A lista de hospedagens não fica mais vazia por causa de um anúncio com dados antigos'
+            es: 'El botón de arrepentimiento se lee bien en tema claro y oscuro',
+            en: 'The withdrawal button is readable in light and dark themes',
+            pt: 'O botão de arrependimento fica legível nos temas claro e escuro'
         },
         body: {
-            es: 'Una ficha guardada con un precio o una ubicación fuera de rango ya no deja en blanco la página del listado: la lista se muestra completa.',
-            en: 'A listing saved with an out-of-range price or location no longer blanks the list page: the list is shown in full.',
-            pt: 'Um anúncio salvo com preço ou localização fora do intervalo não deixa mais a página da lista em branco: a lista aparece completa.'
+            es: 'En la página del botón de arrepentimiento, «Pedir la revocación» ahora tiene buen contraste en los dos temas. Antes, en el tema oscuro, el texto del botón casi no se veía.',
+            en: 'On the withdrawal page, «Request revocation» now has good contrast in both themes. Previously, in the dark theme, the button text was barely visible.',
+            pt: 'Na página do botão de arrependimento, «Pedir a revogação» agora tem bom contraste nos dois temas. Antes, no tema escuro, o texto do botão quase não aparecia.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },

@@ -471,7 +471,7 @@ describe('TEST:V5:32 promotions, alerts and paid public fields', () => {
         expect(data.dailySpecials).toBeUndefined();
         expect(mocks.effectiveSet).toHaveBeenCalledWith({
             userId: IDS.gastroPro,
-            vertical: VerticalEnum.GASTRONOMY
+            vertical: VerticalEnum.VENUE
         });
         const sameOwnerDifferentViewer = await makeApp(
             publicGetGastronomyBySlugRoute,

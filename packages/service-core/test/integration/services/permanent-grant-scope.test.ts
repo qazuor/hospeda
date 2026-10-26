@@ -76,11 +76,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:10 grant scope', () => {
 
             for (const vertical of [VerticalEnum.ACCOMMODATION, VerticalEnum.EXPERIENCE])
                 await expectGrantFloor({ userId, vertical, tx });
-            for (const vertical of [
-                VerticalEnum.GASTRONOMY,
-                VerticalEnum.TOURIST,
-                VerticalEnum.PARTNER
-            ])
+            for (const vertical of [VerticalEnum.VENUE, VerticalEnum.TOURIST, VerticalEnum.PARTNER])
                 expect((await resolveGrantSources({ userId, vertical, tx })).sources).toEqual([]);
         });
     });

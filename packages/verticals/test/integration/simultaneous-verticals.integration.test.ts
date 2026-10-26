@@ -97,7 +97,7 @@ describe('simultaneous verticals', () => {
                 .returning({ id: users.id });
             const userId = user!.id;
             const accommodation = VerticalEnum.ACCOMMODATION;
-            const gastronomy = VerticalEnum.GASTRONOMY;
+            const gastronomy = VerticalEnum.VENUE;
             const bootstrap = createBootstrapCoverageReader(tx);
             const accommodationFloor = await bootstrap.findCurrentVersionByRole({
                 vertical: accommodation,

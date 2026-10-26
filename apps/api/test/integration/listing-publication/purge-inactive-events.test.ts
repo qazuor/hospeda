@@ -23,13 +23,13 @@ import {
 
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 type Vertical = (typeof verticals)[number];
 const tables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const MATRIX_NOW = new Date('2026-10-10T12:00:00.000Z');
@@ -51,7 +51,7 @@ function ownerActor(ownerId: string): Actor {
 async function editService(vertical: Vertical) {
     if (vertical === VerticalEnum.ACCOMMODATION)
         return new AccommodationService({ logger: apiLogger });
-    if (vertical === VerticalEnum.GASTRONOMY) return new GastronomyService({ logger: apiLogger });
+    if (vertical === VerticalEnum.VENUE) return new GastronomyService({ logger: apiLogger });
     return new ExperienceService({ logger: apiLogger });
 }
 

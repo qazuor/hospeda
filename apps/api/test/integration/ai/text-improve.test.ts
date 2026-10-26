@@ -6,7 +6,7 @@
  * chain runs for real:
  *
  *   actorMiddleware → protectedAuthMiddleware (injected by factory)
- *     → entitlementMiddleware (STUBBED — see vi.mock below)
+ *     → [entitlementMiddleware: REMOVED by HOS-1416, no longer in the chain]
  *     → createAiRateLimitMiddlewares (REAL — perUser + perIP sliding window)
  *     → createAiQuotaMiddleware (REAL — entitlement + monthly quota)
  *     → streamHandler (REAL — calls createConfiguredAiService)
@@ -14,10 +14,10 @@
  * 100% middleware order coverage per spec §9.5: each error-path test exercises
  * the entire stack so the order invariant is verified.
  *
- * ## Why a stub for entitlementMiddleware
+ * ## Why there is no stub for entitlementMiddleware anymore
  *
- * `entitlementMiddleware` is the documented test-friendly seam — it normally
- * queries QZPay + billing tables, but in this suite it is `vi.mock`ed to
+ * `entitlementMiddleware` WAS the documented test-friendly seam (removed by HOS-1416) — it
+ * queried the legacy QZPay + billing tables, and this suite `vi.mock`ed it to
  * inject `userEntitlements` / `userLimits` / `billingLoadFailed` directly into
  * the Hono context. This mirrors the established pattern in
  * `test/integration/ai/quota-enforcement.test.ts` and lets us assert on the
@@ -184,11 +184,11 @@ vi.mock('@repo/ai-core', () => {
 });
 
 /**
- * Stub `entitlementMiddleware` to inject `userEntitlements`, `userLimits`,
+ * (Removed, HOS-1416) Stub of `entitlementMiddleware` that injected `userEntitlements`, `userLimits`,
  * and `billingLoadFailed` directly into the Hono context. This is the
  * documented test-friendly seam — see the module JSDoc.
  *
- * The function returns a Hono middleware; the factory does `entitlementMiddleware()`,
+ * (Historical) The function returned a Hono middleware; the factory did `entitlementMiddleware()`,
  * so we must export a function that returns the middleware.
  */
 // Legacy entitlement loader mock removed with the billing middleware (HOS-1416).
@@ -433,7 +433,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
     //
     // Reproduces the double-role bug: a HOST who is ALSO a comercio owner has
     // ACCOMMODATION entitlements that include `AI_TEXT_IMPROVE` (exactly what
-    // the stub below injects, standing in for what `entitlementMiddleware`
+    // the stub below injects, standing in for what the retired `entitlementMiddleware`
     // would really load for such an actor — see `host-provider@local.test`,
     // HOS-694). Before this fix the route had no way to know `fieldValue`
     // belonged to a gastronomy listing and would let the request through on

@@ -2,7 +2,7 @@
  * Admin gastronomy reviews list endpoint.
  * Returns all gastronomy reviews including pending ones.
  */
-import { GastronomyReviewSchema, ModerationStatusEnum, PermissionEnum } from '@repo/schemas';
+import { ModerationStatusEnum, PermissionEnum, VenueReviewSchema } from '@repo/schemas';
 import { GastronomyReviewService, ServiceError } from '@repo/service-core';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -37,7 +37,7 @@ export const adminListGastronomyReviewsRoute = createAdminListRoute({
     requestQuery: {
         status: z.nativeEnum(ModerationStatusEnum).optional()
     },
-    responseSchema: GastronomyReviewSchema,
+    responseSchema: VenueReviewSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

@@ -146,7 +146,7 @@ describe('TEST:V5:26 - G2 (a) and (b): the vertical context is declared and take
         );
     });
 
-    it('(b) fails on a request-read resolver vertical, a folder mismatch and a computed route vertical', () => {
+    it('TEST:1813:8 AC:1:15 (b) fails on a request-read resolver vertical, a folder mismatch and a computed route vertical', () => {
         const middleware = tempTree();
         mutate(
             middleware,
@@ -164,13 +164,9 @@ describe('TEST:V5:26 - G2 (a) and (b): the vertical context is declared and take
             folder,
             BROCHURE_ROUTE,
             'vertical: VerticalEnum.EXPERIENCE',
-            'vertical: VerticalEnum.GASTRONOMY'
+            'vertical: VerticalEnum.VENUE'
         );
-        expectFailure(
-            folder,
-            'G2 (b):',
-            'route under routes/experience declares vertical GASTRONOMY'
-        );
+        expectFailure(folder, 'G2 (b):', 'route under routes/experience declares vertical VENUE');
         const computed = tempTree();
         mutate(
             computed,
@@ -179,6 +175,20 @@ describe('TEST:V5:26 - G2 (a) and (b): the vertical context is declared and take
             'vertical: pickVertical()'
         );
         expectFailure(computed, 'G2 (b):', 'listingAccess computes its vertical (pickVertical())');
+    });
+
+    it('TEST:1813:8 AC:1:15 rejects an experience context in a gastronomy route after the key rename', () => {
+        const root = tempTree();
+        write(
+            root,
+            'apps/api/src/routes/gastronomy/protected/example.ts',
+            "export const route = { listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'READ' } };\n"
+        );
+        expectFailure(
+            root,
+            'G2 (b): apps/api/src/routes/gastronomy/protected/example.ts:',
+            'route under routes/gastronomy declares vertical EXPERIENCE'
+        );
     });
 
     it('accepts a resource-read vertical, a route outside the three folders and a bare resource step', () => {
@@ -198,12 +208,12 @@ describe('TEST:V5:26 - G2 (a) and (b): the vertical context is declared and take
         expect(runTree(root).exitCode).toBe(0);
     });
 
-    it('TEST:M1682:5 (b3) fails when the listing media upload stops running the chain per vertical', () => {
+    it('TEST:1813:8 AC:1:15 TEST:M1682:5 (b3) fails when the listing media upload stops running the chain per vertical', () => {
         const computed = tempTree();
         mutate(
             computed,
             UPLOAD_ENTITY_FILE,
-            'vertical: VerticalEnum.GASTRONOMY',
+            'vertical: VerticalEnum.VENUE',
             'vertical: entityType as never'
         );
         expectFailure(
@@ -212,7 +222,7 @@ describe('TEST:V5:26 - G2 (a) and (b): the vertical context is declared and take
             'listingAccess computes its vertical (entityType as never)'
         );
         const undeclared = tempTree();
-        mutate(undeclared, UPLOAD_ENTITY_FILE, 'vertical: VerticalEnum.GASTRONOMY, ', '');
+        mutate(undeclared, UPLOAD_ENTITY_FILE, 'vertical: VerticalEnum.VENUE, ', '');
         expectFailure(
             undeclared,
             `G2 (a): ${UPLOAD_ENTITY_FILE}:`,

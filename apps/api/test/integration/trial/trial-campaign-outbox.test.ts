@@ -61,7 +61,7 @@ async function startOwnerTrial(
     user: { readonly id: string; readonly email: string },
     vertical:
         | typeof VerticalEnum.ACCOMMODATION
-        | typeof VerticalEnum.GASTRONOMY = VerticalEnum.ACCOMMODATION
+        | typeof VerticalEnum.VENUE = VerticalEnum.ACCOMMODATION
 ) {
     const pseudonym = computeTrialEmailPseudonym({ email: user.email });
     if (!pseudonym.ok) throw new Error('Unable to build trial email pseudonym');
@@ -190,7 +190,7 @@ describe('TEST:V4:22 (parte 1: escritura) - trial campaigns are outbox rows writ
     });
 
     it('writes T3 recovery rows and T5 removes only the converted vertical after consolidating two verticals', async () => {
-        await ensurePublicationCatalog(VerticalEnum.GASTRONOMY);
+        await ensurePublicationCatalog(VerticalEnum.VENUE);
         const owner = await createOwner();
         await createTrial({
             userId: owner.id,
@@ -200,7 +200,7 @@ describe('TEST:V4:22 (parte 1: escritura) - trial campaigns are outbox rows writ
         await createTrial({
             userId: owner.id,
             status: 'TRIAL_ACTIVE',
-            vertical: VerticalEnum.GASTRONOMY
+            vertical: VerticalEnum.VENUE
         });
         const [trial] = await getDb().select().from(trials).where(eq(trials.userId, owner.id));
         if (!trial) throw new Error('Missing trial fixture');
@@ -209,7 +209,7 @@ describe('TEST:V4:22 (parte 1: escritura) - trial campaigns are outbox rows writ
         const expiryClock = fixedClock(new Date('2026-10-06T13:00:00.000Z'));
         injectClock({ clock: expiryClock });
         const machine = getTrialMachinePorts();
-        for (const vertical of [VerticalEnum.ACCOMMODATION, VerticalEnum.GASTRONOMY]) {
+        for (const vertical of [VerticalEnum.ACCOMMODATION, VerticalEnum.VENUE]) {
             await expireTrial({
                 ...machine,
                 clock: expiryClock,
@@ -249,7 +249,7 @@ describe('TEST:V4:22 (parte 1: escritura) - trial campaigns are outbox rows writ
             afterCommit,
             event: {
                 userId: owner.id,
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 sourceType: 'SUBSCRIPTION',
                 change: 'CHANGED'
             }
