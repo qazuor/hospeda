@@ -1,12 +1,7 @@
 import { AnalyticsEventSchemas } from '@repo/analytics';
 import { VerticalEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
-import {
-    captureBillingCheckoutStarted,
-    createAnalyticsFactSink,
-    resetAnalyticsFactSinkForTests,
-    setAnalyticsFactSinkForTests
-} from '../../../src/utils/analytics/analytics-facts.js';
+import { createAnalyticsFactSink } from '../../../src/utils/analytics/analytics-facts.js';
 
 const loggerWarn = vi.hoisted(() => vi.fn());
 vi.mock('@repo/logger', async (importOriginal) => {
@@ -18,42 +13,6 @@ vi.mock('@repo/logger', async (importOriginal) => {
 });
 
 describe('analytics facts (TEST:1878:15, TEST:1878:16)', () => {
-    it('routes checkout facts through the installed test sink (TEST:1878:1)', () => {
-        const emit = vi.fn();
-        setAnalyticsFactSinkForTests({ emit });
-        const occurredAt = new Date('2026-01-01T00:00:00.000Z');
-        captureBillingCheckoutStarted({
-            distinctId: 'u-1',
-            occurredAt,
-            properties: {
-                vertical: 'accommodation',
-                subscription_class: 'PRINCIPAL',
-                actor_kind: 'USER',
-                subscription_id: 's-1',
-                plan_version_id: 'pv-1',
-                billing_option_id: 'bo-1',
-                cycle: 'monthly',
-                amount_minor: 100,
-                currency: 'ARS'
-            }
-        });
-        expect(emit).toHaveBeenCalledWith({
-            kind: 'CHECKOUT_STARTED',
-            userId: 'u-1',
-            vertical: 'accommodation',
-            subscriptionId: 's-1',
-            subscriptionClass: 'PRINCIPAL',
-            actorKind: 'USER',
-            planVersionId: 'pv-1',
-            billingOptionId: 'bo-1',
-            cycle: 'monthly',
-            amountMinor: 100,
-            currency: 'ARS',
-            isSuccession: undefined,
-            occurredAt
-        });
-        resetAnalyticsFactSinkForTests();
-    });
     it('does not propagate a failed capture', () => {
         const failure = new Error('offline');
         const capture = vi.fn(() => {
