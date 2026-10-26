@@ -25,6 +25,7 @@ import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './he
 import { namespaceFake } from './support/payment-provider';
 import {
     seededSubscriptionIds,
+    withSeededInheritedTouristVipSweep,
     withSeededSubscriptionSweep
 } from './support/subscription-window-sweep';
 import { noTouristVip, touristVipInheritanceFromDb } from './support/tourist-vip.ts';
@@ -511,6 +512,7 @@ describe('TEST:B3:37 inherited Tourist VIP at S3', () => {
             provider: 'MERCADO_PAGO',
             providerId: vipAuth.authorizationId
         });
+        seededSubscriptionIds.add(vip[0]!.id);
         const inherits = vi.spyOn(touristVipInheritanceFromDb, 'inherits');
         const inheritingPorts = { ...ports, touristVipInheritance: touristVipInheritanceFromDb };
         advance(72);
@@ -523,12 +525,14 @@ describe('TEST:B3:37 inherited Tourist VIP at S3', () => {
         expect(cancel).toHaveBeenCalledTimes(1);
         expect(cancel).toHaveBeenCalledWith({ authorizationId: plan.started.authorizationId });
         expect(
-            await sweepInheritedTouristVips(100, {
-                provider,
-                clock,
-                beforeCancelNotice: ports.beforeCancelNotice,
-                touristVipInheritance: touristVipInheritanceFromDb
-            })
+            await withSeededInheritedTouristVipSweep(() =>
+                sweepInheritedTouristVips(100, {
+                    provider,
+                    clock,
+                    beforeCancelNotice: ports.beforeCancelNotice,
+                    touristVipInheritance: touristVipInheritanceFromDb
+                })
+            )
         ).toEqual({ cancelled: 0, deferred: 0, skipped: 0 });
         expect(await status(vip[0]!.id)).toBe('ACTIVE');
         expect(inherits).not.toHaveBeenCalled();
