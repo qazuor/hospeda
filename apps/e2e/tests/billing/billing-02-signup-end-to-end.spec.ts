@@ -23,7 +23,11 @@ import {
     type E2eMailCaptureServer,
     startE2eMailCapture
 } from '../../fixtures/mail-capture-server.ts';
-import { attachSession, openSignupCheckout } from '../../fixtures/signup-checkout.ts';
+import {
+    attachSession,
+    confirmSignupCheckout,
+    openSignupCheckout
+} from '../../fixtures/signup-checkout.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
@@ -164,21 +168,12 @@ test.describe('TEST:B3:35 AC:B3:33 AC:B3:9 the signup end to end with two abando
         await attachSession(page, personA.sessionCookie);
         await openSignupCheckout({ page, webUrl: WEB_URL, billingOptionId: monthlyOptionId });
         const requestsBeforeSignup = fakeServer.requests().length;
-        await page.getByTestId('signup-checkout-confirm').click();
-        const pending = page.getByTestId('signup-checkout-pending');
-        await expect(pending).toBeVisible();
-        await expect(pending).toContainText('está esperando que completes el pago');
-        const subscriptionId = await pending.getAttribute('data-subscription-id');
+        const { subscriptionId, checkoutUrl, authorizationWindowEndsAt } =
+            await confirmSignupCheckout({ page });
         expect(subscriptionId).toBeTruthy();
-        const resumeLink = page.getByTestId('signup-checkout-resume-link');
-        await expect(resumeLink).toBeVisible();
-        const checkoutUrl = await resumeLink.getAttribute('href');
-        expect(checkoutUrl).toBeTruthy();
         expect(checkoutUrl).not.toContain('activation');
-        const windowEnds = page.getByTestId('signup-checkout-window-ends');
-        await expect(windowEnds).toBeVisible();
-        const windowDateTime = await windowEnds.getAttribute('dateTime');
-        expect(windowDateTime).toBeTruthy();
+        expect(page.url()).toBe(checkoutUrl);
+        expect(new Date(authorizationWindowEndsAt).getTime()).toBeGreaterThan(Date.now());
         expect(
             fakeServer.requests().length,
             'API must be pointed at the fake provider'
