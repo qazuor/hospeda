@@ -152,6 +152,40 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #3833
+    {
+        id: '2026-10-26-checkout-straight-to-mercadopago',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Suscribirte ahora te lleva directo a Mercado Pago',
+            en: 'Subscribing now takes you straight to Mercado Pago',
+            pt: 'Assinar agora leva você direto ao Mercado Pago'
+        },
+        body: {
+            es: 'Al confirmar tu suscripción, pasás directamente a pagar en Mercado Pago, sin una pantalla intermedia ni un segundo botón. Si dejaste el pago a medias, volver a elegir el mismo plan te lleva al mismo pago, sin crear otro.',
+            en: 'When you confirm your subscription you go straight to pay on Mercado Pago, with no intermediate screen or second button. If you left the payment halfway, choosing the same plan again takes you back to that same payment instead of creating another one.',
+            pt: 'Ao confirmar sua assinatura, você vai direto pagar no Mercado Pago, sem uma tela intermediária nem um segundo botão. Se deixou o pagamento pela metade, escolher o mesmo plano de novo leva você ao mesmo pagamento, sem criar outro.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3800
+    {
+        id: '2026-10-25-grace-period-reminders',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Te avisamos antes de que termine el plazo para regularizar tu pago',
+            en: 'We remind you before the time to settle your payment runs out',
+            pt: 'Avisamos você antes de acabar o prazo para regularizar seu pagamento'
+        },
+        body: {
+            es: 'Si un cobro de tu suscripción no pasa y entrás en el período de gracia, ahora te mandamos un recordatorio por correo unos días antes de que venza y otro el día anterior, una sola vez cada uno.',
+            en: 'If a charge on your subscription fails and you enter the grace period, we now email you a reminder a few days before it ends and another the day before, once each.',
+            pt: 'Se uma cobrança da sua assinatura não passar e você entrar no período de carência, agora enviamos um lembrete por e-mail alguns dias antes do vencimento e outro no dia anterior, uma única vez cada.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3805
     {
         id: '2026-10-25-newsletter-subscribers-list-loads',
