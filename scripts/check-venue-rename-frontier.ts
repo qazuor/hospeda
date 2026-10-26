@@ -50,6 +50,8 @@ export interface FrontierInventory {
         readonly themeOccurrences: Readonly<Record<string, number>>;
     };
     readonly files: Readonly<Record<string, number>>;
+    /** Maps each moved path to the old path used for its base count. */
+    readonly renamedFrom?: Readonly<Record<string, string>>;
 }
 
 /** Counts retired identifier forms in non-binary content and in the path. */
@@ -122,14 +124,51 @@ export function checkFrontier({
             });
     }
     if (base) {
+        const oldPaths = new Set<string>();
+        const invalidRenames = new Set<string>();
+        for (const [file, oldFile] of Object.entries(inventory.renamedFrom ?? {})) {
+            if (base.files[file] !== undefined) {
+                violations.push({
+                    file,
+                    expected: 'new path absent from base',
+                    found: file,
+                    reason: 'renamedFrom new path already exists in base'
+                });
+                invalidRenames.add(file);
+            }
+            if (base.files[oldFile] === undefined) {
+                violations.push({
+                    file,
+                    expected: 'old path present in base',
+                    found: oldFile,
+                    reason: 'renamedFrom old path absent from base'
+                });
+                invalidRenames.add(file);
+            }
+            if (oldPaths.has(oldFile)) {
+                violations.push({
+                    file,
+                    expected: 'unique old path',
+                    found: oldFile,
+                    reason: 'renamedFrom old path is duplicated'
+                });
+                invalidRenames.add(file);
+            }
+            oldPaths.add(oldFile);
+        }
         for (const [file, count] of Object.entries(expected)) {
-            const old = base.files[file];
+            if (invalidRenames.has(file)) continue;
+            const oldFile = inventory.renamedFrom?.[file];
+            const old = base.files[oldFile ?? file];
             if (old === undefined || count > old)
                 violations.push({
                     file,
                     expected: old ?? 'absent from base',
                     found: count,
-                    reason: 'inventory may not grow against base'
+                    reason:
+                        oldFile && old !== undefined && count > old
+                            ? `inventory may not grow against renamed path ${oldFile}`
+                            : 'inventory may not grow against base'
                 });
         }
     }
@@ -221,10 +260,12 @@ function readBase(root: string): FrontierInventory | undefined {
 /** Runs G-FAC-T1 against a repository root and optional base inventory. */
 export function run({
     root = ROOT,
-    baseInventory
+    baseInventory,
+    renames
 }: {
     readonly root?: string;
     readonly baseInventory?: FrontierInventory | null;
+    readonly renames?: ReadonlyMap<string, string>;
 } = {}): { readonly exitCode: number; readonly output: string } {
     try {
         const inventory = readInventory(root);
@@ -255,9 +296,14 @@ export function run({
         if (process.argv.includes('--write')) {
             const base = baseInventory === null ? undefined : (baseInventory ?? readBase(root));
             if (base) {
+                const renamedFrom = buildRenamedFrom({
+                    scanned,
+                    base,
+                    renames: renames ?? readGitRenames(root)
+                });
                 const growth = checkFrontier({
                     scanned,
-                    inventory: { ...inventory, files: Object.fromEntries(scanned) },
+                    inventory: { ...inventory, files: Object.fromEntries(scanned), renamedFrom },
                     base
                 }).filter((item) => item.reason === 'inventory may not grow against base');
                 if (growth.length)
@@ -265,7 +311,21 @@ export function run({
             }
             const next = {
                 ...inventory,
-                files: Object.fromEntries([...scanned].sort(([a], [b]) => a.localeCompare(b)))
+                files: Object.fromEntries([...scanned].sort(([a], [b]) => a.localeCompare(b))),
+                ...(baseInventory === null
+                    ? {}
+                    : (() => {
+                          const base = baseInventory ?? readBase(root);
+                          return base
+                              ? {
+                                    renamedFrom: buildRenamedFrom({
+                                        scanned,
+                                        base,
+                                        renames: renames ?? readGitRenames(root)
+                                    })
+                                }
+                              : { renamedFrom: undefined };
+                      })())
             };
             writeFileSync(join(root, INVENTORY), stringifyInventory(next));
             return {
@@ -288,6 +348,47 @@ export function run({
     } catch (error) {
         return { exitCode: 1, output: error instanceof Error ? error.message : String(error) };
     }
+}
+
+/** Builds the inventory mapping from git rename pairs and measured paths. */
+export function buildRenamedFrom({
+    scanned,
+    base,
+    renames
+}: {
+    readonly scanned: ReadonlyMap<string, number>;
+    readonly base: FrontierInventory;
+    /** Maps new path to old path, as reported by git. */
+    readonly renames: ReadonlyMap<string, string>;
+}): Readonly<Record<string, string>> {
+    return Object.fromEntries(
+        [...renames]
+            .filter(
+                ([newPath, oldPath]) =>
+                    scanned.has(newPath) &&
+                    base.files[oldPath] !== undefined &&
+                    base.files[newPath] === undefined
+            )
+            .sort(([a], [b]) => a.localeCompare(b))
+    );
+}
+
+function readGitRenames(root: string): ReadonlyMap<string, string> {
+    const base = process.env.CI_BASELINE_SHA ?? 'origin/staging';
+    const output = execFileSync(
+        'git',
+        ['diff', '-M', '--name-status', '--diff-filter=R', `${base}...HEAD`],
+        { cwd: root }
+    ).toString();
+    return new Map(
+        output
+            .split('\n')
+            .filter(Boolean)
+            .flatMap((line) => {
+                const [status, oldPath, newPath] = line.split('\t');
+                return status?.startsWith('R') && oldPath && newPath ? [[newPath, oldPath]] : [];
+            })
+    );
 }
 
 function formatViolation(item: FrontierViolation): string {

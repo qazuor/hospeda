@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+    buildRenamedFrom,
     checkFrontier,
     countFrontierHits,
     FRONTIER_FLOOR,
@@ -23,6 +24,95 @@ const inv = (files: Record<string, number>) => ({
         themeOccurrences: {}
     },
     files
+});
+
+describe('TEST:1814:1 AC:1:16 T1 follows renamed files', () => {
+    it('TEST:1814:1 AC:1:16 accepts a moved path against its old base count', () => {
+        expect(
+            checkFrontier({
+                scanned: new Map([['new.ts', 2]]),
+                inventory: { ...inv({ 'new.ts': 2 }), renamedFrom: { 'new.ts': 'old.ts' } },
+                base: inv({ 'old.ts': 2 })
+            })
+        ).toEqual([]);
+        expect(
+            checkFrontier({
+                scanned: new Map([['new.ts', 2]]),
+                inventory: inv({ 'new.ts': 2 }),
+                base: inv({ 'old.ts': 2 })
+            })
+        ).toEqual([
+            {
+                file: 'new.ts',
+                expected: 'absent from base',
+                found: 2,
+                reason: 'inventory may not grow against base'
+            }
+        ]);
+    });
+});
+
+describe('TEST:1814:2 AC:1:16 T1 rejects invalid renamedFrom entries', () => {
+    it('TEST:1814:2 AC:1:16 names invalid old, new, increased, and duplicate paths', () => {
+        const base = inv({ 'old.ts': 1, 'already.ts': 1, 'old-two.ts': 1 });
+        const cases = [
+            {
+                scanned: new Map([['new.ts', 1]]),
+                inventory: { ...inv({ 'new.ts': 1 }), renamedFrom: { 'new.ts': 'missing.ts' } },
+                reasons: ['new.ts: renamedFrom old path absent from base']
+            },
+            {
+                scanned: new Map([['already.ts', 1]]),
+                inventory: { ...inv({ 'already.ts': 1 }), renamedFrom: { 'already.ts': 'old.ts' } },
+                reasons: ['already.ts: renamedFrom new path already exists in base']
+            },
+            {
+                scanned: new Map([['new.ts', 2]]),
+                inventory: { ...inv({ 'new.ts': 2 }), renamedFrom: { 'new.ts': 'old.ts' } },
+                reasons: ['new.ts: inventory may not grow against renamed path old.ts']
+            },
+            {
+                scanned: new Map([
+                    ['new.ts', 1],
+                    ['other.ts', 1]
+                ]),
+                inventory: {
+                    ...inv({ 'new.ts': 1, 'other.ts': 1 }),
+                    renamedFrom: { 'new.ts': 'old.ts', 'other.ts': 'old.ts' }
+                },
+                reasons: ['other.ts: renamedFrom old path is duplicated']
+            }
+        ];
+        for (const testCase of cases) {
+            const result = checkFrontier({ ...testCase, base });
+            expect(result.map(({ file, reason }) => `${file}: ${reason}`)).toEqual(
+                testCase.reasons
+            );
+        }
+    });
+
+    it('TEST:1814:2 AC:1:16 builds mappings only from measured paths and base old paths', () => {
+        expect(
+            buildRenamedFrom({
+                scanned: new Map([
+                    ['new.ts', 1],
+                    ['unmatched.ts', 1]
+                ]),
+                base: inv({ 'old.ts': 1, 'unmatched.ts': 1 }),
+                renames: new Map([
+                    ['new.ts', 'old.ts'],
+                    ['unmatched.ts', 'not-in-base.ts']
+                ])
+            })
+        ).toEqual({ 'new.ts': 'old.ts' });
+        expect(
+            buildRenamedFrom({
+                scanned: new Map([['already.ts', 1]]),
+                base: inv({ 'old.ts': 1, 'already.ts': 1 }),
+                renames: new Map([['already.ts', 'old.ts']])
+            })
+        ).toEqual({});
+    });
 });
 const token = ['Gastronom', 'y'].join('');
 
