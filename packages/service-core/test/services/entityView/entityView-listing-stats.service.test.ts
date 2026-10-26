@@ -10,7 +10,7 @@
  *    `ACCOMMODATION_VIEW_OWN`) — ownership scoping via `findIdsByOwnerId`
  *    IS the security boundary, matching `GastronomyService.listOwn`'s
  *    existing convention.
- *  - Correct model dispatch: GASTRONOMY → `GastronomyModel`, EXPERIENCE →
+ *  - Correct model dispatch: GASTRONOMY → `VenueModel`, EXPERIENCE →
  *    `ExperienceModel`.
  *  - Scope isolation: actor.id (never a caller-supplied id) is passed to
  *    `findIdsByOwnerId`.
@@ -24,7 +24,7 @@
  * Every test follows the AAA (Arrange / Act / Assert) pattern.
  */
 
-import { EntityViewModel, ExperienceModel, GastronomyModel } from '@repo/db';
+import { EntityViewModel, ExperienceModel, VenueModel } from '@repo/db';
 import { EntityTypeEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -57,7 +57,7 @@ const ownerActor = createActor({
 describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
     let service: EntityViewService;
     let modelMock: EntityViewModel;
-    let gastronomyModelMock: GastronomyModel;
+    let gastronomyModelMock: VenueModel;
     let experienceModelMock: ExperienceModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
 
@@ -67,7 +67,7 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
             'getStatsForEntities',
             'purgeOlderThan'
         ]);
-        gastronomyModelMock = createTypedModelMock(GastronomyModel, ['findIdsByOwnerId']);
+        gastronomyModelMock = createTypedModelMock(VenueModel, ['findIdsByOwnerId']);
         experienceModelMock = createTypedModelMock(ExperienceModel, ['findIdsByOwnerId']);
         loggerMock = createLoggerMock();
         service = new EntityViewService(

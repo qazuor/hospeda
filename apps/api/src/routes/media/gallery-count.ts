@@ -41,8 +41,8 @@ import {
     accommodationMediaModel,
     eventMediaModel,
     experienceMediaModel,
-    gastronomyMediaModel,
-    postMediaModel
+    postMediaModel,
+    venueMediaModel
 } from '@repo/db';
 
 /**
@@ -99,7 +99,7 @@ export async function resolveVisibleGalleryCount(
             return total;
         }
         case 'gastronomy': {
-            const { total } = await gastronomyMediaModel.findByGastronomy({
+            const { total } = await venueMediaModel.findByVenue({
                 gastronomyId: entityId,
                 state: 'visible',
                 isFeatured: false

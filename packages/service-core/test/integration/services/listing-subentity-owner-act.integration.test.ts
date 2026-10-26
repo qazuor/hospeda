@@ -35,12 +35,12 @@ import {
     eq,
     experienceFaqs,
     experienceMedia,
-    GastronomyModel,
     gastronomyFaqs,
     gastronomyMedia,
     inArray,
     type SelectDomainEvent,
-    users
+    users,
+    VenueModel
 } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -210,7 +210,7 @@ function buildVerticalOps(
     }
 
     if (vertical === 'gastronomy') {
-        const model = new GastronomyModel();
+        const model = new VenueModel();
         return {
             addFaq: () =>
                 addGastronomyFaq(
@@ -658,7 +658,7 @@ describe('HOS-1642 V9a — owner FAQ/media writes land in domain_event (integrat
                 try {
                     await tx.transaction(async (savepoint) => {
                         const result = await addGastronomyMedia(
-                            new GastronomyModel(),
+                            new VenueModel(),
                             ownerActor(ownerId),
                             { gastronomyId, media: { url: MEDIA_ADDED_URL } },
                             { tx: savepoint as unknown as ServiceContext['tx'] }

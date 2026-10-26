@@ -17,7 +17,7 @@
  * Every test follows the AAA (Arrange / Act / Assert) pattern.
  */
 
-import { EntityViewModel, ExperienceModel, GastronomyModel } from '@repo/db';
+import { EntityViewModel, ExperienceModel, VenueModel } from '@repo/db';
 import { EntityTypeEnum, RoleEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -54,7 +54,7 @@ const baseInput: GetStatsForOwnListingsInput = {
 describe('EntityViewService.getDailySeriesForOwnListings (HOS-734)', () => {
     let service: EntityViewService;
     let modelMock: EntityViewModel;
-    let gastronomyModelMock: GastronomyModel;
+    let gastronomyModelMock: VenueModel;
     let experienceModelMock: ExperienceModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
 
@@ -65,7 +65,7 @@ describe('EntityViewService.getDailySeriesForOwnListings (HOS-734)', () => {
             'getDailySeriesForEntityIds',
             'purgeOlderThan'
         ]);
-        gastronomyModelMock = createTypedModelMock(GastronomyModel, ['findIdsByOwnerId']);
+        gastronomyModelMock = createTypedModelMock(VenueModel, ['findIdsByOwnerId']);
         experienceModelMock = createTypedModelMock(ExperienceModel, ['findIdsByOwnerId']);
         loggerMock = createLoggerMock();
         service = new EntityViewService(

@@ -25,10 +25,10 @@ import {
     AccommodationModel,
     type DrizzleClient,
     ExperienceModel,
-    GastronomyModel,
     REntityTagModel,
     sql,
     TagModel,
+    VenueModel,
     withTransaction
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
@@ -102,7 +102,7 @@ async function recordTagListingOwnerAct(input: {
         entityType === EntityTypeEnum.ACCOMMODATION
             ? new AccommodationModel()
             : entityType === EntityTypeEnum.VENUE
-              ? new GastronomyModel()
+              ? new VenueModel()
               : entityType === EntityTypeEnum.EXPERIENCE
                 ? new ExperienceModel()
                 : null;

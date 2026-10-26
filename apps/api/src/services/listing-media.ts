@@ -52,7 +52,7 @@
  */
 
 import type { DrizzleClient } from '@repo/db';
-import { experienceMediaModel, gastronomyMediaModel } from '@repo/db';
+import { experienceMediaModel, venueMediaModel } from '@repo/db';
 import type { Media, VenueOrExperience } from '@repo/schemas';
 import { composeListingMedia } from '@repo/service-core';
 
@@ -102,13 +102,12 @@ export async function loadListingMedia(input: LoadListingMediaInput): Promise<Me
     // for anything that is not literally 'gastronomy'.
     let grouped: Awaited<
         ReturnType<
-            | typeof gastronomyMediaModel.findByGastronomies
-            | typeof experienceMediaModel.findByExperiences
+            typeof venueMediaModel.findByVenues | typeof experienceMediaModel.findByExperiences
         >
     >;
     switch (entityType) {
         case 'gastronomy':
-            grouped = await gastronomyMediaModel.findByGastronomies({
+            grouped = await venueMediaModel.findByVenues({
                 gastronomyIds: [entityId],
                 tx
             });

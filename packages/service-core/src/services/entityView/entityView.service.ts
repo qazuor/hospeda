@@ -34,7 +34,7 @@
  * @see SPEC-197 §4.2
  */
 
-import type { AccommodationModel, ExperienceModel, GastronomyModel } from '@repo/db';
+import type { AccommodationModel, ExperienceModel, VenueModel } from '@repo/db';
 import {
     AccommodationModel as AccommodationModelClass,
     type AdminSummaryTotalsRow,
@@ -42,7 +42,7 @@ import {
     type EntityViewModel,
     ExperienceModel as ExperienceModelClass,
     entityViewModel,
-    GastronomyModel as GastronomyModelClass,
+    VenueModel as GastronomyModelClass,
     type HostDailySeriesRow
 } from '@repo/db';
 import {
@@ -380,7 +380,7 @@ export interface GetDailySeriesForHostAccommodationsInput {
  * {@link EntityViewService.getDailySeriesForOwnListings} (HOS-734).
  *
  * The actor's own listing IDs are resolved internally (via
- * `GastronomyModel`/`ExperienceModel.findIdsByOwnerId`) — no ownerId param is
+ * `VenueModel`/`ExperienceModel.findIdsByOwnerId`) — no ownerId param is
  * accepted, preventing cross-owner peeking. There is no dedicated
  * `PermissionEnum` for gastronomy/experience "own listing" access (unlike
  * accommodation's `ACCOMMODATION_VIEW_OWN`) — ownership scoping alone is the
@@ -438,8 +438,8 @@ export class EntityViewService extends BaseService {
     private readonly modelOverride: EntityViewModel | undefined;
     private readonly accommodationModelOverride: AccommodationModel | undefined;
     private accommodationModelLazy: AccommodationModel | undefined;
-    private readonly gastronomyModelOverride: GastronomyModel | undefined;
-    private gastronomyModelLazy: GastronomyModel | undefined;
+    private readonly gastronomyModelOverride: VenueModel | undefined;
+    private gastronomyModelLazy: VenueModel | undefined;
     private readonly experienceModelOverride: ExperienceModel | undefined;
     private experienceModelLazy: ExperienceModel | undefined;
 
@@ -447,7 +447,7 @@ export class EntityViewService extends BaseService {
         ctx: ServiceConfig,
         model?: EntityViewModel,
         accommodationModel?: AccommodationModel,
-        gastronomyModel?: GastronomyModel,
+        venueModel?: VenueModel,
         experienceModel?: ExperienceModel
     ) {
         super(ctx, EntityViewService.ENTITY_NAME);
@@ -458,7 +458,7 @@ export class EntityViewService extends BaseService {
         // to undefined exports). Resolution is deferred to the lazy getters.
         this.modelOverride = model;
         this.accommodationModelOverride = accommodationModel;
-        this.gastronomyModelOverride = gastronomyModel;
+        this.gastronomyModelOverride = venueModel;
         this.experienceModelOverride = experienceModel;
     }
 
@@ -488,7 +488,7 @@ export class EntityViewService extends BaseService {
      * (HOS-734). Instantiated once on first use (or the injected override) —
      * mirrors {@link accommodationModel}.
      */
-    private get gastronomyModel(): GastronomyModel {
+    private get gastronomyModel(): VenueModel {
         if (!this.gastronomyModelLazy) {
             this.gastronomyModelLazy = this.gastronomyModelOverride ?? new GastronomyModelClass();
         }
@@ -515,7 +515,7 @@ export class EntityViewService extends BaseService {
      */
     private listingModelFor(
         entityType: EntityTypeEnum.VENUE | EntityTypeEnum.EXPERIENCE
-    ): GastronomyModel | ExperienceModel {
+    ): VenueModel | ExperienceModel {
         return entityType === EntityTypeEnum.VENUE ? this.gastronomyModel : this.experienceModel;
     }
 

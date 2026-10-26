@@ -1,13 +1,13 @@
 import {
     accounts,
     eq,
-    GastronomyMediaModel,
     gastronomies,
     gastronomyFaqs,
     gastronomyReviews,
     getDb,
     sql,
-    users
+    users,
+    VenueMediaModel
 } from '@repo/db';
 import { LifecycleStatusEnum, RoleEnum, RoleGrantReason, VisibilityEnum } from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
@@ -239,8 +239,8 @@ async function seedGastronomyMediaRows({
     const hasPhotos = Boolean(media.featuredImage) || (media.gallery?.length ?? 0) > 0;
     if (!hasPhotos) return;
 
-    const mediaModel = new GastronomyMediaModel();
-    const { total: existingCount } = await mediaModel.findByGastronomy({
+    const mediaModel = new VenueMediaModel();
+    const { total: existingCount } = await mediaModel.findByVenue({
         gastronomyId,
         pageSize: 1
     });

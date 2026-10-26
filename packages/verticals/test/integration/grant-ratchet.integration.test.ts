@@ -219,10 +219,10 @@ describe('TEST:V3:6 — a grant never grants less than its floor', () => {
                 current: true,
                 limitValue: 30
             });
-            const gastronomyPlan = await seedPlan({ tx, vertical: OTHER_VERTICAL });
+            const venuePlan = await seedPlan({ tx, vertical: OTHER_VERTICAL });
             const gastronomyVersion = await seedVersion({
                 tx,
-                planId: gastronomyPlan,
+                planId: venuePlan,
                 vertical: OTHER_VERTICAL,
                 rank: 10,
                 sellable: true,

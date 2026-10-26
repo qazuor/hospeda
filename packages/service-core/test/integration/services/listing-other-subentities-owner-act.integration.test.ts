@@ -1,5 +1,5 @@
 /** HOS-1642 — TEST:V9a:7 against a disposable PostgreSQL database. */
-import { domainEventModel, ExperienceModel, GastronomyModel, tags } from '@repo/db';
+import { domainEventModel, ExperienceModel, tags, VenueModel } from '@repo/db';
 import { EntityTypeEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { issueExperienceCertificate } from '../../../src/services/experience/experience.certificate';
@@ -67,7 +67,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
         await withServiceTestTransaction(async (tx) => {
             const { gastronomyId, ownerId } = await seedGastronomy(tx);
             const actor = owner(ownerId);
-            const model = new GastronomyModel();
+            const model = new VenueModel();
             const ctx = { tx };
             const menu = await replaceGastronomyMenu(
                 model,

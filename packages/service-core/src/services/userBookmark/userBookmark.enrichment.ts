@@ -23,9 +23,9 @@ import {
     experienceMediaModel,
     experiences,
     gastronomies,
-    gastronomyMediaModel,
     getDb,
-    posts
+    posts,
+    venueMediaModel
 } from '@repo/db';
 import type { EntityTypeEnum, UserBookmark } from '@repo/schemas';
 import { inArray } from 'drizzle-orm';
@@ -221,7 +221,7 @@ export async function enrichBookmarksWithEntityInfo(
                   .where(inArray(gastronomies.id, gastronomyIds))
             : Promise.resolve([]),
         gastronomyIds.length > 0
-            ? gastronomyMediaModel.findByGastronomies({
+            ? venueMediaModel.findByVenues({
                   gastronomyIds,
                   state: 'visible',
                   tx
