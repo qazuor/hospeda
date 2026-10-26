@@ -2,14 +2,18 @@
  * Integration tests for GET /accommodations/:id/stats endpoint
  * Tests response data validation against AccommodationStatsSchema.
  *
- * Contract (see `src/routes/accommodation/public/getStats.ts`): the payload is
- * the flat `{ total, totalFeatured, averageRating, totalByType }` shape, and an
- * id that matches no visible accommodation answers `200` with `data: null`
- * (the response schema is nullable on purpose).
+ * Payload (see `src/routes/accommodation/public/getStats.ts`): the flat
+ * `{ total, totalFeatured, averageRating, totalByType }` shape.
+ *
+ * Known divergence (HOS-1902): an id that matches no visible accommodation
+ * answers `200` with `data: null`, whereas the sibling summary route answers
+ * 404. These tests assert the CURRENT behaviour; update them when HOS-1902
+ * settles the contract.
  */
 import { AccommodationStatsSchema } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import {
@@ -26,6 +30,8 @@ describe('GET /accommodations/:id/stats', () => {
 
     beforeAll(async () => {
         await testDb.setup();
+        await testDb.clean();
+        clearCache();
         // Initialize environment variables before running tests
         validateApiEnv();
         app = initApp();
@@ -37,6 +43,7 @@ describe('GET /accommodations/:id/stats', () => {
 
     afterEach(async () => {
         await testDb.clean();
+        clearCache();
     });
 
     afterAll(async () => {
