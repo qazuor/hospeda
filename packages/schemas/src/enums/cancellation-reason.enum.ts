@@ -1,0 +1,11 @@
+/** Reasons given for cancelling a subscription, never rejection reasons. */
+export enum CancellationReasonEnum {
+    TOO_EXPENSIVE = 'TOO_EXPENSIVE',
+    NOT_ENOUGH_RESULTS = 'NOT_ENOUGH_RESULTS',
+    MISSING_FEATURES = 'MISSING_FEATURES',
+    SEASONAL_PAUSE = 'SEASONAL_PAUSE',
+    CLOSING_BUSINESS = 'CLOSING_BUSINESS',
+    SWITCHING_PLATFORM = 'SWITCHING_PLATFORM',
+    TECHNICAL_PROBLEMS = 'TECHNICAL_PROBLEMS',
+    OTHER = 'OTHER'
+}

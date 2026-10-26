@@ -1,3 +1,4 @@
+import { CancellationReasonEnum } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SubscriptionCancel } from '@/components/account/SubscriptionCancel.client';
@@ -47,6 +48,108 @@ describe('SubscriptionCancel island', () => {
         expect(billingSubscriptionApi.cancel).toHaveBeenCalledTimes(1);
         expect(screen.queryByText('¿Estás seguro?')).not.toBeInTheDocument();
         expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    });
+    it('TEST:1878:24a shows an optional localized reason and omits it when unchanged', async () => {
+        vi.mocked(billingSubscriptionApi.cancellationPreview).mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptionId: id,
+                vertical: 'accommodation',
+                paymentMethod: 'CARD',
+                origin: 'ACTIVE',
+                serviceEndsAt: '2026-11-05T03:00:00.000Z',
+                addons: []
+            }
+        } as never);
+        vi.mocked(billingSubscriptionApi.cancel).mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptionId: id,
+                outcome: 'SCHEDULED',
+                serviceEndsAt: '2026-11-05T03:00:00.000Z'
+            }
+        } as never);
+        render(
+            <SubscriptionCancel
+                subscriptionId={id}
+                locale="es"
+                planName="Básico"
+                verticalLabel="Alojamiento"
+            />
+        );
+        fireEvent.click(screen.getByTestId('self-cancel-open'));
+        const select = await screen.findByTestId('self-cancel-reason');
+        expect(screen.getByLabelText('¿Por qué cancelás? (opcional)')).toBe(select);
+        expect(
+            Array.from((select as HTMLSelectElement).options)
+                .slice(1)
+                .map((option) => option.value)
+        ).toEqual(Object.values(CancellationReasonEnum));
+        fireEvent.click(screen.getByTestId('self-cancel-confirm'));
+        await waitFor(() =>
+            expect(billingSubscriptionApi.cancel).toHaveBeenCalledWith({ subscriptionId: id })
+        );
+    });
+    it('TEST:1878:24a sends the selected reason and hides the selector for an already scheduled cancellation', async () => {
+        vi.mocked(billingSubscriptionApi.cancellationPreview).mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptionId: id,
+                vertical: 'accommodation',
+                paymentMethod: 'CARD',
+                origin: 'ACTIVE',
+                serviceEndsAt: '2026-11-05T03:00:00.000Z',
+                addons: []
+            }
+        } as never);
+        vi.mocked(billingSubscriptionApi.cancel).mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptionId: id,
+                outcome: 'SCHEDULED',
+                serviceEndsAt: '2026-11-05T03:00:00.000Z'
+            }
+        } as never);
+        render(
+            <SubscriptionCancel
+                subscriptionId={id}
+                locale="es"
+                planName="Básico"
+                verticalLabel="Alojamiento"
+            />
+        );
+        fireEvent.click(screen.getByTestId('self-cancel-open'));
+        const selector = await screen.findByTestId('self-cancel-reason');
+        fireEvent.change(selector, { target: { value: CancellationReasonEnum.SEASONAL_PAUSE } });
+        fireEvent.click(screen.getByTestId('self-cancel-confirm'));
+        await waitFor(() =>
+            expect(billingSubscriptionApi.cancel).toHaveBeenCalledWith({
+                subscriptionId: id,
+                reason: CancellationReasonEnum.SEASONAL_PAUSE
+            })
+        );
+        vi.mocked(billingSubscriptionApi.cancellationPreview).mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptionId: id,
+                vertical: 'accommodation',
+                paymentMethod: 'CARD',
+                origin: 'CANCEL_SCHEDULED',
+                serviceEndsAt: '2026-11-05T03:00:00.000Z',
+                addons: []
+            }
+        } as never);
+        render(
+            <SubscriptionCancel
+                subscriptionId={id}
+                locale="es"
+                planName="Básico"
+                verticalLabel="Alojamiento"
+            />
+        );
+        fireEvent.click(screen.getByTestId('self-cancel-open'));
+        await screen.findByTestId('self-cancel-end');
+        expect(screen.queryByTestId('self-cancel-reason')).not.toBeInTheDocument();
     });
     it('fails closed when preview is invalid', async () => {
         vi.mocked(billingSubscriptionApi.cancellationPreview).mockResolvedValue({

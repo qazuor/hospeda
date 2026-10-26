@@ -121,8 +121,6 @@ function toEvent(fact: Fact): {
                 },
                 timestamp: fact.occurredAt
             };
-            if (!fact.predecessor) return activated;
-            // S2 carries predecessor data on the activation fact; emit plan_changed alongside activation.
             return activated;
         }
         case 'CHARGE_CREDITED':
@@ -194,7 +192,7 @@ function toEvent(fact: Fact): {
                     ...common,
                     service_ends_at: fact.serviceEndsAt.toISOString(),
                     basis: fact.basis,
-                    reason: fact.reason
+                    ...(fact.reason ? { reason: fact.reason } : {})
                 },
                 timestamp: fact.occurredAt
             };
@@ -208,7 +206,7 @@ function toEvent(fact: Fact): {
                     path: fact.path,
                     was_scheduled: fact.wasScheduled,
                     lifetime_days: fact.lifetimeDays,
-                    reason: fact.reason
+                    ...(fact.reason ? { reason: fact.reason } : {})
                 },
                 timestamp: fact.occurredAt
             };
@@ -348,39 +346,4 @@ export function emitTrialAnalyticsFact(fact: TrialFact): void {
     } catch (error) {
         logger.warn({ kind: fact.kind, error }, 'Trial analytics capture failed (non-blocking)');
     }
-}
-
-/** Emits the S1 checkout fact directly from its API edge; the route wires this in the next rollout. */
-export function captureBillingCheckoutStarted(input: {
-    distinctId: string;
-    properties: {
-        vertical: string;
-        subscription_class: 'PRINCIPAL' | 'COMPLEMENTO';
-        actor_kind: 'USER' | 'ADMIN' | 'SYSTEM';
-        subscription_id: string;
-        plan_version_id: string;
-        billing_option_id: string;
-        cycle: 'monthly' | 'quarterly' | 'semiannual' | 'annual';
-        amount_minor: number;
-        currency: 'ARS';
-        is_succession?: boolean;
-    };
-    occurredAt: Date;
-}): void {
-    const { properties } = input;
-    (testSink ?? productionSink).emit({
-        kind: 'CHECKOUT_STARTED',
-        userId: input.distinctId,
-        vertical: properties.vertical,
-        subscriptionId: properties.subscription_id,
-        subscriptionClass: properties.subscription_class,
-        actorKind: properties.actor_kind,
-        planVersionId: properties.plan_version_id,
-        billingOptionId: properties.billing_option_id,
-        cycle: properties.cycle,
-        amountMinor: properties.amount_minor,
-        currency: properties.currency,
-        isSuccession: properties.is_succession,
-        occurredAt: input.occurredAt
-    });
 }

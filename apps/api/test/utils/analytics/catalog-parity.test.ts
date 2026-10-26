@@ -1,25 +1,29 @@
 import { AnalyticsEventSchemas } from '@repo/analytics';
-import { ADDON_CYCLES } from '@repo/db';
-import { VerticalEnum } from '@repo/schemas';
+import { BILLING_CYCLES, CancellationReasonEnum, VerticalEnum } from '@repo/schemas';
 import { SUSPEND_FOR_ARREARS_EVENTS } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@repo/db', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('@repo/db')>();
-    return { ...actual, ADDON_CYCLES: ['monthly', 'quarterly', 'semiannual', 'annual'] };
-});
-
 describe('billing analytics catalog parity (TEST:1878:16)', () => {
-    it('matches persisted verticals and billing cycles', () => {
+    it('matches persisted verticals and billing cycles', async () => {
+        // test/setup.ts mocks `@repo/db` and `@repo/db/schemas` globally, and a
+        // parity check must compare against the real persisted values.
+        const { SUBSCRIPTION_CANCELLATION_REASONS } =
+            await vi.importActual<typeof import('@repo/db/schemas')>('@repo/db/schemas');
         expect(AnalyticsEventSchemas.billing_checkout_started.shape.vertical.options).toEqual(
             Object.values(VerticalEnum)
         );
-        expect(AnalyticsEventSchemas.billing_checkout_started.shape.cycle.options).toEqual(
-            ADDON_CYCLES
-        );
+        // `billing_checkout_started.cycle` is `billing_option.cycle`, whose CHECK
+        // lists exactly `BILLING_CYCLES`.
+        expect(AnalyticsEventSchemas.billing_checkout_started.shape.cycle.options).toEqual([
+            ...BILLING_CYCLES
+        ]);
         expect(AnalyticsEventSchemas.billing_subscription_suspended.shape.trigger.options).toEqual(
             SUSPEND_FOR_ARREARS_EVENTS
         );
+        expect(
+            AnalyticsEventSchemas.billing_cancel_scheduled.shape.reason.unwrap().options
+        ).toEqual(Object.values(CancellationReasonEnum));
+        expect(SUBSCRIPTION_CANCELLATION_REASONS).toEqual(Object.values(CancellationReasonEnum));
     });
     it('rejects forbidden analytics property names', () => {
         const forbidden =

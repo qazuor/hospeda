@@ -2001,6 +2001,18 @@
         "notice": {
             "CANCELLATION_ORIGIN_CHANGED": "A assinatura mudou desde que você abriu esta tela, e não foi cancelada. Revise o que aconteceria agora e confirme de novo."
         },
-        "successToast": "Cancelamento registrado."
+        "successToast": "Cancelamento registrado.",
+        "reason": {
+            "label": "Motivo do cancelamento (opcional)",
+            "none": "Não especificado",
+            "TOO_EXPENSIVE": "É muito caro",
+            "NOT_ENOUGH_RESULTS": "Tive poucas reservas ou contatos",
+            "MISSING_FEATURES": "Faltam recursos de que preciso",
+            "SEASONAL_PAUSE": "Pausa de temporada",
+            "CLOSING_BUSINESS": "Vou fechar o negócio",
+            "SWITCHING_PLATFORM": "Vou mudar para outra plataforma",
+            "TECHNICAL_PROBLEMS": "Tive problemas técnicos",
+            "OTHER": "Outro motivo"
+        }
     }
 }

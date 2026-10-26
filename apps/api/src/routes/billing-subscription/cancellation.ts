@@ -4,6 +4,7 @@ import {
     ServiceErrorCode,
     SubscriptionCancellationParamsSchema,
     SubscriptionCancellationPreviewResponseSchema,
+    SubscriptionCancellationRequestSchema,
     SubscriptionCancellationResponseSchema
 } from '@repo/schemas';
 import {
@@ -103,9 +104,12 @@ export const protectedCancelSubscriptionRoute = createProtectedRoute({
     tags: ['Billing subscriptions'],
     emailUnverifiedOperation: 'CLOSE_ACCOUNT',
     requestParams: SubscriptionCancellationParamsSchema.shape,
+    requestBody: SubscriptionCancellationRequestSchema,
+    requestBodyRequired: false,
     responseSchema: SubscriptionCancellationResponseSchema,
     successStatusCode: 200,
-    handler: async (ctx, params) => {
+    handler: async (ctx, params, body) => {
+        const { reason } = SubscriptionCancellationRequestSchema.parse(body ?? {});
         const actor = getActorFromContext(ctx);
         const id = params.subscriptionId as string;
         const current = await owned(id, actor.id);
@@ -125,12 +129,16 @@ export const protectedCancelSubscriptionRoute = createProtectedRoute({
             > = {
                 PENDING_AUTHORIZATION: rejectState,
                 ABANDONED: rejectState,
-                ACTIVE: () => cancelActiveSubscription({ actor, subscriptionId: id }, ports),
+                ACTIVE: () =>
+                    cancelActiveSubscription({ actor, subscriptionId: id, reason }, ports),
                 CANCEL_SCHEDULED: () =>
-                    cancelActiveSubscription({ actor, subscriptionId: id }, ports),
-                SUSPENDED: () => cancelDirectSubscription({ actor, subscriptionId: id }, ports),
-                GRACE_PERIOD: () => cancelDirectSubscription({ actor, subscriptionId: id }, ports),
-                CANCELLED: () => cancelDirectSubscription({ actor, subscriptionId: id }, ports),
+                    cancelActiveSubscription({ actor, subscriptionId: id, reason }, ports),
+                SUSPENDED: () =>
+                    cancelDirectSubscription({ actor, subscriptionId: id, reason }, ports),
+                GRACE_PERIOD: () =>
+                    cancelDirectSubscription({ actor, subscriptionId: id, reason }, ports),
+                CANCELLED: () =>
+                    cancelDirectSubscription({ actor, subscriptionId: id, reason }, ports),
                 PAUSED: rejectState,
                 CHARGE_DECLINED: rejectState
             };

@@ -3,6 +3,7 @@ import { billingOptions, eq, getDb, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { VerticalEnumSchema } from '@repo/schemas';
+import type { BillingFact } from '../facts/billing-fact-sink.js';
 import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink.js';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import {
@@ -52,7 +53,7 @@ export async function afterSubscriptionActivated(
                 const verticalFact = VerticalEnumSchema.safeParse(row.subscription.vertical);
                 if (verticalFact.success) {
                     let predecessor: Extract<
-                        import('../facts/billing-fact-sink.js').BillingFact,
+                        BillingFact,
                         { kind: 'SUBSCRIPTION_ACTIVATED' }
                     >['predecessor'];
                     if (row.subscription.succeedsId) {

@@ -6,6 +6,30 @@ import {
 } from '../../../src/api/billing/subscription-admin-cancel.schema.js';
 
 describe('TEST:1696:6 AC:1696:1 admin cancellation schemas', () => {
+    it('TEST:1878:22 accepts an optional closed cancellation reason', () => {
+        expect(
+            AdminSubscriptionCancellationRequestSchema.safeParse({ expectedOrigin: 'ACTIVE' })
+                .success
+        ).toBe(true);
+        expect(
+            AdminSubscriptionCancellationRequestSchema.safeParse({
+                expectedOrigin: 'ACTIVE',
+                reason: 'OTHER'
+            }).success
+        ).toBe(true);
+        expect(
+            AdminSubscriptionCancellationRequestSchema.safeParse({
+                expectedOrigin: 'ACTIVE',
+                reason: 'INVALID'
+            }).success
+        ).toBe(false);
+        expect(
+            AdminSubscriptionCancellationRequestSchema.safeParse({
+                expectedOrigin: 'ACTIVE',
+                extra: true
+            }).success
+        ).toBe(false);
+    });
     it.each([
         'ACTIVE',
         'GRACE_PERIOD',

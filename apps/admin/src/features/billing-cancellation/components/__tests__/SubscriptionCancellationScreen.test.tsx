@@ -3,6 +3,7 @@ import esAdminBilling from '@repo/i18n/locales/es/admin-billing.json';
 import {
     type AdminSubscriptionCancellationPreviewResponse,
     type AdminSubscriptionCancellationResponse,
+    CancellationReasonEnum,
     PermissionEnum
 } from '@repo/schemas';
 import { render, screen, waitFor, within } from '@testing-library/react';
@@ -195,6 +196,44 @@ describe('TEST:1696:3 AC:1696:3 cancellation screen', () => {
             'Ya tiene la baja pedida: el servicio sigue hasta el 04/11/2026. No hay nada que confirmar.'
         );
         noConfirm();
+        expect(card().queryByTestId('subscription-cancellation-reason')).not.toBeInTheDocument();
+    });
+    it('TEST:1878:24b offers an optional reason and omits it from the mutation by default', async () => {
+        const user = userEvent.setup();
+        renderScreen();
+        expect(card().getByText('Motivo de la baja (opcional)')).toBeInTheDocument();
+        expect(mutateAsync).not.toHaveBeenCalled();
+        await user.click(card().getByTestId('subscription-cancellation-confirm'));
+        await waitFor(() =>
+            expect(mutateAsync).toHaveBeenCalledWith({
+                subscriptionId: ID,
+                expectedOrigin: 'ACTIVE'
+            })
+        );
+    });
+    it('TEST:1878:24b sends a selected reason with the cancellation mutation', async () => {
+        const user = userEvent.setup();
+        renderScreen();
+        const reasonSelect = card().getByTestId('subscription-cancellation-reason');
+        await user.click(reasonSelect);
+        expect(
+            (await screen.findAllByRole('option'))
+                .slice(1)
+                .map((option) => option.textContent?.trim())
+        ).toEqual(
+            Object.values(CancellationReasonEnum).map((value) =>
+                translateEs(`admin-billing.subscriptionCancellation.reason.${value}`)
+            )
+        );
+        await user.click(await screen.findByRole('option', { name: 'Pausa por temporada' }));
+        await user.click(card().getByTestId('subscription-cancellation-confirm'));
+        await waitFor(() =>
+            expect(mutateAsync).toHaveBeenCalledWith({
+                subscriptionId: ID,
+                expectedOrigin: 'ACTIVE',
+                reason: 'SEASONAL_PAUSE'
+            })
+        );
     });
     it('confirming disables the button and shows pending copy', () => {
         mutationPending = true;

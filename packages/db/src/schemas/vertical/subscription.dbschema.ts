@@ -30,6 +30,16 @@ export const SUBSCRIPTION_STATUSES = [
     'CHARGE_DECLINED'
 ] as const;
 export const SUBSCRIPTION_CLASSES = ['PRINCIPAL', 'COMPLEMENTO', 'LAPIDA'] as const;
+export const SUBSCRIPTION_CANCELLATION_REASONS = [
+    'TOO_EXPENSIVE',
+    'NOT_ENOUGH_RESULTS',
+    'MISSING_FEATURES',
+    'SEASONAL_PAUSE',
+    'CLOSING_BUSINESS',
+    'SWITCHING_PLATFORM',
+    'TECHNICAL_PROBLEMS',
+    'OTHER'
+] as const;
 export const LIVE_SUBSCRIPTION_STATUSES = [
     'PENDING_AUTHORIZATION',
     'ACTIVE',
@@ -66,6 +76,8 @@ export const subscriptions = pgTable(
         paymentMethod: varchar('payment_method', { length: 16 }),
         /** estado */
         status: varchar('status', { length: 32 }).notNull(),
+        /** The closed-list reason the owner or an admin gave when cancelling; written only by S11/S23/S24 in the same UPDATE that changes the status; never free text. */
+        cancellationReason: varchar('cancellation_reason', { length: 32 }),
         /** clase */
         class: varchar('class', { length: 16 }).notNull(),
         /** fecha del próximo cobro */
@@ -119,6 +131,10 @@ export const subscriptions = pgTable(
         classCheck: check(
             'ck_subscription_class',
             sql`${t.class} IN (${quotedList(SUBSCRIPTION_CLASSES)})`
+        ),
+        cancellationReasonCheck: check(
+            'ck_subscription_cancellation_reason',
+            sql`${t.cancellationReason} IS NULL OR ${t.cancellationReason} IN (${quotedList(SUBSCRIPTION_CANCELLATION_REASONS)})`
         ),
         successionExclusive: check(
             'ck_subscription_succession_exclusive',

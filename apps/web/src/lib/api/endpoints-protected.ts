@@ -17,6 +17,7 @@ import type {
     AccommodationImportStatusResponse,
     AccommodationOccupancy,
     AccommodationReviewListItem,
+    CancellationReasonEnum,
     ConversationListingAvailability,
     DestinationReviewListItem,
     HostTradeBenefitTypeEnum,
@@ -5566,15 +5567,18 @@ export const billingSubscriptionApi = {
             path: `${PROTECTED}/billing-subscription/${subscriptionId}/cancellation-preview`
         });
     },
-    /** Request cancellation without a request body. */
+    /** Request cancellation with an optional reason. */
     cancel({
-        subscriptionId
+        subscriptionId,
+        reason
     }: {
         readonly subscriptionId: string;
+        readonly reason?: CancellationReasonEnum;
     }): Promise<ApiResult<z.infer<typeof SubscriptionCancellationResponseSchema>>> {
-        return apiClient.postProtected({
-            path: `${PROTECTED}/billing-subscription/${subscriptionId}/cancellation`
-        });
+        const path = `${PROTECTED}/billing-subscription/${subscriptionId}/cancellation`;
+        return reason
+            ? apiClient.postProtected({ path, body: { reason } })
+            : apiClient.postProtected({ path });
     },
     /** Read the selected option's vertical and the current user's trial notice. */
     signupNotice({

@@ -514,7 +514,19 @@
             "actError": "Não conseguimos cancelar sua assinatura. Tente de novo.",
             "stateChanged": "Sua assinatura mudou enquanto você olhava. Recarregue a página para ver como ficou.",
             "doneScheduled": "Pronto: você cancelou sua assinatura. Ela continua até {{date}}.",
-            "doneEnded": "Pronto: você cancelou sua assinatura. O serviço terminou hoje."
+            "doneEnded": "Pronto: você cancelou sua assinatura. O serviço terminou hoje.",
+            "reason": {
+                "label": "Por que você está cancelando? (opcional)",
+                "none": "Prefiro não dizer",
+                "TOO_EXPENSIVE": "É muito caro",
+                "NOT_ENOUGH_RESULTS": "Tive poucas reservas ou contatos",
+                "MISSING_FEATURES": "Faltam recursos de que preciso",
+                "SEASONAL_PAUSE": "Pausa de temporada",
+                "CLOSING_BUSINESS": "Vou fechar o negócio",
+                "SWITCHING_PLATFORM": "Vou mudar para outra plataforma",
+                "TECHNICAL_PROBLEMS": "Tive problemas técnicos",
+                "OTHER": "Outro motivo"
+            }
         },
         "promoRedeem": {
             "trialTitle": "Você tem um código para estender seu período de teste?",

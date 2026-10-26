@@ -3,7 +3,8 @@
 import type {
     AdminSubscriptionCancellationPreviewResponse,
     AdminSubscriptionCancellationRequest,
-    AdminSubscriptionCancellationResponse
+    AdminSubscriptionCancellationResponse,
+    CancellationReasonEnum
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
@@ -68,6 +69,7 @@ export interface CancelSubscriptionInput {
     readonly subscriptionId: string;
     readonly expectedOrigin: 'ACTIVE' | 'GRACE_PERIOD' | 'SUSPENDED';
     readonly note?: string;
+    readonly reason?: CancellationReasonEnum;
 }
 
 /** Creates the mutation that submits cancellation and refreshes its preview when needed.
@@ -80,11 +82,15 @@ export function useCancelSubscriptionMutation() {
         mutationFn: async ({
             subscriptionId,
             expectedOrigin,
-            note
+            note,
+            reason
         }: CancelSubscriptionInput): Promise<AdminSubscriptionCancellationResponse> => {
             const trimmedNote = note?.trim() ?? '';
-            const body: AdminSubscriptionCancellationRequest =
-                trimmedNote.length > 0 ? { expectedOrigin, note: trimmedNote } : { expectedOrigin };
+            const body: AdminSubscriptionCancellationRequest = {
+                expectedOrigin,
+                ...(trimmedNote.length > 0 ? { note: trimmedNote } : {}),
+                ...(reason ? { reason } : {})
+            };
             const response = await fetchApi<{ data: AdminSubscriptionCancellationResponse }>({
                 path: buildSubscriptionCancellationPath({ subscriptionId }),
                 method: 'POST',

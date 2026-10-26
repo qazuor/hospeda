@@ -2001,6 +2001,18 @@
         "notice": {
             "CANCELLATION_ORIGIN_CHANGED": "The subscription changed since you opened this screen, and it was not cancelled. Review what would happen now and confirm again."
         },
-        "successToast": "Cancellation recorded."
+        "successToast": "Cancellation recorded.",
+        "reason": {
+            "label": "Cancellation reason (optional)",
+            "none": "Not specified",
+            "TOO_EXPENSIVE": "It's too expensive",
+            "NOT_ENOUGH_RESULTS": "I got too few bookings or contacts",
+            "MISSING_FEATURES": "It's missing features I need",
+            "SEASONAL_PAUSE": "Seasonal break",
+            "CLOSING_BUSINESS": "I'm closing my business",
+            "SWITCHING_PLATFORM": "I'm switching to another platform",
+            "TECHNICAL_PROBLEMS": "I had technical problems",
+            "OTHER": "Other reason"
+        }
     }
 }

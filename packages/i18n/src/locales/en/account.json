@@ -514,7 +514,19 @@
             "actError": "We could not cancel your subscription. Try again.",
             "stateChanged": "Your subscription changed while you were looking at it. Reload the page to see its state.",
             "doneScheduled": "Done: you cancelled your subscription. You keep it until {{date}}.",
-            "doneEnded": "Done: you cancelled your subscription. The service ended today."
+            "doneEnded": "Done: you cancelled your subscription. The service ended today.",
+            "reason": {
+                "label": "Why are you cancelling? (optional)",
+                "none": "I'd rather not say",
+                "TOO_EXPENSIVE": "It's too expensive",
+                "NOT_ENOUGH_RESULTS": "I got too few bookings or contacts",
+                "MISSING_FEATURES": "It's missing features I need",
+                "SEASONAL_PAUSE": "Seasonal break",
+                "CLOSING_BUSINESS": "I'm closing my business",
+                "SWITCHING_PLATFORM": "I'm switching to another platform",
+                "TECHNICAL_PROBLEMS": "I had technical problems",
+                "OTHER": "Other reason"
+            }
         },
         "promoRedeem": {
             "trialTitle": "Have a code to extend your trial?",

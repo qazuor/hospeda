@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CancellationReasonSchema } from '../../enums/cancellation-reason.schema.js';
 import type {
     SubscriptionCancellationParamsSchema,
     SubscriptionCancellationPreviewResponseSchema
@@ -14,7 +15,8 @@ export const AdminSubscriptionCancellationExpectedOriginSchema = z.enum([
 /** Request body for administrative cancellation without a refund. */
 export const AdminSubscriptionCancellationRequestSchema = z.strictObject({
     expectedOrigin: AdminSubscriptionCancellationExpectedOriginSchema,
-    note: z.string().trim().min(1).max(2000).optional()
+    note: z.string().trim().min(1).max(2000).optional(),
+    reason: CancellationReasonSchema.optional()
 });
 
 /** Result of administrative cancellation without a refund. */

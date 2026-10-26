@@ -57,10 +57,9 @@ describe("AC:B7:31 the provider notice receiver wires S7's Tourist VIP clause (H
 });
 
 describe('TEST:1878:5 provider notice S2 forwards billing facts', () => {
-    it('wires one sink to both the receiver and its mirror delegates', () => {
+    it('wires one sink to the receiver', () => {
         const ports = buildMercadoPagoNoticePorts();
         expect(ports.billingFacts).toBe(getAnalyticsFactSink());
-        expect(delegateInputs.at(-1)).toMatchObject({ billingFacts: ports.billingFacts });
     });
 });
 

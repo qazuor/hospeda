@@ -18,6 +18,7 @@ import {
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
+import { getAnalyticsFactSink } from '../../../utils/analytics/analytics-facts';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { getClock } from '../../../utils/clock';
 import { buildBillingCoveragePorts } from '../../../utils/listing-access/billing-coverage';
@@ -189,6 +190,7 @@ export const adminRevokeSubscriptionRoute = createAdminRoute({
                 {
                     provider: getPaymentProvider(),
                     clock: getClock().clock,
+                    billingFacts: getAnalyticsFactSink(),
                     beforeCancelNotice,
                     coverageNotices: getCoverageNotices(),
                     orphanhood: { addonPolicy, listing },

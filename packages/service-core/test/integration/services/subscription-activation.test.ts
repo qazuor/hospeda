@@ -123,6 +123,30 @@ async function status(id: string) {
 // TEST:B3:9 — B4 verifies emission of a source with cobrada: no. B3 can observe
 // ACTIVE without a payment; the payment table is not introduced until B5.
 describe('TEST:B3:9 authorization activation', () => {
+    it('does not emit S2 for a COMPLEMENTO subscription', async () => {
+        const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
+            clock,
+            honestAbout: [{ lie: 'M1', why: 'S2 complement fixture' }]
+        });
+        const provider = namespaceFake(fake);
+        const { started } = await startPending(fake, provider);
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ class: 'COMPLEMENTO' })
+            .where(eq(subscriptions.id, started.subscriptionId));
+        await fake.approve({ authorizationId: started.authorizationId.split(':').at(-1) ?? '' });
+        const facts: unknown[] = [];
+        await activateSubscription(started.subscriptionId, {
+            provider,
+            clock,
+            beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+            touristVipInheritance: noTouristVip,
+            billingFacts: { emit: (fact) => facts.push(fact) }
+        });
+        expect(facts).toHaveLength(0);
+    });
+
     it('TEST:1878:5 emits the committed S2 fact after direct activation', async () => {
         const fake = new FakePaymentProvider({
             idNamespace: crypto.randomUUID(),

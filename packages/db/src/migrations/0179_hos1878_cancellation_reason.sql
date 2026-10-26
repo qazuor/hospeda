@@ -1,0 +1,2 @@
+ALTER TABLE "subscription" ADD COLUMN "cancellation_reason" varchar(32);--> statement-breakpoint
+ALTER TABLE "subscription" ADD CONSTRAINT "ck_subscription_cancellation_reason" CHECK ("subscription"."cancellation_reason" IS NULL OR "subscription"."cancellation_reason" IN ('TOO_EXPENSIVE', 'NOT_ENOUGH_RESULTS', 'MISSING_FEATURES', 'SEASONAL_PAUSE', 'CLOSING_BUSINESS', 'SWITCHING_PLATFORM', 'TECHNICAL_PROBLEMS', 'OTHER'));

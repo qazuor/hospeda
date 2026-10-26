@@ -236,3 +236,25 @@ describe('promoCodeApi (AC:B9b:12 HOS-1591 TEST:B9b:12 (support))', () => {
         });
     });
 });
+
+describe('TEST:1878:24a optional cancellation reason request body', () => {
+    beforeEach(() => {
+        postProtected.mockReset();
+        postProtected.mockResolvedValue({ ok: true, data: {} });
+    });
+
+    it('omits the body when no reason is selected', async () => {
+        await billingSubscriptionApi.cancel({ subscriptionId: 'sub-id' });
+        expect(postProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/billing-subscription/sub-id/cancellation'
+        });
+    });
+
+    it('sends JSON only when a reason is selected', async () => {
+        await billingSubscriptionApi.cancel({ subscriptionId: 'sub-id', reason: 'SEASONAL_PAUSE' });
+        expect(postProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/billing-subscription/sub-id/cancellation',
+            body: { reason: 'SEASONAL_PAUSE' }
+        });
+    });
+});

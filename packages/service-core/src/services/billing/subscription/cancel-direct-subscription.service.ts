@@ -3,7 +3,7 @@ import type { DrizzleClient } from '@repo/db';
 import { and, eq, getDb, providerLinks, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
-import { PermissionEnum, VerticalEnumSchema } from '@repo/schemas';
+import { CancellationReasonSchema, PermissionEnum, VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import type { Actor } from '../../../types/index.js';
 import {
@@ -14,6 +14,7 @@ import {
 } from '../addon/addon-instance-a5.js';
 import type { AddonOrphanhoodPorts } from '../addon/addon-orphanhood-ports.js';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss.js';
+import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import {
     type CancelOurAuthorizationOutcome,
@@ -45,7 +46,11 @@ const actorSchema = z.custom<Actor>((value) => {
         z.array(z.nativeEnum(PermissionEnum)).safeParse(actor.permissions).success
     );
 });
-const inputSchema = z.strictObject({ actor: actorSchema, subscriptionId: z.string() });
+const inputSchema = z.strictObject({
+    actor: actorSchema,
+    subscriptionId: z.string(),
+    reason: CancellationReasonSchema.optional()
+});
 
 /** Origins handled by the direct subscription cancellation act. */
 export const DIRECT_CANCELLATION_ORIGINS = ['SUSPENDED', 'GRACE_PERIOD'] as const;
@@ -67,6 +72,7 @@ export interface CancelDirectSubscriptionPorts {
     readonly orphanhood: AddonOrphanhoodPorts;
     readonly successionCloser?: SuccessionCloser;
     readonly cancellationSeen?: CancellationSeenAnnotator;
+    readonly billingFacts?: BillingFactSink;
 }
 /** Result of S23/S24. */
 export type CancelDirectSubscriptionResult =
@@ -95,6 +101,8 @@ interface Reading {
     readonly origin: DirectCancellationOrigin;
     readonly cardPayer: boolean;
     readonly authorizationId: string | null;
+    readonly cancellationReason: z.infer<typeof CancellationReasonSchema> | null;
+    readonly actorKind: 'USER' | 'ADMIN';
 }
 const CANCEL_CALL_BY_OUTCOME: Readonly<Record<CancelOurAuthorizationOutcome, CancelActiveCall>> = {
     ALREADY_CANCELLED: 'NOT_NEEDED',
@@ -142,10 +150,16 @@ async function writeDirectCancellation(input: {
     subscriptionId: string;
     origin: DirectCancellationOrigin;
     now: Date;
+    reason?: z.infer<typeof CancellationReasonSchema>;
 }): Promise<boolean> {
     const [row] = await input.tx
         .update(subscriptions)
-        .set({ status: 'CANCELLED', serviceEndsAt: input.now, updatedAt: input.now })
+        .set({
+            status: 'CANCELLED',
+            serviceEndsAt: input.now,
+            updatedAt: input.now,
+            cancellationReason: input.reason ?? null
+        })
         .where(
             and(eq(subscriptions.id, input.subscriptionId), eq(subscriptions.status, input.origin))
         )
@@ -165,7 +179,11 @@ async function writeDirectCancellation(input: {
  * @throws ServiceError with the S11 cancellation rejection reasons
  */
 export async function cancelDirectSubscription(
-    input: { readonly actor: Actor; readonly subscriptionId: string },
+    input: {
+        readonly actor: Actor;
+        readonly subscriptionId: string;
+        readonly reason?: z.infer<typeof CancellationReasonSchema>;
+    },
     ports: CancelDirectSubscriptionPorts
 ): Promise<CancelDirectSubscriptionResult> {
     const parsed = inputSchema.parse(input);
@@ -206,7 +224,15 @@ export async function cancelDirectSubscription(
                 'Subscription state is not eligible for direct cancellation'
             );
         const origin = row.status;
-        if (!(await writeDirectCancellation({ tx, subscriptionId: row.id, origin, now })))
+        if (
+            !(await writeDirectCancellation({
+                tx,
+                subscriptionId: row.id,
+                origin,
+                now,
+                reason: parsed.reason
+            }))
+        )
             throw cancelActiveRejection(
                 'CANCELLATION_STATE_NOT_ALLOWED',
                 'Subscription state changed'
@@ -253,7 +279,9 @@ export async function cancelDirectSubscription(
                 vertical: row.vertical,
                 origin,
                 cardPayer,
-                authorizationId: link?.providerId ?? null
+                authorizationId: link?.providerId ?? null,
+                cancellationReason: parsed.reason ?? null,
+                actorKind: parsed.actor.id === row.userId ? ('USER' as const) : ('ADMIN' as const)
             } satisfies Reading,
             cancelled,
             successionClosed: succession.called
@@ -267,6 +295,26 @@ export async function cancelDirectSubscription(
         };
     const { reading, cancelled } = committed;
     const vertical = VerticalEnumSchema.safeParse(reading.vertical);
+    if (reading.userId && vertical.success)
+        emitBillingFact({
+            sink: ports.billingFacts,
+            fact: {
+                kind: 'SUBSCRIPTION_CANCELLED',
+                userId: reading.userId,
+                vertical: vertical.data,
+                subscriptionId: reading.subscriptionId,
+                subscriptionClass: 'PRINCIPAL',
+                actorKind: reading.actorKind,
+                occurredAt: now,
+                cancelledBy: reading.actorKind,
+                path:
+                    reading.origin === 'GRACE_PERIOD'
+                        ? 'DIRECT_FROM_GRACE'
+                        : 'DIRECT_FROM_SUSPENDED',
+                wasScheduled: false,
+                ...(reading.cancellationReason ? { reason: reading.cancellationReason } : {})
+            }
+        });
     if (reading.userId && vertical.success)
         try {
             await ports.coverageNotices.emitCoverageChanged({

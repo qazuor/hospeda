@@ -156,6 +156,31 @@ afterAll(async () => {
 });
 
 describe('Mercado Pago receiver integration', () => {
+    it('emits one S2 activation fact through the signed webhook', async () => {
+        const signup = await createPendingSignup();
+        type CapturedFact = Parameters<
+            Parameters<typeof setAnalyticsFactSinkForTests>[0]['emit']
+        >[0];
+        const facts: CapturedFact[] = [];
+        setAnalyticsFactSinkForTests({ emit: (fact) => facts.push(fact) });
+        try {
+            server.mercadoPagoDeliveries({ webhookSecret });
+            await server.provider.approve({ authorizationId: signup.authorizationId });
+            clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+            const approval = server
+                .mercadoPagoDeliveries({ webhookSecret })
+                .deliveries.find((delivery) =>
+                    delivery.query.includes('type=subscription_preapproval')
+                );
+            if (!approval) throw new Error('Expected signed approval notice');
+            expect((await postDelivery(approval)).status).toBe(200);
+            expect((await postDelivery(approval)).status).toBe(200);
+            expect(facts.filter((fact) => fact.kind === 'SUBSCRIPTION_ACTIVATED')).toHaveLength(1);
+        } finally {
+            resetAnalyticsFactSinkForTests();
+        }
+    });
+
     it('TEST:1878:7 emits one credited fact for a repeated approved charge delivery and none for a no-op', async () => {
         const signup = await createPendingSignup();
         type CapturedFact = Parameters<

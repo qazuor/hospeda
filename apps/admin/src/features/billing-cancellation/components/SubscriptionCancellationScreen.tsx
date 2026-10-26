@@ -3,6 +3,7 @@
 import { AlertCircleIcon, LoaderIcon } from '@repo/icons';
 import {
     type AdminSubscriptionCancellationResponse,
+    CancellationReasonEnum,
     PermissionEnum,
     SubscriptionCancellationParamsSchema
 } from '@repo/schemas';
@@ -11,6 +12,13 @@ import { PermissionGate } from '@/components/auth/PermissionGate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from '@/components/ui/select';
 import { useToast } from '@/components/ui/ToastProvider';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslations } from '@/hooks/use-translations';
@@ -63,11 +71,13 @@ function CancellationBody({ subscriptionId }: SubscriptionCancellationScreenProp
     const preview = useSubscriptionCancellationPreview({ subscriptionId, enabled: validId });
     const mutation = useCancelSubscriptionMutation();
     const [note, setNote] = useState('');
+    const [reason, setReason] = useState<CancellationReasonEnum | null>(null);
     const [notice, setNotice] = useState(false);
     const [actRefusal, setActRefusal] = useState<string | null>(null);
     const [result, setResult] = useState<AdminSubscriptionCancellationResponse | null>(null);
     const noteId = useId();
     const noteHelpId = useId();
+    const reasonId = useId();
 
     if (!validId)
         return (
@@ -106,11 +116,12 @@ function CancellationBody({ subscriptionId }: SubscriptionCancellationScreenProp
         setNotice(false);
         const trimmedNote = note.trim();
         try {
-            const response = await mutation.mutateAsync(
-                trimmedNote
-                    ? { subscriptionId, expectedOrigin: current.origin, note: trimmedNote }
-                    : { subscriptionId, expectedOrigin: current.origin }
-            );
+            const response = await mutation.mutateAsync({
+                subscriptionId,
+                expectedOrigin: current.origin,
+                ...(trimmedNote ? { note: trimmedNote } : {}),
+                ...(reason ? { reason } : {})
+            });
             setResult(response);
             addToast({
                 title: t('admin-billing.subscriptionCancellation.successToast'),
@@ -203,6 +214,49 @@ function CancellationBody({ subscriptionId }: SubscriptionCancellationScreenProp
                                 >
                                     {t('admin-billing.subscriptionCancellation.noteHelp')}
                                 </p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor={reasonId}>
+                                    {t('admin-billing.subscriptionCancellation.reason.label')}
+                                </Label>
+                                <Select
+                                    value={reason ?? ''}
+                                    onValueChange={(value) =>
+                                        setReason(
+                                            value === '__none__'
+                                                ? null
+                                                : (value as CancellationReasonEnum)
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger
+                                        id={reasonId}
+                                        data-testid="subscription-cancellation-reason"
+                                    >
+                                        <SelectValue
+                                            placeholder={t(
+                                                'admin-billing.subscriptionCancellation.reason.none'
+                                            )}
+                                        />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="__none__">
+                                            {t(
+                                                'admin-billing.subscriptionCancellation.reason.none'
+                                            )}
+                                        </SelectItem>
+                                        {Object.values(CancellationReasonEnum).map((value) => (
+                                            <SelectItem
+                                                key={value}
+                                                value={value}
+                                            >
+                                                {t(
+                                                    `admin-billing.subscriptionCancellation.reason.${value}`
+                                                )}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <Button
                                 type="button"

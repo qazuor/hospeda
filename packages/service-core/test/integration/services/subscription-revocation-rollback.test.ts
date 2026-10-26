@@ -1,11 +1,13 @@
 // TEST:B5:11 (AC:B5:20): «en un solo acto». A rejection of RF1 (the last step of the
 // transaction) rolls back everything written before it: the state, the closed pause, the
 // coverage loss (AC:B4:4, written in the same transaction) and the S36 decision. Nothing is
-// cancelled at the provider without its refund. `requestRefund` is replaced only for this
-// file, and only while a test asks it to fail; otherwise it is the real one.
-import { coverageLosses, domainEventModel, eq } from '@repo/db';
+// cancelled at the provider without its refund. TEST:1878:26 adds that no committed REVOKED
+// fact escapes that rollback. `requestRefund` is replaced only for this file, and only while
+// a test asks it to fail; otherwise it is the real one.
+import { coverageLosses, domainEventModel, eq, subscriptions } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
 import { revokeSubscription } from '../../../src/services/billing/subscription/revoke-subscription.service.js';
 import { ServiceError } from '../../../src/types/index.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
@@ -104,6 +106,33 @@ describe('TEST:B5:11 AC:B5:20 a rejected RF1 rolls back the whole act', () => {
                     .from(coverageLosses)
                     .where(eq(coverageLosses.userId, f.userId))
             ).toEqual([{ lostAt: now }]);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'TEST:1878:26 emits no REVOKED fact when the transaction fails after the UPDATE',
+        async () => {
+            // Arrange: the RF1 of the last step fails after the state was already written.
+            const f = await revocationFixture({ origin: 'ACTIVE' });
+            f.at(f.day(5));
+            const facts: BillingFact[] = [];
+            failing.on = true;
+
+            // Act
+            await expect(
+                revokeSubscription(
+                    { actor: await seedRevocationActor(), subscriptionId: f.subscriptionId },
+                    { ...f.ports, billingFacts: { emit: (fact) => facts.push(fact) } }
+                )
+            ).rejects.toMatchObject({ reason: 'PAYMENT_NOT_REFUNDABLE' });
+
+            // Assert: the UPDATE was rolled back and no committed fact escaped the act.
+            expect(facts).toHaveLength(0);
+            const [row] = await getServiceTestDb()
+                .select({ status: subscriptions.status })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, f.subscriptionId));
+            expect(row?.status).toBe('ACTIVE');
         }
     );
 });

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import type { AdminSubscriptionCancellationPreviewResponse } from '@repo/schemas';
+import { CancellationReasonEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
@@ -93,6 +94,31 @@ describe('TEST:1696:3 AC:1696:3 cancellation hook', () => {
         });
         expect(mockedFetchApi.mock.calls[0]?.[0]?.body).not.toHaveProperty('note');
         expect(mockedFetchApi.mock.calls[1]?.[0]?.body).not.toHaveProperty('note');
+    });
+    it('TEST:1878:24b includes only a chosen reason and keeps expectedOrigin required', async () => {
+        mockedFetchApi.mockResolvedValue({ data: { success: true, data: RESULT }, status: 200 });
+        const { result } = renderHook(() => useCancelSubscriptionMutation(), {
+            wrapper: wrapper(client())
+        });
+        await result.current.mutateAsync({ subscriptionId: ID, expectedOrigin: 'SUSPENDED' });
+        await result.current.mutateAsync({
+            subscriptionId: ID,
+            expectedOrigin: 'SUSPENDED',
+            reason: CancellationReasonEnum.SEASONAL_PAUSE
+        });
+        expect(mockedFetchApi).toHaveBeenNthCalledWith(1, {
+            path: PATH,
+            method: 'POST',
+            body: { expectedOrigin: 'SUSPENDED' }
+        });
+        expect(mockedFetchApi).toHaveBeenNthCalledWith(2, {
+            path: PATH,
+            method: 'POST',
+            body: {
+                expectedOrigin: 'SUSPENDED',
+                reason: CancellationReasonEnum.SEASONAL_PAUSE
+            }
+        });
     });
     it('invalidates the preview after success', async () => {
         mockedFetchApi.mockResolvedValue({ data: { success: true, data: RESULT }, status: 200 });
