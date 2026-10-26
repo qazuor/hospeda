@@ -40,7 +40,8 @@ export interface PermissionGateProps {
 
 /**
  * Conditionally renders children based on user permissions.
- * Returns null while auth is loading to prevent SSR hydration mismatches.
+ * Returns null while auth is loading. With authenticated initial SSR state,
+ * children may render in the server HTML before the client has hydrated.
  *
  * @param props - PermissionGateProps
  * @returns Children if user has permissions, fallback or null otherwise
@@ -54,8 +55,8 @@ export function PermissionGate({
     const { isLoading } = useAuthContext();
     const userPermissions = useUserPermissions();
 
-    // During SSR and initial hydration, auth state is not available.
-    // Return null to match server output and avoid hydration mismatch.
+    // Auth can be loading without an authenticated initial state; authenticated
+    // SSR may render children before client hydration completes.
     if (isLoading) {
         return null;
     }

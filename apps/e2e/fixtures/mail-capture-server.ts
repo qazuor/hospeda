@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
+import { setTimeout as delay } from 'node:timers/promises';
 
 /** Default local port for the Brevo-shaped E2E mail capture server. */
 export const E2E_MAIL_CAPTURE_PORT = 18091;
@@ -92,13 +93,27 @@ export async function startE2eMailCapture(
         response.end(JSON.stringify({ messageId: `${randomUUID()}@e2e-capture` }));
     });
     const host = options.host ?? '127.0.0.1';
-    await new Promise<void>((resolve, reject) => {
-        server.once('error', reject);
-        server.listen(options.port ?? E2E_MAIL_CAPTURE_PORT, host, () => {
-            server.off('error', reject);
-            resolve();
-        });
-    });
+    const startedAt = Date.now();
+    while (true) {
+        try {
+            await new Promise<void>((resolve, reject) => {
+                server.once('error', reject);
+                server.listen(options.port ?? E2E_MAIL_CAPTURE_PORT, host, () => {
+                    server.off('error', reject);
+                    resolve();
+                });
+            });
+            break;
+        } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw error;
+            if (Date.now() - startedAt >= 120_000) {
+                throw new Error('Timed out waiting 120 seconds for the mail capture port.', {
+                    cause: error
+                });
+            }
+            await delay(500);
+        }
+    }
     const address = server.address();
     if (!address || typeof address === 'string')
         throw new Error('Could not determine capture port');
