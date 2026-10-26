@@ -2001,6 +2001,18 @@
         "notice": {
             "CANCELLATION_ORIGIN_CHANGED": "La suscripción cambió desde que abriste esta pantalla, y no se dio de baja. Revisá lo que pasaría ahora y confirmá otra vez."
         },
-        "successToast": "Baja registrada."
+        "successToast": "Baja registrada.",
+        "reason": {
+            "label": "Motivo de la baja (opcional)",
+            "none": "Sin especificar",
+            "TOO_EXPENSIVE": "Es muy caro",
+            "NOT_ENOUGH_RESULTS": "Tuve pocas reservas o contactos",
+            "MISSING_FEATURES": "Le faltan funciones que necesito",
+            "SEASONAL_PAUSE": "Pausa por temporada",
+            "CLOSING_BUSINESS": "Cierro el negocio",
+            "SWITCHING_PLATFORM": "Me paso a otra plataforma",
+            "TECHNICAL_PROBLEMS": "Tuve problemas técnicos",
+            "OTHER": "Otro motivo"
+        }
     }
 }
