@@ -1,5 +1,5 @@
 import { accommodationReviews, eq, getDb } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { clearCache } from '../../../src/middlewares/cache';
@@ -9,7 +9,7 @@ import {
     ADMIN_GATE_PERMISSIONS,
     buildMockActorHeaders,
     createMockActorUser
-} from '../helpers/mock-admin-actor';
+} from '../helpers/mock-actor';
 import { seedPublicAccommodation } from '../helpers/seed-public-accommodation';
 
 // The mock-actor headers are only honoured when CI is unset.
@@ -26,8 +26,12 @@ delete process.env.CI;
  *   DELETE /api/v1/admin/accommodations/reviews/:id/hard
  *
  * Every route has its own permission gate (VIEW, UPDATE + MODERATE, DELETE,
- * RESTORE, HARD_DELETE), and the service adds its own check on top. The
- * `/:id` gates are registered path-wide, so the full actor holds all of them.
+ * RESTORE, HARD_DELETE), and the service adds its own check on top.
+ *
+ * Known bug HOS-1908: gates registered on `/:id` are not method-scoped, so they
+ * accumulate across methods (PUT/DELETE also need the permissions of the routes
+ * registered before them on that path). The tests therefore use a full actor and
+ * withhold one permission at a time.
  */
 describe('Admin AccommodationReview CRUD Routes', () => {
     let app: ReturnType<typeof initApp>;
@@ -118,7 +122,7 @@ describe('Admin AccommodationReview CRUD Routes', () => {
         app.request(`${base}${path}`, {
             method,
             headers: withActor
-                ? buildMockActorHeaders({ actorId, permissions })
+                ? buildMockActorHeaders({ actorId, permissions, role: RoleEnum.ADMIN })
                 : { 'content-type': 'application/json', 'user-agent': 'vitest' },
             ...(body === undefined ? {} : { body: JSON.stringify(body) })
         });
@@ -301,6 +305,23 @@ describe('Admin AccommodationReview CRUD Routes', () => {
         it('answers 404 for a review that does not exist', async () => {
             const res = await send({ method: 'DELETE', path: `/${NONEXISTENT_UUID}/hard` });
             expect(res.status).toBe(404);
+        });
+
+        // HOS-1903: BaseCrudService.hardDelete returns { count: 0 } for a soft-deleted row
+        // (base.crud.write.ts:322), so the route answers success while the row stays.
+        it('currently answers 200 but keeps a soft-deleted review in the table (HOS-1903)', async () => {
+            const id = await seedReview({ deleted: true });
+            const res = await send({ method: 'DELETE', path: `/${id}/hard` });
+            expect(res.status).toBe(200);
+            expect(await readRow(id)).toBeDefined();
+        });
+
+        // Drop `.fails` (and the test above) once HOS-1903 is fixed.
+        it.fails('permanently deletes a review that was soft-deleted first (HOS-1903)', async () => {
+            const id = await seedReview({ deleted: true });
+            const res = await send({ method: 'DELETE', path: `/${id}/hard` });
+            expect(res.status).toBe(200);
+            expect(await readRow(id)).toBeUndefined();
         });
 
         it('answers 401 when unauthenticated', async () => {
