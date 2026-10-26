@@ -868,8 +868,10 @@ jobs:
     # row were cut at exactly 30 in the last step (cutover DB tests). 45 held
     # until 2026-10-24: the integration step alone took 40-43.6 min, and two PRs
     # (#3776, #3779) were cut at 45 in the cutover DB tests with every prior step
-    # green. 60 now; the growth itself is tracked in HOS-1775.
-    timeout-minutes: 60
+    # green. 60 until HOS-1775 sharded the job: on #3831 the slowest leg took
+    # 18.2 min (packages 14.5, API shards 11-18.2). 30 keeps ~1.6x headroom;
+    # when a leg nears it, add a shard instead of raising this again.
+    timeout-minutes: 30
     needs: build
 
     services:
