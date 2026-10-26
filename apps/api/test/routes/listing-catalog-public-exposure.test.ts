@@ -16,12 +16,12 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { gastronomySvc, experienceSvc, catalog } = vi.hoisted(() => ({
-    gastronomySvc: { getBySlug: vi.fn() },
+const { venueSvc, experienceSvc, catalog } = vi.hoisted(() => ({
+    venueSvc: { getBySlug: vi.fn() },
     experienceSvc: { getBySlug: vi.fn() },
     catalog: {
-        fetchGastronomyAmenities: vi.fn(),
-        fetchGastronomyFeatures: vi.fn(),
+        fetchVenueAmenities: vi.fn(),
+        fetchVenueFeatures: vi.fn(),
         fetchExperienceAmenities: vi.fn(),
         fetchExperienceFeatures: vi.fn()
     }
@@ -32,7 +32,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     return {
         ...actual,
         VenueService: vi.fn().mockImplementation(function () {
-            return { getBySlug: (...args: unknown[]) => gastronomySvc.getBySlug(...args) };
+            return { getBySlug: (...args: unknown[]) => venueSvc.getBySlug(...args) };
         }),
         ExperienceService: vi.fn().mockImplementation(function () {
             return { getBySlug: (...args: unknown[]) => experienceSvc.getBySlug(...args) };
@@ -65,7 +65,7 @@ const FEATURE_ROW = {
     comments: 'Salida 8:00'
 };
 
-const minimalGastronomy = {
+const minimalVenue = {
     id: ENTITY_ID,
     slug: 'test-gastronomy',
     name: 'Test Parrilla',
@@ -90,7 +90,7 @@ const minimalGastronomy = {
 };
 
 const minimalExperience = {
-    ...minimalGastronomy,
+    ...minimalVenue,
     slug: 'test-experience',
     name: 'Test Experience',
     type: 'TOUR_GUIDE',
@@ -109,8 +109,8 @@ const readData = async (res: Response): Promise<Record<string, unknown>> => {
 
 beforeEach(async () => {
     vi.clearAllMocks();
-    catalog.fetchGastronomyAmenities.mockResolvedValue([]);
-    catalog.fetchGastronomyFeatures.mockResolvedValue([]);
+    catalog.fetchVenueAmenities.mockResolvedValue([]);
+    catalog.fetchVenueFeatures.mockResolvedValue([]);
     catalog.fetchExperienceAmenities.mockResolvedValue([]);
     catalog.fetchExperienceFeatures.mockResolvedValue([]);
     validateApiEnv();
@@ -120,8 +120,8 @@ beforeEach(async () => {
 describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', () => {
     it('publishes the amenities the owner ticked', async () => {
         // Arrange
-        gastronomySvc.getBySlug.mockResolvedValue({ data: minimalGastronomy });
-        catalog.fetchGastronomyAmenities.mockResolvedValue([AMENITY_ROW]);
+        venueSvc.getBySlug.mockResolvedValue({ data: minimalVenue });
+        catalog.fetchVenueAmenities.mockResolvedValue([AMENITY_ROW]);
 
         // Act
         const res = await app.request('/api/v1/public/gastronomies/slug/test-gastronomy', {
@@ -135,8 +135,8 @@ describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', 
 
     it('publishes the features, relabel and comment included', async () => {
         // Arrange
-        gastronomySvc.getBySlug.mockResolvedValue({ data: minimalGastronomy });
-        catalog.fetchGastronomyFeatures.mockResolvedValue([FEATURE_ROW]);
+        venueSvc.getBySlug.mockResolvedValue({ data: minimalVenue });
+        catalog.fetchVenueFeatures.mockResolvedValue([FEATURE_ROW]);
 
         // Act
         const res = await app.request('/api/v1/public/gastronomies/slug/test-gastronomy', {
@@ -150,7 +150,7 @@ describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', 
 
     it('reads the catalog for the listing that was actually resolved', async () => {
         // Arrange
-        gastronomySvc.getBySlug.mockResolvedValue({ data: minimalGastronomy });
+        venueSvc.getBySlug.mockResolvedValue({ data: minimalVenue });
 
         // Act
         await app.request('/api/v1/public/gastronomies/slug/test-gastronomy', {
@@ -158,13 +158,13 @@ describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', 
         });
 
         // Assert
-        expect(catalog.fetchGastronomyAmenities).toHaveBeenCalledWith(ENTITY_ID);
-        expect(catalog.fetchGastronomyFeatures).toHaveBeenCalledWith(ENTITY_ID);
+        expect(catalog.fetchVenueAmenities).toHaveBeenCalledWith(ENTITY_ID);
+        expect(catalog.fetchVenueFeatures).toHaveBeenCalledWith(ENTITY_ID);
     });
 
     it('omits both keys entirely when the listing has none', async () => {
         // Arrange
-        gastronomySvc.getBySlug.mockResolvedValue({ data: minimalGastronomy });
+        venueSvc.getBySlug.mockResolvedValue({ data: minimalVenue });
 
         // Act
         const res = await app.request('/api/v1/public/gastronomies/slug/test-gastronomy', {
@@ -179,7 +179,7 @@ describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', 
 
     it('does not touch the catalog when the slug resolves to nothing', async () => {
         // Arrange
-        gastronomySvc.getBySlug.mockResolvedValue({ data: null });
+        venueSvc.getBySlug.mockResolvedValue({ data: null });
 
         // Act
         const res = await app.request('/api/v1/public/gastronomies/slug/missing', {
@@ -188,7 +188,7 @@ describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', 
 
         // Assert
         expect(res.status).toBe(200);
-        expect(catalog.fetchGastronomyAmenities).not.toHaveBeenCalled();
+        expect(catalog.fetchVenueAmenities).not.toHaveBeenCalled();
     });
 });
 

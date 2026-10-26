@@ -17,7 +17,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const ROUTES_DIR = join(import.meta.dirname, '../../src/routes');
-const VERTICALS = ['accommodation', 'gastronomy', 'experience'] as const;
+const VERTICALS = ['accommodation', 'venue', 'experience'] as const;
 
 /** Wired route (relative to `src/routes`) → the content method its scope wraps. */
 const WIRED: Readonly<Record<string, string>> = {
@@ -35,20 +35,20 @@ const WIRED: Readonly<Record<string, string>> = {
     'accommodation/admin/removeFaq.ts': 'accommodationService.removeFaq',
     'accommodation/admin/updateFaq.ts': 'accommodationService.updateFaq',
     'accommodation/admin/reorderFaqs.ts': 'accommodationService.reorderFaqs',
-    'gastronomy/admin/patch.ts': 'gastronomyService.update',
-    'gastronomy/admin/update.ts': 'gastronomyService.update',
+    'venue/admin/patch.ts': 'venueService.update',
+    'venue/admin/update.ts': 'venueService.update',
     'experience/admin/patch.ts': 'experienceService.update',
     'experience/admin/update.ts': 'experienceService.update',
-    'gastronomy/admin/addFaq.ts': 'addVenueFaq',
-    'gastronomy/admin/addFeaturedMedia.ts': 'addVenueFeaturedMedia',
-    'gastronomy/admin/addMedia.ts': 'addVenueMedia',
-    'gastronomy/admin/removeFaq.ts': 'removeVenueFaq',
-    'gastronomy/admin/removeMedia.ts': 'removeVenueMedia',
-    'gastronomy/admin/reorderFaqs.ts': 'reorderVenueFaqs',
-    'gastronomy/admin/reorderMedia.ts': 'reorderVenueMedia',
-    'gastronomy/admin/setFeaturedMedia.ts': 'setFeaturedVenueMedia',
-    'gastronomy/admin/updateFaq.ts': 'updateVenueFaq',
-    'gastronomy/admin/updateMedia.ts': 'updateVenueMedia',
+    'venue/admin/addFaq.ts': 'addVenueFaq',
+    'venue/admin/addFeaturedMedia.ts': 'addVenueFeaturedMedia',
+    'venue/admin/addMedia.ts': 'addVenueMedia',
+    'venue/admin/removeFaq.ts': 'removeVenueFaq',
+    'venue/admin/removeMedia.ts': 'removeVenueMedia',
+    'venue/admin/reorderFaqs.ts': 'reorderVenueFaqs',
+    'venue/admin/reorderMedia.ts': 'reorderVenueMedia',
+    'venue/admin/setFeaturedMedia.ts': 'setFeaturedVenueMedia',
+    'venue/admin/updateFaq.ts': 'updateVenueFaq',
+    'venue/admin/updateMedia.ts': 'updateVenueMedia',
     'experience/admin/addFaq.ts': 'addExperienceFaq',
     'experience/admin/addFeaturedMedia.ts': 'addExperienceFeaturedMedia',
     'experience/admin/addMedia.ts': 'addExperienceMedia',

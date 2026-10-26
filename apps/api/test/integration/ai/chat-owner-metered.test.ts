@@ -186,7 +186,7 @@ vi.mock('@repo/db', async (importOriginal) => {
     const accommodationSchema = await import(
         '../../../../../packages/db/src/schemas/accommodation/accommodation.dbschema.ts'
     );
-    const gastronomySchema = await import(
+    const venueSchema = await import(
         '../../../../../packages/db/src/schemas/venue/venue.dbschema.ts'
     );
     const experienceSchema = await import(
@@ -214,7 +214,7 @@ vi.mock('@repo/db', async (importOriginal) => {
     return {
         ...actual,
         accommodations: accommodationSchema.accommodations,
-        gastronomies: gastronomySchema.gastronomies,
+        gastronomies: venueSchema.gastronomies,
         experiences: experienceSchema.experiences,
         getDb: vi.fn(() => buildChain())
     };

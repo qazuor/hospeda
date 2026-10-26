@@ -14,7 +14,7 @@ vi.mock('../../src/routes/media/gallery-count', () => ({
 }));
 
 const ACTOR_ID = '11111111-1111-4111-8111-111111111111';
-const GASTRONOMY_ID = '33333333-3333-4333-8333-333333333333';
+const VENUE_ID = '33333333-3333-4333-8333-333333333333';
 const MISSING_ID = '44444444-4444-4444-8444-444444444444';
 
 async function request(id: string) {
@@ -59,13 +59,13 @@ describe('TEST:V5:4 declared vertical on media upload', () => {
             .mockResolvedValue({
                 error: { code: ServiceErrorCode.NOT_FOUND, message: 'accommodation not found' }
             });
-        const gastronomy = vi.spyOn(VenueService.prototype, 'getById');
-        const foreign = await request(GASTRONOMY_ID);
+        const venue = vi.spyOn(VenueService.prototype, 'getById');
+        const foreign = await request(VENUE_ID);
         const missing = await request(MISSING_ID);
         expect(foreign).toEqual(missing);
         expect(foreign.status).toBe(404);
         expect(accommodation).toHaveBeenCalledTimes(2);
-        expect(gastronomy).not.toHaveBeenCalled();
+        expect(venue).not.toHaveBeenCalled();
         expect(countGallery).not.toHaveBeenCalled();
     });
 });

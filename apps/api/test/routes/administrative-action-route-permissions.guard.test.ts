@@ -236,8 +236,8 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
             },
             {
                 kind: 'required',
-                file: 'apps/api/src/routes/gastronomy/admin/moderate.ts',
-                route: 'adminModerateGastronomyRoute'
+                file: 'apps/api/src/routes/venue/admin/moderate.ts',
+                route: 'adminModerateVenueRoute'
             },
             {
                 kind: 'required',
@@ -270,8 +270,8 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
             },
             {
                 kind: 'anyOf',
-                file: 'apps/api/src/routes/gastronomy/admin/create.ts',
-                route: 'adminCreateGastronomyRoute'
+                file: 'apps/api/src/routes/venue/admin/create.ts',
+                route: 'adminCreateVenueRoute'
             },
             {
                 kind: 'anyOf',
@@ -354,7 +354,7 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
             },
             {
                 kind: 'tableGate',
-                file: 'apps/api/src/routes/gastronomy/admin/purge.ts',
+                file: 'apps/api/src/routes/venue/admin/purge.ts',
                 markers: ["administrativeAction: 'ACC_23'"]
             },
             {

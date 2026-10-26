@@ -128,12 +128,12 @@ const CASES = [
         staffPermission: PermissionEnum.GASTRONOMY_VIEW_ALL,
         segment: 'gastronomia',
         importRoute: async () => {
-            const mod = await import('../../src/routes/gastronomy/protected/qrCode.js');
-            return mod.protectedGetGastronomyQrCodeRoute;
+            const mod = await import('../../src/routes/venue/protected/qrCode.js');
+            return mod.protectedGetVenueQrCodeRoute;
         },
         importSheetRoute: async () => {
-            const mod = await import('../../src/routes/gastronomy/protected/qrSheet.js');
-            return mod.protectedGetGastronomyQrSheetRoute;
+            const mod = await import('../../src/routes/venue/protected/qrSheet.js');
+            return mod.protectedGetVenueQrSheetRoute;
         }
     },
     {

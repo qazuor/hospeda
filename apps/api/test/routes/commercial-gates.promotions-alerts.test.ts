@@ -4,11 +4,11 @@ import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createErrorHandler } from '../../src/middlewares/response';
 import { protectedGetWhatsAppRoute } from '../../src/routes/accommodation/protected/getWhatsApp';
-import { publicGetGastronomyBySlugRoute } from '../../src/routes/gastronomy/public/getBySlug';
 import { protectedCreateOwnerPromotionRoute } from '../../src/routes/owner-promotion/protected/create';
 import { protectedPatchOwnerPromotionRoute } from '../../src/routes/owner-promotion/protected/patch';
 import { protectedUpdateOwnerPromotionRoute } from '../../src/routes/owner-promotion/protected/update';
 import { createPriceAlertRoute } from '../../src/routes/price-alert/protected/create';
+import { publicGetVenueBySlugRoute } from '../../src/routes/venue/public/getBySlug';
 import type { AppBindings } from '../../src/types';
 import { createGuestActor } from '../../src/utils/actor';
 
@@ -21,7 +21,7 @@ const mocks = vi.hoisted(() => ({
     alertCount: vi.fn(),
     alertCreate: vi.fn(),
     accommodationGet: vi.fn(),
-    gastronomyGetBySlug: vi.fn(),
+    venueGetBySlug: vi.fn(),
     menu: vi.fn(),
     events: vi.fn(),
     dailySpecials: vi.fn(),
@@ -48,7 +48,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         },
         VenueService: class {
             model = {};
-            getBySlug = mocks.gastronomyGetBySlug;
+            getBySlug = mocks.venueGetBySlug;
         },
         getVenueMenu: mocks.menu,
         getVenueEvents: mocks.events,
@@ -60,8 +60,8 @@ vi.mock('../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({ effectiveSet: mocks.effectiveSet })
 }));
 vi.mock('../../src/utils/listing-catalog-relations', () => ({
-    fetchGastronomyAmenities: mocks.amenities,
-    fetchGastronomyFeatures: mocks.features
+    fetchVenueAmenities: mocks.amenities,
+    fetchVenueFeatures: mocks.features
 }));
 
 const IDS = {
@@ -170,7 +170,7 @@ const DAILY_SPECIAL = {
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z')
 };
-const GASTRONOMY = {
+const VENUE = {
     id: IDS.listing,
     slug: 'la-parrilla',
     name: 'La Parrilla',
@@ -314,7 +314,7 @@ beforeEach(() => {
         },
         error: undefined
     });
-    mocks.gastronomyGetBySlug.mockResolvedValue({ data: GASTRONOMY, error: undefined });
+    mocks.venueGetBySlug.mockResolvedValue({ data: VENUE, error: undefined });
     mocks.menu.mockResolvedValue({ data: { sections: [MENU_SECTION] }, error: undefined });
     mocks.events.mockResolvedValue({ data: { events: [VENUE_EVENT] }, error: undefined });
     mocks.dailySpecials.mockResolvedValue({
@@ -459,7 +459,7 @@ describe('TEST:V5:32 promotions, alerts and paid public fields', () => {
     });
 
     it('gastronomy paid public fields follow the owner set regardless of the viewer', async () => {
-        const app = makeApp(publicGetGastronomyBySlugRoute, IDS.touristVip);
+        const app = makeApp(publicGetVenueBySlugRoute, IDS.touristVip);
         const response = await app.request('/case/slug/la-parrilla');
         expect(response.status, JSON.stringify(await response.clone().json())).toBe(200);
         const data = (await response.json()).data;
@@ -474,18 +474,18 @@ describe('TEST:V5:32 promotions, alerts and paid public fields', () => {
             vertical: VerticalEnum.VENUE
         });
         const sameOwnerDifferentViewer = await makeApp(
-            publicGetGastronomyBySlugRoute,
+            publicGetVenueBySlugRoute,
             IDS.touristFloor
         ).request('/case/slug/la-parrilla');
         expect(sameOwnerDifferentViewer.status).toBe(200);
         const otherViewerData = (await sameOwnerDifferentViewer.json()).data;
         expect(otherViewerData.menuFileUrl).toBe(data.menuFileUrl);
         expect(otherViewerData.menuSections).toEqual(data.menuSections);
-        mocks.gastronomyGetBySlug.mockResolvedValue({
-            data: { ...GASTRONOMY, ownerId: IDS.gastroBasic },
+        mocks.venueGetBySlug.mockResolvedValue({
+            data: { ...VENUE, ownerId: IDS.gastroBasic },
             error: undefined
         });
-        const basicResponse = await makeApp(publicGetGastronomyBySlugRoute, IDS.touristVip).request(
+        const basicResponse = await makeApp(publicGetVenueBySlugRoute, IDS.touristVip).request(
             '/case/slug/la-parrilla'
         );
         expect(basicResponse.status).toBe(200);

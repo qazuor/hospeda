@@ -88,8 +88,8 @@ const CASES = [
         label: 'gastronomy',
         service: VenueService,
         importRoute: async () => {
-            const mod = await import('../../src/routes/gastronomy/protected/listMine.js');
-            return mod.protectedListMyGastronomyRoute;
+            const mod = await import('../../src/routes/venue/protected/listMine.js');
+            return mod.protectedListMyVenueRoute;
         }
     },
     {

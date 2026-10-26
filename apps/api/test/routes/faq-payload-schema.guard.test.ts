@@ -55,7 +55,7 @@ const ROUTES_DIR = join(__dirname, '../../src/routes');
  * Entities whose FAQ table carries the channel-visibility columns.
  * Adding one here without adding the columns re-creates the original bug.
  *
- * `gastronomy` and `experience` joined `accommodation` in HOS-400, which gave
+ * `venue` and `experience` joined `accommodation` in HOS-400, which gave
  * `gastronomy_faqs` / `experience_faqs` the same two columns so their AI chat
  * (HOS-400 PR 1) can honour `isUsableByAi`. `destination` deliberately has no
  * AI chat and stays out.
@@ -81,10 +81,10 @@ const EXPECTED_ROUTES = [
     'experience/admin/updateFaq.ts',
     'experience/protected/addFaq.ts',
     'experience/protected/updateFaq.ts',
-    'gastronomy/admin/addFaq.ts',
-    'gastronomy/admin/updateFaq.ts',
-    'gastronomy/protected/addFaq.ts',
-    'gastronomy/protected/updateFaq.ts'
+    'venue/admin/addFaq.ts',
+    'venue/admin/updateFaq.ts',
+    'venue/protected/addFaq.ts',
+    'venue/protected/updateFaq.ts'
 ] as const;
 
 /** Recursively collect every `.ts` file under a directory. */
@@ -125,7 +125,8 @@ function requestBodySchemaOf(source: string): string | null {
 
 /** The entity segment of a `<entity>/<tier>/<file>` route path. */
 function entityOf(routePath: string): string {
-    return routePath.split('/')[0] as string;
+    const entity = routePath.split('/')[0] as string;
+    return entity === 'venue' ? 'gastronomy' : entity;
 }
 
 const routes = discoverFaqMutationRoutes();

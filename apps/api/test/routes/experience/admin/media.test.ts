@@ -11,7 +11,7 @@
  * Testing strategy: mock the standalone `@repo/service-core` media helper
  * functions so no real DB is needed, then exercise the routes via
  * `initApp()` with the `x-mock-actor-*` header triplet (see
- * gastronomy/admin/admin-gastronomy.test.ts convention).
+ * venue/admin/admin-gastronomy.test.ts convention).
  *
  * @module test/routes/experience/admin/media
  */

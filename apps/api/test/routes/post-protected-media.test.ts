@@ -73,7 +73,7 @@ const OTHER_MEDIA_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const BASE = `/api/v1/protected/posts/${POST_ID}/media`;
 /**
  * The `x-mock-actor-*` triplet is this suite's actor convention (mirrors
- * `gastronomy/admin/media.test.ts`). Do NOT mock `utils/actor.js` instead — the
+ * `venue/admin/media.test.ts`). Do NOT mock `utils/actor.js` instead — the
  * auth middleware chain reads through it too, and stubbing it makes every
  * request 500 before routing.
  *

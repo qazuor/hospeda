@@ -52,20 +52,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const {
     mockUpdatePost,
     mockUpdateEvent,
-    mockUpdateGastronomy,
+    mockUpdateVenue,
     mockUpdateExperience,
     mockRemovePost,
     mockRemoveEvent,
-    mockRemoveGastronomy,
+    mockRemoveVenue,
     mockRemoveExperience
 } = vi.hoisted(() => ({
     mockUpdatePost: vi.fn(),
     mockUpdateEvent: vi.fn(),
-    mockUpdateGastronomy: vi.fn(),
+    mockUpdateVenue: vi.fn(),
     mockUpdateExperience: vi.fn(),
     mockRemovePost: vi.fn(),
     mockRemoveEvent: vi.fn(),
-    mockRemoveGastronomy: vi.fn(),
+    mockRemoveVenue: vi.fn(),
     mockRemoveExperience: vi.fn()
 }));
 
@@ -75,7 +75,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         ...actual,
         updatePostMedia: mockUpdatePost,
         updateEventMedia: mockUpdateEvent,
-        updateVenueMedia: mockUpdateGastronomy,
+        updateVenueMedia: mockUpdateVenue,
         updateExperienceMedia: mockUpdateExperience,
         // The DELETE on the SAME path is mocked too — not to test removal, but
         // so "did the PATCH swallow the DELETE (or vice versa)?" has a real
@@ -84,7 +84,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         // indistinguishable from "the route was never registered".
         removePostMedia: mockRemovePost,
         removeEventMedia: mockRemoveEvent,
-        removeVenueMedia: mockRemoveGastronomy,
+        removeVenueMedia: mockRemoveVenue,
         removeExperienceMedia: mockRemoveExperience
     };
 });
@@ -189,8 +189,8 @@ const CASES: readonly RouteCase[] = [
         tier: 'protected',
         segment: 'gastronomies',
         fk: 'gastronomyId',
-        mock: mockUpdateGastronomy,
-        removeMock: mockRemoveGastronomy,
+        mock: mockUpdateVenue,
+        removeMock: mockRemoveVenue,
         permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN],
         role: 'GASTRONOMY_OWNER'
     },
@@ -199,8 +199,8 @@ const CASES: readonly RouteCase[] = [
         tier: 'admin',
         segment: 'gastronomies',
         fk: 'gastronomyId',
-        mock: mockUpdateGastronomy,
-        removeMock: mockRemoveGastronomy,
+        mock: mockUpdateVenue,
+        removeMock: mockRemoveVenue,
         permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.GASTRONOMY_EDIT_ALL],
         role: 'ADMIN'
     },

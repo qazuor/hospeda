@@ -64,13 +64,13 @@ const buildListing = (type: string) => ({
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
-    const okGastronomy = async () => ({ data: buildListing('RESTAURANT') });
+    const okVenue = async () => ({ data: buildListing('RESTAURANT') });
     const okExperience = async () => ({ data: buildListing('EXCURSION') });
     return {
         ...actual,
         VenueService: class extends actual.VenueService {
-            override getBySlug = okGastronomy as never;
-            override getById = okGastronomy as never;
+            override getBySlug = okVenue as never;
+            override getById = okVenue as never;
         },
         ExperienceService: class extends actual.ExperienceService {
             override getBySlug = okExperience as never;
@@ -81,14 +81,14 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         getVenueMenu: async () => ({ data: { sections: [] } }),
         getVenueEvents: async () => ({ data: { events: [] } }),
         getVenueDailySpecials: async () => ({ data: { specials: [] } }),
-        resolveOwnerGastronomyPlanEntitlementSet: async () => new Set<string>(),
+        resolveOwnerVenuePlanEntitlementSet: async () => new Set<string>(),
         resolveOwnerGrantsExperienceDirections: async () => false
     };
 });
 
 vi.mock('../../../src/utils/listing-catalog-relations', () => ({
-    fetchGastronomyAmenities: async () => [],
-    fetchGastronomyFeatures: async () => [],
+    fetchVenueAmenities: async () => [],
+    fetchVenueFeatures: async () => [],
     fetchExperienceAmenities: async () => [],
     fetchExperienceFeatures: async () => []
 }));

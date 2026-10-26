@@ -116,7 +116,7 @@ class GenericMockModel {
  * mocked DB, so route-level tests assert true gate + routing behaviour instead of a spurious
  * 400 from the sort guard.
  */
-const GASTRONOMY_TABLE_COLUMNS = {
+const VENUE_TABLE_COLUMNS = {
     id: 'id',
     slug: 'slug',
     name: 'name',
@@ -144,9 +144,9 @@ const GASTRONOMY_TABLE_COLUMNS = {
  * (real) VenueService admin list/options/sort validation runs faithfully against
  * the mocked DB. All data methods stay no-op (inherited from GenericMockModel).
  */
-class GastronomyMockModel extends GenericMockModel {
+class VenueMockModel extends GenericMockModel {
     override getTable() {
-        return GASTRONOMY_TABLE_COLUMNS;
+        return VENUE_TABLE_COLUMNS;
     }
     override getTableName() {
         return 'gastronomies';
@@ -1547,7 +1547,7 @@ export function createDbMock() {
         // scope (via service constructor or direct import). They are exported as singleton
         // instances (not classes) in @repo/db — mirror that here with GenericMockModel
         // instances so initApp() can construct all gastronomy routes without a real DB.
-        venueModel: new GastronomyMockModel(),
+        venueModel: new VenueMockModel(),
         venueReviewModel: new GenericMockModel(),
         rVenueAmenityModel: new GenericMockModel(),
         rVenueFeatureModel: new GenericMockModel(),

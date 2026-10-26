@@ -6,8 +6,8 @@ import { createErrorHandler } from '../../src/middlewares/response';
 import { protectedAccommodationRoutes } from '../../src/routes/accommodation/protected/index';
 import { protectedBillingSubscriptionReadRoutes } from '../../src/routes/billing-subscription';
 import { protectedExperienceRoutes } from '../../src/routes/experience/protected/index';
-import { protectedGastronomyRoutes } from '../../src/routes/gastronomy/protected/index';
 import { protectedUserRoutes } from '../../src/routes/user/protected/index';
+import { protectedVenueRoutes } from '../../src/routes/venue/protected/index';
 import type { AppBindings } from '../../src/types';
 import { registerEntityFetchers } from '../../src/utils/entity-fetchers';
 
@@ -50,7 +50,7 @@ function buildApp(options: RouteProbeOptions) {
     });
     app.route('/api/v1/protected/users', protectedUserRoutes);
     app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
-    app.route('/api/v1/protected/gastronomies', protectedGastronomyRoutes);
+    app.route('/api/v1/protected/gastronomies', protectedVenueRoutes);
     app.route('/api/v1/protected/experiences', protectedExperienceRoutes);
     app.route('/api/v1/protected/billing-subscription', protectedBillingSubscriptionReadRoutes);
     return app;

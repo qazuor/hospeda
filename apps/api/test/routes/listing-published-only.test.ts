@@ -155,8 +155,8 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('TEST:V5:6 public gastronomy detail', () => {
     it('shows only PUBLISHED and pairs every hidden state with an invented id', async () => {
-        const { publicGetGastronomyByIdRoute } = await import(
-            '../../src/routes/gastronomy/public/getById.js'
+        const { publicGetVenueByIdRoute } = await import(
+            '../../src/routes/venue/public/getById.js'
         );
         const app = new Hono<AppBindings>();
         app.use((c, next) => {
@@ -167,7 +167,7 @@ describe('TEST:V5:6 public gastronomy detail', () => {
             });
             return next();
         });
-        app.route('/', publicGetGastronomyByIdRoute);
+        app.route('/', publicGetVenueByIdRoute);
         let publicationStatus: PublicationStatusEnum | null = null;
         vi.spyOn(VenueService.prototype, 'getById').mockImplementation(async (actor, id) => {
             if (id === MISSING_ID) {

@@ -6,7 +6,7 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { protectedCreateAccommodationReviewRoute } from '../../src/routes/accommodation/reviews/protected/create';
-import { protectedCreateGastronomyReviewRoute } from '../../src/routes/gastronomy/protected/createReview';
+import { protectedCreateVenueReviewRoute } from '../../src/routes/venue/protected/createReview';
 import type { AppBindings } from '../../src/types';
 import { createGuestActor } from '../../src/utils/actor';
 
@@ -17,7 +17,7 @@ vi.mock('../../src/utils/listing-access/ports', () => ({
 
 const mockServices = vi.hoisted(() => ({
     accommodationCreate: vi.fn(),
-    gastronomyCreate: vi.fn()
+    venueCreate: vi.fn()
 }));
 
 vi.mock('@repo/service-core', async (importOriginal) => {
@@ -28,7 +28,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             return { create: mockServices.accommodationCreate };
         }),
         VenueReviewService: vi.fn().mockImplementation(function () {
-            return { create: mockServices.gastronomyCreate };
+            return { create: mockServices.venueCreate };
         })
     };
 });
@@ -64,10 +64,10 @@ const routes = [
     },
     {
         name: 'gastronomy review',
-        route: protectedCreateGastronomyReviewRoute,
+        route: protectedCreateVenueReviewRoute,
         path: `/${listingId}/reviews`,
         body: { overallRating: 5 },
-        create: mockServices.gastronomyCreate
+        create: mockServices.venueCreate
     }
 ] as const;
 
@@ -119,7 +119,7 @@ beforeEach(() => {
             })
     );
     mockServices.accommodationCreate.mockReset();
-    mockServices.gastronomyCreate.mockReset();
+    mockServices.venueCreate.mockReset();
 });
 
 describe('TEST:V5:19 protected review routes', () => {

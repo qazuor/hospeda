@@ -19,7 +19,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const ROUTES = join(import.meta.dirname, '..', '..', 'src', 'routes');
-const VERTICALS = ['gastronomy', 'experience'] as const;
+const VERTICALS = ['venue', 'experience'] as const;
 
 /**
  * A call that returns a listing with its embedded `faqs` relation, on ANY

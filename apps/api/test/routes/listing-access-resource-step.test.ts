@@ -125,8 +125,7 @@ const cases = [
         label: 'gastronomy',
         service: VenueService,
         route: async () =>
-            (await import('../../src/routes/gastronomy/protected/getById.js'))
-                .protectedGetGastronomyByIdRoute
+            (await import('../../src/routes/venue/protected/getById.js')).protectedGetVenueByIdRoute
     },
     {
         label: 'experience',

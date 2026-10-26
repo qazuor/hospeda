@@ -94,7 +94,7 @@ describe('remove-media routes delete the Cloudinary asset (HOS-372 guard)', () =
             missing,
             `These routes remove a media row without passing a media provider, so the ` +
                 `Cloudinary binary is orphaned. Pass \`getMediaProvider()\` to the service ` +
-                `(see apps/api/src/routes/gastronomy/protected/removeMedia.ts):\n  ` +
+                `(see apps/api/src/routes/venue/protected/removeMedia.ts):\n  ` +
                 missing.join('\n  ')
         ).toEqual([]);
     });
