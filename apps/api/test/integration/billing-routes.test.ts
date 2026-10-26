@@ -69,7 +69,7 @@ const AUTHENTICATED_ROUTES: readonly RouteCase[] = [
     { method: 'POST', path: '/api/v1/protected/billing/promo-codes/redeem' }
 ];
 
-const request = ({ method, path }: RouteCase): Promise<Response> => {
+const request = async ({ method, path }: RouteCase): Promise<Response> => {
     const app = initApp();
     return app.request(path, {
         method,
