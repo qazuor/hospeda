@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { destinations, eventLocations, getDb } from '@repo/db';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -21,7 +22,7 @@ describe('GET /event-locations (list)', () => {
     });
 
     beforeEach(async () => {
-        const suffix = crypto.randomUUID().slice(0, 8);
+        const suffix = randomUUID().slice(0, 8);
         const db = getDb();
         const [destination] = await db
             .insert(destinations)
@@ -83,8 +84,16 @@ describe('GET /event-locations (list)', () => {
 
     // HOS-1904: EventLocationService._executeSearch reads page/pageSize from
     // params (eventLocation.service.ts:327), but BaseCrudRead.search strips them first (base.crud.read.ts:408-411).
-    // Same mechanism as HOS-1900. Drop `.fails` once fixed.
-    it.fails('respects pageSize query parameter', async () => {
+    // Same mechanism as HOS-1900.
+    it('currently ignores the pageSize query parameter and returns every row (HOS-1904)', async () => {
+        const res = await app.request(`${base}?pageSize=2`, { headers });
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data.items).toHaveLength(seededCount);
+    });
+
+    // Drop `.fails` (and the test above) once HOS-1904 is fixed.
+    it.fails('respects pageSize query parameter (HOS-1904)', async () => {
         const res = await app.request(`${base}?pageSize=2`, { headers });
         expect(res.status).toBe(200);
         const body = await res.json();
@@ -98,6 +107,7 @@ describe('GET /event-locations (list)', () => {
         expect(res.status).toBe(200);
         const body = await res.json();
         expect(body.data.pagination.pageSize).toBe(100);
+        expect(body.data.items).toHaveLength(seededCount);
     });
 
     it('rejects a pageSize above the maximum with 400', async () => {
