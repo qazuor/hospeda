@@ -72,7 +72,16 @@ export interface CreateOpenApiRouteInterface {
     tags: string[];
     requestParams?: Record<string, z.ZodTypeAny>;
     requestBody?: z.ZodTypeAny;
-    /** Whether OpenAPI requires a declared request body. Defaults to true. */
+    /**
+     * Tri-state declaration of whether the request body is required.
+     *
+     * - omitted: no `required` key is written to the OpenAPI document, so the
+     *   route keeps the behaviour it had before this flag existed;
+     * - `true`: the document declares `required: true`;
+     * - `false`: the document declares `required: false` and requests with an
+     *   empty body are accepted (their `content-type` header is dropped so the
+     *   validator does not try to parse a non-existent JSON payload).
+     */
     requestBodyRequired?: boolean;
     requestQuery?: Record<string, z.ZodTypeAny>;
     /**
@@ -176,8 +185,8 @@ export const hasHttpCoercionFields = (schema: z.ZodTypeAny): boolean => {
  * Helper function to create body request configuration
  * Reduces boilerplate for body requests
  */
-const createBodyRequest = (schema: z.ZodTypeAny, required: boolean) => ({
-    required,
+const createBodyRequest = (schema: z.ZodTypeAny, required: boolean | undefined) => ({
+    ...(required === undefined ? {} : { required }),
     content: {
         'application/json': {
             schema
@@ -203,7 +212,10 @@ const createQueryRequest = (params: Record<string, z.ZodTypeAny>) => z.object(pa
 const createRequestOptions = (requestOptions: CreateRequestOptionsInterface) => {
     const parsedRequestOptions: {
         params?: z.ZodObject<Record<string, z.ZodTypeAny>>;
-        body?: { content: { 'application/json': { schema: z.ZodTypeAny } } };
+        body?: {
+            required?: boolean;
+            content: { 'application/json': { schema: z.ZodTypeAny } };
+        };
         query?: z.ZodObject<Record<string, z.ZodTypeAny>>;
     } = {};
 
@@ -214,7 +226,7 @@ const createRequestOptions = (requestOptions: CreateRequestOptionsInterface) => 
     if (requestOptions.body) {
         parsedRequestOptions.body = createBodyRequest(
             requestOptions.body,
-            requestOptions.bodyRequired ?? true
+            requestOptions.bodyRequired
         );
     }
 
@@ -264,7 +276,7 @@ const applyRouteMiddlewares = (
     app: ReturnType<typeof createRouter>,
     options: RouteOptions | undefined,
     routePath: string,
-    requestBodyRequired = true
+    requestBodyRequired?: boolean
 ) => {
     const honoPath = openApiPathToHonoPath(routePath);
 
@@ -285,7 +297,11 @@ const applyRouteMiddlewares = (
         }
     }
 
-    if (!requestBodyRequired) {
+    // Only an explicitly optional body (`requestBodyRequired === false`) needs
+    // the empty-body header workaround. When the flag is omitted the route must
+    // behave exactly as it did before this option existed, so no middleware is
+    // added at all.
+    if (requestBodyRequired === false) {
         app.use(honoPath, async (c: Context, next: () => Promise<void>) => {
             const rawBody = await c.req.raw.clone().text();
             if (rawBody.length === 0) {
@@ -390,7 +406,7 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
     const app = createRouter();
 
     // Apply route-specific middlewares
-    applyRouteMiddlewares(app, options.options, options.path, options.requestBodyRequired ?? true);
+    applyRouteMiddlewares(app, options.options, options.path, options.requestBodyRequired);
 
     const route = createRoute({
         method: options.method,

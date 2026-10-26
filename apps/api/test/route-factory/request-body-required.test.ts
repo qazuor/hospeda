@@ -52,9 +52,38 @@ describe('createCRUDRoute requestBodyRequired', () => {
         expect(response.status).toBe(400);
     });
 
-    it('keeps the default required-body behavior when the flag is omitted', async () => {
+    it('keeps the previous behaviour when the flag is omitted', async () => {
         const app = createCRUDRoute({ ...base, path: '/required-body' });
         const response = await app.request('/required-body', { method: 'POST' });
+        expect(response.status).toBe(200);
+
+        const document = app.getOpenAPIDocument({
+            openapi: '3.0.0',
+            info: { title: 'test', version: '1.0.0' }
+        });
+        const body = document.paths?.['/required-body']?.post?.requestBody as
+            | { required?: boolean }
+            | undefined;
+        expect(body).toBeDefined();
+        expect(Object.hasOwn(body ?? {}, 'required')).toBe(false);
+    });
+
+    it('requires the body and documents it when the flag is true', async () => {
+        const app = createCRUDRoute({
+            ...base,
+            path: '/explicitly-required-body',
+            requestBodyRequired: true
+        });
+        const response = await app.request('/explicitly-required-body', { method: 'POST' });
         expect(response.status).toBe(400);
+
+        const document = app.getOpenAPIDocument({
+            openapi: '3.0.0',
+            info: { title: 'test', version: '1.0.0' }
+        });
+        const body = document.paths?.['/explicitly-required-body']?.post?.requestBody as
+            | { required?: boolean }
+            | undefined;
+        expect(body?.required).toBe(true);
     });
 });

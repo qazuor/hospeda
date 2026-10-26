@@ -1,5 +1,5 @@
 import { eq, getDb, subscriptions } from '@repo/db';
-import { CancellationReasonEnum, PermissionEnum } from '@repo/schemas';
+import { CancellationReasonEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import {
@@ -118,23 +118,29 @@ describe('TEST:1878:11, TEST:1878:21, TEST:1878:23 cancellation analytics', () =
         expect(capture).not.toHaveBeenCalled();
     });
 
-    it('admin cancellation requires a request body and documents it as required', async () => {
+    it('rejects an admin cancellation without a body and does not publish it as optional', async () => {
         const seeded = await seedSelfActive(fake, clock);
         const response = await app.request(adminUrl(seeded.subscriptionId), {
             method: 'POST',
             headers: adminHeaders('00000000-0000-4000-8000-000000000097')
         });
         expect(response.status).toBe(400);
+        expect(response.status).not.toBe(500);
+        const errorBody = (await response.json()) as {
+            error?: { code?: string };
+        };
+        expect(errorBody.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
         const docs = await app.request('/docs/openapi.json', {
             headers: { 'user-agent': 'vitest' }
         });
         const document = (await docs.json()) as {
             paths: Record<string, { post?: { requestBody?: { required?: boolean } } }>;
         };
-        expect(
+        const requestBody =
             document.paths['/api/v1/admin/billing-subscription/{subscriptionId}/cancellation']?.post
-                ?.requestBody?.required
-        ).toBe(true);
+                ?.requestBody;
+        expect(requestBody).toBeDefined();
+        expect(Object.hasOwn(requestBody ?? {}, 'required')).toBe(false);
     });
 
     it('AC-21 accepts no body, keeps NULL, and omits the reason property', async () => {
