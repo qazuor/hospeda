@@ -163,7 +163,6 @@ export const adminCancelSubscriptionRoute = createAdminRoute({
     requiredPermissions: [PermissionEnum.BILLING_CANCEL_SUBSCRIPTION],
     requestParams: SubscriptionCancellationParamsSchema.shape,
     requestBody: AdminSubscriptionCancellationRequestSchema,
-    requestBodyRequired: false,
     responseSchema: AdminSubscriptionCancellationResponseSchema,
     successStatusCode: 200,
     handler: async (
@@ -171,7 +170,7 @@ export const adminCancelSubscriptionRoute = createAdminRoute({
         params: Record<string, unknown>,
         body: Record<string, unknown>
     ) => {
-        const input = AdminSubscriptionCancellationRequestSchema.parse(body ?? {});
+        const input = AdminSubscriptionCancellationRequestSchema.parse(body);
         const actor = getActorFromContext(ctx);
         const id = params.subscriptionId as string;
         try {

@@ -1,5 +1,5 @@
 import { eq, getDb, subscriptions } from '@repo/db';
-import { CancellationReasonEnum } from '@repo/schemas';
+import { CancellationReasonEnum, PermissionEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import {
@@ -24,7 +24,14 @@ const clock = routeClock();
 const fake = routeFake(clock);
 let app: ReturnType<typeof initApp>;
 const headers = (id: string) => actorHeaders({ id, role: 'USER', permissions: [] });
+const adminHeaders = (id: string) =>
+    actorHeaders({
+        id,
+        role: 'SUPER_ADMIN',
+        permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.BILLING_CANCEL_SUBSCRIPTION]
+    });
 const url = (id: string) => `/api/v1/protected/billing-subscription/${id}/cancellation`;
+const adminUrl = (id: string) => `/api/v1/admin/billing-subscription/${id}/cancellation`;
 
 beforeAll(async () => {
     process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
@@ -64,6 +71,70 @@ describe('TEST:1878:11, TEST:1878:21, TEST:1878:23 cancellation analytics', () =
             distinctId: seeded.ownerId,
             properties: { reason: 'TOO_EXPENSIVE' }
         });
+    });
+
+    it('AC-11 AC-23 admin cancellation persists the reason and emits one ADMIN fact after commit', async () => {
+        const seeded = await seedSelfActive(fake, clock);
+        const capture = vi.fn();
+        setAnalyticsFactSinkForTests(createAnalyticsFactSink({ capture }));
+        const response = await app.request(adminUrl(seeded.subscriptionId), {
+            method: 'POST',
+            headers: {
+                ...adminHeaders('00000000-0000-4000-8000-000000000099'),
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({
+                expectedOrigin: 'ACTIVE',
+                reason: CancellationReasonEnum.TOO_EXPENSIVE
+            })
+        });
+        expect(response.status).toBe(200);
+        const [row] = await getDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, seeded.subscriptionId));
+        expect(row?.cancellationReason).toBe(CancellationReasonEnum.TOO_EXPENSIVE);
+        expect(capture).toHaveBeenCalledTimes(1);
+        expect(capture.mock.calls[0]?.[0]).toMatchObject({
+            name: 'billing_cancel_scheduled',
+            distinctId: seeded.ownerId,
+            properties: { actor_kind: 'ADMIN', reason: 'TOO_EXPENSIVE' }
+        });
+    });
+
+    it('AC-12 does not emit an admin cancellation fact when the origin is rejected', async () => {
+        const seeded = await seedSelfActive(fake, clock);
+        const capture = vi.fn();
+        setAnalyticsFactSinkForTests(createAnalyticsFactSink({ capture }));
+        const response = await app.request(adminUrl(seeded.subscriptionId), {
+            method: 'POST',
+            headers: {
+                ...adminHeaders('00000000-0000-4000-8000-000000000098'),
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({ expectedOrigin: 'SUSPENDED' })
+        });
+        expect(response.status).toBe(409);
+        expect(capture).not.toHaveBeenCalled();
+    });
+
+    it('admin cancellation requires a request body and documents it as required', async () => {
+        const seeded = await seedSelfActive(fake, clock);
+        const response = await app.request(adminUrl(seeded.subscriptionId), {
+            method: 'POST',
+            headers: adminHeaders('00000000-0000-4000-8000-000000000097')
+        });
+        expect(response.status).toBe(400);
+        const docs = await app.request('/docs/openapi.json', {
+            headers: { 'user-agent': 'vitest' }
+        });
+        const document = (await docs.json()) as {
+            paths: Record<string, { post?: { requestBody?: { required?: boolean } } }>;
+        };
+        expect(
+            document.paths['/api/v1/admin/billing-subscription/{subscriptionId}/cancellation']?.post
+                ?.requestBody?.required
+        ).toBe(true);
     });
 
     it('AC-21 accepts no body, keeps NULL, and omits the reason property', async () => {
