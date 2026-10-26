@@ -892,6 +892,7 @@
         "packages/ai-core/src/storage/settings.storage.ts": 1,
         "packages/ai-core/test/config/feature-coverage.test.ts": 2,
         "packages/ai-core/test/storage.test.ts": 4,
+        "packages/analytics/src/catalog-billing.ts": 1,
         "packages/analytics/src/shared.ts": 1,
         "packages/cache-tags/src/vocabulary.ts": 2,
         "packages/config/generated/env-registry.json": 3,
