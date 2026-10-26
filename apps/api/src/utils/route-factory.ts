@@ -289,6 +289,7 @@ const applyRouteMiddlewares = (
         app.use(honoPath, async (c: Context, next: () => Promise<void>) => {
             const rawBody = await c.req.raw.clone().text();
             if (rawBody.length === 0) {
+                // TYPE-WORKAROUND: the validator reads this request method before the optional-body handler can run.
                 const request = c.req as unknown as {
                     header: (name: string) => string | undefined;
                 };
