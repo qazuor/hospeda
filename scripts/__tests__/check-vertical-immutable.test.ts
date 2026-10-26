@@ -44,7 +44,7 @@ describe('TEST:V5:5 GUARD:G2 (c)', () => {
         expect(run({ root, minScannedFiles: 1 }).exitCode).toBe(0);
     });
 
-    it('TEST:1814:4 AC:1:16 scans venue and legacy service paths', () => {
+    it('TEST:1814:4 AC:1:16 scans venue and ignores the removed legacy service path', () => {
         const venueFile = 'packages/service-core/src/services/venue/venue.service.ts';
         const oldVerticalName = ['gastro', 'nomy'].join('');
         const legacyFile = [
@@ -64,6 +64,13 @@ describe('TEST:V5:5 GUARD:G2 (c)', () => {
         expect(result.exitCode).toBe(1);
         expect(result.output).toContain(venueFile);
         expect(result.output).not.toContain(legacyFile);
+
+        const legacyOnly = makeTree({
+            [legacyFile]: verticalUpdate(legacyVerticalTable, oldVerticalName)
+        });
+        const legacyResult = run({ root: legacyOnly, minScannedFiles: 1 });
+        expect(legacyResult.exitCode).toBe(0);
+        expect(legacyResult.output).not.toContain(legacyFile);
     });
 
     it('rejects a mutated listing service update with file and line', () => {

@@ -12,7 +12,7 @@ const SCAN_ROOTS = [
 ];
 const CODE_FILE = /\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs)$/;
 const TEST_FILE = /(?:\.(?:test|spec)\.[cm]?[jt]sx?$)|(?:^|\/)(?:test|tests|__tests__|e2e)\//;
-const LISTING_PATH = /(?:accommodation|gastronomy|venue|experience)/i;
+const LISTING_PATH = /(?:accommodation|venue|experience)/i;
 const UPDATE_SCHEMA = /(?:update|patch).*schema/i;
 const LISTING_TABLE = /\b(?:accommodations|gastronomies|experiences)\b/;
 const FORBIDDEN = new Set(['vertical', 'productDomain']);
