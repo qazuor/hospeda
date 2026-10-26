@@ -5,8 +5,8 @@ import { AccommodationModel } from '../../src/models/accommodation/accommodation
 import { accommodationMediaModel } from '../../src/models/accommodation/accommodationMedia.model.ts';
 import { ExperienceModel } from '../../src/models/experience/experience.model.ts';
 import { experienceMediaModel } from '../../src/models/experience/experienceMedia.model.ts';
-import { GastronomyModel } from '../../src/models/gastronomy/gastronomy.model.ts';
-import { gastronomyMediaModel } from '../../src/models/gastronomy/gastronomyMedia.model.ts';
+import { GastronomyModel } from '../../src/models/venue/venue.model.ts';
+import { gastronomyMediaModel } from '../../src/models/venue/venueMedia.model.ts';
 import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../src/types.ts';

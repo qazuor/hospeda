@@ -1,6 +1,6 @@
 import type { VenueEvent } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomyEvents } from '../../schemas/gastronomy/gastronomy_event.dbschema.ts';
+import { gastronomyEvents } from '../../schemas/venue/venue_event.dbschema.ts';
 
 /**
  * GastronomyEventModel — DB access for a venue's own agenda (HOS-1042).

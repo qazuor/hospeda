@@ -1,5 +1,5 @@
 /**
- * @file gastronomy.model.contact-info-merge.test.ts
+ * @file venue.model.contact-info-merge.test.ts
  * @description A partial `contactInfo` PATCH on `gastronomies` must NOT wipe
  * the column.
  *
@@ -50,8 +50,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as clientModule from '../../../src/client';
 import { setDb } from '../../../src/client';
-import { GastronomyModel } from '../../../src/models/gastronomy/gastronomy.model';
-import { gastronomies } from '../../../src/schemas/gastronomy/gastronomy.dbschema';
+import { GastronomyModel } from '../../../src/models/venue/gastronomy.model';
+import { gastronomies } from '../../../src/schemas/venue/gastronomy.dbschema';
 import type { DrizzleClient } from '../../../src/types';
 import { buildMergeSetClause } from '../../../src/utils/jsonb-merge';
 

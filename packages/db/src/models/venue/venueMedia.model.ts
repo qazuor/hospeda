@@ -1,7 +1,7 @@
 import type { VenueMedia } from '@repo/schemas';
 import { and, asc, count, eq, inArray } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomyMedia } from '../../schemas/gastronomy/gastronomy_media.dbschema.ts';
+import { gastronomyMedia } from '../../schemas/venue/venue_media.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
@@ -76,7 +76,7 @@ interface FindByGastronomiesInput {
  * - The singleton `gastronomyMediaModel` should be used instead of instantiating
  *   this class directly, unless a custom Drizzle client is required.
  *
- * @see packages/db/src/schemas/gastronomy/gastronomy_media.dbschema.ts — schema +
+ * @see packages/db/src/schemas/venue/venue_media.dbschema.ts — schema +
  *   column docs (mirrors `accommodation_media`, HOS-372).
  * @see packages/db/src/models/accommodation/accommodationMedia.model.ts — the template
  *   this model mirrors field-for-field and finder-for-finder.

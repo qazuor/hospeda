@@ -1,6 +1,6 @@
 import type { VenueMenuSection } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomyMenuSections } from '../../schemas/gastronomy/gastronomy_menu_section.dbschema.ts';
+import { gastronomyMenuSections } from '../../schemas/venue/venue_menu_section.dbschema.ts';
 
 /**
  * GastronomyMenuSectionModel — DB access for the course headings of a venue's

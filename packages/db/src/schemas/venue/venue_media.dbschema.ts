@@ -12,7 +12,7 @@ import {
     uuid
 } from 'drizzle-orm/pg-core';
 import { ModerationStatusPgEnum } from '../enums.dbschema.ts';
-import { gastronomies } from './gastronomy.dbschema.ts';
+import { gastronomies } from './venue.dbschema.ts';
 
 /**
  * PostgreSQL enum for the visibility state of a single gastronomy media row.

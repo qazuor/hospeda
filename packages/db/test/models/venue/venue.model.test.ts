@@ -12,7 +12,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../../src/client';
-import { GastronomyModel } from '../../../src/models/gastronomy/gastronomy.model';
+import { GastronomyModel } from '../../../src/models/venue/gastronomy.model';
 import * as logger from '../../../src/utils/logger';
 
 vi.mock('../../../src/utils/logger', () => ({

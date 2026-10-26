@@ -1,7 +1,7 @@
 import type { Venue } from '@repo/schemas';
 import { and, count, desc, eq, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomies } from '../../schemas/gastronomy/gastronomy.dbschema.ts';
+import { gastronomies } from '../../schemas/venue/venue.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';

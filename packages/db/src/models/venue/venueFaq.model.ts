@@ -1,6 +1,6 @@
 import type { VenueFaq } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomyFaqs } from '../../schemas/gastronomy/gastronomy_faq.dbschema.ts';
+import { gastronomyFaqs } from '../../schemas/venue/venue_faq.dbschema.ts';
 
 /**
  * GastronomyFaqModel — DB access for gastronomy FAQ entries (SPEC-239).

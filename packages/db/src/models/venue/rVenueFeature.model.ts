@@ -1,6 +1,6 @@
 import type { VenueFeatureRelation } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { rGastronomyFeature } from '../../schemas/gastronomy/r_gastronomy_feature.dbschema.ts';
+import { rGastronomyFeature } from '../../schemas/venue/r_venue_feature.dbschema.ts';
 
 /**
  * RGastronomyFeatureModel — DB access for gastronomy-feature junction (SPEC-239).

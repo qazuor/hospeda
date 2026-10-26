@@ -1,7 +1,7 @@
 import type { VenueDailySpecial } from '@repo/schemas';
 import { and, asc, eq, gte, lte } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomyDailySpecials } from '../../schemas/gastronomy/gastronomy_daily_special.dbschema.ts';
+import { gastronomyDailySpecials } from '../../schemas/venue/venue_daily_special.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';

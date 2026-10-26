@@ -81,7 +81,7 @@ export const VENUE_MENU_MAX_ITEM_PRICE_CENTS = 100_000_000;
  * {@link VenueMediaStateSchema} is: it describes one column of one
  * vertical and has no cross-entity consumer.
  *
- * @see packages/db/src/schemas/venue/gastronomy.dbschema.ts
+ * @see packages/db/src/schemas/venue/venue.dbschema.ts
  */
 export const VenueMenuFileKindSchema = z.enum(['image', 'pdf'], {
     message: 'zodError.gastronomy.menuFileKind.invalid'

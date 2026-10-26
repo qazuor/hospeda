@@ -12,7 +12,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
-import { gastronomies } from './gastronomy.dbschema.ts';
+import { gastronomies } from './venue.dbschema.ts';
 
 /**
  * Gastronomy FAQ table (SPEC-239).

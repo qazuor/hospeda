@@ -1,5 +1,5 @@
 /**
- * @file gastronomy-catalog-filters.ts
+ * @file venue-catalog-filters.ts
  * @description WHERE-clause builders that restrict gastronomy listings to those
  * carrying a given set of catalog rows (amenities or features).
  *
@@ -54,9 +54,9 @@
  */
 
 import { type SQL, sql } from 'drizzle-orm';
-import { gastronomies } from '../../schemas/gastronomy/gastronomy.dbschema.ts';
-import { rGastronomyAmenity } from '../../schemas/gastronomy/r_gastronomy_amenity.dbschema.ts';
-import { rGastronomyFeature } from '../../schemas/gastronomy/r_gastronomy_feature.dbschema.ts';
+import { rGastronomyAmenity } from '../../schemas/venue/r_venue_amenity.dbschema.ts';
+import { rGastronomyFeature } from '../../schemas/venue/r_venue_feature.dbschema.ts';
+import { gastronomies } from '../../schemas/venue/venue.dbschema.ts';
 
 /**
  * Build a WHERE clause restricting gastronomy listings to those linked to ALL

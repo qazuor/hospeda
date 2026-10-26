@@ -187,7 +187,7 @@ vi.mock('@repo/db', async (importOriginal) => {
         '../../../../../packages/db/src/schemas/accommodation/accommodation.dbschema.ts'
     );
     const gastronomySchema = await import(
-        '../../../../../packages/db/src/schemas/gastronomy/gastronomy.dbschema.ts'
+        '../../../../../packages/db/src/schemas/venue/venue.dbschema.ts'
     );
     const experienceSchema = await import(
         '../../../../../packages/db/src/schemas/experience/experiences.dbschema.ts'

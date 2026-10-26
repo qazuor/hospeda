@@ -1,8 +1,8 @@
 import type { Venue } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
-import { GastronomyModel } from '../../src/models/gastronomy/gastronomy.model.ts';
 import { listingPurgeModel } from '../../src/models/listing/listing-purge.model.ts';
+import { GastronomyModel } from '../../src/models/venue/venue.model.ts';
 import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../src/types.ts';

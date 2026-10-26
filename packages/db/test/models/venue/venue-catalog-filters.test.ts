@@ -26,7 +26,7 @@ import {
     buildGastronomyAmenityIntersectionClause,
     buildGastronomyCatalogConditions,
     buildGastronomyFeatureIntersectionClause
-} from '../../../src/models/gastronomy/gastronomy-catalog-filters';
+} from '../../../src/models/venue/gastronomy-catalog-filters';
 
 const dialect = new PgDialect();
 

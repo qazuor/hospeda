@@ -2,8 +2,8 @@ import type { I18nText } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
-import { gastronomies } from './gastronomy.dbschema.ts';
-import { gastronomyMenuItems } from './gastronomy_menu_item.dbschema.ts';
+import { gastronomies } from './venue.dbschema.ts';
+import { gastronomyMenuItems } from './venue_menu_item.dbschema.ts';
 
 /**
  * `gastronomy_menu_sections` — the course headings of a venue's real menu (HOS-895).
@@ -38,7 +38,7 @@ import { gastronomyMenuItems } from './gastronomy_menu_item.dbschema.ts';
  * Structure mirrors `gastronomy_faqs`: FK CASCADE, `display_order` with the
  * NULLS-LAST read convention, and the full audit block.
  *
- * @see packages/db/src/schemas/gastronomy/gastronomy_menu_item.dbschema.ts
+ * @see packages/db/src/schemas/venue/venue_menu_item.dbschema.ts
  */
 export const gastronomyMenuSections = pgTable(
     'gastronomy_menu_sections',

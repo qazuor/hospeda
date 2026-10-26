@@ -1,6 +1,6 @@
 import type { VenueAmenityRelation } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { rGastronomyAmenity } from '../../schemas/gastronomy/r_gastronomy_amenity.dbschema.ts';
+import { rGastronomyAmenity } from '../../schemas/venue/r_venue_amenity.dbschema.ts';
 
 /**
  * RGastronomyAmenityModel — DB access for gastronomy-amenity junction (SPEC-239).

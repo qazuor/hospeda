@@ -1,6 +1,6 @@
 import type { VenueMenuItem } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomyMenuItems } from '../../schemas/gastronomy/gastronomy_menu_item.dbschema.ts';
+import { gastronomyMenuItems } from '../../schemas/venue/venue_menu_item.dbschema.ts';
 
 /**
  * GastronomyMenuItemModel — DB access for the dishes on a venue's menu

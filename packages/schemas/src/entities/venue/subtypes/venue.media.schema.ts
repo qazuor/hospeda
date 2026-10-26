@@ -17,7 +17,7 @@ import { ModerationStatusEnumSchema } from '../../../enums/index.js';
  * Re-exports the shared {@link ListingMediaStateSchema} under the
  * per-vertical name used by gastronomy media endpoints/services.
  *
- * @see packages/db/src/schemas/venue/gastronomy_media.dbschema.ts
+ * @see packages/db/src/schemas/venue/venue_media.dbschema.ts
  */
 export const VenueMediaStateSchema = ListingMediaStateSchema;
 export type VenueMediaState = z.infer<typeof VenueMediaStateSchema>;
@@ -30,7 +30,7 @@ export type VenueMediaState = z.infer<typeof VenueMediaStateSchema>;
  * (`gastronomyId`). See the base schema's JSDoc for the full field-level
  * documentation shared by both verticals.
  *
- * @see packages/db/src/schemas/venue/gastronomy_media.dbschema.ts
+ * @see packages/db/src/schemas/venue/venue_media.dbschema.ts
  */
 export const VenueMediaSchema = BaseListingMediaSchema.extend({
     /** UUID primary key for this media row. */

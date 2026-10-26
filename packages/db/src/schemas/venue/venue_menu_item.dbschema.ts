@@ -11,8 +11,8 @@ import {
     uuid
 } from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
-import { gastronomies } from './gastronomy.dbschema.ts';
-import { gastronomyMenuSections } from './gastronomy_menu_section.dbschema.ts';
+import { gastronomies } from './venue.dbschema.ts';
+import { gastronomyMenuSections } from './venue_menu_section.dbschema.ts';
 
 /**
  * `gastronomy_menu_items` — one dish or drink on a venue's real menu (HOS-895).
@@ -83,7 +83,7 @@ export const gastronomyMenuItems = pgTable(
          * Localized name (HOS-1043). Additive/nullable: `name` remains the `es`
          * fallback source and the only value an owner without the
          * `multilingual_gastronomy_menu` entitlement can ever write. See
-         * `gastronomy_menu_section.dbschema.ts` for the full mechanism.
+         * `venue_menu_section.dbschema.ts` for the full mechanism.
          */
         nameI18n: jsonb('name_i18n').$type<I18nText>(),
         /**

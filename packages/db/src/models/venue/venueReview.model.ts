@@ -1,6 +1,6 @@
 import type { VenueReview } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomyReviews } from '../../schemas/gastronomy/gastronomy_review.dbschema.ts';
+import { gastronomyReviews } from '../../schemas/venue/venue_review.dbschema.ts';
 
 /**
  * GastronomyReviewModel — DB access for gastronomy reviews (SPEC-239).

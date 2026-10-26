@@ -1,7 +1,7 @@
 import { relations } from 'drizzle-orm';
 import { index, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
 import { features } from '../accommodation/feature.dbschema.ts';
-import { gastronomies } from './gastronomy.dbschema.ts';
+import { gastronomies } from './venue.dbschema.ts';
 
 /**
  * Junction table: gastronomy <-> feature (many-to-many, SPEC-239).

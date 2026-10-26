@@ -125,8 +125,8 @@ function localeHasContent({
  * never looks dirty on its own. That reasoning broke the moment a SIBLING
  * locale of the SAME field changed: `gastronomyModel`/`experienceModel` do
  * NOT declare `nameI18n`/`summaryI18n`/`descriptionI18n`/`richDescriptionI18n`
- * in `mergeableJsonbColumns` (see `packages/db/src/models/gastronomy/
- * gastronomy.model.ts` and `.../experience/experience.model.ts`, both line
+ * in `mergeableJsonbColumns` (see `packages/db/src/models/venue/
+ * venue.model.ts` and `.../experience/experience.model.ts`, both line
  * 68 — only `contactInfo` is there), so `BaseModelImpl.update()`
  * (`packages/db/src/base/base.model.ts:387-393`) takes the PLAIN-REPLACEMENT
  * path for these columns, not the `||`-merge path — the whole JSONB object is

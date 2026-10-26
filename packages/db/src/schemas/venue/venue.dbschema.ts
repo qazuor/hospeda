@@ -23,12 +23,12 @@ import { destinations } from '../destination/destination.dbschema.ts';
 import { GastronomyTypePgEnum, PriceRangePgEnum } from '../enums.dbschema.ts';
 import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { users } from '../user/user.dbschema.ts';
-import { gastronomyEvents } from './gastronomy_event.dbschema.ts';
-import { gastronomyFaqs } from './gastronomy_faq.dbschema.ts';
-import { gastronomyMenuSections } from './gastronomy_menu_section.dbschema.ts';
-import { gastronomyReviews } from './gastronomy_review.dbschema.ts';
-import { rGastronomyAmenity } from './r_gastronomy_amenity.dbschema.ts';
-import { rGastronomyFeature } from './r_gastronomy_feature.dbschema.ts';
+import { rGastronomyAmenity } from './r_venue_amenity.dbschema.ts';
+import { rGastronomyFeature } from './r_venue_feature.dbschema.ts';
+import { gastronomyEvents } from './venue_event.dbschema.ts';
+import { gastronomyFaqs } from './venue_faq.dbschema.ts';
+import { gastronomyMenuSections } from './venue_menu_section.dbschema.ts';
+import { gastronomyReviews } from './venue_review.dbschema.ts';
 
 /**
  * What kind of file a venue uploaded as its menu (HOS-895).

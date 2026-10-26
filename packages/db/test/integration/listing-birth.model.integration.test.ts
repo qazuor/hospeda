@@ -4,7 +4,7 @@ import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model.ts';
 import { ExperienceModel } from '../../src/models/experience/experience.model.ts';
-import { GastronomyModel } from '../../src/models/gastronomy/gastronomy.model.ts';
+import { GastronomyModel } from '../../src/models/venue/venue.model.ts';
 import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
 import { closeTestPool, testData, withTestTransaction } from './helpers.ts';

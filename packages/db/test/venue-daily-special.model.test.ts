@@ -27,7 +27,7 @@
 
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
-import { GastronomyDailySpecialModel } from '../src/models/gastronomy/gastronomyDailySpecial.model.ts';
+import { GastronomyDailySpecialModel } from '../src/models/venue/venueDailySpecial.model.ts';
 import type { DrizzleClient } from '../src/types.ts';
 
 /**

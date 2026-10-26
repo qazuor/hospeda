@@ -12,7 +12,7 @@ import {
     uuid
 } from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
-import { gastronomies } from './gastronomy.dbschema.ts';
+import { gastronomies } from './venue.dbschema.ts';
 
 /**
  * How a venue event repeats (HOS-1042).
