@@ -200,7 +200,7 @@ describe('findLiveCommitment (AC:B3:6)', () => {
                 authorizationWindowEndsAt: new Date('2026-10-11T20:00:00.000Z'),
                 tx
             });
-            const gastronomyRow = await subscriptionModel.createPendingAuthorization({
+            const venueRow = await subscriptionModel.createPendingAuthorization({
                 userId: accommodation.userId,
                 vertical: 'gastronomy',
                 planVersionId: gastronomy.planVersionId,
@@ -227,7 +227,7 @@ describe('findLiveCommitment (AC:B3:6)', () => {
                         tx
                     })
                 )?.subscription.id
-            ).toBe(gastronomyRow.subscription.id);
+            ).toBe(venueRow.subscription.id);
             expect(
                 await subscriptionModel.findLiveCommitment({
                     userId: otherUser.userId,

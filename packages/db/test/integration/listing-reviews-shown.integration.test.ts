@@ -10,7 +10,7 @@ import { AccommodationModel } from '../../src/models/accommodation/accommodation
 import { accommodationReviewModel } from '../../src/models/accommodation/accommodationReview.model.ts';
 import { ExperienceModel } from '../../src/models/experience/experience.model.ts';
 import { listingReviewsShownCondition } from '../../src/models/listing/listing-reviews-shown.ts';
-import { GastronomyModel } from '../../src/models/venue/venue.model.ts';
+import { VenueModel } from '../../src/models/venue/venue.model.ts';
 import { accommodations } from '../../src/schemas/accommodation/accommodation.dbschema.ts';
 import { accommodationReviews } from '../../src/schemas/accommodation/accommodation_review.dbschema.ts';
 import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
@@ -46,7 +46,7 @@ describe('TEST:1686:1 AC:1686:1 AC:1686:4 listingReviewsShownCondition', () => {
                 } as never,
                 tx
             );
-            const gastronomy = await new GastronomyModel().create(
+            const gastronomy = await new VenueModel().create(
                 {
                     ...common,
                     name: `Review visibility ${crypto.randomUUID()}`,

@@ -8,10 +8,10 @@ import { logError, logQuery } from '../../utils/logger.ts';
 import { listingMediaShownConditions } from '../listing/listing-media-shown.ts';
 
 /**
- * Input type for `findByGastronomy` — groups optional filters into a single
+ * Input type for `findByVenue` — groups optional filters into a single
  * RO-RO parameter object (Receive Object, Return Object pattern).
  */
-interface FindByGastronomyInput {
+interface FindByVenueInput {
     /** The gastronomy listing UUID to load media for. */
     gastronomyId: string;
     /**
@@ -49,9 +49,9 @@ interface FindFeaturedInput {
 }
 
 /**
- * Input type for `findByGastronomies` (batch read).
+ * Input type for `findByVenues` (batch read).
  */
-interface FindByGastronomiesInput {
+interface FindByVenuesInput {
     /** The gastronomy listing UUIDs to load media for (one query, grouped by id). */
     gastronomyIds: readonly string[];
     /**
@@ -73,7 +73,7 @@ interface FindByGastronomiesInput {
  * - Every finder excludes soft-deleted rows and rows marked for remote deletion
  *   (PB12, AC:V6:30) through `listingMediaShownConditions`.
  * - Gallery ordering is by `sort_order ASC` (not insertion time).
- * - The singleton `gastronomyMediaModel` should be used instead of instantiating
+ * - The singleton `venueMediaModel` should be used instead of instantiating
  *   this class directly, unless a custom Drizzle client is required.
  *
  * @see packages/db/src/schemas/venue/venue_media.dbschema.ts — schema +
@@ -81,7 +81,7 @@ interface FindByGastronomiesInput {
  * @see packages/db/src/models/accommodation/accommodationMedia.model.ts — the template
  *   this model mirrors field-for-field and finder-for-finder.
  */
-export class GastronomyMediaModel extends BaseModelImpl<VenueMedia> {
+export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
     protected table = gastronomyMedia;
     public entityName = 'gastronomyMedia';
 
@@ -121,9 +121,7 @@ export class GastronomyMediaModel extends BaseModelImpl<VenueMedia> {
      * @param input.tx           - Optional transaction client.
      * @returns Paginated list of media rows + total count.
      */
-    async findByGastronomy(
-        input: FindByGastronomyInput
-    ): Promise<{ items: VenueMedia[]; total: number }> {
+    async findByVenue(input: FindByVenueInput): Promise<{ items: VenueMedia[]; total: number }> {
         const { gastronomyId, state, isFeatured, page = 1, pageSize = 50, tx } = input;
         const db = this.getClient(tx);
         const logContext = { gastronomyId, state, isFeatured, page, pageSize };
@@ -220,14 +218,14 @@ export class GastronomyMediaModel extends BaseModelImpl<VenueMedia> {
      * Batch-loads non-deleted media rows for multiple gastronomy listings in a
      * single query, grouped by `gastronomyId`. This is the canonical read used
      * by list/search composition to avoid the N+1 that would result from
-     * calling {@link findByGastronomy} once per list item.
+     * calling {@link findByVenue} once per list item.
      *
      * Rows are returned ordered by `sort_order ASC` within each listing's
      * array (the SQL `ORDER BY` is global, but `sort_order` is the only ordering
      * key and grouping preserves it). Listings with no media are simply absent
      * from the returned map — callers should default to `[]`.
      *
-     * Unlike {@link findByGastronomy} this finder is intentionally NOT paginated:
+     * Unlike {@link findByVenue} this finder is intentionally NOT paginated:
      * it loads the full media set for the given ids so composition is complete. A
      * single list page of listings x their galleries stays well within a
      * reasonable row budget.
@@ -237,7 +235,7 @@ export class GastronomyMediaModel extends BaseModelImpl<VenueMedia> {
      * @param input.tx            - Optional transaction client.
      * @returns Map of gastronomyId → ordered media rows.
      */
-    async findByGastronomies(input: FindByGastronomiesInput): Promise<Map<string, VenueMedia[]>> {
+    async findByVenues(input: FindByVenuesInput): Promise<Map<string, VenueMedia[]>> {
         const { gastronomyIds, state, tx } = input;
         const grouped = new Map<string, VenueMedia[]>();
         if (gastronomyIds.length === 0) return grouped;
@@ -289,10 +287,10 @@ export class GastronomyMediaModel extends BaseModelImpl<VenueMedia> {
 }
 
 /**
- * Singleton instance of `GastronomyMediaModel`.
+ * Singleton instance of `VenueMediaModel`.
  *
  * Use this exported constant across the application instead of constructing a new
  * instance. The underlying Drizzle client is resolved lazily via `getDb()` on each
  * operation, so the singleton is safe to import at module load time.
  */
-export const gastronomyMediaModel = new GastronomyMediaModel();
+export const venueMediaModel = new VenueMediaModel();

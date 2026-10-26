@@ -43,6 +43,6 @@ export const rGastronomyAmenityRelations = relations(rGastronomyAmenity, ({ one 
 }));
 
 /** Type-inferred insert type for r_gastronomy_amenity rows. */
-export type InsertRGastronomyAmenity = typeof rGastronomyAmenity.$inferInsert;
+export type InsertRVenueAmenity = typeof rGastronomyAmenity.$inferInsert;
 /** Type-inferred select type for r_gastronomy_amenity rows. */
-export type SelectRGastronomyAmenity = typeof rGastronomyAmenity.$inferSelect;
+export type SelectRVenueAmenity = typeof rGastronomyAmenity.$inferSelect;

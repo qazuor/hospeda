@@ -3,10 +3,10 @@ import { BaseModelImpl } from '../../base/base.model.ts';
 import { rGastronomyAmenity } from '../../schemas/venue/r_venue_amenity.dbschema.ts';
 
 /**
- * RGastronomyAmenityModel — DB access for gastronomy-amenity junction (SPEC-239).
+ * RVenueAmenityModel — DB access for gastronomy-amenity junction (SPEC-239).
  * Mirrors RAccommodationAmenityModel: thin BaseModelImpl wrapper.
  */
-export class RGastronomyAmenityModel extends BaseModelImpl<VenueAmenityRelation> {
+export class RVenueAmenityModel extends BaseModelImpl<VenueAmenityRelation> {
     protected table = rGastronomyAmenity;
     public entityName = 'rGastronomyAmenity';
 
@@ -17,5 +17,5 @@ export class RGastronomyAmenityModel extends BaseModelImpl<VenueAmenityRelation>
     }
 }
 
-/** Singleton instance of RGastronomyAmenityModel for use across the application. */
-export const rGastronomyAmenityModel = new RGastronomyAmenityModel();
+/** Singleton instance of RVenueAmenityModel for use across the application. */
+export const rVenueAmenityModel = new RVenueAmenityModel();

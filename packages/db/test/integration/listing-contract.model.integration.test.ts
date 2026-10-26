@@ -13,7 +13,7 @@ import { AccommodationModel } from '../../src/models/accommodation/accommodation
 import { ExperienceModel } from '../../src/models/experience/experience.model.ts';
 import { listingContractModel } from '../../src/models/listing/listing-contract.model.ts';
 import type { ListingVertical } from '../../src/models/listing/listing-publication.model.ts';
-import { GastronomyModel } from '../../src/models/venue/venue.model.ts';
+import { VenueModel } from '../../src/models/venue/venue.model.ts';
 import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../src/types.ts';
@@ -51,10 +51,7 @@ async function createListing(args: {
                   tx
               )
             : vertical === 'gastronomy'
-              ? await new GastronomyModel().create(
-                    { ...base, type: 'RESTAURANT' } as Partial<Venue>,
-                    tx
-                )
+              ? await new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx)
               : await new ExperienceModel().create(
                     { ...base, type: 'EXCURSION' } as Partial<Experience>,
                     tx

@@ -3,13 +3,13 @@ import { BaseModelImpl } from '../../base/base.model.ts';
 import { gastronomyMenuItems } from '../../schemas/venue/venue_menu_item.dbschema.ts';
 
 /**
- * GastronomyMenuItemModel — DB access for the dishes on a venue's menu
+ * VenueMenuItemModel — DB access for the dishes on a venue's menu
  * (HOS-895).
  *
  * Thin `BaseModelImpl` wrapper. See `GastronomyMenuSectionModel` for why there
  * is no soft delete on this pair of tables.
  */
-export class GastronomyMenuItemModel extends BaseModelImpl<VenueMenuItem> {
+export class VenueMenuItemModel extends BaseModelImpl<VenueMenuItem> {
     protected table = gastronomyMenuItems;
     public entityName = 'gastronomyMenuItems';
 
@@ -18,5 +18,5 @@ export class GastronomyMenuItemModel extends BaseModelImpl<VenueMenuItem> {
     }
 }
 
-/** Singleton instance of GastronomyMenuItemModel. */
-export const gastronomyMenuItemModel = new GastronomyMenuItemModel();
+/** Singleton instance of VenueMenuItemModel. */
+export const venueMenuItemModel = new VenueMenuItemModel();

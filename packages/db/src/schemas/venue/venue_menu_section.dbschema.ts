@@ -105,6 +105,6 @@ export const gastronomyMenuSectionsRelations = relations(
 );
 
 /** Type-inferred insert type for gastronomy_menu_sections rows. */
-export type InsertGastronomyMenuSection = typeof gastronomyMenuSections.$inferInsert;
+export type InsertVenueMenuSection = typeof gastronomyMenuSections.$inferInsert;
 /** Type-inferred select type for gastronomy_menu_sections rows. */
-export type SelectGastronomyMenuSection = typeof gastronomyMenuSections.$inferSelect;
+export type SelectVenueMenuSection = typeof gastronomyMenuSections.$inferSelect;

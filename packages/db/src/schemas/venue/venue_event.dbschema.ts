@@ -188,6 +188,6 @@ export const gastronomyEventsRelations = relations(gastronomyEvents, ({ one }) =
 }));
 
 /** Type-inferred insert type for gastronomy_events rows. */
-export type InsertGastronomyEvent = typeof gastronomyEvents.$inferInsert;
+export type InsertVenueEvent = typeof gastronomyEvents.$inferInsert;
 /** Type-inferred select type for gastronomy_events rows. */
-export type SelectGastronomyEvent = typeof gastronomyEvents.$inferSelect;
+export type SelectVenueEvent = typeof gastronomyEvents.$inferSelect;

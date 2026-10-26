@@ -1,5 +1,5 @@
 /**
- * Unit tests for `GastronomyDailySpecialModel.findValidOn` (HOS-1041).
+ * Unit tests for `VenueDailySpecialModel.findValidOn` (HOS-1041).
  *
  * ## What is being pinned, and why it needs pinning
  *
@@ -27,7 +27,7 @@
 
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
-import { GastronomyDailySpecialModel } from '../src/models/venue/venueDailySpecial.model.ts';
+import { VenueDailySpecialModel } from '../src/models/venue/venueDailySpecial.model.ts';
 import type { DrizzleClient } from '../src/types.ts';
 
 /**
@@ -95,7 +95,7 @@ describe('GastronomyDailySpecialModel.findValidOn', () => {
         // public page, which is the "programado" state the owner's editor shows
         // and the public read must not.
         // Arrange
-        const model = new GastronomyDailySpecialModel();
+        const model = new VenueDailySpecialModel();
         const { client, captured } = createCapturingClient();
 
         // Act
@@ -121,7 +121,7 @@ describe('GastronomyDailySpecialModel.findValidOn', () => {
         // matching condition is enough — so every special of every listing
         // whose window merely started would be published.
         // Arrange
-        const model = new GastronomyDailySpecialModel();
+        const model = new VenueDailySpecialModel();
         const { client, captured } = createCapturingClient();
 
         // Act
@@ -143,7 +143,7 @@ describe('GastronomyDailySpecialModel.findValidOn', () => {
         // that reached for `new Date()` or `CURRENT_DATE` would not carry the
         // caller's date into the query at all.
         // Arrange
-        const model = new GastronomyDailySpecialModel();
+        const model = new VenueDailySpecialModel();
         const { client, captured } = createCapturingClient();
 
         // Act
@@ -159,7 +159,7 @@ describe('GastronomyDailySpecialModel.findValidOn', () => {
 
     it('scopes the read to the requested listing', () => {
         // Arrange
-        const model = new GastronomyDailySpecialModel();
+        const model = new VenueDailySpecialModel();
         const { client, captured } = createCapturingClient();
 
         // Act
@@ -177,7 +177,7 @@ describe('GastronomyDailySpecialModel.findValidOn', () => {
 
     it('orders by display_order so the owner s arrangement survives the read', () => {
         // Arrange
-        const model = new GastronomyDailySpecialModel();
+        const model = new VenueDailySpecialModel();
         const { client, captured } = createCapturingClient();
 
         // Act

@@ -4,7 +4,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model.ts';
 import { ExperienceModel } from '../../src/models/experience/experience.model.ts';
 import { listingPurgeModel } from '../../src/models/listing/listing-purge.model.ts';
-import { GastronomyModel } from '../../src/models/venue/venue.model.ts';
+import { VenueModel } from '../../src/models/venue/venue.model.ts';
 import { amenities } from '../../src/schemas/accommodation/amenity.dbschema.ts';
 import { features } from '../../src/schemas/accommodation/feature.dbschema.ts';
 import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
@@ -69,7 +69,7 @@ async function createListing(
             tx
         );
     if (vertical === 'gastronomy')
-        return new GastronomyModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
+        return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
     return new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx);
 }
 

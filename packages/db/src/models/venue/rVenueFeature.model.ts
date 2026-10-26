@@ -3,10 +3,10 @@ import { BaseModelImpl } from '../../base/base.model.ts';
 import { rGastronomyFeature } from '../../schemas/venue/r_venue_feature.dbschema.ts';
 
 /**
- * RGastronomyFeatureModel — DB access for gastronomy-feature junction (SPEC-239).
+ * RVenueFeatureModel — DB access for gastronomy-feature junction (SPEC-239).
  * Mirrors RAccommodationFeatureModel: thin BaseModelImpl wrapper.
  */
-export class RGastronomyFeatureModel extends BaseModelImpl<VenueFeatureRelation> {
+export class RVenueFeatureModel extends BaseModelImpl<VenueFeatureRelation> {
     protected table = rGastronomyFeature;
     public entityName = 'rGastronomyFeature';
 
@@ -17,5 +17,5 @@ export class RGastronomyFeatureModel extends BaseModelImpl<VenueFeatureRelation>
     }
 }
 
-/** Singleton instance of RGastronomyFeatureModel for use across the application. */
-export const rGastronomyFeatureModel = new RGastronomyFeatureModel();
+/** Singleton instance of RVenueFeatureModel for use across the application. */
+export const rVenueFeatureModel = new RVenueFeatureModel();

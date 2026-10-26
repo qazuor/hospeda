@@ -173,10 +173,10 @@ export const gastronomyMediaRelations = relations(gastronomyMedia, ({ one }) => 
  * Type inferred from the Drizzle table definition for SELECT queries.
  * Use this instead of a manual interface — it always stays in sync with the schema.
  */
-export type SelectGastronomyMedia = typeof gastronomyMedia.$inferSelect;
+export type SelectVenueMedia = typeof gastronomyMedia.$inferSelect;
 
 /**
  * Type inferred from the Drizzle table definition for INSERT queries.
  * Use this instead of a manual interface — it always stays in sync with the schema.
  */
-export type InsertGastronomyMedia = typeof gastronomyMedia.$inferInsert;
+export type InsertVenueMedia = typeof gastronomyMedia.$inferInsert;

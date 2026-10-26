@@ -3,12 +3,12 @@ import { BaseModelImpl } from '../../base/base.model.ts';
 import { gastronomyReviews } from '../../schemas/venue/venue_review.dbschema.ts';
 
 /**
- * GastronomyReviewModel — DB access for gastronomy reviews (SPEC-239).
+ * VenueReviewModel — DB access for gastronomy reviews (SPEC-239).
  * Mirrors AccommodationReviewModel: extends BaseModelImpl for standard CRUD.
  * Custom relation queries (with user/gastronomy) should be added here as the
  * service layer grows — same pattern as AccommodationReviewModel.findAllWithUser.
  */
-export class GastronomyReviewModel extends BaseModelImpl<VenueReview> {
+export class VenueReviewModel extends BaseModelImpl<VenueReview> {
     protected table = gastronomyReviews;
     public entityName = 'gastronomyReviews';
 
@@ -27,5 +27,5 @@ export class GastronomyReviewModel extends BaseModelImpl<VenueReview> {
     }
 }
 
-/** Singleton instance of GastronomyReviewModel for use across the application. */
-export const gastronomyReviewModel = new GastronomyReviewModel();
+/** Singleton instance of VenueReviewModel for use across the application. */
+export const venueReviewModel = new VenueReviewModel();

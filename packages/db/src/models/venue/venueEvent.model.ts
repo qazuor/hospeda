@@ -3,7 +3,7 @@ import { BaseModelImpl } from '../../base/base.model.ts';
 import { gastronomyEvents } from '../../schemas/venue/venue_event.dbschema.ts';
 
 /**
- * GastronomyEventModel — DB access for a venue's own agenda (HOS-1042).
+ * VenueEventModel — DB access for a venue's own agenda (HOS-1042).
  *
  * Thin `BaseModelImpl` wrapper, exactly like `GastronomyMenuSectionModel`.
  * Ordering (`display_order ASC`) is applied by the caller, which is the same
@@ -16,7 +16,7 @@ import { gastronomyEvents } from '../../schemas/venue/venue_event.dbschema.ts';
  * `isActive: false` instead — that is what that column is for, and it is a
  * different statement from "deleted".
  */
-export class GastronomyEventModel extends BaseModelImpl<VenueEvent> {
+export class VenueEventModel extends BaseModelImpl<VenueEvent> {
     protected table = gastronomyEvents;
     public entityName = 'gastronomyEvents';
 
@@ -25,5 +25,5 @@ export class GastronomyEventModel extends BaseModelImpl<VenueEvent> {
     }
 }
 
-/** Singleton instance of GastronomyEventModel. */
-export const gastronomyEventModel = new GastronomyEventModel();
+/** Singleton instance of VenueEventModel. */
+export const venueEventModel = new VenueEventModel();

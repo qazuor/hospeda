@@ -2,7 +2,7 @@ import type { Venue } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { listingPurgeModel } from '../../src/models/listing/listing-purge.model.ts';
-import { GastronomyModel } from '../../src/models/venue/venue.model.ts';
+import { VenueModel } from '../../src/models/venue/venue.model.ts';
 import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../src/types.ts';
@@ -19,7 +19,7 @@ async function createListing(tx: DrizzleClient, ownerId: string, destinationId: 
         ownerId,
         destinationId
     };
-    return new GastronomyModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
+    return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
 }
 
 async function seedMenuFileAndVideos(tx: DrizzleClient, listingId: string) {

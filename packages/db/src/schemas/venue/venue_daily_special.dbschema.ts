@@ -122,6 +122,6 @@ export const gastronomyDailySpecialsRelations = relations(gastronomyDailySpecial
 }));
 
 /** Type-inferred insert type for gastronomy_daily_specials rows. */
-export type InsertGastronomyDailySpecial = typeof gastronomyDailySpecials.$inferInsert;
+export type InsertVenueDailySpecial = typeof gastronomyDailySpecials.$inferInsert;
 /** Type-inferred select type for gastronomy_daily_specials rows. */
-export type SelectGastronomyDailySpecial = typeof gastronomyDailySpecials.$inferSelect;
+export type SelectVenueDailySpecial = typeof gastronomyDailySpecials.$inferSelect;

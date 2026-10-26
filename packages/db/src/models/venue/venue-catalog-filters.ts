@@ -70,9 +70,7 @@ import { gastronomies } from '../../schemas/venue/venue.dbschema.ts';
  *   an empty list would produce `HAVING COUNT(...) = 0`, which matches nothing.
  * @returns A SQL condition suitable for `additionalConditions`.
  */
-export function buildGastronomyFeatureIntersectionClause(
-    featureIds: readonly string[]
-): SQL<unknown> {
+export function buildVenueFeatureIntersectionClause(featureIds: readonly string[]): SQL<unknown> {
     const n = featureIds.length;
     const idList = sql.join(
         featureIds.map((id) => sql`${id}`),
@@ -99,9 +97,7 @@ export function buildGastronomyFeatureIntersectionClause(
  * @param amenityIds - Amenity UUIDs the listing must ALL carry. Must be non-empty.
  * @returns A SQL condition suitable for `additionalConditions`.
  */
-export function buildGastronomyAmenityIntersectionClause(
-    amenityIds: readonly string[]
-): SQL<unknown> {
+export function buildVenueAmenityIntersectionClause(amenityIds: readonly string[]): SQL<unknown> {
     const n = amenityIds.length;
     const idList = sql.join(
         amenityIds.map((id) => sql`${id}`),
@@ -129,7 +125,7 @@ export function buildGastronomyAmenityIntersectionClause(
  * @param params.features - Feature UUIDs the listing must all carry.
  * @returns Zero, one, or two SQL conditions, ANDed by the caller.
  */
-export function buildGastronomyCatalogConditions({
+export function buildVenueCatalogConditions({
     amenities,
     features
 }: {
@@ -138,10 +134,10 @@ export function buildGastronomyCatalogConditions({
 }): SQL[] {
     const conditions: SQL[] = [];
     if (amenities && amenities.length > 0) {
-        conditions.push(buildGastronomyAmenityIntersectionClause(amenities));
+        conditions.push(buildVenueAmenityIntersectionClause(amenities));
     }
     if (features && features.length > 0) {
-        conditions.push(buildGastronomyFeatureIntersectionClause(features));
+        conditions.push(buildVenueFeatureIntersectionClause(features));
     }
     return conditions;
 }

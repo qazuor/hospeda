@@ -376,7 +376,7 @@ describe('TEST:B3:8 — the database refuses what invariant 8 forbids and accept
             const userId = await seedUser(client);
             const otherUserId = await seedUser(client);
             const plan = await seedPlan(client, 'accommodation');
-            const gastronomyPlan = await seedPlan(client, 'gastronomy');
+            const venuePlan = await seedPlan(client, 'gastronomy');
             await insertSubscription(client, {
                 userId,
                 vertical: 'accommodation',
@@ -408,8 +408,8 @@ describe('TEST:B3:8 — the database refuses what invariant 8 forbids and accept
             const gastronomy = await insertSubscription(client, {
                 userId,
                 vertical: 'gastronomy',
-                planVersionId: gastronomyPlan.planVersionId,
-                billingOptionId: gastronomyPlan.billingOptionId,
+                planVersionId: venuePlan.planVersionId,
+                billingOptionId: venuePlan.billingOptionId,
                 status: 'ACTIVE'
             });
             expect(gastronomy).toBeTruthy();

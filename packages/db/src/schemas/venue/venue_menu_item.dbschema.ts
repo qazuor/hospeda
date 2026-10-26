@@ -167,6 +167,6 @@ export const gastronomyMenuItemsRelations = relations(gastronomyMenuItems, ({ on
 }));
 
 /** Type-inferred insert type for gastronomy_menu_items rows. */
-export type InsertGastronomyMenuItem = typeof gastronomyMenuItems.$inferInsert;
+export type InsertVenueMenuItem = typeof gastronomyMenuItems.$inferInsert;
 /** Type-inferred select type for gastronomy_menu_items rows. */
-export type SelectGastronomyMenuItem = typeof gastronomyMenuItems.$inferSelect;
+export type SelectVenueMenuItem = typeof gastronomyMenuItems.$inferSelect;

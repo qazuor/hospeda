@@ -3,7 +3,7 @@ import { BaseModelImpl } from '../../base/base.model.ts';
 import { gastronomyMenuSections } from '../../schemas/venue/venue_menu_section.dbschema.ts';
 
 /**
- * GastronomyMenuSectionModel — DB access for the course headings of a venue's
+ * VenueMenuSectionModel — DB access for the course headings of a venue's
  * menu (HOS-895).
  *
  * Thin `BaseModelImpl` wrapper, exactly like `GastronomyFaqModel`. Ordering
@@ -14,7 +14,7 @@ import { gastronomyMenuSections } from '../../schemas/venue/venue_menu_section.d
  * whole menu is rewritten transactionally by `replaceGastronomyMenu`, so a
  * tombstoned section would only ever be dead weight the read has to filter.
  */
-export class GastronomyMenuSectionModel extends BaseModelImpl<VenueMenuSection> {
+export class VenueMenuSectionModel extends BaseModelImpl<VenueMenuSection> {
     protected table = gastronomyMenuSections;
     public entityName = 'gastronomyMenuSections';
 
@@ -23,5 +23,5 @@ export class GastronomyMenuSectionModel extends BaseModelImpl<VenueMenuSection> 
     }
 }
 
-/** Singleton instance of GastronomyMenuSectionModel. */
-export const gastronomyMenuSectionModel = new GastronomyMenuSectionModel();
+/** Singleton instance of VenueMenuSectionModel. */
+export const venueMenuSectionModel = new VenueMenuSectionModel();

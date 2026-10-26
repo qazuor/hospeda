@@ -11,7 +11,7 @@ import { withListingBirthColumns } from '../listing/listing-birth.ts';
 /**
  * Search input for gastronomy listings (basic subset — expand as routes are built).
  */
-interface GastronomySearchInput {
+interface VenueModelSearchInput {
     readonly q?: string;
     readonly destinationId?: string;
     readonly ownerId?: string;
@@ -23,13 +23,13 @@ interface GastronomySearchInput {
 }
 
 /**
- * GastronomyModel — all DB access for gastronomy listings (SPEC-239).
+ * VenueModel — all DB access for gastronomy listings (SPEC-239).
  *
  * Mirrors AccommodationModel structure: extends BaseModelImpl, provides search()
  * and findWithRelations() overrides. Expand with domain-specific query methods
  * as the service layer grows.
  */
-export class GastronomyModel extends BaseModelImpl<Venue> {
+export class VenueModel extends BaseModelImpl<Venue> {
     protected table = gastronomies;
     public entityName = 'gastronomies';
 
@@ -91,7 +91,7 @@ export class GastronomyModel extends BaseModelImpl<Venue> {
      * @returns Matching gastronomies and total count
      */
     async search(
-        params: GastronomySearchInput,
+        params: VenueModelSearchInput,
         tx?: DrizzleClient
     ): Promise<{ items: Venue[]; total: number }> {
         const db = this.getClient(tx);
@@ -192,5 +192,5 @@ export class GastronomyModel extends BaseModelImpl<Venue> {
     }
 }
 
-/** Singleton instance of GastronomyModel for use across the application. */
-export const gastronomyModel = new GastronomyModel();
+/** Singleton instance of VenueModel for use across the application. */
+export const venueModel = new VenueModel();

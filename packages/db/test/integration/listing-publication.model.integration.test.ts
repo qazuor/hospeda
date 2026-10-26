@@ -9,7 +9,7 @@ import {
     type ListingVertical,
     listingPublicationModel
 } from '../../src/models/listing/listing-publication.model.ts';
-import { GastronomyModel } from '../../src/models/venue/venue.model.ts';
+import { VenueModel } from '../../src/models/venue/venue.model.ts';
 import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../src/types.ts';
@@ -38,10 +38,7 @@ async function makeListing(args: {
             args.tx
         );
     if (args.vertical === 'gastronomy')
-        return new GastronomyModel().create(
-            { ...base, type: 'RESTAURANT' } as Partial<Venue>,
-            args.tx
-        );
+        return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, args.tx);
     return new ExperienceModel().create(
         { ...base, type: 'EXCURSION' } as Partial<Experience>,
         args.tx

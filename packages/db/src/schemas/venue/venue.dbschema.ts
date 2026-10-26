@@ -251,6 +251,6 @@ export const gastronomiesRelations = relations(gastronomies, ({ one, many }) => 
 }));
 
 /** Type-inferred insert type for gastronomy rows. */
-export type InsertGastronomy = typeof gastronomies.$inferInsert;
+export type InsertVenue = typeof gastronomies.$inferInsert;
 /** Type-inferred select type for gastronomy rows. */
-export type SelectGastronomy = typeof gastronomies.$inferSelect;
+export type SelectVenue = typeof gastronomies.$inferSelect;

@@ -7,7 +7,7 @@ import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
 /**
- * Input for {@link GastronomyDailySpecialModel.findValidOn}.
+ * Input for {@link VenueDailySpecialModel.findValidOn}.
  */
 interface FindValidOnInput {
     /** UUID of the parent gastronomy listing. */
@@ -23,7 +23,7 @@ interface FindValidOnInput {
 }
 
 /**
- * GastronomyDailySpecialModel — DB access for the menú del día (HOS-1041).
+ * VenueDailySpecialModel — DB access for the menú del día (HOS-1041).
  *
  * `BaseModelImpl` for the ordinary write path, plus the one finder that makes
  * the feature what it is: {@link findValidOn}, the date query that retires an
@@ -33,7 +33,7 @@ interface FindValidOnInput {
  * removed is gone, and one that merely elapsed is still a row — it just stops
  * matching the read.
  */
-export class GastronomyDailySpecialModel extends BaseModelImpl<VenueDailySpecial> {
+export class VenueDailySpecialModel extends BaseModelImpl<VenueDailySpecial> {
     protected table = gastronomyDailySpecials;
     public entityName = 'gastronomyDailySpecials';
 
@@ -110,5 +110,5 @@ export class GastronomyDailySpecialModel extends BaseModelImpl<VenueDailySpecial
     }
 }
 
-/** Singleton instance of GastronomyDailySpecialModel. */
-export const gastronomyDailySpecialModel = new GastronomyDailySpecialModel();
+/** Singleton instance of VenueDailySpecialModel. */
+export const venueDailySpecialModel = new VenueDailySpecialModel();
