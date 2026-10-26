@@ -144,7 +144,7 @@ function patchPathFor({
     listingId: string;
 }): string {
     return vertical === 'gastronomy'
-        ? `/api/v1/protected/venues/${listingId}`
+        ? `/api/v1/protected/gastronomies/${listingId}`
         : `/api/v1/protected/experiences/${listingId}`;
 }
 
