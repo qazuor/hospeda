@@ -94,7 +94,10 @@ const AuthorizationResponseSchema = z.object({
 });
 const ReadResponseSchema = z.object({
     id: z.string().min(1),
-    external_reference: z.string(),
+    // Our creation ALWAYS sends the reference (see `authorize` below), so a
+    // preapproval without one belongs to a third party (or to the legacy
+    // system). It is classified as unsupported below, never parsed as ours.
+    external_reference: z.string().nullish(),
     status: z.string(),
     auto_recurring: z.object({
         frequency: z.number(),
@@ -302,6 +305,20 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
             method: 'GET'
         });
         const parsed = await parseResponse(ReadResponseSchema, response, 'read');
+        // A preapproval with no reference is foreign by construction: we always
+        // send ours on creation. Classifying it as UNSUPPORTED makes the notice
+        // service ignore it (HOS-1777) instead of writing a receipt tombstone,
+        // which would CANCEL a third party's authorization (AC:B11:3).
+        const reference = parsed.external_reference?.trim() ?? '';
+        if (reference === '') {
+            throw new PaymentProviderError({
+                code: 'UNSUPPORTED',
+                capability: 'read',
+                message: `Mercado Pago returned an unsupported authorization without external_reference (status: ${parsed.status})`,
+                providerStatus: parsed.status,
+                providerCadence: parsed.auto_recurring.frequency_type
+            });
+        }
         const statuses = {
             pending: 'pending',
             authorized: 'active',
@@ -322,7 +339,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
             clock: this.clock,
             snapshot: {
                 authorizationId: parsed.id,
-                reference: parsed.external_reference,
+                reference,
                 status,
                 amount: {
                     amountMinor: Math.round(parsed.auto_recurring.transaction_amount * 100),
