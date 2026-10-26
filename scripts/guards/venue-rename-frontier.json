@@ -453,7 +453,7 @@
         "apps/api/test/services/media/upload-helpers.test.ts": 10,
         "apps/api/test/services/publish-precheck.service.test.ts": 4,
         "apps/api/test/static-guards/listing-qr-sheet-no-entitlement-gate.guard.test.ts": 6,
-        "apps/api/test/utils/entity-qr-purpose.guard.test.ts": 7,
+        "apps/api/test/utils/entity-qr-purpose.guard.test.ts": 4,
         "apps/api/test/utils/existence-disclosure.guard.test.ts": 1,
         "apps/api/test/utils/listing-access/billing-coverage.test.ts": 1,
         "apps/api/test/utils/listing-faq-visibility.guard.test.ts": 4,
