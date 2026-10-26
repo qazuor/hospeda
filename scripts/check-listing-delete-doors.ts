@@ -50,13 +50,14 @@ const ROUTE_FACTORY = /^create\w*Route$/;
 const LISTING_RECEIVERS: ReadonlySet<string> = new Set([
     'accommodationservice',
     'gastronomyservice',
+    'venueservice',
     'experienceservice',
     'accommodationmodel',
     'gastronomymodel',
     'venuemodel',
     'experiencemodel'
 ]);
-const LISTING_CLASS = /^(?:Accommodation|Gastronomy|Experience)(?:Service|Model)$|^VenueModel$/;
+const LISTING_CLASS = /^(?:Accommodation|Gastronomy|Venue|Experience)(?:Service|Model)$/;
 const USER_RECEIVERS: ReadonlySet<string> = new Set(['userservice', 'usermodel']);
 const USER_CLASS = /^User(?:Service|Model)$/;
 const LISTING_METHODS: ReadonlySet<string> = new Set([

@@ -84,6 +84,33 @@ describe('AC:V6:25 listing delete doors guard', () => {
         });
     });
 
+    describe('TEST:1814:4 AC:1:16 follows VenueService and retains the prior service name', () => {
+        it('TEST:1814:4 AC:1:16 detects class and receiver forms for both service names', () => {
+            const file = 'packages/service-core/src/services/venue/venue.service.ts';
+            const venueClass = check({
+                [file]: 'new VenueService({ logger }).hardDelete(actor, id);\n'
+            });
+            expect(venueClass.exitCode).toBe(1);
+            expect(venueClass.output).toContain('new VenueService({ logger }).hardDelete(...)');
+
+            const venueReceiver = check({ [file]: 'venueService.softDelete(actor, id);\n' });
+            expect(venueReceiver.exitCode).toBe(1);
+            expect(venueReceiver.output).toContain('venueService.softDelete(...)');
+
+            const oldClass = ['Gastro', 'nomy', 'Service'].join('');
+            const oldService = check({
+                [file]: `new ${oldClass}({ logger }).hardDelete(actor, id);\n`
+            });
+            expect(oldService.exitCode).toBe(1);
+            expect(oldService.output).toContain(`new ${oldClass}({ logger }).hardDelete(...)`);
+
+            const oldReceiver = ['gastronomy', 'service'].join('');
+            const legacyReceiver = check({ [file]: `${oldReceiver}.softDelete(actor, id);\n` });
+            expect(legacyReceiver.exitCode).toBe(1);
+            expect(legacyReceiver.output).toContain(`${oldReceiver}.softDelete(...)`);
+        });
+    });
+
     it('accepts the repository tree', () => {
         const result = run();
         expect(result.exitCode).toBe(0);

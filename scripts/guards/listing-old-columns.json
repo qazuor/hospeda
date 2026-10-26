@@ -428,7 +428,7 @@
             "reason": "Describe/test titles about the public visibility filter."
         },
         {
-            "file": "packages/service-core/test/services/gastronomy/gastronomy.service.test.ts",
+            "file": "packages/service-core/test/services/venue/venue.service.test.ts",
             "name": "visibility",
             "count": 2,
             "table": "none (test title)",

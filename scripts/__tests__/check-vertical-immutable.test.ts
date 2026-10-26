@@ -44,6 +44,20 @@ describe('TEST:V5:5 GUARD:G2 (c)', () => {
         expect(run({ root, minScannedFiles: 1 }).exitCode).toBe(0);
     });
 
+    it('TEST:1814:4 AC:1:16 scans venue and legacy gastronomy service paths', () => {
+        const venueFile = 'packages/service-core/src/services/venue/venue.service.ts';
+        const legacyFile = 'packages/service-core/src/services/gastronomy/gastronomy.service.ts';
+        const root = makeTree({
+            [venueFile]: 'db.update(gastronomies).set({ vertical: "venue" });\n',
+            [legacyFile]: 'db.update(gastronomies).set({ vertical: "gastronomy" });\n'
+        });
+
+        const result = run({ root, minScannedFiles: 1 });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain(venueFile);
+        expect(result.output).toContain(legacyFile);
+    });
+
     it('rejects a mutated listing service update with file and line', () => {
         const file = 'packages/service-core/src/services/gastronomy/gastronomy.service.ts';
         const root = makeTree({
