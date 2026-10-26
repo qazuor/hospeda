@@ -60,6 +60,6 @@ export function integrationJobRunsBothSuites({
 }): boolean {
     return (
         runs.some((run) => run.startsWith('pnpm test:integration')) &&
-        runs.some((run) => run.startsWith('pnpm --filter hospeda-api test:integration'))
+        runs.some((run) => run.startsWith('pnpm turbo run test:integration --filter=hospeda-api'))
     );
 }

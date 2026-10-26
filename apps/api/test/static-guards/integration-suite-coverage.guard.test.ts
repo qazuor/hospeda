@@ -83,7 +83,7 @@ describe('API integration suite coverage (HOS-1891)', () => {
         );
         expect(ci).toContain(
             // biome-ignore lint/suspicious/noTemplateCurlyInString: a literal GitHub Actions expression, not a JS template.
-            'run: pnpm --filter hospeda-api test:integration --shard=${{ matrix.shard }}'
+            'run: pnpm turbo run test:integration --filter=hospeda-api -- --shard=${{ matrix.shard }}'
         );
         expect(ci).toContain('run: pnpm test:integration --filter=!hospeda-api');
     });

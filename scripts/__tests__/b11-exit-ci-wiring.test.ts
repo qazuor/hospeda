@@ -218,7 +218,7 @@ describe('TEST:1611:1 AC:B11:20 la evidencia de la salida de B11 está en el ár
         const integration = jobBlock({ source: ci, job: 'test-integration' });
         // HOS-1775: the packages leg and the sharded API legs.
         expect(integration).toContain('pnpm test:integration');
-        expect(integration).toContain('pnpm --filter hospeda-api test:integration');
+        expect(integration).toContain('pnpm turbo run test:integration --filter=hospeda-api');
         expect(needsOf({ block: jobBlock({ source: ci, job: 'ci-pass' }) })).toContain(
             'test-integration'
         );

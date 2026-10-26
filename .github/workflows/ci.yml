@@ -914,15 +914,15 @@ jobs:
         run: pnpm test:integration --filter=!hospeda-api
         env:
           HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
-      # Outside turbo there is no strict env filter, so the workflow-level
-      # HOSPEDA_DATABASE_URL secret would reach the suite. Pin it to the job's
-      # disposable service too: global-setup.ts falls back to it.
+      # Through turbo, never `pnpm --filter`: turbo's strict env mode is what
+      # keeps the workflow-level secrets (HOSPEDA_DATABASE_URL,
+      # HOSPEDA_BETTER_AUTH_SECRET, ...) out of the suite. Without it they win
+      # over .env.test and every file fails env validation (measured on #3831).
       - name: Run API integration tests (shard ${{ matrix.shard }})
         if: startsWith(matrix.suite, 'api')
-        run: pnpm --filter hospeda-api test:integration --shard=${{ matrix.shard }}
+        run: pnpm turbo run test:integration --filter=hospeda-api -- --shard=${{ matrix.shard }}
         env:
           HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
-          HOSPEDA_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
       # U3 (HOS-1426): the cutover script's database tests build the OLD schema from
       # `main`'s migrations, so that ref must exist in this shallow checkout. They
       # create and drop their own scratch databases on the same service.
