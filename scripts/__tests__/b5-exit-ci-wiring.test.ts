@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { apiIntegrationCollection } from './helpers/api-integration-collection';
 
 /**
  * TEST:B5:17 (AC:B5:33, HOS-1550, B5.9), the evidence half of the B5 exit.
@@ -445,12 +446,11 @@ describe('TEST:B5:17 AC:B5:33 - B5 exit: LISTA:B5 evidence in the tree, manual h
             expect(read('packages/service-core/vitest.integration.config.ts')).toContain(
                 "'test/integration/services/**/*.test.ts'"
             );
-            const api = read('apps/api/vitest.config.integration.ts');
-            for (const glob of [
-                'test/integration/billing-refund/**/*.test.ts',
-                'test/integration/billing-subscription/**/*.test.ts'
-            ])
-                expect(api).toContain(`'${glob}'`);
+            for (const dir of ['billing-refund', 'billing-subscription']) {
+                const api = apiIntegrationCollection({ target: `test/integration/${dir}` });
+                expect(api.collected.length, dir).toBeGreaterThan(0);
+                expect(api.excluded, dir).toEqual([]);
+            }
             expect(read('packages/db/vitest.config.integration.ts')).toContain(
                 "'test/integration/**/*.test.ts'"
             );

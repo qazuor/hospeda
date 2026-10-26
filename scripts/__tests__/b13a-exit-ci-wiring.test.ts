@@ -2,6 +2,10 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import {
+    apiIntegrationCollection,
+    integrationJobRunsBothSuites
+} from './helpers/api-integration-collection';
 
 /**
  * Static evidence for AC:B13a:15: the LISTA:B13a clauses, explicit phase 2/4
@@ -298,7 +302,11 @@ describe('AC:B13a:15 - B13a exit: LISTA:B13a evidence in the tree, phase 2 and 4
         const setup = read({ file: 'apps/api/test/integration/global-setup.ts' });
         expect(existsSync(path.join(repoRoot, file))).toBe(true);
         expect(titles.some((title) => namesId({ text: title, id: 'TEST:B13a:16' }))).toBe(true);
-        expect(include).toContain('test/integration/billing-subscription/**/*.test.ts');
+        expect(
+            apiIntegrationCollection({
+                target: 'test/integration/billing-subscription/b13a-surfaces-from-empty.test.ts'
+            }).collected
+        ).toHaveLength(1);
         expect(include).toContain('global-setup');
         expect(setup).toContain('DROP DATABASE IF EXISTS');
         expect(setup).toContain('CREATE DATABASE');
@@ -359,7 +367,7 @@ describe('AC:B13a:15 - B13a exit: LISTA:B13a evidence in the tree, phase 2 and 4
         });
         const passNeeds = needsOf({ block: jobBlock({ source: ciYml, job: 'ci-pass' }) });
         expect(guards.some((run) => run.includes('pnpm test:scripts'))).toBe(true);
-        expect(integration.some((run) => run.includes('pnpm test:integration'))).toBe(true);
+        expect(integrationJobRunsBothSuites({ runs: integration })).toBe(true);
         expect(passNeeds).toContain('guards');
         expect(passNeeds).toContain('test-integration');
     });
