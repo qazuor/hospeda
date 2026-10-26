@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { destinations, eq, getDb } from '@repo/db';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -84,7 +85,7 @@ describe('Destination Hierarchy API', () => {
     });
 
     beforeEach(async () => {
-        const suffix = crypto.randomUUID().slice(0, 8);
+        const suffix = randomUUID().slice(0, 8);
         const seededCountry = await seedNode({
             suffix,
             name: 'argentina',
@@ -145,7 +146,15 @@ describe('Destination Hierarchy API', () => {
         // HOS-1906: findChildren (destination.model.ts:785) never
         // checks that the parent exists, so an unknown id answers 200 with an empty list, while
         // getBreadcrumb on the same id answers 404. error-contract.md puts existence at 404.
-        it.fails('answers 404 for a destination that does not exist', async () => {
+        it('currently answers 200 with an empty children list for a destination that does not exist (HOS-1906)', async () => {
+            const res = await app.request(`${base}/${NONEXISTENT_UUID}/children`, { headers });
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data.children).toEqual([]);
+        });
+
+        // Drop `.fails` (and the test above) once HOS-1906 is fixed.
+        it.fails('answers 404 for a destination that does not exist (HOS-1906)', async () => {
             const res = await app.request(`${base}/${NONEXISTENT_UUID}/children`, { headers });
             expect(res.status).toBe(404);
         });
@@ -209,7 +218,15 @@ describe('Destination Hierarchy API', () => {
 
         // HOS-1906: findDescendants (destination.model.ts:817) returns []
         // when the parent is missing instead of surfacing a 404.
-        it.fails('answers 404 for a destination that does not exist', async () => {
+        it('currently answers 200 with an empty descendants list for a destination that does not exist (HOS-1906)', async () => {
+            const res = await app.request(`${base}/${NONEXISTENT_UUID}/descendants`, { headers });
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data.descendants).toEqual([]);
+        });
+
+        // Drop `.fails` (and the test above) once HOS-1906 is fixed.
+        it.fails('answers 404 for a destination that does not exist (HOS-1906)', async () => {
             const res = await app.request(`${base}/${NONEXISTENT_UUID}/descendants`, { headers });
             expect(res.status).toBe(404);
         });
@@ -240,7 +257,15 @@ describe('Destination Hierarchy API', () => {
 
         // HOS-1906: findAncestors (destination.model.ts:876) returns []
         // when the destination is missing instead of surfacing a 404.
-        it.fails('answers 404 for a destination that does not exist', async () => {
+        it('currently answers 200 with an empty ancestors list for a destination that does not exist (HOS-1906)', async () => {
+            const res = await app.request(`${base}/${NONEXISTENT_UUID}/ancestors`, { headers });
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data.ancestors).toEqual([]);
+        });
+
+        // Drop `.fails` (and the test above) once HOS-1906 is fixed.
+        it.fails('answers 404 for a destination that does not exist (HOS-1906)', async () => {
             const res = await app.request(`${base}/${NONEXISTENT_UUID}/ancestors`, { headers });
             expect(res.status).toBe(404);
         });
