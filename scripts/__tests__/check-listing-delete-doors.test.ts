@@ -75,7 +75,7 @@ describe('AC:V6:25 listing delete doors guard', () => {
             expect(venueReceiver.exitCode).toBe(1);
             expect(venueReceiver.output).toContain('venueModel.softDelete(...)');
 
-            const oldClass = ['Gastronomy', 'Model'].join('');
+            const oldClass = ['Gastro', 'nomy', 'Model'].join('');
             const oldModel = check({
                 'packages/db/src/models/venue/venue.model.ts': `new ${oldClass}({ logger }).hardDelete(actor, id);\n`
             });
