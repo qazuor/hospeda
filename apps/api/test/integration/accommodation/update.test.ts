@@ -5,7 +5,7 @@ import { initApp } from '../../../src/app';
 import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
-import { buildMockActorHeaders, createMockActorUser } from '../helpers/mock-admin-actor';
+import { buildMockActorHeaders, createMockActorUser } from '../helpers/mock-actor';
 import {
     type SeededOwnedAccommodation,
     seedOwnedAccommodation
@@ -92,6 +92,12 @@ describe('PUT /protected/accommodations/:id (update)', () => {
             actorId: seeded.ownerId,
             body: { type: 'INVALID_TYPE' }
         });
+        expect(res.status).toBe(400);
+        expect(await readName(seeded.id)).toBe(seeded.name);
+    });
+
+    it('answers 400 for an empty name', async () => {
+        const res = await put({ id: seeded.id, actorId: seeded.ownerId, body: { name: '' } });
         expect(res.status).toBe(400);
         expect(await readName(seeded.id)).toBe(seeded.name);
     });
