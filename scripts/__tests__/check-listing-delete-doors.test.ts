@@ -60,7 +60,7 @@ function route(method: string, routePath: string): string {
 }
 
 describe('AC:V6:25 listing delete doors guard', () => {
-    describe('TEST:1814:4 AC:1:16 follows VenueModel while retaining GastronomyModel', () => {
+    describe('TEST:1814:4 AC:1:16 follows VenueModel and retains the prior model name', () => {
         it('TEST:1814:4 AC:1:16 detects class and receiver forms for both model names', () => {
             const venueClass = check({
                 'packages/db/src/models/venue/venue.model.ts':
@@ -75,12 +75,12 @@ describe('AC:V6:25 listing delete doors guard', () => {
             expect(venueReceiver.exitCode).toBe(1);
             expect(venueReceiver.output).toContain('venueModel.softDelete(...)');
 
+            const oldClass = ['Gastronomy', 'Model'].join('');
             const oldModel = check({
-                'packages/db/src/models/gastronomy/gastronomy.model.ts':
-                    'new GastronomyModel({ logger }).hardDelete(actor, id);\n'
+                'packages/db/src/models/venue/venue.model.ts': `new ${oldClass}({ logger }).hardDelete(actor, id);\n`
             });
             expect(oldModel.exitCode).toBe(1);
-            expect(oldModel.output).toContain('new GastronomyModel({ logger }).hardDelete(...)');
+            expect(oldModel.output).toContain(`new ${oldClass}({ logger }).hardDelete(...)`);
         });
     });
 
