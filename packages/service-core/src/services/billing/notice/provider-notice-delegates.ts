@@ -61,7 +61,6 @@ function arrearsPorts(ports: ProviderNoticeMirrorDelegatesPorts): GraceExpiryChe
         beforeCancelNotice: ports.beforeCancelNotice,
         payments: ports.payments ?? creditedPaymentsFromLedger,
         ...(ports.coverageNotices === undefined ? {} : { coverageNotices: ports.coverageNotices }),
-        ...(ports.billingFacts === undefined ? {} : { billingFacts: ports.billingFacts }),
         ...(ports.markPayments === undefined ? {} : { markPayments: ports.markPayments }),
         ...(ports.planPolicy === undefined ? {} : { planPolicy: ports.planPolicy }),
         ...(ports.unresolvedPeriodCharges === undefined
