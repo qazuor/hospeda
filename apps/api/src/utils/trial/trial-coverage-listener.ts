@@ -16,6 +16,8 @@ import type { CoverageChangedEvent } from '@repo/billing-verticals-contract';
 import { eq, getDb, users } from '@repo/db';
 import { computeTrialEmailPseudonym } from '@repo/service-core';
 import { consumeTrialOnFirstPayment, convertTrialOnTitle } from '@repo/verticals';
+import { emitTrialAnalyticsFact } from '../analytics/analytics-facts';
+import { getClock } from '../clock';
 import { getListingAccessPorts } from '../listing-access/ports';
 import { apiLogger } from '../logger';
 import { getTrialMachinePorts } from './trial-machine-ports';
@@ -35,6 +37,17 @@ async function convertOrConsumeTrial(event: CoverageChangedEvent): Promise<void>
         const { unitOfWork, afterCommit } = getTrialMachinePorts();
         const { billing } = getListingAccessPorts();
         const conversion = await convertTrialOnTitle({ unitOfWork, afterCommit, billing, event });
+        if (conversion.converted)
+            emitTrialAnalyticsFact({
+                kind: 'TRIAL_CONVERTED',
+                userId,
+                vertical,
+                actorKind: 'SYSTEM',
+                trialId: `${userId}:${vertical}`,
+                transition: conversion.transition,
+                trialStateBefore: conversion.transition === 'T2' ? 'ACTIVE' : 'EXPIRED',
+                occurredAt: getClock().clock.now()
+            });
         if (conversion.converted || conversion.reason !== 'NO_TRIAL_ROW') return;
         const [owner] = await getDb()
             .select({ email: users.email })
@@ -49,13 +62,24 @@ async function convertOrConsumeTrial(event: CoverageChangedEvent): Promise<void>
             );
             return;
         }
-        await consumeTrialOnFirstPayment({
+        const consumed = await consumeTrialOnFirstPayment({
             unitOfWork,
             afterCommit,
             billing,
             event,
             emailPseudonym: pseudonym.pseudonym
         });
+        if (consumed.consumed)
+            emitTrialAnalyticsFact({
+                kind: 'TRIAL_CONVERTED',
+                userId,
+                vertical,
+                actorKind: 'SYSTEM',
+                trialId: `${userId}:${vertical}`,
+                transition: 'T8',
+                trialStateBefore: 'NONE',
+                occurredAt: getClock().clock.now()
+            });
     } catch (error) {
         apiLogger.error(
             { error, userId, vertical, sourceType: event.sourceType, change: event.change },

@@ -17,6 +17,10 @@ import { type FakeProviderServer, startFakeProviderServer } from '@repo/payments
 import { createAdjustableClock } from '@repo/test-clock';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import {
+    resetAnalyticsFactSinkForTests,
+    setAnalyticsFactSinkForTests
+} from '../../../src/utils/analytics/analytics-facts';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 
@@ -152,6 +156,62 @@ afterAll(async () => {
 });
 
 describe('Mercado Pago receiver integration', () => {
+    it('TEST:1878:7 emits one credited fact for a repeated approved charge delivery and none for a no-op', async () => {
+        const signup = await createPendingSignup();
+        type CapturedFact = Parameters<
+            Parameters<typeof setAnalyticsFactSinkForTests>[0]['emit']
+        >[0];
+        const facts: CapturedFact[] = [];
+        setAnalyticsFactSinkForTests({ emit: (fact) => facts.push(fact) });
+        try {
+            server.mercadoPagoDeliveries({ webhookSecret });
+            await server.provider.approve({ authorizationId: signup.authorizationId });
+            clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+            const approval = server
+                .mercadoPagoDeliveries({ webhookSecret })
+                .deliveries.find((delivery) =>
+                    delivery.query.includes('type=subscription_preapproval')
+                );
+            if (!approval) throw new Error('Expected signed approval notice');
+            expect((await postDelivery(approval)).status).toBe(200);
+            facts.length = 0;
+
+            server.mercadoPagoDeliveries({ webhookSecret });
+            const charge = await server.provider.charge({
+                authorizationId: signup.authorizationId,
+                amount: { amountMinor: 100000, currency: 'ARS' },
+                reference: `analytics-${signup.subscriptionId}`
+            });
+            clock.advance({ ms: 60 * 60 * 1000 });
+            await server.provider.readCharge({ chargeId: charge.chargeId });
+            const delivery = server
+                .mercadoPagoDeliveries({ webhookSecret })
+                .deliveries.filter((item) => item.query.includes(`data.id=${charge.chargeId}`))
+                .at(-1);
+            if (!delivery) throw new Error('Expected signed approved charge notice');
+            expect((await postDelivery(delivery)).status).toBe(200);
+            expect((await postDelivery(delivery)).status).toBe(200);
+            const chargeFacts = facts.filter(
+                (fact) =>
+                    'subscriptionId' in fact &&
+                    fact.subscriptionId === signup.subscriptionId &&
+                    fact.kind === 'CHARGE_CREDITED'
+            );
+            expect(chargeFacts, JSON.stringify(facts)).toHaveLength(1);
+
+            facts.length = 0;
+            expect((await postDelivery(approval)).status).toBe(200);
+            expect(
+                facts.filter(
+                    (fact) =>
+                        'subscriptionId' in fact && fact.subscriptionId === signup.subscriptionId
+                )
+            ).toHaveLength(0);
+        } finally {
+            resetAnalyticsFactSinkForTests();
+        }
+    });
+
     // TEST:B3:36 (soporte)
     it('stores each signed Webhooks delivery and activates by rereading the authorization', async () => {
         const signup = await createPendingSignup();

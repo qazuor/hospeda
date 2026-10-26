@@ -81,6 +81,7 @@ import {
 import { billingReconciliationSweepJob } from '../../src/cron/jobs/billing-reconciliation-sweep.job';
 import { beforeCancelNotice } from '../../src/routes/billing-subscription/before-cancel-notice';
 import { touristVipInheritance } from '../../src/routes/billing-subscription/tourist-vip-inheritance';
+import { getAnalyticsFactSink } from '../../src/utils/analytics/analytics-facts';
 import { getCoverageNotices } from '../../src/utils/listing-access/coverage-notices';
 
 function context(dryRun = false): CronJobContext {
@@ -209,6 +210,7 @@ describe('billing reconciliation sweep cron', () => {
             beforeCancelNotice,
             payments: creditedPaymentsFromLedger,
             coverageNotices: getCoverageNotices(),
+            billingFacts: getAnalyticsFactSink(),
             complements: mockComplementPorts
         });
         // I-3: the successor grace check runs before the expiry check.
@@ -220,6 +222,13 @@ describe('billing reconciliation sweep cron', () => {
         expect(rowChecks?.[4]).toBe(mockGraceExpiryCheck.mock.results[0]?.value);
         // HOS-1685: the next charge date copy runs last.
         expect(rowChecks?.[5]).toBe(mockNextChargeSync.mock.results[0]?.value);
+        expect(mockLostFirstRejectionCheck).toHaveBeenCalledWith({
+            provider: mockProvider,
+            clock: mockClock,
+            payments: creditedPaymentsFromLedger,
+            planPolicy: mockPlanPolicy,
+            billingFacts: getAnalyticsFactSink()
+        });
         expect(mockPendingFirstChargeDeclineCheck).toHaveBeenCalledWith({
             provider: mockProvider,
             clock: mockClock,
@@ -231,6 +240,7 @@ describe('billing reconciliation sweep cron', () => {
         expect(mockProviderPauseCheck).toHaveBeenCalledWith(
             expect.objectContaining({
                 planPolicy: mockPlanPolicy,
+                billingFacts: getAnalyticsFactSink(),
                 payments: creditedPaymentsFromLedger,
                 coverageNotices: getCoverageNotices(),
                 complements: mockComplementPorts
@@ -244,6 +254,7 @@ describe('billing reconciliation sweep cron', () => {
                 beforeCancelNotice: expect.objectContaining({ beforeCancel: expect.any(Function) }),
                 payments: creditedPaymentsFromLedger,
                 planPolicy: mockPlanPolicy,
+                billingFacts: getAnalyticsFactSink(),
                 complements: mockComplementPorts
             })
         );

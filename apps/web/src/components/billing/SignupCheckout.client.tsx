@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { StartSubscriptionResponse } from '@/lib/api/endpoints-protected';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import {
@@ -56,6 +56,13 @@ export function SignupCheckout({
     pendingAttempt,
     manualPaymentOnly
 }: SignupCheckoutProps) {
+    // Announces hydration with `data-hydrated` (same ref-based pattern as
+    // ListingEditor, HOS-1080): the payer-email input is server-rendered, so a
+    // fill before React attaches is silently reset to `accountEmail` (HOS-1890).
+    const checkoutRef = useRef<HTMLElement>(null);
+    useEffect(() => {
+        checkoutRef.current?.setAttribute('data-hydrated', 'true');
+    }, []);
     const [view, setView] = useState<CheckoutView>(() =>
         manualPaymentOnly
             ? {
@@ -150,6 +157,7 @@ export function SignupCheckout({
 
     return (
         <section
+            ref={checkoutRef}
             className={styles.container}
             data-testid="signup-checkout"
             data-state={view.state}

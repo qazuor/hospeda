@@ -5,6 +5,9 @@ import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/
 import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss';
+import type { BillingFactSink } from '../facts/billing-fact-sink';
+import { emitBillingFact } from '../facts/billing-fact-sink';
+import { buildSuspendedFact } from '../facts/suspended-fact.js';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import { readArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
 import { type PauseComplementsSummary, pauseComplementsS32 } from './complement-pause-s32.js';
@@ -102,6 +105,7 @@ export interface SuspendForArrearsPorts {
     readonly retainedPeriodPayment?: RetainedPeriodPayment;
     readonly cancellationSeen?: CancellationSeenAnnotator;
     readonly coverageNotices?: CoverageNotices;
+    readonly billingFacts?: BillingFactSink;
     /** Optional S32 policy readers; composition roots wire these in the API corrida. */
     readonly complements?: ComplementPolicyPorts;
 }
@@ -424,25 +428,33 @@ export async function suspendForArrears(
         }
     }
 
+    const suspendedAt = ports.clock.now();
     const writeInput =
         origin === 'ACTIVE'
             ? {
                   subscriptionId: subscription.id,
                   origin,
-                  now: ports.clock.now(),
+                  now: suspendedAt,
                   readAt: authorization.readAt,
                   coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices
               }
             : {
                   subscriptionId: subscription.id,
                   origin,
-                  now: ports.clock.now(),
+                  now: suspendedAt,
                   coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices
               };
     const write = await writeArrearsSuspension(writeInput);
     if (write === 'RETAINED_PAYMENT')
         return { outcome: 'NOT_APPLICABLE', reason: 'RETAINED_PAYMENT' };
     if (write === 'LOST_RACE') return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
+    const suspendedFact = buildSuspendedFact({
+        subscription,
+        occurredAt: suspendedAt,
+        trigger: value.event,
+        occurrenceId: value.occurrenceId
+    });
+    if (suspendedFact) emitBillingFact({ sink: ports.billingFacts, fact: suspendedFact });
     let complements: PauseComplementsSummary | undefined;
     if (ports.complements) {
         try {

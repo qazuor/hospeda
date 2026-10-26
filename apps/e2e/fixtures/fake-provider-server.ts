@@ -11,9 +11,12 @@ import { removeE2eClockFile } from './clock-file-cleanup.ts';
 export const E2E_FAKE_PROVIDER_URL = 'http://127.0.0.1:18090';
 /** Fixed local port used by specs that exercise the fake payment provider. */
 export const E2E_FAKE_PROVIDER_PORT = 18090;
-/** Shared webhook secret used by the built API and fake Mercado Pago deliveries. */
+/**
+ * Shared webhook secret used by the built API and fake Mercado Pago deliveries.
+ * `||`, not `??`: CI may export the variable as an empty string.
+ */
 export const E2E_WEBHOOK_SECRET =
-    process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET ?? 'e2e-webhook-secret';
+    process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET || 'e2e-webhook-secret';
 /** API endpoint receiving fake Mercado Pago notifications. */
 export const E2E_RECEIVER_PATH = '/api/v1/webhooks/mercadopago';
 /** API clock file written by the fake provider server. */

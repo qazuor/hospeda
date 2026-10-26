@@ -1,5 +1,4 @@
 import {
-    billingDeadlineVersions,
     billingOptions,
     emailOutbox,
     eq,
@@ -12,7 +11,6 @@ import {
     users
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
-import type { BillingDeadlineValues } from '@repo/schemas';
 import { cancelInheritedTouristVips } from '@repo/service-core';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -20,6 +18,7 @@ import { beforeCancelNotice } from '../../../src/routes/billing-subscription/bef
 import { touristVipInheritance } from '../../../src/routes/billing-subscription/tourist-vip-inheritance';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
+import { ensureBillingDeadlineVersion1 } from '../helpers/billing-deadline-version.js';
 
 const path = '/api/v1/protected/billing/subscriptions';
 const clock = { now: () => new Date('2026-10-08T20:00:00.000Z') };
@@ -35,25 +34,6 @@ const clock = { now: () => new Date('2026-10-08T20:00:00.000Z') };
  * would read the window (`resolve-live-commitment.ts:76`). Idempotent via
  * `onConflictDoNothing`.
  */
-const billingDeadlineVersion1Values = {
-    '10': { cardHours: 72, manualDays: 7 },
-    '11': { noticeDays: 60, contactDays: [30, 7] },
-    '12': { noticeDays: 60, contactDays: [30, 7] },
-    '13': { daysBefore: [5, 1] },
-    '14': { daysBefore: 7 },
-    '15': { hoursRemaining: 24 },
-    '16': { days: 7 },
-    '17': { days: 7 },
-    '18': { days: 180 },
-    '19': { minutes: 60 }
-} satisfies BillingDeadlineValues;
-
-async function ensureBillingDeadlineVersion1(): Promise<void> {
-    await getDb()
-        .insert(billingDeadlineVersions)
-        .values({ version: 1, values: billingDeadlineVersion1Values })
-        .onConflictDoNothing();
-}
 
 async function fixture(sellable: boolean, current = true) {
     const db = getDb();

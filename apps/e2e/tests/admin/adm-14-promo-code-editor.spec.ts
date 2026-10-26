@@ -70,6 +70,7 @@ test.describe('TEST:B9b:9 AC:B9b:9 promo code editor creates and closes a code @
             ]);
         if (ownedUsers.size) await cleanupArrearsRows({ userIds: [...ownedUsers] });
         await world?.fakeServer.close().catch(() => undefined);
+        await world?.mailCapture.close().catch(() => undefined);
     });
 
     test('creates with a consequence review and closes without changing its redemption', async ({
@@ -92,6 +93,11 @@ test.describe('TEST:B9b:9 AC:B9b:9 promo code editor creates and closes a code @
         const code = `E2E${randomUUID().replaceAll('-', '').slice(0, 12).toUpperCase()}`;
         await useAdminSession(page, superAdmin.sessionCookie);
         await page.goto(`${ADMIN_URL}/billing/promo-codes`);
+        // The button is in the SSR HTML; a click before hydration is lost (HOS-1889).
+        await expect(page.getByTestId('promo-codes-hydration')).toHaveAttribute(
+            'data-hydrated',
+            'true'
+        );
         await page.getByTestId('promo-code-new').click();
         await page.getByLabel('Código (mayúsculas)').fill(code);
         await page.getByLabel('Tipo de descuento').selectOption('PERCENTAGE');

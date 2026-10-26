@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BillingAnalyticsEventSchemas } from './catalog-billing.js';
 
 const idSchema = z.string().min(1);
 const slugSchema = z.string().min(1);
@@ -26,11 +27,20 @@ export const AnalyticsEvents = {
     accommodationImportCompleted: 'accommodation_import_completed',
     accommodationImportFailed: 'accommodation_import_failed',
     accommodationPublished: 'accommodation_published',
-    subscriptionCheckoutStarted: 'subscription_checkout_started',
-    subscriptionCreated: 'subscription_created',
-    subscriptionPaymentSucceeded: 'subscription_payment_succeeded',
-    subscriptionPaymentFailed: 'subscription_payment_failed',
-    trialConvertedToPaid: 'trial_converted_to_paid',
+    billingCheckoutStarted: 'billing_checkout_started',
+    billingCheckoutAbandoned: 'billing_checkout_abandoned',
+    billingSubscriptionActivated: 'billing_subscription_activated',
+    billingPlanChanged: 'billing_plan_changed',
+    billingChargeSucceeded: 'billing_charge_succeeded',
+    billingChargeDeclined: 'billing_charge_declined',
+    billingGraceEntered: 'billing_grace_entered',
+    billingSubscriptionSuspended: 'billing_subscription_suspended',
+    billingSubscriptionRecovered: 'billing_subscription_recovered',
+    billingCancelScheduled: 'billing_cancel_scheduled',
+    billingSubscriptionCancelled: 'billing_subscription_cancelled',
+    trialStarted: 'trial_started',
+    trialConverted: 'trial_converted',
+    trialExpired: 'trial_expired',
     newsletterSubscribed: 'newsletter_subscribed',
     favoriteAdded: 'favorite_added',
     favoriteRemoved: 'favorite_removed',
@@ -178,53 +188,7 @@ export const AnalyticsEventSchemas = {
         is_first_publication: z.boolean().nullable().optional(),
         owner_id: idSchema.optional()
     }),
-    [AnalyticsEvents.subscriptionCheckoutStarted]: z.object({
-        amount: nullableNumberSchema,
-        billing_period: z.enum(['monthly', 'annual']),
-        currency: nullableStringSchema,
-        plan_slug: slugSchema,
-        promotion_code: nullableStringSchema
-    }),
-    [AnalyticsEvents.subscriptionCreated]: z.object({
-        amount: nullableNumberSchema,
-        billing_period: z.enum(['monthly', 'annual']),
-        checkout_outcome: z.enum(['paid', 'trial', 'discount', 'comp']).optional(),
-        currency: nullableStringSchema,
-        plan_slug: slugSchema,
-        promotion_code: nullableStringSchema,
-        promotion_code_ignored: z.boolean().optional(),
-        subscription_id: idSchema.nullable().optional(),
-        trial_granted: z.boolean().optional(),
-        $set: z.record(z.string(), z.string()).optional()
-    }),
-    [AnalyticsEvents.subscriptionPaymentSucceeded]: z.object({
-        amount: nullableNumberSchema,
-        currency: nullableStringSchema,
-        payment_kind: nullableStringSchema,
-        payment_method: nullableStringSchema,
-        payment_provider: z.string().min(1),
-        source: nullableStringSchema,
-        $set: z.record(z.string(), z.string()).optional()
-    }),
-    [AnalyticsEvents.subscriptionPaymentFailed]: z.object({
-        amount: nullableNumberSchema,
-        currency: nullableStringSchema,
-        failure_category: nullableStringSchema,
-        failure_reason: nullableStringSchema,
-        payment_provider: z.string().min(1),
-        source: nullableStringSchema
-    }),
-    [AnalyticsEvents.trialConvertedToPaid]: z.object({
-        amount: nullableNumberSchema,
-        converted_billing_period: z.enum(['monthly', 'annual']).nullable().optional(),
-        currency: nullableStringSchema,
-        intended_billing_period: z.enum(['monthly', 'annual']).nullable().optional(),
-        new_subscription_id: idSchema.nullable().optional(),
-        plan_slug: slugSchema.nullable().optional(),
-        source: nullableStringSchema,
-        superseded_subscription_id: idSchema.nullable().optional(),
-        trigger_source: nullableStringSchema
-    }),
+    ...BillingAnalyticsEventSchemas,
     [AnalyticsEvents.newsletterSubscribed]: z.object({
         is_authenticated: z.boolean().optional(),
         locale: localeSchema,

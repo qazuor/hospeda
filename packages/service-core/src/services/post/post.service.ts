@@ -50,13 +50,7 @@ import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import { diffTranslatableFields } from '../../translation/diff-translatable-fields';
 import { getTranslationService } from '../../translation/translation-init';
-import type {
-    Actor,
-    AdminSearchExecuteParams,
-    ServiceConfig,
-    ServiceContext,
-    ServiceOutput
-} from '../../types';
+import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { entityNotFoundError } from '../../utils/not-found';
 import { hasPermission } from '../../utils/permission';
@@ -383,8 +377,8 @@ export class PostService extends BaseCrudService<
     // JSONB blob, so every read path has to rebuild the `media` shape consumers
     // expect. These are the standard chokepoints: `getById`/`getBySlug` go
     // through `_afterGetByField`, `list()` and `search()` through their own
-    // hooks, and `adminList` through `_executeAdminSearch` — which the base
-    // flow does NOT route through `_afterList`, so it needs its own call.
+    // hooks, and `adminList` through `_afterAdminList`, which delegates to
+    // `_afterList` by default.
     //
     // WITHOUT this wiring the relational rows are written but never read: the
     // author persists photos successfully and they appear nowhere.
@@ -465,27 +459,6 @@ export class PostService extends BaseCrudService<
             items: result.items.map((item) => this.flattenPostTagsRelation(item)),
             mediaModel: this.postMediaModel,
             tx: ctx?.tx
-        });
-        return { ...result, items };
-    }
-
-    /**
-     * Override admin search execution to flatten the `r_post_post_tag` join rows
-     * into a top-level `PostTag[]` for every item and compose `media` from the
-     * relational rows, matching the behavior of `_afterList` and `_afterSearch`.
-     * The base `adminList` flow does NOT invoke `_afterList`, so this override is
-     * required to keep the response shape consistent with `PostAdminSchema`
-     * (SPEC-086 / SPEC-117 A-2 fix; HOS-390 for the media half).
-     */
-    protected override async _executeAdminSearch(
-        params: AdminSearchExecuteParams
-    ): Promise<PaginatedListOutput<Post>> {
-        const result = await super._executeAdminSearch(params);
-        if (!result?.items) return result;
-        const items = await attachComposedPostMediaList({
-            items: result.items.map((item) => this.flattenPostTagsRelation(item)),
-            mediaModel: this.postMediaModel,
-            tx: params.ctx?.tx
         });
         return { ...result, items };
     }

@@ -1,5 +1,4 @@
-import { billingDeadlineVersions, eq, getDb, payments } from '@repo/db';
-import type { BillingDeadlineValues } from '@repo/schemas';
+import { eq, getDb, payments } from '@repo/db';
 import { injectPaymentProvider } from '../../../src/utils/payment-provider';
 import {
     retireRevocationRouteRows,
@@ -7,6 +6,7 @@ import {
     routeFake,
     seedCardRevocable
 } from '../billing-subscription/revocation-route-fixtures';
+import { ensureBillingDeadlineVersion1 } from '../helpers/billing-deadline-version.js';
 
 export const CHARGE_TEST_NOW = new Date('2026-10-05T12:00:00.000Z');
 export const chargeClock = routeClock(CHARGE_TEST_NOW);
@@ -19,25 +19,6 @@ export const chargeFake = routeFake(chargeClock);
  * seeds cannot rely on another file having left the row in place. Same values
  * and idempotent insert as `billing-subscription/start.test.ts`.
  */
-const billingDeadlineVersion1Values = {
-    '10': { cardHours: 72, manualDays: 7 },
-    '11': { noticeDays: 60, contactDays: [30, 7] },
-    '12': { noticeDays: 60, contactDays: [30, 7] },
-    '13': { daysBefore: [5, 1] },
-    '14': { daysBefore: 7 },
-    '15': { hoursRemaining: 24 },
-    '16': { days: 7 },
-    '17': { days: 7 },
-    '18': { days: 180 },
-    '19': { minutes: 60 }
-} satisfies BillingDeadlineValues;
-
-async function ensureBillingDeadlineVersion1(): Promise<void> {
-    await getDb()
-        .insert(billingDeadlineVersions)
-        .values({ version: 1, values: billingDeadlineVersion1Values })
-        .onConflictDoNothing();
-}
 
 /** Seed an approved provider charge that has not been delivered to the receiver. */
 export async function seedUnrecordedApprovedCharge() {

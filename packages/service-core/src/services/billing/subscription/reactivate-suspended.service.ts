@@ -11,9 +11,11 @@ import {
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
-import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
+import type { BillingFactSink } from '../facts/billing-fact-sink';
+import { emitBillingFact } from '../facts/billing-fact-sink';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
 import { billingPeriodEnd } from './billing-period-end';
@@ -107,6 +109,7 @@ export interface ReactivateSuspendedPorts {
     readonly markPayments?: ReconciliationMarkPayments;
     readonly actorType?: 'provider' | 'job';
     readonly coverageNotices?: CoverageNotices;
+    readonly billingFacts?: BillingFactSink;
     /** Our email before the paid Tourist VIP is cancelled (AC:B7:31, H10); unwired skips the clause. */
     readonly beforeCancelNotice?: BeforeCancelNotice;
     /** Whether the user's plan grants Tourist VIP again (AC:B7:31, H10); unwired skips the clause. */
@@ -407,6 +410,22 @@ export async function reactivateSuspendedOnCreditedPayment(
             return { outcome: 'CONDITION_FAILED', subscriptionId, failedCondition };
         }
         case 'WRITTEN': {
+            const writtenVertical = VerticalEnumSchema.safeParse(verdict.vertical);
+            if (verdict.userId && writtenVertical.success)
+                emitBillingFact({
+                    sink: ports.billingFacts,
+                    fact: {
+                        kind: 'RECOVERED',
+                        userId: verdict.userId,
+                        vertical: writtenVertical.data,
+                        subscriptionId,
+                        subscriptionClass: 'PRINCIPAL',
+                        actorKind: 'SYSTEM',
+                        occurredAt: ports.clock.now(),
+                        recoveredFrom: 'SUSPENDED',
+                        paymentId: payment.id
+                    }
+                });
             logger.info(
                 {
                     subscriptionId,

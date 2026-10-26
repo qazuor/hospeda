@@ -1,6 +1,7 @@
 import { emailOutbox, eq, payments, subscriptions } from '@repo/db';
 import type { NoticeDelivery } from '@repo/payments';
 import { afterAll, describe, expect, it, vi } from 'vitest';
+import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
 import { receiveProviderDelivery } from '../../../src/services/billing/notice/receive-provider-delivery.service.js';
 import { creditedPaymentsFromLedger } from '../../../src/services/billing/payment/payment-ledger.js';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
@@ -56,14 +57,18 @@ async function rejectedCycle(fixture: Awaited<ReturnType<typeof graceFixture>>) 
 
 function recordPorts(
     fixture: Awaited<ReturnType<typeof graceFixture>>,
-    options: { readonly omitPlanPolicy?: boolean } = {}
+    options: {
+        readonly omitPlanPolicy?: boolean;
+        readonly billingFacts?: { emit(fact: BillingFact): void };
+    } = {}
 ) {
     return {
         provider: fixture.provider,
         clock: fixture.clock,
         beforeCancelNotice,
         payments: creditedPaymentsFromLedger,
-        ...(options.omitPlanPolicy ? {} : { planPolicy: fixture.planPolicy })
+        ...(options.omitPlanPolicy ? {} : { planPolicy: fixture.planPolicy }),
+        ...(options.billingFacts ? { billingFacts: options.billingFacts } : {})
     };
 }
 
@@ -79,7 +84,11 @@ describe('TEST:B7:1 grace entry through a rejected-charge notice', () => {
             const readAt = fixture.clock.now();
             const readCharge = vi.spyOn(fixture.provider, 'readCharge');
 
-            const result = await recordChargeFact({ chargeId }, recordPorts(fixture));
+            const facts: BillingFact[] = [];
+            const result = await recordChargeFact(
+                { chargeId },
+                recordPorts(fixture, { billingFacts: { emit: (fact) => facts.push(fact) } })
+            );
             expect(readCharge).toHaveBeenCalledTimes(2);
             expect(result.outcome).toBe('GRACE');
             if (result.outcome !== 'GRACE') throw new Error('Expected grace transition result');
@@ -109,6 +118,37 @@ describe('TEST:B7:1 grace entry through a rejected-charge notice', () => {
             expect(fixture.planPolicy).toHaveBeenCalledWith({
                 planVersionId: row.planVersionId
             });
+            expect(
+                facts.filter((fact) => fact.subscriptionId === fixture.started.subscriptionId)
+            ).toEqual([
+                {
+                    kind: 'GRACE_STARTED',
+                    userId: fixture.user.id,
+                    vertical: 'accommodation',
+                    subscriptionId: fixture.started.subscriptionId,
+                    subscriptionClass: 'PRINCIPAL',
+                    actorKind: 'SYSTEM',
+                    occurredAt: readAt,
+                    graceStartedAt: readAt,
+                    graceEndsAt: new Date(readAt.getTime() + 7 * DAY_MS),
+                    daysOfGrace: 7
+                },
+                {
+                    kind: 'CHARGE_REJECTED',
+                    userId: fixture.user.id,
+                    vertical: 'accommodation',
+                    subscriptionId: fixture.started.subscriptionId,
+                    subscriptionClass: 'PRINCIPAL',
+                    actorKind: 'SYSTEM',
+                    occurredAt: chargeCreatedAt,
+                    paymentId: (await subjectPayment(chargeId)).id,
+                    amountMinor: 250000,
+                    currency: 'ARS',
+                    isFirstCharge: false,
+                    nextState: 'GRACE_PERIOD',
+                    hasRetryWindow: true
+                }
+            ]);
         }
     );
 

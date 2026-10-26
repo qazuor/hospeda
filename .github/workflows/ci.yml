@@ -341,6 +341,9 @@ jobs:
         run: pnpm check:approval-url-sanitized
       - name: Check no trial is asked of the provider (GUARD:G11)
         run: pnpm check:no-provider-trial
+      # GUARD:G20 ensures catalog declarations retain a production mention.
+      - name: Check analytics catalog emitters (GUARD:G20)
+        run: pnpm check:analytics-catalog-emitters
       # GUARD:G12, G17 (HOS-1509, AC:B1:8/11). G12: the gateway's SDK is imported
       # or declared only under packages/payments/src/adapters/. G17: no decision
       # comes out of a notice without re-reading by id; its message names which

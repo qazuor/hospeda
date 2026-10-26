@@ -1,6 +1,7 @@
 import { eq, payments, users } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, describe, expect, it, vi } from 'vitest';
+import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service';
 import { providerLinkCancellationSeen } from '../../../src/services/billing/subscription/provider-link-cancellation-seen';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
@@ -72,13 +73,15 @@ describe('TEST:1734 rejected charge without a retry window', () => {
         await fake.cancel({ authorizationId: started.authorizationId });
         const read = await fake.readCharge({ chargeId: charge.chargeId });
         expect(read.snapshot.expiresAt).toBeNull();
+        const facts: BillingFact[] = [];
         const result = await recordChargeFact(
             { chargeId: charge.chargeId },
             {
                 provider: fake,
                 clock,
                 beforeCancelNotice,
-                cancellationSeen: providerLinkCancellationSeen
+                cancellationSeen: providerLinkCancellationSeen,
+                billingFacts: { emit: (fact) => facts.push(fact) }
             }
         );
         if (result.outcome !== 'DECLINED') throw new Error('Expected decline result');
@@ -88,5 +91,30 @@ describe('TEST:1734 rejected charge without a retry window', () => {
             .where(eq(payments.id, result.paymentId));
         expect(payment).toEqual({ status: 'FAILED', version: 2 });
         expect(result).toMatchObject({ terminalRejection: { outcome: 'FAILED' } });
+        const [recorded] = await getServiceTestDb()
+            .select({
+                amount: payments.amount,
+                currency: payments.currency,
+                factAt: payments.factAt
+            })
+            .from(payments)
+            .where(eq(payments.id, result.paymentId));
+        expect(facts.filter((fact) => fact.subscriptionId === started.subscriptionId)).toEqual([
+            {
+                kind: 'CHARGE_REJECTED',
+                userId: user.id,
+                vertical: 'accommodation',
+                subscriptionId: started.subscriptionId,
+                subscriptionClass: 'PRINCIPAL',
+                actorKind: 'SYSTEM',
+                occurredAt: recorded!.factAt,
+                paymentId: result.paymentId,
+                amountMinor: recorded!.amount,
+                currency: recorded!.currency,
+                isFirstCharge: true,
+                nextState: 'CHARGE_DECLINED',
+                hasRetryWindow: false
+            }
+        ]);
     });
 });

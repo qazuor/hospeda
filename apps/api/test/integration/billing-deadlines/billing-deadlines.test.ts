@@ -59,6 +59,10 @@ describe('HOS-1516 billing deadlines', () => {
 
     afterEach(async () => {
         await getDb().execute(sql`TRUNCATE TABLE billing_deadline_version CASCADE`);
+        await getDb()
+            .insert(billingDeadlineVersions)
+            .values({ version: 1, values: version1Values })
+            .onConflictDoNothing();
     });
 
     afterAll(async () => testDb.teardown());

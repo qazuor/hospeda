@@ -2,7 +2,10 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import { and, eq, getDb, payments, providerLinks, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, type PaymentProvider } from '@repo/payments';
+import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
+import type { BillingFactSink } from '../facts/billing-fact-sink';
+import { emitBillingFact } from '../facts/billing-fact-sink';
 import { createPaymentReconciliationMarkPayments } from '../payment/payment-ledger';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
@@ -43,6 +46,7 @@ export interface ExitGracePorts {
     readonly clock: Clock;
     readonly markPayments?: ReconciliationMarkPayments;
     readonly actorType?: 'provider' | 'job';
+    readonly billingFacts?: BillingFactSink;
 }
 
 /**
@@ -258,12 +262,29 @@ export async function exitGraceOnCreditedPayment(
         return { outcome: 'CONDITION_FAILED', subscriptionId: subscription.id, failedCondition };
     }
 
+    const reactivatedAt = ports.clock.now();
     const reactivated = await reactivateFromGrace({
         subscriptionId: subscription.id,
-        now: ports.clock.now(),
+        now: reactivatedAt,
         paymentId: payment.id
     });
     if (!reactivated) return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
+    const vertical = VerticalEnumSchema.safeParse(subscription.vertical);
+    if (subscription.userId && vertical.success)
+        emitBillingFact({
+            sink: ports.billingFacts,
+            fact: {
+                kind: 'RECOVERED',
+                userId: subscription.userId,
+                vertical: vertical.data,
+                subscriptionId: subscription.id,
+                subscriptionClass: 'PRINCIPAL',
+                actorKind: 'SYSTEM',
+                occurredAt: reactivatedAt,
+                recoveredFrom: 'GRACE_PERIOD',
+                paymentId: payment.id
+            }
+        });
     logger.info(
         { subscriptionId: subscription.id, paymentId: payment.id },
         'Subscription left grace after a credited payment'

@@ -12,6 +12,7 @@ import {
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
 import { exitGraceOnCreditedPayment } from '../../../src/services/billing/subscription/exit-grace.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
@@ -106,7 +107,7 @@ async function seedLiveSuccessor(fixture: Fixture, succeedsId: string) {
 
 describe('TEST:B7:4 — S5 by the credited charge notice (AC:B7:6)', () => {
     it.skipIf(!isServiceTestDbAvailable())(
-        'a — the approved retry of the same record returns the row to ACTIVE and turns the clock off',
+        'TEST:1878:10 S5 recovery emits after the approved retry returns the row to ACTIVE',
         async () => {
             const fixture = await graceWithFailedCycle({ approveOnAttempt: 2 });
             track(fixture);
@@ -118,7 +119,11 @@ describe('TEST:B7:4 — S5 by the credited charge notice (AC:B7:6)', () => {
             fixture.advanceToAttempt(2);
             const approved = await fixture.provider.readCharge({ chargeId: fixture.chargeId });
             expect(approved.snapshot.status).toBe('approved');
-            const result = await recordChargeFact({ chargeId: fixture.chargeId }, fixture.ports);
+            const facts: BillingFact[] = [];
+            const result = await recordChargeFact(
+                { chargeId: fixture.chargeId },
+                { ...fixture.ports, billingFacts: { emit: (fact) => facts.push(fact) } }
+            );
 
             expect(result).toMatchObject({
                 outcome: 'CREDITED',
@@ -131,6 +136,38 @@ describe('TEST:B7:4 — S5 by the credited charge notice (AC:B7:6)', () => {
             expect(row.graceEndsAt).toBeNull();
             const payment = await paymentFor(fixture.chargeId);
             expect(payment.status).toBe('SUCCEEDED');
+            const committed = await subscriptionRow(fixture.started.subscriptionId);
+            expect(
+                facts.filter((fact) => fact.subscriptionId === fixture.started.subscriptionId)
+            ).toEqual([
+                {
+                    kind: 'CHARGE_CREDITED',
+                    userId: fixture.user.id,
+                    vertical: 'accommodation',
+                    subscriptionId: fixture.started.subscriptionId,
+                    subscriptionClass: 'PRINCIPAL',
+                    actorKind: 'SYSTEM',
+                    occurredAt: payment.factAt,
+                    paymentId: payment.id,
+                    amountMinor: payment.amount,
+                    currency: payment.currency,
+                    isFirstCharge: false,
+                    cycle: 'monthly',
+                    planVersionId: committed.planVersionId,
+                    promoApplied: false
+                },
+                {
+                    kind: 'RECOVERED',
+                    userId: fixture.user.id,
+                    vertical: 'accommodation',
+                    subscriptionId: fixture.started.subscriptionId,
+                    subscriptionClass: 'PRINCIPAL',
+                    actorKind: 'SYSTEM',
+                    occurredAt: fixture.clock.now(),
+                    recoveredFrom: 'GRACE_PERIOD',
+                    paymentId: payment.id
+                }
+            ]);
             expect(
                 await getServiceTestDb()
                     .select()

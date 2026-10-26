@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import {
-    billingDeadlineVersions,
     billingOptions,
     emailOutbox,
     eq,
@@ -12,34 +11,15 @@ import {
     users
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
-import type { BillingDeadlineValues } from '@repo/schemas';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
+import { ensureBillingDeadlineVersion1 } from '../helpers/billing-deadline-version.js';
 
 const root = '/api/v1/protected/billing/subscriptions';
 const now = new Date('2026-10-08T20:00:00.000Z');
 const clock = { now: () => now };
-const deadlines = {
-    '10': { cardHours: 72, manualDays: 7 },
-    '11': { noticeDays: 60, contactDays: [30, 7] },
-    '12': { noticeDays: 60, contactDays: [30, 7] },
-    '13': { daysBefore: [5, 1] },
-    '14': { daysBefore: 7 },
-    '15': { hoursRemaining: 24 },
-    '16': { days: 7 },
-    '17': { days: 7 },
-    '18': { days: 180 },
-    '19': { minutes: 60 }
-} satisfies BillingDeadlineValues;
-
-async function ensureBillingDeadlineVersion1() {
-    await getDb()
-        .insert(billingDeadlineVersions)
-        .values({ version: 1, values: deadlines })
-        .onConflictDoNothing();
-}
 
 async function fixture() {
     const db = getDb();

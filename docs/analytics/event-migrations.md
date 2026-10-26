@@ -45,3 +45,17 @@ Documentar renombres y consolidaciones para evitar dashboards ambiguos y para co
 - No emitir simultáneamente viejo y nuevo en el mismo call site salvo que haya una razón explícita de compatibilidad analítica.
 - En los flujos críticos de negocio, el nombre nuevo debe convertirse en la señal canónica.
 - Los eventos viejos deben considerarse legacy apenas los dashboards nuevos estén activos.
+
+## Retired in HOS-1878
+
+Legacy subscription events have no aliases or dual emit. Their replacements are:
+
+| Retired event | Replacement events |
+|---|---|
+| `subscription_checkout_started` | `billing_checkout_started` |
+| `subscription_created` | `billing_subscription_activated`, `billing_checkout_abandoned` |
+| `subscription_payment_succeeded` | `billing_charge_succeeded` |
+| `subscription_payment_failed` | `billing_charge_declined` |
+| `trial_converted_to_paid` | `trial_converted` |
+
+The dashboards must be rebuilt; historical continuity is intentionally cut.
