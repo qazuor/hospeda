@@ -38,7 +38,7 @@
 import type { Locale } from '@repo/i18n';
 import { trans } from '@repo/i18n';
 import { ModerationStatusEnum } from '@repo/schemas';
-import type { ExperienceBrochureSource, GastronomyBrochureSource } from './brochure-source.js';
+import type { ExperienceBrochureSource, VenueBrochureSource } from './brochure-source.js';
 
 /** The two gastronomy and experience verticals a brochure can be built for. */
 export type BrochureVertical = 'gastronomy' | 'experience';
@@ -317,8 +317,8 @@ function commonFooterCopy(input: { locale: Locale }): { qrHint: string; footer: 
  * @param input.siteUrl - Public base URL of the web app.
  * @returns Printable content.
  */
-export function buildGastronomyBrochureContent(input: {
-    listing: GastronomyBrochureSource;
+export function buildVenueBrochureContent(input: {
+    listing: VenueBrochureSource;
     locale: Locale;
     siteUrl: string;
 }): BrochureContent {

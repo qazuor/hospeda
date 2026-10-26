@@ -64,31 +64,31 @@ const buildListing = (type: string) => ({
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
-    const okGastronomy = async () => ({ data: buildListing('RESTAURANT') });
+    const okVenue = async () => ({ data: buildListing('RESTAURANT') });
     const okExperience = async () => ({ data: buildListing('EXCURSION') });
     return {
         ...actual,
-        GastronomyService: class extends actual.GastronomyService {
-            override getBySlug = okGastronomy as never;
-            override getById = okGastronomy as never;
+        VenueService: class extends actual.VenueService {
+            override getBySlug = okVenue as never;
+            override getById = okVenue as never;
         },
         ExperienceService: class extends actual.ExperienceService {
             override getBySlug = okExperience as never;
             override getById = okExperience as never;
         },
-        listGastronomyFaqs: async () => ({ data: { faqs: FAQS } }),
+        listVenueFaqs: async () => ({ data: { faqs: FAQS } }),
         listExperienceFaqs: async () => ({ data: { faqs: FAQS } }),
-        getGastronomyMenu: async () => ({ data: { sections: [] } }),
-        getGastronomyEvents: async () => ({ data: { events: [] } }),
-        getGastronomyDailySpecials: async () => ({ data: { specials: [] } }),
-        resolveOwnerGastronomyPlanEntitlementSet: async () => new Set<string>(),
+        getVenueMenu: async () => ({ data: { sections: [] } }),
+        getVenueEvents: async () => ({ data: { events: [] } }),
+        getVenueDailySpecials: async () => ({ data: { specials: [] } }),
+        resolveOwnerVenuePlanEntitlementSet: async () => new Set<string>(),
         resolveOwnerGrantsExperienceDirections: async () => false
     };
 });
 
 vi.mock('../../../src/utils/listing-catalog-relations', () => ({
-    fetchGastronomyAmenities: async () => [],
-    fetchGastronomyFeatures: async () => [],
+    fetchVenueAmenities: async () => [],
+    fetchVenueFeatures: async () => [],
     fetchExperienceAmenities: async () => [],
     fetchExperienceFeatures: async () => []
 }));

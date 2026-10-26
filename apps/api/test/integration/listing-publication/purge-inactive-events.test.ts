@@ -5,7 +5,7 @@ import {
     AccommodationService,
     type Actor,
     ExperienceService,
-    GastronomyService
+    VenueService
 } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { purgeInactiveListing } from '../../../../../packages/verticals/src/publication/purge-inactive-listing';
@@ -51,7 +51,7 @@ function ownerActor(ownerId: string): Actor {
 async function editService(vertical: Vertical) {
     if (vertical === VerticalEnum.ACCOMMODATION)
         return new AccommodationService({ logger: apiLogger });
-    if (vertical === VerticalEnum.VENUE) return new GastronomyService({ logger: apiLogger });
+    if (vertical === VerticalEnum.VENUE) return new VenueService({ logger: apiLogger });
     return new ExperienceService({ logger: apiLogger });
 }
 

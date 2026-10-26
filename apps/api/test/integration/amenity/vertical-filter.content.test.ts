@@ -121,7 +121,7 @@ describe('GET /api/v1/public/amenities — vertical filter content assertions (S
     });
 
     it('(3) gastronomy filter returns fewer items than the unfiltered catalog', async () => {
-        const [resAll, resGastronomy] = await Promise.all([
+        const [resAll, resVenue] = await Promise.all([
             app.request(`${BASE}?pageSize=1`, {
                 method: 'GET',
                 headers: { 'user-agent': 'vitest', accept: 'application/json' }
@@ -133,15 +133,15 @@ describe('GET /api/v1/public/amenities — vertical filter content assertions (S
         ]);
 
         expect(resAll.status).toBe(200);
-        expect(resGastronomy.status).toBe(200);
+        expect(resVenue.status).toBe(200);
 
         const bodyAll = (await resAll.json()) as ListResponse<AmenityItem>;
-        const bodyGastronomy = (await resGastronomy.json()) as ListResponse<AmenityItem>;
+        const bodyVenue = (await resVenue.json()) as ListResponse<AmenityItem>;
 
         const totalAll = bodyAll.data.pagination.total;
-        const totalGastronomy = bodyGastronomy.data.pagination.total;
+        const totalVenue = bodyVenue.data.pagination.total;
 
-        expect(totalGastronomy).toBeGreaterThan(0);
-        expect(totalGastronomy).toBeLessThan(totalAll);
+        expect(totalVenue).toBeGreaterThan(0);
+        expect(totalVenue).toBeLessThan(totalAll);
     });
 });

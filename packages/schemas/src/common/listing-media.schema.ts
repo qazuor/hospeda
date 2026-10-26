@@ -54,7 +54,7 @@ export type ListingMediaState = z.infer<typeof ListingMediaStateSchema>;
  * - No `createdById` / `updatedById` / `deletedById` — the media tables do
  *   not carry those columns, unlike their parent listing tables.
  *
- * @see packages/db/src/schemas/gastronomy/gastronomy_media.dbschema.ts
+ * @see packages/db/src/schemas/venue/venue_media.dbschema.ts
  * @see packages/db/src/schemas/experience/experience_media.dbschema.ts
  * @see packages/schemas/src/common/media.schema.ts — `ImageSchema` (the media-item shape this mirrors)
  */

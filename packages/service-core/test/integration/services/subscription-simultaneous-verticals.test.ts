@@ -110,7 +110,7 @@ async function runScenario(expireFirst: boolean) {
         },
         ports
     );
-    const gastronomy = await startSubscription(
+    const venue = await startSubscription(
         {
             userId: user.id,
             billingOptionId: (await seedChoice(user.id, 'gastronomy')).billingOptionId,
@@ -119,72 +119,72 @@ async function runScenario(expireFirst: boolean) {
         ports
     );
     seededSubscriptionIds.add(accommodation.subscriptionId);
-    if (!expireFirst) seededSubscriptionIds.add(gastronomy.subscriptionId);
+    if (!expireFirst) seededSubscriptionIds.add(venue.subscriptionId);
     const sweep = () =>
         withSeededSubscriptionSweep(20, () => expireAuthorizationWindows(20, ports));
     if (expireFirst) {
-        const [gastronomyBeforeExpiry] = await getServiceTestDb()
+        const [venueBeforeExpiry] = await getServiceTestDb()
             .select()
             .from(subscriptions)
-            .where(eq(subscriptions.id, gastronomy.subscriptionId));
-        const [gastronomyLinkBeforeExpiry] = await getServiceTestDb()
+            .where(eq(subscriptions.id, venue.subscriptionId));
+        const [venueLinkBeforeExpiry] = await getServiceTestDb()
             .select()
             .from(providerLinks)
-            .where(eq(providerLinks.subscriptionId, gastronomy.subscriptionId));
-        const gastronomyAuthorizationBeforeExpiry = await provider.readAuthorization({
-            authorizationId: gastronomy.authorizationId
+            .where(eq(providerLinks.subscriptionId, venue.subscriptionId));
+        const venueAuthorizationBeforeExpiry = await provider.readAuthorization({
+            authorizationId: venue.authorizationId
         });
         now = new Date(startAt.getTime() + 73 * 60 * 60 * 1000);
         expect(await sweep()).toMatchObject({ abandoned: 1, activated: 0 });
         expect(
             await provider.readAuthorization({ authorizationId: accommodation.authorizationId })
         ).toMatchObject({ snapshot: { status: 'cancelled' } });
-        const [gastronomyAfterExpiry] = await getServiceTestDb()
+        const [venueAfterExpiry] = await getServiceTestDb()
             .select()
             .from(subscriptions)
-            .where(eq(subscriptions.id, gastronomy.subscriptionId));
-        const [gastronomyLinkAfterExpiry] = await getServiceTestDb()
+            .where(eq(subscriptions.id, venue.subscriptionId));
+        const [venueLinkAfterExpiry] = await getServiceTestDb()
             .select()
             .from(providerLinks)
-            .where(eq(providerLinks.subscriptionId, gastronomy.subscriptionId));
-        expect(gastronomyAfterExpiry).toEqual(gastronomyBeforeExpiry);
-        expect(gastronomyLinkAfterExpiry).toEqual(gastronomyLinkBeforeExpiry);
-        expect(gastronomyAuthorizationBeforeExpiry.snapshot.status).toBe('pending');
+            .where(eq(providerLinks.subscriptionId, venue.subscriptionId));
+        expect(venueAfterExpiry).toEqual(venueBeforeExpiry);
+        expect(venueLinkAfterExpiry).toEqual(venueLinkBeforeExpiry);
+        expect(venueAuthorizationBeforeExpiry.snapshot.status).toBe('pending');
         expect(
-            await provider.readAuthorization({ authorizationId: gastronomy.authorizationId })
+            await provider.readAuthorization({ authorizationId: venue.authorizationId })
         ).toMatchObject({ snapshot: { status: 'pending' } });
-        await provider.approve({ authorizationId: gastronomy.authorizationId });
-        seededSubscriptionIds.add(gastronomy.subscriptionId);
-        expect(await activateSubscription(gastronomy.subscriptionId, ports)).toMatchObject({
+        await provider.approve({ authorizationId: venue.authorizationId });
+        seededSubscriptionIds.add(venue.subscriptionId);
+        expect(await activateSubscription(venue.subscriptionId, ports)).toMatchObject({
             activated: true
         });
     } else {
-        await provider.approve({ authorizationId: gastronomy.authorizationId });
-        expect(await activateSubscription(gastronomy.subscriptionId, ports)).toMatchObject({
+        await provider.approve({ authorizationId: venue.authorizationId });
+        expect(await activateSubscription(venue.subscriptionId, ports)).toMatchObject({
             activated: true
         });
         const [beforeRow] = await getServiceTestDb()
             .select()
             .from(subscriptions)
-            .where(eq(subscriptions.id, gastronomy.subscriptionId));
+            .where(eq(subscriptions.id, venue.subscriptionId));
         const [beforeLink] = await getServiceTestDb()
             .select()
             .from(providerLinks)
-            .where(eq(providerLinks.subscriptionId, gastronomy.subscriptionId));
+            .where(eq(providerLinks.subscriptionId, venue.subscriptionId));
         now = new Date(startAt.getTime() + 73 * 60 * 60 * 1000);
         expect(await sweep()).toMatchObject({ abandoned: 1, activated: 0 });
         const [afterRow] = await getServiceTestDb()
             .select()
             .from(subscriptions)
-            .where(eq(subscriptions.id, gastronomy.subscriptionId));
+            .where(eq(subscriptions.id, venue.subscriptionId));
         const [afterLink] = await getServiceTestDb()
             .select()
             .from(providerLinks)
-            .where(eq(providerLinks.subscriptionId, gastronomy.subscriptionId));
+            .where(eq(providerLinks.subscriptionId, venue.subscriptionId));
         expect(afterRow?.updatedAt).toEqual(beforeRow?.updatedAt);
         expect(afterLink).toEqual(beforeLink);
         expect(
-            await provider.readAuthorization({ authorizationId: gastronomy.authorizationId })
+            await provider.readAuthorization({ authorizationId: venue.authorizationId })
         ).toMatchObject({ snapshot: { status: 'active' } });
     }
     const [accommodationRow] = await getServiceTestDb()
@@ -194,7 +194,7 @@ async function runScenario(expireFirst: boolean) {
     const [gastronomyRow] = await getServiceTestDb()
         .select()
         .from(subscriptions)
-        .where(eq(subscriptions.id, gastronomy.subscriptionId));
+        .where(eq(subscriptions.id, venue.subscriptionId));
     expect(accommodationRow).toMatchObject({
         userId: user.id,
         vertical: 'accommodation',
@@ -205,18 +205,17 @@ async function runScenario(expireFirst: boolean) {
         vertical: 'gastronomy',
         status: 'ACTIVE'
     });
-    const gastronomyNotices = (await getServiceTestDb().select().from(emailOutbox)).filter(
+    const venueNotices = (await getServiceTestDb().select().from(emailOutbox)).filter(
         (notice) =>
-            (notice.payload as { subscriptionId?: string }).subscriptionId ===
-            gastronomy.subscriptionId
+            (notice.payload as { subscriptionId?: string }).subscriptionId === venue.subscriptionId
     );
     expect(
-        gastronomyNotices.filter((notice) => notice.template === 'billing.signup-confirmed')
+        venueNotices.filter((notice) => notice.template === 'billing.signup-confirmed')
     ).toHaveLength(1);
     expect(
-        gastronomyNotices.filter((notice) => notice.template !== 'billing.signup-confirmed')
+        venueNotices.filter((notice) => notice.template !== 'billing.signup-confirmed')
     ).toHaveLength(0);
-    return { provider, gastronomy, userId: user.id };
+    return { provider, gastronomy: venue, userId: user.id };
 }
 
 describe('TEST:B3:33 simultaneous verticals advance independently', () => {

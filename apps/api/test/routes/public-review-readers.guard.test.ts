@@ -6,13 +6,13 @@ const REPO_ROOT = resolve(import.meta.dirname, '../../../..');
 const PUBLIC_REVIEW_READERS: Readonly<Record<string, string>> = {
     'apps/api/src/routes/accommodation/reviews/public/list.ts': 'listingShowsReviews (HOS-1502)',
     'apps/api/src/routes/experience/public/getReviews.ts': 'listingShowsReviews (HOS-1502)',
-    'apps/api/src/routes/gastronomy/public/getReviews.ts': 'listingShowsReviews (HOS-1502)',
+    'apps/api/src/routes/venue/public/getReviews.ts': 'listingShowsReviews (HOS-1502)',
     'apps/api/src/routes/stats/public/get-platform-stats.ts':
         'listingReviewsShownCondition (HOS-1686, S2-S4)',
     'apps/api/src/routes/testimonials/public/list.ts': 'listingReviewsShownCondition (HOS-1686, S1)'
 };
 const REVIEW_READER_PATTERN =
-    /\b(AccommodationReviewService|GastronomyReviewService|ExperienceReviewService|StatsService)\b|\b(accommodationReviews|gastronomyReviews|experienceReviews)\b/;
+    /\b(AccommodationReviewService|VenueReviewService|ExperienceReviewService|StatsService)\b|\b(accommodationReviews|gastronomyReviews|experienceReviews)\b/;
 
 function sourceFiles(dir: string): string[] {
     return readdirSync(dir).flatMap((name) => {

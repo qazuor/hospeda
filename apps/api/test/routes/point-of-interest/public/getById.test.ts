@@ -2,7 +2,7 @@
  * Tests for GET /api/v1/public/points-of-interest/:id
  *
  * Covers: route registration, public access, UUID validation, and
- * response shape. Mirrors `test/routes/gastronomy/public/getById.test.ts`.
+ * response shape. Mirrors `test/routes/venue/public/getById.test.ts`.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';

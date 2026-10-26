@@ -35,12 +35,12 @@ import {
     eq,
     experienceFaqs,
     experienceMedia,
-    GastronomyModel,
     gastronomyFaqs,
     gastronomyMedia,
     inArray,
     type SelectDomainEvent,
-    users
+    users,
+    VenueModel
 } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -58,17 +58,17 @@ import {
     updateExperienceMedia
 } from '../../../src/services/experience/experience.media';
 import {
-    addGastronomyFaq,
-    removeGastronomyFaq,
-    reorderGastronomyFaqs,
-    updateGastronomyFaq
-} from '../../../src/services/gastronomy/gastronomy.faq';
+    addVenueFaq,
+    removeVenueFaq,
+    reorderVenueFaqs,
+    updateVenueFaq
+} from '../../../src/services/venue/venue.faq';
 import {
-    addGastronomyMedia,
-    removeGastronomyMedia,
-    reorderGastronomyMedia,
-    updateGastronomyMedia
-} from '../../../src/services/gastronomy/gastronomy.media';
+    addVenueMedia,
+    removeVenueMedia,
+    reorderVenueMedia,
+    updateVenueMedia
+} from '../../../src/services/venue/venue.media';
 import type { Actor, ServiceContext } from '../../../src/types';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 import {
@@ -77,7 +77,7 @@ import {
     isServiceTestDbAvailable,
     seedAccommodation,
     seedExperience,
-    seedGastronomy,
+    seedVenue,
     withServiceTestTransaction
 } from './helpers';
 
@@ -210,10 +210,10 @@ function buildVerticalOps(
     }
 
     if (vertical === 'gastronomy') {
-        const model = new GastronomyModel();
+        const model = new VenueModel();
         return {
             addFaq: () =>
-                addGastronomyFaq(
+                addVenueFaq(
                     model,
                     actor,
                     {
@@ -223,14 +223,14 @@ function buildVerticalOps(
                     ctx
                 ),
             updateFaq: (faqId) =>
-                updateGastronomyFaq(
+                updateVenueFaq(
                     model,
                     actor,
                     { gastronomyId: listingId, faqId, faq: { question: FAQ_UPDATED_QUESTION } },
                     ctx
                 ),
             reorderFaqs: (faqIds) =>
-                reorderGastronomyFaqs(
+                reorderVenueFaqs(
                     model,
                     actor,
                     {
@@ -243,36 +243,30 @@ function buildVerticalOps(
                     ctx
                 ),
             removeFaq: (faqId) =>
-                removeGastronomyFaq(model, actor, { gastronomyId: listingId, faqId }, ctx),
+                removeVenueFaq(model, actor, { gastronomyId: listingId, faqId }, ctx),
             addMedia: () =>
-                addGastronomyMedia(
+                addVenueMedia(
                     model,
                     actor,
                     { gastronomyId: listingId, media: { url: MEDIA_ADDED_URL } },
                     ctx
                 ),
             updateMedia: (mediaId) =>
-                updateGastronomyMedia(
+                updateVenueMedia(
                     model,
                     actor,
                     { gastronomyId: listingId, mediaId, alt: MEDIA_UPDATED_ALT },
                     ctx
                 ),
             reorderMedia: (orderedIds) =>
-                reorderGastronomyMedia(
+                reorderVenueMedia(
                     model,
                     actor,
                     { gastronomyId: listingId, orderedIds: [...orderedIds] },
                     ctx
                 ),
             removeMedia: (mediaId) =>
-                removeGastronomyMedia(
-                    model,
-                    actor,
-                    { gastronomyId: listingId, mediaId },
-                    undefined,
-                    ctx
-                )
+                removeVenueMedia(model, actor, { gastronomyId: listingId, mediaId }, undefined, ctx)
         };
     }
 
@@ -420,7 +414,7 @@ async function runVerticalCycle(vertical: Vertical): Promise<void> {
             ownerId = seeded.userId;
             listingId = seeded.accommodationId;
         } else if (vertical === 'gastronomy') {
-            const seeded = await seedGastronomy(tx);
+            const seeded = await seedVenue(tx);
             ownerId = seeded.ownerId;
             listingId = seeded.gastronomyId;
         } else {
@@ -652,13 +646,13 @@ describe('HOS-1642 V9a — owner FAQ/media writes land in domain_event (integrat
         'TEST:V9a:6 — gastronomy media add inside a rolled-back savepoint leaves no event',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                const { ownerId, gastronomyId } = await seedGastronomy(tx);
+                const { ownerId, gastronomyId } = await seedVenue(tx);
 
                 let failed = false;
                 try {
                     await tx.transaction(async (savepoint) => {
-                        const result = await addGastronomyMedia(
-                            new GastronomyModel(),
+                        const result = await addVenueMedia(
+                            new VenueModel(),
                             ownerActor(ownerId),
                             { gastronomyId, media: { url: MEDIA_ADDED_URL } },
                             { tx: savepoint as unknown as ServiceContext['tx'] }

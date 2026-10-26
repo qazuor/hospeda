@@ -134,7 +134,7 @@ describe('TEST:B13a:21a AC:B13a:5 and AC:1735:8 the checkout reads the trial of 
             cycle: 'annual',
             amount: 15000000
         });
-        const gastronomyOption = await createOption(VerticalEnum.VENUE);
+        const venueOption = await createOption(VerticalEnum.VENUE);
         await createTrial({ userId: user.id, status: 'TRIAL_ACTIVE' });
         const endsAt = new Date(now.getTime() + 10.5 * 86_400_000);
         await getDb()
@@ -150,7 +150,7 @@ describe('TEST:B13a:21a AC:B13a:5 and AC:1735:8 the checkout reads the trial of 
             .where(eq(subscriptions.userId, user.id));
         const accommodation = await readNotice(user.id, accommodationOption.id);
         const accommodationAnnual = await readNotice(user.id, accommodationAnnualOption.id);
-        const gastronomy = await readNotice(user.id, gastronomyOption.id);
+        const venue = await readNotice(user.id, venueOption.id);
         const after = await getDb()
             .select({ id: subscriptions.id })
             .from(subscriptions)
@@ -193,8 +193,8 @@ describe('TEST:B13a:21a AC:B13a:5 and AC:1735:8 the checkout reads the trial of 
             touristVip: { status: 'NOT_AFFECTED' },
             trial: { status: 'RUNNING', endsAt: endsAt.toISOString(), daysLeft: 11 }
         });
-        expect(gastronomy.response.status).toBe(200);
-        expect(gastronomy.body.data).toEqual({
+        expect(venue.response.status).toBe(200);
+        expect(venue.body.data).toEqual({
             plan: {
                 slug: expect.stringMatching(/^b13a-notice-/),
                 name: 'Checkout plan',

@@ -16,16 +16,16 @@ import { ExperiencePublicSchema, VenuePublicSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     buildExperienceBrochureContent,
-    buildGastronomyBrochureContent,
-    buildPublicListingUrl
+    buildPublicListingUrl,
+    buildVenueBrochureContent
 } from '../../src/services/listing-brochure/brochure-content.js';
 import {
     ExperienceBrochureSourceSchema,
-    GastronomyBrochureSourceSchema
+    VenueBrochureSourceSchema
 } from '../../src/services/listing-brochure/brochure-source.js';
 
 /** A gastronomy row as the owner-tier read returns it — private fields included. */
-const GASTRONOMY_ROW = {
+const VENUE_ROW = {
     id: '22222222-2222-4222-8222-222222222222',
     slug: 'la-parrilla-del-puerto',
     name: 'La Parrilla del Puerto',
@@ -84,7 +84,7 @@ describe('the brochure cannot outrun the public ficha (HOS-1058)', () => {
     const CASES = [
         {
             label: 'gastronomy',
-            source: GastronomyBrochureSourceSchema,
+            source: VenueBrochureSourceSchema,
             publicSchema: VenuePublicSchema
         },
         {
@@ -108,17 +108,17 @@ describe('the brochure cannot outrun the public ficha (HOS-1058)', () => {
     it('does not read contactInfo for gastronomy, because the public ficha has none', () => {
         // The single most tempting field to add to a printed restaurant sheet,
         // and the one `GastronomyPublicSchema` deliberately does not pick.
-        expect(Object.keys(GastronomyBrochureSourceSchema.shape)).not.toContain('contactInfo');
+        expect(Object.keys(VenueBrochureSourceSchema.shape)).not.toContain('contactInfo');
         expect(Object.keys(VenuePublicSchema.shape)).not.toContain('contactInfo');
     });
 
     it('strips a phone number the owner-tier row carried into the gastronomy brochure', () => {
-        const parsed = GastronomyBrochureSourceSchema.parse(GASTRONOMY_ROW);
+        const parsed = VenueBrochureSourceSchema.parse(VENUE_ROW);
         expect(parsed).not.toHaveProperty('contactInfo');
         expect(parsed).not.toHaveProperty('ownerId');
         expect(parsed).not.toHaveProperty('adminInfo');
 
-        const content = buildGastronomyBrochureContent({
+        const content = buildVenueBrochureContent({
             listing: parsed,
             locale: 'es',
             siteUrl: 'https://hospeda.com.ar'
@@ -182,20 +182,20 @@ describe('the QR target (HOS-1058)', () => {
 
 describe('brochure content (HOS-1058)', () => {
     /** Content of the sample gastronomy listing in one locale. */
-    function gastronomy(locale: 'es' | 'en' | 'pt') {
-        return buildGastronomyBrochureContent({
-            listing: GastronomyBrochureSourceSchema.parse(GASTRONOMY_ROW),
+    function venue(locale: 'es' | 'en' | 'pt') {
+        return buildVenueBrochureContent({
+            listing: VenueBrochureSourceSchema.parse(VENUE_ROW),
             locale,
             siteUrl: 'https://hospeda.com.ar'
         });
     }
 
     it('prints the type and the destination as the subtitle', () => {
-        expect(gastronomy('es').subtitle).toBe('Parrilla · Concepción del Uruguay');
+        expect(venue('es').subtitle).toBe('Parrilla · Concepción del Uruguay');
     });
 
     it('prints a sheet for an /en/ page in English, headings included', () => {
-        const content = gastronomy('en');
+        const content = venue('en');
         expect(content.subtitle).toContain('Grill');
         expect(content.sections.map((section) => section.heading)).toContain('Opening hours');
         expect(content.url).toContain('/en/');
@@ -204,18 +204,18 @@ describe('brochure content (HOS-1058)', () => {
     it('prints a closed day as closed instead of omitting it', () => {
         // On paper an absent Monday reads as an oversight, and the reader is
         // standing at the door with no way to ask.
-        const hours = gastronomy('es').sections.find((s) => s.heading.includes('Horarios'));
+        const hours = venue('es').sections.find((s) => s.heading.includes('Horarios'));
         expect(hours?.lines).toContain('Lunes: Cerrado');
         expect(hours?.lines).toContain('Martes: 12:00 - 15:30');
     });
 
     it('joins both catalogue lists into one line, resolving labels by slug', () => {
-        const services = gastronomy('es').sections.at(-1);
+        const services = venue('es').sections.at(-1);
         expect(services?.lines[0]).toBe('WiFi · Frente al río');
     });
 
     it('prefers the summary over the description, as the ficha does', () => {
-        expect(gastronomy('es').intro).toBe('Parrilla a la vista sobre el río Uruguay.');
+        expect(venue('es').intro).toBe('Parrilla a la vista sobre el río Uruguay.');
     });
 
     it('prints the experience price with its unit', () => {
@@ -240,12 +240,12 @@ describe('brochure content (HOS-1058)', () => {
 describe('cover photo selection (HOS-1058)', () => {
     /** The row with a specific media block. */
     function withMedia(media: unknown) {
-        return GastronomyBrochureSourceSchema.parse({ ...GASTRONOMY_ROW, media });
+        return VenueBrochureSourceSchema.parse({ ...VENUE_ROW, media });
     }
 
     /** Cover URL chosen for a media block. */
     function coverOf(media: unknown): string | null {
-        return buildGastronomyBrochureContent({
+        return buildVenueBrochureContent({
             listing: withMedia(media),
             locale: 'es',
             siteUrl: 'https://hospeda.com.ar'

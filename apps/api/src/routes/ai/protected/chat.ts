@@ -330,7 +330,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             resolvedPrompt,
             locale,
             ownerCapabilities: {
-                manageGastronomyMenu: ownerCapabilities.manage_gastronomy_menu === true,
+                manageVenueMenu: ownerCapabilities.manage_gastronomy_menu === true,
                 manageExperienceDirections: ownerCapabilities.manage_experience_directions === true
             }
         });

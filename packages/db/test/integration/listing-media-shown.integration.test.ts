@@ -5,8 +5,8 @@ import { AccommodationModel } from '../../src/models/accommodation/accommodation
 import { accommodationMediaModel } from '../../src/models/accommodation/accommodationMedia.model.ts';
 import { ExperienceModel } from '../../src/models/experience/experience.model.ts';
 import { experienceMediaModel } from '../../src/models/experience/experienceMedia.model.ts';
-import { GastronomyModel } from '../../src/models/gastronomy/gastronomy.model.ts';
-import { gastronomyMediaModel } from '../../src/models/gastronomy/gastronomyMedia.model.ts';
+import { VenueModel } from '../../src/models/venue/venue.model.ts';
+import { venueMediaModel } from '../../src/models/venue/venueMedia.model.ts';
 import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../src/types.ts';
@@ -74,7 +74,7 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                 { ...fixture(), type: 'CABIN' } as Partial<Accommodation>,
                 tx
             );
-            const gastronomy = await new GastronomyModel().create(
+            const venue = await new VenueModel().create(
                 { ...fixture(), type: 'RESTAURANT' } as Partial<Venue>,
                 tx
             );
@@ -92,7 +92,7 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                 tx,
                 table: 'gastronomy_media',
                 fk: 'gastronomy_id',
-                listingId: gastronomy.id
+                listingId: venue.id
             });
             const exp = await seedListingMedia({
                 tx,
@@ -112,12 +112,12 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                 accommodationIds: [accommodation.id],
                 tx
             });
-            const gasList = await gastronomyMediaModel.findByGastronomy({
-                gastronomyId: gastronomy.id,
+            const gasList = await venueMediaModel.findByVenue({
+                gastronomyId: venue.id,
                 tx
             });
-            const gasBatch = await gastronomyMediaModel.findByGastronomies({
-                gastronomyIds: [gastronomy.id],
+            const gasBatch = await venueMediaModel.findByVenues({
+                gastronomyIds: [venue.id],
                 tx
             });
             const expList = await experienceMediaModel.findByExperience({
@@ -137,9 +137,9 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                     tx
                 }),
                 gastronomyList: { ids: ids(gasList.items), total: gasList.total },
-                gastronomyBatch: ids(gasBatch.get(gastronomy.id)),
-                gastronomyFeatured: await gastronomyMediaModel.findFeatured({
-                    gastronomyId: gastronomy.id,
+                gastronomyBatch: ids(gasBatch.get(venue.id)),
+                gastronomyFeatured: await venueMediaModel.findFeatured({
+                    gastronomyId: venue.id,
                     tx
                 }),
                 experienceList: { ids: ids(expList.items), total: expList.total },

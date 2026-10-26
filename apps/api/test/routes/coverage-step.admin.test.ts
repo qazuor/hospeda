@@ -33,18 +33,18 @@ import { adminSetFeaturedExperienceMediaRoute } from '../../src/routes/experienc
 import { adminUpdateExperienceRoute } from '../../src/routes/experience/admin/update';
 import { adminUpdateExperienceFaqRoute } from '../../src/routes/experience/admin/updateFaq';
 import { adminUpdateExperienceMediaRoute } from '../../src/routes/experience/admin/updateMedia';
-import { adminAddGastronomyFaqRoute } from '../../src/routes/gastronomy/admin/addFaq';
-import { adminAddGastronomyFeaturedMediaRoute } from '../../src/routes/gastronomy/admin/addFeaturedMedia';
-import { adminAddGastronomyMediaRoute } from '../../src/routes/gastronomy/admin/addMedia';
-import { adminPatchGastronomyRoute } from '../../src/routes/gastronomy/admin/patch';
-import { adminRemoveGastronomyFaqRoute } from '../../src/routes/gastronomy/admin/removeFaq';
-import { adminRemoveGastronomyMediaRoute } from '../../src/routes/gastronomy/admin/removeMedia';
-import { adminReorderGastronomyFaqsRoute } from '../../src/routes/gastronomy/admin/reorderFaqs';
-import { adminReorderGastronomyMediaRoute } from '../../src/routes/gastronomy/admin/reorderMedia';
-import { adminSetFeaturedGastronomyMediaRoute } from '../../src/routes/gastronomy/admin/setFeaturedMedia';
-import { adminUpdateGastronomyRoute } from '../../src/routes/gastronomy/admin/update';
-import { adminUpdateGastronomyFaqRoute } from '../../src/routes/gastronomy/admin/updateFaq';
-import { adminUpdateGastronomyMediaRoute } from '../../src/routes/gastronomy/admin/updateMedia';
+import { adminAddVenueFaqRoute } from '../../src/routes/venue/admin/addFaq';
+import { adminAddVenueFeaturedMediaRoute } from '../../src/routes/venue/admin/addFeaturedMedia';
+import { adminAddVenueMediaRoute } from '../../src/routes/venue/admin/addMedia';
+import { adminPatchVenueRoute } from '../../src/routes/venue/admin/patch';
+import { adminRemoveVenueFaqRoute } from '../../src/routes/venue/admin/removeFaq';
+import { adminRemoveVenueMediaRoute } from '../../src/routes/venue/admin/removeMedia';
+import { adminReorderVenueFaqsRoute } from '../../src/routes/venue/admin/reorderFaqs';
+import { adminReorderVenueMediaRoute } from '../../src/routes/venue/admin/reorderMedia';
+import { adminSetFeaturedVenueMediaRoute } from '../../src/routes/venue/admin/setFeaturedMedia';
+import { adminUpdateVenueRoute } from '../../src/routes/venue/admin/update';
+import { adminUpdateVenueFaqRoute } from '../../src/routes/venue/admin/updateFaq';
+import { adminUpdateVenueMediaRoute } from '../../src/routes/venue/admin/updateMedia';
 import type { AppBindings } from '../../src/types';
 
 const mocks = vi.hoisted(() => ({ loadFacts: vi.fn(), coverage: vi.fn(), effectiveSet: vi.fn() }));
@@ -283,96 +283,96 @@ const cases = [
         vertical: VerticalEnum.EXPERIENCE
     },
     {
-        file: 'gastronomy/admin/addFaq.ts',
-        route: adminAddGastronomyFaqRoute,
+        file: 'venue/admin/addFaq.ts',
+        route: adminAddVenueFaqRoute,
         method: 'POST',
         path: '/{id}/faqs',
         body: faqCreate,
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/admin/addFeaturedMedia.ts',
-        route: adminAddGastronomyFeaturedMediaRoute,
+        file: 'venue/admin/addFeaturedMedia.ts',
+        route: adminAddVenueFeaturedMediaRoute,
         method: 'POST',
         path: '/{id}/media/featured',
         body: mediaAdd,
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/admin/addMedia.ts',
-        route: adminAddGastronomyMediaRoute,
+        file: 'venue/admin/addMedia.ts',
+        route: adminAddVenueMediaRoute,
         method: 'POST',
         path: '/{id}/media',
         body: mediaAdd,
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/admin/patch.ts',
-        route: adminPatchGastronomyRoute,
+        file: 'venue/admin/patch.ts',
+        route: adminPatchVenueRoute,
         method: 'PATCH',
         path: '/{id}',
         body: { name: 'Updated listing' },
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/admin/removeFaq.ts',
-        route: adminRemoveGastronomyFaqRoute,
+        file: 'venue/admin/removeFaq.ts',
+        route: adminRemoveVenueFaqRoute,
         method: 'DELETE',
         path: '/{id}/faqs/{faqId}',
         body: undefined,
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/admin/removeMedia.ts',
-        route: adminRemoveGastronomyMediaRoute,
+        file: 'venue/admin/removeMedia.ts',
+        route: adminRemoveVenueMediaRoute,
         method: 'DELETE',
         path: '/{id}/media/{mediaId}',
         body: undefined,
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/admin/reorderFaqs.ts',
-        route: adminReorderGastronomyFaqsRoute,
+        file: 'venue/admin/reorderFaqs.ts',
+        route: adminReorderVenueFaqsRoute,
         method: 'PATCH',
         path: '/{id}/faqs/reorder',
         body: faqReorder,
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/admin/reorderMedia.ts',
-        route: adminReorderGastronomyMediaRoute,
+        file: 'venue/admin/reorderMedia.ts',
+        route: adminReorderVenueMediaRoute,
         method: 'PATCH',
         path: '/{id}/media/reorder',
         body: mediaReorder,
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/admin/setFeaturedMedia.ts',
-        route: adminSetFeaturedGastronomyMediaRoute,
+        file: 'venue/admin/setFeaturedMedia.ts',
+        route: adminSetFeaturedVenueMediaRoute,
         method: 'PUT',
         path: '/{id}/media/{mediaId}/featured',
         body: undefined,
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/admin/update.ts',
-        route: adminUpdateGastronomyRoute,
+        file: 'venue/admin/update.ts',
+        route: adminUpdateVenueRoute,
         method: 'PUT',
         path: '/{id}',
         body: { name: 'Updated listing' },
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/admin/updateFaq.ts',
-        route: adminUpdateGastronomyFaqRoute,
+        file: 'venue/admin/updateFaq.ts',
+        route: adminUpdateVenueFaqRoute,
         method: 'PUT',
         path: '/{id}/faqs/{faqId}',
         body: faqUpdate,
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/admin/updateMedia.ts',
-        route: adminUpdateGastronomyMediaRoute,
+        file: 'venue/admin/updateMedia.ts',
+        route: adminUpdateVenueMediaRoute,
         method: 'PATCH',
         path: '/{id}/media/{mediaId}',
         body: mediaUpdate,

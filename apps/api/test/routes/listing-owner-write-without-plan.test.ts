@@ -4,7 +4,7 @@
  *
  * `PATCH /api/v1/protected/gastronomies/:id` no longer carries an entitlement
  * or limits gate: the whole request goes through the REAL app (auth, actor,
- * route factory, validation) and the REAL `GastronomyService.updateOwn`
+ * route factory, validation) and the REAL `VenueService.updateOwn`
  * (ownership + permission chain). Only the persistence layer is replaced by an
  * in-memory model, and NO plan, subscription, entitlement or billing state
  * exists anywhere in the test — so a 200 for the owner proves no plan is
@@ -36,8 +36,8 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...orig,
-        GastronomyService: class InMemoryGastronomyService extends orig.GastronomyService {
-            constructor(...args: ConstructorParameters<typeof orig.GastronomyService>) {
+        VenueService: class InMemoryVenueService extends orig.VenueService {
+            constructor(...args: ConstructorParameters<typeof orig.VenueService>) {
                 super(...args);
                 Object.defineProperty(this, 'model', { value: fakeModel });
             }

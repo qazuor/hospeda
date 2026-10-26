@@ -41,8 +41,8 @@ import {
     DestinationService,
     EventService,
     ExperienceService,
-    GastronomyService,
-    PostService
+    PostService,
+    VenueService
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -120,7 +120,7 @@ const resolveEntityService = (
     | DestinationService
     | EventService
     | PostService
-    | GastronomyService
+    | VenueService
     | ExperienceService
     | null => {
     switch (entityType) {
@@ -133,7 +133,7 @@ const resolveEntityService = (
         case 'post':
             return new PostService({ logger: apiLogger });
         case 'gastronomy':
-            return new GastronomyService({ logger: apiLogger });
+            return new VenueService({ logger: apiLogger });
         case 'experience':
             return new ExperienceService({ logger: apiLogger });
         default:

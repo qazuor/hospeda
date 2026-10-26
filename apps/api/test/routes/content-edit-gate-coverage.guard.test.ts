@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const ROUTES_DIR = join(import.meta.dirname, '../../src/routes');
-const VERTICALS = ['accommodation', 'gastronomy', 'experience'] as const;
+const VERTICALS = ['accommodation', 'venue', 'experience'] as const;
 
 function mutatingRoutes(vertical: string): Array<{ file: string; source: string }> {
     const base = join(ROUTES_DIR, vertical, 'protected');

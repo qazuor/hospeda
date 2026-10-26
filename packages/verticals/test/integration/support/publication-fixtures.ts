@@ -1,12 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { DrizzleClient } from '@repo/db';
-import {
-    AccommodationModel,
-    destinations,
-    ExperienceModel,
-    GastronomyModel,
-    users
-} from '@repo/db';
+import { AccommodationModel, destinations, ExperienceModel, users, VenueModel } from '@repo/db';
 import type { Accommodation, Experience, Venue } from '@repo/schemas';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
@@ -63,10 +57,7 @@ export async function seedPublicationListing(args: {
             args.db
         );
     if (args.vertical === 'gastronomy')
-        return new GastronomyModel().create(
-            { ...base, type: 'RESTAURANT' } as Partial<Venue>,
-            args.db
-        );
+        return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, args.db);
     return new ExperienceModel().create(
         { ...base, type: 'EXCURSION' } as Partial<Experience>,
         args.db

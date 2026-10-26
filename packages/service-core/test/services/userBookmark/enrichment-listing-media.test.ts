@@ -23,7 +23,7 @@ const RELATIONAL_URL = 'https://cdn.example.com/from-media-table.jpg';
 /** The value a regression would surface — never expected in an assertion. */
 const BLOB_URL = 'https://cdn.example.com/from-jsonb-blob.jpg';
 
-const mockFindByGastronomies = vi.fn();
+const mockFindByVenues = vi.fn();
 const mockFindByExperiences = vi.fn();
 const mockSelect = vi.fn();
 
@@ -33,7 +33,7 @@ vi.mock('@repo/db', async (importOriginal) => {
         ...actual,
         getDb: () => ({ select: mockSelect }),
         accommodationMediaModel: { findByAccommodations: vi.fn() },
-        gastronomyMediaModel: { findByGastronomies: mockFindByGastronomies },
+        venueMediaModel: { findByVenues: mockFindByVenues },
         experienceMediaModel: { findByExperiences: mockFindByExperiences }
     };
 });
@@ -70,7 +70,7 @@ describe('enrichBookmarksWithEntityInfo — listing thumbnails (HOS-372)', () =>
                 media: { featuredImage: { url: BLOB_URL } }
             }
         ]);
-        mockFindByGastronomies.mockResolvedValue(
+        mockFindByVenues.mockResolvedValue(
             new Map([[GASTRONOMY_ID, [{ isFeatured: true, url: RELATIONAL_URL }]]])
         );
 
@@ -84,7 +84,7 @@ describe('enrichBookmarksWithEntityInfo — listing thumbnails (HOS-372)', () =>
 
         expect(enriched?.entityImage).toBe(RELATIONAL_URL);
         expect(enriched?.entityName).toBe('La Parrilla del Puerto');
-        expect(mockFindByGastronomies).toHaveBeenCalledWith(
+        expect(mockFindByVenues).toHaveBeenCalledWith(
             expect.objectContaining({ gastronomyIds: [GASTRONOMY_ID], state: 'visible' })
         );
     });
@@ -119,7 +119,7 @@ describe('enrichBookmarksWithEntityInfo — listing thumbnails (HOS-372)', () =>
     it('should return a null image when the listing has no featured row', async () => {
         // Non-featured rows must not be promoted into the thumbnail slot.
         stubSelectChain([{ id: GASTRONOMY_ID, name: 'Sin foto', slug: 'sin-foto', media: null }]);
-        mockFindByGastronomies.mockResolvedValue(
+        mockFindByVenues.mockResolvedValue(
             new Map([[GASTRONOMY_ID, [{ isFeatured: false, url: RELATIONAL_URL }]]])
         );
 

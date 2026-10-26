@@ -10,8 +10,8 @@ import { getTableColumns } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { accommodations } from '../../src/schemas/accommodation/accommodation.dbschema.ts';
 import { experiences } from '../../src/schemas/experience/experiences.dbschema.ts';
-import { gastronomies } from '../../src/schemas/gastronomy/gastronomy.dbschema.ts';
 import { PublicationStatusPgEnum } from '../../src/schemas/listing/publication_status.dbschema.ts';
+import { gastronomies } from '../../src/schemas/venue/venue.dbschema.ts';
 
 describe('PublicationStatusPgEnum (TEST:V6:17)', () => {
     it('has SQL enum name publication_status_enum', () => {

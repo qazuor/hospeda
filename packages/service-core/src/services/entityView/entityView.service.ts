@@ -34,7 +34,7 @@
  * @see SPEC-197 §4.2
  */
 
-import type { AccommodationModel, ExperienceModel, GastronomyModel } from '@repo/db';
+import type { AccommodationModel, ExperienceModel, VenueModel } from '@repo/db';
 import {
     AccommodationModel as AccommodationModelClass,
     type AdminSummaryTotalsRow,
@@ -42,8 +42,8 @@ import {
     type EntityViewModel,
     ExperienceModel as ExperienceModelClass,
     entityViewModel,
-    GastronomyModel as GastronomyModelClass,
-    type HostDailySeriesRow
+    type HostDailySeriesRow,
+    VenueModel as VenueModelClass
 } from '@repo/db';
 import {
     EntityTypeEnum,
@@ -380,12 +380,12 @@ export interface GetDailySeriesForHostAccommodationsInput {
  * {@link EntityViewService.getDailySeriesForOwnListings} (HOS-734).
  *
  * The actor's own listing IDs are resolved internally (via
- * `GastronomyModel`/`ExperienceModel.findIdsByOwnerId`) — no ownerId param is
+ * `VenueModel`/`ExperienceModel.findIdsByOwnerId`) — no ownerId param is
  * accepted, preventing cross-owner peeking. There is no dedicated
  * `PermissionEnum` for gastronomy/experience "own listing" access (unlike
  * accommodation's `ACCOMMODATION_VIEW_OWN`) — ownership scoping alone is the
  * gate here, matching the existing convention of
- * `protectedListMyGastronomyRoute` (`GastronomyService.listOwn`). The former
+ * `protectedListMyGastronomyRoute` (`VenueService.listOwn`). The former
  * route-layer plan entitlement gate was removed by HOS-1352 (transitional until
  * V3, HOS-1357), so no entitlement is checked here either.
  */
@@ -438,8 +438,8 @@ export class EntityViewService extends BaseService {
     private readonly modelOverride: EntityViewModel | undefined;
     private readonly accommodationModelOverride: AccommodationModel | undefined;
     private accommodationModelLazy: AccommodationModel | undefined;
-    private readonly gastronomyModelOverride: GastronomyModel | undefined;
-    private gastronomyModelLazy: GastronomyModel | undefined;
+    private readonly venueModelOverride: VenueModel | undefined;
+    private venueModelLazy: VenueModel | undefined;
     private readonly experienceModelOverride: ExperienceModel | undefined;
     private experienceModelLazy: ExperienceModel | undefined;
 
@@ -447,7 +447,7 @@ export class EntityViewService extends BaseService {
         ctx: ServiceConfig,
         model?: EntityViewModel,
         accommodationModel?: AccommodationModel,
-        gastronomyModel?: GastronomyModel,
+        venueModel?: VenueModel,
         experienceModel?: ExperienceModel
     ) {
         super(ctx, EntityViewService.ENTITY_NAME);
@@ -458,7 +458,7 @@ export class EntityViewService extends BaseService {
         // to undefined exports). Resolution is deferred to the lazy getters.
         this.modelOverride = model;
         this.accommodationModelOverride = accommodationModel;
-        this.gastronomyModelOverride = gastronomyModel;
+        this.venueModelOverride = venueModel;
         this.experienceModelOverride = experienceModel;
     }
 
@@ -488,11 +488,11 @@ export class EntityViewService extends BaseService {
      * (HOS-734). Instantiated once on first use (or the injected override) —
      * mirrors {@link accommodationModel}.
      */
-    private get gastronomyModel(): GastronomyModel {
-        if (!this.gastronomyModelLazy) {
-            this.gastronomyModelLazy = this.gastronomyModelOverride ?? new GastronomyModelClass();
+    private get gastronomyModel(): VenueModel {
+        if (!this.venueModelLazy) {
+            this.venueModelLazy = this.venueModelOverride ?? new VenueModelClass();
         }
-        return this.gastronomyModelLazy;
+        return this.venueModelLazy;
     }
 
     /**
@@ -515,7 +515,7 @@ export class EntityViewService extends BaseService {
      */
     private listingModelFor(
         entityType: EntityTypeEnum.VENUE | EntityTypeEnum.EXPERIENCE
-    ): GastronomyModel | ExperienceModel {
+    ): VenueModel | ExperienceModel {
         return entityType === EntityTypeEnum.VENUE ? this.gastronomyModel : this.experienceModel;
     }
 

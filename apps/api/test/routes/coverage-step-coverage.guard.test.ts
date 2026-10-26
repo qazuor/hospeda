@@ -138,64 +138,64 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'experience/reviews/admin/update.ts': {
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
     },
-    'gastronomy/admin/addFaq.ts': { operation: 'EDIT' },
-    'gastronomy/admin/addFeaturedMedia.ts': { operation: 'EDIT' },
-    'gastronomy/admin/addMedia.ts': { operation: 'EDIT' },
-    'gastronomy/admin/assignOwner.ts': {
+    'venue/admin/addFaq.ts': { operation: 'EDIT' },
+    'venue/admin/addFeaturedMedia.ts': { operation: 'EDIT' },
+    'venue/admin/addMedia.ts': { operation: 'EDIT' },
+    'venue/admin/assignOwner.ts': {
         exempt: 'Fija el dueño: no es ACC:15 ni una de las 25 acciones (hueco H-11 de notas).'
     },
-    'gastronomy/admin/batch.ts': {
+    'venue/admin/batch.ts': {
         exempt: 'Lectura por lote (POST que lee por ids, exige *_VIEW_ALL): no escribe.'
     },
-    'gastronomy/admin/create.ts': { operation: 'CREATE' },
-    'gastronomy/admin/moderate.ts': {
+    'venue/admin/create.ts': { operation: 'CREATE' },
+    'venue/admin/moderate.ts': {
         exempt: 'ACC:12 (moderar): capacidad del actor, sin pasos 5 a 7 sobre el sujeto (V5.md §3.2 regla 3); la construyó V6.5 con `LISTING_MODERATE`.'
     },
-    'gastronomy/admin/patch.ts': { operation: 'EDIT' },
-    'gastronomy/admin/purge.ts': { operation: 'DELETE' },
-    'gastronomy/admin/removeFaq.ts': { operation: 'EDIT' },
-    'gastronomy/admin/removeMedia.ts': { operation: 'EDIT' },
-    'gastronomy/admin/reorderFaqs.ts': { operation: 'EDIT' },
-    'gastronomy/admin/reorderMedia.ts': { operation: 'EDIT' },
-    'gastronomy/admin/setFeaturedMedia.ts': { operation: 'EDIT' },
-    'gastronomy/admin/update.ts': { operation: 'EDIT' },
-    'gastronomy/admin/updateFaq.ts': { operation: 'EDIT' },
-    'gastronomy/admin/updateMedia.ts': { operation: 'EDIT' },
-    'gastronomy/protected/addFaq.ts': { operation: 'EDIT' },
-    'gastronomy/protected/addFeaturedMedia.ts': { operation: 'EDIT' },
-    'gastronomy/protected/addMedia.ts': { operation: 'EDIT' },
-    'gastronomy/protected/create.ts': { operation: 'CREATE' },
-    'gastronomy/protected/createReview.ts': {
+    'venue/admin/patch.ts': { operation: 'EDIT' },
+    'venue/admin/purge.ts': { operation: 'DELETE' },
+    'venue/admin/removeFaq.ts': { operation: 'EDIT' },
+    'venue/admin/removeMedia.ts': { operation: 'EDIT' },
+    'venue/admin/reorderFaqs.ts': { operation: 'EDIT' },
+    'venue/admin/reorderMedia.ts': { operation: 'EDIT' },
+    'venue/admin/setFeaturedMedia.ts': { operation: 'EDIT' },
+    'venue/admin/update.ts': { operation: 'EDIT' },
+    'venue/admin/updateFaq.ts': { operation: 'EDIT' },
+    'venue/admin/updateMedia.ts': { operation: 'EDIT' },
+    'venue/protected/addFaq.ts': { operation: 'EDIT' },
+    'venue/protected/addFeaturedMedia.ts': { operation: 'EDIT' },
+    'venue/protected/addMedia.ts': { operation: 'EDIT' },
+    'venue/protected/create.ts': { operation: 'CREATE' },
+    'venue/protected/createReview.ts': {
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
     },
-    'gastronomy/protected/publish.ts': { operation: 'PUBLISH' },
-    'gastronomy/protected/reactivate.ts': { operation: 'REACTIVATE' },
-    'gastronomy/protected/purge.ts': { operation: 'DELETE' },
-    'gastronomy/protected/reportFixed.ts': {
+    'venue/protected/publish.ts': { operation: 'PUBLISH' },
+    'venue/protected/reactivate.ts': { operation: 'REACTIVATE' },
+    'venue/protected/purge.ts': { operation: 'DELETE' },
+    'venue/protected/reportFixed.ts': {
         exempt: 'Aviso del dueño de que corrigió un pedido de arreglo (fila 30, V8a.1b): no es contenido, publicación ni borrado; se autoriza por propiedad.'
     },
-    'gastronomy/protected/deleteMenuFile.ts': { operation: 'EDIT' },
-    'gastronomy/protected/unpublish.ts': { operation: 'EDIT' },
-    'gastronomy/protected/patch.ts': { operation: 'EDIT' },
-    'gastronomy/protected/putDailySpecials.ts': { operation: 'EDIT' },
-    'gastronomy/protected/putEvents.ts': { operation: 'EDIT' },
-    'gastronomy/protected/putMenu.ts': { operation: 'EDIT' },
-    'gastronomy/protected/removeFaq.ts': { operation: 'EDIT' },
-    'gastronomy/protected/removeMedia.ts': { operation: 'EDIT' },
-    'gastronomy/protected/reorderFaqs.ts': { operation: 'EDIT' },
-    'gastronomy/protected/reorderMedia.ts': { operation: 'EDIT' },
-    'gastronomy/protected/setFeaturedMedia.ts': { operation: 'EDIT' },
-    'gastronomy/protected/updateFaq.ts': { operation: 'EDIT' },
-    'gastronomy/protected/updateMedia.ts': { operation: 'EDIT' },
-    'gastronomy/protected/uploadMenuFile.ts': { operation: 'EDIT' },
-    'gastronomy/protected/uploadMenuItemPhoto.ts': { operation: 'EDIT' },
-    'gastronomy/reviews/admin/delete.ts': {
+    'venue/protected/deleteMenuFile.ts': { operation: 'EDIT' },
+    'venue/protected/unpublish.ts': { operation: 'EDIT' },
+    'venue/protected/patch.ts': { operation: 'EDIT' },
+    'venue/protected/putDailySpecials.ts': { operation: 'EDIT' },
+    'venue/protected/putEvents.ts': { operation: 'EDIT' },
+    'venue/protected/putMenu.ts': { operation: 'EDIT' },
+    'venue/protected/removeFaq.ts': { operation: 'EDIT' },
+    'venue/protected/removeMedia.ts': { operation: 'EDIT' },
+    'venue/protected/reorderFaqs.ts': { operation: 'EDIT' },
+    'venue/protected/reorderMedia.ts': { operation: 'EDIT' },
+    'venue/protected/setFeaturedMedia.ts': { operation: 'EDIT' },
+    'venue/protected/updateFaq.ts': { operation: 'EDIT' },
+    'venue/protected/updateMedia.ts': { operation: 'EDIT' },
+    'venue/protected/uploadMenuFile.ts': { operation: 'EDIT' },
+    'venue/protected/uploadMenuItemPhoto.ts': { operation: 'EDIT' },
+    'venue/reviews/admin/delete.ts': {
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
     },
-    'gastronomy/reviews/admin/moderate.ts': {
+    'venue/reviews/admin/moderate.ts': {
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
     },
-    'gastronomy/reviews/admin/update.ts': {
+    'venue/reviews/admin/update.ts': {
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
     }
 };
@@ -213,7 +213,7 @@ const accessOperation =
     /^\s*listingAccess:\s*\{[^}]*operation:\s*'(CREATE|EDIT|PUBLISH|DELETE|REACTIVATE)'/m;
 
 describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () => {
-    const actual = ['accommodation', 'gastronomy', 'experience']
+    const actual = ['accommodation', 'venue', 'experience']
         .flatMap((vertical) => routeFiles(join(ROUTES_DIR, vertical), vertical))
         .filter((file) => hasWriteMethod.test(readFileSync(join(ROUTES_DIR, file), 'utf8')))
         .sort();

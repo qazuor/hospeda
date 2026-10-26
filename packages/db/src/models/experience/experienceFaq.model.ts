@@ -4,7 +4,7 @@ import { experienceFaqs } from '../../schemas/experience/experience_faq.dbschema
 
 /**
  * ExperienceFaqModel — DB access for experience FAQ entries (SPEC-240).
- * Mirrors GastronomyFaqModel: thin BaseModelImpl wrapper.
+ * Mirrors VenueFaqModel: thin BaseModelImpl wrapper.
  * Custom ordering (display_order ASC NULLS LAST, created_at ASC) is handled
  * at the caller level (e.g. via db.query.experienceFaqs.findMany with orderBy).
  */

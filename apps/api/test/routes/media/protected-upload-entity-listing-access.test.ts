@@ -28,8 +28,8 @@ import {
 import {
     AccommodationService,
     ExperienceService,
-    GastronomyService,
-    PostService
+    PostService,
+    VenueService
 } from '@repo/service-core';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -91,7 +91,7 @@ const VERTICALS: readonly {
         vertical: VerticalEnum.ACCOMMODATION,
         service: AccommodationService
     },
-    { entityType: 'gastronomy', vertical: VerticalEnum.VENUE, service: GastronomyService },
+    { entityType: 'gastronomy', vertical: VerticalEnum.VENUE, service: VenueService },
     { entityType: 'experience', vertical: VerticalEnum.EXPERIENCE, service: ExperienceService }
 ];
 
@@ -115,12 +115,7 @@ const authHeaders = (): Record<string, string> => {
 /** Stub `getById` of every service so the listing exists and belongs to the owner. */
 function ownListing(): void {
     const data = { id: LISTING_ID, ownerId: OWNER_ID, authorId: OWNER_ID, media: {} };
-    for (const service of [
-        AccommodationService,
-        GastronomyService,
-        ExperienceService,
-        PostService
-    ]) {
+    for (const service of [AccommodationService, VenueService, ExperienceService, PostService]) {
         vi.spyOn(service.prototype, 'getById').mockImplementation(
             async (_actor: unknown, id: unknown) =>
                 (id === MISSING_ID

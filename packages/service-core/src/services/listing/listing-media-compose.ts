@@ -4,7 +4,7 @@
  * Pure read-composition helper that rebuilds the `Media` shape from relational
  * listing media rows (`gastronomy_media`, `experience_media` — HOS-372).
  *
- * Shared between `GastronomyService` and `ExperienceService` — the row shape
+ * Shared between `VenueService` and `ExperienceService` — the row shape
  * (`state`, `isFeatured`, `sortOrder`, and the image fields) is identical for
  * both verticals (see `BaseListingMediaSchema` in `@repo/schemas`), so a single
  * composition function serves both instead of duplicating the logic per vertical.

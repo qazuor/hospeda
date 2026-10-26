@@ -50,7 +50,7 @@ const CALL = 'resolveEntityQrScanUrl(';
  * listing's scan counts split between them.
  */
 const EXPECTED: Readonly<Record<string, { entityType: string; purpose: string }>> = {
-    'routes/gastronomy/protected/brochure.ts': {
+    'routes/venue/protected/brochure.ts': {
         entityType: 'VENUE',
         purpose: 'BROCHURE'
     },
@@ -66,7 +66,7 @@ const EXPECTED: Readonly<Record<string, { entityType: string; purpose: string }>
         entityType: 'ACCOMMODATION',
         purpose: 'LISTING'
     },
-    'routes/gastronomy/protected/qrSheet.ts': {
+    'routes/venue/protected/qrSheet.ts': {
         entityType: 'VENUE',
         purpose: 'LISTING'
     },
@@ -78,7 +78,7 @@ const EXPECTED: Readonly<Record<string, { entityType: string; purpose: string }>
         entityType: 'ACCOMMODATION',
         purpose: 'LISTING'
     },
-    'routes/gastronomy/protected/qrCode.ts': {
+    'routes/venue/protected/qrCode.ts': {
         entityType: 'VENUE',
         purpose: 'LISTING'
     },

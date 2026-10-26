@@ -11,7 +11,7 @@
  * **Why not real-route?**  The actual protected routes require:
  *  - Better Auth session middleware + DB actor lookup (not easy to stub without
  *    the real auth layer)
- *  - Per-service mocks (GastronomyReviewService, EntityCommentService, …) with
+ *  - Per-service mocks (VenueReviewService, EntityCommentService, …) with
  *    transactional DB mocks to avoid real DB hits
  *  - All of `setupRoutes(app)` which starts billing, cron, and Sentry side-effects
  *

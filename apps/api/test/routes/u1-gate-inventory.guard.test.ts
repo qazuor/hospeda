@@ -258,57 +258,45 @@ const INVENTORY = [
         'restored',
         'paidFieldsFilter'
     ],
-    ['apps/api/src/routes/gastronomy/protected/addFaq.ts', 'restored', 'listingAccess'],
-    ['apps/api/src/routes/gastronomy/protected/addFeaturedMedia.ts', 'restored', 'listingAccess'],
-    ['apps/api/src/routes/gastronomy/protected/addMedia.ts', 'restored', 'listingAccess'],
-    ['apps/api/src/routes/gastronomy/protected/brochure.ts', 'restored', 'listingAccess'],
+    ['apps/api/src/routes/venue/protected/addFaq.ts', 'restored', 'listingAccess'],
+    ['apps/api/src/routes/venue/protected/addFeaturedMedia.ts', 'restored', 'listingAccess'],
+    ['apps/api/src/routes/venue/protected/addMedia.ts', 'restored', 'listingAccess'],
+    ['apps/api/src/routes/venue/protected/brochure.ts', 'restored', 'listingAccess'],
     [
-        'apps/api/src/routes/gastronomy/protected/deleteMenuFile.ts',
+        'apps/api/src/routes/venue/protected/deleteMenuFile.ts',
         'restored',
         'listingAccess|capabilities'
     ],
-    ['apps/api/src/routes/gastronomy/protected/menuQr.ts', 'restored', 'listingAccess'],
-    ['apps/api/src/routes/gastronomy/protected/menuQrScans.ts', 'restored', 'listingAccess'],
-    ['apps/api/src/routes/gastronomy/protected/patch.ts', 'restored', 'listingAccess'],
+    ['apps/api/src/routes/venue/protected/menuQr.ts', 'restored', 'listingAccess'],
+    ['apps/api/src/routes/venue/protected/menuQrScans.ts', 'restored', 'listingAccess'],
+    ['apps/api/src/routes/venue/protected/patch.ts', 'restored', 'listingAccess'],
     [
-        'apps/api/src/routes/gastronomy/protected/putDailySpecials.ts',
+        'apps/api/src/routes/venue/protected/putDailySpecials.ts',
         'restored',
         'listingAccess|capabilities'
     ],
+    ['apps/api/src/routes/venue/protected/putEvents.ts', 'restored', 'listingAccess|capabilities'],
+    ['apps/api/src/routes/venue/protected/putMenu.ts', 'restored', 'listingAccess|capabilities'],
+    ['apps/api/src/routes/venue/protected/removeFaq.ts', 'restored', 'listingAccess'],
+    ['apps/api/src/routes/venue/protected/removeMedia.ts', 'restored', 'listingAccess'],
+    ['apps/api/src/routes/venue/protected/reorderFaqs.ts', 'restored', 'listingAccess'],
+    ['apps/api/src/routes/venue/protected/reorderMedia.ts', 'restored', 'listingAccess'],
+    ['apps/api/src/routes/venue/protected/setFeaturedMedia.ts', 'restored', 'listingAccess'],
+    ['apps/api/src/routes/venue/protected/updateFaq.ts', 'restored', 'listingAccess'],
+    ['apps/api/src/routes/venue/protected/updateMedia.ts', 'restored', 'listingAccess'],
     [
-        'apps/api/src/routes/gastronomy/protected/putEvents.ts',
-        'restored',
-        'listingAccess|capabilities'
-    ],
-    [
-        'apps/api/src/routes/gastronomy/protected/putMenu.ts',
-        'restored',
-        'listingAccess|capabilities'
-    ],
-    ['apps/api/src/routes/gastronomy/protected/removeFaq.ts', 'restored', 'listingAccess'],
-    ['apps/api/src/routes/gastronomy/protected/removeMedia.ts', 'restored', 'listingAccess'],
-    ['apps/api/src/routes/gastronomy/protected/reorderFaqs.ts', 'restored', 'listingAccess'],
-    ['apps/api/src/routes/gastronomy/protected/reorderMedia.ts', 'restored', 'listingAccess'],
-    ['apps/api/src/routes/gastronomy/protected/setFeaturedMedia.ts', 'restored', 'listingAccess'],
-    ['apps/api/src/routes/gastronomy/protected/updateFaq.ts', 'restored', 'listingAccess'],
-    ['apps/api/src/routes/gastronomy/protected/updateMedia.ts', 'restored', 'listingAccess'],
-    [
-        'apps/api/src/routes/gastronomy/protected/uploadMenuFile.ts',
+        'apps/api/src/routes/venue/protected/uploadMenuFile.ts',
         'restored',
         'listingAccess|capabilities'
     ],
     [
-        'apps/api/src/routes/gastronomy/protected/uploadMenuItemPhoto.ts',
+        'apps/api/src/routes/venue/protected/uploadMenuItemPhoto.ts',
         'restored',
         'listingAccess|capabilities'
     ],
-    ['apps/api/src/routes/gastronomy/protected/viewStats.ts', 'restored', 'enforceUserGate'],
-    [
-        'apps/api/src/routes/gastronomy/protected/viewStatsDailySeries.ts',
-        'restored',
-        'enforceUserGate'
-    ],
-    ['apps/api/src/routes/gastronomy/public/getBySlug.ts', 'restored', 'readEffectiveKeys'],
+    ['apps/api/src/routes/venue/protected/viewStats.ts', 'restored', 'enforceUserGate'],
+    ['apps/api/src/routes/venue/protected/viewStatsDailySeries.ts', 'restored', 'enforceUserGate'],
+    ['apps/api/src/routes/venue/public/getBySlug.ts', 'restored', 'readEffectiveKeys'],
     [
         'apps/api/src/routes/host-onboarding/protected/precheck.ts',
         'not-a-gate',
@@ -427,7 +415,7 @@ const INVENTORY = [
         'HOS-1644 run 4: the route decides, the context stays pure'
     ],
     [
-        'apps/api/src/services/ai-context/gastronomy-ai-context.ts',
+        'apps/api/src/services/ai-context/venue-ai-context.ts',
         'not-a-gate',
         'HOS-1644 run 4: the route decides, the context stays pure'
     ],

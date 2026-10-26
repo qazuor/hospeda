@@ -675,7 +675,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         // field-level fix alone did NOT close.
         //
         // `nameI18n` is a single JSONB column, replaced wholesale on save (not
-        // merged per locale — `gastronomy.model.ts`/`experience.model.ts` do
+        // merged per locale — `venue.model.ts`/`experience.model.ts` do
         // not list it in `mergeableJsonbColumns`, only `contactInfo` is there).
         // So editing only `nameI18n.en` still sends the WHOLE `nameI18n` object,
         // `es` included. The listing here has a plain `name` but an EMPTY

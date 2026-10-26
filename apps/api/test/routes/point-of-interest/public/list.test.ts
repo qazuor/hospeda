@@ -2,7 +2,7 @@
  * Tests for GET /api/v1/public/points-of-interest
  *
  * Covers: route registration, public access (no auth required), and
- * response shape. Mirrors `test/routes/gastronomy/public/list.test.ts`.
+ * response shape. Mirrors `test/routes/venue/public/list.test.ts`.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';

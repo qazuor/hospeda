@@ -21,13 +21,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
     accommodationMediaModel,
-    gastronomyMediaModel,
+    venueMediaModel,
     experienceMediaModel,
     postMediaModel,
     eventMediaModel
 } = vi.hoisted(() => ({
     accommodationMediaModel: { findByAccommodation: vi.fn() },
-    gastronomyMediaModel: { findByGastronomy: vi.fn() },
+    venueMediaModel: { findByVenue: vi.fn() },
     experienceMediaModel: { findByExperience: vi.fn() },
     postMediaModel: { count: vi.fn() },
     eventMediaModel: { count: vi.fn() }
@@ -35,7 +35,7 @@ const {
 
 vi.mock('@repo/db', () => ({
     accommodationMediaModel,
-    gastronomyMediaModel,
+    venueMediaModel,
     experienceMediaModel,
     postMediaModel,
     eventMediaModel
@@ -58,7 +58,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         accommodationMediaModel.findByAccommodation.mockResolvedValue({ items: [], total: 7 });
-        gastronomyMediaModel.findByGastronomy.mockResolvedValue({ items: [], total: 5 });
+        venueMediaModel.findByVenue.mockResolvedValue({ items: [], total: 5 });
         experienceMediaModel.findByExperience.mockResolvedValue({ items: [], total: 4 });
         postMediaModel.count.mockResolvedValue(6);
         eventMediaModel.count.mockResolvedValue(2);
@@ -74,7 +74,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         expect(count).toBe(5);
         // Exact equality, NOT objectContaining: a partial matcher stays green
         // when a filter is dropped, which is precisely the failure this asserts.
-        expect(gastronomyMediaModel.findByGastronomy).toHaveBeenCalledWith({
+        expect(venueMediaModel.findByVenue).toHaveBeenCalledWith({
             gastronomyId: ENTITY_ID,
             state: 'visible',
             isFeatured: false
@@ -114,7 +114,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
     // HOS-791 ------------------------------------------------------------
     it.each([
         ['accommodation', () => accommodationMediaModel.findByAccommodation],
-        ['gastronomy', () => gastronomyMediaModel.findByGastronomy],
+        ['gastronomy', () => venueMediaModel.findByVenue],
         ['experience', () => experienceMediaModel.findByExperience]
     ])('excludes the featured image from the %s count (HOS-791)', async (entityType, getMock) => {
         // The featured image is not a gallery item. Counting it charged the
@@ -140,7 +140,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
             entity: {}
         });
 
-        const call = gastronomyMediaModel.findByGastronomy.mock.calls[0]?.[0];
+        const call = venueMediaModel.findByVenue.mock.calls[0]?.[0];
         expect(call?.state).toBe('visible');
     });
 
@@ -153,7 +153,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
             });
 
             expect(count).toBe(3);
-            expect(gastronomyMediaModel.findByGastronomy).not.toHaveBeenCalled();
+            expect(venueMediaModel.findByVenue).not.toHaveBeenCalled();
             expect(accommodationMediaModel.findByAccommodation).not.toHaveBeenCalled();
         });
     }

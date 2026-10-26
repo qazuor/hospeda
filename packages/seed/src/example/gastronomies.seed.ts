@@ -1,13 +1,13 @@
 import {
     accounts,
     eq,
-    GastronomyMediaModel,
     gastronomies,
     gastronomyFaqs,
     gastronomyReviews,
     getDb,
     sql,
-    users
+    users,
+    VenueMediaModel
 } from '@repo/db';
 import { LifecycleStatusEnum, RoleEnum, RoleGrantReason, VisibilityEnum } from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
@@ -239,8 +239,8 @@ async function seedGastronomyMediaRows({
     const hasPhotos = Boolean(media.featuredImage) || (media.gallery?.length ?? 0) > 0;
     if (!hasPhotos) return;
 
-    const mediaModel = new GastronomyMediaModel();
-    const { total: existingCount } = await mediaModel.findByGastronomy({
+    const mediaModel = new VenueMediaModel();
+    const { total: existingCount } = await mediaModel.findByVenue({
         gastronomyId,
         pageSize: 1
     });
@@ -281,12 +281,12 @@ async function seedGastronomyMediaRows({
  * UUIDv5 id derived from a stable seed-key (see `getGastronomyFixtureId` /
  * `getGastronomyFaqFixtureId` / `getGastronomyReviewFixtureId` above), instead
  * of the column's `defaultRandom()`. This was already a model-direct Drizzle
- * insert (never went through `GastronomyService`/`GastronomyFaqService`/
- * `GastronomyReviewService`), so no service lifecycle hook is newly bypassed —
+ * insert (never went through `VenueService`/`GastronomyFaqService`/
+ * `VenueReviewService`), so no service lifecycle hook is newly bypassed —
  * this only replaces a random id with a stable, reproducible one. The
  * `reviewsCount`/`averageRating` denormalized columns on `gastronomies` are
  * static, author-curated values taken directly from the fixture (matching the
- * companion review fixtures), NOT computed via `GastronomyService.recomputeRating`
+ * companion review fixtures), NOT computed via `VenueService.recomputeRating`
  * — unlike `AccommodationReviewService`/`DestinationReviewService`
  * (HOS-25 T-025), there is no bypassed hook here that used to compute them, so
  * no recompute call is introduced.

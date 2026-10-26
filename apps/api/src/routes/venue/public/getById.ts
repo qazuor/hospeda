@@ -1,0 +1,50 @@
+/**
+ * Public get gastronomy listing by ID endpoint (T-042)
+ * Returns a single gastronomy listing projected through GastronomyPublicSchema.
+ * Returns 404 when the listing is not visible (non-existent, soft-deleted, or non-public).
+ */
+import { VenuePublicSchema } from '@repo/schemas';
+import { ServiceError, VenueService } from '@repo/service-core';
+import type { Context } from 'hono';
+import { z } from 'zod';
+import { withPublicIsFeatured } from '../../../utils/accommodation-featured';
+import { getActorFromContext } from '../../../utils/actor';
+import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
+import { apiLogger } from '../../../utils/logger';
+import { createPublicRoute } from '../../../utils/route-factory';
+
+const venueService = new VenueService({ logger: apiLogger });
+
+/**
+ * GET /api/v1/public/gastronomies/:id
+ * Get gastronomy listing by ID — Public endpoint.
+ *
+ * Returns null (404) when the listing does not exist or is not publicly visible.
+ * The service's _canView check and projection apply.
+ */
+export const publicGetVenueByIdRoute = createPublicRoute({
+    method: 'get',
+    path: '/{id}',
+    summary: 'Get gastronomy listing by ID',
+    description: 'Retrieves a gastronomy listing by its UUID',
+    tags: ['Gastronomy'],
+    requestParams: {
+        id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+    },
+    responseSchema: VenuePublicSchema.nullable(),
+    handler: async (ctx: Context, params: Record<string, unknown>) => {
+        const actor = getActorFromContext(ctx);
+        const result = await venueService.getById(actor, params.id as string);
+
+        if (result.error) {
+            throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        // HOS-1286: the public `isFeatured`, derived in the PUBLIC tier only.
+        return result.data ? withPublicIsFeatured(withPublicVisibleFaqs(result.data)) : null;
+    },
+    options: {
+        cacheTTL: 300,
+        customRateLimit: { requests: 100, windowMs: 60000 }
+    }
+});

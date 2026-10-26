@@ -24,9 +24,9 @@ import {
     EventOrganizerService,
     EventService,
     ExperienceService,
-    GastronomyService,
     PostService,
-    PostSponsorService
+    PostSponsorService,
+    VenueService
 } from '@repo/service-core';
 import type { Context, MiddlewareHandler } from 'hono';
 import { Sentry } from '../../../lib/sentry';
@@ -116,7 +116,7 @@ const resolveDeleteEntityService = (
     | DestinationService
     | EventService
     | PostService
-    | GastronomyService
+    | VenueService
     | ExperienceService
     | PostSponsorService
     | EventOrganizerService => {
@@ -130,7 +130,7 @@ const resolveDeleteEntityService = (
         case 'post':
             return new PostService({ logger: apiLogger });
         case 'gastronomy':
-            return new GastronomyService({ logger: apiLogger });
+            return new VenueService({ logger: apiLogger });
         case 'experience':
             return new ExperienceService({ logger: apiLogger });
         case 'postSponsor':

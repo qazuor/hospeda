@@ -44,8 +44,8 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import {
     AccommodationService,
     ExperienceService,
-    GastronomyService,
-    QrCodeService
+    QrCodeService,
+    VenueService
 } from '@repo/service-core';
 import { Hono } from 'hono';
 import type { AppBindings } from '../../src/types';
@@ -121,12 +121,12 @@ const CASES = [
     },
     {
         label: 'gastronomy',
-        service: GastronomyService,
+        service: VenueService,
         staffPermission: PermissionEnum.GASTRONOMY_VIEW_ALL,
         segment: 'gastronomia',
         importRoute: async () => {
-            const mod = await import('../../src/routes/gastronomy/protected/qrSheet.js');
-            return mod.protectedGetGastronomyQrSheetRoute;
+            const mod = await import('../../src/routes/venue/protected/qrSheet.js');
+            return mod.protectedGetVenueQrSheetRoute;
         }
     },
     {

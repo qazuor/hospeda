@@ -24,7 +24,6 @@ import {
     eq,
     experienceMedia,
     experiences,
-    GastronomyModel,
     gastronomies,
     gastronomyMedia,
     getDb,
@@ -35,7 +34,8 @@ import {
     planVersionLimits,
     planVersions,
     trials,
-    users
+    users,
+    VenueModel
 } from '@repo/db';
 import {
     type Accommodation,
@@ -449,7 +449,7 @@ export async function createVerticalListing(args: {
         contactInfo: { workPhone: '+541100000000' }
     };
     if (args.vertical === VerticalEnum.VENUE) {
-        const listing = await new GastronomyModel().create(
+        const listing = await new VenueModel().create(
             {
                 ...common,
                 type: 'RESTAURANT',

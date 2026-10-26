@@ -44,26 +44,26 @@ import { protectedSetFeaturedExperienceMediaRoute } from '../../src/routes/exper
 import { protectedUnpublishExperienceRoute } from '../../src/routes/experience/protected/unpublish';
 import { protectedUpdateExperienceFaqRoute } from '../../src/routes/experience/protected/updateFaq.ts';
 import { protectedUpdateExperienceMediaRoute } from '../../src/routes/experience/protected/updateMedia.ts';
-import { protectedAddGastronomyFaqRoute } from '../../src/routes/gastronomy/protected/addFaq.ts';
-import { protectedAddGastronomyFeaturedMediaRoute } from '../../src/routes/gastronomy/protected/addFeaturedMedia.ts';
-import { protectedAddGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/addMedia.ts';
-import { protectedCreateGastronomyListingRoute } from '../../src/routes/gastronomy/protected/create';
-import { protectedDeleteGastronomyMenuFileRoute } from '../../src/routes/gastronomy/protected/deleteMenuFile';
-import { protectedPatchGastronomyRoute } from '../../src/routes/gastronomy/protected/patch';
-import { protectedPublishGastronomyRoute } from '../../src/routes/gastronomy/protected/publish';
-import { protectedPutGastronomyDailySpecialsRoute } from '../../src/routes/gastronomy/protected/putDailySpecials.ts';
-import { protectedPutGastronomyEventsRoute } from '../../src/routes/gastronomy/protected/putEvents.ts';
-import { protectedPutGastronomyMenuRoute } from '../../src/routes/gastronomy/protected/putMenu.ts';
-import { protectedRemoveGastronomyFaqRoute } from '../../src/routes/gastronomy/protected/removeFaq.ts';
-import { protectedRemoveGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/removeMedia.ts';
-import { protectedReorderGastronomyFaqsRoute } from '../../src/routes/gastronomy/protected/reorderFaqs.ts';
-import { protectedReorderGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/reorderMedia.ts';
-import { protectedSetFeaturedGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/setFeaturedMedia.ts';
-import { protectedUnpublishGastronomyRoute } from '../../src/routes/gastronomy/protected/unpublish';
-import { protectedUpdateGastronomyFaqRoute } from '../../src/routes/gastronomy/protected/updateFaq.ts';
-import { protectedUpdateGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/updateMedia.ts';
-import { protectedUploadGastronomyMenuFileRoute } from '../../src/routes/gastronomy/protected/uploadMenuFile';
-import { protectedUploadGastronomyMenuItemPhotoRoute } from '../../src/routes/gastronomy/protected/uploadMenuItemPhoto';
+import { protectedAddVenueFaqRoute } from '../../src/routes/venue/protected/addFaq';
+import { protectedAddVenueFeaturedMediaRoute } from '../../src/routes/venue/protected/addFeaturedMedia';
+import { protectedAddVenueMediaRoute } from '../../src/routes/venue/protected/addMedia';
+import { protectedCreateVenueListingRoute } from '../../src/routes/venue/protected/create';
+import { protectedDeleteVenueMenuFileRoute } from '../../src/routes/venue/protected/deleteMenuFile';
+import { protectedPatchVenueRoute } from '../../src/routes/venue/protected/patch';
+import { protectedPublishVenueRoute } from '../../src/routes/venue/protected/publish';
+import { protectedPutVenueDailySpecialsRoute } from '../../src/routes/venue/protected/putDailySpecials';
+import { protectedPutVenueEventsRoute } from '../../src/routes/venue/protected/putEvents';
+import { protectedPutVenueMenuRoute } from '../../src/routes/venue/protected/putMenu';
+import { protectedRemoveVenueFaqRoute } from '../../src/routes/venue/protected/removeFaq';
+import { protectedRemoveVenueMediaRoute } from '../../src/routes/venue/protected/removeMedia';
+import { protectedReorderVenueFaqsRoute } from '../../src/routes/venue/protected/reorderFaqs';
+import { protectedReorderVenueMediaRoute } from '../../src/routes/venue/protected/reorderMedia';
+import { protectedSetFeaturedVenueMediaRoute } from '../../src/routes/venue/protected/setFeaturedMedia';
+import { protectedUnpublishVenueRoute } from '../../src/routes/venue/protected/unpublish';
+import { protectedUpdateVenueFaqRoute } from '../../src/routes/venue/protected/updateFaq';
+import { protectedUpdateVenueMediaRoute } from '../../src/routes/venue/protected/updateMedia';
+import { protectedUploadVenueMenuFileRoute } from '../../src/routes/venue/protected/uploadMenuFile';
+import { protectedUploadVenueMenuItemPhotoRoute } from '../../src/routes/venue/protected/uploadMenuItemPhoto';
 import type { AppBindings } from '../../src/types';
 
 const mocks = vi.hoisted(() => ({
@@ -73,8 +73,8 @@ const mocks = vi.hoisted(() => ({
     subscribeDestination: vi.fn(),
     createAccommodation: vi.fn(),
     deleteAccommodation: vi.fn(),
-    createGastronomy: vi.fn(),
-    deleteGastronomy: vi.fn(),
+    createVenue: vi.fn(),
+    deleteVenue: vi.fn(),
     createExperience: vi.fn(),
     deleteExperience: vi.fn()
 }));
@@ -84,9 +84,9 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
         create = mocks.createAccommodation;
         softDelete = mocks.deleteAccommodation;
     },
-    GastronomyService: class {
-        createForOwner = mocks.createGastronomy;
-        softDeleteOwnDraft = mocks.deleteGastronomy;
+    VenueService: class {
+        createForOwner = mocks.createVenue;
+        softDeleteOwnDraft = mocks.deleteVenue;
     },
     ExperienceService: class {
         createForOwner = mocks.createExperience;
@@ -139,7 +139,7 @@ const accommodationCreate = {
     destinationId: DESTINATION,
     ownerId: OWNER
 };
-const gastronomyCreate = {
+const venueCreate = {
     name: 'A valid restaurant',
     summary: 'A good place to eat in town',
     description: 'A welcoming restaurant with local food and careful service.',
@@ -312,17 +312,17 @@ const cases = [
         vertical: VerticalEnum.EXPERIENCE
     },
     {
-        file: 'gastronomy/protected/create.ts',
-        route: protectedCreateGastronomyListingRoute,
+        file: 'venue/protected/create.ts',
+        route: protectedCreateVenueListingRoute,
         method: 'POST',
         path: '/',
-        body: gastronomyCreate,
+        body: venueCreate,
         operation: 'CREATE',
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/publish.ts',
-        route: protectedPublishGastronomyRoute,
+        file: 'venue/protected/publish.ts',
+        route: protectedPublishVenueRoute,
         method: 'POST',
         path: '/{id}/publish',
         body: undefined,
@@ -330,8 +330,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/unpublish.ts',
-        route: protectedUnpublishGastronomyRoute,
+        file: 'venue/protected/unpublish.ts',
+        route: protectedUnpublishVenueRoute,
         method: 'POST',
         path: '/{id}/unpublish',
         body: undefined,
@@ -339,8 +339,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/deleteMenuFile.ts',
-        route: protectedDeleteGastronomyMenuFileRoute,
+        file: 'venue/protected/deleteMenuFile.ts',
+        route: protectedDeleteVenueMenuFileRoute,
         method: 'DELETE',
         path: '/{id}/menu-file',
         body: undefined,
@@ -348,8 +348,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/patch.ts',
-        route: protectedPatchGastronomyRoute,
+        file: 'venue/protected/patch.ts',
+        route: protectedPatchVenueRoute,
         method: 'PATCH',
         path: '/{id}',
         body: { name: 'Updated listing' },
@@ -357,8 +357,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/uploadMenuFile.ts',
-        route: protectedUploadGastronomyMenuFileRoute,
+        file: 'venue/protected/uploadMenuFile.ts',
+        route: protectedUploadVenueMenuFileRoute,
         method: 'POST',
         path: '/{id}/menu-file',
         body: undefined,
@@ -366,8 +366,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/uploadMenuItemPhoto.ts',
-        route: protectedUploadGastronomyMenuItemPhotoRoute,
+        file: 'venue/protected/uploadMenuItemPhoto.ts',
+        route: protectedUploadVenueMenuItemPhotoRoute,
         method: 'POST',
         path: '/{id}/menu-item-photo',
         body: undefined,
@@ -555,8 +555,8 @@ const cases = [
         vertical: VerticalEnum.EXPERIENCE
     },
     {
-        file: 'gastronomy/protected/addFaq.ts',
-        route: protectedAddGastronomyFaqRoute,
+        file: 'venue/protected/addFaq.ts',
+        route: protectedAddVenueFaqRoute,
         method: 'POST',
         path: '/{id}/faqs',
         body: faqCreate,
@@ -564,8 +564,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/addFeaturedMedia.ts',
-        route: protectedAddGastronomyFeaturedMediaRoute,
+        file: 'venue/protected/addFeaturedMedia.ts',
+        route: protectedAddVenueFeaturedMediaRoute,
         method: 'POST',
         path: '/{id}/media/featured',
         body: mediaAdd,
@@ -573,8 +573,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/addMedia.ts',
-        route: protectedAddGastronomyMediaRoute,
+        file: 'venue/protected/addMedia.ts',
+        route: protectedAddVenueMediaRoute,
         method: 'POST',
         path: '/{id}/media',
         body: mediaAdd,
@@ -582,8 +582,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/putDailySpecials.ts',
-        route: protectedPutGastronomyDailySpecialsRoute,
+        file: 'venue/protected/putDailySpecials.ts',
+        route: protectedPutVenueDailySpecialsRoute,
         method: 'PUT',
         path: '/{id}/daily-specials',
         body: { specials: [] },
@@ -591,8 +591,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/putEvents.ts',
-        route: protectedPutGastronomyEventsRoute,
+        file: 'venue/protected/putEvents.ts',
+        route: protectedPutVenueEventsRoute,
         method: 'PUT',
         path: '/{id}/events',
         body: { events: [] },
@@ -600,8 +600,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/putMenu.ts',
-        route: protectedPutGastronomyMenuRoute,
+        file: 'venue/protected/putMenu.ts',
+        route: protectedPutVenueMenuRoute,
         method: 'PUT',
         path: '/{id}/menu',
         body: { sections: [] },
@@ -609,8 +609,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/removeFaq.ts',
-        route: protectedRemoveGastronomyFaqRoute,
+        file: 'venue/protected/removeFaq.ts',
+        route: protectedRemoveVenueFaqRoute,
         method: 'DELETE',
         path: '/{id}/faqs/{faqId}',
         body: undefined,
@@ -618,8 +618,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/removeMedia.ts',
-        route: protectedRemoveGastronomyMediaRoute,
+        file: 'venue/protected/removeMedia.ts',
+        route: protectedRemoveVenueMediaRoute,
         method: 'DELETE',
         path: '/{id}/media/{mediaId}',
         body: undefined,
@@ -627,8 +627,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/reorderFaqs.ts',
-        route: protectedReorderGastronomyFaqsRoute,
+        file: 'venue/protected/reorderFaqs.ts',
+        route: protectedReorderVenueFaqsRoute,
         method: 'PUT',
         path: '/{id}/faqs/reorder',
         body: faqReorder,
@@ -636,8 +636,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/reorderMedia.ts',
-        route: protectedReorderGastronomyMediaRoute,
+        file: 'venue/protected/reorderMedia.ts',
+        route: protectedReorderVenueMediaRoute,
         method: 'PATCH',
         path: '/{id}/media/reorder',
         body: mediaReorder,
@@ -645,8 +645,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/setFeaturedMedia.ts',
-        route: protectedSetFeaturedGastronomyMediaRoute,
+        file: 'venue/protected/setFeaturedMedia.ts',
+        route: protectedSetFeaturedVenueMediaRoute,
         method: 'PUT',
         path: '/{id}/media/{mediaId}/featured',
         body: undefined,
@@ -654,8 +654,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/updateFaq.ts',
-        route: protectedUpdateGastronomyFaqRoute,
+        file: 'venue/protected/updateFaq.ts',
+        route: protectedUpdateVenueFaqRoute,
         method: 'PUT',
         path: '/{id}/faqs/{faqId}',
         body: faqUpdate,
@@ -663,8 +663,8 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/protected/updateMedia.ts',
-        route: protectedUpdateGastronomyMediaRoute,
+        file: 'venue/protected/updateMedia.ts',
+        route: protectedUpdateVenueMediaRoute,
         method: 'PATCH',
         path: '/{id}/media/{mediaId}',
         body: mediaUpdate,
@@ -695,8 +695,8 @@ beforeEach(() => {
     for (const service of [
         mocks.createAccommodation,
         mocks.deleteAccommodation,
-        mocks.createGastronomy,
-        mocks.deleteGastronomy,
+        mocks.createVenue,
+        mocks.deleteVenue,
         mocks.createExperience,
         mocks.deleteExperience
     ]) {
@@ -757,8 +757,8 @@ describe('TEST:V5:10 protected listing write coverage step', () => {
                 [
                     mocks.createAccommodation,
                     mocks.deleteAccommodation,
-                    mocks.createGastronomy,
-                    mocks.deleteGastronomy,
+                    mocks.createVenue,
+                    mocks.deleteVenue,
                     mocks.createExperience,
                     mocks.deleteExperience
                 ].every((service) => service.mock.calls.length === 0)
@@ -769,8 +769,8 @@ describe('TEST:V5:10 protected listing write coverage step', () => {
                 [
                     mocks.createAccommodation,
                     mocks.deleteAccommodation,
-                    mocks.createGastronomy,
-                    mocks.deleteGastronomy,
+                    mocks.createVenue,
+                    mocks.deleteVenue,
                     mocks.createExperience,
                     mocks.deleteExperience
                 ].every((service) => service.mock.calls.length === 0)
@@ -781,12 +781,12 @@ describe('TEST:V5:10 protected listing write coverage step', () => {
                     ? vertical === VerticalEnum.ACCOMMODATION
                         ? mocks.createAccommodation
                         : vertical === VerticalEnum.VENUE
-                          ? mocks.createGastronomy
+                          ? mocks.createVenue
                           : mocks.createExperience
                     : vertical === VerticalEnum.ACCOMMODATION
                       ? mocks.deleteAccommodation
                       : vertical === VerticalEnum.VENUE
-                        ? mocks.deleteGastronomy
+                        ? mocks.deleteVenue
                         : mocks.deleteExperience;
             expect(
                 service,

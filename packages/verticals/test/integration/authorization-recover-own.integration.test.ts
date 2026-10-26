@@ -127,7 +127,7 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
                 );
             }
 
-            const [gastronomy] = await db
+            const [venue] = await db
                 .insert(gastronomies)
                 .values({
                     slug: randomUUID(),
@@ -157,7 +157,7 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
                     deadlinesVersion: 1
                 })
                 .returning({ id: experiences.id });
-            if (!gastronomy || !experience) throw new Error('Listing insert failed');
+            if (!venue || !experience) throw new Error('Listing insert failed');
 
             const reader = {
                 ...createBootstrapCoverageReader(db),
@@ -228,7 +228,7 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
                     publicationStatus: gastronomies.publicationStatus
                 })
                 .from(gastronomies)
-                .where(eq(gastronomies.id, gastronomy.id))
+                .where(eq(gastronomies.id, venue.id))
                 .limit(1);
             const [otherArchived] = await db
                 .select({

@@ -15,11 +15,11 @@ import { hostConversationMonthlyInquiriesRoute } from '../../src/routes/conversa
 import { hostConversationResponseRateRoute } from '../../src/routes/conversations/protected/response-rate';
 import { protectedExperienceViewStatsRoute } from '../../src/routes/experience/protected/viewStats';
 import { protectedExperienceViewStatsDailySeriesRoute } from '../../src/routes/experience/protected/viewStatsDailySeries';
-import { protectedGetGastronomyMenuQrRoute } from '../../src/routes/gastronomy/protected/menuQr';
-import { protectedGetGastronomyMenuQrScansRoute } from '../../src/routes/gastronomy/protected/menuQrScans';
-import { protectedGastronomyViewStatsRoute } from '../../src/routes/gastronomy/protected/viewStats';
-import { protectedGastronomyViewStatsDailySeriesRoute } from '../../src/routes/gastronomy/protected/viewStatsDailySeries';
 import { hostDashboardRoute } from '../../src/routes/host/protected/dashboard';
+import { protectedGetVenueMenuQrRoute } from '../../src/routes/venue/protected/menuQr';
+import { protectedGetVenueMenuQrScansRoute } from '../../src/routes/venue/protected/menuQrScans';
+import { protectedVenueViewStatsRoute } from '../../src/routes/venue/protected/viewStats';
+import { protectedVenueViewStatsDailySeriesRoute } from '../../src/routes/venue/protected/viewStatsDailySeries';
 import { hostAccommodationViewStatsRoute } from '../../src/routes/views/protected/accommodations-me';
 import { hostAccommodationDailySeriesRoute } from '../../src/routes/views/protected/daily-series';
 import type { AppBindings } from '../../src/types';
@@ -54,7 +54,7 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
         getHostResponseRate = mocks.service;
         getUnreadCount = mocks.service;
     },
-    GastronomyService: class {
+    VenueService: class {
         static ENTITY_NAME = 'gastronomy';
         getById = mocks.service;
     },
@@ -150,7 +150,7 @@ const rows = [
     },
     {
         file: 'gastronomy/views',
-        route: protectedGastronomyViewStatsRoute,
+        route: protectedVenueViewStatsRoute,
         path: '/mine/views',
         key: 'view_basic_stats',
         vertical: VerticalEnum.VENUE,
@@ -159,7 +159,7 @@ const rows = [
     },
     {
         file: 'gastronomy/daily-series',
-        route: protectedGastronomyViewStatsDailySeriesRoute,
+        route: protectedVenueViewStatsDailySeriesRoute,
         path: '/mine/views/daily-series',
         key: 'view_basic_stats',
         vertical: VerticalEnum.VENUE,
@@ -186,7 +186,7 @@ const rows = [
     },
     {
         file: 'gastronomy/menu-qr',
-        route: protectedGetGastronomyMenuQrRoute,
+        route: protectedGetVenueMenuQrRoute,
         path: `/${LISTING}/menu-qr`,
         key: 'menu_qr_scan_metrics',
         vertical: VerticalEnum.VENUE,
@@ -196,7 +196,7 @@ const rows = [
     },
     {
         file: 'gastronomy/menu-qr-scans',
-        route: protectedGetGastronomyMenuQrScansRoute,
+        route: protectedGetVenueMenuQrScansRoute,
         path: `/${LISTING}/menu-qr/scans`,
         key: 'menu_qr_scan_metrics',
         vertical: VerticalEnum.VENUE,
@@ -336,7 +336,7 @@ describe('TEST:V5:32 stats gates', () => {
         }
         if ('resource' in row)
             mocks.service.mockResolvedValue({
-                data: { id: LISTING, ownerId: row.allowed, slug: 'venue', name: 'Venue' }
+                data: { id: LISTING, ownerId: row.allowed, slug: 'gastronomy', name: 'Venue' }
             });
         if (row.file === 'gastronomy/menu-qr') {
             mocks.qr.mockImplementation(async (input: { targetUrl: string }) => ({

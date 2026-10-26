@@ -80,7 +80,7 @@ describe('DestinationModel.getPointsOfInterestMap — categories[] aggregation (
                 const dest = testData.destination();
                 const poi = poiFixture({ slug: 'poi-multi-cat' });
                 const catTermas = categoryFixture({ slug: 'termas', displayWeight: 10 });
-                const catGastronomia = categoryFixture({ slug: 'gastronomia', displayWeight: 20 });
+                const venueCategory = categoryFixture({ slug: 'gastronomia', displayWeight: 20 });
                 const catDeleted = categoryFixture({
                     slug: 'deleted-cat',
                     deletedAt: new Date()
@@ -88,7 +88,7 @@ describe('DestinationModel.getPointsOfInterestMap — categories[] aggregation (
 
                 await db.insert(destinations).values(dest);
                 await db.insert(pointsOfInterest).values(poi);
-                await db.insert(poiCategories).values([catTermas, catGastronomia, catDeleted]);
+                await db.insert(poiCategories).values([catTermas, venueCategory, catDeleted]);
                 await db.insert(rDestinationPointOfInterest).values({
                     destinationId: dest.id,
                     pointOfInterestId: poi.id,
@@ -96,7 +96,7 @@ describe('DestinationModel.getPointsOfInterestMap — categories[] aggregation (
                 });
                 await db.insert(rPoiCategory).values([
                     { pointOfInterestId: poi.id, categoryId: catTermas.id, isPrimary: true },
-                    { pointOfInterestId: poi.id, categoryId: catGastronomia.id, isPrimary: false },
+                    { pointOfInterestId: poi.id, categoryId: venueCategory.id, isPrimary: false },
                     { pointOfInterestId: poi.id, categoryId: catDeleted.id, isPrimary: false }
                 ]);
 

@@ -15,7 +15,7 @@ import type { ListingHookState } from '../listing/listing.types';
  *
  * Currently a pure alias of {@link ListingHookState} — no
  * experience-specific transient state is needed yet. The explicit alias keeps the
- * pattern consistent with other services (AccommodationHookState, GastronomyHookState)
+ * pattern consistent with other services (AccommodationHookState, VenueHookState)
  * and makes future extension trivial.
  *
  * Stored in `ctx.hookState` (a `Record<string, unknown>` scoped to a single

@@ -1,0 +1,99 @@
+/**
+ * PUT /api/v1/protected/gastronomies/:id/menu
+ *
+ * Replaces the venue's structured carta with the submitted document (HOS-895).
+ *
+ * ## What it answers, and in what order
+ *
+ * 1. **Authentication** — `createCRUDRoute` over the protected router.
+ * 2. **Listing access** — the owner needs menu management, plus photo or
+ *    translation capability when the payload carries those fields.
+ * 3. **Ownership** — inside `replaceVenueMenu`, via the same
+ *    `GASTRONOMY_EDIT_OWN` / `GASTRONOMY_EDIT_ALL` gate the sibling writes use.
+ *
+ *
+ * ## Whole document, one transaction
+ *
+ * The body is the ENTIRE carta, and an empty `sections` array is a legitimate
+ * submission meaning "delete it". See `packages/service-core/src/services/venue/venue.menu.ts`
+ * for why the carta is written whole where `gastronomy_media` is written per row.
+ *
+ * @module routes/venue/protected/putMenu
+ */
+
+import {
+    VenueMenuOutputSchema,
+    type VenueMenuReplacePayload,
+    VenueMenuReplacePayloadSchema,
+    VerticalEnum
+} from '@repo/schemas';
+import { replaceVenueMenu, VenueService } from '@repo/service-core';
+// Same module instance `utils/response-helpers` compares against — see
+// `brochure.ts` for why the root import breaks `instanceof`.
+import { ServiceError } from '@repo/service-core/types';
+import type { Context } from 'hono';
+import { z } from 'zod';
+import { getActorFromContext } from '../../../utils/actor';
+import { apiLogger } from '../../../utils/logger';
+import { createProtectedRoute } from '../../../utils/route-factory';
+import { menuPayloadCarriesItemPhoto } from '../../venue/protected/menu-item-photo-gate';
+import { menuPayloadCarriesTranslations } from '../../venue/protected/menu-translations-gate';
+
+const venueService = new VenueService({ logger: apiLogger });
+
+/** Writes the carta. Exported standalone so the route test can call it directly. */
+export async function handlePutVenueMenu(
+    ctx: Context,
+    params: Record<string, unknown>,
+    body: Record<string, unknown>
+) {
+    const actor = getActorFromContext(ctx);
+
+    // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`, the
+    // same accessor the FAQ and media routes use.
+    const model = (venueService as unknown as { model: Parameters<typeof replaceVenueMenu>[0] })
+        .model;
+
+    const result = await replaceVenueMenu(model, actor, {
+        gastronomyId: params.id as string,
+        // TYPE-WORKAROUND: the factory hands the handler a
+        // `Record<string, unknown>`, but the body has already been validated
+        // against `GastronomyMenuReplacePayloadSchema` by the route; the service
+        // re-parses it anyway, so the cast asserts nothing the next line does not
+        // verify.
+        menu: body as unknown as VenueMenuReplacePayload
+    });
+
+    if (result.error) {
+        throw new ServiceError(result.error.code, result.error.message);
+    }
+
+    return result.data;
+}
+
+export const protectedPutVenueMenuRoute = createProtectedRoute({
+    method: 'put',
+    path: '/{id}/menu',
+    summary: 'Replace the structured menu of a gastronomy listing',
+    description:
+        'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above; a document carrying a per-dish photo additionally requires menu_item_photos (premium), and a document carrying a nameI18n/descriptionI18n translation additionally requires multilingual_gastronomy_menu (premium).',
+    listingAccess: {
+        vertical: VerticalEnum.VENUE,
+        operation: 'EDIT',
+        idParam: 'id',
+        capabilities: ({ body }) => [
+            'manage_gastronomy_menu',
+            ...(menuPayloadCarriesItemPhoto(body) ? ['menu_item_photos'] : []),
+            ...(menuPayloadCarriesTranslations(body) ? ['multilingual_gastronomy_menu'] : [])
+        ]
+    },
+    tags: ['Gastronomy', 'Gastronomy Menu'],
+    protectedTag: false,
+    requestParams: {
+        id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+    },
+    requestBody: VenueMenuReplacePayloadSchema,
+    responseSchema: VenueMenuOutputSchema,
+    handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
+        handlePutVenueMenu(ctx, params, body)
+});

@@ -13,13 +13,13 @@
 import type { AiChatEntityType, AiFeature } from '@repo/schemas';
 import { assembleAccommodationContext } from '../accommodation-ai-context.js';
 import { assembleExperienceContext } from './experience-ai-context.js';
-import { assembleGastronomyContext } from './gastronomy-ai-context.js';
 import type { ChatContextAssembler, ChatContextAssemblerMap } from './types.js';
+import { assembleVenueContext } from './venue-ai-context.js';
 
 export { assembleExperienceContext } from './experience-ai-context.js';
-export { assembleGastronomyContext } from './gastronomy-ai-context.js';
 export * from './owner-data-fence.js';
 export * from './types.js';
+export { assembleVenueContext } from './venue-ai-context.js';
 
 /**
  * Adapts the pre-existing accommodation assembler to the shared contract.
@@ -51,7 +51,7 @@ const assembleAccommodationChatContext: ChatContextAssembler = async (input) => 
 /** Maps each chat entity type to the assembler that builds its context. */
 export const CHAT_CONTEXT_ASSEMBLERS: ChatContextAssemblerMap = {
     accommodation: assembleAccommodationChatContext,
-    gastronomy: assembleGastronomyContext,
+    gastronomy: assembleVenueContext,
     experience: assembleExperienceContext
 };
 

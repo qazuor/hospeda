@@ -1,4 +1,4 @@
-import { accommodationModel, experienceModel, gastronomyModel } from '@repo/db';
+import { accommodationModel, experienceModel, venueModel } from '@repo/db';
 import {
     type Accommodation,
     type Experience,
@@ -77,7 +77,7 @@ export async function readIncompleteListingIds(args: {
             break;
         }
         case VerticalEnum.VENUE: {
-            const listings = await gastronomyModel.findByIds(args.listingIds);
+            const listings = await venueModel.findByIds(args.listingIds);
             for (const listing of listings) {
                 const media = await loadListingMedia({
                     entityType: args.vertical,
