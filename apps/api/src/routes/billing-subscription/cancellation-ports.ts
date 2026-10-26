@@ -1,4 +1,5 @@
 import { providerLinkCancellationSeen } from '@repo/service-core';
+import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts';
 import { getClock } from '../../utils/clock';
 import { buildBillingCoveragePorts } from '../../utils/listing-access/billing-coverage';
 import { createBootstrapCoverageReader } from '../../utils/listing-access/bootstrap-coverage-reader';
@@ -16,6 +17,7 @@ export function buildSelfCancellationPorts() {
         clock: getClock().clock,
         beforeCancelNotice,
         coverageNotices: getCoverageNotices(),
+        billingFacts: getAnalyticsFactSink(),
         complements: { addonPolicy, listing },
         orphanhood: { addonPolicy, listing },
         cancellationSeen: providerLinkCancellationSeen

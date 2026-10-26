@@ -72,6 +72,8 @@ export interface CreateOpenApiRouteInterface {
     tags: string[];
     requestParams?: Record<string, z.ZodTypeAny>;
     requestBody?: z.ZodTypeAny;
+    /** Whether OpenAPI requires a declared request body. Defaults to true. */
+    requestBodyRequired?: boolean;
     requestQuery?: Record<string, z.ZodTypeAny>;
     /**
      * Zod schema that every route MUST declare.
@@ -119,6 +121,7 @@ export interface CreateOpenApiRouteInterface {
 interface CreateRequestOptionsInterface {
     params: Record<string, z.ZodTypeAny>;
     body?: z.ZodTypeAny; // optional to avoid declaring body for GET/DELETE
+    bodyRequired?: boolean;
     query: Record<string, z.ZodTypeAny>;
 }
 
@@ -173,7 +176,8 @@ export const hasHttpCoercionFields = (schema: z.ZodTypeAny): boolean => {
  * Helper function to create body request configuration
  * Reduces boilerplate for body requests
  */
-const createBodyRequest = (schema: z.ZodTypeAny) => ({
+const createBodyRequest = (schema: z.ZodTypeAny, required: boolean) => ({
+    required,
     content: {
         'application/json': {
             schema
@@ -208,7 +212,10 @@ const createRequestOptions = (requestOptions: CreateRequestOptionsInterface) => 
     }
 
     if (requestOptions.body) {
-        parsedRequestOptions.body = createBodyRequest(requestOptions.body);
+        parsedRequestOptions.body = createBodyRequest(
+            requestOptions.body,
+            requestOptions.bodyRequired ?? true
+        );
     }
 
     if (Object.keys(requestOptions.query).length > 0) {
@@ -256,7 +263,8 @@ const openApiPathToHonoPath = (openApiPath: string): string =>
 const applyRouteMiddlewares = (
     app: ReturnType<typeof createRouter>,
     options: RouteOptions | undefined,
-    routePath: string
+    routePath: string,
+    requestBodyRequired = true
 ) => {
     const honoPath = openApiPathToHonoPath(routePath);
 
@@ -275,6 +283,21 @@ const applyRouteMiddlewares = (
         for (const middleware of options.middlewares) {
             app.use(honoPath, middleware);
         }
+    }
+
+    if (!requestBodyRequired) {
+        app.use(honoPath, async (c: Context, next: () => Promise<void>) => {
+            const rawBody = await c.req.raw.clone().text();
+            if (rawBody.length === 0) {
+                const request = c.req as unknown as {
+                    header: (name: string) => string | undefined;
+                };
+                const originalHeader = request.header.bind(c.req);
+                request.header = (name) =>
+                    name.toLowerCase() === 'content-type' ? undefined : originalHeader(name);
+            }
+            await next();
+        });
     }
 
     // Add route-specific options as context for middlewares to use
@@ -366,7 +389,7 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
     const app = createRouter();
 
     // Apply route-specific middlewares
-    applyRouteMiddlewares(app, options.options, options.path);
+    applyRouteMiddlewares(app, options.options, options.path, options.requestBodyRequired ?? true);
 
     const route = createRoute({
         method: options.method,
@@ -397,6 +420,7 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
                           ? options.requestBody
                           : createOpenAPISchema(options.requestBody)
                       : undefined,
+            bodyRequired: options.requestBodyRequired,
             query: options.requestQuery || {}
         }),
         // Apply OpenAPI conversion to response schemas

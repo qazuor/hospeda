@@ -194,7 +194,7 @@ function toEvent(fact: Fact): {
                     ...common,
                     service_ends_at: fact.serviceEndsAt.toISOString(),
                     basis: fact.basis,
-                    reason: fact.reason
+                    ...(fact.reason ? { reason: fact.reason } : {})
                 },
                 timestamp: fact.occurredAt
             };
@@ -208,7 +208,7 @@ function toEvent(fact: Fact): {
                     path: fact.path,
                     was_scheduled: fact.wasScheduled,
                     lifetime_days: fact.lifetimeDays,
-                    reason: fact.reason
+                    ...(fact.reason ? { reason: fact.reason } : {})
                 },
                 timestamp: fact.occurredAt
             };

@@ -1,5 +1,6 @@
 import { endScheduledServices, providerLinkCancellationSeen } from '@repo/service-core';
 import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
+import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts.js';
 import { getClock } from '../../utils/clock.js';
 import { buildBillingCoveragePorts } from '../../utils/listing-access/billing-coverage.js';
 import { createBootstrapCoverageReader } from '../../utils/listing-access/bootstrap-coverage-reader.js';
@@ -43,6 +44,7 @@ export const subscriptionServiceEndJob: CronJobDefinition = {
                 { limit: 100 },
                 {
                     clock: getClock().clock,
+                    billingFacts: getAnalyticsFactSink(),
                     provider: getPaymentProvider(),
                     beforeCancelNotice,
                     coverageNotices: getCoverageNotices(),

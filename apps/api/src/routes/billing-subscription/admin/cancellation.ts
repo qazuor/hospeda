@@ -163,6 +163,7 @@ export const adminCancelSubscriptionRoute = createAdminRoute({
     requiredPermissions: [PermissionEnum.BILLING_CANCEL_SUBSCRIPTION],
     requestParams: SubscriptionCancellationParamsSchema.shape,
     requestBody: AdminSubscriptionCancellationRequestSchema,
+    requestBodyRequired: false,
     responseSchema: AdminSubscriptionCancellationResponseSchema,
     successStatusCode: 200,
     handler: async (
@@ -170,7 +171,7 @@ export const adminCancelSubscriptionRoute = createAdminRoute({
         params: Record<string, unknown>,
         body: Record<string, unknown>
     ) => {
-        const input = AdminSubscriptionCancellationRequestSchema.parse(body);
+        const input = AdminSubscriptionCancellationRequestSchema.parse(body ?? {});
         const actor = getActorFromContext(ctx);
         const id = params.subscriptionId as string;
         try {
@@ -197,8 +198,14 @@ export const adminCancelSubscriptionRoute = createAdminRoute({
             const ports = buildSelfCancellationPorts();
             const result: CancellationResult =
                 plan.action === 'S11'
-                    ? await cancelActiveSubscription({ actor, subscriptionId: id }, ports)
-                    : await cancelDirectSubscription({ actor, subscriptionId: id }, ports);
+                    ? await cancelActiveSubscription(
+                          { actor, subscriptionId: id, reason: input.reason },
+                          ports
+                      )
+                    : await cancelDirectSubscription(
+                          { actor, subscriptionId: id, reason: input.reason },
+                          ports
+                      );
             const transition =
                 result.outcome === 'SCHEDULED'
                     ? 'S11'
@@ -235,7 +242,8 @@ export const adminCancelSubscriptionRoute = createAdminRoute({
                     ...('escalated' in result && result.escalated
                         ? { escalated: result.escalated }
                         : {}),
-                    ...(note ? { note } : {})
+                    ...(note ? { note } : {}),
+                    ...(input.reason ? { reason: input.reason } : {})
                 }
             });
             return response;
