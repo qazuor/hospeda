@@ -3,11 +3,11 @@
  * Routes that require admin-level access for review moderation.
  */
 import { createRouter } from '../../../../utils/create-app';
-import { adminDeleteGastronomyReviewRoute } from '../../../gastronomy/reviews/admin/delete';
-import { adminGetGastronomyReviewByIdRoute } from '../../../gastronomy/reviews/admin/getById';
-import { adminListGastronomyReviewsRoute } from '../../../gastronomy/reviews/admin/list';
-import { adminModerateGastronomyReviewRoute } from '../../../gastronomy/reviews/admin/moderate';
-import { adminUpdateGastronomyReviewRoute } from '../../../gastronomy/reviews/admin/update';
+import { adminDeleteGastronomyReviewRoute } from './delete';
+import { adminGetGastronomyReviewByIdRoute } from './getById';
+import { adminListGastronomyReviewsRoute } from './list';
+import { adminModerateGastronomyReviewRoute } from './moderate';
+import { adminUpdateGastronomyReviewRoute } from './update';
 
 const app = createRouter();
 

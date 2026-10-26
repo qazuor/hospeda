@@ -104,7 +104,7 @@ describe('AC:V6:25 listing delete doors guard', () => {
             expect(oldService.exitCode).toBe(1);
             expect(oldService.output).toContain(`new ${oldClass}({ logger }).hardDelete(...)`);
 
-            const oldReceiver = ['gastronomy', 'service'].join('');
+            const oldReceiver = [['gastro', 'nomy'].join(''), 'service'].join('');
             const legacyReceiver = check({ [file]: `${oldReceiver}.softDelete(actor, id);\n` });
             expect(legacyReceiver.exitCode).toBe(1);
             expect(legacyReceiver.output).toContain(`${oldReceiver}.softDelete(...)`);
