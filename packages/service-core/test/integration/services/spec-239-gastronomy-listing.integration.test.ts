@@ -223,7 +223,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                 });
 
                 // Seed a new owner user
-                const { users, gastronomyModel } = await import('@repo/db');
+                const { users, venueModel } = await import('@repo/db');
                 const newOwnerId = crypto.randomUUID();
                 await tx.insert(users).values({
                     id: newOwnerId,
@@ -235,7 +235,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
 
                 // Act: assign owner at model level (service layer intentionally
                 //      excludes ownerId from the update schema as a dedicated admin action)
-                await gastronomyModel.update({ id: gastronomyId }, { ownerId: newOwnerId }, tx);
+                await venueModel.update({ id: gastronomyId }, { ownerId: newOwnerId }, tx);
 
                 // Read back via service to confirm
                 const ctx: ServiceContext = { tx };

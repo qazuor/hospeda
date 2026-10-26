@@ -38,7 +38,7 @@
  * @module gastronomy.events
  */
 
-import { GastronomyEventModel, type GastronomyModel, withTransaction } from '@repo/db';
+import { VenueEventModel, type VenueModel, withTransaction } from '@repo/db';
 import {
     ServiceErrorCode,
     type VenueEventsGetInput,
@@ -65,14 +65,14 @@ const EVENTS_READ_PAGE_SIZE = 500;
 /**
  * Loads a gastronomy listing by ID or throws NOT_FOUND.
  *
- * @param model - The GastronomyModel instance.
+ * @param model - The VenueModel instance.
  * @param gastronomyId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
  * @returns The gastronomy DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
 async function requireGastronomy(
-    model: GastronomyModel,
+    model: VenueModel,
     gastronomyId: string,
     tx?: ServiceContext['tx']
 ) {
@@ -136,13 +136,13 @@ export function projectEvent<T extends { startTime: string; endTime: string | nu
  * un-park it. The public projection drops them (see the route's own gate),
  * which is where a reader-facing decision belongs.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param data - `{ gastronomyId }`.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyEventsOutput>`.
  */
 export async function getGastronomyEvents(
-    model: GastronomyModel,
+    model: VenueModel,
     data: VenueEventsGetInput,
     ctx?: ServiceContext
 ): Promise<ServiceOutput<VenueEventsOutput>> {
@@ -163,7 +163,7 @@ export async function getGastronomyEvents(
 
         await requireGastronomy(model, gastronomyId, ctx?.tx);
 
-        const eventModel = new GastronomyEventModel();
+        const eventModel = new VenueEventModel();
         const { items: rows } = await eventModel.findAll(
             { gastronomyId },
             { pageSize: EVENTS_READ_PAGE_SIZE },
@@ -206,14 +206,14 @@ export async function getGastronomyEvents(
  * is not a second validation — it is what keeps a future caller that skips the
  * schema from persisting an entry no renderer can place.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - `{ gastronomyId, agenda }`.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyEventsOutput>` with the agenda as now stored.
  */
 export async function replaceGastronomyEvents(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueEventsReplaceInput,
     ctx?: ServiceContext
@@ -237,7 +237,7 @@ export async function replaceGastronomyEvents(
         const gastronomy = await requireGastronomy(model, gastronomyId, ctx?.tx);
         checkGastronomyCanEditFaqs(actor, gastronomy);
 
-        const eventModel = new GastronomyEventModel();
+        const eventModel = new VenueEventModel();
 
         // ONE transaction for the whole document, same reason the carta's write
         // is one: an agenda half-written — the old entries gone and the new ones

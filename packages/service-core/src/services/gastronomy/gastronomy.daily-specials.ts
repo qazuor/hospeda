@@ -41,7 +41,7 @@
  * @module gastronomy.daily-specials
  */
 
-import { GastronomyDailySpecialModel, type GastronomyModel, withTransaction } from '@repo/db';
+import { VenueDailySpecialModel, type VenueModel, withTransaction } from '@repo/db';
 import {
     ServiceErrorCode,
     type VenueDailySpecialsGetInput,
@@ -70,14 +70,14 @@ const DAILY_SPECIALS_READ_PAGE_SIZE = 1000;
 /**
  * Loads a gastronomy listing by ID or throws NOT_FOUND.
  *
- * @param model - The GastronomyModel instance.
+ * @param model - The VenueModel instance.
  * @param gastronomyId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
  * @returns The gastronomy DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
 async function requireGastronomy(
-    model: GastronomyModel,
+    model: VenueModel,
     gastronomyId: string,
     tx?: ServiceContext['tx']
 ) {
@@ -101,7 +101,7 @@ const byDisplayOrder = <T extends { displayOrder: number; title: string }>(a: T,
  * and the caller-facing projection is the route's business, not this
  * function's.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param data - `{ gastronomyId, validOn? }`. Pass `validOn` (a `YYYY-MM-DD`
  *   resolved in the AR market timezone) for the PUBLIC read; omit it for the
  *   owner's, which must include scheduled and elapsed rows.
@@ -109,7 +109,7 @@ const byDisplayOrder = <T extends { displayOrder: number; title: string }>(a: T,
  * @returns `ServiceOutput<GastronomyDailySpecialsOutput>`.
  */
 export async function getGastronomyDailySpecials(
-    model: GastronomyModel,
+    model: VenueModel,
     data: VenueDailySpecialsGetInput,
     ctx?: ServiceContext
 ): Promise<ServiceOutput<VenueDailySpecialsOutput>> {
@@ -130,7 +130,7 @@ export async function getGastronomyDailySpecials(
 
         await requireGastronomy(model, gastronomyId, ctx?.tx);
 
-        const specialModel = new GastronomyDailySpecialModel();
+        const specialModel = new VenueDailySpecialModel();
 
         // The branch IS the feature. `findValidOn` applies the window in SQL,
         // served by the composite index; the unfiltered path is the owner's and
@@ -182,7 +182,7 @@ export async function getGastronomyDailySpecials(
  * so the order a client sees is the order it sent, and two specials cannot be
  * given the same place.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - `{ gastronomyId, specials }`.
  * @param ctx - Optional service context for transaction propagation.
@@ -191,7 +191,7 @@ export async function getGastronomyDailySpecials(
  *   back and a filtered echo would hide the special they just scheduled.
  */
 export async function replaceGastronomyDailySpecials(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueDailySpecialsReplaceInput,
     ctx?: ServiceContext
@@ -215,7 +215,7 @@ export async function replaceGastronomyDailySpecials(
         const gastronomy = await requireGastronomy(model, gastronomyId, ctx?.tx);
         checkGastronomyCanEditFaqs(actor, gastronomy);
 
-        const specialModel = new GastronomyDailySpecialModel();
+        const specialModel = new VenueDailySpecialModel();
 
         // ONE transaction for the whole document, for the reason the carta
         // gives: a half-written menú del día — the old plates gone and the new

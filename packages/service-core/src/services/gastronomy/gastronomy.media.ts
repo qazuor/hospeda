@@ -25,12 +25,7 @@
  * @module gastronomy.media
  */
 
-import {
-    type DrizzleClient,
-    GastronomyMediaModel,
-    type GastronomyModel,
-    withTransaction
-} from '@repo/db';
+import { type DrizzleClient, VenueMediaModel, type VenueModel, withTransaction } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import {
     getGalleryCap,
@@ -72,14 +67,14 @@ import { checkGastronomyCanEditMedia } from './gastronomy.permissions';
 /**
  * Loads a gastronomy listing by ID or throws NOT_FOUND.
  *
- * @param model - The GastronomyModel instance.
+ * @param model - The VenueModel instance.
  * @param gastronomyId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
  * @returns The gastronomy DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
 async function requireGastronomy(
-    model: GastronomyModel,
+    model: VenueModel,
     gastronomyId: string,
     tx?: ServiceContext['tx']
 ) {
@@ -110,14 +105,14 @@ async function requireGastronomy(
  * - `sortOrder`  → max(current visible sortOrder) + 1
  * - `moderationState` → defaults to `ModerationStatusEnum.PENDING` when not supplied
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - Validated add-media input.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyMediaSingleOutput>` containing the created row.
  */
 export async function addGastronomyMedia(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueMediaAddInput,
     ctx?: ServiceContext
@@ -146,7 +141,7 @@ export async function addGastronomyMedia(
             // moderation verdict; a no-op outside its authorized scope.
             assertSupportEditContentOnly({ data: { media: validated.media } });
 
-            const mediaModel = new GastronomyMediaModel();
+            const mediaModel = new VenueMediaModel();
 
             // Compute next sortOrder: max(visible sortOrder) + 1, or 0 if none yet.
             const existing = await mediaModel.findAll(
@@ -253,7 +248,7 @@ export async function addGastronomyMedia(
  * unlikely. Callers that omit the provider get the previous DB-only behavior.
  * See `services/media/delete-media-asset.ts` for the full ordering rationale.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - Validated remove-media input.
  * @param mediaProvider - Optional ImageProvider used to delete the binary.
@@ -261,7 +256,7 @@ export async function addGastronomyMedia(
  * @returns `ServiceOutput<{ success: true }>` on success.
  */
 export async function removeGastronomyMedia(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueMediaRemoveInput,
     mediaProvider?: ImageProvider | null,
@@ -285,7 +280,7 @@ export async function removeGastronomyMedia(
         const gastronomy = await requireGastronomy(model, validated.gastronomyId, ctx?.tx);
         checkGastronomyCanEditMedia(actor, gastronomy);
 
-        const mediaModel = new GastronomyMediaModel();
+        const mediaModel = new VenueMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
         if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId || mediaRow.deletedAt) {
             throw new ServiceError(
@@ -304,7 +299,7 @@ export async function removeGastronomyMedia(
             await mediaModel.softDelete({ id: validated.mediaId }, actor.id, tx);
 
             // Reload the remaining visible rows to resequence them.
-            const { items: remaining } = await mediaModel.findByGastronomy({
+            const { items: remaining } = await mediaModel.findByVenue({
                 gastronomyId: validated.gastronomyId,
                 state: 'visible',
                 pageSize: 200,
@@ -375,14 +370,14 @@ export async function removeGastronomyMedia(
  * `array(uuid).min(1)`), so this function compares the raw array length against
  * the deduplicated set size first.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - Validated reorder input.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyMediaListOutput>` containing the reordered rows.
  */
 export async function reorderGastronomyMedia(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueMediaReorderInput,
     ctx?: ServiceContext
@@ -405,10 +400,10 @@ export async function reorderGastronomyMedia(
         const gastronomy = await requireGastronomy(model, validated.gastronomyId, ctx?.tx);
         checkGastronomyCanEditMedia(actor, gastronomy);
 
-        const mediaModel = new GastronomyMediaModel();
+        const mediaModel = new VenueMediaModel();
 
         // Load all visible rows to validate and resequence.
-        const { items: visibleRows } = await mediaModel.findByGastronomy({
+        const { items: visibleRows } = await mediaModel.findByVenue({
             gastronomyId: validated.gastronomyId,
             state: 'visible',
             pageSize: 200,
@@ -500,14 +495,14 @@ export async function reorderGastronomyMedia(
  * `state` filter (defaults to `'visible'`). Gated with
  * `checkGastronomyCanEditMedia` so an owner sees only their own listing's gallery.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - Validated list-media input.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyMediaListOutput>` containing the media array.
  */
 export async function getGastronomyMedia(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueMediaListInput,
     ctx?: ServiceContext
@@ -530,8 +525,8 @@ export async function getGastronomyMedia(
         const gastronomy = await requireGastronomy(model, validated.gastronomyId, ctx?.tx);
         checkGastronomyCanEditMedia(actor, gastronomy);
 
-        const mediaModel = new GastronomyMediaModel();
-        const { items } = await mediaModel.findByGastronomy({
+        const mediaModel = new VenueMediaModel();
+        const { items } = await mediaModel.findByVenue({
             gastronomyId: validated.gastronomyId,
             state: validated.state ?? 'visible',
             pageSize: 200,
@@ -566,14 +561,14 @@ export async function getGastronomyMedia(
  *    mandatory — setting the new one first would briefly violate the partial
  *    unique index on (gastronomy_id) WHERE is_featured.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - Validated set-featured input.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyMediaSingleOutput>` containing the updated row.
  */
 export async function setFeaturedGastronomyMedia(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueMediaSetFeaturedInput,
     ctx?: ServiceContext
@@ -596,7 +591,7 @@ export async function setFeaturedGastronomyMedia(
         const gastronomy = await requireGastronomy(model, validated.gastronomyId, ctx?.tx);
         checkGastronomyCanEditMedia(actor, gastronomy);
 
-        const mediaModel = new GastronomyMediaModel();
+        const mediaModel = new VenueMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
         // `deletedAt`: `findById` does NOT filter soft-deletes and `softDelete`
         // leaves `is_featured` set, so without this a released cover stays a
@@ -703,14 +698,14 @@ export async function setFeaturedGastronomyMedia(
  * a caption or credit IS rendered content, so a correction that never reaches
  * the cache is a correction nobody sees.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - Update input (`gastronomyId` + `mediaId` + the text fields).
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyMediaSingleOutput>` containing the updated row.
  */
 export async function updateGastronomyMedia(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueMediaUpdateInput,
     ctx?: ServiceContext
@@ -736,7 +731,7 @@ export async function updateGastronomyMedia(
             const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
             checkGastronomyCanEditMedia(actor, gastronomy);
 
-            const mediaModel = new GastronomyMediaModel();
+            const mediaModel = new VenueMediaModel();
             const mediaRow = await mediaModel.findById(validated.mediaId, tx);
             if (
                 !mediaRow ||
@@ -825,14 +820,14 @@ export async function updateGastronomyMedia(
  * different operation and is unchanged: it still demotes the old cover into the
  * gallery, which is quota-neutral on its own.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - Validated featured-media input.
  * @param ctx - Optional service context for transaction propagation.
  * @returns The created cover plus what became of the one it replaced.
  */
 export async function addGastronomyFeaturedMedia(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueFeaturedMediaAddInput,
     ctx?: ServiceContext
@@ -858,7 +853,7 @@ export async function addGastronomyFeaturedMedia(
         // moderation verdict; a no-op outside its authorized scope.
         assertSupportEditContentOnly({ data: { media: validated.media } });
 
-        const mediaModel = new GastronomyMediaModel();
+        const mediaModel = new VenueMediaModel();
 
         // HOS-1642 (AC:V9a:6): the swap and its owner-act event share one
         // boundary. The tx is opened HERE (when the caller brought none) and

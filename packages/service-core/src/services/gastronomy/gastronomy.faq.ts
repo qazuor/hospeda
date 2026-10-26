@@ -26,12 +26,7 @@
  * @module gastronomy.faq
  */
 
-import {
-    type DrizzleClient,
-    GastronomyFaqModel,
-    type GastronomyModel,
-    withTransaction
-} from '@repo/db';
+import { type DrizzleClient, VenueFaqModel, type VenueModel, withTransaction } from '@repo/db';
 import {
     ServiceErrorCode,
     type VenueFaq,
@@ -60,14 +55,14 @@ import { checkGastronomyCanEditFaqEntries, checkGastronomyCanView } from './gast
 /**
  * Loads a gastronomy listing by ID or throws NOT_FOUND.
  *
- * @param model - The GastronomyModel instance.
+ * @param model - The VenueModel instance.
  * @param gastronomyId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
  * @returns The gastronomy DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
 async function requireGastronomy(
-    model: GastronomyModel,
+    model: VenueModel,
     gastronomyId: string,
     tx?: ServiceContext['tx']
 ) {
@@ -88,14 +83,14 @@ async function requireGastronomy(
  * Permission: `GASTRONOMY_EDIT_OWN` (listing owner) or `GASTRONOMY_EDIT_ALL` (staff).
  * `displayOrder` is auto-assigned as `max(existing) + 1` or 0 when no FAQs exist yet.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - Validated add-FAQ input.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyFaqSingleOutput>` containing the created FAQ.
  */
 export async function addGastronomyFaq(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueFaqAddInput,
     ctx?: ServiceContext
@@ -121,7 +116,7 @@ export async function addGastronomyFaq(
             const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
             checkGastronomyCanEditFaqEntries(actor, gastronomy);
 
-            const faqModel = new GastronomyFaqModel();
+            const faqModel = new VenueFaqModel();
 
             // Compute next displayOrder: max(existing) + 1 or 0 when none exist.
             const existing = await faqModel.findAll(
@@ -174,14 +169,14 @@ export async function addGastronomyFaq(
  * Permission: `GASTRONOMY_EDIT_OWN` (listing owner) or `GASTRONOMY_EDIT_ALL` (staff).
  * The FAQ must belong to the specified gastronomy (enforced by `gastronomyId` check).
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - Validated update-FAQ input.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyFaqSingleOutput>` containing the updated FAQ.
  */
 export async function updateGastronomyFaq(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueFaqUpdateInput,
     ctx?: ServiceContext
@@ -206,7 +201,7 @@ export async function updateGastronomyFaq(
             const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
             checkGastronomyCanEditFaqEntries(actor, gastronomy);
 
-            const faqModel = new GastronomyFaqModel();
+            const faqModel = new VenueFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
             if (!faq || faq.gastronomyId !== validated.gastronomyId) {
                 throw new ServiceError(
@@ -257,14 +252,14 @@ export async function updateGastronomyFaq(
  * Permission: `GASTRONOMY_EDIT_OWN` (listing owner) or `GASTRONOMY_EDIT_ALL` (staff).
  * The FAQ must belong to the specified gastronomy.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - Validated remove-FAQ input.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<{ success: true }>` on success.
  */
 export async function removeGastronomyFaq(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueFaqRemoveInput,
     ctx?: ServiceContext
@@ -289,7 +284,7 @@ export async function removeGastronomyFaq(
             const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
             checkGastronomyCanEditFaqEntries(actor, gastronomy);
 
-            const faqModel = new GastronomyFaqModel();
+            const faqModel = new VenueFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
             if (!faq || faq.gastronomyId !== validated.gastronomyId) {
                 throw new ServiceError(
@@ -332,14 +327,14 @@ export async function removeGastronomyFaq(
  * Permission: any actor that can view the listing may read its FAQs.
  * FAQs are returned ordered by `displayOrder ASC NULLS LAST, createdAt ASC`.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - Validated list-FAQ input.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyFaqListOutput>` containing the FAQ array.
  */
 export async function listGastronomyFaqs(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueFaqListInput,
     ctx?: ServiceContext
@@ -402,14 +397,14 @@ export async function listGastronomyFaqs(
  *
  * Permission: `GASTRONOMY_EDIT_OWN` (listing owner) or `GASTRONOMY_EDIT_ALL` (staff).
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - Validated reorder input: `{ gastronomyId, order: [{ faqId, displayOrder }] }`.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<{ success: true }>` on success.
  */
 export async function reorderGastronomyFaqs(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueFaqReorderInput,
     ctx?: ServiceContext
@@ -437,7 +432,7 @@ export async function reorderGastronomyFaqs(
             const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
             checkGastronomyCanEditFaqEntries(actor, gastronomy);
 
-            const faqModel = new GastronomyFaqModel();
+            const faqModel = new VenueFaqModel();
 
             // Load all active FAQs to validate ownership of every faqId in `order`.
             const { items: existingFaqs } = await faqModel.findAll(

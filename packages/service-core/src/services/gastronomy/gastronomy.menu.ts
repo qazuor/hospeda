@@ -47,9 +47,9 @@
  */
 
 import {
-    GastronomyMenuItemModel,
-    GastronomyMenuSectionModel,
-    type GastronomyModel,
+    VenueMenuItemModel,
+    VenueMenuSectionModel,
+    type VenueModel,
     withTransaction
 } from '@repo/db';
 import {
@@ -78,14 +78,14 @@ const MENU_READ_PAGE_SIZE = 4000;
 /**
  * Loads a gastronomy listing by ID or throws NOT_FOUND.
  *
- * @param model - The GastronomyModel instance.
+ * @param model - The VenueModel instance.
  * @param gastronomyId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
  * @returns The gastronomy DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
 async function requireGastronomy(
-    model: GastronomyModel,
+    model: VenueModel,
     gastronomyId: string,
     tx?: ServiceContext['tx']
 ) {
@@ -112,13 +112,13 @@ const byDisplayOrder = <T extends { displayOrder: number; name: string }>(a: T, 
  * and an uploaded PDF is NOT a venue without a menu, and a consumer that asked
  * only for sections would conclude that it is.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param data - `{ gastronomyId }`.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyMenuOutput>`.
  */
 export async function getGastronomyMenu(
-    model: GastronomyModel,
+    model: VenueModel,
     data: VenueMenuGetInput,
     ctx?: ServiceContext
 ): Promise<ServiceOutput<VenueMenuOutput>> {
@@ -139,8 +139,8 @@ export async function getGastronomyMenu(
 
         const gastronomy = await requireGastronomy(model, gastronomyId, ctx?.tx);
 
-        const sectionModel = new GastronomyMenuSectionModel();
-        const itemModel = new GastronomyMenuItemModel();
+        const sectionModel = new VenueMenuSectionModel();
+        const itemModel = new VenueMenuItemModel();
 
         const { items: sectionRows } = await sectionModel.findAll(
             { gastronomyId },
@@ -220,14 +220,14 @@ export async function getGastronomyMenu(
  * so the order a client sees is the order it sent, and two dishes cannot be
  * given the same place.
  *
- * @param model - GastronomyModel instance.
+ * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - `{ gastronomyId, menu }`.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyMenuOutput>` with the carta as now stored.
  */
 export async function replaceGastronomyMenu(
-    model: GastronomyModel,
+    model: VenueModel,
     actor: Actor,
     data: VenueMenuReplaceInput,
     ctx?: ServiceContext
@@ -251,8 +251,8 @@ export async function replaceGastronomyMenu(
         const gastronomy = await requireGastronomy(model, gastronomyId, ctx?.tx);
         checkGastronomyCanEditFaqs(actor, gastronomy);
 
-        const sectionModel = new GastronomyMenuSectionModel();
-        const itemModel = new GastronomyMenuItemModel();
+        const sectionModel = new VenueMenuSectionModel();
+        const itemModel = new VenueMenuItemModel();
 
         // ONE transaction for the whole document. A carta half-written — the
         // old courses gone and the new ones not yet in — is a published menu

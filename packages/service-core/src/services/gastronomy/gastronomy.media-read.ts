@@ -10,14 +10,14 @@
  * `listing-media-compose.ts` for why one function serves both gastronomy and experience
  * verticals).
  *
- * Both helpers use the batch finder `findByGastronomies` (one `IN` query) so
+ * Both helpers use the batch finder `findByVenues` (one `IN` query) so
  * list/search composition does not incur an N+1.
  *
  * Empty-composition fidelity: when a listing has no photos and no videos, the
  * composed object is `{}`. To avoid a `null → {}` shape drift, the original
  * `media` value is preserved in that case (mirrors accommodation).
  *
- * Fail-hard contract: a DB error from `findByGastronomies` propagates (no catch,
+ * Fail-hard contract: a DB error from `findByVenues` propagates (no catch,
  * no JSONB fallback) — the relational table is the read source of truth.
  *
  * Videos come from the entity's own `videos` column, NOT from the media rows:
@@ -27,7 +27,7 @@
  * @module gastronomy.media-read
  */
 
-import type { DrizzleClient, GastronomyMediaModel } from '@repo/db';
+import type { DrizzleClient, VenueMediaModel } from '@repo/db';
 import type { Venue, VenueMedia } from '@repo/schemas';
 import { composeListingMedia } from '../listing/listing-media-compose';
 
@@ -59,12 +59,12 @@ function withComposedGastronomyMedia<T extends Venue>(entity: T, rows: readonly 
  */
 export async function attachComposedGastronomyMedia<T extends Venue>(input: {
     entity: T | null;
-    mediaModel: GastronomyMediaModel;
+    mediaModel: VenueMediaModel;
     tx?: DrizzleClient;
 }): Promise<T | null> {
     const { entity, mediaModel, tx } = input;
     if (!entity) return entity;
-    const grouped = await mediaModel.findByGastronomies({ gastronomyIds: [entity.id], tx });
+    const grouped = await mediaModel.findByVenues({ gastronomyIds: [entity.id], tx });
     return withComposedGastronomyMedia(entity, grouped.get(entity.id) ?? []);
 }
 
@@ -78,12 +78,12 @@ export async function attachComposedGastronomyMedia<T extends Venue>(input: {
  */
 export async function attachComposedGastronomyMediaList<T extends Venue>(input: {
     items: readonly T[];
-    mediaModel: GastronomyMediaModel;
+    mediaModel: VenueMediaModel;
     tx?: DrizzleClient;
 }): Promise<T[]> {
     const { items, mediaModel, tx } = input;
     if (!items || items.length === 0) return [...items];
-    const grouped = await mediaModel.findByGastronomies({
+    const grouped = await mediaModel.findByVenues({
         gastronomyIds: items.map((i) => i.id),
         tx
     });

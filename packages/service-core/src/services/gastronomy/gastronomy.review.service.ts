@@ -22,7 +22,7 @@
  * @module gastronomy.review.service
  */
 
-import { type GastronomyReviewModel, gastronomyModel, gastronomyReviewModel } from '@repo/db';
+import { type VenueReviewModel, venueModel, venueReviewModel } from '@repo/db';
 import {
     type CountResponse,
     LifecycleStatusEnum,
@@ -97,7 +97,7 @@ function computeEffectiveRating(input: VenueReviewCreateInput): number {
  * Service for managing gastronomy reviews.
  *
  * Uses `GastronomyReview` as the entity type (inferred from Zod schema) and
- * `GastronomyReviewModel` as the DB model.  Where the Drizzle inferred type
+ * `VenueReviewModel` as the DB model.  Where the Drizzle inferred type
  * diverges from the Zod type (e.g. `isVerified`, `reviewerName` absent from
  * the DB columns), explicit `unknown` casts bridge the gap — this is the same
  * pattern used by `AccommodationReviewService`.
@@ -122,7 +122,7 @@ function computeEffectiveRating(input: VenueReviewCreateInput): number {
  */
 export class GastronomyReviewService extends BaseCrudService<
     VenueReview,
-    GastronomyReviewModel,
+    VenueReviewModel,
     typeof VenueReviewCreateInputSchema,
     typeof VenueReviewUpdateInputSchema,
     typeof VenueSearchSchema
@@ -130,18 +130,18 @@ export class GastronomyReviewService extends BaseCrudService<
     static readonly ENTITY_NAME = 'gastronomyReview';
 
     protected readonly entityName = GastronomyReviewService.ENTITY_NAME;
-    protected readonly model: GastronomyReviewModel;
+    protected readonly model: VenueReviewModel;
     protected readonly createSchema = VenueReviewCreateInputSchema;
     protected readonly updateSchema = VenueReviewUpdateInputSchema;
     protected readonly searchSchema = VenueSearchSchema;
 
     /** Injectable for unit tests. */
     private _gastronomyService: GastronomyService;
-    private _gastronomyModel = gastronomyModel;
+    private _gastronomyModel = venueModel;
 
     constructor(config: ServiceConfig) {
         super(config, GastronomyReviewService.ENTITY_NAME);
-        this.model = gastronomyReviewModel;
+        this.model = venueReviewModel;
         this._gastronomyService = new GastronomyService(config);
     }
 

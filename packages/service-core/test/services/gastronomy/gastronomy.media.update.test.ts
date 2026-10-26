@@ -45,7 +45,7 @@ vi.mock('@repo/db', async (importOriginal) => {
     return {
         ...actual,
         domainEventModel: doubles.domainEventModelDouble,
-        GastronomyMediaModel: vi.fn(function () {
+        VenueMediaModel: vi.fn(function () {
             return mockMediaModel;
         }),
         withTransaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn({}))

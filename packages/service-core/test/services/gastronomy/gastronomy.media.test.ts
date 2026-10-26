@@ -28,7 +28,7 @@ const mockMediaModel = {
     findAll: vi.fn(),
     count: vi.fn(),
     findById: vi.fn(),
-    findByGastronomy: vi.fn(),
+    findByVenue: vi.fn(),
     findFeatured: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
@@ -43,7 +43,7 @@ vi.mock('@repo/db', async (importOriginal) => {
     return {
         ...actual,
         domainEventModel: doubles.domainEventModelDouble,
-        GastronomyMediaModel: vi.fn(function () {
+        VenueMediaModel: vi.fn(function () {
             return mockMediaModel;
         }),
         withTransaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn({}))
@@ -115,7 +115,7 @@ const touristActor: Actor = {
 };
 
 // ---------------------------------------------------------------------------
-// Mock GastronomyModel factory
+// Mock VenueModel factory
 // ---------------------------------------------------------------------------
 
 function makeGastronomyModel(entity: Record<string, unknown> | null = null) {
@@ -138,7 +138,7 @@ beforeEach(() => {
     mockMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
     mockMediaModel.count.mockResolvedValue(0);
     mockMediaModel.findById.mockResolvedValue(null);
-    mockMediaModel.findByGastronomy.mockResolvedValue({ items: [], total: 0 });
+    mockMediaModel.findByVenue.mockResolvedValue({ items: [], total: 0 });
     mockMediaModel.findFeatured.mockResolvedValue(null);
     mockMediaModel.create.mockResolvedValue(makeMediaRow());
     mockMediaModel.update.mockResolvedValue(makeMediaRow());
@@ -321,7 +321,7 @@ describe('removeGastronomyMedia', () => {
         // this is the exact shape removeGastronomyMedia must repair to (0, 1, 2).
         const remainingId2 = '00000000-0000-4000-a000-000000000010';
         const remainingId3 = '00000000-0000-4000-a000-000000000011';
-        mockMediaModel.findByGastronomy.mockResolvedValue({
+        mockMediaModel.findByVenue.mockResolvedValue({
             items: [
                 makeMediaRow({ id: '00000000-0000-4000-a000-000000000009', sortOrder: 0 }),
                 makeMediaRow({ id: remainingId2, sortOrder: 2 }),
@@ -380,7 +380,7 @@ describe('reorderGastronomyMedia', () => {
     const ID_C = '00000000-0000-4000-a000-00000000000c';
 
     function setVisibleRows() {
-        mockMediaModel.findByGastronomy.mockResolvedValue({
+        mockMediaModel.findByVenue.mockResolvedValue({
             items: [
                 makeMediaRow({ id: ID_A, sortOrder: 0 }),
                 makeMediaRow({ id: ID_B, sortOrder: 1 }),
@@ -462,7 +462,7 @@ describe('reorderGastronomyMedia', () => {
     it('should reject a duplicate even when the deduplicated set exactly matches existing ids', async () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         // Only two visible rows this time.
-        mockMediaModel.findByGastronomy.mockResolvedValue({
+        mockMediaModel.findByVenue.mockResolvedValue({
             items: [
                 makeMediaRow({ id: ID_A, sortOrder: 0 }),
                 makeMediaRow({ id: ID_B, sortOrder: 1 })
@@ -641,7 +641,7 @@ describe('getGastronomyMedia', () => {
 
     it('should default to the visible state filter', async () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
-        mockMediaModel.findByGastronomy.mockResolvedValue({ items: [makeMediaRow()], total: 1 });
+        mockMediaModel.findByVenue.mockResolvedValue({ items: [makeMediaRow()], total: 1 });
 
         const input: VenueMediaListInput = { gastronomyId: GASTRONOMY_ID };
 
@@ -653,7 +653,7 @@ describe('getGastronomyMedia', () => {
 
         expect(result.error).toBeUndefined();
         expect(result.data?.media).toHaveLength(1);
-        expect(mockMediaModel.findByGastronomy).toHaveBeenCalledWith(
+        expect(mockMediaModel.findByVenue).toHaveBeenCalledWith(
             expect.objectContaining({ state: 'visible' })
         );
     });
@@ -684,7 +684,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
     it('should delete the Cloudinary binary BEFORE soft-deleting the row', async () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(cloudinaryRow());
-        mockMediaModel.findByGastronomy.mockResolvedValue({ items: [], total: 0 });
+        mockMediaModel.findByVenue.mockResolvedValue({ items: [], total: 0 });
 
         // Record the interleaving of both side effects in a single ordered log.
         const callOrder: string[] = [];
@@ -738,7 +738,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
     it('should treat an already-absent asset as success', async () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(cloudinaryRow());
-        mockMediaModel.findByGastronomy.mockResolvedValue({ items: [], total: 0 });
+        mockMediaModel.findByVenue.mockResolvedValue({ items: [], total: 0 });
 
         // `wasPresent: false` means the binary was already gone — the goal is
         // "the asset does not exist", and it already does not.
@@ -758,7 +758,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
     it('should still remove the row when no media provider is configured', async () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(cloudinaryRow());
-        mockMediaModel.findByGastronomy.mockResolvedValue({ items: [], total: 0 });
+        mockMediaModel.findByVenue.mockResolvedValue({ items: [], total: 0 });
 
         // Local dev and CI run without Cloudinary credentials; removing a photo
         // must not become impossible there.
@@ -778,7 +778,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
         // Seed fixtures point at external CDNs — there is no binary of ours to
         // delete, and that must not block the removal.
         mockMediaModel.findById.mockResolvedValue(makeMediaRow());
-        mockMediaModel.findByGastronomy.mockResolvedValue({ items: [], total: 0 });
+        mockMediaModel.findByVenue.mockResolvedValue({ items: [], total: 0 });
 
         const provider = { delete: vi.fn(async () => ({ wasPresent: true })) };
 

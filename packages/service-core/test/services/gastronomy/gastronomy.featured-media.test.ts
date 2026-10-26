@@ -29,7 +29,7 @@ const mockMediaModel = {
     findAll: vi.fn(),
     count: vi.fn(),
     findById: vi.fn(),
-    findByGastronomy: vi.fn(),
+    findByVenue: vi.fn(),
     findFeatured: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
@@ -44,7 +44,7 @@ vi.mock('@repo/db', async (importOriginal) => {
     return {
         ...actual,
         domainEventModel: doubles.domainEventModelDouble,
-        GastronomyMediaModel: vi.fn(function () {
+        VenueMediaModel: vi.fn(function () {
             return mockMediaModel;
         }),
         withTransaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn({ __tx: true }))

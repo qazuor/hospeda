@@ -34,7 +34,7 @@ vi.mock('@repo/db', async (importOriginal) => {
         ...actual,
         domainEventModel: doubles.domainEventModelDouble,
         withTransaction: doubles.fakeDbWithTransaction,
-        GastronomyFaqModel: vi.fn(function () {
+        VenueFaqModel: vi.fn(function () {
             return mockFaqModel;
         })
     };
@@ -106,7 +106,7 @@ const touristActor: Actor = {
 };
 
 // ---------------------------------------------------------------------------
-// Mock GastronomyModel factory
+// Mock VenueModel factory
 // ---------------------------------------------------------------------------
 
 function makeGastronomyModel(entity: Record<string, unknown> | null = null) {
@@ -124,7 +124,7 @@ beforeEach(() => {
     // Vitest 4 (HOS-28): restoreAllMocks only restores spyOn spies — it never
     // cleared the call history of the module-level `mockFaqModel` vi.fn()s.
     // clearAllMocks clears that history WITHOUT resetting implementations (so the
-    // GastronomyFaqModel constructor factory keeps returning mockFaqModel).
+    // VenueFaqModel constructor factory keeps returning mockFaqModel).
     vi.clearAllMocks();
     vi.restoreAllMocks();
     vi.spyOn(permissionUtils, 'hasPermission').mockImplementation((actor, permission) =>

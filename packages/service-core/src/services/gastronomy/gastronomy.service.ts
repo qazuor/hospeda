@@ -13,8 +13,8 @@
  *
  * ## Gastronomy-specific additions (T-035 / T-036)
  *
- * 1. **Abstract getters** — wire `gastronomyModel`, junction models
- *    (`rGastronomyAmenityModel`, `rGastronomyFeatureModel`) and catalog models
+ * 1. **Abstract getters** — wire `venueModel`, junction models
+ *    (`rVenueAmenityModel`, `rVenueFeatureModel`) and catalog models
  *    (`amenityModel`, `featureModel`) for the base junction-sync machinery.
  * 2. **Search filters** — `_executeSearch` / `_executeCount` apply gastronomy
  *    filters (`type`, `priceRange`, `destinationId`, `isFeatured`, …).
@@ -30,14 +30,14 @@
 
 import {
     AmenityModel,
-    buildGastronomyCatalogConditions,
+    buildVenueCatalogConditions,
     FeatureModel,
-    type GastronomyMediaModel,
-    type GastronomyModel,
-    gastronomyMediaModel,
-    gastronomyModel,
-    rGastronomyAmenityModel,
-    rGastronomyFeatureModel
+    rVenueAmenityModel,
+    rVenueFeatureModel,
+    type VenueMediaModel,
+    type VenueModel,
+    venueMediaModel,
+    venueModel
 } from '@repo/db';
 import {
     type CountResponse,
@@ -123,7 +123,7 @@ import {
  */
 export class GastronomyService extends BaseListingService<
     Venue,
-    GastronomyModel,
+    VenueModel,
     typeof VenueAdminCreateInputSchema,
     typeof VenueUpdateInputSchema,
     typeof VenueSearchSchema
@@ -132,7 +132,7 @@ export class GastronomyService extends BaseListingService<
 
     protected readonly entityName = GastronomyService.ENTITY_NAME;
 
-    protected readonly model: GastronomyModel;
+    protected readonly model: VenueModel;
     protected readonly createSchema = VenueAdminCreateInputSchema;
     protected readonly updateSchema = VenueUpdateInputSchema;
     protected readonly searchSchema = VenueSearchSchema;
@@ -153,7 +153,7 @@ export class GastronomyService extends BaseListingService<
      * Relational media model used by the read-composition hooks (HOS-372).
      * @internal Overrideable in unit tests.
      */
-    private _gastronomyMediaModelInstance: GastronomyMediaModel;
+    private _gastronomyMediaModelInstance: VenueMediaModel;
 
     /**
      * The QR service used to keep a venue's menu QR pointing at a page that
@@ -167,21 +167,23 @@ export class GastronomyService extends BaseListingService<
 
     constructor(
         config: ServiceConfig,
-        mediaModel?: GastronomyMediaModel,
+        mediaModel?: VenueMediaModel,
         qrCodeService?: QrCodeService
     ) {
         super(config, GastronomyService.ENTITY_NAME);
-        this.model = gastronomyModel;
-        this._gastronomyMediaModelInstance = mediaModel ?? gastronomyMediaModel;
+        this.model = venueModel;
+        this._gastronomyMediaModelInstance = mediaModel ?? venueMediaModel;
         this.adminSearchSchema = VenueAdminSearchSchema;
         this._amenityModelInstance = new AmenityModel();
         this._featureModelInstance = new FeatureModel();
         // TYPE-WORKAROUND: concrete gastronomy junction model bridged to the generic ListingJunctionModel contract
-        this._amenityJunctionModelInstance =
-            rGastronomyAmenityModel as unknown as ListingJunctionModel<Record<string, unknown>>;
+        this._amenityJunctionModelInstance = rVenueAmenityModel as unknown as ListingJunctionModel<
+            Record<string, unknown>
+        >;
         // TYPE-WORKAROUND: concrete gastronomy junction model bridged to the generic ListingJunctionModel contract
-        this._featureJunctionModelInstance =
-            rGastronomyFeatureModel as unknown as ListingJunctionModel<Record<string, unknown>>;
+        this._featureJunctionModelInstance = rVenueFeatureModel as unknown as ListingJunctionModel<
+            Record<string, unknown>
+        >;
         this.qrCodeService = qrCodeService ?? new QrCodeService(config);
     }
 
@@ -229,7 +231,7 @@ export class GastronomyService extends BaseListingService<
     }
 
     /** Relational media model backing the read-composition hooks (HOS-372). */
-    protected get _gastronomyMediaModel(): GastronomyMediaModel {
+    protected get _gastronomyMediaModel(): VenueMediaModel {
         return this._gastronomyMediaModelInstance;
     }
 
@@ -265,7 +267,7 @@ export class GastronomyService extends BaseListingService<
     // owner persists photos successfully and they appear nowhere. Any new
     // listing vertical must wire the same three hooks.
     //
-    // Composition is batched (`findByGastronomies`, one IN query) so a list
+    // Composition is batched (`findByVenues`, one IN query) so a list
     // page does not go N+1.
 
     protected override async _afterGetByField(
@@ -425,7 +427,7 @@ export class GastronomyService extends BaseListingService<
      *
      * `amenities` / `features` are junction-table filters and are applied as
      * `additionalConditions` built by `@repo/db`'s
-     * `buildGastronomyCatalogConditions` (HOS-1054). They are what backs the
+     * `buildVenueCatalogConditions` (HOS-1054). They are what backs the
      * public "apto" filter — sin TACC, vegano, sin lactosa and the rest are
      * `features` catalog rows, so filtering by apto IS filtering by feature.
      * Semantics are intersection: two aptos selected means the listing must
@@ -459,7 +461,7 @@ export class GastronomyService extends BaseListingService<
             ...scalarFilters
         } = params;
 
-        const catalogConditions = buildGastronomyCatalogConditions({ amenities, features });
+        const catalogConditions = buildVenueCatalogConditions({ amenities, features });
 
         // Public search MUST only surface listings with an active subscription
         // (AC-6.2 / AC-4.3): force publicationStatus=PUBLISHED AFTER
@@ -526,7 +528,7 @@ export class GastronomyService extends BaseListingService<
         // ignored the apto filter would report a total for a different result set
         // than the one being paginated, so page 2 of "sin TACC" would exist and be
         // empty.
-        const catalogConditions = buildGastronomyCatalogConditions({ amenities, features });
+        const catalogConditions = buildVenueCatalogConditions({ amenities, features });
 
         // Mirror _executeSearch: count only publicly-visible (active-subscription)
         // listings so pagination totals match the filtered result set (AC-6.2).
