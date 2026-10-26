@@ -56,10 +56,7 @@ export const adminModerateVenueReviewRoute = createAdminRoute({
         const id = params.id as string;
         const { decision, reason } = ReviewModerateInputSchema.parse(body);
 
-        const result = await venueReviewService.moderateReview(
-            { id, decision, reason },
-            actor
-        );
+        const result = await venueReviewService.moderateReview({ id, decision, reason }, actor);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

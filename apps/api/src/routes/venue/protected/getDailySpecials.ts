@@ -65,10 +65,7 @@ async function requireOwnedVenue(ctx: Context, gastronomyId: string): Promise<vo
 }
 
 /** Reads the specials. Exported standalone so the route test can call it directly. */
-export async function handleGetVenueDailySpecials(
-    ctx: Context,
-    params: Record<string, unknown>
-) {
+export async function handleGetVenueDailySpecials(ctx: Context, params: Record<string, unknown>) {
     const gastronomyId = params.id as string;
 
     await requireOwnedVenue(ctx, gastronomyId);

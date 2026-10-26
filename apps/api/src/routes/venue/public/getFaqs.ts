@@ -48,9 +48,8 @@ export const publicGetVenueFaqsRoute = createPublicRoute({
         // TYPE-WORKAROUND: access the internal gastronomyModel from the service instance
         // to pass to the standalone FAQ helper. The service exposes it via protected
         // `model` — we cast through unknown to satisfy TypeScript without `any`.
-        const model = (
-            venueService as unknown as { model: Parameters<typeof listVenueFaqs>[0] }
-        ).model;
+        const model = (venueService as unknown as { model: Parameters<typeof listVenueFaqs>[0] })
+            .model;
 
         const result = await listVenueFaqs(model, actor, {
             gastronomyId: params.gastronomyId as string

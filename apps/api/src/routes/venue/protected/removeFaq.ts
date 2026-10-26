@@ -40,9 +40,8 @@ export const protectedRemoveVenueFaqRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
-        const model = (
-            venueService as unknown as { model: Parameters<typeof removeVenueFaq>[0] }
-        ).model;
+        const model = (venueService as unknown as { model: Parameters<typeof removeVenueFaq>[0] })
+            .model;
         const result = await removeVenueFaq(model, actor, {
             gastronomyId: params.id as string,
             faqId: params.faqId as string

@@ -57,9 +57,8 @@ export const protectedUpdateVenueFaqRoute = createProtectedRoute({
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
-        const model = (
-            venueService as unknown as { model: Parameters<typeof updateVenueFaq>[0] }
-        ).model;
+        const model = (venueService as unknown as { model: Parameters<typeof updateVenueFaq>[0] })
+            .model;
         const result = await updateVenueFaq(model, actor, input);
 
         if (result.error) {

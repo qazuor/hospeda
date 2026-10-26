@@ -52,9 +52,8 @@ export async function handlePutVenueEvents(
 
     // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`, the
     // same accessor the FAQ, media and menu routes use.
-    const model = (
-        venueService as unknown as { model: Parameters<typeof replaceVenueEvents>[0] }
-    ).model;
+    const model = (venueService as unknown as { model: Parameters<typeof replaceVenueEvents>[0] })
+        .model;
 
     const result = await replaceVenueEvents(model, actor, {
         gastronomyId: params.id as string,

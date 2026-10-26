@@ -51,9 +51,8 @@ export const protectedRemoveVenueMediaRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
-        const model = (
-            venueService as unknown as { model: Parameters<typeof removeVenueMedia>[0] }
-        ).model;
+        const model = (venueService as unknown as { model: Parameters<typeof removeVenueMedia>[0] })
+            .model;
         const result = await removeVenueMedia(
             model,
             actor,

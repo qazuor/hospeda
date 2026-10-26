@@ -18,10 +18,7 @@ import { getTodayInMarketTimezone } from '../../../services/calendar-sync/date-r
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
 import { readEffectiveKeys } from '../../../utils/listing-access/user-gate';
-import {
-    fetchVenueAmenities,
-    fetchVenueFeatures
-} from '../../../utils/listing-catalog-relations';
+import { fetchVenueAmenities, fetchVenueFeatures } from '../../../utils/listing-catalog-relations';
 import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
@@ -91,9 +88,8 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
         //
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`,
         // the same accessor the protected menu routes use.
-        const model = (
-            venueService as unknown as { model: Parameters<typeof getVenueMenu>[0] }
-        ).model;
+        const model = (venueService as unknown as { model: Parameters<typeof getVenueMenu>[0] })
+            .model;
 
         // HOS-1041: the menú del día joins the same parallel batch, read with
         // `validOn` set to TODAY. That argument is the entire expiry mechanism

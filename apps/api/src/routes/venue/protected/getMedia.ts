@@ -53,9 +53,8 @@ export const protectedGetVenueMediaRoute = createCRUDRoute({
         const state = stateParsed.success ? stateParsed.data : undefined;
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
-        const model = (
-            venueService as unknown as { model: Parameters<typeof getVenueMedia>[0] }
-        ).model;
+        const model = (venueService as unknown as { model: Parameters<typeof getVenueMedia>[0] })
+            .model;
         const result = await getVenueMedia(model, actor, {
             gastronomyId: params.id as string,
             state

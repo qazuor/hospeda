@@ -53,9 +53,8 @@ export const adminUpdateVenueFaqRoute = createAdminRoute({
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
-        const model = (
-            venueService as unknown as { model: Parameters<typeof updateVenueFaq>[0] }
-        ).model;
+        const model = (venueService as unknown as { model: Parameters<typeof updateVenueFaq>[0] })
+            .model;
         const result = await runListingContentCall({
             ctx,
             run: () => updateVenueFaq(model, actor, input)

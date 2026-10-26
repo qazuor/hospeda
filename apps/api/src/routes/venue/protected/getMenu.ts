@@ -70,8 +70,7 @@ export async function handleGetVenueMenu(ctx: Context, params: Record<string, un
 
     // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`, the
     // same accessor the FAQ and media routes use.
-    const model = (venueService as unknown as { model: Parameters<typeof getVenueMenu>[0] })
-        .model;
+    const model = (venueService as unknown as { model: Parameters<typeof getVenueMenu>[0] }).model;
     const result = await getVenueMenu(model, { gastronomyId });
 
     if (result.error) {

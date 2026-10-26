@@ -49,9 +49,8 @@ export const protectedReorderVenueFaqsRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
-        const model = (
-            venueService as unknown as { model: Parameters<typeof reorderVenueFaqs>[0] }
-        ).model;
+        const model = (venueService as unknown as { model: Parameters<typeof reorderVenueFaqs>[0] })
+            .model;
         const result = await reorderVenueFaqs(model, actor, {
             gastronomyId: params.id as string,
             order: (body as { order: Array<{ faqId: string; displayOrder: number }> }).order
