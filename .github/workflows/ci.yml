@@ -838,9 +838,30 @@ jobs:
   # Independent of unit tests so a unit failure doesn't hide
   # integration regressions. ~7 min.
   # ------------------------------------------------------------------
+  # HOS-1775: the API suite is the critical path (204 files took 39.5 min
+  # alone on 2026-10-26, while db/service-core/seed/verticals finished
+  # together in ~16 min) and HOS-1891 added ~128 more files to it. So the
+  # job is a matrix: one leg runs every other package plus the cutover DB
+  # tests, and the API suite is split by `vitest --shard` across the rest.
+  # Each leg gets its own Postgres service, so the shards never share a DB.
+  # CI Pass reads `needs.test-integration.result`, which is `success` only
+  # when every leg succeeds.
   test-integration:
-    name: Integration Tests
+    name: Integration Tests (${{ matrix.suite }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: packages
+          - suite: api 1/4
+            shard: 1/4
+          - suite: api 2/4
+            shard: 2/4
+          - suite: api 3/4
+            shard: 3/4
+          - suite: api 4/4
+            shard: 4/4
     # 20 was the ceiling until the HOS-1352 wave 18: the job ran 14.6-19.6 min
     # and was cut five times in one night with every test already passed.
     # 30 held until wave 23, when green runs took 20-29 min and two runs in a
@@ -889,15 +910,23 @@ jobs:
           done
           docker exec ${{ job.services.postgres.id }} psql -U hospeda_user -d postgres -tAc "SHOW max_locks_per_transaction" | grep -qx 1024
       - name: Run integration tests (SPEC-061 db + SPEC-080 service-core)
-        run: pnpm test:integration
+        if: matrix.suite == 'packages'
+        run: pnpm test:integration --filter=!hospeda-api
+        env:
+          HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
+      - name: Run API integration tests (shard ${{ matrix.shard }})
+        if: matrix.shard != ''
+        run: pnpm --filter hospeda-api test:integration --shard=${{ matrix.shard }}
         env:
           HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
       # U3 (HOS-1426): the cutover script's database tests build the OLD schema from
       # `main`'s migrations, so that ref must exist in this shallow checkout. They
       # create and drop their own scratch databases on the same service.
       - name: Fetch main for the old-schema migration chain (cutover tests)
+        if: matrix.suite == 'packages'
         run: git fetch --depth=1 origin main:refs/remotes/origin/main
       - name: Cutover script database tests (U3)
+        if: matrix.suite == 'packages'
         run: pnpm test:cutover-db
         env:
           HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
