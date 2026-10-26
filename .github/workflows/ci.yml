@@ -836,7 +836,7 @@ jobs:
   # ------------------------------------------------------------------
   # Integration tests requiring a real PostgreSQL instance.
   # Independent of unit tests so a unit failure doesn't hide
-  # integration regressions. ~7 min.
+  # integration regressions.
   # ------------------------------------------------------------------
   # HOS-1775: the API suite is the critical path (204 files took 39.5 min
   # alone on 2026-10-26, while db/service-core/seed/verticals finished
@@ -914,11 +914,15 @@ jobs:
         run: pnpm test:integration --filter=!hospeda-api
         env:
           HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
+      # Outside turbo there is no strict env filter, so the workflow-level
+      # HOSPEDA_DATABASE_URL secret would reach the suite. Pin it to the job's
+      # disposable service too: global-setup.ts falls back to it.
       - name: Run API integration tests (shard ${{ matrix.shard }})
-        if: matrix.shard != ''
+        if: startsWith(matrix.suite, 'api')
         run: pnpm --filter hospeda-api test:integration --shard=${{ matrix.shard }}
         env:
           HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
+          HOSPEDA_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
       # U3 (HOS-1426): the cutover script's database tests build the OLD schema from
       # `main`'s migrations, so that ref must exist in this shallow checkout. They
       # create and drop their own scratch databases on the same service.

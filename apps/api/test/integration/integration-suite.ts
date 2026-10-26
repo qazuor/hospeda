@@ -17,6 +17,7 @@
  * @module test/integration/integration-suite
  */
 import { matchesGlob } from 'node:path';
+import { configDefaults } from 'vitest/config';
 
 /** Every integration test under `apps/api/test/integration`. */
 export const API_INTEGRATION_INCLUDE = ['test/integration/**/*.test.ts'] as const;
@@ -46,11 +47,15 @@ const byReason = ({
     readonly files: readonly string[];
 }): readonly ApiIntegrationExclusion[] => files.map((file) => ({ file, reason }));
 
-/** Files kept out of the API integration suite. Shrink this list; do not grow it. */
+/**
+ * Files kept out of the API integration suite. Shrink this list; do not grow
+ * it: the coverage guard freezes its length and requires an issue id in every
+ * reason.
+ */
 export const API_INTEGRATION_EXCLUSIONS: readonly ApiIntegrationExclusion[] = [
     {
         file: 'test/integration/ai/vault-roundtrip.test.ts',
-        reason: 'Non-deterministically flaky: the credential-create route fires syncAiProviderModels after responding, racing testDb.clean(). Comes back once the create flow is deterministic under test.'
+        reason: 'HOS-247: non-deterministically flaky: the credential-create route fires syncAiProviderModels after responding, racing testDb.clean(). Comes back once the create flow is deterministic under test.'
     },
     ...byReason({
         reason: NO_DB_INIT,
@@ -139,6 +144,9 @@ export function isCollectedByApiIntegration({ file }: { readonly file: string })
     readonly collected: boolean;
 } {
     const included = API_INTEGRATION_INCLUDE.some((glob) => matchesGlob(file, glob));
-    const excluded = API_INTEGRATION_EXCLUSIONS.some((exclusion) => exclusion.file === file);
+    // vitest also drops vitest's own default excludes (node_modules, dist, ...).
+    const excluded =
+        configDefaults.exclude.some((glob) => matchesGlob(file, glob)) ||
+        API_INTEGRATION_EXCLUSIONS.some((exclusion) => exclusion.file === file);
     return { collected: included && !excluded };
 }

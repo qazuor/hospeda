@@ -39,7 +39,7 @@ import {
  * `hospeda_api_integration_test` database on the CI Postgres service (or local
  * Docker Postgres) before any test file runs, and — critically — overrides
  * `process.env.HOSPEDA_DATABASE_URL` so `test-database.ts`'s `testDb` singleton
- * (used by the `beforeAll`/`afterEach`/`afterAll` hooks in the ai/** suite)
+ * (used by the `beforeAll`/`afterEach`/`afterAll` hooks across the suite)
  * connects to the ephemeral DB instead of whatever `HOSPEDA_DATABASE_URL`
  * resolves to in the environment. See that file's JSDoc for the full rationale.
  *
@@ -50,7 +50,7 @@ import {
  * `pnpm test:integration`. No changes to `ci.yml` or `turbo.json` were needed.
  *
  * `pool: 'forks'` + `fileParallelism: false` mirrors `vitest.config.e2e.ts`:
- * both files in scope call `testDb.clean()` (TRUNCATE ... CASCADE) between
+ * the files in scope call `testDb.clean()` (TRUNCATE ... CASCADE) between
  * tests, so running them concurrently against the same ephemeral DB would
  * corrupt each other's in-flight data.
  */

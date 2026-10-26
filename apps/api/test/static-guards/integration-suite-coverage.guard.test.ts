@@ -16,9 +16,13 @@
  * 3. An exclusion with no reason, which nobody will ever come back to.
  * 4. An exclusion whose file was moved or deleted — it then excludes nothing,
  *    and a renamed copy of the same broken file slips into the suite unseen.
+ *
+ * It also freezes the exclusion count, pins the package script, and checks
+ * that CI's shard matrix (HOS-1775) is a complete `1..N/N` set: dropping one
+ * leg would silently skip a quarter of the suite with everything green.
  */
 
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { configDefaults } from 'vitest/config';
@@ -54,6 +58,43 @@ describe('API integration suite coverage (HOS-1891)', () => {
             ...configDefaults.exclude,
             ...API_INTEGRATION_EXCLUSIONS.map((exclusion) => exclusion.file)
         ]);
+    });
+
+    it('the package script runs that config over the whole suite', () => {
+        const manifest = JSON.parse(readFileSync(join(API_ROOT, 'package.json'), 'utf8')) as {
+            readonly scripts: Readonly<Record<string, string>>;
+        };
+        expect(manifest.scripts['test:integration']).toBe(
+            'vitest run --config vitest.config.integration.ts'
+        );
+    });
+
+    it('CI shards the API suite into a complete 1..N/N set and keeps it out of the packages leg', () => {
+        const ci = readFileSync(join(API_ROOT, '../../.github/workflows/ci.yml'), 'utf8');
+        const shards = [...ci.matchAll(/^\s+shard: (\d+)\/(\d+)\s*$/gm)].map((match) => ({
+            index: Number(match[1]),
+            total: Number(match[2])
+        }));
+        const total = shards[0]?.total ?? 0;
+        expect(total).toBeGreaterThan(1);
+        expect(shards.every((shard) => shard.total === total)).toBe(true);
+        expect(shards.map((shard) => shard.index).sort((a, b) => a - b)).toEqual(
+            Array.from({ length: total }, (_, index) => index + 1)
+        );
+        expect(ci).toContain(
+            // biome-ignore lint/suspicious/noTemplateCurlyInString: a literal GitHub Actions expression, not a JS template.
+            'run: pnpm --filter hospeda-api test:integration --shard=${{ matrix.shard }}'
+        );
+        expect(ci).toContain('run: pnpm test:integration --filter=!hospeda-api');
+    });
+
+    it('the exclusion list does not grow and every entry names an issue', () => {
+        // Lower this number as files come back; never raise it.
+        expect(API_INTEGRATION_EXCLUSIONS.length).toBeLessThanOrEqual(55);
+        const untracked = API_INTEGRATION_EXCLUSIONS.filter(
+            ({ reason }) => !/\bHOS-\d+\b/.test(reason)
+        );
+        expect(untracked.map(({ file }) => file)).toEqual([]);
     });
 
     it('finds integration test files at all', () => {
