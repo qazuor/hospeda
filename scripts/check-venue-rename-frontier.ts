@@ -167,7 +167,7 @@ export function checkFrontier({
                     found: count,
                     reason:
                         oldFile && old !== undefined && count > old
-                            ? `inventory may not grow against renamed path ${oldFile}`
+                            ? `inventory may not grow for renamed path; old path ${oldFile}`
                             : 'inventory may not grow against base'
                 });
         }
@@ -296,10 +296,23 @@ export function run({
         if (process.argv.includes('--write')) {
             const base = baseInventory === null ? undefined : (baseInventory ?? readBase(root));
             if (base) {
+                const gitRenames = renames ?? readGitRenames(root);
+                const nameRenames = buildNameRenames(scanned, base);
+                const conflicts = findRenameConflicts(gitRenames, nameRenames);
+                if (conflicts.length)
+                    return {
+                        exitCode: 1,
+                        output: conflicts
+                            .map(
+                                ({ file, oldPath }) =>
+                                    `${file}: rename sources disagree; git found ${gitRenames.get(file)}, path mapping found ${oldPath}`
+                            )
+                            .join('\n')
+                    };
                 const renamedFrom = buildRenamedFrom({
                     scanned,
                     base,
-                    renames: renames ?? readGitRenames(root)
+                    renames: mergeRenames(gitRenames, nameRenames)
                 });
                 const growth = checkFrontier({
                     scanned,
@@ -325,7 +338,10 @@ export function run({
                                     renamedFrom: buildRenamedFrom({
                                         scanned,
                                         base,
-                                        renames: renames ?? readGitRenames(root)
+                                        renames: mergeRenames(
+                                            renames ?? readGitRenames(root),
+                                            buildNameRenames(scanned, base)
+                                        )
                                     })
                                 }
                               : { renamedFrom: undefined };
@@ -338,6 +354,37 @@ export function run({
             };
         }
         const base = baseInventory === null ? undefined : (baseInventory ?? readBase(root));
+        if (base) {
+            const gitRenames = renames ?? readGitRenames(root);
+            const nameRenames = buildNameRenames(scanned, base);
+            const conflicts = findRenameConflicts(gitRenames, nameRenames);
+            if (conflicts.length)
+                return {
+                    exitCode: 1,
+                    output: conflicts
+                        .map(
+                            ({ file, oldPath }) =>
+                                `${file}: rename sources disagree; git found ${gitRenames.get(file)}, path mapping found ${oldPath}`
+                        )
+                        .join('\n')
+                };
+            const detected = buildRenamedFrom({
+                scanned,
+                base,
+                renames: mergeRenames(gitRenames, nameRenames)
+            });
+            const missingMappings = Object.entries(detected)
+                .filter(([file, oldFile]) => inventory.renamedFrom?.[file] !== oldFile)
+                .map(([file, oldFile]) => ({
+                    file,
+                    expected: oldFile,
+                    found: inventory.renamedFrom?.[file] ?? 'missing',
+                    reason: 'renamedFrom differs from detected rename sources'
+                }));
+            const violations = [...checkFrontier({ scanned, inventory, base }), ...missingMappings];
+            if (violations.length)
+                return { exitCode: 1, output: violations.map(formatViolation).join('\n') };
+        }
         const violations = checkFrontier({ scanned, inventory, base });
         if (violations.length)
             return { exitCode: 1, output: violations.map(formatViolation).join('\n') };
@@ -377,6 +424,57 @@ export function buildRenamedFrom({
     );
 }
 
+/** Derives a moved path by reversing the repository's segment mapping. */
+export function buildNameRenames(
+    scanned: ReadonlyMap<string, number>,
+    base: FrontierInventory
+): ReadonlyMap<string, string> {
+    const from = ['venues', 'Venues', 'Venue', 'VENUE', 'venue'];
+    const to = [
+        `${PARTS[0]}ies`,
+        `${PARTS[0][0]?.toUpperCase()}${PARTS[0].slice(1)}ies`,
+        `${PARTS[0][0]?.toUpperCase()}${PARTS[0].slice(1)}y`,
+        `${PARTS[0].toUpperCase()}Y`,
+        `${PARTS[0]}y`
+    ];
+    const result = new Map<string, string>();
+    for (const newPath of scanned.keys()) {
+        if (base.files[newPath] !== undefined) continue;
+        const oldPath = newPath
+            .split('/')
+            .map((segment) => {
+                let mapped = segment;
+                for (const [index, oldPart] of from.entries()) {
+                    const newPart = to[index];
+                    if (newPart) mapped = mapped.replaceAll(oldPart, newPart);
+                }
+                return mapped;
+            })
+            .join('/');
+        if (base.files[oldPath] !== undefined && !scanned.has(oldPath))
+            result.set(newPath, oldPath);
+    }
+    return result;
+}
+
+/** Finds paths for which Git and the path mapping propose different old paths. */
+export function findRenameConflicts(
+    gitRenames: ReadonlyMap<string, string>,
+    nameRenames: ReadonlyMap<string, string>
+): readonly { readonly file: string; readonly oldPath: string }[] {
+    return [...nameRenames].flatMap(([file, oldPath]) => {
+        const gitOldPath = gitRenames.get(file);
+        return gitOldPath !== undefined && gitOldPath !== oldPath ? [{ file, oldPath }] : [];
+    });
+}
+
+function mergeRenames(
+    gitRenames: ReadonlyMap<string, string>,
+    nameRenames: ReadonlyMap<string, string>
+): ReadonlyMap<string, string> {
+    return new Map([...gitRenames, ...nameRenames]);
+}
+
 function readGitRenames(root: string): ReadonlyMap<string, string> {
     const base = process.env.CI_BASELINE_SHA ?? 'origin/staging';
     const output = execFileSync(
@@ -395,7 +493,7 @@ function readGitRenames(root: string): ReadonlyMap<string, string> {
     );
 }
 
-function formatViolation(item: FrontierViolation): string {
+export function formatViolation(item: FrontierViolation): string {
     return `${item.file}: ${item.reason}; expected ${item.expected}, found ${item.found}`;
 }
 

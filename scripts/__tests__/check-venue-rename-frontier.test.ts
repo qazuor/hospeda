@@ -1,12 +1,16 @@
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+    buildNameRenames,
     buildRenamedFrom,
     checkFrontier,
     countFrontierHits,
     FRONTIER_FLOOR,
+    findRenameConflicts,
+    formatViolation,
     run,
     scanFrontier
 } from '../check-venue-rename-frontier.js';
@@ -69,7 +73,7 @@ describe('TEST:1814:2 AC:1:16 T1 rejects invalid renamedFrom entries', () => {
             {
                 scanned: new Map([['new.ts', 2]]),
                 inventory: { ...inv({ 'new.ts': 2 }), renamedFrom: { 'new.ts': 'old.ts' } },
-                reasons: ['new.ts: inventory may not grow against renamed path old.ts']
+                reasons: ['new.ts: inventory may not grow for renamed path; old path old.ts']
             },
             {
                 scanned: new Map([
@@ -89,6 +93,13 @@ describe('TEST:1814:2 AC:1:16 T1 rejects invalid renamedFrom entries', () => {
                 testCase.reasons
             );
         }
+        const increased = cases[2];
+        if (!increased) throw new Error('Missing increased-count test case');
+        const growth = checkFrontier({ ...increased, base })[0];
+        if (!growth) throw new Error('Expected an increased-count violation');
+        expect(formatViolation(growth)).toEqual(
+            'new.ts: inventory may not grow for renamed path; old path old.ts; expected 1, found 2'
+        );
     });
 
     it('TEST:1814:2 AC:1:16 builds mappings only from measured paths and base old paths', () => {
@@ -257,4 +268,82 @@ describe('TEST:1813:4 AC:1:15 T1 is wired to guards CI and package scripts', () 
         ).toBe(true);
         expect(workflow).toContain('run: pnpm check:venue-rename-frontier');
     });
+});
+
+describe('TEST:1814:1 AC:1:16 T1 derives renames from paths', () => {
+    it('TEST:1814:1 AC:1:16 accepts a strongly edited moved path by its mapped name', () => {
+        const measured = new Map([['packages/db/src/models/venue/venueMenuItem.model.ts', 4]]);
+        const base = inv({ 'packages/db/src/models/gastronomy/gastronomyMenuItem.model.ts': 4 });
+        expect(buildNameRenames(measured, base)).toEqual(
+            new Map([
+                [
+                    'packages/db/src/models/venue/venueMenuItem.model.ts',
+                    'packages/db/src/models/gastronomy/gastronomyMenuItem.model.ts'
+                ]
+            ])
+        );
+        expect(
+            checkFrontier({
+                scanned: measured,
+                inventory: {
+                    ...inv(Object.fromEntries(measured)),
+                    renamedFrom: Object.fromEntries(buildNameRenames(measured, base))
+                },
+                base
+            })
+        ).toEqual([]);
+        const noCounterpart = new Map([['packages/db/src/models/venue/brandNew.ts', 1]]);
+        expect(buildNameRenames(noCounterpart, base)).toEqual(new Map());
+        expect(
+            checkFrontier({
+                scanned: noCounterpart,
+                inventory: inv(Object.fromEntries(noCounterpart)),
+                base
+            })[0]
+        ).toEqual({
+            file: 'packages/db/src/models/venue/brandNew.ts',
+            expected: 'absent from base',
+            found: 1,
+            reason: 'inventory may not grow against base'
+        });
+    });
+
+    it('TEST:1814:1 AC:1:16 rejects conflicting git and path rename sources', () => {
+        expect(
+            findRenameConflicts(
+                new Map([['new.ts', 'git-old.ts']]),
+                new Map([['new.ts', 'mapped-old.ts']])
+            )
+        ).toEqual([{ file: 'new.ts', oldPath: 'mapped-old.ts' }]);
+    });
+});
+
+describe('TEST:1814:3 AC:1:16 T1 compares the committed inventory with staging', () => {
+    const stagingInventory = (() => {
+        try {
+            return JSON.parse(
+                execFileSync(
+                    'git',
+                    ['show', 'origin/staging:scripts/guards/venue-rename-frontier.json'],
+                    { cwd: ROOT }
+                ).toString()
+            ) as ReturnType<typeof inv>;
+        } catch {
+            return null;
+        }
+    })();
+
+    it.skipIf(stagingInventory === null)(
+        'TEST:1814:3 AC:1:16 checks real renamedFrom entries against staging (requires origin/staging)',
+        () => {
+            const result = run({ root: ROOT, baseInventory: stagingInventory });
+            expect(result.exitCode, result.output).toBe(0);
+            const inventory = JSON.parse(
+                readFileSync(resolve(ROOT, 'scripts/guards/venue-rename-frontier.json'), 'utf8')
+            ) as { files: Record<string, number> };
+            const counts = Object.values(inventory.files);
+            expect(counts.length).toBeLessThan(1715);
+            expect(counts.reduce((sum, count) => sum + count, 0)).toBeLessThan(15365);
+        }
+    );
 });
