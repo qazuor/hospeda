@@ -1,459 +1,312 @@
 /**
  * Performance Stack Integration Tests
- * Tests the performance characteristics of the complete middleware stack
- * under various load conditions to ensure optimal response times and throughput
+ *
+ * Exercises the complete middleware stack under concurrent and sustained load
+ * and checks that it stays correct (statuses, request ids, formatting, metrics)
+ * and responsive.
+ *
+ * The latency budgets are deliberately an order of magnitude above what the
+ * in-process app needs (a few ms per request). They exist to catch a hang or a
+ * pathological slowdown, not to benchmark: a tighter wall-clock threshold on a
+ * shared CI runner is a flake, not a regression signal.
+ *
+ * Endpoint choice matters for what each test can claim:
+ * - `/health/ready` is public and cached (a cache HIT is served before the
+ *   metrics middleware and replays the first response), so it is used where
+ *   only "answers 200 under load" matters.
+ * - `GET /api/v1/admin/accommodations` without a session answers 401 and is
+ *   never cached, so it is used where every response must be a fresh request
+ *   (unique request ids, exact metric counts).
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { RoleEnum } from '@repo/schemas';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../src/app';
+import { clearCache } from '../../src/middlewares/cache';
 import { resetMetrics } from '../../src/middlewares/metrics';
+import { validateApiEnv } from '../../src/utils/env';
+import { testDb } from '../e2e/setup/test-database';
+import {
+    ADMIN_GATE_PERMISSIONS,
+    buildMockActorHeaders,
+    createMockActorUser
+} from './helpers/mock-actor';
+import { seedPublicAccommodation } from './helpers/seed-public-accommodation';
 
-// Mock external dependencies
-vi.mock('@repo/logger', () => {
-    const mockLogger = {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-        registerCategory: vi.fn(() => mockLogger),
-        registerLogMethod: vi.fn()
-    };
+const READY = '/health/ready';
+const UNCACHED_401 = '/api/v1/admin/accommodations';
+const METRICS = '/api/v1/admin/metrics';
 
-    return {
-        default: mockLogger,
-        logger: mockLogger,
-        LoggerColors: {
-            GREEN: 'green',
-            RED: 'red',
-            BLUE: 'blue',
-            YELLOW: 'yellow',
-            CYAN: 'cyan',
-            MAGENTA: 'magenta'
-        },
-        LogLevel: {
-            DEBUG: 'debug',
-            INFO: 'info',
-            WARN: 'warn',
-            ERROR: 'error'
-        }
-    };
-});
+/** Budget for one request. A hang or a pathological slowdown, not a benchmark. */
+const MAX_REQUEST_MS = 3000;
+/** Budget for a whole batch of concurrent requests. */
+const MAX_BATCH_MS = 10000;
 
-/**
- * Performance measurement utilities
- */
-interface PerformanceMetrics {
-    totalTime: number;
-    averageTime: number;
-    minTime: number;
-    maxTime: number;
-    successRate: number;
-    throughput: number;
-    responseTimes: number[];
+/** Timing and outcome of one request. */
+interface TimedResponse {
+    readonly response: Response;
+    readonly elapsedMs: number;
 }
 
-const measurePerformance = async (
-    requests: (Promise<Response> | Response)[],
-    startTime: number
-): Promise<PerformanceMetrics> => {
-    const responses = await Promise.all(
-        requests.map(async (request) => {
-            const reqStartTime = Date.now();
-            try {
-                // Handle both Promise<Response> and Response
-                const response = await Promise.resolve(request);
-                const reqEndTime = Date.now();
-                return {
-                    response,
-                    responseTime: reqEndTime - reqStartTime,
-                    success: response.status >= 200 && response.status < 500
-                };
-            } catch (error) {
-                const reqEndTime = Date.now();
-                return {
-                    response: null,
-                    responseTime: reqEndTime - reqStartTime,
-                    success: false,
-                    error
-                };
-            }
-        })
-    );
+/** Runs one request and measures how long it took to settle. */
+const timed = async ({
+    run
+}: {
+    readonly run: () => Promise<Response>;
+}): Promise<TimedResponse> => {
+    const start = performance.now();
+    const response = await run();
+    return { response, elapsedMs: performance.now() - start };
+};
 
-    const endTime = Date.now();
-    const totalTime = endTime - startTime;
-    const responseTimes = responses.map((r) => r.responseTime);
-    const successfulResponses = responses.filter((r) => r.success);
-
-    return {
-        totalTime,
-        averageTime: responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length,
-        minTime: Math.min(...responseTimes),
-        maxTime: Math.max(...responseTimes),
-        successRate: (successfulResponses.length / responses.length) * 100,
-        throughput: responses.length / (totalTime / 1000), // requests per second
-        responseTimes
-    };
+/** Fires every request at once and reports each timing plus the batch duration. */
+const fireBatch = async ({
+    runs
+}: {
+    readonly runs: readonly (() => Promise<Response>)[];
+}): Promise<{ readonly results: readonly TimedResponse[]; readonly batchMs: number }> => {
+    const start = performance.now();
+    const results = await Promise.all(runs.map((run) => timed({ run })));
+    return { results, batchMs: performance.now() - start };
 };
 
 describe('Performance Stack Integration', () => {
+    let app: ReturnType<typeof initApp>;
+    let adminHeaders: Record<string, string>;
+
+    const publicHeaders = (userAgent: string): Record<string, string> => ({
+        'user-agent': userAgent,
+        accept: 'application/json'
+    });
+
+    beforeAll(async () => {
+        await testDb.setup();
+        await testDb.clean();
+        clearCache();
+        validateApiEnv();
+        app = initApp();
+        const admin = await createMockActorUser({ label: 'perf-stack-admin' });
+        adminHeaders = buildMockActorHeaders({
+            actorId: admin.id,
+            permissions: ADMIN_GATE_PERMISSIONS,
+            role: RoleEnum.ADMIN
+        });
+    });
+
     beforeEach(() => {
-        vi.clearAllMocks();
+        clearCache();
         resetMetrics();
     });
 
+    afterAll(async () => {
+        await testDb.clean();
+        clearCache();
+        await testDb.teardown();
+    });
+
     describe('Single Request Performance', () => {
-        it('should handle individual requests with optimal response time', async () => {
-            const app = initApp();
+        it('should answer each system endpoint quickly with the full stack applied', async () => {
+            const bare = await timed({
+                run: () =>
+                    app.request('/health', { headers: publicHeaders('performance-test/1.0') })
+            });
+            expect(bare.response.status).toBe(200);
+            expect((await bare.response.json()).status).toBe('ok');
+            expect(bare.elapsedMs).toBeLessThan(MAX_REQUEST_MS);
 
-            const endpoints = ['/health', '/health/live', '/metrics'];
+            const ready = await timed({
+                run: () => app.request(READY, { headers: publicHeaders('performance-test/1.0') })
+            });
+            expect(ready.response.status).toBe(200);
+            expect(ready.response.headers.get('x-request-id')).toBeTruthy();
+            expect(ready.elapsedMs).toBeLessThan(MAX_REQUEST_MS);
 
-            for (const endpoint of endpoints) {
-                const startTime = Date.now();
-
-                const response = await app.request(endpoint, {
-                    headers: {
-                        'user-agent': 'performance-test/1.0',
-                        accept: 'application/json'
-                    }
-                });
-
-                const endTime = Date.now();
-                const responseTime = endTime - startTime;
-
-                // Individual request should complete quickly
-                expect(responseTime).toBeLessThan(500); // 500ms max for individual requests
-                expect([200, 429]).toContain(response.status);
-                expect(response.headers.get('x-request-id')).toBeTruthy();
-            }
+            const metrics = await timed({
+                run: () => app.request(METRICS, { headers: adminHeaders })
+            });
+            expect(metrics.response.status).toBe(200);
+            expect(metrics.response.headers.get('x-request-id')).toBeTruthy();
+            expect(metrics.elapsedMs).toBeLessThan(MAX_REQUEST_MS);
         });
     });
 
     describe('Concurrent Request Performance', () => {
-        it('should maintain performance under moderate concurrent load', async () => {
-            const app = initApp();
-            const concurrency = 10;
+        it('should keep every response correct and distinct under moderate concurrent load', async () => {
+            const { results, batchMs } = await fireBatch({
+                runs: Array.from(
+                    { length: 10 },
+                    (_, i) => () =>
+                        app.request(UNCACHED_401, {
+                            headers: publicHeaders(`concurrent-test-${i}/1.0`)
+                        })
+                )
+            });
 
-            const startTime = Date.now();
-            const requests = Array.from({ length: concurrency }, (_, i) =>
-                app.request('/health/live', {
-                    headers: {
-                        'user-agent': `concurrent-test-${i}/1.0`,
-                        accept: 'application/json'
-                    }
-                })
-            );
-
-            const metrics = await measurePerformance(requests, startTime);
-
-            // Performance assertions
-            expect(metrics.totalTime).toBeLessThan(2000); // 2 seconds total for 10 requests
-            expect(metrics.averageTime).toBeLessThan(300); // 300ms average
-            expect(metrics.maxTime).toBeLessThan(1000); // 1 second max for any single request
-            expect(metrics.successRate).toBeGreaterThan(80); // At least 80% success rate
-            expect(metrics.throughput).toBeGreaterThan(3); // At least 3 requests/second
-
-            // All successful responses should have proper formatting
-            const responses = await Promise.all(requests);
-            const successfulResponses = responses.filter((r) => r.status === 200);
-
-            for (const response of successfulResponses.slice(0, 3)) {
-                // Check first 3
-                expect(response.headers.get('x-request-id')).toBeTruthy();
+            expect(batchMs).toBeLessThan(MAX_BATCH_MS);
+            for (const { response, elapsedMs } of results) {
+                expect(response.status).toBe(401);
                 expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+                expect(elapsedMs).toBeLessThan(MAX_REQUEST_MS);
             }
+            const ids = results.map(({ response }) => response.headers.get('x-request-id'));
+            expect(ids.every(Boolean)).toBe(true);
+            expect(new Set(ids).size).toBe(10);
         });
 
         it('should handle burst traffic gracefully', async () => {
-            const app = initApp();
-            const burstSize = 20;
+            const { results, batchMs } = await fireBatch({
+                runs: Array.from(
+                    { length: 20 },
+                    (_, i) => () =>
+                        app.request(READY, { headers: publicHeaders(`burst-test-${i}/1.0`) })
+                )
+            });
 
-            const startTime = Date.now();
-            const requests = Array.from({ length: burstSize }, (_, i) =>
-                app.request('/health', {
-                    headers: {
-                        'user-agent': `burst-test-${i}/1.0`,
-                        accept: 'application/json'
-                    }
-                })
-            );
-
-            const metrics = await measurePerformance(requests, startTime);
-
-            // Burst traffic should be handled reasonably
-            expect(metrics.totalTime).toBeLessThan(5000); // 5 seconds for 20 requests
-            expect(metrics.averageTime).toBeLessThan(500); // 500ms average
-            expect(metrics.successRate).toBeGreaterThan(70); // At least 70% success rate under burst
-            expect(metrics.throughput).toBeGreaterThan(2); // At least 2 requests/second
-
-            // Verify that rate limiting works under burst
-            const responses = await Promise.all(requests);
-            const rateLimitedCount = responses.filter((r) => r.status === 429).length;
-            const successfulCount = responses.filter((r) => r.status === 200).length;
-
-            // Should have a mix of successful and rate-limited responses
-            expect(successfulCount + rateLimitedCount).toBe(burstSize);
-            expect(successfulCount).toBeGreaterThan(0); // Some should succeed
+            expect(batchMs).toBeLessThan(MAX_BATCH_MS);
+            for (const { response } of results) {
+                expect(response.status).toBe(200);
+            }
         });
     });
 
     describe('Mixed Workload Performance', () => {
         it('should handle different endpoint types efficiently', async () => {
-            const app = initApp();
-
+            const seeded = await seedPublicAccommodation();
             const workload = [
-                // Health checks (fast)
                 ...Array.from({ length: 5 }, (_, i) => ({
-                    path: '/health/live',
-                    userAgent: `health-check-${i}/1.0`
+                    path: READY,
+                    headers: publicHeaders(`health-check-${i}/1.0`),
+                    status: 200
                 })),
-                // Metrics (medium)
-                ...Array.from({ length: 3 }, (_, i) => ({
-                    path: '/metrics',
-                    userAgent: `metrics-check-${i}/1.0`
+                ...Array.from({ length: 3 }, () => ({
+                    path: METRICS,
+                    headers: adminHeaders,
+                    status: 200
                 })),
-                // API calls (potentially slower)
                 ...Array.from({ length: 2 }, (_, i) => ({
                     path: '/api/v1/public/accommodations',
-                    userAgent: `api-call-${i}/1.0`
+                    headers: publicHeaders(`api-call-${i}/1.0`),
+                    status: 200
                 }))
             ];
 
-            // Create request functions instead of executing them immediately
-            const requestFunctions = workload.map(
-                ({ path, userAgent }) =>
-                    () =>
-                        app.request(path, {
-                            headers: {
-                                'user-agent': userAgent,
-                                accept: 'application/json'
-                            }
-                        })
-            );
+            const { results, batchMs } = await fireBatch({
+                runs: workload.map(
+                    ({ path, headers }) =>
+                        () =>
+                            app.request(path, { headers })
+                )
+            });
 
-            // Execute all requests and measure performance
-            const startTime = Date.now();
-            const requests = requestFunctions.map((fn) => fn());
-            const metrics = await measurePerformance(requests, startTime);
-
-            // Mixed workload performance
-            expect(metrics.totalTime).toBeLessThan(3000); // 3 seconds for mixed workload
-            expect(metrics.averageTime).toBeLessThan(400); // 400ms average
-            expect(metrics.successRate).toBeGreaterThan(75); // At least 75% success rate
-            expect(metrics.throughput).toBeGreaterThan(2.5); // At least 2.5 requests/second
+            expect(batchMs).toBeLessThan(MAX_BATCH_MS);
+            results.forEach(({ response }, index) => {
+                expect(response.status).toBe(workload[index]?.status);
+            });
+            const listResponse = results[workload.length - 1]?.response;
+            const listBody = await listResponse?.json();
+            expect(listBody.data.items.map((item: { id: string }) => item.id)).toEqual([seeded.id]);
         });
     });
 
     describe('Error Handling Performance', () => {
-        it('should handle validation errors quickly', async () => {
-            const app = initApp();
-            const errorRequests = 10;
+        it('should handle validation errors quickly and keep them formatted', async () => {
+            const { results, batchMs } = await fireBatch({
+                runs: Array.from(
+                    { length: 10 },
+                    () => () =>
+                        // Missing user-agent triggers the header validation error
+                        app.request(READY, { headers: { accept: 'application/json' } })
+                )
+            });
 
-            const startTime = Date.now();
-            const requests = Array.from({ length: errorRequests }, (_, _i) =>
-                app.request('/health/live', {
-                    headers: {
-                        // Missing user-agent to trigger validation error
-                        accept: 'application/json'
-                    }
-                })
-            );
-
-            const metrics = await measurePerformance(requests, startTime);
-
-            // Error handling should be fast
-            expect(metrics.totalTime).toBeLessThan(1500); // 1.5 seconds for 10 error requests
-            expect(metrics.averageTime).toBeLessThan(200); // 200ms average for errors
-            expect(metrics.maxTime).toBeLessThan(500); // 500ms max for any error
-
-            // Verify that errors are properly formatted
-            const responses = await Promise.all(requests);
-            const errorResponses = responses.filter((r) => r.status === 400);
-
-            for (const response of errorResponses.slice(0, 3)) {
-                // Check first 3
+            expect(batchMs).toBeLessThan(MAX_BATCH_MS);
+            for (const { response, elapsedMs } of results) {
+                expect(response.status).toBe(400);
+                expect(elapsedMs).toBeLessThan(MAX_REQUEST_MS);
                 const data = await response.json();
                 expect(data.success).toBe(false);
-                expect(data.error).toBeDefined();
-                expect(response.headers.get('x-request-id')).toBeTruthy();
+                expect(data.error.code).toBe('MISSING_REQUIRED_HEADER');
+                expect(data.metadata.requestId).toBe(response.headers.get('x-request-id'));
             }
         });
     });
 
     describe('Middleware Stack Performance Analysis', () => {
-        it('should provide performance insights through metrics', async () => {
-            const app = initApp();
-
-            // Generate load to create meaningful metrics
-            const loadRequests = Array.from({ length: 15 }, (_, i) =>
-                app.request(i % 2 === 0 ? '/health' : '/health/live', {
-                    headers: {
-                        'user-agent': `metrics-load-${i}/1.0`,
-                        accept: 'application/json'
-                    }
-                })
-            );
-
-            const startTime = Date.now();
-            await Promise.all(loadRequests);
-            const loadTime = Date.now() - startTime;
-
-            // Wait for metrics to be processed
-            await new Promise((resolve) => setTimeout(resolve, 100));
-
-            // Check metrics endpoint performance
-            const metricsStartTime = Date.now();
-            const metricsResponse = await app.request('/metrics', {
-                headers: {
-                    'user-agent': 'metrics-analysis/1.0',
-                    accept: 'application/json'
-                }
+        it('should count every uncached request exactly in the admin metrics', async () => {
+            await fireBatch({
+                runs: Array.from(
+                    { length: 15 },
+                    (_, i) => () =>
+                        app.request(UNCACHED_401, {
+                            headers: publicHeaders(`metrics-load-${i}/1.0`)
+                        })
+                )
             });
-            const metricsTime = Date.now() - metricsStartTime;
 
-            // Metrics endpoint should be fast even after load
-            expect(metricsTime).toBeLessThan(300); // 300ms for metrics retrieval
-            expect([200, 429]).toContain(metricsResponse.status);
+            const start = performance.now();
+            const res = await app.request(METRICS, { headers: adminHeaders });
+            expect(performance.now() - start).toBeLessThan(MAX_REQUEST_MS);
 
-            if (metricsResponse.status === 200) {
-                const metricsData = await metricsResponse.json();
-                expect(metricsData.success).toBe(true);
-                expect(metricsData.data.summary).toBeDefined();
-                expect(metricsData.data.endpoints).toBeDefined();
-
-                // Verify metrics contain performance data
-                expect(metricsData.data.summary.totalRequests).toBeGreaterThan(0);
-            }
-
-            // Overall load should complete in reasonable time
-            expect(loadTime).toBeLessThan(4000); // 4 seconds for 15 requests
-        });
-    });
-
-    describe('Memory and Resource Performance', () => {
-        it('should handle sustained load without memory issues', async () => {
-            const app = initApp();
-            const sustainedRequests = 25;
-
-            // Make requests in batches to simulate sustained load
-            const batchSize = 5;
-            const batches = Math.ceil(sustainedRequests / batchSize);
-
-            let totalTime = 0;
-            const allResponseTimes: number[] = [];
-
-            for (let batch = 0; batch < batches; batch++) {
-                const batchStart = Date.now();
-
-                const batchRequests = Array.from({ length: batchSize }, (_, i) =>
-                    app.request('/health/live', {
-                        headers: {
-                            'user-agent': `sustained-${batch}-${i}/1.0`,
-                            accept: 'application/json'
-                        }
-                    })
-                );
-
-                const batchMetrics = await measurePerformance(batchRequests, batchStart);
-                totalTime += batchMetrics.totalTime;
-                allResponseTimes.push(...batchMetrics.responseTimes);
-
-                // Small delay between batches
-                await new Promise((resolve) => setTimeout(resolve, 10));
-            }
-
-            const averageResponseTime =
-                allResponseTimes.reduce((a, b) => a + b, 0) / allResponseTimes.length;
-            const maxResponseTime = Math.max(...allResponseTimes);
-
-            // Performance should remain consistent across batches
-            expect(averageResponseTime).toBeLessThan(300); // 300ms average across all requests
-            expect(maxResponseTime).toBeLessThan(1000); // 1 second max for any request
-            expect(totalTime).toBeLessThan(8000); // 8 seconds total for sustained load
-
-            // Memory should be stable (no obvious leaks)
-            // This is implicit - if the test completes without timeout/crash, memory is stable
-            expect(true).toBe(true); // Placeholder assertion
-        });
-    });
-
-    describe('Performance Regression Detection', () => {
-        it('should maintain baseline performance characteristics', async () => {
-            const app = initApp();
-
-            // Baseline test with known characteristics
-            const baselineRequests = 12;
-            const startTime = Date.now();
-
-            const requests = Array.from({ length: baselineRequests }, (_, i) =>
-                app.request('/health', {
-                    headers: {
-                        'user-agent': `baseline-${i}/1.0`,
-                        accept: 'application/json'
-                    }
-                })
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.success).toBe(true);
+            const endpoint = body.data.endpoints.find(
+                (item: { endpoint: string }) => item.endpoint === `GET ${UNCACHED_401}`
             );
+            expect(endpoint).toMatchObject({ requests: 15, errors: 15, errorRate: 100 });
+            expect(body.data.summary.totalRequests).toBeGreaterThanOrEqual(15);
+        });
+    });
 
-            const metrics = await measurePerformance(requests, startTime);
+    describe('Sustained load', () => {
+        it('should stay correct across consecutive batches', async () => {
+            const allIds = new Set<string>();
+            const times: number[] = [];
 
-            // Baseline performance thresholds (adjust based on infrastructure)
-            expect(metrics.averageTime).toBeLessThan(250); // 250ms average baseline
-            expect(metrics.maxTime).toBeLessThan(800); // 800ms max baseline
-            expect(metrics.minTime).toBeLessThan(100); // 100ms min baseline (best case)
-            expect(metrics.successRate).toBeGreaterThan(85); // 85% success rate baseline
-            expect(metrics.throughput).toBeGreaterThan(4); // 4 requests/second baseline
+            for (let batch = 0; batch < 5; batch++) {
+                const { results } = await fireBatch({
+                    runs: Array.from(
+                        { length: 5 },
+                        (_, i) => () =>
+                            app.request(UNCACHED_401, {
+                                headers: publicHeaders(`sustained-${batch}-${i}/1.0`)
+                            })
+                    )
+                });
+                for (const { response, elapsedMs } of results) {
+                    expect(response.status).toBe(401);
+                    allIds.add(response.headers.get('x-request-id') ?? '');
+                    times.push(elapsedMs);
+                }
+            }
 
-            // Response time distribution should be reasonable
-            const sortedTimes = metrics.responseTimes.sort((a, b) => a - b);
-            const p95 = sortedTimes[Math.floor(sortedTimes.length * 0.95)];
-            const p99 = sortedTimes[Math.floor(sortedTimes.length * 0.99)];
-
-            expect(p95).toBeLessThan(400); // 95th percentile under 400ms
-            expect(p99).toBeLessThan(600); // 99th percentile under 600ms
+            expect(allIds.size).toBe(25);
+            expect(allIds.has('')).toBe(false);
+            const average = times.reduce((sum, value) => sum + value, 0) / times.length;
+            expect(average).toBeLessThan(MAX_REQUEST_MS);
+            expect(Math.max(...times)).toBeLessThan(MAX_BATCH_MS);
         });
     });
 
     describe('Middleware Overhead Analysis', () => {
-        it('should validate that middleware stack overhead is acceptable', async () => {
-            const app = initApp();
+        it('should apply the whole stack to every request in a batch', async () => {
+            const { results } = await fireBatch({
+                runs: Array.from(
+                    { length: 8 },
+                    (_, i) => () =>
+                        app.request(READY, { headers: publicHeaders(`overhead-test-${i}/1.0`) })
+                )
+            });
 
-            // Test the fastest possible endpoint to measure middleware overhead
-            const overheadRequests = 8;
-            const startTime = Date.now();
-
-            const requests = Array.from({ length: overheadRequests }, (_, i) =>
-                app.request('/health/live', {
-                    headers: {
-                        'user-agent': `overhead-test-${i}/1.0`,
-                        accept: 'application/json'
-                    }
-                })
-            );
-
-            const metrics = await measurePerformance(requests, startTime);
-
-            // Middleware overhead should be minimal
-            expect(metrics.averageTime).toBeLessThan(200); // 200ms average with full middleware stack
-            expect(metrics.minTime).toBeLessThan(50); // 50ms minimum (best case with all middlewares)
-
-            // Verify all middleware features are working
-            const responses = await Promise.all(requests);
-            const successfulResponses = responses.filter((r) => r.status === 200);
-
-            for (const response of successfulResponses.slice(0, 3)) {
-                // Check first 3
-                // Security middleware
+            for (const { response } of results) {
+                expect(response.status).toBe(200);
                 expect(response.headers.get('x-content-type-options')).toBe('nosniff');
-                expect(['DENY', 'SAMEORIGIN']).toContain(response.headers.get('x-frame-options'));
-
-                // Request ID middleware
+                expect(response.headers.get('x-frame-options')).toBe('SAMEORIGIN');
                 expect(response.headers.get('x-request-id')).toBeTruthy();
-
-                // Response formatting middleware
                 const data = await response.json();
                 expect(data.success).toBe(true);
-                expect(data.data).toBeDefined();
-                expect(data.metadata).toBeDefined();
+                expect(data.data.ready).toBe(true);
+                expect(data.metadata.timestamp).toBeDefined();
             }
         });
     });
