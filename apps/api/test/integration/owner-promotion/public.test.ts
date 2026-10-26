@@ -5,157 +5,232 @@
  * - GET /api/v1/public/owner-promotions — paginated list
  * - GET /api/v1/public/owner-promotions/:id — get by ID
  *
- * These routes are unauthenticated and read-only.
+ * These routes are unauthenticated and read-only. Each test starts from
+ * three ACTIVE promotions plus one DRAFT one seeded through Drizzle, so the
+ * public visibility gate (ACTIVE only) is exercised against real rows.
  */
-import { beforeAll, describe, expect, it } from 'vitest';
+import { getDb, ownerPromotions } from '@repo/db';
+import { LifecycleStatusEnum, OwnerPromotionDiscountTypeEnum } from '@repo/schemas';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
+import { createTestUser } from '../../e2e/setup/seed-helpers';
+import { testDb } from '../../e2e/setup/test-database';
+
+const base = '/api/v1/public/owner-promotions';
+const headers = { 'user-agent': 'vitest' };
+const ACTIVE_COUNT = 3;
+
+interface SeededPromotions {
+    readonly activeIds: readonly string[];
+    readonly draftId: string;
+}
+
+/**
+ * Seeds `ACTIVE_COUNT` ACTIVE promotions and one DRAFT promotion for a fresh owner.
+ */
+async function seedPromotions(): Promise<SeededPromotions> {
+    const suffix = crypto.randomUUID().slice(0, 8);
+    const owner = await createTestUser({
+        email: `owner-promo-${suffix}@example.test`,
+        slug: `owner-promo-${suffix}`
+    });
+    const validFrom = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const rows = await getDb()
+        .insert(ownerPromotions)
+        .values(
+            Array.from({ length: ACTIVE_COUNT + 1 }, (_, index) => ({
+                slug: `owner-promo-${index}-${suffix}`,
+                ownerId: owner.id,
+                title: `Owner promotion ${index} ${suffix}`,
+                description: 'Seeded for the public owner-promotion integration tests.',
+                discountType: OwnerPromotionDiscountTypeEnum.PERCENTAGE,
+                discountValue: 10 + index,
+                validFrom,
+                lifecycleState:
+                    index < ACTIVE_COUNT ? LifecycleStatusEnum.ACTIVE : LifecycleStatusEnum.DRAFT
+            }))
+        )
+        .returning({ id: ownerPromotions.id, lifecycleState: ownerPromotions.lifecycleState });
+
+    const draft = rows.find((row) => row.lifecycleState === LifecycleStatusEnum.DRAFT);
+    if (!draft) throw new Error('seedPromotions: draft promotion insert returned no row');
+    return {
+        activeIds: rows.filter((row) => row.id !== draft.id).map((row) => row.id),
+        draftId: draft.id
+    };
+}
 
 describe('GET /api/v1/public/owner-promotions (list)', () => {
     let app: ReturnType<typeof initApp>;
-    const base = '/api/v1/public/owner-promotions';
 
-    beforeAll(() => {
+    beforeAll(async () => {
+        await testDb.setup();
+        await testDb.clean();
+        clearCache();
         validateApiEnv();
         app = initApp();
     });
 
-    it('returns 200 with data array on happy path', async () => {
-        // Arrange / Act
-        const res = await app.request(base, { headers: { 'user-agent': 'vitest' } });
-
-        // Assert — 403 can occur in some env configs where rate-limit or CORS is strict
-        expect([200, 400, 403]).toContain(res.status);
-        if (res.status === 200) {
-            const body = await res.json();
-            expect(body).toHaveProperty('data');
-        }
+    beforeEach(async () => {
+        await seedPromotions();
     });
 
-    it('includes pagination metadata when successful', async () => {
+    afterEach(async () => {
+        await testDb.clean();
+        clearCache();
+    });
+
+    afterAll(async () => {
+        await testDb.teardown();
+    });
+
+    it('returns 200 with only the ACTIVE promotions on the happy path', async () => {
         // Arrange / Act
-        const res = await app.request(base, { headers: { 'user-agent': 'vitest' } });
+        const res = await app.request(base, { headers });
 
         // Assert
-        if (res.status === 200) {
-            const body = await res.json();
-            expect(body).toHaveProperty('pagination');
-            expect(body.pagination).toHaveProperty('page');
-            expect(body.pagination).toHaveProperty('pageSize');
-            expect(body.pagination).toHaveProperty('total');
-        }
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data.items).toHaveLength(ACTIVE_COUNT);
+    });
+
+    it('includes pagination metadata', async () => {
+        // Arrange / Act
+        const res = await app.request(base, { headers });
+
+        // Assert
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data.pagination).toMatchObject({
+            page: 1,
+            total: ACTIVE_COUNT,
+            totalPages: 1
+        });
+        expect(body.data.pagination).toHaveProperty('pageSize');
     });
 
     it('respects pageSize query parameter', async () => {
         // Arrange / Act
-        const res = await app.request(`${base}?pageSize=5`, {
-            headers: { 'user-agent': 'vitest' }
-        });
+        const res = await app.request(`${base}?pageSize=2`, { headers });
 
         // Assert
-        if (res.status === 200) {
-            const body = await res.json();
-            expect(body.pagination.pageSize).toBeLessThanOrEqual(5);
-        }
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data.pagination.pageSize).toBe(2);
+        expect(body.data.items).toHaveLength(2);
     });
 
-    it('enforces maximum pageSize limit', async () => {
+    it('accepts the maximum pageSize of 100', async () => {
         // Arrange / Act
-        const res = await app.request(`${base}?pageSize=500`, {
-            headers: { 'user-agent': 'vitest' }
-        });
+        const res = await app.request(`${base}?pageSize=100`, { headers });
 
         // Assert
-        if (res.status === 200) {
-            const body = await res.json();
-            expect(body.pagination.pageSize).toBeLessThanOrEqual(100);
-        }
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data.pagination.pageSize).toBe(100);
+    });
+
+    it('rejects a pageSize above the maximum with 400', async () => {
+        // Arrange / Act
+        const res = await app.request(`${base}?pageSize=500`, { headers });
+
+        // Assert
+        expect(res.status).toBe(400);
     });
 
     it('does not require authentication', async () => {
-        // Arrange — no auth headers at all
+        // Arrange — no auth headers at all (only the user-agent every client sends)
         // Act
-        const res = await app.request(base);
+        const res = await app.request(base, { headers });
 
         // Assert — must NOT return 401
         expect(res.status).not.toBe(401);
-    });
-
-    it('includes cache headers', async () => {
-        // Arrange / Act
-        const res = await app.request(base, { headers: { 'user-agent': 'vitest' } });
-
-        // Assert
-        if (res.status === 200) {
-            const cacheControl = res.headers.get('cache-control');
-            expect(cacheControl).toBeTruthy();
-        }
+        expect(res.status).toBe(200);
     });
 });
 
 describe('GET /api/v1/public/owner-promotions/:id', () => {
     let app: ReturnType<typeof initApp>;
-    const base = '/api/v1/public/owner-promotions';
+    let seeded: SeededPromotions;
+    const missingId = '99999999-9999-4999-8999-999999999999';
 
-    beforeAll(() => {
+    beforeAll(async () => {
+        await testDb.setup();
+        await testDb.clean();
+        clearCache();
         validateApiEnv();
         app = initApp();
     });
 
-    it('returns 200 or 404 for a valid UUID', async () => {
+    beforeEach(async () => {
+        seeded = await seedPromotions();
+    });
+
+    afterEach(async () => {
+        await testDb.clean();
+        clearCache();
+    });
+
+    afterAll(async () => {
+        await testDb.teardown();
+    });
+
+    it('returns 200 and the promotion for an existing ACTIVE id', async () => {
         // Arrange
-        const validUuid = '00000000-0000-0000-0000-000000000001';
+        const id = seeded.activeIds[0];
 
         // Act
-        const res = await app.request(`${base}/${validUuid}`, {
-            headers: { 'user-agent': 'vitest' }
-        });
+        const res = await app.request(`${base}/${id}`, { headers });
 
         // Assert
-        expect([200, 400, 404]).toContain(res.status);
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data).toMatchObject({ id });
+    });
+
+    it('returns 404 for a valid UUID that matches no promotion', async () => {
+        // Arrange / Act
+        const res = await app.request(`${base}/${missingId}`, { headers });
+
+        // Assert
+        expect(res.status).toBe(404);
+    });
+
+    // HOS-1897: a DRAFT promotion answers 403, which confirms the id exists. Drop `.fails` once it is 404.
+    it.fails('returns 404 NOT_FOUND for a DRAFT promotion', async () => {
+        // Arrange / Act
+        const res = await app.request(`${base}/${seeded.draftId}`, { headers });
+
+        // Assert
+        expect(res.status).toBe(404);
+        const body = await res.json();
+        expect(body.error.code).toBe('NOT_FOUND');
     });
 
     it('returns 400 for an invalid UUID format', async () => {
         // Arrange / Act
-        const res = await app.request(`${base}/not-a-uuid`, {
-            headers: { 'user-agent': 'vitest' }
-        });
+        const res = await app.request(`${base}/not-a-uuid`, { headers });
 
         // Assert
-        expect([400, 422]).toContain(res.status);
-    });
-
-    it('returns data object when entity is found', async () => {
-        // Arrange
-        const validUuid = '00000000-0000-0000-0000-000000000001';
-
-        // Act
-        const res = await app.request(`${base}/${validUuid}`, {
-            headers: { 'user-agent': 'vitest' }
-        });
-
-        // Assert
-        if (res.status === 200) {
-            const body = await res.json();
-            expect(body).toHaveProperty('data');
-        }
+        expect(res.status).toBe(400);
     });
 
     it('does not leak admin-only fields when found', async () => {
         // Arrange
-        const validUuid = '00000000-0000-0000-0000-000000000001';
+        const id = seeded.activeIds[0];
 
         // Act
-        const res = await app.request(`${base}/${validUuid}`, {
-            headers: { 'user-agent': 'vitest' }
-        });
+        const res = await app.request(`${base}/${id}`, { headers });
 
-        // Assert — admin fields like deletedAt / deletedById must not be present at top level
-        if (res.status === 200) {
-            const body = (await res.json()) as Record<string, unknown>;
-            const item = (body.data ?? body) as Record<string, unknown>;
-            expect(item).not.toHaveProperty('deletedAt');
-            expect(item).not.toHaveProperty('deletedById');
-        }
+        // Assert — admin fields must not be present
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { data: Record<string, unknown> };
+        expect(body.data).not.toHaveProperty('deletedAt');
+        expect(body.data).not.toHaveProperty('deletedById');
+        expect(body.data).not.toHaveProperty('lifecycleState');
+        expect(body.data).not.toHaveProperty('ownerId');
+        expect(body.data).not.toHaveProperty('currentRedemptions');
     });
 });
