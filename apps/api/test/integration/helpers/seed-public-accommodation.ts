@@ -68,8 +68,12 @@ export async function seedPublicAccommodation(
                   path: `/seed-acc-dest-${suffix}`,
                   pathIds: '',
                   level: 4,
-                  location: { country: 'AR', state: 'ER', city: 'CDU' }
-              } as typeof destinations.$inferInsert)
+                  location: {
+                      country: 'AR',
+                      state: 'ER',
+                      coordinates: { lat: '-32.48', long: '-58.23' }
+                  }
+              })
               .returning({ id: destinations.id });
     const destinationId = destinationRows[0]?.id;
     if (!destinationId) throw new Error('seedPublicAccommodation: destination insert failed');
@@ -91,7 +95,7 @@ export async function seedPublicAccommodation(
             deadlinesVersion: 1,
             featuredByEntitlement: input.isFeatured ?? false,
             ...(input.averageRating === undefined ? {} : { averageRating: input.averageRating })
-        } as typeof accommodations.$inferInsert)
+        })
         .returning({ id: accommodations.id });
     const id = rows[0]?.id;
     if (!id) throw new Error('seedPublicAccommodation: accommodation insert failed');
