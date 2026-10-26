@@ -215,13 +215,16 @@ describe('TEST:1696:3 AC:1696:3 cancellation screen', () => {
         const user = userEvent.setup();
         renderScreen();
         const reasonSelect = card().getByTestId('subscription-cancellation-reason');
-        expect(
-            within(reasonSelect)
-                .getAllByRole('option')
-                .slice(1)
-                .map((option) => (option as HTMLOptionElement).value)
-        ).toEqual(Object.values(CancellationReasonEnum));
         await user.click(reasonSelect);
+        expect(
+            (await screen.findAllByRole('option'))
+                .slice(1)
+                .map((option) => option.textContent?.trim())
+        ).toEqual(
+            Object.values(CancellationReasonEnum).map((value) =>
+                translateEs(`admin-billing.subscriptionCancellation.reason.${value}`)
+            )
+        );
         await user.click(await screen.findByRole('option', { name: 'Pausa por temporada' }));
         await user.click(card().getByTestId('subscription-cancellation-confirm'));
         await waitFor(() =>
