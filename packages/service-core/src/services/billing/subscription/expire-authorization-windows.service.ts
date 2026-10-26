@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { Clock } from '@repo/billing-verticals-contract';
+import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contract';
 import {
     eq,
     findCreditedPendingAuthorizations,
