@@ -1,23 +1,15 @@
 // TEST:1731:7 — the real signed payment notice closes the pending checkout signup.
-import {
-    billingDeadlineVersions,
-    emailOutbox,
-    eq,
-    getDb,
-    payments,
-    providerLinks,
-    subscriptions
-} from '@repo/db';
+import { emailOutbox, eq, getDb, payments, providerLinks, subscriptions } from '@repo/db';
 import { type LogEntry, registerHook, unregisterHook } from '@repo/logger';
 import { MercadoPagoPaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { type FakeProviderServer, startFakeProviderServer } from '@repo/payments/fake-server';
-import type { BillingDeadlineValues } from '@repo/schemas';
 import { createAdjustableClock } from '@repo/test-clock';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
+import { ensureBillingDeadlineVersion1 } from '../helpers/billing-deadline-version.js';
 import {
     createLifter,
     createSignupOption,
@@ -46,25 +38,6 @@ let lifterId: string;
  * `onConflictDoNothing` keeps the seed idempotent and never triggers the
  * UPDATE/DELETE-only immutability trigger.
  */
-const billingDeadlineVersion1Values = {
-    '10': { cardHours: 72, manualDays: 7 },
-    '11': { noticeDays: 60, contactDays: [30, 7] },
-    '12': { noticeDays: 60, contactDays: [30, 7] },
-    '13': { daysBefore: [5, 1] },
-    '14': { daysBefore: 7 },
-    '15': { hoursRemaining: 24 },
-    '16': { days: 7 },
-    '17': { days: 7 },
-    '18': { days: 180 },
-    '19': { minutes: 60 }
-} satisfies BillingDeadlineValues;
-
-const ensureBillingDeadlineVersion1 = async (): Promise<void> => {
-    await getDb()
-        .insert(billingDeadlineVersions)
-        .values({ version: 1, values: billingDeadlineVersion1Values })
-        .onConflictDoNothing();
-};
 
 const outcomeFrom = (entry: LogEntry): unknown => {
     if (
