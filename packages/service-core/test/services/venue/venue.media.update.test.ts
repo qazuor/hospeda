@@ -1,7 +1,7 @@
 /**
  * gastronomy.media.update.test.ts
  *
- * Unit tests for `updateGastronomyMedia` (HOS-1036) — the text-metadata PATCH that
+ * Unit tests for `updateVenueMedia` (HOS-1036) — the text-metadata PATCH that
  * closes the gap left by HOS-390: `gastronomy_media` rows had `alt`, `caption`,
  * `description` and `attribution` columns and no endpoint that could write them.
  *
@@ -57,7 +57,7 @@ vi.mock('@repo/db', async (importOriginal) => {
 import type { VenueMedia, VenueMediaUpdateInput } from '@repo/schemas';
 import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { updateGastronomyMedia } from '../../../src/services/gastronomy/gastronomy.media';
+import { updateVenueMedia } from '../../../src/services/venue/venue.media';
 import type { Actor } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
 
@@ -68,7 +68,7 @@ import * as permissionUtils from '../../../src/utils/permission';
 const GASTRONOMY_ID = '00000000-0000-4000-a000-000000000001';
 const MEDIA_ID = '00000000-0000-4000-a000-000000000002';
 const OWNER_ID = '00000000-0000-4000-a000-000000000003';
-const OTHER_GASTRONOMY_ID = '00000000-0000-4000-a000-000000000099';
+const OTHER_VENUE_ID = '00000000-0000-4000-a000-000000000099';
 
 function makeMediaRow(overrides: Partial<VenueMedia> = {}): VenueMedia {
     return {
@@ -90,7 +90,7 @@ function makeMediaRow(overrides: Partial<VenueMedia> = {}): VenueMedia {
 }
 
 /** A gastronomy listing owned by `ownerActor`. */
-function makeGastronomy(overrides: Record<string, unknown> = {}) {
+function makeVenue(overrides: Record<string, unknown> = {}) {
     return {
         id: GASTRONOMY_ID,
         ownerId: OWNER_ID,
@@ -110,17 +110,17 @@ const strangerActor: Actor = {
     permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
 };
 
-function makeGastronomyModel(entity: Record<string, unknown> | null = null) {
+function makeVenueModel(entity: Record<string, unknown> | null = null) {
     return {
         findById: vi.fn().mockResolvedValue(entity)
     };
 }
 
-type ModelArg = Parameters<typeof updateGastronomyMedia>[0];
+type ModelArg = Parameters<typeof updateVenueMedia>[0];
 
 /** Run the helper against a mocked model, keeping the cast in one place. */
 function run(entity: Record<string, unknown> | null, actor: Actor, input: VenueMediaUpdateInput) {
-    return updateGastronomyMedia(makeGastronomyModel(entity) as unknown as ModelArg, actor, input);
+    return updateVenueMedia(makeVenueModel(entity) as unknown as ModelArg, actor, input);
 }
 
 // ---------------------------------------------------------------------------
@@ -146,7 +146,7 @@ beforeEach(() => {
 describe('updateGastronomyMedia (HOS-1036)', () => {
     describe('happy path', () => {
         it('writes every supplied field, and ONLY the supplied fields', async () => {
-            const result = await run(makeGastronomy(), ownerActor, {
+            const result = await run(makeVenue(), ownerActor, {
                 gastronomyId: GASTRONOMY_ID,
                 mediaId: MEDIA_ID,
                 caption: 'Atardecer en el muelle',
@@ -169,7 +169,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
         });
 
         it('returns the updated row inside the media envelope', async () => {
-            const result = await run(makeGastronomy(), ownerActor, {
+            const result = await run(makeVenue(), ownerActor, {
                 gastronomyId: GASTRONOMY_ID,
                 mediaId: MEDIA_ID,
                 alt: 'Texto nuevo'
@@ -180,7 +180,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
         });
 
         it('leaves an OMITTED field out of the patch entirely', async () => {
-            const result = await run(makeGastronomy(), ownerActor, {
+            const result = await run(makeVenue(), ownerActor, {
                 gastronomyId: GASTRONOMY_ID,
                 mediaId: MEDIA_ID,
                 alt: 'Sólo el alt'
@@ -196,7 +196,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
         });
 
         it('CLEARS a field sent as null (null is an edit, not an omission)', async () => {
-            const result = await run(makeGastronomy(), ownerActor, {
+            const result = await run(makeVenue(), ownerActor, {
                 gastronomyId: GASTRONOMY_ID,
                 mediaId: MEDIA_ID,
                 caption: null
@@ -210,10 +210,10 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
     describe('ownership and existence — 404, never 403', () => {
         it('returns NOT_FOUND when the media row belongs to another gastronomy', async () => {
             mockMediaModel.findById.mockResolvedValue(
-                makeMediaRow({ gastronomyId: OTHER_GASTRONOMY_ID } as Partial<VenueMedia>)
+                makeMediaRow({ gastronomyId: OTHER_VENUE_ID } as Partial<VenueMedia>)
             );
 
-            const result = await run(makeGastronomy(), ownerActor, {
+            const result = await run(makeVenue(), ownerActor, {
                 gastronomyId: GASTRONOMY_ID,
                 mediaId: MEDIA_ID,
                 alt: 'No debería escribirse'
@@ -226,7 +226,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
         it('returns NOT_FOUND when the media row does not exist', async () => {
             mockMediaModel.findById.mockResolvedValue(null);
 
-            const result = await run(makeGastronomy(), ownerActor, {
+            const result = await run(makeVenue(), ownerActor, {
                 gastronomyId: GASTRONOMY_ID,
                 mediaId: MEDIA_ID,
                 alt: 'No debería escribirse'
@@ -241,7 +241,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
                 makeMediaRow({ deletedAt: new Date('2024-02-01') } as never)
             );
 
-            const result = await run(makeGastronomy(), ownerActor, {
+            const result = await run(makeVenue(), ownerActor, {
                 gastronomyId: GASTRONOMY_ID,
                 mediaId: MEDIA_ID,
                 alt: 'No debería escribirse'
@@ -263,7 +263,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
         });
 
         it('returns FORBIDDEN when the actor may not edit the gastronomy', async () => {
-            const result = await run(makeGastronomy(), strangerActor, {
+            const result = await run(makeVenue(), strangerActor, {
                 gastronomyId: GASTRONOMY_ID,
                 mediaId: MEDIA_ID,
                 alt: 'No debería escribirse'
@@ -276,7 +276,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
 
     describe('input validation', () => {
         it('rejects a body with no editable field at all', async () => {
-            const result = await run(makeGastronomy(), ownerActor, {
+            const result = await run(makeVenue(), ownerActor, {
                 gastronomyId: GASTRONOMY_ID,
                 mediaId: MEDIA_ID
             } as VenueMediaUpdateInput);
@@ -286,7 +286,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
         });
 
         it('rejects an alt longer than 200 characters', async () => {
-            const result = await run(makeGastronomy(), ownerActor, {
+            const result = await run(makeVenue(), ownerActor, {
                 gastronomyId: GASTRONOMY_ID,
                 mediaId: MEDIA_ID,
                 alt: 'x'.repeat(201)
@@ -297,7 +297,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
         });
 
         it('rejects an empty-string caption (clearing is null, not "")', async () => {
-            const result = await run(makeGastronomy(), ownerActor, {
+            const result = await run(makeVenue(), ownerActor, {
                 gastronomyId: GASTRONOMY_ID,
                 mediaId: MEDIA_ID,
                 caption: ''
@@ -308,7 +308,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
         });
 
         it('rejects a non-UUID mediaId before touching the DB', async () => {
-            const result = await run(makeGastronomy(), ownerActor, {
+            const result = await run(makeVenue(), ownerActor, {
                 gastronomyId: GASTRONOMY_ID,
                 mediaId: 'not-a-uuid',
                 alt: 'Cualquier cosa'

@@ -3,7 +3,7 @@
  *
  * Abstract base class for all listing services (SPEC-239 T-029).
  *
- * Provides shared lifecycle hooks and behaviors so that GastronomyService and
+ * Provides shared lifecycle hooks and behaviors so that VenueService and
  * future experience services reuse this logic without re-deriving it:
  *
  *  (a) Destination CITY-type validation in `_beforeCreate` / `_beforeUpdate`.
@@ -973,7 +973,7 @@ export abstract class BaseListingService<
      * `reviewsCount` fields after a review is created, updated, or deleted.
      *
      * This is a service-layer helper, not a DB trigger.  The entity's review
-     * sub-service (e.g. `GastronomyReviewService`) is responsible for calling
+     * sub-service (e.g. `VenueReviewService`) is responsible for calling
      * this method whenever the approved review set changes.
      *
      * **Caller responsibility**: pass only APPROVED, non-deleted review rows.
@@ -987,7 +987,7 @@ export abstract class BaseListingService<
      *
      * @example
      * ```ts
-     * // In GastronomyReviewService._afterCreate:
+     * // In VenueReviewService._afterCreate:
      * const approved = await reviewModel.findAll({
      *   gastronomyId: listing.id,
      *   moderationState: ModerationStateEnum.APPROVED,

@@ -28,8 +28,8 @@ import {
 } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
-import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
 import { LISTING_CONTENT_EDITED_BY_SUPPORT_TEMPLATE } from '../../../src/services/listing/listing-support-edit';
+import { VenueService } from '../../../src/services/venue/venue.service';
 import type { Actor } from '../../../src/types';
 import { runWithAdministrativeAuthorization } from '../../../src/utils/administrative-authorization';
 import { createLoggerMock } from '../../utils/modelMockFactory';
@@ -38,7 +38,7 @@ import {
     getServiceTestDb,
     isServiceTestDbAvailable,
     seedAccommodation,
-    seedGastronomy,
+    seedVenue,
     withServiceTestTransaction
 } from './helpers';
 
@@ -161,12 +161,12 @@ async function readEvents(tx: DrizzleClient, accommodationId: string) {
 
 describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
     let service: AccommodationService;
-    let gastronomyService: GastronomyService;
+    let gastronomyService: VenueService;
 
     beforeAll(() => {
         if (!dbAvailable) return;
         service = new AccommodationService({ logger: createLoggerMock() });
-        gastronomyService = new GastronomyService({ logger: createLoggerMock() });
+        gastronomyService = new VenueService({ logger: createLoggerMock() });
     });
 
     afterEach(async () => {
@@ -452,7 +452,7 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
         '(h) gastronomy: action 15 edits content, and refuses a non-content field',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                const { ownerId, gastronomyId } = await seedGastronomy(tx);
+                const { ownerId, gastronomyId } = await seedVenue(tx);
                 const adminId = await seedUser(tx);
 
                 const refusedCode = await errorCodeOf(

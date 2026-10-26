@@ -38,7 +38,7 @@
  *
  * This module answers PERMISSION only — `GASTRONOMY_EDIT_OWN` on your own
  * listing, `GASTRONOMY_EDIT_ALL` for staff, via the same
- * {@link checkGastronomyCanEditFaqs} gate the sibling helpers use. Whether the
+ * {@link checkVenueCanEditFaqs} gate the sibling helpers use. Whether the
  * caller's PLAN includes a structured carta is an entitlement
  * (`MANAGE_GASTRONOMY_MENU`) and is checked at the route, before this is
  * reached — the same split `brochure.ts` makes.
@@ -63,7 +63,7 @@ import {
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
-import { checkGastronomyCanEditFaqs } from './gastronomy.permissions';
+import { checkVenueCanEditFaqs } from './venue.permissions';
 
 /**
  * Upper bound on the rows one read pulls back.
@@ -84,11 +84,7 @@ const MENU_READ_PAGE_SIZE = 4000;
  * @returns The gastronomy DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
-async function requireGastronomy(
-    model: VenueModel,
-    gastronomyId: string,
-    tx?: ServiceContext['tx']
-) {
+async function requireVenue(model: VenueModel, gastronomyId: string, tx?: ServiceContext['tx']) {
     const entity = await model.findById(gastronomyId, tx);
     if (!entity) {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
@@ -117,7 +113,7 @@ const byDisplayOrder = <T extends { displayOrder: number; name: string }>(a: T, 
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyMenuOutput>`.
  */
-export async function getGastronomyMenu(
+export async function getVenueMenu(
     model: VenueModel,
     data: VenueMenuGetInput,
     ctx?: ServiceContext
@@ -137,7 +133,7 @@ export async function getGastronomyMenu(
         }
         const { gastronomyId } = parseResult.data;
 
-        const gastronomy = await requireGastronomy(model, gastronomyId, ctx?.tx);
+        const gastronomy = await requireVenue(model, gastronomyId, ctx?.tx);
 
         const sectionModel = new VenueMenuSectionModel();
         const itemModel = new VenueMenuItemModel();
@@ -226,7 +222,7 @@ export async function getGastronomyMenu(
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyMenuOutput>` with the carta as now stored.
  */
-export async function replaceGastronomyMenu(
+export async function replaceVenueMenu(
     model: VenueModel,
     actor: Actor,
     data: VenueMenuReplaceInput,
@@ -248,8 +244,8 @@ export async function replaceGastronomyMenu(
         const validated = parseResult.data;
         const { gastronomyId } = validated;
 
-        const gastronomy = await requireGastronomy(model, gastronomyId, ctx?.tx);
-        checkGastronomyCanEditFaqs(actor, gastronomy);
+        const gastronomy = await requireVenue(model, gastronomyId, ctx?.tx);
+        checkVenueCanEditFaqs(actor, gastronomy);
 
         const sectionModel = new VenueMenuSectionModel();
         const itemModel = new VenueMenuItemModel();
@@ -350,7 +346,7 @@ export async function replaceGastronomyMenu(
             });
         }
 
-        return await getGastronomyMenu(model, { gastronomyId }, ctx);
+        return await getVenueMenu(model, { gastronomyId }, ctx);
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };

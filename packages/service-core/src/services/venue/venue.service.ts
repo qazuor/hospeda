@@ -5,7 +5,7 @@
  *
  * ## Architecture
  *
- * `GastronomyService` extends {@link BaseListingService} and satisfies its
+ * `VenueService` extends {@link BaseListingService} and satisfies its
  * abstract contract by wiring the gastronomy-specific DB models.  All shared
  * behaviors (slug auto-generation, junction sync, owner-scoping, rating recompute,
  * destination validation) are inherited from the base — zero shared logic is
@@ -65,34 +65,31 @@ import type {
 import { ServiceError } from '../../types';
 import { assertListingReadable, entityNotFoundError } from '../../utils';
 import { hasPermission } from '../../utils/permission';
-import { GASTRONOMY_ENTITY_NAME } from '../entity-names';
+import { VENUE_ENTITY_NAME } from '../entity-names';
 import { resolveSiteUrlFromTargetUrl } from '../hostTrade/host-trade-qr';
 import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-listing.service';
 import { BaseListingService } from '../listing/base-listing.service';
 import { QrCodeService } from '../qr-code/qr-code.service';
+import { attachComposedVenueMedia, attachComposedVenueMediaList } from './venue.media-read';
 import {
-    attachComposedGastronomyMedia,
-    attachComposedGastronomyMediaList
-} from './gastronomy.media-read';
+    checkVenueCanAdminList,
+    checkVenueCanCreate,
+    checkVenueCanDelete,
+    checkVenueCanEditAll,
+    checkVenueCanEditOwn,
+    checkVenueCanEditOwnOrAll,
+    checkVenueCanHardDelete,
+    checkVenueCanRestore,
+    checkVenueCanView
+} from './venue.permissions';
+import { projectVenueOwnerAvatar, projectVenuePublic } from './venue.projections';
+import type { VenueHookState } from './venue.types';
 import {
-    checkGastronomyCanAdminList,
-    checkGastronomyCanCreate,
-    checkGastronomyCanDelete,
-    checkGastronomyCanEditAll,
-    checkGastronomyCanEditOwn,
-    checkGastronomyCanEditOwnOrAll,
-    checkGastronomyCanHardDelete,
-    checkGastronomyCanRestore,
-    checkGastronomyCanView
-} from './gastronomy.permissions';
-import { projectGastronomyOwnerAvatar, projectGastronomyPublic } from './gastronomy.projections';
-import type { GastronomyHookState } from './gastronomy.types';
-import {
-    buildGastronomyMenuQrTargetUrl,
-    GASTRONOMY_MENU_QR_ENTITY_TYPE,
-    GASTRONOMY_MENU_QR_PURPOSE,
-    resolveGastronomyMenuQrLangFromTargetUrl
-} from './gastronomy-qr';
+    buildVenueMenuQrTargetUrl,
+    resolveVenueMenuQrLangFromTargetUrl,
+    VENUE_MENU_QR_ENTITY_TYPE,
+    VENUE_MENU_QR_PURPOSE
+} from './venue-qr';
 
 /**
  * Business-logic service for gastronomy listings.
@@ -103,7 +100,7 @@ import {
  *
  * @example
  * ```ts
- * const service = new GastronomyService({});
+ * const service = new VenueService({});
  *
  * // Admin create (full identity control)
  * const result = await service.create(
@@ -121,7 +118,7 @@ import {
  * );
  * ```
  */
-export class GastronomyService extends BaseListingService<
+export class VenueService extends BaseListingService<
     Venue,
     VenueModel,
     typeof VenueAdminCreateInputSchema,
@@ -130,7 +127,7 @@ export class GastronomyService extends BaseListingService<
 > {
     static readonly ENTITY_NAME = 'gastronomy';
 
-    protected readonly entityName = GastronomyService.ENTITY_NAME;
+    protected readonly entityName = VenueService.ENTITY_NAME;
 
     protected readonly model: VenueModel;
     protected readonly createSchema = VenueAdminCreateInputSchema;
@@ -153,7 +150,7 @@ export class GastronomyService extends BaseListingService<
      * Relational media model used by the read-composition hooks (HOS-372).
      * @internal Overrideable in unit tests.
      */
-    private _gastronomyMediaModelInstance: VenueMediaModel;
+    private _venueMediaModelInstance: VenueMediaModel;
 
     /**
      * The QR service used to keep a venue's menu QR pointing at a page that
@@ -170,9 +167,9 @@ export class GastronomyService extends BaseListingService<
         mediaModel?: VenueMediaModel,
         qrCodeService?: QrCodeService
     ) {
-        super(config, GastronomyService.ENTITY_NAME);
+        super(config, VenueService.ENTITY_NAME);
         this.model = venueModel;
-        this._gastronomyMediaModelInstance = mediaModel ?? venueMediaModel;
+        this._venueMediaModelInstance = mediaModel ?? venueMediaModel;
         this.adminSearchSchema = VenueAdminSearchSchema;
         this._amenityModelInstance = new AmenityModel();
         this._featureModelInstance = new FeatureModel();
@@ -231,8 +228,8 @@ export class GastronomyService extends BaseListingService<
     }
 
     /** Relational media model backing the read-composition hooks (HOS-372). */
-    protected get _gastronomyMediaModel(): VenueMediaModel {
-        return this._gastronomyMediaModelInstance;
+    protected get _venueMediaModel(): VenueMediaModel {
+        return this._venueMediaModelInstance;
     }
 
     // -----------------------------------------------------------------------
@@ -275,9 +272,9 @@ export class GastronomyService extends BaseListingService<
         _actor: Actor,
         ctx: ServiceContext
     ): Promise<Venue | null> {
-        return attachComposedGastronomyMedia({
+        return attachComposedVenueMedia({
             entity,
-            mediaModel: this._gastronomyMediaModel,
+            mediaModel: this._venueMediaModel,
             tx: ctx?.tx
         });
     }
@@ -288,9 +285,9 @@ export class GastronomyService extends BaseListingService<
         ctx: ServiceContext
     ): Promise<PaginatedListOutput<Venue>> {
         if (!result?.items) return result;
-        const items = await attachComposedGastronomyMediaList({
+        const items = await attachComposedVenueMediaList({
             items: result.items,
-            mediaModel: this._gastronomyMediaModel,
+            mediaModel: this._venueMediaModel,
             tx: ctx?.tx
         });
         return { ...result, items };
@@ -302,9 +299,9 @@ export class GastronomyService extends BaseListingService<
         ctx: ServiceContext
     ): Promise<PaginatedListOutput<Venue>> {
         if (!result?.items) return result;
-        const items = await attachComposedGastronomyMediaList({
+        const items = await attachComposedVenueMediaList({
             items: result.items,
-            mediaModel: this._gastronomyMediaModel,
+            mediaModel: this._venueMediaModel,
             tx: ctx?.tx
         });
         return { ...result, items };
@@ -315,27 +312,27 @@ export class GastronomyService extends BaseListingService<
     // -----------------------------------------------------------------------
 
     protected _canCreate(actor: Actor, data: unknown): void {
-        checkGastronomyCanCreate(actor, data);
+        checkVenueCanCreate(actor, data);
     }
 
     protected _canUpdate(actor: Actor, entity: Venue): void {
-        checkGastronomyCanEditOwnOrAll(actor, entity);
+        checkVenueCanEditOwnOrAll(actor, entity);
     }
 
     protected _canSoftDelete(actor: Actor, entity: Venue): void {
-        checkGastronomyCanDelete(actor, entity);
+        checkVenueCanDelete(actor, entity);
     }
 
     protected _canHardDelete(actor: Actor, entity: Venue): void {
-        checkGastronomyCanHardDelete(actor, entity);
+        checkVenueCanHardDelete(actor, entity);
     }
 
     protected _canRestore(actor: Actor, entity: Venue): void {
-        checkGastronomyCanRestore(actor, entity);
+        checkVenueCanRestore(actor, entity);
     }
 
     protected _canView(actor: Actor, entity: Venue): void {
-        checkGastronomyCanView(actor);
+        checkVenueCanView(actor);
 
         // Soft-deleted listings existed but are permanently gone. Only those that
         // were PUBLISHED (indexable) surface as GONE (410) so crawlers/LLM fetchers
@@ -351,27 +348,27 @@ export class GastronomyService extends BaseListingService<
             if (entity.publicationStatus === PublicationStatusEnum.PUBLISHED) {
                 throw new ServiceError(ServiceErrorCode.GONE, 'Gastronomy is gone');
             }
-            throw entityNotFoundError({ entityName: GASTRONOMY_ENTITY_NAME });
+            throw entityNotFoundError({ entityName: VENUE_ENTITY_NAME });
         }
 
         if (hasPermission(actor, PermissionEnum.GASTRONOMY_VIEW_ALL)) return;
-        assertListingReadable({ actor, entity, entityName: GASTRONOMY_ENTITY_NAME });
+        assertListingReadable({ actor, entity, entityName: VENUE_ENTITY_NAME });
     }
 
     protected _canList(actor: Actor): void {
-        checkGastronomyCanView(actor);
+        checkVenueCanView(actor);
     }
 
     protected _canSearch(actor: Actor): void {
-        checkGastronomyCanView(actor);
+        checkVenueCanView(actor);
     }
 
     protected _canCount(actor: Actor): void {
-        checkGastronomyCanView(actor);
+        checkVenueCanView(actor);
     }
 
     protected _canUpdateVisibility(actor: Actor, entity: Venue, _newVisibility: unknown): void {
-        checkGastronomyCanEditAll(actor, entity);
+        checkVenueCanEditAll(actor, entity);
     }
 
     /**
@@ -383,7 +380,7 @@ export class GastronomyService extends BaseListingService<
      */
     protected override async _canAdminList(actor: Actor): Promise<void> {
         await super._canAdminList(actor);
-        checkGastronomyCanAdminList(actor);
+        checkVenueCanAdminList(actor);
     }
 
     // -----------------------------------------------------------------------
@@ -399,7 +396,7 @@ export class GastronomyService extends BaseListingService<
      * @returns Projected entity with private fields removed.
      */
     protected override _projectPublicEntity(entity: Venue): Venue {
-        return projectGastronomyPublic(entity) as Venue;
+        return projectVenuePublic(entity) as Venue;
     }
 
     /**
@@ -410,7 +407,7 @@ export class GastronomyService extends BaseListingService<
      */
     protected override _projectPublicEntityList(entities: Venue[]): Venue[] {
         return entities.map((e) => {
-            const withAvatar = projectGastronomyOwnerAvatar(e) ?? e;
+            const withAvatar = projectVenueOwnerAvatar(e) ?? e;
             return this._projectPublicEntity(withAvatar);
         });
     }
@@ -593,7 +590,7 @@ export class GastronomyService extends BaseListingService<
         gastronomyId: string,
         data: VenueOwnerUpdateInput,
         actor: Actor,
-        ctx?: ServiceContext<GastronomyHookState>
+        ctx?: ServiceContext<VenueHookState>
     ): Promise<ServiceOutput<Venue>> {
         try {
             // 1. Validate the payload against the owner-update schema (operational only).
@@ -637,7 +634,7 @@ export class GastronomyService extends BaseListingService<
             // 4. Single permission check (SPEC-253 D2=b): GASTRONOMY_EDIT_OWN covers all
             //    owner-accessible sections. Staff with EDIT_ALL bypass this gate.
             if (!hasEditAll) {
-                checkGastronomyCanEditOwn(actor, entity);
+                checkVenueCanEditOwn(actor, entity);
             }
 
             // 5. Delegate to base update() for junction sync + hook pipeline.
@@ -645,7 +642,7 @@ export class GastronomyService extends BaseListingService<
             //    so casting is safe here.  Base update signature: update(actor, id, data, ctx?).
             //
             //    Base update() runs _canUpdate, which is owner-aware
-            //    (checkGastronomyCanEditOwnOrAll: GASTRONOMY_EDIT_ALL OR owner +
+            //    (checkVenueCanEditOwnOrAll: GASTRONOMY_EDIT_ALL OR owner +
             //    GASTRONOMY_EDIT_OWN). updateOwn() already enforced ownership and the
             //    single GASTRONOMY_EDIT_OWN gate above, and the payload was validated
             //    against the owner schema (operational fields only), so the actor
@@ -688,7 +685,7 @@ export class GastronomyService extends BaseListingService<
      *    unrelated edit.
      * 3. **`siteUrl` and the locale come from the CURRENT `targetUrl`**, via
      *    {@link resolveSiteUrlFromTargetUrl} and
-     *    {@link resolveGastronomyMenuQrLangFromTargetUrl} — never from
+     *    {@link resolveVenueMenuQrLangFromTargetUrl} — never from
      *    config or from the request. A stored target that is not a
      *    parseable, recognizable menu URL is left untouched rather than
      *    rewritten against a guess.
@@ -715,9 +712,9 @@ export class GastronomyService extends BaseListingService<
         try {
             const found = await this.qrCodeService.findLiveCodeForEntity({
                 actor,
-                entityType: GASTRONOMY_MENU_QR_ENTITY_TYPE,
+                entityType: VENUE_MENU_QR_ENTITY_TYPE,
                 entityId: updated.id,
-                purpose: GASTRONOMY_MENU_QR_PURPOSE,
+                purpose: VENUE_MENU_QR_PURPOSE,
                 ctx
             });
 
@@ -726,7 +723,7 @@ export class GastronomyService extends BaseListingService<
             if (!code) return updated;
 
             const siteUrl = resolveSiteUrlFromTargetUrl({ targetUrl: code.targetUrl });
-            const lang = resolveGastronomyMenuQrLangFromTargetUrl({ targetUrl: code.targetUrl });
+            const lang = resolveVenueMenuQrLangFromTargetUrl({ targetUrl: code.targetUrl });
             if (!siteUrl || !lang) {
                 this.logger.error(
                     { gastronomyId: updated.id, qrCodeId: code.id },
@@ -737,10 +734,10 @@ export class GastronomyService extends BaseListingService<
 
             await this.qrCodeService.setEntityTargetUrl({
                 actor,
-                entityType: GASTRONOMY_MENU_QR_ENTITY_TYPE,
+                entityType: VENUE_MENU_QR_ENTITY_TYPE,
                 entityId: updated.id,
-                purpose: GASTRONOMY_MENU_QR_PURPOSE,
-                targetUrl: buildGastronomyMenuQrTargetUrl({ siteUrl, lang, slug: updated.slug }),
+                purpose: VENUE_MENU_QR_PURPOSE,
+                targetUrl: buildVenueMenuQrTargetUrl({ siteUrl, lang, slug: updated.slug }),
                 ctx
             });
         } catch (error) {

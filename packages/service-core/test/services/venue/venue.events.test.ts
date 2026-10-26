@@ -23,7 +23,7 @@
  */
 import { VenueEventPublicSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { projectEvent, toClockTime } from '../../../src/services/gastronomy/gastronomy.events.js';
+import { projectEvent, toClockTime } from '../../../src/services/venue/venue.events.js';
 
 describe('toClockTime (HOS-1042)', () => {
     it('truncates the seconds a Postgres time column appends', () => {

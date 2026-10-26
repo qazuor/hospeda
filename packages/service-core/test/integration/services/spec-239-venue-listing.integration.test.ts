@@ -38,15 +38,15 @@ import {
 } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { GastronomyReviewService } from '../../../src/services/gastronomy/gastronomy.review.service';
-import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
+import { VenueReviewService } from '../../../src/services/venue/venue.review.service';
+import { VenueService } from '../../../src/services/venue/venue.service';
 import type { Actor, ServiceContext } from '../../../src/types';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 import {
     closeServiceTestPool,
     getServiceTestDb,
     isServiceTestDbAvailable,
-    seedGastronomy,
+    seedVenue,
     withServiceTestTransaction
 } from './helpers';
 
@@ -114,8 +114,8 @@ async function seedTouristUser(tx: import('@repo/db').DrizzleClient): Promise<st
 // ---------------------------------------------------------------------------
 
 describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', () => {
-    let gastronomyService: GastronomyService;
-    let reviewService: GastronomyReviewService;
+    let gastronomyService: VenueService;
+    let reviewService: VenueReviewService;
     let adminActor: Actor;
     /** DB-backed super-admin user ID (seeded in beforeAll, cleaned up in afterAll). */
     let seededAdminId: string;
@@ -124,8 +124,8 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         if (!dbAvailable) return;
         const db = getServiceTestDb();
         const loggerConfig = { logger: createLoggerMock() };
-        gastronomyService = new GastronomyService(loggerConfig);
-        reviewService = new GastronomyReviewService(loggerConfig);
+        gastronomyService = new VenueService(loggerConfig);
+        reviewService = new VenueReviewService(loggerConfig);
 
         // Seed a real admin user into the DB so FK constraints on
         // createdById / updatedById / moderatedById are satisfied.
@@ -170,7 +170,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
     it.skipIf(!dbAvailable)('T-1: admin creates a gastronomy listing (born DRAFT)', async () => {
         await withServiceTestTransaction(async (tx) => {
             // Arrange: seed owner + destination
-            const { ownerId, destinationId } = await seedGastronomy(tx);
+            const { ownerId, destinationId } = await seedVenue(tx);
             const ctx: ServiceContext = { tx };
 
             // Act: create via service using enum values and required non-null defaults.
@@ -218,7 +218,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 // Arrange: seed listing + a second user (the intended owner)
-                const { ownerId: originalOwnerId, gastronomyId } = await seedGastronomy(tx, {
+                const { ownerId: originalOwnerId, gastronomyId } = await seedVenue(tx, {
                     publicationStatus: PublicationStatusEnum.DRAFT
                 });
 
@@ -260,7 +260,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 // Arrange: seed listing that is PUBLISHED (owner can see it)
-                const { ownerId, gastronomyId } = await seedGastronomy(tx, {
+                const { ownerId, gastronomyId } = await seedVenue(tx, {
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const ownerActor = createListingOwnerActor(ownerId);
@@ -305,7 +305,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 // Arrange
-                const { ownerId, gastronomyId } = await seedGastronomy(tx, {
+                const { ownerId, gastronomyId } = await seedVenue(tx, {
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const ownerActor = createListingOwnerActor(ownerId);
@@ -351,7 +351,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 // Arrange: PUBLISHED listing so the tourist reviewer can see it
-                const { gastronomyId } = await seedGastronomy(tx, {
+                const { gastronomyId } = await seedVenue(tx, {
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);
@@ -399,17 +399,13 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                 expect(approvedState).toBe(ModerationStatusEnum.APPROVED);
 
                 // Assert-3: listing rating recomputed (>0, reviewsCount=1)
-                const gastronomyAfter = await gastronomyService.getById(
-                    adminActor,
-                    gastronomyId,
-                    ctx
-                );
-                expect(gastronomyAfter.error).toBeUndefined();
-                expect(gastronomyAfter.data).toBeDefined();
-                if (!gastronomyAfter.data) throw new Error('expected gastronomy data');
+                const venueAfter = await gastronomyService.getById(adminActor, gastronomyId, ctx);
+                expect(venueAfter.error).toBeUndefined();
+                expect(venueAfter.data).toBeDefined();
+                if (!venueAfter.data) throw new Error('expected gastronomy data');
 
-                const rc = gastronomyAfter.data.reviewsCount;
-                const ar = gastronomyAfter.data.averageRating;
+                const rc = venueAfter.data.reviewsCount;
+                const ar = venueAfter.data.averageRating;
 
                 expect(rc, 'reviewsCount should be 1 after first approved review').toBe(1);
                 expect(
@@ -437,7 +433,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 // Arrange: PUBLISHED listing + tourist reviewer
-                const { gastronomyId } = await seedGastronomy(tx, {
+                const { gastronomyId } = await seedVenue(tx, {
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);
@@ -487,7 +483,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         'T-8c: listForModeration returns PENDING reviews and enforces permission',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                const { gastronomyId } = await seedGastronomy(tx, {
+                const { gastronomyId } = await seedVenue(tx, {
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);

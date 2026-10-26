@@ -4,14 +4,14 @@
  * Unit tests for gastronomy media helper functions (HOS-372).
  *
  * Coverage:
- *  - addGastronomyMedia: NOT_FOUND listing, permission gate, sortOrder auto-assign.
- *  - removeGastronomyMedia: NOT_FOUND media, resequences remaining visible rows
+ *  - addVenueMedia: NOT_FOUND listing, permission gate, sortOrder auto-assign.
+ *  - removeVenueMedia: NOT_FOUND media, resequences remaining visible rows
  *    to a dense 0-based sortOrder.
- *  - reorderGastronomyMedia: rejects missing id, extra id, and duplicate id;
+ *  - reorderVenueMedia: rejects missing id, extra id, and duplicate id;
  *    happy path applies sortOrder per index.
- *  - setFeaturedGastronomyMedia: clears the previous featured row, rejects an
+ *  - setFeaturedVenueMedia: clears the previous featured row, rejects an
  *    archived target.
- *  - getGastronomyMedia: NOT_FOUND listing, returns rows.
+ *  - getVenueMedia: NOT_FOUND listing, returns rows.
  *
  * All DB interactions are fully mocked — no live DB is touched.
  */
@@ -70,12 +70,12 @@ import {
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    addGastronomyMedia,
-    getGastronomyMedia,
-    removeGastronomyMedia,
-    reorderGastronomyMedia,
-    setFeaturedGastronomyMedia
-} from '../../../src/services/gastronomy/gastronomy.media';
+    addVenueMedia,
+    getVenueMedia,
+    removeVenueMedia,
+    reorderVenueMedia,
+    setFeaturedVenueMedia
+} from '../../../src/services/venue/venue.media';
 import type { Actor } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
 
@@ -118,7 +118,7 @@ const touristActor: Actor = {
 // Mock VenueModel factory
 // ---------------------------------------------------------------------------
 
-function makeGastronomyModel(entity: Record<string, unknown> | null = null) {
+function makeVenueModel(entity: Record<string, unknown> | null = null) {
     return {
         findById: vi.fn().mockResolvedValue(entity)
     };
@@ -146,19 +146,19 @@ beforeEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// addGastronomyMedia
+// addVenueMedia
 // ---------------------------------------------------------------------------
 
 describe('addGastronomyMedia', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
-        const model = makeGastronomyModel(null);
+        const model = makeVenueModel(null);
         const input: VenueMediaAddInput = {
             gastronomyId: GASTRONOMY_ID,
             media: { url: 'https://cdn.example.com/new.jpg' }
         };
 
-        const result = await addGastronomyMedia(
-            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+        const result = await addVenueMedia(
+            model as unknown as Parameters<typeof addVenueMedia>[0],
             ownerActor,
             input
         );
@@ -167,14 +167,14 @@ describe('addGastronomyMedia', () => {
     });
 
     it('should return FORBIDDEN when actor lacks GASTRONOMY_EDIT_OWN', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         const input: VenueMediaAddInput = {
             gastronomyId: GASTRONOMY_ID,
             media: { url: 'https://cdn.example.com/new.jpg' }
         };
 
-        const result = await addGastronomyMedia(
-            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+        const result = await addVenueMedia(
+            model as unknown as Parameters<typeof addVenueMedia>[0],
             touristActor,
             input
         );
@@ -183,7 +183,7 @@ describe('addGastronomyMedia', () => {
     });
 
     it('should set sortOrder to 0 when no visible media exists', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
 
         const input: VenueMediaAddInput = {
@@ -191,8 +191,8 @@ describe('addGastronomyMedia', () => {
             media: { url: 'https://cdn.example.com/new.jpg' }
         };
 
-        const result = await addGastronomyMedia(
-            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+        const result = await addVenueMedia(
+            model as unknown as Parameters<typeof addVenueMedia>[0],
             ownerActor,
             input
         );
@@ -205,7 +205,7 @@ describe('addGastronomyMedia', () => {
     });
 
     it('should set sortOrder to max + 1 when visible media exists', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findAll.mockResolvedValue({
             items: [makeMediaRow({ sortOrder: 3 })],
             total: 1
@@ -216,8 +216,8 @@ describe('addGastronomyMedia', () => {
             media: { url: 'https://cdn.example.com/new.jpg' }
         };
 
-        await addGastronomyMedia(
-            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+        await addVenueMedia(
+            model as unknown as Parameters<typeof addVenueMedia>[0],
             ownerActor,
             input
         );
@@ -229,15 +229,15 @@ describe('addGastronomyMedia', () => {
     });
 
     it('defaults moderationState to PENDING when not supplied', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
 
         const input: VenueMediaAddInput = {
             gastronomyId: GASTRONOMY_ID,
             media: { url: 'https://cdn.example.com/new.jpg' }
         };
 
-        await addGastronomyMedia(
-            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+        await addVenueMedia(
+            model as unknown as Parameters<typeof addVenueMedia>[0],
             ownerActor,
             input
         );
@@ -250,12 +250,12 @@ describe('addGastronomyMedia', () => {
 });
 
 // ---------------------------------------------------------------------------
-// removeGastronomyMedia
+// removeVenueMedia
 // ---------------------------------------------------------------------------
 
 describe('removeGastronomyMedia', () => {
     it('should return NOT_FOUND when the media row does not exist', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(null);
 
         const input: VenueMediaRemoveInput = {
@@ -263,8 +263,8 @@ describe('removeGastronomyMedia', () => {
             mediaId: MEDIA_ID
         };
 
-        const result = await removeGastronomyMedia(
-            model as unknown as Parameters<typeof removeGastronomyMedia>[0],
+        const result = await removeVenueMedia(
+            model as unknown as Parameters<typeof removeVenueMedia>[0],
             ownerActor,
             input
         );
@@ -273,7 +273,7 @@ describe('removeGastronomyMedia', () => {
     });
 
     it('should return NOT_FOUND when the media belongs to a different listing', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(
             makeMediaRow({ gastronomyId: '00000000-0000-4000-a000-000000000099' })
         );
@@ -283,8 +283,8 @@ describe('removeGastronomyMedia', () => {
             mediaId: MEDIA_ID
         };
 
-        const result = await removeGastronomyMedia(
-            model as unknown as Parameters<typeof removeGastronomyMedia>[0],
+        const result = await removeVenueMedia(
+            model as unknown as Parameters<typeof removeVenueMedia>[0],
             ownerActor,
             input
         );
@@ -293,7 +293,7 @@ describe('removeGastronomyMedia', () => {
     });
 
     it('should return NOT_FOUND for an already soft-deleted row instead of deleting it again (HOS-1175)', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(
             makeMediaRow({ deletedAt: new Date('2024-02-01') })
         );
@@ -303,8 +303,8 @@ describe('removeGastronomyMedia', () => {
             mediaId: MEDIA_ID
         };
 
-        const result = await removeGastronomyMedia(
-            model as unknown as Parameters<typeof removeGastronomyMedia>[0],
+        const result = await removeVenueMedia(
+            model as unknown as Parameters<typeof removeVenueMedia>[0],
             ownerActor,
             input
         );
@@ -314,11 +314,11 @@ describe('removeGastronomyMedia', () => {
     });
 
     it('should soft-delete and resequence remaining visible rows to a dense 0-based sortOrder', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(makeMediaRow({ sortOrder: 1 }));
 
         // Remaining rows after the delete carry a GAP at sortOrder 1 (0, 2, 3) —
-        // this is the exact shape removeGastronomyMedia must repair to (0, 1, 2).
+        // this is the exact shape removeVenueMedia must repair to (0, 1, 2).
         const remainingId2 = '00000000-0000-4000-a000-000000000010';
         const remainingId3 = '00000000-0000-4000-a000-000000000011';
         mockMediaModel.findByVenue.mockResolvedValue({
@@ -335,8 +335,8 @@ describe('removeGastronomyMedia', () => {
             mediaId: MEDIA_ID
         };
 
-        const result = await removeGastronomyMedia(
-            model as unknown as Parameters<typeof removeGastronomyMedia>[0],
+        const result = await removeVenueMedia(
+            model as unknown as Parameters<typeof removeVenueMedia>[0],
             ownerActor,
             input
         );
@@ -366,12 +366,12 @@ describe('removeGastronomyMedia', () => {
     // Regression guard: reverting the resequencing loop (e.g. deleting without
     // reindexing remaining rows) would leave gaps in sortOrder. Verified this
     // test fails when the resequencing `for` loop body in
-    // `removeGastronomyMedia` is commented out — the `update` assertions above
+    // `removeVenueMedia` is commented out — the `update` assertions above
     // then receive zero calls instead of the expected sortOrder values.
 });
 
 // ---------------------------------------------------------------------------
-// reorderGastronomyMedia
+// reorderVenueMedia
 // ---------------------------------------------------------------------------
 
 describe('reorderGastronomyMedia', () => {
@@ -391,7 +391,7 @@ describe('reorderGastronomyMedia', () => {
     }
 
     it('should reject when orderedIds is missing an id', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         setVisibleRows();
 
         const input: VenueMediaReorderInput = {
@@ -399,8 +399,8 @@ describe('reorderGastronomyMedia', () => {
             orderedIds: [ID_A, ID_B] // missing ID_C
         };
 
-        const result = await reorderGastronomyMedia(
-            model as unknown as Parameters<typeof reorderGastronomyMedia>[0],
+        const result = await reorderVenueMedia(
+            model as unknown as Parameters<typeof reorderVenueMedia>[0],
             ownerActor,
             input
         );
@@ -410,7 +410,7 @@ describe('reorderGastronomyMedia', () => {
     });
 
     it('should reject when orderedIds contains an extra/foreign id', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         setVisibleRows();
 
         const input: VenueMediaReorderInput = {
@@ -418,8 +418,8 @@ describe('reorderGastronomyMedia', () => {
             orderedIds: [ID_A, ID_B, ID_C, '00000000-0000-4000-a000-000000000099']
         };
 
-        const result = await reorderGastronomyMedia(
-            model as unknown as Parameters<typeof reorderGastronomyMedia>[0],
+        const result = await reorderVenueMedia(
+            model as unknown as Parameters<typeof reorderVenueMedia>[0],
             ownerActor,
             input
         );
@@ -429,7 +429,7 @@ describe('reorderGastronomyMedia', () => {
     });
 
     it('should reject when orderedIds contains a duplicate id', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         setVisibleRows();
 
         const input: VenueMediaReorderInput = {
@@ -437,8 +437,8 @@ describe('reorderGastronomyMedia', () => {
             orderedIds: [ID_A, ID_A, ID_B] // duplicate A, missing C
         };
 
-        const result = await reorderGastronomyMedia(
-            model as unknown as Parameters<typeof reorderGastronomyMedia>[0],
+        const result = await reorderVenueMedia(
+            model as unknown as Parameters<typeof reorderVenueMedia>[0],
             ownerActor,
             input
         );
@@ -454,13 +454,13 @@ describe('reorderGastronomyMedia', () => {
     // JSDoc in gastronomy.media.ts). Verified this test FAILS (does not reject)
     // when the explicit
     //   `if (validated.orderedIds.length !== inputIds.size) { throw ... }`
-    // guard is removed from `reorderGastronomyMedia`, because for the 3-row
+    // guard is removed from `reorderVenueMedia`, because for the 3-row
     // fixture above a duplicate always also creates a genuine missing id, so a
     // second fixture was required to prove the guard is load-bearing on its
     // own: see the next test.
 
     it('should reject a duplicate even when the deduplicated set exactly matches existing ids', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         // Only two visible rows this time.
         mockMediaModel.findByVenue.mockResolvedValue({
             items: [
@@ -478,8 +478,8 @@ describe('reorderGastronomyMedia', () => {
             orderedIds: [ID_A, ID_A, ID_B]
         };
 
-        const result = await reorderGastronomyMedia(
-            model as unknown as Parameters<typeof reorderGastronomyMedia>[0],
+        const result = await reorderVenueMedia(
+            model as unknown as Parameters<typeof reorderVenueMedia>[0],
             ownerActor,
             input
         );
@@ -489,7 +489,7 @@ describe('reorderGastronomyMedia', () => {
     });
 
     it('should apply sortOrder per index on the happy path', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         setVisibleRows();
 
         const input: VenueMediaReorderInput = {
@@ -497,8 +497,8 @@ describe('reorderGastronomyMedia', () => {
             orderedIds: [ID_C, ID_A, ID_B]
         };
 
-        const result = await reorderGastronomyMedia(
-            model as unknown as Parameters<typeof reorderGastronomyMedia>[0],
+        const result = await reorderVenueMedia(
+            model as unknown as Parameters<typeof reorderVenueMedia>[0],
             ownerActor,
             input
         );
@@ -512,12 +512,12 @@ describe('reorderGastronomyMedia', () => {
 });
 
 // ---------------------------------------------------------------------------
-// setFeaturedGastronomyMedia
+// setFeaturedVenueMedia
 // ---------------------------------------------------------------------------
 
 describe('setFeaturedGastronomyMedia', () => {
     it('should return NOT_FOUND when the media row does not exist', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(null);
 
         const input: VenueMediaSetFeaturedInput = {
@@ -525,8 +525,8 @@ describe('setFeaturedGastronomyMedia', () => {
             mediaId: MEDIA_ID
         };
 
-        const result = await setFeaturedGastronomyMedia(
-            model as unknown as Parameters<typeof setFeaturedGastronomyMedia>[0],
+        const result = await setFeaturedVenueMedia(
+            model as unknown as Parameters<typeof setFeaturedVenueMedia>[0],
             ownerActor,
             input
         );
@@ -535,7 +535,7 @@ describe('setFeaturedGastronomyMedia', () => {
     });
 
     it('should reject an archived target photo', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(makeMediaRow({ state: 'archived' }));
 
         const input: VenueMediaSetFeaturedInput = {
@@ -543,8 +543,8 @@ describe('setFeaturedGastronomyMedia', () => {
             mediaId: MEDIA_ID
         };
 
-        const result = await setFeaturedGastronomyMedia(
-            model as unknown as Parameters<typeof setFeaturedGastronomyMedia>[0],
+        const result = await setFeaturedVenueMedia(
+            model as unknown as Parameters<typeof setFeaturedVenueMedia>[0],
             ownerActor,
             input
         );
@@ -554,7 +554,7 @@ describe('setFeaturedGastronomyMedia', () => {
     });
 
     it('should clear the previous featured row before setting the new one', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         const previousFeaturedId = '00000000-0000-4000-a000-000000000020';
         mockMediaModel.findById
             .mockResolvedValueOnce(
@@ -572,8 +572,8 @@ describe('setFeaturedGastronomyMedia', () => {
             mediaId: MEDIA_ID
         };
 
-        const result = await setFeaturedGastronomyMedia(
-            model as unknown as Parameters<typeof setFeaturedGastronomyMedia>[0],
+        const result = await setFeaturedVenueMedia(
+            model as unknown as Parameters<typeof setFeaturedVenueMedia>[0],
             ownerActor,
             input
         );
@@ -597,7 +597,7 @@ describe('setFeaturedGastronomyMedia', () => {
     });
 
     it('should not attempt to clear when there is no previous featured row', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(makeMediaRow({ state: 'visible' }));
         mockMediaModel.findFeatured.mockResolvedValue(null);
 
@@ -606,8 +606,8 @@ describe('setFeaturedGastronomyMedia', () => {
             mediaId: MEDIA_ID
         };
 
-        await setFeaturedGastronomyMedia(
-            model as unknown as Parameters<typeof setFeaturedGastronomyMedia>[0],
+        await setFeaturedVenueMedia(
+            model as unknown as Parameters<typeof setFeaturedVenueMedia>[0],
             ownerActor,
             input
         );
@@ -622,16 +622,16 @@ describe('setFeaturedGastronomyMedia', () => {
 });
 
 // ---------------------------------------------------------------------------
-// getGastronomyMedia
+// getVenueMedia
 // ---------------------------------------------------------------------------
 
 describe('getGastronomyMedia', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
-        const model = makeGastronomyModel(null);
+        const model = makeVenueModel(null);
         const input: VenueMediaListInput = { gastronomyId: GASTRONOMY_ID };
 
-        const result = await getGastronomyMedia(
-            model as unknown as Parameters<typeof getGastronomyMedia>[0],
+        const result = await getVenueMedia(
+            model as unknown as Parameters<typeof getVenueMedia>[0],
             ownerActor,
             input
         );
@@ -640,13 +640,13 @@ describe('getGastronomyMedia', () => {
     });
 
     it('should default to the visible state filter', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findByVenue.mockResolvedValue({ items: [makeMediaRow()], total: 1 });
 
         const input: VenueMediaListInput = { gastronomyId: GASTRONOMY_ID };
 
-        const result = await getGastronomyMedia(
-            model as unknown as Parameters<typeof getGastronomyMedia>[0],
+        const result = await getVenueMedia(
+            model as unknown as Parameters<typeof getVenueMedia>[0],
             ownerActor,
             input
         );
@@ -660,7 +660,7 @@ describe('getGastronomyMedia', () => {
 });
 
 // ---------------------------------------------------------------------------
-// removeGastronomyMedia — Cloudinary asset deletion (HOS-372)
+// removeVenueMedia — Cloudinary asset deletion (HOS-372)
 // ---------------------------------------------------------------------------
 
 /**
@@ -682,7 +682,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
         } as Partial<VenueMedia>);
 
     it('should delete the Cloudinary binary BEFORE soft-deleting the row', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(cloudinaryRow());
         mockMediaModel.findByVenue.mockResolvedValue({ items: [], total: 0 });
 
@@ -699,11 +699,11 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
             return 1;
         });
 
-        const result = await removeGastronomyMedia(
-            model as unknown as Parameters<typeof removeGastronomyMedia>[0],
+        const result = await removeVenueMedia(
+            model as unknown as Parameters<typeof removeVenueMedia>[0],
             ownerActor,
             { gastronomyId: GASTRONOMY_ID, mediaId: MEDIA_ID },
-            provider as unknown as Parameters<typeof removeGastronomyMedia>[3]
+            provider as unknown as Parameters<typeof removeVenueMedia>[3]
         );
 
         expect(result.error).toBeUndefined();
@@ -714,7 +714,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
     });
 
     it('should NOT delete the row when Cloudinary deletion fails', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(cloudinaryRow());
 
         const provider = {
@@ -723,11 +723,11 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
             })
         };
 
-        const result = await removeGastronomyMedia(
-            model as unknown as Parameters<typeof removeGastronomyMedia>[0],
+        const result = await removeVenueMedia(
+            model as unknown as Parameters<typeof removeVenueMedia>[0],
             ownerActor,
             { gastronomyId: GASTRONOMY_ID, mediaId: MEDIA_ID },
-            provider as unknown as Parameters<typeof removeGastronomyMedia>[3]
+            provider as unknown as Parameters<typeof removeVenueMedia>[3]
         );
 
         // The whole operation aborts: the user retries, nothing is orphaned.
@@ -736,7 +736,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
     });
 
     it('should treat an already-absent asset as success', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(cloudinaryRow());
         mockMediaModel.findByVenue.mockResolvedValue({ items: [], total: 0 });
 
@@ -744,11 +744,11 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
         // "the asset does not exist", and it already does not.
         const provider = { delete: vi.fn(async () => ({ wasPresent: false })) };
 
-        const result = await removeGastronomyMedia(
-            model as unknown as Parameters<typeof removeGastronomyMedia>[0],
+        const result = await removeVenueMedia(
+            model as unknown as Parameters<typeof removeVenueMedia>[0],
             ownerActor,
             { gastronomyId: GASTRONOMY_ID, mediaId: MEDIA_ID },
-            provider as unknown as Parameters<typeof removeGastronomyMedia>[3]
+            provider as unknown as Parameters<typeof removeVenueMedia>[3]
         );
 
         expect(result.error).toBeUndefined();
@@ -756,14 +756,14 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
     });
 
     it('should still remove the row when no media provider is configured', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(cloudinaryRow());
         mockMediaModel.findByVenue.mockResolvedValue({ items: [], total: 0 });
 
         // Local dev and CI run without Cloudinary credentials; removing a photo
         // must not become impossible there.
-        const result = await removeGastronomyMedia(
-            model as unknown as Parameters<typeof removeGastronomyMedia>[0],
+        const result = await removeVenueMedia(
+            model as unknown as Parameters<typeof removeVenueMedia>[0],
             ownerActor,
             { gastronomyId: GASTRONOMY_ID, mediaId: MEDIA_ID },
             null
@@ -774,7 +774,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
     });
 
     it('should not call the provider for a row hosted outside Cloudinary', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         // Seed fixtures point at external CDNs — there is no binary of ours to
         // delete, and that must not block the removal.
         mockMediaModel.findById.mockResolvedValue(makeMediaRow());
@@ -782,11 +782,11 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
 
         const provider = { delete: vi.fn(async () => ({ wasPresent: true })) };
 
-        const result = await removeGastronomyMedia(
-            model as unknown as Parameters<typeof removeGastronomyMedia>[0],
+        const result = await removeVenueMedia(
+            model as unknown as Parameters<typeof removeVenueMedia>[0],
             ownerActor,
             { gastronomyId: GASTRONOMY_ID, mediaId: MEDIA_ID },
-            provider as unknown as Parameters<typeof removeGastronomyMedia>[3]
+            provider as unknown as Parameters<typeof removeVenueMedia>[3]
         );
 
         expect(result.error).toBeUndefined();
@@ -808,13 +808,13 @@ describe('addGastronomyMedia — gallery cap (HOS-389 §2)', () => {
     };
 
     it('refuses to register a row once the gallery is at cap, and writes nothing', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         // The cap is measured by a dedicated gallery-only count (HOS-791);
         // `findAll` still answers the sortOrder probe and sees every visible row.
         mockMediaModel.count.mockResolvedValue(CAP);
 
-        const result = await addGastronomyMedia(
-            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+        const result = await addVenueMedia(
+            model as unknown as Parameters<typeof addVenueMedia>[0],
             ownerActor,
             input
         );
@@ -833,14 +833,14 @@ describe('addGastronomyMedia — gallery cap (HOS-389 §2)', () => {
         // The stub answers a DIFFERENT number per filter, so this reads which
         // query the service issued: drop `isFeatured: false` and the count comes
         // back as CAP, the write is refused, and `create` is never called.
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.count.mockImplementation(async (where: { isFeatured?: boolean }) =>
             where.isFeatured === false ? CAP - 1 : CAP
         );
         mockMediaModel.create.mockResolvedValue(makeMediaRow());
 
-        const result = await addGastronomyMedia(
-            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+        const result = await addVenueMedia(
+            model as unknown as Parameters<typeof addVenueMedia>[0],
             ownerActor,
             input
         );
@@ -856,12 +856,12 @@ describe('addGastronomyMedia — gallery cap (HOS-389 §2)', () => {
     it('accepts the last photo that still fits', async () => {
         // Boundary: at CAP-1 there is room for exactly one more. An off-by-one
         // here caps owners one photo below their real allowance.
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.count.mockResolvedValue(CAP - 1);
         mockMediaModel.create.mockResolvedValue(makeMediaRow());
 
-        const result = await addGastronomyMedia(
-            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+        const result = await addVenueMedia(
+            model as unknown as Parameters<typeof addVenueMedia>[0],
             ownerActor,
             input
         );
@@ -903,10 +903,10 @@ describe('gastronomy media — public-page revalidation (HOS-389 §4)', () => {
     });
 
     it('purges the listing after a photo is added', async () => {
-        const model = makeGastronomyModel(publicListing());
+        const model = makeVenueModel(publicListing());
 
-        const result = await addGastronomyMedia(
-            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+        const result = await addVenueMedia(
+            model as unknown as Parameters<typeof addVenueMedia>[0],
             ownerActor,
             input
         );
@@ -924,13 +924,13 @@ describe('gastronomy media — public-page revalidation (HOS-389 §4)', () => {
     it('purges nothing for a listing with no public page', async () => {
         // A DRAFT/PRIVATE listing has no public footprint, so purging is waste
         // — and produced logged 404s in production under HOS-203.
-        const model = makeGastronomyModel({
+        const model = makeVenueModel({
             ...publicListing(),
             publicationStatus: PublicationStatusEnum.DRAFT
         });
 
-        const result = await addGastronomyMedia(
-            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+        const result = await addVenueMedia(
+            model as unknown as Parameters<typeof addVenueMedia>[0],
             ownerActor,
             input
         );

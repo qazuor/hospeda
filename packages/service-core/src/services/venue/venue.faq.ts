@@ -10,9 +10,9 @@
  *
  * - **Owner ops** (add / update / remove / reorder):
  *   Gated on `GASTRONOMY_EDIT_OWN` for listing owners, or
- *   `GASTRONOMY_EDIT_ALL` for staff (via `checkGastronomyCanEditFaqs`).
+ *   `GASTRONOMY_EDIT_ALL` for staff (via `checkVenueCanEditFaqs`).
  * - **Admin list** (`adminGetFaqs`):
- *   Gated on `GASTRONOMY_VIEW_ALL` (staff); same as `checkGastronomyCanViewAll`.
+ *   Gated on `GASTRONOMY_VIEW_ALL` (staff); same as `checkVenueCanViewAll`.
  * - **Public list** (`getFaqs`):
  *   Open — any actor that can view the listing can read its FAQs.
  *
@@ -46,7 +46,7 @@ import {
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
-import { checkGastronomyCanEditFaqEntries, checkGastronomyCanView } from './gastronomy.permissions';
+import { checkVenueCanEditFaqEntries, checkVenueCanView } from './venue.permissions';
 
 // ---------------------------------------------------------------------------
 // Internal helper — load listing or throw NOT_FOUND
@@ -61,11 +61,7 @@ import { checkGastronomyCanEditFaqEntries, checkGastronomyCanView } from './gast
  * @returns The gastronomy DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
-async function requireGastronomy(
-    model: VenueModel,
-    gastronomyId: string,
-    tx?: ServiceContext['tx']
-) {
+async function requireVenue(model: VenueModel, gastronomyId: string, tx?: ServiceContext['tx']) {
     const entity = await model.findById(gastronomyId, tx);
     if (!entity) {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
@@ -74,7 +70,7 @@ async function requireGastronomy(
 }
 
 // ---------------------------------------------------------------------------
-// FAQ helpers (called by GastronomyService public methods)
+// FAQ helpers (called by VenueService public methods)
 // ---------------------------------------------------------------------------
 
 /**
@@ -89,7 +85,7 @@ async function requireGastronomy(
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyFaqSingleOutput>` containing the created FAQ.
  */
-export async function addGastronomyFaq(
+export async function addVenueFaq(
     model: VenueModel,
     actor: Actor,
     data: VenueFaqAddInput,
@@ -113,8 +109,8 @@ export async function addGastronomyFaq(
         // HOS-1642 (AC:V9a:6): the write and its owner-act event share one
         // transaction — the event commits or rolls back WITH the FAQ row.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<VenueFaqSingleOutput>> => {
-            const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
-            checkGastronomyCanEditFaqEntries(actor, gastronomy);
+            const gastronomy = await requireVenue(model, validated.gastronomyId, tx);
+            checkVenueCanEditFaqEntries(actor, gastronomy);
 
             const faqModel = new VenueFaqModel();
 
@@ -175,7 +171,7 @@ export async function addGastronomyFaq(
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyFaqSingleOutput>` containing the updated FAQ.
  */
-export async function updateGastronomyFaq(
+export async function updateVenueFaq(
     model: VenueModel,
     actor: Actor,
     data: VenueFaqUpdateInput,
@@ -198,8 +194,8 @@ export async function updateGastronomyFaq(
 
         // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<VenueFaqSingleOutput>> => {
-            const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
-            checkGastronomyCanEditFaqEntries(actor, gastronomy);
+            const gastronomy = await requireVenue(model, validated.gastronomyId, tx);
+            checkVenueCanEditFaqEntries(actor, gastronomy);
 
             const faqModel = new VenueFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
@@ -258,7 +254,7 @@ export async function updateGastronomyFaq(
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<{ success: true }>` on success.
  */
-export async function removeGastronomyFaq(
+export async function removeVenueFaq(
     model: VenueModel,
     actor: Actor,
     data: VenueFaqRemoveInput,
@@ -281,8 +277,8 @@ export async function removeGastronomyFaq(
 
         // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<{ success: true }>> => {
-            const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
-            checkGastronomyCanEditFaqEntries(actor, gastronomy);
+            const gastronomy = await requireVenue(model, validated.gastronomyId, tx);
+            checkVenueCanEditFaqEntries(actor, gastronomy);
 
             const faqModel = new VenueFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
@@ -333,7 +329,7 @@ export async function removeGastronomyFaq(
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyFaqListOutput>` containing the FAQ array.
  */
-export async function listGastronomyFaqs(
+export async function listVenueFaqs(
     model: VenueModel,
     actor: Actor,
     data: VenueFaqListInput,
@@ -367,7 +363,7 @@ export async function listGastronomyFaqs(
         }
 
         // Public visibility check (any actor that can view the listing).
-        checkGastronomyCanView(actor);
+        checkVenueCanView(actor);
 
         // TYPE-WORKAROUND: Drizzle widens the entity type when loading relations;
         // `faqs` is not part of the base Gastronomy type.
@@ -390,7 +386,7 @@ export async function listGastronomyFaqs(
  * Reorders FAQs on a gastronomy listing (SPEC-177 pattern).
  *
  * Steps:
- * 1. Gate on `checkGastronomyCanEditFaqs` (same as add/update/remove).
+ * 1. Gate on `checkVenueCanEditFaqs` (same as add/update/remove).
  * 2. Load all active FAQs for the listing and validate every `faqId` in
  *    `order` belongs to this gastronomy (unknown IDs → VALIDATION_ERROR).
  * 3. Apply each `displayOrder` value individually via `faqModel.update`.
@@ -403,7 +399,7 @@ export async function listGastronomyFaqs(
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<{ success: true }>` on success.
  */
-export async function reorderGastronomyFaqs(
+export async function reorderVenueFaqs(
     model: VenueModel,
     actor: Actor,
     data: VenueFaqReorderInput,
@@ -429,8 +425,8 @@ export async function reorderGastronomyFaqs(
         // transaction with its owner-act event, so a partial reorder is no
         // longer possible and the event cannot outlive (or miss) the writes.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<{ success: true }>> => {
-            const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
-            checkGastronomyCanEditFaqEntries(actor, gastronomy);
+            const gastronomy = await requireVenue(model, validated.gastronomyId, tx);
+            checkVenueCanEditFaqEntries(actor, gastronomy);
 
             const faqModel = new VenueFaqModel();
 

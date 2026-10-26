@@ -8,7 +8,7 @@ import { EntityTypeEnum, QrCodePurposeEnum } from '@repo/schemas';
  *
  * Two callers need the same shape and neither can see the other. `apps/api`
  * builds the target URL when it first provisions a venue's menu code
- * (`routes/gastronomy/protected/menuQr.ts`), and {@link GastronomyService}
+ * (`routes/gastronomy/protected/menuQr.ts`), and {@link VenueService}
  * rebuilds it when the venue renames its slug. Leaving the builder in
  * `apps/api` would have forced the service to spell the path a second time —
  * exactly the drift `HostTradeService`'s equivalent module
@@ -18,7 +18,7 @@ import { EntityTypeEnum, QrCodePurposeEnum } from '@repo/schemas';
  */
 
 /** The entity type every menu QR is filed under. */
-export const GASTRONOMY_MENU_QR_ENTITY_TYPE = EntityTypeEnum.VENUE;
+export const VENUE_MENU_QR_ENTITY_TYPE = EntityTypeEnum.VENUE;
 
 /**
  * WHICH of a venue's codes this module is about.
@@ -28,7 +28,7 @@ export const GASTRONOMY_MENU_QR_ENTITY_TYPE = EntityTypeEnum.VENUE;
  * naming this one explicitly is what keeps the lookup key from silently
  * colliding with a future addition.
  */
-export const GASTRONOMY_MENU_QR_PURPOSE = QrCodePurposeEnum.MENU;
+export const VENUE_MENU_QR_PURPOSE = QrCodePurposeEnum.MENU;
 
 /** `qr_codes.label` is `varchar(200)`; a longer label is a failed insert. */
 const QR_CODE_LABEL_MAX_LENGTH = 200;
@@ -39,7 +39,7 @@ const QR_CODE_LABEL_MAX_LENGTH = 200;
  * stored target was minted with — the venue's slug is not captured, because
  * the whole point of a repoint is to write a NEW one over it.
  */
-const GASTRONOMY_MENU_PATH_PATTERN = /^\/([a-z]{2})\/gastronomia\/[^/]+\/carta\/?$/;
+const VENUE_MENU_PATH_PATTERN = /^\/([a-z]{2})\/gastronomia\/[^/]+\/carta\/?$/;
 
 /**
  * Builds the absolute URL a menu QR should redirect to.
@@ -51,7 +51,7 @@ const GASTRONOMY_MENU_PATH_PATTERN = /^\/([a-z]{2})\/gastronomia\/[^/]+\/carta\/
  * @param input.slug - The venue's CURRENT slug.
  * @returns The absolute `/{lang}/gastronomia/{slug}/carta/` URL.
  */
-export function buildGastronomyMenuQrTargetUrl(input: {
+export function buildVenueMenuQrTargetUrl(input: {
     readonly siteUrl: string;
     readonly lang: string;
     readonly slug: string;
@@ -64,9 +64,9 @@ export function buildGastronomyMenuQrTargetUrl(input: {
 
 /**
  * Recovers the language segment from a target URL previously built by
- * {@link buildGastronomyMenuQrTargetUrl}.
+ * {@link buildVenueMenuQrTargetUrl}.
  *
- * This is what lets the slug-change repointing hook (`GastronomyService.
+ * This is what lets the slug-change repointing hook (`VenueService.
  * _afterUpdate`) rebuild the target without guessing which locale the code
  * was minted for — it reads the stored row instead, the same principle
  * `resolveSiteUrlFromTargetUrl` (`hostTrade/host-trade-qr.ts`) applies to the
@@ -77,12 +77,12 @@ export function buildGastronomyMenuQrTargetUrl(input: {
  * @returns The two-letter locale segment, or `null` when the stored value is
  *   not a parseable absolute URL or does not match the menu page's shape.
  */
-export function resolveGastronomyMenuQrLangFromTargetUrl(input: {
+export function resolveVenueMenuQrLangFromTargetUrl(input: {
     readonly targetUrl: string;
 }): string | null {
     try {
         const { pathname } = new URL(input.targetUrl);
-        return GASTRONOMY_MENU_PATH_PATTERN.exec(pathname)?.[1] ?? null;
+        return VENUE_MENU_PATH_PATTERN.exec(pathname)?.[1] ?? null;
     } catch {
         return null;
     }
@@ -100,7 +100,7 @@ export function resolveGastronomyMenuQrLangFromTargetUrl(input: {
  * @param input.slug - The venue's slug.
  * @returns A label of at most 200 characters.
  */
-export function buildGastronomyMenuQrLabel(input: {
+export function buildVenueMenuQrLabel(input: {
     readonly name: string;
     readonly slug: string;
 }): string {

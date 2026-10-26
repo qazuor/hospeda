@@ -12,12 +12,12 @@ import {
     checkExperienceCanEditFaqs,
     checkExperienceCanEditMedia
 } from '../../../src/services/experience/experience.permissions';
-import {
-    checkGastronomyCanEditFaqEntries,
-    checkGastronomyCanEditFaqs,
-    checkGastronomyCanEditMedia
-} from '../../../src/services/gastronomy/gastronomy.permissions';
 import { assertSupportEditContentOnly } from '../../../src/services/listing/listing-support-edit';
+import {
+    checkVenueCanEditFaqEntries,
+    checkVenueCanEditFaqs,
+    checkVenueCanEditMedia
+} from '../../../src/services/venue/venue.permissions';
 import type { Actor } from '../../../src/types';
 import { runWithAdministrativeAuthorization } from '../../../src/utils/administrative-authorization';
 
@@ -38,8 +38,8 @@ const inScope = <T>(subjectId: string, run: () => T): Promise<T> =>
     });
 
 const CONTENT_GATES = {
-    checkGastronomyCanEditMedia,
-    checkGastronomyCanEditFaqEntries,
+    checkVenueCanEditMedia,
+    checkVenueCanEditFaqEntries,
     checkExperienceCanEditMedia,
     checkExperienceCanEditFaqEntries
 } as const;
@@ -69,7 +69,7 @@ describe('ACC:15 sub-entity content gates', () => {
 
     it('keeps the gate shared by menu, events and certificates closed to action 15', async () => {
         // Act
-        const gastronomy = inScope(OWNER_ID, () => checkGastronomyCanEditFaqs(admin15, listing));
+        const gastronomy = inScope(OWNER_ID, () => checkVenueCanEditFaqs(admin15, listing));
         const experience = inScope(OWNER_ID, () => checkExperienceCanEditFaqs(admin15, listing));
 
         // Assert

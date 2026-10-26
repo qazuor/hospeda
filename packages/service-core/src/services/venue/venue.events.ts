@@ -24,13 +24,13 @@
  * — no photo, no ticket, no metric — so a diff would be machinery with no
  * consequence, and the reinsert is what makes the transaction trivially correct.
  * The day something DOES reference an entry, this function grows a diff, exactly
- * as `replaceGastronomyMenu` records for the carta.
+ * as `replaceVenueMenu` records for the carta.
  *
  * ## Permissions vs. entitlements
  *
  * This module answers PERMISSION only — `GASTRONOMY_EDIT_OWN` on your own
  * listing, `GASTRONOMY_EDIT_ALL` for staff, via the same
- * {@link checkGastronomyCanEditFaqs} gate every sibling helper uses. Whether the
+ * {@link checkVenueCanEditFaqs} gate every sibling helper uses. Whether the
  * caller's PLAN includes an agenda is an entitlement
  * (`MANAGE_GASTRONOMY_EVENTS`) and is checked at the route, before this is
  * reached.
@@ -50,7 +50,7 @@ import {
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
-import { checkGastronomyCanEditFaqs } from './gastronomy.permissions';
+import { checkVenueCanEditFaqs } from './venue.permissions';
 
 /**
  * Upper bound on the rows one read pulls back.
@@ -71,11 +71,7 @@ const EVENTS_READ_PAGE_SIZE = 500;
  * @returns The gastronomy DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
-async function requireGastronomy(
-    model: VenueModel,
-    gastronomyId: string,
-    tx?: ServiceContext['tx']
-) {
+async function requireVenue(model: VenueModel, gastronomyId: string, tx?: ServiceContext['tx']) {
     const entity = await model.findById(gastronomyId, tx);
     if (!entity) {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
@@ -141,7 +137,7 @@ export function projectEvent<T extends { startTime: string; endTime: string | nu
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyEventsOutput>`.
  */
-export async function getGastronomyEvents(
+export async function getVenueEvents(
     model: VenueModel,
     data: VenueEventsGetInput,
     ctx?: ServiceContext
@@ -161,7 +157,7 @@ export async function getGastronomyEvents(
         }
         const { gastronomyId } = parseResult.data;
 
-        await requireGastronomy(model, gastronomyId, ctx?.tx);
+        await requireVenue(model, gastronomyId, ctx?.tx);
 
         const eventModel = new VenueEventModel();
         const { items: rows } = await eventModel.findAll(
@@ -212,7 +208,7 @@ export async function getGastronomyEvents(
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyEventsOutput>` with the agenda as now stored.
  */
-export async function replaceGastronomyEvents(
+export async function replaceVenueEvents(
     model: VenueModel,
     actor: Actor,
     data: VenueEventsReplaceInput,
@@ -234,8 +230,8 @@ export async function replaceGastronomyEvents(
         const validated = parseResult.data;
         const { gastronomyId } = validated;
 
-        const gastronomy = await requireGastronomy(model, gastronomyId, ctx?.tx);
-        checkGastronomyCanEditFaqs(actor, gastronomy);
+        const gastronomy = await requireVenue(model, gastronomyId, ctx?.tx);
+        checkVenueCanEditFaqs(actor, gastronomy);
 
         const eventModel = new VenueEventModel();
 
@@ -288,7 +284,7 @@ export async function replaceGastronomyEvents(
             });
         }
 
-        return await getGastronomyEvents(model, { gastronomyId }, ctx);
+        return await getVenueEvents(model, { gastronomyId }, ctx);
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };

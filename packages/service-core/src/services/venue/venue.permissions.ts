@@ -13,7 +13,7 @@
  * - NEVER check the actor's roles directly (`actor.roles`).  Only `PermissionEnum`
  *   values.  Since HOS-296 an account holds a SET of hats, so "is the actor
  *   role X" is not even a well-formed question here.
- * - These helpers are called by GastronomyService permission hooks only.
+ * - These helpers are called by VenueService permission hooks only.
  * - Owner-scoped update gate uses `GASTRONOMY_EDIT_OWN` (single permission,
  *   SPEC-253 D2=b).
  */
@@ -55,7 +55,7 @@ const VERTICAL: VenueOrExperience = 'gastronomy';
  * @param data - Create payload (unused; accepted for signature parity).
  * @throws {ServiceError} UNAUTHORIZED when the actor is anonymous / a guest.
  */
-export function checkGastronomyCanCreate(actor: Actor, data: unknown): void {
+export function checkVenueCanCreate(actor: Actor, data: unknown): void {
     checkCanCreateListing(actor, data);
 }
 
@@ -67,7 +67,7 @@ export function checkGastronomyCanCreate(actor: Actor, data: unknown): void {
  * @param entity - The gastronomy entity being updated.
  * @throws {ServiceError} FORBIDDEN when the actor lacks `GASTRONOMY_EDIT_ALL`.
  */
-export function checkGastronomyCanEditAll(actor: Actor, entity: unknown): void {
+export function checkVenueCanEditAll(actor: Actor, entity: unknown): void {
     checkCanEditAll(actor, entity, VERTICAL);
 }
 
@@ -84,10 +84,7 @@ export function checkGastronomyCanEditAll(actor: Actor, entity: unknown): void {
  * @param entity - The gastronomy entity being updated (must carry `ownerId`).
  * @throws {ServiceError} FORBIDDEN when neither condition is met.
  */
-export function checkGastronomyCanEditOwnOrAll(
-    actor: Actor,
-    entity: { ownerId?: string | null }
-): void {
+export function checkVenueCanEditOwnOrAll(actor: Actor, entity: { ownerId?: string | null }): void {
     checkCanEditOwnOrAll(actor, entity, VERTICAL);
 }
 
@@ -103,7 +100,7 @@ export function checkGastronomyCanEditOwnOrAll(
  * @param entity - The gastronomy entity being updated (must carry `ownerId`).
  * @throws {ServiceError} FORBIDDEN when neither condition is met.
  */
-export function checkGastronomyCanEditOwn(actor: Actor, entity: { ownerId?: string | null }): void {
+export function checkVenueCanEditOwn(actor: Actor, entity: { ownerId?: string | null }): void {
     checkCanEditOwn(actor, entity, VERTICAL);
 }
 
@@ -115,7 +112,7 @@ export function checkGastronomyCanEditOwn(actor: Actor, entity: { ownerId?: stri
  * @param entity - The entity being deleted (unused; accepted for signature parity).
  * @throws {ServiceError} FORBIDDEN when the actor lacks `GASTRONOMY_DELETE`.
  */
-export function checkGastronomyCanDelete(actor: Actor, entity: unknown): void {
+export function checkVenueCanDelete(actor: Actor, entity: unknown): void {
     checkCanDeleteListing(actor, entity, VERTICAL);
 }
 
@@ -126,7 +123,7 @@ export function checkGastronomyCanDelete(actor: Actor, entity: unknown): void {
  * @param actor - The actor performing the action.
  * @throws {ServiceError} FORBIDDEN when the actor lacks `GASTRONOMY_VIEW_ALL`.
  */
-export function checkGastronomyCanViewAll(actor: Actor): void {
+export function checkVenueCanViewAll(actor: Actor): void {
     checkCanViewAll(actor, VERTICAL);
 }
 
@@ -140,7 +137,7 @@ export function checkGastronomyCanViewAll(actor: Actor): void {
  * @param actor - The actor performing the action.
  * @throws {ServiceError} FORBIDDEN when the actor lacks that permission.
  */
-export function checkGastronomyCanAdminList(actor: Actor): void {
+export function checkVenueCanAdminList(actor: Actor): void {
     checkCanAdminListListings(actor, VERTICAL);
 }
 
@@ -151,7 +148,7 @@ export function checkGastronomyCanAdminList(actor: Actor): void {
  * @param actor - The actor performing the action.
  * @throws {ServiceError} FORBIDDEN when the actor lacks `GASTRONOMY_MODERATE_REVIEW`.
  */
-export function checkGastronomyCanModerateReview(actor: Actor): void {
+export function checkVenueCanModerateReview(actor: Actor): void {
     checkCanModerateReview(actor, VERTICAL);
 }
 
@@ -165,10 +162,7 @@ export function checkGastronomyCanModerateReview(actor: Actor): void {
  * @param entity - The gastronomy entity whose FAQs are being edited.
  * @throws {ServiceError} FORBIDDEN when neither condition is met.
  */
-export function checkGastronomyCanEditFaqs(
-    actor: Actor,
-    entity: { ownerId?: string | null }
-): void {
+export function checkVenueCanEditFaqs(actor: Actor, entity: { ownerId?: string | null }): void {
     checkCanEditOwn(actor, entity, VERTICAL);
 }
 
@@ -178,7 +172,7 @@ export function checkGastronomyCanEditFaqs(
  *
  * Accepts either `GASTRONOMY_EDIT_ALL` (staff) or `GASTRONOMY_EDIT_OWN` when the
  * actor is the listing owner — identical gate to
- * {@link checkGastronomyCanEditFaqs}, kept as a separate named wrapper for
+ * {@link checkVenueCanEditFaqs}, kept as a separate named wrapper for
  * call-site clarity (media vs FAQ operations). Action 15 (ACC:15, HOS-1493)
  * also passes, only inside its authorized scope bound to the listing's owner.
  *
@@ -186,10 +180,7 @@ export function checkGastronomyCanEditFaqs(
  * @param entity - The gastronomy entity whose media is being edited.
  * @throws {ServiceError} FORBIDDEN when neither condition is met.
  */
-export function checkGastronomyCanEditMedia(
-    actor: Actor,
-    entity: { ownerId?: string | null }
-): void {
+export function checkVenueCanEditMedia(actor: Actor, entity: { ownerId?: string | null }): void {
     // ACC:15 (HOS-1493): only inside a scope where a route's listing-access
     // chain authorized action 15 for this listing's owner — never from the
     // actor's permission alone.
@@ -199,22 +190,22 @@ export function checkGastronomyCanEditMedia(
 
 /**
  * Checks if the actor may add, edit, remove or reorder the FAQ ENTRIES of a
- * gastronomy listing: the owner/staff gate of {@link checkGastronomyCanEditFaqs} plus
+ * gastronomy listing: the owner/staff gate of {@link checkVenueCanEditFaqs} plus
  * action 15 (ACC:15, HOS-1493) inside its authorized scope. FAQ entries are
  * listing content; the sibling sub-entities that share
- * {@link checkGastronomyCanEditFaqs} (menu, events, certificates, …) are not part of
+ * {@link checkVenueCanEditFaqs} (menu, events, certificates, …) are not part of
  * action 15 and keep that gate unchanged.
  *
  * @param actor - The actor performing the action.
  * @param entity - The gastronomy entity whose FAQs are being edited.
  * @throws {ServiceError} FORBIDDEN when no condition is met.
  */
-export function checkGastronomyCanEditFaqEntries(
+export function checkVenueCanEditFaqEntries(
     actor: Actor,
     entity: { ownerId?: string | null }
 ): void {
     if (isAction15AuthorizedFor({ actor, ownerId: entity.ownerId })) return;
-    checkGastronomyCanEditFaqs(actor, entity);
+    checkVenueCanEditFaqs(actor, entity);
 }
 
 /**
@@ -226,7 +217,7 @@ export function checkGastronomyCanEditFaqEntries(
  *
  * @param _actor - The actor performing the action (currently unused).
  */
-export function checkGastronomyCanView(_actor: Actor): void {
+export function checkVenueCanView(_actor: Actor): void {
     // Public listings are viewable by all. The service enforces publication status.
     return;
 }
@@ -240,7 +231,7 @@ export function checkGastronomyCanView(_actor: Actor): void {
  * @param _entity - The entity being hard-deleted (unused; accepted for signature parity).
  * @throws {ServiceError} FORBIDDEN when the actor lacks `GASTRONOMY_DELETE`.
  */
-export function checkGastronomyCanHardDelete(actor: Actor, _entity: unknown): void {
+export function checkVenueCanHardDelete(actor: Actor, _entity: unknown): void {
     if (!hasListingPermission(actor, 'delete', VERTICAL)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -257,6 +248,6 @@ export function checkGastronomyCanHardDelete(actor: Actor, _entity: unknown): vo
  * @param _entity - The entity being restored (unused; accepted for signature parity).
  * @throws {ServiceError} FORBIDDEN when the actor lacks `GASTRONOMY_EDIT_ALL`.
  */
-export function checkGastronomyCanRestore(actor: Actor, _entity: unknown): void {
+export function checkVenueCanRestore(actor: Actor, _entity: unknown): void {
     checkCanEditAll(actor, _entity, VERTICAL);
 }

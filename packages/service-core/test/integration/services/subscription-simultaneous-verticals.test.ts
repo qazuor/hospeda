@@ -123,15 +123,15 @@ async function runScenario(expireFirst: boolean) {
     const sweep = () =>
         withSeededSubscriptionSweep(20, () => expireAuthorizationWindows(20, ports));
     if (expireFirst) {
-        const [gastronomyBeforeExpiry] = await getServiceTestDb()
+        const [venueBeforeExpiry] = await getServiceTestDb()
             .select()
             .from(subscriptions)
             .where(eq(subscriptions.id, gastronomy.subscriptionId));
-        const [gastronomyLinkBeforeExpiry] = await getServiceTestDb()
+        const [venueLinkBeforeExpiry] = await getServiceTestDb()
             .select()
             .from(providerLinks)
             .where(eq(providerLinks.subscriptionId, gastronomy.subscriptionId));
-        const gastronomyAuthorizationBeforeExpiry = await provider.readAuthorization({
+        const venueAuthorizationBeforeExpiry = await provider.readAuthorization({
             authorizationId: gastronomy.authorizationId
         });
         now = new Date(startAt.getTime() + 73 * 60 * 60 * 1000);
@@ -139,17 +139,17 @@ async function runScenario(expireFirst: boolean) {
         expect(
             await provider.readAuthorization({ authorizationId: accommodation.authorizationId })
         ).toMatchObject({ snapshot: { status: 'cancelled' } });
-        const [gastronomyAfterExpiry] = await getServiceTestDb()
+        const [venueAfterExpiry] = await getServiceTestDb()
             .select()
             .from(subscriptions)
             .where(eq(subscriptions.id, gastronomy.subscriptionId));
-        const [gastronomyLinkAfterExpiry] = await getServiceTestDb()
+        const [venueLinkAfterExpiry] = await getServiceTestDb()
             .select()
             .from(providerLinks)
             .where(eq(providerLinks.subscriptionId, gastronomy.subscriptionId));
-        expect(gastronomyAfterExpiry).toEqual(gastronomyBeforeExpiry);
-        expect(gastronomyLinkAfterExpiry).toEqual(gastronomyLinkBeforeExpiry);
-        expect(gastronomyAuthorizationBeforeExpiry.snapshot.status).toBe('pending');
+        expect(venueAfterExpiry).toEqual(venueBeforeExpiry);
+        expect(venueLinkAfterExpiry).toEqual(venueLinkBeforeExpiry);
+        expect(venueAuthorizationBeforeExpiry.snapshot.status).toBe('pending');
         expect(
             await provider.readAuthorization({ authorizationId: gastronomy.authorizationId })
         ).toMatchObject({ snapshot: { status: 'pending' } });
@@ -205,16 +205,16 @@ async function runScenario(expireFirst: boolean) {
         vertical: 'gastronomy',
         status: 'ACTIVE'
     });
-    const gastronomyNotices = (await getServiceTestDb().select().from(emailOutbox)).filter(
+    const venueNotices = (await getServiceTestDb().select().from(emailOutbox)).filter(
         (notice) =>
             (notice.payload as { subscriptionId?: string }).subscriptionId ===
             gastronomy.subscriptionId
     );
     expect(
-        gastronomyNotices.filter((notice) => notice.template === 'billing.signup-confirmed')
+        venueNotices.filter((notice) => notice.template === 'billing.signup-confirmed')
     ).toHaveLength(1);
     expect(
-        gastronomyNotices.filter((notice) => notice.template !== 'billing.signup-confirmed')
+        venueNotices.filter((notice) => notice.template !== 'billing.signup-confirmed')
     ).toHaveLength(0);
     return { provider, gastronomy, userId: user.id };
 }

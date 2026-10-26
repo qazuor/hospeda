@@ -136,8 +136,8 @@ export async function enrichBookmarksWithEntityInfo(
         postRows,
         experienceRows,
         experienceMediaMap,
-        gastronomyRows,
-        gastronomyMediaMap
+        venueRows,
+        venueMediaMap
     ] = await Promise.all([
         accommodationIds.length > 0
             ? db
@@ -279,11 +279,11 @@ export async function enrichBookmarksWithEntityInfo(
             entityImage: featuredUrlFrom(experienceMediaMap, row.id)
         });
     }
-    for (const row of gastronomyRows) {
+    for (const row of venueRows) {
         lookup.set(row.id, {
             entityName: row.name,
             entitySlug: row.slug,
-            entityImage: featuredUrlFrom(gastronomyMediaMap, row.id)
+            entityImage: featuredUrlFrom(venueMediaMap, row.id)
         });
     }
 

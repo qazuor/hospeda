@@ -1,7 +1,7 @@
 /**
- * packages/service-core/test/services/gastronomy/gastronomy.featured-media.test.ts
+ * packages/service-core/test/services/venue/venue.featured-media.test.ts
  *
- * HOS-803 — `addGastronomyFeaturedMedia`, the gastronomy/experience wiring of the shared
+ * HOS-803 — `addVenueFeaturedMedia`, the gastronomy/experience wiring of the shared
  * born-featured primitive.
  *
  * The primitive's policy is proved once, against a fake table, in
@@ -61,7 +61,7 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { addGastronomyFeaturedMedia } from '../../../src/services/gastronomy/gastronomy.media';
+import { addVenueFeaturedMedia } from '../../../src/services/venue/venue.media';
 import type { Actor } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
 
@@ -101,11 +101,11 @@ const touristActor: Actor = {
     permissions: []
 };
 
-function makeGastronomyModel(entity: Record<string, unknown> | null = null) {
+function makeVenueModel(entity: Record<string, unknown> | null = null) {
     return { findById: vi.fn().mockResolvedValue(entity) };
 }
 
-type ModelArg = Parameters<typeof addGastronomyFeaturedMedia>[0];
+type ModelArg = Parameters<typeof addVenueFeaturedMedia>[0];
 
 function arrangeGallery({
     galleryCount,
@@ -145,10 +145,10 @@ beforeEach(() => {
 
 describe('addGastronomyFeaturedMedia (HOS-803)', () => {
     it('succeeds with the gallery exactly at the cap — the reported bug', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: ENTITY_CAP, previousFeatured: true });
 
-        const result = await addGastronomyFeaturedMedia(model as unknown as ModelArg, ownerActor, {
+        const result = await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
             gastronomyId: GASTRONOMY_ID,
             media: PAYLOAD
         });
@@ -158,10 +158,10 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
     });
 
     it('creates the row already featured', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: ENTITY_CAP, previousFeatured: true });
 
-        await addGastronomyFeaturedMedia(model as unknown as ModelArg, ownerActor, {
+        await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
             gastronomyId: GASTRONOMY_ID,
             media: PAYLOAD
         });
@@ -175,10 +175,10 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
     });
 
     it('threads gastronomyId, not another vertical key, through the reads and writes', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: 4, previousFeatured: true });
 
-        await addGastronomyFeaturedMedia(model as unknown as ModelArg, ownerActor, {
+        await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
             gastronomyId: GASTRONOMY_ID,
             media: PAYLOAD
         });
@@ -197,10 +197,10 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
     });
 
     it('soft-deletes the previous cover, stamping the actor', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: 4, previousFeatured: true });
 
-        const result = await addGastronomyFeaturedMedia(model as unknown as ModelArg, ownerActor, {
+        const result = await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
             gastronomyId: GASTRONOMY_ID,
             media: PAYLOAD
         });
@@ -217,10 +217,10 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
     });
 
     it('deletes the previous cover at the cap too, so the gallery cannot grow', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: ENTITY_CAP, previousFeatured: true });
 
-        const result = await addGastronomyFeaturedMedia(model as unknown as ModelArg, ownerActor, {
+        const result = await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
             gastronomyId: GASTRONOMY_ID,
             media: PAYLOAD
         });
@@ -241,10 +241,10 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
     });
 
     it('reports no previous cover when the listing had none', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: 2, previousFeatured: false });
 
-        const result = await addGastronomyFeaturedMedia(model as unknown as ModelArg, ownerActor, {
+        const result = await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
             gastronomyId: GASTRONOMY_ID,
             media: PAYLOAD
         });
@@ -256,9 +256,9 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
     // ── Gates ──────────────────────────────────────────────────────────────
 
     it('returns NOT_FOUND when the listing does not exist', async () => {
-        const model = makeGastronomyModel(null);
+        const model = makeVenueModel(null);
 
-        const result = await addGastronomyFeaturedMedia(model as unknown as ModelArg, ownerActor, {
+        const result = await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
             gastronomyId: GASTRONOMY_ID,
             media: PAYLOAD
         });
@@ -268,23 +268,22 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
     });
 
     it('refuses an actor without GASTRONOMY_EDIT_OWN, before touching the table', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: 0, previousFeatured: false });
 
-        const result = await addGastronomyFeaturedMedia(
-            model as unknown as ModelArg,
-            touristActor,
-            { gastronomyId: GASTRONOMY_ID, media: PAYLOAD }
-        );
+        const result = await addVenueFeaturedMedia(model as unknown as ModelArg, touristActor, {
+            gastronomyId: GASTRONOMY_ID,
+            media: PAYLOAD
+        });
 
         expect(result.error).toBeDefined();
         expect(mockMediaModel.create).not.toHaveBeenCalled();
     });
 
     it('rejects a payload with no url', async () => {
-        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
 
-        const result = await addGastronomyFeaturedMedia(model as unknown as ModelArg, ownerActor, {
+        const result = await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
             gastronomyId: GASTRONOMY_ID,
             media: {} as never
         });

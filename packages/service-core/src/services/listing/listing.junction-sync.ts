@@ -125,7 +125,7 @@ export interface SyncListingFeatureJunctionInput<TRow extends Record<string, unk
  *
  * @example
  * ```ts
- * // In GastronomyService._afterCreate:
+ * // In VenueService._afterCreate:
  * await syncListingAmenityJunction({
  *   entityId: gastronomy.id,
  *   entityFkColumn: 'gastronomyId',

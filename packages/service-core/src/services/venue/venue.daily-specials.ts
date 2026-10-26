@@ -19,7 +19,7 @@
  *
  * ## Two reads, and the difference between them matters
  *
- * `getGastronomyDailySpecials` takes an OPTIONAL `validOn`:
+ * `getVenueDailySpecials` takes an OPTIONAL `validOn`:
  *
  * - The public detail route passes today (resolved in the AR market timezone),
  *   so a diner sees exactly what is on offer.
@@ -33,7 +33,7 @@
  *
  * This module answers PERMISSION only — `GASTRONOMY_EDIT_OWN` on your own
  * listing, `GASTRONOMY_EDIT_ALL` for staff, via the same
- * {@link checkGastronomyCanEditFaqs} gate the carta and FAQ helpers use.
+ * {@link checkVenueCanEditFaqs} gate the carta and FAQ helpers use.
  * Whether the caller's PLAN includes the menú del día is an entitlement
  * (`MANAGE_GASTRONOMY_DAILY_SPECIAL`), checked at the route before this is
  * reached — the same split `gastronomy.menu.ts` makes.
@@ -53,7 +53,7 @@ import {
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
-import { checkGastronomyCanEditFaqs } from './gastronomy.permissions';
+import { checkVenueCanEditFaqs } from './venue.permissions';
 
 /**
  * Upper bound on the rows the unfiltered (owner) read pulls back.
@@ -76,11 +76,7 @@ const DAILY_SPECIALS_READ_PAGE_SIZE = 1000;
  * @returns The gastronomy DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
-async function requireGastronomy(
-    model: VenueModel,
-    gastronomyId: string,
-    tx?: ServiceContext['tx']
-) {
+async function requireVenue(model: VenueModel, gastronomyId: string, tx?: ServiceContext['tx']) {
     const entity = await model.findById(gastronomyId, tx);
     if (!entity) {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
@@ -108,7 +104,7 @@ const byDisplayOrder = <T extends { displayOrder: number; title: string }>(a: T,
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyDailySpecialsOutput>`.
  */
-export async function getGastronomyDailySpecials(
+export async function getVenueDailySpecials(
     model: VenueModel,
     data: VenueDailySpecialsGetInput,
     ctx?: ServiceContext
@@ -128,7 +124,7 @@ export async function getGastronomyDailySpecials(
         }
         const { gastronomyId, validOn } = parseResult.data;
 
-        await requireGastronomy(model, gastronomyId, ctx?.tx);
+        await requireVenue(model, gastronomyId, ctx?.tx);
 
         const specialModel = new VenueDailySpecialModel();
 
@@ -190,7 +186,7 @@ export async function getGastronomyDailySpecials(
  *   OWNER's view, unfiltered, because this is the owner's own write echoing
  *   back and a filtered echo would hide the special they just scheduled.
  */
-export async function replaceGastronomyDailySpecials(
+export async function replaceVenueDailySpecials(
     model: VenueModel,
     actor: Actor,
     data: VenueDailySpecialsReplaceInput,
@@ -212,8 +208,8 @@ export async function replaceGastronomyDailySpecials(
         const validated = parseResult.data;
         const { gastronomyId } = validated;
 
-        const gastronomy = await requireGastronomy(model, gastronomyId, ctx?.tx);
-        checkGastronomyCanEditFaqs(actor, gastronomy);
+        const gastronomy = await requireVenue(model, gastronomyId, ctx?.tx);
+        checkVenueCanEditFaqs(actor, gastronomy);
 
         const specialModel = new VenueDailySpecialModel();
 
@@ -261,7 +257,7 @@ export async function replaceGastronomyDailySpecials(
             });
         }
 
-        return await getGastronomyDailySpecials(model, { gastronomyId }, ctx);
+        return await getVenueDailySpecials(model, { gastronomyId }, ctx);
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };

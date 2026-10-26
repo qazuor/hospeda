@@ -1,7 +1,7 @@
 /**
  * gastronomy.service.test.ts
  *
- * Unit tests for GastronomyService (SPEC-239 T-035 / T-036).
+ * Unit tests for VenueService (SPEC-239 T-035 / T-036).
  *
  * Coverage:
  * - updateOwn: schema validation, ownership gate, per-section permission gates,
@@ -40,7 +40,7 @@ vi.mock('@repo/db', async (importOriginal) => {
     };
 });
 
-import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
+import { VenueService } from '../../../src/services/venue/venue.service';
 import type { Actor } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
 
@@ -53,7 +53,7 @@ const OWNER_ID = '00000000-0000-4000-a000-000000000002';
 const DEST_ID = '00000000-0000-4000-a000-000000000003';
 const OTHER_USER = '00000000-0000-4000-a000-000000000099';
 
-function makeGastronomyEntity(overrides: Partial<Record<string, unknown>> = {}): Venue {
+function makeVenueEntity(overrides: Partial<Record<string, unknown>> = {}): Venue {
     return {
         id: ENTITY_ID,
         name: 'La Parrilla del Sur',
@@ -99,7 +99,7 @@ const otherUserActor: Actor = {
 // Mock model factory
 // ---------------------------------------------------------------------------
 
-function makeGastronomyModel(entity: Venue | null = null) {
+function makeVenueModel(entity: Venue | null = null) {
     return {
         entityName: 'gastronomy',
         findById: vi.fn().mockResolvedValue(entity),
@@ -162,9 +162,9 @@ function makeCatalogModel(validIds: string[] = []) {
 
 type AnyService = any;
 
-function makeService(entity: Venue | null = null): GastronomyService {
-    const service: AnyService = new GastronomyService({});
-    const model = makeGastronomyModel(entity);
+function makeService(entity: Venue | null = null): VenueService {
+    const service: AnyService = new VenueService({});
+    const model = makeVenueModel(entity);
     service.model = model;
     service._amenityJunctionModelInstance = makeJunctionModel();
     service._featureJunctionModelInstance = makeJunctionModel();
@@ -177,7 +177,7 @@ function makeService(entity: Venue | null = null): GastronomyService {
     service._destinationModel = {
         findById: vi.fn().mockResolvedValue({ destinationType: 'CITY' })
     };
-    return service as GastronomyService;
+    return service as VenueService;
 }
 
 beforeEach(() => {
@@ -199,14 +199,14 @@ describe('GastronomyService.updateOwn', () => {
     });
 
     it('should return NOT_FOUND for non-owner actor (existence leak prevention)', async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const result = await service.updateOwn(ENTITY_ID, {}, otherUserActor);
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
     it('should allow staff with GASTRONOMY_EDIT_ALL to update any listing', async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const result = await service.updateOwn(
             ENTITY_ID,
@@ -221,7 +221,7 @@ describe('GastronomyService.updateOwn', () => {
         // The owner holds GASTRONOMY_EDIT_OWN and owns the listing. updateOwn enforces
         // the single gate, then the base update()'s _canUpdate (checkCanEditOwnOrAll)
         // accepts the owner — no GASTRONOMY_EDIT_ALL is required. Core US-5 behavior.
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const result = await service.updateOwn(
             ENTITY_ID,
@@ -232,7 +232,7 @@ describe('GastronomyService.updateOwn', () => {
     });
 
     it('should return FORBIDDEN when owner lacks GASTRONOMY_EDIT_OWN (single gate)', async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         // Actor is the owner but has NO permissions (not GASTRONOMY_EDIT_OWN, not GASTRONOMY_EDIT_ALL)
         const actorNoPerm: Actor = {
@@ -250,7 +250,7 @@ describe('GastronomyService.updateOwn', () => {
 
     // SPEC-253 T-010 Block B: new owner-editable fields persist correctly
     it('should persist type when owner updates it (SPEC-253 AC-1/AC-5)', async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const mockUpdate = (service as AnyService).model.update;
 
@@ -264,7 +264,7 @@ describe('GastronomyService.updateOwn', () => {
     });
 
     it('should persist summary when owner updates it (SPEC-253 AC-1)', async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const mockUpdate = (service as AnyService).model.update;
 
@@ -281,7 +281,7 @@ describe('GastronomyService.updateOwn', () => {
     });
 
     it('should persist nameI18n/summaryI18n/descriptionI18n/richDescriptionI18n (SPEC-253 AC-1)', async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const mockUpdate = (service as AnyService).model.update;
         const i18nValue = { es: 'Texto ES', en: 'Text EN', pt: 'Texto PT' };
@@ -307,7 +307,7 @@ describe('GastronomyService.updateOwn', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid payload (extra unknown key does not cause error — stripped by schema)', async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         // menuUrl must be an HTTPS URL when provided
         const result = await service.updateOwn(
@@ -319,7 +319,7 @@ describe('GastronomyService.updateOwn', () => {
     });
 
     it('should call model.update when staff actor performs updateOwn', async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const mockUpdate = (service as AnyService).model.update;
 
@@ -344,7 +344,7 @@ describe('GastronomyService.updateOwn', () => {
 // (publicationStatus/ownerId) remain stripped.
 describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-022, SPEC-253, HOS-166 D-1)', () => {
     it('persists name/description/destinationId/type/summary/i18n; strips control fields + slug', async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const mockUpdate = (service as AnyService).model.update;
 
@@ -389,7 +389,7 @@ describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-
 
 describe('GastronomyService search filter forwarding', () => {
     it('should call model.findAllWithRelations with deletedAt: null filter (Bug B7a: relations loaded for destinationName)', async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
@@ -446,7 +446,7 @@ describe('GastronomyService — apto/catalog filters (HOS-1054)', () => {
         dialect.sqlToQuery(condition as Parameters<typeof dialect.sqlToQuery>[0]).sql;
 
     it('forwards the features filter as an additionalCondition on the feature junction', async () => {
-        const service = makeService(makeGastronomyEntity());
+        const service = makeService(makeVenueEntity());
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
         await (
@@ -466,7 +466,7 @@ describe('GastronomyService — apto/catalog filters (HOS-1054)', () => {
         // `features` is an array against a junction table; if it slipped into the
         // `where` object the base builder would try to compare a `features` COLUMN
         // that does not exist on `gastronomies`.
-        const service = makeService(makeGastronomyEntity());
+        const service = makeService(makeVenueEntity());
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
         await (
@@ -493,7 +493,7 @@ describe('GastronomyService — apto/catalog filters (HOS-1054)', () => {
     });
 
     it('forwards the amenities filter on the amenity junction', async () => {
-        const service = makeService(makeGastronomyEntity());
+        const service = makeService(makeVenueEntity());
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
         await (
@@ -506,7 +506,7 @@ describe('GastronomyService — apto/catalog filters (HOS-1054)', () => {
     });
 
     it('passes undefined — not an empty array — when no catalog filter is active', async () => {
-        const service = makeService(makeGastronomyEntity());
+        const service = makeService(makeVenueEntity());
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
         await (
@@ -523,14 +523,14 @@ describe('GastronomyService — apto/catalog filters (HOS-1054)', () => {
 
 describe('GastronomyService._projectPublicEntity', () => {
     it('should strip adminInfo from the projected entity', () => {
-        const entity = makeGastronomyEntity({ adminInfo: { notes: 'internal' } });
+        const entity = makeVenueEntity({ adminInfo: { notes: 'internal' } });
         const service = makeService(entity);
         const result = (service as AnyService)._projectPublicEntity(entity);
         expect(result).not.toHaveProperty('adminInfo');
     });
 
     it('should strip ownerId from the projected entity', () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const result = (service as AnyService)._projectPublicEntity(entity);
         expect(result).not.toHaveProperty('ownerId');
@@ -547,7 +547,7 @@ describe('GastronomyService._canView', () => {
         // and non-owner actors without GASTRONOMY_VIEW_ALL receive GONE (410,
         // deindex) instead of NOT_FOUND (404, never existed) — but only because
         // this listing was PUBLIC (indexable) before deletion.
-        const entity = makeGastronomyEntity({
+        const entity = makeVenueEntity({
             publicationStatus: PublicationStatusEnum.PUBLISHED,
             deletedAt: new Date()
         });
@@ -563,7 +563,7 @@ describe('GastronomyService._canView', () => {
     it('should throw NOT_FOUND (not GONE) for a deleted PRIVATE entity — anti-enumeration (SPEC-092 T-087)', () => {
         // A PRIVATE listing was never publicly discoverable, so its deletion
         // must stay a uniform 404 (never distinguishable from never-existed).
-        const entity = makeGastronomyEntity({
+        const entity = makeVenueEntity({
             publicationStatus: PublicationStatusEnum.DRAFT,
             deletedAt: new Date()
         });
@@ -577,7 +577,7 @@ describe('GastronomyService._canView', () => {
     });
 
     it('should allow staff with GASTRONOMY_VIEW_ALL to view deleted entities', () => {
-        const entity = makeGastronomyEntity({
+        const entity = makeVenueEntity({
             publicationStatus: PublicationStatusEnum.PUBLISHED,
             deletedAt: new Date()
         });
@@ -592,7 +592,7 @@ describe('GastronomyService._canView', () => {
 
 describe('GastronomyService.ENTITY_NAME', () => {
     it('should be "gastronomy"', () => {
-        expect(GastronomyService.ENTITY_NAME).toBe('gastronomy');
+        expect(VenueService.ENTITY_NAME).toBe('gastronomy');
     });
 });
 
@@ -603,7 +603,7 @@ describe('GastronomyService.ENTITY_NAME', () => {
 
 describe('GastronomyService public search visibility filter (AC-6.2)', () => {
     it('forces publicationStatus=PUBLISHED on public search (no hidden-listing leak)', async () => {
-        const service = makeService(makeGastronomyEntity());
+        const service = makeService(makeVenueEntity());
         const model = (service as AnyService).model;
         await service.search(otherUserActor, { page: 1, pageSize: 10 });
         // After B7a fix: _executeSearch uses findAllWithRelations (arg[0]=relations, arg[1]=where)
@@ -615,7 +615,7 @@ describe('GastronomyService public search visibility filter (AC-6.2)', () => {
     });
 
     it('forces the same visibility filter on the public count', async () => {
-        const service = makeService(makeGastronomyEntity());
+        const service = makeService(makeVenueEntity());
         const model = (service as AnyService).model;
         await service.count(otherUserActor, { page: 1, pageSize: 10 });
         expect(model.count).toHaveBeenCalled();
@@ -632,7 +632,7 @@ describe('GastronomyService public search visibility filter (AC-6.2)', () => {
 
 describe('GastronomyService.assignOwner', () => {
     it('writes the new ownerId via model.update for a staff actor', async () => {
-        const service = makeService(makeGastronomyEntity());
+        const service = makeService(makeVenueEntity());
         const model = (service as AnyService).model;
 
         const result = await service.assignOwner(staffActor, ENTITY_ID, OTHER_USER);
@@ -645,7 +645,7 @@ describe('GastronomyService.assignOwner', () => {
     });
 
     it('returns FORBIDDEN when the actor lacks GASTRONOMY_EDIT_ALL', async () => {
-        const service = makeService(makeGastronomyEntity());
+        const service = makeService(makeVenueEntity());
         const model = (service as AnyService).model;
 
         const result = await service.assignOwner(ownerActor, ENTITY_ID, OTHER_USER);
@@ -673,7 +673,7 @@ describe('GastronomyService.assignOwner', () => {
 
 describe('GastronomyService.listOwn', () => {
     it("lists the owner's own non-deleted gastronomy listings (hard-scoped to ownerId)", async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const mockFindAll = (service as AnyService).model.findAll;
 
@@ -698,7 +698,7 @@ describe('GastronomyService.listOwn', () => {
 
 describe('GastronomyService._executeSearch — B7a regression (destination relation loaded)', () => {
     it('passes destination: true and owner: true to findAllWithRelations', async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
@@ -716,7 +716,7 @@ describe('GastronomyService._executeSearch — B7a regression (destination relat
     });
 
     it('preserves the AC-6.2 security invariant (publicationStatus=PUBLISHED + deletedAt=null) in the where argument', async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
@@ -747,7 +747,7 @@ describe('GastronomyService._executeSearch — B7a regression (destination relat
 
 describe('GastronomyService._executeSearch — BETA-119 regression (sort forwarded from ctx.pagination)', () => {
     it('forwards ctx.pagination.sortBy/sortOrder into the findAllWithRelations pagination argument', async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
@@ -767,7 +767,7 @@ describe('GastronomyService._executeSearch — BETA-119 regression (sort forward
     });
 
     it('leaves sortBy/sortOrder undefined when ctx has no pagination (no ORDER BY forced)', async () => {
-        const entity = makeGastronomyEntity();
+        const entity = makeVenueEntity();
         const service = makeService(entity);
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 

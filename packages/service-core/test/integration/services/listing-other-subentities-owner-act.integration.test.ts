@@ -3,17 +3,17 @@ import { domainEventModel, ExperienceModel, tags, VenueModel } from '@repo/db';
 import { EntityTypeEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { issueExperienceCertificate } from '../../../src/services/experience/experience.certificate';
-import { replaceGastronomyDailySpecials } from '../../../src/services/gastronomy/gastronomy.daily-specials';
-import { replaceGastronomyEvents } from '../../../src/services/gastronomy/gastronomy.events';
-import { replaceGastronomyMenu } from '../../../src/services/gastronomy/gastronomy.menu';
 import { TagService } from '../../../src/services/tag/tag.service';
+import { replaceVenueDailySpecials } from '../../../src/services/venue/venue.daily-specials';
+import { replaceVenueEvents } from '../../../src/services/venue/venue.events';
+import { replaceVenueMenu } from '../../../src/services/venue/venue.menu';
 import type { Actor } from '../../../src/types';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 import {
     closeServiceTestPool,
     seedAccommodation,
     seedExperience,
-    seedGastronomy,
+    seedVenue,
     withServiceTestTransaction
 } from './helpers';
 
@@ -65,11 +65,11 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
 
     it('TEST:V9a:7 — carta, special and event edits each write a name-only act', async () => {
         await withServiceTestTransaction(async (tx) => {
-            const { gastronomyId, ownerId } = await seedGastronomy(tx);
+            const { gastronomyId, ownerId } = await seedVenue(tx);
             const actor = owner(ownerId);
             const model = new VenueModel();
             const ctx = { tx };
-            const menu = await replaceGastronomyMenu(
+            const menu = await replaceVenueMenu(
                 model,
                 actor,
                 {
@@ -81,7 +81,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
                 ctx
             );
             expect(menu.error).toBeUndefined();
-            const specials = await replaceGastronomyDailySpecials(
+            const specials = await replaceVenueDailySpecials(
                 model,
                 actor,
                 {
@@ -99,7 +99,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
                 ctx
             );
             expect(specials.error).toBeUndefined();
-            const agenda = await replaceGastronomyEvents(
+            const agenda = await replaceVenueEvents(
                 model,
                 actor,
                 {
@@ -165,13 +165,13 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
                 vertical === 'accommodation'
                     ? await seedAccommodation(tx)
                     : vertical === 'gastronomy'
-                      ? await seedGastronomy(tx)
+                      ? await seedVenue(tx)
                       : await seedExperience(tx);
             const entityId =
                 vertical === 'accommodation'
                     ? (seeded as Awaited<ReturnType<typeof seedAccommodation>>).accommodationId
                     : vertical === 'gastronomy'
-                      ? (seeded as Awaited<ReturnType<typeof seedGastronomy>>).gastronomyId
+                      ? (seeded as Awaited<ReturnType<typeof seedVenue>>).gastronomyId
                       : (seeded as Awaited<ReturnType<typeof seedExperience>>).experienceId;
             const ownerId = 'userId' in seeded ? seeded.userId : seeded.ownerId;
             const [tag] = await tx

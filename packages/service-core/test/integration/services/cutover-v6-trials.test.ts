@@ -22,7 +22,7 @@ import {
     closeServiceTestPool,
     seedAccommodation,
     seedExperience,
-    seedGastronomy,
+    seedVenue,
     withServiceTestTransaction
 } from './helpers';
 
@@ -54,7 +54,7 @@ async function seedPublished(tx: DrizzleClient, kind: Kind): Promise<SeededListi
         listingId = row.accommodationId;
         vertical = VerticalEnum.ACCOMMODATION;
     } else if (kind === 'gastronomy') {
-        const row = await seedGastronomy(tx, overrides);
+        const row = await seedVenue(tx, overrides);
         userId = row.ownerId;
         listingId = row.gastronomyId;
         vertical = VerticalEnum.VENUE;

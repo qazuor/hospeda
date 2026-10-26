@@ -385,7 +385,7 @@ export interface GetDailySeriesForHostAccommodationsInput {
  * `PermissionEnum` for gastronomy/experience "own listing" access (unlike
  * accommodation's `ACCOMMODATION_VIEW_OWN`) — ownership scoping alone is the
  * gate here, matching the existing convention of
- * `protectedListMyGastronomyRoute` (`GastronomyService.listOwn`). The former
+ * `protectedListMyGastronomyRoute` (`VenueService.listOwn`). The former
  * route-layer plan entitlement gate was removed by HOS-1352 (transitional until
  * V3, HOS-1357), so no entitlement is checked here either.
  */
@@ -438,8 +438,8 @@ export class EntityViewService extends BaseService {
     private readonly modelOverride: EntityViewModel | undefined;
     private readonly accommodationModelOverride: AccommodationModel | undefined;
     private accommodationModelLazy: AccommodationModel | undefined;
-    private readonly gastronomyModelOverride: VenueModel | undefined;
-    private gastronomyModelLazy: VenueModel | undefined;
+    private readonly venueModelOverride: VenueModel | undefined;
+    private venueModelLazy: VenueModel | undefined;
     private readonly experienceModelOverride: ExperienceModel | undefined;
     private experienceModelLazy: ExperienceModel | undefined;
 
@@ -458,7 +458,7 @@ export class EntityViewService extends BaseService {
         // to undefined exports). Resolution is deferred to the lazy getters.
         this.modelOverride = model;
         this.accommodationModelOverride = accommodationModel;
-        this.gastronomyModelOverride = venueModel;
+        this.venueModelOverride = venueModel;
         this.experienceModelOverride = experienceModel;
     }
 
@@ -489,10 +489,10 @@ export class EntityViewService extends BaseService {
      * mirrors {@link accommodationModel}.
      */
     private get gastronomyModel(): VenueModel {
-        if (!this.gastronomyModelLazy) {
-            this.gastronomyModelLazy = this.gastronomyModelOverride ?? new VenueModelClass();
+        if (!this.venueModelLazy) {
+            this.venueModelLazy = this.venueModelOverride ?? new VenueModelClass();
         }
-        return this.gastronomyModelLazy;
+        return this.venueModelLazy;
     }
 
     /**

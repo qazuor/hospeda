@@ -79,7 +79,7 @@ export interface ExperienceReviewModerateInput {
  * `ExperienceReviewModel` as the DB model.  Where the Drizzle inferred type
  * diverges from the Zod type (e.g. `isVerified`, `reviewerName` absent from
  * the DB columns), explicit `unknown` casts bridge the gap — this is the same
- * pattern used by `GastronomyReviewService`.
+ * pattern used by `VenueReviewService`.
  *
  * @example
  * ```ts

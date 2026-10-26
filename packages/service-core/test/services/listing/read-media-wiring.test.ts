@@ -3,9 +3,9 @@
  * tables.
  *
  * This exists because the wiring was missing once already. The composition
- * helpers (`attachComposedGastronomyMedia` and friends) were written, tested and
+ * helpers (`attachComposedVenueMedia` and friends) were written, tested and
  * exported from the service barrels, while NOTHING called them: neither
- * `GastronomyService` nor `ExperienceService` defined `_afterGetByField` /
+ * `VenueService` nor `ExperienceService` defined `_afterGetByField` /
  * `_afterList` / `_afterSearch` at all.
  *
  * That failure mode is completely silent. Photos persist correctly into
@@ -19,7 +19,7 @@
 import { ModerationStatusEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExperienceService } from '../../../src/services/experience/experience.service';
-import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
+import { VenueService } from '../../../src/services/venue/venue.service';
 import type { ServiceConfig, ServiceContext } from '../../../src/types';
 
 vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
@@ -89,9 +89,9 @@ describe.each([
     {
         vertical: 'gastronomy',
         fk: 'gastronomyId' as const,
-        finder: 'findByGastronomies' as const,
+        finder: 'findByVenues' as const,
         build: (media: Record<string, unknown>) =>
-            new GastronomyService({} as ServiceConfig, media as never)
+            new VenueService({} as ServiceConfig, media as never)
     },
     {
         vertical: 'experience',

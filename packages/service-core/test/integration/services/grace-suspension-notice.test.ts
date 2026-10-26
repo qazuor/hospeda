@@ -219,7 +219,7 @@ async function seedPromo(input: {
 }
 
 /** Another live title of the same user, in gastronomy, whose version inherits Tourist VIP. */
-async function seedInheritingGastronomyTitle(userId: string) {
+async function seedInheritingVenueTitle(userId: string) {
     const db = getServiceTestDb();
     const [plan] = await db
         .insert(plans)
@@ -328,7 +328,7 @@ describe('TEST:B7:18 — the suspension notice names what is lost (AC:B7:30)', (
         async () => {
             // Arrange
             const s = await noticeFixture({ inheritsTouristVip: true });
-            await seedInheritingGastronomyTitle(s.userId);
+            await seedInheritingVenueTitle(s.userId);
 
             // Act
             await s.runS6();

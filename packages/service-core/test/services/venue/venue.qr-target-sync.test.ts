@@ -3,7 +3,7 @@
  * AC-5).
  *
  * Mirrors `host-trade.qr-target-sync.test.ts` structurally — same double
- * shape, same case list — because `GastronomyService._afterUpdate` copies
+ * shape, same case list — because `VenueService._afterUpdate` copies
  * `HostTradeService._afterUpdate`'s four decisions verbatim (see the spec's
  * §6.3). The one addition here is the locale round-trip: a gastronomy menu
  * target carries `/{lang}/...`, which `HostTradeService`'s fixed-path target
@@ -36,8 +36,8 @@ vi.mock('@repo/db', async (importOriginal) => {
     };
 });
 
-import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
 import type { QrCodeService } from '../../../src/services/qr-code/qr-code.service';
+import { VenueService } from '../../../src/services/venue/venue.service';
 import type { Actor } from '../../../src/types';
 import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock } from '../../utils/modelMockFactory';
@@ -52,7 +52,7 @@ const NEW_SLUG = 'la-nueva-parrilla-del-sur';
 
 const menuUrl = (lang: string, slug: string) => `${SITE}/${lang}/gastronomia/${slug}/carta/`;
 
-const makeGastronomy = (overrides: Record<string, unknown> = {}) => ({
+const makeVenue = (overrides: Record<string, unknown> = {}) => ({
     id: G_ID,
     name: 'La Parrilla del Sur',
     slug: OLD_SLUG,
@@ -125,7 +125,7 @@ function makeQrDouble(initial: { slug: string; targetUrl: string } | null) {
 /**
  * Loosened on purpose, matching `gastronomy.service.test.ts`'s own escape
  * hatch: the test injects doubles onto PRIVATE fields (`model`,
- * `_destinationModel`) that the public `GastronomyService` type does not
+ * `_destinationModel`) that the public `VenueService` type does not
  * expose.
  */
 type AnyService = any;
@@ -135,8 +135,8 @@ function buildService(input: {
     existing?: Record<string, unknown>;
     updated?: Record<string, unknown>;
 }) {
-    const existing = input.existing ?? makeGastronomy();
-    const updated = input.updated ?? makeGastronomy({ slug: NEW_SLUG });
+    const existing = input.existing ?? makeVenue();
+    const updated = input.updated ?? makeVenue({ slug: NEW_SLUG });
 
     const model = {
         entityName: 'gastronomy',
@@ -158,7 +158,7 @@ function buildService(input: {
         raw: vi.fn()
     };
 
-    const service: AnyService = new GastronomyService(
+    const service: AnyService = new VenueService(
         { logger: createLoggerMock() },
         undefined,
         input.qr.asService()
@@ -171,7 +171,7 @@ function buildService(input: {
         findById: vi.fn().mockResolvedValue({ slug: 'destino-test' })
     };
 
-    return { service: service as GastronomyService, model };
+    return { service: service as VenueService, model };
 }
 
 const admin: Actor = {
@@ -254,7 +254,7 @@ describe('GastronomyService — menu QR target sync on slug change (HOS-1044 AC-
         const qr = makeQrDouble({ slug: 'k7Qm2XbT', targetUrl: menuUrl('es', OLD_SLUG) });
         const { service } = buildService({
             qr,
-            updated: makeGastronomy({ name: 'La Parrilla del Sur SRL' })
+            updated: makeVenue({ name: 'La Parrilla del Sur SRL' })
         });
 
         await service.update(admin, G_ID, {

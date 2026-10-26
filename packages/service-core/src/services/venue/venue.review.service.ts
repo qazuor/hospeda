@@ -10,7 +10,7 @@
  * - **Moderate (admin path)**: approve or reject a review via `moderateReview`.
  *   On every decision, the listing's denormalized `averageRating` / `reviewsCount`
  *   / `rating` fields are recomputed from all APPROVED, non-deleted reviews using
- *   `GastronomyService.recomputeRating()`.
+ *   `VenueService.recomputeRating()`.
  * - **Public list**: `_executeSearch` + `_executeCount` force-override
  *   `lifecycleState = ACTIVE` AND `moderationState = APPROVED` so that PENDING /
  *   REJECTED reviews never surface on public endpoints (mirrors SPEC-166).
@@ -50,7 +50,7 @@ import { ServiceError } from '../../types';
 import { entityNotFoundError } from '../../utils/not-found';
 import { hasPermission } from '../../utils/permission';
 import { listingShowsReviews } from '../listing/listing-reviews-shown.js';
-import { GastronomyService } from './gastronomy.service';
+import { VenueService } from './venue.service';
 
 // ---------------------------------------------------------------------------
 // Moderation decision input type
@@ -59,7 +59,7 @@ import { GastronomyService } from './gastronomy.service';
 /**
  * Input for the `moderateReview` method.
  */
-export interface GastronomyReviewModerateInput {
+export interface VenueReviewModerateInput {
     /** UUID of the review to moderate. */
     id: string;
     /** The moderation decision. */
@@ -104,7 +104,7 @@ function computeEffectiveRating(input: VenueReviewCreateInput): number {
  *
  * @example
  * ```ts
- * const service = new GastronomyReviewService({});
+ * const service = new VenueReviewService({});
  *
  * // Tourist creates a review (goes to PENDING)
  * const result = await service.create(
@@ -120,7 +120,7 @@ function computeEffectiveRating(input: VenueReviewCreateInput): number {
  * );
  * ```
  */
-export class GastronomyReviewService extends BaseCrudService<
+export class VenueReviewService extends BaseCrudService<
     VenueReview,
     VenueReviewModel,
     typeof VenueReviewCreateInputSchema,
@@ -129,20 +129,20 @@ export class GastronomyReviewService extends BaseCrudService<
 > {
     static readonly ENTITY_NAME = 'gastronomyReview';
 
-    protected readonly entityName = GastronomyReviewService.ENTITY_NAME;
+    protected readonly entityName = VenueReviewService.ENTITY_NAME;
     protected readonly model: VenueReviewModel;
     protected readonly createSchema = VenueReviewCreateInputSchema;
     protected readonly updateSchema = VenueReviewUpdateInputSchema;
     protected readonly searchSchema = VenueSearchSchema;
 
     /** Injectable for unit tests. */
-    private _gastronomyService: GastronomyService;
-    private _gastronomyModel = venueModel;
+    private _venueService: VenueService;
+    private _venueModel = venueModel;
 
     constructor(config: ServiceConfig) {
-        super(config, GastronomyReviewService.ENTITY_NAME);
+        super(config, VenueReviewService.ENTITY_NAME);
         this.model = venueReviewModel;
-        this._gastronomyService = new GastronomyService(config);
+        this._venueService = new VenueService(config);
     }
 
     // -----------------------------------------------------------------------
@@ -289,7 +289,7 @@ export class GastronomyReviewService extends BaseCrudService<
         actor: Actor,
         ctx: ServiceContext
     ): Promise<Partial<VenueReview>> {
-        const gastronomy = await this._gastronomyModel.findById(data.gastronomyId, ctx.tx);
+        const gastronomy = await this._venueModel.findById(data.gastronomyId, ctx.tx);
         if (
             !resolveResourceStep({
                 actorId: actor.id,
@@ -297,7 +297,7 @@ export class GastronomyReviewService extends BaseCrudService<
                 operation: 'WRITE_ABOUT_LISTING'
             }).allowed
         ) {
-            throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
+            throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
         }
         const existing = await this.model.findOne({
             userId: actor.id,
@@ -411,7 +411,7 @@ export class GastronomyReviewService extends BaseCrudService<
      * @returns `ServiceOutput<GastronomyReview>` wrapping the updated review.
      */
     public async moderateReview(
-        input: GastronomyReviewModerateInput,
+        input: VenueReviewModerateInput,
         actor: Actor,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<VenueReview>> {
@@ -588,13 +588,13 @@ export class GastronomyReviewService extends BaseCrudService<
      * @param ctx - Optional service context for transaction propagation.
      * @returns `ServiceOutput` with the approved review list and total count.
      */
-    public async listByGastronomy(
+    public async listByVenue(
         gastronomyId: string,
         _actor: Actor,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ reviews: VenueReview[]; total: number }>> {
         try {
-            const gastronomy = await this._gastronomyModel.findById(gastronomyId, ctx?.tx);
+            const gastronomy = await this._venueModel.findById(gastronomyId, ctx?.tx);
             if (
                 gastronomy &&
                 !listingShowsReviews({
@@ -645,7 +645,7 @@ export class GastronomyReviewService extends BaseCrudService<
 
     /**
      * Recomputes the gastronomy listing's denormalized rating fields from all
-     * APPROVED, non-deleted reviews using `GastronomyService.recomputeRating`.
+     * APPROVED, non-deleted reviews using `VenueService.recomputeRating`.
      *
      * Called after create, moderation decision, and soft-delete.
      *
@@ -684,7 +684,7 @@ export class GastronomyReviewService extends BaseCrudService<
                 };
             });
 
-            await this._gastronomyService.recomputeRating(gastronomyId, ratingRows, ctx?.tx);
+            await this._venueService.recomputeRating(gastronomyId, ratingRows, ctx?.tx);
         } catch {
             // Swallow recompute errors to prevent a rating-update failure from
             // rolling back the review write (best-effort denormalization).

@@ -39,7 +39,7 @@ import { composeListingMedia } from '../listing/listing-media-compose';
  * Returns the entity with its `media` rebuilt from the supplied rows, preserving
  * the original `media` value when there is nothing to compose (see module note).
  */
-function withComposedGastronomyMedia<T extends Venue>(entity: T, rows: readonly VenueMedia[]): T {
+function withComposedVenueMedia<T extends Venue>(entity: T, rows: readonly VenueMedia[]): T {
     const composed = composeListingMedia({ rows, videos: entity.videos });
     const hasContent = Object.keys(composed).length > 0;
     return { ...entity, media: hasContent ? composed : entity.media } as T;
@@ -57,7 +57,7 @@ function withComposedGastronomyMedia<T extends Venue>(entity: T, rows: readonly 
  * @param input.mediaModel - The `gastronomy_media` model.
  * @param input.tx         - Optional active transaction client.
  */
-export async function attachComposedGastronomyMedia<T extends Venue>(input: {
+export async function attachComposedVenueMedia<T extends Venue>(input: {
     entity: T | null;
     mediaModel: VenueMediaModel;
     tx?: DrizzleClient;
@@ -65,7 +65,7 @@ export async function attachComposedGastronomyMedia<T extends Venue>(input: {
     const { entity, mediaModel, tx } = input;
     if (!entity) return entity;
     const grouped = await mediaModel.findByVenues({ gastronomyIds: [entity.id], tx });
-    return withComposedGastronomyMedia(entity, grouped.get(entity.id) ?? []);
+    return withComposedVenueMedia(entity, grouped.get(entity.id) ?? []);
 }
 
 /**
@@ -76,7 +76,7 @@ export async function attachComposedGastronomyMedia<T extends Venue>(input: {
  * @param input.mediaModel - The `gastronomy_media` model.
  * @param input.tx         - Optional active transaction client.
  */
-export async function attachComposedGastronomyMediaList<T extends Venue>(input: {
+export async function attachComposedVenueMediaList<T extends Venue>(input: {
     items: readonly T[];
     mediaModel: VenueMediaModel;
     tx?: DrizzleClient;
@@ -87,5 +87,5 @@ export async function attachComposedGastronomyMediaList<T extends Venue>(input: 
         gastronomyIds: items.map((i) => i.id),
         tx
     });
-    return items.map((item) => withComposedGastronomyMedia(item, grouped.get(item.id) ?? []));
+    return items.map((item) => withComposedVenueMedia(item, grouped.get(item.id) ?? []));
 }

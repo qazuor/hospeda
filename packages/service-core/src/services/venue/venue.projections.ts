@@ -38,25 +38,25 @@ import type { Venue } from '@repo/schemas';
  *
  * @example
  * ```ts
- * const safe = projectGastronomyPublic(rawEntity);
+ * const safe = projectVenuePublic(rawEntity);
  * // safe.adminInfo === undefined
  * // safe.ownerId  === undefined
  * ```
  */
-export function projectGastronomyPublic(entity: Venue): Partial<Venue> {
+export function projectVenuePublic(entity: Venue): Partial<Venue> {
     const { adminInfo: _adminInfo, ownerId: _ownerId, ...rest } = entity;
     return rest;
 }
 
 /**
- * List variant of {@link projectGastronomyPublic}.
- * Maps `projectGastronomyPublic` over an array of entities.
+ * List variant of {@link projectVenuePublic}.
+ * Maps `projectVenuePublic` over an array of entities.
  *
  * @param entities - Array of raw gastronomy entities.
  * @returns Array of projected entities without private fields.
  */
-export function projectGastronomyPublicList(entities: Venue[]): Partial<Venue>[] {
-    return entities.map(projectGastronomyPublic);
+export function projectVenuePublicList(entities: Venue[]): Partial<Venue>[] {
+    return entities.map(projectVenuePublic);
 }
 
 // ---------------------------------------------------------------------------
@@ -92,7 +92,7 @@ function resolveOwnerImage(owner: Record<string, unknown> | undefined | null): s
  * @param entity - The gastronomy entity (may carry an eager-loaded `owner` relation).
  * @returns A new entity object with the resolved avatar, or the original if unchanged.
  */
-export function projectGastronomyOwnerAvatar<T extends Venue>(entity: T | null): T | null {
+export function projectVenueOwnerAvatar<T extends Venue>(entity: T | null): T | null {
     if (!entity) return entity;
     // TYPE-WORKAROUND: projection reads an optionally-loaded relation not present on the base entity type
     const owner = (entity as unknown as { owner?: Record<string, unknown> }).owner;
@@ -103,11 +103,11 @@ export function projectGastronomyOwnerAvatar<T extends Venue>(entity: T | null):
 }
 
 /**
- * List variant of {@link projectGastronomyOwnerAvatar}.
+ * List variant of {@link projectVenueOwnerAvatar}.
  *
  * @param entities - Array of gastronomy entities (may carry eager-loaded `owner`).
  * @returns Array with resolved owner avatars.
  */
-export function projectGastronomyOwnerAvatarList<T extends Venue>(entities: T[]): T[] {
-    return entities.map((e) => projectGastronomyOwnerAvatar(e) as T);
+export function projectVenueOwnerAvatarList<T extends Venue>(entities: T[]): T[] {
+    return entities.map((e) => projectVenueOwnerAvatar(e) as T);
 }

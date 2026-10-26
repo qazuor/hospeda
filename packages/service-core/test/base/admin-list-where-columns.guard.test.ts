@@ -167,7 +167,7 @@ const ADMIN_LIST_UNREACHABLE: ReadonlyArray<{
         reason: 'No adminSearchSchema, although GET /admin/experiences/reviews does call adminList — so that endpoint answers CONFIGURATION_ERROR today, for every request.'
     },
     {
-        service: 'GastronomyReviewService',
+        service: 'VenueReviewService',
         reason: 'No adminSearchSchema; its admin reviews route calls listForModeration(), not adminList().'
     },
     {
