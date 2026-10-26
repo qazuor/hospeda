@@ -13,6 +13,7 @@ import { getDb, ownerPromotions } from '@repo/db';
 import { LifecycleStatusEnum, OwnerPromotionDiscountTypeEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
 import { createTestUser } from '../../e2e/setup/seed-helpers';
 import { testDb } from '../../e2e/setup/test-database';
@@ -66,6 +67,8 @@ describe('GET /api/v1/public/owner-promotions (list)', () => {
 
     beforeAll(async () => {
         await testDb.setup();
+        await testDb.clean();
+        clearCache();
         validateApiEnv();
         app = initApp();
     });
@@ -76,6 +79,7 @@ describe('GET /api/v1/public/owner-promotions (list)', () => {
 
     afterEach(async () => {
         await testDb.clean();
+        clearCache();
     });
 
     afterAll(async () => {
@@ -154,6 +158,8 @@ describe('GET /api/v1/public/owner-promotions/:id', () => {
 
     beforeAll(async () => {
         await testDb.setup();
+        await testDb.clean();
+        clearCache();
         validateApiEnv();
         app = initApp();
     });
@@ -164,6 +170,7 @@ describe('GET /api/v1/public/owner-promotions/:id', () => {
 
     afterEach(async () => {
         await testDb.clean();
+        clearCache();
     });
 
     afterAll(async () => {
@@ -189,6 +196,17 @@ describe('GET /api/v1/public/owner-promotions/:id', () => {
 
         // Assert
         expect(res.status).toBe(404);
+    });
+
+    // HOS-1897: a DRAFT promotion answers 403, which confirms the id exists. Drop `.fails` once it is 404.
+    it.fails('returns 404 NOT_FOUND for a DRAFT promotion', async () => {
+        // Arrange / Act
+        const res = await app.request(`${base}/${seeded.draftId}`, { headers });
+
+        // Assert
+        expect(res.status).toBe(404);
+        const body = await res.json();
+        expect(body.error.code).toBe('NOT_FOUND');
     });
 
     it('returns 400 for an invalid UUID format', async () => {
