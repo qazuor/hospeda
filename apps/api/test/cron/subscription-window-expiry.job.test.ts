@@ -14,6 +14,14 @@ const { mockCredited, mockExpire, mockSweep, mockClock, mockProvider, mockComple
             liveAnchors: { hasLiveAnchor: vi.fn() }
         }
     }));
+vi.mock('@repo/verticals', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/verticals')>()),
+    createPlanCatalogInverse: () => ({ changeDirection: vi.fn() })
+}));
+vi.mock('@repo/db', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/db')>()),
+    planCatalogModel: {}
+}));
 
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
@@ -30,6 +38,7 @@ vi.mock('../../src/utils/billing-complement-ports.js', () => ({
 import { subscriptionWindowExpiryJob } from '../../src/cron/jobs/subscription-window-expiry.job';
 import { beforeCancelNotice } from '../../src/routes/billing-subscription/before-cancel-notice';
 import { touristVipInheritance } from '../../src/routes/billing-subscription/tourist-vip-inheritance';
+import { getAnalyticsFactSink } from '../../src/utils/analytics/analytics-facts';
 import { getCoverageNotices } from '../../src/utils/listing-access/coverage-notices';
 
 const context = (dryRun = false): CronJobContext => ({
@@ -78,6 +87,8 @@ describe('subscription-window-expiry cron', () => {
             beforeCancelNotice,
             touristVipInheritance,
             coverageNotices: getCoverageNotices(),
+            billingFacts: getAnalyticsFactSink(),
+            changeDirection: expect.any(Function),
             complements: mockComplementPorts
         });
         expect(mockExpire).toHaveBeenCalledWith(100, {
@@ -86,6 +97,8 @@ describe('subscription-window-expiry cron', () => {
             beforeCancelNotice,
             touristVipInheritance,
             coverageNotices: getCoverageNotices(),
+            billingFacts: getAnalyticsFactSink(),
+            changeDirection: expect.any(Function),
             complements: mockComplementPorts
         });
         expect(mockSweep).toHaveBeenCalledWith(100, {
@@ -100,6 +113,7 @@ describe('subscription-window-expiry cron', () => {
             mockExpire.mock.invocationCallOrder[0]!
         );
         expect(mockExpire.mock.calls[0]?.[1].coverageNotices).toBe(getCoverageNotices());
+        expect(mockExpire.mock.calls[0]?.[1].billingFacts).toBe(getAnalyticsFactSink());
         expect(mockSweep.mock.calls[0]?.[1].coverageNotices).toBe(getCoverageNotices());
         expect(result).toMatchObject({
             success: true,

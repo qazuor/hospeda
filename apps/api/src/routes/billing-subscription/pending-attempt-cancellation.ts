@@ -6,6 +6,7 @@ import {
 import { cancelPendingAttempt, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../utils/actor';
+import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { getClock } from '../../utils/clock';
 import { getPaymentProvider } from '../../utils/payment-provider';
@@ -33,7 +34,8 @@ export const protectedPendingAttemptCancellationRoute = createProtectedRoute({
                 {
                     provider: getPaymentProvider(),
                     clock: getClock().clock,
-                    beforeCancelNotice
+                    beforeCancelNotice,
+                    billingFacts: getAnalyticsFactSink()
                 }
             );
             auditLog({

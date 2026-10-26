@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
     emailRows: [] as { email: string }[],
     warn: vi.fn(),
     error: vi.fn(),
+    emitTrial: vi.fn(),
     billing: { coverage: vi.fn() },
     trialPorts: { unitOfWork: { runLocked: vi.fn() }, afterCommit: { invalidateUser: vi.fn() } }
 }));
@@ -51,11 +52,19 @@ vi.mock('@repo/db', () => ({
 vi.mock('../../../src/utils/logger', () => ({
     apiLogger: { warn: mocks.warn, error: mocks.error }
 }));
+vi.mock('../../../src/utils/analytics/analytics-facts', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../src/utils/analytics/analytics-facts')>()),
+    emitTrialAnalyticsFact: mocks.emitTrial
+}));
+vi.mock('../../../src/utils/clock', () => ({
+    getClock: () => ({ clock: { now: () => new Date('2026-10-08T20:00:00.000Z') } })
+}));
 
 import { subscribeTrialCoverageConversion } from '../../../src/utils/trial/trial-coverage-listener';
 
 const USER_ID = '00000000-0000-4000-8000-0000000b4203';
 const PSEUDONYM = 'a'.repeat(64);
+const OCCURRED_AT = new Date('2026-10-08T20:00:00.000Z');
 
 function notice(sourceType: CoverageChangedEvent['sourceType']): CoverageChangedEvent {
     return { userId: USER_ID, vertical: VerticalEnum.ACCOMMODATION, sourceType, change: 'CHANGED' };
@@ -82,6 +91,7 @@ describe('Coord-99 the trial consumer of the coverage notice (T2, T5, T8; HOS-15
         mocks.convert.mockResolvedValue({ converted: false, reason: 'NO_CONVERTING_TITLE' });
         mocks.consume.mockResolvedValue({ consumed: false, reason: 'NO_CONVERTING_TITLE' });
         mocks.pseudonym.mockReturnValue({ ok: true, pseudonym: PSEUDONYM });
+        mocks.emitTrial.mockReset();
     });
 
     it('subscribes once and the returned closure unsubscribes', () => {
@@ -123,6 +133,58 @@ describe('Coord-99 the trial consumer of the coverage notice (T2, T5, T8; HOS-15
         // Assert
         expect(mocks.convert.mock.calls).toEqual([[portsFor(event)]]);
         expect(mocks.consume).not.toHaveBeenCalled();
+        expect(mocks.emitTrial.mock.calls).toEqual([
+            [
+                {
+                    kind: 'TRIAL_CONVERTED',
+                    userId: USER_ID,
+                    vertical: VerticalEnum.ACCOMMODATION,
+                    actorKind: 'SYSTEM',
+                    trialId: `${USER_ID}:${VerticalEnum.ACCOMMODATION}`,
+                    transition: 'T2',
+                    trialStateBefore: 'ACTIVE',
+                    occurredAt: OCCURRED_AT
+                }
+            ]
+        ]);
+    });
+
+    it.each([
+        'NO_CONVERTING_TITLE',
+        'ALREADY_CONVERTED'
+    ] as const)('does not emit for %s (TEST:1878:13)', async (reason) => {
+        stop = subscribeTrialCoverageConversion();
+        mocks.convert.mockResolvedValue({ converted: false, reason });
+        await mocks.listener?.(notice('SUBSCRIPTION'));
+        expect(mocks.emitTrial).not.toHaveBeenCalled();
+    });
+
+    it('does not emit when T8 reports TRIAL_ROW_EXISTS (TEST:1878:13)', async () => {
+        stop = subscribeTrialCoverageConversion();
+        mocks.convert.mockResolvedValue({ converted: false, reason: 'NO_TRIAL_ROW' });
+        mocks.consume.mockResolvedValue({ consumed: false, reason: 'TRIAL_ROW_EXISTS' });
+        await mocks.listener?.(notice('SUBSCRIPTION'));
+        expect(mocks.emitTrial).not.toHaveBeenCalled();
+    });
+
+    it('reports an expired trial as T5 with EXPIRED before state (TEST:1878:13)', async () => {
+        stop = subscribeTrialCoverageConversion();
+        mocks.convert.mockResolvedValue({ converted: true, transition: 'T5', notices: {} });
+        await mocks.listener?.(notice('SUBSCRIPTION'));
+        expect(mocks.emitTrial.mock.calls).toEqual([
+            [
+                {
+                    kind: 'TRIAL_CONVERTED',
+                    userId: USER_ID,
+                    vertical: VerticalEnum.ACCOMMODATION,
+                    actorKind: 'SYSTEM',
+                    trialId: `${USER_ID}:${VerticalEnum.ACCOMMODATION}`,
+                    transition: 'T5',
+                    trialStateBefore: 'EXPIRED',
+                    occurredAt: OCCURRED_AT
+                }
+            ]
+        ]);
     });
 
     it('with NO_TRIAL_ROW computes the owner pseudonym and runs consumeTrialOnFirstPayment (T8)', async () => {
@@ -138,6 +200,23 @@ describe('Coord-99 the trial consumer of the coverage notice (T2, T5, T8; HOS-15
         expect(mocks.pseudonym.mock.calls).toEqual([[{ email: 'owner@example.com' }]]);
         expect(mocks.consume.mock.calls).toEqual([
             [{ ...portsFor(event), emailPseudonym: PSEUDONYM }]
+        ]);
+        expect(mocks.emitTrial).not.toHaveBeenCalled();
+        mocks.consume.mockResolvedValue({ consumed: true, transition: 'T8', notices: {} });
+        await mocks.listener?.(event);
+        expect(mocks.emitTrial.mock.calls).toEqual([
+            [
+                {
+                    kind: 'TRIAL_CONVERTED',
+                    userId: USER_ID,
+                    vertical: VerticalEnum.ACCOMMODATION,
+                    actorKind: 'SYSTEM',
+                    trialId: `${USER_ID}:${VerticalEnum.ACCOMMODATION}`,
+                    transition: 'T8',
+                    trialStateBefore: 'NONE',
+                    occurredAt: OCCURRED_AT
+                }
+            ]
         ]);
     });
 

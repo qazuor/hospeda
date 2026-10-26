@@ -17,6 +17,8 @@ import {
 import { eq } from 'drizzle-orm';
 import type { PublicationVertical } from '../../../../../packages/verticals/src/publication/publication-types';
 import { PUBLICATION_LIMIT_KEYS } from '../../../../../packages/verticals/src/publication/publication-types';
+import { emitTrialAnalyticsFact } from '../../utils/analytics/analytics-facts';
+import { getClock } from '../../utils/clock';
 import { getListingPublicationPorts } from '../../utils/listing-publication/ports';
 import { loadListingMedia } from '../listing-media';
 import { evaluateListingPublishCompleteness } from './listing-publish-completeness';
@@ -139,6 +141,17 @@ export class ListingPublicationService {
             }
             throw mapListingPublishDenial(result.reason, vertical);
         }
+
+        if (result.trialStarted)
+            emitTrialAnalyticsFact({
+                kind: 'TRIAL_STARTED',
+                userId: ownerId,
+                vertical,
+                actorKind: 'USER',
+                trialId: `${ownerId}:${vertical}`,
+                activationEvent: 'listing_published',
+                occurredAt: getClock().clock.now()
+            });
 
         if (vertical === VerticalEnum.ACCOMMODATION) {
             const [updated] = await db

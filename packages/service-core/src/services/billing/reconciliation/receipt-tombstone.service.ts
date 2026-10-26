@@ -5,6 +5,7 @@ import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
+import type { BillingFactSink } from '../facts/billing-fact-sink.js';
 import { type CreditPaymentResult, creditPayment } from '../payment/credit-payment.service.js';
 import { createPaymentReconciliationMarkPayments } from '../payment/payment-ledger.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
@@ -73,6 +74,7 @@ export interface WriteChargeTombstonePorts {
     readonly clock: Clock;
     readonly markPayments?: ReconciliationMarkPayments;
     readonly coverageNotices?: CoverageNotices;
+    readonly billingFacts?: BillingFactSink;
 }
 
 /** Result of {@link writeChargeTombstone}. */
@@ -195,7 +197,11 @@ export async function writeChargeTombstone(
     try {
         const credit = await creditPayment(
             { paymentId: written.paymentId, chargeCreatedAt: input.charge.createdAt },
-            { clock: ports.clock, coverageNotices: ports.coverageNotices }
+            {
+                clock: ports.clock,
+                coverageNotices: ports.coverageNotices,
+                billingFacts: ports.billingFacts
+            }
         );
         return { ...written, credit };
     } catch (error) {
