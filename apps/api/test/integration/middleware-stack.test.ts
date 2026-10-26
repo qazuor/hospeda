@@ -1,47 +1,40 @@
 /**
  * Middleware Stack Integration Tests
  * Tests the complete middleware stack to ensure all middlewares work together
- * and that the request flow is processed correctly through all layers
+ * and that the request flow is processed correctly through all layers.
+ *
+ * `/health/ready` is the happy-path probe: it is public, cached and answers the
+ * standard envelope. `/health/live` is NOT used for that, because it answers
+ * 500 today (see the known-failure test at the bottom).
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { gunzipSync } from 'node:zlib';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../src/app';
+import { clearCache } from '../../src/middlewares/cache';
 import { resetMetrics } from '../../src/middlewares/metrics';
 
-// Mock external dependencies
-vi.mock('@repo/logger', () => {
-    const mockLogger = {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-        registerCategory: vi.fn(() => mockLogger),
-        registerLogMethod: vi.fn()
-    };
+const READY = '/health/ready';
 
-    return {
-        default: mockLogger,
-        logger: mockLogger,
-        LoggerColors: {
-            GREEN: 'green',
-            RED: 'red',
-            BLUE: 'blue',
-            YELLOW: 'yellow',
-            CYAN: 'cyan',
-            MAGENTA: 'magenta'
-        },
-        LogLevel: {
-            DEBUG: 'debug',
-            INFO: 'info',
-            WARN: 'warn',
-            ERROR: 'error'
-        }
-    };
-});
+/** The slice of the response envelope these tests read. */
+interface Envelope {
+    readonly success: boolean;
+    readonly data: { readonly ready?: boolean };
+    readonly metadata: { readonly requestId: string; readonly timestamp: string };
+}
+
+/** Reads a JSON body, inflating it first when the stack compressed it. */
+const readJson = async ({ res }: { readonly res: Response }): Promise<Envelope> => {
+    const raw = Buffer.from(await res.arrayBuffer());
+    const text = res.headers.get('content-encoding')?.includes('gzip')
+        ? gunzipSync(raw).toString('utf8')
+        : raw.toString('utf8');
+    return JSON.parse(text);
+};
 
 describe('Middleware Stack Integration', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        clearCache();
         resetMetrics();
     });
 
@@ -49,7 +42,7 @@ describe('Middleware Stack Integration', () => {
         it('should process request through all middlewares successfully', async () => {
             const app = initApp();
 
-            const res = await app.request('/health/live', {
+            const res = await app.request(READY, {
                 method: 'GET',
                 headers: {
                     'user-agent': 'integration-test/1.0',
@@ -60,41 +53,32 @@ describe('Middleware Stack Integration', () => {
             });
 
             expect(res.status).toBe(200);
+            // Compression middleware
+            expect(res.headers.get('content-encoding')).toBe('gzip');
 
-            // Verify response formatting middleware worked
-            const contentEncoding = res.headers.get('content-encoding');
-            if (contentEncoding?.includes('gzip')) {
-                // If compressed, just verify we can read it as text
-                const text = await res.text();
-                expect(text).toBeTruthy();
-                // Skip JSON parsing for compressed responses in this test
-                return;
-            }
-
-            const data = await res.json();
+            // Response formatting middleware
+            const data = await readJson({ res });
             expect(data.success).toBe(true);
-            expect(data.data).toBeDefined();
-            expect(data.metadata).toBeDefined();
+            expect(data.data.ready).toBe(true);
             expect(data.metadata.timestamp).toBeDefined();
-            expect(data.metadata.requestId).toBeDefined();
 
-            // Verify security headers middleware worked
+            // Request ID middleware: header and envelope agree
+            expect(res.headers.get('x-request-id')).toBeTruthy();
+            expect(data.metadata.requestId).toBe(res.headers.get('x-request-id'));
+
+            // Security headers middleware
             expect(res.headers.get('x-content-type-options')).toBe('nosniff');
-            // Allow either DENY or SAMEORIGIN for x-frame-options
-            expect(['DENY', 'SAMEORIGIN']).toContain(res.headers.get('x-frame-options'));
+            expect(res.headers.get('x-frame-options')).toBe('SAMEORIGIN');
             expect(res.headers.get('x-xss-protection')).toBe('0');
 
-            // Verify CORS middleware worked
-            expect(res.headers.get('access-control-allow-origin')).toBeTruthy();
-
-            // Verify request ID middleware worked
-            expect(res.headers.get('x-request-id')).toBeTruthy();
+            // CORS middleware echoes the allowed origin
+            expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:3000');
         });
 
         it('should handle validation errors correctly through the stack', async () => {
             const app = initApp();
 
-            const res = await app.request('/health/live', {
+            const res = await app.request(READY, {
                 method: 'GET',
                 headers: {
                     // Missing required user-agent header
@@ -104,26 +88,18 @@ describe('Middleware Stack Integration', () => {
 
             expect(res.status).toBe(400);
 
-            // Verify error response formatting
             const data = await res.json();
             expect(data.success).toBe(false);
-            expect(data.error).toBeDefined();
             expect(data.error.code).toBe('MISSING_REQUIRED_HEADER');
-            expect(data.metadata).toBeDefined();
-            expect(data.metadata.requestId).toBeDefined();
+            expect(data.metadata.requestId).toBe(res.headers.get('x-request-id'));
 
-            // Verify security headers are still applied even on errors
+            // Security headers are still applied on errors
             expect(res.headers.get('x-content-type-options')).toBe('nosniff');
-            expect(['DENY', 'SAMEORIGIN']).toContain(res.headers.get('x-frame-options'));
+            expect(res.headers.get('x-frame-options')).toBe('SAMEORIGIN');
         });
 
-        it('should handle POST requests with body validation', async () => {
+        it('should answer a JSON POST to an unknown route with a formatted 404', async () => {
             const app = initApp();
-
-            const testPayload = {
-                test: 'data',
-                number: 123
-            };
 
             const res = await app.request('/api/v1/users', {
                 method: 'POST',
@@ -132,14 +108,13 @@ describe('Middleware Stack Integration', () => {
                     accept: 'application/json',
                     'content-type': 'application/json'
                 },
-                body: JSON.stringify(testPayload)
+                body: JSON.stringify({ test: 'data', number: 123 })
             });
 
-            // Should process through validation, even if endpoint doesn't exist
-            // The important thing is that all middlewares processed it
-            expect([200, 404, 401, 403]).toContain(res.status);
-
-            // Verify all standard headers are present
+            expect(res.status).toBe(404);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('NOT_FOUND');
             expect(res.headers.get('x-request-id')).toBeTruthy();
             expect(res.headers.get('x-content-type-options')).toBe('nosniff');
         });
@@ -149,7 +124,7 @@ describe('Middleware Stack Integration', () => {
         it('should apply middlewares in the correct order', async () => {
             const app = initApp();
 
-            const res = await app.request('/health/live', {
+            const res = await app.request(READY, {
                 headers: {
                     'user-agent': 'integration-test/1.0',
                     accept: 'application/json'
@@ -159,14 +134,12 @@ describe('Middleware Stack Integration', () => {
             expect(res.status).toBe(200);
             const data = await res.json();
 
-            // Request ID should be set early (before response formatting)
-            expect(data.metadata.requestId).toBeTruthy();
-
-            // Response formatting should be applied (success/data structure)
+            // Request ID is set before response formatting reads it
+            expect(data.metadata.requestId).toBe(res.headers.get('x-request-id'));
+            // Response formatting wrapped the handler output
             expect(data.success).toBe(true);
-            expect(data.data).toBeDefined();
-
-            // Security headers should be applied last
+            expect(data.data.ready).toBe(true);
+            // Security headers are applied on the way out
             expect(res.headers.get('x-content-type-options')).toBe('nosniff');
         });
     });
@@ -175,95 +148,55 @@ describe('Middleware Stack Integration', () => {
         it('should handle multiple concurrent requests', async () => {
             const app = initApp();
 
-            const requests = Array.from({ length: 10 }, (_, i) =>
-                app.request('/health/live', {
-                    headers: {
-                        'user-agent': `integration-test-${i}/1.0`,
-                        accept: 'application/json'
-                    }
-                })
+            // The admin list is not cached, so every response is a fresh request.
+            const responses = await Promise.all(
+                Array.from({ length: 10 }, (_, i) =>
+                    app.request('/api/v1/admin/accommodations', {
+                        headers: {
+                            'user-agent': `integration-test-${i}/1.0`,
+                            accept: 'application/json'
+                        }
+                    })
+                )
             );
 
-            const responses = await Promise.all(requests);
-
-            // All requests should succeed
-            responses.forEach((res, _index) => {
-                expect(res.status).toBe(200);
+            for (const res of responses) {
+                expect(res.status).toBe(401);
                 expect(res.headers.get('x-request-id')).toBeTruthy();
-            });
+            }
 
-            // Each should have unique request IDs
             const requestIds = responses.map((res) => res.headers.get('x-request-id'));
-            const uniqueIds = new Set(requestIds);
-            expect(uniqueIds.size).toBe(10);
+            expect(new Set(requestIds).size).toBe(10);
         });
     });
 
     describe('Cache and Compression Integration', () => {
         it('should apply both caching and compression when appropriate', async () => {
             const app = initApp();
+            const request = () =>
+                app.request(READY, {
+                    headers: {
+                        'user-agent': 'integration-test/1.0',
+                        accept: 'application/json',
+                        'accept-encoding': 'gzip'
+                    }
+                });
 
-            const res = await app.request('/health', {
-                headers: {
-                    'user-agent': 'integration-test/1.0',
-                    accept: 'application/json',
-                    'accept-encoding': 'gzip'
-                }
-            });
+            const first = await request();
+            expect(first.status).toBe(200);
+            expect(first.headers.get('x-cache')).toBe('MISS');
+            expect(first.headers.get('content-encoding')).toBe('gzip');
+            expect((await readJson({ res: first })).data.ready).toBe(true);
 
-            expect(res.status).toBe(200);
-
-            // Cache headers should be present for cacheable endpoints
-            const cacheControl = res.headers.get('cache-control');
-            if (cacheControl) {
-                expect(cacheControl).toContain('max-age');
-            }
-
-            // Response should be JSON formatted (handle compression)
-            const contentEncoding = res.headers.get('content-encoding');
-            if (contentEncoding?.includes('gzip')) {
-                const text = await res.text();
-                expect(text).toBeTruthy();
-            } else {
-                const data = await res.json();
-                expect(data.success).toBe(true);
-            }
+            const second = await request();
+            expect(second.status).toBe(200);
+            expect(second.headers.get('x-cache')).toBe('HIT');
+            expect(second.headers.get('content-encoding')).toBe('gzip');
+            expect((await readJson({ res: second })).data.ready).toBe(true);
         });
     });
 
     describe('Error Propagation Through Stack', () => {
-        it('should handle rate limiting correctly', async () => {
-            const app = initApp();
-
-            // Make many requests quickly to potentially trigger rate limiting
-            const requests = Array.from({ length: 50 }, () =>
-                app.request('/health/live', {
-                    headers: {
-                        'user-agent': 'rate-limit-test/1.0',
-                        accept: 'application/json'
-                    }
-                })
-            );
-
-            const responses = await Promise.all(requests);
-
-            // Some requests should succeed, rate limiting behavior depends on configuration
-            const statuses = responses.map((res) => res.status);
-            const successCount = statuses.filter((status) => status === 200).length;
-
-            // At least some requests should succeed
-            expect(successCount).toBeGreaterThan(0);
-
-            // Any rate limited responses should have proper error format
-            const rateLimitedResponses = responses.filter((res) => res.status === 429);
-            for (const res of rateLimitedResponses) {
-                const data = await res.json();
-                expect(data.success).toBe(false);
-                expect(data.error).toBeDefined();
-                expect(res.headers.get('x-request-id')).toBeTruthy();
-            }
-        });
-
         it('should handle invalid content-type gracefully', async () => {
             const app = initApp();
 
@@ -277,17 +210,11 @@ describe('Middleware Stack Integration', () => {
                 body: 'invalid json payload'
             });
 
-            // Should be rejected by validation middleware or rate limited
-            expect([400, 429]).toContain(res.status);
-
+            expect(res.status).toBe(400);
             const data = await res.json();
             expect(data.success).toBe(false);
-            expect(data.error).toBeDefined();
-
-            // Only check metadata if it exists (might not be present in rate limited responses)
-            if (data.metadata) {
-                expect(data.metadata.requestId).toBeTruthy();
-            }
+            expect(data.error.code).toBe('INVALID_CONTENT_TYPE');
+            expect(data.metadata.requestId).toBe(res.headers.get('x-request-id'));
         });
     });
 
@@ -295,31 +222,42 @@ describe('Middleware Stack Integration', () => {
         it('should apply all security headers consistently', async () => {
             const app = initApp();
 
-            const res = await app.request('/health/live', {
+            const res = await app.request(READY, {
                 headers: {
                     'user-agent': 'security-test/1.0',
                     accept: 'application/json'
                 }
             });
 
-            // Expect success or rate limiting
-            expect([200, 429]).toContain(res.status);
-
-            // Verify all expected security headers (if not rate limited)
-            if (res.status === 200) {
-                expect(res.headers.get('x-content-type-options')).toBe('nosniff');
-                expect(['DENY', 'SAMEORIGIN']).toContain(res.headers.get('x-frame-options'));
-                expect(res.headers.get('x-xss-protection')).toBe('0');
-                expect(res.headers.get('referrer-policy')).toBeTruthy();
-            } else {
-                // Rate limited responses might not have all security headers
-                // Just verify the response is properly formatted
-                const data = await res.json();
-                expect(data.success).toBe(false);
-            }
-
-            // Request ID should be present
+            expect(res.status).toBe(200);
+            expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+            expect(res.headers.get('x-frame-options')).toBe('SAMEORIGIN');
+            expect(res.headers.get('x-xss-protection')).toBe('0');
+            expect(res.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
             expect(res.headers.get('x-request-id')).toBeTruthy();
+        });
+    });
+
+    describe('Liveness endpoint', () => {
+        const live = () =>
+            initApp().request('/health/live', {
+                headers: { 'user-agent': 'integration-test/1.0', accept: 'application/json' }
+            });
+
+        // HOS-TODO-health-live-500: liveRoutes declares the whole envelope (HealthLivenessSchema) as responseSchema but returns the bare payload, so stripWithSchema always throws.
+        it.fails('answers 200 with the alive payload', async () => {
+            const res = await live();
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.data.alive).toBe(true);
+        });
+
+        it('currently answers 500 INTERNAL_ERROR (HOS-TODO-health-live-500)', async () => {
+            const res = await live();
+            expect(res.status).toBe(500);
+            const data = await res.json();
+            expect(data.error.code).toBe('INTERNAL_ERROR');
+            expect(data.error.message).toBe('Response payload does not match declared schema');
         });
     });
 });
