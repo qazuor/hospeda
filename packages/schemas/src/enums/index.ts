@@ -14,6 +14,8 @@ export * from './billing-interval.schema.js';
 // Calendar sync enums (HOS-157 Phase 2)
 export * from './calendar-sync-status.enum.js';
 export * from './calendar-sync-status.schema.js';
+export * from './cancellation-reason.enum.js';
+export * from './cancellation-reason.schema.js';
 export * from './client-type.enum.js';
 export * from './client-type.schema.js';
 export * from './contact-preference.enum.js';

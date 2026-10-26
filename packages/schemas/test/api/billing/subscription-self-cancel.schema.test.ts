@@ -2,10 +2,23 @@ import { describe, expect, it } from 'vitest';
 import {
     OwnSubscriptionsResponseSchema,
     SubscriptionCancellationParamsSchema,
-    SubscriptionCancellationPreviewResponseSchema
+    SubscriptionCancellationPreviewResponseSchema,
+    SubscriptionCancellationRequestSchema
 } from '../../../src/api/billing/subscription-self-cancel.schema.js';
 
 describe('self cancellation schemas', () => {
+    it('TEST:1878:21 accepts an empty body or a valid closed cancellation reason only', () => {
+        expect(SubscriptionCancellationRequestSchema.safeParse({}).success).toBe(true);
+        expect(SubscriptionCancellationRequestSchema.safeParse({ reason: 'OTHER' }).success).toBe(
+            true
+        );
+        expect(SubscriptionCancellationRequestSchema.safeParse({ reason: 'INVALID' }).success).toBe(
+            false
+        );
+        expect(SubscriptionCancellationRequestSchema.safeParse({ extra: true }).success).toBe(
+            false
+        );
+    });
     const ownSubscriptions = { subscriptions: [], deferredCourtesies: [] };
     const ownRow = {
         id: '00000000-0000-4000-8000-000000000001',

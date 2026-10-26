@@ -1,5 +1,12 @@
 import { z } from 'zod';
 import { BillingCycleSchema } from '../../catalog/plan-publication.schema.js';
+import { CancellationReasonSchema } from '../../enums/cancellation-reason.schema.js';
+
+/** Optional closed-list reason given by the owner when cancelling. */
+export const SubscriptionCancellationRequestSchema = z.strictObject({
+    reason: CancellationReasonSchema.optional()
+});
+export type SubscriptionCancellationRequest = z.infer<typeof SubscriptionCancellationRequestSchema>;
 
 /** The plan and billing option this subscription is ANCHORED to (never the current catalog version); amount in minor units, list price without promotions. */
 export const OwnSubscriptionPlanSchema = z.object({
