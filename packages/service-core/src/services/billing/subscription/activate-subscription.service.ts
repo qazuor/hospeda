@@ -1,4 +1,4 @@
-import type { Clock } from '@repo/billing-verticals-contract';
+import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contract';
 import { eq, getDb, providerLinks, subscriptions } from '@repo/db';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import type { BillingFactSink } from '../facts/billing-fact-sink.js';
@@ -19,7 +19,7 @@ export interface ActivateSubscriptionPorts {
     /** Receives the post-commit S2 notice (B4.2); defaults to the unwired logger. */
     readonly coverageNotices?: CoverageNotices;
     readonly billingFacts?: BillingFactSink;
-    readonly changeDirection?: import('@repo/billing-verticals-contract').VerticalsForBilling['changeDirection'];
+    readonly changeDirection?: VerticalsForBilling['changeDirection'];
     /**
      * S18's interface (B8b), handed to S2 for branch 1 (AC:B7:25): when the
      * activated successor's predecessor holds an S19 retention. Defaults to
