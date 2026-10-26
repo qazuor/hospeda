@@ -55,13 +55,13 @@ vi.mock('../../../src/utils/listing-access/ports', async (importOriginal) => {
 const app = initApp();
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 type Vertical = (typeof verticals)[number];
 const segments: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const createdOwners: string[] = [];
@@ -77,7 +77,7 @@ async function listing(vertical: Vertical, ownerId: string, status: PublicationS
     switch (vertical) {
         case VerticalEnum.ACCOMMODATION:
             return createListing({ ownerId, destinationId, status, complete: false });
-        case VerticalEnum.GASTRONOMY:
+        case VerticalEnum.VENUE:
         case VerticalEnum.EXPERIENCE:
             return createVerticalListing({ vertical, ownerId, destinationId, status });
         default: {

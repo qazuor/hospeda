@@ -12,7 +12,7 @@
  * @module test/services/listing-brochure
  */
 
-import { ExperiencePublicSchema, GastronomyPublicSchema } from '@repo/schemas';
+import { ExperiencePublicSchema, VenuePublicSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     buildExperienceBrochureContent,
@@ -85,7 +85,7 @@ describe('the brochure cannot outrun the public ficha (HOS-1058)', () => {
         {
             label: 'gastronomy',
             source: GastronomyBrochureSourceSchema,
-            publicSchema: GastronomyPublicSchema
+            publicSchema: VenuePublicSchema
         },
         {
             label: 'experience',
@@ -109,7 +109,7 @@ describe('the brochure cannot outrun the public ficha (HOS-1058)', () => {
         // The single most tempting field to add to a printed restaurant sheet,
         // and the one `GastronomyPublicSchema` deliberately does not pick.
         expect(Object.keys(GastronomyBrochureSourceSchema.shape)).not.toContain('contactInfo');
-        expect(Object.keys(GastronomyPublicSchema.shape)).not.toContain('contactInfo');
+        expect(Object.keys(VenuePublicSchema.shape)).not.toContain('contactInfo');
     });
 
     it('strips a phone number the owner-tier row carried into the gastronomy brochure', () => {

@@ -191,7 +191,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
                     vertical === 'accommodation'
                         ? EntityTypeEnum.ACCOMMODATION
                         : vertical === 'gastronomy'
-                          ? EntityTypeEnum.GASTRONOMY
+                          ? EntityTypeEnum.VENUE
                           : EntityTypeEnum.EXPERIENCE
             };
             const assigned = await service.assignTag(owner(ownerId), params, { tx });

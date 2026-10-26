@@ -26,9 +26,9 @@ vi.mock('../../../src/utils/listing-publication/ports', async (importOriginal) =
 });
 
 const app = initApp({ clock: { now: () => MATRIX_NOW } });
-const verticals = [VerticalEnum.GASTRONOMY, VerticalEnum.EXPERIENCE] as const;
+const verticals = [VerticalEnum.VENUE, VerticalEnum.EXPERIENCE] as const;
 const url = (vertical: (typeof verticals)[number], id: string) =>
-    `/api/v1/protected/${vertical === VerticalEnum.GASTRONOMY ? 'gastronomies' : 'experiences'}/${id}/unpublish`;
+    `/api/v1/protected/${vertical === VerticalEnum.VENUE ? 'gastronomies' : 'experiences'}/${id}/unpublish`;
 
 function unpublish(
     vertical: (typeof verticals)[number],

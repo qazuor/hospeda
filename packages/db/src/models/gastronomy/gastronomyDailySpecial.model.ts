@@ -1,4 +1,4 @@
-import type { GastronomyDailySpecial } from '@repo/schemas';
+import type { VenueDailySpecial } from '@repo/schemas';
 import { and, asc, eq, gte, lte } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { gastronomyDailySpecials } from '../../schemas/gastronomy/gastronomy_daily_special.dbschema.ts';
@@ -33,7 +33,7 @@ interface FindValidOnInput {
  * removed is gone, and one that merely elapsed is still a row — it just stops
  * matching the read.
  */
-export class GastronomyDailySpecialModel extends BaseModelImpl<GastronomyDailySpecial> {
+export class GastronomyDailySpecialModel extends BaseModelImpl<VenueDailySpecial> {
     protected table = gastronomyDailySpecials;
     public entityName = 'gastronomyDailySpecials';
 
@@ -77,7 +77,7 @@ export class GastronomyDailySpecialModel extends BaseModelImpl<GastronomyDailySp
      * @param input.tx - Optional transaction client.
      * @returns The currently-valid specials, ordered for display.
      */
-    async findValidOn(input: FindValidOnInput): Promise<GastronomyDailySpecial[]> {
+    async findValidOn(input: FindValidOnInput): Promise<VenueDailySpecial[]> {
         const { gastronomyId, today, tx } = input;
         const db = this.getClient(tx);
         const logContext = { gastronomyId, today };
@@ -95,7 +95,7 @@ export class GastronomyDailySpecialModel extends BaseModelImpl<GastronomyDailySp
                 )
                 .orderBy(asc(gastronomyDailySpecials.displayOrder));
 
-            const result = items as GastronomyDailySpecial[];
+            const result = items as VenueDailySpecial[];
             try {
                 logQuery(this.entityName, 'findValidOn', logContext, result);
             } catch {}

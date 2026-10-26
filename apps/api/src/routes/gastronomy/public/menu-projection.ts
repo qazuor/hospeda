@@ -7,19 +7,19 @@
  *
  * @module routes/gastronomy/public/menu-projection
  */
-import type { GastronomyMenuFileKind, GastronomyMenuSectionPublic } from '@repo/schemas';
+import type { VenueMenuFileKind, VenueMenuSectionPublic } from '@repo/schemas';
 
 /** What the public route needs from the stored listing to project its menu. */
 export interface GastronomyMenuGateSource {
     readonly menuFileUrl?: string | null | undefined;
-    readonly menuFileKind?: GastronomyMenuFileKind | null | undefined;
+    readonly menuFileKind?: VenueMenuFileKind | null | undefined;
 }
 
 /** The projected fields, ready to spread into the public response. */
 export interface GastronomyMenuGateResult {
     readonly menuFileUrl: string | null;
-    readonly menuFileKind: GastronomyMenuFileKind | null;
-    readonly menuSections: readonly GastronomyMenuSectionPublic[] | undefined;
+    readonly menuFileKind: VenueMenuFileKind | null;
+    readonly menuSections: readonly VenueMenuSectionPublic[] | undefined;
 }
 
 /**
@@ -64,10 +64,10 @@ function projectTranslations<T extends { nameI18n?: unknown; descriptionI18n?: u
  * @returns The sections with each dish projected.
  */
 function projectSections(
-    sections: readonly GastronomyMenuSectionPublic[],
+    sections: readonly VenueMenuSectionPublic[],
     keepPhoto: boolean,
     keepTranslations: boolean
-): readonly GastronomyMenuSectionPublic[] {
+): readonly VenueMenuSectionPublic[] {
     return sections.map((section) => ({
         ...projectTranslations(section, keepTranslations),
         items: section.items.map((item) => {
@@ -118,7 +118,7 @@ function projectSections(
  */
 export function applyGastronomyMenuManagementGate(input: {
     readonly gastronomy: GastronomyMenuGateSource;
-    readonly menuSections: readonly GastronomyMenuSectionPublic[];
+    readonly menuSections: readonly VenueMenuSectionPublic[];
     readonly ownerGrantsMenuManagement: boolean;
     readonly ownerGrantsMenuItemPhotos: boolean;
     readonly ownerGrantsMenuTranslations: boolean;

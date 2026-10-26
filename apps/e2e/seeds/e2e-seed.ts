@@ -89,7 +89,7 @@ async function seedListingOwnerTrials(pool: Pool): Promise<void> {
     const db = getDb();
     const listings = [
         { vertical: VerticalEnum.ACCOMMODATION, table: accommodations },
-        { vertical: VerticalEnum.GASTRONOMY, table: gastronomies },
+        { vertical: VerticalEnum.VENUE, table: gastronomies },
         { vertical: VerticalEnum.EXPERIENCE, table: experiences }
     ] as const;
 

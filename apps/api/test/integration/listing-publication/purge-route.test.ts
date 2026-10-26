@@ -25,12 +25,12 @@ vi.mock('../../../src/services/media', () => ({
 const app = initApp();
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 const tables: Readonly<Record<(typeof verticals)[number], string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const createFixture: Readonly<
@@ -41,9 +41,9 @@ const createFixture: Readonly<
 > = {
     [VerticalEnum.ACCOMMODATION]: (ownerId, destinationId, status) =>
         createListing({ ownerId, destinationId, status, complete: false }),
-    [VerticalEnum.GASTRONOMY]: (ownerId, destinationId, status) =>
+    [VerticalEnum.VENUE]: (ownerId, destinationId, status) =>
         createVerticalListing({
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             ownerId,
             destinationId,
             status

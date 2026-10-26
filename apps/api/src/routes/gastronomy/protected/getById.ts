@@ -5,7 +5,7 @@
  * NOT_FOUND so that owner-private fields (contactInfo, ownerId,
  * lifecycleState, richDescription, audit dates) are never leaked.
  */
-import { GastronomyProtectedSchema, PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, VenueProtectedSchema } from '@repo/schemas';
 import { entityNotFoundError, GastronomyService, ServiceError } from '@repo/service-core';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import type { Context } from 'hono';
@@ -37,7 +37,7 @@ export const protectedGetGastronomyByIdRoute = createProtectedRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: GastronomyProtectedSchema.nullable(),
+    responseSchema: VenueProtectedSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await gastronomyService.getById(actor, params.id as string);

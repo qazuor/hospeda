@@ -96,11 +96,11 @@ describe('CreateBillingPlanSchema', () => {
                 ...validCreate,
                 slug: 'gastronomy-basico',
                 category: 'owner',
-                productDomain: ProductDomainEnum.GASTRONOMY
+                productDomain: ProductDomainEnum.VENUE
             });
 
             expect(result.success).toBe(true);
-            expect(result.data?.productDomain).toBe(ProductDomainEnum.GASTRONOMY);
+            expect(result.data?.productDomain).toBe(ProductDomainEnum.VENUE);
         });
 
         it('rejects a domain outside the enum', () => {
@@ -289,7 +289,7 @@ describe('AdminBillingPlanResponseSchema (HOS-1314)', () => {
         updatedAt: '2026-05-30T00:00:00.000Z',
         isDeleted: false,
         activeSubscriptionCount: 2,
-        productDomain: ProductDomainEnum.GASTRONOMY
+        productDomain: ProductDomainEnum.VENUE
     };
 
     it('accepts a valid admin response DTO carrying productDomain', () => {

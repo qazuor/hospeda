@@ -1,4 +1,4 @@
-import type { GastronomyAmenityRelation } from '@repo/schemas';
+import type { VenueAmenityRelation } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { rGastronomyAmenity } from '../../schemas/gastronomy/r_gastronomy_amenity.dbschema.ts';
 
@@ -6,7 +6,7 @@ import { rGastronomyAmenity } from '../../schemas/gastronomy/r_gastronomy_amenit
  * RGastronomyAmenityModel — DB access for gastronomy-amenity junction (SPEC-239).
  * Mirrors RAccommodationAmenityModel: thin BaseModelImpl wrapper.
  */
-export class RGastronomyAmenityModel extends BaseModelImpl<GastronomyAmenityRelation> {
+export class RGastronomyAmenityModel extends BaseModelImpl<VenueAmenityRelation> {
     protected table = rGastronomyAmenity;
     public entityName = 'rGastronomyAmenity';
 

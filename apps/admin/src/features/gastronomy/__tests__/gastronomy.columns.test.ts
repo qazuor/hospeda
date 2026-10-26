@@ -15,7 +15,7 @@
  *  - Badge options for priceRange include all PriceRangeEnum values
  */
 
-import { GastronomyTypeEnum, PublicationStatusEnum } from '@repo/schemas';
+import { PublicationStatusEnum, VenueTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { ColumnType } from '@/components/table/DataTable';
 import { createGastronomyColumns } from '../config/gastronomy.columns';
@@ -97,7 +97,7 @@ describe('createGastronomyColumns — column details', () => {
         const link = name?.linkHandler?.({
             id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
             name: 'Test',
-            type: GastronomyTypeEnum.RESTAURANT,
+            type: VenueTypeEnum.RESTAURANT,
             destinationId: 'dest-1',
             ownerId: 'owner-1',
             featuredByEntitlement: false,

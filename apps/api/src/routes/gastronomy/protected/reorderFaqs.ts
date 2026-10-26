@@ -7,11 +7,7 @@
  * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).
  */
 
-import {
-    FaqReorderPayloadSchema,
-    GastronomyFaqRemoveOutputSchema,
-    VerticalEnum
-} from '@repo/schemas';
+import { FaqReorderPayloadSchema, VenueFaqRemoveOutputSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService, reorderGastronomyFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -37,14 +33,14 @@ export const protectedReorderGastronomyFaqsRoute = createProtectedRoute({
     path: '/{id}/faqs/reorder',
     summary: 'Reorder FAQs on gastronomy listing',
     description: 'Sets a new display order for FAQs belonging to the given gastronomy listing',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy FAQs'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     requestBody: FaqReorderPayloadSchema,
-    responseSchema: GastronomyFaqRemoveOutputSchema,
+    responseSchema: VenueFaqRemoveOutputSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

@@ -9,10 +9,10 @@
  */
 
 import {
-    GastronomyAdminListItemSchema,
-    GastronomyTypeEnum,
     PermissionEnum,
-    PriceRangeEnum
+    PriceRangeEnum,
+    VenueAdminListItemSchema,
+    VenueTypeEnum
 } from '@repo/schemas';
 import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
@@ -29,7 +29,7 @@ import { createGastronomyColumns } from './gastronomy.columns';
  * Picks the subset of fields actually rendered in columns.
  */
 export type GastronomyListItem = Pick<
-    z.infer<typeof GastronomyAdminListItemSchema>,
+    z.infer<typeof VenueAdminListItemSchema>,
     | 'id'
     | 'name'
     | 'type'
@@ -48,28 +48,28 @@ export type GastronomyListItem = Pick<
 // ---------------------------------------------------------------------------
 
 const GASTRONOMY_TYPE_OPTIONS = [
-    { value: GastronomyTypeEnum.RESTAURANT, labelKey: 'admin-filters.gastronomyType.restaurant' },
-    { value: GastronomyTypeEnum.BAR, labelKey: 'admin-filters.gastronomyType.bar' },
-    { value: GastronomyTypeEnum.CAFE, labelKey: 'admin-filters.gastronomyType.cafe' },
-    { value: GastronomyTypeEnum.PARRILLA, labelKey: 'admin-filters.gastronomyType.parrilla' },
+    { value: VenueTypeEnum.RESTAURANT, labelKey: 'admin-filters.gastronomyType.restaurant' },
+    { value: VenueTypeEnum.BAR, labelKey: 'admin-filters.gastronomyType.bar' },
+    { value: VenueTypeEnum.CAFE, labelKey: 'admin-filters.gastronomyType.cafe' },
+    { value: VenueTypeEnum.PARRILLA, labelKey: 'admin-filters.gastronomyType.parrilla' },
     {
-        value: GastronomyTypeEnum.CERVECERIA,
+        value: VenueTypeEnum.CERVECERIA,
         labelKey: 'admin-filters.gastronomyType.cerveceria'
     },
     {
-        value: GastronomyTypeEnum.HELADERIA,
+        value: VenueTypeEnum.HELADERIA,
         labelKey: 'admin-filters.gastronomyType.heladeria'
     },
     {
-        value: GastronomyTypeEnum.PANADERIA,
+        value: VenueTypeEnum.PANADERIA,
         labelKey: 'admin-filters.gastronomyType.panaderia'
     },
     {
-        value: GastronomyTypeEnum.ROTISERIA,
+        value: VenueTypeEnum.ROTISERIA,
         labelKey: 'admin-filters.gastronomyType.rotiseria'
     },
     {
-        value: GastronomyTypeEnum.FOOD_TRUCK,
+        value: VenueTypeEnum.FOOD_TRUCK,
         labelKey: 'admin-filters.gastronomyType.foodTruck'
     }
 ] as const;
@@ -105,7 +105,7 @@ export const gastronomyListConfig = createListingListConfig<GastronomyListItem>(
     // TYPE-WORKAROUND: schema carries branded effects from @repo/schemas;
     // structurally compatible with the list-item shape, brand-only mismatch.
     listItemSchema:
-        GastronomyAdminListItemSchema as unknown as import('zod').ZodSchema<GastronomyListItem>,
+        VenueAdminListItemSchema as unknown as import('zod').ZodSchema<GastronomyListItem>,
     createColumns: createGastronomyColumns,
     extraFilters: [
         {

@@ -37,12 +37,12 @@ vi.mock('../../../src/services/media', () => ({
 
 type ListingVertical =
     | typeof VerticalEnum.ACCOMMODATION
-    | typeof VerticalEnum.GASTRONOMY
+    | typeof VerticalEnum.VENUE
     | typeof VerticalEnum.EXPERIENCE;
 
 const TABLES: Readonly<Record<ListingVertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 
@@ -57,8 +57,8 @@ const CREATE_LISTING: Readonly<
     >
 > = {
     [VerticalEnum.ACCOMMODATION]: (args) => createListing({ ...args, complete: false }),
-    [VerticalEnum.GASTRONOMY]: (args) =>
-        createVerticalListing({ ...args, vertical: VerticalEnum.GASTRONOMY }),
+    [VerticalEnum.VENUE]: (args) =>
+        createVerticalListing({ ...args, vertical: VerticalEnum.VENUE }),
     [VerticalEnum.EXPERIENCE]: (args) =>
         createVerticalListing({ ...args, vertical: VerticalEnum.EXPERIENCE })
 };
@@ -184,7 +184,7 @@ listingCaseSet({ describe, it, expect, makeHarness: async () => harness });
 describe('TEST:V6:34 AC:V6:26 ficha and fichaPurgada over the three states (gastronomy)', () => {
     it('TEST:V6:34 AC:V6:26 PUBLISHED, MODERATED and PURGED by PB12', async () => {
         const ownerId = randomUUID();
-        const vertical = VerticalEnum.GASTRONOMY;
+        const vertical = VerticalEnum.VENUE;
         const published = await arrangeListing({ vertical, ownerId, state: 'PUBLISHED' });
         const moderated = await arrangeListing({ vertical, ownerId, state: 'MODERATED' });
         const purged = await arrangeListing({ vertical, ownerId, state: 'PUBLISHED' });

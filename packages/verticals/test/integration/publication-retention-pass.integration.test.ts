@@ -20,7 +20,7 @@ import { createPublicationTestAdapter } from './support/publication-unit-of-work
 
 type TestVertical =
     | typeof VerticalEnum.ACCOMMODATION
-    | typeof VerticalEnum.GASTRONOMY
+    | typeof VerticalEnum.VENUE
     | typeof VerticalEnum.EXPERIENCE;
 const vertical = VerticalEnum.ACCOMMODATION;
 const pool = new Pool({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL, max: 4 });

@@ -37,7 +37,7 @@ import {
 afterAll(closeServiceTestPool);
 
 const V = VerticalEnum.ACCOMMODATION;
-const W = VerticalEnum.GASTRONOMY;
+const W = VerticalEnum.VENUE;
 
 describe.skipIf(!isServiceTestDbAvailable())(
     'HOS-1545 TEST:B5:13 AC:B5:25 A5 is local, from its two live states, and notifies after the commit',

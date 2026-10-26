@@ -21,7 +21,7 @@ const now = new Date('2026-10-22T12:00:00.000Z');
 const clock = { now: () => now };
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 
@@ -90,7 +90,7 @@ async function readStatus(vertical: (typeof verticals)[number], id: string) {
             .where(eq(accommodations.id, id));
         return row?.status;
     }
-    if (vertical === VerticalEnum.GASTRONOMY) {
+    if (vertical === VerticalEnum.VENUE) {
         const [row] = await getDb()
             .select({ status: gastronomies.publicationStatus })
             .from(gastronomies)

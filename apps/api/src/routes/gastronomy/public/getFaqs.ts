@@ -12,7 +12,7 @@
  * before the row ever leaves this route — filtering only on the client would
  * still ship the private FAQ in the page's payload.
  */
-import { GastronomyFaqPublicListOutputSchema } from '@repo/schemas';
+import { VenueFaqPublicListOutputSchema } from '@repo/schemas';
 import { GastronomyService, listGastronomyFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -41,7 +41,7 @@ export const publicGetGastronomyFaqsRoute = createPublicRoute({
     requestParams: {
         gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: GastronomyFaqPublicListOutputSchema,
+    responseSchema: VenueFaqPublicListOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 

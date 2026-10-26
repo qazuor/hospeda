@@ -10,7 +10,7 @@
  * children, so an extra wrapper would change the rendered spacing.
  */
 
-import { ExperienceTypeEnum, GastronomyTypeEnum } from '@repo/schemas';
+import { ExperienceTypeEnum, VenueTypeEnum } from '@repo/schemas';
 import type { JSX } from 'react';
 import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
 import type { DestinationOption } from '@/components/listing/destination-option';
@@ -21,7 +21,7 @@ import { buildFieldId } from '@/lib/forms/build-field-id';
 import { resolveGastronomyTypeLabel } from '@/lib/gastronomy/type-labels';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { GastronomyOrExperience } from '@/lib/listing/owner-listings';
+import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 import styles from './editor-fields.module.css';
 import { LISTING_FIELD_PREFIX } from './field-ids';
 import type { ListingEditData, ListingFieldChange } from './listing-edit-data';
@@ -51,14 +51,14 @@ const RICH_DESCRIPTION_ID = buildFieldId({
 });
 
 /** Gastronomy type options in display order. */
-const GASTRONOMY_TYPE_OPTIONS = Object.values(GastronomyTypeEnum);
+const GASTRONOMY_TYPE_OPTIONS = Object.values(VenueTypeEnum);
 
 /** Experience type options in display order. */
 const EXPERIENCE_TYPE_OPTIONS = Object.values(ExperienceTypeEnum);
 
 export interface BasicInfoSectionProps {
     readonly locale: SupportedLocale;
-    readonly vertical: GastronomyOrExperience;
+    readonly vertical: VenueOrExperience;
     readonly data: ListingEditData;
     readonly destinations: readonly DestinationOption[];
     readonly destinationsLoadFailed: boolean;

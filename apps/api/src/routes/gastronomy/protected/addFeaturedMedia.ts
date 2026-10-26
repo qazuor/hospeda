@@ -34,10 +34,10 @@
  */
 
 import {
-    type GastronomyFeaturedMediaAddInput,
-    GastronomyFeaturedMediaAddOutputSchema,
-    type GastronomyMediaAddPayload,
-    GastronomyMediaAddPayloadSchema,
+    type VenueFeaturedMediaAddInput,
+    VenueFeaturedMediaAddOutputSchema,
+    type VenueMediaAddPayload,
+    VenueMediaAddPayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { addGastronomyFeaturedMedia, GastronomyService, ServiceError } from '@repo/service-core';
@@ -68,7 +68,7 @@ export const protectedAddGastronomyFeaturedMediaRoute = createProtectedRoute({
         'is kept. Unlike POST /:id/media this does not ' +
         'consume a gallery slot, because the cover is not a gallery item ' +
         '(HOS-791). Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
     protectedTag: false,
     requestParams: {
@@ -77,8 +77,8 @@ export const protectedAddGastronomyFeaturedMediaRoute = createProtectedRoute({
     // The SAME payload the gallery endpoint accepts. A cover differs in what the
     // server does with it, not in what the caller sends — which is why neither
     // `isFeatured` nor the cap is reachable from this body.
-    requestBody: GastronomyMediaAddPayloadSchema,
-    responseSchema: GastronomyFeaturedMediaAddOutputSchema,
+    requestBody: VenueMediaAddPayloadSchema,
+    responseSchema: VenueFeaturedMediaAddOutputSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -86,9 +86,9 @@ export const protectedAddGastronomyFeaturedMediaRoute = createProtectedRoute({
     ) => {
         const actor = getActorFromContext(ctx);
 
-        const input: GastronomyFeaturedMediaAddInput = {
+        const input: VenueFeaturedMediaAddInput = {
             gastronomyId: params.id as string,
-            media: body as GastronomyMediaAddPayload
+            media: body as VenueMediaAddPayload
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`

@@ -7,11 +7,11 @@
  *
  * @module routes/gastronomy/public/daily-specials-projection
  */
-import type { GastronomyDailySpecialPublic } from '@repo/schemas';
+import type { VenueDailySpecialPublic } from '@repo/schemas';
 
 /** The projected field, ready to spread into the public response. */
 export interface GastronomyDailySpecialsGateResult {
-    readonly dailySpecials: readonly GastronomyDailySpecialPublic[] | undefined;
+    readonly dailySpecials: readonly VenueDailySpecialPublic[] | undefined;
 }
 
 /**
@@ -41,7 +41,7 @@ export interface GastronomyDailySpecialsGateResult {
  *   `amenities`/`features`/`menuSections` already use on this schema.
  */
 export function applyGastronomyDailySpecialsGate(input: {
-    readonly dailySpecials: readonly GastronomyDailySpecialPublic[];
+    readonly dailySpecials: readonly VenueDailySpecialPublic[];
     readonly ownerGrantsDailySpecial: boolean;
 }): GastronomyDailySpecialsGateResult {
     const { dailySpecials, ownerGrantsDailySpecial } = input;

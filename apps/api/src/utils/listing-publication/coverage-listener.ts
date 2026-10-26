@@ -21,7 +21,7 @@ export function subscribeListingCoverageRecalculation(): () => void {
     unsubscribe = getListingAccessPorts().billing.onCoverageChanged((event) => {
         if (
             event.vertical !== VerticalEnum.ACCOMMODATION &&
-            event.vertical !== VerticalEnum.GASTRONOMY &&
+            event.vertical !== VerticalEnum.VENUE &&
             event.vertical !== VerticalEnum.EXPERIENCE
         )
             return;

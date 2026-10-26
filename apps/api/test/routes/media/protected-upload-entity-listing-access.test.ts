@@ -91,7 +91,7 @@ const VERTICALS: readonly {
         vertical: VerticalEnum.ACCOMMODATION,
         service: AccommodationService
     },
-    { entityType: 'gastronomy', vertical: VerticalEnum.GASTRONOMY, service: GastronomyService },
+    { entityType: 'gastronomy', vertical: VerticalEnum.VENUE, service: GastronomyService },
     { entityType: 'experience', vertical: VerticalEnum.EXPERIENCE, service: ExperienceService }
 ];
 

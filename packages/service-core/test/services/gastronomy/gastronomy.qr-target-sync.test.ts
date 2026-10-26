@@ -85,7 +85,7 @@ function makeQrDouble(initial: { slug: string; targetUrl: string } | null) {
               label: 'Gastronomy menu QR — La Parrilla del Sur (la-parrilla-del-sur)',
               description: null,
               source: QrCodeSourceEnum.GENERATED,
-              entityType: EntityTypeEnum.GASTRONOMY,
+              entityType: EntityTypeEnum.VENUE,
               entityId: G_ID,
               purpose: QrCodePurposeEnum.MENU,
               isActive: true,

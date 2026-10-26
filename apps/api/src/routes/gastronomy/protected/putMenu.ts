@@ -22,9 +22,9 @@
  */
 
 import {
-    GastronomyMenuOutputSchema,
-    type GastronomyMenuReplacePayload,
-    GastronomyMenuReplacePayloadSchema,
+    VenueMenuOutputSchema,
+    type VenueMenuReplacePayload,
+    VenueMenuReplacePayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, replaceGastronomyMenu } from '@repo/service-core';
@@ -62,7 +62,7 @@ export async function handlePutGastronomyMenu(
         // against `GastronomyMenuReplacePayloadSchema` by the route; the service
         // re-parses it anyway, so the cast asserts nothing the next line does not
         // verify.
-        menu: body as unknown as GastronomyMenuReplacePayload
+        menu: body as unknown as VenueMenuReplacePayload
     });
 
     if (result.error) {
@@ -79,7 +79,7 @@ export const protectedPutGastronomyMenuRoute = createProtectedRoute({
     description:
         'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above; a document carrying a per-dish photo additionally requires menu_item_photos (premium), and a document carrying a nameI18n/descriptionI18n translation additionally requires multilingual_gastronomy_menu (premium).',
     listingAccess: {
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
         capabilities: ({ body }) => [
@@ -93,8 +93,8 @@ export const protectedPutGastronomyMenuRoute = createProtectedRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyMenuReplacePayloadSchema,
-    responseSchema: GastronomyMenuOutputSchema,
+    requestBody: VenueMenuReplacePayloadSchema,
+    responseSchema: VenueMenuOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
         handlePutGastronomyMenu(ctx, params, body)
 });

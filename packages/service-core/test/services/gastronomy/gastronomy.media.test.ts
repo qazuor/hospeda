@@ -53,12 +53,12 @@ vi.mock('@repo/db', async (importOriginal) => {
 // ---------------------------------------------------------------------------
 
 import type {
-    GastronomyMedia,
-    GastronomyMediaAddInput,
-    GastronomyMediaListInput,
-    GastronomyMediaRemoveInput,
-    GastronomyMediaReorderInput,
-    GastronomyMediaSetFeaturedInput
+    VenueMedia,
+    VenueMediaAddInput,
+    VenueMediaListInput,
+    VenueMediaRemoveInput,
+    VenueMediaReorderInput,
+    VenueMediaSetFeaturedInput
 } from '@repo/schemas';
 import {
     getGalleryCap,
@@ -87,7 +87,7 @@ const GASTRONOMY_ID = '00000000-0000-4000-a000-000000000001';
 const MEDIA_ID = '00000000-0000-4000-a000-000000000002';
 const OWNER_ID = '00000000-0000-4000-a000-000000000003';
 
-function makeMediaRow(overrides: Partial<GastronomyMedia> = {}): GastronomyMedia {
+function makeMediaRow(overrides: Partial<VenueMedia> = {}): VenueMedia {
     return {
         id: MEDIA_ID,
         gastronomyId: GASTRONOMY_ID,
@@ -99,7 +99,7 @@ function makeMediaRow(overrides: Partial<GastronomyMedia> = {}): GastronomyMedia
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date('2024-01-01'),
         ...overrides
-    } as GastronomyMedia;
+    } as VenueMedia;
 }
 
 const ownerActor: Actor = {
@@ -152,7 +152,7 @@ beforeEach(() => {
 describe('addGastronomyMedia', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
         const model = makeGastronomyModel(null);
-        const input: GastronomyMediaAddInput = {
+        const input: VenueMediaAddInput = {
             gastronomyId: GASTRONOMY_ID,
             media: { url: 'https://cdn.example.com/new.jpg' }
         };
@@ -168,7 +168,7 @@ describe('addGastronomyMedia', () => {
 
     it('should return FORBIDDEN when actor lacks GASTRONOMY_EDIT_OWN', async () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
-        const input: GastronomyMediaAddInput = {
+        const input: VenueMediaAddInput = {
             gastronomyId: GASTRONOMY_ID,
             media: { url: 'https://cdn.example.com/new.jpg' }
         };
@@ -186,7 +186,7 @@ describe('addGastronomyMedia', () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
 
-        const input: GastronomyMediaAddInput = {
+        const input: VenueMediaAddInput = {
             gastronomyId: GASTRONOMY_ID,
             media: { url: 'https://cdn.example.com/new.jpg' }
         };
@@ -211,7 +211,7 @@ describe('addGastronomyMedia', () => {
             total: 1
         });
 
-        const input: GastronomyMediaAddInput = {
+        const input: VenueMediaAddInput = {
             gastronomyId: GASTRONOMY_ID,
             media: { url: 'https://cdn.example.com/new.jpg' }
         };
@@ -231,7 +231,7 @@ describe('addGastronomyMedia', () => {
     it('defaults moderationState to PENDING when not supplied', async () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
 
-        const input: GastronomyMediaAddInput = {
+        const input: VenueMediaAddInput = {
             gastronomyId: GASTRONOMY_ID,
             media: { url: 'https://cdn.example.com/new.jpg' }
         };
@@ -258,7 +258,7 @@ describe('removeGastronomyMedia', () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(null);
 
-        const input: GastronomyMediaRemoveInput = {
+        const input: VenueMediaRemoveInput = {
             gastronomyId: GASTRONOMY_ID,
             mediaId: MEDIA_ID
         };
@@ -278,7 +278,7 @@ describe('removeGastronomyMedia', () => {
             makeMediaRow({ gastronomyId: '00000000-0000-4000-a000-000000000099' })
         );
 
-        const input: GastronomyMediaRemoveInput = {
+        const input: VenueMediaRemoveInput = {
             gastronomyId: GASTRONOMY_ID,
             mediaId: MEDIA_ID
         };
@@ -298,7 +298,7 @@ describe('removeGastronomyMedia', () => {
             makeMediaRow({ deletedAt: new Date('2024-02-01') })
         );
 
-        const input: GastronomyMediaRemoveInput = {
+        const input: VenueMediaRemoveInput = {
             gastronomyId: GASTRONOMY_ID,
             mediaId: MEDIA_ID
         };
@@ -330,7 +330,7 @@ describe('removeGastronomyMedia', () => {
             total: 3
         });
 
-        const input: GastronomyMediaRemoveInput = {
+        const input: VenueMediaRemoveInput = {
             gastronomyId: GASTRONOMY_ID,
             mediaId: MEDIA_ID
         };
@@ -394,7 +394,7 @@ describe('reorderGastronomyMedia', () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         setVisibleRows();
 
-        const input: GastronomyMediaReorderInput = {
+        const input: VenueMediaReorderInput = {
             gastronomyId: GASTRONOMY_ID,
             orderedIds: [ID_A, ID_B] // missing ID_C
         };
@@ -413,7 +413,7 @@ describe('reorderGastronomyMedia', () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         setVisibleRows();
 
-        const input: GastronomyMediaReorderInput = {
+        const input: VenueMediaReorderInput = {
             gastronomyId: GASTRONOMY_ID,
             orderedIds: [ID_A, ID_B, ID_C, '00000000-0000-4000-a000-000000000099']
         };
@@ -432,7 +432,7 @@ describe('reorderGastronomyMedia', () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         setVisibleRows();
 
-        const input: GastronomyMediaReorderInput = {
+        const input: VenueMediaReorderInput = {
             gastronomyId: GASTRONOMY_ID,
             orderedIds: [ID_A, ID_A, ID_B] // duplicate A, missing C
         };
@@ -470,7 +470,7 @@ describe('reorderGastronomyMedia', () => {
             total: 2
         });
 
-        const input: GastronomyMediaReorderInput = {
+        const input: VenueMediaReorderInput = {
             gastronomyId: GASTRONOMY_ID,
             // Deduplicated set is exactly {A, B} == existingIds, but the raw
             // array has a duplicate A and one too many entries — this is the
@@ -492,7 +492,7 @@ describe('reorderGastronomyMedia', () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         setVisibleRows();
 
-        const input: GastronomyMediaReorderInput = {
+        const input: VenueMediaReorderInput = {
             gastronomyId: GASTRONOMY_ID,
             orderedIds: [ID_C, ID_A, ID_B]
         };
@@ -520,7 +520,7 @@ describe('setFeaturedGastronomyMedia', () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(null);
 
-        const input: GastronomyMediaSetFeaturedInput = {
+        const input: VenueMediaSetFeaturedInput = {
             gastronomyId: GASTRONOMY_ID,
             mediaId: MEDIA_ID
         };
@@ -538,7 +538,7 @@ describe('setFeaturedGastronomyMedia', () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(makeMediaRow({ state: 'archived' }));
 
-        const input: GastronomyMediaSetFeaturedInput = {
+        const input: VenueMediaSetFeaturedInput = {
             gastronomyId: GASTRONOMY_ID,
             mediaId: MEDIA_ID
         };
@@ -567,7 +567,7 @@ describe('setFeaturedGastronomyMedia', () => {
             makeMediaRow({ id: previousFeaturedId, isFeatured: true })
         );
 
-        const input: GastronomyMediaSetFeaturedInput = {
+        const input: VenueMediaSetFeaturedInput = {
             gastronomyId: GASTRONOMY_ID,
             mediaId: MEDIA_ID
         };
@@ -601,7 +601,7 @@ describe('setFeaturedGastronomyMedia', () => {
         mockMediaModel.findById.mockResolvedValue(makeMediaRow({ state: 'visible' }));
         mockMediaModel.findFeatured.mockResolvedValue(null);
 
-        const input: GastronomyMediaSetFeaturedInput = {
+        const input: VenueMediaSetFeaturedInput = {
             gastronomyId: GASTRONOMY_ID,
             mediaId: MEDIA_ID
         };
@@ -628,7 +628,7 @@ describe('setFeaturedGastronomyMedia', () => {
 describe('getGastronomyMedia', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
         const model = makeGastronomyModel(null);
-        const input: GastronomyMediaListInput = { gastronomyId: GASTRONOMY_ID };
+        const input: VenueMediaListInput = { gastronomyId: GASTRONOMY_ID };
 
         const result = await getGastronomyMedia(
             model as unknown as Parameters<typeof getGastronomyMedia>[0],
@@ -643,7 +643,7 @@ describe('getGastronomyMedia', () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         mockMediaModel.findByGastronomy.mockResolvedValue({ items: [makeMediaRow()], total: 1 });
 
-        const input: GastronomyMediaListInput = { gastronomyId: GASTRONOMY_ID };
+        const input: VenueMediaListInput = { gastronomyId: GASTRONOMY_ID };
 
         const result = await getGastronomyMedia(
             model as unknown as Parameters<typeof getGastronomyMedia>[0],
@@ -679,7 +679,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
         makeMediaRow({
             url: 'https://res.cloudinary.com/demo/image/upload/v1/hospeda/dev/gastronomies/g1/photo.jpg',
             publicId: 'hospeda/dev/gastronomies/g1/photo'
-        } as Partial<GastronomyMedia>);
+        } as Partial<VenueMedia>);
 
     it('should delete the Cloudinary binary BEFORE soft-deleting the row', async () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
@@ -802,7 +802,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
 describe('addGastronomyMedia — gallery cap (HOS-389 §2)', () => {
     const CAP = getGalleryCap('gastronomy');
 
-    const input: GastronomyMediaAddInput = {
+    const input: VenueMediaAddInput = {
         gastronomyId: GASTRONOMY_ID,
         media: { url: 'https://cdn.example.com/new.jpg' }
     };
@@ -880,7 +880,7 @@ describe('addGastronomyMedia — gallery cap (HOS-389 §2)', () => {
 });
 
 describe('gastronomy media — public-page revalidation (HOS-389 §4)', () => {
-    const input: GastronomyMediaAddInput = {
+    const input: VenueMediaAddInput = {
         gastronomyId: GASTRONOMY_ID,
         media: { url: 'https://cdn.example.com/new.jpg' }
     };

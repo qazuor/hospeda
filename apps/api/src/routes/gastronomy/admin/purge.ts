@@ -22,7 +22,7 @@ export const adminPurgeOnRequestGastronomyRoute = createAdminRoute({
     successStatusCode: 200,
     path: '/{id}/purge',
     listingAccess: {
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         operation: 'DELETE',
         idParam: 'id',
         administrativeAction: 'ACC_23'
@@ -37,7 +37,7 @@ export const adminPurgeOnRequestGastronomyRoute = createAdminRoute({
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
         service.purgeOnRequest({
             actor: getActorFromContext(ctx),
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             id: params.id as string,
             reason: ListingPurgeOnRequestSchema.parse(body).reason,
             expectedOwnerId: ctx.get('listingAccess')?.subjectId ?? null

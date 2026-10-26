@@ -10,7 +10,7 @@
  * @module utils/listing-media-builder
  */
 
-import type { ExperienceMedia, GastronomyMedia } from '@repo/schemas';
+import type { ExperienceMedia, VenueMedia } from '@repo/schemas';
 import type { FixtureMediaBlock } from './media-rows-builder.js';
 import { buildMediaRows } from './media-rows-builder.js';
 
@@ -27,7 +27,7 @@ export function buildGastronomyMediaRows({
 }: {
     readonly gastronomyId: string;
     readonly media: FixtureMediaBlock;
-}): Partial<GastronomyMedia>[] {
+}): Partial<VenueMedia>[] {
     return buildMediaRows({ media }).map((row) => ({ ...row, gastronomyId }));
 }
 

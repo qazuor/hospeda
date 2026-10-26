@@ -1,4 +1,4 @@
-import { GastronomyProtectedSchema, VerticalEnum } from '@repo/schemas';
+import { VenueProtectedSchema, VerticalEnum } from '@repo/schemas';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { ListingPublicationService } from '../../../services/listing-publication/listing-publication.service';
@@ -11,18 +11,18 @@ const listingPublicationService = new ListingPublicationService();
 export const protectedUnpublishGastronomyRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/unpublish',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     summary: 'Unpublish gastronomy listing',
     description: 'Moves a published gastronomy listing to DRAFT through PB6.',
     tags: ['Gastronomy'],
     requestParams: { id: z.string().uuid() },
-    responseSchema: GastronomyProtectedSchema,
+    responseSchema: VenueProtectedSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         return listingPublicationService.unpublish({
             actor,
             id: params.id as string,
-            vertical: VerticalEnum.GASTRONOMY
+            vertical: VerticalEnum.VENUE
         });
     }
 });

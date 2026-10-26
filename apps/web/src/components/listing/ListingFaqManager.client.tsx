@@ -41,7 +41,7 @@ import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.
 import { apiClient } from '@/lib/api/client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { GastronomyOrExperience } from '@/lib/listing/owner-listings';
+import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 import styles from './ListingFaqManager.module.css';
 
 // ---------------------------------------------------------------------------
@@ -87,7 +87,7 @@ interface ListingFaqEnvelope {
 /** Props for ListingFaqManager. */
 export interface ListingFaqManagerProps {
     /** Which vertical this listing belongs to (drives the endpoint path). */
-    readonly vertical: GastronomyOrExperience;
+    readonly vertical: VenueOrExperience;
     /** UUID of the listing. */
     readonly listingId: string;
     /** Active UI locale. */
@@ -175,7 +175,7 @@ function faqBasePath({
     vertical,
     listingId
 }: {
-    vertical: GastronomyOrExperience;
+    vertical: VenueOrExperience;
     listingId: string;
 }): string {
     const entity = vertical === 'gastronomy' ? 'gastronomies' : 'experiences';

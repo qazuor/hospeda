@@ -49,7 +49,7 @@ const retentionAfterCommit = {
 
 describe.each([
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const)('TEST:V9b:1 AC:V9b:1 %s', (vertical) => {
     it('purges only an expired archived row and preserves the owner and a second listing', async () => {
@@ -62,19 +62,19 @@ describe.each([
         });
         const otherVertical =
             vertical === VerticalEnum.ACCOMMODATION
-                ? VerticalEnum.GASTRONOMY
+                ? VerticalEnum.VENUE
                 : VerticalEnum.ACCOMMODATION;
         const amenityId = randomUUID();
         const amenityRelation =
             vertical === VerticalEnum.ACCOMMODATION
                 ? 'r_accommodation_amenity'
-                : vertical === VerticalEnum.GASTRONOMY
+                : vertical === VerticalEnum.VENUE
                   ? 'r_gastronomy_amenity'
                   : 'r_experience_amenity';
         const otherAmenityRelation =
             otherVertical === VerticalEnum.ACCOMMODATION
                 ? 'r_accommodation_amenity'
-                : otherVertical === VerticalEnum.GASTRONOMY
+                : otherVertical === VerticalEnum.VENUE
                   ? 'r_gastronomy_amenity'
                   : 'r_experience_amenity';
         await db.execute(
@@ -96,46 +96,46 @@ describe.each([
         const otherAmenityBefore = await db.execute(
             sql`SELECT * FROM ${sql.raw(otherAmenityRelation)} WHERE ${sql.raw(`${otherVertical}_id`)} = ${other.id}`
         );
-        const listingTable = vertical === VerticalEnum.GASTRONOMY ? 'gastronomies' : `${vertical}s`;
+        const listingTable = vertical === VerticalEnum.VENUE ? 'gastronomies' : `${vertical}s`;
         await db.execute(
-            vertical === VerticalEnum.GASTRONOMY
+            vertical === VerticalEnum.VENUE
                 ? sql`UPDATE ${sql.raw(listingTable)} SET inactive_since = ${new Date(t0.getTime() - 300 * day)}, deadlines_version = 1, deletion_announced_at = ${new Date(t0.getTime() - day)}, description = 'private purge text', summary = 'private summary', opening_hours = '{"monday":{"open":"09:00","close":"17:00"}}'::jsonb WHERE id = ${archived.id}`
                 : sql`UPDATE ${sql.raw(listingTable)} SET inactive_since = ${new Date(t0.getTime() - 300 * day)}, deadlines_version = 1, deletion_announced_at = ${new Date(t0.getTime() - day)}, description = 'private purge text', summary = 'private summary' WHERE id = ${archived.id}`
         );
         const faqTable =
             vertical === VerticalEnum.ACCOMMODATION
                 ? 'accommodation_faqs'
-                : vertical === VerticalEnum.GASTRONOMY
+                : vertical === VerticalEnum.VENUE
                   ? 'gastronomy_faqs'
                   : 'experience_faqs';
         const mediaTable =
             vertical === VerticalEnum.ACCOMMODATION
                 ? 'accommodation_media'
-                : vertical === VerticalEnum.GASTRONOMY
+                : vertical === VerticalEnum.VENUE
                   ? 'gastronomy_media'
                   : 'experience_media';
         const fk =
             vertical === VerticalEnum.ACCOMMODATION
                 ? 'accommodation_id'
-                : vertical === VerticalEnum.GASTRONOMY
+                : vertical === VerticalEnum.VENUE
                   ? 'gastronomy_id'
                   : 'experience_id';
         const otherFaqTable =
             otherVertical === VerticalEnum.ACCOMMODATION
                 ? 'accommodation_faqs'
-                : otherVertical === VerticalEnum.GASTRONOMY
+                : otherVertical === VerticalEnum.VENUE
                   ? 'gastronomy_faqs'
                   : 'experience_faqs';
         const otherMediaTable =
             otherVertical === VerticalEnum.ACCOMMODATION
                 ? 'accommodation_media'
-                : otherVertical === VerticalEnum.GASTRONOMY
+                : otherVertical === VerticalEnum.VENUE
                   ? 'gastronomy_media'
                   : 'experience_media';
         const otherFk =
             otherVertical === VerticalEnum.ACCOMMODATION
                 ? 'accommodation_id'
-                : otherVertical === VerticalEnum.GASTRONOMY
+                : otherVertical === VerticalEnum.VENUE
                   ? 'gastronomy_id'
                   : 'experience_id';
         await db.execute(
@@ -213,7 +213,7 @@ describe.each([
             .from(emailOutbox)
             .where(eq(emailOutbox.recipientUserId, userId));
         const otherListingTable =
-            otherVertical === VerticalEnum.GASTRONOMY ? 'gastronomies' : `${otherVertical}s`;
+            otherVertical === VerticalEnum.VENUE ? 'gastronomies' : `${otherVertical}s`;
         const otherBefore = await db.execute(
             sql`SELECT * FROM ${sql.raw(otherListingTable)} WHERE id = ${other.id}`
         );
@@ -241,7 +241,7 @@ describe.each([
         });
         expect(result).toMatchObject({ purged: true });
         const after = await db.execute(
-            sql`SELECT id, publication_status, deleted_at, name, description, summary${vertical === VerticalEnum.GASTRONOMY || vertical === VerticalEnum.EXPERIENCE ? sql`, opening_hours` : sql``} FROM ${sql.raw(listingTable)} WHERE id = ${archived.id}`
+            sql`SELECT id, publication_status, deleted_at, name, description, summary${vertical === VerticalEnum.VENUE || vertical === VerticalEnum.EXPERIENCE ? sql`, opening_hours` : sql``} FROM ${sql.raw(listingTable)} WHERE id = ${archived.id}`
         );
         expect(after.rows).toHaveLength(1);
         expect(after.rows[0]).toMatchObject({
@@ -251,7 +251,7 @@ describe.each([
             description: '',
             summary: ''
         });
-        if (vertical === VerticalEnum.GASTRONOMY || vertical === VerticalEnum.EXPERIENCE) {
+        if (vertical === VerticalEnum.VENUE || vertical === VerticalEnum.EXPERIENCE) {
             expect(after.rows[0]).toMatchObject({ opening_hours: null });
         }
         expect(

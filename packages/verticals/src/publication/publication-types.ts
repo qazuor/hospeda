@@ -6,13 +6,13 @@ import type { ListingRestitutionPayload } from './publication-notices';
 /** The verticals whose listings share the publication machine. */
 export type PublicationVertical =
     | VerticalEnum.ACCOMMODATION
-    | VerticalEnum.GASTRONOMY
+    | VerticalEnum.VENUE
     | VerticalEnum.EXPERIENCE;
 
 /** Listing counts are resolved from these catalog keys in the same order as the catalog. */
 export const PUBLICATION_LIMIT_KEYS: Readonly<Record<PublicationVertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: publicationKey(0),
-    [VerticalEnum.GASTRONOMY]: publicationKey(1),
+    [VerticalEnum.VENUE]: publicationKey(1),
     [VerticalEnum.EXPERIENCE]: publicationKey(2)
 };
 

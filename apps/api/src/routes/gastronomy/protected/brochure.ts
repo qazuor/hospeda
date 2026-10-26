@@ -111,7 +111,7 @@ export async function handleGetGastronomyBrochure(
     // later one, so a reprint matches the sheet already on the wall.
     const qrUrl = await resolveEntityQrScanUrl({
         actor,
-        entityType: EntityTypeEnum.GASTRONOMY,
+        entityType: EntityTypeEnum.VENUE,
         entityId: entity.id,
         purpose: QrCodePurposeEnum.BROCHURE,
         targetUrl: content.url,
@@ -138,7 +138,7 @@ export const protectedGetGastronomyBrochureRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/brochure',
     listingAccess: {
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         operation: 'READ_OWN_COMMERCIAL',
         idParam: 'id',
         step6Key: 'download_listing_pdf'

@@ -3,9 +3,9 @@
  * Allows admins to partially update any gastronomy listing.
  */
 import {
-    GastronomyAdminSchema,
-    type GastronomyUpdateInput,
-    GastronomyUpdateInputSchema,
+    VenueAdminSchema,
+    type VenueUpdateInput,
+    VenueUpdateInputSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
@@ -27,7 +27,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminPatchGastronomyRoute = createAdminRoute({
     method: 'patch',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}',
     summary: 'Partial update gastronomy listing (admin)',
     description:
@@ -36,8 +36,8 @@ export const adminPatchGastronomyRoute = createAdminRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyUpdateInputSchema,
-    responseSchema: GastronomyAdminSchema,
+    requestBody: VenueUpdateInputSchema,
+    responseSchema: VenueAdminSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -45,7 +45,7 @@ export const adminPatchGastronomyRoute = createAdminRoute({
     ) => {
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
-        const data = body as GastronomyUpdateInput;
+        const data = body as VenueUpdateInput;
 
         const result = await runListingContentCall({
             ctx,

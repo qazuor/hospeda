@@ -367,7 +367,7 @@ export function registerSupplementalTrialConsumeCases(args: {
     });
 
     it.each([
-        VerticalEnum.GASTRONOMY,
+        VerticalEnum.VENUE,
         VerticalEnum.EXPERIENCE
     ])('TEST:V4:12 (c) T6 consumes a paid title for %s', async (targetVertical) => {
         const target = targetVertical as PublicationVertical;

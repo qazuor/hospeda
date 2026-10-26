@@ -75,11 +75,7 @@ vi.mock('../../../../src/utils/actor', () => ({
     getActorFromContext: (ctx: { get: (key: string) => unknown }) => ctx.get('actor')
 }));
 
-import {
-    GastronomyOwnerCreateInputSchema,
-    GastronomyTypeEnum,
-    PublicationStatusEnum
-} from '@repo/schemas';
+import { PublicationStatusEnum, VenueOwnerCreateInputSchema, VenueTypeEnum } from '@repo/schemas';
 import { handleCreateGastronomyListing } from '../../../../src/routes/gastronomy/protected/create';
 
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
@@ -108,7 +104,7 @@ const VALID_GASTRONOMY_BODY = {
     summary: 'A riverside parrilla with fresh grilled fish and steak.',
     description:
         'La Parrilla del Puerto has served the waterfront for over a decade, specializing in grilled fish.',
-    type: GastronomyTypeEnum.PARRILLA,
+    type: VenueTypeEnum.PARRILLA,
     destinationId: '00000000-0000-4000-a000-000000000002'
 };
 
@@ -158,7 +154,7 @@ describe('handleCreateGastronomyListing (HOS-166 §7.2, D-3)', () => {
         // BEFORE the handler ever sees the body. Simulate that real pipeline
         // here instead of asserting a property the handler itself does not
         // own (see gastronomy.crud.schema.test.ts for the schema-level guard).
-        const validatedBody = GastronomyOwnerCreateInputSchema.parse({
+        const validatedBody = VenueOwnerCreateInputSchema.parse({
             ...VALID_GASTRONOMY_BODY,
             slug: 'owner-chosen-slug'
         });
@@ -185,7 +181,7 @@ describe('handleCreateGastronomyListing (HOS-166 §7.2, D-3)', () => {
         expect(actorArg.id).toBe(OWNER_ID);
         expect(createInput.name).toBe(VALID_GASTRONOMY_BODY.name);
         expect(createInput.description).toBe(VALID_GASTRONOMY_BODY.description);
-        expect(createInput.type).toBe(GastronomyTypeEnum.PARRILLA);
+        expect(createInput.type).toBe(VenueTypeEnum.PARRILLA);
     });
 
     it('routes the owner create through createForOwner, never the plain create (HOS-687)', async () => {

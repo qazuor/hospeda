@@ -22,7 +22,7 @@ import { quotedList } from '../vertical/quoted-list.ts';
  */
 export const FIX_REQUEST_ENTITY_TYPES = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 

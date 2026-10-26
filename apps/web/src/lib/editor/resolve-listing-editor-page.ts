@@ -32,8 +32,8 @@ import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import {
     fetchOwnerListingDetail,
-    type GastronomyOrExperience,
-    type ListingDetail
+    type ListingDetail,
+    type VenueOrExperience
 } from '@/lib/listing/owner-listings';
 import { hasListingNavAccess } from '@/lib/nav-gating';
 import { buildUrl } from '@/lib/urls';
@@ -48,7 +48,7 @@ export type ListingEditorPageResolution =
           readonly redirect?: undefined;
           readonly detail: ListingDetail;
           readonly locale: SupportedLocale;
-          readonly vertical: GastronomyOrExperience;
+          readonly vertical: VenueOrExperience;
           readonly listingId: string;
           /** `null` on the hub, where no section is active. */
           readonly sectionId: string | null;
@@ -168,7 +168,7 @@ export async function resolveListingEditorPage({
  * @param params - The vertical to scope the catalogs to.
  * @returns The two catalogs, empty on any failure.
  */
-async function loadCatalogs({ vertical }: { readonly vertical: GastronomyOrExperience }): Promise<{
+async function loadCatalogs({ vertical }: { readonly vertical: VenueOrExperience }): Promise<{
     readonly amenities: readonly AmenityData[];
     readonly features: readonly AmenityData[];
 }> {

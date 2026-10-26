@@ -134,7 +134,7 @@ describe('TEST:1621:3 pricing situation is resolved through the protected route'
         validateApiEnv();
         injectClock({ clock });
         await ensurePublicationCatalog(VerticalEnum.ACCOMMODATION);
-        await ensurePublicationCatalog(VerticalEnum.GASTRONOMY);
+        await ensurePublicationCatalog(VerticalEnum.VENUE);
         await ensurePublicationCatalog(VerticalEnum.EXPERIENCE);
     });
 

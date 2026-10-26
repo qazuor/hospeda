@@ -25,17 +25,17 @@
 import { type GastronomyReviewModel, gastronomyModel, gastronomyReviewModel } from '@repo/db';
 import {
     type CountResponse,
-    type GastronomyReview,
-    type GastronomyReviewCreateInput,
-    GastronomyReviewCreateInputSchema,
-    GastronomyReviewUpdateInputSchema,
-    type GastronomySearch,
-    GastronomySearchSchema,
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
     type PublicationStatusEnum,
-    ServiceErrorCode
+    ServiceErrorCode,
+    type VenueReview,
+    type VenueReviewCreateInput,
+    VenueReviewCreateInputSchema,
+    VenueReviewUpdateInputSchema,
+    type VenueSearch,
+    VenueSearchSchema
 } from '@repo/schemas';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -79,7 +79,7 @@ export interface GastronomyReviewModerateInput {
  * @param input - The validated create input.
  * @returns The effective scalar rating to persist as `averageRating`.
  */
-function computeEffectiveRating(input: GastronomyReviewCreateInput): number {
+function computeEffectiveRating(input: VenueReviewCreateInput): number {
     const breakdown = input.rating;
     if (breakdown) {
         const mean =
@@ -121,19 +121,19 @@ function computeEffectiveRating(input: GastronomyReviewCreateInput): number {
  * ```
  */
 export class GastronomyReviewService extends BaseCrudService<
-    GastronomyReview,
+    VenueReview,
     GastronomyReviewModel,
-    typeof GastronomyReviewCreateInputSchema,
-    typeof GastronomyReviewUpdateInputSchema,
-    typeof GastronomySearchSchema
+    typeof VenueReviewCreateInputSchema,
+    typeof VenueReviewUpdateInputSchema,
+    typeof VenueSearchSchema
 > {
     static readonly ENTITY_NAME = 'gastronomyReview';
 
     protected readonly entityName = GastronomyReviewService.ENTITY_NAME;
     protected readonly model: GastronomyReviewModel;
-    protected readonly createSchema = GastronomyReviewCreateInputSchema;
-    protected readonly updateSchema = GastronomyReviewUpdateInputSchema;
-    protected readonly searchSchema = GastronomySearchSchema;
+    protected readonly createSchema = VenueReviewCreateInputSchema;
+    protected readonly updateSchema = VenueReviewUpdateInputSchema;
+    protected readonly searchSchema = VenueSearchSchema;
 
     /** Injectable for unit tests. */
     private _gastronomyService: GastronomyService;
@@ -177,7 +177,7 @@ export class GastronomyReviewService extends BaseCrudService<
      * @param _data - The create payload (unused).
      * @throws {ServiceError} FORBIDDEN when actor is not authenticated.
      */
-    protected _canCreate(actor: Actor, _data: GastronomyReviewCreateInput): void {
+    protected _canCreate(actor: Actor, _data: VenueReviewCreateInput): void {
         if (!actor?.id) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
@@ -187,7 +187,7 @@ export class GastronomyReviewService extends BaseCrudService<
     }
 
     /** Review update is staff-only (`GASTRONOMY_EDIT_ALL`). */
-    protected _canUpdate(actor: Actor, _entity: GastronomyReview): void {
+    protected _canUpdate(actor: Actor, _entity: VenueReview): void {
         if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
@@ -197,7 +197,7 @@ export class GastronomyReviewService extends BaseCrudService<
     }
 
     /** Soft-delete: staff or the review author. */
-    protected _canSoftDelete(actor: Actor, entity: GastronomyReview): void {
+    protected _canSoftDelete(actor: Actor, entity: VenueReview): void {
         const isAuthor = entity.userId === actor.id;
         if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL) && !isAuthor) {
             throw new ServiceError(
@@ -208,7 +208,7 @@ export class GastronomyReviewService extends BaseCrudService<
     }
 
     /** Hard delete is staff-only (`GASTRONOMY_EDIT_ALL`). */
-    protected _canHardDelete(actor: Actor, _entity: GastronomyReview): void {
+    protected _canHardDelete(actor: Actor, _entity: VenueReview): void {
         if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
@@ -218,7 +218,7 @@ export class GastronomyReviewService extends BaseCrudService<
     }
 
     /** Restore is staff-only (`GASTRONOMY_EDIT_ALL`). */
-    protected _canRestore(actor: Actor, _entity: GastronomyReview): void {
+    protected _canRestore(actor: Actor, _entity: VenueReview): void {
         if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
@@ -228,7 +228,7 @@ export class GastronomyReviewService extends BaseCrudService<
     }
 
     /** Public view — any actor may view a review. */
-    protected _canView(_actor: Actor, _entity: GastronomyReview): void {
+    protected _canView(_actor: Actor, _entity: VenueReview): void {
         return;
     }
 
@@ -247,7 +247,7 @@ export class GastronomyReviewService extends BaseCrudService<
         return;
     }
 
-    protected _canUpdateVisibility(actor: Actor, _entity: GastronomyReview, _v: unknown): void {
+    protected _canUpdateVisibility(actor: Actor, _entity: VenueReview, _v: unknown): void {
         if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
@@ -285,10 +285,10 @@ export class GastronomyReviewService extends BaseCrudService<
      * @throws {ServiceError} ALREADY_EXISTS when user already reviewed this listing.
      */
     protected override async _beforeCreate(
-        data: GastronomyReviewCreateInput,
+        data: VenueReviewCreateInput,
         actor: Actor,
         ctx: ServiceContext
-    ): Promise<Partial<GastronomyReview>> {
+    ): Promise<Partial<VenueReview>> {
         const gastronomy = await this._gastronomyModel.findById(data.gastronomyId, ctx.tx);
         if (
             !resolveResourceStep({
@@ -324,7 +324,7 @@ export class GastronomyReviewService extends BaseCrudService<
             userId: actor.id,
             moderationState: ModerationStatusEnum.PENDING,
             averageRating
-        } as Partial<GastronomyReview>;
+        } as Partial<VenueReview>;
     }
 
     /**
@@ -334,10 +334,10 @@ export class GastronomyReviewService extends BaseCrudService<
      * approved; this is still called to maintain consistency.
      */
     protected override async _afterCreate(
-        entity: GastronomyReview,
+        entity: VenueReview,
         _actor: Actor,
         ctx: ServiceContext
-    ): Promise<GastronomyReview> {
+    ): Promise<VenueReview> {
         await this._recomputeListingRating(entity.gastronomyId, ctx);
         return entity;
     }
@@ -354,10 +354,10 @@ export class GastronomyReviewService extends BaseCrudService<
      * (mirrors SPEC-166 T-022 for accommodation reviews).
      */
     protected async _executeSearch(
-        params: GastronomySearch,
+        params: VenueSearch,
         _actor: Actor,
         ctx: ServiceContext
-    ): Promise<PaginatedListOutput<GastronomyReview>> {
+    ): Promise<PaginatedListOutput<VenueReview>> {
         const { page, pageSize, sortBy: _sortBy, sortOrder: _sortOrder, ...filters } = params;
         // Force-override: public reads must only see APPROVED+ACTIVE reviews.
         (filters as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
@@ -368,14 +368,14 @@ export class GastronomyReviewService extends BaseCrudService<
             undefined,
             ctx?.tx
         );
-        return result as unknown as PaginatedListOutput<GastronomyReview>; // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+        return result as unknown as PaginatedListOutput<VenueReview>; // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
     }
 
     /**
      * Count query mirroring `_executeSearch` filter overrides.
      */
     protected async _executeCount(
-        params: GastronomySearch,
+        params: VenueSearch,
         _actor: Actor,
         ctx: ServiceContext
     ): Promise<CountResponse> {
@@ -414,7 +414,7 @@ export class GastronomyReviewService extends BaseCrudService<
         input: GastronomyReviewModerateInput,
         actor: Actor,
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<GastronomyReview>> {
+    ): Promise<ServiceOutput<VenueReview>> {
         try {
             if (!hasPermission(actor, PermissionEnum.GASTRONOMY_MODERATE_REVIEW)) {
                 return {
@@ -461,7 +461,7 @@ export class GastronomyReviewService extends BaseCrudService<
             // Recompute listing rating after every moderation decision.
             await this._recomputeListingRating(gastronomyId, ctx ?? {});
 
-            return { data: updated as unknown as GastronomyReview }; // TYPE-WORKAROUND: model row narrowed to the Zod GastronomyReview entity type
+            return { data: updated as unknown as VenueReview }; // TYPE-WORKAROUND: model row narrowed to the Zod GastronomyReview entity type
         } catch (err) {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message } };
@@ -543,7 +543,7 @@ export class GastronomyReviewService extends BaseCrudService<
             pageSize?: number;
         } = {},
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<PaginatedListOutput<GastronomyReview>>> {
+    ): Promise<ServiceOutput<PaginatedListOutput<VenueReview>>> {
         try {
             if (!hasPermission(actor, PermissionEnum.GASTRONOMY_MODERATE_REVIEW)) {
                 return {
@@ -564,7 +564,7 @@ export class GastronomyReviewService extends BaseCrudService<
             }
 
             const result = await this.model.findAll(where, { page, pageSize }, undefined, ctx?.tx);
-            return { data: result as unknown as PaginatedListOutput<GastronomyReview> }; // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+            return { data: result as unknown as PaginatedListOutput<VenueReview> }; // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
         } catch (err) {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message } };
@@ -592,7 +592,7 @@ export class GastronomyReviewService extends BaseCrudService<
         gastronomyId: string,
         _actor: Actor,
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ reviews: GastronomyReview[]; total: number }>> {
+    ): Promise<ServiceOutput<{ reviews: VenueReview[]; total: number }>> {
         try {
             const gastronomy = await this._gastronomyModel.findById(gastronomyId, ctx?.tx);
             if (
@@ -622,7 +622,7 @@ export class GastronomyReviewService extends BaseCrudService<
             );
             return {
                 data: {
-                    reviews: result.items as unknown as GastronomyReview[], // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+                    reviews: result.items as unknown as VenueReview[], // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
                     total: result.total
                 }
             };

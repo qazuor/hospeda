@@ -72,7 +72,7 @@ export function grantCoverageCaseSet(
             const userId = harness.newUserId();
             await harness.arrange.liveGrant(userId, VerticalEnum.ACCOMMODATION);
             const response = validResponse(
-                await harness.subject.coverage({ userId, vertical: VerticalEnum.GASTRONOMY })
+                await harness.subject.coverage({ userId, vertical: VerticalEnum.VENUE })
             );
             expect(response.sources.some((source) => source.type === 'GRANT')).toBe(false);
         });

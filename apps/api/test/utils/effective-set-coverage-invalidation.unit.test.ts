@@ -29,7 +29,7 @@ import { subscribeEffectiveSetCoverageInvalidation } from '../../src/utils/effec
 
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE,
     VerticalEnum.TOURIST,
     VerticalEnum.PARTNER

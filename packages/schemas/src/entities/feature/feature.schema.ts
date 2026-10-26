@@ -90,7 +90,7 @@ export type AccommodationFeatureRelation = z.infer<typeof AccommodationFeatureRe
  * Represents the many-to-many relationship between gastronomy listings and features.
  * Mirrors the accommodation variant with gastronomyId instead of accommodationId.
  */
-export const GastronomyFeatureRelationSchema = z.object({
+export const VenueFeatureRelationSchema = z.object({
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     featureId: FeatureIdSchema,
     hostReWriteName: z
@@ -104,7 +104,7 @@ export const GastronomyFeatureRelationSchema = z.object({
         .max(300, { message: 'zodError.gastronomyFeature.comments.max' })
         .optional()
 });
-export type GastronomyFeatureRelation = z.infer<typeof GastronomyFeatureRelationSchema>;
+export type VenueFeatureRelation = z.infer<typeof VenueFeatureRelationSchema>;
 
 /**
  * Experience-Feature Relation Schema (SPEC-240)

@@ -27,22 +27,22 @@ import {
 const app = initApp();
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 type Vertical = (typeof verticals)[number];
 
 const tables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const viewAll: Readonly<Record<Vertical, PermissionEnum>> = {
     [VerticalEnum.ACCOMMODATION]: PermissionEnum.ACCOMMODATION_VIEW_ALL,
-    [VerticalEnum.GASTRONOMY]: PermissionEnum.GASTRONOMY_VIEW_ALL,
+    [VerticalEnum.VENUE]: PermissionEnum.GASTRONOMY_VIEW_ALL,
     [VerticalEnum.EXPERIENCE]: PermissionEnum.EXPERIENCE_VIEW_ALL
 };
-const staffReadVerticals = [VerticalEnum.GASTRONOMY, VerticalEnum.EXPERIENCE] as const;
+const staffReadVerticals = [VerticalEnum.VENUE, VerticalEnum.EXPERIENCE] as const;
 
 interface Fixture {
     readonly ownerId: string;

@@ -39,7 +39,7 @@ export const protectedRemoveGastronomyMediaRoute = createProtectedRoute({
     description:
         'Soft-deletes a media row and resequences the remaining visible photos. ' +
         'Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
     protectedTag: false,
     requestParams: {

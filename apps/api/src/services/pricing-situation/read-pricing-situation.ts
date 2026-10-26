@@ -22,7 +22,7 @@ export async function readPricingSituation(input: {
     const verticalQuestions: Record<Vertical, () => Promise<PricingSituationResponse>> = {
         accommodation: () =>
             readPublicationSituation({ ...input, vertical: VerticalEnum.ACCOMMODATION }),
-        gastronomy: () => readPublicationSituation({ ...input, vertical: VerticalEnum.GASTRONOMY }),
+        gastronomy: () => readPublicationSituation({ ...input, vertical: VerticalEnum.VENUE }),
         experience: () => readPublicationSituation({ ...input, vertical: VerticalEnum.EXPERIENCE }),
         tourist: () => readTouristSituation()
     };

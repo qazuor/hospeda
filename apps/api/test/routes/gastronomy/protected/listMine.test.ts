@@ -126,7 +126,7 @@ describe('GET /api/v1/protected/gastronomies/mine', () => {
             };
             const listings = body.data.listings;
             expect(listings).toHaveLength(3);
-            expect(listings[0]?.vertical).toBe(ProductDomainEnum.GASTRONOMY);
+            expect(listings[0]?.vertical).toBe(ProductDomainEnum.VENUE);
             expect(listings[0]?.id).toBe('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
             expect(listings[0]?.slug).toBe('la-parrilla');
             expect(listings[0]?.isPublic).toBe(true);

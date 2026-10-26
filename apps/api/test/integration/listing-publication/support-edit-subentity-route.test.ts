@@ -28,17 +28,17 @@ import {
 } from './publication-routes.helpers';
 
 const app = initApp();
-const verticals = [VerticalEnum.GASTRONOMY, VerticalEnum.EXPERIENCE] as const;
+const verticals = [VerticalEnum.VENUE, VerticalEnum.EXPERIENCE] as const;
 type Vertical = (typeof verticals)[number];
 const tables: Readonly<Record<Vertical, string>> = {
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 /** Each vertical's own permissions: edit own, edit all, view all. */
 const perms: Readonly<
     Record<Vertical, { editOwn: PermissionEnum; editAll: PermissionEnum; viewAll: PermissionEnum }>
 > = {
-    [VerticalEnum.GASTRONOMY]: {
+    [VerticalEnum.VENUE]: {
         editOwn: PermissionEnum.GASTRONOMY_EDIT_OWN,
         editAll: PermissionEnum.GASTRONOMY_EDIT_ALL,
         viewAll: PermissionEnum.GASTRONOMY_VIEW_ALL
@@ -51,7 +51,7 @@ const perms: Readonly<
 };
 /** The media table and its listing column, per vertical. */
 const media: Readonly<Record<Vertical, { table: string; fk: string }>> = {
-    [VerticalEnum.GASTRONOMY]: { table: 'gastronomy_media', fk: 'gastronomy_id' },
+    [VerticalEnum.VENUE]: { table: 'gastronomy_media', fk: 'gastronomy_id' },
     [VerticalEnum.EXPERIENCE]: { table: 'experience_media', fk: 'experience_id' }
 };
 const REASON = 'La dueña pidió que le corrijamos la foto y la pregunta frecuente';

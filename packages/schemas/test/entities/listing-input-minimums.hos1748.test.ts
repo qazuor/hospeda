@@ -12,13 +12,13 @@ import {
     ExperienceUpdateInputSchema
 } from '../../src/entities/experience/experience.crud.schema.js';
 import {
-    GastronomyAdminCreateInputSchema,
-    GastronomyOwnerCreateInputSchema,
-    GastronomyOwnerUpdateInputSchema,
-    GastronomyUpdateInputSchema
-} from '../../src/entities/gastronomy/gastronomy.crud.schema.js';
+    VenueAdminCreateInputSchema,
+    VenueOwnerCreateInputSchema,
+    VenueOwnerUpdateInputSchema,
+    VenueUpdateInputSchema
+} from '../../src/entities/venue/venue.crud.schema.js';
 import { createValidAccommodation } from '../fixtures/accommodation.fixtures.js';
-import { createMinimalGastronomy } from '../fixtures/gastronomy.fixtures.js';
+import { createMinimalGastronomy } from '../fixtures/venue.fixtures.js';
 
 /**
  * HOS-1748 lock: relaxing the READ schemas must not relax the INPUT or the
@@ -73,10 +73,10 @@ const experienceBase: Payload = {
 const inputCases: readonly InputCase[] = [
     ['AccommodationCreateInputSchema', AccommodationCreateInputSchema, accommodationBase],
     ['AccommodationUpdateInputSchema', AccommodationUpdateInputSchema, accommodationBase],
-    ['GastronomyOwnerCreateInputSchema', GastronomyOwnerCreateInputSchema, gastronomyBase],
-    ['GastronomyOwnerUpdateInputSchema', GastronomyOwnerUpdateInputSchema, gastronomyBase],
-    ['GastronomyUpdateInputSchema', GastronomyUpdateInputSchema, gastronomyBase],
-    ['GastronomyAdminCreateInputSchema', GastronomyAdminCreateInputSchema, gastronomyBase],
+    ['GastronomyOwnerCreateInputSchema', VenueOwnerCreateInputSchema, gastronomyBase],
+    ['GastronomyOwnerUpdateInputSchema', VenueOwnerUpdateInputSchema, gastronomyBase],
+    ['GastronomyUpdateInputSchema', VenueUpdateInputSchema, gastronomyBase],
+    ['GastronomyAdminCreateInputSchema', VenueAdminCreateInputSchema, gastronomyBase],
     ['ExperienceOwnerCreateInputSchema', ExperienceOwnerCreateInputSchema, experienceBase],
     ['ExperienceOwnerUpdateInputSchema', ExperienceOwnerUpdateInputSchema, experienceBase],
     ['ExperienceUpdateInputSchema', ExperienceUpdateInputSchema, experienceBase],

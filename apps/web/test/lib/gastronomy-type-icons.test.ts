@@ -17,7 +17,7 @@ import {
     TraditionalGrillIcon,
     TraditionalPubIcon
 } from '@repo/icons';
-import { GastronomyTypeEnum } from '@repo/schemas';
+import { VenueTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     GASTRONOMY_TYPE_FALLBACK_ICON,
@@ -76,7 +76,7 @@ describe('getGastronomyTypeIcon', () => {
     });
 
     it('covers every value of GastronomyTypeEnum with a defined icon component', () => {
-        const allTypes = Object.values(GastronomyTypeEnum);
+        const allTypes = Object.values(VenueTypeEnum);
         expect(allTypes.length).toBeGreaterThan(0);
         for (const type of allTypes) {
             const icon = getGastronomyTypeIcon({ type });

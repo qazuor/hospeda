@@ -27,9 +27,9 @@ vi.mock('../../../src/utils/listing-publication/ports', async (importOriginal) =
 });
 
 const app = initApp({ clock: { now: () => MATRIX_NOW } });
-const verticals = [VerticalEnum.GASTRONOMY, VerticalEnum.EXPERIENCE] as const;
+const verticals = [VerticalEnum.VENUE, VerticalEnum.EXPERIENCE] as const;
 const url = (vertical: (typeof verticals)[number], id: string) =>
-    `/api/v1/protected/${vertical === VerticalEnum.GASTRONOMY ? 'gastronomies' : 'experiences'}/${id}/publish`;
+    `/api/v1/protected/${vertical === VerticalEnum.VENUE ? 'gastronomies' : 'experiences'}/${id}/publish`;
 
 function publish(
     vertical: (typeof verticals)[number],
@@ -86,7 +86,7 @@ describe.each(verticals)('PB1 route — %s (TEST:V6:2/3)', (vertical) => {
     it('answers 403 FORBIDDEN to a foreign publish by an admin with LISTING_FOREIGN_CONTENT_EDIT', async () => {
         const { listingId } = await listing(vertical, PublicationStatusEnum.DRAFT);
         const viewPermission =
-            vertical === VerticalEnum.GASTRONOMY
+            vertical === VerticalEnum.VENUE
                 ? PermissionEnum.GASTRONOMY_VIEW_ALL
                 : PermissionEnum.EXPERIENCE_VIEW_ALL;
         const answer = await readResponse(

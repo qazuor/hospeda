@@ -101,7 +101,7 @@ const BLANK_CONTENT: Record<ListingVertical, SQL> = {
 
 const ENTITY_TYPES: Record<ListingVertical, EntityTypeEnum> = {
     accommodation: EntityTypeEnum.ACCOMMODATION,
-    gastronomy: EntityTypeEnum.GASTRONOMY,
+    gastronomy: EntityTypeEnum.VENUE,
     experience: EntityTypeEnum.EXPERIENCE
 };
 

@@ -28,7 +28,7 @@ export {
     syncListingAmenityJunction,
     syncListingFeatureJunction
 } from './listing.junction-sync';
-export type { GastronomyOrExperience } from './listing.permissions';
+export type { VenueOrExperience } from './listing.permissions';
 export {
     checkCanAdminListListings,
     checkCanCreateListing,

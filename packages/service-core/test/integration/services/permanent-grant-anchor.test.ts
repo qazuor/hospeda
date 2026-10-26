@@ -29,7 +29,7 @@ import {
 afterAll(closeServiceTestPool);
 const userIds: string[] = [];
 const V1 = VerticalEnum.ACCOMMODATION;
-const V2 = VerticalEnum.GASTRONOMY;
+const V2 = VerticalEnum.VENUE;
 const now = new Date('2026-10-14T12:00:00.000Z');
 afterEach(async () => retirePermanentGrantRows(userIds.splice(0)));
 

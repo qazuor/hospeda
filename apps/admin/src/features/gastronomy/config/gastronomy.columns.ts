@@ -7,7 +7,7 @@
  */
 
 import { EditIcon } from '@repo/icons';
-import { GastronomyTypeEnum, PriceRangeEnum } from '@repo/schemas';
+import { PriceRangeEnum, VenueTypeEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { createElement, Fragment } from 'react';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
@@ -20,16 +20,16 @@ import type { GastronomyListItem } from './gastronomy.config';
 // ---------------------------------------------------------------------------
 
 /** Spanish labels for each GastronomyTypeEnum value. */
-const TYPE_LABELS: Record<GastronomyTypeEnum, string> = {
-    [GastronomyTypeEnum.RESTAURANT]: 'Restaurante',
-    [GastronomyTypeEnum.BAR]: 'Bar',
-    [GastronomyTypeEnum.CAFE]: 'Café',
-    [GastronomyTypeEnum.PARRILLA]: 'Parrilla',
-    [GastronomyTypeEnum.CERVECERIA]: 'Cervecería',
-    [GastronomyTypeEnum.HELADERIA]: 'Heladería',
-    [GastronomyTypeEnum.PANADERIA]: 'Panadería',
-    [GastronomyTypeEnum.ROTISERIA]: 'Rotisería',
-    [GastronomyTypeEnum.FOOD_TRUCK]: 'Food Truck'
+const TYPE_LABELS: Record<VenueTypeEnum, string> = {
+    [VenueTypeEnum.RESTAURANT]: 'Restaurante',
+    [VenueTypeEnum.BAR]: 'Bar',
+    [VenueTypeEnum.CAFE]: 'Café',
+    [VenueTypeEnum.PARRILLA]: 'Parrilla',
+    [VenueTypeEnum.CERVECERIA]: 'Cervecería',
+    [VenueTypeEnum.HELADERIA]: 'Heladería',
+    [VenueTypeEnum.PANADERIA]: 'Panadería',
+    [VenueTypeEnum.ROTISERIA]: 'Rotisería',
+    [VenueTypeEnum.FOOD_TRUCK]: 'Food Truck'
 };
 
 /** Spanish labels for each PriceRangeEnum value. */
@@ -41,7 +41,7 @@ const PRICE_RANGE_LABELS: Record<PriceRangeEnum, string> = {
 };
 
 /** Badge colour mapping per gastronomy type. */
-const TYPE_BADGE_OPTIONS = Object.values(GastronomyTypeEnum).map((value) => ({
+const TYPE_BADGE_OPTIONS = Object.values(VenueTypeEnum).map((value) => ({
     value,
     label: TYPE_LABELS[value] ?? value,
     color: BadgeColor.ORANGE

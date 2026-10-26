@@ -53,7 +53,7 @@ import { z } from 'zod';
  */
 const SUBSCRIPTION_SCOPE_DOMAINS = [
     ProductDomainEnum.ACCOMMODATION,
-    ProductDomainEnum.GASTRONOMY,
+    ProductDomainEnum.VENUE,
     ProductDomainEnum.EXPERIENCE,
     ProductDomainEnum.TOURIST
 ] as const;

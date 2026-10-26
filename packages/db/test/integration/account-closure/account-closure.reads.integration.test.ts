@@ -1,4 +1,4 @@
-import type { Accommodation, Experience, Gastronomy } from '@repo/schemas';
+import type { Accommodation, Experience, Venue } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../../src/models/accommodation/accommodation.model.ts';
@@ -30,7 +30,7 @@ const CREATE: Record<
     accommodation: ({ tx, base }) =>
         new AccommodationModel().create({ ...base, type: 'CABIN' } as Partial<Accommodation>, tx),
     gastronomy: ({ tx, base }) =>
-        new GastronomyModel().create({ ...base, type: 'RESTAURANT' } as Partial<Gastronomy>, tx),
+        new GastronomyModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx),
     experience: ({ tx, base }) =>
         new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx)
 };

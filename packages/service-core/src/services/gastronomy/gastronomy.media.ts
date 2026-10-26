@@ -33,26 +33,26 @@ import {
 } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import {
-    type GastronomyFeaturedMediaAddInput,
-    GastronomyFeaturedMediaAddInputSchema,
-    type GastronomyFeaturedMediaAddOutput,
-    type GastronomyMediaAddInput,
-    GastronomyMediaAddInputSchema,
-    type GastronomyMediaListInput,
-    GastronomyMediaListInputSchema,
-    type GastronomyMediaListOutput,
-    type GastronomyMediaRemoveInput,
-    GastronomyMediaRemoveInputSchema,
-    type GastronomyMediaReorderInput,
-    GastronomyMediaReorderInputSchema,
-    type GastronomyMediaSetFeaturedInput,
-    GastronomyMediaSetFeaturedInputSchema,
-    type GastronomyMediaSingleOutput,
-    type GastronomyMediaUpdateInput,
-    GastronomyMediaUpdateInputSchema,
     getGalleryCap,
     ModerationStatusEnum,
-    ServiceErrorCode
+    ServiceErrorCode,
+    type VenueFeaturedMediaAddInput,
+    VenueFeaturedMediaAddInputSchema,
+    type VenueFeaturedMediaAddOutput,
+    type VenueMediaAddInput,
+    VenueMediaAddInputSchema,
+    type VenueMediaListInput,
+    VenueMediaListInputSchema,
+    type VenueMediaListOutput,
+    type VenueMediaRemoveInput,
+    VenueMediaRemoveInputSchema,
+    type VenueMediaReorderInput,
+    VenueMediaReorderInputSchema,
+    type VenueMediaSetFeaturedInput,
+    VenueMediaSetFeaturedInputSchema,
+    type VenueMediaSingleOutput,
+    type VenueMediaUpdateInput,
+    VenueMediaUpdateInputSchema
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -119,11 +119,11 @@ async function requireGastronomy(
 export async function addGastronomyMedia(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyMediaAddInput,
+    data: VenueMediaAddInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyMediaSingleOutput>> {
+): Promise<ServiceOutput<VenueMediaSingleOutput>> {
     try {
-        const parseResult = GastronomyMediaAddInputSchema.safeParse(data);
+        const parseResult = VenueMediaAddInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)
@@ -139,9 +139,7 @@ export async function addGastronomyMedia(
 
         // HOS-1642 (AC:V9a:6): the write and its owner-act event share one
         // transaction — the event commits or rolls back WITH the media row.
-        const run = async (
-            tx: DrizzleClient
-        ): Promise<ServiceOutput<GastronomyMediaSingleOutput>> => {
+        const run = async (tx: DrizzleClient): Promise<ServiceOutput<VenueMediaSingleOutput>> => {
             const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
             checkGastronomyCanEditMedia(actor, gastronomy);
             // ACC:15 (HOS-1493): a photo written by action 15 never carries a
@@ -265,12 +263,12 @@ export async function addGastronomyMedia(
 export async function removeGastronomyMedia(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyMediaRemoveInput,
+    data: VenueMediaRemoveInput,
     mediaProvider?: ImageProvider | null,
     ctx?: ServiceContext
 ): Promise<ServiceOutput<{ success: true }>> {
     try {
-        const parseResult = GastronomyMediaRemoveInputSchema.safeParse(data);
+        const parseResult = VenueMediaRemoveInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)
@@ -386,11 +384,11 @@ export async function removeGastronomyMedia(
 export async function reorderGastronomyMedia(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyMediaReorderInput,
+    data: VenueMediaReorderInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyMediaListOutput>> {
+): Promise<ServiceOutput<VenueMediaListOutput>> {
     try {
-        const parseResult = GastronomyMediaReorderInputSchema.safeParse(data);
+        const parseResult = VenueMediaReorderInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)
@@ -511,11 +509,11 @@ export async function reorderGastronomyMedia(
 export async function getGastronomyMedia(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyMediaListInput,
+    data: VenueMediaListInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyMediaListOutput>> {
+): Promise<ServiceOutput<VenueMediaListOutput>> {
     try {
-        const parseResult = GastronomyMediaListInputSchema.safeParse(data);
+        const parseResult = VenueMediaListInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)
@@ -577,11 +575,11 @@ export async function getGastronomyMedia(
 export async function setFeaturedGastronomyMedia(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyMediaSetFeaturedInput,
+    data: VenueMediaSetFeaturedInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyMediaSingleOutput>> {
+): Promise<ServiceOutput<VenueMediaSingleOutput>> {
     try {
-        const parseResult = GastronomyMediaSetFeaturedInputSchema.safeParse(data);
+        const parseResult = VenueMediaSetFeaturedInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)
@@ -682,7 +680,7 @@ export async function setFeaturedGastronomyMedia(
  *
  * Text only: `caption`, `description`, `alt`, `attribution`. `url`, `publicId`,
  * `moderationState`, `state`, `isFeatured`, `sortOrder` and `gastronomyId` are not
- * reachable from {@link GastronomyMediaUpdateInputSchema} even if the client sends
+ * reachable from {@link VenueMediaUpdateInputSchema} even if the client sends
  * them.
  *
  * Each field is three-state — omit to leave unchanged, `null` to clear, a value
@@ -714,11 +712,11 @@ export async function setFeaturedGastronomyMedia(
 export async function updateGastronomyMedia(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyMediaUpdateInput,
+    data: VenueMediaUpdateInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyMediaSingleOutput>> {
+): Promise<ServiceOutput<VenueMediaSingleOutput>> {
     try {
-        const parseResult = GastronomyMediaUpdateInputSchema.safeParse(data);
+        const parseResult = VenueMediaUpdateInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)
@@ -734,9 +732,7 @@ export async function updateGastronomyMedia(
 
         // HOS-1642 (AC:V9a:6): the write and its owner-act event share one
         // transaction.
-        const run = async (
-            tx: DrizzleClient
-        ): Promise<ServiceOutput<GastronomyMediaSingleOutput>> => {
+        const run = async (tx: DrizzleClient): Promise<ServiceOutput<VenueMediaSingleOutput>> => {
             const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
             checkGastronomyCanEditMedia(actor, gastronomy);
 
@@ -838,11 +834,11 @@ export async function updateGastronomyMedia(
 export async function addGastronomyFeaturedMedia(
     model: GastronomyModel,
     actor: Actor,
-    data: GastronomyFeaturedMediaAddInput,
+    data: VenueFeaturedMediaAddInput,
     ctx?: ServiceContext
-): Promise<ServiceOutput<GastronomyFeaturedMediaAddOutput>> {
+): Promise<ServiceOutput<VenueFeaturedMediaAddOutput>> {
     try {
-        const parseResult = GastronomyFeaturedMediaAddInputSchema.safeParse(data);
+        const parseResult = VenueFeaturedMediaAddInputSchema.safeParse(data);
         if (!parseResult.success) {
             const messages = parseResult.error.issues
                 .map((i) => `${i.path.join('.')}: ${i.message}`)

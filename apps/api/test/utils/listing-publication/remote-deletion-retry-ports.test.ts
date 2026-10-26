@@ -33,7 +33,7 @@ describe('AC:V6:30 remote deletion retry production ports', () => {
     it('reads the marked media population from the purge model without a transaction', async () => {
         const page = { items: [], next: null };
         listMarkedMedia.mockResolvedValue(page);
-        const after: MarkedMediaCursor = { vertical: VerticalEnum.GASTRONOMY, mediaId: 'm-1' };
+        const after: MarkedMediaCursor = { vertical: VerticalEnum.VENUE, mediaId: 'm-1' };
         await expect(
             getRemoteDeletionRetryPorts().pending.listMarkedMedia({ after, limit: 200 })
         ).resolves.toBe(page);

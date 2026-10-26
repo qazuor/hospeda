@@ -26,7 +26,7 @@
  * editor does not claim to draw.
  */
 
-import { ExperienceOwnerUpdateInputSchema, GastronomyOwnerUpdateInputSchema } from '@repo/schemas';
+import { ExperienceOwnerUpdateInputSchema, VenueOwnerUpdateInputSchema } from '@repo/schemas';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -176,7 +176,7 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
 };
 
 const SCHEMA_BY_VERTICAL = {
-    gastronomy: GastronomyOwnerUpdateInputSchema,
+    gastronomy: VenueOwnerUpdateInputSchema,
     experience: ExperienceOwnerUpdateInputSchema
 } as const;
 

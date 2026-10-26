@@ -119,7 +119,7 @@ export async function seedSelfComplement(ownerId: string) {
     const [plan] = await db
         .insert(plans)
         .values({
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             slug: `self-cancel-complement-${crypto.randomUUID()}`,
             name: 'Self cancel complement fixture'
         })
@@ -129,7 +129,7 @@ export async function seedSelfComplement(ownerId: string) {
         .insert(planVersions)
         .values({
             planId: plan.id,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             rank: Math.floor(Math.random() * 100000000) + 1000,
             sellable: false,
             current: false,
@@ -147,7 +147,7 @@ export async function seedSelfComplement(ownerId: string) {
         .insert(subscriptions)
         .values({
             userId: ownerId,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             planVersionId: version.id,
             billingOptionId: option.id,
             paymentMethod: 'CARD',

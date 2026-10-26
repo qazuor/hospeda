@@ -126,7 +126,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const { userId: adminId } = await seedCoverageUser(getServiceTestDb());
             userIds.push(userId, adminId);
             const first = await seedGrantPlan(getServiceTestDb(), VerticalEnum.ACCOMMODATION);
-            const other = await seedGrantPlan(getServiceTestDb(), VerticalEnum.GASTRONOMY);
+            const other = await seedGrantPlan(getServiceTestDb(), VerticalEnum.VENUE);
             const initial = await grantPermanentGrant(
                 {
                     beneficiaryUserId: userId,
@@ -149,7 +149,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     {
                         permanentGrantId: initial.permanentGrantId,
                         actor: grantSignerActor(adminId),
-                        vertical: VerticalEnum.GASTRONOMY,
+                        vertical: VerticalEnum.VENUE,
                         ...other
                     },
                     ports((args) => simulator.planPolicy(args))

@@ -24,9 +24,9 @@
  */
 
 import {
-    GastronomyEventsOutputSchema,
-    type GastronomyEventsReplacePayload,
-    GastronomyEventsReplacePayloadSchema,
+    VenueEventsOutputSchema,
+    type VenueEventsReplacePayload,
+    VenueEventsReplacePayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, replaceGastronomyEvents } from '@repo/service-core';
@@ -63,7 +63,7 @@ export async function handlePutGastronomyEvents(
         // against `GastronomyEventsReplacePayloadSchema` by the route; the
         // service re-parses it anyway, so the cast asserts nothing the next line
         // does not verify.
-        agenda: body as unknown as GastronomyEventsReplacePayload
+        agenda: body as unknown as VenueEventsReplacePayload
     });
 
     if (result.error) {
@@ -80,7 +80,7 @@ export const protectedPutGastronomyEventsRoute = createProtectedRoute({
     description:
         'Replaces the listing’s own events with the submitted document. Each entry is either dated (recurrence "once" with a date) or weekly (recurrence "weekly" with a weekday 0-6, Sunday-based); the two are mutually exclusive and the payload is rejected if an entry declares neither or both. An empty events array takes the agenda down. Owner-only, and requires the manage_gastronomy_events entitlement granted by the professional gastronomy plan and above.',
     listingAccess: {
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
         capabilities: ['manage_gastronomy_events']
@@ -90,8 +90,8 @@ export const protectedPutGastronomyEventsRoute = createProtectedRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyEventsReplacePayloadSchema,
-    responseSchema: GastronomyEventsOutputSchema,
+    requestBody: VenueEventsReplacePayloadSchema,
+    responseSchema: VenueEventsOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
         handlePutGastronomyEvents(ctx, params, body)
 });

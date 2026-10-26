@@ -15,7 +15,6 @@ import type {
     EventSummary,
     ExternalReputationBlock,
     FeaturePublic,
-    GastronomyPublic,
     NearbyPoi,
     PartnerPublic,
     PoiCategoryPublic,
@@ -23,7 +22,8 @@ import type {
     PostListItem,
     PostPublic,
     PostSummary,
-    QrCodeResolution
+    QrCodeResolution,
+    VenuePublic
 } from '@repo/schemas';
 import { apiClient } from './client';
 import { SSR_PUBLIC_CACHE_TTL_MS } from './ssr-cache';
@@ -1606,7 +1606,7 @@ export const gastronomyApi = {
         readonly features?: string;
         readonly includeAmenities?: boolean;
         readonly includeFeatures?: boolean;
-    }): Promise<ApiResult<PaginatedResponse<GastronomyPublic>>> {
+    }): Promise<ApiResult<PaginatedResponse<VenuePublic>>> {
         return apiClient.getList({ path: `${BASE}/gastronomies`, params });
     },
 
@@ -1615,7 +1615,7 @@ export const gastronomyApi = {
      *
      * GET /api/v1/public/gastronomies/slug/:slug
      */
-    getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<GastronomyPublic>> {
+    getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<VenuePublic>> {
         return apiClient.get({ path: `${BASE}/gastronomies/slug/${slug}` });
     },
 

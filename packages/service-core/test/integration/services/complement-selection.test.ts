@@ -20,7 +20,7 @@ import {
 } from './support/addon-orphan-fixtures.js';
 
 afterAll(closeServiceTestPool);
-const OTHER_VERTICAL = VerticalEnum.GASTRONOMY;
+const OTHER_VERTICAL = VerticalEnum.VENUE;
 
 describe.skipIf(!isServiceTestDbAvailable())(
     'HOS-1562 TEST:B7:14 AC:B7:22 AC:B7:21 la selección de complementos',

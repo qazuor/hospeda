@@ -29,7 +29,7 @@ vi.mock('../../../src/services/media', () => ({
 const app = initApp();
 const fixtures: PurgeAssetFixture[] = [];
 const routeNames: Readonly<Record<PurgeAssetFixture['vertical'], string>> = {
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences',
     [VerticalEnum.ACCOMMODATION]: 'accommodations'
 };
@@ -65,7 +65,7 @@ async function purge(fixture: PurgeAssetFixture) {
 describe('TEST:1702:2 AC:1702:1 AC:1702:3 AC:1702:4 PB12 deletes every remote file of a purged listing', () => {
     it('deletes only uploaded assets and clears the purged listing content in every vertical', async () => {
         for (const vertical of [
-            VerticalEnum.GASTRONOMY,
+            VerticalEnum.VENUE,
             VerticalEnum.EXPERIENCE,
             VerticalEnum.ACCOMMODATION
         ] as const) {
@@ -86,7 +86,7 @@ describe('TEST:1702:2 AC:1702:1 AC:1702:3 AC:1702:4 PB12 deletes every remote fi
             expect(
                 [...storage.stored].filter((id) => id.startsWith(`${fixture.listingId}:`)).sort()
             ).toEqual([]);
-            if (vertical === VerticalEnum.GASTRONOMY) {
+            if (vertical === VerticalEnum.VENUE) {
                 const media = await getDb().execute(
                     sql`SELECT id FROM gastronomy_media WHERE gastronomy_id = ${fixture.listingId}::uuid`
                 );

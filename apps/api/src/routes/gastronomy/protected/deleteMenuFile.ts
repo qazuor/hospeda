@@ -37,7 +37,7 @@ export const protectedDeleteGastronomyMenuFileRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/menu-file',
     listingAccess: {
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
         capabilities: ['manage_gastronomy_menu']
