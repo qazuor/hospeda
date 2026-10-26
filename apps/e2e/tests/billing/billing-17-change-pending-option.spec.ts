@@ -13,6 +13,7 @@ import {
 import {
     annualOptionForSlug,
     attachSession,
+    confirmSignupCheckout,
     monthlyOptionForSlug,
     openSignupCheckout
 } from '../../fixtures/signup-checkout.ts';
@@ -119,19 +120,16 @@ test.describe('TEST:1735:16 AC:1735:16 change the billing option with a pending 
         await attachSession(page, person.sessionCookie);
 
         let originalSubscriptionId = '';
-        let originalResumeHref = '';
+        let originalCheckoutUrl = '';
         await test.step('1. Start a monthly checkout and retain its pending link', async () => {
             await openSignupCheckout({ page, webUrl: WEB_URL, billingOptionId: monthlyOptionId });
-            const checkout = page.getByTestId('signup-checkout');
-            await checkout.getByTestId('signup-checkout-confirm').click();
-            const pending = checkout.getByTestId('signup-checkout-pending');
-            await expect(pending).toBeVisible();
-            originalSubscriptionId = (await pending.getAttribute('data-subscription-id')) ?? '';
+            // HOS-1896: a fresh signup navigates to the provider checkout, so the
+            // start response replaces the pending screen as the source of truth.
+            const { subscriptionId, checkoutUrl } = await confirmSignupCheckout({ page });
+            originalSubscriptionId = subscriptionId;
             expect(originalSubscriptionId).toBeTruthy();
-            const resume = checkout.getByTestId('signup-checkout-resume-link');
-            await expect(resume).toBeVisible();
-            originalResumeHref = (await resume.getAttribute('href')) ?? '';
-            expect(originalResumeHref).toBeTruthy();
+            originalCheckoutUrl = checkoutUrl;
+            expect(originalCheckoutUrl).toBeTruthy();
             expect(fakeServer?.requests().some((request) => request.path === '/preapproval')).toBe(
                 true
             );
@@ -165,7 +163,7 @@ test.describe('TEST:1735:16 AC:1735:16 change the billing option with a pending 
             await expect(checkout.getByTestId('signup-checkout-confirm')).toHaveCount(0);
             await expect(
                 checkout.getByTestId('signup-checkout-pending-attempt-resume')
-            ).toHaveAttribute('href', originalResumeHref);
+            ).toHaveAttribute('href', originalCheckoutUrl);
         });
 
         await test.step('3. Cancel the pending attempt and verify its durable effects', async () => {
@@ -200,13 +198,11 @@ test.describe('TEST:1735:16 AC:1735:16 change the billing option with a pending 
         });
 
         await test.step('4. Confirm annual checkout and receive a new subscription', async () => {
-            const checkout = page.getByTestId('signup-checkout');
-            await checkout.getByTestId('signup-checkout-confirm').click();
-            const pending = checkout.getByTestId('signup-checkout-pending');
-            await expect(pending).toBeVisible();
-            const newSubscriptionId = await pending.getAttribute('data-subscription-id');
-            expect(newSubscriptionId).toBeTruthy();
-            expect(newSubscriptionId).not.toBe(originalSubscriptionId);
+            // HOS-1896: the pending screen is gone from the happy path; the
+            // helper reads the new id from the start response after navigating.
+            const { subscriptionId } = await confirmSignupCheckout({ page });
+            expect(subscriptionId).toBeTruthy();
+            expect(subscriptionId).not.toBe(originalSubscriptionId);
             expect(
                 fakeServer?.requests().filter((request) => request.path === '/preapproval').length
             ).toBeGreaterThanOrEqual(2);
