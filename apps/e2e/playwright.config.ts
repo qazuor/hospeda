@@ -159,7 +159,7 @@ export default defineConfig({
                 HOSPEDA_MERCADO_PAGO_API_BASE_URL: 'http://127.0.0.1:18090',
                 // TEST:B3:35 (HOS-1526): align receiver signature verification with the fake provider.
                 HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET:
-                    process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET ?? 'e2e-webhook-secret',
+                    process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET || 'e2e-webhook-secret',
                 HOSPEDA_E2E_CLOCK_FILE: path.join(
                     REPO_ROOT,
                     'apps/e2e/test-results/fake-provider-clock.json'
