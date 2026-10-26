@@ -14,6 +14,7 @@
  */
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import { seedPublicAccommodation } from '../helpers/seed-public-accommodation';
@@ -48,10 +49,13 @@ describe('GET /accommodations — SPEC-076 multi-sort + forced featuredFirst', (
 
     afterEach(async () => {
         await testDb.clean();
+        clearCache();
     });
 
     beforeAll(async () => {
         await testDb.setup();
+        await testDb.clean();
+        clearCache();
         validateApiEnv();
         app = initApp();
     });

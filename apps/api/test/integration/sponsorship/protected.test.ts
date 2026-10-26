@@ -5,6 +5,7 @@ delete process.env.CI;
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
 import { createTestUser } from '../../e2e/setup/seed-helpers';
 import { testDb } from '../../e2e/setup/test-database';
@@ -77,10 +78,13 @@ describe('Protected Sponsorship Routes', () => {
 
     afterEach(async () => {
         await testDb.clean();
+        clearCache();
     });
 
     beforeAll(async () => {
         await testDb.setup();
+        await testDb.clean();
+        clearCache();
         validateApiEnv();
         process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
         app = initApp();

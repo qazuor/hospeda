@@ -1,6 +1,7 @@
 import { attractions, getDb } from '@repo/db';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 
@@ -12,6 +13,8 @@ describe('GET /attractions (list)', () => {
 
     beforeAll(async () => {
         await testDb.setup();
+        await testDb.clean();
+        clearCache();
         // Initialize environment variables before running tests
         validateApiEnv();
         app = initApp();
@@ -31,6 +34,7 @@ describe('GET /attractions (list)', () => {
 
     afterEach(async () => {
         await testDb.clean();
+        clearCache();
     });
 
     afterAll(async () => {

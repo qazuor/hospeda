@@ -5,6 +5,7 @@
 import { AccommodationSummarySchema } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import {
@@ -26,6 +27,7 @@ describe('GET /accommodations/:id/summary', () => {
 
     afterEach(async () => {
         await testDb.clean();
+        clearCache();
     });
 
     beforeEach(async () => {
@@ -35,6 +37,8 @@ describe('GET /accommodations/:id/summary', () => {
 
     beforeAll(async () => {
         await testDb.setup();
+        await testDb.clean();
+        clearCache();
         // Initialize environment variables before running tests
         validateApiEnv();
         app = initApp();

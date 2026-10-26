@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import { seedPublicDestinations } from '../helpers/seed-public-destinations';
@@ -14,6 +15,7 @@ describe('GET /destinations (list)', () => {
 
     afterEach(async () => {
         await testDb.clean();
+        clearCache();
     });
 
     beforeEach(async () => {
@@ -22,6 +24,8 @@ describe('GET /destinations (list)', () => {
 
     beforeAll(async () => {
         await testDb.setup();
+        await testDb.clean();
+        clearCache();
         // Initialize environment variables before running tests
         validateApiEnv();
         app = initApp();
