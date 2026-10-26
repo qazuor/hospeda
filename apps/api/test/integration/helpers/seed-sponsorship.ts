@@ -63,6 +63,12 @@ export interface SeedSponsorshipInput {
      * bug seed one.
      */
     readonly withPackage?: boolean;
+    /** Analytics counters stored on the row. Defaults to the column default. */
+    readonly analytics?: {
+        readonly impressions?: number;
+        readonly clicks?: number;
+        readonly couponsUsed?: number;
+    };
 }
 
 /** Rows created by {@link seedSponsorship}. */
@@ -107,6 +113,7 @@ export async function seedSponsorship(input: SeedSponsorshipInput): Promise<Seed
             targetId: randomUUID(),
             levelId: input.levelId,
             ...(packageId ? { packageId } : {}),
+            ...(input.analytics ? { analytics: { ...input.analytics } } : {}),
             startsAt: new Date()
         })
         .returning({ id: sponsorships.id });
