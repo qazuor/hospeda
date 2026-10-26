@@ -151,8 +151,11 @@ describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
         expect(start).not.toHaveBeenCalled();
     });
 
-    it('enters pending after one click, with the API URL and authorization end', async () => {
-        start.mockResolvedValue(success);
+    it('keeps the pending fallback with the authorization window when there is no URL', async () => {
+        start.mockResolvedValue({
+            ...success,
+            data: { ...success.data, checkoutUrl: null }
+        });
         render(<SignupCheckout {...props} />);
         fireEvent.click(screen.getByTestId('signup-checkout-confirm'));
         expect(await screen.findByTestId('signup-checkout-pending')).toHaveAttribute(
@@ -163,10 +166,7 @@ describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
             'data-vertical',
             'tourist'
         );
-        expect(screen.getByTestId('signup-checkout-resume-link')).toHaveAttribute(
-            'href',
-            success.data.checkoutUrl
-        );
+        expect(screen.queryByTestId('signup-checkout-resume-link')).not.toBeInTheDocument();
         expect(screen.getByTestId('signup-checkout-window-ends')).toHaveAttribute(
             'dateTime',
             success.data.authorizationWindowEndsAt
@@ -346,7 +346,10 @@ describe('TEST:B13a:21c AC:B13a:5 the checkout says both trial halves before con
         );
         expect(screen.queryByTestId('signup-checkout-trial-notice')).not.toBeInTheDocument();
 
-        start.mockResolvedValue(success);
+        start.mockResolvedValue({
+            ...success,
+            data: { ...success.data, checkoutUrl: null }
+        });
         rerender(
             <SignupCheckout
                 {...props}

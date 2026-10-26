@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignupCheckout } from '@/components/billing/SignupCheckout.client';
 
 const api = vi.hoisted(() => ({
@@ -25,6 +25,34 @@ const props = {
     planSummary: null
 };
 beforeEach(() => vi.resetAllMocks());
+
+let restoreLocation: (() => void) | null = null;
+
+// jsdom's window.location is non-configurable for assignment; redefine it with a
+// setter so HOS-1896 can assert the retake paths never navigate.
+function stubNavigation() {
+    const navigate = vi.fn();
+    const originalLocation = window.location;
+    Object.defineProperty(window, 'location', {
+        configurable: true,
+        writable: true,
+        value: {
+            ...originalLocation,
+            set href(value: string) {
+                navigate(value);
+            }
+        } as Location
+    });
+    restoreLocation = () => {
+        window.location = originalLocation;
+    };
+    return navigate;
+}
+
+afterEach(() => {
+    restoreLocation?.();
+    restoreLocation = null;
+});
 
 describe('TEST:1735:11 pending attempt checkout panel', () => {
     it('TEST:1759:4 shows the localized plan name of the pending attempt', () => {
@@ -134,6 +162,7 @@ describe('TEST:1735:11 pending attempt checkout panel', () => {
     });
 
     it('TEST:1735:13 rereads after COMMITMENT_TAKEN and displays a newly found attempt', async () => {
+        const navigate = stubNavigation();
         api.start.mockResolvedValueOnce({
             ok: false,
             error: { status: 409, reason: 'COMMITMENT_TAKEN' }
@@ -148,6 +177,20 @@ describe('TEST:1735:11 pending attempt checkout panel', () => {
         const island = within(screen.getByTestId('signup-checkout'));
         fireEvent.click(island.getByTestId('signup-checkout-confirm'));
         expect(await island.findByTestId('signup-checkout-pending-attempt')).toBeInTheDocument();
+        // AC:1896:4 — retaking an existing attempt is PendingAttemptPanel's job.
+        expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('TEST:1896:4 shows an existing pending attempt without navigating away', () => {
+        const navigate = stubNavigation();
+        render(
+            <SignupCheckout
+                {...props}
+                pendingAttempt={pendingAttempt}
+            />
+        );
+        expect(screen.getByTestId('signup-checkout-pending-attempt')).toBeInTheDocument();
+        expect(navigate).not.toHaveBeenCalled();
     });
 
     it('TEST:1735:13 keeps the existing rejection when reread has no pendingAttempt', async () => {
