@@ -43,6 +43,7 @@ function subscription(overrides: Partial<SelectSubscription> = {}): SelectSubscr
         paymentMethod: 'CARD',
         status: 'ACTIVE',
         class: 'PRINCIPAL',
+        cancellationReason: null,
         nextChargeAt: null,
         serviceEndsAt: null,
         firstChargeAt: null,

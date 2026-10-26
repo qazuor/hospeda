@@ -3,9 +3,15 @@ import type { DrizzleClient } from '@repo/db';
 import { and, eq, getDb, providerLinks, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
-import { PermissionEnum, ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
+import {
+    CancellationReasonSchema,
+    PermissionEnum,
+    ServiceErrorCode,
+    VerticalEnumSchema
+} from '@repo/schemas';
 import { z } from 'zod';
 import { type Actor, ServiceError } from '../../../types/index.js';
+import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import {
     type CancelOurAuthorizationOutcome,
@@ -38,7 +44,11 @@ const actorSchema = z.custom<Actor>((value) => {
         permissionsSchema.safeParse(candidate.permissions).success
     );
 });
-const inputSchema = z.strictObject({ actor: actorSchema, subscriptionId: z.string() });
+const inputSchema = z.strictObject({
+    actor: actorSchema,
+    subscriptionId: z.string(),
+    reason: CancellationReasonSchema.optional()
+});
 /** Stable machine-readable rejection reasons for the S11 act. */
 export const CANCEL_ACTIVE_REJECTIONS = [
     'SUBSCRIPTION_NOT_FOUND',
@@ -95,6 +105,7 @@ export interface CancelActiveSubscriptionPorts {
     readonly complements: ComplementPolicyPorts;
     /** Optional annotation of provider cancellation observations. */
     readonly cancellationSeen?: CancellationSeenAnnotator;
+    readonly billingFacts?: BillingFactSink;
 }
 /** Observable outcome of scheduling an active subscription's cancellation. */
 export type CancelActiveSubscriptionResult =
@@ -127,6 +138,8 @@ interface S11Reading {
     readonly basis: 'PAID_PERIOD' | 'CREDIT' | 'NOW';
     readonly cardPayer: boolean;
     readonly authorizationId: string | null;
+    readonly cancellationReason: z.infer<typeof CancellationReasonSchema> | null;
+    readonly actorKind: 'USER' | 'ADMIN';
 }
 
 /** The single guarded S11 write (G5): ACTIVE becomes CANCEL_SCHEDULED and receives its service end. */
@@ -135,13 +148,15 @@ async function writeS11Cancellation(input: {
     subscriptionId: string;
     serviceEndsAt: Date;
     now: Date;
+    reason?: z.infer<typeof CancellationReasonSchema>;
 }): Promise<boolean> {
     const [row] = await input.tx
         .update(subscriptions)
         .set({
             status: 'CANCEL_SCHEDULED',
             serviceEndsAt: input.serviceEndsAt,
-            updatedAt: input.now
+            updatedAt: input.now,
+            cancellationReason: input.reason ?? null
         })
         .where(and(eq(subscriptions.id, input.subscriptionId), eq(subscriptions.status, 'ACTIVE')))
         .returning({ id: subscriptions.id });
@@ -158,7 +173,11 @@ async function writeS11Cancellation(input: {
  * @throws ServiceError with a typed cancellation rejection reason
  */
 export async function cancelActiveSubscription(
-    input: { readonly actor: Actor; readonly subscriptionId: string },
+    input: {
+        readonly actor: Actor;
+        readonly subscriptionId: string;
+        readonly reason?: z.infer<typeof CancellationReasonSchema>;
+    },
     ports: CancelActiveSubscriptionPorts
 ): Promise<CancelActiveSubscriptionResult> {
     const parsed = inputSchema.parse(input);
@@ -214,7 +233,8 @@ export async function cancelActiveSubscription(
                 tx,
                 subscriptionId: subscription.id,
                 serviceEndsAt: end.serviceEndsAt,
-                now
+                now,
+                reason: parsed.reason
             }))
         )
             throw cancelActiveRejection(
@@ -256,7 +276,10 @@ export async function cancelActiveSubscription(
                 serviceEndsAt: end.serviceEndsAt,
                 basis: end.basis,
                 cardPayer,
-                authorizationId: link?.providerId ?? null
+                authorizationId: link?.providerId ?? null,
+                cancellationReason: parsed.reason ?? null,
+                actorKind:
+                    parsed.actor.id === subscription.userId ? ('USER' as const) : ('ADMIN' as const)
             } satisfies S11Reading,
             decided
         };
@@ -269,6 +292,24 @@ export async function cancelActiveSubscription(
             complements: { decided: 0, calls: [] }
         };
     const reading = committed.reading;
+    if (reading.userId && VerticalEnumSchema.safeParse(reading.vertical).success) {
+        const validVertical = VerticalEnumSchema.parse(reading.vertical);
+        emitBillingFact({
+            sink: ports.billingFacts,
+            fact: {
+                kind: 'CANCEL_SCHEDULED',
+                userId: reading.userId,
+                vertical: validVertical,
+                subscriptionId: reading.subscriptionId,
+                subscriptionClass: 'PRINCIPAL',
+                actorKind: reading.actorKind,
+                occurredAt: now,
+                serviceEndsAt: reading.serviceEndsAt,
+                basis: reading.basis,
+                ...(reading.cancellationReason ? { reason: reading.cancellationReason } : {})
+            }
+        });
+    }
     const vertical = VerticalEnumSchema.safeParse(reading.vertical);
     if (reading.userId && vertical.success) {
         try {

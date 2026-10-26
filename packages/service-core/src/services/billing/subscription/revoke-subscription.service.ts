@@ -25,6 +25,7 @@ import {
 } from '../addon/addon-instance-a5';
 import type { AddonOrphanhoodPorts } from '../addon/addon-orphanhood-ports';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss';
+import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink.js';
 import type { CoverageNotices } from '../payment/payment-ports';
 import {
     type CancelOurAuthorizationOutcome,
@@ -77,6 +78,7 @@ export interface RevokeSubscriptionPorts {
     readonly clock: Clock;
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly coverageNotices: CoverageNotices;
+    readonly billingFacts?: BillingFactSink;
     readonly orphanhood: AddonOrphanhoodPorts;
     /** S18's interface (B8b); defaults to `unimplementedSuccessionCloser`, which throws. */
     readonly successionCloser?: SuccessionCloser;
@@ -359,6 +361,23 @@ export async function revokeSubscription(
     });
 
     const { reading, refundId, cancelled, oneTime } = committed;
+    const vertical = VerticalEnumSchema.safeParse(reading.vertical);
+    if (reading.userId && vertical.success)
+        emitBillingFact({
+            sink: ports.billingFacts,
+            fact: {
+                kind: 'SUBSCRIPTION_CANCELLED',
+                userId: reading.userId,
+                vertical: vertical.data,
+                subscriptionId: reading.subscriptionId,
+                subscriptionClass: 'PRINCIPAL',
+                actorKind: 'ADMIN',
+                cancelledBy: 'ADMIN',
+                path: 'REVOKED',
+                wasScheduled: reading.origin === 'CANCEL_SCHEDULED',
+                occurredAt: now
+            }
+        });
     await emitRemoved({ reading, coverageNotices: ports.coverageNotices });
     const provider = await cancelAtProvider({ reading, ports });
     await emitAddonCoverageRemoved({ cancelled, coverageNotices: ports.coverageNotices });

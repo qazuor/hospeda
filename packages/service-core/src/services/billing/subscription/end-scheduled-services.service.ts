@@ -17,7 +17,7 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import { and, asc, type DrizzleClient, eq, getDb, lte, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
-import { ServiceErrorCode } from '@repo/schemas';
+import { CancellationReasonSchema, ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
 import { notExists } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
@@ -28,6 +28,7 @@ import {
     emitAddonCoverageRemoved
 } from '../addon/addon-instance-a5';
 import type { AddonOrphanhoodPorts } from '../addon/addon-orphanhood-ports';
+import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink.js';
 import type { CoverageNotices } from '../payment/payment-ports';
 import { pauseComplementsS32 } from './complement-pause-s32.js';
 import {
@@ -47,6 +48,7 @@ export interface EndScheduledServicesPorts extends AddonOrphanhoodPorts {
     /** Our notice before A5's provider call (`ADDON_CANCELLED`). */
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly coverageNotices: CoverageNotices;
+    readonly billingFacts?: BillingFactSink;
     /** S18's interface; defaults to `unimplementedSuccessionCloser` (fails closed). */
     readonly successionCloser?: SuccessionCloser;
     readonly cancellationSeen?: CancellationSeenAnnotator;
@@ -213,6 +215,37 @@ export async function endScheduledServices(
             );
             if (result.outcome === 'CANCELLED') {
                 principals.cancelled += 1;
+                const [endedSubscription] = await db
+                    .select()
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, subscriptionId))
+                    .limit(1);
+                const vertical = VerticalEnumSchema.safeParse(endedSubscription?.vertical);
+                const reason = CancellationReasonSchema.safeParse(
+                    endedSubscription?.cancellationReason
+                );
+                if (endedSubscription?.userId && vertical.success) {
+                    const lifetimeDays = Math.floor(
+                        (now.getTime() - endedSubscription.createdAt.getTime()) / 86_400_000
+                    );
+                    emitBillingFact({
+                        sink: ports.billingFacts,
+                        fact: {
+                            kind: 'SUBSCRIPTION_CANCELLED',
+                            userId: endedSubscription.userId,
+                            vertical: vertical.data,
+                            subscriptionId,
+                            subscriptionClass: 'PRINCIPAL',
+                            actorKind: 'SYSTEM',
+                            cancelledBy: 'SYSTEM',
+                            path: 'SERVICE_END',
+                            wasScheduled: true,
+                            occurredAt: now,
+                            ...(reason.success ? { reason: reason.data } : {}),
+                            ...(endedSubscription.createdAt ? { lifetimeDays } : {})
+                        }
+                    });
+                }
                 await emitServiceEndRemoved({
                     ended: [result],
                     coverageNotices: ports.coverageNotices
