@@ -463,8 +463,20 @@ describe('GET /accommodations (Enhanced List)', () => {
         });
 
         // HOS-1898: the public list ignores ?isFeatured=, so rows of the wrong kind come back.
-        // Drop `.fails` once the filter is wired.
-        it.fails('should handle boolean filters', async () => {
+        it('currently ignores ?isFeatured= and returns the non-featured rows (HOS-1898)', async () => {
+            const response = await app.request(`${baseUrl}?isFeatured=true`, {
+                headers: { 'user-agent': 'vitest', Accept: 'application/json' }
+            });
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect(data.data.items).toHaveLength(3);
+            for (const item of data.data.items) {
+                expect(item.isFeatured).toBe(false);
+            }
+        });
+
+        // Drop `.fails` (and the test above) once the filter is wired (HOS-1898).
+        it.fails('should handle boolean filters (HOS-1898)', async () => {
             const booleanTests = [
                 { isFeatured: 'true' },
                 { isFeatured: 'false' },
