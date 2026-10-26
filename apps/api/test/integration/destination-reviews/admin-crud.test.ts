@@ -1,6 +1,6 @@
 import { destinationReviews, eq, getDb } from '@repo/db';
 import type { DestinationRatingInput } from '@repo/schemas';
-import { PermissionEnum } from '@repo/schemas';
+import { DestinationRatingSchema, PermissionEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { clearCache } from '../../../src/middlewares/cache';
@@ -16,6 +16,11 @@ import { seedPublicDestinations } from '../helpers/seed-public-destinations';
 // The mock-actor headers are only honoured when CI is unset.
 delete process.env.CI;
 
+/** Every rating category the destination schema declares, each scored 4. */
+const SEEDED_RATING = Object.fromEntries(
+    Object.keys(DestinationRatingSchema.shape).map((key) => [key, 4])
+) as DestinationRatingInput;
+
 /**
  * Integration tests for the admin destination review CRUD routes.
  *
@@ -30,27 +35,6 @@ delete process.env.CI;
  * RESTORE, HARD_DELETE), and the service adds its own check on top. The
  * `/:id` gates are registered path-wide, so the full actor holds all of them.
  */
-const DESTINATION_RATING_KEYS = [
-    'landscape',
-    'attractions',
-    'accessibility',
-    'safety',
-    'cleanliness',
-    'hospitality',
-    'culturalOffer',
-    'gastronomy',
-    'affordability',
-    'nightlife',
-    'infrastructure',
-    'environmentalCare',
-    'wifiAvailability',
-    'shopping',
-    'beaches',
-    'greenSpaces',
-    'localEvents',
-    'weatherSatisfaction'
-] as const;
-
 describe('Admin DestinationReview CRUD Routes', () => {
     let app: ReturnType<typeof initApp>;
     const base = '/api/v1/admin/destinations/reviews';
@@ -112,9 +96,7 @@ describe('Admin DestinationReview CRUD Routes', () => {
                 userId: actorId,
                 title: 'Seeded review',
                 content: 'Seeded review content for the admin CRUD tests.',
-                rating: Object.fromEntries(
-                    DESTINATION_RATING_KEYS.map((key) => [key, 4])
-                ) as DestinationRatingInput,
+                rating: SEEDED_RATING,
                 averageRating: 4,
                 ...(deleted ? { deletedAt: new Date() } : {})
             })
