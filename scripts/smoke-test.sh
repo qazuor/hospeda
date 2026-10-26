@@ -92,8 +92,8 @@ check_status() {
 }
 
 # Like check_status but accepts any of several status codes (useful when the
-# target host can answer with multiple legitimate codes — e.g. admin returns
-# 307 from the apex but 200 from /auth/signin).
+# target host can answer with multiple legitimate codes — e.g. the web apex
+# answers 301 to its default locale, or the admin apex 307 to /dashboard).
 check_status_any() {
     local url=$1
     shift
@@ -140,15 +140,22 @@ section "Connectivity ($ENV)"
 
 # Health endpoint is /health (no /api/v1/ prefix). Anything else 404s.
 check_status "${API}/health" "200"
-check_status "${WEB}" "200"
-# Admin returns 307 redirect from apex to /auth/signin. Both are healthy.
+# The web apex redirects (301) to its default locale; the locale root is the
+# page that has to render.
+check_status_any "${WEB}" "200" "301"
+check_status "${WEB}/es/" "200"
+# The admin has no sign-in page of its own: the apex redirects (307) to
+# /dashboard, which sends an anonymous visitor to the web sign-in. The public
+# /auth/forbidden route is what proves the admin app itself renders.
 check_status_any "${ADMIN}" "200" "307"
-check_status "${ADMIN}/auth/signin" "200"
+check_status "${ADMIN}/auth/forbidden" "200"
 
 # www.hospeda.com.ar serves the same Astro site as the apex (mirror), not a
-# 301/308 redirect. 200 is the expected status here.
+# redirect to the apex. Like the apex, its root redirects (301) to the default
+# locale, and the locale root is the page that has to render.
 if [ "$ENV" = "prod" ] && [ -n "$WEB_WWW" ]; then
-    check_status "${WEB_WWW}" "200"
+    check_status_any "${WEB_WWW}" "200" "301"
+    check_status "${WEB_WWW}/es/" "200"
 fi
 
 # ---------------------------------------------------------------------------
