@@ -237,7 +237,29 @@ export async function confirmSignupCheckout(options: {
 }): Promise<SignupCheckoutConfirmation> {
     const { page } = options;
     const isFakeApprovalUrl = (url: URL): boolean => url.hostname === FAKE_APPROVAL_HOST;
+    const isStartUrl = (url: URL): boolean => url.pathname === START_SUBSCRIPTION_PATH;
 
+    // The island navigates away as soon as the start response lands, and the
+    // browser then drops that response's body: `waitForResponse(...).json()`
+    // fails with "No resource with given identifier found". So the body is read
+    // here, while the request is still ours, and handed back unchanged.
+    let resolveStart: (value: { readonly status: number; readonly text: string }) => void = () =>
+        undefined;
+    const startCaptured = new Promise<{ readonly status: number; readonly text: string }>(
+        (resolve) => {
+            resolveStart = resolve;
+        }
+    );
+    await page.route(isStartUrl, async (route) => {
+        if (route.request().method() !== 'POST') {
+            await route.continue();
+            return;
+        }
+        const fetched = await route.fetch();
+        const text = await fetched.text();
+        resolveStart({ status: fetched.status(), text });
+        await route.fulfill({ response: fetched, body: text });
+    });
     await page.route(isFakeApprovalUrl, (route) =>
         route.fulfill({
             status: 200,
@@ -246,17 +268,12 @@ export async function confirmSignupCheckout(options: {
         })
     );
     try {
-        const startResponse = page.waitForResponse(
-            (response) =>
-                response.request().method() === 'POST' &&
-                new URL(response.url()).pathname === START_SUBSCRIPTION_PATH
-        );
         await page.getByTestId('signup-checkout-confirm').click();
-        const response = await startResponse;
-        if (!response.ok()) {
-            throw new Error(`Signup start failed (${response.status()}): ${await response.text()}`);
+        const response = await startCaptured;
+        if (response.status < 200 || response.status >= 300) {
+            throw new Error(`Signup start failed (${response.status}): ${response.text}`);
         }
-        const body = (await response.json()) as {
+        const body = JSON.parse(response.text) as {
             readonly data?: Partial<SignupCheckoutConfirmation>;
         };
         const data = body.data;
@@ -275,5 +292,6 @@ export async function confirmSignupCheckout(options: {
         };
     } finally {
         await page.unroute(isFakeApprovalUrl);
+        await page.unroute(isStartUrl);
     }
 }
