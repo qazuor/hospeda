@@ -42,8 +42,8 @@ import {
     type EntityViewModel,
     ExperienceModel as ExperienceModelClass,
     entityViewModel,
-    VenueModel as GastronomyModelClass,
-    type HostDailySeriesRow
+    type HostDailySeriesRow,
+    VenueModel as VenueModelClass
 } from '@repo/db';
 import {
     EntityTypeEnum,
@@ -490,7 +490,7 @@ export class EntityViewService extends BaseService {
      */
     private get gastronomyModel(): VenueModel {
         if (!this.gastronomyModelLazy) {
-            this.gastronomyModelLazy = this.gastronomyModelOverride ?? new GastronomyModelClass();
+            this.gastronomyModelLazy = this.gastronomyModelOverride ?? new VenueModelClass();
         }
         return this.gastronomyModelLazy;
     }
