@@ -30,8 +30,6 @@ export interface ApiIntegrationExclusion {
     readonly reason: string;
 }
 
-const STALE_STATUS =
-    'HOS-1891: never ran in CI; the asserted status list no longer matches what the route answers (mostly 404 for a missing id, 400 on hierarchy). Unverified per file.';
 const WHOLE_MODULE_MOCK =
     'HOS-1891: never ran in CI; its whole-module vi.mock of @repo/logger or @repo/service-core lacks an export the app now imports.';
 const MISC =
@@ -55,31 +53,6 @@ export const API_INTEGRATION_EXCLUSIONS: readonly ApiIntegrationExclusion[] = [
         file: 'test/integration/ai/vault-roundtrip.test.ts',
         reason: 'HOS-247: non-deterministically flaky: the credential-create route fires syncAiProviderModels after responding, racing testDb.clean(). Comes back once the create flow is deterministic under test.'
     },
-    ...byReason({
-        reason: STALE_STATUS,
-        files: [
-            'test/integration/accommodation-reviews/admin-crud.test.ts',
-            'test/integration/accommodation/create.test.ts',
-            'test/integration/accommodation/delete-faq.test.ts',
-            'test/integration/accommodation/get-faqs.test.ts',
-            'test/integration/accommodation/post-faq.test.ts',
-            'test/integration/accommodation/put-faq.test.ts',
-            'test/integration/accommodation/update.test.ts',
-            'test/integration/attraction/hard-delete.test.ts',
-            'test/integration/attraction/patch.test.ts',
-            'test/integration/attraction/restore.test.ts',
-            'test/integration/destination-reviews/admin-crud.test.ts',
-            'test/integration/destination/hierarchy.test.ts',
-            'test/integration/event-location/hard-delete.test.ts',
-            'test/integration/event-location/list.test.ts',
-            'test/integration/event-location/patch.test.ts',
-            'test/integration/event-location/restore.test.ts',
-            'test/integration/event-organizer/hard-delete.test.ts',
-            'test/integration/event-organizer/patch.test.ts',
-            'test/integration/event-organizer/restore.test.ts',
-            'test/integration/sponsorship/admin-list.test.ts'
-        ]
-    }),
     ...byReason({
         reason: WHOLE_MODULE_MOCK,
         files: [
