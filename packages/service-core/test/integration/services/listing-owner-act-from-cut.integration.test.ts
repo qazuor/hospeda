@@ -93,14 +93,14 @@ function expectPostCutOwnerEdit(input: {
 
 describe('HOS-1500 V9a — owner-act register starts at the cut (integration)', () => {
     let accommodationService: AccommodationService;
-    let gastronomyService: VenueService;
+    let venueService: VenueService;
     let experienceService: ExperienceService;
 
     beforeAll(() => {
         if (!dbAvailable) return;
         const config = { logger: createLoggerMock() };
         accommodationService = new AccommodationService(config);
-        gastronomyService = new VenueService(config);
+        venueService = new VenueService(config);
         experienceService = new ExperienceService(config);
     });
 
@@ -182,7 +182,7 @@ describe('HOS-1500 V9a — owner-act register starts at the cut (integration)', 
                     await findLatestOwnerAct({ entityType, entityId: gastronomyId, tx })
                 ).toBeNull();
 
-                const edited = await gastronomyService.updateOwn(
+                const edited = await venueService.updateOwn(
                     gastronomyId,
                     { summary: 'Resumen editado después del corte' },
                     ownerActor(ownerId),

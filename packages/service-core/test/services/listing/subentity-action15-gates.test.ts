@@ -69,11 +69,11 @@ describe('ACC:15 sub-entity content gates', () => {
 
     it('keeps the gate shared by menu, events and certificates closed to action 15', async () => {
         // Act
-        const gastronomy = inScope(OWNER_ID, () => checkVenueCanEditFaqs(admin15, listing));
+        const venue = inScope(OWNER_ID, () => checkVenueCanEditFaqs(admin15, listing));
         const experience = inScope(OWNER_ID, () => checkExperienceCanEditFaqs(admin15, listing));
 
         // Assert
-        await expect(gastronomy).rejects.toThrow(forbidden);
+        await expect(venue).rejects.toThrow(forbidden);
         await expect(experience).rejects.toThrow(forbidden);
     });
 });

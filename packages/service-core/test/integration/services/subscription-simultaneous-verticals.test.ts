@@ -110,7 +110,7 @@ async function runScenario(expireFirst: boolean) {
         },
         ports
     );
-    const gastronomy = await startSubscription(
+    const venue = await startSubscription(
         {
             userId: user.id,
             billingOptionId: (await seedChoice(user.id, 'gastronomy')).billingOptionId,
@@ -119,20 +119,20 @@ async function runScenario(expireFirst: boolean) {
         ports
     );
     seededSubscriptionIds.add(accommodation.subscriptionId);
-    if (!expireFirst) seededSubscriptionIds.add(gastronomy.subscriptionId);
+    if (!expireFirst) seededSubscriptionIds.add(venue.subscriptionId);
     const sweep = () =>
         withSeededSubscriptionSweep(20, () => expireAuthorizationWindows(20, ports));
     if (expireFirst) {
         const [venueBeforeExpiry] = await getServiceTestDb()
             .select()
             .from(subscriptions)
-            .where(eq(subscriptions.id, gastronomy.subscriptionId));
+            .where(eq(subscriptions.id, venue.subscriptionId));
         const [venueLinkBeforeExpiry] = await getServiceTestDb()
             .select()
             .from(providerLinks)
-            .where(eq(providerLinks.subscriptionId, gastronomy.subscriptionId));
+            .where(eq(providerLinks.subscriptionId, venue.subscriptionId));
         const venueAuthorizationBeforeExpiry = await provider.readAuthorization({
-            authorizationId: gastronomy.authorizationId
+            authorizationId: venue.authorizationId
         });
         now = new Date(startAt.getTime() + 73 * 60 * 60 * 1000);
         expect(await sweep()).toMatchObject({ abandoned: 1, activated: 0 });
@@ -142,49 +142,49 @@ async function runScenario(expireFirst: boolean) {
         const [venueAfterExpiry] = await getServiceTestDb()
             .select()
             .from(subscriptions)
-            .where(eq(subscriptions.id, gastronomy.subscriptionId));
+            .where(eq(subscriptions.id, venue.subscriptionId));
         const [venueLinkAfterExpiry] = await getServiceTestDb()
             .select()
             .from(providerLinks)
-            .where(eq(providerLinks.subscriptionId, gastronomy.subscriptionId));
+            .where(eq(providerLinks.subscriptionId, venue.subscriptionId));
         expect(venueAfterExpiry).toEqual(venueBeforeExpiry);
         expect(venueLinkAfterExpiry).toEqual(venueLinkBeforeExpiry);
         expect(venueAuthorizationBeforeExpiry.snapshot.status).toBe('pending');
         expect(
-            await provider.readAuthorization({ authorizationId: gastronomy.authorizationId })
+            await provider.readAuthorization({ authorizationId: venue.authorizationId })
         ).toMatchObject({ snapshot: { status: 'pending' } });
-        await provider.approve({ authorizationId: gastronomy.authorizationId });
-        seededSubscriptionIds.add(gastronomy.subscriptionId);
-        expect(await activateSubscription(gastronomy.subscriptionId, ports)).toMatchObject({
+        await provider.approve({ authorizationId: venue.authorizationId });
+        seededSubscriptionIds.add(venue.subscriptionId);
+        expect(await activateSubscription(venue.subscriptionId, ports)).toMatchObject({
             activated: true
         });
     } else {
-        await provider.approve({ authorizationId: gastronomy.authorizationId });
-        expect(await activateSubscription(gastronomy.subscriptionId, ports)).toMatchObject({
+        await provider.approve({ authorizationId: venue.authorizationId });
+        expect(await activateSubscription(venue.subscriptionId, ports)).toMatchObject({
             activated: true
         });
         const [beforeRow] = await getServiceTestDb()
             .select()
             .from(subscriptions)
-            .where(eq(subscriptions.id, gastronomy.subscriptionId));
+            .where(eq(subscriptions.id, venue.subscriptionId));
         const [beforeLink] = await getServiceTestDb()
             .select()
             .from(providerLinks)
-            .where(eq(providerLinks.subscriptionId, gastronomy.subscriptionId));
+            .where(eq(providerLinks.subscriptionId, venue.subscriptionId));
         now = new Date(startAt.getTime() + 73 * 60 * 60 * 1000);
         expect(await sweep()).toMatchObject({ abandoned: 1, activated: 0 });
         const [afterRow] = await getServiceTestDb()
             .select()
             .from(subscriptions)
-            .where(eq(subscriptions.id, gastronomy.subscriptionId));
+            .where(eq(subscriptions.id, venue.subscriptionId));
         const [afterLink] = await getServiceTestDb()
             .select()
             .from(providerLinks)
-            .where(eq(providerLinks.subscriptionId, gastronomy.subscriptionId));
+            .where(eq(providerLinks.subscriptionId, venue.subscriptionId));
         expect(afterRow?.updatedAt).toEqual(beforeRow?.updatedAt);
         expect(afterLink).toEqual(beforeLink);
         expect(
-            await provider.readAuthorization({ authorizationId: gastronomy.authorizationId })
+            await provider.readAuthorization({ authorizationId: venue.authorizationId })
         ).toMatchObject({ snapshot: { status: 'active' } });
     }
     const [accommodationRow] = await getServiceTestDb()
@@ -194,7 +194,7 @@ async function runScenario(expireFirst: boolean) {
     const [gastronomyRow] = await getServiceTestDb()
         .select()
         .from(subscriptions)
-        .where(eq(subscriptions.id, gastronomy.subscriptionId));
+        .where(eq(subscriptions.id, venue.subscriptionId));
     expect(accommodationRow).toMatchObject({
         userId: user.id,
         vertical: 'accommodation',
@@ -207,8 +207,7 @@ async function runScenario(expireFirst: boolean) {
     });
     const venueNotices = (await getServiceTestDb().select().from(emailOutbox)).filter(
         (notice) =>
-            (notice.payload as { subscriptionId?: string }).subscriptionId ===
-            gastronomy.subscriptionId
+            (notice.payload as { subscriptionId?: string }).subscriptionId === venue.subscriptionId
     );
     expect(
         venueNotices.filter((notice) => notice.template === 'billing.signup-confirmed')
@@ -216,7 +215,7 @@ async function runScenario(expireFirst: boolean) {
     expect(
         venueNotices.filter((notice) => notice.template !== 'billing.signup-confirmed')
     ).toHaveLength(0);
-    return { provider, gastronomy, userId: user.id };
+    return { provider, gastronomy: venue, userId: user.id };
 }
 
 describe('TEST:B3:33 simultaneous verticals advance independently', () => {

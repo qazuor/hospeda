@@ -208,8 +208,8 @@ export async function replaceVenueDailySpecials(
         const validated = parseResult.data;
         const { gastronomyId } = validated;
 
-        const gastronomy = await requireVenue(model, gastronomyId, ctx?.tx);
-        checkVenueCanEditFaqs(actor, gastronomy);
+        const venue = await requireVenue(model, gastronomyId, ctx?.tx);
+        checkVenueCanEditFaqs(actor, venue);
 
         const specialModel = new VenueDailySpecialModel();
 
@@ -242,7 +242,7 @@ export async function replaceVenueDailySpecials(
             // AC:V9a:7 — the owner act commits with the whole specials document.
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: gastronomy,
+                listing: venue,
                 actor,
                 field: 'dailySpecials',
                 ctx: { ...ctx, tx }

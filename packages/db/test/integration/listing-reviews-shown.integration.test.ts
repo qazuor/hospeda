@@ -46,7 +46,7 @@ describe('TEST:1686:1 AC:1686:1 AC:1686:4 listingReviewsShownCondition', () => {
                 } as never,
                 tx
             );
-            const gastronomy = await new VenueModel().create(
+            const venue = await new VenueModel().create(
                 {
                     ...common,
                     name: `Review visibility ${crypto.randomUUID()}`,
@@ -86,7 +86,7 @@ describe('TEST:1686:1 AC:1686:1 AC:1686:4 listingReviewsShownCondition', () => {
                     table: gastronomies,
                     reviewTable: gastronomyReviews,
                     fk: gastronomyReviews.gastronomyId,
-                    listing: gastronomy,
+                    listing: venue,
                     rating: { food: 5, service: 5, ambiance: 5, value: 5 }
                 },
                 {

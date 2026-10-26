@@ -405,14 +405,14 @@ describe('TEST:B3:8 — the database refuses what invariant 8 forbids and accept
             expect(other).toBeTruthy();
 
             // Another vertical of the same user keeps its own origin.
-            const gastronomy = await insertSubscription(client, {
+            const venue = await insertSubscription(client, {
                 userId,
                 vertical: 'gastronomy',
                 planVersionId: venuePlan.planVersionId,
                 billingOptionId: venuePlan.billingOptionId,
                 status: 'ACTIVE'
             });
-            expect(gastronomy).toBeTruthy();
+            expect(venue).toBeTruthy();
 
             // A COMPLEMENTO is not a commitment and needs no plan anchor.
             await client.query(

@@ -289,11 +289,11 @@ export class VenueReviewService extends BaseCrudService<
         actor: Actor,
         ctx: ServiceContext
     ): Promise<Partial<VenueReview>> {
-        const gastronomy = await this._venueModel.findById(data.gastronomyId, ctx.tx);
+        const venue = await this._venueModel.findById(data.gastronomyId, ctx.tx);
         if (
             !resolveResourceStep({
                 actorId: actor.id,
-                facts: readListingAccessFacts({ entity: gastronomy }),
+                facts: readListingAccessFacts({ entity: venue }),
                 operation: 'WRITE_ABOUT_LISTING'
             }).allowed
         ) {
@@ -594,11 +594,11 @@ export class VenueReviewService extends BaseCrudService<
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ reviews: VenueReview[]; total: number }>> {
         try {
-            const gastronomy = await this._venueModel.findById(gastronomyId, ctx?.tx);
+            const venue = await this._venueModel.findById(gastronomyId, ctx?.tx);
             if (
-                gastronomy &&
+                venue &&
                 !listingShowsReviews({
-                    publicationStatus: gastronomy.publicationStatus as PublicationStatusEnum
+                    publicationStatus: venue.publicationStatus as PublicationStatusEnum
                 })
             ) {
                 return { data: { reviews: [], total: 0 } };

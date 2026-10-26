@@ -161,12 +161,12 @@ async function readEvents(tx: DrizzleClient, accommodationId: string) {
 
 describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
     let service: AccommodationService;
-    let gastronomyService: VenueService;
+    let venueService: VenueService;
 
     beforeAll(() => {
         if (!dbAvailable) return;
         service = new AccommodationService({ logger: createLoggerMock() });
-        gastronomyService = new VenueService({ logger: createLoggerMock() });
+        venueService = new VenueService({ logger: createLoggerMock() });
     });
 
     afterEach(async () => {
@@ -457,7 +457,7 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
 
                 const refusedCode = await errorCodeOf(
                     asAction15(ownerId, () =>
-                        gastronomyService.update(
+                        venueService.update(
                             admin15(adminId),
                             gastronomyId,
                             { type: 'PARRILLA' } as never,
@@ -466,7 +466,7 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                     )
                 );
                 const edited = await asAction15(ownerId, () =>
-                    gastronomyService.update(
+                    venueService.update(
                         admin15(adminId),
                         gastronomyId,
                         { description: 'Descripción de la parrilla corregida por soporte.' },

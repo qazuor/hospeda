@@ -77,14 +77,14 @@ function expectMinimumFields(input: {
 
 describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integration)', () => {
     let accommodationService: AccommodationService;
-    let gastronomyService: VenueService;
+    let venueService: VenueService;
     let experienceService: ExperienceService;
 
     beforeAll(() => {
         if (!dbAvailable) return;
         const config = { logger: createLoggerMock() };
         accommodationService = new AccommodationService(config);
-        gastronomyService = new VenueService(config);
+        venueService = new VenueService(config);
         experienceService = new ExperienceService(config);
     });
 
@@ -103,7 +103,7 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                 const correlationId = crypto.randomUUID();
                 const ctx: ServiceContext = { tx, correlationId };
 
-                const created = await gastronomyService.createForOwner(
+                const created = await venueService.createForOwner(
                     actor,
                     {
                         name: 'Parrilla del Dueño',
@@ -120,7 +120,7 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                 expect(created.error).toBeUndefined();
                 const listingId = created.data?.id as string;
 
-                const edited = await gastronomyService.updateOwn(
+                const edited = await venueService.updateOwn(
                     listingId,
                     { summary: 'Un resumen editado por el dueño' },
                     actor,
@@ -383,7 +383,7 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                 );
 
                 for (const description of texts) {
-                    const edited = await gastronomyService.updateOwn(
+                    const edited = await venueService.updateOwn(
                         gastronomyId,
                         { description },
                         actor,

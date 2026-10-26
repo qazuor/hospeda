@@ -133,7 +133,7 @@ export async function getVenueMenu(
         }
         const { gastronomyId } = parseResult.data;
 
-        const gastronomy = await requireVenue(model, gastronomyId, ctx?.tx);
+        const venue = await requireVenue(model, gastronomyId, ctx?.tx);
 
         const sectionModel = new VenueMenuSectionModel();
         const itemModel = new VenueMenuItemModel();
@@ -177,15 +177,15 @@ export async function getVenueMenu(
         // and a document link, and half an attachment gives it nothing to
         // choose with.
         const file =
-            gastronomy.menuFileUrl && gastronomy.menuFileKind
-                ? { url: gastronomy.menuFileUrl, kind: gastronomy.menuFileKind }
+            venue.menuFileUrl && venue.menuFileKind
+                ? { url: venue.menuFileUrl, kind: venue.menuFileKind }
                 : null;
 
         return {
             data: {
                 sections,
                 file,
-                externalUrl: gastronomy.menuUrl ?? null
+                externalUrl: venue.menuUrl ?? null
             }
         };
     } catch (err) {
@@ -244,8 +244,8 @@ export async function replaceVenueMenu(
         const validated = parseResult.data;
         const { gastronomyId } = validated;
 
-        const gastronomy = await requireVenue(model, gastronomyId, ctx?.tx);
-        checkVenueCanEditFaqs(actor, gastronomy);
+        const venue = await requireVenue(model, gastronomyId, ctx?.tx);
+        checkVenueCanEditFaqs(actor, venue);
 
         const sectionModel = new VenueMenuSectionModel();
         const itemModel = new VenueMenuItemModel();
@@ -331,7 +331,7 @@ export async function replaceVenueMenu(
             // AC:V9a:7 — the owner act commits with the whole carta.
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: gastronomy,
+                listing: venue,
                 actor,
                 field: 'menu',
                 ctx: { ...ctx, tx }

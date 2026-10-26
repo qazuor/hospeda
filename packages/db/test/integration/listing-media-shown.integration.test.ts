@@ -74,7 +74,7 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                 { ...fixture(), type: 'CABIN' } as Partial<Accommodation>,
                 tx
             );
-            const gastronomy = await new VenueModel().create(
+            const venue = await new VenueModel().create(
                 { ...fixture(), type: 'RESTAURANT' } as Partial<Venue>,
                 tx
             );
@@ -92,7 +92,7 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                 tx,
                 table: 'gastronomy_media',
                 fk: 'gastronomy_id',
-                listingId: gastronomy.id
+                listingId: venue.id
             });
             const exp = await seedListingMedia({
                 tx,
@@ -113,11 +113,11 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                 tx
             });
             const gasList = await venueMediaModel.findByVenue({
-                gastronomyId: gastronomy.id,
+                gastronomyId: venue.id,
                 tx
             });
             const gasBatch = await venueMediaModel.findByVenues({
-                gastronomyIds: [gastronomy.id],
+                gastronomyIds: [venue.id],
                 tx
             });
             const expList = await experienceMediaModel.findByExperience({
@@ -137,9 +137,9 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                     tx
                 }),
                 gastronomyList: { ids: ids(gasList.items), total: gasList.total },
-                gastronomyBatch: ids(gasBatch.get(gastronomy.id)),
+                gastronomyBatch: ids(gasBatch.get(venue.id)),
                 gastronomyFeatured: await venueMediaModel.findFeatured({
-                    gastronomyId: gastronomy.id,
+                    gastronomyId: venue.id,
                     tx
                 }),
                 experienceList: { ids: ids(expList.items), total: expList.total },

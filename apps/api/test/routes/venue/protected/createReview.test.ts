@@ -23,7 +23,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...orig,
-        VenueReviewService: class MockGastronomyReviewService extends orig.VenueReviewService {
+        VenueReviewService: class MockVenueReviewService extends orig.VenueReviewService {
             // biome-ignore lint/complexity/noUselessConstructor: need to call super
             constructor(...args: ConstructorParameters<typeof orig.VenueReviewService>) {
                 super(...args);

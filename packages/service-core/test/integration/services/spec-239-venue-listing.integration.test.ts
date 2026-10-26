@@ -114,7 +114,7 @@ async function seedTouristUser(tx: import('@repo/db').DrizzleClient): Promise<st
 // ---------------------------------------------------------------------------
 
 describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', () => {
-    let gastronomyService: VenueService;
+    let venueService: VenueService;
     let reviewService: VenueReviewService;
     let adminActor: Actor;
     /** DB-backed super-admin user ID (seeded in beforeAll, cleaned up in afterAll). */
@@ -124,7 +124,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         if (!dbAvailable) return;
         const db = getServiceTestDb();
         const loggerConfig = { logger: createLoggerMock() };
-        gastronomyService = new VenueService(loggerConfig);
+        venueService = new VenueService(loggerConfig);
         reviewService = new VenueReviewService(loggerConfig);
 
         // Seed a real admin user into the DB so FK constraints on
@@ -177,7 +177,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
             // GastronomyAdminCreateInputSchema omits id/timestamps but keeps
             // averageRating, reviewsCount (they have schema defaults
             // but are still part of the required shape before omit).
-            const result = await gastronomyService.create(
+            const result = await venueService.create(
                 adminActor,
                 {
                     name: 'La Parrilla Admin',
@@ -239,7 +239,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
 
                 // Read back via service to confirm
                 const ctx: ServiceContext = { tx };
-                const result = await gastronomyService.getById(adminActor, gastronomyId, ctx);
+                const result = await venueService.getById(adminActor, gastronomyId, ctx);
 
                 // Assert
                 expect(result.error).toBeUndefined();
@@ -267,7 +267,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                 const ctx: ServiceContext = { tx };
 
                 // Act: owner updates operational field
-                const result = await gastronomyService.updateOwn(
+                const result = await venueService.updateOwn(
                     gastronomyId,
                     {
                         priceRange: PriceRangeEnum.MID,
@@ -312,13 +312,13 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                 const ctx: ServiceContext = { tx };
 
                 // Read the current name before the owner update
-                const before = await gastronomyService.getById(adminActor, gastronomyId, ctx);
+                const before = await venueService.getById(adminActor, gastronomyId, ctx);
                 const originalName = before.data?.name;
                 const originalType = before.data?.type;
                 expect(originalName).toBeTruthy();
 
                 // Act: owner updates an operational field only
-                const result = await gastronomyService.updateOwn(
+                const result = await venueService.updateOwn(
                     gastronomyId,
                     { priceRange: PriceRangeEnum.HIGH },
                     ownerActor,
@@ -399,7 +399,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                 expect(approvedState).toBe(ModerationStatusEnum.APPROVED);
 
                 // Assert-3: listing rating recomputed (>0, reviewsCount=1)
-                const venueAfter = await gastronomyService.getById(adminActor, gastronomyId, ctx);
+                const venueAfter = await venueService.getById(adminActor, gastronomyId, ctx);
                 expect(venueAfter.error).toBeUndefined();
                 expect(venueAfter.data).toBeDefined();
                 if (!venueAfter.data) throw new Error('expected gastronomy data');

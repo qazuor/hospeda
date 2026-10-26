@@ -109,8 +109,8 @@ export async function addVenueFaq(
         // HOS-1642 (AC:V9a:6): the write and its owner-act event share one
         // transaction — the event commits or rolls back WITH the FAQ row.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<VenueFaqSingleOutput>> => {
-            const gastronomy = await requireVenue(model, validated.gastronomyId, tx);
-            checkVenueCanEditFaqEntries(actor, gastronomy);
+            const venue = await requireVenue(model, validated.gastronomyId, tx);
+            checkVenueCanEditFaqEntries(actor, venue);
 
             const faqModel = new VenueFaqModel();
 
@@ -135,7 +135,7 @@ export async function addVenueFaq(
             // question/answer text (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId, name: gastronomy.name },
+                listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
                 actor,
                 field: 'faqs',
                 ctx: { ...ctx, tx }
@@ -194,8 +194,8 @@ export async function updateVenueFaq(
 
         // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<VenueFaqSingleOutput>> => {
-            const gastronomy = await requireVenue(model, validated.gastronomyId, tx);
-            checkVenueCanEditFaqEntries(actor, gastronomy);
+            const venue = await requireVenue(model, validated.gastronomyId, tx);
+            checkVenueCanEditFaqEntries(actor, venue);
 
             const faqModel = new VenueFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
@@ -218,7 +218,7 @@ export async function updateVenueFaq(
             // Post-write, inside the tx; field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId, name: gastronomy.name },
+                listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
                 actor,
                 field: 'faqs',
                 ctx: { ...ctx, tx }
@@ -277,8 +277,8 @@ export async function removeVenueFaq(
 
         // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<{ success: true }>> => {
-            const gastronomy = await requireVenue(model, validated.gastronomyId, tx);
-            checkVenueCanEditFaqEntries(actor, gastronomy);
+            const venue = await requireVenue(model, validated.gastronomyId, tx);
+            checkVenueCanEditFaqEntries(actor, venue);
 
             const faqModel = new VenueFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
@@ -293,7 +293,7 @@ export async function removeVenueFaq(
             // Post-write, inside the tx; field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId, name: gastronomy.name },
+                listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
                 actor,
                 field: 'faqs',
                 ctx: { ...ctx, tx }
@@ -351,12 +351,12 @@ export async function listVenueFaqs(
         const validated = parseResult.data;
 
         // Load the listing with its FAQs relation for a single-query pattern.
-        const gastronomy = await model.findWithRelations(
+        const venue = await model.findWithRelations(
             { id: validated.gastronomyId },
             { faqs: true },
             ctx?.tx
         );
-        if (!gastronomy) {
+        if (!venue) {
             return {
                 error: { code: ServiceErrorCode.NOT_FOUND, message: 'Gastronomy listing not found' }
             };
@@ -367,7 +367,7 @@ export async function listVenueFaqs(
 
         // TYPE-WORKAROUND: Drizzle widens the entity type when loading relations;
         // `faqs` is not part of the base Gastronomy type.
-        const faqs = (gastronomy as unknown as { faqs?: unknown[] }).faqs ?? [];
+        const faqs = (venue as unknown as { faqs?: unknown[] }).faqs ?? [];
         return { data: { faqs: faqs as VenueFaq[] } };
     } catch (err) {
         if (err instanceof ServiceError) {
@@ -425,8 +425,8 @@ export async function reorderVenueFaqs(
         // transaction with its owner-act event, so a partial reorder is no
         // longer possible and the event cannot outlive (or miss) the writes.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<{ success: true }>> => {
-            const gastronomy = await requireVenue(model, validated.gastronomyId, tx);
-            checkVenueCanEditFaqEntries(actor, gastronomy);
+            const venue = await requireVenue(model, validated.gastronomyId, tx);
+            checkVenueCanEditFaqEntries(actor, venue);
 
             const faqModel = new VenueFaqModel();
 
@@ -461,7 +461,7 @@ export async function reorderVenueFaqs(
             // field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId, name: gastronomy.name },
+                listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
                 actor,
                 field: 'faqs',
                 ctx: { ...ctx, tx }

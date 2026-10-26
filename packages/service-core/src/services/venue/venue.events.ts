@@ -230,8 +230,8 @@ export async function replaceVenueEvents(
         const validated = parseResult.data;
         const { gastronomyId } = validated;
 
-        const gastronomy = await requireVenue(model, gastronomyId, ctx?.tx);
-        checkVenueCanEditFaqs(actor, gastronomy);
+        const venue = await requireVenue(model, gastronomyId, ctx?.tx);
+        checkVenueCanEditFaqs(actor, venue);
 
         const eventModel = new VenueEventModel();
 
@@ -269,7 +269,7 @@ export async function replaceVenueEvents(
             // AC:V9a:7 — the owner act commits with the whole events document.
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: gastronomy,
+                listing: venue,
                 actor,
                 field: 'events',
                 ctx: { ...ctx, tx }

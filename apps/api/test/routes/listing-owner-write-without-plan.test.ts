@@ -36,7 +36,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...orig,
-        VenueService: class InMemoryGastronomyService extends orig.VenueService {
+        VenueService: class InMemoryVenueService extends orig.VenueService {
             constructor(...args: ConstructorParameters<typeof orig.VenueService>) {
                 super(...args);
                 Object.defineProperty(this, 'model', { value: fakeModel });
