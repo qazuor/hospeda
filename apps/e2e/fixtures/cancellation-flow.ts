@@ -12,7 +12,12 @@ import {
 } from './arrears-cycle.ts';
 import { execSQL } from './db-helpers.ts';
 import { readPublicationStatus } from './listing-notices.ts';
-import { attachSession, monthlyOptionForSlug, openSignupCheckout } from './signup-checkout.ts';
+import {
+    attachSession,
+    confirmSignupCheckout,
+    monthlyOptionForSlug,
+    openSignupCheckout
+} from './signup-checkout.ts';
 
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
 const WAIT_TIMEOUT_MS = 30_000;
@@ -37,11 +42,7 @@ export async function signUpCardSubscriber(args: {
         webUrl: WEB_URL,
         billingOptionId: await monthlyOptionForSlug(args.slug)
     });
-    await args.page.getByTestId('signup-checkout-confirm').click();
-    const pending = args.page.getByTestId('signup-checkout-pending');
-    await expect(pending).toBeVisible();
-    const subscriptionId = await pending.getAttribute('data-subscription-id');
-    if (!subscriptionId) throw new Error('Expected web checkout subscription id.');
+    const { subscriptionId } = await confirmSignupCheckout({ page: args.page });
     const links = await execSQL<{ provider_id: string }>(
         'SELECT provider_id FROM provider_link WHERE subscription_id = $1',
         [subscriptionId]

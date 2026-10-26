@@ -31,7 +31,11 @@ import { execSQL } from '../../fixtures/db-helpers.ts';
 import { startE2eFakeProvider } from '../../fixtures/fake-provider-server.ts';
 import { readPublicationStatus } from '../../fixtures/listing-notices.ts';
 import { startE2eMailCapture } from '../../fixtures/mail-capture-server.ts';
-import { monthlyOptionForSlug, openSignupCheckout } from '../../fixtures/signup-checkout.ts';
+import {
+    confirmSignupCheckout,
+    monthlyOptionForSlug,
+    openSignupCheckout
+} from '../../fixtures/signup-checkout.ts';
 
 const MAIL_TIMEOUT_MS = 30_000;
 
@@ -166,22 +170,11 @@ test.describe('TEST:1624:1 a suspended card subscriber comes back: S23, a new S1
                 webUrl: WEB_URL,
                 billingOptionId: await monthlyOptionForSlug('owner-basico')
             });
-            const checkoutResponse = page.waitForResponse(
-                (response) =>
-                    response.request().method() === 'POST' &&
-                    response.url().includes('/api/v1/protected/billing/subscriptions'),
-                { timeout: MAIL_TIMEOUT_MS }
-            );
-            await page.getByTestId('signup-checkout-confirm').click();
-            const response = await checkoutResponse;
-            if (!response.ok()) {
-                throw new Error(
-                    `New checkout failed (${response.status()}): ${await response.text()}`
-                );
-            }
-            const pending = page.getByTestId('signup-checkout-pending');
-            await expect(pending).toBeVisible();
-            newSubscriptionId = (await pending.getAttribute('data-subscription-id')) ?? '';
+            // HOS-1896: the fresh signup navigates straight to the provider
+            // checkout, so the helper reads the start response instead of the
+            // pending screen and waits for that navigation.
+            const { subscriptionId } = await confirmSignupCheckout({ page });
+            newSubscriptionId = subscriptionId;
             expect(newSubscriptionId, 'Expected new checkout subscription id.').toBeTruthy();
             expect(newSubscriptionId).not.toBe(oldSubscriptionId);
             const row = await readSubscriptionRow({ subscriptionId: newSubscriptionId });

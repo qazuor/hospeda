@@ -3,6 +3,19 @@ import { execSQL } from './db-helpers.ts';
 
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
 
+const START_SUBSCRIPTION_PATH = '/api/v1/protected/billing/subscriptions';
+const FAKE_APPROVAL_HOST = 'payments-fake.invalid';
+const CHECKOUT_STUB_HTML = '<!doctype html><html><body>Fake provider checkout</body></html>';
+
+/** The successful body of `POST /billing/subscriptions` the web checkout navigates with. */
+export type SignupCheckoutConfirmation = {
+    readonly subscriptionId: string;
+    readonly authorizationId: string;
+    readonly checkoutUrl: string;
+    readonly vertical: string;
+    readonly authorizationWindowEndsAt: string;
+};
+
 /** The 0144 catalog plans these fixtures hold a monthly option of. */
 export type CatalogSlug =
     | 'owner-basico'
@@ -205,4 +218,80 @@ export async function openSignupCheckout(options: {
     );
     // The island is server-rendered: wait until React has attached (HOS-1890).
     await options.page.locator('[data-testid="signup-checkout"][data-hydrated="true"]').waitFor();
+}
+
+/**
+ * Confirms an open signup checkout and reads the start response, instead of the
+ * pending screen HOS-1896 removed from the happy path.
+ *
+ * The provider checkout navigation is answered with a local stub: the fake
+ * provider's `approvalUrl` (`https://payments-fake.invalid/approve/<id>`,
+ * M10's `?activation` already sanitized by the API) is not a page the suite can
+ * load.
+ *
+ * @param options.page - The page already sitting on the signup checkout
+ * @returns The start response fields every signup spec used to read from the screen
+ */
+export async function confirmSignupCheckout(options: {
+    readonly page: Page;
+}): Promise<SignupCheckoutConfirmation> {
+    const { page } = options;
+    const isFakeApprovalUrl = (url: URL): boolean => url.hostname === FAKE_APPROVAL_HOST;
+    const isStartUrl = (url: URL): boolean => url.pathname === START_SUBSCRIPTION_PATH;
+
+    // The island navigates away as soon as the start response lands, and the
+    // browser then drops that response's body: `waitForResponse(...).json()`
+    // fails with "No resource with given identifier found". So the body is read
+    // here, while the request is still ours, and handed back unchanged.
+    let resolveStart: (value: { readonly status: number; readonly text: string }) => void = () =>
+        undefined;
+    const startCaptured = new Promise<{ readonly status: number; readonly text: string }>(
+        (resolve) => {
+            resolveStart = resolve;
+        }
+    );
+    await page.route(isStartUrl, async (route) => {
+        if (route.request().method() !== 'POST') {
+            await route.continue();
+            return;
+        }
+        const fetched = await route.fetch();
+        const text = await fetched.text();
+        resolveStart({ status: fetched.status(), text });
+        await route.fulfill({ response: fetched, body: text });
+    });
+    await page.route(isFakeApprovalUrl, (route) =>
+        route.fulfill({
+            status: 200,
+            contentType: 'text/html',
+            body: CHECKOUT_STUB_HTML
+        })
+    );
+    try {
+        await page.getByTestId('signup-checkout-confirm').click();
+        const response = await startCaptured;
+        if (response.status < 200 || response.status >= 300) {
+            throw new Error(`Signup start failed (${response.status}): ${response.text}`);
+        }
+        const body = JSON.parse(response.text) as {
+            readonly data?: Partial<SignupCheckoutConfirmation>;
+        };
+        const data = body.data;
+        if (!data?.subscriptionId || !data.checkoutUrl || !data.authorizationWindowEndsAt) {
+            throw new Error(
+                'Signup start response is missing subscriptionId, checkoutUrl or authorizationWindowEndsAt.'
+            );
+        }
+        await page.waitForURL((url) => url.href === data.checkoutUrl);
+        return {
+            subscriptionId: data.subscriptionId,
+            authorizationId: data.authorizationId ?? '',
+            checkoutUrl: data.checkoutUrl,
+            vertical: data.vertical ?? '',
+            authorizationWindowEndsAt: data.authorizationWindowEndsAt
+        };
+    } finally {
+        await page.unroute(isFakeApprovalUrl);
+        await page.unroute(isStartUrl);
+    }
 }

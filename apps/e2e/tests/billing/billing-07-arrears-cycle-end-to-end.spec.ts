@@ -34,6 +34,7 @@ import { startE2eFakeProvider } from '../../fixtures/fake-provider-server.ts';
 import { startE2eMailCapture } from '../../fixtures/mail-capture-server.ts';
 import {
     attachSession,
+    confirmSignupCheckout,
     monthlyOptionForSlug,
     openSignupCheckout
 } from '../../fixtures/signup-checkout.ts';
@@ -120,15 +121,8 @@ test.describe('TEST:B7:20 AC:B7:32 the arrears cycle end to end @p0 @billing @cl
             const optionId = await monthlyOptionForSlug('owner-basico');
             await attachSession(page, user.sessionCookie);
             await openSignupCheckout({ page, webUrl: WEB_URL, billingOptionId: optionId });
-            await page.getByTestId('signup-checkout-confirm').click();
-            const pending = page.getByTestId('signup-checkout-pending');
-            await expect(
-                pending,
-                'Expected web checkout to create a pending card subscription.'
-            ).toBeVisible();
-            subscriptionId = (await pending.getAttribute('data-subscription-id')) ?? '';
-            if (!subscriptionId)
-                throw new Error('Expected checkout data-subscription-id; saw none.');
+            const confirmation = await confirmSignupCheckout({ page });
+            subscriptionId = confirmation.subscriptionId;
             const links = await execSQL<{ provider_id: string }>(
                 'SELECT provider_id FROM provider_link WHERE subscription_id = $1',
                 [subscriptionId]

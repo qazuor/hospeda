@@ -120,6 +120,17 @@ export function SignupCheckout({
                 });
                 return;
             }
+            const checkoutUrl = resolveSafeExternalUrl(result.data.checkoutUrl);
+            if (checkoutUrl) {
+                // The spec sends a freshly created signup to the provider's
+                // init_point (HOS-1352 decision log, line 1115), same as the
+                // alta. Retaking an existing attempt is PendingAttemptPanel's
+                // job, never this post-start screen (HOS-1896). The view stays
+                // in `submitting`, so the confirm button cannot start a second
+                // signup while the browser leaves the page.
+                window.location.href = checkoutUrl;
+                return;
+            }
             setView({ state: 'pending', data: result.data });
         } catch {
             setView({ state: 'rejected', rejection: resolveSignupRejection({}) });
