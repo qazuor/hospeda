@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { destinations, eq, eventLocations, getDb } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { clearCache } from '../../../src/middlewares/cache';
@@ -9,24 +10,35 @@ import {
     ADMIN_GATE_PERMISSIONS,
     buildMockActorHeaders,
     createMockActorUser
-} from '../helpers/mock-admin-actor';
+} from '../helpers/mock-actor';
 
 // The mock-actor headers are only honoured when CI is unset.
 delete process.env.CI;
 
 /**
- * PATCH /api/v1/admin/event-locations/:id. The route gate and the service both ask for EVENT_LOCATION_UPDATE. It also needs EVENT_LOCATION_VIEW: the
- * GET /:id route registers its permission gate on the same `/:id` path for every
- * method, so it runs ahead of the PATCH handler.
+ * PATCH /api/v1/admin/event-locations/:id. The route gate and the service both ask for EVENT_LOCATION_UPDATE, so there is one UPDATE permission to withhold.
+ *
+ * Known bug HOS-1908: the permission gate of GET /:id is registered on the same
+ * `/:id` path for every method (`applyRouteMiddlewares` uses `app.use(path)`, not
+ * method-scoped), so PATCH is also refused to an actor without EVENT_LOCATION_VIEW. The
+ * tests below that need a successful PATCH therefore grant VIEW as a workaround,
+ * and the `it.fails` pins the intended behaviour (UPDATE alone is enough).
  */
 describe('PATCH /admin/event-locations/:id', () => {
     let app: ReturnType<typeof initApp>;
     const base = '/api/v1/admin/event-locations';
     const NONEXISTENT_UUID = 'a0000000-0000-4000-8000-000000000001';
-    const viewer = [...ADMIN_GATE_PERMISSIONS, PermissionEnum.EVENT_LOCATION_VIEW];
-    const editor = [...viewer, PermissionEnum.EVENT_LOCATION_UPDATE];
+    // VIEW is the HOS-1908 workaround, see the docblock.
+    const editor: readonly PermissionEnum[] = [
+        ...ADMIN_GATE_PERMISSIONS,
+        PermissionEnum.EVENT_LOCATION_VIEW,
+        PermissionEnum.EVENT_LOCATION_UPDATE
+    ];
+    const without = (permission: PermissionEnum): readonly PermissionEnum[] =>
+        editor.filter((candidate) => candidate !== permission);
     let actorId: string;
     let rowId: string;
+    let seededValue: string | null | undefined;
 
     beforeAll(async () => {
         await testDb.setup();
@@ -40,6 +52,7 @@ describe('PATCH /admin/event-locations/:id', () => {
     beforeEach(async () => {
         actorId = (await createMockActorUser({ label: 'event-location-patch' })).id;
         rowId = await seedRow();
+        seededValue = await readField(rowId);
     });
 
     afterEach(async () => {
@@ -52,7 +65,7 @@ describe('PATCH /admin/event-locations/:id', () => {
     });
 
     const seedDestination = async (): Promise<string> => {
-        const suffix = crypto.randomUUID().slice(0, 8);
+        const suffix = randomUUID().slice(0, 8);
         const rows = await getDb()
             .insert(destinations)
             .values({
@@ -71,11 +84,13 @@ describe('PATCH /admin/event-locations/:id', () => {
                 }
             })
             .returning({ id: destinations.id });
-        return rows[0]?.id ?? '';
+        const id = rows[0]?.id;
+        if (!id) throw new Error('seedDestination: destination insert failed');
+        return id;
     };
 
     const seedRow = async (): Promise<string> => {
-        const suffix = crypto.randomUUID().slice(0, 8);
+        const suffix = randomUUID().slice(0, 8);
         const destinationId = await seedDestination();
         const rows = await getDb()
             .insert(eventLocations)
@@ -84,7 +99,9 @@ describe('PATCH /admin/event-locations/:id', () => {
                 destinationId
             })
             .returning({ id: eventLocations.id });
-        return rows[0]?.id ?? '';
+        const id = rows[0]?.id;
+        if (!id) throw new Error('seed event location: insert failed');
+        return id;
     };
 
     const patch = ({
@@ -101,7 +118,7 @@ describe('PATCH /admin/event-locations/:id', () => {
         app.request(`${base}/${id}`, {
             method: 'PATCH',
             headers: withActor
-                ? buildMockActorHeaders({ actorId, permissions })
+                ? buildMockActorHeaders({ actorId, permissions, role: RoleEnum.ADMIN })
                 : { 'content-type': 'application/json', 'user-agent': 'vitest' },
             body: JSON.stringify(body)
         });
@@ -124,14 +141,14 @@ describe('PATCH /admin/event-locations/:id', () => {
         expect(res.status).toBe(401);
     });
 
-    it('answers 403 when the actor lacks the update permission', async () => {
+    it('answers 403 when the actor lacks the route permission (EVENT_LOCATION_UPDATE)', async () => {
         const res = await patch({
             id: rowId,
-            permissions: viewer,
+            permissions: without(PermissionEnum.EVENT_LOCATION_UPDATE),
             body: { placeName: 'Updated Value' }
         });
         expect(res.status).toBe(403);
-        expect(await readField(rowId)).not.toBe('Updated Value');
+        expect(await readField(rowId)).toBe(seededValue);
     });
 
     it('answers 400 for an invalid UUID', async () => {
@@ -150,7 +167,7 @@ describe('PATCH /admin/event-locations/:id', () => {
             body: { invalidField: 'value' }
         });
         expect(res.status).toBe(400);
-        expect(await readField(rowId)).not.toBe('Updated Value');
+        expect(await readField(rowId)).toBe(seededValue);
     });
 
     it('answers 404 for an event location that does not exist', async () => {
@@ -171,6 +188,27 @@ describe('PATCH /admin/event-locations/:id', () => {
         expect(res.status).toBe(200);
         const body = await res.json();
         expect(body.data.id).toBe(rowId);
+        expect(await readField(rowId)).toBe('Updated Value');
+    });
+
+    // HOS-1908: the GET /:id gate leaks onto PATCH, so UPDATE alone is refused.
+    it('currently answers 403 to an actor with UPDATE but without VIEW (HOS-1908)', async () => {
+        const res = await patch({
+            id: rowId,
+            permissions: without(PermissionEnum.EVENT_LOCATION_VIEW),
+            body: { placeName: 'Updated Value' }
+        });
+        expect(res.status).toBe(403);
+    });
+
+    // Drop `.fails` (and the test above) once HOS-1908 is fixed.
+    it.fails('PATCH succeeds with UPDATE alone (HOS-1908)', async () => {
+        const res = await patch({
+            id: rowId,
+            permissions: without(PermissionEnum.EVENT_LOCATION_VIEW),
+            body: { placeName: 'Updated Value' }
+        });
+        expect(res.status).toBe(200);
         expect(await readField(rowId)).toBe('Updated Value');
     });
 });

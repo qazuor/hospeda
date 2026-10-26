@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { destinations, eq, eventLocations, getDb } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { clearCache } from '../../../src/middlewares/cache';
@@ -9,7 +10,7 @@ import {
     ADMIN_GATE_PERMISSIONS,
     buildMockActorHeaders,
     createMockActorUser
-} from '../helpers/mock-admin-actor';
+} from '../helpers/mock-actor';
 
 // The mock-actor headers are only honoured when CI is unset.
 delete process.env.CI;
@@ -21,11 +22,13 @@ describe('POST /admin/event-locations/:id/restore', () => {
     let app: ReturnType<typeof initApp>;
     const base = '/api/v1/admin/event-locations';
     const NONEXISTENT_UUID = 'a0000000-0000-4000-8000-000000000001';
-    const restorer = [
+    const restorer: readonly PermissionEnum[] = [
         ...ADMIN_GATE_PERMISSIONS,
         PermissionEnum.EVENT_LOCATION_RESTORE,
         PermissionEnum.EVENT_LOCATION_UPDATE
     ];
+    const without = (permission: PermissionEnum): readonly PermissionEnum[] =>
+        restorer.filter((candidate) => candidate !== permission);
     let actorId: string;
     let deletedRowId: string;
 
@@ -53,7 +56,7 @@ describe('POST /admin/event-locations/:id/restore', () => {
     });
 
     const seedDestination = async (): Promise<string> => {
-        const suffix = crypto.randomUUID().slice(0, 8);
+        const suffix = randomUUID().slice(0, 8);
         const rows = await getDb()
             .insert(destinations)
             .values({
@@ -72,11 +75,13 @@ describe('POST /admin/event-locations/:id/restore', () => {
                 }
             })
             .returning({ id: destinations.id });
-        return rows[0]?.id ?? '';
+        const id = rows[0]?.id;
+        if (!id) throw new Error('seedDestination: destination insert failed');
+        return id;
     };
 
     const seedDeletedRow = async (): Promise<string> => {
-        const suffix = crypto.randomUUID().slice(0, 8);
+        const suffix = randomUUID().slice(0, 8);
         const destinationId = await seedDestination();
         const rows = await getDb()
             .insert(eventLocations)
@@ -86,7 +91,9 @@ describe('POST /admin/event-locations/:id/restore', () => {
                 deletedAt: new Date()
             })
             .returning({ id: eventLocations.id });
-        return rows[0]?.id ?? '';
+        const id = rows[0]?.id;
+        if (!id) throw new Error('seed event location: insert failed');
+        return id;
     };
 
     const restore = ({
@@ -101,7 +108,7 @@ describe('POST /admin/event-locations/:id/restore', () => {
         app.request(`${base}/${id}/restore`, {
             method: 'POST',
             headers: withActor
-                ? buildMockActorHeaders({ actorId, permissions })
+                ? buildMockActorHeaders({ actorId, permissions, role: RoleEnum.ADMIN })
                 : { 'user-agent': 'vitest' }
         });
 
@@ -119,8 +126,20 @@ describe('POST /admin/event-locations/:id/restore', () => {
         expect(await readDeletedAt(deletedRowId)).toBeInstanceOf(Date);
     });
 
-    it('answers 403 when the actor lacks the restore permission', async () => {
-        const res = await restore({ id: deletedRowId, permissions: ADMIN_GATE_PERMISSIONS });
+    it('answers 403 when the actor lacks the route permission (EVENT_LOCATION_RESTORE)', async () => {
+        const res = await restore({
+            id: deletedRowId,
+            permissions: without(PermissionEnum.EVENT_LOCATION_RESTORE)
+        });
+        expect(res.status).toBe(403);
+        expect(await readDeletedAt(deletedRowId)).toBeInstanceOf(Date);
+    });
+
+    it('answers 403 when the actor lacks the service permission (EVENT_LOCATION_UPDATE)', async () => {
+        const res = await restore({
+            id: deletedRowId,
+            permissions: without(PermissionEnum.EVENT_LOCATION_UPDATE)
+        });
         expect(res.status).toBe(403);
         expect(await readDeletedAt(deletedRowId)).toBeInstanceOf(Date);
     });
