@@ -36,9 +36,9 @@
  */
 
 import {
-    type GastronomyMenuFileKind,
-    GastronomyMenuFileUploadOutputSchema,
     PermissionEnum,
+    type VenueMenuFileKind,
+    VenueMenuFileUploadOutputSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService } from '@repo/service-core';
@@ -116,7 +116,7 @@ export const protectedUploadGastronomyMenuFileRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/menu-file',
     listingAccess: {
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
         capabilities: ['manage_gastronomy_menu']
@@ -128,7 +128,7 @@ export const protectedUploadGastronomyMenuFileRoute = createProtectedRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: GastronomyMenuFileUploadOutputSchema,
+    responseSchema: VenueMenuFileUploadOutputSchema,
     successStatusCode: 200,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         ctx.header('Cache-Control', 'no-store');
@@ -254,7 +254,7 @@ export const protectedUploadGastronomyMenuFileRoute = createProtectedRoute({
         // The whole reason this route exists rather than a field on the editor
         // PATCH. `menuFilePublicId` is stored alongside the URL so the delete
         // route can destroy the asset instead of merely forgetting it.
-        const kind: GastronomyMenuFileKind = isPdf ? 'pdf' : 'image';
+        const kind: VenueMenuFileKind = isPdf ? 'pdf' : 'image';
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`,
         // the same accessor the FAQ and media routes use.

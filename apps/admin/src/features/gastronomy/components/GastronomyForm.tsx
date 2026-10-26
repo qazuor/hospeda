@@ -13,7 +13,7 @@
  * generic system cannot be used (e.g. embedded modals, custom workflows).
  */
 
-import { GastronomyCreateHttpSchema, GastronomyTypeEnum, PriceRangeEnum } from '@repo/schemas';
+import { PriceRangeEnum, VenueCreateHttpSchema, VenueTypeEnum } from '@repo/schemas';
 import { useForm } from '@tanstack/react-form';
 import * as React from 'react';
 import type { z } from 'zod';
@@ -23,7 +23,7 @@ import { Button } from '@/components/ui-wrapped/Button';
 // Types
 // ---------------------------------------------------------------------------
 
-type GastronomyFormValues = z.infer<typeof GastronomyCreateHttpSchema>;
+type GastronomyFormValues = z.infer<typeof VenueCreateHttpSchema>;
 
 /** Props accepted by {@link GastronomyForm}. */
 export interface GastronomyFormProps {
@@ -46,16 +46,16 @@ export interface GastronomyFormProps {
 // Option lists
 // ---------------------------------------------------------------------------
 
-const GASTRONOMY_TYPE_OPTIONS: ReadonlyArray<{ value: GastronomyTypeEnum; label: string }> = [
-    { value: GastronomyTypeEnum.RESTAURANT, label: 'Restaurante' },
-    { value: GastronomyTypeEnum.BAR, label: 'Bar' },
-    { value: GastronomyTypeEnum.CAFE, label: 'Café' },
-    { value: GastronomyTypeEnum.PARRILLA, label: 'Parrilla' },
-    { value: GastronomyTypeEnum.CERVECERIA, label: 'Cervecería' },
-    { value: GastronomyTypeEnum.HELADERIA, label: 'Heladería' },
-    { value: GastronomyTypeEnum.PANADERIA, label: 'Panadería' },
-    { value: GastronomyTypeEnum.ROTISERIA, label: 'Rotisería' },
-    { value: GastronomyTypeEnum.FOOD_TRUCK, label: 'Food Truck' }
+const GASTRONOMY_TYPE_OPTIONS: ReadonlyArray<{ value: VenueTypeEnum; label: string }> = [
+    { value: VenueTypeEnum.RESTAURANT, label: 'Restaurante' },
+    { value: VenueTypeEnum.BAR, label: 'Bar' },
+    { value: VenueTypeEnum.CAFE, label: 'Café' },
+    { value: VenueTypeEnum.PARRILLA, label: 'Parrilla' },
+    { value: VenueTypeEnum.CERVECERIA, label: 'Cervecería' },
+    { value: VenueTypeEnum.HELADERIA, label: 'Heladería' },
+    { value: VenueTypeEnum.PANADERIA, label: 'Panadería' },
+    { value: VenueTypeEnum.ROTISERIA, label: 'Rotisería' },
+    { value: VenueTypeEnum.FOOD_TRUCK, label: 'Food Truck' }
 ];
 
 const PRICE_RANGE_OPTIONS: ReadonlyArray<{ value: PriceRangeEnum; label: string }> = [
@@ -117,13 +117,13 @@ export function GastronomyForm({
     const form = useForm<GastronomyFormValues>({
         defaultValues: {
             name: '',
-            type: GastronomyTypeEnum.RESTAURANT,
+            type: VenueTypeEnum.RESTAURANT,
             destinationId: '',
             ...defaultValues
         } as GastronomyFormValues,
         onSubmit: async ({ value }) => {
             setGlobalError(null);
-            const result = GastronomyCreateHttpSchema.safeParse(value);
+            const result = VenueCreateHttpSchema.safeParse(value);
             if (!result.success) {
                 const firstIssue = result.error.issues[0];
                 setGlobalError(firstIssue?.message ?? 'Datos inválidos. Revisá el formulario.');
@@ -285,7 +285,7 @@ export function GastronomyForm({
                                         value={(field.state.value as string) ?? ''}
                                         onBlur={field.handleBlur}
                                         onChange={(e) =>
-                                            field.handleChange(e.target.value as GastronomyTypeEnum)
+                                            field.handleChange(e.target.value as VenueTypeEnum)
                                         }
                                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                         disabled={isPending}

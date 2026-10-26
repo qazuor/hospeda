@@ -41,18 +41,18 @@ import {
 } from '@repo/db';
 import {
     type CountResponse,
-    type Gastronomy,
-    GastronomyAdminCreateInputSchema,
-    GastronomyAdminSearchSchema,
-    type GastronomyOwnerUpdateInput,
-    GastronomyOwnerUpdateInputSchema,
-    type GastronomySearch,
-    GastronomySearchSchema,
-    type GastronomyUpdateInput,
-    GastronomyUpdateInputSchema,
     PermissionEnum,
     PublicationStatusEnum,
-    ServiceErrorCode
+    ServiceErrorCode,
+    type Venue,
+    VenueAdminCreateInputSchema,
+    VenueAdminSearchSchema,
+    type VenueOwnerUpdateInput,
+    VenueOwnerUpdateInputSchema,
+    type VenueSearch,
+    VenueSearchSchema,
+    type VenueUpdateInput,
+    VenueUpdateInputSchema
 } from '@repo/schemas';
 import type {
     Actor,
@@ -122,20 +122,20 @@ import {
  * ```
  */
 export class GastronomyService extends BaseListingService<
-    Gastronomy,
+    Venue,
     GastronomyModel,
-    typeof GastronomyAdminCreateInputSchema,
-    typeof GastronomyUpdateInputSchema,
-    typeof GastronomySearchSchema
+    typeof VenueAdminCreateInputSchema,
+    typeof VenueUpdateInputSchema,
+    typeof VenueSearchSchema
 > {
     static readonly ENTITY_NAME = 'gastronomy';
 
     protected readonly entityName = GastronomyService.ENTITY_NAME;
 
     protected readonly model: GastronomyModel;
-    protected readonly createSchema = GastronomyAdminCreateInputSchema;
-    protected readonly updateSchema = GastronomyUpdateInputSchema;
-    protected readonly searchSchema = GastronomySearchSchema;
+    protected readonly createSchema = VenueAdminCreateInputSchema;
+    protected readonly updateSchema = VenueUpdateInputSchema;
+    protected readonly searchSchema = VenueSearchSchema;
 
     // -----------------------------------------------------------------------
     // Catalog / junction model instances (injectable for unit tests)
@@ -173,7 +173,7 @@ export class GastronomyService extends BaseListingService<
         super(config, GastronomyService.ENTITY_NAME);
         this.model = gastronomyModel;
         this._gastronomyMediaModelInstance = mediaModel ?? gastronomyMediaModel;
-        this.adminSearchSchema = GastronomyAdminSearchSchema;
+        this.adminSearchSchema = VenueAdminSearchSchema;
         this._amenityModelInstance = new AmenityModel();
         this._featureModelInstance = new FeatureModel();
         // TYPE-WORKAROUND: concrete gastronomy junction model bridged to the generic ListingJunctionModel contract
@@ -269,10 +269,10 @@ export class GastronomyService extends BaseListingService<
     // page does not go N+1.
 
     protected override async _afterGetByField(
-        entity: Gastronomy | null,
+        entity: Venue | null,
         _actor: Actor,
         ctx: ServiceContext
-    ): Promise<Gastronomy | null> {
+    ): Promise<Venue | null> {
         return attachComposedGastronomyMedia({
             entity,
             mediaModel: this._gastronomyMediaModel,
@@ -281,10 +281,10 @@ export class GastronomyService extends BaseListingService<
     }
 
     protected override async _afterList(
-        result: PaginatedListOutput<Gastronomy>,
+        result: PaginatedListOutput<Venue>,
         _actor: Actor,
         ctx: ServiceContext
-    ): Promise<PaginatedListOutput<Gastronomy>> {
+    ): Promise<PaginatedListOutput<Venue>> {
         if (!result?.items) return result;
         const items = await attachComposedGastronomyMediaList({
             items: result.items,
@@ -295,10 +295,10 @@ export class GastronomyService extends BaseListingService<
     }
 
     protected override async _afterSearch(
-        result: PaginatedListOutput<Gastronomy>,
+        result: PaginatedListOutput<Venue>,
         _actor: Actor,
         ctx: ServiceContext
-    ): Promise<PaginatedListOutput<Gastronomy>> {
+    ): Promise<PaginatedListOutput<Venue>> {
         if (!result?.items) return result;
         const items = await attachComposedGastronomyMediaList({
             items: result.items,
@@ -316,23 +316,23 @@ export class GastronomyService extends BaseListingService<
         checkGastronomyCanCreate(actor, data);
     }
 
-    protected _canUpdate(actor: Actor, entity: Gastronomy): void {
+    protected _canUpdate(actor: Actor, entity: Venue): void {
         checkGastronomyCanEditOwnOrAll(actor, entity);
     }
 
-    protected _canSoftDelete(actor: Actor, entity: Gastronomy): void {
+    protected _canSoftDelete(actor: Actor, entity: Venue): void {
         checkGastronomyCanDelete(actor, entity);
     }
 
-    protected _canHardDelete(actor: Actor, entity: Gastronomy): void {
+    protected _canHardDelete(actor: Actor, entity: Venue): void {
         checkGastronomyCanHardDelete(actor, entity);
     }
 
-    protected _canRestore(actor: Actor, entity: Gastronomy): void {
+    protected _canRestore(actor: Actor, entity: Venue): void {
         checkGastronomyCanRestore(actor, entity);
     }
 
-    protected _canView(actor: Actor, entity: Gastronomy): void {
+    protected _canView(actor: Actor, entity: Venue): void {
         checkGastronomyCanView(actor);
 
         // Soft-deleted listings existed but are permanently gone. Only those that
@@ -368,11 +368,7 @@ export class GastronomyService extends BaseListingService<
         checkGastronomyCanView(actor);
     }
 
-    protected _canUpdateVisibility(
-        actor: Actor,
-        entity: Gastronomy,
-        _newVisibility: unknown
-    ): void {
+    protected _canUpdateVisibility(actor: Actor, entity: Venue, _newVisibility: unknown): void {
         checkGastronomyCanEditAll(actor, entity);
     }
 
@@ -400,8 +396,8 @@ export class GastronomyService extends BaseListingService<
      * @param entity - Raw gastronomy entity from the database.
      * @returns Projected entity with private fields removed.
      */
-    protected override _projectPublicEntity(entity: Gastronomy): Gastronomy {
-        return projectGastronomyPublic(entity) as Gastronomy;
+    protected override _projectPublicEntity(entity: Venue): Venue {
+        return projectGastronomyPublic(entity) as Venue;
     }
 
     /**
@@ -410,7 +406,7 @@ export class GastronomyService extends BaseListingService<
      * @param entities - Array of raw gastronomy entities.
      * @returns Array of projected entities.
      */
-    protected override _projectPublicEntityList(entities: Gastronomy[]): Gastronomy[] {
+    protected override _projectPublicEntityList(entities: Venue[]): Venue[] {
         return entities.map((e) => {
             const withAvatar = projectGastronomyOwnerAvatar(e) ?? e;
             return this._projectPublicEntity(withAvatar);
@@ -445,10 +441,10 @@ export class GastronomyService extends BaseListingService<
      * @returns Paginated gastronomy listing results.
      */
     protected async _executeSearch(
-        params: GastronomySearch,
+        params: VenueSearch,
         _actor: Actor,
         ctx: ServiceContext
-    ): Promise<PaginatedListOutput<Gastronomy>> {
+    ): Promise<PaginatedListOutput<Venue>> {
         const {
             page,
             pageSize,
@@ -496,7 +492,7 @@ export class GastronomyService extends BaseListingService<
             catalogConditions.length > 0 ? catalogConditions : undefined,
             ctx?.tx
         );
-        return result as unknown as PaginatedListOutput<Gastronomy>; // TYPE-WORKAROUND: base list result narrowed to the gastronomy entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+        return result as unknown as PaginatedListOutput<Venue>; // TYPE-WORKAROUND: base list result narrowed to the gastronomy entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
     }
 
     /**
@@ -508,7 +504,7 @@ export class GastronomyService extends BaseListingService<
      * @returns Total count of matching gastronomy listings.
      */
     protected async _executeCount(
-        params: GastronomySearch,
+        params: VenueSearch,
         _actor: Actor,
         ctx: ServiceContext
     ): Promise<CountResponse> {
@@ -557,7 +553,7 @@ export class GastronomyService extends BaseListingService<
      */
     protected override async _executeAdminSearch(
         params: AdminSearchExecuteParams<Record<string, unknown>>
-    ): Promise<PaginatedListOutput<Gastronomy>> {
+    ): Promise<PaginatedListOutput<Venue>> {
         return super._executeAdminSearch(params);
     }
 
@@ -593,13 +589,13 @@ export class GastronomyService extends BaseListingService<
      */
     public async updateOwn(
         gastronomyId: string,
-        data: GastronomyOwnerUpdateInput,
+        data: VenueOwnerUpdateInput,
         actor: Actor,
         ctx?: ServiceContext<GastronomyHookState>
-    ): Promise<ServiceOutput<Gastronomy>> {
+    ): Promise<ServiceOutput<Venue>> {
         try {
             // 1. Validate the payload against the owner-update schema (operational only).
-            const parseResult = GastronomyOwnerUpdateInputSchema.safeParse(data);
+            const parseResult = VenueOwnerUpdateInputSchema.safeParse(data);
             if (!parseResult.success) {
                 const messages = parseResult.error.issues
                     .map((i) => `${i.path.join('.')}: ${i.message}`)
@@ -655,7 +651,7 @@ export class GastronomyService extends BaseListingService<
             return this.update(
                 actor,
                 gastronomyId,
-                validated as GastronomyUpdateInput,
+                validated as VenueUpdateInput,
                 ctx as ServiceContext
             );
         } catch (err) {
@@ -708,10 +704,10 @@ export class GastronomyService extends BaseListingService<
      * @returns The entity, unchanged.
      */
     protected override async _afterUpdate(
-        entity: Gastronomy,
+        entity: Venue,
         actor: Actor,
         ctx: ServiceContext
-    ): Promise<Gastronomy> {
+    ): Promise<Venue> {
         const updated = await super._afterUpdate(entity, actor, ctx);
 
         try {

@@ -169,7 +169,7 @@ describe('TEST:B4:3 retenciónDetenida and coberturaPerdidaEn (AC:B4:4)', () => 
         const userId = await seedUser();
         const subscriptionId = await seedRow({
             userId,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             status: 'PAUSED'
         });
         await seedPause({ subscriptionId, reason: 'CUSTOMER_REQUEST', actualEndAt: null });
@@ -181,7 +181,7 @@ describe('TEST:B4:3 retenciónDetenida and coberturaPerdidaEn (AC:B4:4)', () => 
         });
         const there = await retention.retentionStopped({
             userId,
-            vertical: VerticalEnum.GASTRONOMY
+            vertical: VerticalEnum.VENUE
         });
 
         // Assert

@@ -18,7 +18,7 @@ import { EntityTypeEnum, QrCodePurposeEnum } from '@repo/schemas';
  */
 
 /** The entity type every menu QR is filed under. */
-export const GASTRONOMY_MENU_QR_ENTITY_TYPE = EntityTypeEnum.GASTRONOMY;
+export const GASTRONOMY_MENU_QR_ENTITY_TYPE = EntityTypeEnum.VENUE;
 
 /**
  * WHICH of a venue's codes this module is about.

@@ -172,7 +172,7 @@ const UPLOAD_LISTING_ACCESS = {
         }
     },
     gastronomy: {
-        listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' }
+        listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' }
     },
     experience: {
         listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' }

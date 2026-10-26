@@ -78,7 +78,7 @@ describe('enrichBookmarksWithEntityInfo — listing thumbnails (HOS-372)', () =>
             {
                 id: 'bookmark-1',
                 entityId: GASTRONOMY_ID,
-                entityType: EntityTypeEnum.GASTRONOMY
+                entityType: EntityTypeEnum.VENUE
             } as never
         ]);
 
@@ -127,7 +127,7 @@ describe('enrichBookmarksWithEntityInfo — listing thumbnails (HOS-372)', () =>
             {
                 id: 'bookmark-3',
                 entityId: GASTRONOMY_ID,
-                entityType: EntityTypeEnum.GASTRONOMY
+                entityType: EntityTypeEnum.VENUE
             } as never
         ]);
 

@@ -41,7 +41,7 @@
  * available type is used with a `// TODO(SPEC-239)` comment.
  */
 
-import { type GastronomyOrExperience, PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, type VenueOrExperience } from '@repo/schemas';
 import {
     FieldTypeEnum,
     LayoutTypeEnum,
@@ -53,7 +53,7 @@ import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-function permissionsForVertical(vertical: GastronomyOrExperience) {
+function permissionsForVertical(vertical: VenueOrExperience) {
     return vertical === 'gastronomy'
         ? {
               view: PermissionEnum.GASTRONOMY_VIEW_ALL,

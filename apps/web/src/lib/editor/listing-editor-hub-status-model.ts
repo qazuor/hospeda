@@ -31,7 +31,7 @@ import {
 } from '@repo/schemas';
 import type { EditorSectionStatus } from '@/lib/editor/editor-hub-status-model';
 import { MISSING_FIELD_I18N_SUFFIX } from '@/lib/listing/missing-field-labels';
-import type { GastronomyOrExperience } from '@/lib/listing/owner-listings';
+import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 
 /**
  * Which editor section owns each `missing` entry `resolveListingCompleteness`
@@ -64,7 +64,7 @@ export interface ListingEditorStatusInput {
      * only one of them is what the route param actually is, and a cast at every
      * call site is how a third spelling eventually appears.
      */
-    readonly vertical: GastronomyOrExperience;
+    readonly vertical: VenueOrExperience;
     /**
      * The listing row as loaded. Passed straight through to
      * `resolveListingCompleteness`, so the hub and the server reach the same
@@ -146,7 +146,7 @@ function resolveBlockingStatuses({
     const { missing } = resolveListingCompleteness({
         entityType:
             input.vertical === 'gastronomy'
-                ? ProductDomainEnum.GASTRONOMY
+                ? ProductDomainEnum.VENUE
                 : ProductDomainEnum.EXPERIENCE,
         listing: input.listing
     });

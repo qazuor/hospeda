@@ -22,7 +22,7 @@ afterAll(closeServiceTestPool);
 const userIds: string[] = [];
 const now = new Date('2026-10-14T12:00:00.000Z');
 const V = VerticalEnum.ACCOMMODATION;
-const W = VerticalEnum.GASTRONOMY;
+const W = VerticalEnum.VENUE;
 afterEach(async () => retirePermanentGrantRows(userIds.splice(0)));
 
 async function seed() {

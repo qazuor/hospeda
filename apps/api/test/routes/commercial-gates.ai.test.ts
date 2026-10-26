@@ -185,7 +185,7 @@ describe('TEST:V5:32 AI gates', () => {
             'chat_gastronomy',
             'ai_chat',
             'max_ai_chat_gastronomy_per_month',
-            VerticalEnum.GASTRONOMY
+            VerticalEnum.VENUE
         ],
         [
             'chat experience owner',
@@ -232,7 +232,7 @@ describe('TEST:V5:32 AI gates', () => {
         await expect(
             enforceAiQuota({
                 userId: OWNER_WITHOUT_KEY,
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 feature: 'chat_gastronomy',
                 entitlementKey: 'ai_chat',
                 limitKey: 'max_ai_chat_gastronomy_per_month',

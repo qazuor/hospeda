@@ -25,7 +25,7 @@
  *
  * @module routes/gastronomy/protected/getDailySpecials
  */
-import { GastronomyDailySpecialsOutputSchema, PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, VenueDailySpecialsOutputSchema } from '@repo/schemas';
 import {
     entityNotFoundError,
     GastronomyService,
@@ -103,7 +103,7 @@ export const protectedGetGastronomyDailySpecialsRoute = createCRUDRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: GastronomyDailySpecialsOutputSchema,
+    responseSchema: VenueDailySpecialsOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleGetGastronomyDailySpecials(ctx, params)
 });

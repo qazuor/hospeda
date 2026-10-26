@@ -1,4 +1,4 @@
-import type { Accommodation, Experience, Gastronomy } from '@repo/schemas';
+import type { Accommodation, Experience, Venue } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model.ts';
@@ -75,7 +75,7 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                 tx
             );
             const gastronomy = await new GastronomyModel().create(
-                { ...fixture(), type: 'RESTAURANT' } as Partial<Gastronomy>,
+                { ...fixture(), type: 'RESTAURANT' } as Partial<Venue>,
                 tx
             );
             const experience = await new ExperienceModel().create(

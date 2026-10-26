@@ -17,8 +17,19 @@ describe('ProductDomainEnum', () => {
             expect(ProductDomainEnum.PARTNER).toBe('partner');
         });
 
-        it('should define GASTRONOMY', () => {
-            expect(ProductDomainEnum.GASTRONOMY).toBe('gastronomy');
+        it('TEST:1813:7 AC:1:15 should define VENUE with the persisted gastronomy value', () => {
+            expect(ProductDomainEnum.VENUE).toBe('gastronomy');
+        });
+
+        it('TEST:1813:7 AC:1:15 exposes the complete renamed key set', () => {
+            expect(Object.keys(ProductDomainEnum)).toEqual([
+                'ACCOMMODATION',
+                'VENUE',
+                'EXPERIENCE',
+                'PARTNER',
+                'TOURIST',
+                'ADDON'
+            ]);
         });
 
         it('should define EXPERIENCE', () => {

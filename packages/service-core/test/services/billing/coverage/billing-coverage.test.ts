@@ -118,7 +118,7 @@ describe('billing real coverage assembler (AC:B4:1, AC:B4:7)', () => {
         // Act
         const response = await createBillingCoverage({
             ports: fakePorts({ covered: false, sources: [baseSource] })
-        }).coverage({ userId, vertical: VerticalEnum.GASTRONOMY });
+        }).coverage({ userId, vertical: VerticalEnum.VENUE });
 
         // Assert
         expect(response).toEqual({ covered: false, sources: [baseSource, addonSource] });

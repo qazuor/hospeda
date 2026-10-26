@@ -1,4 +1,4 @@
-import type { GastronomyMedia } from '@repo/schemas';
+import type { VenueMedia } from '@repo/schemas';
 import { and, asc, count, eq, inArray } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { gastronomyMedia } from '../../schemas/gastronomy/gastronomy_media.dbschema.ts';
@@ -81,7 +81,7 @@ interface FindByGastronomiesInput {
  * @see packages/db/src/models/accommodation/accommodationMedia.model.ts — the template
  *   this model mirrors field-for-field and finder-for-finder.
  */
-export class GastronomyMediaModel extends BaseModelImpl<GastronomyMedia> {
+export class GastronomyMediaModel extends BaseModelImpl<VenueMedia> {
     protected table = gastronomyMedia;
     public entityName = 'gastronomyMedia';
 
@@ -123,7 +123,7 @@ export class GastronomyMediaModel extends BaseModelImpl<GastronomyMedia> {
      */
     async findByGastronomy(
         input: FindByGastronomyInput
-    ): Promise<{ items: GastronomyMedia[]; total: number }> {
+    ): Promise<{ items: VenueMedia[]; total: number }> {
         const { gastronomyId, state, isFeatured, page = 1, pageSize = 50, tx } = input;
         const db = this.getClient(tx);
         const logContext = { gastronomyId, state, isFeatured, page, pageSize };
@@ -155,7 +155,7 @@ export class GastronomyMediaModel extends BaseModelImpl<GastronomyMedia> {
             ]);
 
             const result = {
-                items: items as GastronomyMedia[],
+                items: items as VenueMedia[],
                 total: Number(countResult[0]?.count ?? 0)
             };
             try {
@@ -184,7 +184,7 @@ export class GastronomyMediaModel extends BaseModelImpl<GastronomyMedia> {
      * @param input.tx           - Optional transaction client.
      * @returns The featured media row, or `null` if no featured image is set.
      */
-    async findFeatured(input: FindFeaturedInput): Promise<GastronomyMedia | null> {
+    async findFeatured(input: FindFeaturedInput): Promise<VenueMedia | null> {
         const { gastronomyId, tx } = input;
         const db = this.getClient(tx);
         const logContext = { gastronomyId };
@@ -202,7 +202,7 @@ export class GastronomyMediaModel extends BaseModelImpl<GastronomyMedia> {
                 )
                 .limit(1);
 
-            const row = (result[0] as GastronomyMedia) ?? null;
+            const row = (result[0] as VenueMedia) ?? null;
             try {
                 logQuery(this.entityName, 'findFeatured', logContext, row);
             } catch {}
@@ -237,11 +237,9 @@ export class GastronomyMediaModel extends BaseModelImpl<GastronomyMedia> {
      * @param input.tx            - Optional transaction client.
      * @returns Map of gastronomyId → ordered media rows.
      */
-    async findByGastronomies(
-        input: FindByGastronomiesInput
-    ): Promise<Map<string, GastronomyMedia[]>> {
+    async findByGastronomies(input: FindByGastronomiesInput): Promise<Map<string, VenueMedia[]>> {
         const { gastronomyIds, state, tx } = input;
-        const grouped = new Map<string, GastronomyMedia[]>();
+        const grouped = new Map<string, VenueMedia[]>();
         if (gastronomyIds.length === 0) return grouped;
 
         const db = this.getClient(tx);
@@ -263,10 +261,7 @@ export class GastronomyMediaModel extends BaseModelImpl<GastronomyMedia> {
                 .select()
                 .from(gastronomyMedia)
                 .where(and(...conditions))
-                .orderBy(
-                    asc(gastronomyMedia.sortOrder),
-                    asc(gastronomyMedia.id)
-                )) as GastronomyMedia[];
+                .orderBy(asc(gastronomyMedia.sortOrder), asc(gastronomyMedia.id))) as VenueMedia[];
 
             for (const row of rows) {
                 const list = grouped.get(row.gastronomyId);

@@ -61,7 +61,7 @@ const fakeRevocation: CalendarConnectionRevocationPort = {
 
 type Vertical =
     | typeof VerticalEnum.ACCOMMODATION
-    | typeof VerticalEnum.GASTRONOMY
+    | typeof VerticalEnum.VENUE
     | typeof VerticalEnum.EXPERIENCE;
 const verticalConfig: Readonly<Record<Vertical, { table: string; media: string; fk: string }>> = {
     [VerticalEnum.ACCOMMODATION]: {
@@ -69,7 +69,7 @@ const verticalConfig: Readonly<Record<Vertical, { table: string; media: string; 
         media: 'accommodation_media',
         fk: 'accommodation_id'
     },
-    [VerticalEnum.GASTRONOMY]: {
+    [VerticalEnum.VENUE]: {
         table: 'gastronomies',
         media: 'gastronomy_media',
         fk: 'gastronomy_id'
@@ -90,7 +90,7 @@ type Fixture = {
     vertical: Vertical;
 };
 const nonAccommodationVerticals: readonly Vertical[] = [
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ];
 const fixtures: Fixture[] = [];

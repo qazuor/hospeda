@@ -27,14 +27,14 @@ vi.mock('../../../src/utils/listing-publication/ports', async (importOriginal) =
 const app = initApp({ clock: { now: () => MATRIX_NOW } });
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 function path(vertical: (typeof verticals)[number], id: string) {
     const segment =
         vertical === VerticalEnum.ACCOMMODATION
             ? 'accommodations'
-            : vertical === VerticalEnum.GASTRONOMY
+            : vertical === VerticalEnum.VENUE
               ? 'gastronomies'
               : 'experiences';
     return `/api/v1/protected/${segment}/${id}/reactivate`;
@@ -56,7 +56,7 @@ async function makeListing(
             .set({ inactiveSince: new Date(MATRIX_NOW.getTime() - 120 * 86_400_000) })
             .where(eq(accommodations.id, id));
     else {
-        if (vertical === VerticalEnum.GASTRONOMY)
+        if (vertical === VerticalEnum.VENUE)
             await getDb().execute(
                 sql`UPDATE gastronomies SET inactive_since = ${new Date(MATRIX_NOW.getTime() - 120 * 86_400_000)} WHERE id = ${id}`
             );

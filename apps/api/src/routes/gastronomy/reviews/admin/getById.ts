@@ -2,7 +2,7 @@
  * Admin get gastronomy review by ID endpoint.
  * Returns full review information including moderation fields.
  */
-import { GastronomyReviewSchema, PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, VenueReviewSchema } from '@repo/schemas';
 import { GastronomyReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -29,7 +29,7 @@ export const adminGetGastronomyReviewByIdRoute = createAdminRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: GastronomyReviewSchema.nullable(),
+    responseSchema: VenueReviewSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await gastronomyReviewService.getById(actor, params.id as string);

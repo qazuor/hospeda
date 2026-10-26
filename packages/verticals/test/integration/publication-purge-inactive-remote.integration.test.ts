@@ -22,7 +22,7 @@ const t0 = new Date('2026-10-12T12:00:00.000Z');
 const day = 86_400_000;
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 
@@ -48,7 +48,7 @@ async function archivedListing(vertical: (typeof verticals)[number]) {
         destinationId,
         status: Status.ARCHIVED
     });
-    const table = vertical === VerticalEnum.GASTRONOMY ? 'gastronomies' : `${vertical}s`;
+    const table = vertical === VerticalEnum.VENUE ? 'gastronomies' : `${vertical}s`;
     await db.execute(
         sql`UPDATE ${sql.raw(table)} SET inactive_since = ${new Date(t0.getTime() - 300 * day)}, deadlines_version = 1, deletion_announced_at = ${new Date(t0.getTime() - day)} WHERE id = ${listing.id}`
     );

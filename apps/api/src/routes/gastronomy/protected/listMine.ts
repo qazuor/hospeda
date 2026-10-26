@@ -42,7 +42,7 @@ export const protectedListMyGastronomyRoute = createProtectedRoute({
 
         const listings = ownListings.map((listing) => ({
             id: listing.id,
-            vertical: ProductDomainEnum.GASTRONOMY,
+            vertical: ProductDomainEnum.VENUE,
             name: listing.name,
             slug: listing.slug,
             type: listing.type,

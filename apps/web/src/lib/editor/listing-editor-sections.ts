@@ -27,7 +27,7 @@
  */
 
 import type { EditorRegistry, EditorSection } from '@/lib/editor/editor-registry';
-import type { GastronomyOrExperience } from '@/lib/listing/owner-listings';
+import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 
 /** Sections every gastronomy and experience listing has, in nav order. */
 export const LISTING_SHARED_EDITOR_SECTIONS: readonly EditorSection[] = [
@@ -113,7 +113,7 @@ export function createListingEditorRegistry({
     vertical,
     sections
 }: {
-    readonly vertical: GastronomyOrExperience;
+    readonly vertical: VenueOrExperience;
     readonly sections: readonly EditorSection[];
 }): EditorRegistry {
     return {

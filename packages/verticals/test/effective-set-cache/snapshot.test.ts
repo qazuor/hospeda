@@ -12,7 +12,7 @@ import { createInMemoryCatalog, planVersionRow } from '../plan-catalog/in-memory
 import { FakeRedis } from './fake-redis';
 
 const vertical = VerticalEnum.ACCOMMODATION;
-const other = VerticalEnum.GASTRONOMY;
+const other = VerticalEnum.VENUE;
 const snapshot: EffectiveSetSnapshot = {
     version: 1,
     userId: 'A',

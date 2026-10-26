@@ -20,7 +20,7 @@ const tables: Readonly<Record<(typeof verticals)[number], string>> = {
 };
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 const T0 = new Date('2026-03-01T12:00:00.000Z');

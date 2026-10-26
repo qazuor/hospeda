@@ -1,4 +1,4 @@
-import type { Accommodation, Experience, Gastronomy } from '@repo/schemas';
+import type { Accommodation, Experience, Venue } from '@repo/schemas';
 import { PublicationStatusEnum as Status } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -44,10 +44,7 @@ async function makeListing(
             tx
         );
     if (vertical === 'gastronomy')
-        return new GastronomyModel().create(
-            { ...base, type: 'RESTAURANT' } as Partial<Gastronomy>,
-            tx
-        );
+        return new GastronomyModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
     return new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx);
 }
 

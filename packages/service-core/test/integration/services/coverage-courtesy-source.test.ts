@@ -167,10 +167,10 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:12 real COURTESY source',
             ).toEqual([]);
 
             const otherVertical = await seedCoverageUser(tx);
-            const otherPlan = await seedCoveragePlanVersion(tx, VerticalEnum.GASTRONOMY);
+            const otherPlan = await seedCoveragePlanVersion(tx, VerticalEnum.VENUE);
             const otherSub = await seedCoverageSubscription(tx, {
                 ...otherVertical,
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 ...otherPlan,
                 status: 'PAUSED'
             });

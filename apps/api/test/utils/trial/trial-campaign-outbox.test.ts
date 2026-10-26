@@ -115,7 +115,7 @@ describe('trial campaign outbox adapter', () => {
         const h = harness();
         await h.ports.scheduleRecoveryCampaign({
             userId: 'u',
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             expiredAt: now,
             deadlinesVersion: 1,
             milestones: RECOVERY_CAMPAIGN_OFFSETS_DAYS.map(
@@ -125,7 +125,7 @@ describe('trial campaign outbox adapter', () => {
         expect(h.withdraw).not.toHaveBeenCalled();
         await h.ports.cancelCampaign({
             userId: 'u',
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             campaign: 'RECOVERY'
         });
         expect(h.withdraw).toHaveBeenCalledWith(

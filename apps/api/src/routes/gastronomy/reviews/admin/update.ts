@@ -3,10 +3,10 @@
  * Allows admins to update any gastronomy review.
  */
 import {
-    GastronomyReviewSchema,
-    type GastronomyReviewUpdateInput,
-    GastronomyReviewUpdateInputSchema,
-    PermissionEnum
+    PermissionEnum,
+    VenueReviewSchema,
+    type VenueReviewUpdateInput,
+    VenueReviewUpdateInputSchema
 } from '@repo/schemas';
 import { GastronomyReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -38,15 +38,15 @@ export const adminUpdateGastronomyReviewRoute = createAdminRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyReviewUpdateInputSchema,
-    responseSchema: GastronomyReviewSchema,
+    requestBody: VenueReviewUpdateInputSchema,
+    responseSchema: VenueReviewSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        const input = body as GastronomyReviewUpdateInput;
+        const input = body as VenueReviewUpdateInput;
         const result = await gastronomyReviewService.update(actor, params.id as string, input);
 
         if (result.error) {

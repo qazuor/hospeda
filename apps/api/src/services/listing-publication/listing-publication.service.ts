@@ -62,7 +62,7 @@ export class ListingPublicationService {
                 ownerId = existing.data.ownerId;
                 break;
             }
-            case VerticalEnum.GASTRONOMY: {
+            case VerticalEnum.VENUE: {
                 const existing = await gastronomyService.getById(args.actor, args.id);
                 if (existing.error)
                     throw new ServiceError(existing.error.code, existing.error.message);
@@ -251,7 +251,7 @@ export class ListingPublicationService {
                 if (result.error) throw new ServiceError(result.error.code, result.error.message);
                 return result.data ? { ownerId: result.data.ownerId } : null;
             }
-            case VerticalEnum.GASTRONOMY: {
+            case VerticalEnum.VENUE: {
                 const result = await gastronomyService.getById(actor, id);
                 if (result.error) throw new ServiceError(result.error.code, result.error.message);
                 return result.data ? { ownerId: result.data.ownerId } : null;
@@ -273,7 +273,7 @@ export class ListingPublicationService {
         id: string,
         vertical: Exclude<PublicationVertical, typeof VerticalEnum.ACCOMMODATION>
     ) {
-        if (vertical === VerticalEnum.GASTRONOMY) {
+        if (vertical === VerticalEnum.VENUE) {
             const result = await gastronomyService.getById(actor, id);
             if (result.error) throw new ServiceError(result.error.code, result.error.message);
             if (!result.data)

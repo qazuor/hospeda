@@ -15,15 +15,15 @@ const db = drizzle({ client: pool }) as unknown as DrizzleClient;
 const fixtures = createPublicationFixtureTracker(db);
 const DAY = 86_400_000;
 const now = new Date('2026-10-10T12:00:00.000Z');
-type Vertical = VerticalEnum.ACCOMMODATION | VerticalEnum.GASTRONOMY | VerticalEnum.EXPERIENCE;
+type Vertical = VerticalEnum.ACCOMMODATION | VerticalEnum.VENUE | VerticalEnum.EXPERIENCE;
 const verticals: readonly Vertical[] = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ];
 const tableByVertical: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 } as const;
 

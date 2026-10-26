@@ -9,7 +9,7 @@
  * - After creation, the listing's denormalized rating fields are recomputed.
  */
 
-import { GastronomyReviewCreateInputSchema, GastronomyReviewSchema } from '@repo/schemas';
+import { VenueReviewCreateInputSchema, VenueReviewSchema } from '@repo/schemas';
 import { GastronomyReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
@@ -29,7 +29,7 @@ const writeReviewRateLimit = createSlidingWindowPerUserRateLimit({
  * Protected projection for the review response: omits admin-only moderation
  * decision fields that should not be surfaced to tourists on creation.
  */
-const GastronomyReviewProtectedSchema = GastronomyReviewSchema.pick({
+const GastronomyReviewProtectedSchema = VenueReviewSchema.pick({
     id: true,
     gastronomyId: true,
     userId: true,
@@ -62,9 +62,9 @@ export const protectedCreateGastronomyReviewRoute = createProtectedRoute({
         'Submits a new review for a gastronomy listing. The review starts in PENDING state awaiting moderation.',
     tags: ['Gastronomy', 'Gastronomy Reviews'],
     requestParams: {
-        gastronomyId: GastronomyReviewCreateInputSchema.shape.gastronomyId
+        gastronomyId: VenueReviewCreateInputSchema.shape.gastronomyId
     },
-    requestBody: GastronomyReviewCreateInputSchema.omit({ gastronomyId: true }),
+    requestBody: VenueReviewCreateInputSchema.omit({ gastronomyId: true }),
     responseSchema: GastronomyReviewProtectedSchema,
     handler: async (
         ctx: Context,
@@ -73,7 +73,7 @@ export const protectedCreateGastronomyReviewRoute = createProtectedRoute({
     ) => {
         const actor = getActorFromContext(ctx);
         const input = {
-            ...(body as z.infer<typeof GastronomyReviewCreateInputSchema>),
+            ...(body as z.infer<typeof VenueReviewCreateInputSchema>),
             gastronomyId: params.gastronomyId as string
         };
 

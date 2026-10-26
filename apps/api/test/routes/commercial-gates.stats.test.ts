@@ -153,7 +153,7 @@ const rows = [
         route: protectedGastronomyViewStatsRoute,
         path: '/mine/views',
         key: 'view_basic_stats',
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         denied: TRIAL,
         allowed: GASTRO_BASIC
     },
@@ -162,7 +162,7 @@ const rows = [
         route: protectedGastronomyViewStatsDailySeriesRoute,
         path: '/mine/views/daily-series',
         key: 'view_basic_stats',
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         denied: TRIAL,
         allowed: GASTRO_BASIC
     },
@@ -189,7 +189,7 @@ const rows = [
         route: protectedGetGastronomyMenuQrRoute,
         path: `/${LISTING}/menu-qr`,
         key: 'menu_qr_scan_metrics',
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         denied: GASTRO_BASIC,
         allowed: GASTRO_PREMIUM,
         resource: true
@@ -199,7 +199,7 @@ const rows = [
         route: protectedGetGastronomyMenuQrScansRoute,
         path: `/${LISTING}/menu-qr/scans`,
         key: 'menu_qr_scan_metrics',
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         denied: GASTRO_BASIC,
         allowed: GASTRO_PREMIUM,
         resource: true

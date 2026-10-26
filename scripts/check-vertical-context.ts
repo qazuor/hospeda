@@ -14,7 +14,7 @@
  *   that hides it fails too.
  * Half (b), "an operation on a resource that stores its vertical takes it from
  * the request":
- * - (b1) every route config names `VerticalEnum.<ACCOMMODATION|GASTRONOMY|EXPERIENCE>`,
+ * - (b1) every route config names `VerticalEnum.<ACCOMMODATION|VENUE|EXPERIENCE>`,
  *   and a route under `routes/<accommodation|gastronomy|experience>/` names the
  *   vertical of its folder, which is the table it reads its resource from;
  * - (b2) the `vertical` of every `resolveListingAccess` call and the
@@ -60,7 +60,7 @@ export const CONFIG_TYPE_FILE = 'apps/api/src/types/authorization.ts';
 /** File holding `resolveListingAccess`. */
 export const RESOLVER_FILE = 'packages/verticals/src/authorization/resolve-listing-access.ts';
 /** `VerticalEnum` members that own listings. */
-export const LISTING_VERTICAL_MEMBERS = ['ACCOMMODATION', 'GASTRONOMY', 'EXPERIENCE'] as const;
+export const LISTING_VERTICAL_MEMBERS = ['ACCOMMODATION', 'VENUE', 'EXPERIENCE'] as const;
 /** Names that mean "read from the request" inside a vertical expression. */
 export const REQUEST_NAMES = ['body', 'params', 'query', 'headers', 'request', 'req'] as const;
 /** The media upload of the listings, which must run the chain per vertical (HOS-1682). */
@@ -180,7 +180,8 @@ function checkRouteConfig(site: OperationSite, where: string): readonly string[]
         ];
     }
     const folder = ROUTE_FOLDER.exec(site.file)?.[1];
-    if (folder && folder.toUpperCase() !== member) {
+    const folderMember = folder === 'gastronomy' ? 'VENUE' : folder?.toUpperCase();
+    if (folderMember && folderMember !== member) {
         return [
             `G2 (b): ${where} route under routes/${folder} declares vertical ${member}: the context must be the vertical of the resource it serves`
         ];

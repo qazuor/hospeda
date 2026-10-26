@@ -18,9 +18,9 @@
  */
 
 import {
-    type GastronomyOwnerUpdateInput,
-    GastronomyOwnerUpdateInputSchema,
-    GastronomyProtectedSchema,
+    type VenueOwnerUpdateInput,
+    VenueOwnerUpdateInputSchema,
+    VenueProtectedSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
@@ -45,7 +45,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
 export const protectedPatchGastronomyRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     summary: 'Update gastronomy listing (owner)',
     description:
         'Partially updates operational fields of a gastronomy listing. Requires ownership.',
@@ -53,8 +53,8 @@ export const protectedPatchGastronomyRoute = createProtectedRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyOwnerUpdateInputSchema,
-    responseSchema: GastronomyProtectedSchema,
+    requestBody: VenueOwnerUpdateInputSchema,
+    responseSchema: VenueProtectedSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -63,7 +63,7 @@ export const protectedPatchGastronomyRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const result = await gastronomyService.updateOwn(
             params.id as string,
-            body as GastronomyOwnerUpdateInput,
+            body as VenueOwnerUpdateInput,
             actor
         );
 

@@ -7,10 +7,10 @@
  * returned URL + metadata as a new `gastronomy_media` row.
  */
 import {
-    type GastronomyMediaAddInput,
-    type GastronomyMediaAddPayload,
-    GastronomyMediaAddPayloadSchema,
-    GastronomyMediaSingleOutputSchema,
+    type VenueMediaAddInput,
+    type VenueMediaAddPayload,
+    VenueMediaAddPayloadSchema,
+    VenueMediaSingleOutputSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { addGastronomyMedia, GastronomyService, ServiceError } from '@repo/service-core';
@@ -32,7 +32,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminAddGastronomyMediaRoute = createAdminRoute({
     method: 'post',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media',
     summary: 'Add photo to gastronomy listing gallery (admin)',
     description:
@@ -41,8 +41,8 @@ export const adminAddGastronomyMediaRoute = createAdminRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyMediaAddPayloadSchema,
-    responseSchema: GastronomyMediaSingleOutputSchema,
+    requestBody: VenueMediaAddPayloadSchema,
+    responseSchema: VenueMediaSingleOutputSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -50,9 +50,9 @@ export const adminAddGastronomyMediaRoute = createAdminRoute({
     ) => {
         const actor = getActorFromContext(ctx);
 
-        const input: GastronomyMediaAddInput = {
+        const input: VenueMediaAddInput = {
             gastronomyId: params.id as string,
-            media: body as GastronomyMediaAddPayload
+            media: body as VenueMediaAddPayload
         };
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`

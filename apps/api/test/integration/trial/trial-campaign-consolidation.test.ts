@@ -78,12 +78,12 @@ afterAll(async () => testDb.teardown());
 describe('TEST:V4:22 (parte 2: clase y una sola pieza) - three verticals, one piece per milestone, before the daily cap', () => {
     it('consolida antes del tope y retira solo la vertical convertida', async () => {
         await ensurePublicationCatalog(VerticalEnum.ACCOMMODATION);
-        await ensurePublicationCatalog(VerticalEnum.GASTRONOMY);
+        await ensurePublicationCatalog(VerticalEnum.VENUE);
         await ensurePublicationCatalog(VerticalEnum.EXPERIENCE);
         const owner = await createOwner();
         for (const vertical of [
             VerticalEnum.ACCOMMODATION,
-            VerticalEnum.GASTRONOMY,
+            VerticalEnum.VENUE,
             VerticalEnum.EXPERIENCE
         ] as const) {
             await createTrial({ userId: owner.id, status: 'TRIAL_ACTIVE', vertical });
@@ -95,7 +95,7 @@ describe('TEST:V4:22 (parte 2: clase y una sola pieza) - three verticals, one pi
         const machine = getTrialMachinePorts();
         for (const vertical of [
             VerticalEnum.ACCOMMODATION,
-            VerticalEnum.GASTRONOMY,
+            VerticalEnum.VENUE,
             VerticalEnum.EXPERIENCE
         ] as const) {
             await expireTrial({
@@ -199,7 +199,7 @@ describe('TEST:V4:22 (parte 2: clase y una sola pieza) - three verticals, one pi
             afterCommit: noEffects,
             event: {
                 userId: owner.id,
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 sourceType: 'SUBSCRIPTION',
                 change: 'CHANGED'
             }

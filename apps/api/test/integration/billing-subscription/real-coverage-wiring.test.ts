@@ -147,7 +147,7 @@ describe('TEST:B4:1 — the composition root answers coverage from the real bill
 
         const response = await getListingAccessPorts().billing.coverage({
             userId,
-            vertical: VerticalEnum.GASTRONOMY
+            vertical: VerticalEnum.VENUE
         });
 
         expect(response.sources.some((source) => source.type === 'SUBSCRIPTION')).toBe(false);

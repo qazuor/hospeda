@@ -22,13 +22,13 @@ import {
 const app = initApp();
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 type Vertical = (typeof verticals)[number];
 const segments: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.GASTRONOMY]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const createdOwners: string[] = [];
@@ -48,7 +48,7 @@ async function publishedListing(vertical: Vertical, ownerId: string) {
             return trackListing(
                 await createListing({ ownerId, destinationId, status, complete: false })
             );
-        case VerticalEnum.GASTRONOMY:
+        case VerticalEnum.VENUE:
         case VerticalEnum.EXPERIENCE:
             return trackListing(
                 await createVerticalListing({ vertical, ownerId, destinationId, status })

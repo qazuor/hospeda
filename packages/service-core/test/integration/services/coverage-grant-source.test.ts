@@ -25,7 +25,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:12 real GRANT source', ()
                 grantedBy: signer,
                 anchors: [
                     { vertical: VerticalEnum.ACCOMMODATION },
-                    { vertical: VerticalEnum.GASTRONOMY },
+                    { vertical: VerticalEnum.VENUE },
                     { vertical: VerticalEnum.TOURIST }
                 ]
             });
@@ -76,7 +76,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9a:12 real GRANT source', ()
                     .sources
             ).toEqual([]);
             const floors = await Promise.all(
-                [VerticalEnum.ACCOMMODATION, VerticalEnum.GASTRONOMY, VerticalEnum.TOURIST].map(
+                [VerticalEnum.ACCOMMODATION, VerticalEnum.VENUE, VerticalEnum.TOURIST].map(
                     (vertical) => resolveGrantSources({ userId, vertical, tx })
                 )
             );

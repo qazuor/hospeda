@@ -23,9 +23,9 @@
  */
 
 import {
-    GastronomyDailySpecialsOutputSchema,
-    type GastronomyDailySpecialsReplacePayload,
-    GastronomyDailySpecialsReplacePayloadSchema,
+    VenueDailySpecialsOutputSchema,
+    type VenueDailySpecialsReplacePayload,
+    VenueDailySpecialsReplacePayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, replaceGastronomyDailySpecials } from '@repo/service-core';
@@ -64,7 +64,7 @@ export async function handlePutGastronomyDailySpecials(
         // against `GastronomyDailySpecialsReplacePayloadSchema` by the route;
         // the service re-parses it anyway, so the cast asserts nothing the next
         // line does not verify.
-        specials: body as unknown as GastronomyDailySpecialsReplacePayload
+        specials: body as unknown as VenueDailySpecialsReplacePayload
     });
 
     if (result.error) {
@@ -81,7 +81,7 @@ export const protectedPutGastronomyDailySpecialsRoute = createProtectedRoute({
     description:
         'Replaces the listing’s daily specials with the submitted document. Each special carries its own inclusive validity window and stops being shown publicly once it passes — no job runs and nothing has to be taken down by hand. An empty specials array removes them immediately. Owner-only, and requires the manage_gastronomy_daily_special entitlement granted by the professional gastronomy plan and above.',
     listingAccess: {
-        vertical: VerticalEnum.GASTRONOMY,
+        vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
         capabilities: ['manage_gastronomy_daily_special']
@@ -91,8 +91,8 @@ export const protectedPutGastronomyDailySpecialsRoute = createProtectedRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyDailySpecialsReplacePayloadSchema,
-    responseSchema: GastronomyDailySpecialsOutputSchema,
+    requestBody: VenueDailySpecialsReplacePayloadSchema,
+    responseSchema: VenueDailySpecialsOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
         handlePutGastronomyDailySpecials(ctx, params, body)
 });

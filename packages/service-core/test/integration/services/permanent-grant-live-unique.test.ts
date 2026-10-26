@@ -45,9 +45,9 @@ async function fixture() {
             seedCoverageUser(tx)
         ]);
         const planA = await seedGrantPlan(tx, VerticalEnum.ACCOMMODATION);
-        const planB = await seedGrantPlan(tx, VerticalEnum.GASTRONOMY);
+        const planB = await seedGrantPlan(tx, VerticalEnum.VENUE);
         const coverageA = await seedCoveragePlanVersion(tx, VerticalEnum.ACCOMMODATION);
-        const coverageB = await seedCoveragePlanVersion(tx, VerticalEnum.GASTRONOMY);
+        const coverageB = await seedCoveragePlanVersion(tx, VerticalEnum.VENUE);
         const subA = await seedCoverageSubscription(tx, {
             userId: beneficiary,
             vertical: VerticalEnum.ACCOMMODATION,
@@ -56,7 +56,7 @@ async function fixture() {
         });
         const subB = await seedCoverageSubscription(tx, {
             userId: beneficiary,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             ...coverageB,
             status: 'ACTIVE'
         });
@@ -170,7 +170,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             const callsBefore = p.calls();
             const noticesBefore = p.notices();
             await expect(
-                grantPermanentGrant(input(f, VerticalEnum.GASTRONOMY, f.planB), p.ports)
+                grantPermanentGrant(input(f, VerticalEnum.VENUE, f.planB), p.ports)
             ).rejects.toMatchObject({
                 code: 'ALREADY_EXISTS',
                 reason: 'PERMANENT_GRANT_ALREADY_LIVE'
@@ -259,7 +259,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         ...input(f, VerticalEnum.ACCOMMODATION, f.planA),
                         anchors: [
                             { vertical: VerticalEnum.ACCOMMODATION, ...f.planA },
-                            { vertical: VerticalEnum.GASTRONOMY, ...f.planA }
+                            { vertical: VerticalEnum.VENUE, ...f.planA }
                         ]
                     },
                     p.ports
@@ -276,7 +276,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         anchors: [
                             { vertical: VerticalEnum.ACCOMMODATION, ...f.planA },
                             {
-                                vertical: VerticalEnum.GASTRONOMY,
+                                vertical: VerticalEnum.VENUE,
                                 planId: f.planB.planId,
                                 floorPlanVersionId: wrongFloor.floorPlanVersionId
                             }
@@ -334,7 +334,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 const p = makePorts();
                 const settled = await Promise.allSettled([
                     grantPermanentGrant(input(f, VerticalEnum.ACCOMMODATION, f.planA), p.ports),
-                    grantPermanentGrant(input(f, VerticalEnum.GASTRONOMY, f.planB), p.ports)
+                    grantPermanentGrant(input(f, VerticalEnum.VENUE, f.planB), p.ports)
                 ]);
                 expect(settled.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
                 const rejection = settled.find((r) => r.status === 'rejected');

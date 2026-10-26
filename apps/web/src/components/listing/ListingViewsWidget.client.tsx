@@ -33,13 +33,13 @@ import { useEffect, useState } from 'react';
 import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { GastronomyOrExperience } from '@/lib/listing/owner-listings';
+import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 import styles from './ListingViewsWidget.module.css';
 
 /** Minimal listing shape the widget needs — id, vertical, and display name. */
 export interface ListingViewsWidgetListing {
     readonly id: string;
-    readonly vertical: GastronomyOrExperience;
+    readonly vertical: VenueOrExperience;
     readonly name: string;
 }
 

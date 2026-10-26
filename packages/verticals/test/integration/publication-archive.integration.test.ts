@@ -17,7 +17,7 @@ const at = new Date('2026-10-11T12:00:00.000Z');
 const clock = { now: () => new Date(at) };
 const verticals = [
     VerticalEnum.ACCOMMODATION,
-    VerticalEnum.GASTRONOMY,
+    VerticalEnum.VENUE,
     VerticalEnum.EXPERIENCE
 ] as const;
 const tables = {
@@ -196,28 +196,28 @@ describe('TEST:V6:8 and TEST:V6:9 PB4/PB5 over Postgres', () => {
         const { userId, destinationId } = await seedPublicationOwner({ db });
         const short = await seedPublicationListing({
             db,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             userId,
             destinationId,
             status: PublicationStatusEnum.PUBLISHED
         });
         const original = await seedPublicationListing({
             db,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             userId,
             destinationId,
             status: PublicationStatusEnum.PUBLISHED
         });
         const old = new Date(at.getTime() - 70 * 86_400_000);
         await setClockState({
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             listingId: short.id,
             status: PublicationStatusEnum.PUBLISHED,
             inactiveSince: old,
             version: shortArchiveVersion
         });
         await setClockState({
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             listingId: original.id,
             status: PublicationStatusEnum.PUBLISHED,
             inactiveSince: old,
@@ -230,7 +230,7 @@ describe('TEST:V6:8 and TEST:V6:9 PB4/PB5 over Postgres', () => {
                     ...shortAdapter,
                     afterCommit,
                     clock,
-                    vertical: VerticalEnum.GASTRONOMY,
+                    vertical: VerticalEnum.VENUE,
                     listingId: short.id,
                     ownerId: userId,
                     correlationId: randomUUID()
@@ -242,13 +242,13 @@ describe('TEST:V6:8 and TEST:V6:9 PB4/PB5 over Postgres', () => {
                 ...shortAdapter,
                 afterCommit,
                 clock,
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 listingId: original.id,
                 ownerId: userId,
                 correlationId: randomUUID()
             })
         ).toMatchObject({ archived: false, reason: 'NOT_DUE' });
-        expect((await readRow(VerticalEnum.GASTRONOMY, short.id))?.deletion_announced_at).toEqual(
+        expect((await readRow(VerticalEnum.VENUE, short.id))?.deletion_announced_at).toEqual(
             new Date(at.getTime() + 120 * 86_400_000)
         );
 

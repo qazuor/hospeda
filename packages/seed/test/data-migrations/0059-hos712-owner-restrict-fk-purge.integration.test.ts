@@ -52,10 +52,10 @@ import {
     AccommodationTypeEnum,
     DestinationTypeEnum,
     ExperienceTypeEnum,
-    GastronomyTypeEnum,
     OccupancySourceEnum,
     PublicationStatusEnum,
-    RoleEnum
+    RoleEnum,
+    VenueTypeEnum
 } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { config as loadEnv } from 'dotenv';
@@ -187,7 +187,7 @@ async function insertGastronomy(
             name: 'HOS-712 gastronomy',
             summary: 'HOS-712 fixture.',
             description: 'HOS-712 fixture gastronomy, rolled back after the test.',
-            type: GastronomyTypeEnum.RESTAURANT,
+            type: VenueTypeEnum.RESTAURANT,
             ownerId: args.ownerId,
             destinationId: args.destinationId,
             publicationStatus: PublicationStatusEnum.PUBLISHED,

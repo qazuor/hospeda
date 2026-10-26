@@ -57,7 +57,7 @@ describe('TEST:V8a:8 row 26 lists the support edits of a listing', () => {
 
         // Act
         const result = await listSupportEdits({
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             listingId: LISTING
         });
 

@@ -42,7 +42,7 @@
  */
 
 import type { OpeningHours } from '@repo/schemas';
-import { ExperienceOwnerUpdateInputSchema, GastronomyOwnerUpdateInputSchema } from '@repo/schemas';
+import { ExperienceOwnerUpdateInputSchema, VenueOwnerUpdateInputSchema } from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MeetingPointSection } from '@/components/experience/MeetingPointSection.client';
 import { ActionBar } from '@/components/host/editor/ActionBar.client';
@@ -55,7 +55,7 @@ import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { GastronomyOrExperience, ListingDetail } from '@/lib/listing/owner-listings';
+import type { ListingDetail, VenueOrExperience } from '@/lib/listing/owner-listings';
 import {
     buildSlugRefreshPayload,
     shouldOfferPublishedSlugRefresh
@@ -96,7 +96,7 @@ import {
 
 export interface ListingEditorProps {
     /** Which vertical this listing belongs to (drives the PATCH endpoint + price group). */
-    readonly vertical: GastronomyOrExperience;
+    readonly vertical: VenueOrExperience;
     /**
      * Which section this page edits (HOS-1080). Decides what renders AND what
      * the save may persist — see `listing-section-payload.ts`.
@@ -140,7 +140,7 @@ function patchPathFor({
     vertical,
     listingId
 }: {
-    vertical: GastronomyOrExperience;
+    vertical: VenueOrExperience;
     listingId: string;
 }): string {
     return vertical === 'gastronomy'
@@ -290,7 +290,7 @@ function buildPatchPayload({
 }: {
     current: ListingEditData;
     baseline: ListingEditData;
-    vertical: GastronomyOrExperience;
+    vertical: VenueOrExperience;
     publicationStatus?: string | null;
 }): Record<string, unknown> {
     const payload: Record<string, unknown> = {};
@@ -499,9 +499,7 @@ export function ListingEditor({
     // (mobilePhone/workEmail), social networks, opening hours, menuUrl, and the
     // priceFrom/priceUnit null-vs-undefined bug (see `buildPayload` below).
     const schema =
-        vertical === 'gastronomy'
-            ? GastronomyOwnerUpdateInputSchema
-            : ExperienceOwnerUpdateInputSchema;
+        vertical === 'gastronomy' ? VenueOwnerUpdateInputSchema : ExperienceOwnerUpdateInputSchema;
     const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
         schema,
         t,

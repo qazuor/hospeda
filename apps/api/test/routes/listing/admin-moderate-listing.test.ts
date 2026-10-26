@@ -37,7 +37,7 @@ describe('TEST:V6:12 listing moderation route adapters', () => {
         const body = { action: 'TAKE_DOWN', reason: 'policy' };
         for (const [index, vertical] of [
             VerticalEnum.ACCOMMODATION,
-            VerticalEnum.GASTRONOMY,
+            VerticalEnum.VENUE,
             VerticalEnum.EXPERIENCE
         ].entries()) {
             const route = captured[index];

@@ -116,7 +116,7 @@ describe('buildBillingCoveragePorts', () => {
         const { ports } = buildBillingCoveragePorts({ reader });
 
         await expect(ports.listing({ listingId })).resolves.toEqual({
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             ownerId,
             acceptsFeature: true
         });

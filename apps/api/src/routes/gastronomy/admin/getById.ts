@@ -2,7 +2,7 @@
  * Admin get gastronomy listing by ID endpoint.
  * Returns full gastronomy information including admin fields.
  */
-import { GastronomyAdminSchema, PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, VenueAdminSchema } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -30,7 +30,7 @@ export const adminGetGastronomyByIdRoute = createAdminRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: GastronomyAdminSchema.nullable(),
+    responseSchema: VenueAdminSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await gastronomyService.getById(actor, params.id as string);

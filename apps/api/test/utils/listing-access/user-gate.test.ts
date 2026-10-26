@@ -99,18 +99,18 @@ describe('user-level effective gate', () => {
         ]);
         await enforceUserGate({
             userId,
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             keys: ['view_basic_stats'],
             limit: async () => ({ key: 'max_active_promotions', requested: 1 })
         });
         expect(mocks.effectiveSet).toHaveBeenCalledTimes(2);
         expect(mocks.effectiveSet).toHaveBeenNthCalledWith(1, {
             userId,
-            vertical: VerticalEnum.GASTRONOMY
+            vertical: VerticalEnum.VENUE
         });
         expect(mocks.effectiveSet).toHaveBeenNthCalledWith(2, {
             userId,
-            vertical: VerticalEnum.GASTRONOMY
+            vertical: VerticalEnum.VENUE
         });
     });
 

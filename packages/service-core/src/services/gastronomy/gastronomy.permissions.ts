@@ -22,7 +22,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { isAction15AuthorizedFor } from '../../utils/administrative-authorization';
-import type { GastronomyOrExperience } from '../listing/listing.permissions';
+import type { VenueOrExperience } from '../listing/listing.permissions';
 import {
     checkCanAdminListListings,
     checkCanCreateListing,
@@ -41,7 +41,7 @@ import {
  * Passing it is what makes `gastronomy.*` permissions pass here while the
  * other vertical's do not.
  */
-const VERTICAL: GastronomyOrExperience = 'gastronomy';
+const VERTICAL: VenueOrExperience = 'gastronomy';
 
 // Re-export generic helpers under gastronomy-scoped names so callers inside
 // the gastronomy directory can import from one place.

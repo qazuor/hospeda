@@ -73,7 +73,7 @@ describe('TEST:V8a:10 action 23 service (purgeOnRequest)', () => {
         await expect(
             new ListingPurgeService().purgeOnRequest({
                 actor: admin,
-                vertical: VerticalEnum.GASTRONOMY,
+                vertical: VerticalEnum.VENUE,
                 id: LISTING,
                 reason: 'x',
                 expectedOwnerId: null

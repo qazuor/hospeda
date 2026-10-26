@@ -1,4 +1,4 @@
-import type { Accommodation, Experience, Gastronomy } from '@repo/schemas';
+import type { Accommodation, Experience, Venue } from '@repo/schemas';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -86,7 +86,7 @@ describe('listing birth model integration (TEST:V6:19)', () => {
                     type: 'RESTAURANT',
                     ownerId: user.id,
                     destinationId: destination.id
-                } as Partial<Gastronomy>,
+                } as Partial<Venue>,
                 tx
             );
             expect(row.publicationStatus).toBe(PublicationStatusEnum.DRAFT);

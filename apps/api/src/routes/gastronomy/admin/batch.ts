@@ -2,11 +2,7 @@
  * Admin batch gastronomy listings endpoint.
  * Retrieves multiple gastronomy listings by IDs in a single request.
  */
-import {
-    GastronomyBatchRequestSchema,
-    GastronomyBatchResponseSchema,
-    PermissionEnum
-} from '@repo/schemas';
+import { PermissionEnum, VenueBatchRequestSchema, VenueBatchResponseSchema } from '@repo/schemas';
 import { GastronomyService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -30,8 +26,8 @@ export const adminBatchGastronomiesRoute = createAdminRoute({
         'Retrieves multiple gastronomy listings by their IDs for entity select components. Requires GASTRONOMY_VIEW_ALL.',
     tags: ['Gastronomy'],
     anyOfPermissions: [[PermissionEnum.GASTRONOMY_VIEW_ALL]],
-    requestBody: GastronomyBatchRequestSchema,
-    responseSchema: GastronomyBatchResponseSchema,
+    requestBody: VenueBatchRequestSchema,
+    responseSchema: VenueBatchResponseSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

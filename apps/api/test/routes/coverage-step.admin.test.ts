@@ -288,7 +288,7 @@ const cases = [
         method: 'POST',
         path: '/{id}/faqs',
         body: faqCreate,
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/admin/addFeaturedMedia.ts',
@@ -296,7 +296,7 @@ const cases = [
         method: 'POST',
         path: '/{id}/media/featured',
         body: mediaAdd,
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/admin/addMedia.ts',
@@ -304,7 +304,7 @@ const cases = [
         method: 'POST',
         path: '/{id}/media',
         body: mediaAdd,
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/admin/patch.ts',
@@ -312,7 +312,7 @@ const cases = [
         method: 'PATCH',
         path: '/{id}',
         body: { name: 'Updated listing' },
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/admin/removeFaq.ts',
@@ -320,7 +320,7 @@ const cases = [
         method: 'DELETE',
         path: '/{id}/faqs/{faqId}',
         body: undefined,
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/admin/removeMedia.ts',
@@ -328,7 +328,7 @@ const cases = [
         method: 'DELETE',
         path: '/{id}/media/{mediaId}',
         body: undefined,
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/admin/reorderFaqs.ts',
@@ -336,7 +336,7 @@ const cases = [
         method: 'PATCH',
         path: '/{id}/faqs/reorder',
         body: faqReorder,
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/admin/reorderMedia.ts',
@@ -344,7 +344,7 @@ const cases = [
         method: 'PATCH',
         path: '/{id}/media/reorder',
         body: mediaReorder,
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/admin/setFeaturedMedia.ts',
@@ -352,7 +352,7 @@ const cases = [
         method: 'PUT',
         path: '/{id}/media/{mediaId}/featured',
         body: undefined,
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/admin/update.ts',
@@ -360,7 +360,7 @@ const cases = [
         method: 'PUT',
         path: '/{id}',
         body: { name: 'Updated listing' },
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/admin/updateFaq.ts',
@@ -368,7 +368,7 @@ const cases = [
         method: 'PUT',
         path: '/{id}/faqs/{faqId}',
         body: faqUpdate,
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/admin/updateMedia.ts',
@@ -376,7 +376,7 @@ const cases = [
         method: 'PATCH',
         path: '/{id}/media/{mediaId}',
         body: mediaUpdate,
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     }
 ] as const;
 

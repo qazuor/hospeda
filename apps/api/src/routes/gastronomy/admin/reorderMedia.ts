@@ -13,9 +13,9 @@
  * the post/event twin, `test/routes/post-protected-media.test.ts`).
  */
 import {
-    GastronomyMediaListOutputSchema,
-    type GastronomyMediaReorderPayload,
-    GastronomyMediaReorderPayloadSchema,
+    VenueMediaListOutputSchema,
+    type VenueMediaReorderPayload,
+    VenueMediaReorderPayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, reorderGastronomyMedia, ServiceError } from '@repo/service-core';
@@ -37,7 +37,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminReorderGastronomyMediaRoute = createAdminRoute({
     method: 'patch',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/reorder',
     summary: 'Reorder gastronomy listing gallery photos (admin)',
     description:
@@ -48,8 +48,8 @@ export const adminReorderGastronomyMediaRoute = createAdminRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyMediaReorderPayloadSchema,
-    responseSchema: GastronomyMediaListOutputSchema,
+    requestBody: VenueMediaReorderPayloadSchema,
+    responseSchema: VenueMediaListOutputSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -66,7 +66,7 @@ export const adminReorderGastronomyMediaRoute = createAdminRoute({
             run: () =>
                 reorderGastronomyMedia(model, actor, {
                     gastronomyId: params.id as string,
-                    orderedIds: (body as GastronomyMediaReorderPayload).orderedIds
+                    orderedIds: (body as VenueMediaReorderPayload).orderedIds
                 })
         });
 

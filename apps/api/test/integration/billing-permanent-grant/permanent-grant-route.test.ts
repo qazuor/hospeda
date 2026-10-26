@@ -152,7 +152,7 @@ describe('TEST:B9a:9 admin action 2 routes (AC:B9a:8, AC:B9a:9)', () => {
         const principal = await seedCardRevocable({ fake, clock });
         await markPermanentGrantNoticeSent(principal);
         const actorId = await seedGrantUser('anchor-actor');
-        const firstVertical = await seedGrantPlan(VerticalEnum.GASTRONOMY);
+        const firstVertical = await seedGrantPlan(VerticalEnum.VENUE);
         const grant = await seedGrant({
             beneficiaryUserId: principal.ownerId,
             grantedBy: actorId,
@@ -216,7 +216,7 @@ describe('TEST:B9a:9 admin action 2 routes (AC:B9a:8, AC:B9a:9)', () => {
             grantedBy: actorId,
             anchor: accommodation
         });
-        const gastronomy = await seedGrantPlan(VerticalEnum.GASTRONOMY);
+        const gastronomy = await seedGrantPlan(VerticalEnum.VENUE);
         const revokedBeneficiary = await seedGrantUser('revoked-beneficiary');
         const revoked = await seedGrant({
             beneficiaryUserId: revokedBeneficiary,

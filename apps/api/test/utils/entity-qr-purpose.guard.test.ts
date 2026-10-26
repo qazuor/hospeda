@@ -51,7 +51,7 @@ const CALL = 'resolveEntityQrScanUrl(';
  */
 const EXPECTED: Readonly<Record<string, { entityType: string; purpose: string }>> = {
     'routes/gastronomy/protected/brochure.ts': {
-        entityType: 'GASTRONOMY',
+        entityType: 'VENUE',
         purpose: 'BROCHURE'
     },
     'routes/experience/protected/brochure.ts': {
@@ -67,7 +67,7 @@ const EXPECTED: Readonly<Record<string, { entityType: string; purpose: string }>
         purpose: 'LISTING'
     },
     'routes/gastronomy/protected/qrSheet.ts': {
-        entityType: 'GASTRONOMY',
+        entityType: 'VENUE',
         purpose: 'LISTING'
     },
     'routes/experience/protected/qrSheet.ts': {
@@ -79,7 +79,7 @@ const EXPECTED: Readonly<Record<string, { entityType: string; purpose: string }>
         purpose: 'LISTING'
     },
     'routes/gastronomy/protected/qrCode.ts': {
-        entityType: 'GASTRONOMY',
+        entityType: 'VENUE',
         purpose: 'LISTING'
     },
     'routes/experience/protected/qrCode.ts': {

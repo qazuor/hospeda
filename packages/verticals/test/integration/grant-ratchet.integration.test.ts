@@ -37,7 +37,7 @@ const pool = new Pool({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL,
 const db = drizzle({ client: pool }) as unknown as DrizzleClient;
 
 const VERTICAL = VerticalEnum.ACCOMMODATION;
-const OTHER_VERTICAL = VerticalEnum.GASTRONOMY;
+const OTHER_VERTICAL = VerticalEnum.VENUE;
 const MAX_PHOTOS = 'max_photos_per_accommodation';
 const MAX_GASTRONOMIES = 'max_gastronomies';
 const SINCE = new Date('2026-01-01T00:00:00.000Z');

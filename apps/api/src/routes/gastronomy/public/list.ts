@@ -7,10 +7,10 @@
  * the route relies on the service's public-tier contract for the remaining gates.
  */
 import {
-    GastronomyPublicSchema,
-    type GastronomySearchHttp,
-    GastronomySearchHttpSchema,
-    httpToDomainGastronomySearch
+    httpToDomainVenueSearch,
+    VenuePublicSchema,
+    type VenueSearchHttp,
+    VenueSearchHttpSchema
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import { withPublicIsFeaturedList } from '../../../utils/accommodation-featured';
@@ -36,14 +36,14 @@ export const publicListGastronomiesRoute = createPublicListRoute({
     summary: 'List gastronomy listings',
     description: 'Returns a paginated list of public gastronomy listings',
     tags: ['Gastronomy'],
-    requestQuery: GastronomySearchHttpSchema.shape,
-    responseSchema: GastronomyPublicSchema,
+    requestQuery: VenueSearchHttpSchema.shape,
+    responseSchema: VenuePublicSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const httpQuery = (query ?? {}) as GastronomySearchHttp;
-        const domainParams = httpToDomainGastronomySearch(httpQuery);
+        const httpQuery = (query ?? {}) as VenueSearchHttp;
+        const domainParams = httpToDomainVenueSearch(httpQuery);
 
         const result = await gastronomyService.search(actor, {
             ...domainParams,

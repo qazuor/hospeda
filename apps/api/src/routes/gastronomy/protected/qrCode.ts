@@ -96,7 +96,7 @@ export async function handleGetGastronomyQrCode(
 
     const url = await resolveEntityQrScanUrl({
         actor,
-        entityType: EntityTypeEnum.GASTRONOMY,
+        entityType: EntityTypeEnum.VENUE,
         entityId: entity.id,
         purpose: QrCodePurposeEnum.LISTING,
         targetUrl: buildListingQrTargetUrl({

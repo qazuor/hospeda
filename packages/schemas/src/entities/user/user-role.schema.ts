@@ -48,7 +48,7 @@ export const LAST_ROLE_REVOKE_REASON = 'LAST_ROLE_REVOKE';
  *
  * The relation is many-to-many: a user holds a SET of roles and granting one
  * never removes another. The composite primary key `(userId, role)` is what
- * makes {@link  grantRole} idempotent ("grant if absent") without a prior read.
+ * makes {@link grantRole} idempotent ("grant if absent") without a prior read.
  *
  * `grantedBy` is null when the grant was automatic (signup hook, accommodation
  * activation, cron) rather than performed by a human actor; the FK is

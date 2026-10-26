@@ -23,6 +23,18 @@ function makeTree(files: Readonly<Record<string, string>>): string {
 }
 
 describe('TEST:V5:5 GUARD:G2 (c)', () => {
+    it('TEST:1813:6 AC:1:15 scans the moved venue schema path', () => {
+        const file = 'packages/schemas/src/entities/venue/venue.crud.schema.ts';
+        expect(
+            findImmutableVerticalWrites({
+                file,
+                source: 'export const VenueUpdateInputSchema = z.object({ vertical: z.string() });\n'
+            })
+        ).toEqual([
+            { file, line: 1, detail: 'update schema VenueUpdateInputSchema declares vertical' }
+        ]);
+    });
+
     it('accepts the current branch and a listing update without a vertical field', () => {
         expect(run().exitCode).toBe(0);
         const root = makeTree({

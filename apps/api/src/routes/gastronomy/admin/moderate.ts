@@ -28,7 +28,7 @@ export const adminModerateGastronomyRoute = createAdminRoute({
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
         service.moderate({
             actor: getActorFromContext(ctx),
-            vertical: VerticalEnum.GASTRONOMY,
+            vertical: VerticalEnum.VENUE,
             id: params.id as string,
             body: ListingModerationActionSchema.parse(body)
         })

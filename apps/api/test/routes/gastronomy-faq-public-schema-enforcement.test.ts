@@ -12,7 +12,7 @@
  * Endpoint: GET /api/v1/public/gastronomies/:gastronomyId/faqs
  */
 
-import { GastronomyFaqPublicListOutputSchema, GastronomyFaqPublicSchema } from '@repo/schemas';
+import { VenueFaqPublicListOutputSchema, VenueFaqPublicSchema } from '@repo/schemas';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../src/app.js';
 import type { AppOpenAPI } from '../../src/types.js';
@@ -64,7 +64,7 @@ const RAW_FAQ_WITH_FORBIDDEN_FIELDS = {
 
 describe('GastronomyFaqPublicSchema — unit tests (no DB, always run) (SPEC-210)', () => {
     it('strips all audit fields and lifecycleState from a raw FAQ object', () => {
-        const result = GastronomyFaqPublicSchema.safeParse(RAW_FAQ_WITH_FORBIDDEN_FIELDS);
+        const result = VenueFaqPublicSchema.safeParse(RAW_FAQ_WITH_FORBIDDEN_FIELDS);
         expect(result.success).toBe(true);
         if (result.success) {
             const data = result.data as Record<string, unknown>;
@@ -75,7 +75,7 @@ describe('GastronomyFaqPublicSchema — unit tests (no DB, always run) (SPEC-210
     });
 
     it('preserves required public fields (id, gastronomyId, question, answer) after parse', () => {
-        const result = GastronomyFaqPublicSchema.safeParse(RAW_FAQ_WITH_FORBIDDEN_FIELDS);
+        const result = VenueFaqPublicSchema.safeParse(RAW_FAQ_WITH_FORBIDDEN_FIELDS);
         expect(result.success).toBe(true);
         if (result.success) {
             const data = result.data as Record<string, unknown>;
@@ -86,7 +86,7 @@ describe('GastronomyFaqPublicSchema — unit tests (no DB, always run) (SPEC-210
     });
 
     it('preserves category and displayOrder when present', () => {
-        const result = GastronomyFaqPublicSchema.safeParse(RAW_FAQ_WITH_FORBIDDEN_FIELDS);
+        const result = VenueFaqPublicSchema.safeParse(RAW_FAQ_WITH_FORBIDDEN_FIELDS);
         expect(result.success).toBe(true);
         if (result.success) {
             const data = result.data as Record<string, unknown>;
@@ -102,7 +102,7 @@ describe('GastronomyFaqPublicSchema — unit tests (no DB, always run) (SPEC-210
             question: 'Is there parking available near the restaurant?',
             answer: 'Yes, there is free parking available on the street and a paid lot two blocks away.'
         };
-        const result = GastronomyFaqPublicSchema.safeParse(minimal);
+        const result = VenueFaqPublicSchema.safeParse(minimal);
         expect(result.success).toBe(true);
     });
 
@@ -110,7 +110,7 @@ describe('GastronomyFaqPublicSchema — unit tests (no DB, always run) (SPEC-210
         const payload = {
             faqs: [RAW_FAQ_WITH_FORBIDDEN_FIELDS]
         };
-        const result = GastronomyFaqPublicListOutputSchema.safeParse(payload);
+        const result = VenueFaqPublicListOutputSchema.safeParse(payload);
         expect(result.success).toBe(true);
         if (result.success) {
             expect(Array.isArray(result.data.faqs)).toBe(true);

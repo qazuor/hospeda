@@ -77,10 +77,10 @@ interface EntityViewTrackerProps {
 const ENTITY_TYPE_ENUM_MAP = {
     POST: EntityTypeEnum.POST,
     EVENT: EntityTypeEnum.EVENT,
-    GASTRONOMY: EntityTypeEnum.GASTRONOMY,
+    GASTRONOMY: EntityTypeEnum.VENUE,
     EXPERIENCE: EntityTypeEnum.EXPERIENCE,
     PARTNER: EntityTypeEnum.PARTNER
-} as const satisfies Record<SupportedEntityType, (typeof EntityTypeEnum)[SupportedEntityType]>;
+} as const satisfies Record<SupportedEntityType, EntityTypeEnum>;
 
 /**
  * Headless React island that fires analytics on post, event, gastronomy, and

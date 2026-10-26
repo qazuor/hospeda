@@ -36,9 +36,9 @@
  */
 
 import {
-    GastronomyMediaSingleOutputSchema,
-    type GastronomyMediaUpdatePayload,
-    GastronomyMediaUpdatePayloadSchema,
+    VenueMediaSingleOutputSchema,
+    type VenueMediaUpdatePayload,
+    VenueMediaUpdatePayloadSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError, updateGastronomyMedia } from '@repo/service-core';
@@ -65,22 +65,22 @@ export const protectedUpdateGastronomyMediaRoute = createProtectedRoute({
         'Each field is nullable: omit to leave unchanged, null to clear, a value ' +
         'to replace. At least one field must be present — an empty body is a ' +
         'VALIDATION_ERROR, not a silent 200. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    requestBody: GastronomyMediaUpdatePayloadSchema,
-    responseSchema: GastronomyMediaSingleOutputSchema,
+    requestBody: VenueMediaUpdatePayloadSchema,
+    responseSchema: VenueMediaSingleOutputSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        const payload = body as GastronomyMediaUpdatePayload;
+        const payload = body as VenueMediaUpdatePayload;
 
         // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
         // (mirrors the sibling media routes).

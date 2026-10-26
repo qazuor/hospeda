@@ -128,7 +128,7 @@ const cases = [
         path: '/{id}/faqs',
         body: faqCreate,
         key: 'edit_gastronomy_info',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/removeFaq',
@@ -137,7 +137,7 @@ const cases = [
         path: '/{id}/faqs/{faqId}',
         body: undefined,
         key: 'edit_gastronomy_info',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/updateFaq',
@@ -146,7 +146,7 @@ const cases = [
         path: '/{id}/faqs/{faqId}',
         body: faqUpdate,
         key: 'edit_gastronomy_info',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/reorderFaqs',
@@ -155,7 +155,7 @@ const cases = [
         path: '/{id}/faqs/reorder',
         body: faqReorder,
         key: 'edit_gastronomy_info',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/addMedia',
@@ -164,7 +164,7 @@ const cases = [
         path: '/{id}/media',
         body: mediaAdd,
         key: 'edit_gastronomy_info',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/addFeaturedMedia',
@@ -173,7 +173,7 @@ const cases = [
         path: '/{id}/media/featured',
         body: mediaAdd,
         key: 'edit_gastronomy_info',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/removeMedia',
@@ -182,7 +182,7 @@ const cases = [
         path: '/{id}/media/{mediaId}',
         body: undefined,
         key: 'edit_gastronomy_info',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/reorderMedia',
@@ -191,7 +191,7 @@ const cases = [
         path: '/{id}/media/reorder',
         body: mediaReorder,
         key: 'edit_gastronomy_info',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/setFeaturedMedia',
@@ -200,7 +200,7 @@ const cases = [
         path: '/{id}/media/{mediaId}/featured',
         body: undefined,
         key: 'edit_gastronomy_info',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/updateMedia',
@@ -209,7 +209,7 @@ const cases = [
         path: '/{id}/media/{mediaId}',
         body: mediaUpdate,
         key: 'edit_gastronomy_info',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/patch',
@@ -218,7 +218,7 @@ const cases = [
         path: '/{id}',
         body: patchBody,
         key: 'edit_gastronomy_info',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/uploadMenuFile',
@@ -227,7 +227,7 @@ const cases = [
         path: '/{id}/menu-file',
         body: undefined,
         key: 'manage_gastronomy_menu',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/deleteMenuFile',
@@ -236,7 +236,7 @@ const cases = [
         path: '/{id}/menu-file',
         body: undefined,
         key: 'manage_gastronomy_menu',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/putMenu',
@@ -245,7 +245,7 @@ const cases = [
         path: '/{id}/menu',
         body: menuPlain,
         key: 'manage_gastronomy_menu',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/uploadMenuItemPhoto',
@@ -254,7 +254,7 @@ const cases = [
         path: '/{id}/menu-item-photo',
         body: undefined,
         key: 'menu_item_photos',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/putDailySpecials',
@@ -263,7 +263,7 @@ const cases = [
         path: '/{id}/daily-specials',
         body: specials,
         key: 'manage_gastronomy_daily_special',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/putEvents',
@@ -272,7 +272,7 @@ const cases = [
         path: '/{id}/events',
         body: events,
         key: 'manage_gastronomy_events',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'gastronomy/brochure',
@@ -281,7 +281,7 @@ const cases = [
         path: '/{id}/brochure',
         body: undefined,
         key: 'download_listing_pdf',
-        vertical: VerticalEnum.GASTRONOMY
+        vertical: VerticalEnum.VENUE
     },
     {
         file: 'experience/addFaq',

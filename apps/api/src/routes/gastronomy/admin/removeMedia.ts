@@ -30,7 +30,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminRemoveGastronomyMediaRoute = createAdminRoute({
     method: 'delete',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}',
     summary: 'Remove photo from gastronomy listing gallery (admin)',
     description:

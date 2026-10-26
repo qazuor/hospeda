@@ -32,14 +32,14 @@ async function seedFive() {
         listingId: string;
         vertical:
             | typeof VerticalEnum.ACCOMMODATION
-            | typeof VerticalEnum.GASTRONOMY
+            | typeof VerticalEnum.VENUE
             | typeof VerticalEnum.EXPERIENCE;
     }[] = [];
     for (const vertical of [
         VerticalEnum.ACCOMMODATION,
         VerticalEnum.ACCOMMODATION,
-        VerticalEnum.GASTRONOMY,
-        VerticalEnum.GASTRONOMY,
+        VerticalEnum.VENUE,
+        VerticalEnum.VENUE,
         VerticalEnum.EXPERIENCE
     ] as const) {
         const owner = await createOwner();
@@ -60,7 +60,7 @@ async function seedFive() {
         const table =
             vertical === VerticalEnum.ACCOMMODATION
                 ? accommodations
-                : vertical === VerticalEnum.GASTRONOMY
+                : vertical === VerticalEnum.VENUE
                   ? gastronomies
                   : experiences;
         await getDb().update(table).set({ inactiveSince: CUTOVER }).where(eq(table.id, listingId));
@@ -86,7 +86,7 @@ beforeEach(async () => {
     await testDb.clean();
     for (const vertical of [
         VerticalEnum.ACCOMMODATION,
-        VerticalEnum.GASTRONOMY,
+        VerticalEnum.VENUE,
         VerticalEnum.EXPERIENCE
     ] as const)
         await ensurePublicationCatalog(vertical);

@@ -43,7 +43,7 @@ const ownerActor = createActor({
 
 const baseInput: GetStatsForOwnListingsInput = {
     actor: ownerActor,
-    entityType: EntityTypeEnum.GASTRONOMY,
+    entityType: EntityTypeEnum.VENUE,
     window: '30d'
 };
 
@@ -93,7 +93,7 @@ describe('EntityViewService.getDailySeriesForOwnListings (HOS-734)', () => {
             // Act
             const result = await service.getDailySeriesForOwnListings({
                 actor: ownerActor,
-                entityType: EntityTypeEnum.GASTRONOMY,
+                entityType: EntityTypeEnum.VENUE,
                 // @ts-expect-error intentionally invalid window
                 window: '90d'
             });
@@ -166,7 +166,7 @@ describe('EntityViewService.getDailySeriesForOwnListings (HOS-734)', () => {
             };
             expect(callArg.entityIds).toEqual([UUID_LISTING_1]);
             expect(callArg.windowDays).toBe(30);
-            expect(callArg.entityType).toBe(EntityTypeEnum.GASTRONOMY);
+            expect(callArg.entityType).toBe(EntityTypeEnum.VENUE);
             expect(asMock(experienceModelMock.findIdsByOwnerId)).not.toHaveBeenCalled();
         });
 

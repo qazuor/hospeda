@@ -14,12 +14,12 @@
 import type {
     ExperienceOwnerCreateInput,
     ExperienceProtected,
-    GastronomyOrExperience,
-    GastronomyOwnerCreateInput,
-    GastronomyProtected,
     ListingCompletenessListing,
     OwnerListingSummary,
-    ResolveListingCompletenessResult
+    ResolveListingCompletenessResult,
+    VenueOrExperience,
+    VenueOwnerCreateInput,
+    VenueProtected
 } from '@repo/schemas';
 import { PublicationStatusEnum, resolveListingCompleteness } from '@repo/schemas';
 import { apiClient } from '../api/client';
@@ -31,10 +31,10 @@ const GASTRONOMY_PATH = '/api/v1/protected/gastronomies';
 const EXPERIENCE_PATH = '/api/v1/protected/experiences';
 
 /** Owner-tier detail of a single listing, one of the two verticals. */
-export type ListingDetail = GastronomyProtected | ExperienceProtected;
+export type ListingDetail = VenueProtected | ExperienceProtected;
 
 /** The two supported gastronomy/experience verticals (matches the URL segment + enum value). */
-export type { GastronomyOrExperience };
+export type { VenueOrExperience };
 
 type ListResponse = { readonly listings: readonly OwnerListingSummary[] };
 
@@ -83,7 +83,7 @@ export async function fetchOwnerListingDetail({
     id,
     cookieHeader
 }: {
-    vertical: GastronomyOrExperience;
+    vertical: VenueOrExperience;
     id: string;
     cookieHeader?: string;
 }): Promise<ListingDetail | null> {
@@ -176,7 +176,7 @@ export async function fetchOwnerListingsWithState({
 
 /** Payload accepted by {@link createOwnerListing} — one per vertical. */
 export type CreateOwnerListingPayload =
-    | { readonly vertical: 'gastronomy'; readonly data: GastronomyOwnerCreateInput }
+    | { readonly vertical: 'gastronomy'; readonly data: VenueOwnerCreateInput }
     | { readonly vertical: 'experience'; readonly data: ExperienceOwnerCreateInput };
 
 /**

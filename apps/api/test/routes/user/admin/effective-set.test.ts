@@ -66,8 +66,8 @@ describe('TEST:B13a:23 AC:B13a:23 admin effective set route', () => {
 
     it('asks the port for the requested vertical', async () => {
         effectiveSet.mockImplementation(async ({ vertical }) =>
-            vertical === VerticalEnum.GASTRONOMY
-                ? snapshot(VerticalEnum.GASTRONOMY, [{ key: 'manage_gastronomy_menu', value: 1 }])
+            vertical === VerticalEnum.VENUE
+                ? snapshot(VerticalEnum.VENUE, [{ key: 'manage_gastronomy_menu', value: 1 }])
                 : snapshot(VerticalEnum.ACCOMMODATION, [{ key: 'respond_reviews', value: 1 }])
         );
         const accommodation = await app.request(`${base}?vertical=accommodation`, {
@@ -83,7 +83,7 @@ describe('TEST:B13a:23 AC:B13a:23 admin effective set route', () => {
         });
         expect(effectiveSet).toHaveBeenCalledWith({
             userId: USER_ID,
-            vertical: VerticalEnum.GASTRONOMY
+            vertical: VerticalEnum.VENUE
         });
     });
 

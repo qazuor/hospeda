@@ -3,7 +3,7 @@
  * Returns a single gastronomy listing projected through GastronomyPublicSchema.
  * Returns 404 when the listing is not visible (non-existent, soft-deleted, or non-public).
  */
-import { GastronomyPublicSchema } from '@repo/schemas';
+import { VenuePublicSchema } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -31,7 +31,7 @@ export const publicGetGastronomyByIdRoute = createPublicRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: GastronomyPublicSchema.nullable(),
+    responseSchema: VenuePublicSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await gastronomyService.getById(actor, params.id as string);
