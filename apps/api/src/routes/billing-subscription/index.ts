@@ -104,7 +104,7 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
                             | 'annual',
                         amountMinor: signupWindow.amountMinor,
                         currency: 'ARS',
-                        isSuccession: signupWindow.succeedsId ? true : undefined,
+                        isSuccession: signupWindow.isSuccession ? true : undefined,
                         occurredAt: signupWindow.createdAt
                     }
                 });

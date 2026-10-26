@@ -130,9 +130,14 @@ describe('TEST:V6:5 restitution notice outbox', () => {
 
     it('completes restitution without an outbox row when the owner has no email', async () => {
         const { ownerId } = await createFixture();
-        await getDb().update(users).set({ email: '' }).where(eq(users.id, ownerId));
+        const [owner] = await getDb()
+            .select({ email: users.email })
+            .from(users)
+            .where(eq(users.id, ownerId));
+        if (!owner) throw new Error('Restitution owner not found');
         const stop = subscribeListingCoverageRecalculation();
         try {
+            await getDb().update(users).set({ email: '' }).where(eq(users.id, ownerId));
             accessState.listener?.({ userId: ownerId, vertical: VerticalEnum.ACCOMMODATION });
             await waitForPublished(ownerId, 3);
             accessState.limit = 5;
@@ -141,6 +146,7 @@ describe('TEST:V6:5 restitution notice outbox', () => {
             expect(await readOutbox(ownerId)).toHaveLength(0);
         } finally {
             stop();
+            await getDb().update(users).set({ email: owner.email }).where(eq(users.id, ownerId));
         }
     });
 });

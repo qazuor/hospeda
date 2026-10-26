@@ -1,4 +1,4 @@
-import { subscriptionModel } from '@repo/db';
+import { subscriptionModel, touristVipModel } from '@repo/db';
 import { vi } from 'vitest';
 
 /** IDs of subscriptions created by the current integration test. */
@@ -23,5 +23,31 @@ export async function withSeededSubscriptionSweep<T>(
         return await run();
     } finally {
         findExpired.mockRestore();
+    }
+}
+
+/** Runs the inherited-VIP retry sweep for subscriptions seeded by this test. */
+export async function withSeededInheritedTouristVipSweep<T>(run: () => Promise<T>): Promise<T> {
+    const original = touristVipModel.findUserIdsWithCancellableVip;
+    const findUserIds = vi.spyOn(touristVipModel, 'findUserIdsWithCancellableVip');
+    findUserIds.mockImplementation(async (input) => {
+        if (seededSubscriptionIds.size === 0) return [];
+        const userIds = await original({ ...input, limit: 10_000 });
+        const seededUserIds = await Promise.all(
+            userIds.map(async (userId) => {
+                const rows = await touristVipModel.findCancellableRows({ userId });
+                return rows.some((row) => seededSubscriptionIds.has(row.subscription.id))
+                    ? userId
+                    : null;
+            })
+        );
+        return seededUserIds
+            .filter((userId): userId is string => userId !== null)
+            .slice(0, input.limit);
+    });
+    try {
+        return await run();
+    } finally {
+        findUserIds.mockRestore();
     }
 }

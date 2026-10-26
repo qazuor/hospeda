@@ -1,100 +1,164 @@
 /**
- * RES-04 — MercadoPago webhook duplicate is idempotent.
- *
- * Actors: MP webhook source (real network) → simulated by signed POST.
- * Tags: @p0 @resilience @billing @cross-app
- *
- * Preconditions:
- *   - `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` set on the API and exposed to
- *     this test process.
- *   - Webhook endpoint at `/api/v1/webhooks/mercadopago/payment` mounted.
- *
- * What this validates:
- *  1. The first signed webhook POST is accepted (2xx).
- *  2. The second POST with the IDENTICAL signed payload (same dataId,
- *     same ts) is also accepted with 2xx — the API must NOT 5xx on
- *     duplicates.
- *  3. The system does not duplicate side effects: zero new
- *     `billing_subscription_events` rows are created on the second call
- *     for the same payment id (or the count is unchanged).
- *  4. No payment row is duplicated for the same external payment id.
- *
- * Why this matters:
- *   MP retries webhooks aggressively under network noise. Without
- *   idempotency, retries would create N copies of every state transition
- *   — phantom subscriptions, double-charges-by-record, etc.
- *
- * @see SPEC-092 spec.md § RES-04
- * @see apps/e2e/fixtures/mp-webhook-helper.ts
+ * RES-04 — the real Mercado Pago receiver accepts the same signed delivery twice
+ * without repeating its observable effects.
  */
 
 import { expect, test } from '@playwright/test';
-import { execSQL, getDbPool, hasOldBillingSchema } from '../../fixtures/db-helpers.ts';
-import { postPaymentApprovedWebhook } from '../../fixtures/mp-webhook-helper.ts';
+import { FakePaymentProvider } from '@repo/payments/fake';
+import { createAdjustableClock } from '@repo/test-clock';
+import { createUser, markProfileCompleted } from '../../fixtures/api-helpers.ts';
+import { readSubscriptionStatus } from '../../fixtures/billing-signup-helpers.ts';
+import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import {
+    E2E_RECEIVER_PATH,
+    E2E_WEBHOOK_SECRET,
+    startE2eFakeProvider
+} from '../../fixtures/fake-provider-server.ts';
+import { monthlyOptionForSlug } from '../../fixtures/signup-checkout.ts';
+import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
-const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
+const clock = createAdjustableClock({ start: new Date() });
 
-test.describe('RES-04: webhook duplicate is idempotent @p0 @resilience @billing @cross-app', () => {
-    test('two identical signed POSTs return 2xx, no duplicated side effects', async () => {
-        test.fixme(
-            !(await hasOldBillingSchema()),
-            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+test.describe('RES-04: duplicate signed webhook is idempotent @p0 @resilience @billing @clock', () => {
+    test.describe.configure({ mode: 'serial', timeout: 120_000 });
+
+    const userIdsToCleanup: string[] = [];
+    let fakeServer: Awaited<ReturnType<typeof startE2eFakeProvider>> | null = null;
+
+    test.beforeAll(async () => {
+        fakeServer = await startE2eFakeProvider({
+            provider: new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() }),
+            clock
+        });
+        await execSQL(
+            `INSERT INTO billing_deadline_version (version, "values")
+             VALUES (1, $1::jsonb) ON CONFLICT (version) DO NOTHING`,
+            [
+                JSON.stringify({
+                    '10': { cardHours: 72, manualDays: 7 },
+                    '11': { noticeDays: 60, contactDays: [30, 7] },
+                    '12': { noticeDays: 60, contactDays: [30, 7] },
+                    '13': { daysBefore: [5, 1] },
+                    '14': { daysBefore: 7 },
+                    '15': { hoursRemaining: 24 },
+                    '16': { days: 7 },
+                    '17': { days: 7 },
+                    '18': { days: 180 },
+                    '19': { minutes: 60 }
+                })
+            ]
         );
+    });
 
-        if (!process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET) {
-            test.fixme(
-                true,
-                'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET not set — webhook signature cannot be produced'
-            );
-            return;
+    test.afterAll(async () => {
+        try {
+            if (userIdsToCleanup.length > 0) {
+                await execSQL(
+                    `DELETE FROM provider_link
+                      WHERE subscription_id IN (
+                          SELECT id FROM subscription WHERE user_id = ANY($1::uuid[])
+                      )`,
+                    [userIdsToCleanup]
+                );
+                await cleanupTestUsers(getDbPool(), [...userIdsToCleanup]);
+                userIdsToCleanup.length = 0;
+            }
+        } finally {
+            await fakeServer?.close();
         }
+    });
 
-        // Use a deterministic synthetic payment id so the test owns the
-        // search space. Real ids from the MP sandbox are 12-digit numerics.
-        const paymentId = `e2e-res04-${Date.now()}`;
-
-        const dbPool = getDbPool();
-        await dbPool.query('SELECT 1'); // ensure pool is alive
-
-        // Snapshot rows count before — bound the assertion to changes
-        // produced specifically by this test.
-        const beforeEvents = await execSQL<{ count: string }>(
-            'SELECT COUNT(*)::text AS count FROM billing_subscription_events'
-        );
-        const beforeCount = Number(beforeEvents[0]?.count ?? 0);
-
-        // ── 1. First webhook ──────────────────────────────────────────────
-        const first = await postPaymentApprovedWebhook({
-            paymentId,
-            baseUrl: API_URL
+    test('accepts two identical signed deliveries and records effects only once', async () => {
+        // Arrange
+        if (!fakeServer) throw new Error('RES-04 fake provider server was not started');
+        const user = await createUser({}, { apiBaseUrl: API_URL });
+        userIdsToCleanup.push(user.id);
+        await markProfileCompleted({ userId: user.id });
+        const billingOptionId = await monthlyOptionForSlug('owner-basico');
+        const started = await fetch(`${API_URL}/api/v1/protected/billing/subscriptions`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', cookie: user.sessionCookie },
+            body: JSON.stringify({
+                billingOptionId,
+                payerEmail: `mp-${crypto.randomUUID()}@example.test`
+            })
         });
+        const startedBody = (await started.json()) as {
+            data?: { subscriptionId?: string; authorizationId?: string };
+            error?: { message?: string };
+        };
         expect(
-            first.status >= 200 && first.status < 300,
-            `first webhook should be 2xx (got ${first.status})`
-        ).toBe(true);
-
-        // ── 2. Second webhook with identical payload ──────────────────────
-        const second = await postPaymentApprovedWebhook({
-            paymentId,
-            baseUrl: API_URL
-        });
-        expect(
-            second.status >= 200 && second.status < 300,
-            `duplicate webhook should be 2xx (got ${second.status})`
-        ).toBe(true);
-
-        // ── 3. No duplicated side effects: events count delta ≤ 1 ─────────
-        // We do not lock the schema to "exactly 0 new events" because the
-        // first call may legitimately add an audit row; the contract is
-        // "the second call adds nothing additional".
-        const afterEvents = await execSQL<{ count: string }>(
-            'SELECT COUNT(*)::text AS count FROM billing_subscription_events'
+            fakeServer.requests().length,
+            `subscription signup must reach fake provider; error=${startedBody.error?.message ?? 'none'}`
+        ).toBeGreaterThan(0);
+        expect(started.status, `subscription signup failed: ${startedBody.error?.message}`).toBe(
+            201
         );
-        const afterCount = Number(afterEvents[0]?.count ?? 0);
-        const delta = afterCount - beforeCount;
+        const subscriptionId = startedBody.data?.subscriptionId;
+        const authorizationId = startedBody.data?.authorizationId;
+        expect(subscriptionId, 'signup must return its subscription id').toBeTruthy();
+        expect(authorizationId, 'signup must return its authorization id').toBeTruthy();
+        await fakeServer.provider.approve({ authorizationId: authorizationId ?? '' });
+        const generated = fakeServer.mercadoPagoDeliveries({
+            webhookSecret: E2E_WEBHOOK_SECRET
+        });
+        const delivery = generated.deliveries.find((item) => item.channel === 'WEBHOOKS');
+        expect(delivery, 'approval must produce a signed WEBHOOKS delivery').toBeDefined();
+        if (!delivery || !subscriptionId) throw new Error('RES-04 signed delivery was not created');
+
+        const postDelivery = () =>
+            fetch(`${API_URL}${E2E_RECEIVER_PATH}?${delivery.query}`, {
+                method: 'POST',
+                headers: delivery.headers,
+                body: delivery.body
+            });
+        const countOutboxRows = async () => {
+            const rows = await execSQL<{ count: string }>(
+                'SELECT COUNT(*)::text AS count FROM email_outbox WHERE recipient_user_id = $1',
+                [user.id]
+            );
+            return Number(rows[0]?.count ?? 0);
+        };
+
+        // Act: the first delivery must apply the approval and enqueue an effect.
+        const first = await postDelivery();
+        const firstBody = await first.text();
         expect(
-            delta <= 1,
-            `delta=${delta} new events for two identical webhooks; expected ≤ 1 (idempotent)`
-        ).toBe(true);
+            first.status,
+            `first signed webhook returned ${first.status}: ${firstBody}`
+        ).toBeGreaterThanOrEqual(200);
+        expect(
+            first.status,
+            `first signed webhook returned ${first.status}: ${firstBody}`
+        ).toBeLessThan(300);
+        const firstStatus = await readSubscriptionStatus({ subscriptionId });
+        const firstOutboxCount = await countOutboxRows();
+
+        // Assert first-delivery positive control and exact duplicate invariants.
+        expect(firstStatus, 'first delivery must activate the subscription').toBe('ACTIVE');
+        expect(
+            firstOutboxCount,
+            'first delivery must enqueue an email outbox effect'
+        ).toBeGreaterThan(0);
+
+        const second = await postDelivery();
+        const secondBody = await second.text();
+        expect(
+            second.status,
+            `duplicate signed webhook returned ${second.status}: ${secondBody}`
+        ).toBeGreaterThanOrEqual(200);
+        expect(
+            second.status,
+            `duplicate signed webhook returned ${second.status}: ${secondBody}`
+        ).toBeLessThan(300);
+        expect(
+            await readSubscriptionStatus({ subscriptionId }),
+            'duplicate delivery must leave subscription ACTIVE'
+        ).toBe('ACTIVE');
+        expect(
+            await countOutboxRows(),
+            'duplicate delivery must not add another email outbox effect'
+        ).toBe(firstOutboxCount);
     });
 });

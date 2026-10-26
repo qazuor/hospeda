@@ -632,7 +632,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      * `users.id`, so a synthetic actor id would violate it.
      *
      * Tables without a `deletedById` column (the `r_*` relation tables, the
-     * qzpay-owned billing tables) simply do not receive the field.
+     * legacy qzpay-owned billing tables, since removed by HOS-1416) simply do not receive the field.
      *
      * @param where - The filter object
      * @param deletedById - Id of the user performing the delete, or `null` for a system-initiated one

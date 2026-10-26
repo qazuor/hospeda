@@ -70,6 +70,9 @@ describe('AC:V4:7 (unitaria) trial expiry', () => {
         const emittedEvents: unknown[] = [];
         expect(await fixture.expire()).toEqual({
             expired: true,
+            trialId: 'trial-1',
+            startedAt: new Date('2026-10-10T12:00:00.000Z'),
+            endsAt: T,
             notices: { coverageNotice: 'EMITTED', cacheInvalidation: 'DONE' }
         });
         expect(fixture.machine.trialOf(userId, vertical)).toMatchObject({

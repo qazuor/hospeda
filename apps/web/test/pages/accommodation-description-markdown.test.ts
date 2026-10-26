@@ -14,8 +14,8 @@
  *
  * ## Why rendering it leaks no entitlement
  *
- * `gateRichDescription` (apps/api/src/middlewares/accommodation-entitlements.ts)
- * neutralizes markdown in `description` at WRITE time via
+ * `gateRichDescription` (apps/api/src/middlewares/accommodation-entitlements.ts, REMOVED by HOS-1416)
+ * neutralized markdown in `description` at WRITE time via
  * `stripRichDescriptionSyntax` for any owner lacking CAN_USE_RICH_DESCRIPTION.
  * Markdown surviving in `description` therefore implies an entitled owner, so
  * the renderer needs no entitlement check of its own (and the page is pinned

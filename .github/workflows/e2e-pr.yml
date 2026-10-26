@@ -107,7 +107,10 @@ jobs:
       # initialize and every entitlement-gated route errors.
       HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: APP_USR-0000000000000000-010125-00000000000000000000000000000000-000000000
       HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: APP_USR-00000000-0000-0000-0000-000000000000
-      HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET }}
+      # Runs triggered by Dependabot receive no repository secrets, so this
+      # resolves to '' there and the API answers every simulated webhook with 500.
+      # The value only signs fake deliveries, so a deterministic fallback is safe.
+      HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET || 'e2e-webhook-secret' }}
       HOSPEDA_MERCADO_PAGO_SANDBOX: 'true'
 
       # Cloudinary: optional in PR (tests tagged @cloudinary skip when absent)

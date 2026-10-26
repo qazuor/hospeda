@@ -12,7 +12,7 @@ import { users } from '../user/user.dbschema.ts';
  *
  * The decision to use a dedicated table (rather than a generic audit log) was
  * owner-approved in SPEC-173 §5.5 / Q1: the repo has no reusable generic admin
- * audit table — only `billing_audit_logs` from the third-party qzpay lib and
+ * audit table — only `billing_audit_logs` from the (since removed) third-party qzpay lib and
  * a log-based `AuditEventType`, neither suitable for a queryable credential
  * security trail over cost-bearing secrets.
  *

@@ -14,7 +14,7 @@
  */
 
 import type { SocialAuditLogModel, SocialSettingModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SocialSettingService } from '../../../src/services/social/social-setting.service';
 import { createActor } from '../../factories/actorFactory';
@@ -74,7 +74,10 @@ describe('SocialSettingService.listAll — secret masking', () => {
 
     it('should mask value for settings with type === "secret"', async () => {
         // Arrange
-        const actor = createActor({ permissions: [PermissionEnum.SOCIAL_SETTINGS_MANAGE] });
+        const actor = createActor({
+            roles: [RoleEnum.ADMIN],
+            permissions: [PermissionEnum.ACCESS_API_ADMIN, PermissionEnum.SOCIAL_SETTINGS_MANAGE]
+        });
         const secretSetting = buildSecretSetting();
         const normalSetting = buildMockSetting({ key: 'timezone', value: 'UTC', type: 'string' });
         settingModelMock.findAll.mockResolvedValue({
@@ -94,7 +97,10 @@ describe('SocialSettingService.listAll — secret masking', () => {
 
     it('should not mask non-secret settings', async () => {
         // Arrange
-        const actor = createActor({ permissions: [PermissionEnum.SOCIAL_SETTINGS_MANAGE] });
+        const actor = createActor({
+            roles: [RoleEnum.ADMIN],
+            permissions: [PermissionEnum.SOCIAL_SETTINGS_MANAGE]
+        });
         const setting = buildMockSetting({ type: 'string', value: 'https://example.com' });
         settingModelMock.findAll.mockResolvedValue({ items: [setting], total: 1 });
 
@@ -164,6 +170,38 @@ describe('SocialSettingService.list — _afterList secret masking', () => {
         // Assert
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+    });
+});
+
+describe('SocialSettingService.adminList — secret masking', () => {
+    it('masks secret values and preserves non-secret values', async () => {
+        // Arrange
+        const settingModelMock = createModelMock();
+        const service = new SocialSettingService(
+            { logger: createLoggerMock() },
+            settingModelMock as unknown as SocialSettingModel,
+            createModelMock() as unknown as SocialAuditLogModel
+        );
+        Object.defineProperty(settingModelMock, 'getTable', { value: () => ({ id: {} }) });
+        const actor = createActor({
+            roles: [RoleEnum.ADMIN],
+            permissions: [PermissionEnum.ACCESS_API_ADMIN, PermissionEnum.SOCIAL_SETTINGS_MANAGE]
+        });
+        settingModelMock.findAll.mockResolvedValue({
+            items: [
+                buildSecretSetting(),
+                buildMockSetting({ key: 'timezone', value: 'UTC', type: 'string' })
+            ],
+            total: 2
+        });
+
+        // Act
+        const result = await service.adminList(actor, { sort: 'id:asc' });
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(result.data?.items?.find((item) => item.key === 'api_key')?.value).toBe('***');
+        expect(result.data?.items?.find((item) => item.key === 'timezone')?.value).toBe('UTC');
     });
 });
 

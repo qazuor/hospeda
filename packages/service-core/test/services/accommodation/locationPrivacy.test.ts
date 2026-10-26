@@ -12,10 +12,12 @@
  *   does NOT add `approximateLocation`.
  */
 import type { AccommodationModel } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
+import type { Accommodation } from '@repo/schemas';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
+import type { AdminSearchExecuteParams, PaginatedListOutput } from '../../../src/types';
 import { createAccommodationWithMockIds } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';
 import {
@@ -39,8 +41,18 @@ const buildEntityWithCoords = () =>
         }
     });
 
+class AccommodationAdminListFixture extends AccommodationService {
+    public rows: ReturnType<typeof buildEntityWithCoords>[] = [];
+
+    protected override async _executeAdminSearch(
+        _params: AdminSearchExecuteParams
+    ): Promise<PaginatedListOutput<Accommodation>> {
+        return { items: this.rows as unknown as Accommodation[], total: this.rows.length };
+    }
+}
+
 describe('AccommodationService — SPEC-097 location privacy', () => {
-    let service: AccommodationService;
+    let service: AccommodationAdminListFixture;
     let model: ReturnType<typeof createModelMock>;
     let originalSalt: string | undefined;
 
@@ -48,10 +60,11 @@ describe('AccommodationService — SPEC-097 location privacy', () => {
         originalSalt = process.env.HOSPEDA_LOCATION_SALT;
         process.env.HOSPEDA_LOCATION_SALT = TEST_SALT;
         model = createModelMock();
+        Object.defineProperty(model, 'getTable', { value: () => ({ createdAt: {} }) });
         // SPEC-204 T-013: _afterGetByField/_afterList/_afterSearch now call
         // findByAccommodations on the media model. Inject a stub returning an empty
         // Map so the read hooks preserve the entity's original `media` without a DB.
-        service = new AccommodationService(
+        service = new AccommodationAdminListFixture(
             { logger: mockLogger },
             model as unknown as AccommodationModel,
             undefined,
@@ -195,6 +208,54 @@ describe('AccommodationService — SPEC-097 location privacy', () => {
                 b.data as unknown as { approximateLocation?: { lat: number; lng: number } }
             )?.approximateLocation;
             expect(aLoc).toEqual(bLoc);
+        });
+    });
+
+    describe('adminList projection', () => {
+        it('keeps exact location for an actor with ACCOMMODATION_LOCATION_EXACT_VIEW', async () => {
+            const entity = buildEntityWithCoords();
+            service.rows = [entity];
+            vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
+            const actor = createActor({
+                id: '22222222-2222-2222-2222-222222222222',
+                roles: [RoleEnum.ADMIN],
+                permissions: [
+                    PermissionEnum.ACCESS_API_ADMIN,
+                    PermissionEnum.ACCOMMODATION_VIEW_ALL,
+                    PermissionEnum.ACCOMMODATION_LOCATION_EXACT_VIEW
+                ]
+            });
+
+            const result = await service.adminList(actor, {});
+            const data = result.data?.items?.[0] as unknown as {
+                location?: Record<string, unknown>;
+            };
+            expect(data.location?.coordinates).toEqual({ lat: '-30.7521', long: '-58.0429' });
+            expect(data.location?.street).toBe('Av. Belgrano');
+        });
+
+        it('returns approximate location to admin-panel actors without exact-location permission', async () => {
+            const entity = buildEntityWithCoords();
+            service.rows = [entity];
+            vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
+            const actor = createActor({
+                id: '22222222-2222-2222-2222-222222222222',
+                roles: [RoleEnum.ADMIN],
+                permissions: [
+                    PermissionEnum.ACCESS_API_ADMIN,
+                    PermissionEnum.ACCOMMODATION_VIEW_ALL
+                ]
+            });
+
+            const result = await service.adminList(actor, {});
+            const data = result.data?.items?.[0] as unknown as {
+                location?: Record<string, unknown>;
+                approximateLocation?: { lat: number; lng: number; radiusMeters: number };
+            };
+            expect(data.approximateLocation).toBeDefined();
+            expect(data.approximateLocation?.radiusMeters).toBe(150);
+            expect(data.location?.coordinates).toBeUndefined();
+            expect(data.location?.street).toBeUndefined();
         });
     });
 });

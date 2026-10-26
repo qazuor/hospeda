@@ -51,8 +51,8 @@ Flags:
 Examples:
   hops cron-trigger                       # interactive picker
   hops cron-trigger 3                     # run the 3rd job from cron-list
-  hops cron-trigger trial-expiry          # by exact name
-  hops cron-trigger trial-expiry --dry-run --yes
+  hops cron-trigger trial-machine-expiry  # by exact name
+  hops cron-trigger trial-machine-expiry --dry-run --yes
 
 Notes:
   - Disabled jobs cannot be triggered (the API returns 400).

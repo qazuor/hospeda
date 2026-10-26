@@ -22,7 +22,7 @@
  *   billing entitlement is enforced at the ROUTE layer (`requireEntitlement`
  *   in `apps/api/src/routes/accommodation/protected/{add,batch,remove}Occupancy.ts`),
  *   NOT here — gating it in the service via a direct DB-driven resolver
- *   diverged from the `loadEntitlements()` path the frontend gate trusts
+ *   diverged from the (since retired) `loadEntitlements()` path the frontend gate trusted
  *   (which includes the HOST draft-defaults fallback), so a brand-new host
  *   with no subscription yet could see the calendar UI but have every write
  *   403. The route-level gate reads the same `userEntitlements` context the

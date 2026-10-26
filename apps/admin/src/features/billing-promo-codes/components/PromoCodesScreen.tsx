@@ -1,7 +1,7 @@
 import type { TranslationKey } from '@repo/i18n';
 import type { AdminPromoCode } from '@repo/schemas';
 import { PermissionEnum } from '@repo/schemas';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,10 +20,23 @@ const PAGE_SIZE = 25;
 
 /** Lists promo codes and gates all management controls by action 21 permission. */
 export function PromoCodesScreen() {
+    // Announces hydration with `data-hydrated` (same ref-based pattern as the web
+    // ListingEditor, HOS-1080): with an authenticated SSR state the controls are
+    // in the server HTML, and a click before React attaches is lost (HOS-1889).
+    const screenRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        screenRef.current?.setAttribute('data-hydrated', 'true');
+    }, []);
+
     return (
-        <PermissionGate permissions={[PermissionEnum.BILLING_MANAGE_PROMO_CODES]}>
-            <PromoCodesBody />
-        </PermissionGate>
+        <div
+            ref={screenRef}
+            data-testid="promo-codes-hydration"
+        >
+            <PermissionGate permissions={[PermissionEnum.BILLING_MANAGE_PROMO_CODES]}>
+                <PromoCodesBody />
+            </PermissionGate>
+        </div>
     );
 }
 

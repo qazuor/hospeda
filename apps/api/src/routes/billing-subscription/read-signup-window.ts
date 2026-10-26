@@ -19,7 +19,11 @@ export async function readSignupWindow({
     readonly amountMinor: number | null;
     readonly currency: string | null;
     readonly subscriptionClass: string;
-    readonly succeedsId: string | null;
+    /**
+     * Whether the row succeeds another subscription. Exposed as a flag so the
+     * creating route never names the succession columns (AC:B3:5).
+     */
+    readonly isSuccession: boolean;
     readonly createdAt: Date;
 } | null> {
     const [row] = await getDb()
@@ -41,5 +45,7 @@ export async function readSignupWindow({
         .where(and(eq(subscriptions.id, subscriptionId), eq(subscriptions.userId, userId)))
         .limit(1);
 
-    return row ?? null;
+    if (!row) return null;
+    const { succeedsId, ...window } = row;
+    return { ...window, isSuccession: succeedsId !== null };
 }

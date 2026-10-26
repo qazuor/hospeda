@@ -64,7 +64,7 @@ import type { TranslationFn } from '@/lib/i18n';
  * exactly what the cumulative delta could not survive: several tiers in this
  * catalogue differ ONLY in their numeric caps, so a card built from entitlements
  * alone renders "everything in Basic, plus:" followed by nothing. The shape is
- * `Record<key, value>` — QZPay's storage format, which is what the public
+ * `Record<key, value>` — the legacy QZPay storage format, which is what the public
  * endpoint returns — not `LimitDefinition[]`.
  */
 export interface PricingPlan {

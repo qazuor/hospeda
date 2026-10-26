@@ -395,8 +395,9 @@ export class HostTradeUsageService extends BaseCrudService<
     /**
      * Names both parties of every row (T-056) — see
      * {@link HostTradeUsageService.attachAdminParties}. The enrichment hangs off
-     * `_executeAdminSearch` because `adminList` returns it verbatim: there is no
-     * `_afterAdminList` hook.
+     * `_executeAdminSearch` because the inherited `_afterAdminList` hook handles
+     * the shared post-query projection; this entity-specific enrichment needs
+     * the joined rows available while the admin query is assembled.
      *
      * It used to do a second, unrelated job (T-038): rescue the `status` filter
      * from the base's lifecycle handling. `status` is a key

@@ -19,9 +19,9 @@ import { getDefaultNewsletterService } from '../protected/_singletons';
 let cachedCampaignService: NewsletterCampaignService | null = null;
 
 /**
- * Stub delivery service used as the fallback when Redis is not configured.
+ * Stub delivery service used as the fallback when delivery prerequisites are missing.
  *
- * Triggered when `HOSPEDA_REDIS_URL` is unset (dev without Docker, tests).
+ * Triggered when `HOSPEDA_REDIS_URL` or `HOSPEDA_EMAIL_API_KEY` is unset.
  * Calls to `enqueueBatches` / `bulkSkipPending` / `sendTestEmail` surface
  * a SERVICE_UNAVAILABLE error so misconfigured environments fail visibly
  * instead of silently dropping work.
@@ -30,7 +30,9 @@ const stubDeliveryService: INewsletterDeliveryService = {
     async enqueueBatches(_input) {
         throw new ServiceError(
             ServiceErrorCode.SERVICE_UNAVAILABLE,
-            'BullMQ dispatch queue is not available (Redis not configured).',
+            getDeliveryUnavailableMessage({
+                emailApiKeyConfigured: Boolean(env.HOSPEDA_EMAIL_API_KEY)
+            }),
             undefined,
             'BULLMQ_NOT_CONFIGURED'
         );
@@ -38,7 +40,9 @@ const stubDeliveryService: INewsletterDeliveryService = {
     async bulkSkipPending(_input) {
         throw new ServiceError(
             ServiceErrorCode.SERVICE_UNAVAILABLE,
-            'BullMQ dispatch queue is not available (Redis not configured).',
+            getDeliveryUnavailableMessage({
+                emailApiKeyConfigured: Boolean(env.HOSPEDA_EMAIL_API_KEY)
+            }),
             undefined,
             'BULLMQ_NOT_CONFIGURED'
         );
@@ -46,12 +50,24 @@ const stubDeliveryService: INewsletterDeliveryService = {
     async sendTestEmail(_input) {
         throw new ServiceError(
             ServiceErrorCode.SERVICE_UNAVAILABLE,
-            'Newsletter delivery service is not configured (Redis or HOSPEDA_EMAIL_API_KEY missing).',
+            getDeliveryUnavailableMessage({
+                emailApiKeyConfigured: Boolean(env.HOSPEDA_EMAIL_API_KEY)
+            }),
             undefined,
             'DELIVERY_SERVICE_NOT_CONFIGURED'
         );
     }
 };
+
+/** Describe the first missing dependency that prevents newsletter delivery. */
+export function getDeliveryUnavailableMessage(input: {
+    readonly emailApiKeyConfigured: boolean;
+}): string {
+    if (!input.emailApiKeyConfigured) {
+        return 'Newsletter delivery service is not configured (HOSPEDA_EMAIL_API_KEY missing).';
+    }
+    return 'BullMQ dispatch queue is not available (Redis not configured).';
+}
 
 /**
  * Returns a process-wide {@link NewsletterCampaignService} instance.
@@ -88,7 +104,7 @@ export async function getDefaultCampaignService(): Promise<NewsletterCampaignSer
             deliveryService = real;
         } else {
             apiLogger.warn(
-                'Newsletter delivery service falling back to stub (Redis or HOSPEDA_EMAIL_API_KEY missing).'
+                `Newsletter delivery service falling back to stub: ${getDeliveryUnavailableMessage({ emailApiKeyConfigured: Boolean(env.HOSPEDA_EMAIL_API_KEY) })}`
             );
         }
     } catch (error) {
