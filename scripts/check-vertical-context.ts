@@ -15,7 +15,7 @@
  * Half (b), "an operation on a resource that stores its vertical takes it from
  * the request":
  * - (b1) every route config names `VerticalEnum.<ACCOMMODATION|VENUE|EXPERIENCE>`,
- *   and a route under `routes/<accommodation|gastronomy|experience>/` names the
+ *   and a route under `routes/<accommodation|venue|experience>/` names the
  *   vertical of its folder, which is the table it reads its resource from;
  * - (b2) the `vertical` of every `resolveListingAccess` call and the
  *   `resourceVertical` of every `resolveResourceVertical` call contain none of
@@ -70,7 +70,7 @@ export const MIN_ROUTE_CONFIGS = 100;
 /** Fewer production files than this means the file listing is broken. */
 export const MIN_SCANNED_FILES = 500;
 
-const ROUTE_FOLDER = /^apps\/api\/src\/routes\/(accommodation|gastronomy|experience)\//;
+const ROUTE_FOLDER = /^apps\/api\/src\/routes\/(accommodation|venue|experience)\//;
 const MEMBERS: ReadonlySet<string> = new Set(LISTING_VERTICAL_MEMBERS);
 const REQUEST: ReadonlySet<string> = new Set(REQUEST_NAMES);
 
@@ -180,7 +180,7 @@ function checkRouteConfig(site: OperationSite, where: string): readonly string[]
         ];
     }
     const folder = ROUTE_FOLDER.exec(site.file)?.[1];
-    const folderMember = folder === 'gastronomy' ? 'VENUE' : folder?.toUpperCase();
+    const folderMember = folder?.toUpperCase();
     if (folderMember && folderMember !== member) {
         return [
             `G2 (b): ${where} route under routes/${folder} declares vertical ${member}: the context must be the vertical of the resource it serves`

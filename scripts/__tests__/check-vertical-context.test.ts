@@ -177,17 +177,17 @@ describe('TEST:V5:26 - G2 (a) and (b): the vertical context is declared and take
         expectFailure(computed, 'G2 (b):', 'listingAccess computes its vertical (pickVertical())');
     });
 
-    it('TEST:1813:8 AC:1:15 rejects an experience context in a gastronomy route after the key rename', () => {
+    it('TEST:1814:4 AC:1:16 rejects a venue route without vertical context', () => {
         const root = tempTree();
         write(
             root,
-            'apps/api/src/routes/gastronomy/protected/example.ts',
-            "export const route = { listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'READ' } };\n"
+            'apps/api/src/routes/venue/protected/example.ts',
+            "export const route = { listingAccess: { operation: 'READ' } };\n"
         );
         expectFailure(
             root,
-            'G2 (b): apps/api/src/routes/gastronomy/protected/example.ts:',
-            'route under routes/gastronomy declares vertical EXPERIENCE'
+            'G2 (a): apps/api/src/routes/venue/protected/example.ts:',
+            'route-config does not declare its vertical context'
         );
     });
 

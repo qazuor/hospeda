@@ -63,11 +63,11 @@ describe('TEST:V5:5 GUARD:G2 (c)', () => {
         const result = run({ root, minScannedFiles: 1 });
         expect(result.exitCode).toBe(1);
         expect(result.output).toContain(venueFile);
-        expect(result.output).toContain(legacyFile);
+        expect(result.output).not.toContain(legacyFile);
     });
 
     it('rejects a mutated listing service update with file and line', () => {
-        const file = 'packages/service-core/src/services/gastronomy/gastronomy.service.ts';
+        const file = 'packages/service-core/src/services/venue/venue.service.ts';
         const root = makeTree({
             [file]:
                 'const unchanged = 1;\n' +

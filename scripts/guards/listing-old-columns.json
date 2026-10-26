@@ -99,14 +99,14 @@
             "reason": "Route description of review moderation."
         },
         {
-            "file": "apps/api/src/routes/gastronomy/reviews/admin/list.ts",
+            "file": "apps/api/src/routes/venue/reviews/admin/list.ts",
             "name": "moderationState",
             "count": 2,
             "table": "gastronomy_reviews",
             "reason": "The admin review list filters reviews by their own moderationState."
         },
         {
-            "file": "apps/api/src/routes/gastronomy/reviews/admin/moderate.ts",
+            "file": "apps/api/src/routes/venue/reviews/admin/moderate.ts",
             "name": "moderationState",
             "count": 1,
             "table": "gastronomy_reviews",

@@ -60,8 +60,8 @@ function route(method: string, routePath: string): string {
 }
 
 describe('AC:V6:25 listing delete doors guard', () => {
-    describe('TEST:1814:4 AC:1:16 follows VenueModel and retains the prior model name', () => {
-        it('TEST:1814:4 AC:1:16 detects class and receiver forms for both model names', () => {
+    describe('TEST:1814:4 AC:1:16 follows VenueModel and drops its retired name', () => {
+        it('TEST:1814:4 AC:1:16 detects VenueModel and ignores GastronomyModel', () => {
             const venueClass = check({
                 'packages/db/src/models/venue/venue.model.ts':
                     'new VenueModel({ logger }).hardDelete(actor, id);\n'
@@ -79,13 +79,12 @@ describe('AC:V6:25 listing delete doors guard', () => {
             const oldModel = check({
                 'packages/db/src/models/venue/venue.model.ts': `new ${oldClass}({ logger }).hardDelete(actor, id);\n`
             });
-            expect(oldModel.exitCode).toBe(1);
-            expect(oldModel.output).toContain(`new ${oldClass}({ logger }).hardDelete(...)`);
+            expect(oldModel.exitCode).toBe(0);
         });
     });
 
-    describe('TEST:1814:4 AC:1:16 follows VenueService and retains the prior service name', () => {
-        it('TEST:1814:4 AC:1:16 detects class and receiver forms for both service names', () => {
+    describe('TEST:1814:4 AC:1:16 follows VenueService and drops its retired name', () => {
+        it('TEST:1814:4 AC:1:16 detects VenueService and ignores GastronomyService', () => {
             const file = 'packages/service-core/src/services/venue/venue.service.ts';
             const venueClass = check({
                 [file]: 'new VenueService({ logger }).hardDelete(actor, id);\n'
@@ -101,13 +100,11 @@ describe('AC:V6:25 listing delete doors guard', () => {
             const oldService = check({
                 [file]: `new ${oldClass}({ logger }).hardDelete(actor, id);\n`
             });
-            expect(oldService.exitCode).toBe(1);
-            expect(oldService.output).toContain(`new ${oldClass}({ logger }).hardDelete(...)`);
+            expect(oldService.exitCode).toBe(0);
 
             const oldReceiver = [['gastro', 'nomy'].join(''), 'service'].join('');
             const legacyReceiver = check({ [file]: `${oldReceiver}.softDelete(actor, id);\n` });
-            expect(legacyReceiver.exitCode).toBe(1);
-            expect(legacyReceiver.output).toContain(`${oldReceiver}.softDelete(...)`);
+            expect(legacyReceiver.exitCode).toBe(0);
         });
     });
 
@@ -121,7 +118,7 @@ describe('AC:V6:25 listing delete doors guard', () => {
     });
 
     it('(p1) rejects a retired door file that exists again', () => {
-        const file = 'apps/api/src/routes/gastronomy/admin/restore.ts';
+        const file = 'apps/api/src/routes/venue/admin/restore.ts';
         const result = check({ [file]: 'export const x = 1;\n' });
         expect(result.exitCode).toBe(1);
         expect(result.output).toContain(`FAIL AC:V6:25 (p1): ${file}:1 retired door`);
@@ -181,12 +178,26 @@ describe('AC:V6:25 listing delete doors guard', () => {
     it('(p4) rejects a hard delete on a freshly built listing service', () => {
         const file = 'packages/service-core/src/x/b.ts';
         const result = check({
-            [file]: 'export const f = async (actor, id) =>\n    await new GastronomyService({ logger }).hardDelete(actor, id);\n'
+            [file]: 'export const f = async (actor, id) =>\n    await new VenueService({ logger }).hardDelete(actor, id);\n'
         });
         expect(result.exitCode).toBe(1);
         expect(result.output).toContain(
-            `FAIL AC:V6:25 (p4): ${file}:2 calls new GastronomyService({ logger }).hardDelete(...)`
+            `FAIL AC:V6:25 (p4): ${file}:2 calls new VenueService({ logger }).hardDelete(...)`
         );
+    });
+
+    it('TEST:1814:4 AC:1:16 recognizes VenueService and venueservice but not legacy names', () => {
+        const file = 'apps/api/src/services/x/a.ts';
+        for (const source of [
+            'export const f = (actor, id) => new VenueService({ logger }).hardDelete(actor, id);\n',
+            'export const f = (actor, id) => venueservice.hardDelete(actor, id);\n'
+        ]) {
+            expect(check({ [file]: source }).exitCode).toBe(1);
+        }
+        const legacy = check({
+            [file]: 'export const f = (actor, id) => new GastronomyService({ logger }).hardDelete(actor, id);\n'
+        });
+        expect(legacy.exitCode).toBe(0);
     });
 
     it('(p4) rejects an account hard delete call', () => {

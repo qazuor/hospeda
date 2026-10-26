@@ -71,7 +71,7 @@ export function findImmutableVerticalWrites(args: {
                 if (key) {
                     const chain = node.expression.expression.getText(sourceFile);
                     const listingService =
-                        /packages\/service-core\/src\/services\/(?:accommodation|gastronomy|venue|experience)\//.test(
+                        /packages\/service-core\/src\/services\/(?:accommodation|venue|experience)\//.test(
                             args.file
                         );
                     const writesListing = LISTING_TABLE.test(chain) || listingService;
