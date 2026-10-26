@@ -105,11 +105,6 @@ import {
     publicFeatureFlagRoutes
 } from './feature-flags';
 import { publicFeedbackRoutes } from './feedback';
-import {
-    adminGastronomyRoutes,
-    protectedGastronomyRoutes,
-    publicGastronomyRoutes
-} from './gastronomy';
 import { adminGeocodingRoutes, protectedGeocodingRoutes } from './geocoding';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
 import { mediaHealthRoutes } from './health/media';
@@ -211,6 +206,7 @@ import { adminTrialRoutes } from './trial/admin/extend.js';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bookmark';
 import { protectedUserBookmarkCollectionRoutes } from './user-bookmark-collection';
+import { adminVenueRoutes, protectedVenueRoutes, publicVenueRoutes } from './venue';
 import { adminVerticalDeadlineRoutes } from './vertical-deadlines/admin/index.js';
 import { adminViewsRoutes, protectedViewsRoutes, viewsRoutes } from './views';
 import { brevoWebhookRoutes, mercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
@@ -329,7 +325,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         //   GET /api/v1/public/accommodations/:id/external-reputation
         app.route('/api/v1/public/accommodations', publicExternalReputationRoutes);
         // Gastronomy listings (SPEC-239 T-042)
-        app.route('/api/v1/public/gastronomies', publicGastronomyRoutes);
+        app.route('/api/v1/public/gastronomies', publicVenueRoutes);
         // Experience listings (SPEC-240 T-019)
         app.route('/api/v1/public/experiences', publicExperienceRoutes);
         // Partners program public listing (SPEC-271)
@@ -476,7 +472,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         //   POST     /api/v1/protected/accommodations/:id/external-reputation/refresh
         app.route('/api/v1/protected/accommodations', protectedExternalReputationRoutes);
         // Gastronomy listings (SPEC-239 T-043 / T-044)
-        app.route('/api/v1/protected/gastronomies', protectedGastronomyRoutes);
+        app.route('/api/v1/protected/gastronomies', protectedVenueRoutes);
         // Experience listings (SPEC-240 T-020)
         app.route('/api/v1/protected/experiences', protectedExperienceRoutes);
         // Alliance applicant self-service: my own applications (HOS-278 AC-5)
@@ -556,7 +552,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         //   POST /api/v1/admin/accommodations/:id/external-reputation/disable
         app.route('/api/v1/admin/accommodations', adminExternalReputationRoutes);
         // Gastronomy listings (SPEC-239 T-045 / T-046)
-        app.route('/api/v1/admin/gastronomies', adminGastronomyRoutes);
+        app.route('/api/v1/admin/gastronomies', adminVenueRoutes);
         // Experience listings (SPEC-240 T-021)
         app.route('/api/v1/admin/experiences', adminExperienceRoutes);
         // Partners program admin management (SPEC-271)

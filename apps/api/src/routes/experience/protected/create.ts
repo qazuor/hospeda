@@ -7,7 +7,7 @@
  * and the admin create at `experience/admin/create.ts`. The experience
  * owner-create payload has its own required shape (`openingHours`/
  * `priceRange`), so this vertical has its own route; the gastronomy one lives
- * in `gastronomy/protected/create.ts`.
+ * in `venue/protected/create.ts`.
  *
  * ## D-3 — server-forced fields
  *

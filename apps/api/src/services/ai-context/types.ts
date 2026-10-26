@@ -37,7 +37,7 @@ export interface AssembleChatContextInput {
     readonly locale: 'es' | 'en' | 'pt';
     /** Owner capabilities resolved by the route for this listing's vertical. */
     readonly ownerCapabilities: {
-        readonly manageGastronomyMenu?: boolean;
+        readonly manageVenueMenu?: boolean;
         readonly manageExperienceDirections?: boolean;
     };
 }

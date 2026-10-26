@@ -116,14 +116,14 @@ const commonBrochureFields = {
  * does not carry. `menuUrl` and `socialNetworks` are how a restaurant publishes
  * contact on this platform, and both ARE public.
  */
-export const GastronomyBrochureSourceSchema = z.object({
+export const VenueBrochureSourceSchema = z.object({
     ...commonBrochureFields,
     priceRange: z.string().nullish(),
     menuUrl: z.string().nullish()
 });
 
 /** The gastronomy fields a brochure reads. */
-export type GastronomyBrochureSource = z.infer<typeof GastronomyBrochureSourceSchema>;
+export type VenueBrochureSource = z.infer<typeof VenueBrochureSourceSchema>;
 
 /**
  * What an experience brochure may read.

@@ -14,7 +14,7 @@ export const UNVERIFIED_STAFF_BYPASS_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.ACCOMMODATION_UPDATE_ANY,
     // Read by accommodation/protected/getById.ts and checkCanView.
     PermissionEnum.ACCOMMODATION_VIEW_ALL,
-    PermissionEnum.GASTRONOMY_VIEW_ALL, // gastronomy/protected/getById.ts and _canView.
+    PermissionEnum.GASTRONOMY_VIEW_ALL, // venue/protected/getById.ts and _canView.
     PermissionEnum.EXPERIENCE_VIEW_ALL, // experience/protected/getById.ts and _canView.
     PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT, // ownership bypass.
     // enforceListingAccess action 15.

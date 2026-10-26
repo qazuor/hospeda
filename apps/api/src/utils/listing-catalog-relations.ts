@@ -47,7 +47,7 @@ import type { ListingAmenityPublic, ListingFeaturePublic } from '@repo/schemas';
  * @param gastronomyId - The listing's UUID.
  * @returns Catalog-joined amenity rows, most important first. Empty when none.
  */
-export async function fetchGastronomyAmenities(
+export async function fetchVenueAmenities(
     gastronomyId: string
 ): Promise<readonly ListingAmenityPublic[]> {
     const db = getDb();
@@ -76,7 +76,7 @@ export async function fetchGastronomyAmenities(
  * @param gastronomyId - The listing's UUID.
  * @returns Catalog-joined feature rows, most important first. Empty when none.
  */
-export async function fetchGastronomyFeatures(
+export async function fetchVenueFeatures(
     gastronomyId: string
 ): Promise<readonly ListingFeaturePublic[]> {
     const db = getDb();

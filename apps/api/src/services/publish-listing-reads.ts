@@ -52,7 +52,7 @@ import { apiLogger } from '../utils/logger';
  */
 export type PublishVertical = 'accommodation' | 'gastronomy' | 'experience';
 
-export const isGastronomyOrExperienceVertical = (
+export const isVenueOrExperienceVertical = (
     vertical: PublishVertical
 ): vertical is Exclude<PublishVertical, 'accommodation'> =>
     vertical === 'gastronomy' || vertical === 'experience';
@@ -73,7 +73,7 @@ export const isGastronomyOrExperienceVertical = (
  * Memoised, so the request path still pays one construction per process.
  */
 let accommodationService: AccommodationService | null = null;
-let gastronomyService: VenueService | null = null;
+let venueService: VenueService | null = null;
 let experienceService: ExperienceService | null = null;
 
 const getAccommodationService = (): AccommodationService => {
@@ -81,9 +81,9 @@ const getAccommodationService = (): AccommodationService => {
     return accommodationService;
 };
 
-const getGastronomyService = (): VenueService => {
-    gastronomyService ??= new VenueService({ logger: apiLogger });
-    return gastronomyService;
+const getVenueService = (): VenueService => {
+    venueService ??= new VenueService({ logger: apiLogger });
+    return venueService;
 };
 
 const getExperienceService = (): ExperienceService => {
@@ -118,7 +118,7 @@ function serviceFor(vertical: PublishVertical) {
         case 'accommodation':
             return getAccommodationService();
         case 'gastronomy':
-            return getGastronomyService();
+            return getVenueService();
         case 'experience':
             return getExperienceService();
         default: {
@@ -151,7 +151,7 @@ function serviceFor(vertical: PublishVertical) {
  * `experience.service.ts:501`; before V6.9b the pair of old visibility and
  * lifecycle columns) so a public-search total matches the page it
  * paginates. Every owner-created listing starts `DRAFT`
- * (`gastronomy/protected/create.ts` and `experience/protected/create.ts` D-3) — so this function returned ZERO for
+ * (`venue/protected/create.ts` and `experience/protected/create.ts` D-3) — so this function returned ZERO for
  * precisely the rows the cap exists to count, `checkLimit` compared `0 <
  * maxAllowed`, and three listings went onto a plan of one with nothing raised.
  *
@@ -215,7 +215,7 @@ export async function countOwnListings(input: {
     // TypeScript cannot narrow the generic at a call site that is polymorphic
     // over three services. Mirrors the assertion the enforcement middleware and
     // the accommodation precheck both already make.
-    const result = isGastronomyOrExperienceVertical(vertical)
+    const result = isVenueOrExperienceVertical(vertical)
         ? await (service as VenueService | ExperienceService).countOwn(actor)
         : await service.count(actor, { ownerId: actor.id } as never);
 
@@ -292,7 +292,7 @@ export async function listOwnDraftListings(input: {
     }));
 }
 
-// NOTE: `isGastronomyOrExperienceVertical` is deliberately NOT re-exported from here
+// NOTE: `isVenueOrExperienceVertical` is deliberately NOT re-exported from here
 // for callers in this module's orbit. This module is MOCKED by the precheck's
 // test, which rebuilds it as `{ ...actual, ...stubs }`, and spreading an ESM
 // namespace copies values rather than live bindings — a re-export through it
