@@ -52,7 +52,7 @@ interface TimedResponse {
 const timed = async ({
     run
 }: {
-    readonly run: () => Promise<Response>;
+    readonly run: () => Response | Promise<Response>;
 }): Promise<TimedResponse> => {
     const start = performance.now();
     const response = await run();
@@ -63,7 +63,7 @@ const timed = async ({
 const fireBatch = async ({
     runs
 }: {
-    readonly runs: readonly (() => Promise<Response>)[];
+    readonly runs: readonly (() => Response | Promise<Response>)[];
 }): Promise<{ readonly results: readonly TimedResponse[]; readonly batchMs: number }> => {
     const start = performance.now();
     const results = await Promise.all(runs.map((run) => timed({ run })));
