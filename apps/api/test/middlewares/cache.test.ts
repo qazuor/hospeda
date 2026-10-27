@@ -243,7 +243,7 @@ describe('Cache Middleware', () => {
             expect(callCount).toBe(2);
         });
 
-        it('should cache private endpoints with separate keys per auth token', async () => {
+        it('should never cache private endpoints for a request with an auth token (HOS-1923)', async () => {
             const middleware = createCacheMiddleware();
             const app = new Hono();
             let callCount = 0;
@@ -254,25 +254,19 @@ describe('Cache Middleware', () => {
                 return c.json({ user: 'data', callCount });
             });
 
-            // Two requests with different auth tokens
-            const res1 = await app.request('/api/v1/public/users', {
-                headers: { Authorization: 'Bearer token-a' }
-            });
-            const res2 = await app.request('/api/v1/public/users', {
-                headers: { Authorization: 'Bearer token-b' }
-            });
+            const request = () =>
+                app.request('/api/v1/public/users', {
+                    headers: { Authorization: 'Bearer token-a' }
+                });
 
-            // Each should be a cache miss (different keys)
-            expect(res1.headers.get('X-Cache')).toBe('MISS');
-            expect(res2.headers.get('X-Cache')).toBe('MISS');
-            expect(callCount).toBe(2);
+            const res1 = await request();
+            const res2 = await request();
 
-            // Now repeat with token-a - should be a HIT
-            const res3 = await app.request('/api/v1/public/users', {
-                headers: { Authorization: 'Bearer token-a' }
-            });
-            expect(res3.headers.get('X-Cache')).toBe('HIT');
+            // Credentials bypass the cache entirely: both runs reach the handler.
+            expect(res1.headers.get('X-Cache')).toBe('BYPASS');
+            expect(res2.headers.get('X-Cache')).toBe('BYPASS');
             expect(callCount).toBe(2);
+            expect(getCacheSize()).toBe(0);
         });
 
         it('should use "anonymous" key for private endpoints without auth header', async () => {

@@ -3,7 +3,9 @@
  * Replaces the Web Standards Cache API (which is unavailable in Node.js)
  * with a simple Map-based cache that supports TTL expiration and LRU eviction.
  */
-import type { MiddlewareHandler } from 'hono';
+import { DEFAULT_AUTH_COOKIE_PREFIX, STAGING_AUTH_COOKIE_PREFIX } from '@repo/config';
+import type { Context, MiddlewareHandler } from 'hono';
+import { getCookie } from 'hono/cookie';
 import type { AppBindings } from '../types';
 import { getCacheConfig } from '../utils/env';
 import { apiLogger } from '../utils/logger';
@@ -119,6 +121,69 @@ export function getCacheSize(): number {
 const CACHEABLE_STATUS_CODES: ReadonlySet<number> = new Set([200, 404]);
 
 /**
+ * Cookie-name prefixes Better Auth writes for every Hospeda deployment
+ * (HOS-1923). Better Auth names its cookies `<prefix>.<cookie>` —
+ * `session_token`, the `session_data` cookie cache, `dont_remember` — and adds
+ * `__Secure-` when `useSecureCookies` is on (`NODE_ENV=production`).
+ *
+ * Both deployment prefixes are listed, not only the one this process resolves:
+ * staging and production share the apex cookie domain, so a request can carry
+ * either. Bypassing on the other environment's cookie only costs a cache hit,
+ * while missing this environment's would serve a session-bound body to
+ * strangers. Resolved from `@repo/config`, the same source `lib/auth.ts` uses.
+ */
+const AUTH_COOKIE_NAME_PREFIXES: readonly string[] = [
+    DEFAULT_AUTH_COOKIE_PREFIX,
+    STAGING_AUTH_COOKIE_PREFIX
+].flatMap((prefix) => [`${prefix}.`, `__Secure-${prefix}.`]);
+
+/**
+ * Test-only headers that make the harness build an actor
+ * (`test/helpers/mockAuthMiddleware.ts`, `middlewares/actor.ts`). Both readers
+ * require `x-mock-actor-id`, so its presence alone is the superset.
+ */
+const MOCK_ACTOR_ID_HEADER = 'x-mock-actor-id';
+
+/**
+ * Whether a request carries anything the auth chain could turn into a
+ * non-guest actor, in which case the response cache must neither read nor
+ * write for it (HOS-1923).
+ *
+ * The cache runs BEFORE `authMiddleware`/`actorMiddleware` and keys public
+ * endpoints without any actor component, so a handler that branches on the
+ * actor (draft posts for an author, a user profile for its owner) would have
+ * its authenticated answer replayed to anonymous callers for the whole TTL —
+ * and an anonymous 404 replayed to the owner.
+ *
+ * Credentials recognised:
+ * - an `Authorization` header (any scheme; the mock auth also reads it);
+ * - any Better Auth cookie of a Hospeda deployment, matched by parsed cookie
+ *   NAME (never a substring of the raw header), see
+ *   {@link AUTH_COOKIE_NAME_PREFIXES};
+ * - under `NODE_ENV=test` only, the mock-actor header the test harness honours.
+ *
+ * Unrelated cookies (`hospeda_vid`, analytics) do not count: an anonymous
+ * visitor always carries them and must keep being served from cache.
+ *
+ * @param params.c - Hono context of the request.
+ * @returns `true` when the request must bypass the cache.
+ */
+function requestCarriesCredentials({ c }: { readonly c: Context<AppBindings> }): boolean {
+    if (c.req.header('Authorization') !== undefined) return true;
+
+    // NODE_ENV is a system variable, read directly like `lazyMockAuthMiddleware`
+    // in `utils/create-app.ts` decides whether the mock headers are honoured.
+    if (process.env.NODE_ENV === 'test' && c.req.header(MOCK_ACTOR_ID_HEADER) !== undefined) {
+        return true;
+    }
+
+    if (c.req.header('Cookie') === undefined) return false;
+    return Object.keys(getCookie(c)).some((name) =>
+        AUTH_COOKIE_NAME_PREFIXES.some((prefix) => name.startsWith(prefix))
+    );
+}
+
+/**
  * Determines the cache key for a request based on endpoint classification.
  * Returns null if the request should not be cached.
  */
@@ -161,7 +226,8 @@ function generateCacheKey({
  * Creates cache middleware with environment-based configuration.
  * Uses an in-memory Map with TTL expiration and LRU-style eviction.
  * Only caches GET requests with cacheable status codes (200, 404).
- * Adds X-Cache header (HIT or MISS) to all responses passing through.
+ * Adds an X-Cache header to every response of a classified endpoint: HIT or
+ * MISS, or BYPASS when the request carries credentials (HOS-1923).
  */
 export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
     const cacheConfig = getCacheConfig();
@@ -205,6 +271,14 @@ export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
         // If no cache key generated, skip caching
         if (!key) {
             await next();
+            return;
+        }
+
+        // HOS-1923: a request with credentials is answered for ITS actor, but
+        // the key above has no actor in it. Never read nor store such a request.
+        if (requestCarriesCredentials({ c })) {
+            await next();
+            c.header('X-Cache', 'BYPASS');
             return;
         }
 
