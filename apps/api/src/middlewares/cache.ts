@@ -20,11 +20,11 @@ interface CacheEntry {
     readonly headers: Record<string, string>;
     readonly expires: number;
     /**
-     * `true` when the stored body is a JSON object carrying `metadata.requestId`
-     * (HOS-1915). Computed once on the MISS so a HIT only parses bodies that
-     * actually need re-stamping.
+     * The `metadata.requestId` the stored body was written with, or `null` when
+     * the body is not a JSON object carrying one (HOS-1915). Computed once on
+     * the MISS so a HIT never parses the body.
      */
-    readonly hasRequestIdMetadata: boolean;
+    readonly storedRequestId: string | null;
 }
 
 /**
@@ -81,59 +81,67 @@ function isPerRequestHeader(name: string): boolean {
 }
 
 /**
- * Whether a response body is a JSON object whose `metadata.requestId` is a
- * string, i.e. the envelope shape built by the response formatter.
+ * Extracts `metadata.requestId` from a response body when it is a JSON object
+ * whose `metadata.requestId` is a string, i.e. the envelope shape built by the
+ * response formatter. Parses once, on the MISS only.
  *
  * @param params.body - Raw response body text.
  * @param params.contentType - Value of the `content-type` header, if any.
- * @returns `true` when the body needs its request id re-stamped on a hit.
+ * @returns The stored request id, or `null` when the body has none.
  */
-function bodyHasRequestIdMetadata({
+function extractStoredRequestId({
     body,
     contentType
 }: {
     readonly body: string;
     readonly contentType: string | undefined;
-}): boolean {
-    if (!contentType?.toLowerCase().includes('json')) return false;
+}): string | null {
+    if (!contentType?.toLowerCase().includes('json')) return null;
     try {
         const parsed: unknown = JSON.parse(body);
-        if (typeof parsed !== 'object' || parsed === null) return false;
+        if (typeof parsed !== 'object' || parsed === null) return null;
         const metadata = (parsed as { metadata?: unknown }).metadata;
-        return (
-            typeof metadata === 'object' &&
-            metadata !== null &&
-            typeof (metadata as { requestId?: unknown }).requestId === 'string'
-        );
+        if (typeof metadata !== 'object' || metadata === null) return null;
+        const id = (metadata as { requestId?: unknown }).requestId;
+        return typeof id === 'string' && id.length > 0 ? id : null;
     } catch {
-        return false;
+        return null;
     }
 }
 
 /**
- * Replaces `metadata.requestId` in a cached JSON body with the current
- * request's id (HOS-1915). Only called for entries flagged
- * `hasRequestIdMetadata`; any parse problem returns the body untouched.
+ * Swaps the stored request id for the current one in a cached JSON body
+ * (HOS-1915) with a string splice, so a HIT stays O(n) with no parse.
+ *
+ * Request ids are unique per request, so the stored id string only appears in
+ * the `metadata.requestId` field; the LAST occurrence is used because the
+ * envelope serialises `metadata` after `data`, which also protects against a
+ * data field that happens to contain the same literal text. If the pattern is
+ * not found (e.g. a non-compact serialisation) the body is served unchanged.
  * `timestamp` is intentionally left as stored: it dates the cached payload.
  *
  * @param params.body - Cached body text.
+ * @param params.storedRequestId - Id the body was cached with.
  * @param params.requestId - Id of the request being served.
- * @returns The body with the current request id.
+ * @returns The body carrying the current request id.
  */
 function restampRequestId({
     body,
+    storedRequestId,
     requestId
 }: {
     readonly body: string;
+    readonly storedRequestId: string;
     readonly requestId: string;
 }): string {
-    try {
-        const parsed = JSON.parse(body) as { metadata: { requestId: string } };
-        parsed.metadata.requestId = requestId;
-        return JSON.stringify(parsed);
-    } catch {
-        return body;
-    }
+    const needle = `"requestId":${JSON.stringify(storedRequestId)}`;
+    const index = body.lastIndexOf(needle);
+    if (index === -1) return body;
+    return (
+        body.slice(0, index) +
+        `"requestId":${JSON.stringify(requestId)}` +
+        body.slice(index + needle.length)
+    );
 }
 
 /** Maximum number of entries in the cache before eviction */
@@ -286,9 +294,12 @@ export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
                 c.header(name, value);
             }
             const currentRequestId = c.get('requestId');
-            if (cached.hasRequestIdMetadata && currentRequestId) {
+            // The empty-id branch is unreachable in the real app: requestId()
+            // is the first middleware in create-app.ts, so the id always exists.
+            if (cached.storedRequestId !== null && currentRequestId) {
                 const body = restampRequestId({
                     body: cached.body,
+                    storedRequestId: cached.storedRequestId,
                     requestId: currentRequestId
                 });
                 // The stored content-length describes the original body; the
@@ -326,7 +337,7 @@ export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
                     status,
                     headers,
                     expires: Date.now() + ttlMs,
-                    hasRequestIdMetadata: bodyHasRequestIdMetadata({
+                    storedRequestId: extractStoredRequestId({
                         body: responseBody,
                         contentType: c.res.headers.get('content-type') ?? undefined
                     })

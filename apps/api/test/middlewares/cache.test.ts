@@ -478,10 +478,31 @@ describe('cache middleware request id on HIT (HOS-1915)', () => {
         await send({ app, id: 'a' });
         const second = await send({ app, id: 'a-much-longer-request-id' });
 
+        expect(second.headers.get('x-cache')).toBe('HIT');
         const text = await second.text();
         expect(second.headers.get('content-length')).toBe(
             String(new TextEncoder().encode(text).length)
         );
+    });
+
+    it('re-stamps a large body and ignores a data field spelling "requestId"', async () => {
+        const items = Array.from({ length: 5000 }, (_, i) => ({ id: i, name: `item-${i}` }));
+        const app = createRequestIdApp({
+            respond: (c, id) =>
+                c.json({
+                    data: { items, note: 'requestId', requestId: 'data-value' },
+                    metadata: { requestId: id }
+                })
+        });
+
+        await send({ app, id: 'req-A' });
+        const second = await send({ app, id: 'req-B' });
+
+        expect(second.headers.get('x-cache')).toBe('HIT');
+        const body = await second.json();
+        expect(body.metadata.requestId).toBe('req-B');
+        expect(body.data.requestId).toBe('data-value');
+        expect(body.data.items).toHaveLength(5000);
     });
 
     it('leaves a non-JSON body untouched', async () => {
@@ -505,6 +526,7 @@ describe('cache middleware request id on HIT (HOS-1915)', () => {
         await send({ app, id: 'req-A' });
         const second = await send({ app, id: 'req-B' });
 
+        expect(second.headers.get('x-cache')).toBe('HIT');
         expect(await second.json()).toEqual({ data: 'x', metadata: { timestamp: 't' } });
     });
 
