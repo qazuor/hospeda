@@ -217,7 +217,7 @@ describe('SPEC-266 T-011 — applicable_verticals migration-safety invariants', 
             // Insert one valid and one with explicitly non-empty verticals.
             const amenityA = makeAmenity({ applicableVerticals: ['accommodation'] });
             const amenityB = makeAmenity({
-                applicableVerticals: ['accommodation', 'gastronomy', 'experience']
+                applicableVerticals: ['accommodation', 'venue', 'experience']
             });
             await tx.insert(amenities).values([amenityA, amenityB]);
 
@@ -234,7 +234,7 @@ describe('SPEC-266 T-011 — applicable_verticals migration-safety invariants', 
     it('INV-2: no feature in the test catalog has an empty applicable_verticals', async () => {
         await withTestTransaction(async (tx) => {
             const featureA = makeFeature({ applicableVerticals: ['accommodation'] });
-            const featureB = makeFeature({ applicableVerticals: ['accommodation', 'gastronomy'] });
+            const featureB = makeFeature({ applicableVerticals: ['accommodation', 'venue'] });
             await tx.insert(features).values([featureA, featureB]);
 
             const emptyRows = await tx
@@ -277,7 +277,7 @@ describe('SPEC-266 T-011 — applicable_verticals migration-safety invariants', 
             // Two amenities: both valid (have 'accommodation' in applicable_verticals)
             const amenityAccOnly = makeAmenity({ applicableVerticals: ['accommodation'] });
             const amenityShared = makeAmenity({
-                applicableVerticals: ['accommodation', 'gastronomy', 'experience']
+                applicableVerticals: ['accommodation', 'venue', 'experience']
             });
             await tx.insert(amenities).values([amenityAccOnly, amenityShared]);
 
@@ -321,7 +321,7 @@ describe('SPEC-266 T-011 — applicable_verticals migration-safety invariants', 
             // any existing r_accommodation_amenity row (inserting such a row would
             // be an application-layer bug, not a DB constraint, but we guard it here).
             const amenityNoAccommodation = makeAmenity({
-                applicableVerticals: ['gastronomy', 'experience']
+                applicableVerticals: ['venue', 'experience']
             });
             await tx.insert(amenities).values(amenityNoAccommodation);
 
@@ -350,7 +350,7 @@ describe('SPEC-266 T-011 — applicable_verticals migration-safety invariants', 
 
             const featureAccOnly = makeFeature({ applicableVerticals: ['accommodation'] });
             const featureShared = makeFeature({
-                applicableVerticals: ['accommodation', 'gastronomy']
+                applicableVerticals: ['accommodation', 'venue']
             });
             await tx.insert(features).values([featureAccOnly, featureShared]);
 
@@ -389,7 +389,7 @@ describe('SPEC-266 T-011 — applicable_verticals migration-safety invariants', 
             // INV-1 negative: features scoped only to non-accommodation verticals must
             // not appear in relation rows (no such row was inserted).
             const featureNoAccommodation = makeFeature({
-                applicableVerticals: ['gastronomy']
+                applicableVerticals: ['venue']
             });
             await tx.insert(features).values(featureNoAccommodation);
 

@@ -6,7 +6,7 @@ import { listingRetentionScheduleModel } from '../../src/models/listing/listing-
 import type { DrizzleClient } from '../../src/types.ts';
 import { closeTestPool, withTestTransaction } from './helpers.ts';
 
-const verticals: readonly ListingVertical[] = ['accommodation', 'gastronomy', 'experience'];
+const verticals: readonly ListingVertical[] = ['accommodation', 'venue', 'experience'];
 const event = async (
     tx: DrizzleClient,
     vertical: ListingVertical,

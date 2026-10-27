@@ -23,7 +23,7 @@ afterAll(async () => closeTestPool());
 
 const TABLE: Readonly<Record<ListingVertical, string>> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'gastronomies',
     experience: 'experiences'
 };
 
@@ -50,7 +50,7 @@ async function createListing(args: {
                   { ...base, type: 'CABIN' } as Partial<Accommodation>,
                   tx
               )
-            : vertical === 'gastronomy'
+            : vertical === 'venue'
               ? await new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx)
               : await new ExperienceModel().create(
                     { ...base, type: 'EXCURSION' } as Partial<Experience>,
@@ -76,7 +76,7 @@ describe('TEST:V6:34 AC:V6:26 listingContractModel.findListingsById', () => {
             const { ownerId, destinationId } = await arrangeOwner(tx);
             const cases: readonly [ListingVertical, PublicationStatusEnum][] = [
                 ['accommodation', PublicationStatusEnum.PUBLISHED],
-                ['gastronomy', PublicationStatusEnum.MODERATED],
+                ['venue', PublicationStatusEnum.MODERATED],
                 ['experience', PublicationStatusEnum.DRAFT]
             ];
             for (const [vertical, status] of cases) {
@@ -108,7 +108,7 @@ describe('TEST:V6:34 AC:V6:26 listingContractModel.findListingsById', () => {
             const { ownerId, destinationId } = await arrangeOwner(tx);
             const { id } = await createListing({
                 tx,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 ownerId,
                 destinationId,
                 status: PublicationStatusEnum.PUBLISHED

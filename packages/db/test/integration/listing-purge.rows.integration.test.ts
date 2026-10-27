@@ -28,7 +28,7 @@ const verticalTables = {
         ['accommodation_occupancy', 'accommodation_id'],
         ['accommodation_ia_data', 'accommodation_id']
     ],
-    gastronomy: [
+    venue: [
         ['r_gastronomy_amenity', 'gastronomy_id'],
         ['r_gastronomy_feature', 'gastronomy_id'],
         ['r_entity_tag', 'entity_id'],
@@ -68,7 +68,7 @@ async function createListing(
             { ...base, type: 'CABIN' } as Partial<Accommodation>,
             tx
         );
-    if (vertical === 'gastronomy')
+    if (vertical === 'venue')
         return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
     return new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx);
 }

@@ -84,20 +84,20 @@ describe('TEST:AC:U2 scheduled outbox queue', () => {
                 sendAfter: new Date('2026-10-12T03:00:00.000Z'),
                 payload: { campaign: 'RECOVERY' }
             };
-            expect(
-                await enqueueOrMergeScheduledEmail({ ...common, vertical: 'gastronomy' })
-            ).toEqual({ outcome: 'inserted' });
+            expect(await enqueueOrMergeScheduledEmail({ ...common, vertical: 'venue' })).toEqual({
+                outcome: 'inserted'
+            });
             expect(
                 await enqueueOrMergeScheduledEmail({ ...common, vertical: 'accommodation' })
             ).toEqual({ outcome: 'merged' });
-            expect(
-                await enqueueOrMergeScheduledEmail({ ...common, vertical: 'gastronomy' })
-            ).toEqual({ outcome: 'merged' });
+            expect(await enqueueOrMergeScheduledEmail({ ...common, vertical: 'venue' })).toEqual({
+                outcome: 'merged'
+            });
             const [shared] = await tx
                 .select()
                 .from(emailOutbox)
                 .where(eq(emailOutbox.dedupKey, common.dedupKey));
-            expect(shared?.payload.verticals).toEqual(['accommodation', 'gastronomy']);
+            expect(shared?.payload.verticals).toEqual(['accommodation', 'venue']);
             await tx
                 .update(emailOutbox)
                 .set({ status: 'sent' })
@@ -112,7 +112,7 @@ describe('TEST:AC:U2 scheduled outbox queue', () => {
                 vertical: 'accommodation'
             };
             await enqueueOrMergeScheduledEmail(two);
-            await enqueueOrMergeScheduledEmail({ ...two, vertical: 'gastronomy' });
+            await enqueueOrMergeScheduledEmail({ ...two, vertical: 'venue' });
             const only = { ...two, dedupKey: key(firstUser.id, 'only') };
             await enqueueOrMergeScheduledEmail(only);
             expect(
@@ -129,7 +129,7 @@ describe('TEST:AC:U2 scheduled outbox queue', () => {
                 .from(emailOutbox)
                 .where(eq(emailOutbox.dedupKey, two.dedupKey));
             expect(remaining?.status).toBe('pending');
-            expect(remaining?.payload.verticals).toEqual(['gastronomy']);
+            expect(remaining?.payload.verticals).toEqual(['venue']);
             const [cancelled] = await tx
                 .select()
                 .from(emailOutbox)

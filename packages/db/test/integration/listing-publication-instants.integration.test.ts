@@ -35,14 +35,14 @@ async function makeListing(
             { ...base, type: 'CABIN' } as Partial<Accommodation>,
             tx
         );
-    if (vertical === 'gastronomy')
+    if (vertical === 'venue')
         return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
     return new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx);
 }
 
 describe.each([
     'accommodation',
-    'gastronomy',
+    'venue',
     'experience'
 ] as const)('publication instants: %s', (vertical) => {
     it('TEST:V6:5 reads the latest owner PB1 only for matching entity type and ids', async () => {
@@ -110,7 +110,7 @@ describe.each([
                 to: PublicationStatusEnum.PUBLISHED,
                 actorType: 'owner',
                 occurredAt: firstAt,
-                entityVertical: vertical === 'experience' ? 'gastronomy' : 'experience'
+                entityVertical: vertical === 'experience' ? 'venue' : 'experience'
             });
             await record({
                 listingId: outside.id,

@@ -38,7 +38,7 @@ async function makeListing(
             { ...base, type: 'CABIN' } as Partial<Accommodation>,
             tx
         );
-    if (vertical === 'gastronomy')
+    if (vertical === 'venue')
         return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
     return new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx);
 }
@@ -50,11 +50,7 @@ describe('TEST:V6:7 reconciler population and summaries', () => {
             const destination = testData.destination();
             await tx.insert(users).values(user);
             await tx.insert(destinations).values(destination);
-            const verticals: readonly ListingVertical[] = [
-                'accommodation',
-                'gastronomy',
-                'experience'
-            ];
+            const verticals: readonly ListingVertical[] = ['accommodation', 'venue', 'experience'];
             for (const vertical of verticals) {
                 await makeListing(
                     tx,

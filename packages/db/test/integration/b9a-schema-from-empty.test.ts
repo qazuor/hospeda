@@ -222,7 +222,7 @@ describe('TEST:B9a:8 — the permanent grant schema from empty (AC:B9a:8)', () =
             const signer = await user(client);
             const grantId = await grant(client, beneficiary, signer);
             const a = await plan(client, 'accommodation');
-            const g = await plan(client, 'gastronomy');
+            const g = await plan(client, 'venue');
             const otherFloor = await plan(client, 'accommodation');
             await anchor(client, grantId, 'accommodation', a);
             expect(
@@ -239,14 +239,14 @@ describe('TEST:B9a:8 — the permanent grant schema from empty (AC:B9a:8)', () =
                 await rejected(
                     client,
                     'INSERT INTO permanent_grant_vertical (permanent_grant_id, vertical, plan_id, floor_plan_version_id) VALUES ($1, $2, $3, $4)',
-                    [grantId, 'gastronomy', a.planId, a.floorId]
+                    [grantId, 'venue', a.planId, a.floorId]
                 )
             ).toMatchObject({ code: '23503', constraint: 'fk_permanent_grant_vertical_plan' });
             expect(
                 await rejected(
                     client,
                     'INSERT INTO permanent_grant_vertical (permanent_grant_id, vertical, plan_id, floor_plan_version_id) VALUES ($1, $2, $3, $4)',
-                    [grantId, 'gastronomy', g.planId, otherFloor.floorId]
+                    [grantId, 'venue', g.planId, otherFloor.floorId]
                 )
             ).toMatchObject({ code: '23503', constraint: 'fk_permanent_grant_vertical_floor' });
         });
