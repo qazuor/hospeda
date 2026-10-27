@@ -41,10 +41,10 @@
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^26.6.1",
         "@types/react": "^19.2.18",
-        "@vitest/coverage-v8": "^4.1.10",
+        "@vitest/coverage-v8": "^5.0.5",
         "tsx": "^4.23.13",
         "typescript": "6.0.3",
         "vite-tsconfig-paths": "^6.1.1",
-        "vitest": "^4.1.11"
+        "vitest": "^5.0.5"
     }
 }
