@@ -3,7 +3,6 @@ import { sql } from '@repo/db';
 import type { EntityChangeData } from '@repo/service-core';
 import { getAffectedCacheTags } from '@repo/service-core';
 import { PASSAGE_TABLE } from './passage-table.js';
-import type { PassageRow } from './ports.js';
 
 /** External page-cache and edge purge port. */
 export interface PagePurger {
@@ -59,9 +58,10 @@ export async function runStep4c({ db, pagePurger, dryRun }: RunStep4cInput): Pro
         FROM ${sql.raw(PASSAGE_TABLE)}
         ORDER BY entity_type, entity_id
     `);
-    const listings = rowsOf<{ entityType: PassageRow['entityType']; entityId: string }>(
-        passageResult
-    );
+    const listings = rowsOf<{
+        entityType: 'accommodation' | 'venue' | 'experience';
+        entityId: string;
+    }>(passageResult);
     const destinationResult = await db.execute(sql`
         SELECT id::text AS id, slug
         FROM destinations
@@ -73,7 +73,7 @@ export async function runStep4c({ db, pagePurger, dryRun }: RunStep4cInput): Pro
     const listingTags = sortedUnique(
         listings.flatMap(({ entityType, entityId }) =>
             entityTags({
-                entityType: entityType === 'gastronomy' ? 'venue' : entityType,
+                entityType,
                 id: entityId
             })
         )

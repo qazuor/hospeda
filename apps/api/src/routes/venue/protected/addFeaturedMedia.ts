@@ -19,7 +19,7 @@
  * unverifiable: nothing obliges a client to send the promotion it promises, so
  * a caller setting it on every upload would have no cap at all. Here the
  * service creates the row already featured, in one transaction, and
- * `uq_gastronomy_media_single_featured` permits exactly one per listing.
+ * `uq_venue_media_single_featured` permits exactly one per listing.
  *
  * No cap needs waiving, because none is spent: the replaced cover is DELETED
  * (soft-deleted) in the same transaction, so one row enters the featured slot

@@ -87,7 +87,7 @@ const NAMED_UNIQUE_CONSTRAINT_MESSAGES: Readonly<Record<string, string>> = {
         'This event already has a featured image. Unset the current one first.',
     uq_experience_media_single_featured:
         'This experience already has a featured image. Unset the current one first.',
-    uq_gastronomy_media_single_featured:
+    uq_venue_media_single_featured:
         'This listing already has a featured image. Unset the current one first.',
     uq_post_media_single_featured:
         'This post already has a featured image. Unset the current one first.'
