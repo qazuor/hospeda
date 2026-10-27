@@ -9,7 +9,7 @@
  * ## Owner decision (SPEC-243, locked)
  * Mobile host set: HOST, ADMIN, SUPER_ADMIN.
  * Mobile tourist set: every other authenticated role (USER, EDITOR,
- * CLIENT_MANAGER, SPONSOR, GASTRONOMY_OWNER, and any unknown/future role).
+ * CLIENT_MANAGER, SPONSOR, VENUE_OWNER, and any unknown/future role).
  *
  * DIVERGENCE from `apps/web/src/lib/account-roles.ts`:
  * The web app includes EDITOR and CLIENT_MANAGER in its "host-like" set.
@@ -21,7 +21,7 @@
  * `users.role` no longer exists: an account holds a SET of roles and the
  * session no longer carries a scalar. The mapping is now "does the held set
  * intersect the host set", but it is still 1-of-3 and still mutually
- * exclusive — a user holding HOST **and** GASTRONOMY_OWNER lands in `(host)`,
+ * exclusive — a user holding HOST **and** VENUE_OWNER lands in `(host)`,
  * exactly as a HOST does today.
  *
  * That 1-of-3 shape is structurally incompatible with real dual-hat
