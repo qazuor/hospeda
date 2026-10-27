@@ -32,7 +32,7 @@ describe('vertical usage — TEST:1757:1-4,6', () => {
     it('TEST:1757:1 counts only published listings against the effective vertical cap', () => {
         const result = buildListingUsage({
             vertical: 'gastronomy',
-            effectiveSet: effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: 3 }),
+            effectiveSet: effective({ [LimitKeyEnum.MAX_VENUES]: 3 }),
             listings: [
                 listing('gastronomy', PublicationStatusEnum.PUBLISHED),
                 listing('gastronomy', PublicationStatusEnum.DRAFT),
@@ -57,7 +57,7 @@ describe('vertical usage — TEST:1757:1-4,6', () => {
             buildListingUsage({
                 vertical: 'gastronomy',
                 effectiveSet: effective({
-                    [LimitKeyEnum.MAX_GASTRONOMIES]: 3,
+                    [LimitKeyEnum.MAX_VENUES]: 3,
                     [LimitKeyEnum.MAX_EXPERIENCES]: 8
                 }),
                 listings
@@ -67,7 +67,7 @@ describe('vertical usage — TEST:1757:1-4,6', () => {
             buildListingUsage({
                 vertical: 'experience',
                 effectiveSet: effective({
-                    [LimitKeyEnum.MAX_GASTRONOMIES]: 3,
+                    [LimitKeyEnum.MAX_VENUES]: 3,
                     [LimitKeyEnum.MAX_EXPERIENCES]: 8
                 }),
                 listings
@@ -76,15 +76,12 @@ describe('vertical usage — TEST:1757:1-4,6', () => {
     });
 
     it.each([
-        ['failed', effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: 3 }, true)],
+        ['failed', effective({ [LimitKeyEnum.MAX_VENUES]: 3 }, true)],
         ['missing limit', effective({})],
-        ['infinite', effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: Infinity })],
-        [
-            'unlimited sentinel',
-            effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: UNLIMITED_LIMIT_VALUE })
-        ],
-        ['zero', effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: 0 })],
-        ['negative', effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: -1 })]
+        ['infinite', effective({ [LimitKeyEnum.MAX_VENUES]: Infinity })],
+        ['unlimited sentinel', effective({ [LimitKeyEnum.MAX_VENUES]: UNLIMITED_LIMIT_VALUE })],
+        ['zero', effective({ [LimitKeyEnum.MAX_VENUES]: 0 })],
+        ['negative', effective({ [LimitKeyEnum.MAX_VENUES]: -1 })]
     ])('TEST:1757:3 omits a badge for %s capacity', (_case, effectiveSet) => {
         expect(
             buildListingUsage({ vertical: 'gastronomy', effectiveSet, listings: [] })

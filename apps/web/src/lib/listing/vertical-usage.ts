@@ -22,7 +22,7 @@ export interface ListingUsage {
 }
 
 const LIMIT_KEY_BY_VERTICAL: Readonly<Record<ListingVertical, LimitKeyEnum>> = {
-    gastronomy: LimitKeys.MAX_GASTRONOMIES,
+    gastronomy: LimitKeys.MAX_VENUES,
     experience: LimitKeys.MAX_EXPERIENCES
 };
 

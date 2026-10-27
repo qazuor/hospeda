@@ -89,7 +89,7 @@ describe('publish precheck panel content during the billing transition', () => {
 
     it.each([
         ['accommodation', 'max_accommodations'],
-        ['gastronomy', 'max_gastronomies'],
+        ['gastronomy', 'max_venues'],
         ['experience', 'max_experiences']
     ] as const)('uses the %s copy namespace', (vertical, namespace) => {
         const result = resolvePrecheckPanelContent({ ...BASE, vertical, decision: 'upgrade_only' });

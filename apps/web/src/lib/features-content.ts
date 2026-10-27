@@ -234,7 +234,7 @@ export const GASTRO_LIST: readonly FeatureListItem[] = [
         descriptionKey: 'features.gastro.list.ownProfile.description'
     },
     {
-        // HOS-1042 — the venue's own agenda. A `gastronomy-pro` capability, and
+        // HOS-1042 — the venue's own agenda. A `venue-pro` capability, and
         // the copy says so: every other row on this list is on every tier, so a
         // row that quietly is not would be the page over-promising.
         titleKey: 'features.gastro.list.venueEvents.title',

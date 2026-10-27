@@ -81,7 +81,7 @@ const PRECHECK_COPY: Readonly<
 /** Retained locale key segments from the former publish-limit map. */
 const LIMIT_KEY_BY_PUBLISH_VERTICAL: Readonly<Record<PublishVertical, string>> = {
     accommodation: 'max_accommodations',
-    gastronomy: 'max_gastronomies',
+    gastronomy: 'max_venues',
     experience: 'max_experiences'
 };
 

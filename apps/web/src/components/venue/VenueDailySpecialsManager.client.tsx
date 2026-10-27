@@ -25,7 +25,7 @@
  *
  * ## The 403 is a real state, not an error
  *
- * The menú del día is a `gastronomy-pro` capability, and the page this mounts
+ * The menú del día is a `venue-pro` capability, and the page this mounts
  * on carries no entitlement information — the same situation
  * `VenueMenuManager` and `BrochureDownloadButton` are in. So the fields
  * render for every owner and the API decides; a refusal is shown as the upsell

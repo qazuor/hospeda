@@ -72,7 +72,7 @@ export const KNOWN_LIMIT_KEYS = new Set([
     // HOS-688 — each has a `billing.limit.<key>.*` block in all three locales.
     // Without the entry the at-limit toast falls back to
     // `billing.limit.generic.*`, which never names the vertical just hit.
-    'max_gastronomies',
+    'max_venues',
     'max_experiences',
     // HOS-690 AC-23 — closing the gap the exhaustiveness guard found: these 11
     // keys had NO `billing.limit.<key>.*` entry at all in any locale and were
@@ -93,7 +93,7 @@ export const KNOWN_LIMIT_KEYS = new Set([
     'max_ai_chat_consumer_per_month',
     // HOS-400 — each gastronomy/experience verticals's own AI-chat cap. Title-only entry,
     // same shape as the pair above (see the comment a few lines up).
-    'max_ai_chat_gastronomy_per_month',
+    'max_ai_chat_venue_per_month',
     'max_ai_chat_experience_per_month',
     'max_ai_search_per_month',
     'max_ai_support_per_month',

@@ -112,7 +112,7 @@ const ACCOMMODATION_PLANS = [
 
 const VENUE_PLANS = [
     makePlan({
-        slug: 'gastronomy-basico',
+        slug: 'venue-basico',
         vertical: 'gastronomy',
         monthlyPriceArs: 1_000_000,
         hasTrial: true,
@@ -121,7 +121,7 @@ const VENUE_PLANS = [
     // Inactive, and carrying a SHORTER trial than the live plan: if `isActive`
     // stopped being checked, gastronomy would advertise 1 day.
     makePlan({
-        slug: 'gastronomy-pro',
+        slug: 'venue-pro',
         vertical: 'gastronomy',
         monthlyPriceArs: 0,
         isActive: false,

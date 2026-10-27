@@ -1115,7 +1115,7 @@ export interface VenueMenuItem {
      * Localized name (HOS-1043), or `null`.
      *
      * `null` covers both "never translated" and "withheld server-side for a
-     * plan that does not grant `multilingual_gastronomy_menu`" — the API
+     * plan that does not grant `multilingual_venue_menu`" — the API
      * decides, the renderer draws what it is given, the same collapse
      * {@link photoUrl} documents for its own gate.
      */
@@ -1131,7 +1131,7 @@ export interface VenueMenuItem {
      * `null` covers THREE situations the page cannot and need not tell apart:
      * the venue attached no photo to this dish, the owner's current plan does
      * not grant `menu_item_photos`, or their plan no longer grants
-     * `manage_gastronomy_menu` (in which case the whole carta is withheld and
+     * `manage_venue_menu` (in which case the whole carta is withheld and
      * this field never arrives at all). The API decides; the renderer draws
      * what it is given.
      */
@@ -1214,7 +1214,7 @@ export interface VenueDetailData extends VenueCardData {
     /**
      * Delivery URL of an uploaded photo or PDF of the menu (HOS-895 PR2).
      * `null` both when nothing was uploaded AND when the owner's current plan
-     * does not grant `manage_gastronomy_menu` — the API withholds it live, so
+     * does not grant `manage_venue_menu` — the API withholds it live, so
      * the page cannot tell the two apart and does not need to.
      */
     readonly menuFileUrl?: string | null;
@@ -1230,7 +1230,7 @@ export interface VenueDetailData extends VenueCardData {
      * The menú del día as it stands TODAY (HOS-1041). Empty when the venue is
      * offering nothing today, when every special's window has passed, OR when
      * the owner's current plan does not grant
-     * `manage_gastronomy_daily_special` — the API applies both the window
+     * `manage_venue_daily_special` — the API applies both the window
      * filter and the entitlement gate, so the page cannot tell the three apart
      * and does not need to.
      */
@@ -1238,7 +1238,7 @@ export interface VenueDetailData extends VenueCardData {
     /**
      * The venue's own agenda, in order (HOS-1042). Empty/absent when the venue
      * has none, OR when the owner's current plan does not grant
-     * `manage_gastronomy_events` — same withholding as {@link menuSections}.
+     * `manage_venue_events` — same withholding as {@link menuSections}.
      */
     readonly venueEvents?: readonly VenueEvent[];
     /** Social network links provided by the owner. */
