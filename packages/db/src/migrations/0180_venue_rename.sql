@@ -4,7 +4,7 @@ DO $$ BEGIN IF EXISTS (SELECT 1 FROM vertical WHERE id = 'gastronomy') THEN RAIS
 -- Convert persisted values before the enum labels change.
 UPDATE qr_codes
 SET target_url = replace(target_url, '/gastronomia/', '/comer-y-salir/')
-WHERE entity_type = 'GASTRONOMY'
+WHERE entity_type::text = 'GASTRONOMY'
   AND source = 'GENERATED'
   AND target_url LIKE '%/gastronomia/%';
 --> statement-breakpoint
