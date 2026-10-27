@@ -125,6 +125,15 @@ describe('AccommodationService.removeFaq', () => {
         expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any, FAKE_DB_TX);
     });
 
+    it('should return NOT_FOUND if the FAQ is already soft-deleted (HOS-1907)', async () => {
+        modelMock.findById.mockResolvedValue(accommodation);
+        faqModelMock.findById.mockResolvedValue({ ...faq, deletedAt: new Date() });
+        vi.spyOn(Object.getPrototypeOf(service), '_canUpdate').mockImplementation(() => {});
+        const result = await service.removeFaq(actor, input);
+        expectNotFoundError(result);
+        expect(faqModelMock.softDelete).not.toHaveBeenCalled();
+    });
+
     it('should return NOT_FOUND if FAQ does not belong to accommodation', async () => {
         modelMock.findById.mockResolvedValue(accommodation);
         faqModelMock.findById.mockResolvedValue({

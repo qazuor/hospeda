@@ -2856,7 +2856,11 @@ export class AccommodationService extends BaseCrudService<
                     await this._canUpdate(actor, accommodation);
                     const faqModel = new AccommodationFaqModel();
                     const faq = await faqModel.findById(validated.faqId, tx);
-                    if (!faq || faq.accommodationId !== validated.accommodationId) {
+                    if (
+                        !faq ||
+                        faq.accommodationId !== validated.accommodationId ||
+                        faq.deletedAt
+                    ) {
                         throw new ServiceError(
                             ServiceErrorCode.NOT_FOUND,
                             'FAQ not found for this accommodation'
@@ -2914,7 +2918,11 @@ export class AccommodationService extends BaseCrudService<
                     await this._canUpdate(actor, accommodation);
                     const faqModel = new AccommodationFaqModel();
                     const faq = await faqModel.findById(validated.faqId, tx);
-                    if (!faq || faq.accommodationId !== validated.accommodationId) {
+                    if (
+                        !faq ||
+                        faq.accommodationId !== validated.accommodationId ||
+                        faq.deletedAt
+                    ) {
                         throw new ServiceError(
                             ServiceErrorCode.NOT_FOUND,
                             'FAQ not found for this accommodation'
