@@ -5,10 +5,8 @@
  * Payload (see `src/routes/accommodation/public/getStats.ts`): the flat
  * `{ total, totalFeatured, averageRating, totalByType }` shape.
  *
- * Known divergence (HOS-1902): an id that matches no visible accommodation
- * answers `200` with `data: null`, whereas the sibling summary route answers
- * 404. These tests assert the CURRENT behaviour; update them when HOS-1902
- * settles the contract.
+ * An id that matches no visible accommodation answers 404 NOT_FOUND, exactly
+ * like the sibling summary route (HOS-1902, error-contract.md).
  */
 import { AccommodationStatsSchema } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -80,15 +78,16 @@ describe('GET /accommodations/:id/stats', () => {
             const data = await response.json();
             expect(data.data).toMatchObject({ total: 1, totalFeatured: 1 });
         });
+    });
 
-        it('should answer 200 with null data for non-existent accommodation', async () => {
+    describe('Not Found (404)', () => {
+        it('should answer 404 NOT_FOUND for non-existent accommodation', async () => {
             const response = await app.request(`${baseUrl}/${nonExistentUuid}/stats`, { headers });
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(404);
             const data = await response.json();
-            expect(data).toHaveProperty('success', true);
-            expect(data.data).toBeNull();
-            expect(data).toHaveProperty('metadata');
+            expect(data).toHaveProperty('success', false);
+            expect(data.error).toHaveProperty('code', 'NOT_FOUND');
         });
     });
 
@@ -116,15 +115,15 @@ describe('GET /accommodations/:id/stats', () => {
             }
         });
 
-        it('should answer 200 with null data for the nil UUID (a valid UUID that matches no row)', async () => {
+        it('should answer 404 for the nil UUID (a valid UUID that matches no row)', async () => {
             const response = await app.request(
                 `${baseUrl}/00000000-0000-0000-0000-000000000000/stats`,
                 { headers }
             );
 
-            expect(response.status).toBe(200);
+            expect(response.status).toBe(404);
             const data = await response.json();
-            expect(data.data).toBeNull();
+            expect(data.error).toHaveProperty('code', 'NOT_FOUND');
         });
 
         it('should return 404 for missing ID parameter', async () => {
