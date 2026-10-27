@@ -94,13 +94,13 @@
         "@types/pngjs": "^6.0.5",
         "@types/qrcode": "^1.5.6",
         "@types/sanitize-html": "^2.16.1",
-        "@vitest/coverage-v8": "^4.1.10",
+        "@vitest/coverage-v8": "^5.0.5",
         "jsqr": "^1.4.0",
         "tsup": "^8.5.1",
         "tsx": "^4.23.13",
         "typescript": "6.0.3",
         "vite-tsconfig-paths": "^6.1.1",
-        "vitest": "^4.1.11"
+        "vitest": "^5.0.5"
     },
     "optionalDependencies": {
         "node-cron": "^4.6.0"

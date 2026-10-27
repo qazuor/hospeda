@@ -23,17 +23,17 @@ export default defineConfig({
                 statements: 90
             },
             exclude: [
-                'node_modules/',
-                'dist/',
-                'test/',
+                '**/node_modules/**',
+                '**/dist/**',
+                '**/test/**',
                 '**/*.d.ts',
                 '**/*.config.*',
                 '**/index.ts', // Re-export files
                 // Documentation-only example code (imports libs not in deps;
                 // never exported or imported by production schemas).
-                'docs/',
+                '**/docs/**',
                 // Copy-paste scaffolding template for devs — not imported anywhere.
-                'src/templates/'
+                'src/templates/**'
             ]
         }
     }

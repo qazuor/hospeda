@@ -145,7 +145,7 @@ export default defineConfig({
             enforce: 'post' as const,
             configResolved(config) {
                 // Remove better-auth from optimizeDeps.exclude in all environments
-                const envs = (config as Record<string, unknown>).environments as
+                const envs = (config as unknown as Record<string, unknown>).environments as
                     | Record<string, Record<string, unknown>>
                     | undefined;
                 if (envs) {
@@ -163,7 +163,10 @@ export default defineConfig({
                 }
                 // Also check top-level optimizeDeps
                 const topExclude = (
-                    (config as Record<string, unknown>).optimizeDeps as Record<string, unknown>
+                    (config as unknown as Record<string, unknown>).optimizeDeps as Record<
+                        string,
+                        unknown
+                    >
                 )?.exclude as string[] | undefined;
                 if (Array.isArray(topExclude)) {
                     const idx = topExclude.indexOf('better-auth');
