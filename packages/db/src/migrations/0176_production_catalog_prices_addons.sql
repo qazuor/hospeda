@@ -28,7 +28,7 @@ INSERT INTO "billing_option" ("id", "plan_version_id", "cycle", "amount", "curre
 INSERT INTO "addon" ("id", "slug", "name", "description") VALUES
 	('73cea908-12f1-55b8-9607-3b2943629271', 'extra-accommodations-5', 'Extra Accommodations Pack (+5)', 'Adds 5 additional accommodations to your plan. Renews monthly.'),
 	('ccc9266a-4db1-5e93-a93b-f432fd48baa5', 'extra-photos-20', 'Extra Photos Pack (+20 photos)', 'Adds 20 additional photos to each accommodation. Renews monthly.'),
-	('541c04e0-38a5-5427-8911-ea8b7c5e4cfb', 'extra-gastronomies-1', 'Extra Comer y salir Listing (+1)', 'Adds 1 additional venue listing to your plan. Renews monthly.'),
+	('3a40ce3f-8b7c-59c3-94c1-9b4ee56486e9', 'extra-venues-1', 'Extra Comer y salir Listing (+1)', 'Adds 1 additional venue listing to your plan. Renews monthly.'),
 	('66b3d450-e92f-56ef-ae92-042204aee1bb', 'extra-experiences-1', 'Extra Experience Listing (+1)', 'Adds 1 additional experience listing to your plan. Renews monthly.'),
 	('8c4adeb1-46b3-541f-a7af-751df16f459b', 'visibility-boost-7d', 'Visibility Boost (7 days)', 'Your accommodation appears featured in search results for 7 days.'),
 	('b8605b0b-1310-5b5e-acc4-b7473b1e7d4a', 'visibility-boost-30d', 'Visibility Boost (30 days)', 'Your accommodation appears featured in search results for 30 days.'),
@@ -40,7 +40,7 @@ INSERT INTO "addon" ("id", "slug", "name", "description") VALUES
 INSERT INTO "addon_version" ("id", "addon_id", "validity", "validity_days", "scope_type") VALUES
 	('ce27dae1-29c1-5d55-b416-80ba6d2163ba', '73cea908-12f1-55b8-9607-3b2943629271', 'WHILE_SUBSCRIPTION_ALIVE', NULL, 'VERTICAL_SUBSCRIPTION'),
 	('4e083437-97ab-5c81-ab4a-d4e4f9e1fd7c', 'ccc9266a-4db1-5e93-a93b-f432fd48baa5', 'WHILE_SUBSCRIPTION_ALIVE', NULL, 'VERTICAL_SUBSCRIPTION'),
-	('5ac6389a-5e8c-5d0e-812c-8f1078ced6ac', '541c04e0-38a5-5427-8911-ea8b7c5e4cfb', 'WHILE_SUBSCRIPTION_ALIVE', NULL, 'VERTICAL_SUBSCRIPTION'),
+	('fc99fd03-1b03-5cd6-8e9e-c08645ada1bc', '3a40ce3f-8b7c-59c3-94c1-9b4ee56486e9', 'WHILE_SUBSCRIPTION_ALIVE', NULL, 'VERTICAL_SUBSCRIPTION'),
 	('65745dd2-3593-54e4-b1df-1bcf2c751b9a', '66b3d450-e92f-56ef-ae92-042204aee1bb', 'WHILE_SUBSCRIPTION_ALIVE', NULL, 'VERTICAL_SUBSCRIPTION'),
 	('9da1528b-259a-59c0-a646-85e6a01a6132', '8c4adeb1-46b3-541f-a7af-751df16f459b', 'FIXED_DAYS', 7, 'LISTING'),
 	('159b74f4-8601-5ecc-a96f-5b490c7d0c7e', 'b8605b0b-1310-5b5e-acc4-b7473b1e7d4a', 'FIXED_DAYS', 30, 'LISTING'),
@@ -60,13 +60,13 @@ INSERT INTO "addon_version_entitlement" ("id", "addon_version_id", "key") VALUES
 INSERT INTO "addon_version_limit" ("id", "addon_version_id", "key", "value") VALUES
 	('aa6d0786-d6cf-5389-aed0-9aed13e4258c', 'ce27dae1-29c1-5d55-b416-80ba6d2163ba', 'max_accommodations', 5),
 	('befc8c7d-f050-5f23-a3f2-3f12ba589c45', '4e083437-97ab-5c81-ab4a-d4e4f9e1fd7c', 'max_photos_per_accommodation', 20),
-	('d00ffe8e-d4bf-5037-bcdb-15881859d2f7', '5ac6389a-5e8c-5d0e-812c-8f1078ced6ac', 'max_venues', 1),
+	('f0d5f78c-3e82-532c-84ab-e695e51641bf', 'fc99fd03-1b03-5cd6-8e9e-c08645ada1bc', 'max_venues', 1),
 	('1058c957-1812-593c-9af7-b6d7a339084c', '65745dd2-3593-54e4-b1df-1bcf2c751b9a', 'max_experiences', 1);
 --> statement-breakpoint
 INSERT INTO "addon_product" ("id", "addon_id", "version_id", "price", "currency", "charge_kind", "cycle", "compatible_verticals") VALUES
 	('9236170b-3865-53af-891e-6f9eae3451cd', '73cea908-12f1-55b8-9607-3b2943629271', 'ce27dae1-29c1-5d55-b416-80ba6d2163ba', 1300000, 'ARS', 'PERIODICO', 'monthly', '{accommodation}'),
 	('9519d2dd-ee9d-5467-951d-aa9fc6db47b4', 'ccc9266a-4db1-5e93-a93b-f432fd48baa5', '4e083437-97ab-5c81-ab4a-d4e4f9e1fd7c', 500000, 'ARS', 'PERIODICO', 'monthly', '{accommodation}'),
-	('13ebf058-90ec-5682-8280-7a43893ec1bd', '541c04e0-38a5-5427-8911-ea8b7c5e4cfb', '5ac6389a-5e8c-5d0e-812c-8f1078ced6ac', 1500000, 'ARS', 'PERIODICO', 'monthly', '{venue}'),
+	('f3103842-e7e6-5a09-8458-4a9350d46489', '3a40ce3f-8b7c-59c3-94c1-9b4ee56486e9', 'fc99fd03-1b03-5cd6-8e9e-c08645ada1bc', 1500000, 'ARS', 'PERIODICO', 'monthly', '{venue}'),
 	('b4c069e4-1e32-5098-a5e1-6420b3c45df7', '66b3d450-e92f-56ef-ae92-042204aee1bb', '65745dd2-3593-54e4-b1df-1bcf2c751b9a', 1500000, 'ARS', 'PERIODICO', 'monthly', '{experience}'),
 	('a76cc6e2-01d2-5bbb-b028-2f5581dc02be', '8c4adeb1-46b3-541f-a7af-751df16f459b', '9da1528b-259a-59c0-a646-85e6a01a6132', 500000, 'ARS', 'UNA_VEZ', NULL, '{accommodation}'),
 	('10d25758-a906-579d-9df5-e09ff03e058b', 'b8605b0b-1310-5b5e-acc4-b7473b1e7d4a', '159b74f4-8601-5ecc-a96f-5b490c7d0c7e', 1500000, 'ARS', 'UNA_VEZ', NULL, '{accommodation}'),
