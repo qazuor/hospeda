@@ -194,7 +194,7 @@ describe('ListingGalleryManager — split: featured vs gallery', () => {
 });
 
 describe('ListingGalleryManager — add gallery photo', () => {
-    it('calls upload then addMedia when a file is selected for the gallery, with entityType matching the vertical prop', async () => {
+    it('TEST:1819:6 AC:1:3 sends the venue media entity type on gallery upload', async () => {
         const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
         mockUploadEntityImageMutateAsync.mockResolvedValue({
             url: 'https://cdn.example.com/new.jpg',
@@ -215,13 +215,12 @@ describe('ListingGalleryManager — add gallery photo', () => {
         fireEvent.change(galleryInput, { target: { files: [file] } });
 
         await waitFor(() => {
-            expect(mockUploadEntityImageMutateAsync).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    entityType: 'venue',
-                    entityId: 'ent-1',
-                    role: 'gallery'
-                })
-            );
+            expect(mockUploadEntityImageMutateAsync.mock.calls[0]?.[0]).toEqual({
+                file,
+                entityType: 'venue',
+                entityId: 'ent-1',
+                role: 'gallery'
+            });
             expect(mockAddMutateAsync).toHaveBeenCalledWith(
                 expect.objectContaining({
                     url: 'https://cdn.example.com/new.jpg',
