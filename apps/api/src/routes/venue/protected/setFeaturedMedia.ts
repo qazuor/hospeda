@@ -1,5 +1,5 @@
 /**
- * PUT /api/v1/protected/gastronomies/:id/media/:mediaId/featured
+ * PUT /api/v1/protected/venues/:id/media/:mediaId/featured
  * Set the featured photo for a gastronomy listing gallery (HOS-372).
  *
  * Promotes the target `venue_media` row to `is_featured = true` and

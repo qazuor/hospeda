@@ -1,5 +1,5 @@
 /**
- * DELETE /api/v1/protected/gastronomies/:id/menu-file
+ * DELETE /api/v1/protected/venues/:id/menu-file
  *
  * Removes the uploaded photo/PDF of the venue's menu (HOS-895).
  *

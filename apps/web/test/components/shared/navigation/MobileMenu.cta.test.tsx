@@ -158,7 +158,7 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
         );
         expect(screen.getByRole('menuitem', { name: /gastronomía/i })).toHaveAttribute(
             'href',
-            '/es/publicar/gastronomia/'
+            '/es/publicar/comer-y-salir/'
         );
         expect(screen.getByRole('menuitem', { name: /experiencias/i })).toHaveAttribute(
             'href',

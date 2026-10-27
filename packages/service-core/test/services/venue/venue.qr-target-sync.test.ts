@@ -50,7 +50,7 @@ const SITE = 'https://hospeda.com.ar';
 const OLD_SLUG = 'la-parrilla-del-sur';
 const NEW_SLUG = 'la-nueva-parrilla-del-sur';
 
-const menuUrl = (lang: string, slug: string) => `${SITE}/${lang}/gastronomia/${slug}/carta/`;
+const menuUrl = (lang: string, slug: string) => `${SITE}/${lang}/comer-y-salir/${slug}/carta/`;
 
 const makeVenue = (overrides: Record<string, unknown> = {}) => ({
     id: G_ID,
@@ -194,6 +194,18 @@ describe('GastronomyService — menu QR target sync on slug change (HOS-1044 AC-
         } as Parameters<typeof service.update>[2]);
 
         expect(result.error).toBeUndefined();
+        expect(qr.stored?.targetUrl).toBe(menuUrl('es', NEW_SLUG));
+    });
+
+    it('recognises a pre-rename target after the slug changed and repoints it', async () => {
+        const qr = makeQrDouble({
+            slug: 'k7Qm2XbT',
+            targetUrl: `${SITE}/es/gastronomia/${OLD_SLUG}/carta/`
+        });
+        const { service } = buildService({ qr });
+        await service.update(admin, G_ID, { slug: NEW_SLUG } as Parameters<
+            typeof service.update
+        >[2]);
         expect(qr.stored?.targetUrl).toBe(menuUrl('es', NEW_SLUG));
     });
 

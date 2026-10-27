@@ -108,7 +108,7 @@ const DAYS: readonly { readonly key: string; readonly label: string }[] = [
  * a 404, which is why the route test asserts the built URL literally.
  */
 const PUBLIC_PATH_SEGMENT: Readonly<Record<BrochureVertical, string>> = {
-    venue: 'gastronomia',
+    venue: 'comer-y-salir',
     experience: 'experiencias'
 };
 

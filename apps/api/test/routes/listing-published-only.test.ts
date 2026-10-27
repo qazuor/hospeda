@@ -100,14 +100,11 @@ describe('TEST:V5:6 published foreign gastronomy writes', () => {
             ['POST', '/media', { url: 'https://example.com/photo.jpg' }]
         ] as const) {
             const send = async (id: string) => {
-                const response = await app.request(
-                    `/api/v1/protected/gastronomies/${id}${suffix}`,
-                    {
-                        method,
-                        headers,
-                        body: JSON.stringify(body)
-                    }
-                );
+                const response = await app.request(`/api/v1/protected/venues/${id}${suffix}`, {
+                    method,
+                    headers,
+                    body: JSON.stringify(body)
+                });
                 const result: unknown = await response.json();
                 if (result && typeof result === 'object' && 'metadata' in result) {
                     const { metadata, ...rest } = result;

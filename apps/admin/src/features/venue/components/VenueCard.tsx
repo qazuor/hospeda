@@ -79,7 +79,7 @@ export const VenueCard = React.memo(function VenueCardComponent({
 
     return (
         <Link
-            to="/gastronomies/$id"
+            to="/venues/$id"
             params={{ id: venue.id }}
             onClick={handleClick}
             className="block h-full rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"

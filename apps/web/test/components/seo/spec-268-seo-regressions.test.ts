@@ -8,7 +8,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const ROOT = resolve(__dirname, '../../../src');
-const venueDetail = readFileSync(resolve(ROOT, 'pages/[lang]/gastronomia/[slug].astro'), 'utf8');
+const venueDetail = readFileSync(resolve(ROOT, 'pages/[lang]/comer-y-salir/[slug].astro'), 'utf8');
 const experienceDetail = readFileSync(
     resolve(ROOT, 'pages/[lang]/experiencias/[slug].astro'),
     'utf8'

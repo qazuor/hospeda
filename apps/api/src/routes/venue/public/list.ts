@@ -22,7 +22,7 @@ import { createPublicListRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/public/gastronomies
+ * GET /api/v1/public/venues
  * List gastronomy listings — Public endpoint.
  *
  * All filter params from GastronomySearchHttpSchema are converted to the domain

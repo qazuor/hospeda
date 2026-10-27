@@ -2365,7 +2365,7 @@ type ListingAnalyticsVertical = 'venue' | 'experience';
 
 /** Path segment each vertical mounts its protected routes under. */
 const LISTING_VERTICAL_PATH: Readonly<Record<ListingAnalyticsVertical, string>> = {
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 
@@ -2502,7 +2502,7 @@ export const listingAnalyticsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/gastronomies/${gastronomyId}/menu-qr`
+            path: `${PROTECTED}/venues/${gastronomyId}/menu-qr`
         });
     },
 
@@ -2535,7 +2535,7 @@ export const listingAnalyticsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/gastronomies/${gastronomyId}/menu-qr/scans`,
+            path: `${PROTECTED}/venues/${gastronomyId}/menu-qr/scans`,
             params: { window: windowParam }
         });
     }
@@ -3101,7 +3101,7 @@ export const publishApi = {
 /** Protected API plural per listing vertical (HOS-1493, row 26 read). */
 const LISTING_VERTICAL_PLURAL: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 
@@ -5053,8 +5053,8 @@ export const priceAlertsApi = {
 /**
  * Maps a gastronomy/experience verticals to its URL path segment.
  */
-function listingMediaPathSegment(vertical: ListingMediaVertical): 'gastronomies' | 'experiences' {
-    return vertical === 'venue' ? 'gastronomies' : 'experiences';
+function listingMediaPathSegment(vertical: ListingMediaVertical): 'venues' | 'experiences' {
+    return vertical === 'venue' ? 'venues' : 'experiences';
 }
 
 /**

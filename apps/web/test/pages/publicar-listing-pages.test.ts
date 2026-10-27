@@ -51,8 +51,8 @@ const PAGES = [
         name: 'gastronomia',
         vertical: 'venue',
         otherVertical: 'experience',
-        file: '../../src/pages/[lang]/publicar/gastronomia/index.astro',
-        plansPath: 'planes/gastronomia'
+        file: '../../src/pages/[lang]/publicar/comer-y-salir/index.astro',
+        plansPath: 'planes/comer-y-salir'
     },
     {
         name: 'experiencias',

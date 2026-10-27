@@ -3,7 +3,7 @@
  *
  *   PATCH /api/v1/{protected,admin}/posts/:id/media/:mediaId
  *   PATCH /api/v1/{protected,admin}/events/:id/media/:mediaId
- *   PATCH /api/v1/{protected,admin}/gastronomies/:id/media/:mediaId
+ *   PATCH /api/v1/{protected,admin}/venues/:id/media/:mediaId
  *   PATCH /api/v1/{protected,admin}/experiences/:id/media/:mediaId
  *
  * Eight thin handlers with one job each: resolve the actor, forward the four
@@ -185,9 +185,9 @@ const CASES: readonly RouteCase[] = [
         role: 'ADMIN'
     },
     {
-        name: 'protected gastronomy',
+        name: 'protected venue',
         tier: 'protected',
-        segment: 'gastronomies',
+        segment: 'venues',
         fk: 'gastronomyId',
         mock: mockUpdateVenue,
         removeMock: mockRemoveVenue,
@@ -195,9 +195,9 @@ const CASES: readonly RouteCase[] = [
         role: 'VENUE_OWNER'
     },
     {
-        name: 'admin gastronomy',
+        name: 'admin venue',
         tier: 'admin',
-        segment: 'gastronomies',
+        segment: 'venues',
         fk: 'gastronomyId',
         mock: mockUpdateVenue,
         removeMock: mockRemoveVenue,

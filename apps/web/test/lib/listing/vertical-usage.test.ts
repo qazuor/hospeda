@@ -124,7 +124,7 @@ describe('vertical usage — TEST:1757:1-4,6', () => {
     });
 
     it('TEST:1757:6 resolves the vertical pricing pages', () => {
-        expect(resolveUsageUpgradePath({ vertical: 'venue' })).toBe('planes/gastronomia/precios');
+        expect(resolveUsageUpgradePath({ vertical: 'venue' })).toBe('planes/comer-y-salir/precios');
         expect(resolveUsageUpgradePath({ vertical: 'experience' })).toBe(
             'planes/experiencias/precios'
         );

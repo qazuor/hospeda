@@ -23,11 +23,11 @@ import {
 
 describe('gastronomyListConfig', () => {
     it('should point to the correct admin API endpoint', () => {
-        expect(venueListConfig.apiEndpoint).toBe('/api/v1/admin/gastronomies');
+        expect(venueListConfig.apiEndpoint).toBe('/api/v1/admin/venues');
     });
 
-    it('should have basePath /gastronomies', () => {
-        expect(venueListConfig.basePath).toBe('/gastronomies');
+    it('should have basePath /venues', () => {
+        expect(venueListConfig.basePath).toBe('/venues');
     });
 
     it('should have entityKey gastronomy', () => {

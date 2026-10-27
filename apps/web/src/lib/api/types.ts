@@ -50,7 +50,7 @@ export interface ApiErrorResponse {
          * List of missing/invalid field names, sent as a SIBLING of
          * `code`/`message` (NOT nested under `details`) by
          * `LISTING_INCOMPLETE` 422 responses — e.g.
-         * `POST /protected/{gastronomies,experiences}/:id/start-subscription`
+         * `POST /protected/{venues,experiences}/:id/start-subscription`
          * (HOS-166 §7.1). `resolveListingCompleteness`'s `missing` vocabulary.
          */
         readonly missing?: readonly string[];

@@ -38,7 +38,7 @@ const reviewListingColumns: Readonly<Record<Vertical, string>> = {
 };
 const reviewPaths: Readonly<Record<Vertical, (id: string) => string>> = {
     [VerticalEnum.ACCOMMODATION]: (id) => `/api/v1/public/accommodations/${id}/reviews`,
-    [VerticalEnum.VENUE]: (id) => `/api/v1/public/gastronomies/${id}/reviews`,
+    [VerticalEnum.VENUE]: (id) => `/api/v1/public/venues/${id}/reviews`,
     [VerticalEnum.EXPERIENCE]: (id) => `/api/v1/public/experiences/${id}/reviews`
 };
 const MATRIX_NOW = new Date('2026-10-10T12:00:00.000Z');

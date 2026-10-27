@@ -32,7 +32,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 /** Route configuration for the gastronomy view page. */
-export const Route = createFileRoute('/_authed/gastronomies/$id')({
+export const Route = createFileRoute('/_authed/venues/$id')({
     component: VenueViewPage,
     loader: async ({ params }) => ({ venueId: params.id }),
     errorComponent: createErrorComponent('Gastronomy'),
@@ -228,7 +228,7 @@ function VenueViewPage() {
         <div className="space-y-4">
             <PageTabs
                 tabs={venueTabs}
-                basePath={`/gastronomies/${id}`}
+                basePath={`/venues/${id}`}
             />
 
             {/* px-6 mirrors the EntityPageBase content inset so the delete row
@@ -241,7 +241,7 @@ function VenueViewPage() {
                         vertical="venue"
                         entityId={id}
                         entityName={venue?.name ?? id}
-                        onPurged={() => navigate({ to: '/gastronomies' })}
+                        onPurged={() => navigate({ to: '/venues' })}
                         publicationStatus={venue?.publicationStatus}
                     />
                 </div>
@@ -305,7 +305,7 @@ function VenueViewPage() {
                     >
                         <div className="rounded-lg border bg-card p-6">
                             <FaqManager
-                                entityType="gastronomies"
+                                entityType="venues"
                                 parentId={id}
                             />
                         </div>

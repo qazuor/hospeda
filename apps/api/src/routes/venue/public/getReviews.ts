@@ -50,7 +50,7 @@ const VenueReviewPublicSchema = VenueReviewSchema.pick({
 });
 
 /**
- * GET /api/v1/public/gastronomies/:gastronomyId/reviews
+ * GET /api/v1/public/venues/:gastronomyId/reviews
  * List APPROVED gastronomy reviews — Public endpoint.
  *
  * Uses VenueReviewService.listByVenue() which force-filters to

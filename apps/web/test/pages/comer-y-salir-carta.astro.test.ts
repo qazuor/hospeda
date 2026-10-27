@@ -1,7 +1,7 @@
 /**
  * @file gastronomia-carta.astro.test.ts
  * @description HOS-1044 G-1 — structural verification of the dedicated public
- * menu page `/{lang}/gastronomia/{slug}/carta/`.
+ * menu page `/{lang}/comer-y-salir/{slug}/carta/`.
  *
  * Astro pages cannot be rendered through Vitest/jsdom (see
  * `alojamientos-fotos-gallery.test.ts`), so every assertion operates on the
@@ -12,8 +12,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const CARTA_PATH = resolve(__dirname, '../../src/pages/[lang]/gastronomia/[slug]/carta.astro');
-const LISTING_PATH = resolve(__dirname, '../../src/pages/[lang]/gastronomia/[slug].astro');
+const CARTA_PATH = resolve(__dirname, '../../src/pages/[lang]/comer-y-salir/[slug]/carta.astro');
+const LISTING_PATH = resolve(__dirname, '../../src/pages/[lang]/comer-y-salir/[slug].astro');
 
 const cartaSrc = readFileSync(CARTA_PATH, 'utf8');
 const listingSrc = readFileSync(LISTING_PATH, 'utf8');
@@ -114,7 +114,7 @@ describe('carta.astro — SEO (canonical to listing, noindex, out of sitemap by 
 
     it('builds the canonical path from the LISTING url, not its own route', () => {
         expect(cartaSrc).toContain('canonicalPath={listingUrl}');
-        expect(cartaSrc).toMatch(/const listingPath = `gastronomia\/\$\{venue\.slug\}`/);
+        expect(cartaSrc).toMatch(/const listingPath = `comer-y-salir\/\$\{venue\.slug\}`/);
         expect(cartaSrc).toContain('buildUrl({ locale, path: listingPath })');
     });
 

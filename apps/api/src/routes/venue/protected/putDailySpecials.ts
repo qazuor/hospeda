@@ -1,5 +1,5 @@
 /**
- * PUT /api/v1/protected/gastronomies/:id/daily-specials
+ * PUT /api/v1/protected/venues/:id/daily-specials
  *
  * Replaces the venue's menú del día with the submitted document (HOS-1041).
  *

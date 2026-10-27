@@ -50,7 +50,7 @@ import {
     EVENT_CATEGORY_LEGACY_ENGLISH_SLUGS,
     POST_CATEGORY_LEGACY_ENGLISH_SLUGS
 } from '../src/lib/facet-slugs';
-
+import { RETIRED_VENUE_URL_PREFIXES } from '../src/lib/legacy-redirects';
 // Imported statically, NOT via `await import(...)` inside each test.
 //
 // `src/middleware` pulls a large module graph (env, i18n, media, cache-tags,
@@ -1055,5 +1055,20 @@ describe('middleware onRequest — HOS-981 /qr/ is language-neutral', () => {
         await onRequest(context as any, next);
 
         expect(context.redirect).toHaveBeenCalledWith('/es/algo/qr/Live2345/', 301);
+    });
+});
+
+describe('middleware — retired venue URLs preserve query in one redirect', () => {
+    it('redirects the deep mi-cuenta URL directly and preserves its query', async () => {
+        const context = createContext({
+            pathname: `/es${RETIRED_VENUE_URL_PREFIXES[4]}/abc/editar/fotos/?x=1`
+        });
+        const next = vi.fn().mockResolvedValue(new Response('ok'));
+        await onRequest(context as any, next);
+        expect(context.redirect).toHaveBeenCalledTimes(1);
+        expect(context.redirect).toHaveBeenCalledWith(
+            '/es/mi-cuenta/comercio/venue/abc/editar/fotos/?x=1',
+            302
+        );
     });
 });

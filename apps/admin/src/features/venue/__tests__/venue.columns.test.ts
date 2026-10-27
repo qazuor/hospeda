@@ -91,7 +91,7 @@ describe('createGastronomyColumns — column details', () => {
         expect(name?.linkHandler).toBeDefined();
     });
 
-    it('name linkHandler should resolve to gastronomies/$id', () => {
+    it('name linkHandler should resolve to venues/$id', () => {
         const columns = createVenueColumns(t);
         const name = columns.find((c) => c.id === 'name');
         const link = name?.linkHandler?.({
@@ -105,7 +105,7 @@ describe('createGastronomyColumns — column details', () => {
             createdAt: new Date()
         });
         expect(link).toMatchObject({
-            to: '/gastronomies/$id',
+            to: '/venues/$id',
             params: { id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' }
         });
     });

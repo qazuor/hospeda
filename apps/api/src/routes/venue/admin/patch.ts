@@ -19,7 +19,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * PATCH /api/v1/admin/gastronomies/:id
+ * PATCH /api/v1/admin/venues/:id
  * Partial update gastronomy listing — Admin endpoint.
  *
  * Uses the same `GastronomyUpdateInputSchema` (all fields partial) as the PUT

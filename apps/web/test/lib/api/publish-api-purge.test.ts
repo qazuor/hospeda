@@ -19,7 +19,7 @@ vi.mock('@/lib/api/client', () => ({
 
 const CASES = [
     { vertical: 'accommodation', plural: 'accommodations' },
-    { vertical: 'venue', plural: 'gastronomies' },
+    { vertical: 'venue', plural: 'venues' },
     { vertical: 'experience', plural: 'experiences' }
 ] as const;
 

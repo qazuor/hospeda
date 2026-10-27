@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/protected/gastronomies/:id/daily-specials
+ * GET /api/v1/protected/venues/:id/daily-specials
  *
  * The owner's view of the venue's menú del día (HOS-1041).
  *

@@ -9,11 +9,11 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(
-    resolve(__dirname, '../../src/pages/[lang]/gastronomia/index.astro'),
+    resolve(__dirname, '../../src/pages/[lang]/comer-y-salir/index.astro'),
     'utf8'
 );
 
-describe('gastronomia/index.astro', () => {
+describe('comer-y-salir/index.astro', () => {
     describe('locale', () => {
         it('reads locale from Astro.locals.locale, not Astro.params.lang', () => {
             expect(src).toContain('Astro.locals.locale');

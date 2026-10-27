@@ -170,7 +170,7 @@ describe('ListingFaqManager', () => {
 
         await waitFor(() => {
             expect(mockPostProtected).toHaveBeenCalledWith({
-                path: '/api/v1/protected/gastronomies/listing-1/faqs',
+                path: '/api/v1/protected/venues/listing-1/faqs',
                 body: {
                     question: '¿Tienen wifi gratis?',
                     answer: 'Sí, en todo el salón.',
@@ -208,7 +208,7 @@ describe('ListingFaqManager', () => {
 
         await waitFor(() => {
             expect(mockPostProtected).toHaveBeenCalledWith({
-                path: '/api/v1/protected/gastronomies/listing-1/faqs',
+                path: '/api/v1/protected/venues/listing-1/faqs',
                 body: expect.objectContaining({ question: '¿Tienen delivery?' })
             });
         });
@@ -260,7 +260,7 @@ describe('ListingFaqManager', () => {
 
         await waitFor(() => {
             expect(mockPut).toHaveBeenCalledWith({
-                path: '/api/v1/protected/gastronomies/listing-1/faqs/faq-1',
+                path: '/api/v1/protected/venues/listing-1/faqs/faq-1',
                 body: expect.objectContaining({ question: '¿Cuándo abre el local?' })
             });
         });
@@ -292,7 +292,7 @@ describe('ListingFaqManager', () => {
 
         await waitFor(() => {
             expect(mockDelete).toHaveBeenCalledWith({
-                path: '/api/v1/protected/gastronomies/listing-1/faqs/faq-1'
+                path: '/api/v1/protected/venues/listing-1/faqs/faq-1'
             });
         });
 
@@ -322,7 +322,7 @@ describe('ListingFaqManager', () => {
 
         await waitFor(() => {
             expect(mockPut).toHaveBeenCalledWith({
-                path: '/api/v1/protected/gastronomies/listing-1/faqs/reorder',
+                path: '/api/v1/protected/venues/listing-1/faqs/reorder',
                 body: expect.objectContaining({ order: expect.any(Array) })
             });
         });

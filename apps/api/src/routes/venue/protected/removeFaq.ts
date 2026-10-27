@@ -1,5 +1,5 @@
 /**
- * DELETE /api/v1/protected/gastronomies/:id/faqs/:faqId
+ * DELETE /api/v1/protected/venues/:id/faqs/:faqId
  * Remove (soft-delete) a FAQ from a gastronomy listing (T-044)
  *
  * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).

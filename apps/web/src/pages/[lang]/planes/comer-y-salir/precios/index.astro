@@ -1,11 +1,11 @@
 ---
 /**
- * @file planes/gastronomia/precios/index.astro
+ * @file planes/comer-y-salir/precios/index.astro
  * @description Pricing page for the gastronomy vertical — level 3 of the three
  * HOS-941 D-7 defines: "which one do I pick and what does it cost", for a
  * visitor who has already decided to publish.
  *
- * @route     /[lang]/planes/gastronomia/precios/
+ * @route     /[lang]/planes/comer-y-salir/precios/
  * @rendering SSR (prerender=false) — reads the catalogue at request time so an
  *   operator's price edit in admin lands without a redeploy. Edge-cacheable via
  *   the `pricing` cache class, tagged `CACHE_TAG_PRICING`; the middleware is
@@ -16,7 +16,7 @@
  * ## Where this content came from
  *
  * The price block that used to live INSIDE `/publicar-restaurante/` (HOS-690).
- * That URL now 301s to `/planes/gastronomia/`, the sales page — the retirement
+ * That URL now 301s to `/planes/comer-y-salir/`, the sales page — the retirement
  * and this page are one move, which is why HOS-985 deliberately left both
  * undone: taking the old URL down before this page existed would have left the
  * vertical with no price anywhere.
@@ -91,7 +91,7 @@ const { copyRoot, faqs, hasComparison, priceMode } = resolvePricingPageContent({
 });
 
 const intlLocale = getIntlLocale(locale);
-const pagePath = buildUrl({ locale, path: 'planes/gastronomia/precios' });
+const pagePath = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 
 /**
@@ -125,8 +125,8 @@ const breadcrumbs = buildPricingBreadcrumbs({
     homeLabel: t('nav.home', 'Inicio'),
     homeUrl: `${siteOrigin}${buildUrl({ locale, path: '' })}`,
     salesLabel: t('gastronomy.landing.lead.title'),
-    salesPath: 'planes/gastronomia',
-    salesUrl: `${siteOrigin}${buildUrl({ locale, path: 'planes/gastronomia' })}`,
+    salesPath: 'planes/comer-y-salir',
+    salesUrl: `${siteOrigin}${buildUrl({ locale, path: 'planes/comer-y-salir' })}`,
     pageLabel: title,
     pageUrl: `${siteOrigin}${pagePath}`
 });

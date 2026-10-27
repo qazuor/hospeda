@@ -24,7 +24,7 @@ const verticals = [
 ] as const;
 const plural = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 } as const;
 const table = {

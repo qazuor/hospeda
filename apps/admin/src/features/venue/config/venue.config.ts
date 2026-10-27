@@ -89,16 +89,16 @@ const PRICE_RANGE_OPTIONS = [
  * Full entity list configuration for the gastronomy admin list page.
  * Built on top of the shared listing layer via `createListingListConfig`.
  *
- * Endpoint: `GET /api/v1/admin/gastronomies`
+ * Endpoint: `GET /api/v1/admin/venues`
  * Permissions gate: VENUE_VIEW_ALL
  */
 export const venueListConfig = createListingListConfig<VenueListItem>({
     entityName: 'gastronomies',
     entityKey: 'gastronomy',
     entityType: EntityType.VENUE,
-    apiEndpoint: '/api/v1/admin/gastronomies',
-    basePath: '/gastronomies',
-    detailPath: '/gastronomies/[id]',
+    apiEndpoint: '/api/v1/admin/venues',
+    basePath: '/venues',
+    detailPath: '/venues/[id]',
     // Use the admin LIST schema, which keeps the eager-loaded `owner` and
     // `destination` relation summaries. The base admin schema strips them, so the
     // grid could only show raw FK UUIDs in the Destino / Propietario columns.

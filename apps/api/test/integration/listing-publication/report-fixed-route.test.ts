@@ -28,7 +28,7 @@ const verticals = [
 type Vertical = (typeof verticals)[number];
 const segments: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const sqlTables: Readonly<Record<Vertical, string>> = {

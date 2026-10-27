@@ -1,5 +1,5 @@
 /**
- * DELETE /api/v1/admin/gastronomies/:id/faqs/:faqId
+ * DELETE /api/v1/admin/venues/:id/faqs/:faqId
  * Remove an existing FAQ from a gastronomy listing — Admin endpoint.
  */
 import { type VenueFaqRemoveInput, VenueFaqRemoveOutputSchema, VerticalEnum } from '@repo/schemas';
@@ -14,7 +14,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * DELETE /api/v1/admin/gastronomies/:id/faqs/:faqId
+ * DELETE /api/v1/admin/venues/:id/faqs/:faqId
  * Remove FAQ from gastronomy listing — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service helper

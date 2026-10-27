@@ -29,7 +29,7 @@ const tables: Readonly<Record<Vertical, string>> = {
 };
 const routeTables: Readonly<Record<Vertical, string>> = {
     ...tables,
-    [VerticalEnum.VENUE]: 'gastronomies'
+    [VerticalEnum.VENUE]: 'venues'
 };
 /** Each vertical's own permissions: create, "edit any", and the list read its router mounts on `/`. */
 const perms: Readonly<

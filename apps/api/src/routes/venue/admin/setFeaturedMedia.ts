@@ -1,5 +1,5 @@
 /**
- * PUT /api/v1/admin/gastronomies/:id/media/:mediaId/featured
+ * PUT /api/v1/admin/venues/:id/media/:mediaId/featured
  * Set the featured photo for a gastronomy listing gallery — Admin endpoint (HOS-372).
  *
  * Promotes the target `venue_media` row to `is_featured = true` and
@@ -25,7 +25,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * PUT /api/v1/admin/gastronomies/:id/media/:mediaId/featured
+ * PUT /api/v1/admin/venues/:id/media/:mediaId/featured
  * Set featured photo for gastronomy listing gallery — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service helper

@@ -133,7 +133,7 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         // "Publicar" button stopped leading to publishing. That is the defect
         // HOS-1156 fixes; this is the same case, inverted.
         expect(accommodation?.href).toBe('publicar');
-        expect(venue?.href).toBe('publicar/gastronomia');
+        expect(venue?.href).toBe('publicar/comer-y-salir');
         expect(experience?.href).toBe('publicar/experiencias');
 
         // Each vertical still goes to its OWN page — the property the previous

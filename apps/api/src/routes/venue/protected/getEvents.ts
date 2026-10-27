@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/protected/gastronomies/:id/events
+ * GET /api/v1/protected/venues/:id/events
  *
  * The owner's view of the venue's own agenda (HOS-1042) — every entry, in
  * order, `isActive: false` ones included.

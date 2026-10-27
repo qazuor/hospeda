@@ -68,7 +68,7 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     { url: '/es/alojamientos/', name: 'Accommodations List' },
     { url: '/es/destinos/', name: 'Destinations List' },
     { url: '/es/eventos/', name: 'Events List' },
-    { url: '/es/gastronomia/', name: 'Gastronomy List' },
+    { url: '/es/comer-y-salir/', name: 'Gastronomy List' },
     { url: '/es/experiencias/', name: 'Experiences List' },
     { url: '/es/publicaciones/', name: 'Posts List' },
     { url: '/es/nosotros/', name: 'About' },
@@ -86,7 +86,7 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     // HOS-1032, which turned them into 301s — a redirect has no markup to audit
     // and axe would run against whatever it lands on, double-counting the page
     // that IS listed.
-    { url: '/es/planes/gastronomia/', name: 'Sales Gastronomy' },
+    { url: '/es/planes/comer-y-salir/', name: 'Sales Gastronomy' },
     { url: '/es/planes/experiencias/', name: 'Sales Experience' },
     { url: '/es/planes/anfitriones/', name: 'Sales Host' },
     { url: '/es/planes/turistas/', name: 'Sales Tourist' },
@@ -101,7 +101,7 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     // old billing (HOS-1637, AC:B13a:21).
     { url: '/es/planes/anfitriones/precios/', name: 'Pricing Host' },
     { url: '/es/planes/turistas/precios/', name: 'Pricing Tourist' },
-    { url: '/es/planes/gastronomia/precios/', name: 'Pricing Gastronomy' },
+    { url: '/es/planes/comer-y-salir/precios/', name: 'Pricing Gastronomy' },
     { url: '/es/planes/experiencias/precios/', name: 'Pricing Experience' },
     // HOS-1156: the three publish pages. Swept SIGNED OUT, which is the state
     // this sweep runs in and also the one worth auditing hardest — it is what a
@@ -111,7 +111,7 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     // each mounts a DIFFERENT create island behind that CTA, so a fix on one
     // page's form proves nothing about the other two.
     { url: '/es/publicar/', name: 'Publish Accommodation' },
-    { url: '/es/publicar/gastronomia/', name: 'Publish Gastronomy' },
+    { url: '/es/publicar/comer-y-salir/', name: 'Publish Gastronomy' },
     { url: '/es/publicar/experiencias/', name: 'Publish Experience' },
     { url: '/en/', name: 'Home EN' },
     { url: '/pt/', name: 'Home PT' }
@@ -146,7 +146,7 @@ const DETAIL_ROUTE_SPECS: ReadonlyArray<DetailRouteSpec> = [
     },
     {
         name: 'Gastronomy Detail',
-        apiPath: '/api/v1/public/gastronomies?page=1&pageSize=1',
+        apiPath: '/api/v1/public/venues?page=1&pageSize=1',
         toUrl: (item) => buildEntityUrl({ basePath: 'gastronomia', slug: item.slug })
     },
     {

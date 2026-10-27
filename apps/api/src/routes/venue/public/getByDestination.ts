@@ -20,7 +20,7 @@ import { createPublicListRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/public/gastronomies/destination/:destinationId
+ * GET /api/v1/public/venues/destination/:destinationId
  * List gastronomy listings by destination — Public endpoint.
  *
  * Uses VenueService.search() with a forced destinationId filter.

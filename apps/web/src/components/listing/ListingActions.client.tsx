@@ -47,7 +47,7 @@ export interface ListingActionsProps {
 
 /** Public detail path segment per vertical (mirrors the `[slug].astro` routes). */
 const PUBLIC_PATH_BY_VERTICAL: Record<OwnerListingSummaryWithState['vertical'], string> = {
-    venue: 'gastronomia',
+    venue: 'comer-y-salir',
     experience: 'experiencias'
 };
 

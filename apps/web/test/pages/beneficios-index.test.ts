@@ -75,7 +75,7 @@ describe('beneficios/index.astro — the five audience sections', () => {
         // rather than at a URL that immediately forwards them there.
         expect(src).toContain("path: 'planes/anfitriones'");
         expect(src).toContain("path: 'planes/experiencias'");
-        expect(src).toContain("path: 'planes/gastronomia'");
+        expect(src).toContain("path: 'planes/comer-y-salir'");
         expect(src).toContain("path: 'sumate/partner'");
     });
 });

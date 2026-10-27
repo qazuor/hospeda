@@ -134,7 +134,7 @@ describe('GET /{id}/menu-qr — minting (AC-2)', () => {
         await app.request(`/${VENUE_ID}/menu-qr`);
 
         const input = mockGetOrCreateForEntity.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(input.targetUrl).toContain('/gastronomia/la-parrilla-del-sur/carta/');
+        expect(input.targetUrl).toContain('/comer-y-salir/la-parrilla-del-sur/carta/');
         expect(input.label).toContain('La Parrilla del Sur');
         expect(input.label).toContain('la-parrilla-del-sur');
     });

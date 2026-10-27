@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/protected/gastronomies/:id/menu-file
+ * POST /api/v1/protected/venues/:id/menu-file
  *
  * Uploads a photo or a PDF of the venue's printed menu (HOS-895) — the
  * alternative for the restaurant that will not type its carta dish by dish.

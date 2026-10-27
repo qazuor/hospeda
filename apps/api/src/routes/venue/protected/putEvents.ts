@@ -1,5 +1,5 @@
 /**
- * PUT /api/v1/protected/gastronomies/:id/events
+ * PUT /api/v1/protected/venues/:id/events
  *
  * Replaces the venue's own agenda with the submitted document (HOS-1042).
  *

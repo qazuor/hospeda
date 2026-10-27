@@ -76,7 +76,7 @@ export const ENTITY_PUBLIC_PATHS: Readonly<Record<NotifiableEntityType, (slug: s
         destination: (slug) => `/destinos/${slug}/`,
         event: (slug) => `/eventos/${slug}/`,
         post: (slug) => `/publicaciones/${slug}/`,
-        gastronomy: (slug) => `/gastronomia/${slug}/`,
+        gastronomy: (slug) => `/comer-y-salir/${slug}/`,
         experience: (slug) => `/experiencias/${slug}/`
     };
 

@@ -301,7 +301,7 @@ export const GET: APIRoute = async () => {
         fetchAllEntities(apiUrl, `${base}/destinations`, { includeEventCount: 'true' }),
         fetchAllEntities(apiUrl, `${base}/events`),
         fetchAllEntities(apiUrl, `${base}/posts`),
-        fetchAllEntities(apiUrl, `${base}/gastronomies`),
+        fetchAllEntities(apiUrl, `${base}/venues`),
         fetchAllEntities(apiUrl, `${base}/experiences`),
         fetchAllEntities(apiUrl, `${base}/attractions`),
         fetchAllEntities(apiUrl, `${base}/points-of-interest`),
@@ -337,7 +337,7 @@ export const GET: APIRoute = async () => {
         'alojamientos',
         'destinos',
         'eventos',
-        'gastronomia',
+        'comer-y-salir',
         'experiencias',
         'publicaciones'
     ] as const;
@@ -411,7 +411,7 @@ export const GET: APIRoute = async () => {
         })
     );
 
-    // Gastronomy: /gastronomia/{slug}/
+    // Gastronomy: /comer-y-salir/{slug}/
     entries.push(
         ...buildEntriesForEntity({
             items: resolvedVenue,

@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/protected/gastronomies/:id/menu-item-photo
+ * POST /api/v1/protected/venues/:id/menu-item-photo
  *
  * Uploads ONE dish photo and hands back the URL for the client to attach to a
  * dish in the carta document (HOS-1045).

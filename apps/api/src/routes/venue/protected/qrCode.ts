@@ -2,7 +2,7 @@
  * The owner's listing QR for a gastronomy listing, as an image (HOS-982 PR 2).
  *
  * ```
- * GET /api/v1/protected/gastronomies/{id}/qr
+ * GET /api/v1/protected/venues/{id}/qr
  * ```
  *
  * The accommodation twin (`routes/accommodation/protected/qrCode.ts`) carries
@@ -116,7 +116,7 @@ export async function handleGetVenueQrCode(
 }
 
 /**
- * GET /api/v1/protected/gastronomies/:id/qr
+ * GET /api/v1/protected/venues/:id/qr
  *
  * No entitlement gate — owner decision, see the accommodation twin.
  */

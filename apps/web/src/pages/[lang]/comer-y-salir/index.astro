@@ -6,7 +6,7 @@
  * a grid of VenueCard components with FilterSidebar, Pagination, EmptyState,
  * and ErrorBanner following the same pattern as alojamientos/index.astro.
  *
- * @route /{lang}/gastronomia/
+ * @route /{lang}/comer-y-salir/
  * @rendering SSR (on-demand)
  */
 
@@ -312,7 +312,7 @@ const filterSummary = buildVenueListingSummary({
     }
 });
 
-const baseUrl = buildUrl({ locale, path: 'gastronomia' });
+const baseUrl = buildUrl({ locale, path: 'comer-y-salir' });
 const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
 
 /**
@@ -339,7 +339,7 @@ const typeChips = VENUE_TYPES.map((value) => {
 });
 
 const itemListEntries = cards.map((card) => ({
-    url: new URL(buildUrl({ locale, path: `gastronomia/${card.slug}` }), Astro.site ?? Astro.url.origin)
+    url: new URL(buildUrl({ locale, path: `comer-y-salir/${card.slug}` }), Astro.site ?? Astro.url.origin)
         .href,
     name: card.name,
 }));

@@ -86,7 +86,7 @@ describe('BrochureDownloadButton (HOS-1058)', () => {
 
         await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
         const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-        expect(url).toBe('https://api.test/api/v1/protected/gastronomies/listing-1/brochure');
+        expect(url).toBe('https://api.test/api/v1/protected/venues/listing-1/brochure');
         // Without this the browser saves a 401 to the owner's disk.
         expect(init.credentials).toBe('include');
         expect((init.headers as Record<string, string>)['X-Client-Locale']).toBe('en');

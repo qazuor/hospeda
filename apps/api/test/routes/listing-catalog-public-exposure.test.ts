@@ -117,14 +117,14 @@ beforeEach(async () => {
     app = await initApp();
 });
 
-describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', () => {
+describe('GET /public/venues/slug/:slug — catalog exposure (HOS-1072)', () => {
     it('publishes the amenities the owner ticked', async () => {
         // Arrange
         venueSvc.getBySlug.mockResolvedValue({ data: minimalVenue });
         catalog.fetchVenueAmenities.mockResolvedValue([AMENITY_ROW]);
 
         // Act
-        const res = await app.request('/api/v1/public/gastronomies/slug/test-gastronomy', {
+        const res = await app.request('/api/v1/public/venues/slug/test-gastronomy', {
             headers: PUBLIC_HEADERS
         });
 
@@ -139,7 +139,7 @@ describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', 
         catalog.fetchVenueFeatures.mockResolvedValue([FEATURE_ROW]);
 
         // Act
-        const res = await app.request('/api/v1/public/gastronomies/slug/test-gastronomy', {
+        const res = await app.request('/api/v1/public/venues/slug/test-gastronomy', {
             headers: PUBLIC_HEADERS
         });
 
@@ -153,7 +153,7 @@ describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', 
         venueSvc.getBySlug.mockResolvedValue({ data: minimalVenue });
 
         // Act
-        await app.request('/api/v1/public/gastronomies/slug/test-gastronomy', {
+        await app.request('/api/v1/public/venues/slug/test-gastronomy', {
             headers: PUBLIC_HEADERS
         });
 
@@ -167,7 +167,7 @@ describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', 
         venueSvc.getBySlug.mockResolvedValue({ data: minimalVenue });
 
         // Act
-        const res = await app.request('/api/v1/public/gastronomies/slug/test-gastronomy', {
+        const res = await app.request('/api/v1/public/venues/slug/test-gastronomy', {
             headers: PUBLIC_HEADERS
         });
 
@@ -182,7 +182,7 @@ describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', 
         venueSvc.getBySlug.mockResolvedValue({ data: null });
 
         // Act
-        const res = await app.request('/api/v1/public/gastronomies/slug/missing', {
+        const res = await app.request('/api/v1/public/venues/slug/missing', {
             headers: PUBLIC_HEADERS
         });
 

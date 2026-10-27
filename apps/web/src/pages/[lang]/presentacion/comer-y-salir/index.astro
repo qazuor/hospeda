@@ -1,6 +1,6 @@
 ---
 /**
- * @file presentacion/gastronomia/index.astro
+ * @file presentacion/comer-y-salir/index.astro
  * @description Commercial presentation for the gastronomy vertical (HOS-978). It STARTED as a
  * verbatim migration of the owner-approved artifact "Presentación Gastronomía"; the stylesheet is still the artifact's own.
  *
@@ -69,21 +69,21 @@
  * WHY THE PRICES ARE PRINTED *AND* LINKED. HOS-1134 removed a hardcoded "quince mil pesos" that had been half the real
  * `venue-basico` price for two releases. The lesson is not "never print a number" — a presentation with no price is not a
  * presentation — it is that the number must travel with the live grid beside it. So the tier table carries the figures AND
- * every price mention links to `/{lang}/planes/gastronomia/precios/`, which reads the catalogue at request time from the public
+ * every price mention links to `/{lang}/planes/comer-y-salir/precios/`, which reads the catalogue at request time from the public
  * plans endpoint (`domain=gastronomy`). That link is what survives a reprice. It is NOT `/publicar-restaurante/` (301s to the
- * sales page since HOS-690) nor the bare `/planes/gastronomia`, which is the sales level, not the grid.
+ * sales page since HOS-690) nor the bare `/planes/comer-y-salir`, which is the sales level, not the grid.
  *
- * WHY IT IS NOT THE PUBLIC LANDING (/planes/gastronomia/), NOT TRANSLATED, AND STANDALONE — the four constraints every
+ * WHY IT IS NOT THE PUBLIC LANDING (/planes/comer-y-salir/), NOT TRANSLATED, AND STANDALONE — the four constraints every
  * `presentacion/*` page shares; see the sibling pages for the long form. That landing sells and ranks; this one is
  * hand-delivered to one prospect and carries negotiable pricing and operational detail, so `noindex, nofollow` is a
  * requirement, not a precaution, and the page is excluded from the sitemap (`lib/seo-config.ts` → SITEMAP_EXCLUDED_PATHS, which
  * also drives the robots.txt `Disallow`). The audience is local (HOS-978), so the same Spanish copy serves under `/en/` and
- * `/pt/` BY DESIGN — it lives under `[lang]/` only so the dictable `hospeda.com.ar/presentacion/gastronomia` 301s to `/es/…`
+ * `/pt/` BY DESIGN — it lives under `[lang]/` only so the dictable `hospeda.com.ar/presentacion/comer-y-salir` 301s to `/es/…`
  * via the middleware's locale step. `StandaloneLayout` because the page owns 100% of its chrome. And the stylesheet stays a
  * plain `<style>` block: `is:inline` would be dropped in prod, where the CSP omits `'unsafe-inline'` from `style-src`
  * (`lib/middleware-helpers.ts`) — perfect locally, unstyled live. Do not add it.
  *
- * @route /{lang}/presentacion/gastronomia/
+ * @route /{lang}/presentacion/comer-y-salir/
  * @rendering SSR + Cloudflare cache (matches funcionalidades/nosotros)
  */
 
@@ -105,7 +105,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 // translated, see "WHY IT IS NOT TRANSLATED" above). The destination is shown as visible text
 // under the button, derived from the same href, so a PDF export still says where it leads.
 const ctaLabel = 'Ver planes y precios';
-const ctaHref = 'https://hospeda.com.ar/es/planes/gastronomia/precios/';
+const ctaHref = 'https://hospeda.com.ar/es/planes/comer-y-salir/precios/';
 const ctaUrlText = ctaHref.replace(/^https?:\/\//, '');
 // Brand contact phone, single source of truth (HOS-364) — only the phone
 // digits are parameterized so a real number change does not require
@@ -123,8 +123,8 @@ applyCacheHeaders({
 	tags: [CACHE_TAG_SITE_CONFIG]
 });
 
-const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/gastronomia/`;
-const preciosUrl = buildUrl({ locale, path: 'planes/gastronomia/precios' });
+const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/comer-y-salir/`;
+const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
 ---
 
 <StandaloneLayout locale={locale}>
@@ -401,7 +401,7 @@ const preciosUrl = buildUrl({ locale, path: 'planes/gastronomia/precios' });
       <li><span class="tick">&check;</span><span><strong>Tu ficha en PDF, lista para imprimir</strong>: la foto, los horarios, el contacto y un QR que devuelve a tu página. Para el folleto del mostrador del hotel, el volante de la cabaña o la pila de la oficina de turismo &mdash; el único lugar donde tu ficha funciona sin internet.</span></li>
     </ul>
     <p class="subhead">
-      Tu página vive en <strong>hospeda.com.ar/es/gastronomia/tu-local</strong>, entra en el listado con buscador y
+      Tu página vive en <strong>hospeda.com.ar/es/comer-y-salir/tu-local</strong>, entra en el listado con buscador y
       filtros por ciudad, por tipo de cocina y por apto, y está escrita para que Google la encuentre.
     </p>
   </section>

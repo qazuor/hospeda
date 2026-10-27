@@ -10,7 +10,7 @@
  * before W2-1.
  *
  * **W2-4** covers the six pages W2-3 deliberately left uncached
- * (`/destinos/atraccion/`, `/destinos/lugar/`, `/gastronomia/`,
+ * (`/destinos/atraccion/`, `/destinos/lugar/`, `/comer-y-salir/`,
  * `/experiencias/` and the two gastronomy/experience detail pages). They were excluded
  * because `attraction`, `pointOfInterest`, `gastronomy` and `experience` had no
  * tag vocabulary, no `entity-tag-mapper` case, and their services never called
@@ -162,7 +162,7 @@ const CATALOG_PAGES: readonly CatalogPage[] = [
  */
 const W2_4_PAGES = [
     {
-        path: 'gastronomia/index.astro',
+        path: 'comer-y-salir/index.astro',
         tag: 'CACHE_TAG_COLLECTIONS.venue',
         kind: 'collection'
     },
@@ -171,7 +171,7 @@ const W2_4_PAGES = [
         tag: 'CACHE_TAG_COLLECTIONS.experience',
         kind: 'collection'
     },
-    { path: 'gastronomia/[slug].astro', tag: 'venue', kind: 'entity' },
+    { path: 'comer-y-salir/[slug].astro', tag: 'venue', kind: 'entity' },
     { path: 'experiencias/[slug].astro', tag: 'experience', kind: 'entity' },
     { path: 'destinos/atraccion/[slug]/index.astro', tag: 'attraction', kind: 'entity' },
     { path: 'destinos/lugar/[slug]/index.astro', tag: 'pointOfInterest', kind: 'entity' }
@@ -337,7 +337,7 @@ describe('W2-4 pages — cacheable now that their purge chain exists (HOS-369)',
         // is the `!result.ok` 404. If the call ever moves above that gate, a
         // non-public listing becomes shareable from the edge — the worst
         // possible cache bug, and one no page would visibly fail on.
-        for (const path of ['gastronomia/[slug].astro', 'experiencias/[slug].astro']) {
+        for (const path of ['comer-y-salir/[slug].astro', 'experiencias/[slug].astro']) {
             const source = readPage(path);
             const gate = source.indexOf('if (!result.ok)');
             const call = source.indexOf('applyCacheHeaders({');

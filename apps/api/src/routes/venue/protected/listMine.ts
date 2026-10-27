@@ -19,7 +19,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/protected/gastronomies/mine
+ * GET /api/v1/protected/venues/mine
  * Lists the authenticated owner's own gastronomy listings (summary view).
  */
 export const protectedListMyVenueRoute = createProtectedRoute({

@@ -91,7 +91,7 @@ describe('GastronomyDailySpecialsManager', () => {
         // Assert
         await waitFor(() => {
             expect(mockGet).toHaveBeenCalledWith({
-                path: `/api/v1/protected/gastronomies/${LISTING_ID}/daily-specials`
+                path: `/api/v1/protected/venues/${LISTING_ID}/daily-specials`
             });
         });
         expect(await screen.findByDisplayValue('Milanesa a la napolitana')).toBeTruthy();

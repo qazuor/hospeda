@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/admin/gastronomies/:id/media
+ * GET /api/v1/admin/venues/:id/media
  * List photos in a gastronomy listing gallery — Admin endpoint (HOS-372).
  *
  * Returns all non-deleted media rows for the given listing, ordered by
@@ -17,7 +17,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/admin/gastronomies/:id/media
+ * GET /api/v1/admin/venues/:id/media
  * List gastronomy listing gallery photos — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission (mirrors the internal

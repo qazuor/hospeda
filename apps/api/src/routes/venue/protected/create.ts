@@ -1,7 +1,7 @@
 /**
  * Owner self-service gastronomy listing create endpoint (HOS-166 §7.2).
  *
- *   POST /api/v1/protected/gastronomies/
+ *   POST /api/v1/protected/venues/
  *
  * Mirrors the accommodation owner create (`POST /protected/accommodations/`)
  * and the admin create at `venue/admin/create.ts`. The gastronomy
@@ -84,7 +84,7 @@ export async function handleCreateVenueListing(ctx: Context, body: Record<string
 }
 
 /**
- * POST /api/v1/protected/gastronomies/
+ * POST /api/v1/protected/venues/
  *
  * Creates a gastronomy listing owned by the caller. Starts as a
  * `DRAFT` (D-3) — see module docstring.

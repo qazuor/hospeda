@@ -137,7 +137,7 @@ describe('cacheable pages demote their error responses', () => {
     it('the page HOS-1154 measured is policed, and passes', () => {
         // Named explicitly so the guard cannot pass by accidentally excluding
         // the exact file the issue reproduced on.
-        const venue = path.join(WEB_SRC, 'pages/[lang]/gastronomia/index.astro');
+        const venue = path.join(WEB_SRC, 'pages/[lang]/comer-y-salir/index.astro');
 
         expect(fs.existsSync(venue)).toBe(true);
         expect(isPolicedFile({ source: fs.readFileSync(venue, 'utf8') })).toBe(true);
@@ -322,7 +322,7 @@ describe('detector: reaching the marker', () => {
     });
 
     it('THE IMPORT TRAP: importing the banner without rendering it is NOT enough', () => {
-        // Reproduced by review on `pages/[lang]/gastronomia/index.astro` — the
+        // Reproduced by review on `pages/[lang]/comer-y-salir/index.astro` — the
         // exact page HOS-1154 measured. Replacing the `<ErrorBanner …>` render
         // with inline markup and leaving the import alone put the public
         // Cache-Control straight back on the error response, and the FIRST
@@ -624,7 +624,7 @@ describe('detector: import resolution', () => {
     it('resolves the @/ alias against src, the way the app writes it', () => {
         const resolved = resolveLocalImport({
             specifier: '@/lib/cache/response-cache',
-            fromFile: path.join(WEB_SRC, 'pages/[lang]/gastronomia/index.astro'),
+            fromFile: path.join(WEB_SRC, 'pages/[lang]/comer-y-salir/index.astro'),
             srcRoot: WEB_SRC
         });
 

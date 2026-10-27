@@ -71,7 +71,7 @@ describe('fetchOwnerListings', () => {
 describe('fetchOwnerListingDetail', () => {
     const detail = { id: 'abc', ownerId: 'owner-1', name: 'La Parrilla', slug: 'la-parrilla' };
 
-    it('fetches gastronomy detail from the gastronomies path', async () => {
+    it('fetches gastronomy detail from the venues path', async () => {
         mockGetProtected.mockResolvedValueOnce({ ok: true, data: detail });
 
         const result = await fetchOwnerListingDetail({
@@ -82,7 +82,7 @@ describe('fetchOwnerListingDetail', () => {
 
         expect(result).toEqual(detail);
         expect(mockGetProtected).toHaveBeenCalledWith({
-            path: '/api/v1/protected/gastronomies/abc',
+            path: '/api/v1/protected/venues/abc',
             cookieHeader: 'session=x'
         });
     });

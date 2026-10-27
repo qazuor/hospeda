@@ -84,7 +84,7 @@ describe('PublishButton listing verticals (TEST:1729:2, TEST:1729:3)', () => {
     });
 
     it.each([
-        ['venue', '/es/planes/gastronomia/precios/'],
+        ['venue', '/es/planes/comer-y-salir/precios/'],
         ['experience', '/es/planes/experiencias/precios/']
     ] as const)('uses %s pricing for server subscription rejection', async (vertical, href) => {
         verticalPublish.mockResolvedValue({

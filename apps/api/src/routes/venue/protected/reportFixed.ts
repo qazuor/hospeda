@@ -22,7 +22,7 @@ const ownerAccess: MiddlewareHandler = async (ctx, next) => {
 };
 
 /**
- * POST /api/v1/protected/gastronomies/{id}/fix-request/report-fixed — row 30
+ * POST /api/v1/protected/venues/{id}/fix-request/report-fixed — row 30
  * (HOS-1492, H4): the owner reports that they fixed what the open fix request
  * asked. Idempotent; 409 `NO_OPEN_FIX_REQUEST` without an open request. Anybody
  * else gets 404.

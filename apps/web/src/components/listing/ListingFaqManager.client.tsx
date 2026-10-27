@@ -178,7 +178,7 @@ function faqBasePath({
     vertical: VenueOrExperience;
     listingId: string;
 }): string {
-    const entity = vertical === 'venue' ? 'gastronomies' : 'experiences';
+    const entity = vertical === 'venue' ? 'venues' : 'experiences';
     return `/api/v1/protected/${entity}/${listingId}/faqs`;
 }
 

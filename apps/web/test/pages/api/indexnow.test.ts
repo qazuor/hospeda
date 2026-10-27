@@ -198,9 +198,9 @@ describe('POST /api/indexnow — what it submits', () => {
 
         const { payload } = submitToIndexNow.mock.calls[0][0];
         expect(payload.urlList).toEqual([
-            `${SITE}/es/gastronomia/parrilla-x/`,
-            `${SITE}/en/gastronomia/parrilla-x/`,
-            `${SITE}/pt/gastronomia/parrilla-x/`
+            `${SITE}/es/comer-y-salir/parrilla-x/`,
+            `${SITE}/en/comer-y-salir/parrilla-x/`,
+            `${SITE}/pt/comer-y-salir/parrilla-x/`
         ]);
     });
 

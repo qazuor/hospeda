@@ -12,7 +12,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 
 const service = new ListingModerationService();
 
-/** POST /api/v1/admin/gastronomies/{id}/moderate — ACC:12 two-level moderation; the legacy moderation column was retired by V6.9b (HOS-1641). */
+/** POST /api/v1/admin/venues/{id}/moderate — ACC:12 two-level moderation; the legacy moderation column was retired by V6.9b (HOS-1641). */
 export const adminModerateVenueRoute = createAdminRoute({
     method: 'post',
     successStatusCode: 200,

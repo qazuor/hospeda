@@ -69,7 +69,7 @@ const PRICING_URLS: readonly string[] = [
     '/es/suscriptores/planes/',
     '/es/planes/anfitriones/precios/',
     '/es/planes/turistas/precios/',
-    '/es/planes/gastronomia/precios/',
+    '/es/planes/comer-y-salir/precios/',
     '/es/planes/experiencias/precios/'
 ];
 

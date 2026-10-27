@@ -4,7 +4,7 @@
  *
  * Mirrors the useAccommodationMedia test pattern, plus vertical-specific
  * assertions to guard the singular→plural route-segment mapping
- * (`'venue'` → `/gastronomies/...`, `'experience'` → `/experiences/...`):
+ * (`'venue'` → `/venues/...`, `'experience'` → `/experiences/...`):
  *   - Mock fetchApi at module level
  *   - Wrap hooks in a fresh QueryClientProvider with retries disabled
  *   - Assert: correct path/method/body sent to fetchApi, per vertical
@@ -65,7 +65,7 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('useListingMediaList — response envelope parsing', () => {
-    it('calls GET on the gastronomies endpoint for vertical="venue"', async () => {
+    it('calls GET on the venues endpoint for vertical="venue"', async () => {
         const items = [makeMedia({ id: 'media-1' }), makeMedia({ id: 'media-2' })];
         mockedFetchApi.mockResolvedValue({
             data: { success: true, data: { media: items } },
@@ -80,7 +80,7 @@ describe('useListingMediaList — response envelope parsing', () => {
 
         expect(mockedFetchApi).toHaveBeenCalledWith(
             expect.objectContaining({
-                path: '/api/v1/admin/gastronomies/ent-1/media?state=visible'
+                path: '/api/v1/admin/venues/ent-1/media?state=visible'
             })
         );
         expect(result.current.data).toHaveLength(2);
@@ -264,7 +264,7 @@ describe('useListingMediaSetFeatured', () => {
 
         expect(mockedFetchApi).toHaveBeenCalledWith(
             expect.objectContaining({
-                path: '/api/v1/admin/gastronomies/ent-1/media/media-7/featured',
+                path: '/api/v1/admin/venues/ent-1/media/media-7/featured',
                 method: 'PUT'
             })
         );

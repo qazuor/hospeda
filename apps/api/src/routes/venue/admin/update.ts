@@ -19,7 +19,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * PUT /api/v1/admin/gastronomies/:id
+ * PUT /api/v1/admin/venues/:id
  * Update gastronomy listing — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service layer (`_canUpdate`)

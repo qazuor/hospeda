@@ -33,7 +33,7 @@ import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
  */
 export const PUBLISH_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: 'publicar',
-    venue: 'publicar/gastronomia',
+    venue: 'publicar/comer-y-salir',
     experience: 'publicar/experiencias'
 } as const;
 
@@ -58,7 +58,7 @@ export const ACCOUNT_LISTINGS_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalS
  */
 export const PLANS_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: 'planes/anfitriones',
-    venue: 'planes/gastronomia',
+    venue: 'planes/comer-y-salir',
     experience: 'planes/experiencias'
 } as const;
 

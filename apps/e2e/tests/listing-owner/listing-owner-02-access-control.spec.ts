@@ -173,7 +173,7 @@ test.describe('LISTING-OWNER-02: access-control negative paths @p0 @listing-owne
         // detail.ownerId === user.id, for the hub and every section alike
         // (HOS-1080 moved it out of the single page into the shared resolver).
         // Rodrigo's listing ownerId !== Julieta's userId → redirect to /mi-cuenta/comercio/.
-        const rivalEditorUrl = `${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${RODRIGO_GASTRONOMY_ID}/editar`;
+        const rivalEditorUrl = `${WEB_URL}/es/mi-cuenta/comercio/venue/${RODRIGO_GASTRONOMY_ID}/editar`;
         await page.goto(rivalEditorUrl, { waitUntil: 'domcontentloaded' });
 
         // The ownership gate redirects to /[lang]/mi-cuenta/comercio/ (her index).

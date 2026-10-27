@@ -1,5 +1,5 @@
 /**
- * PUT /api/v1/protected/gastronomies/:id/menu
+ * PUT /api/v1/protected/venues/:id/menu
  *
  * Replaces the venue's structured carta with the submitted document (HOS-895).
  *

@@ -20,7 +20,7 @@ import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { ListingGalleryManager } from '@/features/listing';
 import { useVenueQuery } from '@/features/venue';
 
-export const Route = createFileRoute('/_authed/gastronomies/$id_/gallery')({
+export const Route = createFileRoute('/_authed/venues/$id_/gallery')({
     component: VenueGalleryPage
 });
 
@@ -45,7 +45,7 @@ function VenueGalleryPage() {
             <div className="space-y-4">
                 <PageTabs
                     tabs={venueTabs}
-                    basePath={`/gastronomies/${id}`}
+                    basePath={`/venues/${id}`}
                 />
 
                 <div className="rounded-lg border bg-card p-6">

@@ -1,5 +1,5 @@
 /**
- * PATCH /api/v1/admin/gastronomies/:id/media/:mediaId
+ * PATCH /api/v1/admin/venues/:id/media/:mediaId
  * Correct the text metadata of a gastronomy gallery photo (HOS-1036).
  *
  * The gastronomy twin of `accommodation/admin/updateMedia.ts` (HOS-388). Until this

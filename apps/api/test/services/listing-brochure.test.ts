@@ -154,7 +154,7 @@ describe('the QR target (HOS-1058)', () => {
                 locale: 'es',
                 siteUrl: 'https://hospeda.com.ar'
             })
-        ).toBe('https://hospeda.com.ar/es/gastronomia/la-parrilla-del-puerto/');
+        ).toBe('https://hospeda.com.ar/es/comer-y-salir/la-parrilla-del-puerto/');
     });
 
     it('builds the experience ficha URL, whose segment differs from the vertical name', () => {
@@ -176,7 +176,7 @@ describe('the QR target (HOS-1058)', () => {
                 locale: 'pt',
                 siteUrl: 'https://hospeda.com.ar/'
             })
-        ).toBe('https://hospeda.com.ar/pt/gastronomia/x/');
+        ).toBe('https://hospeda.com.ar/pt/comer-y-salir/x/');
     });
 });
 

@@ -40,7 +40,7 @@ describe('fetchOwnerListingsWithState — PURGED (HOS-1641)', () => {
     it('does not fetch the detail of a PURGED listing and leaves its completeness null', async () => {
         // Arrange
         getProtected.mockImplementation(async ({ path }: { path: string }) => {
-            if (path.endsWith('/gastronomies/mine')) {
+            if (path.endsWith('/venues/mine')) {
                 return {
                     ok: true,
                     data: {
@@ -64,7 +64,7 @@ describe('fetchOwnerListingsWithState — PURGED (HOS-1641)', () => {
         const detailPaths = getProtected.mock.calls
             .map(([args]) => (args as { path: string }).path)
             .filter((path) => !path.endsWith('/mine'));
-        expect(detailPaths).toEqual(['/api/v1/protected/gastronomies/draft']);
+        expect(detailPaths).toEqual(['/api/v1/protected/venues/draft']);
 
         const purged = listings.find((listing) => listing.id === 'purged');
         expect(purged?.publicationStatus).toBe(PublicationStatusEnum.PURGED);

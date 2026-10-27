@@ -71,7 +71,7 @@ function content(overrides: Partial<BrochureContent> = {}): BrochureContent {
         price: '$$ — precio medio',
         intro: 'Parrilla a la vista sobre el río Uruguay, con pescado de la zona.',
         sections: [{ heading: 'Horarios', lines: ['Martes: 12:00 a 15:30', 'Miércoles: cerrado'] }],
-        url: 'https://hospeda.com.ar/es/gastronomia/la-parrilla-del-puerto/',
+        url: 'https://hospeda.com.ar/es/comer-y-salir/la-parrilla-del-puerto/',
         qrHint: 'Escaneá para ver la ficha completa',
         footer: 'Hospeda · hospeda.com.ar',
         coverImageUrl: null,
@@ -277,13 +277,13 @@ describe('what the QR encodes (HOS-1129)', () => {
 
     it('ignores content.url, which the sheet no longer draws anywhere', async () => {
         const short = await renderBrochurePdf({
-            content: content({ url: 'https://hospeda.com.ar/es/gastronomia/a/' }),
+            content: content({ url: 'https://hospeda.com.ar/es/comer-y-salir/a/' }),
             cover: null,
             qrUrl: QR_URL
         });
         const long = await renderBrochurePdf({
             content: content({
-                url: `https://hospeda.com.ar/es/gastronomia/${'un-slug-larguisimo-'.repeat(6)}/`
+                url: `https://hospeda.com.ar/es/comer-y-salir/${'un-slug-larguisimo-'.repeat(6)}/`
             }),
             cover: null,
             qrUrl: QR_URL
@@ -315,7 +315,7 @@ describe('what the QR encodes (HOS-1129)', () => {
     it('prints the bare domain beside the code, not the listing address', async () => {
         const bytes = await renderBrochurePdf({
             content: content({
-                url: 'https://hospeda.com.ar/es/gastronomia/la-parrilla-del-puerto/',
+                url: 'https://hospeda.com.ar/es/comer-y-salir/la-parrilla-del-puerto/',
                 footer: 'Hospeda'
             }),
             cover: null,
@@ -326,9 +326,9 @@ describe('what the QR encodes (HOS-1129)', () => {
         // The deep path is the half that would rot. Assert the whole address
         // and the path alone: a renderer that printed either is caught.
         expect(
-            drawsText(bytes, 'https://hospeda.com.ar/es/gastronomia/la-parrilla-del-puerto/')
+            drawsText(bytes, 'https://hospeda.com.ar/es/comer-y-salir/la-parrilla-del-puerto/')
         ).toBe(false);
-        expect(drawsText(bytes, '/es/gastronomia/')).toBe(false);
+        expect(drawsText(bytes, '/es/comer-y-salir/')).toBe(false);
         // Nor the opaque redirect, which was the other option on the table.
         expect(drawsText(bytes, 'K7Qm2XbT')).toBe(false);
     });
@@ -417,7 +417,8 @@ describe('text fitting (HOS-1058)', () => {
     it('breaks a single over-wide word instead of letting it run off the paper', async () => {
         const font = await helvetica();
         // The real case: a long URL in the contact block of a printed sheet.
-        const url = 'https://hospeda.com.ar/es/gastronomia/un-slug-extremadamente-largo-de-verdad/';
+        const url =
+            'https://hospeda.com.ar/es/comer-y-salir/un-slug-extremadamente-largo-de-verdad/';
         const lines = wrapText({ text: url, font, size: 8.5, maxWidth: 90 });
 
         expect(lines.length).toBeGreaterThan(1);

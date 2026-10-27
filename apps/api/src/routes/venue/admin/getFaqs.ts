@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/admin/gastronomies/:id/faqs
+ * GET /api/v1/admin/venues/:id/faqs
  * Get all FAQs for a gastronomy listing — Admin endpoint.
  */
 import { PermissionEnum, VenueFaqListOutputSchema } from '@repo/schemas';
@@ -13,7 +13,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/admin/gastronomies/:id/faqs
+ * GET /api/v1/admin/venues/:id/faqs
  * Get gastronomy FAQs — Admin endpoint.
  *
  * Requires VENUE_VIEW_ALL. Uses the standalone `listVenueFaqs` helper

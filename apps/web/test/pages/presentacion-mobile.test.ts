@@ -131,7 +131,7 @@ describe('closing CTA', () => {
         'alojamientos',
         'editores',
         'experiencias',
-        'gastronomia',
+        'comer-y-salir',
         'proveedores'
     ];
 

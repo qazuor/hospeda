@@ -217,7 +217,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
                 amenityIds: [],
                 featureIds: []
             } as never);
-            const path = `/api/v1/protected/gastronomies/${LISTING_ID}`;
+            const path = `/api/v1/protected/venues/${LISTING_ID}`;
             const without = await probe({
                 actorId: OWNER_ID,
                 emailVerified: false,
@@ -243,7 +243,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
                 amenityIds: [],
                 featureIds: []
             } as never);
-            const path = `/api/v1/protected/gastronomies/${LISTING_ID}`;
+            const path = `/api/v1/protected/venues/${LISTING_ID}`;
             const without = await probe({
                 actorId: OWNER_ID,
                 emailVerified: false,
@@ -267,7 +267,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
                 amenityIds: [],
                 featureIds: []
             } as never);
-            const path = `/api/v1/protected/gastronomies/${LISTING_ID}`;
+            const path = `/api/v1/protected/venues/${LISTING_ID}`;
             const unverified = await probe({
                 actorId: OWNER_ID,
                 emailVerified: false,

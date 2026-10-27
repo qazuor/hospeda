@@ -28,7 +28,7 @@ const table = {
 } as const;
 const segment = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 } as const;
 const permissions = [

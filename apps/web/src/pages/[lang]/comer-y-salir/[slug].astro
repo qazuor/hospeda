@@ -10,7 +10,7 @@
  * - The listing is not PUBLISHED: the public read answers it like an unknown
  *   slug (HOS-1641), so this is the same `!result.ok` case.
  *
- * @route /{lang}/gastronomia/{slug}/
+ * @route /{lang}/comer-y-salir/{slug}/
  * @rendering SSR (on-demand)
  */
 
@@ -220,7 +220,7 @@ const amenitiesForGrid = showEventsCta
     ? venue.amenities.filter((amenity) => amenity.name !== 'private_events')
     : venue.amenities;
 
-const canonicalPath = buildUrl({ locale, path: `gastronomia/${venue.slug}/` });
+const canonicalPath = buildUrl({ locale, path: `comer-y-salir/${venue.slug}/` });
 
 // Sign-in URL (with return path) for the anonymous review CTA.
 const reviewSignInHref = buildLoginRedirect({ locale, currentUrl: canonicalPath });
@@ -249,7 +249,7 @@ const breadcrumbItems = [
     { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
     {
         name: t('gastronomy.listing.title', 'Gastronomía'),
-        url: `${siteOrigin}/${locale}/gastronomia/`
+        url: `${siteOrigin}/${locale}/comer-y-salir/`
     },
     { name: venue.name, url: `${siteOrigin}${Astro.url.pathname}` }
 ];
@@ -286,7 +286,7 @@ const breadcrumbItems = [
         items={[
             {
                 label: t('gastronomy.listing.title', 'Gastronomía'),
-                path: 'gastronomia/'
+                path: 'comer-y-salir/'
             },
             { label: venue.name }
         ]}

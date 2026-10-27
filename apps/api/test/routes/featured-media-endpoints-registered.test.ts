@@ -94,11 +94,11 @@ const COVER_ENDPOINTS: ReadonlyArray<{
         caller: 'apps/admin — useAccommodationMediaAddFeatured (mediaEndpoint → /api/v1/admin)'
     },
     {
-        path: `/api/v1/protected/gastronomies/${ID}/media/featured`,
+        path: `/api/v1/protected/venues/${ID}/media/featured`,
         caller: 'protected tier parity with the admin route below'
     },
     {
-        path: `/api/v1/admin/gastronomies/${ID}/media/featured`,
+        path: `/api/v1/admin/venues/${ID}/media/featured`,
         caller: 'apps/admin — useListingMediaAddFeatured, vertical gastronomy'
     },
     {

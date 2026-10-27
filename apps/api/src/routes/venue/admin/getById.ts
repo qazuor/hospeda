@@ -13,7 +13,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/admin/gastronomies/:id
+ * GET /api/v1/admin/venues/:id
  * Get gastronomy listing by ID — Admin endpoint.
  *
  * Gate requires VENUE_VIEW_ALL; the service layer additionally enforces

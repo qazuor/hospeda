@@ -65,8 +65,8 @@ const FAMILY_DIR = resolve(__dirname, '../../src/pages/[lang]/planes');
 const EXPECTED_AUDIENCES = [
     // `aliados` was removed with the old billing (HOS-1637, AC:B13a:21).
     'anfitriones',
+    'comer-y-salir',
     'experiencias',
-    'gastronomia',
     'turistas'
 ] as const;
 

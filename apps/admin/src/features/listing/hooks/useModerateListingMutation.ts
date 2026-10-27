@@ -20,6 +20,7 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 import {
+    PURGE_LISTING_ENTITY_NAME,
     PURGE_LISTING_PLURAL,
     type PurgeListingVertical
 } from './usePurgeListingOnRequestMutation';
@@ -76,7 +77,7 @@ export function useModerateListingMutation() {
         },
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({
-                queryKey: [PURGE_LISTING_PLURAL[variables.vertical]]
+                queryKey: [PURGE_LISTING_ENTITY_NAME[variables.vertical]]
             });
         }
     });

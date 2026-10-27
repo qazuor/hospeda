@@ -49,7 +49,7 @@ const FACET_SURFACE_PAGES = [
     'alojamientos/index.astro',
     'eventos/index.astro',
     'publicaciones/index.astro',
-    'gastronomia/index.astro',
+    'comer-y-salir/index.astro',
     'experiencias/index.astro',
     'destinos/index.astro',
     'destinos/[...path].astro'

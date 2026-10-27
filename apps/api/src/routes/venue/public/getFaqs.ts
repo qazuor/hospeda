@@ -25,7 +25,7 @@ import { createPublicRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/public/gastronomies/:gastronomyId/faqs
+ * GET /api/v1/public/venues/:gastronomyId/faqs
  * List FAQs for a gastronomy listing — Public endpoint.
  *
  * Returns the FAQ array ordered by displayOrder ASC NULLS LAST.

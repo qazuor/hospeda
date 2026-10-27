@@ -44,7 +44,8 @@ const SRC_DIR = resolve(__dirname, '../../src');
 const SUPERSEDED_PATHS: ReadonlyArray<{ readonly path: string; readonly replacement: string }> = [
     { path: 'publicar/nueva', replacement: 'publicar' },
     { path: 'mi-cuenta/comercio/nuevo', replacement: 'publicar/{vertical page}' },
-    { path: 'publicar-restaurante', replacement: 'publicar/gastronomia' },
+    { path: 'publicar-restaurante', replacement: 'publicar/comer-y-salir' },
+    { path: 'publicar/gastronomia', replacement: 'publicar/comer-y-salir' },
     { path: 'publicar-experiencia', replacement: 'publicar/experiencias' }
 ];
 
@@ -63,7 +64,8 @@ const EXEMPT: Readonly<Record<string, string>> = {
     'pages/[lang]/mi-cuenta/comercio/nuevo/[vertical].astro': 'The 301 itself.',
     'lib/seo/static-sitemap-pages.ts':
         'Classifies retired URLs as redirect-only so the sitemap never advertises one.',
-    'lib/routes.ts': 'PUBLIC_REDIRECT_PATHS names the retired path it exempts from the login gate.'
+    'lib/routes.ts': 'PUBLIC_REDIRECT_PATHS names the retired path it exempts from the login gate.',
+    'lib/legacy-redirects.ts': 'The redirect map must name the old route prefixes it resolves.'
 };
 
 /** Every source file the guard walks. */

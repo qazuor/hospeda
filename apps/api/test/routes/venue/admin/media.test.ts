@@ -2,11 +2,11 @@
  * Tests for gastronomy media routes — Admin tier (HOS-372).
  *
  * Covers:
- * - POST   /api/v1/admin/gastronomies/:id/media
- * - GET    /api/v1/admin/gastronomies/:id/media
- * - PATCH  /api/v1/admin/gastronomies/:id/media/reorder
- * - PUT    /api/v1/admin/gastronomies/:id/media/:mediaId/featured
- * - DELETE /api/v1/admin/gastronomies/:id/media/:mediaId
+ * - POST   /api/v1/admin/venues/:id/media
+ * - GET    /api/v1/admin/venues/:id/media
+ * - PATCH  /api/v1/admin/venues/:id/media/reorder
+ * - PUT    /api/v1/admin/venues/:id/media/:mediaId/featured
+ * - DELETE /api/v1/admin/venues/:id/media/:mediaId
  *
  * Testing strategy: mock the standalone `@repo/service-core` media helper
  * functions so no real DB is needed, then exercise the routes via
@@ -82,7 +82,7 @@ import type { AppOpenAPI } from '../../../../src/types.js';
 const VENUE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const MEDIA_ID_1 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb01';
 const MEDIA_ID_2 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb02';
-const BASE = `/api/v1/admin/gastronomies/${VENUE_ID}/media`;
+const BASE = `/api/v1/admin/venues/${VENUE_ID}/media`;
 
 const NOW = new Date('2026-01-15T12:00:00.000Z');
 

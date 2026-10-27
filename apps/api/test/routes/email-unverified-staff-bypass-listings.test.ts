@@ -131,7 +131,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
                 publicationStatus: PublicationStatusEnum.ARCHIVED,
                 ports: listingMocks
             });
-            const path = `/api/v1/protected/gastronomies/${LISTING_ID}/reactivate`;
+            const path = `/api/v1/protected/venues/${LISTING_ID}/reactivate`;
             const without = await probe({
                 actorId: OWNER_ID,
                 emailVerified: false,
@@ -158,7 +158,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
                 actorId: OWNER_ID,
                 emailVerified: true,
                 permissions: [PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT],
-                path: `/api/v1/protected/gastronomies/${LISTING_ID}/reactivate`
+                path: `/api/v1/protected/venues/${LISTING_ID}/reactivate`
             });
             expect(result.status, JSON.stringify(result)).toBe(403);
             expect((result.body.error as { code: string }).code).toBe('FORBIDDEN');
@@ -176,7 +176,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
                     publicationStatus: PublicationStatusEnum.ARCHIVED
                 })
             } as never);
-            const path = `/api/v1/protected/gastronomies/${LISTING_ID}/reactivate`;
+            const path = `/api/v1/protected/venues/${LISTING_ID}/reactivate`;
             const unverified = await probe({
                 actorId: OWNER_ID,
                 emailVerified: false,

@@ -84,7 +84,7 @@ async function patchGastronomy(options: {
     readonly sessionCookie: string;
     readonly body: Record<string, unknown>;
 }): Promise<Response> {
-    return fetch(`${API_URL}/api/v1/protected/gastronomies/${options.listingId}`, {
+    return fetch(`${API_URL}/api/v1/protected/venues/${options.listingId}`, {
         method: 'PATCH',
         headers: {
             'content-type': 'application/json',

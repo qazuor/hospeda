@@ -91,7 +91,7 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
 
     test.beforeAll(async () => {
         const rows = await execSQL<{ id: string; social_networks: Record<string, string> | null }>(
-            'SELECT id, social_networks FROM gastronomies WHERE slug = $1 LIMIT 1',
+            'SELECT id, social_networks FROM venues WHERE slug = $1 LIMIT 1',
             [GASTRONOMY_SLUG]
         );
         const row = rows[0];
@@ -107,12 +107,12 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
         if (originalLinkedIn === null) {
             // Remove the linkedIn key from the JSON.
             await execSQL(
-                "UPDATE gastronomies SET social_networks = social_networks - 'linkedIn' WHERE slug = $1",
+                "UPDATE venues SET social_networks = social_networks - 'linkedIn' WHERE slug = $1",
                 [GASTRONOMY_SLUG]
             );
         } else {
             await execSQL(
-                "UPDATE gastronomies SET social_networks = jsonb_set(COALESCE(social_networks, '{}'::jsonb), '{linkedIn}', $1::jsonb) WHERE slug = $2",
+                "UPDATE venues SET social_networks = jsonb_set(COALESCE(social_networks, '{}'::jsonb), '{linkedIn}', $1::jsonb) WHERE slug = $2",
                 [JSON.stringify(originalLinkedIn), GASTRONOMY_SLUG]
             );
         }
@@ -220,7 +220,7 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
 
         const saved = await saveListingEditor({
             page,
-            pathPattern: /\/protected\/gastronomies\//
+            pathPattern: /\/protected\/venues\//
         });
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
 

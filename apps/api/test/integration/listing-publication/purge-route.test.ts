@@ -35,7 +35,7 @@ const tables: Readonly<Record<(typeof verticals)[number], string>> = {
 };
 const routeTables: Readonly<Record<(typeof verticals)[number], string>> = {
     ...tables,
-    [VerticalEnum.VENUE]: 'gastronomies'
+    [VerticalEnum.VENUE]: 'venues'
 };
 const createFixture: Readonly<
     Record<

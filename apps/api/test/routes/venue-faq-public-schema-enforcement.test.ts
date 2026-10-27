@@ -1,7 +1,7 @@
 /**
  * Regression tests for SPEC-210 PR2 — gastronomy FAQ public schema enforcement.
  *
- * Verifies that GET /api/v1/public/gastronomies/:gastronomyId/faqs serializes
+ * Verifies that GET /api/v1/public/venues/:gastronomyId/faqs serializes
  * responses through `GastronomyFaqPublicSchema` and NEVER leaks the internal-only
  * fields: `createdAt`, `updatedAt`, `createdById`, `updatedById`, `deletedAt`,
  * `deletedById`, and `lifecycleState`.
@@ -9,7 +9,7 @@
  * The "Schema unit tests — always run (no DB required)" block runs unconditionally
  * so a schema revert is caught even in the DB-less CI environment.
  *
- * Endpoint: GET /api/v1/public/gastronomies/:gastronomyId/faqs
+ * Endpoint: GET /api/v1/public/venues/:gastronomyId/faqs
  */
 
 import { VenueFaqPublicListOutputSchema, VenueFaqPublicSchema } from '@repo/schemas';
@@ -129,10 +129,10 @@ describe('GastronomyFaqPublicSchema — unit tests (no DB, always run) (SPEC-210
 // Route-level regression tests (may be skipped if DB unavailable)
 // ---------------------------------------------------------------------------
 
-describe('GET /api/v1/public/gastronomies/:gastronomyId/faqs — schema enforcement (SPEC-210)', () => {
+describe('GET /api/v1/public/venues/:gastronomyId/faqs — schema enforcement (SPEC-210)', () => {
     let app: AppOpenAPI;
     const gastronomyId = '223e4567-e89b-12d3-a456-426614174000';
-    const base = `/api/v1/public/gastronomies/${gastronomyId}/faqs`;
+    const base = `/api/v1/public/venues/${gastronomyId}/faqs`;
 
     beforeAll(async () => {
         app = initApp();

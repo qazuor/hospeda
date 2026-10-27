@@ -46,7 +46,7 @@ const VenueReviewProtectedSchema = VenueReviewSchema.pick({
 });
 
 /**
- * POST /api/v1/protected/gastronomies/:gastronomyId/reviews
+ * POST /api/v1/protected/venues/:gastronomyId/reviews
  * Create a gastronomy review — Protected endpoint.
  *
  * gastronomyId and userId are supplied by the URL and the authenticated actor

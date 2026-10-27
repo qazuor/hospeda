@@ -39,7 +39,7 @@ const tables: Readonly<Record<Vertical, string>> = {
 };
 const routeTables: Readonly<Record<Vertical, string>> = {
     ...tables,
-    [VerticalEnum.VENUE]: 'gastronomies'
+    [VerticalEnum.VENUE]: 'venues'
 };
 const viewAll: Readonly<Record<Vertical, PermissionEnum>> = {
     [VerticalEnum.ACCOMMODATION]: PermissionEnum.ACCOMMODATION_VIEW_ALL,

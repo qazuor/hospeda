@@ -83,7 +83,7 @@ describe('TEST:1702:3 AC:1702:2 a failed remote deletion of the menu file and di
         for (const publicId of remoteIds) storage.stored.add(publicId);
         const warn = vi.spyOn(apiLogger, 'warn').mockImplementation(() => undefined);
         const response = await readResponse(
-            await app.request(`/api/v1/protected/gastronomies/${fixture.listingId}/purge`, {
+            await app.request(`/api/v1/protected/venues/${fixture.listingId}/purge`, {
                 method: 'POST',
                 headers: actorHeaders({ id: fixture.ownerId })
             })

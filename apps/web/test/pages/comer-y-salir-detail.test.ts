@@ -8,11 +8,11 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(
-    resolve(__dirname, '../../src/pages/[lang]/gastronomia/[slug].astro'),
+    resolve(__dirname, '../../src/pages/[lang]/comer-y-salir/[slug].astro'),
     'utf8'
 );
 
-describe('gastronomia/[slug].astro', () => {
+describe('comer-y-salir/[slug].astro', () => {
     describe('locale', () => {
         it('reads locale from Astro.locals.locale, not Astro.params.lang', () => {
             expect(src).toContain('Astro.locals.locale');
@@ -114,7 +114,7 @@ describe('gastronomia/[slug].astro', () => {
 
         it('uses Breadcrumbs with gastronomia link', () => {
             expect(src).toContain('Breadcrumbs');
-            expect(src).toContain('gastronomia/');
+            expect(src).toContain('comer-y-salir/');
         });
     });
 

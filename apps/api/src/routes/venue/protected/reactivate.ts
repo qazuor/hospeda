@@ -7,7 +7,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 
 const listingPublicationService = new ListingPublicationService();
 
-/** POST /api/v1/protected/gastronomies/{id}/reactivate */
+/** POST /api/v1/protected/venues/{id}/reactivate */
 export const protectedReactivateVenueRoute = createProtectedRoute({
     method: 'post',
     successStatusCode: 200,

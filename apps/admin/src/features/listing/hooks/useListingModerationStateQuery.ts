@@ -2,6 +2,7 @@ import { ListingModerationStateSchema } from '@repo/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 import {
+    PURGE_LISTING_ENTITY_NAME,
     PURGE_LISTING_PLURAL,
     type PurgeListingVertical
 } from './usePurgeListingOnRequestMutation';
@@ -38,7 +39,7 @@ export function useListingModerationStateQuery({
     readonly id: string;
 }) {
     return useQuery({
-        queryKey: [PURGE_LISTING_PLURAL[vertical], id, 'moderation'],
+        queryKey: [PURGE_LISTING_ENTITY_NAME[vertical], id, 'moderation'],
         queryFn: async () => {
             const response = await fetchApi<{ data?: unknown }>({
                 path: buildListingModerationStatePath({ vertical, id }),

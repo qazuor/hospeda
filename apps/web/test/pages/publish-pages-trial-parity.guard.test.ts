@@ -6,8 +6,8 @@
  *
  * `/publicar/index.astro` (accommodation) had 52 references to `trial`: a
  * hero callout promising the free trial length, and an expired-trial banner.
- * `/publicar/gastronomia/` and `/publicar/experiencias/` had ZERO — even
- * though their own SALES landings (`/planes/gastronomia/`,
+ * `/publicar/comer-y-salir/` and `/publicar/experiencias/` had ZERO — even
+ * though their own SALES landings (`/planes/comer-y-salir/`,
  * `/planes/experiencias/`) already promise a free trial one click away. A
  * gastronomy or experience owner who reached the publish form directly never
  * saw the promise their own funnel had just made them.
@@ -68,8 +68,8 @@ const PUBLISH_PAGES: ReadonlyArray<{
             'const showTrialCallout = shouldShowPublishTrialCallout({ isTrialExpired: false, trialEligibility });'
     },
     {
-        route: '/{lang}/publicar/gastronomia/',
-        file: 'publicar/gastronomia/index.astro',
+        route: '/{lang}/publicar/comer-y-salir/',
+        file: 'publicar/comer-y-salir/index.astro',
         vertical: 'venue',
         trialCalloutWiring: null
     },

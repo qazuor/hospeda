@@ -65,7 +65,7 @@ const READY_QR = {
     data: {
         svg: '<svg>qr</svg>',
         url: 'https://hospeda.com.ar/qr/abc123',
-        targetUrl: 'https://hospeda.com.ar/es/gastronomia/la-parrilla/carta/',
+        targetUrl: 'https://hospeda.com.ar/es/comer-y-salir/la-parrilla/carta/',
         slug: 'la-parrilla',
         qrSlug: 'abc123'
     }

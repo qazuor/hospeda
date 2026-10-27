@@ -1160,7 +1160,7 @@ only surface that lists partners.
 
 ### Publishing: one page per vertical (HOS-1156)
 
-`/{lang}/publicar/`, `/{lang}/publicar/gastronomia/` and
+`/{lang}/publicar/`, `/{lang}/publicar/comer-y-salir/` and
 `/{lang}/publicar/experiencias/` are the three pages the header's "Publicar"
 menu opens. Each one carries the funnel AND the create form — there is no
 funnel/form pair any more, and no vertical picker. Four rules a future reader

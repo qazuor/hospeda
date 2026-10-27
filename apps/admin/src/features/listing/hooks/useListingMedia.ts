@@ -85,6 +85,12 @@ export const listingMediaQueryKeys = {
 
 /** Maps the singular vertical name to its plural admin route segment. */
 const VERTICAL_ROUTE_SEGMENT: Record<ListingMediaVertical, string> = {
+    venue: 'venues',
+    experience: 'experiences'
+};
+
+/** Entity query roots remain the entityName configured by each listing feature. */
+const VERTICAL_ENTITY_NAME: Record<ListingMediaVertical, string> = {
     venue: 'gastronomies',
     experience: 'experiences'
 };
@@ -101,10 +107,8 @@ const mediaEndpoint = (vertical: ListingMediaVertical, entityId: string) =>
  * "no cover" right after one was uploaded, until some unrelated refetch
  * happened to refresh it.
  *
- * The entity key is built from the same `VERTICAL_ROUTE_SEGMENT` map the
- * endpoint uses, which is also the `entityName` the listing entity hooks are
- * created with (`'gastronomies'` / `'experiences'`) — so the two cannot drift
- * apart into invalidating a key nobody reads.
+ * The entity key uses the feature's `entityName` (`'gastronomies'` /
+ * `'experiences'`) so it stays aligned with the listing entity hooks.
  *
  * Written once and shared by all three mutations rather than pasted into each
  * `onSuccess`: three copies is how one of them silently keeps the stale-entity
@@ -119,7 +123,7 @@ function invalidateAfterMediaMutation(
         queryKey: listingMediaQueryKeys.list(vertical, entityId)
     });
     queryClient.invalidateQueries({
-        queryKey: createEntityQueryKeys(VERTICAL_ROUTE_SEGMENT[vertical]).detail(entityId)
+        queryKey: createEntityQueryKeys(VERTICAL_ENTITY_NAME[vertical]).detail(entityId)
     });
 }
 

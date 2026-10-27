@@ -1,6 +1,6 @@
 /**
  * Unit tests for the owner self-service gastronomy create handler (HOS-166 §7.2, D-3):
- * `handleCreateVenueListing` behind `POST /api/v1/protected/gastronomies/`.
+ * `handleCreateVenueListing` behind `POST /api/v1/protected/venues/`.
  *
  * The handler is exported standalone and exercised against a mocked `Context`,
  * with `VenueService` replaced by a spy so the exact payload passed to

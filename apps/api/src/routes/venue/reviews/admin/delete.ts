@@ -13,7 +13,7 @@ import { createAdminRoute } from '../../../../utils/route-factory';
 const venueReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
- * DELETE /api/v1/admin/gastronomies/reviews/:id
+ * DELETE /api/v1/admin/venues/reviews/:id
  * Soft delete gastronomy review — Admin endpoint.
  *
  * Requires VENUE_MODERATE_REVIEW permission. The service layer

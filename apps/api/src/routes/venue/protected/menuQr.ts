@@ -2,7 +2,7 @@
  * The owner's menu QR and its printable image (HOS-1044 §6.2).
  *
  * ```
- * GET /api/v1/protected/gastronomies/{id}/menu-qr
+ * GET /api/v1/protected/venues/{id}/menu-qr
  * ```
  *
  * ## Order of refusals
@@ -143,7 +143,7 @@ export async function handleGetVenueMenuQr(
 }
 
 /**
- * GET /api/v1/protected/gastronomies/:id/menu-qr
+ * GET /api/v1/protected/venues/:id/menu-qr
  *
  * Owner-only menu QR read requiring menu_qr_scan_metrics on the listing owner.
  */

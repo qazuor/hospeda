@@ -56,7 +56,7 @@ describe('buildListingCreateUrl', () => {
             '/es/publicar/experiencias/'
         );
         expect(buildListingCreateUrl({ locale: 'es', vertical: 'venue' })).toBe(
-            '/es/publicar/gastronomia/'
+            '/es/publicar/comer-y-salir/'
         );
     });
 
@@ -93,7 +93,7 @@ describe('buildListingStartUrl', () => {
 
         it('carries the vertical publish page as returnUrl (gastronomy)', () => {
             const url = buildListingStartUrl({ locale: 'es', vertical: 'venue' });
-            expect(url).toBe('/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fgastronomia%2F');
+            expect(url).toBe('/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fcomer-y-salir%2F');
         });
 
         it('survives signup.astro s open-redirect guard, per locale and vertical', () => {

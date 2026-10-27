@@ -24,7 +24,7 @@ const listingVerticals: readonly ListingVertical[] = [
 ];
 const plural: Readonly<Record<ListingVertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const instanceIds = new Set<string>();

@@ -64,7 +64,7 @@ describe('shouldNofollowFacetHref', () => {
             ['/pt/destinos/concepcion-del-uruguay/?categories=termas', 'POI categories'],
             ['?categories=termas', 'query-only href (island SSR shape)'],
             ['/es/destinos/?attractions=a,b#dest-filter-top', 'destinos attractions + fragment'],
-            ['/es/gastronomia/?type=RESTAURANT', 'gastronomy type'],
+            ['/es/comer-y-salir/?type=RESTAURANT', 'gastronomy type'],
             ['/es/alojamientos/?sortBy=price&checkIn=2026-08-01', 'date param in 2nd position'],
             ['/es/alojamientos/?q=cabana', 'internal search results']
         ])('nofollows %s (%s)', (href) => {

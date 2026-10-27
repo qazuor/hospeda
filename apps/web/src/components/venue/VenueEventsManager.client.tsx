@@ -115,7 +115,7 @@ export function VenueEventsManager({
     const [message, setMessage] = useState<string | null>(null);
     const [isLocked, setIsLocked] = useState(false);
 
-    const basePath = `/api/v1/protected/gastronomies/${listingId}/events`;
+    const basePath = `/api/v1/protected/venues/${listingId}/events`;
 
     // ── Load ────────────────────────────────────────────────────────────────
     // The panel reads its own state rather than receiving it from the SSR

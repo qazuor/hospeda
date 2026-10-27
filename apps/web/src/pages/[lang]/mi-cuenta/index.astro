@@ -689,7 +689,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         if (isListingView) {
             try {
                 const [venueRes, experienceRes] = await Promise.all([
-                    fetch(`${base}/gastronomies/mine`, { credentials: 'include' }),
+                    fetch(`${base}/venues/mine`, { credentials: 'include' }),
                     fetch(`${base}/experiences/mine`, { credentials: 'include' }),
                 ]);
 

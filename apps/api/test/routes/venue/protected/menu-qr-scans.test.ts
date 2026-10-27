@@ -166,7 +166,7 @@ describe('GET /{id}/menu-qr/scans — existing code', () => {
             data: {
                 id: QR_ID,
                 slug: 'k7Qm2XbT',
-                targetUrl: 'https://hospeda.com.ar/es/gastronomia/x/carta/'
+                targetUrl: 'https://hospeda.com.ar/es/comer-y-salir/x/carta/'
             }
         });
     });

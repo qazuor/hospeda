@@ -13,7 +13,7 @@ import { createAdminListRoute } from '../../../../utils/route-factory';
 const venueReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
- * GET /api/v1/admin/gastronomies/reviews
+ * GET /api/v1/admin/venues/reviews
  * List all gastronomy reviews — Admin endpoint.
  *
  * Returns all reviews including PENDING and REJECTED (not filtered to APPROVED

@@ -16,12 +16,12 @@ import { validateApiEnv } from '../../src/utils/env';
 
 type Route = { readonly method: string; readonly path: string };
 
-const LISTING_PLURALS = ['accommodations', 'gastronomies', 'experiences'] as const;
+const LISTING_PLURALS = ['accommodations', 'venues', 'experiences'] as const;
 const TIERS = ['admin', 'protected'] as const;
 
 /** A listing path itself, or its `/hard` or `/restore` suffix (no sub-resource). */
 const LISTING_DOOR_PATH =
-    /^\/api\/v1\/(admin|protected)\/(accommodations|gastronomies|experiences)\/:id(\/hard|\/restore)?$/;
+    /^\/api\/v1\/(admin|protected)\/(accommodations|venues|experiences)\/:id(\/hard|\/restore)?$/;
 
 let routes: Route[];
 
@@ -37,6 +37,10 @@ beforeAll(() => {
 });
 
 describe('TEST:V6:33 AC:V6:25 no listing or account delete door outside the design', () => {
+    it('includes venues in the closed listing path set', () => {
+        expect(LISTING_PLURALS).toContain('venues');
+    });
+
     it('enumerates the live app routes', () => {
         expect(routes.length).toBeGreaterThan(100);
     });

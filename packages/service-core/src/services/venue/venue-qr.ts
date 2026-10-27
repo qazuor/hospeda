@@ -39,7 +39,7 @@ const QR_CODE_LABEL_MAX_LENGTH = 200;
  * stored target was minted with — the venue's slug is not captured, because
  * the whole point of a repoint is to write a NEW one over it.
  */
-const VENUE_MENU_PATH_PATTERN = /^\/([a-z]{2})\/gastronomia\/[^/]+\/carta\/?$/;
+const VENUE_MENU_PATH_PATTERN = /^\/([a-z]{2})\/(?:gastronomia|comer-y-salir)\/[^/]+\/carta\/?$/; // legacy-name-allowed: pre-rename QR targets must remain recognisable;
 
 /**
  * Builds the absolute URL a menu QR should redirect to.
