@@ -3,7 +3,7 @@
  * Page-orchestrator hook for the experience view and edit pages (SPEC-240 T-028).
  *
  * Centralises data loading, mode switching, and navigation so route components
- * stay thin.  Mirrors the `useGastronomyPage` pattern adapted for the
+ * stay thin.  Mirrors the `useVenuePage` pattern adapted for the
  * experience entity's consolidated config.
  */
 

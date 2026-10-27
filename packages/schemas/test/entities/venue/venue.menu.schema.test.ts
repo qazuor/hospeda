@@ -159,7 +159,7 @@ describe('the menu-file columns are not writable from a listing body (HOS-895)',
     /*
      * REGRESSION ANCHOR. `menuFileUrl`, `menuFilePublicId` and `menuFileKind`
      * are written by `POST`/`DELETE /gastronomies/{id}/menu-file` and by nothing
-     * else — but adding them to `GastronomySchema` made three of the four write
+     * else — but adding them to `VenueSchema` made three of the four write
      * schemas accept them silently, because those three are built with
      * `.omit(...)` and therefore take every field they are not told to drop.
      * Measured before the fix: all three kept `javascript:alert(1)` verbatim.
@@ -173,7 +173,7 @@ describe('the menu-file columns are not writable from a listing body (HOS-895)',
      *    media provider, so a body that sets it to another listing's Cloudinary
      *    id turns that route into a cross-tenant asset delete.
      *
-     * The render-side gate in `GastronomyMenuManager` covers the first no matter
+     * The render-side gate in `VenueMenuManager` covers the first no matter
      * how the row was written; this covers both at the boundary.
      */
     const HOSTILE = {

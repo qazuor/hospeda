@@ -28,7 +28,7 @@
  *
  * Field-group coverage (SPEC-253 additions marked *, HOS-166 D-1 marked †):
  *   † name + destinationId (SPEC-239 decision #5 reversed — the owner now
- *     loads their own identity, see `GastronomyOwnerUpdateInputSchema`'s JSDoc)
+ *     loads their own identity, see `VenueOwnerUpdateInputSchema`'s JSDoc)
  *   * type select (per-vertical enum, T-020)
  *   * summary textarea (min 10 / max 300, T-020)
  *   T-012 mechanics + richDescription
@@ -189,7 +189,7 @@ function sameStringList(a: readonly string[], b: readonly string[]): boolean {
  * Map an emptied field to an explicit `null` rather than to `undefined`.
  *
  * `contactInfo` (HOS-1190) and `socialNetworks` (HOS-1262) are MERGEABLE JSONB
- * columns on `GastronomyModel` and `ExperienceModel` (following the `users`
+ * columns on `VenueModel` and `ExperienceModel` (following the `users`
  * precedent of HOS-375), so
  * the PATCH is shallow-merged into the stored object with PostgreSQL `||`
  * instead of replacing it. Under merge semantics an OMITTED key means "leave
@@ -530,7 +530,7 @@ export function ListingEditor({
 
     // HOS-166 D-1: name + destinationId + description are identity fields the
     // owner may edit (description was widened alongside name/destinationId on
-    // the schema — see `GastronomyOwnerUpdateInputSchema`/
+    // the schema — see `VenueOwnerUpdateInputSchema`/
     // `ExperienceOwnerUpdateInputSchema` — but the FORM never exposed it,
     // leaving it settable only at create, contradicting AC-19).
     const buildInitialEditData = (): ListingEditData => ({

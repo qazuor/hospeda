@@ -77,7 +77,7 @@ function buildSortPhrase({
  * Build the natural-language summary sentence for a gastronomy or
  * experience) listing. Always returns a single sentence ending with a
  * period. Page authors should not call this directly — use
- * `buildGastronomyListingSummary` / `buildExperienceListingSummary` from
+ * `buildVenueListingSummary` / `buildExperienceListingSummary` from
  * `index.ts`, which supply the fixed entity config.
  */
 export function buildListingSummary({

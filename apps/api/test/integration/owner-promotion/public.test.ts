@@ -198,17 +198,8 @@ describe('GET /api/v1/public/owner-promotions/:id', () => {
         expect(res.status).toBe(404);
     });
 
-    // HOS-1897: a DRAFT promotion answers 403, which confirms the id exists.
-    it('currently answers 403 for a DRAFT promotion (HOS-1897)', async () => {
-        // Arrange / Act
-        const res = await app.request(`${base}/${seeded.draftId}`, { headers });
-
-        // Assert
-        expect(res.status).toBe(403);
-    });
-
-    // Drop `.fails` (and the test above) once HOS-1897 is fixed.
-    it.fails('returns 404 NOT_FOUND for a DRAFT promotion (HOS-1897)', async () => {
+    // HOS-1897: a non-public promotion must be indistinguishable from an unknown id.
+    it('returns 404 NOT_FOUND for a DRAFT promotion (HOS-1897)', async () => {
         // Arrange / Act
         const res = await app.request(`${base}/${seeded.draftId}`, { headers });
 

@@ -17,7 +17,7 @@
  * {@link EditorRegistry} the caller supplies.
  *
  * Nothing here knows about a vertical. `accommodation-editor-sections.ts`,
- * `gastronomy-editor-sections.ts` and `experience-editor-sections.ts` each
+ * `venue-editor-sections.ts` and `experience-editor-sections.ts` each
  * declare one registry and the rest of the editor reads only this file.
  */
 

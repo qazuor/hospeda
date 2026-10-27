@@ -1,0 +1,135 @@
+/**
+ * @file venue.config.ts
+ * Entity list configuration for the gastronomy admin list page.
+ *
+ * Uses `createListingListConfig` from the generic listing layer so that the
+ * shared filter scaffold (destination, featured, ownerId, includeDeleted) is
+ * applied automatically.  Gastronomy-specific filters (type, priceRange) are
+ * injected via `extraFilters`.
+ */
+
+import {
+    PermissionEnum,
+    PriceRangeEnum,
+    VenueAdminListItemSchema,
+    VenueTypeEnum
+} from '@repo/schemas';
+import type { z } from 'zod';
+import { createEntityListPage } from '@/components/entity-list';
+import { EntityType } from '@/components/table/DataTable';
+import { createListingListConfig } from '@/features/listing';
+import { createVenueColumns } from './venue.columns';
+
+// ---------------------------------------------------------------------------
+// List-item shape
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimal list-item shape for the gastronomy table.
+ * Picks the subset of fields actually rendered in columns.
+ */
+export type VenueListItem = Pick<
+    z.infer<typeof VenueAdminListItemSchema>,
+    | 'id'
+    | 'name'
+    | 'type'
+    | 'priceRange'
+    | 'destinationId'
+    | 'featuredByEntitlement'
+    | 'ownerId'
+    | 'createdAt'
+    | 'destination'
+    | 'owner'
+    | 'publicationStatus'
+>;
+
+// ---------------------------------------------------------------------------
+// Filter options
+// ---------------------------------------------------------------------------
+
+const VENUE_TYPE_OPTIONS = [
+    { value: VenueTypeEnum.RESTAURANT, labelKey: 'admin-filters.gastronomyType.restaurant' },
+    { value: VenueTypeEnum.BAR, labelKey: 'admin-filters.gastronomyType.bar' },
+    { value: VenueTypeEnum.CAFE, labelKey: 'admin-filters.gastronomyType.cafe' },
+    { value: VenueTypeEnum.PARRILLA, labelKey: 'admin-filters.gastronomyType.parrilla' },
+    {
+        value: VenueTypeEnum.CERVECERIA,
+        labelKey: 'admin-filters.gastronomyType.cerveceria'
+    },
+    {
+        value: VenueTypeEnum.HELADERIA,
+        labelKey: 'admin-filters.gastronomyType.heladeria'
+    },
+    {
+        value: VenueTypeEnum.PANADERIA,
+        labelKey: 'admin-filters.gastronomyType.panaderia'
+    },
+    {
+        value: VenueTypeEnum.ROTISERIA,
+        labelKey: 'admin-filters.gastronomyType.rotiseria'
+    },
+    {
+        value: VenueTypeEnum.FOOD_TRUCK,
+        labelKey: 'admin-filters.gastronomyType.foodTruck'
+    }
+] as const;
+
+const PRICE_RANGE_OPTIONS = [
+    { value: PriceRangeEnum.BUDGET, labelKey: 'admin-filters.priceRange.budget' },
+    { value: PriceRangeEnum.MID, labelKey: 'admin-filters.priceRange.mid' },
+    { value: PriceRangeEnum.HIGH, labelKey: 'admin-filters.priceRange.high' },
+    { value: PriceRangeEnum.PREMIUM, labelKey: 'admin-filters.priceRange.premium' }
+] as const;
+
+// ---------------------------------------------------------------------------
+// Entity config
+// ---------------------------------------------------------------------------
+
+/**
+ * Full entity list configuration for the gastronomy admin list page.
+ * Built on top of the shared listing layer via `createListingListConfig`.
+ *
+ * Endpoint: `GET /api/v1/admin/gastronomies`
+ * Permissions gate: GASTRONOMY_VIEW_ALL
+ */
+export const venueListConfig = createListingListConfig<VenueListItem>({
+    entityName: 'gastronomies',
+    entityKey: 'gastronomy',
+    entityType: EntityType.VENUE,
+    apiEndpoint: '/api/v1/admin/gastronomies',
+    basePath: '/gastronomies',
+    detailPath: '/gastronomies/[id]',
+    // Use the admin LIST schema, which keeps the eager-loaded `owner` and
+    // `destination` relation summaries. The base admin schema strips them, so the
+    // grid could only show raw FK UUIDs in the Destino / Propietario columns.
+    // TYPE-WORKAROUND: schema carries branded effects from @repo/schemas;
+    // structurally compatible with the list-item shape, brand-only mismatch.
+    listItemSchema: VenueAdminListItemSchema as unknown as import('zod').ZodSchema<VenueListItem>,
+    createColumns: createVenueColumns,
+    extraFilters: [
+        {
+            paramKey: 'type',
+            labelKey: 'admin-filters.gastronomyType.label' as const,
+            type: 'select' as const,
+            order: 10,
+            // TYPE-WORKAROUND: option constant is a readonly tuple; the filter config expects a mutable array.
+            options: VENUE_TYPE_OPTIONS as unknown as { value: string; labelKey: string }[]
+        },
+        {
+            paramKey: 'priceRange',
+            labelKey: 'admin-filters.priceRange.label' as const,
+            type: 'select' as const,
+            order: 11,
+            // TYPE-WORKAROUND: option constant is a readonly tuple; the filter config expects a mutable array.
+            options: PRICE_RANGE_OPTIONS as unknown as { value: string; labelKey: string }[]
+        }
+    ]
+});
+
+// Derive the route + component from the config via the generic list-page factory
+const { component, route } = createEntityListPage(venueListConfig);
+
+export { component as VenuesPageComponent, route as VenuesRoute };
+
+/** Required permission to view the gastronomy list. */
+export const VENUE_VIEW_PERMISSION = PermissionEnum.GASTRONOMY_VIEW_ALL;

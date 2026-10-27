@@ -110,14 +110,14 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
     });
 
     it('resolves each listing door only for its vertical owner (HOS-134)', () => {
-        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const venue = listing?.options.find((option) => option.id === 'gastronomy');
         const experience = listing?.options.find((option) => option.id === 'experience');
-        expect(gastronomy).toBeDefined();
+        expect(venue).toBeDefined();
         expect(experience).toBeDefined();
-        if (!gastronomy || !experience) return;
+        if (!venue || !experience) return;
         expect(
             resolveDoorOptionState({
-                option: gastronomy,
+                option: venue,
                 visibility: (node) => isVisibleByRoles(node, [RoleEnum.GASTRONOMY_OWNER])
             })
         ).toBe('acquired');
@@ -135,7 +135,7 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
         ).toBe('acquired');
         expect(
             resolveDoorOptionState({
-                option: gastronomy,
+                option: venue,
                 visibility: (node) => isVisibleByRoles(node, [RoleEnum.EXPERIENCE_OWNER])
             })
         ).toBe('unacquired');

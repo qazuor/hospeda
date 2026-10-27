@@ -147,7 +147,7 @@ describe('BasicInfoSection', () => {
                 onFieldChange={vi.fn()}
             />
         );
-        const gastronomyOptions = Array.from(
+        const venueOptions = Array.from(
             (screen.getByLabelText('Categoría') as HTMLSelectElement).options
         ).map((o) => o.value);
         unmount();
@@ -167,9 +167,9 @@ describe('BasicInfoSection', () => {
             (screen.getByLabelText('Categoría') as HTMLSelectElement).options
         ).map((o) => o.value);
 
-        expect(gastronomyOptions.length).toBeGreaterThan(1);
+        expect(venueOptions.length).toBeGreaterThan(1);
         expect(experienceOptions.length).toBeGreaterThan(1);
-        expect(gastronomyOptions).not.toEqual(experienceOptions);
+        expect(venueOptions).not.toEqual(experienceOptions);
     });
 
     it('interpolates the summary counter instead of printing the template (BETA-124)', () => {

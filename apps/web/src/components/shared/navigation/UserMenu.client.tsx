@@ -117,7 +117,7 @@ const HOST_PERMISSION = 'accommodation.create' as const;
  * Permission that marks a user as a gastronomy listing owner (self-service,
  * SPEC-253). Fed to PostHog as `is_gastronomy_owner`.
  */
-const GASTRONOMY_OWNER_PERMISSION = 'gastronomy.editOwn' as const;
+const VENUE_OWNER_PERMISSION = 'gastronomy.editOwn' as const;
 
 /**
  * Permission that marks a user as an experience listing owner (self-service,
@@ -134,7 +134,7 @@ function resolveAnalyticsUserType(input: {
     }
     if (
         permissions?.includes(HOST_PERMISSION) ||
-        permissions?.includes(GASTRONOMY_OWNER_PERMISSION) ||
+        permissions?.includes(VENUE_OWNER_PERMISSION) ||
         permissions?.includes(EXPERIENCE_OWNER_PERMISSION)
     ) {
         return 'owner';
@@ -229,7 +229,7 @@ export function UserMenu({
                       user_type: resolveAnalyticsUserType({ permissions }),
                       roles: rolesKey.length > 0 ? rolesKey.split(',') : [],
                       is_host: permissions.includes(HOST_PERMISSION),
-                      is_gastronomy_owner: permissions.includes(GASTRONOMY_OWNER_PERMISSION),
+                      is_gastronomy_owner: permissions.includes(VENUE_OWNER_PERMISSION),
                       is_experience_owner: permissions.includes(EXPERIENCE_OWNER_PERMISSION),
                       is_staff: permissions.includes(STAFF_DISCRIMINATOR_PERMISSION)
                   };

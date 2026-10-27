@@ -19,7 +19,7 @@ import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { ListingActions } from '@/components/listing/ListingActions.client';
 import { ListingViewsWidget } from '@/components/listing/ListingViewsWidget.client';
-import { GastronomyMenuQrWidget } from '@/components/gastronomy/GastronomyMenuQrWidget.client';
+import { VenueMenuQrWidget } from '@/components/venue/VenueMenuQrWidget.client';
 import ListingNotices from '@/components/listing/ListingNotices.astro';
 import { publishApi } from '@/lib/api/endpoints-protected';
 import {
@@ -193,7 +193,7 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
         role is granted alongside the listing's creation, never before), so
         this is never empty for the audience that tour targets. */}
     <div data-tour="gastronomy-qr">
-        <GastronomyMenuQrWidget
+        <VenueMenuQrWidget
             client:visible
             locale={locale}
             listings={listings

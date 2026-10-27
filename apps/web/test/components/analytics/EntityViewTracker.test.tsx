@@ -241,7 +241,7 @@ describe('EntityViewTracker — EVENT (SPEC-159 T-013)', () => {
 });
 
 describe('EntityViewTracker — GASTRONOMY / EXPERIENCE (HOS-734)', () => {
-    const GASTRONOMY_PROPS = {
+    const VENUE_PROPS = {
         entityType: 'GASTRONOMY' as const,
         slug: 'la-parrilla-del-puerto',
         entityId: '550e8400-e29b-41d4-a716-446655440003',
@@ -265,17 +265,17 @@ describe('EntityViewTracker — GASTRONOMY / EXPERIENCE (HOS-734)', () => {
     });
 
     it('renders null (no DOM output) for GASTRONOMY', () => {
-        const { container } = render(<EntityViewTracker {...GASTRONOMY_PROPS} />);
+        const { container } = render(<EntityViewTracker {...VENUE_PROPS} />);
         expect(container).toBeEmptyDOMElement();
     });
 
     it('calls sendViewBeacon with entityType GASTRONOMY and correct entityId', () => {
-        render(<EntityViewTracker {...GASTRONOMY_PROPS} />);
+        render(<EntityViewTracker {...VENUE_PROPS} />);
 
         expect(sendViewBeaconMock).toHaveBeenCalledTimes(1);
         expect(sendViewBeaconMock).toHaveBeenCalledWith({
             entityType: 'GASTRONOMY',
-            entityId: GASTRONOMY_PROPS.entityId
+            entityId: VENUE_PROPS.entityId
         });
     });
 
@@ -290,7 +290,7 @@ describe('EntityViewTracker — GASTRONOMY / EXPERIENCE (HOS-734)', () => {
     });
 
     it('does NOT fire a PostHog trackEvent for GASTRONOMY (owner decision, HOS-734)', () => {
-        render(<EntityViewTracker {...GASTRONOMY_PROPS} />);
+        render(<EntityViewTracker {...VENUE_PROPS} />);
         expect(trackEventMock).not.toHaveBeenCalled();
     });
 
@@ -300,14 +300,14 @@ describe('EntityViewTracker — GASTRONOMY / EXPERIENCE (HOS-734)', () => {
     });
 
     it('fires again when entityId changes (View Transitions navigation) for GASTRONOMY', () => {
-        const { rerender } = render(<EntityViewTracker {...GASTRONOMY_PROPS} />);
+        const { rerender } = render(<EntityViewTracker {...VENUE_PROPS} />);
         expect(sendViewBeaconMock).toHaveBeenCalledTimes(1);
 
         const newId = 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff';
         act(() => {
             rerender(
                 <EntityViewTracker
-                    {...GASTRONOMY_PROPS}
+                    {...VENUE_PROPS}
                     entityId={newId}
                     slug="otro-restaurante"
                 />

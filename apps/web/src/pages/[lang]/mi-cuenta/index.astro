@@ -688,7 +688,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         // no conversation model for listings to count from.
         if (isListingView) {
             try {
-                const [gastronomyRes, experienceRes] = await Promise.all([
+                const [venueRes, experienceRes] = await Promise.all([
                     fetch(`${base}/gastronomies/mine`, { credentials: 'include' }),
                     fetch(`${base}/experiences/mine`, { credentials: 'include' }),
                 ]);
@@ -699,11 +699,11 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 // "0" default via the outer catch below.
                 let listingsCount = 0;
                 let listingsFetchOk = false;
-                if (gastronomyRes.ok) {
-                    const gastronomyData = (await gastronomyRes.json()) as {
+                if (venueRes.ok) {
+                    const venueData = (await venueRes.json()) as {
                         data?: { listings?: unknown[] };
                     };
-                    listingsCount += gastronomyData.data?.listings?.length ?? 0;
+                    listingsCount += venueData.data?.listings?.length ?? 0;
                     listingsFetchOk = true;
                 }
                 if (experienceRes.ok) {

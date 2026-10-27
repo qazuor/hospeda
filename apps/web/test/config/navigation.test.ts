@@ -103,27 +103,27 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
     it('gates listing-door options behind ACCOMMODATION_CREATE and GASTRONOMY_EDIT_OWN (OQ-3: signal = permissions)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const venue = listing?.options.find((option) => option.id === 'gastronomy');
         const experience = listing?.options.find((option) => option.id === 'experience');
         expect(accommodation?.acquiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
-        expect(gastronomy?.acquiredPermission).toBe(PermissionEnum.GASTRONOMY_EDIT_OWN);
+        expect(venue?.acquiredPermission).toBe(PermissionEnum.GASTRONOMY_EDIT_OWN);
         expect(experience?.acquiredPermission).toBe(PermissionEnum.EXPERIENCE_EDIT_OWN);
     });
 
     it('links the acquired listing-door options to their management pages', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const venue = listing?.options.find((option) => option.id === 'gastronomy');
         const experience = listing?.options.find((option) => option.id === 'experience');
         expect(accommodation?.manageHref).toBe('mi-cuenta/host-dashboard');
-        expect(gastronomy?.manageHref).toBe('mi-cuenta/comercio');
+        expect(venue?.manageHref).toBe('mi-cuenta/comercio');
         expect(experience?.manageHref).toBe('mi-cuenta/comercio');
     });
 
     it('routes every listing-door option at ITS OWN publish page (HOS-1156 AC-1)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const venue = listing?.options.find((option) => option.id === 'gastronomy');
         const experience = listing?.options.find((option) => option.id === 'experience');
 
         // This case used to assert the opposite — that the two gastronomy/experience options
@@ -133,12 +133,12 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         // "Publicar" button stopped leading to publishing. That is the defect
         // HOS-1156 fixes; this is the same case, inverted.
         expect(accommodation?.href).toBe('publicar');
-        expect(gastronomy?.href).toBe('publicar/gastronomia');
+        expect(venue?.href).toBe('publicar/gastronomia');
         expect(experience?.href).toBe('publicar/experiencias');
 
         // Each vertical still goes to its OWN page — the property the previous
         // version of this case was really protecting.
-        const hrefs = [accommodation?.href, gastronomy?.href, experience?.href];
+        const hrefs = [accommodation?.href, venue?.href, experience?.href];
         expect(new Set(hrefs).size).toBe(3);
     });
 
@@ -147,14 +147,14 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         // owner goes once they HAVE a listing, which this spec did not change.
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const venue = listing?.options.find((option) => option.id === 'gastronomy');
         const experience = listing?.options.find((option) => option.id === 'experience');
 
         expect(accommodation?.manageHref).toBe('mi-cuenta/host-dashboard');
-        expect(gastronomy?.manageHref).toBe('mi-cuenta/comercio');
+        expect(venue?.manageHref).toBe('mi-cuenta/comercio');
         expect(experience?.manageHref).toBe('mi-cuenta/comercio');
         expect(accommodation?.acquiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
-        expect(gastronomy?.acquiredPermission).toBe(PermissionEnum.GASTRONOMY_EDIT_OWN);
+        expect(venue?.acquiredPermission).toBe(PermissionEnum.GASTRONOMY_EDIT_OWN);
         expect(experience?.acquiredPermission).toBe(PermissionEnum.EXPERIENCE_EDIT_OWN);
     });
 

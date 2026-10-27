@@ -14,7 +14,7 @@ const hasFiniteNumber = (value: number | undefined): boolean =>
     typeof value === 'number' && Number.isFinite(value);
 
 /** Parsed gastronomy filters relevant to the listing empty-state copy. */
-export interface GastronomyListingEmptyStateFilters {
+export interface VenueListingEmptyStateFilters {
     readonly q: string | undefined;
     readonly destinationId: string | undefined;
     readonly type: string | undefined;
@@ -74,7 +74,7 @@ export interface AccommodationListingEmptyStateFilters {
  * Whether a zero-result gastronomy listing is empty because the visitor applied
  * one or more real result-narrowing filters.
  */
-export function hasActiveGastronomyListingFilters({
+export function hasActiveVenueListingFilters({
     q,
     destinationId,
     type,
@@ -82,7 +82,7 @@ export function hasActiveGastronomyListingFilters({
     isFeatured,
     minRating,
     features
-}: GastronomyListingEmptyStateFilters): boolean {
+}: VenueListingEmptyStateFilters): boolean {
     return Boolean(
         hasNonEmptyText(q) ||
             hasNonEmptyText(destinationId) ||

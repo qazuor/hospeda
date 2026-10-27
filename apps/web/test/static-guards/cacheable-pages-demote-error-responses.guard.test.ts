@@ -137,11 +137,11 @@ describe('cacheable pages demote their error responses', () => {
     it('the page HOS-1154 measured is policed, and passes', () => {
         // Named explicitly so the guard cannot pass by accidentally excluding
         // the exact file the issue reproduced on.
-        const gastronomy = path.join(WEB_SRC, 'pages/[lang]/gastronomia/index.astro');
+        const venue = path.join(WEB_SRC, 'pages/[lang]/gastronomia/index.astro');
 
-        expect(fs.existsSync(gastronomy)).toBe(true);
-        expect(isPolicedFile({ source: fs.readFileSync(gastronomy, 'utf8') })).toBe(true);
-        expect(reachesDegradationMarker({ file: gastronomy, srcRoot: WEB_SRC })).toBe(true);
+        expect(fs.existsSync(venue)).toBe(true);
+        expect(isPolicedFile({ source: fs.readFileSync(venue, 'utf8') })).toBe(true);
+        expect(reachesDegradationMarker({ file: venue, srcRoot: WEB_SRC })).toBe(true);
     });
 
     it('the pages reach the marker through the banner, not by calling it themselves', () => {

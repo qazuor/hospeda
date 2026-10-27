@@ -73,7 +73,7 @@ export interface ListingFaq {
 /**
  * Envelope the add / update endpoints answer with (HOS-841).
  *
- * `ExperienceFaqSingleOutputSchema` and `GastronomyFaqSingleOutputSchema` are
+ * `ExperienceFaqSingleOutputSchema` and `VenueFaqSingleOutputSchema` are
  * both `z.object({ faq: … })`, so the FAQ arrives one level down. Typing these
  * two calls as `ListingFaq` compiled fine and put the ENVELOPE into the list:
  * `question`/`answer` rendered blank and `id` was `undefined`, which then sent

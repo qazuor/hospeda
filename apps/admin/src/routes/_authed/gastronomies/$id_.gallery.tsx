@@ -8,26 +8,26 @@
  * `listingSections.ts`).
  *
  * Mirrors the pattern of `$id_.seo.tsx` (the only other gastronomy sub-tab
- * route today): `SidebarPageLayout` + `PageTabs` with `gastronomyTabs`, rather
+ * route today): `SidebarPageLayout` + `PageTabs` with `venueTabs`, rather
  * than accommodation's dedicated `AccommodationSubTabLayout` wrapper — that
  * component is accommodation-specific and gastronomy/experience routes don't
  * use it.
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { gastronomyTabs, PageTabs } from '@/components/layout/PageTabs';
+import { PageTabs, venueTabs } from '@/components/layout/PageTabs';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { useGastronomyQuery } from '@/features/gastronomy';
 import { ListingGalleryManager } from '@/features/listing';
+import { useVenueQuery } from '@/features/venue';
 
 export const Route = createFileRoute('/_authed/gastronomies/$id_/gallery')({
-    component: GastronomyGalleryPage
+    component: VenueGalleryPage
 });
 
-function GastronomyGalleryPage() {
+function VenueGalleryPage() {
     const { id } = Route.useParams();
     // Reuses the shared detail query cache key (also hit by the view/edit
-    // routes via useGastronomyPage) so navigating between tabs after visiting
+    // routes via useVenuePage) so navigating between tabs after visiting
     // one of those doesn't trigger a second network fetch — only the alt-text
     // derivation below needs `name`, so no dedicated lightweight query exists.
     //
@@ -38,13 +38,13 @@ function GastronomyGalleryPage() {
     // queries — otherwise the upload controls could render before `name`
     // resolves, producing an upload with no `alt` at all (there is no
     // update-media endpoint to backfill it afterwards).
-    const { data: gastronomy, isLoading: isGastronomyLoading } = useGastronomyQuery(id);
+    const { data: venue, isLoading: isVenueLoading } = useVenueQuery(id);
 
     return (
         <SidebarPageLayout titleKey="admin-pages.titles.gastronomiesView">
             <div className="space-y-4">
                 <PageTabs
-                    tabs={gastronomyTabs}
+                    tabs={venueTabs}
                     basePath={`/gastronomies/${id}`}
                 />
 
@@ -52,8 +52,8 @@ function GastronomyGalleryPage() {
                     <ListingGalleryManager
                         vertical="gastronomy"
                         entityId={id}
-                        entityName={gastronomy?.name}
-                        isEntityLoading={isGastronomyLoading}
+                        entityName={venue?.name}
+                        isEntityLoading={isVenueLoading}
                     />
                 </div>
             </div>

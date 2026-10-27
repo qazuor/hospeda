@@ -978,7 +978,7 @@ export interface EventDetailData {
  * in `"HH:mm"` 24-hour format. Mirrors `ShiftSchema` from the gastronomy/experience
  * opening-hours schema (`@repo/schemas`).
  */
-export interface GastronomyOpeningHoursShift {
+export interface VenueOpeningHoursShift {
     /** Opening time string in `"HH:mm"` format. */
     readonly open: string;
     /** Closing time string in `"HH:mm"` format. */
@@ -992,16 +992,16 @@ export interface GastronomyOpeningHoursShift {
  * A day can carry MULTIPLE shifts (e.g. a restaurant open midday and again at
  * night), so `shifts` is an ordered array rather than a single open/close pair.
  */
-export interface GastronomyOpeningHoursEntry {
+export interface VenueOpeningHoursEntry {
     /** Whether the establishment is open on this day (has at least one shift). */
     readonly isOpen: boolean;
     /** Operating shifts for the day, in order. Empty when the day is closed. */
-    readonly shifts: ReadonlyArray<GastronomyOpeningHoursShift>;
+    readonly shifts: ReadonlyArray<VenueOpeningHoursShift>;
 }
 
 /**
  * Social networks map for a gastronomy listing.
- * Mirrors the `socialNetworks` field from the `GastronomyPublicSchema`.
+ * Mirrors the `socialNetworks` field from the `VenuePublicSchema`.
  *
  * NOTE (HOS-1076): `whatsapp` was removed from this shape. It was never part
  * of `SocialNetworkSchema` (the WRITE/READ shape backing the `socialNetworks`
@@ -1013,7 +1013,7 @@ export interface GastronomyOpeningHoursEntry {
  * WhatsApp channel for gastronomy belongs on its own dedicated path, mirroring
  * accommodation's `CAN_CONTACT_WHATSAPP_DISPLAY` entitlement.
  */
-export interface GastronomySocialNetworks {
+export interface VenueSocialNetworks {
     readonly facebook?: string | null;
     readonly instagram?: string | null;
     readonly twitter?: string | null;
@@ -1023,15 +1023,15 @@ export interface GastronomySocialNetworks {
 }
 
 /**
- * Props for the GastronomyCard component (SPEC-239).
+ * Props for the VenueCard component (SPEC-239).
  *
- * Produced by `toGastronomyCardProps()` in `transforms.ts` and consumed by
+ * Produced by `toVenueCardProps()` in `transforms.ts` and consumed by
  * the gastronomy card component. Used on the listing page and any featured
  * gastronomy sections.
  *
  * @example
  * ```ts
- * const card: GastronomyCardData = {
+ * const card: VenueCardData = {
  *   id: 'abc-123',
  *   slug: 'la-parrilla-de-juan',
  *   name: 'La Parrilla de Juan',
@@ -1048,7 +1048,7 @@ export interface GastronomySocialNetworks {
  * };
  * ```
  */
-export interface GastronomyCardData {
+export interface VenueCardData {
     /** UUID identifier for the gastronomy listing. */
     readonly id: string;
     /** URL-safe slug used to build the detail page path. */
@@ -1078,7 +1078,7 @@ export interface GastronomyCardData {
     /** Whether this listing appears in featured/promoted slots. */
     readonly isFeatured: boolean;
     /** Structured opening hours by day. Null when not configured by the owner. */
-    readonly openingHours: Record<string, GastronomyOpeningHoursEntry> | null;
+    readonly openingHours: Record<string, VenueOpeningHoursEntry> | null;
     /** ISO 8601 creation date. Used to derive "new" badge (< 30 days). */
     readonly createdAt?: string | null;
     /**
@@ -1104,10 +1104,10 @@ export interface GastronomyCardData {
 
 /**
  * One dish or drink on a gastronomy listing's structured carta (HOS-895 PR2).
- * Mirrors `GastronomyMenuItemPublic` (`@repo/schemas`) with only the fields
+ * Mirrors `VenueMenuItemPublic` (`@repo/schemas`) with only the fields
  * the public detail page renders.
  */
-export interface GastronomyMenuItem {
+export interface VenueMenuItem {
     readonly id: string;
     readonly name: string;
     readonly description: string | null;
@@ -1142,22 +1142,22 @@ export interface GastronomyMenuItem {
 
 /**
  * One course heading with its dishes (HOS-895 PR2). Mirrors
- * `GastronomyMenuSectionPublic` (`@repo/schemas`).
+ * `VenueMenuSectionPublic` (`@repo/schemas`).
  */
-export interface GastronomyMenuSection {
+export interface VenueMenuSection {
     readonly id: string;
     readonly name: string;
     readonly description: string | null;
-    /** Localized heading (HOS-1043), or `null`. Same collapse as {@link GastronomyMenuItem.nameI18n}. */
+    /** Localized heading (HOS-1043), or `null`. Same collapse as {@link VenueMenuItem.nameI18n}. */
     readonly nameI18n: I18nTextLike | null;
     /** Localized blurb (HOS-1043), or `null`. */
     readonly descriptionI18n: I18nTextLike | null;
-    readonly items: readonly GastronomyMenuItem[];
+    readonly items: readonly VenueMenuItem[];
 }
 
 /**
  * One dish on a gastronomy listing's menú del día (HOS-1041). Mirrors
- * `GastronomyDailySpecialPublic` (`@repo/schemas`) with only the fields the
+ * `VenueDailySpecialPublic` (`@repo/schemas`) with only the fields the
  * public detail page renders.
  *
  * Deliberately carries NO `validFrom`/`validUntil`. Everything that reaches
@@ -1166,7 +1166,7 @@ export interface GastronomyMenuSection {
  * invite a component to re-derive the filter in the browser's timezone, which
  * is how the same day gets two different answers.
  */
-export interface GastronomyDailySpecial {
+export interface VenueDailySpecial {
     readonly id: string;
     readonly title: string;
     readonly description: string | null;
@@ -1176,14 +1176,14 @@ export interface GastronomyDailySpecial {
 
 /**
  * One entry on a venue's own agenda (HOS-1042) — live music night, happy
- * hour, the Tuesday deal. Mirrors `GastronomyEventPublic` (`@repo/schemas`)
+ * hour, the Tuesday deal. Mirrors `VenueEventPublic` (`@repo/schemas`)
  * with only the fields the public detail page renders.
  *
  * `date` and `weekday` are mutually exclusive per `recurrence`, exactly as the
  * schema enforces server-side: a `once` entry carries `date` and a `null`
  * `weekday`; a `weekly` entry carries `weekday` and a `null` `date`.
  */
-export interface GastronomyVenueEvent {
+export interface VenueEvent {
     readonly id: string;
     readonly title: string;
     readonly description: string | null;
@@ -1200,11 +1200,11 @@ export interface GastronomyVenueEvent {
 
 /**
  * Typed data shape for the gastronomy detail page (SPEC-239).
- * Produced by `toGastronomyDetailPageProps()` in `transforms.ts`.
+ * Produced by `toVenueDetailPageProps()` in `transforms.ts`.
  *
- * Extends `GastronomyCardData` with fields only needed for the full detail view.
+ * Extends `VenueCardData` with fields only needed for the full detail view.
  */
-export interface GastronomyDetailData extends GastronomyCardData {
+export interface VenueDetailData extends VenueCardData {
     /** Full plain-text description of the establishment. */
     readonly description: string;
     /** Optional rich-text (markdown) description (entitlement-gated). */
@@ -1225,7 +1225,7 @@ export interface GastronomyDetailData extends GastronomyCardData {
      * venue typed none, OR when the owner's current plan does not grant the
      * entitlement — same withholding as {@link menuFileUrl}.
      */
-    readonly menuSections?: readonly GastronomyMenuSection[];
+    readonly menuSections?: readonly VenueMenuSection[];
     /**
      * The menú del día as it stands TODAY (HOS-1041). Empty when the venue is
      * offering nothing today, when every special's window has passed, OR when
@@ -1234,15 +1234,15 @@ export interface GastronomyDetailData extends GastronomyCardData {
      * filter and the entitlement gate, so the page cannot tell the three apart
      * and does not need to.
      */
-    readonly dailySpecials?: readonly GastronomyDailySpecial[];
+    readonly dailySpecials?: readonly VenueDailySpecial[];
     /**
      * The venue's own agenda, in order (HOS-1042). Empty/absent when the venue
      * has none, OR when the owner's current plan does not grant
      * `manage_gastronomy_events` — same withholding as {@link menuSections}.
      */
-    readonly venueEvents?: readonly GastronomyVenueEvent[];
+    readonly venueEvents?: readonly VenueEvent[];
     /** Social network links provided by the owner. */
-    readonly socialNetworks: GastronomySocialNetworks | null;
+    readonly socialNetworks: VenueSocialNetworks | null;
     /** SEO metadata fields. */
     readonly seo: { readonly title: string | null; readonly description: string | null } | null;
     /** Tag slugs associated with the listing. */
@@ -1278,14 +1278,14 @@ export interface GastronomyDetailData extends GastronomyCardData {
  *
  * Experience listings reuse the gastronomy structured-hours sub-system verbatim
  * (same `OpeningHoursSchema` source, same `OpeningHoursSection` renderer), so
- * this is an alias of {@link GastronomyOpeningHoursEntry} — multi-shift aware —
+ * this is an alias of {@link VenueOpeningHoursEntry} — multi-shift aware —
  * rather than a divergent copy.
  */
-export type ExperienceOpeningHoursEntry = GastronomyOpeningHoursEntry;
+export type ExperienceOpeningHoursEntry = VenueOpeningHoursEntry;
 
 /**
  * Social networks map for an experience listing.
- * Mirrors GastronomySocialNetworks — same fields from the shared listing core.
+ * Mirrors VenueSocialNetworks — same fields from the shared listing core.
  */
 export interface ExperienceSocialNetworks {
     readonly facebook?: string | null;

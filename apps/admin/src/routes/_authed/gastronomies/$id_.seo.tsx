@@ -1,32 +1,32 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { gastronomyTabs, PageTabs } from '@/components/layout/PageTabs';
+import { PageTabs, venueTabs } from '@/components/layout/PageTabs';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { SeoEditor } from '@/components/seo/SeoEditor';
 import { buildSeoPreviewUrl, SEO_DEFAULT_LOCALE } from '@/components/seo/seo-editor.utils';
 import { env } from '@/env';
-import { useGastronomyQuery, useUpdateGastronomyMutation } from '@/features/gastronomy';
+import { useUpdateVenueMutation, useVenueQuery } from '@/features/venue';
 
 export const Route = createFileRoute('/_authed/gastronomies/$id_/seo')({
-    component: GastronomySeoPage
+    component: VenueSeoPage
 });
 
-function GastronomySeoPage() {
+function VenueSeoPage() {
     const { id } = Route.useParams();
-    const { data: gastronomy, isLoading } = useGastronomyQuery(id);
-    const updateGastronomy = useUpdateGastronomyMutation();
+    const { data: venue, isLoading } = useVenueQuery(id);
+    const updateVenue = useUpdateVenueMutation();
 
     const previewUrl = buildSeoPreviewUrl({
         siteUrl: env.VITE_SITE_URL,
         locale: SEO_DEFAULT_LOCALE,
         pathSegment: 'gastronomia',
-        slug: gastronomy?.slug
+        slug: venue?.slug
     });
 
     return (
         <SidebarPageLayout titleKey="admin-pages.titles.gastronomiesView">
             <div className="space-y-4">
                 <PageTabs
-                    tabs={gastronomyTabs}
+                    tabs={venueTabs}
                     basePath={`/gastronomies/${id}`}
                 />
 
@@ -40,17 +40,17 @@ function GastronomySeoPage() {
                     </div>
                 ) : (
                     <SeoEditor
-                        seo={gastronomy?.seo}
-                        fallbackTitle={gastronomy?.name ?? ''}
-                        fallbackDescription={gastronomy?.summary ?? ''}
+                        seo={venue?.seo}
+                        fallbackTitle={venue?.name ?? ''}
+                        fallbackDescription={venue?.summary ?? ''}
                         previewUrl={previewUrl}
-                        isSaving={updateGastronomy.isPending}
+                        isSaving={updateVenue.isPending}
                         saveError={
-                            updateGastronomy.error instanceof Error
-                                ? updateGastronomy.error.message
+                            updateVenue.error instanceof Error
+                                ? updateVenue.error.message
                                 : undefined
                         }
-                        onSave={(seo) => updateGastronomy.mutateAsync({ id, data: { seo } })}
+                        onSave={(seo) => updateVenue.mutateAsync({ id, data: { seo } })}
                     />
                 )}
             </div>

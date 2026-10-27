@@ -12,7 +12,7 @@
  *
  * This file holds what the two verticals have IN COMMON: the sections both have,
  * the group order and the group headings, and the registry factory. The sections
- * only one vertical has live in `gastronomy-editor-sections.ts` and
+ * only one vertical has live in `venue-editor-sections.ts` and
  * `experience-editor-sections.ts`; `listing-editor-registry.ts` picks between
  * them by vertical.
  *

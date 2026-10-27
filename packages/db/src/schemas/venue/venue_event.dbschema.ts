@@ -60,7 +60,7 @@ export const GastronomyEventRecurrencePgEnum = pgEnum('gastronomy_event_recurren
  *   and location. A happy hour does not belong there, and putting it there would
  *   mean either flooding a curated calendar or building a second visibility rule
  *   inside it.
- * - `GastronomyEventsCta` (HOS-1055) is the "we host YOUR event" toggle:
+ * - `VenueEventsCta` (HOS-1055) is the "we host YOUR event" toggle:
  *   birthdays, corporate dinners, weddings. That is the venue offering itself for
  *   hire and is free on every tier.
  * - This table is neither. It is owner-authored, tier-gated
@@ -76,7 +76,7 @@ export const GastronomyEventRecurrencePgEnum = pgEnum('gastronomy_event_recurren
  * every ordering decision a merge.
  *
  * The invariant that exactly one of the two is set for a given `recurrence` is
- * enforced by {@link GastronomyEventInputSchema} (a Zod discriminated refinement)
+ * enforced by {@link VenueEventInputSchema} (a Zod discriminated refinement)
  * and by the service that writes the rows, NOT by a database CHECK: cross-column
  * constraints belong to the extras carril, and this one has a single writer that
  * already validates. See the schema module for the exact rule.

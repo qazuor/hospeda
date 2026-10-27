@@ -8,7 +8,7 @@
  * way, because the same four wiring mistakes are the ones that fail silently:
  *
  *  - the section renders for `experience` and NOT for `gastronomy` (none of
- *    these keys is on `GastronomyOwnerUpdateInputSchema`, so a control drawn
+ *    these keys is on `VenueOwnerUpdateInputSchema`, so a control drawn
  *    there would offer an edit every save strips while answering 200);
  *  - a persisted value seeds the form (an editor that opens blank re-saves
  *    blank, deleting data the owner never touched);
@@ -191,7 +191,7 @@ describe('ListingEditor — practical details', () => {
         });
 
         it('renders nothing of the kind for a gastronomy listing', () => {
-            // None of these keys is on `GastronomyOwnerUpdateInputSchema`, so a
+            // None of these keys is on `VenueOwnerUpdateInputSchema`, so a
             // control here would offer an edit the API strips while answering 200.
             const { container } = renderEditor('gastronomy');
 
@@ -206,7 +206,7 @@ describe('ListingEditor — practical details', () => {
             const experienceIds = buildListingEditorSections({
                 vertical: 'experience'
             }).map((section) => section.id);
-            const gastronomyIds = buildListingEditorSections({
+            const venueIds = buildListingEditorSections({
                 vertical: 'gastronomy'
             }).map((section) => section.id);
 
@@ -214,7 +214,7 @@ describe('ListingEditor — practical details', () => {
             expect(experienceIds.indexOf('practicalInfo')).toBe(
                 experienceIds.indexOf('meetingPoint') + 1
             );
-            expect(gastronomyIds).not.toContain('practicalInfo');
+            expect(venueIds).not.toContain('practicalInfo');
         });
     });
 

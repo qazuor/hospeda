@@ -45,15 +45,15 @@ const SHARED_FILTER_ORDER = {
  * @example
  * ```ts
  * // In the gastronomy feature (SPEC-240):
- * const gastronomyListConfig = createListingListConfig({
+ * const venueListConfig = createListingListConfig({
  *   entityName: 'gastronomy',
  *   entityKey: 'gastronomy',
- *   entityType: EntityType.GASTRONOMY,
+ *   entityType: EntityType.VENUE,
  *   apiEndpoint: '/api/v1/admin/gastronomy',
  *   basePath: '/platform/gastronomy',
  *   detailPath: '/platform/gastronomy/[id]',
- *   listItemSchema: GastronomyListItemSchema,
- *   createColumns: createGastronomyColumns,
+ *   listItemSchema: VenueListItemSchema,
+ *   createColumns: createVenueColumns,
  *   extraFilters: [
  *     { paramKey: 'gastronomyType', type: 'select', labelKey: '…', order: 10, options: […] },
  *     { paramKey: 'priceRange',     type: 'select', labelKey: '…', order: 11, options: […] },

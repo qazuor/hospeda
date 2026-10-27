@@ -13,7 +13,7 @@
 import type { CatalogEntry, EntityGender, SummaryLocale } from './summary.types';
 
 /** Default gastronomy type labels (mirror the FilterSidebar config + i18n copy). */
-export const DEFAULT_GASTRONOMY_TYPES: readonly CatalogEntry[] = [
+export const DEFAULT_VENUE_TYPES: readonly CatalogEntry[] = [
     { key: 'RESTAURANT', label: { es: 'restaurante', en: 'restaurant', pt: 'restaurante' } },
     { key: 'BAR', label: { es: 'bar', en: 'bar', pt: 'bar' } },
     { key: 'CAFE', label: { es: 'café', en: 'café', pt: 'café' } },

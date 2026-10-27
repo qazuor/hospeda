@@ -1,1001 +1,502 @@
 /**
  * E2E Integration Tests for Sponsorship Purchase and Analytics Tracking
  *
- * Tests the complete lifecycle of sponsorship purchases and analytics tracking including:
- * - Sponsor purchases different sponsorship levels (Gold, Silver, Standard)
- * - Sponsorship creation for events and posts
- * - Sponsorship appears in sponsor dashboard/list
- * - Analytics tracking: impressions, clicks, CTR
- * - Coupon usage tracking
- * - Access control for analytics viewing
- * - Error handling for invalid purchases and duplicate sponsorships
- * - Analytics data aggregation
- * - Sponsorship package purchases
- * - Sponsorship level benefits verification
+ * Runs against the real services and the integration database. The levels and
+ * sponsorships are seeded rows and every actor is backed by a real user row, so
+ * the purchase rules (level exists, level matches the target) and the analytics
+ * counters are read from data the test put there.
+ *
+ * The flow used to target `/api/v1/sponsorships` (the routes live under
+ * `/api/v1/protected/sponsorships`) and to accept any of several statuses per
+ * case. The billing checkout and the public level/package catalog it also
+ * touched no longer exist as routes: they are pinned as 404 below.
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    PermissionEnum,
+    RoleEnum,
+    SponsorshipTargetTypeEnum,
+    SponsorshipTierEnum
+} from '@repo/schemas';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../src/app';
+import { clearCache } from '../../src/middlewares/cache';
 import { validateApiEnv } from '../../src/utils/env';
+import { testDb } from '../e2e/setup/test-database';
+import { buildMockActorHeaders, createMockActorUser } from './helpers/mock-actor';
+import {
+    type SeededSponsorship,
+    type SeededSponsorshipLevel,
+    seedSponsorship,
+    seedSponsorshipLevel
+} from './helpers/seed-sponsorship';
 
-// Mock @repo/logger
-vi.mock('@repo/logger', () => {
-    const createMockedLogger = () => ({
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-        registerLogMethod: vi.fn().mockReturnThis(),
-        permission: vi.fn()
-    });
+const BASE = '/api/v1/protected/sponsorships';
+const NON_EXISTENT_ID = '99999999-9999-4999-8999-999999999999';
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-    const mockedLogger = {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-        registerCategory: vi.fn(() => createMockedLogger()),
-        configure: vi.fn(),
-        resetConfig: vi.fn(),
-        createLogger: vi.fn(() => createMockedLogger()),
-        registerLogMethod: vi.fn().mockReturnThis()
-    };
+const SPONSOR_PERMISSIONS: readonly PermissionEnum[] = [
+    PermissionEnum.ACCESS_API_PUBLIC,
+    PermissionEnum.ACCESS_API_PRIVATE,
+    PermissionEnum.SPONSORSHIP_VIEW,
+    PermissionEnum.SPONSORSHIP_CREATE,
+    PermissionEnum.SPONSORSHIP_UPDATE,
+    PermissionEnum.SPONSORSHIP_VIEW_OWN,
+    PermissionEnum.SPONSORSHIP_UPDATE_OWN
+];
 
-    const LoggerColors = {
-        BLACK: 'BLACK',
-        RED: 'RED',
-        GREEN: 'GREEN',
-        YELLOW: 'YELLOW',
-        BLUE: 'BLUE',
-        MAGENTA: 'MAGENTA',
-        CYAN: 'CYAN',
-        WHITE: 'WHITE',
-        GRAY: 'GRAY',
-        BLACK_BRIGHT: 'BLACK_BRIGHT',
-        RED_BRIGHT: 'RED_BRIGHT',
-        GREEN_BRIGHT: 'GREEN_BRIGHT',
-        YELLOW_BRIGHT: 'YELLOW_BRIGHT',
-        BLUE_BRIGHT: 'BLUE_BRIGHT',
-        MAGENTA_BRIGHT: 'MAGENTA_BRIGHT',
-        CYAN_BRIGHT: 'CYAN_BRIGHT',
-        WHITE_BRIGHT: 'WHITE_BRIGHT'
-    };
-
-    const LogLevel = {
-        LOG: 'LOG',
-        INFO: 'INFO',
-        WARN: 'WARN',
-        ERROR: 'ERROR',
-        DEBUG: 'DEBUG'
-    };
-
-    return {
-        default: mockedLogger,
-        logger: mockedLogger,
-        createLogger: mockedLogger.createLogger,
-        LoggerColors,
-        LogLevel
-    };
-});
-
-/**
- * Mock @repo/service-core - import actual exports and override service classes
- * to return proper ServiceResult objects instead of undefined.
- */
-vi.mock('@repo/service-core', async (importOriginal) => {
-    const actual = await importOriginal<Record<string, unknown>>();
-
-    const listResult = {
-        data: { items: [], total: 0, page: 1, pageSize: 10 },
-        error: null,
-        success: true
-    };
-    const notFoundResult = {
-        data: null,
-        error: { code: 'NOT_FOUND', message: 'Resource not found' },
-        success: false
-    };
-
-    const createMockServiceInstance = () =>
-        new Proxy(
-            {},
-            {
-                get(_target, prop) {
-                    if (prop === 'constructor') return vi.fn();
-                    return vi
-                        .fn()
-                        .mockResolvedValue(
-                            prop === 'list' || prop === 'findAll' ? listResult : notFoundResult
-                        );
-                }
-            }
-        );
-
-    // Override all *Service exports with mock constructors
-    const overrides: Record<string, unknown> = {};
-    for (const key of Object.keys(actual)) {
-        if (key.endsWith('Service') && typeof actual[key] === 'function') {
-            overrides[key] = vi.fn().mockImplementation(() => createMockServiceInstance());
-        }
-    }
-
-    return { ...actual, ...overrides };
-});
+/** What an admin needs on top: the service-level "any" grants. */
+const ADMIN_SPONSORSHIP_PERMISSIONS: readonly PermissionEnum[] = [
+    PermissionEnum.ACCESS_API_PUBLIC,
+    PermissionEnum.ACCESS_API_PRIVATE,
+    PermissionEnum.SPONSORSHIP_VIEW,
+    PermissionEnum.SPONSORSHIP_VIEW_ANY
+];
 
 describe('Sponsorship Purchase and Analytics E2E Flow', () => {
     let app: ReturnType<typeof initApp>;
+    let sponsorId: string;
+    let otherSponsorId: string;
+    let eventLevel: SeededSponsorshipLevel;
+    let postLevel: SeededSponsorshipLevel;
+    let own: SeededSponsorship;
 
-    // Test actors
-    const sponsorActor = {
-        id: 'sponsor-e2e-user-001',
-        roles: [RoleEnum.SPONSOR],
-        permissions: [
-            PermissionEnum.SPONSORSHIP_VIEW,
-            PermissionEnum.SPONSORSHIP_CREATE,
-            PermissionEnum.SPONSORSHIP_UPDATE,
-            PermissionEnum.USER_VIEW_PROFILE,
-            PermissionEnum.USER_UPDATE_PROFILE,
-            PermissionEnum.DASHBOARD_BASE_VIEW,
-            PermissionEnum.ACCESS_PANEL_ADMIN,
-            PermissionEnum.ACCESS_API_PUBLIC
-        ]
-    };
+    const headersFor = ({
+        actorId,
+        permissions,
+        role = RoleEnum.SPONSOR
+    }: {
+        readonly actorId: string;
+        readonly permissions: readonly PermissionEnum[];
+        readonly role?: RoleEnum;
+    }) => buildMockActorHeaders({ actorId, permissions, role });
 
-    const sponsorActor2 = {
-        id: 'sponsor-e2e-user-002',
-        roles: [RoleEnum.SPONSOR],
-        permissions: [
-            PermissionEnum.SPONSORSHIP_VIEW,
-            PermissionEnum.SPONSORSHIP_CREATE,
-            PermissionEnum.USER_VIEW_PROFILE,
-            PermissionEnum.ACCESS_API_PUBLIC
-        ]
-    };
+    const sponsorHeaders = () =>
+        headersFor({ actorId: sponsorId, permissions: SPONSOR_PERMISSIONS });
 
-    const adminActor = {
-        id: 'admin-e2e-user-001',
-        roles: [RoleEnum.ADMIN],
-        permissions: [
-            PermissionEnum.SPONSORSHIP_VIEW,
-            PermissionEnum.SPONSORSHIP_CREATE,
-            PermissionEnum.SPONSORSHIP_UPDATE,
-            PermissionEnum.SPONSORSHIP_DELETE,
-            PermissionEnum.ACCESS_PANEL_ADMIN,
-            PermissionEnum.ACCESS_API_PUBLIC
-        ]
-    };
+    /** A valid purchase body for the given level, overridable per case. */
+    const purchase = ({
+        level,
+        overrides = {}
+    }: {
+        readonly level: SeededSponsorshipLevel;
+        readonly overrides?: Record<string, unknown>;
+    }) => ({
+        sponsorUserId: sponsorId,
+        targetType: level.targetType,
+        targetId: crypto.randomUUID(),
+        levelId: level.id,
+        startsAt: new Date().toISOString(),
+        endsAt: new Date(Date.now() + 30 * DAY_MS).toISOString(),
+        logoUrl: 'https://example.com/logo.png',
+        linkUrl: 'https://example.com',
+        ...overrides
+    });
 
-    const touristActor = {
-        id: 'tourist-e2e-user-001',
-        roles: [RoleEnum.USER],
-        permissions: [PermissionEnum.USER_VIEW_PROFILE, PermissionEnum.ACCESS_API_PUBLIC]
-    };
+    const post = ({ body }: { readonly body: unknown }) =>
+        app.request(BASE, {
+            method: 'POST',
+            headers: sponsorHeaders(),
+            body: JSON.stringify(body)
+        });
 
-    beforeAll(() => {
-        validateApiEnv();
+    beforeAll(async () => {
         process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
-    });
-
-    beforeEach(() => {
+        await testDb.setup();
+        await testDb.clean();
+        clearCache();
+        validateApiEnv();
         app = initApp();
-        vi.clearAllMocks();
     });
 
-    /**
-     * Helper to create mock auth headers for a test actor
-     */
-    function createMockHeaders(actor: {
-        id: string;
-        roles: readonly string[];
-        permissions: string[];
-    }): Record<string, string> {
-        return {
-            'user-agent': 'vitest-test-agent',
-            'x-mock-actor-id': actor.id,
-            'x-mock-actor-role': actor.roles.join(','),
-            'x-mock-actor-permissions': JSON.stringify(actor.permissions)
-        };
-    }
+    beforeEach(async () => {
+        sponsorId = (await createMockActorUser({ label: 'purchase-sponsor' })).id;
+        otherSponsorId = (await createMockActorUser({ label: 'purchase-other' })).id;
+        eventLevel = await seedSponsorshipLevel({
+            targetType: SponsorshipTargetTypeEnum.EVENT,
+            tier: SponsorshipTierEnum.GOLD
+        });
+        postLevel = await seedSponsorshipLevel({
+            targetType: SponsorshipTargetTypeEnum.POST,
+            tier: SponsorshipTierEnum.STANDARD
+        });
+        own = await seedSponsorship({
+            sponsorUserId: sponsorId,
+            level: eventLevel,
+            analytics: { impressions: 200, clicks: 10, couponsUsed: 3 }
+        });
+    });
+
+    afterEach(async () => {
+        await testDb.clean();
+        clearCache();
+    });
+
+    afterAll(async () => {
+        await testDb.teardown();
+    });
 
     describe('1. Sponsorship Purchase Flow - Different Levels', () => {
-        it('should allow sponsor to purchase Gold event sponsorship', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const goldSponsorship = {
+        it('should allow sponsor to purchase a Gold event sponsorship with a coupon', async () => {
+            const body = purchase({
+                level: eventLevel,
+                overrides: { couponCode: 'GOLD20', couponDiscountPercent: 20 }
+            });
+
+            const res = await post({ body });
+
+            expect(res.status).toBe(201);
+            const data = await res.json();
+            expect(data.success).toBe(true);
+            expect(data.data).toMatchObject({
+                sponsorUserId: sponsorId,
+                levelId: eventLevel.id,
                 targetType: 'event',
-                targetId: '00000000-0000-0000-0000-000000000001',
-                levelId: '00000000-0000-0000-0000-level-gold',
-                startsAt: new Date().toISOString(),
-                endsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                logoUrl: 'https://example.com/logo.png',
-                linkUrl: 'https://example.com',
+                targetId: body.targetId,
                 couponCode: 'GOLD20',
                 couponDiscountPercent: 20
-            };
-
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(goldSponsorship)
             });
-
-            // 201 (created), 400 (validation), or 404 (target/level not found)
-            expect([201, 400, 404]).toContain(response.status);
-
-            if (response.status === 201) {
-                const data = await response.json();
-                expect(data.success).toBe(true);
-                expect(data.data).toBeDefined();
-            }
         });
 
-        it('should allow sponsor to purchase Silver event sponsorship', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const silverSponsorship = {
-                targetType: 'event',
-                targetId: '00000000-0000-0000-0000-000000000002',
-                levelId: '00000000-0000-0000-0000-level-silver',
-                startsAt: new Date().toISOString(),
-                endsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                logoUrl: 'https://example.com/logo.png',
-                linkUrl: 'https://example.com',
-                couponCode: 'SILVER10',
-                couponDiscountPercent: 10
-            };
+        it('should allow sponsor to purchase a Standard post sponsorship', async () => {
+            const body = purchase({ level: postLevel });
 
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(silverSponsorship)
-            });
+            const res = await post({ body });
 
-            expect([201, 400, 404]).toContain(response.status);
-        });
-
-        it('should allow sponsor to purchase Standard post sponsorship', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const postSponsorship = {
+            expect(res.status).toBe(201);
+            const data = await res.json();
+            expect(data.data).toMatchObject({
+                levelId: postLevel.id,
                 targetType: 'post',
-                targetId: '00000000-0000-0000-0000-post-000001',
-                levelId: '00000000-0000-0000-0000-level-standard',
-                startsAt: new Date().toISOString(),
-                endsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                logoUrl: 'https://example.com/logo.png'
-            };
-
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(postSponsorship)
+                targetId: body.targetId
             });
-
-            expect([201, 400, 404]).toContain(response.status);
         });
 
         it('should validate required fields for sponsorship creation', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const invalidSponsorship = {
-                targetType: 'event'
-                // Missing required fields: targetId, levelId, startsAt
-            };
+            const res = await post({ body: { targetType: 'event' } });
 
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(invalidSponsorship)
-            });
-
-            expect(response.status).toBe(400);
+            expect(res.status).toBe(400);
+            expect((await res.json()).error.code).toBe('VALIDATION_ERROR');
         });
 
         it('should reject sponsorship with invalid target type', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const invalidSponsorship = {
-                targetType: 'invalid-type',
-                targetId: '00000000-0000-0000-0000-000000000001',
-                levelId: '00000000-0000-0000-0000-level-gold',
-                startsAt: new Date().toISOString()
-            };
-
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(invalidSponsorship)
+            const res = await post({
+                body: purchase({ level: eventLevel, overrides: { targetType: 'invalid-type' } })
             });
 
-            expect(response.status).toBe(400);
+            expect(res.status).toBe(400);
+            expect((await res.json()).error.code).toBe('VALIDATION_ERROR');
         });
 
         it('should reject sponsorship with invalid UUID for targetId', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const invalidSponsorship = {
-                targetType: 'event',
-                targetId: 'not-a-uuid',
-                levelId: '00000000-0000-0000-0000-level-gold',
-                startsAt: new Date().toISOString()
-            };
-
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(invalidSponsorship)
+            const res = await post({
+                body: purchase({ level: eventLevel, overrides: { targetId: 'not-a-uuid' } })
             });
 
-            expect(response.status).toBe(400);
+            expect(res.status).toBe(400);
+            expect((await res.json()).error.code).toBe('VALIDATION_ERROR');
         });
     });
 
     describe('2. Sponsorship Dashboard and Listing', () => {
-        it('should show sponsorships in sponsor dashboard list', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'GET',
-                headers
-            });
+        it('should show the purchased sponsorship in the sponsor dashboard list', async () => {
+            const bought = await post({ body: purchase({ level: postLevel }) });
+            expect(bought.status).toBe(201);
+            const boughtId = (await bought.json()).data.id;
 
-            expect(response.status).toBe(200);
-            const data = await response.json();
+            const res = await app.request(BASE, { headers: sponsorHeaders() });
+
+            expect(res.status).toBe(200);
+            const data = await res.json();
             expect(data.success).toBe(true);
-            expect(data.data).toBeDefined();
+            expect(data.data.items.map((item: { id: string }) => item.id)).toEqual(
+                expect.arrayContaining([own.id, boughtId])
+            );
         });
 
-        it('should support pagination for sponsorships list', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/sponsorships?page=1&pageSize=5', {
-                method: 'GET',
-                headers
+        it('should support pagination for the sponsorships list', async () => {
+            const res = await app.request(`${BASE}?page=1&pageSize=5`, {
+                headers: sponsorHeaders()
             });
 
-            expect(response.status).toBe(200);
-            const data = await response.json();
-            expect(data.success).toBe(true);
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.data.pagination).toMatchObject({ page: 1, pageSize: 5, total: 1 });
         });
 
         it('should filter sponsorships by target type', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/sponsorships?targetType=event', {
-                method: 'GET',
-                headers
+            await seedSponsorship({ sponsorUserId: sponsorId, level: postLevel });
+
+            const res = await app.request(`${BASE}?targetType=post`, {
+                headers: sponsorHeaders()
             });
 
-            expect(response.status).toBe(200);
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(
+                data.data.items.every((item: { targetType: string }) => item.targetType === 'post')
+            ).toBe(true);
+            expect(data.data.items).toHaveLength(1);
         });
 
-        it('should filter sponsorships by status', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/sponsorships?status=active', {
-                method: 'GET',
-                headers
+        it('should retrieve a specific sponsorship by ID', async () => {
+            const res = await app.request(`${BASE}/${own.id}`, { headers: sponsorHeaders() });
+
+            expect(res.status).toBe(200);
+            expect((await res.json()).data).toMatchObject({ id: own.id, levelId: eventLevel.id });
+        });
+
+        it('should return 404 for a non-existent sponsorship', async () => {
+            const res = await app.request(`${BASE}/${NON_EXISTENT_ID}`, {
+                headers: sponsorHeaders()
             });
 
-            expect(response.status).toBe(200);
-        });
-
-        it('should retrieve specific sponsorship by ID', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const sponsorshipId = '00000000-0000-0000-0000-sponsorship-01';
-            const response = await app.request(`/api/v1/sponsorships/${sponsorshipId}`, {
-                method: 'GET',
-                headers
-            });
-
-            // 200 (found), 400 (invalid ID), or 404 (not found)
-            expect([200, 400, 404]).toContain(response.status);
-        });
-
-        it('should return 404 for non-existent sponsorship', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request(
-                '/api/v1/sponsorships/00000000-0000-0000-0000-000000000000',
-                { method: 'GET', headers }
-            );
-
-            expect(response.status).toBe(404);
+            expect(res.status).toBe(404);
         });
     });
 
     describe('3. Analytics Tracking - Impressions and Clicks', () => {
-        it('should retrieve analytics for a sponsorship', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const sponsorshipId = '00000000-0000-0000-0000-sponsorship-01';
+        it('should retrieve the analytics counters of a sponsorship', async () => {
+            const res = await app.request(`${BASE}/${own.id}/analytics`, {
+                headers: sponsorHeaders()
+            });
 
-            try {
-                const response = await app.request(
-                    `/api/v1/sponsorships/${sponsorshipId}/analytics`,
-                    { method: 'GET', headers }
-                );
-
-                // 200 (success), 400 (invalid ID), 403 (forbidden), or 404 (not found)
-                expect([200, 400, 403, 404]).toContain(response.status);
-
-                if (response.status === 200) {
-                    const data = await response.json();
-                    expect(data.success).toBe(true);
-                    // Analytics should have impressions, clicks, and couponsUsed
-                    expect(data.data).toHaveProperty('impressions');
-                    expect(data.data).toHaveProperty('clicks');
-                    expect(data.data).toHaveProperty('couponsUsed');
-                }
-            } catch (error) {
-                // HTTPException from authorization middleware is valid
-                expect(error).toBeDefined();
-            }
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.success).toBe(true);
+            expect(data.data).toEqual({ impressions: 200, clicks: 10, couponsUsed: 3 });
         });
 
-        it('should calculate CTR (Click-Through Rate) from analytics data', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const sponsorshipId = '00000000-0000-0000-0000-sponsorship-01';
+        it('should derive a CTR between 0 and 100 from the analytics data', async () => {
+            const res = await app.request(`${BASE}/${own.id}/analytics`, {
+                headers: sponsorHeaders()
+            });
 
-            try {
-                const response = await app.request(
-                    `/api/v1/sponsorships/${sponsorshipId}/analytics`,
-                    { method: 'GET', headers }
-                );
-
-                if (response.status === 200) {
-                    const data = await response.json();
-                    const { impressions, clicks } = data.data;
-
-                    if (impressions > 0) {
-                        const ctr = (clicks / impressions) * 100;
-                        expect(ctr).toBeGreaterThanOrEqual(0);
-                        expect(ctr).toBeLessThanOrEqual(100);
-                    }
-                }
-            } catch (error) {
-                // Expected if route throws HTTPException
-                expect(error).toBeDefined();
-            }
+            expect(res.status).toBe(200);
+            const { impressions, clicks } = (await res.json()).data;
+            expect((clicks / impressions) * 100).toBe(5);
         });
 
-        it('should track coupon usage in analytics', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const sponsorshipId = '00000000-0000-0000-0000-sponsorship-01';
+        it('should return zeroed analytics for a freshly purchased sponsorship', async () => {
+            const bought = await post({ body: purchase({ level: postLevel }) });
+            expect(bought.status).toBe(201);
+            const boughtId = (await bought.json()).data.id;
 
-            try {
-                const response = await app.request(
-                    `/api/v1/sponsorships/${sponsorshipId}/analytics`,
-                    { method: 'GET', headers }
-                );
+            const res = await app.request(`${BASE}/${boughtId}/analytics`, {
+                headers: sponsorHeaders()
+            });
 
-                if (response.status === 200) {
-                    const data = await response.json();
-                    expect(data.data.couponsUsed).toBeGreaterThanOrEqual(0);
-                }
-            } catch (error) {
-                expect(error).toBeDefined();
-            }
-        });
-
-        it('should validate analytics data structure', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const sponsorshipId = '00000000-0000-0000-0000-sponsorship-01';
-
-            try {
-                const response = await app.request(
-                    `/api/v1/sponsorships/${sponsorshipId}/analytics`,
-                    { method: 'GET', headers }
-                );
-
-                if (response.status === 200) {
-                    const data = await response.json();
-                    const { impressions, clicks, couponsUsed } = data.data;
-
-                    // All analytics fields should be non-negative integers
-                    expect(Number.isInteger(impressions)).toBe(true);
-                    expect(Number.isInteger(clicks)).toBe(true);
-                    expect(Number.isInteger(couponsUsed)).toBe(true);
-                    expect(impressions).toBeGreaterThanOrEqual(0);
-                    expect(clicks).toBeGreaterThanOrEqual(0);
-                    expect(couponsUsed).toBeGreaterThanOrEqual(0);
-                }
-            } catch (error) {
-                expect(error).toBeDefined();
-            }
+            expect(res.status).toBe(200);
+            expect((await res.json()).data).toEqual({ impressions: 0, clicks: 0, couponsUsed: 0 });
         });
     });
 
     describe('4. Access Control - Analytics Viewing', () => {
-        it('should allow sponsor to view their own sponsorship analytics', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const sponsorshipId = '00000000-0000-0000-0000-sponsorship-own';
+        // HOS-1913: checkCanView throws FORBIDDEN for a row owned by someone else, so the route answers 403 and confirms the id exists (error-contract.md wants 404).
+        it.fails("should answer 404 to another sponsor's analytics request", async () => {
+            const res = await app.request(`${BASE}/${own.id}/analytics`, {
+                headers: headersFor({
+                    actorId: otherSponsorId,
+                    permissions: SPONSOR_PERMISSIONS
+                })
+            });
 
-            try {
-                const response = await app.request(
-                    `/api/v1/sponsorships/${sponsorshipId}/analytics`,
-                    { method: 'GET', headers }
-                );
-
-                // 200, 400, 403, or 404
-                expect([200, 400, 403, 404]).toContain(response.status);
-            } catch (error) {
-                expect(error).toBeDefined();
-            }
+            expect(res.status).toBe(404);
         });
 
-        it('should deny sponsor access to other sponsors analytics', async () => {
-            const headers = createMockHeaders(sponsorActor2);
-            const otherSponsorshipId = '00000000-0000-0000-0000-sponsorship-own';
+        it("currently answers 403 to another sponsor's analytics request (HOS-1913)", async () => {
+            const res = await app.request(`${BASE}/${own.id}/analytics`, {
+                headers: headersFor({
+                    actorId: otherSponsorId,
+                    permissions: SPONSOR_PERMISSIONS
+                })
+            });
 
-            try {
-                const response = await app.request(
-                    `/api/v1/sponsorships/${otherSponsorshipId}/analytics`,
-                    { method: 'GET', headers }
-                );
-
-                // Should be 403 (forbidden) or 404 (not found) if ownership check is enforced
-                expect([403, 404, 200]).toContain(response.status);
-            } catch (error) {
-                expect(error).toBeDefined();
-                // Should contain authorization/permission error
-            }
+            expect(res.status).toBe(403);
         });
 
-        it('should deny non-sponsor access to analytics', async () => {
-            const headers = createMockHeaders(touristActor);
-            const sponsorshipId = '00000000-0000-0000-0000-sponsorship-01';
+        it('should answer 403 to a user without sponsorship permissions', async () => {
+            const touristId = (await createMockActorUser({ label: 'purchase-tourist' })).id;
 
-            try {
-                const response = await app.request(
-                    `/api/v1/sponsorships/${sponsorshipId}/analytics`,
-                    { method: 'GET', headers }
-                );
+            const res = await app.request(`${BASE}/${own.id}/analytics`, {
+                headers: headersFor({
+                    actorId: touristId,
+                    role: RoleEnum.USER,
+                    permissions: [
+                        PermissionEnum.ACCESS_API_PUBLIC,
+                        PermissionEnum.USER_VIEW_PROFILE
+                    ]
+                })
+            });
 
-                // 403 (forbidden) or 200 if permission check is at service layer (mocked)
-                expect([200, 403]).toContain(response.status);
-            } catch (error) {
-                expect(error).toBeDefined();
-            }
+            expect(res.status).toBe(403);
         });
 
-        it('should allow admin to view any sponsorship analytics', async () => {
-            const headers = createMockHeaders(adminActor);
-            const sponsorshipId = '00000000-0000-0000-0000-sponsorship-01';
+        it('should allow an actor holding SPONSORSHIP_VIEW_ANY to view any sponsorship analytics', async () => {
+            const adminId = (await createMockActorUser({ label: 'purchase-admin' })).id;
 
-            try {
-                const response = await app.request(
-                    `/api/v1/sponsorships/${sponsorshipId}/analytics`,
-                    { method: 'GET', headers }
-                );
+            const res = await app.request(`${BASE}/${own.id}/analytics`, {
+                headers: headersFor({
+                    actorId: adminId,
+                    role: RoleEnum.ADMIN,
+                    permissions: ADMIN_SPONSORSHIP_PERMISSIONS
+                })
+            });
 
-                expect([200, 400, 404]).toContain(response.status);
-            } catch (error) {
-                expect(error).toBeDefined();
-            }
+            expect(res.status).toBe(200);
+            expect((await res.json()).data).toEqual({
+                impressions: 200,
+                clicks: 10,
+                couponsUsed: 3
+            });
         });
     });
 
     describe('5. Error Handling and Edge Cases', () => {
-        it('should handle purchase of invalid sponsorship level', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const invalidSponsorship = {
-                targetType: 'event',
-                targetId: '00000000-0000-0000-0000-000000000001',
-                levelId: '00000000-0000-0000-0000-invalid-level',
-                startsAt: new Date().toISOString()
-            };
-
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(invalidSponsorship)
+        it('should reject the purchase of a level that does not exist', async () => {
+            const res = await post({
+                body: purchase({ level: eventLevel, overrides: { levelId: NON_EXISTENT_ID } })
             });
 
-            // Should fail with 400 (validation) or 404 (level not found)
-            expect([400, 404]).toContain(response.status);
+            expect(res.status).toBe(400);
+            expect((await res.json()).error.message).toContain('does not exist');
         });
 
-        it('should handle duplicate sponsorship for same event/post', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const duplicateSponsorship = {
-                targetType: 'event',
-                targetId: '00000000-0000-0000-0000-duplicate-event',
-                levelId: '00000000-0000-0000-0000-level-gold',
-                startsAt: new Date().toISOString()
-            };
-
-            // First attempt
-            const response1 = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(duplicateSponsorship)
+        it('should reject a level that applies to a different target type', async () => {
+            const res = await post({
+                body: purchase({ level: eventLevel, overrides: { targetType: 'post' } })
             });
 
-            // Second attempt (duplicate)
-            const response2 = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(duplicateSponsorship)
-            });
-
-            // At least one should fail with 400 or 409 (conflict)
-            const statuses = [response1.status, response2.status];
-            expect(statuses.some((status) => [400, 404, 409].includes(status))).toBe(true);
+            expect(res.status).toBe(400);
+            expect((await res.json()).error.message).toContain('applies to event, not post');
         });
 
-        it('should handle invalid date ranges (end before start)', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const invalidDates = {
-                targetType: 'event',
-                targetId: '00000000-0000-0000-0000-000000000001',
-                levelId: '00000000-0000-0000-0000-level-gold',
-                startsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                endsAt: new Date().toISOString() // End before start
-            };
-
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(invalidDates)
+        it('should reject invalid coupon discount percentages above 100', async () => {
+            const res = await post({
+                body: purchase({ level: eventLevel, overrides: { couponDiscountPercent: 150 } })
             });
 
-            // Should fail validation
-            expect([400, 404]).toContain(response.status);
+            expect(res.status).toBe(400);
+            expect((await res.json()).error.code).toBe('VALIDATION_ERROR');
         });
 
-        it('should handle invalid coupon discount percentages', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const invalidCoupon = {
-                targetType: 'event',
-                targetId: '00000000-0000-0000-0000-000000000001',
-                levelId: '00000000-0000-0000-0000-level-gold',
-                startsAt: new Date().toISOString(),
-                couponDiscountPercent: 150 // Invalid: > 100
-            };
-
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(invalidCoupon)
+        it('should reject negative coupon discount percentages', async () => {
+            const res = await post({
+                body: purchase({ level: eventLevel, overrides: { couponDiscountPercent: -10 } })
             });
 
-            expect(response.status).toBe(400);
+            expect(res.status).toBe(400);
+            expect((await res.json()).error.code).toBe('VALIDATION_ERROR');
         });
 
-        it('should handle negative coupon discount percentages', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const invalidCoupon = {
-                targetType: 'event',
-                targetId: '00000000-0000-0000-0000-000000000001',
-                levelId: '00000000-0000-0000-0000-level-gold',
-                startsAt: new Date().toISOString(),
-                couponDiscountPercent: -10
-            };
-
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(invalidCoupon)
+        // HOS-1914: neither the create schema nor the service checks that endsAt follows startsAt, so the sponsorship is persisted with an inverted range.
+        it.fails('should reject an end date before the start date', async () => {
+            const res = await post({
+                body: purchase({
+                    level: eventLevel,
+                    overrides: {
+                        startsAt: new Date(Date.now() + 30 * DAY_MS).toISOString(),
+                        endsAt: new Date().toISOString()
+                    }
+                })
             });
 
-            expect(response.status).toBe(400);
+            expect(res.status).toBe(400);
         });
 
-        it('should handle malformed JSON in sponsorship creation', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/sponsorships', {
+        it('currently accepts an end date before the start date (HOS-1914)', async () => {
+            const res = await post({
+                body: purchase({
+                    level: eventLevel,
+                    overrides: {
+                        startsAt: new Date(Date.now() + 30 * DAY_MS).toISOString(),
+                        endsAt: new Date().toISOString()
+                    }
+                })
+            });
+
+            expect(res.status).toBe(201);
+        });
+
+        it('currently accepts a duplicate sponsorship for the same event (HOS-1916, pending owner decision)', async () => {
+            const body = purchase({ level: eventLevel });
+
+            const first = await post({ body });
+            const second = await post({ body });
+
+            expect(first.status).toBe(201);
+            expect(second.status).toBe(201);
+        });
+
+        it('should reject malformed JSON in sponsorship creation', async () => {
+            const res = await app.request(BASE, {
                 method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
+                headers: sponsorHeaders(),
                 body: 'invalid json {'
             });
 
-            expect(response.status).toBe(400);
-        });
-    });
-
-    describe('6. Sponsorship Levels and Packages', () => {
-        it('should list available sponsorship levels', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            try {
-                const response = await app.request('/api/v1/public/sponsorship-levels', {
-                    method: 'GET',
-                    headers
-                });
-
-                // Accept 200 (success) or 400 (query validation) - both indicate route exists
-                expect([200, 400]).toContain(response.status);
-                if (response.status === 200) {
-                    const data = await response.json();
-                    expect(data.success).toBe(true);
-                }
-            } catch (error) {
-                // HTTPException from middleware
-                expect(error).toBeDefined();
-            }
+            expect(res.status).toBe(400);
         });
 
-        it('should filter sponsorship levels by target type', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            try {
-                const response = await app.request(
-                    '/api/v1/public/sponsorship-levels?targetType=event',
-                    {
-                        method: 'GET',
-                        headers
-                    }
-                );
-
-                expect([200, 400]).toContain(response.status);
-            } catch (error) {
-                expect(error).toBeDefined();
-            }
-        });
-
-        it('should filter sponsorship levels by tier', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            try {
-                const response = await app.request('/api/v1/public/sponsorship-levels?tier=gold', {
-                    method: 'GET',
-                    headers
-                });
-
-                expect([200, 400]).toContain(response.status);
-            } catch (error) {
-                expect(error).toBeDefined();
-            }
-        });
-
-        it('should retrieve specific sponsorship level by ID', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const levelId = '00000000-0000-0000-0000-000000000001';
-            try {
-                const response = await app.request(`/api/v1/public/sponsorship-levels/${levelId}`, {
-                    method: 'GET',
-                    headers
-                });
-
-                expect([200, 400, 403, 404]).toContain(response.status);
-            } catch (error) {
-                // HTTPException from authorization middleware
-                expect(error).toBeDefined();
-            }
-        });
-
-        it('should list available sponsorship packages', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            try {
-                const response = await app.request('/api/v1/public/sponsorship-packages', {
-                    method: 'GET',
-                    headers
-                });
-
-                expect([200, 400]).toContain(response.status);
-            } catch (error) {
-                expect(error).toBeDefined();
-            }
-        });
-
-        it('should retrieve specific sponsorship package by ID', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const packageId = '00000000-0000-0000-0000-000000000001';
-            try {
-                const response = await app.request(
-                    `/api/v1/public/sponsorship-packages/${packageId}`,
-                    {
-                        method: 'GET',
-                        headers
-                    }
-                );
-
-                expect([200, 400, 403, 404]).toContain(response.status);
-            } catch (error) {
-                // HTTPException from authorization middleware
-                expect(error).toBeDefined();
-            }
-        });
-    });
-
-    describe('7. Sponsorship Level Benefits Verification', () => {
-        it('should validate Bronze level benefits (logo only)', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const bronzeSponsorship = {
-                targetType: 'event',
-                targetId: '00000000-0000-0000-0000-event-bronze',
-                levelId: '00000000-0000-0000-0000-level-bronze',
-                startsAt: new Date().toISOString(),
-                logoUrl: 'https://example.com/logo.png'
-                // No linkUrl, couponCode - only logo for Bronze
-            };
-
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(bronzeSponsorship)
+        it('should answer 400 to an analytics request with an invalid sponsorship id', async () => {
+            const res = await app.request(`${BASE}/not-a-uuid/analytics`, {
+                headers: sponsorHeaders()
             });
 
-            expect([201, 400, 404]).toContain(response.status);
+            expect(res.status).toBe(400);
         });
 
-        it('should validate Silver level benefits (logo + link + coupon)', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const silverSponsorship = {
-                targetType: 'event',
-                targetId: '00000000-0000-0000-0000-event-silver',
-                levelId: '00000000-0000-0000-0000-level-silver',
-                startsAt: new Date().toISOString(),
-                logoUrl: 'https://example.com/logo.png',
-                linkUrl: 'https://example.com',
-                couponCode: 'SILVER10',
-                couponDiscountPercent: 10
-            };
-
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(silverSponsorship)
+        it('should answer 404 to an analytics request for a sponsorship that does not exist', async () => {
+            const res = await app.request(`${BASE}/${NON_EXISTENT_ID}/analytics`, {
+                headers: sponsorHeaders()
             });
 
-            expect([201, 400, 404]).toContain(response.status);
-        });
-
-        it('should validate Gold level benefits (all features)', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const goldSponsorship = {
-                targetType: 'event',
-                targetId: '00000000-0000-0000-0000-event-gold',
-                levelId: '00000000-0000-0000-0000-level-gold',
-                startsAt: new Date().toISOString(),
-                logoUrl: 'https://example.com/logo.png',
-                linkUrl: 'https://example.com',
-                couponCode: 'GOLD20',
-                couponDiscountPercent: 20
-                // Gold also includes newsletter feature (handled separately)
-            };
-
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(goldSponsorship)
-            });
-
-            expect([201, 400, 404]).toContain(response.status);
+            expect(res.status).toBe(404);
         });
     });
 
-    describe('8. Billing Integration', () => {
-        it('should handle billing checkout session creation for sponsorship', async () => {
-            const headers = createMockHeaders(sponsorActor);
+    describe('6. Retired public catalog and billing checkout', () => {
+        it.each([
+            '/api/v1/public/sponsorship-levels',
+            '/api/v1/public/sponsorship-levels?targetType=event',
+            `/api/v1/public/sponsorship-levels/${NON_EXISTENT_ID}`,
+            '/api/v1/public/sponsorship-packages',
+            `/api/v1/public/sponsorship-packages/${NON_EXISTENT_ID}`,
+            '/api/v1/protected/billing/plans'
+        ])('should answer 404 to GET %s (route not mounted)', async (path) => {
+            const res = await app.request(path, { headers: sponsorHeaders() });
 
-            try {
-                const response = await app.request('/api/v1/protected/billing/checkout/sessions', {
-                    method: 'POST',
-                    headers: { ...headers, 'content-type': 'application/json' },
-                    body: JSON.stringify({
-                        items: [
-                            {
-                                levelId: '00000000-0000-0000-0000-level-gold',
-                                quantity: 1
-                            }
-                        ],
-                        successUrl: 'https://example.com/success',
-                        cancelUrl: 'https://example.com/cancel'
-                    })
-                });
-
-                // 200, 201, 404 (route not found), or 503 (billing not configured)
-                expect([200, 201, 400, 404, 503]).toContain(response.status);
-            } catch (error) {
-                // Expected if billing is not configured
-                expect(error).toBeDefined();
-            }
+            expect(res.status).toBe(404);
         });
 
-        it('should return 503 when billing is not configured', async () => {
-            const headers = createMockHeaders(sponsorActor);
+        it('should answer 404 to the billing checkout session creation', async () => {
+            const res = await app.request('/api/v1/protected/billing/checkout/sessions', {
+                method: 'POST',
+                headers: sponsorHeaders(),
+                body: JSON.stringify({ sponsorshipId: own.id })
+            });
 
-            try {
-                const response = await app.request('/api/v1/protected/billing/plans', {
-                    method: 'GET',
-                    headers
-                });
-
-                // Should return 503 (Service Unavailable) or 404
-                expect([404, 503]).toContain(response.status);
-            } catch (error) {
-                expect(error).toBeDefined();
-            }
+            expect(res.status).toBe(404);
         });
     });
 
-    describe('9. Unauthenticated Access', () => {
+    describe('7. Unauthenticated Access', () => {
         it('should deny unauthenticated access to sponsorship creation', async () => {
-            try {
-                const response = await app.request('/api/v1/sponsorships', {
-                    method: 'POST',
-                    headers: {
-                        'user-agent': 'vitest-test-agent',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        targetType: 'event',
-                        targetId: '00000000-0000-0000-0000-000000000001',
-                        levelId: '00000000-0000-0000-0000-level-gold',
-                        startsAt: new Date().toISOString()
-                    })
-                });
+            const res = await app.request(BASE, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json', 'user-agent': 'vitest' },
+                body: JSON.stringify(purchase({ level: eventLevel }))
+            });
 
-                // Should be 401 or 403
-                expect([401, 403]).toContain(response.status);
-            } catch (error) {
-                // HTTPException from auth middleware
-                expect(error).toBeDefined();
-            }
+            expect(res.status).toBe(401);
         });
 
-        it('should allow unauthenticated access to public sponsorship levels', async () => {
-            try {
-                const response = await app.request('/api/v1/public/sponsorship-levels', {
-                    method: 'GET',
-                    headers: { 'user-agent': 'vitest-test-agent' }
-                });
+        it('should deny unauthenticated access to analytics', async () => {
+            const res = await app.request(`${BASE}/${own.id}/analytics`, {
+                headers: { 'user-agent': 'vitest' }
+            });
 
-                // Public route should not require auth - accept 200 or 400 (query validation)
-                // 401/403 would indicate auth is unexpectedly required
-                expect([200, 400]).toContain(response.status);
-            } catch (error) {
-                // HTTPException may be thrown if middleware blocks
-                expect(error).toBeDefined();
-            }
-        });
-
-        it('should allow unauthenticated access to public sponsorship packages', async () => {
-            try {
-                const response = await app.request('/api/v1/public/sponsorship-packages', {
-                    method: 'GET',
-                    headers: { 'user-agent': 'vitest-test-agent' }
-                });
-
-                // Public route should not require auth - accept 200 or 400 (query validation)
-                expect([200, 400]).toContain(response.status);
-            } catch (error) {
-                // HTTPException may be thrown if middleware blocks
-                expect(error).toBeDefined();
-            }
-        });
-    });
-
-    describe('10. Analytics Edge Cases', () => {
-        it('should handle analytics request with invalid sponsorship ID format', async () => {
-            const headers = createMockHeaders(sponsorActor);
-
-            try {
-                const response = await app.request('/api/v1/sponsorships/not-a-uuid/analytics', {
-                    method: 'GET',
-                    headers
-                });
-
-                // Should be 400 (validation error) or 404
-                expect([400, 404]).toContain(response.status);
-            } catch (error) {
-                expect(error).toBeDefined();
-            }
-        });
-
-        it('should return empty analytics for new sponsorship', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const newSponsorshipId = '00000000-0000-0000-0000-new-sponsorship';
-
-            try {
-                const response = await app.request(
-                    `/api/v1/sponsorships/${newSponsorshipId}/analytics`,
-                    {
-                        method: 'GET',
-                        headers
-                    }
-                );
-
-                if (response.status === 200) {
-                    const data = await response.json();
-                    expect(data.data.impressions).toBe(0);
-                    expect(data.data.clicks).toBe(0);
-                    expect(data.data.couponsUsed).toBe(0);
-                } else {
-                    // 404 if sponsorship doesn't exist
-                    expect([404, 400, 403]).toContain(response.status);
-                }
-            } catch (error) {
-                expect(error).toBeDefined();
-            }
+            expect(res.status).toBe(401);
         });
     });
 });

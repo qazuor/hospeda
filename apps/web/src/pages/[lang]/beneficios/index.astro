@@ -100,7 +100,7 @@ const experienceBenefits = [
 	}
 ] as const;
 
-const gastronomyBenefits = [
+const venueBenefits = [
 	{
 		Icon: MapIcon,
 		titleKey: 'gastronomy.landing.benefits.item1.title',
@@ -153,7 +153,7 @@ const splitLastWord = (full: string): { main: string; accent: string } => {
 const touristHeading = splitLastWord(t('benefits.tourist.title'));
 const ownerHeading = splitLastWord(t('benefits.owner.title'));
 const experienceHeading = splitLastWord(t('experience.landing.benefits.title'));
-const gastronomyHeading = splitLastWord(t('gastronomy.landing.benefits.title'));
+const venueHeading = splitLastWord(t('gastronomy.landing.benefits.title'));
 const partnerHeading = splitLastWord(t('benefits.partner.title'));
 
 const benefitsTitle = t('benefits.title', 'Beneficios');
@@ -438,9 +438,9 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		<div class="benefits-section__container">
 			<p class="benefits-section__tagline" data-reveal="up">{t('benefits.gastronomy.tagline')}</p>
 			<h2 class="benefits-section__title" data-reveal="up">
-				{gastronomyHeading.main && <>{gastronomyHeading.main}{' '}</>}
+				{venueHeading.main && <>{venueHeading.main}{' '}</>}
 				<span class="benefits-section__title-accent benefits-section__title-accent--gastronomy">
-					{gastronomyHeading.accent}
+					{venueHeading.accent}
 					<svg
 						class="benefits-section__title-underline"
 						viewBox="0 0 200 18"
@@ -458,7 +458,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 				</span>
 			</h2>
 			<div class="benefits-section__grid">
-				{gastronomyBenefits.map((b, i) => {
+				{venueBenefits.map((b, i) => {
 					const Icon = b.Icon;
 					return (
 						<div class="benefits-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">

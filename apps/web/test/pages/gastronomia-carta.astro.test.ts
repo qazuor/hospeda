@@ -53,7 +53,7 @@ describe('carta.astro — 404 guards', () => {
     it('404s a venue with no menu content at all (neither carta nor file)', () => {
         expect(cartaSrc).toContain('hasMenuContent');
         expect(cartaSrc).toMatch(/menuSections\?\.length\s*\?\?\s*0\)\s*>\s*0/);
-        expect(cartaSrc).toContain('gastronomy.menuFileUrl && gastronomy.menuFileKind');
+        expect(cartaSrc).toContain('venue.menuFileUrl && venue.menuFileKind');
         expect(cartaSrc).toMatch(
             /if\s*\(!hasMenuContent\)\s*\{\s*\n\s*return new Response\(null, \{ status: 404 \}\);/
         );
@@ -61,25 +61,23 @@ describe('carta.astro — 404 guards', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 3. REUSES GastronomyMenu.astro — never reimplements the carta render (NG)
+// 3. REUSES VenueMenu.astro — never reimplements the carta render (NG)
 // ---------------------------------------------------------------------------
 describe('carta.astro — reuses GastronomyMenu.astro verbatim', () => {
     it('imports GastronomyMenu from the shared component', () => {
-        expect(cartaSrc).toContain(
-            "import GastronomyMenu from '@/components/gastronomy/GastronomyMenu.astro'"
-        );
+        expect(cartaSrc).toContain("import VenueMenu from '@/components/venue/VenueMenu.astro'");
     });
 
     it('mounts GastronomyMenu with the same props the listing forwards to it', () => {
-        expect(cartaSrc).toContain('<GastronomyMenu');
-        expect(cartaSrc).toContain('menuSections={gastronomy.menuSections}');
-        expect(cartaSrc).toContain('fileUrl={gastronomy.menuFileUrl}');
-        expect(cartaSrc).toContain('fileKind={gastronomy.menuFileKind}');
+        expect(cartaSrc).toContain('<VenueMenu');
+        expect(cartaSrc).toContain('menuSections={venue.menuSections}');
+        expect(cartaSrc).toContain('fileUrl={venue.menuFileUrl}');
+        expect(cartaSrc).toContain('fileKind={venue.menuFileKind}');
     });
 
     it('does NOT re-declare menu section/item markup of its own', () => {
         // The carta section markup (`.gastro-menu__section`, dish list, etc.)
-        // belongs to GastronomyMenu.astro alone — this page must not fork it.
+        // belongs to VenueMenu.astro alone — this page must not fork it.
         expect(cartaSrc).not.toContain('gastro-menu__section');
         expect(cartaSrc).not.toContain('gastro-menu__item');
     });
@@ -116,7 +114,7 @@ describe('carta.astro — SEO (canonical to listing, noindex, out of sitemap by 
 
     it('builds the canonical path from the LISTING url, not its own route', () => {
         expect(cartaSrc).toContain('canonicalPath={listingUrl}');
-        expect(cartaSrc).toMatch(/const listingPath = `gastronomia\/\$\{gastronomy\.slug\}`/);
+        expect(cartaSrc).toMatch(/const listingPath = `gastronomia\/\$\{venue\.slug\}`/);
         expect(cartaSrc).toContain('buildUrl({ locale, path: listingPath })');
     });
 

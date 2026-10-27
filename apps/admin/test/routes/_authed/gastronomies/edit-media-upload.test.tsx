@@ -8,7 +8,7 @@ import * as mod from '../../../../src/routes/_authed/gastronomies/$id_.edit';
  * This file used to assert that the gastronomy edit page wired
  * `media.featuredImage` / `media.gallery` field handlers to Cloudinary
  * uploads. That wiring was the bug: `media` is not a writable key on
- * `GastronomyUpdateInputSchema` (the `media` JSONB column was dropped —
+ * `VenueUpdateInputSchema` (the `media` JSONB column was dropped —
  * HOS-372), so the schema silently stripped it on every PATCH. Every photo
  * uploaded through those fields reached Cloudinary but never got a DB row —
  * a permanently-billed orphan. Photos are now managed exclusively via the
@@ -54,7 +54,7 @@ vi.mock('@/components/ui-wrapped', () => ({
 // `useLocation`/`Link` (the router mock below only provides `createFileRoute`).
 vi.mock('@/components/layout/PageTabs', () => ({
     PageTabs: () => <div data-testid="page-tabs" />,
-    gastronomyTabs: []
+    venueTabs: []
 }));
 // The revalidate button is real UI with its own hooks (react-query, toast,
 // permissions). This file is about field handlers, so it is stubbed here
@@ -62,8 +62,8 @@ vi.mock('@/components/layout/PageTabs', () => ({
 vi.mock('@/components/RevalidateEntityButton', () => ({
     RevalidateEntityButton: () => <div data-testid="revalidate-entity-button" />
 }));
-vi.mock('@/features/gastronomy', () => ({
-    useGastronomyPage: () => ({ entity: null, isLoading: false, error: null, permissions: {} })
+vi.mock('@/features/venue', () => ({
+    useVenuePage: () => ({ entity: null, isLoading: false, error: null, permissions: {} })
 }));
 vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({ t: (key: string) => key })

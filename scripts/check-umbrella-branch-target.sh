@@ -6,9 +6,10 @@
 #
 # WHY
 #
-# A multi-epic program (the first one is HOS-1352) is developed on ONE
-# integration branch, `epic/HOS-1352-verticales-billing`. Sub-epics and units
-# branch off it and merge back into it; `staging` is merged INTO it
+# Each multi-epic program is developed on its own integration branch. The
+# watched branches are `epic/HOS-1352-verticales-billing` and
+# `epic/HOS-1801-renombrado-fisico`. Sub-epics and units branch off their
+# umbrella and merge back into it; `staging` is merged INTO it
 # periodically; and only the umbrella itself goes to `staging`, once, at the
 # end. That rule exists so that shipping half of the program is not a decision
 # somebody can get wrong: the unit that reaches `staging` is the umbrella.
@@ -49,8 +50,8 @@
 #
 # WHAT IS ALLOWED
 #
-#   - The umbrella's own PR (head ref == the umbrella branch): it is the one
-#     path the rule prescribes.
+#   - Each umbrella's own PR (head ref == that umbrella branch): it is the
+#     path the rule prescribes for that umbrella. Other umbrellas are checked.
 #   - Any PR whose target is not `staging` or `main` (a sub-epic -> umbrella
 #     PR included).
 #   - Everything, while the umbrella does not exist on the remote: there is
@@ -74,7 +75,7 @@
 #   CI_BASELINE_SHA   commit the PR is measured against (set by
 #                     scripts/resolve-ci-baseline.sh). Falls back to
 #                     <remote>/<GITHUB_BASE_REF>.
-#   UMBRELLA_BRANCH   default: epic/HOS-1352-verticales-billing
+#   UMBRELLA_BRANCHES space-separated list; defaults to the watched umbrellas
 #   UMBRELLA_REMOTE   default: origin
 #
 # Exit: 0 allowed, 1 forbidden target or the check could not be completed
@@ -83,7 +84,8 @@
 
 set -euo pipefail
 
-readonly UMBRELLA_BRANCH="${UMBRELLA_BRANCH:-epic/HOS-1352-verticales-billing}"
+readonly DEFAULT_UMBRELLAS="epic/HOS-1352-verticales-billing epic/HOS-1801-renombrado-fisico"
+read -r -a UMBRELLA_BRANCHES <<<"${UMBRELLA_BRANCHES:-${DEFAULT_UMBRELLAS}}"
 readonly REMOTE="${UMBRELLA_REMOTE:-origin}"
 readonly BASE_REF="${GITHUB_BASE_REF:-}"
 readonly HEAD_REF="${GITHUB_HEAD_REF:-}"
@@ -98,33 +100,6 @@ case "${BASE_REF}" in
         ;;
 esac
 
-if [ "${HEAD_REF}" = "${UMBRELLA_BRANCH}" ]; then
-    echo "OK: '${HEAD_REF}' is the umbrella itself — its PR to ${BASE_REF} is the allowed path."
-    exit 0
-fi
-
-umbrella_ref="refs/remotes/${REMOTE}/${UMBRELLA_BRANCH}"
-
-if ! git rev-parse --verify --quiet "${umbrella_ref}" >/dev/null 2>&1; then
-    # Not fetched locally. Ask the remote whether it exists at all:
-    # `ls-remote --exit-code` returns 2 when no ref matches.
-    set +e
-    git ls-remote --exit-code --heads "${REMOTE}" "${UMBRELLA_BRANCH}" >/dev/null 2>&1
-    ls_status=$?
-    set -e
-    if [ "${ls_status}" -eq 2 ]; then
-        echo "OK: umbrella '${UMBRELLA_BRANCH}' does not exist on '${REMOTE}' — nothing to protect yet."
-        exit 0
-    fi
-    if [ "${ls_status}" -ne 0 ]; then
-        echo "FAIL: could not query '${REMOTE}' for '${UMBRELLA_BRANCH}' (git ls-remote exit ${ls_status})."
-        exit 1
-    fi
-    if ! git fetch --no-tags "${REMOTE}" "+refs/heads/${UMBRELLA_BRANCH}:${umbrella_ref}" >/dev/null 2>&1; then
-        echo "FAIL: '${UMBRELLA_BRANCH}' exists on '${REMOTE}' but could not be fetched."
-        exit 1
-    fi
-fi
 
 base="${CI_BASELINE_SHA:-}"
 if [ -z "${base}" ]; then
@@ -150,21 +125,57 @@ if ! git rev-parse --verify --quiet "${staging_ref}^{commit}" >/dev/null 2>&1; t
     exit 1
 fi
 
-# No common history at all: HEAD cannot carry umbrella commits.
-merge_bases="$(git merge-base --all HEAD "${umbrella_ref}" || true)"
-
-for mb in ${merge_bases}; do
-    # A merge-base that `staging` already has is shared history the umbrella
-    # took from `staging`, legitimate on any target. Only the umbrella's own
-    # commits — in neither the target nor `staging` — are a leak.
-    if ! git merge-base --is-ancestor "${mb}" "${base}" &&
-        ! git merge-base --is-ancestor "${mb}" "${staging_ref}"; then
-        echo "FAIL (DEC-ARCH-007): this branch carries commits of '${UMBRELLA_BRANCH}' that neither '${BASE_REF}' nor '${STAGING_BRANCH}' has."
-        echo "  A branch cut from the umbrella may not target staging or main."
-        echo "  Retarget the PR to '${UMBRELLA_BRANCH}'. Only the umbrella's own PR goes to ${BASE_REF}."
-        echo "  Umbrella-only commit shared with HEAD: $(git rev-parse --short "${mb}")"
-        exit 1
+check_umbrella() {
+    local umbrella="$1"
+    local mb merge_bases
+    if [ "${HEAD_REF}" = "${umbrella}" ]; then
+        echo "OK: '${HEAD_REF}' is the umbrella itself — its PR to ${BASE_REF} is the allowed path."
+        return 0
     fi
-done
 
-echo "OK: no umbrella-only commit of '${UMBRELLA_BRANCH}' reaches '${BASE_REF}' through this branch."
+    local umbrella_ref="refs/remotes/${REMOTE}/${umbrella}"
+
+    if ! git rev-parse --verify --quiet "${umbrella_ref}" >/dev/null 2>&1; then
+        # Not fetched locally. Ask the remote whether it exists at all:
+        # `ls-remote --exit-code` returns 2 when no ref matches.
+        set +e
+        git ls-remote --exit-code --heads "${REMOTE}" "${umbrella}" >/dev/null 2>&1
+        local ls_status=$?
+        set -e
+        if [ "${ls_status}" -eq 2 ]; then
+            echo "OK: umbrella '${umbrella}' does not exist on '${REMOTE}' — nothing to protect yet."
+            return 0
+        fi
+        if [ "${ls_status}" -ne 0 ]; then
+            echo "FAIL: could not query '${REMOTE}' for '${umbrella}' (git ls-remote exit ${ls_status})."
+            return 1
+        fi
+        if ! git fetch --no-tags "${REMOTE}" "+refs/heads/${umbrella}:${umbrella_ref}" >/dev/null 2>&1; then
+            echo "FAIL: '${umbrella}' exists on '${REMOTE}' but could not be fetched."
+            return 1
+        fi
+    fi
+    merge_bases="$(git merge-base --all HEAD "${umbrella_ref}" || true)"
+
+    for mb in ${merge_bases}; do
+        # A merge-base that `staging` already has is shared history the umbrella
+        # took from `staging`, legitimate on any target. Only the umbrella's own
+        # commits — in neither the target nor `staging` — are a leak.
+        if ! git merge-base --is-ancestor "${mb}" "${base}" &&
+            ! git merge-base --is-ancestor "${mb}" "${staging_ref}"; then
+            echo "FAIL (DEC-ARCH-007): this branch carries commits of '${umbrella}' that neither '${BASE_REF}' nor '${STAGING_BRANCH}' has."
+            echo "  A branch cut from the umbrella may not target staging or main."
+            echo "  Retarget the PR to '${umbrella}'. Only the umbrella's own PR goes to ${BASE_REF}."
+            echo "  Umbrella-only commit shared with HEAD: $(git rev-parse --short "${mb}")"
+            return 1
+        fi
+    done
+
+    echo "OK: no umbrella-only commit of '${umbrella}' reaches '${BASE_REF}' through this branch."
+}
+
+failed=0
+for u in "${UMBRELLA_BRANCHES[@]}"; do
+    check_umbrella "${u}" || failed=1
+done
+exit "${failed}"

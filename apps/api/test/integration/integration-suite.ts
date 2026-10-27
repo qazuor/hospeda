@@ -30,8 +30,6 @@ export interface ApiIntegrationExclusion {
     readonly reason: string;
 }
 
-const WHOLE_MODULE_MOCK =
-    'HOS-1891: never ran in CI; its whole-module vi.mock of @repo/logger or @repo/service-core lacks an export the app now imports.';
 const MISC =
     'HOS-1891: never ran in CI; fails for a file-specific reason (health, app, auth actor, reviews permissions, missing vertical seed). Needs its own diagnosis.';
 
@@ -53,20 +51,6 @@ export const API_INTEGRATION_EXCLUSIONS: readonly ApiIntegrationExclusion[] = [
         file: 'test/integration/ai/vault-roundtrip.test.ts',
         reason: 'HOS-247: non-deterministically flaky: the credential-create route fires syncAiProviderModels after responding, racing testDb.clean(). Comes back once the create flow is deterministic under test.'
     },
-    ...byReason({
-        reason: WHOLE_MODULE_MOCK,
-        files: [
-            'test/integration/accommodation/relations.test.ts',
-            'test/integration/billing-routes.test.ts',
-            'test/integration/error-handling.test.ts',
-            'test/integration/middleware-interactions.test.ts',
-            'test/integration/middleware-stack.test.ts',
-            'test/integration/performance-stack.test.ts',
-            'test/integration/real-user-scenarios.test.ts',
-            'test/integration/sponsor-user-flow.test.ts',
-            'test/integration/sponsorship-purchase-analytics.test.ts'
-        ]
-    }),
     ...byReason({
         reason: MISC,
         files: [
