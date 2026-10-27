@@ -26485,7 +26485,7 @@
       "checkConstraints": {
         "ck_vertical_id": {
           "name": "ck_vertical_id",
-          "value": "\"vertical\".\"id\" IN ('accommodation', 'gastronomy', 'experience', 'tourist', 'partner')"
+          "value": "\"vertical\".\"id\" IN ('accommodation', 'venue', 'experience', 'tourist', 'partner')"
         },
         "ck_vertical_activation_event": {
           "name": "ck_vertical_activation_event",
