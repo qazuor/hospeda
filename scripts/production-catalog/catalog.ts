@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 export const UNLIMITED_LIMIT_VALUE = 2147483647;
 
 export interface PlanCatalogDefinition {
-    readonly vertical: 'accommodation' | 'gastronomy' | 'experience' | 'tourist' | 'partner';
+    readonly vertical: 'accommodation' | 'venue' | 'experience' | 'tourist' | 'partner';
     readonly slug: string;
     readonly name: string;
     readonly pricingOrder: number;
@@ -544,9 +544,9 @@ export const PRODUCTION_PLAN_CATALOG = [
         }
     },
     {
-        vertical: 'gastronomy',
-        slug: 'gastronomy-basico',
-        name: 'Gastronomía Básico',
+        vertical: 'venue',
+        slug: 'venue-basico',
+        name: 'Comer y salir Básico',
         pricingOrder: 1,
         role: null,
         version: {
@@ -604,10 +604,10 @@ export const PRODUCTION_PLAN_CATALOG = [
                     key: 'can_use_collections'
                 },
                 {
-                    key: 'edit_gastronomy_info'
+                    key: 'edit_venue_info'
                 },
                 {
-                    key: 'publish_gastronomy'
+                    key: 'publish_venue'
                 },
                 {
                     key: 'view_basic_stats'
@@ -647,7 +647,7 @@ export const PRODUCTION_PLAN_CATALOG = [
                     value: 1
                 },
                 {
-                    key: 'max_ai_chat_gastronomy_per_month',
+                    key: 'max_ai_chat_venue_per_month',
                     value: 0
                 },
                 {
@@ -658,9 +658,9 @@ export const PRODUCTION_PLAN_CATALOG = [
         }
     },
     {
-        vertical: 'gastronomy',
-        slug: 'gastronomy-pro',
-        name: 'Gastronomía Profesional',
+        vertical: 'venue',
+        slug: 'venue-pro',
+        name: 'Comer y salir Profesional',
         pricingOrder: 2,
         role: null,
         version: {
@@ -718,22 +718,22 @@ export const PRODUCTION_PLAN_CATALOG = [
                     key: 'can_use_collections'
                 },
                 {
-                    key: 'edit_gastronomy_info'
+                    key: 'edit_venue_info'
                 },
                 {
-                    key: 'publish_gastronomy'
+                    key: 'publish_venue'
                 },
                 {
                     key: 'view_basic_stats'
                 },
                 {
-                    key: 'manage_gastronomy_menu'
+                    key: 'manage_venue_menu'
                 },
                 {
-                    key: 'manage_gastronomy_daily_special'
+                    key: 'manage_venue_daily_special'
                 },
                 {
-                    key: 'manage_gastronomy_events'
+                    key: 'manage_venue_events'
                 }
             ],
             limits: [
@@ -770,7 +770,7 @@ export const PRODUCTION_PLAN_CATALOG = [
                     value: 3
                 },
                 {
-                    key: 'max_ai_chat_gastronomy_per_month',
+                    key: 'max_ai_chat_venue_per_month',
                     value: 0
                 },
                 {
@@ -781,9 +781,9 @@ export const PRODUCTION_PLAN_CATALOG = [
         }
     },
     {
-        vertical: 'gastronomy',
-        slug: 'gastronomy-premium',
-        name: 'Gastronomía Premium',
+        vertical: 'venue',
+        slug: 'venue-premium',
+        name: 'Comer y salir Premium',
         pricingOrder: 3,
         role: null,
         version: {
@@ -841,10 +841,10 @@ export const PRODUCTION_PLAN_CATALOG = [
                     key: 'can_use_collections'
                 },
                 {
-                    key: 'edit_gastronomy_info'
+                    key: 'edit_venue_info'
                 },
                 {
-                    key: 'publish_gastronomy'
+                    key: 'publish_venue'
                 },
                 {
                     key: 'view_basic_stats'
@@ -853,13 +853,13 @@ export const PRODUCTION_PLAN_CATALOG = [
                     key: 'download_listing_pdf'
                 },
                 {
-                    key: 'manage_gastronomy_menu'
+                    key: 'manage_venue_menu'
                 },
                 {
-                    key: 'manage_gastronomy_daily_special'
+                    key: 'manage_venue_daily_special'
                 },
                 {
-                    key: 'manage_gastronomy_events'
+                    key: 'manage_venue_events'
                 },
                 {
                     key: 'menu_item_photos'
@@ -870,7 +870,7 @@ export const PRODUCTION_PLAN_CATALOG = [
                     trialQuota: 50
                 },
                 {
-                    key: 'multilingual_gastronomy_menu'
+                    key: 'multilingual_venue_menu'
                 },
                 {
                     key: 'menu_qr_scan_metrics'
@@ -910,7 +910,7 @@ export const PRODUCTION_PLAN_CATALOG = [
                     value: 5
                 },
                 {
-                    key: 'max_ai_chat_gastronomy_per_month',
+                    key: 'max_ai_chat_venue_per_month',
                     value: 1250
                 },
                 {
@@ -1509,9 +1509,9 @@ export const PRODUCTION_PLAN_CATALOG = [
         }
     },
     {
-        vertical: 'gastronomy',
+        vertical: 'venue',
         slug: 'trial',
-        name: 'Gastronomy Trial',
+        name: 'Comer y salir Trial',
         pricingOrder: 0,
         role: 'trial',
         version: {
@@ -1532,9 +1532,9 @@ export const PRODUCTION_PLAN_CATALOG = [
         }
     },
     {
-        vertical: 'gastronomy',
+        vertical: 'venue',
         slug: 'pre-trial',
-        name: 'Gastronomy Pre Trial',
+        name: 'Comer y salir Pre Trial',
         pricingOrder: 0,
         role: 'pre_trial',
         version: {
@@ -1557,9 +1557,9 @@ export const PRODUCTION_PLAN_CATALOG = [
         }
     },
     {
-        vertical: 'gastronomy',
+        vertical: 'venue',
         slug: 'floor',
-        name: 'Gastronomy Floor',
+        name: 'Comer y salir Floor',
         pricingOrder: 0,
         role: 'floor',
         version: {
