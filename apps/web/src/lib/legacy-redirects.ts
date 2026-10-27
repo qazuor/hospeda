@@ -148,7 +148,10 @@ export function resolveLegacyRedirectTarget({
     const locale = retiredLocaleMatch?.[1] ?? 'es';
     const retiredPath = retiredLocaleMatch?.[2] ?? path;
     const retiredRoutes: readonly [RegExp, (tail: string) => string][] = [
-        [/^\/mi-cuenta\/comercio\/nuevo\/gastronomy(\/.*)?$/, (tail) => `/publicar/comer-y-salir/`],
+        [
+            /^\/mi-cuenta\/comercio\/nuevo\/gastronomy(\/.*)?$/,
+            (_tail) => `/publicar/comer-y-salir/`
+        ],
         [/^\/gastronomia(\/.*)?$/, (tail) => `/comer-y-salir${tail || '/'}`],
         [/^\/planes\/gastronomia(\/.*)?$/, (tail) => `/planes/comer-y-salir${tail || '/'}`],
         [
