@@ -42,8 +42,12 @@ type ListingVertical =
 
 const TABLES: Readonly<Record<ListingVertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences'
+};
+const ROUTE_TABLES: Readonly<Record<ListingVertical, string>> = {
+    ...TABLES,
+    [VerticalEnum.VENUE]: 'gastronomies'
 };
 
 const CREATE_LISTING: Readonly<
@@ -129,7 +133,7 @@ async function purgeListing(args: { readonly listingId: string }): Promise<void>
     try {
         const response = await readResponse(
             await app.request(
-                `/api/v1/protected/${TABLES[listing.vertical]}/${args.listingId}/purge`,
+                `/api/v1/protected/${ROUTE_TABLES[listing.vertical]}/${args.listingId}/purge`,
                 { method: 'POST', headers: actorHeaders({ id: listing.ownerId }) }
             )
         );

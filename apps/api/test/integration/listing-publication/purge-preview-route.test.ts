@@ -43,7 +43,7 @@ async function cleanOwnedRows(): Promise<void> {
     instanceIds.clear();
     for (const id of listingIds.splice(0)) {
         await getDb().execute(sql`DELETE FROM accommodations WHERE id = ${id}::uuid`);
-        await getDb().execute(sql`DELETE FROM gastronomies WHERE id = ${id}::uuid`);
+        await getDb().execute(sql`DELETE FROM venues WHERE id = ${id}::uuid`);
         await getDb().execute(sql`DELETE FROM experiences WHERE id = ${id}::uuid`);
     }
     for (const id of destinationIds) {

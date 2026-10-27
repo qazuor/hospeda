@@ -54,29 +54,29 @@ export async function createPurgeAssetFixture(
         if (options.includeGallery !== false) {
             const gallery = await getDb().execute(sql<{
                 id: string;
-            }>`INSERT INTO gastronomy_media (gastronomy_id, url, public_id, sort_order)
+            }>`INSERT INTO venue_media (venue_id, url, public_id, sort_order)
             VALUES (${listingId}::uuid, ${`https://assets.example/${galleryPublicId}`}, ${galleryPublicId}, 0) RETURNING id`);
             fixture.galleryMediaId = String(gallery.rows[0]?.id);
         }
         const menuPublicId = `${listingId}:menu-file`;
         fixture.publicIds.push(menuPublicId);
         const videos = [{ url: 'https://youtube.example/video', title: 'Fixture video' }];
-        await getDb().execute(sql`UPDATE gastronomies SET menu_file_url = 'https://assets.example/menu.pdf',
+        await getDb().execute(sql`UPDATE venues SET menu_file_url = 'https://assets.example/menu.pdf',
             menu_file_public_id = ${menuPublicId}, menu_file_kind = 'pdf', videos = ${JSON.stringify(videos)}::jsonb
             WHERE id = ${listingId}::uuid`);
         const section = await getDb().execute(sql<{
             id: string;
-        }>`INSERT INTO gastronomy_menu_sections
-            (gastronomy_id, name, display_order, created_by_id) VALUES (${listingId}::uuid, 'Fixture section', 0, ${owner.id}::uuid) RETURNING id`);
+        }>`INSERT INTO venue_menu_sections
+            (venue_id, name, display_order, created_by_id) VALUES (${listingId}::uuid, 'Fixture section', 0, ${owner.id}::uuid) RETURNING id`);
         fixture.sectionId = String(section.rows[0]?.id);
-        const dishA = await getDb().execute(sql<{ id: string }>`INSERT INTO gastronomy_menu_items
-            (section_id, gastronomy_id, name, display_order, photo_url, photo_public_id, created_by_id)
+        const dishA = await getDb().execute(sql<{ id: string }>`INSERT INTO venue_menu_items
+            (section_id, venue_id, name, display_order, photo_url, photo_public_id, created_by_id)
             VALUES (${fixture.sectionId}::uuid, ${listingId}::uuid, 'Dish A', 0, 'https://assets.example/dish-a.jpg', ${`${listingId}:dish-a`}, ${owner.id}::uuid) RETURNING id`);
-        const dishB = await getDb().execute(sql<{ id: string }>`INSERT INTO gastronomy_menu_items
-            (section_id, gastronomy_id, name, display_order, photo_url, created_by_id)
+        const dishB = await getDb().execute(sql<{ id: string }>`INSERT INTO venue_menu_items
+            (section_id, venue_id, name, display_order, photo_url, created_by_id)
             VALUES (${fixture.sectionId}::uuid, ${listingId}::uuid, 'Dish B', 1, 'https://external.example/dish-b.jpg', ${owner.id}::uuid) RETURNING id`);
-        const dishC = await getDb().execute(sql<{ id: string }>`INSERT INTO gastronomy_menu_items
-            (section_id, gastronomy_id, name, display_order, created_by_id)
+        const dishC = await getDb().execute(sql<{ id: string }>`INSERT INTO venue_menu_items
+            (section_id, venue_id, name, display_order, created_by_id)
             VALUES (${fixture.sectionId}::uuid, ${listingId}::uuid, 'Dish C', 2, ${owner.id}::uuid) RETURNING id`);
         fixture.dishIds = [dishA.rows[0], dishB.rows[0], dishC.rows[0]].map((row) =>
             String(row?.id)
@@ -107,13 +107,13 @@ export async function cleanupPurgeAssetFixtures(
     for (const fixture of fixtures) {
         const table =
             fixture.vertical === VerticalEnum.VENUE
-                ? 'gastronomy_media'
+                ? 'venue_media'
                 : fixture.vertical === VerticalEnum.EXPERIENCE
                   ? 'experience_media'
                   : 'accommodation_media';
         const fk =
             fixture.vertical === VerticalEnum.VENUE
-                ? 'gastronomy_id'
+                ? 'venue_id'
                 : fixture.vertical === VerticalEnum.EXPERIENCE
                   ? 'experience_id'
                   : 'accommodation_id';
@@ -122,7 +122,7 @@ export async function cleanupPurgeAssetFixtures(
         );
         const listingTable =
             fixture.vertical === VerticalEnum.VENUE
-                ? 'gastronomies'
+                ? 'venues'
                 : fixture.vertical === VerticalEnum.EXPERIENCE
                   ? 'experiences'
                   : 'accommodations';

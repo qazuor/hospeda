@@ -123,7 +123,7 @@ describe('GET /{id}/menu-qr — minting (AC-2)', () => {
         expect(mockGetOrCreateForEntity).toHaveBeenCalledTimes(2);
         expect(mockGetOrCreateForEntity.mock.calls[0]?.[0]).toMatchObject({
             entityId: VENUE_ID,
-            entityType: 'GASTRONOMY',
+            entityType: 'VENUE',
             purpose: 'MENU'
         });
     });

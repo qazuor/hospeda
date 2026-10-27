@@ -30,8 +30,12 @@ const verticals = [
 ] as const;
 const tables: Readonly<Record<(typeof verticals)[number], string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences'
+};
+const routeTables: Readonly<Record<(typeof verticals)[number], string>> = {
+    ...tables,
+    [VerticalEnum.VENUE]: 'gastronomies'
 };
 const createFixture: Readonly<
     Record<
@@ -52,7 +56,7 @@ const createFixture: Readonly<
         createVerticalListing({ vertical: VerticalEnum.EXPERIENCE, ownerId, destinationId, status })
 };
 function listingPath(vertical: (typeof verticals)[number], id: string) {
-    return `/api/v1/protected/${tables[vertical]}/${id}/purge`;
+    return `/api/v1/protected/${routeTables[vertical]}/${id}/purge`;
 }
 
 beforeAll(async () => {

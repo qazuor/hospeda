@@ -91,7 +91,7 @@ describe('TEST:1702:3 AC:1702:2 a failed remote deletion of the menu file and di
         expect(response.status).toBe(200);
         expect(response.body.data).toEqual({ purged: true });
         const status = await getDb().execute(
-            sql`SELECT publication_status FROM gastronomies WHERE id = ${fixture.listingId}::uuid`
+            sql`SELECT publication_status FROM venues WHERE id = ${fixture.listingId}::uuid`
         );
         expect(status.rows).toEqual([{ publication_status: 'PURGED' }]);
         await vi.waitFor(() =>
@@ -104,7 +104,7 @@ describe('TEST:1702:3 AC:1702:2 a failed remote deletion of the menu file and di
                 id: string;
                 public_id: string;
                 remote_deletion_pending_at: Date | null;
-            }>`SELECT id, public_id, remote_deletion_pending_at FROM gastronomy_media WHERE gastronomy_id = ${fixture.listingId}::uuid AND remote_deletion_pending_at IS NOT NULL ORDER BY public_id`
+            }>`SELECT id, public_id, remote_deletion_pending_at FROM venue_media WHERE venue_id = ${fixture.listingId}::uuid AND remote_deletion_pending_at IS NOT NULL ORDER BY public_id`
         );
         expect(rows.rows.map(({ public_id }) => public_id)).toEqual([...remoteIds].sort());
         expect(
@@ -140,7 +140,7 @@ describe('TEST:1702:3 AC:1702:2 a failed remote deletion of the menu file and di
             sql`, `
         );
         const stillMarked = await getDb().execute(
-            sql`SELECT id FROM gastronomy_media WHERE id IN (${idList}) AND remote_deletion_pending_at IS NOT NULL`
+            sql`SELECT id FROM venue_media WHERE id IN (${idList}) AND remote_deletion_pending_at IS NOT NULL`
         );
         expect(stillMarked.rows.map((row) => String((row as { id: string }).id)).sort()).toEqual(
             [...ids].sort()
@@ -151,7 +151,7 @@ describe('TEST:1702:3 AC:1702:2 a failed remote deletion of the menu file and di
         expect(recovered.mediaDeleted).toBe(2);
         expect(recovered.failures).toEqual([]);
         const remaining = await getDb().execute(
-            sql`SELECT id FROM gastronomy_media WHERE id IN (${idList})`
+            sql`SELECT id FROM venue_media WHERE id IN (${idList})`
         );
         expect(remaining.rows).toEqual([]);
         expect([...storage.stored].filter((id) => remoteIds.includes(id)).sort()).toEqual([]);

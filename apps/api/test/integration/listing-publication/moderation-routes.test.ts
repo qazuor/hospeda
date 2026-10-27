@@ -141,7 +141,7 @@ describe.each(verticals)('TEST:V6:12 moderation HTTP — %s', (vertical) => {
         const softDeletedId = await makeListing(vertical, owner.id, destinationId);
         const table: Readonly<Record<(typeof verticals)[number], string>> = {
             [VerticalEnum.ACCOMMODATION]: 'accommodations',
-            [VerticalEnum.VENUE]: 'gastronomies',
+            [VerticalEnum.VENUE]: 'venues',
             [VerticalEnum.EXPERIENCE]: 'experiences'
         };
         await getDb().execute(

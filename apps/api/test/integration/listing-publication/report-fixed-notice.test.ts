@@ -37,6 +37,11 @@ const segments: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.VENUE]: 'gastronomies',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
+const sqlTables: Readonly<Record<Vertical, string>> = {
+    [VerticalEnum.ACCOMMODATION]: 'accommodations',
+    [VerticalEnum.VENUE]: 'venues',
+    [VerticalEnum.EXPERIENCE]: 'experiences'
+};
 const createdOwners: string[] = [];
 const createdListings: string[] = [];
 const noticeTemplate = 'verticals.listing-fix-reported';
@@ -165,7 +170,7 @@ afterEach(async () => {
         .update(users)
         .set({ deletedAt: new Date() })
         .where(sql`${users.id} = ANY(${sql.param(ownerIds)}::uuid[])`);
-    for (const table of Object.values(segments)) {
+    for (const table of Object.values(sqlTables)) {
         await getDb().execute(
             sql`UPDATE ${sql.identifier(table)} SET deleted_at = now() WHERE owner_id = ANY(${sql.param(ownerIds)}::uuid[]) AND deleted_at IS NULL`
         );

@@ -23,17 +23,17 @@ const verticals = [
 type Vertical = (typeof verticals)[number];
 const listingTables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const reviewTables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodation_reviews',
-    [VerticalEnum.VENUE]: 'gastronomy_reviews',
+    [VerticalEnum.VENUE]: 'venue_reviews',
     [VerticalEnum.EXPERIENCE]: 'experience_reviews'
 };
 const reviewListingColumns: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodation_id',
-    [VerticalEnum.VENUE]: 'gastronomy_id',
+    [VerticalEnum.VENUE]: 'venue_id',
     [VerticalEnum.EXPERIENCE]: 'experience_id'
 };
 const reviewPaths: Readonly<Record<Vertical, (id: string) => string>> = {
