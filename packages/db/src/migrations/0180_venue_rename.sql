@@ -15,7 +15,7 @@ UPDATE ai_settings
 SET value = jsonb_set(
     value,
     '{features}',
-    (value->'features' - 'chat_gastronomy') || jsonb_build_object('chat_venue', value #> '{features,chat_gastronomy}')
+    ((value->'features') - 'chat_gastronomy') || jsonb_build_object('chat_venue', value #> '{features,chat_gastronomy}')
 )
 WHERE value #> '{features,chat_gastronomy}' IS NOT NULL;
 --> statement-breakpoint
