@@ -28,7 +28,7 @@ const verticals = [
 ] as const;
 const tables: Readonly<Record<DeadlineListingRef['vertical'], string>> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'gastronomies',
     experience: 'experiences'
 };
 const now = new Date('2026-10-10T12:00:00.000Z');
