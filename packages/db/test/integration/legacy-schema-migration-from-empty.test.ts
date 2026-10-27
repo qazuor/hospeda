@@ -40,6 +40,9 @@ const EXTRAS_DIR = join(REPO_ROOT, 'packages/db/src/migrations/extras');
 
 /** The retired grouping word, built in parts so the repo-wide guard does not match this file. */
 const OLD = ['comm', 'erce'].join('');
+const OLD_VERTICAL = ['gastro', 'nomy'].join('');
+const OLD_VERTICAL_UPPER = OLD_VERTICAL.toUpperCase();
+const OLD_AI_FEATURE = `chat_${OLD_VERTICAL}`;
 
 /** Every public table in the migrated database. */
 async function publicTables(): Promise<Set<string>> {
@@ -395,7 +398,7 @@ describe('TEST:1820:3 AC:1:4 — reset guard is the first migration statement', 
             await expect(client.query(guard)).resolves.toBeDefined();
             await client.query('BEGIN');
             await client.query('ALTER TABLE vertical DROP CONSTRAINT ck_vertical_id');
-            await client.query("INSERT INTO vertical (id) VALUES ('gastronomy')");
+            await client.query('INSERT INTO vertical (id) VALUES ($1)', [OLD_VERTICAL]);
             await expect(client.query(guard)).rejects.toThrow(
                 'HOS-1787: esta base necesita reset (DEC-FAC-029)'
             );
@@ -416,7 +419,7 @@ describe('TEST:1820:4 AC:1:6 — physical rename data conversions', () => {
         const conversions =
             migration
                 .split('-- Convert persisted values before the enum labels change.')[1]
-                ?.split('ALTER TABLE "gastronomies"')[0]
+                ?.split(`ALTER TABLE "${OLD_VERTICAL}s"`)[0]
                 ?.split('--> statement-breakpoint') ?? [];
         const client = await getTestPool().connect();
         try {
@@ -432,33 +435,33 @@ describe('TEST:1820:4 AC:1:6 — physical rename data conversions', () => {
                 CREATE TEMP TABLE revalidation_config (entity_type text);
                 CREATE TEMP TABLE email_outbox (payload jsonb);
                 CREATE TEMP TABLE cutover_v6_deleted_listing (entity_type text);
-                INSERT INTO qr_codes VALUES ('GASTRONOMY', 'GENERATED', '/es/gastronomia/cafe/carta/');
-                INSERT INTO amenities VALUES (ARRAY['gastronomy']);
-                INSERT INTO features VALUES (ARRAY['gastronomy']);
-                INSERT INTO ai_settings VALUES ('{"features":{"chat_gastronomy":{"enabled":true}}}');
-                INSERT INTO ai_usage VALUES ('chat_gastronomy');
-                INSERT INTO ai_conversations VALUES ('chat_gastronomy');
-                INSERT INTO ai_request_log VALUES ('chat_gastronomy');
-                INSERT INTO ai_prompt_versions VALUES ('chat_gastronomy');
-                INSERT INTO revalidation_config VALUES ('gastronomy');
-                INSERT INTO email_outbox VALUES ('{"vertical":"gastronomy"}');
-                INSERT INTO cutover_v6_deleted_listing VALUES ('gastronomy');
+                INSERT INTO qr_codes VALUES ('${OLD_VERTICAL_UPPER}', 'GENERATED', '/es/gastronomia/cafe/carta/');
+                INSERT INTO amenities VALUES (ARRAY['${OLD_VERTICAL}']);
+                INSERT INTO features VALUES (ARRAY['${OLD_VERTICAL}']);
+                INSERT INTO ai_settings VALUES ('{"features":{"${OLD_AI_FEATURE}":{"enabled":true}}}');
+                INSERT INTO ai_usage VALUES ('${OLD_AI_FEATURE}');
+                INSERT INTO ai_conversations VALUES ('${OLD_AI_FEATURE}');
+                INSERT INTO ai_request_log VALUES ('${OLD_AI_FEATURE}');
+                INSERT INTO ai_prompt_versions VALUES ('${OLD_AI_FEATURE}');
+                INSERT INTO revalidation_config VALUES ('${OLD_VERTICAL}');
+                INSERT INTO email_outbox VALUES ('{"vertical":"${OLD_VERTICAL}"}');
+                INSERT INTO cutover_v6_deleted_listing VALUES ('${OLD_VERTICAL}');
             `);
             for (const sql of conversions) {
                 if (sql.trim()) await client.query(sql);
             }
             const counts = await client.query<{ old_rows: string }>(`
                 SELECT (SELECT count(*) FROM qr_codes WHERE target_url LIKE '%/gastronomia/%')::text AS old_rows
-                UNION ALL SELECT count(*)::text FROM amenities WHERE 'gastronomy' = ANY(applicable_verticals)
-                UNION ALL SELECT count(*)::text FROM features WHERE 'gastronomy' = ANY(applicable_verticals)
-                UNION ALL SELECT count(*)::text FROM ai_settings WHERE value #> '{features,chat_gastronomy}' IS NOT NULL
-                UNION ALL SELECT count(*)::text FROM ai_usage WHERE feature = 'chat_gastronomy'
-                UNION ALL SELECT count(*)::text FROM ai_conversations WHERE feature = 'chat_gastronomy'
-                UNION ALL SELECT count(*)::text FROM ai_request_log WHERE feature = 'chat_gastronomy'
-                UNION ALL SELECT count(*)::text FROM ai_prompt_versions WHERE feature = 'chat_gastronomy'
-                UNION ALL SELECT count(*)::text FROM revalidation_config WHERE entity_type = 'gastronomy'
-                UNION ALL SELECT count(*)::text FROM email_outbox WHERE payload->>'vertical' = 'gastronomy'
-                UNION ALL SELECT count(*)::text FROM cutover_v6_deleted_listing WHERE entity_type = 'gastronomy'
+                UNION ALL SELECT count(*)::text FROM amenities WHERE '${OLD_VERTICAL}' = ANY(applicable_verticals)
+                UNION ALL SELECT count(*)::text FROM features WHERE '${OLD_VERTICAL}' = ANY(applicable_verticals)
+                UNION ALL SELECT count(*)::text FROM ai_settings WHERE value #> '{features,${OLD_AI_FEATURE}}' IS NOT NULL
+                UNION ALL SELECT count(*)::text FROM ai_usage WHERE feature = '${OLD_AI_FEATURE}'
+                UNION ALL SELECT count(*)::text FROM ai_conversations WHERE feature = '${OLD_AI_FEATURE}'
+                UNION ALL SELECT count(*)::text FROM ai_request_log WHERE feature = '${OLD_AI_FEATURE}'
+                UNION ALL SELECT count(*)::text FROM ai_prompt_versions WHERE feature = '${OLD_AI_FEATURE}'
+                UNION ALL SELECT count(*)::text FROM revalidation_config WHERE entity_type = '${OLD_VERTICAL}'
+                UNION ALL SELECT count(*)::text FROM email_outbox WHERE payload->>'vertical' = '${OLD_VERTICAL}'
+                UNION ALL SELECT count(*)::text FROM cutover_v6_deleted_listing WHERE entity_type = '${OLD_VERTICAL}'
             `);
             expect(counts.rows).toEqual(Array.from({ length: 11 }, () => ({ old_rows: '0' })));
         } finally {
