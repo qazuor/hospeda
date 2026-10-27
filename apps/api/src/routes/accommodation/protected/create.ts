@@ -42,8 +42,15 @@ export const protectedCreateAccommodationRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        // Convert HTTP input to domain input
-        const domainInput = httpToDomainAccommodationCreate(body as AccommodationCreateHttp);
+        // HOS-1909: the shared create schema accepts `ownerId`, but in the protected
+        // tier the owner is ALWAYS the caller. A body-supplied value is discarded
+        // (not rejected, so clients that echo their own id keep working) so a signed-in
+        // user cannot create a listing owned by someone else. Creating on behalf of
+        // another owner is an admin-tier capability (action 15) with its own route.
+        const domainInput = httpToDomainAccommodationCreate({
+            ...(body as AccommodationCreateHttp),
+            ownerId: actor.id
+        });
         const result = await accommodationService.create(actor, domainInput);
 
         if (result.error) {
