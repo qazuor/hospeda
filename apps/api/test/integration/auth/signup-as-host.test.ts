@@ -47,6 +47,17 @@ delete process.env.CI;
  */
 const signUpEmailFn = vi.fn();
 
+/**
+ * HOS-296: the HOST hat is an additive role grant (`grantRole`), not a
+ * `users.role` UPDATE. Hoisted so the `vi.mock` factory below can reference it.
+ */
+const { grantRoleFn } = vi.hoisted(() => ({ grantRoleFn: vi.fn() }));
+
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return { ...actual, grantRole: grantRoleFn };
+});
+
 vi.mock('../../../src/lib/auth', () => ({
     getAuth: () => ({
         api: {
@@ -240,6 +251,7 @@ describe('SPEC-182 T-013 — POST /api/v1/admin/auth/signup-as-host permission m
         // `expect(signUpEmailFn).not.toHaveBeenCalled()` check only the
         // current test's interactions, not cumulative calls.
         vi.clearAllMocks();
+        grantRoleFn.mockResolvedValue({ data: undefined });
     });
 
     afterAll(() => {
@@ -288,14 +300,14 @@ describe('SPEC-182 T-013 — POST /api/v1/admin/auth/signup-as-host permission m
             // Act
             const response = await app.request(buildRequest(VALID_BODY, ACTOR_WITH_USER_CREATE));
 
-            // Assert — the role UPDATE must also flip emailVerified to true.
+            // Assert — the post-signup UPDATE flips emailVerified and the HOST role is granted.
             expect(response.status).toBe(201);
             const { getDb } = await import('@repo/db');
             const db = getDb() as unknown as { set: ReturnType<typeof vi.fn> };
-            expect(db.set).toHaveBeenCalledWith({
-                role: RoleEnum.HOST,
-                emailVerified: true
-            });
+            expect(db.set).toHaveBeenCalledWith({ emailVerified: true });
+            expect(grantRoleFn).toHaveBeenCalledWith(
+                expect.objectContaining({ userId: STUB_USER_ID, role: RoleEnum.HOST })
+            );
         });
     });
 
