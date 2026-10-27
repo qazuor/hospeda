@@ -157,7 +157,9 @@ const parseEntityFromPublicId = (
         destinations: 'destination',
         events: 'event',
         posts: 'post',
+        // legacy-name-allowed: fotos subidas antes del renombrado (HOS-1822)
         gastronomies: 'venue',
+        venues: 'venue',
         postSponsors: 'postSponsor',
         eventOrganizers: 'eventOrganizer'
     };
