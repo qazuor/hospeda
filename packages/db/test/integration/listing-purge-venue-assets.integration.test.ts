@@ -23,7 +23,7 @@ async function createListing(tx: DrizzleClient, ownerId: string, destinationId: 
 }
 
 async function seedMenuFileAndVideos(tx: DrizzleClient, listingId: string) {
-    await tx.execute(sql`UPDATE gastronomies
+    await tx.execute(sql`UPDATE venues
         SET menu_file_url = 'https://cdn.example.test/menu.pdf',
             menu_file_public_id = 'remote/menu-file', menu_file_kind = 'pdf',
             videos = '[{"url":"https://youtu.be/example","platform":"youtube"}]'::jsonb
@@ -32,7 +32,7 @@ async function seedMenuFileAndVideos(tx: DrizzleClient, listingId: string) {
 
 async function insertSection(tx: DrizzleClient, listingId: string) {
     const result = await tx.execute(sql<{ id: string }>`
-        INSERT INTO gastronomy_menu_sections (gastronomy_id, name, display_order)
+        INSERT INTO venue_menu_sections (venue_id, name, display_order)
         VALUES (${listingId}, 'Dinner', 0) RETURNING id`);
     return String(result.rows[0]!.id);
 }
@@ -46,14 +46,14 @@ async function insertDish(
     photoPublicId?: string
 ) {
     await tx.execute(sql`
-        INSERT INTO gastronomy_menu_items
-            (gastronomy_id, section_id, name, display_order, photo_url, photo_public_id)
+        INSERT INTO venue_menu_items
+            (venue_id, section_id, name, display_order, photo_url, photo_public_id)
         VALUES (${listingId}, ${sectionId}, ${name}, 0, ${photoUrl}, ${photoPublicId ?? null})`);
 }
 
 async function insertGalleryPhoto(tx: DrizzleClient, listingId: string) {
     const result = await tx.execute(sql<{ id: string }>`
-        INSERT INTO gastronomy_media (gastronomy_id, url, public_id, sort_order)
+        INSERT INTO venue_media (venue_id, url, public_id, sort_order)
         VALUES (${listingId}, 'https://cdn.example.test/gallery.jpg', 'remote/gallery', 0)
         RETURNING id`);
     return String(result.rows[0]!.id);
@@ -113,7 +113,7 @@ describe('TEST:1702:1 AC:1702:1 AC:1702:4 gastronomy purge keeps a marked media 
                     public_id: string | null;
                     remote_deletion_pending_at: Date | null;
                     is_featured: boolean;
-                }>`SELECT id, public_id, remote_deletion_pending_at, is_featured FROM gastronomy_media WHERE gastronomy_id = ${listing.id}`
+                }>`SELECT id, public_id, remote_deletion_pending_at, is_featured FROM venue_media WHERE venue_id = ${listing.id}`
             );
             const storedMediaOrdered = storedMedia.rows
                 .map((row) => ({
@@ -158,7 +158,7 @@ describe('TEST:1702:1 AC:1702:1 AC:1702:4 gastronomy purge keeps a marked media 
                     menu_file_public_id: string | null;
                     menu_file_kind: string | null;
                     videos: unknown;
-                }>`SELECT menu_file_url, menu_file_public_id, menu_file_kind, videos FROM gastronomies WHERE id = ${listing.id}`
+                }>`SELECT menu_file_url, menu_file_public_id, menu_file_kind, videos FROM venues WHERE id = ${listing.id}`
             );
             expect(storedListing.rows).toEqual([
                 {
@@ -169,10 +169,10 @@ describe('TEST:1702:1 AC:1702:1 AC:1702:4 gastronomy purge keeps a marked media 
                 }
             ]);
             const remainingItems = await tx.execute(
-                sql`SELECT id FROM gastronomy_menu_items WHERE gastronomy_id = ${listing.id}`
+                sql`SELECT id FROM venue_menu_items WHERE venue_id = ${listing.id}`
             );
             const remainingSections = await tx.execute(
-                sql`SELECT id FROM gastronomy_menu_sections WHERE gastronomy_id = ${listing.id}`
+                sql`SELECT id FROM venue_menu_sections WHERE venue_id = ${listing.id}`
             );
             expect(remainingItems.rows).toEqual([]);
             expect(remainingSections.rows).toEqual([]);
@@ -217,7 +217,7 @@ describe('TEST:1702:1 AC:1702:1 AC:1702:4 gastronomy purge keeps a marked media 
                 menu_file_public_id: string | null;
                 photo_public_id: string | null;
             }>`SELECT g.menu_file_public_id, i.photo_public_id
-                FROM gastronomies g JOIN gastronomy_menu_items i ON i.gastronomy_id = g.id
+                FROM venues g JOIN venue_menu_items i ON i.venue_id = g.id
                 WHERE g.id = ${listing.id}`);
             expect(stored.rows).toEqual([
                 {

@@ -226,7 +226,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
     });
 
     it('serialises ONLY the sent key — sibling contact fields are never named, so they survive the `||` merge', () => {
-        // Arrange: the real `gastronomies` table and the real mergeable list.
+        // Arrange: the real `venues` table and the real mergeable list.
         const mergeable = (
             new VenueModel() as unknown as { mergeableJsonbColumns: readonly string[] }
         ).mergeableJsonbColumns;

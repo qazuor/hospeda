@@ -17,7 +17,7 @@ const now = new Date('2026-10-17T12:00:00.000Z');
 const DAY = 86_400_000;
 const tables: Readonly<Record<ListingVertical, string>> = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 const verticals: readonly ListingVertical[] = ['accommodation', 'venue', 'experience'];

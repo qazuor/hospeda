@@ -21,7 +21,7 @@ const VERTICALS = ['accommodation', 'venue', 'experience'] as const;
 
 const MEDIA_TABLES = {
     accommodation: { table: 'accommodation_media', fk: 'accommodation_id' },
-    venue: { table: 'gastronomy_media', fk: 'gastronomy_id' },
+    venue: { table: 'venue_media', fk: 'venue_id' },
     experience: { table: 'experience_media', fk: 'experience_id' }
 } as const;
 

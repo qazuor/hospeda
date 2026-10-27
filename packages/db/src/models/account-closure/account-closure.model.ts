@@ -68,7 +68,7 @@ const LISTING_LOCK_ORDER = ['accommodation', 'venue', 'experience'] as const;
 
 const LISTING_TABLES: Record<(typeof LISTING_LOCK_ORDER)[number], string> = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 

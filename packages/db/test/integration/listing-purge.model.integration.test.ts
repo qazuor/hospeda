@@ -61,13 +61,13 @@ describe.each([
             const otherListing = await createListing(tx, vertical, owner.id, destination.id);
             const mediaTables = {
                 accommodation: { table: 'accommodation_media', fk: 'accommodation_id' },
-                venue: { table: 'gastronomy_media', fk: 'gastronomy_id' },
+                venue: { table: 'venue_media', fk: 'venue_id' },
                 experience: { table: 'experience_media', fk: 'experience_id' }
             } as const;
             const mediaTable = mediaTables[vertical];
             const faqTables = {
                 accommodation: { table: 'accommodation_faqs', fk: 'accommodation_id' },
-                venue: { table: 'gastronomy_faqs', fk: 'gastronomy_id' },
+                venue: { table: 'venue_faqs', fk: 'venue_id' },
                 experience: { table: 'experience_faqs', fk: 'experience_id' }
             } as const;
             const faqTable = faqTables[vertical];
@@ -112,7 +112,7 @@ describe.each([
             });
             const tableByVertical = {
                 accommodation: 'accommodations',
-                venue: 'gastronomies',
+                venue: 'venues',
                 experience: 'experiences'
             } as const;
             const stored = await tx.execute(sql<{

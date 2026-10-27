@@ -29,15 +29,15 @@ const verticalTables = {
         ['accommodation_ia_data', 'accommodation_id']
     ],
     venue: [
-        ['r_gastronomy_amenity', 'gastronomy_id'],
-        ['r_gastronomy_feature', 'gastronomy_id'],
+        ['r_venue_amenity', 'venue_id'],
+        ['r_venue_feature', 'venue_id'],
         ['r_entity_tag', 'entity_id'],
         ['qr_codes', 'entity_id'],
         ['entity_view_monthly_rollups', 'entity_id'],
-        ['gastronomy_menu_sections', 'gastronomy_id'],
-        ['gastronomy_menu_items', 'gastronomy_id'],
-        ['gastronomy_daily_specials', 'gastronomy_id'],
-        ['gastronomy_events', 'gastronomy_id']
+        ['venue_menu_sections', 'venue_id'],
+        ['venue_menu_items', 'venue_id'],
+        ['venue_daily_specials', 'venue_id'],
+        ['venue_events', 'venue_id']
     ],
     experience: [
         ['r_experience_amenity', 'experience_id'],
@@ -90,10 +90,10 @@ async function insertRow(
     }[vertical];
     const sqlByTable: Record<string, ReturnType<typeof sql>> = {
         r_accommodation_amenity: sql`INSERT INTO r_accommodation_amenity (accommodation_id, amenity_id) VALUES (${listingId}, ${amenityId}) RETURNING accommodation_id AS id`,
-        r_gastronomy_amenity: sql`INSERT INTO r_gastronomy_amenity (gastronomy_id, amenity_id) VALUES (${listingId}, ${amenityId}) RETURNING gastronomy_id AS id`,
+        r_venue_amenity: sql`INSERT INTO r_venue_amenity (venue_id, amenity_id) VALUES (${listingId}, ${amenityId}) RETURNING venue_id AS id`,
         r_experience_amenity: sql`INSERT INTO r_experience_amenity (experience_id, amenity_id) VALUES (${listingId}, ${amenityId}) RETURNING experience_id AS id`,
         r_accommodation_feature: sql`INSERT INTO r_accommodation_feature (accommodation_id, feature_id) VALUES (${listingId}, ${featureId}) RETURNING accommodation_id AS id`,
-        r_gastronomy_feature: sql`INSERT INTO r_gastronomy_feature (gastronomy_id, feature_id) VALUES (${listingId}, ${featureId}) RETURNING gastronomy_id AS id`,
+        r_venue_feature: sql`INSERT INTO r_venue_feature (venue_id, feature_id) VALUES (${listingId}, ${featureId}) RETURNING venue_id AS id`,
         r_experience_feature: sql`INSERT INTO r_experience_feature (experience_id, feature_id) VALUES (${listingId}, ${featureId}) RETURNING experience_id AS id`,
         r_entity_tag: sql`INSERT INTO r_entity_tag (tag_id, entity_id, entity_type, assigned_by_id) VALUES (${tagId}, ${listingId}, ${entityType}, ${ownerId}) RETURNING entity_id AS id`,
         qr_codes: sql`INSERT INTO qr_codes (slug, target_url, label, source, entity_type, entity_id, render_options) VALUES (${`pb12-${crypto.randomUUID()}`}, 'https://example.test', 'fixture', 'GENERATED', ${entityType}, ${listingId}, '{}'::jsonb) RETURNING id`,
@@ -103,10 +103,10 @@ async function insertRow(
         accommodation_external_reputation: sql`WITH source AS (INSERT INTO accommodation_external_listings (accommodation_id, platform, url) VALUES (${listingId}, 'GOOGLE', 'https://example.test/reputation') ON CONFLICT (accommodation_id, platform) DO UPDATE SET url = EXCLUDED.url RETURNING id) INSERT INTO accommodation_external_reputation (accommodation_id, platform, listing_id) SELECT ${listingId}, 'GOOGLE', id FROM source RETURNING id`,
         accommodation_occupancy: sql`INSERT INTO accommodation_occupancy (accommodation_id, date, source, created_by_id) VALUES (${listingId}, '2026-10-13', 'MANUAL', ${ownerId}) RETURNING id`,
         accommodation_ia_data: sql`INSERT INTO accommodation_ia_data (accommodation_id, title, content) VALUES (${listingId}, 'fixture', 'fixture') RETURNING id`,
-        gastronomy_menu_sections: sql`INSERT INTO gastronomy_menu_sections (gastronomy_id, name, display_order) VALUES (${listingId}, 'fixture', 0) RETURNING id`,
-        gastronomy_menu_items: sql`WITH section AS (INSERT INTO gastronomy_menu_sections (gastronomy_id, name, display_order) VALUES (${listingId}, 'fixture item section', 0) RETURNING id) INSERT INTO gastronomy_menu_items (section_id, gastronomy_id, name, display_order) SELECT id, ${listingId}, 'fixture', 0 FROM section RETURNING id`,
-        gastronomy_daily_specials: sql`INSERT INTO gastronomy_daily_specials (gastronomy_id, title, valid_from, valid_until, display_order) VALUES (${listingId}, 'fixture', '2026-10-13', '2026-10-13', 0) RETURNING id`,
-        gastronomy_events: sql`INSERT INTO gastronomy_events (gastronomy_id, title, recurrence, date, start_time, display_order) VALUES (${listingId}, 'fixture', 'once', '2026-10-13', '12:00', 0) RETURNING id`,
+        venue_menu_sections: sql`INSERT INTO venue_menu_sections (venue_id, name, display_order) VALUES (${listingId}, 'fixture', 0) RETURNING id`,
+        venue_menu_items: sql`WITH section AS (INSERT INTO venue_menu_sections (venue_id, name, display_order) VALUES (${listingId}, 'fixture item section', 0) RETURNING id) INSERT INTO venue_menu_items (section_id, venue_id, name, display_order) SELECT id, ${listingId}, 'fixture', 0 FROM section RETURNING id`,
+        venue_daily_specials: sql`INSERT INTO venue_daily_specials (venue_id, title, valid_from, valid_until, display_order) VALUES (${listingId}, 'fixture', '2026-10-13', '2026-10-13', 0) RETURNING id`,
+        venue_events: sql`INSERT INTO venue_events (venue_id, title, recurrence, date, start_time, display_order) VALUES (${listingId}, 'fixture', 'once', '2026-10-13', '12:00', 0) RETURNING id`,
         experience_certificates: sql`INSERT INTO experience_certificates (experience_id, recipient_name, completed_at) VALUES (${listingId}, 'fixture', '2026-10-12') RETURNING id`
     };
     const result = await tx.execute(sqlByTable[table]!);

@@ -38,7 +38,7 @@ describe('PublicationStatusPgEnum (TEST:V6:17)', () => {
 
 describe.each([
     ['accommodations', accommodations],
-    ['gastronomies', gastronomies],
+    ['venues', gastronomies],
     ['experiences', experiences]
 ] as const)('listing table %s (TEST:V6:17)', (_name, table) => {
     it('declares the publication-model columns with V6.9 nullability', () => {

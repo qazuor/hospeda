@@ -15,7 +15,7 @@
  *    query string.
  * 3. **The junction columns are raw identifiers, never aliased to the outer
  *    table.** A Drizzle column reference inside the subquery would compile to
- *    `"gastronomies"."feature_id"` and 500 at runtime.
+ *    `"venues"."feature_id"` and 500 at runtime.
  *
  * They do NOT execute the SQL — no database is involved here. That the clause
  * actually returns the right rows is the service/e2e layer's job.
@@ -36,21 +36,21 @@ const GLUTEN_FREE_ID = '11111111-1111-4111-8111-111111111111';
 const LACTOSE_FREE_ID = '22222222-2222-4222-8222-222222222222';
 
 describe('buildVenueFeatureIntersectionClause', () => {
-    it('correlates the subquery against the gastronomies table', () => {
+    it('correlates the subquery against the venues table', () => {
         const { sql } = compile(buildVenueFeatureIntersectionClause([GLUTEN_FREE_ID]));
 
-        expect(sql).toContain('"gastronomies"."id" IN (');
-        expect(sql).toContain('FROM "r_gastronomy_feature"');
+        expect(sql).toContain('"venues"."id" IN (');
+        expect(sql).toContain('FROM "r_venue_feature"');
     });
 
     it('reads the junction columns as raw identifiers, not outer-table aliases', () => {
         const { sql } = compile(buildVenueFeatureIntersectionClause([GLUTEN_FREE_ID]));
 
-        expect(sql).toContain('"r_gastronomy_feature"."gastronomy_id"');
-        expect(sql).toContain('"r_gastronomy_feature"."feature_id"');
+        expect(sql).toContain('"r_venue_feature"."venue_id"');
+        expect(sql).toContain('"r_venue_feature"."feature_id"');
         // The failure mode this exists for: Drizzle aliasing a column reference
         // inside the subquery against the OUTER query's table.
-        expect(sql).not.toContain('"gastronomies"."feature_id"');
+        expect(sql).not.toContain('"venues"."feature_id"');
     });
 
     it('requires ALL requested features — HAVING COUNT equals the id count', () => {
@@ -58,7 +58,7 @@ describe('buildVenueFeatureIntersectionClause', () => {
             buildVenueFeatureIntersectionClause([GLUTEN_FREE_ID, LACTOSE_FREE_ID])
         );
 
-        expect(sql).toContain('HAVING COUNT(DISTINCT "r_gastronomy_feature"."feature_id") =');
+        expect(sql).toContain('HAVING COUNT(DISTINCT "r_venue_feature"."feature_id") =');
         // The count is the LAST bound param, after the two ids.
         expect(params).toEqual([GLUTEN_FREE_ID, LACTOSE_FREE_ID, 2]);
     });
@@ -77,9 +77,9 @@ describe('buildVenueAmenityIntersectionClause', () => {
             buildVenueAmenityIntersectionClause([GLUTEN_FREE_ID, LACTOSE_FREE_ID])
         );
 
-        expect(sql).toContain('FROM "r_gastronomy_amenity"');
-        expect(sql).toContain('"r_gastronomy_amenity"."amenity_id"');
-        expect(sql).toContain('HAVING COUNT(DISTINCT "r_gastronomy_amenity"."amenity_id") =');
+        expect(sql).toContain('FROM "r_venue_amenity"');
+        expect(sql).toContain('"r_venue_amenity"."amenity_id"');
+        expect(sql).toContain('HAVING COUNT(DISTINCT "r_venue_amenity"."amenity_id") =');
         expect(params).toEqual([GLUTEN_FREE_ID, LACTOSE_FREE_ID, 2]);
     });
 });
@@ -112,7 +112,7 @@ describe('buildVenueCatalogConditions', () => {
             amenities: [LACTOSE_FREE_ID]
         });
 
-        expect(compile(first as never).sql).toContain('"r_gastronomy_amenity"');
-        expect(compile(second as never).sql).toContain('"r_gastronomy_feature"');
+        expect(compile(first as never).sql).toContain('"r_venue_amenity"');
+        expect(compile(second as never).sql).toContain('"r_venue_feature"');
     });
 });

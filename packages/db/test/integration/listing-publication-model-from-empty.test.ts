@@ -28,7 +28,7 @@ import { protectScratchPool, waitForNoConnections } from './support/scratch-data
 const pkgDir = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SCRATCH_DB = `hospeda_scratch_listing_model_${process.pid}`;
 
-const LISTING_TABLES = ['accommodations', 'gastronomies', 'experiences'] as const;
+const LISTING_TABLES = ['accommodations', 'venues', 'experiences'] as const;
 
 const PUBLICATION_STATUSES = [
     'DRAFT',

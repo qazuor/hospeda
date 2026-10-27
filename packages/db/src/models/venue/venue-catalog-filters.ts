@@ -77,11 +77,11 @@ export function buildVenueFeatureIntersectionClause(featureIds: readonly string[
         sql`, `
     );
     return sql<unknown>`${gastronomies.id} IN (
-        SELECT "r_gastronomy_feature"."gastronomy_id"
+        SELECT "r_venue_feature"."venue_id"
         FROM ${rGastronomyFeature}
-        WHERE "r_gastronomy_feature"."feature_id" IN (${idList})
-        GROUP BY "r_gastronomy_feature"."gastronomy_id"
-        HAVING COUNT(DISTINCT "r_gastronomy_feature"."feature_id") = ${n}
+        WHERE "r_venue_feature"."feature_id" IN (${idList})
+        GROUP BY "r_venue_feature"."venue_id"
+        HAVING COUNT(DISTINCT "r_venue_feature"."feature_id") = ${n}
     )`;
 }
 
@@ -104,11 +104,11 @@ export function buildVenueAmenityIntersectionClause(amenityIds: readonly string[
         sql`, `
     );
     return sql<unknown>`${gastronomies.id} IN (
-        SELECT "r_gastronomy_amenity"."gastronomy_id"
+        SELECT "r_venue_amenity"."venue_id"
         FROM ${rGastronomyAmenity}
-        WHERE "r_gastronomy_amenity"."amenity_id" IN (${idList})
-        GROUP BY "r_gastronomy_amenity"."gastronomy_id"
-        HAVING COUNT(DISTINCT "r_gastronomy_amenity"."amenity_id") = ${n}
+        WHERE "r_venue_amenity"."amenity_id" IN (${idList})
+        GROUP BY "r_venue_amenity"."venue_id"
+        HAVING COUNT(DISTINCT "r_venue_amenity"."amenity_id") = ${n}
     )`;
 }
 

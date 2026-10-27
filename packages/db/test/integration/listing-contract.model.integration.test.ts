@@ -23,7 +23,7 @@ afterAll(async () => closeTestPool());
 
 const TABLE: Readonly<Record<ListingVertical, string>> = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 
@@ -113,7 +113,7 @@ describe('TEST:V6:34 AC:V6:26 listingContractModel.findListingsById', () => {
                 destinationId,
                 status: PublicationStatusEnum.PUBLISHED
             });
-            await tx.execute(sql`UPDATE gastronomies SET deleted_at = now() WHERE id = ${id}`);
+            await tx.execute(sql`UPDATE venues SET deleted_at = now() WHERE id = ${id}`);
             const rows = await listingContractModel.findListingsById({ listingId: id, tx });
             expect(rows).toEqual([]);
         });
