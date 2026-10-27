@@ -1,5 +1,5 @@
 /**
- * HOS-1899: `country` / `state` / `city` are keys of the `location` JSONB column, not
+ * HOS-1899: `state` / `city` are keys of the `location` JSONB column, not
  * columns. They used to be put in the `where` record, where `buildWhereClause` skipped
  * them (filter ignored) or threw when they were the only keys (HTTP 500). These tests
  * assert on what the service HANDS TO THE MODEL, for search, count and searchForList.
@@ -50,24 +50,28 @@ describe('destination location filters (HOS-1899)', () => {
             expect(params).toEqual(['city', 'CDU']);
         });
 
-        it('emits one condition per filter, in country, state, city order', () => {
+        it('emits one condition per filter, in state, city order', () => {
             const conditions = buildDestinationLocationConditions({
                 city: 'a',
-                state: 'b',
-                country: 'c'
+                state: 'b'
             });
 
-            expect(conditions.map((c) => render(c).params[0])).toEqual([
-                'country',
-                'state',
-                'city'
-            ]);
+            expect(conditions.map((c) => render(c).params[0])).toEqual(['state', 'city']);
+        });
+
+        it('has no country filter (HOS-1921)', () => {
+            // A stray `country` key (an untyped caller) must not become a condition.
+            const conditions = buildDestinationLocationConditions({
+                country: 'AR'
+            } as unknown as Parameters<typeof buildDestinationLocationConditions>[0]);
+
+            expect(conditions).toEqual([]);
         });
     });
 
     describe('search', () => {
         it('hands the location conditions to model.findAll and keeps them out of where', async () => {
-            await service.search(actor, { city: 'CDU', country: 'AR', page: 1, pageSize: 10 });
+            await service.search(actor, { city: 'CDU', state: 'ER', page: 1, pageSize: 10 });
 
             const [where, , additional] = (model.findAll as Mock).mock.calls[0] as [
                 Record<string, unknown>,
@@ -75,9 +79,9 @@ describe('destination location filters (HOS-1899)', () => {
                 SQL[] | undefined
             ];
             expect(where).not.toHaveProperty('city');
-            expect(where).not.toHaveProperty('country');
+            expect(where).not.toHaveProperty('state');
             expect(additional?.map((c) => render(c).params)).toEqual([
-                ['country', 'AR'],
+                ['state', 'ER'],
                 ['city', 'CDU']
             ]);
         });
@@ -106,7 +110,7 @@ describe('destination location filters (HOS-1899)', () => {
             id,
             name: id,
             isFeatured,
-            location: { city, state: 'ER', country: 'AR' }
+            location: { city, state: 'ER', country: 'Argentina' }
         });
 
         beforeEach(() => {
@@ -161,7 +165,7 @@ describe('destination location filters (HOS-1899)', () => {
 
     describe('count', () => {
         it('hands the SAME location conditions to model.count so totals agree', async () => {
-            await service.count(actor, { city: 'CDU', country: 'AR', page: 1, pageSize: 10 });
+            await service.count(actor, { city: 'CDU', state: 'ER', page: 1, pageSize: 10 });
 
             const [where, options] = (model.count as Mock).mock.calls[0] as [
                 Record<string, unknown>,
@@ -169,7 +173,7 @@ describe('destination location filters (HOS-1899)', () => {
             ];
             expect(where).toEqual({});
             expect(options?.additionalConditions?.map((c) => render(c).params)).toEqual([
-                ['country', 'AR'],
+                ['state', 'ER'],
                 ['city', 'CDU']
             ]);
         });

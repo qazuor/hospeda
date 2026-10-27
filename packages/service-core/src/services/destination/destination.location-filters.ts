@@ -6,15 +6,19 @@ import { type SQL, sql } from 'drizzle-orm';
  * Each value is matched against the same-named key of the `location` JSONB column.
  */
 export interface DestinationLocationFilters {
-    readonly country?: string;
     readonly state?: string;
     readonly city?: string;
 }
 
-const LOCATION_KEYS = ['country', 'state', 'city'] as const;
+/**
+ * There is deliberately NO `country` key (HOS-1921). The HTTP schema demanded ISO-2
+ * ("AR") while stored `location.country` is a name ("Argentina"), so the filter could
+ * never match. Do not re-add it without a consumer and an agreed representation.
+ */
+const LOCATION_KEYS = ['state', 'city'] as const;
 
 /**
- * Builds the WHERE conditions for the `country` / `state` / `city` filters (HOS-1899).
+ * Builds the WHERE conditions for the `state` / `city` filters (HOS-1899).
  *
  * `destinations` has no such columns: the values live inside the `location` JSONB
  * column. Putting them in the `where` record handed to `buildWhereClause` is wrong

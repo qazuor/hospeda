@@ -279,6 +279,13 @@ const INERT_BRIDGES: Readonly<Record<string, string>> = {
     // Drizzle's migration CLI, pulled in by `@repo/db` for the `db:*` scripts.
     // The server never imports it. Absent from dist/server.
     'drizzle-kit': 'CLI only — invoked by database scripts, not by the server',
+    // Sentry build tooling (sourcemap upload / injection), pulled in by
+    // `@sentry/node` v11 (HOS-1892, apps/api) and by the Sentry Astro plugin
+    // chain. The dependency index merges versions by name, so the v11 copy
+    // installed for the API is attributed to web. No external import of it or of
+    // its ESM-only deps (magic-string, oxc-parser) in dist/server.
+    '@sentry/bundler-plugins':
+        'build-time only — sourcemap tooling, never an external import in dist/server',
     // Nitro/unstorage HTTP layer. Reachable through Astro's session storage
     // dependency chain, but Astro bundles what it needs into the entry rather
     // than importing h3 externally. Absent from dist/server.
