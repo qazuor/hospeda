@@ -41,7 +41,7 @@ describe('AI settings feature coverage', () => {
         });
 
         it('includes the two per-vertical chats HOS-400 added', () => {
-            expect(ALL_FEATURES).toContain('chat_gastronomy');
+            expect(ALL_FEATURES).toContain('chat_venue');
             expect(ALL_FEATURES).toContain('chat_experience');
         });
 

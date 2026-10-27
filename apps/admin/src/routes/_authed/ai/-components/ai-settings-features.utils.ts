@@ -38,7 +38,7 @@ import type { AiFeatureId, AiSettingsValue } from '@/features/ai-settings';
 export const ALL_FEATURES: readonly AiFeatureId[] = [
     'text_improve',
     'chat',
-    'chat_gastronomy',
+    'chat_venue',
     'chat_experience',
     'search',
     'support',

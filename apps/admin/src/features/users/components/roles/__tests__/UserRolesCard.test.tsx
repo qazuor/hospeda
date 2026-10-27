@@ -281,7 +281,7 @@ describe('UserRolesCard (HOS-296)', () => {
         expect(offered).not.toContain('SYSTEM');
         expect(offered).not.toContain('GUEST');
         expect(offered).toContain('SPONSOR');
-        expect(offered).toContain('GASTRONOMY_OWNER');
+        expect(offered).toContain('VENUE_OWNER');
         expect(offered).toContain('EXPERIENCE_OWNER');
     });
 

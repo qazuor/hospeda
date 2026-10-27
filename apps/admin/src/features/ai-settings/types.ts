@@ -32,7 +32,7 @@ export type AiFeatureId =
     | 'chat'
     // HOS-400: per-vertical chat features (own metering counter each), same
     // product and same entitlement as `chat` — see FEATURE_LABELS below.
-    | 'chat_gastronomy'
+    | 'chat_venue'
     | 'chat_experience'
     | 'search'
     | 'support'
