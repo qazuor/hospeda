@@ -112,6 +112,39 @@ describe('SponsorshipService.search — _executeSearch', () => {
         );
     });
 
+    it('should force sponsorUserId=actor.id for a VIEW_OWN actor, overriding the caller value (HOS-1912)', async () => {
+        // Arrange
+        const actor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_VIEW_OWN] });
+
+        // Act
+        await service.search(actor, {
+            page: 1,
+            pageSize: 10,
+            sponsorUserId: '00000000-0000-4000-8000-000000000001'
+        });
+
+        // Assert
+        expect(modelMock.findAll).toHaveBeenCalledWith(
+            expect.objectContaining({ sponsorUserId: actor.id }),
+            expect.anything()
+        );
+    });
+
+    it('should not scope sponsorUserId for a VIEW_ANY actor (HOS-1912)', async () => {
+        // Arrange
+        const actor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_VIEW_ANY] });
+        const target = '00000000-0000-4000-8000-000000000001';
+
+        // Act
+        await service.search(actor, { page: 1, pageSize: 10, sponsorUserId: target });
+
+        // Assert
+        expect(modelMock.findAll).toHaveBeenCalledWith(
+            expect.objectContaining({ sponsorUserId: target }),
+            expect.anything()
+        );
+    });
+
     it('should return FORBIDDEN when actor lacks view permission', async () => {
         // Arrange
         const actor = createActor({ permissions: [] });
@@ -152,6 +185,23 @@ describe('SponsorshipService.count — _executeCount', () => {
         expect(result.data?.count).toBe(3);
         expect(modelMock.count).toHaveBeenCalledWith(
             expect.objectContaining({ lifecycleState: LifecycleStatusEnum.ACTIVE })
+        );
+    });
+
+    it('should force sponsorUserId=actor.id in count for a VIEW_OWN actor (HOS-1912)', async () => {
+        // Arrange
+        const actor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_VIEW_OWN] });
+
+        // Act
+        await service.count(actor, {
+            page: 1,
+            pageSize: 10,
+            sponsorUserId: '00000000-0000-4000-8000-000000000001'
+        });
+
+        // Assert
+        expect(modelMock.count).toHaveBeenCalledWith(
+            expect.objectContaining({ sponsorUserId: actor.id })
         );
     });
 
