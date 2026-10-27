@@ -124,8 +124,8 @@ describe('T-029: review admin update — write-path permission boundaries', () =
                     // 403 would come from the tier, not from the *_MODERATE check.
                     PermissionEnum.ACCESS_API_ADMIN,
                     PermissionEnum.ACCESS_PANEL_ADMIN,
-                    // GET /:id sibling gate leaks onto PUT (HOS-1908): VIEW is held so the
-                    // 403 below can only come from the missing *_REVIEW_MODERATE.
+                    // VIEW is held so the 403 below can only come from the missing
+                    // *_REVIEW_MODERATE.
                     viewPerm,
                     updatePerm
                     // intentionally omitting `moderatePerm`
@@ -171,8 +171,8 @@ describe('T-029: review admin update — write-path permission boundaries', () =
             expect(res.status).not.toBe(401);
         });
 
-        // HOS-1908: the GET /:id gate (*_REVIEW_VIEW) leaks onto PUT, so the
-        // route's own UPDATE+MODERATE pair is not enough on its own.
+        // HOS-1908 (fixed): the GET /:id gate (*_REVIEW_VIEW) no longer leaks
+        // onto PUT, so the route's own UPDATE+MODERATE pair is enough.
         const updateWithoutView = async (headers: Record<string, string>, path: string) =>
             app.request(`${path}/${reviewId}`, {
                 method: 'PUT',
@@ -191,17 +191,8 @@ describe('T-029: review admin update — write-path permission boundaries', () =
             ]
         });
 
-        it('currently answers 403 to UPDATE+MODERATE without VIEW (HOS-1908)', async () => {
-            const res = await updateWithoutView(
-                makeHeaders(actorWithoutView(updatePerm, moderatePerm)),
-                path
-            );
-
-            expect(res.status).toBe(403);
-        });
-
-        // Drop `.fails` (and the test above) once HOS-1908 is fixed.
-        it.fails('lets UPDATE+MODERATE through without VIEW (HOS-1908)', async () => {
+        // HOS-1908 (fixed): each route's gates are scoped to its own method.
+        it('lets UPDATE+MODERATE through without VIEW (HOS-1908)', async () => {
             const res = await updateWithoutView(
                 makeHeaders(actorWithoutView(updatePerm, moderatePerm)),
                 path

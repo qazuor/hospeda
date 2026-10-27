@@ -30,14 +30,9 @@ const ADMIN_HEADERS = {
     'user-agent': 'vitest',
     'x-mock-actor-id': '11111111-1111-4111-8111-111111111111',
     'x-mock-actor-role': 'ADMIN',
-    // `moderation.threshold.view` rides along because the sibling GET /{id}
-    // route is mounted at the same path, and a sub-app's middleware applies to
-    // every method on it — so its gate also runs on this PATCH.
-    'x-mock-actor-permissions': JSON.stringify([
-        'access.panelAdmin',
-        'moderation.threshold.update',
-        'moderation.threshold.view'
-    ])
+    // Exactly the PATCH route's own declaration: since HOS-1908 the sibling
+    // GET /{id} gate (`moderation.threshold.view`) no longer runs on a PATCH.
+    'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'moderation.threshold.update'])
 };
 
 let app: AppOpenAPI;
