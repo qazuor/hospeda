@@ -39,14 +39,14 @@ describe('web tours config', () => {
             const reversed = getWelcomeToursForRoles({ roles: ['VENUE_OWNER', 'HOST'] }).map(
                 (t) => t.id
             );
-            expect(forward).toEqual(['web.host.welcome', 'web.gastronomy.welcome']);
+            expect(forward).toEqual(['web.host.welcome', 'web.venue.welcome']);
             expect(reversed).toEqual(forward);
         });
 
         it.each([
             ['USER', 'web.tourist.welcome'],
             ['HOST', 'web.host.welcome'],
-            ['VENUE_OWNER', 'web.gastronomy.welcome'],
+            ['VENUE_OWNER', 'web.venue.welcome'],
             ['EXPERIENCE_OWNER', 'web.experience.welcome'],
             ['EDITOR', 'web.editor.welcome'],
             ['SPONSOR', 'web.sponsor.welcome']
@@ -112,15 +112,11 @@ describe('web tours config', () => {
                 roles,
                 hasSeen: seenTours(['web.tourist.welcome', 'web.host.welcome'])
             });
-            expect(third?.id).toBe('web.gastronomy.welcome');
+            expect(third?.id).toBe('web.venue.welcome');
 
             const none = getNextPendingWelcomeTour({
                 roles,
-                hasSeen: seenTours([
-                    'web.tourist.welcome',
-                    'web.host.welcome',
-                    'web.gastronomy.welcome'
-                ])
+                hasSeen: seenTours(['web.tourist.welcome', 'web.host.welcome', 'web.venue.welcome'])
             });
             expect(none).toBeUndefined();
         });
@@ -144,11 +140,11 @@ describe('web tours config', () => {
                     '[data-tour="messages"]',
                     '[data-tour="promotions"]'
                 ],
-                'web.gastronomy.welcome': [
+                'web.venue.welcome': [
                     'center',
                     '[data-tour="comercio-listings"]',
                     '[data-tour="listings"]',
-                    '[data-tour="gastronomy-qr"]',
+                    '[data-tour="venue-qr"]',
                     '[data-tour="listing-views"]'
                 ],
                 'web.experience.welcome': [

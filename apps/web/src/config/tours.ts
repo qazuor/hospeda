@@ -161,7 +161,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
         ]
     },
     {
-        id: 'web.gastronomy.welcome',
+        id: 'web.venue.welcome',
         version: 1,
         // HOS-788: each welcome tour is gated by its own vertical owner role.
         // A gastronomy owner does not acquire the experience tour.
@@ -193,8 +193,8 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
                 align: 'start'
             },
             {
-                id: 'gastronomy-qr',
-                target: '[data-tour="gastronomy-qr"]',
+                id: 'venue-qr',
+                target: '[data-tour="venue-qr"]',
                 title: 'account.welcomeTour.gastronomyQr.title',
                 body: 'account.welcomeTour.gastronomyQr.body',
                 side: 'top',
@@ -214,7 +214,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
         id: 'web.experience.welcome',
         version: 1,
         // HOS-788: split out of the old shared two-vertical tour, same
-        // reasoning as `web.gastronomy.welcome` above — gated on
+        // reasoning as `web.venue.welcome` above — gated on
         // `EXPERIENCE_OWNER` only, so gastronomy owners do not see this tour.
         //
         // No experience-exclusive step: `ExperienceCertificatePanel`
