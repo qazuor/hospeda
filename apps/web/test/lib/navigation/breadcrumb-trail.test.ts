@@ -119,7 +119,7 @@ describe('buildBreadcrumbTrail', () => {
         it('normalizes a path that already carries a trailing slash', () => {
             // Arrange — gastronomia/experiencias pass 'gastronomia/'
             const items = [
-                { label: 'Gastronomía', path: 'gastronomia/' },
+                { label: 'Gastronomía', path: 'comer-y-salir/' },
                 { label: 'La Parrilla' }
             ];
 

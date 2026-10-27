@@ -611,7 +611,7 @@ export function resolveLocalImport({
  * actually drew.
  *
  * That is not a contrived shape, it is what a refactor looks like. Measured on
- * `pages/[lang]/gastronomia/index.astro` — the page HOS-1154 itself measured —
+ * `pages/[lang]/comer-y-salir/index.astro` — the page HOS-1154 itself measured —
  * replacing
  *
  *     {hasError && !result.ok && <ErrorBanner … />}
