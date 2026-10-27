@@ -167,14 +167,14 @@ overrides:
   # so 3.1.5 clears it — a bare ">=3.1.5" additionally resolved the tree onto
   # 4.1.2, forcing a semver major onto ajv@8.20.0 (the only consumer), which
   # declares the 3.x line. Fixing an advisory must not smuggle in a major.
-  "fast-uri@>=3.0.0 <4": ">=3.1.5 <4"
+  "fast-uri@>=3.0.0 <4": ">=3.1.7 <4"
   devalue: ">=5.9.3 <6"
   # GHSA-jp82-f5mq-hwhp: solid-js (admin devtools) resolves seroval <=1.6.2.
   seroval: ">=1.6.3 <2"
   tar: ">=7.5.11"
   tar-fs: ">=3.1.1"
   node-forge: ">=1.4.0"
-  basic-ftp: ">=5.2.0"
+  basic-ftp: ">=6.2.1"
   cookie: ">=0.7.0 <2"
   path-to-regexp: ">=6.3.0"
   "msw>path-to-regexp": "8.4.2"
@@ -304,7 +304,7 @@ overrides:
   # (10.2.2). 10.3.1 is the only floor that clears all three. Transitive only
   # (socks-proxy-agent), so no Dependabot PR can ever reach it — an override is
   # the only route.
-  ip-address: ">=10.3.1"
+  ip-address: ">=10.7.1"
   svgo: ">=4.0.1"
   next: ">=16.2.3"
   drizzle-orm: ">=0.45.2"
@@ -344,6 +344,10 @@ overrides:
   # GHSA-vc2v-76pw-4v95: @expo/cli (mobile, via @better-auth/expo) resolves
   # compression 1.8.1. Keep the 1.x line.
   compression: ">=1.8.2 <2"
+  # HOS-1894: fflate 0.7.4 (via @vercel/og > satori > @shuding/opentype.js) has a
+  # fix in 0.7.5. Range-scoped so posthog-js's fflate 0.4.9 and vitest's 0.8.x
+  # are left alone.
+  "fflate@>=0.7.0 <0.7.5": ">=0.7.5 <0.8"
 
 auditConfig:
   ignoreGhsas:
@@ -385,6 +389,17 @@ auditConfig:
     # image asset in the app would fail to bundle. Metro 0.87.1 dropped
     # image-size entirely (0.84.4 is resolved today, via Expo SDK 56), so these
     # two lines go away with the Expo/React Native bump that brings it.
+    #
+    # HOS-1894 — alerts deliberately left open (no ignoreGhsas entry needed:
+    # neither is in the `pnpm audit --prod` graph that CI gates on):
+    # - extract-zip@2.0.1 (symlink write, no fixed release on npm): reached only
+    #   via apps/web devDependencies > @lhci/cli > lighthouse > puppeteer-core >
+    #   @puppeteer/browsers. Dev tooling that unpacks the Chrome download.
+    # - decode-uri-component@0.2.2 (fixed in 0.5.0): reached only via
+    #   apps/mobile > expo-router > query-string@7.1.3. 0.5.0 (and 0.4.x) are
+    #   ESM-only ("type": "module"), while query-string 7.x loads it with
+    #   require(), so forcing it would break the mobile bundle. Goes away with
+    #   an expo-router / query-string bump.
     # Before removing them, confirm with:
     #   pnpm why image-size -r --prod   # no 1.x left
     - GHSA-w3rx-r6r6-pgpr
