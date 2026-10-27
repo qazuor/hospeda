@@ -371,9 +371,13 @@ describe('TEST:1820:2 AC:1:4 — extras are idempotent after the rename', () => 
         const venuesTrigger = await getTestPool().query(
             `SELECT count(*)::int AS count FROM pg_trigger WHERE tgname = 'trg_set_updated_at_venues'`
         );
+        const retiredVenueTriggers = await getTestPool().query<{ tgname: string }>(
+            `SELECT tgname FROM pg_trigger WHERE tgname ILIKE '%gastronom%'`
+        );
 
         expect(featuredIndex.rows).toEqual([{ count: 1 }]);
         expect(venuesTrigger.rows).toEqual([{ count: 1 }]);
+        expect(retiredVenueTriggers.rows).toEqual([]);
     });
 });
 
