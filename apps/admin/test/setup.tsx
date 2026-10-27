@@ -3,10 +3,16 @@
  * Configures test environment and global mocks for React components
  */
 
-import '@testing-library/jest-dom/vitest';
+import * as jestDomMatchers from '@testing-library/jest-dom/matchers';
+// Type-only: provides the `vitest` Assertion augmentation without jest-dom's own
+// `require('vitest')` side effect, which breaks `rejects.toThrow` on vitest 5.
+import type {} from '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, expect, vi } from 'vitest';
 import { server } from './mocks/server';
+
+// vitest 5: register jest-dom on this file's own `expect`; the '/vitest' entry breaks `rejects.toThrow`.
+expect.extend(jestDomMatchers);
 
 // Inject required Vite env vars into import.meta.env for test environment.
 // These are accessed by validateAdminEnv() in src/env.ts via import.meta.env.
