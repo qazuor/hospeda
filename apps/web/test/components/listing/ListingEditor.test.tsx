@@ -623,7 +623,7 @@ describe('ListingEditor', () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
 
         // HOS-190 slice 3: `amenityIds`/`featureIds` are now validated as real
-        // UUIDs against `GastronomyOwnerUpdateInputSchema` before the PATCH
+        // UUIDs against `VenueOwnerUpdateInputSchema` before the PATCH
         // fires — short fixture ids like 'a1' used to be harmless (no
         // validation existed) but now fail `.uuid()` and silently block
         // submission. Use UUID-shaped fixture ids throughout.

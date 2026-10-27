@@ -8,7 +8,7 @@
  * request for this slug to the hub — the same mechanism that refuses
  * `punto-de-encuentro` to a restaurant, pointing the other way.
  *
- * `GastronomyMenuManager` owns its own endpoints — `GET`/`PUT .../menu` for the
+ * `VenueMenuManager` owns its own endpoints — `GET`/`PUT .../menu` for the
  * carta and `POST`/`DELETE .../menu-file` for the uploaded photo/PDF — so this
  * page mounts it directly, with no form and no save button, exactly as
  * `preguntas.astro` mounts the FAQ manager. Nothing here reaches the listing
@@ -27,7 +27,7 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
-import { GastronomyMenuManager } from '@/components/gastronomy/GastronomyMenuManager.client';
+import { VenueMenuManager } from '@/components/venue/VenueMenuManager.client';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
@@ -51,7 +51,7 @@ const { t } = createTranslations(locale);
 	currentSectionSlug="carta"
 	title={t('listing.owner.editor.sectionNav.menu', 'Carta')}
 >
-	<GastronomyMenuManager
+	<VenueMenuManager
 		client:load
 		listingId={listingId}
 		locale={locale}

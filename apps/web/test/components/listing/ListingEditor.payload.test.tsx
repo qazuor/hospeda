@@ -18,7 +18,7 @@
  *    payload must carry the untouched members too — the block is overwritten
  *    server-side, not merged;
  *  - `contactInfo` also ships whole, but it is MERGED server-side since
- *    HOS-1190 (`GastronomyModel`/`ExperienceModel` declare it in
+ *    HOS-1190 (`VenueModel`/`ExperienceModel` declare it in
  *    `mergeableJsonbColumns`), so the contract that matters there is the
  *    opposite one: an emptied member must travel as an explicit `null`,
  *    because an omitted key now means "keep the stored value";

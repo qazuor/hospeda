@@ -2360,7 +2360,7 @@ export const hostAnalyticsApi = {
 
 // --- Listing Analytics (Protected — HOS-734) ---
 
-/** The two gastronomy/experience verticals — matches `GastronomyOrExperience` in `@repo/billing`. */
+/** The two gastronomy/experience verticals — matches `VenueOrExperience` in `@repo/billing`. */
 type ListingAnalyticsVertical = 'gastronomy' | 'experience';
 
 /** Path segment each vertical mounts its protected routes under. */

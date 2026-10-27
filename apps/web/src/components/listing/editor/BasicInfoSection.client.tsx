@@ -18,10 +18,10 @@ import { FieldError } from '@/components/ui/FieldError';
 import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
 import { resolveExperienceTypeLabel } from '@/lib/experience/type-labels';
 import { buildFieldId } from '@/lib/forms/build-field-id';
-import { resolveGastronomyTypeLabel } from '@/lib/gastronomy/type-labels';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
+import { resolveVenueTypeLabel } from '@/lib/venue/type-labels';
 import styles from './editor-fields.module.css';
 import { LISTING_FIELD_PREFIX } from './field-ids';
 import type { ListingEditData, ListingFieldChange } from './listing-edit-data';
@@ -51,7 +51,7 @@ const RICH_DESCRIPTION_ID = buildFieldId({
 });
 
 /** Gastronomy type options in display order. */
-const GASTRONOMY_TYPE_OPTIONS = Object.values(VenueTypeEnum);
+const VENUE_TYPE_OPTIONS = Object.values(VenueTypeEnum);
 
 /** Experience type options in display order. */
 const EXPERIENCE_TYPE_OPTIONS = Object.values(ExperienceTypeEnum);
@@ -83,8 +83,7 @@ export function BasicInfoSection({
     shouldOfferSlugRefresh = false
 }: BasicInfoSectionProps): JSX.Element {
     const { t } = createTranslations(locale);
-    const typeOptions =
-        vertical === 'gastronomy' ? GASTRONOMY_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
+    const typeOptions = vertical === 'gastronomy' ? VENUE_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
 
     return (
         <>
@@ -228,7 +227,7 @@ export function BasicInfoSection({
                         >
                             {vertical === 'experience'
                                 ? resolveExperienceTypeLabel({ t, type: opt })
-                                : resolveGastronomyTypeLabel({ t, type: opt })}
+                                : resolveVenueTypeLabel({ t, type: opt })}
                         </option>
                     ))}
                 </TextField>
@@ -293,7 +292,7 @@ export function BasicInfoSection({
 
             {/* HOS-371: TipTap instead of the bare textarea this field used to
                 be. `richDescription` is already rendered as Markdown on the
-                public pages (`GastronomyDescription.astro` / `ExperienceInfo.astro`
+                public pages (`VenueDescription.astro` / `ExperienceInfo.astro`
                 both run it through `renderContent`), and RichTextEditor persists
                 Markdown — so the stored shape is unchanged, the owner just stops
                 having to hand-write it.

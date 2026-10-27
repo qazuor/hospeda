@@ -1,0 +1,583 @@
+/**
+ * @file VenueReviewForm.client.tsx
+ * @description Review-submission island for the gastronomy detail page
+ * (SPEC-239 / SPEC-259 smoke follow-up). Lets an authenticated visitor open a
+ * native <dialog> with a compact review form.
+ *
+ * Domain difference vs. the accommodation review form: gastronomy reviews use a
+ * single required scalar `overallRating` (1–5) instead of a multi-dimension
+ * breakdown — the granular `rating` object is optional and intentionally not
+ * collected here (see the gastronomy review schema). Submitted reviews start in
+ * PENDING moderation, so the success state shows a "pending approval" notice
+ * rather than implying the review is already live.
+ *
+ * The actual POST goes to `/api/v1/protected/gastronomies/:id/reviews` with
+ * `credentials: 'include'` so the Better Auth session cookie is sent.
+ *
+ * Hydration: caller MUST use `client:visible`.
+ */
+
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
+import { translateApiError } from '@/lib/api-errors';
+import { cn } from '@/lib/cn';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import styles from './VenueReviewForm.module.css';
+
+const TITLE_MAX = 120;
+const TITLE_MIN = 3;
+const CONTENT_MAX = 2000;
+const CONTENT_MIN = 10;
+const STAR_POSITIONS = [1, 2, 3, 4, 5] as const;
+
+interface VenueReviewFormProps {
+    /** UUID of the gastronomy listing being reviewed. */
+    readonly gastronomyId: string;
+    /** Listing name, shown as the dialog subtitle. */
+    readonly gastronomyName: string;
+    /** Active locale for i18n. */
+    readonly locale: SupportedLocale;
+    /** Absolute API base URL (web app and API live on different hosts). */
+    readonly apiUrl: string;
+    /** Sign-in URL (with return path) shown to anonymous visitors. */
+    readonly signInHref: string;
+}
+
+function joinApi(apiUrl: string, path: string): string {
+    return `${apiUrl.replace(/\/$/, '')}${path}`;
+}
+
+/**
+ * VenueReviewForm — authenticated review submission for a gastronomy
+ * listing.
+ *
+ * @param props - Component props (see {@link VenueReviewFormProps}).
+ */
+export function VenueReviewForm({
+    gastronomyId,
+    gastronomyName,
+    locale,
+    apiUrl,
+    signInHref
+}: VenueReviewFormProps) {
+    const { t } = createTranslations(locale);
+
+    // Session resolved client-side (HOS-369 WB0-4). Until it resolves the card
+    // shows the sign-in variant — the same thing the server renders, so there
+    // is no hydration mismatch and a guest sees no flicker.
+    const { user } = useAccountPermissions();
+    const isAuthenticated = user !== null;
+    const dialogRef = useRef<HTMLDialogElement>(null);
+
+    const [open, setOpen] = useState<boolean>(false);
+    const [overall, setOverall] = useState<number>(0);
+    const [title, setTitle] = useState<string>('');
+    const [content, setContent] = useState<string>('');
+    const [submitting, setSubmitting] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<boolean>(false);
+    // Persists after the dialog closes so the page keeps a visible "under
+    // review" banner — moderated reviews never appear in the list immediately
+    // (Bug B9: make the pending state visible beyond the dialog).
+    const [submitted, setSubmitted] = useState<boolean>(false);
+
+    const rated = overall >= 1;
+    const titleTrimmed = title.trim();
+    const titleValid = titleTrimmed.length === 0 || titleTrimmed.length >= TITLE_MIN;
+    const contentTrimmed = content.trim();
+    const contentValid = contentTrimmed.length === 0 || contentTrimmed.length >= CONTENT_MIN;
+
+    // Sync the native <dialog> with React state; showModal() traps focus + ESC.
+    useEffect(() => {
+        const dlg = dialogRef.current;
+        if (!dlg) return;
+        if (open && !dlg.open) {
+            dlg.showModal();
+        } else if (!open && dlg.open) {
+            dlg.close();
+        }
+    }, [open]);
+
+    const handleOpen = useCallback(() => {
+        setSuccess(false);
+        setError(null);
+        setOpen(true);
+    }, []);
+
+    const handleClose = useCallback(() => {
+        setOpen(false);
+        // Reset shortly after close so the closing animation doesn't flash the
+        // empty form.
+        window.setTimeout(() => {
+            setOverall(0);
+            setTitle('');
+            setContent('');
+            setError(null);
+            setSuccess(false);
+        }, 200);
+    }, []);
+
+    // Back button closes the dialog instead of leaving the page (HOS-334).
+    // This form uses a native <dialog>, not the shared `Dialog`, so it wires
+    // the hook directly — same pattern as AiChatWidget.
+    useDialogHistoryBack({ isOpen: open, onClose: handleClose });
+
+    const handleSubmit = useCallback(
+        async (event: FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+            if (!rated || submitting || !titleValid || !contentValid) return;
+            setSubmitting(true);
+            setError(null);
+
+            try {
+                const response = await fetch(
+                    joinApi(apiUrl, `/api/v1/protected/gastronomies/${gastronomyId}/reviews`),
+                    {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            overallRating: overall,
+                            title: titleTrimmed || undefined,
+                            content: contentTrimmed || undefined
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    let apiError: { code?: string; message?: string; reason?: string } | null =
+                        null;
+                    try {
+                        const body = (await response.json()) as {
+                            error?: { code?: string; message?: string; reason?: string };
+                        };
+                        apiError = body?.error ?? null;
+                    } catch {
+                        // body wasn't JSON
+                    }
+                    setError(
+                        translateApiError({
+                            error: apiError,
+                            locale,
+                            fallback: t(
+                                'review.form.errors.submitFailed',
+                                'Error al enviar la reseña. Por favor, intenta de nuevo.'
+                            )
+                        })
+                    );
+                    return;
+                }
+
+                setSuccess(true);
+                setSubmitted(true);
+            } catch {
+                setError(
+                    t(
+                        'common.apiError.NETWORK_ERROR',
+                        'No pudimos conectar con el servidor. Probá de nuevo.'
+                    )
+                );
+            } finally {
+                setSubmitting(false);
+            }
+        },
+        [
+            apiUrl,
+            contentTrimmed,
+            contentValid,
+            gastronomyId,
+            locale,
+            overall,
+            rated,
+            submitting,
+            t,
+            titleTrimmed,
+            titleValid
+        ]
+    );
+
+    return (
+        <>
+            <aside
+                className={styles.card}
+                aria-labelledby="gastronomy-review-card-title"
+            >
+                <div className={styles.cardHeader}>
+                    <span
+                        className={styles.cardBadge}
+                        aria-hidden="true"
+                    >
+                        <svg
+                            viewBox="0 0 24 24"
+                            width="18"
+                            height="18"
+                            fill="currentColor"
+                            aria-hidden="true"
+                            focusable="false"
+                        >
+                            <title>Estrella</title>
+                            <path d="M12 2l2.92 5.92 6.53.95-4.72 4.6 1.11 6.5L12 17.6l-5.84 3.07 1.11-6.5-4.72-4.6 6.53-.95L12 2z" />
+                        </svg>
+                    </span>
+                    <h3
+                        id="gastronomy-review-card-title"
+                        className={styles.cardTitle}
+                    >
+                        {submitted
+                            ? t('review.gastronomySidebar.pendingTitle', 'Reseña en revisión')
+                            : t('review.gastronomySidebar.title', 'Tu opinión')}
+                    </h3>
+                </div>
+
+                {submitted ? (
+                    <output className={styles.cardPending}>
+                        {t(
+                            'review.gastronomySidebar.pendingBanner',
+                            'Tu reseña fue enviada y se publicará cuando nuestro equipo la apruebe.'
+                        )}
+                    </output>
+                ) : isAuthenticated ? (
+                    <>
+                        <p className={styles.cardText}>
+                            {t(
+                                'review.gastronomySidebar.canLeaveReview',
+                                'Compartí tu experiencia en este lugar para ayudar a otros comensales.'
+                            )}
+                        </p>
+                        <button
+                            type="button"
+                            className={styles.cardCta}
+                            onClick={handleOpen}
+                        >
+                            {t('review.gastronomySidebar.cta', 'Dejar reseña')}
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="16"
+                                height="16"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden="true"
+                                focusable="false"
+                            >
+                                <title>Abrir</title>
+                                <line
+                                    x1="5"
+                                    y1="12"
+                                    x2="19"
+                                    y2="12"
+                                />
+                                <polyline points="12 5 19 12 12 19" />
+                            </svg>
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <p className={styles.cardText}>
+                            {t(
+                                'review.gastronomySidebar.signInCtaHint',
+                                'Necesitás una cuenta para dejar tu reseña.'
+                            )}
+                        </p>
+                        <a
+                            className={styles.cardCta}
+                            href={signInHref}
+                        >
+                            {t('review.gastronomySidebar.signInCta', 'Iniciá sesión para opinar')}
+                        </a>
+                    </>
+                )}
+            </aside>
+
+            <dialog
+                ref={dialogRef}
+                className={`${styles.dialog} dialog-panel`}
+                aria-labelledby="gastronomy-review-dialog-title"
+                onClose={() => setOpen(false)}
+                onClick={(event) => {
+                    // Click on the backdrop (outside content) closes the dialog.
+                    if (event.target === dialogRef.current) handleClose();
+                }}
+                onKeyDown={(event) => {
+                    if (event.key === 'Escape') handleClose();
+                }}
+            >
+                <div className={styles.dialogInner}>
+                    {success ? (
+                        <output className={styles.successState}>
+                            <span
+                                className={styles.successBadge}
+                                aria-hidden="true"
+                            >
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    width="28"
+                                    height="28"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden="true"
+                                    focusable="false"
+                                >
+                                    <title>Reseña enviada</title>
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                            </span>
+                            <span className={styles.successMessage}>
+                                {t('review.form.submitSuccess', 'Tu reseña fue enviada con éxito')}
+                            </span>
+                            <p className={styles.pendingNotice}>
+                                {t(
+                                    'review.form.gastronomy.pendingNotice',
+                                    'Tu reseña está pendiente de aprobación y será visible cuando sea revisada.'
+                                )}
+                            </p>
+                            <button
+                                type="button"
+                                className={styles.secondaryButton}
+                                onClick={handleClose}
+                            >
+                                {t('review.dialog.close', 'Cerrar')}
+                            </button>
+                        </output>
+                    ) : (
+                        <>
+                            <header className={styles.dialogHeader}>
+                                <div>
+                                    <h3
+                                        id="gastronomy-review-dialog-title"
+                                        className={styles.dialogTitle}
+                                    >
+                                        {t('review.list.writeReview', 'Escribir reseña')}
+                                    </h3>
+                                    <p className={styles.dialogSubtitle}>{gastronomyName}</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    className={styles.closeButton}
+                                    onClick={handleClose}
+                                    aria-label={t('review.dialog.close', 'Cerrar')}
+                                >
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        width="20"
+                                        height="20"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        aria-hidden="true"
+                                        focusable="false"
+                                    >
+                                        <title>Cerrar</title>
+                                        <line
+                                            x1="18"
+                                            y1="6"
+                                            x2="6"
+                                            y2="18"
+                                        />
+                                        <line
+                                            x1="6"
+                                            y1="6"
+                                            x2="18"
+                                            y2="18"
+                                        />
+                                    </svg>
+                                </button>
+                            </header>
+
+                            <form
+                                className={styles.form}
+                                onSubmit={handleSubmit}
+                                noValidate
+                            >
+                                <div className={styles.ratingList}>
+                                    <div className={styles.ratingRow}>
+                                        <span className={styles.ratingLabel}>
+                                            {t('review.form.overallLabel', 'Calificación general')}
+                                        </span>
+                                        <div
+                                            className={styles.starGroup}
+                                            role="radiogroup"
+                                            aria-label={t(
+                                                'review.form.overallLabel',
+                                                'Calificación general'
+                                            )}
+                                        >
+                                            {STAR_POSITIONS.map((star) => (
+                                                // biome-ignore lint/a11y/useSemanticElements: button+role=radio is the ARIA APG pattern for star ratings; <input type=radio> can't host the star glyph.
+                                                <button
+                                                    key={star}
+                                                    type="button"
+                                                    role="radio"
+                                                    aria-checked={overall === star}
+                                                    aria-label={`${star}`}
+                                                    className={cn(
+                                                        styles.starButton,
+                                                        star <= overall && styles.starButtonOn
+                                                    )}
+                                                    onClick={() => setOverall(star)}
+                                                    disabled={submitting}
+                                                >
+                                                    <svg
+                                                        viewBox="0 0 24 24"
+                                                        width="100%"
+                                                        height="100%"
+                                                        fill="currentColor"
+                                                        aria-hidden="true"
+                                                        focusable="false"
+                                                    >
+                                                        <title>Estrella</title>
+                                                        <path d="M12 2l2.92 5.92 6.53.95-4.72 4.6 1.11 6.5L12 17.6l-5.84 3.07 1.11-6.5-4.72-4.6 6.53-.95L12 2z" />
+                                                    </svg>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <label className={styles.field}>
+                                    <span className={styles.fieldLabel}>
+                                        {t('review.form.titleLabel', 'Título')}
+                                        <span className={styles.fieldOptional}>
+                                            {t('common.optional', 'Opcional')}
+                                        </span>
+                                    </span>
+                                    <input
+                                        type="text"
+                                        className={styles.input}
+                                        value={title}
+                                        maxLength={TITLE_MAX}
+                                        onChange={(event) => setTitle(event.target.value)}
+                                        placeholder={t(
+                                            'review.form.titlePlaceholder',
+                                            'Resumen de tu experiencia'
+                                        )}
+                                        disabled={submitting}
+                                        aria-invalid={!titleValid}
+                                        aria-describedby={
+                                            titleValid
+                                                ? undefined
+                                                : fieldErrorId('gastronomy-review-title')
+                                        }
+                                    />
+                                    <FieldError
+                                        id={fieldErrorId('gastronomy-review-title')}
+                                        message={
+                                            titleValid
+                                                ? null
+                                                : t(
+                                                      'review.form.errors.titleMinLength',
+                                                      'El título debe tener al menos 3 caracteres'
+                                                  )
+                                        }
+                                    />
+                                </label>
+
+                                <label className={styles.field}>
+                                    <span className={styles.fieldLabel}>
+                                        {t('review.form.contentLabel', 'Comentario')}
+                                        <span className={styles.fieldOptional}>
+                                            {t('common.optional', 'Opcional')}
+                                        </span>
+                                    </span>
+                                    <textarea
+                                        className={styles.textarea}
+                                        value={content}
+                                        maxLength={CONTENT_MAX}
+                                        rows={4}
+                                        onChange={(event) => setContent(event.target.value)}
+                                        placeholder={t(
+                                            'review.form.contentPlaceholder',
+                                            'Comparte tu experiencia en detalle...'
+                                        )}
+                                        disabled={submitting}
+                                        aria-invalid={!contentValid}
+                                        aria-describedby={
+                                            contentValid
+                                                ? undefined
+                                                : fieldErrorId('gastronomy-review-content')
+                                        }
+                                    />
+                                    <span className={styles.charCounter}>
+                                        {content.length}/{CONTENT_MAX}
+                                    </span>
+                                    <FieldError
+                                        id={fieldErrorId('gastronomy-review-content')}
+                                        message={
+                                            contentValid
+                                                ? null
+                                                : t(
+                                                      'review.form.errors.contentMinLength',
+                                                      'El comentario debe tener al menos 10 caracteres'
+                                                  )
+                                        }
+                                    />
+                                </label>
+
+                                {error && (
+                                    <p
+                                        className={styles.errorMessage}
+                                        role="alert"
+                                    >
+                                        {error}
+                                    </p>
+                                )}
+
+                                <div className={styles.actions}>
+                                    <button
+                                        type="button"
+                                        className={styles.secondaryButton}
+                                        onClick={handleClose}
+                                        disabled={submitting}
+                                    >
+                                        {t('review.form.cancelButton', 'Cancelar')}
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className={styles.submitButton}
+                                        disabled={
+                                            !rated || !titleValid || !contentValid || submitting
+                                        }
+                                    >
+                                        {submitting && (
+                                            <span
+                                                className={styles.spinner}
+                                                aria-hidden="true"
+                                            />
+                                        )}
+                                        <span>
+                                            {submitting
+                                                ? t('review.form.submittingButton', 'Enviando...')
+                                                : t('review.form.submitButton', 'Enviar reseña')}
+                                        </span>
+                                    </button>
+                                </div>
+
+                                {!rated && (
+                                    <p
+                                        className={styles.helpText}
+                                        aria-live="polite"
+                                    >
+                                        {t(
+                                            'review.form.errors.ratingRequired',
+                                            'Calificá todas las categorías'
+                                        )}
+                                    </p>
+                                )}
+                            </form>
+                        </>
+                    )}
+                </div>
+            </dialog>
+        </>
+    );
+}

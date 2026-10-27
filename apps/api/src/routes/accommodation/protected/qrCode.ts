@@ -15,7 +15,7 @@
  * browser instead would mean a second QR generator, which
  * `scripts/check-qrcode-engine-isolation.sh` exists to forbid. What the CSP DOES
  * allow is `img-src … data:`, which is how `ProviderQrPanel` and
- * `GastronomyMenuQrWidget` already put a code on screen. So the panel needs the
+ * `VenueMenuQrWidget` already put a code on screen. So the panel needs the
  * SVG, and this is the route that hands it over.
  *
  * A button that downloads a PDF blind tells the owner nothing about what they

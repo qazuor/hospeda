@@ -150,7 +150,7 @@ Wiring is opt-in per surface. These deliberately have no back-button handling:
 - `components/shared/filters/components/MobileDrawer.tsx` — see above.
 - `components/maps/MapCardsSidebar.client.tsx` — mobile results bottom sheet.
 - The native `<dialog showModal>` review forms (`ReviewSidebarCard`,
-  `DestinationReviewSidebarCard`, `GastronomyReviewForm`) — these are the highest
+  `DestinationReviewSidebarCard`, `VenueReviewForm`) — these are the highest
   value remaining targets, since they hold typed content.
 - Anchored popovers (`AuthRequiredPopover`, `CompareUpsellPopover`,
   `CollectionPickerPopover`, `DateRangeFilter`, `SearchBar`) — hijacking the back

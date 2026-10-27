@@ -68,7 +68,7 @@ const failed = (error = 'boom') => ({ ok: false, error }) as const;
 const OWNER_TRIAL = 14;
 const OWNER_LONGER_TRIAL = 21;
 const TOURIST_TRIAL = 45;
-const GASTRONOMY_TRIAL = 7;
+const VENUE_TRIAL = 7;
 const EXPERIENCE_TRIAL = 3;
 
 /**
@@ -110,13 +110,13 @@ const ACCOMMODATION_PLANS = [
     })
 ];
 
-const GASTRONOMY_PLANS = [
+const VENUE_PLANS = [
     makePlan({
         slug: 'gastronomy-basico',
         vertical: 'gastronomy',
         monthlyPriceArs: 1_000_000,
         hasTrial: true,
-        trialDays: GASTRONOMY_TRIAL
+        trialDays: VENUE_TRIAL
     }),
     // Inactive, and carrying a SHORTER trial than the live plan: if `isActive`
     // stopped being checked, gastronomy would advertise 1 day.
@@ -145,7 +145,7 @@ const HOST_PLANS = ACCOMMODATION_PLANS.filter((plan) => plan.vertical === 'accom
 const ALL_OK = {
     accommodation: ok(HOST_PLANS),
     tourist: ok(TOURIST_PLANS),
-    gastronomy: ok(GASTRONOMY_PLANS),
+    gastronomy: ok(VENUE_PLANS),
     experience: ok(EXPERIENCE_PLANS)
 } as const;
 
@@ -338,7 +338,7 @@ describe('resolveAudienceTrialDays', () => {
             host: OWNER_TRIAL,
             // Tourist starts at a free tier, so its card carries no trial (HOS-1766).
             tourist: null,
-            gastronomy: GASTRONOMY_TRIAL,
+            gastronomy: VENUE_TRIAL,
             experience: EXPERIENCE_TRIAL
         });
     });
@@ -460,7 +460,7 @@ describe('resolveAudienceTrialDays', () => {
     });
 
     it('ignores inactive plans even when they offer a shorter trial', () => {
-        expect(resolveAudienceTrialDays(ALL_OK).gastronomy).toBe(GASTRONOMY_TRIAL);
+        expect(resolveAudienceTrialDays(ALL_OK).gastronomy).toBe(VENUE_TRIAL);
     });
 
     it('keeps tourist catalog trials out of the host card (AC:B13a:11)', () => {

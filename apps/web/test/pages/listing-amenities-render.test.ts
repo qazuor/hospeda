@@ -57,35 +57,35 @@ function withoutComments(source: string): string {
 const read = (relativePath: string): string =>
     withoutComments(readFileSync(resolve(__dirname, '../../src', relativePath), 'utf8'));
 
-const GASTRONOMY_PAGE = read('pages/[lang]/gastronomia/[slug].astro');
+const VENUE_PAGE = read('pages/[lang]/gastronomia/[slug].astro');
 const EXPERIENCE_INFO = read('components/experience/ExperienceInfo.astro');
-const GASTRONOMY_PRESENTATION = read('pages/[lang]/presentacion/gastronomia/index.astro');
+const VENUE_PRESENTATION = read('pages/[lang]/presentacion/gastronomia/index.astro');
 const EXPERIENCE_PRESENTATION = read('pages/[lang]/presentacion/experiencias/index.astro');
 
 describe('gastronomia/[slug].astro — mounts the catalog grids (HOS-1072)', () => {
     it('imports the shared grids instead of declaring per-vertical copies', () => {
-        expect(GASTRONOMY_PRESENTATION).not.toContain('AmenitiesGrid');
-        expect(GASTRONOMY_PAGE).toContain(
+        expect(VENUE_PRESENTATION).not.toContain('AmenitiesGrid');
+        expect(VENUE_PAGE).toContain(
             "import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro'"
         );
-        expect(GASTRONOMY_PAGE).toContain(
+        expect(VENUE_PAGE).toContain(
             "import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro'"
         );
     });
 
     it("binds AmenitiesGrid to the LISTING's own amenities", () => {
-        // HOS-1055: `amenitiesForGrid` is `gastronomy.amenities` with
+        // HOS-1055: `amenitiesForGrid` is `venue.amenities` with
         // `private_events` excluded ONLY when the dedicated events CTA renders
-        // in its place (see `apps/web/test/pages/gastronomy-events-cta.test.ts`)
+        // in its place (see `apps/web/test/pages/venue-events-cta.test.ts`)
         // — still the listing's own amenities, not a different source.
-        expect(GASTRONOMY_PAGE).toContain(
+        expect(VENUE_PAGE).toContain(
             '<AmenitiesGrid amenities={amenitiesForGrid} lang={locale} />'
         );
     });
 
     it("binds FeaturesGrid to the listing's features, with no accommodation-only smoking flag", () => {
-        expect(GASTRONOMY_PAGE).toContain(
-            '<FeaturesGrid features={gastronomy.features} smokingAllowed={null} lang={locale} />'
+        expect(VENUE_PAGE).toContain(
+            '<FeaturesGrid features={venue.features} smokingAllowed={null} lang={locale} />'
         );
     });
 });
@@ -124,12 +124,12 @@ describe('ExperienceInfo.astro — keeps the promise its own JSDoc made (HOS-107
 
 describe('vertical presentation pages — the third surface (HOS-1071 rule)', () => {
     it('gastronomia tells the owner the venue traits are publishable', () => {
-        expect(GASTRONOMY_PRESENTATION).toContain('Lo que ofrece el local');
-        expect(GASTRONOMY_PRESENTATION).toContain('delivery o take away');
+        expect(VENUE_PRESENTATION).toContain('Lo que ofrece el local');
+        expect(VENUE_PRESENTATION).toContain('delivery o take away');
     });
 
     it('gastronomia lists those traits among what the owner edits alone', () => {
-        expect(GASTRONOMY_PRESENTATION).toContain(
+        expect(VENUE_PRESENTATION).toContain(
             'lo que ofrece el local, contacto y redes</td><td><strong>Vos, cuando quieras</strong>'
         );
     });

@@ -2,7 +2,7 @@
  * Regression guard for the review-count header shared by listing listing
  * detail pages (gastronomy + experience).
  *
- * `GastronomyDetailHeader.astro` and `ExperienceHero.astro` render the review
+ * `VenueDetailHeader.astro` and `ExperienceHero.astro` render the review
  * count via `tPlural('review.list.totalReviews', count, { count })`. A SPEC-259
  * smoke found both components referencing the wrong path `review.totalReviews`
  * (no `.list`, no `{ count }`), which rendered the literal
