@@ -40,10 +40,10 @@ describe('TEST:1626:8 — read_reviews follows write_reviews in the production c
             'experience/experience-basico',
             'experience/experience-premium',
             'experience/experience-pro',
-            'venue/venue-basico',
-            'venue/venue-premium',
             'tourist/floor',
             'tourist/tourist-vip',
+            'venue/venue-basico',
+            'venue/venue-premium',
             'venue/venue-pro'
         ]);
     });
