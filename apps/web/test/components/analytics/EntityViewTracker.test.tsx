@@ -274,7 +274,7 @@ describe('EntityViewTracker — GASTRONOMY / EXPERIENCE (HOS-734)', () => {
 
         expect(sendViewBeaconMock).toHaveBeenCalledTimes(1);
         expect(sendViewBeaconMock).toHaveBeenCalledWith({
-            entityType: 'GASTRONOMY',
+            entityType: 'VENUE',
             entityId: VENUE_PROPS.entityId
         });
     });
@@ -316,7 +316,7 @@ describe('EntityViewTracker — GASTRONOMY / EXPERIENCE (HOS-734)', () => {
 
         expect(sendViewBeaconMock).toHaveBeenCalledTimes(2);
         expect(sendViewBeaconMock).toHaveBeenLastCalledWith({
-            entityType: 'GASTRONOMY',
+            entityType: 'VENUE',
             entityId: newId
         });
     });
