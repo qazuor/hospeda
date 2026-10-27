@@ -1,4 +1,4 @@
-import type { Accommodation, Experience, Venue } from '@repo/schemas';
+import { type Accommodation, EntityTypeEnum, type Experience, type Venue } from '@repo/schemas';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model.ts';
@@ -83,7 +83,11 @@ async function insertRow(
     featureId: string,
     tagId: string
 ) {
-    const entityType = vertical.toUpperCase();
+    const entityType = {
+        accommodation: EntityTypeEnum.ACCOMMODATION,
+        venue: EntityTypeEnum.VENUE,
+        experience: EntityTypeEnum.EXPERIENCE
+    }[vertical];
     const sqlByTable: Record<string, ReturnType<typeof sql>> = {
         r_accommodation_amenity: sql`INSERT INTO r_accommodation_amenity (accommodation_id, amenity_id) VALUES (${listingId}, ${amenityId}) RETURNING accommodation_id AS id`,
         r_gastronomy_amenity: sql`INSERT INTO r_gastronomy_amenity (gastronomy_id, amenity_id) VALUES (${listingId}, ${amenityId}) RETURNING gastronomy_id AS id`,
