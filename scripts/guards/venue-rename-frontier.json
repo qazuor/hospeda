@@ -238,8 +238,6 @@
         "apps/api/src/services/ai-context/index.ts": 3,
         "apps/api/src/services/ai-context/owner-data-fence.ts": 1,
         "apps/api/src/services/ai-context/venue-ai-context.ts": 54,
-        "apps/api/src/services/cutover-v6/ports.ts": 1,
-        "apps/api/src/services/cutover-v6/step-5b.service.ts": 1,
         "apps/api/src/services/listing-brochure/brochure-content.ts": 10,
         "apps/api/src/services/listing-brochure/brochure-render.ts": 1,
         "apps/api/src/services/listing-brochure/brochure-source.ts": 6,
