@@ -346,7 +346,7 @@
         "apps/e2e/tests/accommodation/acc-02-edit-revalidation.spec.ts": 1,
         "apps/e2e/tests/admin/adm-11-user-trial-summary.spec.ts": 1,
         "apps/e2e/tests/listing-owner/listing-owner-01-owner-edits-listings.spec.ts": 32,
-        "apps/e2e/tests/listing-owner/listing-owner-02-access-control.spec.ts": 22,
+        "apps/e2e/tests/listing-owner/listing-owner-02-access-control.spec.ts": 21,
         "apps/e2e/tests/listing-owner/listing-owner-03-owner-edits-type-i18n.spec.ts": 34,
         "apps/e2e/tests/listing-owner/listing-owner-04-permission-gate.spec.ts": 22,
         "apps/e2e/tests/listing-owner/listing-owner-05-contact-social-fields.spec.ts": 15,
