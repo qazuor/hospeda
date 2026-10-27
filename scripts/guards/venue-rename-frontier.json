@@ -106,8 +106,6 @@
         "apps/admin/test/features/listing-publication-status-panel.test.ts": 1,
         "apps/admin/test/features/listing-purged-list-items.test.ts": 2,
         "apps/admin/test/listing-moderation-control.guard.test.ts": 3,
-        "apps/admin/test/routes/_authed/ai/ai-settings-features.utils.test.ts": 3,
-        "apps/admin/test/routes/_authed/ai/playground-features.utils.test.ts": 1,
         "apps/admin/test/routes/_authed/gastronom\u0069es/edit-media-upload.test.tsx": 5,
         "apps/api/.env.example": 3,
         "apps/api/CLAUDE.md": 1,
