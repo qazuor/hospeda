@@ -166,17 +166,7 @@ describe('DELETE /admin/event-locations/:id/hard (hard delete)', () => {
         expect(await countRows(rowId)).toBe(0);
     });
 
-    // HOS-1903: BaseCrudService.hardDelete returns { count: 0 } for a soft-deleted row
-    // (base.crud.write.ts:322), so the route answers success while the row stays.
-    it('currently answers 200 but keeps a soft-deleted event location in the table (HOS-1903)', async () => {
-        const softDeletedId = await seedRow({ deleted: true });
-        const res = await hardDelete({ id: softDeletedId, permissions: deleter });
-        expect(res.status).toBe(200);
-        expect(await countRows(softDeletedId)).toBe(1);
-    });
-
-    // Drop `.fails` (and the test above) once HOS-1903 is fixed.
-    it.fails('permanently deletes an event location that was soft-deleted first (HOS-1903)', async () => {
+    it('permanently deletes an event location that was soft-deleted first (HOS-1903)', async () => {
         const softDeletedId = await seedRow({ deleted: true });
         const res = await hardDelete({ id: softDeletedId, permissions: deleter });
         expect(res.status).toBe(200);

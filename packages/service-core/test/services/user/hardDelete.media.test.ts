@@ -19,6 +19,7 @@
 import { UserModel } from '@repo/db';
 import { resolveEnvironment } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
+import { ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
 import { createSuperAdminActor } from '../../factories/actorFactory';
@@ -118,7 +119,7 @@ describe('UserService.hardDelete — avatar cleanup (T-065)', () => {
         expect(deleteSpy).not.toHaveBeenCalled();
     });
 
-    it('does NOT call the provider when the DB reports zero deleted rows', async () => {
+    it('answers NOT_FOUND and skips media cleanup when the DB reports zero deleted rows (HOS-1903)', async () => {
         const entity = createUser({ id: userId, imagePublicId: 'hospeda/test/avatars/x' });
         (userModelMock.findById as Mock).mockResolvedValue(entity);
         (userModelMock.hardDelete as Mock).mockResolvedValue(0);
@@ -126,8 +127,8 @@ describe('UserService.hardDelete — avatar cleanup (T-065)', () => {
 
         const result = await service.hardDelete(actor, userId);
 
-        expect(result.error).toBeUndefined();
-        expect(result.data?.count).toBe(0);
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(result.data).toBeUndefined();
         expect(deleteSpy).not.toHaveBeenCalled();
     });
 

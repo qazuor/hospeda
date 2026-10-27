@@ -63,17 +63,13 @@ describe('PostSponsorService.hardDelete', () => {
         expect(result.data).toBeUndefined();
     });
 
-    it('should return 0 if already deleted', async () => {
+    it('should hard delete an already soft-deleted row (trash then purge, HOS-1903)', async () => {
         const deletedEntity = { ...existing, deletedAt: new Date() };
         modelMock.findById.mockResolvedValue(deletedEntity);
-        // No llamar a hardDelete si ya está eliminado
-        modelMock.hardDelete.mockImplementation(() => {
-            throw new Error('Should not be called');
-        });
+        modelMock.hardDelete.mockResolvedValue(1);
         const result = await service.hardDelete(actor, id);
-        expect(result.data).toBeDefined();
-        expect(result.data?.count ?? 0).toBe(0);
         expect(result.error).toBeUndefined();
-        expect(modelMock.hardDelete).not.toHaveBeenCalled();
+        expect(result.data?.count).toBe(1);
+        expect(modelMock.hardDelete).toHaveBeenCalled();
     });
 });
