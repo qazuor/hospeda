@@ -141,7 +141,7 @@ const EXPECTED_GLOBAL_KEYS = ['has_verification_badge', 'priority_support', 'vip
 const EXPECTED_LISTING_CAPS = [
     'max_accommodations',
     'max_experiences',
-    'max_gastronomies',
+    'max_venues',
     'max_properties'
 ];
 const EXPECTED_METERED_KEYS = [

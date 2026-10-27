@@ -11,7 +11,7 @@ import { type KeyRow, toDefinitions } from './key-row.js';
  */
 const ROWS: readonly KeyRow[] = [
     ['max_accommodations', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'],
-    ['max_gastronomies', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'],
+    ['max_venues', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'],
     ['max_experiences', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'],
     ['max_properties', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'],
     ['max_photos_per_accommodation', 'vertical', 'SUM', 'ARCHIVE', 'COMMERCIAL'],

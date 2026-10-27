@@ -643,7 +643,7 @@ export const PRODUCTION_PLAN_CATALOG = [
                     value: 25
                 },
                 {
-                    key: 'max_gastronomies',
+                    key: 'max_venues',
                     value: 1
                 },
                 {
@@ -766,7 +766,7 @@ export const PRODUCTION_PLAN_CATALOG = [
                     value: 25
                 },
                 {
-                    key: 'max_gastronomies',
+                    key: 'max_venues',
                     value: 3
                 },
                 {
@@ -906,7 +906,7 @@ export const PRODUCTION_PLAN_CATALOG = [
                     value: 25
                 },
                 {
-                    key: 'max_gastronomies',
+                    key: 'max_venues',
                     value: 5
                 },
                 {
@@ -1525,7 +1525,7 @@ export const PRODUCTION_PLAN_CATALOG = [
             entitlements: [],
             limits: [
                 {
-                    key: 'max_gastronomies',
+                    key: 'max_venues',
                     value: 1
                 }
             ]

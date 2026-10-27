@@ -63,7 +63,7 @@ export enum EntitlementKeyEnum {
 /** Named limit keys mirrored from the catalog definitions. */
 export enum LimitKeyEnum {
     MAX_ACCOMMODATIONS = 'max_accommodations',
-    MAX_GASTRONOMIES = 'max_gastronomies',
+    MAX_VENUES = 'max_venues',
     MAX_EXPERIENCES = 'max_experiences',
     MAX_PROPERTIES = 'max_properties',
     MAX_PHOTOS_PER_ACCOMMODATION = 'max_photos_per_accommodation',
