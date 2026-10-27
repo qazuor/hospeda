@@ -12,7 +12,7 @@ Machine-greppable header so a later sweep can find every sign-off, and
 <!-- smoke-signoff v1 -->
 ## Smoke sign-off
 
-- **Resultado**: PASO | PARCIAL | FALLO | PENDIENTE
+- **Resultado**: PASO | TRASPASO | PARCIAL | FALLO | PENDIENTE
 - **Entorno**: prod | staging | local
 - **Grado**: ejecutado | declarado-de-memoria
 - **Tanda**: <slug>  (`individual` for a one-off `/smoke HOS-N`)
@@ -25,9 +25,19 @@ Machine-greppable header so a later sweep can find every sign-off, and
 - **Entornos pendientes**: ninguno   (or `prod — concerns_distintos: MP real`)
 - **Labels retirados**: status-needs-smoke-staging
 - **Observado**: <what was actually seen, in words. Never "step 12 passed".>
-- **Novedad**: <entry-id>   (only on PASO)
-- **Hallazgo**: HOS-NNN   (only on FALLO)
+- **Novedad**: <entry-id>   (only on PASO, or a TRASPASO that closes)
+- **Traspasado**: AC-2 → HOS-NNN   (only on TRASPASO; one line per moved criterion)
 ```
+
+`TRASPASO` means a criterion failed **separably** and was moved, verbatim and
+with its `status-needs-smoke-*` label(s), to exactly one other open issue (new or
+pre-existing). The original closes when nothing else is pending. A `FALLO` is a
+**core** failure: the original goes back to In Progress and **no** other issue is
+opened for it, so the failure is never open twice. See SKILL.md, I2 and
+*Transfer*.
+
+Sign-offs written before 2026-10-27 may carry `Hallazgo: HOS-NNN` on a `FALLO`.
+That is the old two-open-issues shape; read it as history, never write it again.
 
 `Novedad` carries the id of the What's New entry Phase 2b wrote for this issue.
 It is written by amending this same comment once the labels are applied, so a
