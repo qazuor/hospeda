@@ -328,7 +328,17 @@ export class ExperienceReviewService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext
     ): Promise<PaginatedListOutput<ExperienceReview>> {
-        const { page, pageSize, sortBy: _sortBy, sortOrder: _sortOrder, ...filters } = params;
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params and
+        // republishes them on ctx.pagination (SPEC-088); read them from ctx (HOS-1900).
+        const page = ctx.pagination?.page;
+        const pageSize = ctx.pagination?.pageSize;
+        const {
+            page: _page,
+            pageSize: _pageSize,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            ...filters
+        } = params;
         // Force-override: public reads must only see APPROVED+ACTIVE reviews.
         (filters as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
         (filters as Record<string, unknown>).moderationState = ModerationStatusEnum.APPROVED;
