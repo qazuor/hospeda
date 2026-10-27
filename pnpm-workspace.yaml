@@ -389,7 +389,10 @@ auditConfig:
     # image asset in the app would fail to bundle. Metro 0.87.1 dropped
     # image-size entirely (0.84.4 is resolved today, via Expo SDK 56), so these
     # two lines go away with the Expo/React Native bump that brings it.
-    #
+    # Before removing them, confirm with:
+    #   pnpm why image-size -r --prod   # no 1.x left
+    - GHSA-w3rx-r6r6-pgpr
+    - GHSA-5p2g-fcmc-qvqq
     # HOS-1894 — alerts deliberately left open (no ignoreGhsas entry needed:
     # neither is in the `pnpm audit --prod` graph that CI gates on):
     # - extract-zip@2.0.1 (symlink write, no fixed release on npm): reached only
@@ -400,10 +403,6 @@ auditConfig:
     #   ESM-only ("type": "module"), while query-string 7.x loads it with
     #   require(), so forcing it would break the mobile bundle. Goes away with
     #   an expo-router / query-string bump.
-    # Before removing them, confirm with:
-    #   pnpm why image-size -r --prod   # no 1.x left
-    - GHSA-w3rx-r6r6-pgpr
-    - GHSA-5p2g-fcmc-qvqq
     # pnpm's GHSA ignore is advisory-wide; the remaining affected resolution is
     # zod@3.25.76 only. The zod 4 override is patched at 4.6.6.
     # GHSA-mrhx-c7xc-m3w5: zod@3.25.76 is pinned EXACTLY by @expo/cli
