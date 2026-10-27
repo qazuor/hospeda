@@ -12,7 +12,7 @@ import { VenueRatingSchema } from '../../../common/venue-rating.schema.js';
  * {@link VenueRatingSchema} for the rating breakdown (food / service /
  * ambiance / value) instead of accommodation-specific dimensions.
  *
- * Columns match the `gastronomy_reviews` DB table exactly:
+ * Columns match the `venue_reviews` DB table exactly:
  * - `title` (text, nullable) — optional short headline for the review.
  * - `content` (text, nullable) — optional free-text body.
  * - `averageRating` (numeric 3,2) — computed average of the rating breakdown.
@@ -88,7 +88,7 @@ export const VenueReviewSchema = z.object({
     /**
      * UUID of the user who last performed a moderation action.
      * Nullable until a moderator acts on the review.
-     * Mirrors the `moderated_by_id` column in `gastronomy_reviews`.
+     * Mirrors the `moderated_by_id` column in `venue_reviews`.
      */
     moderatedById: UserIdSchema.nullish(),
 

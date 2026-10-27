@@ -187,7 +187,7 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
     contactInfo: true,
     socialNetworks: true,
     // HOS-372: `media` is not writable — the `media` JSONB column was dropped.
-    // Photos are written through the relational `gastronomy_media` endpoints and
+    // Photos are written through the relational `venue_media` endpoints and
     // videos through this top-level column.
     videos: true,
     menuUrl: true,
@@ -287,7 +287,7 @@ export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     //   inert rather than live — it is omitted so it cannot become live the day
     //   the column lands.
     // - `media` — the `media` jsonb column was DROPPED (HOS-372); photos live in
-    //   `gastronomy_media`. `GastronomyUpdateInputSchema` omits it for exactly
+    //   `venue_media`. `GastronomyUpdateInputSchema` omits it for exactly
     //   this reason (see HOS-382 below); accepting it here reproduces the same
     //   silently-vanishing-photo path on the owner's first save.
     adminInfo: true,
@@ -402,7 +402,7 @@ export const VenueUpdateInputSchema = z
                 menuFilePublicId: true,
                 menuFileKind: true,
                 // HOS-372: the `media` JSONB column was dropped. Photos live in
-                // `gastronomy_media` and are written through the relational media
+                // `venue_media` and are written through the relational media
                 // endpoints; videos travel as the top-level `videos` column, which
                 // stays writable here. `media` remains a RESPONSE field, composed
                 // from the rows on the way out — it is only the write side that goes.

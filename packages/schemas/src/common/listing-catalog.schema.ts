@@ -14,7 +14,7 @@ import { z } from 'zod';
  * fork the i18n contract.
  *
  * It is narrower than the accommodation twin in one respect, and that is a
- * property of the tables rather than a simplification: `r_gastronomy_amenity`
+ * property of the tables rather than a simplification: `r_venue_amenity`
  * and `r_experience_amenity` carry no `isOptional` / `additionalCost` columns,
  * so there is nothing to publish for them. Declaring them anyway would promise
  * a value the DB cannot produce.

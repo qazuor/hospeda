@@ -21,7 +21,7 @@
  * owner-facing question ("hasta cuándo lo ofrecés") has an inclusive answer.
  *
  * The day they are compared against is resolved in the AR market timezone, not
- * UTC — see `gastronomy_daily_special.dbschema.ts` for why that matters at
+ * UTC — see `venue_daily_special.dbschema.ts` for why that matters at
  * 21:00 on a Friday.
  *
  * @module entities/venue/subtypes/venue.daily-special.schema

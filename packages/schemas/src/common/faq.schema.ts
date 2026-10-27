@@ -66,7 +66,7 @@ export type BaseFaqType = z.infer<typeof BaseFaqSchema>;
  * Channel-visibility fields (HOS-393).
  *
  * Deliberately NOT part of {@link BaseFaqSchema}. All four FAQ tables
- * (`accommodation_faqs`, `destination_faqs`, `gastronomy_faqs`,
+ * (`accommodation_faqs`, `destination_faqs`, `venue_faqs`,
  * `experience_faqs`) extend that base, but only accommodation FAQs carry these
  * flags today: `isUsableByAi` is inert where there is no AI chat, and the chat
  * currently exists only on accommodations.

@@ -58,7 +58,7 @@ export const VENUE_EVENTS_MAX_ENTRIES = 30;
 // ----------------------------------------------------------------------------
 
 /**
- * How a venue event repeats. Mirrors `gastronomy_event_recurrence_enum`.
+ * How a venue event repeats. Mirrors `venue_event_recurrence_enum`.
  *
  * Declared here rather than in `enums/` for the same reason
  * `GastronomyMenuFileKindSchema` is: it describes one column of one vertical

@@ -32,7 +32,7 @@ export type ListingMediaState = z.infer<typeof ListingMediaStateSchema>;
 
 /**
  * Shared base shape for a single row in a listing media table
- * (`gastronomy_media`, `experience_media`).
+ * (`venue_media`, `experience_media`).
  *
  * Deliberately EXCLUDES `id` and the parent foreign key — those are the only
  * two fields that differ per vertical. Each vertical's schema extends this

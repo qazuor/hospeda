@@ -262,7 +262,7 @@ export type BaseMediaFieldsType = typeof BaseMediaFields;
  * table (HOS-372).
  *
  * Accommodations, gastronomy listings and experiences store their photos as rows
- * (`accommodation_media` / `gastronomy_media` / `experience_media`), so the JSONB
+ * (`accommodation_media` / `venue_media` / `experience_media`), so the JSONB
  * `media` blob is being retired for them. Videos have no relational table of their
  * own — a video is an external YouTube/Vimeo URL rather than an uploaded asset, so
  * it can never be orphaned and gains nothing from a row — and therefore moves to a
