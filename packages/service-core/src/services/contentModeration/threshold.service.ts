@@ -189,8 +189,8 @@ export class ContentModerationThresholdService extends BaseCrudService<
     ) {
         // BaseCrudRead.search strips page/pageSize from params and republishes them
         // on ctx.pagination (SPEC-088); read them from ctx (HOS-1900).
-        const page = ctx.pagination?.page ?? 1;
-        const pageSize = ctx.pagination?.pageSize ?? 10;
+        const page = ctx.pagination?.page;
+        const pageSize = ctx.pagination?.pageSize;
         const result = await this.model.findAll({}, { page, pageSize }, undefined, undefined);
         return result;
     }

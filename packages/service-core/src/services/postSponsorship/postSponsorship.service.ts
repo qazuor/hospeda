@@ -205,8 +205,8 @@ export class PostSponsorshipService extends BaseCrudService<
         const { sponsorId, postId, fromDate, toDate, isHighlighted } = params;
         // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params and
         // republishes them on ctx.pagination (SPEC-088); read them from ctx (HOS-1900).
-        const page = ctx.pagination?.page ?? 1;
-        const pageSize = ctx.pagination?.pageSize ?? 10;
+        const page = ctx.pagination?.page;
+        const pageSize = ctx.pagination?.pageSize;
         const where: Record<string, unknown> = {};
         if (sponsorId) where.sponsorId = sponsorId;
         if (postId) where.postId = postId;
