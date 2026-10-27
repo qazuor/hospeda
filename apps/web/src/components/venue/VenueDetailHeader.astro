@@ -32,7 +32,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 
 interface Props {
-    readonly gastronomy: VenueDetailData;
+    readonly venue: VenueDetailData;
     readonly locale: SupportedLocale;
     /** Whether the current user is authenticated (forwarded to FavoriteButton). */
     /** SSR-resolved initial favorite state for the current user. */
@@ -42,22 +42,22 @@ interface Props {
 }
 
 const {
-    gastronomy,
+    venue,
     locale,
     bookmarkCount,
 } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
-const typeLabel = t(`gastronomy.types.${gastronomy.type}`, gastronomy.type);
-const priceRangeLabel = gastronomy.priceRange
-    ? t(`gastronomy.card.priceRange.${gastronomy.priceRange}`, gastronomy.priceRange)
+const typeLabel = t(`gastronomy.types.${venue.type}`, venue.type);
+const priceRangeLabel = venue.priceRange
+    ? t(`gastronomy.card.priceRange.${venue.priceRange}`, venue.priceRange)
     : null;
 
-const fullStars = Math.floor(gastronomy.averageRating);
+const fullStars = Math.floor(venue.averageRating);
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const isNew = gastronomy.createdAt
-    ? Date.now() - new Date(gastronomy.createdAt).getTime() < THIRTY_DAYS_MS
+const isNew = venue.createdAt
+    ? Date.now() - new Date(venue.createdAt).getTime() < THIRTY_DAYS_MS
     : false;
 ---
 
@@ -74,7 +74,7 @@ const isNew = gastronomy.createdAt
                 {priceRangeLabel && (
                     <span class="gastro-detail-header__price-badge wh-compact-badge">{priceRangeLabel}</span>
                 )}
-                {gastronomy.isFeatured && (
+                {venue.isFeatured && (
                     <span class="featured-badge">
                         <StarIcon size={12} weight="fill" aria-hidden="true" />
                         <span>{t('gastronomy.card.featured', 'Destacado')}</span>
@@ -87,16 +87,16 @@ const isNew = gastronomy.createdAt
                 )}
             </div>
 
-            <h1 class="gastro-detail-header__name wh-compact-title">{gastronomy.name}</h1>
+            <h1 class="gastro-detail-header__name wh-compact-title">{venue.name}</h1>
 
-            {gastronomy.destinationName && (
+            {venue.destinationName && (
                 <div class="gastro-detail-header__location wh-compact-demote">
                     <LocationIcon size={16} weight="fill" aria-hidden="true" />
-                    <span>{gastronomy.destinationName}</span>
+                    <span>{venue.destinationName}</span>
                 </div>
             )}
 
-            {gastronomy.averageRating > 0 && (
+            {venue.averageRating > 0 && (
                 <div class="gastro-detail-header__rating wh-compact-hide">
                     <div class="gastro-detail-header__stars" aria-hidden="true">
                         {Array.from({ length: 5 }).map((_, i) => (
@@ -116,11 +116,11 @@ const isNew = gastronomy.createdAt
                         ))}
                     </div>
                     <span class="gastro-detail-header__rating-value">
-                        {gastronomy.averageRating.toFixed(1)}
+                        {venue.averageRating.toFixed(1)}
                     </span>
-                    {gastronomy.reviewsCount > 0 && (
+                    {venue.reviewsCount > 0 && (
                         <span class="gastro-detail-header__reviews-count">
-                            · {tPlural('review.list.totalReviews', gastronomy.reviewsCount, { count: gastronomy.reviewsCount })}
+                            · {tPlural('review.list.totalReviews', venue.reviewsCount, { count: venue.reviewsCount })}
                         </span>
                     )}
                 </div>
@@ -131,7 +131,7 @@ const isNew = gastronomy.createdAt
         <div class="gastro-detail-header__fav">
             <FavoriteButton
                 client:load
-                entityId={gastronomy.id}
+                entityId={venue.id}
                 entityType="GASTRONOMY"
                 count={bookmarkCount}
                 variant="standalone"

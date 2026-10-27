@@ -135,8 +135,8 @@ for (const page of PAGES) {
 }
 
 describe('the two gastronomy/experience publish pages share the mould, not the words (§1)', () => {
-    const [gastronomy, experiences] = PAGES;
-    const venueSrc = readStripped(gastronomy.file);
+    const [venue, experiences] = PAGES;
+    const venueSrc = readStripped(venue.file);
     const experiencesSrc = readStripped(experiences.file);
 
     it('names no i18n key of the other vertical', () => {

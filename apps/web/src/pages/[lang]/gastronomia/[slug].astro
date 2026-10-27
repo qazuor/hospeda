@@ -76,7 +76,7 @@ const raw = result.data as unknown as Record<string, unknown>;
 // same 404 as an unknown slug, which `!result.ok` above already returns. The
 // public payload carries no publication field to re-check.
 
-const gastronomy = toVenueDetailPageProps({ item: raw, locale });
+const venue = toVenueDetailPageProps({ item: raw, locale });
 
 // --- Edge cacheability (HOS-369 W2-4) ---
 // After the guard above — the 404/410 for missing, soft-deleted or
@@ -110,8 +110,8 @@ applyCacheHeaders({
 
 // --- Parallel secondary fetches ---
 const [reviewsSettled, faqsSettled] = await Promise.allSettled([
-    venueApi.getReviews({ id: gastronomy.id, page: 1, pageSize: 5 }),
-    venueApi.getFaqs({ id: gastronomy.id })
+    venueApi.getReviews({ id: venue.id, page: 1, pageSize: 5 }),
+    venueApi.getFaqs({ id: venue.id })
 ]);
 
 const reviewsResult =
@@ -122,12 +122,12 @@ const faqsResult =
 const reviews: readonly VenueReviewPublicItem[] =
     reviewsResult?.ok ? reviewsResult.data.items : [];
 const totalReviews: number =
-    reviewsResult?.ok ? reviewsResult.data.pagination.total : gastronomy.reviewsCount;
+    reviewsResult?.ok ? reviewsResult.data.pagination.total : venue.reviewsCount;
 
 // FAQs: prefer inline entity FAQs, fall back to standalone endpoint
 const faqs: readonly DetailFaq[] =
-    gastronomy.faqs.length > 0
-        ? gastronomy.faqs
+    venue.faqs.length > 0
+        ? venue.faqs
         : faqsResult?.ok && Array.isArray(faqsResult.data)
           ? (faqsResult.data as Array<Record<string, unknown>>).map((faq) => ({
                 id: String(faq.id || ''),
@@ -148,15 +148,15 @@ const galleryImages = (() => {
             .filter((g) => g.url)
             .map((g) => ({
                 url: String(g.url),
-                alt: g.caption ?? gastronomy.name,
+                alt: g.caption ?? venue.name,
                 caption: g.caption
             }));
     }
-    if (gastronomy.featuredImage.url && !gastronomy.featuredImage.url.includes('placeholder')) {
+    if (venue.featuredImage.url && !venue.featuredImage.url.includes('placeholder')) {
         return [
             {
-                url: gastronomy.featuredImage.url,
-                alt: gastronomy.featuredImage.caption ?? gastronomy.name
+                url: venue.featuredImage.url,
+                alt: venue.featuredImage.caption ?? venue.name
             }
         ];
     }
@@ -170,7 +170,7 @@ let bookmarkCount: number | undefined;
 try {
     const countResult = await userBookmarksPublicApi.count({
         entityType: 'GASTRONOMY',
-        entityId: gastronomy.id
+        entityId: venue.id
     });
     if (countResult.ok) {
         bookmarkCount = countResult.data.count;
@@ -180,7 +180,7 @@ try {
 }
 
 
-const descriptionText = renderPlain({ raw: gastronomy.description });
+const descriptionText = renderPlain({ raw: venue.description });
 
 // --- "Accepts events" CTA (HOS-1055) ---
 // Reuses the existing `private_events` catalog amenity (HOS-1072 exposed it in
@@ -205,11 +205,11 @@ const descriptionText = renderPlain({ raw: gastronomy.description });
 // could point at an anchor with nothing behind it, which is worse than no CTA
 // (same principle as HOS-363/HOS-924: never promise a channel that isn't
 // there).
-const acceptsEventsAmenity = gastronomy.amenities.find((amenity) => amenity.name === 'private_events');
+const acceptsEventsAmenity = venue.amenities.find((amenity) => amenity.name === 'private_events');
 const hasVenueContact =
-    Boolean(resolveSafeExternalUrl(gastronomy.menuUrl)) ||
-    (gastronomy.socialNetworks
-        ? Object.values(gastronomy.socialNetworks).some((value) =>
+    Boolean(resolveSafeExternalUrl(venue.menuUrl)) ||
+    (venue.socialNetworks
+        ? Object.values(venue.socialNetworks).some((value) =>
               Boolean(resolveSafeExternalUrl(value))
           )
         : false);
@@ -217,10 +217,10 @@ const showEventsCta = Boolean(acceptsEventsAmenity) && hasVenueContact;
 // Excluded from the generic grid ONLY when the dedicated CTA renders in its
 // place — otherwise both would say "accepts events" two centimeters apart.
 const amenitiesForGrid = showEventsCta
-    ? gastronomy.amenities.filter((amenity) => amenity.name !== 'private_events')
-    : gastronomy.amenities;
+    ? venue.amenities.filter((amenity) => amenity.name !== 'private_events')
+    : venue.amenities;
 
-const canonicalPath = buildUrl({ locale, path: `gastronomia/${gastronomy.slug}/` });
+const canonicalPath = buildUrl({ locale, path: `gastronomia/${venue.slug}/` });
 
 // Sign-in URL (with return path) for the anonymous review CTA.
 const reviewSignInHref = buildLoginRedirect({ locale, currentUrl: canonicalPath });
@@ -232,15 +232,15 @@ const priceRangeMap: Record<string, string> = {
     HIGH: '$$$',
     PREMIUM: '$$$$'
 };
-const jsonLdPriceRange = gastronomy.priceRange ? priceRangeMap[gastronomy.priceRange] ?? undefined : undefined;
+const jsonLdPriceRange = venue.priceRange ? priceRangeMap[venue.priceRange] ?? undefined : undefined;
 
 // --- SEO ---
 // SEOHead (via DetailLayout) already appends " | Hospeda", so the fallback is the
 // bare name — appending it here too produced a duplicated "… | Hospeda | Hospeda".
-const seoTitle = gastronomy.seo?.title?.trim() || gastronomy.name;
+const seoTitle = venue.seo?.title?.trim() || venue.name;
 const seoDescription =
-    gastronomy.seo?.description?.trim() ||
-    gastronomy.summary ||
+    venue.seo?.description?.trim() ||
+    venue.summary ||
     t('gastronomy.listing.subtitle', 'Gastronomía en el Litoral Entrerriano');
 
 // --- Breadcrumb JSON-LD (HOS-117 T-007) ---
@@ -251,7 +251,7 @@ const breadcrumbItems = [
         name: t('gastronomy.listing.title', 'Gastronomía'),
         url: `${siteOrigin}/${locale}/gastronomia/`
     },
-    { name: gastronomy.name, url: `${siteOrigin}${Astro.url.pathname}` }
+    { name: venue.name, url: `${siteOrigin}${Astro.url.pathname}` }
 ];
 ---
 
@@ -262,21 +262,21 @@ const breadcrumbItems = [
     canonicalPath={canonicalPath}
     showBreadcrumbs={true}
     showSidebar={false}
-    ogImage={gastronomy.featuredImage.url}
-    ogType={t(`gastronomy.types.${gastronomy.type}`, gastronomy.type)}
-    ogSubtitle={gastronomy.destinationName}
-    ogRating={gastronomy.averageRating > 0 ? gastronomy.averageRating.toFixed(1) : undefined}
+    ogImage={venue.featuredImage.url}
+    ogType={t(`gastronomy.types.${venue.type}`, venue.type)}
+    ogSubtitle={venue.destinationName}
+    ogRating={venue.averageRating > 0 ? venue.averageRating.toFixed(1) : undefined}
 >
     <RestaurantJsonLd
         slot="head-extra"
-        name={gastronomy.name}
+        name={venue.name}
         description={seoDescription}
         url={canonicalPath}
-        image={gastronomy.featuredImage.url}
+        image={venue.featuredImage.url}
         priceRange={jsonLdPriceRange}
-        aggregateRating={gastronomy.averageRating > 0 ? {
-            ratingValue: gastronomy.averageRating,
-            reviewCount: gastronomy.reviewsCount,
+        aggregateRating={venue.averageRating > 0 ? {
+            ratingValue: venue.averageRating,
+            reviewCount: venue.reviewsCount,
         } : undefined}
     />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
@@ -288,14 +288,14 @@ const breadcrumbItems = [
                 label: t('gastronomy.listing.title', 'Gastronomía'),
                 path: 'gastronomia/'
             },
-            { label: gastronomy.name }
+            { label: venue.name }
         ]}
     />
 
     <!-- Header (rendered inside the wave band, like destinos/alojamientos) -->
     <Fragment slot="page-header">
         <VenueDetailHeader
-            gastronomy={gastronomy}
+            venue={venue}
             locale={locale}
             bookmarkCount={bookmarkCount}
         />
@@ -316,9 +316,9 @@ const breadcrumbItems = [
 
         <!-- Description -->
         <VenueDescription
-            summary={gastronomy.summary}
+            summary={venue.summary}
             descriptionText={descriptionText}
-            richDescription={gastronomy.richDescription}
+            richDescription={venue.richDescription}
         />
 
         <!-- Menú del día (HOS-1041): what is on offer TODAY, above the carta
@@ -327,7 +327,7 @@ const breadcrumbItems = [
              current day (in the AR market timezone) AND already
              entitlement-gated by the API; renders nothing when empty. -->
         <VenueDailySpecials
-            dailySpecials={gastronomy.dailySpecials}
+            dailySpecials={venue.dailySpecials}
             locale={locale}
         />
 
@@ -335,16 +335,16 @@ const breadcrumbItems = [
              Both arrive pre-filtered by the API's live entitlement check —
              see VenueMenu.astro's frontmatter for the hierarchy. -->
         <VenueMenu
-            menuSections={gastronomy.menuSections}
-            fileUrl={gastronomy.menuFileUrl}
-            fileKind={gastronomy.menuFileKind}
+            menuSections={venue.menuSections}
+            fileUrl={venue.menuFileUrl}
+            fileKind={venue.menuFileKind}
             locale={locale}
         />
 
         <!-- Opening Hours (only when configured) -->
-        {gastronomy.openingHours && Object.keys(gastronomy.openingHours).length > 0 && (
+        {venue.openingHours && Object.keys(venue.openingHours).length > 0 && (
             <OpeningHoursSection
-                openingHours={gastronomy.openingHours as Record<string, VenueOpeningHoursEntry>}
+                openingHours={venue.openingHours as Record<string, VenueOpeningHoursEntry>}
                 locale={locale}
             />
         )}
@@ -354,7 +354,7 @@ const breadcrumbItems = [
              VenueEvents.astro's frontmatter. Pre-filtered by the API
              the same way menuSections is, so no gate is needed here. -->
         <VenueEvents
-            venueEvents={gastronomy.venueEvents}
+            venueEvents={venue.venueEvents}
             locale={locale}
         />
 
@@ -364,7 +364,7 @@ const breadcrumbItems = [
              accommodation-only column and is passed as null. `private_events` is
              excluded from `amenitiesForGrid` when the dedicated events CTA below
              renders instead (HOS-1055) — see the frontmatter comment. -->
-        <FeaturesGrid features={gastronomy.features} smokingAllowed={null} lang={locale} />
+        <FeaturesGrid features={venue.features} smokingAllowed={null} lang={locale} />
         <AmenitiesGrid amenities={amenitiesForGrid} lang={locale} />
 
         <!-- "Accepts events" CTA (HOS-1055) — a toggle, not an entitlement.
@@ -373,16 +373,16 @@ const breadcrumbItems = [
         {showEventsCta && <VenueEventsCta locale={locale} />}
 
         <!-- Contact block (menu URL + social networks) -->
-        {(gastronomy.menuUrl || gastronomy.socialNetworks) && (
+        {(venue.menuUrl || venue.socialNetworks) && (
             <VenueContactBlock
-                menuUrl={gastronomy.menuUrl}
-                socialNetworks={gastronomy.socialNetworks}
+                menuUrl={venue.menuUrl}
+                socialNetworks={venue.socialNetworks}
                 locale={locale}
             />
         )}
 
         <!-- Reviews preview -->
-        {gastronomy.reviewsCount > 0 && (
+        {venue.reviewsCount > 0 && (
             <section class="gastro-detail__reviews">
                 <h2 class="gastro-detail__section-title">
                     {t('gastronomy.detail.reviews.title', 'Reseñas')}
@@ -425,8 +425,8 @@ const breadcrumbItems = [
         <section class="gastro-detail__review-form">
             <VenueReviewForm
                 client:visible
-                gastronomyId={gastronomy.id}
-                gastronomyName={gastronomy.name}
+                gastronomyId={venue.id}
+                gastronomyName={venue.name}
                 locale={locale}
                 apiUrl={getApiUrl()}
                 signInHref={reviewSignInHref}
@@ -444,7 +444,7 @@ const breadcrumbItems = [
             client:idle
             entityType="GASTRONOMY"
             slug={slug}
-            entityId={gastronomy.id}
+            entityId={venue.id}
             locale={locale}
         />
     </div>
@@ -459,7 +459,7 @@ const breadcrumbItems = [
     <AiChatWidget
         client:idle
         entityType="gastronomy"
-        entityId={gastronomy.id}
+        entityId={venue.id}
         locale={locale}
         apiUrl={getApiUrl()}
     />

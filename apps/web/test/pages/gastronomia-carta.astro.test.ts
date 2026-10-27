@@ -53,7 +53,7 @@ describe('carta.astro — 404 guards', () => {
     it('404s a venue with no menu content at all (neither carta nor file)', () => {
         expect(cartaSrc).toContain('hasMenuContent');
         expect(cartaSrc).toMatch(/menuSections\?\.length\s*\?\?\s*0\)\s*>\s*0/);
-        expect(cartaSrc).toContain('gastronomy.menuFileUrl && gastronomy.menuFileKind');
+        expect(cartaSrc).toContain('venue.menuFileUrl && venue.menuFileKind');
         expect(cartaSrc).toMatch(
             /if\s*\(!hasMenuContent\)\s*\{\s*\n\s*return new Response\(null, \{ status: 404 \}\);/
         );
@@ -70,9 +70,9 @@ describe('carta.astro — reuses GastronomyMenu.astro verbatim', () => {
 
     it('mounts GastronomyMenu with the same props the listing forwards to it', () => {
         expect(cartaSrc).toContain('<VenueMenu');
-        expect(cartaSrc).toContain('menuSections={gastronomy.menuSections}');
-        expect(cartaSrc).toContain('fileUrl={gastronomy.menuFileUrl}');
-        expect(cartaSrc).toContain('fileKind={gastronomy.menuFileKind}');
+        expect(cartaSrc).toContain('menuSections={venue.menuSections}');
+        expect(cartaSrc).toContain('fileUrl={venue.menuFileUrl}');
+        expect(cartaSrc).toContain('fileKind={venue.menuFileKind}');
     });
 
     it('does NOT re-declare menu section/item markup of its own', () => {

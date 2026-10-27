@@ -394,13 +394,13 @@ describe('buildSubscribeToPublishCopy — row 21', () => {
     it('TEST:V8a:5 row 21: subscribe to publish, still unpublished, a subscription in the vertical', () => {
         // Act
         const copy = buildSubscribeToPublishCopy({ t: es.t, vertical: 'accommodation' });
-        const gastronomy = buildSubscribeToPublishCopy({ t: es.t, vertical: 'gastronomy' });
+        const venue = buildSubscribeToPublishCopy({ t: es.t, vertical: 'gastronomy' });
 
         // Assert
         expect(copy).toEqual({
             title: 'Suscribite para publicar',
             body: 'Tu ficha sigue sin publicar. Para publicarla necesitás una suscripción de alojamiento.'
         });
-        expect(gastronomy.body).toContain('una suscripción de gastronomía.');
+        expect(venue.body).toContain('una suscripción de gastronomía.');
     });
 });

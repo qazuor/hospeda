@@ -22,7 +22,7 @@ import {
     buildVenueEditorSections
 } from '@/lib/editor/venue-editor-sections';
 
-const gastronomy = buildVenueEditorSections();
+const venue = buildVenueEditorSections();
 const experience = buildExperienceEditorSections();
 
 describe('buildGastronomyEditorSections: the vertical split', () => {
@@ -30,8 +30,8 @@ describe('buildGastronomyEditorSections: the vertical split', () => {
         // Not "hidden": absent. `findEditorSectionBySlug` then misses, and the
         // resolver's unknown-slug branch redirects to the hub, which stops a
         // typed URL from rendering a page whose every field the API strips.
-        expect(gastronomy.map((section) => section.id)).not.toContain('meetingPoint');
-        expect(gastronomy.map((section) => section.id)).not.toContain('practicalInfo');
+        expect(venue.map((section) => section.id)).not.toContain('meetingPoint');
+        expect(venue.map((section) => section.id)).not.toContain('practicalInfo');
     });
 
     it('should make the experience-only slugs unresolvable on a gastronomy registry', () => {
@@ -42,13 +42,13 @@ describe('buildGastronomyEditorSections: the vertical split', () => {
     });
 
     it('should give a restaurant the three sections only it has', () => {
-        expect(gastronomy.map((section) => section.id)).toContain('menu');
-        expect(gastronomy.map((section) => section.id)).toContain('dailySpecials');
-        expect(gastronomy.map((section) => section.id)).toContain('venueEvents');
+        expect(venue.map((section) => section.id)).toContain('menu');
+        expect(venue.map((section) => section.id)).toContain('dailySpecials');
+        expect(venue.map((section) => section.id)).toContain('venueEvents');
     });
 
     it('should differ from the experience list by exactly the three gastronomy-only sections', () => {
-        const extra = gastronomy
+        const extra = venue
             .map((section) => section.id)
             .filter((id) => !experience.some((section) => section.id === id));
 
@@ -59,7 +59,7 @@ describe('buildGastronomyEditorSections: the vertical split', () => {
     });
 
     it('should place the gastronomy-only run in order, ending at the FAQ page', () => {
-        const ids = gastronomy.map((section) => section.id);
+        const ids = venue.map((section) => section.id);
 
         expect(ids.indexOf('menu')).toBe(ids.indexOf('dailySpecials') - 1);
         expect(ids.indexOf('dailySpecials')).toBe(ids.indexOf('venueEvents') - 1);
@@ -77,24 +77,24 @@ describe('buildGastronomyEditorSections: the vertical split', () => {
 
 describe('buildGastronomyEditorSections: registry shape', () => {
     it('should give every section a distinct id and a distinct slug', () => {
-        expect(new Set(gastronomy.map((section) => section.id)).size).toBe(gastronomy.length);
-        expect(new Set(gastronomy.map((section) => section.slug)).size).toBe(gastronomy.length);
+        expect(new Set(venue.map((section) => section.id)).size).toBe(venue.length);
+        expect(new Set(venue.map((section) => section.slug)).size).toBe(venue.length);
     });
 
     it('should give every section an i18n label key, never a literal', () => {
-        for (const section of gastronomy) {
+        for (const section of venue) {
             expect(section.labelKey).toMatch(/^listing\.owner\.editor\./);
         }
     });
 
     it('should use URL-safe, lowercase slugs', () => {
-        for (const section of gastronomy) {
+        for (const section of venue) {
             expect(section.slug).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
         }
     });
 
     it('should put every section in a declared group', () => {
-        for (const section of gastronomy) {
+        for (const section of venue) {
             expect(LISTING_EDITOR_SECTION_GROUPS).toContain(section.group);
         }
     });
@@ -108,7 +108,7 @@ describe('buildGastronomyEditorSections: registry shape', () => {
     });
 
     it('should carry no runtime visibility key', () => {
-        for (const section of gastronomy) {
+        for (const section of venue) {
             expect(section.visibilityKey).toBeUndefined();
         }
     });

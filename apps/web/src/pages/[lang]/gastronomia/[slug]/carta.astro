@@ -85,15 +85,15 @@ const raw = result.data as unknown as Record<string, unknown>;
 // None here: the public read answers only a PUBLISHED venue, so a
 // non-published one already 404s through `!result.ok` above.
 
-const gastronomy = toVenueDetailPageProps({ item: raw, locale });
+const venue = toVenueDetailPageProps({ item: raw, locale });
 
 // --- The 404 that makes this a valid QR destination (AC-1) ---
 // A carta page with nothing to show is not "empty content" — it is a broken
 // printed sticker. Mirrors VenueMenu.astro's own render gate exactly so
 // the two can never disagree about whether there is a menu to show.
 const hasMenuContent =
-    (gastronomy.menuSections?.length ?? 0) > 0 ||
-    Boolean(gastronomy.menuFileUrl && gastronomy.menuFileKind);
+    (venue.menuSections?.length ?? 0) > 0 ||
+    Boolean(venue.menuFileUrl && venue.menuFileKind);
 
 if (!hasMenuContent) {
     return new Response(null, { status: 404 });
@@ -123,19 +123,19 @@ applyCacheHeaders({
 });
 
 // --- SEO ---
-const listingPath = `gastronomia/${gastronomy.slug}`;
+const listingPath = `gastronomia/${venue.slug}`;
 const listingUrl = buildUrl({ locale, path: listingPath });
 
 const pageTitleWord = t('gastronomy.detail.menuCarta.title', 'Carta');
-const seoTitle = `${pageTitleWord} - ${gastronomy.name} | Hospeda`;
+const seoTitle = `${pageTitleWord} - ${venue.name} | Hospeda`;
 const seoDescription = t('gastronomy.detail.menuCarta.seoDescription', 'Carta de {{name}}', {
-    name: gastronomy.name
+    name: venue.name
 });
 const backToListingLabel = t('gastronomy.detail.menuCarta.backToListing', '← Volver a la ficha');
 
 // --- Opening hours (only when the listing already has them at hand) ---
 const hasOpeningHours =
-    gastronomy.openingHours !== null && Object.keys(gastronomy.openingHours).length > 0;
+    venue.openingHours !== null && Object.keys(venue.openingHours).length > 0;
 ---
 
 <DetailLayout
@@ -152,13 +152,13 @@ const hasOpeningHours =
         locale={locale}
         items={[
             { label: t('gastronomy.listing.title', 'Gastronomía'), path: 'gastronomia/' },
-            { label: gastronomy.name, path: listingPath },
+            { label: venue.name, path: listingPath },
             { label: pageTitleWord }
         ]}
     />
 
     <Fragment slot="page-header">
-        <h1 class="carta__title">{pageTitleWord} - {gastronomy.name}</h1>
+        <h1 class="carta__title">{pageTitleWord} - {venue.name}</h1>
     </Fragment>
 
     <div class="carta">
@@ -175,15 +175,15 @@ const hasOpeningHours =
 
         {hasOpeningHours && (
             <OpeningHoursSection
-                openingHours={gastronomy.openingHours as Record<string, VenueOpeningHoursEntry>}
+                openingHours={venue.openingHours as Record<string, VenueOpeningHoursEntry>}
                 locale={locale}
             />
         )}
 
         <VenueMenu
-            menuSections={gastronomy.menuSections}
-            fileUrl={gastronomy.menuFileUrl}
-            fileKind={gastronomy.menuFileKind}
+            menuSections={venue.menuSections}
+            fileUrl={venue.menuFileUrl}
+            fileKind={venue.menuFileKind}
             locale={locale}
         />
 

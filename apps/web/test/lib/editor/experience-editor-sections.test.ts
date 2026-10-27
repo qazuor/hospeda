@@ -16,7 +16,7 @@ import {
 import { buildListingEditorRegistry } from '@/lib/editor/listing-editor-registry';
 import { buildVenueEditorSections } from '@/lib/editor/venue-editor-sections';
 
-const gastronomy = buildVenueEditorSections();
+const venue = buildVenueEditorSections();
 const experience = buildExperienceEditorSections();
 
 describe('buildExperienceEditorSections: the vertical split', () => {
@@ -28,7 +28,7 @@ describe('buildExperienceEditorSections: the vertical split', () => {
     it('should differ from the gastronomy list by exactly those two sections', () => {
         const extra = experience
             .map((section) => section.id)
-            .filter((id) => !gastronomy.some((section) => section.id === id));
+            .filter((id) => !venue.some((section) => section.id === id));
 
         expect(extra).toEqual(['meetingPoint', 'practicalInfo']);
     });
@@ -72,6 +72,6 @@ describe('buildExperienceEditorRegistry: paths', () => {
 describe('buildListingEditorRegistry: dispatch by vertical', () => {
     it('should return the registry that matches the vertical', () => {
         expect(buildListingEditorRegistry({ vertical: 'experience' }).sections).toEqual(experience);
-        expect(buildListingEditorRegistry({ vertical: 'gastronomy' }).sections).toEqual(gastronomy);
+        expect(buildListingEditorRegistry({ vertical: 'gastronomy' }).sections).toEqual(venue);
     });
 });

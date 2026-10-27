@@ -79,7 +79,7 @@ describe('gastronomia/[slug].astro', () => {
 
         it('renders OpeningHoursSection when openingHours is present', () => {
             expect(src).toContain('OpeningHoursSection');
-            expect(src).toContain('gastronomy.openingHours');
+            expect(src).toContain('venue.openingHours');
         });
 
         it('renders GastronomyContactBlock for menu + social', () => {
@@ -97,7 +97,7 @@ describe('gastronomia/[slug].astro', () => {
 
     describe('richDescription', () => {
         it('passes richDescription to GastronomyDescription', () => {
-            expect(src).toContain('richDescription={gastronomy.richDescription}');
+            expect(src).toContain('richDescription={venue.richDescription}');
         });
     });
 
@@ -120,7 +120,7 @@ describe('gastronomia/[slug].astro', () => {
 
     describe('FAQs', () => {
         it('prefers inline entity FAQs over standalone endpoint', () => {
-            expect(src).toContain('gastronomy.faqs.length > 0');
+            expect(src).toContain('venue.faqs.length > 0');
         });
     });
 
@@ -132,7 +132,7 @@ describe('gastronomia/[slug].astro', () => {
             expect(src).toContain('<EntityViewTracker');
             expect(src).toContain('client:idle');
             expect(src).toContain('entityType="GASTRONOMY"');
-            expect(src).toContain('entityId={gastronomy.id}');
+            expect(src).toContain('entityId={venue.id}');
         });
     });
 });

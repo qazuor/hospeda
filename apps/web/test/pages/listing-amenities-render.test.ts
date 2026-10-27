@@ -74,7 +74,7 @@ describe('gastronomia/[slug].astro — mounts the catalog grids (HOS-1072)', () 
     });
 
     it("binds AmenitiesGrid to the LISTING's own amenities", () => {
-        // HOS-1055: `amenitiesForGrid` is `gastronomy.amenities` with
+        // HOS-1055: `amenitiesForGrid` is `venue.amenities` with
         // `private_events` excluded ONLY when the dedicated events CTA renders
         // in its place (see `apps/web/test/pages/gastronomy-events-cta.test.ts`)
         // — still the listing's own amenities, not a different source.
@@ -85,7 +85,7 @@ describe('gastronomia/[slug].astro — mounts the catalog grids (HOS-1072)', () 
 
     it("binds FeaturesGrid to the listing's features, with no accommodation-only smoking flag", () => {
         expect(VENUE_PAGE).toContain(
-            '<FeaturesGrid features={gastronomy.features} smokingAllowed={null} lang={locale} />'
+            '<FeaturesGrid features={venue.features} smokingAllowed={null} lang={locale} />'
         );
     });
 });

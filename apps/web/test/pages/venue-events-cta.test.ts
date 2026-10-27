@@ -64,17 +64,17 @@ describe('gastronomia/[slug].astro — accepts-events CTA (HOS-1055)', () => {
         // `contactInfo` is not part of GastronomyPublicSchema (see
         // GastronomyContactBlock's header) — reaching for it would repeat the
         // HOS-363/HOS-924 bug.
-        expect(VENUE_PAGE).not.toContain('gastronomy.contactInfo');
+        expect(VENUE_PAGE).not.toContain('venue.contactInfo');
     });
 
     it('requires BOTH the private_events amenity and an actual contact channel before showing the CTA', () => {
         expect(VENUE_PAGE).toContain(
-            "gastronomy.amenities.find((amenity) => amenity.name === 'private_events')"
+            "venue.amenities.find((amenity) => amenity.name === 'private_events')"
         );
         // Mirrors GastronomyContactBlock's own render gate, duplicated on
         // purpose rather than imported (see the frontmatter comment) — a CTA
         // anchored to an empty contact block would be worse than no CTA.
-        expect(VENUE_PAGE).toContain('resolveSafeExternalUrl(gastronomy.menuUrl)');
+        expect(VENUE_PAGE).toContain('resolveSafeExternalUrl(venue.menuUrl)');
         expect(VENUE_PAGE).toContain(
             'const showEventsCta = Boolean(acceptsEventsAmenity) && hasVenueContact;'
         );
@@ -83,11 +83,11 @@ describe('gastronomia/[slug].astro — accepts-events CTA (HOS-1055)', () => {
     it('excludes the private_events chip from the generic grid ONLY when the CTA renders in its place', () => {
         expect(VENUE_PAGE).toContain('const amenitiesForGrid = showEventsCta');
         expect(VENUE_PAGE).toContain(
-            "gastronomy.amenities.filter((amenity) => amenity.name !== 'private_events')"
+            "venue.amenities.filter((amenity) => amenity.name !== 'private_events')"
         );
         // The else branch is the un-filtered listing amenities — the chip
         // survives when there is no contact channel to show a CTA with instead.
-        expect(VENUE_PAGE).toContain(': gastronomy.amenities;');
+        expect(VENUE_PAGE).toContain(': venue.amenities;');
     });
 
     it('mounts the CTA guarded by showEventsCta, with no href passed in', () => {

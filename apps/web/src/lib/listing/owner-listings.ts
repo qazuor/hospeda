@@ -52,14 +52,14 @@ export async function fetchOwnerListings({
 }: {
     cookieHeader?: string;
 }): Promise<readonly OwnerListingSummary[]> {
-    const [gastronomy, experience] = await Promise.all([
+    const [venue, experience] = await Promise.all([
         apiClient.getProtected<ListResponse>({ path: VENUE_MINE_PATH, cookieHeader }),
         apiClient.getProtected<ListResponse>({ path: EXPERIENCE_MINE_PATH, cookieHeader })
     ]);
 
     const listings: OwnerListingSummary[] = [];
-    if (gastronomy.ok) {
-        listings.push(...gastronomy.data.listings);
+    if (venue.ok) {
+        listings.push(...venue.data.listings);
     }
     if (experience.ok) {
         listings.push(...experience.data.listings);
