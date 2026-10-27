@@ -398,3 +398,162 @@ describe('Cache Middleware', () => {
         });
     });
 });
+
+/**
+ * HOS-1915: a cache HIT must carry the CURRENT request's id, both in the
+ * `x-request-id` header and in the JSON envelope's `metadata.requestId`.
+ */
+describe('cache middleware request id on HIT (HOS-1915)', () => {
+    const ROUTE = '/api/v1/public/accommodations';
+
+    /** App whose upstream stamps the id the way `hono/request-id` + the formatter do. */
+    function createRequestIdApp({
+        respond
+    }: {
+        readonly respond: (c: import('hono').Context, requestId: string) => Response;
+    }) {
+        const app = new Hono<{ Variables: { requestId: string } }>();
+        app.use('*', async (c, next) => {
+            const id = c.req.header('x-test-request-id') ?? 'missing';
+            c.set('requestId', id);
+            c.header('X-Request-Id', id);
+            await next();
+        });
+        app.use('*', createCacheMiddleware());
+        app.get(ROUTE, (c) => respond(c, c.get('requestId')));
+        return app;
+    }
+
+    const send = ({
+        app,
+        id
+    }: {
+        readonly app: { request: (u: string, i?: RequestInit) => Response | Promise<Response> };
+        readonly id: string;
+    }) => Promise.resolve(app.request(ROUTE, { headers: { 'x-test-request-id': id } }));
+
+    beforeEach(() => {
+        clearCache();
+        vi.mocked(getCacheConfig).mockReturnValue({
+            enabled: true,
+            defaultMaxAge: 60,
+            defaultStaleWhileRevalidate: 30,
+            defaultStaleIfError: 3600,
+            maxAge: 60,
+            staleWhileRevalidate: 30,
+            staleIfError: 3600,
+            etagEnabled: true,
+            lastModifiedEnabled: true
+        });
+    });
+
+    it('re-stamps the header and metadata.requestId on a HIT', async () => {
+        const app = createRequestIdApp({
+            respond: (c, id) =>
+                c.json({ success: true, data: { ok: true }, metadata: { requestId: id } })
+        });
+
+        const first = await send({ app, id: 'req-A' });
+        const second = await send({ app, id: 'req-BBBBBBBB' });
+
+        expect(second.headers.get('x-cache')).toBe('HIT');
+        expect(second.headers.get('x-request-id')).toBe('req-BBBBBBBB');
+        const body = await second.json();
+        expect(body.metadata.requestId).toBe('req-BBBBBBBB');
+        expect(body.data).toEqual({ ok: true });
+        expect((await first.json()).metadata.requestId).toBe('req-A');
+    });
+
+    it('recomputes content-length to match the re-stamped body when the entry stored one', async () => {
+        const app = createRequestIdApp({
+            respond: (_c, id) => {
+                const body = JSON.stringify({ metadata: { requestId: id }, data: 'x' });
+                return new Response(body, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Content-Length': String(new TextEncoder().encode(body).length)
+                    }
+                });
+            }
+        });
+
+        const first = await send({ app, id: 'a' });
+        const second = await send({ app, id: 'a-much-longer-request-id' });
+
+        expect(first.headers.get('content-length')).not.toBeNull();
+        expect(second.headers.get('x-cache')).toBe('HIT');
+        const text = await second.text();
+        expect(second.headers.get('content-length')).toBe(
+            String(new TextEncoder().encode(text).length)
+        );
+    });
+
+    it('adds no content-length on a HIT when the stored entry had none', async () => {
+        const app = createRequestIdApp({
+            respond: (c, id) => c.json({ metadata: { requestId: id }, data: 'x' })
+        });
+
+        const first = await send({ app, id: 'a' });
+        const second = await send({ app, id: 'a-much-longer-request-id' });
+
+        expect(first.headers.get('content-length')).toBeNull();
+        expect(second.headers.get('x-cache')).toBe('HIT');
+        expect(second.headers.get('content-length')).toBeNull();
+        expect((await second.json()).metadata.requestId).toBe('a-much-longer-request-id');
+    });
+
+    it('re-stamps a large body and ignores a data field spelling "requestId"', async () => {
+        const items = Array.from({ length: 5000 }, (_, i) => ({ id: i, name: `item-${i}` }));
+        const app = createRequestIdApp({
+            respond: (c, id) =>
+                c.json({
+                    data: { items, note: 'requestId', requestId: 'data-value' },
+                    metadata: { requestId: id }
+                })
+        });
+
+        await send({ app, id: 'req-A' });
+        const second = await send({ app, id: 'req-B' });
+
+        expect(second.headers.get('x-cache')).toBe('HIT');
+        const body = await second.json();
+        expect(body.metadata.requestId).toBe('req-B');
+        expect(body.data.requestId).toBe('data-value');
+        expect(body.data.items).toHaveLength(5000);
+    });
+
+    it('leaves a non-JSON body untouched', async () => {
+        const app = createRequestIdApp({
+            respond: (c, id) => c.text(`{"metadata":{"requestId":"${id}"}}`)
+        });
+
+        await send({ app, id: 'req-A' });
+        const second = await send({ app, id: 'req-B' });
+
+        expect(second.headers.get('x-cache')).toBe('HIT');
+        expect(await second.text()).toBe('{"metadata":{"requestId":"req-A"}}');
+        expect(second.headers.get('x-request-id')).toBe('req-B');
+    });
+
+    it('leaves a JSON body without metadata.requestId untouched', async () => {
+        const app = createRequestIdApp({
+            respond: (c) => c.json({ data: 'x', metadata: { timestamp: 't' } })
+        });
+
+        await send({ app, id: 'req-A' });
+        const second = await send({ app, id: 'req-B' });
+
+        expect(second.headers.get('x-cache')).toBe('HIT');
+        expect(await second.json()).toEqual({ data: 'x', metadata: { timestamp: 't' } });
+    });
+
+    it('does not break when the cached JSON is not an object', async () => {
+        const app = createRequestIdApp({ respond: (c) => c.json([1, 2, 3]) });
+
+        await send({ app, id: 'req-A' });
+        const second = await send({ app, id: 'req-B' });
+
+        expect(second.headers.get('x-cache')).toBe('HIT');
+        expect(await second.json()).toEqual([1, 2, 3]);
+    });
+});
