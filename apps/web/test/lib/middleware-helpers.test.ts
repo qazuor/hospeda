@@ -867,7 +867,7 @@ describe('isSessionOptionalRoute', () => {
             'destinos',
             'eventos',
             'publicaciones',
-            'gastronomia',
+            'comer-y-salir',
             'experiencias'
         ]) {
             expect(
