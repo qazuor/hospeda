@@ -49,7 +49,7 @@ export const VenueAdminCreateInputSchema = VenueSchema.omit({
     // publication state — never a request body, not even an admin's.
     publicationStatus: true,
     // HOS-895: the uploaded menu photo/PDF. Written ONLY by
-    // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
+    // `POST`/`DELETE /venues/{id}/menu-file`, in the same
     // request that stores or destroys the Cloudinary asset — never
     // from a listing body. Omitted here because these schemas are
     // built with `.omit(...)`, so a field is accepted unless it is
@@ -258,7 +258,7 @@ export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     deletedAt: true,
     deletedById: true,
     // HOS-895: the uploaded menu photo/PDF. Written ONLY by
-    // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
+    // `POST`/`DELETE /venues/{id}/menu-file`, in the same
     // request that stores or destroys the Cloudinary asset — never
     // from a listing body. Omitted here because these schemas are
     // built with `.omit(...)`, so a field is accepted unless it is
@@ -389,7 +389,7 @@ export const VenueUpdateInputSchema = z
                 reviewsCount: true,
                 averageRating: true,
                 // HOS-895: the uploaded menu photo/PDF. Written ONLY by
-                // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
+                // `POST`/`DELETE /venues/{id}/menu-file`, in the same
                 // request that stores or destroys the Cloudinary asset — never
                 // from a listing body. Omitted here because these schemas are
                 // built with `.omit(...)`, so a field is accepted unless it is
