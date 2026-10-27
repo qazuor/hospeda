@@ -1,5 +1,5 @@
 /**
- * Tests for PATCH /api/v1/protected/gastronomies/:id
+ * Tests for PATCH /api/v1/protected/venues/:id
  *
  * Covers:
  * - Route registration
@@ -14,7 +14,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
-const BASE = '/api/v1/protected/gastronomies';
+const BASE = '/api/v1/protected/venues';
 const VALID_UUID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 // ---------------------------------------------------------------------------
@@ -52,7 +52,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
-describe('PATCH /api/v1/protected/gastronomies/:id', () => {
+describe('PATCH /api/v1/protected/venues/:id', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {

@@ -25,7 +25,7 @@ const verticals = [
 function listingPath(vertical: (typeof verticals)[number], id: string) {
     const segment: Readonly<Record<(typeof verticals)[number], string>> = {
         [VerticalEnum.ACCOMMODATION]: 'accommodations',
-        [VerticalEnum.VENUE]: 'gastronomies',
+        [VerticalEnum.VENUE]: 'venues',
         [VerticalEnum.EXPERIENCE]: 'experiences'
     };
     return `/api/v1/admin/${segment[vertical]}/${id}/moderate`;

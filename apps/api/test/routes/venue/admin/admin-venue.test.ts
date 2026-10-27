@@ -2,10 +2,10 @@
  * Tests for admin gastronomy routes (SPEC-239 T-045 / T-046).
  *
  * Verifies:
- *  - POST   /api/v1/admin/gastronomies         requires VENUE_CREATE (403 without)
- *  - GET    /api/v1/admin/gastronomies         requires VENUE_VIEW_ALL (401/403 without)
- *  - POST   /api/v1/admin/gastronomies/reviews/:id/moderate requires VENUE_MODERATE_REVIEW
- *  - POST   /api/v1/admin/gastronomies/:id/assign-owner sets ownerId via update
+ *  - POST   /api/v1/admin/venues         requires VENUE_CREATE (403 without)
+ *  - GET    /api/v1/admin/venues         requires VENUE_VIEW_ALL (401/403 without)
+ *  - POST   /api/v1/admin/venues/reviews/:id/moderate requires VENUE_MODERATE_REVIEW
+ *  - POST   /api/v1/admin/venues/:id/assign-owner sets ownerId via update
  *
  * Pattern: boot the full Hono app with `initApp()` and send real HTTP requests
  * with the `x-mock-actor-*` header triplet. The service layer is mocked in
@@ -90,9 +90,9 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
     // T-045: List (GET /)
     // ──────────────────────────────────────────────────────────────────────────
 
-    describe('GET /api/v1/admin/gastronomies — list requires auth', () => {
+    describe('GET /api/v1/admin/venues — list requires auth', () => {
         it('returns 401/403 when no auth headers are provided', async () => {
-            const res = await app.request('/api/v1/admin/gastronomies', {
+            const res = await app.request('/api/v1/admin/venues', {
                 method: 'GET',
                 headers: noHeaders
             });
@@ -100,7 +100,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         });
 
         it('passes the gate with VENUE_VIEW_ALL (not 403/404)', async () => {
-            const res = await app.request('/api/v1/admin/gastronomies', {
+            const res = await app.request('/api/v1/admin/venues', {
                 method: 'GET',
                 headers: headersWithViewAll
             });
@@ -114,7 +114,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
     // T-045: Create (POST /)
     // ──────────────────────────────────────────────────────────────────────────
 
-    describe('POST /api/v1/admin/gastronomies — create requires VENUE_CREATE', () => {
+    describe('POST /api/v1/admin/venues — create requires VENUE_CREATE', () => {
         const validBody = JSON.stringify({
             name: 'La Parrilla Test',
             type: 'PARRILLA',
@@ -123,7 +123,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         });
 
         it('returns 401/403 when no auth headers are provided', async () => {
-            const res = await app.request('/api/v1/admin/gastronomies', {
+            const res = await app.request('/api/v1/admin/venues', {
                 method: 'POST',
                 headers: noAuthJsonHeaders,
                 body: validBody
@@ -132,7 +132,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         });
 
         it('returns 403 when actor lacks VENUE_CREATE', async () => {
-            const res = await app.request('/api/v1/admin/gastronomies', {
+            const res = await app.request('/api/v1/admin/venues', {
                 method: 'POST',
                 headers: { ...headersNoPerms, 'Content-Type': 'application/json' },
                 body: validBody
@@ -141,7 +141,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         });
 
         it('passes the gate with VENUE_CREATE (not 401/403)', async () => {
-            const res = await app.request('/api/v1/admin/gastronomies', {
+            const res = await app.request('/api/v1/admin/venues', {
                 method: 'POST',
                 headers: { ...headersWithCreate, 'Content-Type': 'application/json' },
                 body: validBody
@@ -156,8 +156,8 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
     // T-046: Moderate review (POST /reviews/:id/moderate)
     // ──────────────────────────────────────────────────────────────────────────
 
-    describe('POST /api/v1/admin/gastronomies/reviews/:id/moderate — requires VENUE_MODERATE_REVIEW', () => {
-        const moderatePath = `/api/v1/admin/gastronomies/reviews/${MOCK_REVIEW_ID}/moderate`;
+    describe('POST /api/v1/admin/venues/reviews/:id/moderate — requires VENUE_MODERATE_REVIEW', () => {
+        const moderatePath = `/api/v1/admin/venues/reviews/${MOCK_REVIEW_ID}/moderate`;
         const validBody = JSON.stringify({ decision: 'APPROVED' });
 
         it('returns 401/403 when no auth headers are provided', async () => {
@@ -193,8 +193,8 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
     // T-046: Assign owner (POST /:id/assign-owner)
     // ──────────────────────────────────────────────────────────────────────────
 
-    describe('POST /api/v1/admin/gastronomies/:id/assign-owner — sets ownerId via update', () => {
-        const assignOwnerPath = `/api/v1/admin/gastronomies/${MOCK_VENUE_ID}/assign-owner`;
+    describe('POST /api/v1/admin/venues/:id/assign-owner — sets ownerId via update', () => {
+        const assignOwnerPath = `/api/v1/admin/venues/${MOCK_VENUE_ID}/assign-owner`;
         const newOwnerId = '22222222-2222-4222-8222-222222222222';
         const validBody = JSON.stringify({ ownerId: newOwnerId });
 
@@ -234,7 +234,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
 
     describe('route ordering — static segments not captured as /:id', () => {
         it('/options is served (not captured as /:id UUID check)', async () => {
-            const res = await app.request('/api/v1/admin/gastronomies/options', {
+            const res = await app.request('/api/v1/admin/venues/options', {
                 method: 'GET',
                 headers: headersWithViewAll
             });
@@ -243,7 +243,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         });
 
         it('/batch is served (not captured as /:id UUID check)', async () => {
-            const res = await app.request('/api/v1/admin/gastronomies/batch', {
+            const res = await app.request('/api/v1/admin/venues/batch', {
                 method: 'POST',
                 headers: { ...headersWithViewAll, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ids: [MOCK_VENUE_ID] })

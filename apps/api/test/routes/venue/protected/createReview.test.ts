@@ -1,5 +1,5 @@
 /**
- * Tests for POST /api/v1/protected/gastronomies/:gastronomyId/reviews
+ * Tests for POST /api/v1/protected/venues/:gastronomyId/reviews
  *
  * Covers:
  * - Route registration
@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
-const BASE = '/api/v1/protected/gastronomies';
+const BASE = '/api/v1/protected/venues';
 const VALID_UUID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 // ---------------------------------------------------------------------------
@@ -55,7 +55,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
-describe('POST /api/v1/protected/gastronomies/:gastronomyId/reviews', () => {
+describe('POST /api/v1/protected/venues/:gastronomyId/reviews', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {

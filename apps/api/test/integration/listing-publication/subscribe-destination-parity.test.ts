@@ -42,7 +42,7 @@ const verticals = [
 ] as const;
 const pathByVertical: Record<(typeof verticals)[number], string> = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 const subscribePath = (vertical: (typeof verticals)[number]) =>

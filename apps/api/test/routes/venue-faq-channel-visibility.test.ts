@@ -88,7 +88,7 @@ import type { AppOpenAPI } from '../../src/types.js';
 // ---------------------------------------------------------------------------
 const VENUE_ID = '00000000-0000-4000-8000-000000000002';
 const FAQ_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb02';
-const ADD_URL = `/api/v1/protected/gastronomies/${VENUE_ID}/faqs`;
+const ADD_URL = `/api/v1/protected/venues/${VENUE_ID}/faqs`;
 const UPDATE_URL = `${ADD_URL}/${FAQ_ID}`;
 
 const QUESTION = '¿Tienen menú apto para celíacos?';

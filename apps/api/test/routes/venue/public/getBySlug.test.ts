@@ -1,5 +1,5 @@
 /**
- * Tests for GET /api/v1/public/gastronomies/slug/:slug
+ * Tests for GET /api/v1/public/venues/slug/:slug
  *
  * Covers: route registration, public access, slug format acceptance, and
  * response shape.
@@ -9,7 +9,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
-const BASE = '/api/v1/public/gastronomies/slug';
+const BASE = '/api/v1/public/venues/slug';
 
 // ---------------------------------------------------------------------------
 // HOS-117 T-022 — GONE (410) regression: a soft-deleted gastronomy listing
@@ -47,7 +47,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
-describe('GET /api/v1/public/gastronomies/slug/:slug', () => {
+describe('GET /api/v1/public/venues/slug/:slug', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {

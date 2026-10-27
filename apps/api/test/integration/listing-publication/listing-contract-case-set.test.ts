@@ -47,7 +47,7 @@ const TABLES: Readonly<Record<ListingVertical, string>> = {
 };
 const ROUTE_TABLES: Readonly<Record<ListingVertical, string>> = {
     ...TABLES,
-    [VerticalEnum.VENUE]: 'gastronomies'
+    [VerticalEnum.VENUE]: 'venues'
 };
 
 const CREATE_LISTING: Readonly<

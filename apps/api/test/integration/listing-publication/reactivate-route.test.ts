@@ -35,7 +35,7 @@ function path(vertical: (typeof verticals)[number], id: string) {
         vertical === VerticalEnum.ACCOMMODATION
             ? 'accommodations'
             : vertical === VerticalEnum.VENUE
-              ? 'gastronomies'
+              ? 'venues'
               : 'experiences';
     return `/api/v1/protected/${segment}/${id}/reactivate`;
 }

@@ -1,5 +1,5 @@
 /**
- * Tests for GET /api/v1/public/gastronomies/:id
+ * Tests for GET /api/v1/public/venues/:id
  *
  * Covers: route registration, public access, 404 for hidden/missing listings,
  * UUID validation, and response shape.
@@ -8,11 +8,11 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
-const BASE = '/api/v1/public/gastronomies';
+const BASE = '/api/v1/public/venues';
 const VALID_UUID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const INVALID_UUID = 'not-a-uuid';
 
-describe('GET /api/v1/public/gastronomies/:id', () => {
+describe('GET /api/v1/public/venues/:id', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {

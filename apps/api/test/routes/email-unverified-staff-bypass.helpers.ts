@@ -50,7 +50,7 @@ function buildApp(options: RouteProbeOptions) {
     });
     app.route('/api/v1/protected/users', protectedUserRoutes);
     app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
-    app.route('/api/v1/protected/gastronomies', protectedVenueRoutes);
+    app.route('/api/v1/protected/venues', protectedVenueRoutes);
     app.route('/api/v1/protected/experiences', protectedExperienceRoutes);
     app.route('/api/v1/protected/billing-subscription', protectedBillingSubscriptionReadRoutes);
     return app;

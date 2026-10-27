@@ -50,7 +50,7 @@ import type { AppOpenAPI } from '../../src/types.js';
 // Fixtures
 // ---------------------------------------------------------------------------
 const VENUE_ID = '00000000-0000-4000-8000-000000000004';
-const URL = `/api/v1/public/gastronomies/${VENUE_ID}/faqs`;
+const URL = `/api/v1/public/venues/${VENUE_ID}/faqs`;
 
 const VISIBLE_FAQ = {
     id: 'cccccccc-cccc-4ccc-8ccc-cccccccccc01',
@@ -83,7 +83,7 @@ function buildHeaders(): Record<string, string> {
     return { 'user-agent': 'vitest', Accept: 'application/json' };
 }
 
-describe('GET /public/gastronomies/:id/faqs never leaks a hidden FAQ (HOS-400)', () => {
+describe('GET /public/venues/:id/faqs never leaks a hidden FAQ (HOS-400)', () => {
     let app: AppOpenAPI;
 
     beforeEach(() => {

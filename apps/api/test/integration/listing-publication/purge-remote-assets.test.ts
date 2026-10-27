@@ -29,7 +29,7 @@ vi.mock('../../../src/services/media', () => ({
 const app = initApp();
 const fixtures: PurgeAssetFixture[] = [];
 const routeNames: Readonly<Record<PurgeAssetFixture['vertical'], string>> = {
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences',
     [VerticalEnum.ACCOMMODATION]: 'accommodations'
 };

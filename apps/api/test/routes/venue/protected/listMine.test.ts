@@ -1,5 +1,5 @@
 /**
- * Tests for GET /api/v1/protected/gastronomies/mine (SPEC-249 T-006)
+ * Tests for GET /api/v1/protected/venues/mine (SPEC-249 T-006)
  *
  * Covers:
  * - Route registration (the literal "mine" segment is not swallowed by /{id})
@@ -13,7 +13,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
-const BASE = '/api/v1/protected/gastronomies';
+const BASE = '/api/v1/protected/venues';
 
 const MOCK_LISTINGS = [
     {
@@ -65,7 +65,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
-describe('GET /api/v1/protected/gastronomies/mine', () => {
+describe('GET /api/v1/protected/venues/mine', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {

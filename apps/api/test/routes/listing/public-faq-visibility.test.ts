@@ -94,11 +94,11 @@ vi.mock('../../../src/utils/listing-catalog-relations', () => ({
 }));
 
 const CASES = [
-    ['gastronomy getBySlug', '/api/v1/public/gastronomies/slug/hos-1263-listing'],
-    ['gastronomy getById', `/api/v1/public/gastronomies/${LISTING_ID}`],
+    ['gastronomy getBySlug', '/api/v1/public/venues/slug/hos-1263-listing'],
+    ['gastronomy getById', `/api/v1/public/venues/${LISTING_ID}`],
     ['experience getBySlug', '/api/v1/public/experiences/slug/hos-1263-listing'],
     ['experience getById', `/api/v1/public/experiences/${LISTING_ID}`],
-    ['gastronomy /faqs', `/api/v1/public/gastronomies/${LISTING_ID}/faqs`],
+    ['gastronomy /faqs', `/api/v1/public/venues/${LISTING_ID}/faqs`],
     ['experience /faqs', `/api/v1/public/experiences/${LISTING_ID}/faqs`]
 ] as const;
 

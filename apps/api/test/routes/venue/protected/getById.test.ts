@@ -1,5 +1,5 @@
 /**
- * Regression tests for GET /api/v1/protected/gastronomies/:id — ownership IDOR fix.
+ * Regression tests for GET /api/v1/protected/venues/:id — ownership IDOR fix.
  *
  * Security context: GastronomyProtectedSchema exposes owner-private fields
  * (contactInfo, ownerId, publicationStatus, richDescription, audit dates) that
@@ -17,7 +17,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
-const BASE = '/api/v1/protected/gastronomies';
+const BASE = '/api/v1/protected/venues';
 const LISTING_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const OWNER_ID = '11111111-1111-4111-a111-111111111111';
 const NON_OWNER_ID = '22222222-2222-4222-a222-222222222222';
@@ -133,7 +133,7 @@ const staffHeaders = {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('GET /api/v1/protected/gastronomies/:id — ownership IDOR regression', () => {
+describe('GET /api/v1/protected/venues/:id — ownership IDOR regression', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {

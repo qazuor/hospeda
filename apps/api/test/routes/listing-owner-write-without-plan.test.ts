@@ -2,7 +2,7 @@
  * TEST:U1:15 (HOS-1419 / AC:U1:8) — owner writes on a vertical listing run
  * WITHOUT any plan.
  *
- * `PATCH /api/v1/protected/gastronomies/:id` no longer carries an entitlement
+ * `PATCH /api/v1/protected/venues/:id` no longer carries an entitlement
  * or limits gate: the whole request goes through the REAL app (auth, actor,
  * route factory, validation) and the REAL `VenueService.updateOwn`
  * (ownership + permission chain). Only the persistence layer is replaced by an
@@ -20,7 +20,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../src/app.js';
 import type { AppOpenAPI } from '../../src/types.js';
 
-const BASE = '/api/v1/protected/gastronomies';
+const BASE = '/api/v1/protected/venues';
 const LISTING_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const STRANGER_ID = '22222222-2222-4222-8222-222222222222';
