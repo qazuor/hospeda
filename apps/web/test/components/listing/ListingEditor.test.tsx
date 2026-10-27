@@ -164,7 +164,7 @@ const destinationOptions = [
 ];
 
 function renderEditor(
-    vertical: 'gastronomy' | 'experience',
+    vertical: 'venue' | 'experience',
     sectionId: ListingEditorFormSectionId = 'basicInfo'
 ) {
     return render(
@@ -214,7 +214,7 @@ describe('ListingEditor', () => {
 
         const ssr = renderToStaticMarkup(
             <ListingEditor
-                vertical="gastronomy"
+                vertical="venue"
                 sectionId="basicInfo"
                 listingId="abc"
                 locale="es"
@@ -548,7 +548,7 @@ describe('ListingEditor', () => {
 
         render(
             <ListingEditor
-                vertical="gastronomy"
+                vertical="venue"
                 sectionId="openingHours"
                 listingId="abc"
                 locale="es"
@@ -633,7 +633,7 @@ describe('ListingEditor', () => {
 
         render(
             <ListingEditor
-                vertical="gastronomy"
+                vertical="venue"
                 sectionId="amenities"
                 listingId="abc"
                 locale="es"
@@ -693,7 +693,7 @@ describe('ListingEditor', () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
         const { container } = render(
             <ListingEditor
-                vertical="gastronomy"
+                vertical="venue"
                 sectionId="amenities"
                 listingId="abc"
                 locale="es"
@@ -732,7 +732,7 @@ describe('ListingEditor', () => {
         it('renders name, destinationId, and description seeded from initialData', () => {
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
@@ -752,7 +752,7 @@ describe('ListingEditor', () => {
             mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
@@ -777,7 +777,7 @@ describe('ListingEditor', () => {
             mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
@@ -802,7 +802,7 @@ describe('ListingEditor', () => {
             mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
@@ -829,7 +829,7 @@ describe('ListingEditor', () => {
             mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
@@ -857,7 +857,7 @@ describe('ListingEditor', () => {
         it('shows an error message instead of silently hiding the destination select', () => {
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
@@ -876,7 +876,7 @@ describe('ListingEditor', () => {
         it('shows an empty-catalog message (not the load-failed one) when destinations legitimately loaded empty', () => {
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"

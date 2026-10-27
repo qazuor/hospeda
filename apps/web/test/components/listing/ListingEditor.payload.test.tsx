@@ -261,7 +261,7 @@ function buildListing(overrides: Record<string, unknown> = {}): ListingDetail {
  * wrong section would pass vacuously with an empty body.
  */
 function renderEditor(
-    vertical: 'gastronomy' | 'experience',
+    vertical: 'venue' | 'experience',
     initialData: ListingDetail = buildListing(),
     sectionId: ListingEditorFormSectionId = 'basicInfo'
 ) {

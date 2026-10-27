@@ -71,7 +71,7 @@ describe('publish precheck panel content during the billing transition', () => {
         expect(
             resolvePrecheckPanelContent({
                 ...BASE,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 decision: 'resume_or_create'
             }).titleKey
         ).toBe('publish.precheck.gastronomy.resumeOrCreate.title');
@@ -80,7 +80,7 @@ describe('publish precheck panel content during the billing transition', () => {
     it('uses the right noun in gastronomy fallback copy', () => {
         const body = resolvePrecheckPanelContent({
             ...BASE,
-            vertical: 'gastronomy',
+            vertical: 'venue',
             decision: 'resume_or_create'
         }).bodyFallback;
         expect(body).toContain('ficha');
@@ -89,7 +89,7 @@ describe('publish precheck panel content during the billing transition', () => {
 
     it.each([
         ['accommodation', 'max_accommodations'],
-        ['gastronomy', 'max_venues'],
+        ['venue', 'max_venues'],
         ['experience', 'max_experiences']
     ] as const)('uses the %s copy namespace', (vertical, namespace) => {
         const result = resolvePrecheckPanelContent({ ...BASE, vertical, decision: 'upgrade_only' });

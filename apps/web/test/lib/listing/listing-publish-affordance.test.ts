@@ -5,7 +5,7 @@ import { resolveListingPublishAffordances } from '../../../src/lib/listing/listi
 import type { OwnerListingSummaryWithState } from '../../../src/lib/listing/owner-listings';
 
 const listing = (
-    vertical: 'gastronomy' | 'experience',
+    vertical: 'venue' | 'experience',
     publicationStatus = PublicationStatusEnum.DRAFT
 ) =>
     ({
@@ -22,9 +22,7 @@ const destination = (value: 'PUBLISH' | 'CHECKOUT' | 'NO_PLANS_AVAILABLE') => ({
 describe('resolveListingPublishAffordances — TEST:1729:6', () => {
     it('resolves each listed draft vertical from its own destination read', async () => {
         const subscribeDestination = vi.fn(({ vertical }: { vertical: string }) =>
-            Promise.resolve(
-                vertical === 'gastronomy' ? destination('PUBLISH') : destination('CHECKOUT')
-            )
+            Promise.resolve(vertical === 'venue' ? destination('PUBLISH') : destination('CHECKOUT'))
         );
         const result = await resolveListingPublishAffordances({
             listings: [listing('gastronomy'), listing('experience')],

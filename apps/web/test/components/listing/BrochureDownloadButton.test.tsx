@@ -36,7 +36,7 @@ vi.mock('../../../src/lib/env', () => ({
 function renderButton() {
     return render(
         <BrochureDownloadButton
-            vertical="gastronomy"
+            vertical="venue"
             listingId="listing-1"
             slug="la-parrilla"
             locale="en"

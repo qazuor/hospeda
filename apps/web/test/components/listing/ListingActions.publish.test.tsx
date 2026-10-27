@@ -37,7 +37,7 @@ const publishButtonSource = readFileSync(
     'utf8'
 );
 function listing(
-    vertical: 'gastronomy' | 'experience',
+    vertical: 'venue' | 'experience',
     overrides: Partial<OwnerListingSummaryWithState> = {}
 ): OwnerListingSummaryWithState {
     return {

@@ -101,7 +101,7 @@ describe('gastronomy/experience editor routes — one file per section', () => {
     it('should point every nav link at a route file that exists', () => {
         // The nav builds hrefs from slugs, and a slug with no file is a 404
         // reached from a link the editor drew itself — invisible to typecheck.
-        for (const vertical of ['gastronomy', 'experience'] as const) {
+        for (const vertical of ['venue', 'experience'] as const) {
             for (const section of buildListingEditorSections({ vertical })) {
                 expect(
                     ROUTE_FILES,

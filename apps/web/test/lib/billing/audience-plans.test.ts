@@ -113,7 +113,7 @@ const ACCOMMODATION_PLANS = [
 const VENUE_PLANS = [
     makePlan({
         slug: 'venue-basico',
-        vertical: 'gastronomy',
+        vertical: 'venue',
         monthlyPriceArs: 1_000_000,
         hasTrial: true,
         trialDays: VENUE_TRIAL
@@ -122,7 +122,7 @@ const VENUE_PLANS = [
     // stopped being checked, gastronomy would advertise 1 day.
     makePlan({
         slug: 'venue-pro',
-        vertical: 'gastronomy',
+        vertical: 'venue',
         monthlyPriceArs: 0,
         isActive: false,
         hasTrial: true,

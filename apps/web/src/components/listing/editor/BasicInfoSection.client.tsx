@@ -83,7 +83,7 @@ export function BasicInfoSection({
     shouldOfferSlugRefresh = false
 }: BasicInfoSectionProps): JSX.Element {
     const { t } = createTranslations(locale);
-    const typeOptions = vertical === 'gastronomy' ? VENUE_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
+    const typeOptions = vertical === 'venue' ? VENUE_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
 
     return (
         <>

@@ -88,7 +88,7 @@ const FAQ_2: ListingFaq = {
 function renderManager(initialFaqs: readonly ListingFaq[] = []) {
     return render(
         <ListingFaqManager
-            vertical="gastronomy"
+            vertical="venue"
             listingId="listing-1"
             locale="es"
             initialFaqs={initialFaqs}

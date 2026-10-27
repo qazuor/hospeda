@@ -96,7 +96,7 @@ const BASE_DATA = {
     richDescription: 'old text'
 } as unknown as ListingDetail;
 
-type Vertical = 'gastronomy' | 'experience';
+type Vertical = 'venue' | 'experience';
 
 /**
  * Renders EVERY form section of the editor at once (HOS-1080).
@@ -126,19 +126,17 @@ function renderEditor(vertical: Vertical) {
     const sectionIds = Object.keys(LISTING_SECTION_PAYLOAD_KEYS) as ListingEditorFormSectionId[];
 
     return render(
-        <>
-            {sectionIds.map((sectionId) => (
-                <ListingEditor
-                    key={sectionId}
-                    vertical={vertical}
-                    sectionId={sectionId}
-                    listingId="abc"
-                    locale="es"
-                    initialData={BASE_DATA}
-                    destinations={[{ id: DESTINATION_ID, name: 'Concepción del Uruguay' }]}
-                />
-            ))}
-        </>
+        sectionIds.map((sectionId) => (
+            <ListingEditor
+                key={sectionId}
+                vertical={vertical}
+                sectionId={sectionId}
+                listingId="abc"
+                locale="es"
+                initialData={BASE_DATA}
+                destinations={[{ id: DESTINATION_ID, name: 'Concepción del Uruguay' }]}
+            />
+        ))
     );
 }
 
@@ -226,7 +224,7 @@ describe('listing editor — derived field ids (HOS-385 AC-5)', () => {
         vi.clearAllMocks();
     });
 
-    for (const vertical of ['gastronomy', 'experience'] as const) {
+    for (const vertical of ['venue', 'experience'] as const) {
         describe(vertical, () => {
             const focusable = focusableKeysFor(vertical);
 

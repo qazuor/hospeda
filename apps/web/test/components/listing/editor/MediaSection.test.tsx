@@ -110,7 +110,7 @@ const LISTING_ID = '00000000-0000-4000-8000-0000000000aa';
 
 const defaultProps: MediaSectionProps = {
     locale: 'es',
-    vertical: 'gastronomy',
+    vertical: 'venue',
     listingId: LISTING_ID
 };
 
@@ -260,7 +260,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             render(<MediaSection {...defaultProps} />);
             await waitFor(() => {
                 expect(mockListMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID
                 });
             });
@@ -303,7 +303,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(mockAddMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     body: expect.objectContaining({
                         url: NEW_ROW.url,
@@ -355,7 +355,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(mockRemoveMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     mediaId: GALLERY_ROW_1.id
                 });
@@ -412,7 +412,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(mockAddMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     body: expect.objectContaining({ url: NEW_ROW.url })
                 });
@@ -420,7 +420,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(mockSetFeaturedMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     mediaId: NEW_ROW.id
                 });
@@ -502,7 +502,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(mockRemoveMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     mediaId: FEATURED_ROW.id
                 });

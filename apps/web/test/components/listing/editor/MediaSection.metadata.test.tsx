@@ -102,7 +102,7 @@ const LISTING_ID = '00000000-0000-4000-8000-0000000000aa';
 
 const defaultProps: MediaSectionProps = {
     locale: 'es',
-    vertical: 'gastronomy',
+    vertical: 'venue',
     listingId: LISTING_ID
 };
 
@@ -221,7 +221,7 @@ describe('MediaSection — photo text metadata (HOS-1036)', () => {
 
         await waitFor(() => expect(mockUpdateMedia).toHaveBeenCalledTimes(1));
         expect(mockUpdateMedia.mock.calls[0]?.[0]).toEqual({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             id: LISTING_ID,
             mediaId: GALLERY_ROW.id,
             body: {
@@ -262,7 +262,7 @@ describe('MediaSection — photo text metadata (HOS-1036)', () => {
         // toStrictEqual, not toEqual: the latter ignores keys whose value is
         // `undefined`, which is exactly what a dropped mapping produces.
         expect(mockUpdateMedia.mock.calls[0]?.[0]).toStrictEqual({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             id: LISTING_ID,
             mediaId: FEATURED_ROW.id,
             body: {

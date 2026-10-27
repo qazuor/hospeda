@@ -7,7 +7,7 @@ import { getUsageThreshold } from '@/lib/host/usage-badge';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 /** One of the two listing verticals shown in the owner index. */
-export type ListingVertical = 'gastronomy' | 'experience';
+export type ListingVertical = 'venue' | 'experience';
 
 /** Usage and effective capacity for one listing vertical. */
 export interface ListingUsage {
@@ -22,7 +22,7 @@ export interface ListingUsage {
 }
 
 const LIMIT_KEY_BY_VERTICAL: Readonly<Record<ListingVertical, LimitKeyEnum>> = {
-    gastronomy: LimitKeys.MAX_VENUES,
+    venue: LimitKeys.MAX_VENUES,
     experience: LimitKeys.MAX_EXPERIENCES
 };
 
@@ -110,5 +110,5 @@ export function resolveUsageUpgradePath({
 }: {
     readonly vertical: ListingVertical;
 }): string {
-    return PRICING_PAGE_PATH_BY_AUDIENCE[vertical];
+    return PRICING_PAGE_PATH_BY_AUDIENCE[vertical === 'venue' ? 'gastronomy' : vertical];
 }

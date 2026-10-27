@@ -45,7 +45,7 @@ function resolve(
 ) {
     return resolveListingEditorSectionStatuses({
         input: {
-            vertical: 'gastronomy',
+            vertical: 'venue',
             listing,
             photoCount: counts.photoCount ?? 0,
             faqCount: counts.faqCount ?? 0,

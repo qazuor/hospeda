@@ -100,7 +100,7 @@ export function buildVenueEditorSections(): readonly EditorSection[] {
  */
 export function buildVenueEditorRegistry(): EditorRegistry {
     return createListingEditorRegistry({
-        vertical: 'gastronomy',
+        vertical: 'venue',
         sections: buildVenueEditorSections()
     });
 }

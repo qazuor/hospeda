@@ -59,7 +59,7 @@ const LANDINGS: ReadonlyArray<{
     readonly vertical: string;
 }> = [
     { label: 'planes/experiencias/precios', src: experiencePricing, vertical: 'experience' },
-    { label: 'planes/gastronomia/precios', src: venuePricing, vertical: 'gastronomy' }
+    { label: 'planes/gastronomia/precios', src: venuePricing, vertical: 'venue' }
 ];
 
 describe('HOS-810 — gastronomy/experience landing CTA wiring', () => {

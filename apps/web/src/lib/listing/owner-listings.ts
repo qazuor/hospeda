@@ -87,7 +87,7 @@ export async function fetchOwnerListingDetail({
     id: string;
     cookieHeader?: string;
 }): Promise<ListingDetail | null> {
-    const path = vertical === 'gastronomy' ? `${VENUE_PATH}/${id}` : `${EXPERIENCE_PATH}/${id}`;
+    const path = vertical === 'venue' ? `${VENUE_PATH}/${id}` : `${EXPERIENCE_PATH}/${id}`;
 
     const result = await apiClient.getProtected<ListingDetail | null>({
         path,
@@ -175,7 +175,7 @@ export async function fetchOwnerListingsWithState({
 
 /** Payload accepted by {@link createOwnerListing} — one per vertical. */
 export type CreateOwnerListingPayload =
-    | { readonly vertical: 'gastronomy'; readonly data: VenueOwnerCreateInput }
+    | { readonly vertical: 'venue'; readonly data: VenueOwnerCreateInput }
     | { readonly vertical: 'experience'; readonly data: ExperienceOwnerCreateInput };
 
 /**
@@ -198,7 +198,7 @@ export function createOwnerListing(
     params: CreateOwnerListingPayload
 ): Promise<ApiResult<ListingDetail>> {
     return apiClient.postProtected<ListingDetail>({
-        path: params.vertical === 'gastronomy' ? VENUE_PATH : EXPERIENCE_PATH,
+        path: params.vertical === 'venue' ? VENUE_PATH : EXPERIENCE_PATH,
         body: params.data
     });
 }

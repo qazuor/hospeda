@@ -77,7 +77,7 @@ import styles from './ListingQrSheet.module.css';
  */
 const API_SEGMENT_BY_VERTICAL = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'gastronomies',
     experience: 'experiences'
 } as const;
 
@@ -179,7 +179,7 @@ export function resolveQrSheetFilename(input: {
  * @example
  * ```tsx
  * <ListingQrSheet
- *   vertical="gastronomy"
+ *   vertical="venue"
  *   listingId={listing.id}
  *   slug={listing.slug}
  *   locale={locale}

@@ -22,7 +22,7 @@ import { fetchOwnerListingsWithState } from '../../../src/lib/listing/owner-list
 function summary(id: string, publicationStatus: PublicationStatusEnum) {
     return {
         id,
-        vertical: 'gastronomy' as const,
+        vertical: 'venue' as const,
         name: `Listing ${id}`,
         slug: `listing-${id}`,
         type: 'RESTAURANT',
@@ -90,7 +90,7 @@ describe('mi-cuenta/comercio/index.astro — PURGED offers no action (HOS-1641)'
 
     it('keeps a purged listing out of the menu QR widget', () => {
         expect(source).toContain(
-            ".filter((listing) => listing.vertical === 'gastronomy' && !isPurged(listing))"
+            ".filter((listing) => listing.vertical === 'venue' && !isPurged(listing))"
         );
     });
 

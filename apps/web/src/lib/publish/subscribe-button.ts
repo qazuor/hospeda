@@ -13,7 +13,7 @@ export { NO_PLANS_AVAILABLE_MESSAGE };
 
 export const SUBSCRIBE_VERTICAL_BY_AUDIENCE: Record<PricingAudience, PublishVerticalSlug | null> = {
     owner: 'accommodation',
-    gastronomy: 'gastronomy',
+    gastronomy: 'venue',
     experience: 'experience',
     tourist: null,
     partner: null

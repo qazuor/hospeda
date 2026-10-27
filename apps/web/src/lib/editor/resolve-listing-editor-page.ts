@@ -97,7 +97,7 @@ export async function resolveListingEditorPage({
 
     const verticalParam = astro.params.vertical;
     const listingId = astro.params.id;
-    const isVertical = verticalParam === 'gastronomy' || verticalParam === 'experience';
+    const isVertical = verticalParam === 'venue' || verticalParam === 'experience';
     if (!isVertical || !listingId) {
         return { redirect: new Response(null, { status: 404 }) };
     }

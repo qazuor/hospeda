@@ -25,7 +25,7 @@ interface TrialSummaryCopy {
     readonly endedTitle: string;
     readonly endedConverted: string;
     readonly endedExpired: string;
-    readonly vertical: Record<'accommodation' | 'gastronomy' | 'experience', string>;
+    readonly vertical: Record<'accommodation' | 'venue' | 'experience', string>;
     readonly total_one: string;
     readonly total_other: string;
     readonly origins: Record<string, string>;

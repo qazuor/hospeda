@@ -21,7 +21,7 @@ const UNKNOWN = {
 } as const;
 
 function props(
-    vertical: 'gastronomy' | 'experience',
+    vertical: 'venue' | 'experience',
     affordance: PublishAffordance = TRIAL,
     overrides: Record<string, unknown> = {}
 ) {
@@ -47,7 +47,7 @@ function props(
     };
 }
 
-async function confirm(vertical: 'gastronomy' | 'experience', affordance = TRIAL) {
+async function confirm(vertical: 'venue' | 'experience', affordance = TRIAL) {
     const user = userEvent.setup();
     render(<PublishButton {...props(vertical, affordance)} />);
     await user.click(screen.getByRole('button', { name: 'Publicar' }));
@@ -61,7 +61,7 @@ beforeEach(() => {
 
 describe('PublishButton listing verticals (TEST:1729:2, TEST:1729:3)', () => {
     it.each([
-        'gastronomy',
+        'venue',
         'experience'
     ] as const)('publishes %s and only announces a real trial', async (vertical) => {
         const user = userEvent.setup();
@@ -74,7 +74,7 @@ describe('PublishButton listing verticals (TEST:1729:2, TEST:1729:3)', () => {
     });
 
     it.each([
-        'gastronomy',
+        'venue',
         'experience'
     ] as const)('hides trial for %s when covered', async (vertical) => {
         const user = userEvent.setup();
@@ -84,7 +84,7 @@ describe('PublishButton listing verticals (TEST:1729:2, TEST:1729:3)', () => {
     });
 
     it.each([
-        ['gastronomy', '/es/planes/gastronomia/precios/'],
+        ['venue', '/es/planes/gastronomia/precios/'],
         ['experience', '/es/planes/experiencias/precios/']
     ] as const)('uses %s pricing for server subscription rejection', async (vertical, href) => {
         verticalPublish.mockResolvedValue({
@@ -95,7 +95,7 @@ describe('PublishButton listing verticals (TEST:1729:2, TEST:1729:3)', () => {
         const notice = await screen.findByTestId('publish-subscribe-to-publish');
         expect(notice).toHaveTextContent('Suscribite para publicar');
         expect(notice).toHaveTextContent(
-            vertical === 'gastronomy' ? 'suscripción de gastronomía' : 'suscripción de experiencias'
+            vertical === 'venue' ? 'suscripción de gastronomía' : 'suscripción de experiencias'
         );
         expect(screen.getByRole('link', { name: 'Ver planes' })).toHaveAttribute('href', href);
     });
@@ -121,7 +121,7 @@ describe('PublishButton listing verticals (TEST:1729:2, TEST:1729:3)', () => {
     });
 
     it.each([
-        ['gastronomy', '/es/mi-cuenta/comercio/gastronomy/listing-1/editar/'],
+        ['venue', '/es/mi-cuenta/comercio/venue/listing-1/editar/'],
         ['experience', '/es/mi-cuenta/comercio/experience/listing-1/editar/']
     ] as const)('routes an unrecognized %s validation error to its vertical editor', async (vertical, href) => {
         verticalPublish.mockResolvedValue({
@@ -139,7 +139,7 @@ describe('PublishButton listing verticals (TEST:1729:2, TEST:1729:3)', () => {
         UNKNOWN,
         { kind: 'checkout', canPublish: false, startsTrial: false, trialDays: null } as const
     ])('fails closed for unresolved or checkout affordance', (affordance) => {
-        render(<PublishButton {...props('gastronomy', affordance)} />);
+        render(<PublishButton {...props('venue', affordance)} />);
         expect(screen.queryByRole('button')).not.toBeInTheDocument();
     });
 });

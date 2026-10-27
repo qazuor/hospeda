@@ -145,9 +145,7 @@ function resolveBlockingStatuses({
 }): Record<string, EditorSectionStatus> {
     const { missing } = resolveListingCompleteness({
         entityType:
-            input.vertical === 'gastronomy'
-                ? ProductDomainEnum.VENUE
-                : ProductDomainEnum.EXPERIENCE,
+            input.vertical === 'venue' ? ProductDomainEnum.VENUE : ProductDomainEnum.EXPERIENCE,
         listing: input.listing
     });
     if (missing.length === 0) return {};

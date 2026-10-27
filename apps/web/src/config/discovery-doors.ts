@@ -163,7 +163,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 //
                 // `manageHref` below stays `mi-cuenta/comercio`: this href is
                 // where you go to publish, that one is where you go once you do.
-                href: PUBLISH_PAGE_PATH_BY_VERTICAL.gastronomy,
+                href: PUBLISH_PAGE_PATH_BY_VERTICAL.venue,
                 ctaI18nKey: 'account.doors.publish.options.gastronomy.cta',
                 acquiredPermission: PermissionEnum.GASTRONOMY_EDIT_OWN,
                 manageHref: 'mi-cuenta/comercio'

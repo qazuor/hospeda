@@ -137,7 +137,7 @@ function buildListing(overrides: Record<string, unknown> = {}): ListingDetail {
 }
 
 function renderEditor(
-    vertical: 'gastronomy' | 'experience',
+    vertical: 'venue' | 'experience',
     initialData: ListingDetail = buildListing()
 ) {
     return render(
@@ -207,7 +207,7 @@ describe('ListingEditor — practical details', () => {
                 vertical: 'experience'
             }).map((section) => section.id);
             const venueIds = buildListingEditorSections({
-                vertical: 'gastronomy'
+                vertical: 'venue'
             }).map((section) => section.id);
 
             expect(experienceIds).toContain('practicalInfo');
@@ -415,7 +415,7 @@ describe('ListingEditor — practical details', () => {
             // This asserts the second half, from a page a restaurant DOES have.
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"

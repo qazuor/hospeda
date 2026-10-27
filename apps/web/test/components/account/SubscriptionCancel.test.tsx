@@ -408,7 +408,7 @@ describe('SubscriptionCancel island', () => {
                 ok: true,
                 data: {
                     subscriptionId: otherId,
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     paymentMethod: 'CARD',
                     origin: 'ACTIVE',
                     serviceEndsAt: '2026-11-05T03:00:00.000Z',

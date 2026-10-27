@@ -66,7 +66,7 @@ describe('ListingCreateForm', () => {
         it('renders a fully empty, usable form', () => {
             render(
                 <ListingCreateForm
-                    vertical="gastronomy"
+                    vertical="venue"
                     locale="es"
                     destinations={destinations}
                 />
@@ -79,7 +79,7 @@ describe('ListingCreateForm', () => {
         it('lets the owner type freely into the name field', () => {
             render(
                 <ListingCreateForm
-                    vertical="gastronomy"
+                    vertical="venue"
                     locale="es"
                     destinations={destinations}
                 />
@@ -98,7 +98,7 @@ describe('ListingCreateForm', () => {
 
             render(
                 <ListingCreateForm
-                    vertical="gastronomy"
+                    vertical="venue"
                     locale="es"
                     destinations={destinations}
                 />
@@ -126,7 +126,7 @@ describe('ListingCreateForm', () => {
             });
 
             const call = mockCreate.mock.calls[0]?.[0];
-            expect(call?.vertical).toBe('gastronomy');
+            expect(call?.vertical).toBe('venue');
             expect(call?.data).toMatchObject({ name: 'La Parrilla de Juan', type: 'RESTAURANT' });
 
             await waitFor(() => {
@@ -139,7 +139,7 @@ describe('ListingCreateForm', () => {
         it('does not submit when required fields are missing', async () => {
             render(
                 <ListingCreateForm
-                    vertical="gastronomy"
+                    vertical="venue"
                     locale="es"
                     destinations={destinations}
                 />
@@ -157,7 +157,7 @@ describe('ListingCreateForm', () => {
         it('shows an error message instead of silently hiding the destination select', () => {
             render(
                 <ListingCreateForm
-                    vertical="gastronomy"
+                    vertical="venue"
                     locale="es"
                     destinations={[]}
                     destinationsLoadFailed
@@ -173,7 +173,7 @@ describe('ListingCreateForm', () => {
         it('shows an empty-catalog message (not the load-failed one) when destinations legitimately loaded empty', () => {
             render(
                 <ListingCreateForm
-                    vertical="gastronomy"
+                    vertical="venue"
                     locale="es"
                     destinations={[]}
                 />

@@ -72,6 +72,6 @@ describe('buildExperienceEditorRegistry: paths', () => {
 describe('buildListingEditorRegistry: dispatch by vertical', () => {
     it('should return the registry that matches the vertical', () => {
         expect(buildListingEditorRegistry({ vertical: 'experience' }).sections).toEqual(experience);
-        expect(buildListingEditorRegistry({ vertical: 'gastronomy' }).sections).toEqual(venue);
+        expect(buildListingEditorRegistry({ vertical: 'venue' }).sections).toEqual(venue);
     });
 });

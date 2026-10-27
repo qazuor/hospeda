@@ -143,7 +143,7 @@ function patchPathFor({
     vertical: VenueOrExperience;
     listingId: string;
 }): string {
-    return vertical === 'gastronomy'
+    return vertical === 'venue'
         ? `/api/v1/protected/gastronomies/${listingId}`
         : `/api/v1/protected/experiences/${listingId}`;
 }
@@ -371,7 +371,7 @@ function buildPatchPayload({
         payload.featureIds = [...current.featureIds];
     }
 
-    if (vertical === 'gastronomy') {
+    if (vertical === 'venue') {
         if (current.priceRange !== baseline.priceRange) {
             payload.priceRange = current.priceRange || null;
         }
@@ -499,7 +499,7 @@ export function ListingEditor({
     // (mobilePhone/workEmail), social networks, opening hours, menuUrl, and the
     // priceFrom/priceUnit null-vs-undefined bug (see `buildPayload` below).
     const schema =
-        vertical === 'gastronomy' ? VenueOwnerUpdateInputSchema : ExperienceOwnerUpdateInputSchema;
+        vertical === 'venue' ? VenueOwnerUpdateInputSchema : ExperienceOwnerUpdateInputSchema;
     const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
         schema,
         t,

@@ -39,7 +39,7 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
 
 const GASTRO_LISTING: ListingViewsWidgetListing = {
     id: 'gastro-1',
-    vertical: 'gastronomy',
+    vertical: 'venue',
     name: 'La Parrilla del Puerto'
 };
 
@@ -67,7 +67,7 @@ describe('ListingViewsWidget (HOS-734)', () => {
 
     it('fetches views for each distinct vertical and renders one row per listing', async () => {
         mockGetViews.mockImplementation(({ vertical }: { vertical: string }) => {
-            if (vertical === 'gastronomy') {
+            if (vertical === 'venue') {
                 return Promise.resolve({
                     ok: true,
                     data: [{ entityId: 'gastro-1', unique: 12, total: 30 }]

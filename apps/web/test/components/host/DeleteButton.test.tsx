@@ -111,7 +111,7 @@ describe('DeleteButton (owner PB12 delete island)', () => {
         );
     });
 
-    for (const vertical of ['accommodation', 'gastronomy', 'experience'] as const) {
+    for (const vertical of ['accommodation', 'venue', 'experience'] as const) {
         it(`runs PB12 in the ${vertical} vertical when told to (AC-14, AC:V6:25)`, async () => {
             purgeMock.mockResolvedValue({ ok: true, data: {} });
             renderButton(vertical);
