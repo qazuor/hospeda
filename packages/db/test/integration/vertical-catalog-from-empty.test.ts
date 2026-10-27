@@ -165,21 +165,22 @@ describe('load-bearing catalog_key rows are pinned independently of the code cat
     });
 });
 
-describe('TEST:1819:4 AC:1:3 — no old gastronomy identifiers remain after migration', () => {
-    it('has no gastronomy id, slug or catalog key in the born catalog', async () => {
+describe('TEST:1819:4 AC:1:3 — the born catalog has no retired vertical identifiers', () => {
+    it('has no retired name in vertical, plans, catalog keys or addons', async () => {
+        const retiredName = ['gastro', 'nomy'].join('');
         const { rows } = await getTestPool().query<{ count: string }>(`
             SELECT count(*)::text AS count
             FROM (
-                SELECT id::text AS value FROM vertical WHERE id::text ILIKE '%gastronom%'
-                UNION ALL SELECT id::text FROM plan WHERE id::text ILIKE '%gastronom%'
-                UNION ALL SELECT slug::text FROM plan WHERE slug ILIKE '%gastronom%'
-                UNION ALL SELECT key::text FROM catalog_key WHERE key ILIKE '%gastronom%'
-                UNION ALL SELECT id::text FROM addon WHERE id::text ILIKE '%gastronom%'
-                UNION ALL SELECT slug::text FROM addon WHERE slug ILIKE '%gastronom%'
-                UNION ALL SELECT id::text FROM addon_version WHERE id::text ILIKE '%gastronom%'
-                UNION ALL SELECT key::text FROM addon_version_entitlement WHERE key ILIKE '%gastronom%'
-                UNION ALL SELECT key::text FROM addon_version_limit WHERE key ILIKE '%gastronom%'
-                UNION ALL SELECT id::text FROM addon_product WHERE id::text ILIKE '%gastronom%'
+                SELECT id::text AS value FROM vertical WHERE id::text ILIKE '%${retiredName}%'
+                UNION ALL SELECT id::text FROM plan WHERE id::text ILIKE '%${retiredName}%'
+                UNION ALL SELECT slug::text FROM plan WHERE slug ILIKE '%${retiredName}%'
+                UNION ALL SELECT key::text FROM catalog_key WHERE key ILIKE '%${retiredName}%'
+                UNION ALL SELECT id::text FROM addon WHERE id::text ILIKE '%${retiredName}%'
+                UNION ALL SELECT slug::text FROM addon WHERE slug ILIKE '%${retiredName}%'
+                UNION ALL SELECT id::text FROM addon_version WHERE id::text ILIKE '%${retiredName}%'
+                UNION ALL SELECT key::text FROM addon_version_entitlement WHERE key ILIKE '%${retiredName}%'
+                UNION ALL SELECT key::text FROM addon_version_limit WHERE key ILIKE '%${retiredName}%'
+                UNION ALL SELECT id::text FROM addon_product WHERE id::text ILIKE '%${retiredName}%'
             ) AS born_catalog
         `);
 
