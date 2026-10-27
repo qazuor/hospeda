@@ -523,7 +523,7 @@ export function ListingEditor({
 
     // HOS-372: media is not buffered in this editor's state at all. MediaSection
     // is self-contained (per-operation persistence against the relational
-    // gastronomy_media / experience_media endpoints — see its file header) and
+    // venue_media / experience_media endpoints — see its file header) and
     // hydrates its own state from the API; since HOS-1080 it is mounted by its
     // own route rather than by this island, so nothing about photos reaches
     // here.
