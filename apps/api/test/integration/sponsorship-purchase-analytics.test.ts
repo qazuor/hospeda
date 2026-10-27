@@ -1,6 +1,3 @@
-// The mock-actor headers are only honoured when CI is unset (integration-test convention).
-delete process.env.CI;
-
 /**
  * E2E Integration Tests for Sponsorship Purchase and Analytics Tracking
  *
@@ -15,7 +12,12 @@ delete process.env.CI;
  * touched no longer exist as routes: they are pinned as 404 below.
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import {
+    PermissionEnum,
+    RoleEnum,
+    SponsorshipTargetTypeEnum,
+    SponsorshipTierEnum
+} from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../src/app';
 import { clearCache } from '../../src/middlewares/cache';
@@ -99,22 +101,28 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
         });
 
     beforeAll(async () => {
+        process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
         await testDb.setup();
         await testDb.clean();
         clearCache();
         validateApiEnv();
-        process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
         app = initApp();
     });
 
     beforeEach(async () => {
         sponsorId = (await createMockActorUser({ label: 'purchase-sponsor' })).id;
         otherSponsorId = (await createMockActorUser({ label: 'purchase-other' })).id;
-        eventLevel = await seedSponsorshipLevel({ targetType: 'event', tier: 'gold' });
-        postLevel = await seedSponsorshipLevel({ targetType: 'post', tier: 'standard' });
+        eventLevel = await seedSponsorshipLevel({
+            targetType: SponsorshipTargetTypeEnum.EVENT,
+            tier: SponsorshipTierEnum.GOLD
+        });
+        postLevel = await seedSponsorshipLevel({
+            targetType: SponsorshipTargetTypeEnum.POST,
+            tier: SponsorshipTierEnum.STANDARD
+        });
         own = await seedSponsorship({
             sponsorUserId: sponsorId,
-            levelId: eventLevel.id,
+            level: eventLevel,
             analytics: { impressions: 200, clicks: 10, couponsUsed: 3 }
         });
     });
@@ -217,11 +225,7 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
         });
 
         it('should filter sponsorships by target type', async () => {
-            await seedSponsorship({
-                sponsorUserId: sponsorId,
-                levelId: postLevel.id,
-                targetType: 'post'
-            });
+            await seedSponsorship({ sponsorUserId: sponsorId, level: postLevel });
 
             const res = await app.request(`${BASE}?targetType=post`, {
                 headers: sponsorHeaders()
@@ -288,7 +292,7 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
     });
 
     describe('4. Access Control - Analytics Viewing', () => {
-        // HOS-TODO-sponsorship-foreign-403: checkCanView throws FORBIDDEN for a row owned by someone else, so the route answers 403 and confirms the id exists (error-contract.md wants 404).
+        // HOS-1913: checkCanView throws FORBIDDEN for a row owned by someone else, so the route answers 403 and confirms the id exists (error-contract.md wants 404).
         it.fails("should answer 404 to another sponsor's analytics request", async () => {
             const res = await app.request(`${BASE}/${own.id}/analytics`, {
                 headers: headersFor({
@@ -300,7 +304,7 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
             expect(res.status).toBe(404);
         });
 
-        it("currently answers 403 to another sponsor's analytics request (HOS-TODO-sponsorship-foreign-403)", async () => {
+        it("currently answers 403 to another sponsor's analytics request (HOS-1913)", async () => {
             const res = await app.request(`${BASE}/${own.id}/analytics`, {
                 headers: headersFor({
                     actorId: otherSponsorId,
@@ -385,7 +389,7 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
             expect((await res.json()).error.code).toBe('VALIDATION_ERROR');
         });
 
-        // HOS-TODO-sponsorship-end-before-start: neither the create schema nor the service checks that endsAt follows startsAt, so the sponsorship is persisted with an inverted range.
+        // HOS-1914: neither the create schema nor the service checks that endsAt follows startsAt, so the sponsorship is persisted with an inverted range.
         it.fails('should reject an end date before the start date', async () => {
             const res = await post({
                 body: purchase({
@@ -400,7 +404,7 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
             expect(res.status).toBe(400);
         });
 
-        it('currently accepts an end date before the start date (HOS-TODO-sponsorship-end-before-start)', async () => {
+        it('currently accepts an end date before the start date (HOS-1914)', async () => {
             const res = await post({
                 body: purchase({
                     level: eventLevel,
@@ -414,18 +418,7 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
             expect(res.status).toBe(201);
         });
 
-        // HOS-TODO-sponsorship-duplicate-target: nothing stops the same sponsor buying the same target twice; both purchases are persisted as separate rows.
-        it.fails('should reject a duplicate sponsorship for the same event', async () => {
-            const body = purchase({ level: eventLevel });
-
-            const first = await post({ body });
-            const second = await post({ body });
-
-            expect(first.status).toBe(201);
-            expect(second.status).toBe(409);
-        });
-
-        it('currently accepts a duplicate sponsorship for the same event (HOS-TODO-sponsorship-duplicate-target)', async () => {
+        it('currently accepts a duplicate sponsorship for the same event (HOS-1916, pending owner decision)', async () => {
             const body = purchase({ level: eventLevel });
 
             const first = await post({ body });
