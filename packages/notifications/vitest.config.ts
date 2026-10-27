@@ -16,17 +16,17 @@ export default defineConfig({
                 branches: 85,
                 statements: 90
             },
-            include: ['src/**/*.ts'],
+            include: ['src/**/*.{ts,tsx}'],
             exclude: [
-                'node_modules/',
-                'dist/',
-                'test/',
+                '**/node_modules/**',
+                '**/dist/**',
+                '**/test/**',
                 '**/*.d.ts',
                 '**/*.config.*',
                 '**/index.ts',
                 // Pure type/interface declarations — no runtime to cover.
-                'src/types/delivery.types.ts',
-                'src/transports/email/email-transport.interface.ts'
+                '**/src/types/delivery.types.ts',
+                '**/src/transports/email/email-transport.interface.ts'
             ]
         }
     }
