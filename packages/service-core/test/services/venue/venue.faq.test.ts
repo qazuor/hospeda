@@ -298,11 +298,16 @@ describe('updateGastronomyFaq', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should return NOT_FOUND when FAQ belongs to a different listing', async () => {
+    it.each([
+        [
+            'belongs to a different listing',
+            { gastronomyId: '00000000-0000-4000-a000-000000000099' }
+        ],
+        ['is already soft-deleted (HOS-1907)', { deletedAt: new Date() }]
+    ])('should return NOT_FOUND when the FAQ %s', async (_label, faqOverride) => {
         // Arrange
         const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
-        const foreignFaq = { ...makeFaq(), gastronomyId: '00000000-0000-4000-a000-000000000099' };
-        mockFaqModel.findById.mockResolvedValue(foreignFaq);
+        mockFaqModel.findById.mockResolvedValue({ ...makeFaq(), ...faqOverride });
 
         const input: VenueFaqUpdateInput = {
             gastronomyId: GASTRONOMY_ID,
@@ -319,6 +324,7 @@ describe('updateGastronomyFaq', () => {
 
         // Assert
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(mockFaqModel.update).not.toHaveBeenCalled();
     });
 
     it('should update the FAQ and return it on success', async () => {
@@ -372,11 +378,16 @@ describe('removeGastronomyFaq', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should return NOT_FOUND when FAQ belongs to a different listing', async () => {
+    it.each([
+        [
+            'belongs to a different listing',
+            { gastronomyId: '00000000-0000-4000-a000-000000000099' }
+        ],
+        ['is already soft-deleted (HOS-1907)', { deletedAt: new Date() }]
+    ])('should return NOT_FOUND when the FAQ %s', async (_label, faqOverride) => {
         // Arrange
         const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
-        const foreignFaq = { ...makeFaq(), gastronomyId: '00000000-0000-4000-a000-000000000099' };
-        mockFaqModel.findById.mockResolvedValue(foreignFaq);
+        mockFaqModel.findById.mockResolvedValue({ ...makeFaq(), ...faqOverride });
 
         const input: VenueFaqRemoveInput = {
             gastronomyId: GASTRONOMY_ID,
@@ -392,6 +403,7 @@ describe('removeGastronomyFaq', () => {
 
         // Assert
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(mockFaqModel.softDelete).not.toHaveBeenCalled();
     });
 
     it('should soft-delete the FAQ and return success', async () => {

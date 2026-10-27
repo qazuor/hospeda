@@ -95,6 +95,7 @@ describe('AccommodationService.hardDelete', () => {
 
     it('should handle errors from the _afterHardDelete hook', async () => {
         const hookError = new Error('Error in afterHardDelete hook');
+        (model.hardDelete as Mock).mockResolvedValue(1);
         vi.spyOn(
             service as unknown as { _afterHardDelete: () => void },
             '_afterHardDelete'

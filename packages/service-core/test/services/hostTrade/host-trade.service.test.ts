@@ -275,7 +275,7 @@ describe('HostTradeService', () => {
             const existing = makeHostTrade({ deletedAt: new Date() });
             const { service } = buildService({
                 findById: vi.fn().mockResolvedValue(existing),
-                hardDelete: vi.fn().mockResolvedValue(undefined)
+                hardDelete: vi.fn().mockResolvedValue(1)
             });
 
             const result = await service.hardDelete(actorWithHardDelete, HT_ID);

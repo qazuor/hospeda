@@ -1765,7 +1765,7 @@ export class DestinationService extends BaseCrudService<
                 this._canUpdate(actor, destination);
                 const faqModel = new DestinationFaqModel();
                 const faq = await faqModel.findById(validated.faqId, ctx?.tx);
-                if (!faq || faq.destinationId !== validated.destinationId) {
+                if (!faq || faq.destinationId !== validated.destinationId || faq.deletedAt) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'FAQ not found for this destination'
@@ -1815,7 +1815,7 @@ export class DestinationService extends BaseCrudService<
                 this._canUpdate(actor, destination);
                 const faqModel = new DestinationFaqModel();
                 const faq = await faqModel.findById(validated.faqId, ctx?.tx);
-                if (!faq || faq.destinationId !== validated.destinationId) {
+                if (!faq || faq.destinationId !== validated.destinationId || faq.deletedAt) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'FAQ not found for this destination'

@@ -17,7 +17,7 @@
 import type { AccommodationModel } from '@repo/db';
 import { resolveEnvironment } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { createAccommodationWithMockIds } from '../../factories/accommodationFactory';
@@ -129,7 +129,7 @@ describe('AccommodationService.hardDelete — media cleanup (T-065)', () => {
         expect(deleteSpy).not.toHaveBeenCalled();
     });
 
-    it('does NOT call the provider when the DB reports zero deleted rows', async () => {
+    it('answers NOT_FOUND and skips media cleanup when the DB reports zero deleted rows (HOS-1903)', async () => {
         // Arrange
         (model.hardDelete as Mock).mockResolvedValue(0);
         const deleteSpy = vi.spyOn(provider, 'deleteByPrefix');
@@ -137,9 +137,9 @@ describe('AccommodationService.hardDelete — media cleanup (T-065)', () => {
         // Act
         const result = await service.hardDelete(actor, entity.id);
 
-        // Assert — short-circuit: no media cleanup attempted when result.count === 0.
-        expect(result.error).toBeUndefined();
-        expect(result.data?.count).toBe(0);
+        // Assert — no success is claimed and no media cleanup is attempted.
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(result.data).toBeUndefined();
         expect(deleteSpy).not.toHaveBeenCalled();
     });
 

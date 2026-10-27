@@ -215,22 +215,7 @@ describe('PUT /protected/accommodations/:id/faqs/:faqId', () => {
             .where(eq(accommodationFaqs.id, faqId));
     };
 
-    // HOS-1907: updateFaq loads the FAQ with BaseModel.findById, which does not filter
-    // deleted rows (accommodation.service.ts:2916), so a soft-deleted FAQ is edited.
-    it('currently answers 200 and edits a soft-deleted FAQ (HOS-1907)', async () => {
-        const faqId = seeded.faqIds[0] ?? '';
-        await softDeleteFaq(faqId);
-        const res = await putFaq({
-            id: seeded.id,
-            faqId,
-            actorId: seeded.ownerId,
-            body: { answer: updatedAnswer }
-        });
-        expect(res.status).toBe(200);
-    });
-
-    // Drop `.fails` (and the test above) once HOS-1907 is fixed.
-    it.fails('answers 404 for a soft-deleted FAQ (HOS-1907)', async () => {
+    it('answers 404 for a soft-deleted FAQ (HOS-1907)', async () => {
         const faqId = seeded.faqIds[0] ?? '';
         await softDeleteFaq(faqId);
         const res = await putFaq({
