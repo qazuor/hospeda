@@ -48,7 +48,7 @@ const ROUTES = [
     },
     {
         vertical: 'venue',
-        path: '../src/routes/_authed/gastronomies/$id.tsx',
+        path: '../src/routes/_authed/venues/$id.tsx',
         blockStatus: 'publicationStatus={venue?.publicationStatus}',
         fileStatus: null
     },

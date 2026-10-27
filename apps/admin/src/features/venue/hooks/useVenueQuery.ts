@@ -27,7 +27,7 @@ import { createListingEntityHooks } from '@/features/listing';
  */
 export const venueHooks = createListingEntityHooks<VenueAdmin>({
     entityName: 'gastronomies',
-    apiEndpoint: '/api/v1/admin/gastronomies'
+    apiEndpoint: '/api/v1/admin/venues'
 });
 
 // ---------------------------------------------------------------------------

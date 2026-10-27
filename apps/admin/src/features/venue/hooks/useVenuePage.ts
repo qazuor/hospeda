@@ -76,10 +76,10 @@ export const useVenuePage = (entityId: string) => {
     const switchToView = () => setMode('view');
     const switchToEdit = () => setMode('edit');
 
-    const goToList = () => navigate({ to: '/gastronomies' });
-    const goToView = () => navigate({ to: '/gastronomies/$id', params: { id: entityId } });
+    const goToList = () => navigate({ to: '/venues' });
+    const goToView = () => navigate({ to: '/venues/$id', params: { id: entityId } });
     const goToEdit = () =>
-        navigate({ to: '/gastronomies/$id/edit' as never, params: { id: entityId } as never });
+        navigate({ to: '/venues/$id/edit' as never, params: { id: entityId } as never });
 
     const getSections = (): SectionConfig[] =>
         mode === 'view' ? entityConfig.viewSections : entityConfig.editSections;

@@ -16,7 +16,7 @@ import { createVenueConsolidatedConfig, useCreateVenueMutation } from '@/feature
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
-export const Route = createFileRoute('/_authed/gastronomies/new')({
+export const Route = createFileRoute('/_authed/venues/new')({
     component: VenueCreatePage,
     errorComponent: createErrorComponent('Gastronomy'),
     pendingComponent: createPendingComponent()
@@ -51,7 +51,7 @@ function VenueCreatePage() {
         description: t('admin-entities.entities.gastronomy.description'),
         entityName,
         entityNamePlural,
-        basePath: '/gastronomies',
+        basePath: '/venues',
         submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
         savingLabel: t('admin-entities.messages.saving'),
         successToastTitle: t('admin-entities.gastronomy.create.successTitle'),

@@ -6,7 +6,7 @@ import { buildSeoPreviewUrl, SEO_DEFAULT_LOCALE } from '@/components/seo/seo-edi
 import { env } from '@/env';
 import { useUpdateVenueMutation, useVenueQuery } from '@/features/venue';
 
-export const Route = createFileRoute('/_authed/gastronomies/$id_/seo')({
+export const Route = createFileRoute('/_authed/venues/$id_/seo')({
     component: VenueSeoPage
 });
 
@@ -18,7 +18,7 @@ function VenueSeoPage() {
     const previewUrl = buildSeoPreviewUrl({
         siteUrl: env.VITE_SITE_URL,
         locale: SEO_DEFAULT_LOCALE,
-        pathSegment: 'gastronomia',
+        pathSegment: 'comer-y-salir',
         slug: venue?.slug
     });
 
@@ -27,7 +27,7 @@ function VenueSeoPage() {
             <div className="space-y-4">
                 <PageTabs
                     tabs={venueTabs}
-                    basePath={`/gastronomies/${id}`}
+                    basePath={`/venues/${id}`}
                 />
 
                 {isLoading ? (

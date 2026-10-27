@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import * as mod from '../../../../src/routes/_authed/gastronomies/$id_.edit';
+import * as mod from '../../../../src/routes/_authed/venues/$id_.edit';
 
 /**
  * HOS-382 regression test.
@@ -13,7 +13,7 @@ import * as mod from '../../../../src/routes/_authed/gastronomies/$id_.edit';
  * uploaded through those fields reached Cloudinary but never got a DB row —
  * a permanently-billed orphan. Photos are now managed exclusively via the
  * relational Gallery tab (`ListingGalleryManager`,
- * `/gastronomies/:id/gallery`), so this test now guards the opposite: the
+ * `/venues/:id/gallery`), so this test now guards the opposite: the
  * edit page must NEVER forward `fieldHandlers` to `EntityEditContent` again.
  */
 
@@ -81,7 +81,7 @@ vi.mock('@tanstack/react-router', () => ({
         })
 }));
 
-describe('Route /_authed/gastronomies/$id_/edit', () => {
+describe('Route /_authed/venues/$id_/edit', () => {
     it('HOS-382: no longer forwards media.featuredImage / media.gallery field handlers', async () => {
         const Page = (mod.Route as unknown as { options: { component: React.ComponentType } })
             .options.component;

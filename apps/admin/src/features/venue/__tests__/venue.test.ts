@@ -47,14 +47,14 @@ describe('createGastronomyColumns', () => {
         expect(ids).toContain('actions');
     });
 
-    it('name column links to the /gastronomies/$id route', () => {
+    it('name column links to the /venues/$id route', () => {
         const nameCol = columns.find((c) => c.id === 'name');
         expect(nameCol?.linkHandler).toBeDefined();
         const link = nameCol?.linkHandler?.({
             id: 'uuid-gastro-1',
             name: 'Test Restó'
         } as unknown as Parameters<NonNullable<typeof nameCol.linkHandler>>[0]);
-        expect(link?.to).toBe('/gastronomies/$id');
+        expect(link?.to).toBe('/venues/$id');
         expect((link?.params as { id: string })?.id).toBe('uuid-gastro-1');
     });
 
@@ -98,19 +98,19 @@ describe('createGastronomyColumns', () => {
 
 describe('gastronomyListConfig', () => {
     it('points to the correct API endpoint', () => {
-        expect(venueListConfig.apiEndpoint).toBe('/api/v1/admin/gastronomies');
+        expect(venueListConfig.apiEndpoint).toBe('/api/v1/admin/venues');
     });
 
     it('uses the GASTRONOMY entity type', () => {
         expect(venueListConfig.entityType).toBe(EntityType.VENUE);
     });
 
-    it('basePath is /gastronomies (top-level, not under /platform)', () => {
-        expect(venueListConfig.basePath).toBe('/gastronomies');
+    it('basePath is /venues (top-level, not under /platform)', () => {
+        expect(venueListConfig.basePath).toBe('/venues');
     });
 
-    it('createButtonPath leads to /gastronomies/new', () => {
-        expect(venueListConfig.layoutConfig?.createButtonPath).toBe('/gastronomies/new');
+    it('createButtonPath leads to /venues/new', () => {
+        expect(venueListConfig.layoutConfig?.createButtonPath).toBe('/venues/new');
     });
 
     it('always includes the four shared listing filter params', () => {

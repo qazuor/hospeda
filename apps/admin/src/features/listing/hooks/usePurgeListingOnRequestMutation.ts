@@ -23,6 +23,13 @@ export type PurgeListingVertical = 'accommodation' | 'venue' | 'experience';
  */
 export const PURGE_LISTING_PLURAL: Readonly<Record<PurgeListingVertical, string>> = {
     accommodation: 'accommodations',
+    venue: 'venues',
+    experience: 'experiences'
+};
+
+/** Query roots match each entity hook's configured `entityName`. */
+const PURGE_LISTING_ENTITY_NAME: Readonly<Record<PurgeListingVertical, string>> = {
+    accommodation: 'accommodations',
     venue: 'gastronomies',
     experience: 'experiences'
 };
@@ -83,7 +90,7 @@ export function usePurgeListingOnRequestMutation() {
         },
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({
-                queryKey: [PURGE_LISTING_PLURAL[variables.vertical]]
+                queryKey: [PURGE_LISTING_ENTITY_NAME[variables.vertical]]
             });
         }
     });

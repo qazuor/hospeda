@@ -76,7 +76,11 @@ export function useModerateListingMutation() {
         },
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({
-                queryKey: [PURGE_LISTING_PLURAL[variables.vertical]]
+                queryKey: [
+                    variables.vertical === 'venue'
+                        ? 'gastronomies'
+                        : PURGE_LISTING_PLURAL[variables.vertical]
+                ]
             });
         }
     });

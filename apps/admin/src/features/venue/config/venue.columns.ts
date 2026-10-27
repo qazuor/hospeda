@@ -78,7 +78,7 @@ export const createVenueColumns = (t: ColumnTFunction): readonly ColumnConfig<Ve
         linkHandler: (row) =>
             row.id
                 ? {
-                      to: '/gastronomies/$id',
+                      to: '/venues/$id',
                       params: { id: row.id }
                   }
                 : undefined
@@ -177,7 +177,7 @@ export const createVenueColumns = (t: ColumnTFunction): readonly ColumnConfig<Ve
                 createElement(
                     Link,
                     {
-                        to: '/gastronomies/$id/edit' as never,
+                        to: '/venues/$id/edit' as never,
                         params: { id: row.id } as never,
                         className:
                             'inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground',

@@ -9,7 +9,7 @@
  * PATCH, but the `media` JSONB column was dropped (HOS-372) and the update
  * schema silently strips that key — every photo uploaded through this form
  * was orphaned in Cloudinary with no DB row. Photos are now managed via the
- * dedicated Gallery tab (`/gastronomies/:id/gallery`, `ListingGalleryManager`),
+ * dedicated Gallery tab (`/venues/:id/gallery`, `ListingGalleryManager`),
  * reachable from the `PageTabs` bar below, mirroring accommodations.
  */
 
@@ -27,7 +27,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 /** Route configuration for the gastronomy edit page. */
-export const Route = createFileRoute('/_authed/gastronomies/$id_/edit')({
+export const Route = createFileRoute('/_authed/venues/$id_/edit')({
     component: VenueEditPage,
     loader: async ({ params }) => ({ venueId: params.id }),
     errorComponent: createErrorComponent('Gastronomy'),
@@ -50,7 +50,7 @@ function VenueEditPage() {
                 <div className="flex items-center justify-between gap-4">
                     <PageTabs
                         tabs={venueTabs}
-                        basePath={`/gastronomies/${id}`}
+                        basePath={`/venues/${id}`}
                     />
                     <RevalidateEntityButton
                         entityType="gastronomy"
@@ -91,7 +91,7 @@ function VenueEditPage() {
                         >
                             <div className="rounded-lg border bg-card p-6">
                                 <FaqManager
-                                    entityType="gastronomies"
+                                    entityType="venues"
                                     parentId={id}
                                 />
                             </div>

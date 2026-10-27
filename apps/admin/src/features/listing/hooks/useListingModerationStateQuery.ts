@@ -38,7 +38,11 @@ export function useListingModerationStateQuery({
     readonly id: string;
 }) {
     return useQuery({
-        queryKey: [PURGE_LISTING_PLURAL[vertical], id, 'moderation'],
+        queryKey: [
+            vertical === 'venue' ? 'gastronomies' : PURGE_LISTING_PLURAL[vertical],
+            id,
+            'moderation'
+        ],
         queryFn: async () => {
             const response = await fetchApi<{ data?: unknown }>({
                 path: buildListingModerationStatePath({ vertical, id }),

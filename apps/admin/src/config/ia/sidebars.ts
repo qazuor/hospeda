@@ -195,7 +195,7 @@ const catalogoSidebar: SidebarInput = {
                     id: 'gastronomy-list',
                     label: { es: 'Listado', en: 'List', pt: 'Lista' },
                     icon: 'ListIcon',
-                    route: '/gastronomies',
+                    route: '/venues',
                     permissions: ['VENUE_VIEW_ALL']
                 },
                 {
@@ -207,7 +207,7 @@ const catalogoSidebar: SidebarInput = {
                         pt: 'Nova gastronomia'
                     },
                     icon: 'AddIcon',
-                    route: '/gastronomies/new',
+                    route: '/venues/new',
                     permissions: ['VENUE_CREATE']
                 }
             ]
