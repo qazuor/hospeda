@@ -1031,118 +1031,6 @@
         },
         {
             "method": "GET",
-            "path": "/api/v1/admin/gastronomies"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/admin/gastronomies"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/admin/gastronomies/:id"
-        },
-        {
-            "method": "PATCH",
-            "path": "/api/v1/admin/gastronomies/:id"
-        },
-        {
-            "method": "PUT",
-            "path": "/api/v1/admin/gastronomies/:id"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/admin/gastronomies/:id/assign-owner"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/admin/gastronomies/:id/faqs"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/admin/gastronomies/:id/faqs"
-        },
-        {
-            "method": "DELETE",
-            "path": "/api/v1/admin/gastronomies/:id/faqs/:faqId"
-        },
-        {
-            "method": "PUT",
-            "path": "/api/v1/admin/gastronomies/:id/faqs/:faqId"
-        },
-        {
-            "method": "PATCH",
-            "path": "/api/v1/admin/gastronomies/:id/faqs/reorder"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/admin/gastronomies/:id/media"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/admin/gastronomies/:id/media"
-        },
-        {
-            "method": "DELETE",
-            "path": "/api/v1/admin/gastronomies/:id/media/:mediaId"
-        },
-        {
-            "method": "PATCH",
-            "path": "/api/v1/admin/gastronomies/:id/media/:mediaId"
-        },
-        {
-            "method": "PUT",
-            "path": "/api/v1/admin/gastronomies/:id/media/:mediaId/featured"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/admin/gastronomies/:id/media/featured"
-        },
-        {
-            "method": "PATCH",
-            "path": "/api/v1/admin/gastronomies/:id/media/reorder"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/admin/gastronomies/:id/moderate"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/admin/gastronomies/:id/moderation"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/admin/gastronomies/:id/purge"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/admin/gastronomies/batch"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/admin/gastronomies/options"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/admin/gastronomies/reviews"
-        },
-        {
-            "method": "DELETE",
-            "path": "/api/v1/admin/gastronomies/reviews/:id"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/admin/gastronomies/reviews/:id"
-        },
-        {
-            "method": "PUT",
-            "path": "/api/v1/admin/gastronomies/reviews/:id"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/admin/gastronomies/reviews/:id/moderate"
-        },
-        {
-            "method": "GET",
             "path": "/api/v1/admin/geocoding/autocomplete"
         },
         {
@@ -2163,6 +2051,118 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/venues"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/venues"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/venues/:id"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/admin/venues/:id"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/admin/venues/:id"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/venues/:id/assign-owner"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/venues/:id/faqs"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/venues/:id/faqs"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/admin/venues/:id/faqs/:faqId"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/admin/venues/:id/faqs/:faqId"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/admin/venues/:id/faqs/reorder"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/venues/:id/media"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/venues/:id/media"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/admin/venues/:id/media/:mediaId"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/admin/venues/:id/media/:mediaId"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/admin/venues/:id/media/:mediaId/featured"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/venues/:id/media/featured"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/admin/venues/:id/media/reorder"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/venues/:id/moderate"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/venues/:id/moderation"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/venues/:id/purge"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/venues/batch"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/venues/options"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/venues/reviews"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/admin/venues/reviews/:id"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/venues/reviews/:id"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/admin/venues/reviews/:id"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/venues/reviews/:id/moderate"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/vertical-deadlines"
         },
         {
@@ -2822,162 +2822,6 @@
             "path": "/api/v1/protected/features/:id"
         },
         {
-            "method": "POST",
-            "path": "/api/v1/protected/gastronomies"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/protected/gastronomies/:gastronomyId/reviews"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/:id"
-        },
-        {
-            "method": "PATCH",
-            "path": "/api/v1/protected/gastronomies/:id"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/:id/brochure"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/:id/daily-specials"
-        },
-        {
-            "method": "PUT",
-            "path": "/api/v1/protected/gastronomies/:id/daily-specials"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/:id/events"
-        },
-        {
-            "method": "PUT",
-            "path": "/api/v1/protected/gastronomies/:id/events"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/protected/gastronomies/:id/faqs"
-        },
-        {
-            "method": "DELETE",
-            "path": "/api/v1/protected/gastronomies/:id/faqs/:faqId"
-        },
-        {
-            "method": "PUT",
-            "path": "/api/v1/protected/gastronomies/:id/faqs/:faqId"
-        },
-        {
-            "method": "PUT",
-            "path": "/api/v1/protected/gastronomies/:id/faqs/reorder"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/protected/gastronomies/:id/fix-request/report-fixed"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/:id/media"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/protected/gastronomies/:id/media"
-        },
-        {
-            "method": "DELETE",
-            "path": "/api/v1/protected/gastronomies/:id/media/:mediaId"
-        },
-        {
-            "method": "PATCH",
-            "path": "/api/v1/protected/gastronomies/:id/media/:mediaId"
-        },
-        {
-            "method": "PUT",
-            "path": "/api/v1/protected/gastronomies/:id/media/:mediaId/featured"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/protected/gastronomies/:id/media/featured"
-        },
-        {
-            "method": "PATCH",
-            "path": "/api/v1/protected/gastronomies/:id/media/reorder"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/:id/menu"
-        },
-        {
-            "method": "PUT",
-            "path": "/api/v1/protected/gastronomies/:id/menu"
-        },
-        {
-            "method": "DELETE",
-            "path": "/api/v1/protected/gastronomies/:id/menu-file"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/protected/gastronomies/:id/menu-file"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/protected/gastronomies/:id/menu-item-photo"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/:id/menu-qr"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/:id/menu-qr/scans"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/protected/gastronomies/:id/publish"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/protected/gastronomies/:id/purge"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/:id/purge-preview"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/:id/qr"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/:id/qr-sheet"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/protected/gastronomies/:id/reactivate"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/:id/support-edits"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/protected/gastronomies/:id/unpublish"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/mine"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/mine/views"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/protected/gastronomies/mine/views/daily-series"
-        },
-        {
             "method": "GET",
             "path": "/api/v1/protected/geocoding/autocomplete"
         },
@@ -3418,6 +3262,162 @@
             "path": "/api/v1/protected/users/me/whats-new-seen"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/protected/venues"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:gastronomyId/reviews"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/protected/venues/:id"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/brochure"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/daily-specials"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/protected/venues/:id/daily-specials"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/events"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/protected/venues/:id/events"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/faqs"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/protected/venues/:id/faqs/:faqId"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/protected/venues/:id/faqs/:faqId"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/protected/venues/:id/faqs/reorder"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/fix-request/report-fixed"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/media"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/media"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/protected/venues/:id/media/:mediaId"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/protected/venues/:id/media/:mediaId"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/protected/venues/:id/media/:mediaId/featured"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/media/featured"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/protected/venues/:id/media/reorder"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/menu"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/protected/venues/:id/menu"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/protected/venues/:id/menu-file"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/menu-file"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/menu-item-photo"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/menu-qr"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/menu-qr/scans"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/publish"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/purge"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/purge-preview"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/qr"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/qr-sheet"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/reactivate"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/support-edits"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/unpublish"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/mine"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/mine/views"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/mine/views/daily-series"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/protected/views/accommodations/me"
         },
@@ -3743,30 +3743,6 @@
         },
         {
             "method": "GET",
-            "path": "/api/v1/public/gastronomies"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/public/gastronomies/:gastronomyId/faqs"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/public/gastronomies/:gastronomyId/reviews"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/public/gastronomies/:id"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/public/gastronomies/destination/:destinationId"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/public/gastronomies/slug/:slug"
-        },
-        {
-            "method": "GET",
             "path": "/api/v1/public/health/media"
         },
         {
@@ -3916,6 +3892,30 @@
         {
             "method": "GET",
             "path": "/api/v1/public/users/by-slug/:slug"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/venues"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/venues/:gastronomyId/faqs"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/venues/:gastronomyId/reviews"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/venues/:id"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/venues/destination/:destinationId"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/venues/slug/:slug"
         },
         {
             "method": "POST",
