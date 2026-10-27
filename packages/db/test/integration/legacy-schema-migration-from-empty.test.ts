@@ -97,7 +97,7 @@ const DROPPED_COLUMNS: ReadonlyArray<readonly [string, string]> = [
     ['owner_promotions', 'plan_restricted'],
     ['experiences', 'has_active_subscription'],
     ['accommodations', 'is_featured'],
-    ['gastronomies', 'is_featured'],
+    ['venues', 'is_featured'],
     ['experiences', 'is_featured']
 ];
 
@@ -197,8 +197,8 @@ describe('TEST:U1:12 — extras and dual-write branch after migrate + apply-extr
 
         expect(constraints.rows.map((r) => r.conname).sort()).toEqual([
             'chk_experience_media_featured_not_archived',
-            'chk_venue_media_featured_not_archived',
-            'chk_post_media_featured_not_archived'
+            'chk_post_media_featured_not_archived',
+            'chk_venue_media_featured_not_archived'
         ]);
         expect(indexes.rowCount).toBe(4);
     });
@@ -419,7 +419,7 @@ describe('TEST:1820:4 AC:1:6 — physical rename data conversions', () => {
         const conversions =
             migration
                 .split('-- Convert persisted values before the enum labels change.')[1]
-                ?.split(`ALTER TABLE "${OLD_VERTICAL}s"`)[0]
+                ?.split('ALTER TABLE "gastronomies"')[0]
                 ?.split('--> statement-breakpoint') ?? [];
         const client = await getTestPool().connect();
         try {
