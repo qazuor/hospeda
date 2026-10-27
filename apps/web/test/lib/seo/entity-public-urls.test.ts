@@ -121,7 +121,7 @@ describe('buildEntityLocaleUrls', () => {
         ['destination', 'destinos'],
         ['event', 'eventos'],
         ['post', 'publicaciones'],
-        ['gastronomy', 'gastronomia'],
+        ['gastronomy', 'comer-y-salir'],
         ['experience', 'experiencias']
     ] as const)('maps %s to /%s/', (entityType, segment) => {
         const [first] = buildEntityLocaleUrls({ entityType, slug: 's', siteUrl: SITE });
@@ -180,7 +180,7 @@ describe('anti-drift: the sitemap consumes this map', () => {
         'destinos',
         'eventos',
         'publicaciones',
-        'gastronomia',
+        'comer-y-salir',
         'experiencias'
     ])('does not re-inline the /%s/{slug}/ detail path', (segment) => {
         expect(sitemapSrc).not.toContain(`\`/${segment}/\${slug}/\``);

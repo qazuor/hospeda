@@ -13,7 +13,7 @@ const src = readFileSync(
     'utf8'
 );
 
-describe('gastronomia/index.astro', () => {
+describe('comer-y-salir/index.astro', () => {
     describe('locale', () => {
         it('reads locale from Astro.locals.locale, not Astro.params.lang', () => {
             expect(src).toContain('Astro.locals.locale');

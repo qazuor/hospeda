@@ -337,7 +337,7 @@ export const GET: APIRoute = async () => {
         'alojamientos',
         'destinos',
         'eventos',
-        'gastronomia',
+        'comer-y-salir',
         'experiencias',
         'publicaciones'
     ] as const;

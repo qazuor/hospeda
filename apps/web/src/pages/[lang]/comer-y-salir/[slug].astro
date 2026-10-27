@@ -220,7 +220,7 @@ const amenitiesForGrid = showEventsCta
     ? venue.amenities.filter((amenity) => amenity.name !== 'private_events')
     : venue.amenities;
 
-const canonicalPath = buildUrl({ locale, path: `gastronomia/${venue.slug}/` });
+const canonicalPath = buildUrl({ locale, path: `comer-y-salir/${venue.slug}/` });
 
 // Sign-in URL (with return path) for the anonymous review CTA.
 const reviewSignInHref = buildLoginRedirect({ locale, currentUrl: canonicalPath });
@@ -286,7 +286,7 @@ const breadcrumbItems = [
         items={[
             {
                 label: t('gastronomy.listing.title', 'Gastronomía'),
-                path: 'gastronomia/'
+                path: 'comer-y-salir/'
             },
             { label: venue.name }
         ]}
