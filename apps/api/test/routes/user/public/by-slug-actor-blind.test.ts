@@ -7,9 +7,8 @@
  * `/api/v1/public/users` is in **`PRIVATE_CACHE_ENDPOINTS`**, not
  * `PUBLIC_CACHE_ENDPOINTS` (`apps/api/src/middlewares/cache.constants.ts`) — so
  * it never reaches the shared CDN. It IS stored in the API's own in-memory
- * cache, since the route declares `cacheTTL: 300`, under the key
- * `private:${path}${suffix}:anonymous` (`generateCacheKey`,
- * `apps/api/src/middlewares/cache.ts`).
+ * cache under the key `private:${path}${suffix}:anonymous`
+ * (`generateCacheKey`, `apps/api/src/middlewares/cache.ts`).
  *
  * Since HOS-1923 a request carrying credentials (an `Authorization` header or
  * a Better Auth session cookie) bypasses that cache entirely, so only anonymous

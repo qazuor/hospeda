@@ -53,7 +53,6 @@ export const publicGetAttractionDestinationsRoute = createPublicRoute({
         return result.data?.destinations ?? [];
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

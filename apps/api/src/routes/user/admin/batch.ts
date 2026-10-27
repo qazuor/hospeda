@@ -64,7 +64,6 @@ export const adminUserBatchRoute = createAdminRoute({
         return users;
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 50, windowMs: 60000 }
     }
 });

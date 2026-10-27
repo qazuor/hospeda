@@ -80,7 +80,6 @@ export const adminReviewsPendingCountRoute = createAdminRoute({
         return { count, byType: { accommodationReviews, destinationReviews } };
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }
 });

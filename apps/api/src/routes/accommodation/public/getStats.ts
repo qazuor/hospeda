@@ -77,7 +77,6 @@ export const getStatsRoute = createCRUDRoute({
     options: {
         skipAuth: true, // Public endpoint
         skipValidation: true, // Skip header validation for public endpoint
-        cacheTTL: 300, // Cache for 5 minutes
         customRateLimit: { requests: 100, windowMs: 60000 } // 100 requests per minute
     }
 });

@@ -38,7 +38,6 @@ export const publicGetDestinationAncestorsRoute = createPublicRoute({
         return result.data;
     },
     options: {
-        cacheTTL: 600, // Cache ancestors longer (they change rarely)
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

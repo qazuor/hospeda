@@ -46,7 +46,6 @@ export const adminUserStatsRoute = createAdminRoute({
         return result.data;
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }
 });

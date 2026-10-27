@@ -40,7 +40,5 @@ export const publicGetNewsPostsRoute = createPublicListRoute({
             pagination: getPaginationResponse(0, { page, pageSize })
         };
     },
-    options: {
-        cacheTTL: 60
-    }
+    options: {}
 });

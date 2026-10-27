@@ -67,7 +67,6 @@ export const publicGetExperienceFaqsRoute = createPublicRoute({
         return { faqs: filterPublicFaqs(faqs) };
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });

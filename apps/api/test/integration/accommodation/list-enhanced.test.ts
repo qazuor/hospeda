@@ -714,7 +714,7 @@ describe('GET /accommodations (Enhanced List)', () => {
             });
 
             expect(response.status).toBe(200);
-            // Cache headers should be present due to cacheTTL configuration
+            // Cache headers should be present due to the global cache middleware
         });
 
         it('should handle large pageSize values appropriately', async () => {

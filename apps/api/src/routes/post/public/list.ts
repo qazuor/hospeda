@@ -85,7 +85,6 @@ export const publicListPostsRoute = createPublicListRoute({
         };
     },
     options: {
-        cacheTTL: 300, // Cache for 5 minutes
         customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });

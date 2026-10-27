@@ -21,7 +21,6 @@ export const healthRoutes = createSimpleRoute({
     options: {
         skipAuth: true,
         skipValidation: true,
-        cacheTTL: 10,
         customRateLimit: { requests: 1000, windowMs: 60000 }
     }
 });

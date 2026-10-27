@@ -41,5 +41,5 @@ export const adminRecentCommentsRoute = createAdminRoute({
         }
         return { data: result.data ?? [] };
     },
-    options: { cacheTTL: 60, customRateLimit: { requests: 60, windowMs: 60_000 } }
+    options: { customRateLimit: { requests: 60, windowMs: 60_000 } }
 });

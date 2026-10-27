@@ -229,8 +229,7 @@ const rootRoute = createSimpleRoute({
         documentation: '/docs'
     }),
     options: {
-        skipAuth: true,
-        cacheTTL: 300
+        skipAuth: true
     }
 });
 

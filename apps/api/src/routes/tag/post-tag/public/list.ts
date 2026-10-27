@@ -86,7 +86,6 @@ export const publicListPostTagsRoute = createPublicRoute({
         return result.data ?? [];
     },
     options: {
-        cacheTTL: 600, // 10 minutes — matches Cache-Control header
         customRateLimit: { requests: 300, windowMs: 60000 }
     }
 });
