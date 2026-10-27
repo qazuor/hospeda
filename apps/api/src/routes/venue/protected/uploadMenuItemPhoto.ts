@@ -11,7 +11,7 @@
  * Save is an asset that bills with nothing pointing at it (HOS-372). That rule
  * is right, and this route cannot follow it — not because the cost is smaller,
  * but because there is nothing to write TO. The menu-file's target is a column
- * on the listing, which exists. A dish photo's target is a `gastronomy_menu_items`
+ * on the listing, which exists. A dish photo's target is a `venue_menu_items`
  * row whose id is minted afresh on every `PUT .../menu` (the carta is replaced
  * as a whole document), so at upload time the dish may not exist at all and,
  * if it does, its id will not survive the next save.

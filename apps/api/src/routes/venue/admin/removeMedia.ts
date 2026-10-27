@@ -2,7 +2,7 @@
  * DELETE /api/v1/admin/gastronomies/:id/media/:mediaId
  * Remove (soft-delete) a photo from a gastronomy listing gallery — Admin endpoint (HOS-372).
  *
- * Soft-deletes the `gastronomy_media` row identified by `mediaId` and
+ * Soft-deletes the `venue_media` row identified by `mediaId` and
  * resequences the remaining visible rows to a dense 0-based `sortOrder`.
  *
  * Deletes the Cloudinary binary as well (HOS-372): the provider is passed down

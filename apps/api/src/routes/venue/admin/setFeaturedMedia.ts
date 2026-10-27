@@ -2,11 +2,11 @@
  * PUT /api/v1/admin/gastronomies/:id/media/:mediaId/featured
  * Set the featured photo for a gastronomy listing gallery — Admin endpoint (HOS-372).
  *
- * Promotes the target `gastronomy_media` row to `is_featured = true` and
+ * Promotes the target `venue_media` row to `is_featured = true` and
  * demotes the previous featured row (if any) back to `is_featured = false`.
  * Both operations run in a single DB transaction — clear-then-set order is
  * mandatory to avoid transiently violating the partial unique index on
- * (gastronomy_id) WHERE is_featured = true AND deleted_at IS NULL.
+ * (venue_id) WHERE is_featured = true AND deleted_at IS NULL.
  *
  * The target media row MUST be `state = 'visible'` — archived photos are
  * rejected before reaching the DB (CHECK constraint guard).

@@ -18,7 +18,7 @@
  * submission meaning "take it down" — a venue that stopped doing live music
  * needs a way to say so. See
  * `packages/service-core/src/services/venue/venue.events.ts` for why
- * the agenda is written whole where `gastronomy_media` is written per row.
+ * the agenda is written whole where `venue_media` is written per row.
  *
  * @module routes/venue/protected/putEvents
  */

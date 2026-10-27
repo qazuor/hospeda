@@ -5,7 +5,7 @@
  *
  * Deletes the ASSET as well as the columns, which is the point: forgetting the
  * URL and leaving the file in Cloudinary is exactly the orphan HOS-372 built
- * `gastronomy_media` to stop, and `menu_file_public_id` exists so this route
+ * `venue_media` to stop, and `menu_file_public_id` exists so this route
  * has the handle it needs to do it properly.
  *
  * The provider deletion is best-effort and does NOT fail the request. If

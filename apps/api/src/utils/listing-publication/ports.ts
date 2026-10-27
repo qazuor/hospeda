@@ -35,7 +35,7 @@ import { buildTrialStartReader } from './trial-start-reader';
 
 const LISTING_TABLE_BY_VERTICAL: Readonly<Record<PublicationVertical, string>> = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 

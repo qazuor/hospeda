@@ -22,7 +22,7 @@
  * | Entity type   | Counted from                                                     |
  * |---------------|------------------------------------------------------------------|
  * | accommodation | `accommodation_media` rows (`state='visible'`, `is_featured=false`) |
- * | gastronomy    | `gastronomy_media` rows (`state='visible'`, `is_featured=false`)    |
+ * | gastronomy    | `venue_media` rows (`state='visible'`, `is_featured=false`)    |
  * | experience    | `experience_media` rows (`state='visible'`, `is_featured=false`)    |
  * | destination   | JSONB `media.gallery`                                              |
  * | event         | `event_media` rows (`state='visible'`, `is_featured=false`)         |

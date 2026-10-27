@@ -2,7 +2,7 @@
  * DELETE /api/v1/protected/gastronomies/:id/media/:mediaId
  * Remove (soft-delete) a photo from a gastronomy listing gallery (HOS-372).
  *
- * Soft-deletes the `gastronomy_media` row identified by `mediaId` and
+ * Soft-deletes the `venue_media` row identified by `mediaId` and
  * resequences the remaining visible rows to a dense 0-based `sortOrder`.
  * Both operations run in a single transaction inside the service.
  *
