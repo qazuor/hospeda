@@ -1316,7 +1316,7 @@
         "packages/service-core/src/services/post/post.media-read.ts": 3,
         "packages/service-core/src/services/post/post.media.ts": 1,
         "packages/service-core/src/services/qr-code/qr-code.service.ts": 2,
-        "packages/service-core/src/services/userBookmark/userBookmark.enrichment.ts": 12,
+        "packages/service-core/src/services/userBookmark/userBookmark.enrichment.ts": 5,
         "packages/service-core/src/services/venue/index.ts": 2,
         "packages/service-core/src/services/venue/venue-qr.ts": 5,
         "packages/service-core/src/services/venue/venue.daily-specials.ts": 25,
