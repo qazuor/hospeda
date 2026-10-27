@@ -558,12 +558,12 @@ Operative rule (verifiable without judgment):
 
 #### Umbrella integration branches — `epic/**` (DEC-CI-001)
 
-`epic/**` is a first-class branch type: the integration branch of a multi-epic program that must reach `staging` as ONE unit (the first is `epic/HOS-1352-verticales-billing`, DEC-ARCH-007). It is a declared exception to the 6-step flow below — do not "fix" it back:
+`epic/**` is a first-class branch type: the integration branch of a multi-epic program that must reach `staging` as ONE unit (currently `epic/HOS-1352-verticales-billing` and `epic/HOS-1801-renombrado-fisico`, DEC-ARCH-007). It is a declared exception to the 6-step flow below — do not "fix" it back:
 
 1. The umbrella is cut from `staging`. Sub-epic/unit branches are cut from the **umbrella** and PR back into the **umbrella**, never into `staging` or `main`. Review happens on those PRs.
 2. `staging` is merged INTO the umbrella periodically, as an obligation. Never the reverse until the end.
 3. Only the umbrella's own PR goes to `staging`, once, when the program is done.
-4. Enforced, not remembered: `scripts/check-umbrella-branch-target.sh` (Guards job + `pnpm check:guards`) fails any PR to `staging`/`main` whose branch carries umbrella commits the target does not have. The umbrella's own PR is exempt.
+4. Enforced, not remembered: `scripts/check-umbrella-branch-target.sh` (Guards job + `pnpm check:guards`) fails any PR to `staging`/`main` whose branch carries commits from any umbrella in `UMBRELLA_BRANCHES` that the target does not have. Each umbrella's own PR is exempt.
 5. Which workflows run on `epic/**`: `ci.yml` (push + PR), `e2e-pr.yml`, `validate-pr-title.yml`, `validate-docs.yml`, `codeql.yml` (push + PR); `docs.yml` already runs (no branch filter). They do **NOT** run there: `lighthouse.yml` and `a11y-sweep.yml` (they measure deployed pages and an umbrella deploys nothing), `whats-new-gate.yml` (a `main` gate by design), and **`smoke-gate-sync.yml`** — it moves Linear issues on merge, and sub-epic PRs carry `[HOS-NNN]` titles, so running it there would close every unit as done with nothing deployed (the PR #1982/#1983 footgun). Keep it off `epic/**`.
 6. A `push` run of `ci.yml` on the periodic `staging` → umbrella merge measures the whole `staging` delta as new in the two diff-based checks (semgrep baseline and seed dual-write). Re-run it via `workflow_dispatch` with `baseline_ref: staging` instead of chasing that noise.
 

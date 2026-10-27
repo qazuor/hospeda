@@ -11,7 +11,7 @@
  * runs the real script there, asserting exit code and output.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,6 +21,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SCRIPT_PATH = path.resolve(__dirname, '../check-umbrella-branch-target.sh');
 const UMBRELLA = 'epic/HOS-1352-verticales-billing';
+const UMBRELLA_RENAME = 'epic/HOS-1801-renombrado-fisico';
+const WATCHED = [UMBRELLA, UMBRELLA_RENAME];
 
 interface RunResult {
     readonly exitCode: number;
@@ -123,11 +125,15 @@ describe('check-umbrella-branch-target.sh (DEC-ARCH-007)', () => {
     });
 
     /** Umbrella cut from staging, with one commit of its own, pushed. */
-    function createUmbrellaWithWork(): void {
+    function createUmbrellaWithWork({
+        umbrella = UMBRELLA
+    }: {
+        readonly umbrella?: string;
+    } = {}): void {
         const cwd = sandbox.clone;
-        git({ cwd, args: ['checkout', '-q', '-b', UMBRELLA, 'staging'] });
-        commit({ cwd, file: 'umbrella-1.txt' });
-        push({ cwd, branch: UMBRELLA });
+        git({ cwd, args: ['checkout', '-q', '-b', umbrella, 'staging'] });
+        commit({ cwd, file: `${umbrella.replaceAll('/', '-')}-1.txt` });
+        push({ cwd, branch: umbrella });
     }
 
     it('passes when the umbrella does not exist on the remote yet', () => {
@@ -462,6 +468,130 @@ describe('check-umbrella-branch-target.sh (DEC-ARCH-007)', () => {
         // Assert
         expect(result.exitCode).toBe(1);
         expect(result.stdout).toContain('FAIL (DEC-ARCH-007)');
+    });
+
+    it('TEST:1818:1 AC:1:21 fails a branch cut from the HOS-1801 umbrella that targets staging', () => {
+        const cwd = sandbox.clone;
+        createUmbrellaWithWork({ umbrella: UMBRELLA_RENAME });
+        git({ cwd, args: ['checkout', '-q', '-b', 'feat/HOS-1818-rename-unit', UMBRELLA_RENAME] });
+        commit({ cwd, file: 'rename-unit.txt' });
+        push({ cwd, branch: 'feat/HOS-1818-rename-unit' });
+        checkoutPrMerge({ cwd, head: 'feat/HOS-1818-rename-unit', base: 'staging' });
+        const result = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'staging', GITHUB_HEAD_REF: 'feat/HOS-1818-rename-unit' }
+        });
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('FAIL (DEC-ARCH-007)');
+        expect(result.stdout).toContain(UMBRELLA_RENAME);
+    });
+
+    it('TEST:1818:2 AC:1:21 still fails a branch cut from the HOS-1352 umbrella when both umbrellas exist', () => {
+        const cwd = sandbox.clone;
+        createUmbrellaWithWork();
+        createUmbrellaWithWork({ umbrella: UMBRELLA_RENAME });
+        git({ cwd, args: ['checkout', '-q', '-b', 'feat/HOS-1352-unit', UMBRELLA] });
+        commit({ cwd, file: 'hos-1352-unit.txt' });
+        push({ cwd, branch: 'feat/HOS-1352-unit' });
+        checkoutPrMerge({ cwd, head: 'feat/HOS-1352-unit', base: 'staging' });
+        const result = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'staging', GITHUB_HEAD_REF: 'feat/HOS-1352-unit' }
+        });
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain(UMBRELLA);
+    });
+
+    it.each(
+        WATCHED
+    )('TEST:1818:3 AC:1:21 passes the umbrella %s its own PR to staging', (umbrella) => {
+        const cwd = sandbox.clone;
+        createUmbrellaWithWork();
+        createUmbrellaWithWork({ umbrella: UMBRELLA_RENAME });
+        checkoutPrMerge({ cwd, head: umbrella, base: 'staging' });
+        const result = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'staging', GITHUB_HEAD_REF: umbrella }
+        });
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toContain('is the umbrella itself');
+    });
+
+    it('TEST:1818:4 AC:1:21 a umbrella dropped from UMBRELLA_BRANCHES is no longer watched', () => {
+        const cwd = sandbox.clone;
+        createUmbrellaWithWork({ umbrella: UMBRELLA_RENAME });
+        git({ cwd, args: ['checkout', '-q', '-b', 'feat/HOS-1818-rename-unit', UMBRELLA_RENAME] });
+        commit({ cwd, file: 'rename-unit.txt' });
+        push({ cwd, branch: 'feat/HOS-1818-rename-unit' });
+        checkoutPrMerge({ cwd, head: 'feat/HOS-1818-rename-unit', base: 'staging' });
+        const result = runGuard({
+            cwd,
+            env: {
+                GITHUB_BASE_REF: 'staging',
+                GITHUB_HEAD_REF: 'feat/HOS-1818-rename-unit',
+                UMBRELLA_BRANCHES: UMBRELLA
+            }
+        });
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toContain('does not exist');
+    });
+
+    it('TEST:1818:5 AC:1:21 the default list contains both umbrellas', () => {
+        const script = readFileSync(SCRIPT_PATH, 'utf8');
+        const defaultLine = script.split('\n').find((line) => line.includes('DEFAULT_UMBRELLAS'));
+        expect(defaultLine).toContain(UMBRELLA);
+        expect(defaultLine).toContain(UMBRELLA_RENAME);
+    });
+
+    it('TEST:1818:6 AC:1:21 the exemption is per umbrella when its PR carries another umbrella commits', () => {
+        const cwd = sandbox.clone;
+        createUmbrellaWithWork();
+        createUmbrellaWithWork({ umbrella: UMBRELLA_RENAME });
+        git({ cwd, args: ['checkout', '-q', UMBRELLA_RENAME] });
+        git({ cwd, args: ['merge', '-q', '--no-ff', '--no-edit', UMBRELLA] });
+        push({ cwd, branch: UMBRELLA_RENAME });
+        checkoutPrMerge({ cwd, head: UMBRELLA_RENAME, base: 'staging' });
+        const result = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'staging', GITHUB_HEAD_REF: UMBRELLA_RENAME }
+        });
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('FAIL (DEC-ARCH-007)');
+        expect(result.stdout).toContain(UMBRELLA);
+    });
+
+    it('TEST:1818:7 AC:1:21 reports every red umbrella, not just the first', () => {
+        const cwd = sandbox.clone;
+        createUmbrellaWithWork();
+        createUmbrellaWithWork({ umbrella: UMBRELLA_RENAME });
+        git({ cwd, args: ['checkout', '-q', '-b', 'feat/both-umbrellas', UMBRELLA] });
+        git({ cwd, args: ['merge', '-q', '--no-ff', '--no-edit', UMBRELLA_RENAME] });
+        commit({ cwd, file: 'both-umbrellas.txt' });
+        push({ cwd, branch: 'feat/both-umbrellas' });
+        checkoutPrMerge({ cwd, head: 'feat/both-umbrellas', base: 'staging' });
+        const result = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'staging', GITHUB_HEAD_REF: 'feat/both-umbrellas' }
+        });
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain(UMBRELLA);
+        expect(result.stdout).toContain(UMBRELLA_RENAME);
+    });
+
+    it('TEST:1818:8 AC:1:21 a missing umbrella does not hide the other one', () => {
+        const cwd = sandbox.clone;
+        createUmbrellaWithWork({ umbrella: UMBRELLA_RENAME });
+        git({ cwd, args: ['checkout', '-q', '-b', 'feat/only-rename', UMBRELLA_RENAME] });
+        commit({ cwd, file: 'only-rename.txt' });
+        push({ cwd, branch: 'feat/only-rename' });
+        checkoutPrMerge({ cwd, head: 'feat/only-rename', base: 'staging' });
+        const result = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'staging', GITHUB_HEAD_REF: 'feat/only-rename' }
+        });
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('does not exist');
+        expect(result.stdout).toContain(UMBRELLA_RENAME);
     });
 
     it('skips when there is no protected target (push or local run)', () => {
