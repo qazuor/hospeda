@@ -157,24 +157,12 @@ describe('POST /protected/accommodations (create)', () => {
         expect(await countAccommodations()).toBe(before);
     });
 
-    // HOS-1909: AccommodationCreateHttpSchema accepts `ownerId` in the body and the
-    // service stores it, so a signed-in actor can create a listing owned by someone else.
-    it('currently stores a foreign ownerId from the body (HOS-1909)', async () => {
+    // HOS-1909: the body `ownerId` is ignored; the owner is always the actor.
+    it('never creates an accommodation owned by someone other than the actor (HOS-1909)', async () => {
         const victim = await createMockActorUser({ label: 'acc-create-victim' });
         const res = await post({ body: { ...validBody(), ownerId: victim.id } });
         expect(res.status).toBe(201);
-        const body = await res.json();
-        const [row] = await getDb()
-            .select()
-            .from(accommodations)
-            .where(eq(accommodations.id, body.data.id));
-        expect(row?.ownerId).toBe(victim.id);
-    });
-
-    // Drop `.fails` (and the test above) once HOS-1909 is fixed.
-    it.fails('never creates an accommodation owned by someone other than the actor (HOS-1909)', async () => {
-        const victim = await createMockActorUser({ label: 'acc-create-victim' });
-        await post({ body: { ...validBody(), ownerId: victim.id } });
+        expect((await res.json()).data.ownerId).toBe(host.ownerId);
         const owned = await getDb()
             .select({ id: accommodations.id })
             .from(accommodations)
