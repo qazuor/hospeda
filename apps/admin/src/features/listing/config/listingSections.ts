@@ -56,10 +56,10 @@ import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/
 function permissionsForVertical(vertical: VenueOrExperience) {
     return vertical === 'venue'
         ? {
-              view: PermissionEnum.GASTRONOMY_VIEW_ALL,
-              editAll: PermissionEnum.GASTRONOMY_EDIT_ALL,
-              editOwn: PermissionEnum.GASTRONOMY_EDIT_OWN,
-              moderateReview: PermissionEnum.GASTRONOMY_MODERATE_REVIEW
+              view: PermissionEnum.VENUE_VIEW_ALL,
+              editAll: PermissionEnum.VENUE_EDIT_ALL,
+              editOwn: PermissionEnum.VENUE_EDIT_OWN,
+              moderateReview: PermissionEnum.VENUE_MODERATE_REVIEW
           }
         : {
               view: PermissionEnum.EXPERIENCE_VIEW_ALL,

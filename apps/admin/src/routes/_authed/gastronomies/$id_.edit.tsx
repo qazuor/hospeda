@@ -45,7 +45,7 @@ function VenueEditPage() {
     const entityData = useVenuePage(id);
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.GASTRONOMY_EDIT_ALL]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.VENUE_EDIT_ALL]}>
             <div className="space-y-4">
                 <div className="flex items-center justify-between gap-4">
                     <PageTabs

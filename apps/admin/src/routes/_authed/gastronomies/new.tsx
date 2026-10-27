@@ -61,7 +61,7 @@ function VenueCreatePage() {
     };
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.GASTRONOMY_CREATE]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.VENUE_CREATE]}>
             <EntityCreatePageBase
                 config={createConfig}
                 zodSchema={VenueAdminCreateInputSchema}
