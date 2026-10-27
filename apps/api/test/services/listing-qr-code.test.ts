@@ -78,7 +78,7 @@ describe('the destination a listing code is minted with', () => {
             buildListingQrTargetUrl({ vertical: 'accommodation', slug: SLUG, siteUrl: SITE })
         ).toBe(`${SITE}/es/alojamientos/${SLUG}/`);
         expect(buildListingQrTargetUrl({ vertical: 'venue', slug: SLUG, siteUrl: SITE })).toBe(
-            `${SITE}/es/gastronomia/${SLUG}/`
+            `${SITE}/es/comer-y-salir/${SLUG}/`
         );
         expect(buildListingQrTargetUrl({ vertical: 'experience', slug: SLUG, siteUrl: SITE })).toBe(
             `${SITE}/es/experiencias/${SLUG}/`
