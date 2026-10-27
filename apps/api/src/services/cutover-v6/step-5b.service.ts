@@ -42,7 +42,7 @@ export interface RunStep5bInput {
 }
 
 /**
- * Removes remote photos (gallery photos, plus gastronomy menu files and dish photos), and closes Google grants recorded by migration 0148.
+ * Removes remote photos (gallery photos, plus venue menu files and dish photos), and closes Google grants recorded by migration 0148.
  * The passage table is deliberately outside the Drizzle schema because the
  * cutover SQL owns its lifecycle and drops it after successful completion.
  *

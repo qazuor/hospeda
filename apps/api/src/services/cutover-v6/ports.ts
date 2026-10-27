@@ -27,7 +27,7 @@ export const passagePhotoSchema = z
 /** One deleted listing row read from the external cutover passage table. */
 export const passageRowSchema = z
     .object({
-        entityType: z.enum(['accommodation', 'gastronomy', 'experience']),
+        entityType: z.enum(['accommodation', 'venue', 'experience']),
         entityId: z.string().uuid(),
         slug: z.string().nullable(),
         photos: z.array(passagePhotoSchema),

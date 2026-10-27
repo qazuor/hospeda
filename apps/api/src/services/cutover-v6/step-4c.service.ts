@@ -2,6 +2,7 @@ import type { DrizzleClient } from '@repo/db';
 import { sql } from '@repo/db';
 import type { EntityChangeData } from '@repo/service-core';
 import { getAffectedCacheTags } from '@repo/service-core';
+import { z } from 'zod';
 import { PASSAGE_TABLE } from './passage-table.js';
 
 /** External page-cache and edge purge port. */
@@ -58,10 +59,14 @@ export async function runStep4c({ db, pagePurger, dryRun }: RunStep4cInput): Pro
         FROM ${sql.raw(PASSAGE_TABLE)}
         ORDER BY entity_type, entity_id
     `);
-    const listings = rowsOf<{
-        entityType: 'accommodation' | 'venue' | 'experience';
-        entityId: string;
-    }>(passageResult);
+    const listings = z
+        .array(
+            z.object({
+                entityType: z.enum(['accommodation', 'venue', 'experience']),
+                entityId: z.string().uuid()
+            })
+        )
+        .parse(rowsOf(passageResult));
     const destinationResult = await db.execute(sql`
         SELECT id::text AS id, slug
         FROM destinations
