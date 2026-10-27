@@ -41,6 +41,12 @@ export interface RouteOptions {
 }
 
 /**
+ * HTTP methods a route factory can declare. Every per-route middleware is
+ * registered for exactly this method (HOS-1908).
+ */
+export type RouteHttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch';
+
+/**
  * Interface for creating simple routes (like health checks, version info)
  */
 export interface SimpleRouteInterface {
@@ -65,7 +71,7 @@ export interface SimpleRouteInterface {
  * Now with improved type safety and customization options
  */
 export interface CreateOpenApiRouteInterface {
-    method: 'get' | 'post' | 'put' | 'delete' | 'patch';
+    method: RouteHttpMethod;
     path: string;
     summary: string;
     description: string;
@@ -268,21 +274,42 @@ const openApiPathToHonoPath = (openApiPath: string): string =>
  * 429 after three completely unrelated requests.
  *
  * Passing `routePath` (the OpenAPI path string from the route definition,
- * e.g. `/`, `/{id}`, `/me/stats`) to `app.use()` after converting it to
- * Hono syntax (`/:id`, `/me/stats`) scopes the middleware to just that
- * path within the sub-app, breaking the leak.
+ * e.g. `/`, `/{id}`, `/me/stats`) after converting it to Hono syntax
+ * (`/:id`, `/me/stats`) scopes the middleware to just that path within the
+ * sub-app, breaking the leak.
+ *
+ * **Method-scoping is mandatory too (HOS-1908).** A path filter alone is not
+ * enough: `GET /{id}`, `PUT /{id}`, `PATCH /{id}` and `DELETE /{id}` are four
+ * sibling sub-apps sharing ONE path, and `app.use(path, mw)` registers for
+ * every method. Mounted together, a `PATCH /{id}` request ran the GET
+ * route's VIEW gate and the PUT route's UPDATE gate before its own — so an
+ * actor holding exactly the permission the operation declares got a 403.
+ * Each middleware is therefore registered with `app.on(method, path, mw)`
+ * for the route's OWN method, so a route's declaration is the complete and
+ * only set of gates it runs. (Hono serves `HEAD` through the `GET` handlers,
+ * so a GET route's gates still run for `HEAD`.)
  */
-const applyRouteMiddlewares = (
-    app: ReturnType<typeof createRouter>,
-    options: RouteOptions | undefined,
-    routePath: string,
-    requestBodyRequired?: boolean
-) => {
+const applyRouteMiddlewares = ({
+    app,
+    method,
+    options,
+    routePath,
+    requestBodyRequired
+}: {
+    readonly app: ReturnType<typeof createRouter>;
+    /** The route's own HTTP method; every middleware is scoped to it. */
+    readonly method: RouteHttpMethod;
+    readonly options: RouteOptions | undefined;
+    readonly routePath: string;
+    readonly requestBodyRequired?: boolean;
+}): void => {
     const honoPath = openApiPathToHonoPath(routePath);
+    const honoMethod = method.toUpperCase();
 
     // Apply per-route rate limiting BEFORE other middlewares
     if (options?.customRateLimit) {
-        app.use(
+        app.on(
+            honoMethod,
             honoPath,
             createPerRouteRateLimitMiddleware({
                 requests: options.customRateLimit.requests,
@@ -293,7 +320,7 @@ const applyRouteMiddlewares = (
 
     if (options?.middlewares) {
         for (const middleware of options.middlewares) {
-            app.use(honoPath, middleware);
+            app.on(honoMethod, honoPath, middleware);
         }
     }
 
@@ -302,7 +329,7 @@ const applyRouteMiddlewares = (
     // behave exactly as it did before this option existed, so no middleware is
     // added at all.
     if (requestBodyRequired === false) {
-        app.use(honoPath, async (c: Context, next: () => Promise<void>) => {
+        app.on(honoMethod, honoPath, async (c: Context, next: () => Promise<void>) => {
             const rawBody = await c.req.raw.clone().text();
             if (rawBody.length === 0) {
                 // TYPE-WORKAROUND: the validator reads this request method before the optional-body handler can run.
@@ -319,7 +346,7 @@ const applyRouteMiddlewares = (
 
     // Add route-specific options as context for middlewares to use
     if (options) {
-        app.use(honoPath, async (c: Context, next: () => Promise<void>) => {
+        app.on(honoMethod, honoPath, async (c: Context, next: () => Promise<void>) => {
             // Store route options as a non-standard property on the context object.
             // Route validators and guards read this to determine per-route behavior
             // (e.g. skipValidation). There is no ContextVariableMap entry for this
@@ -370,7 +397,12 @@ export const createSimpleRoute = (options: SimpleRouteInterface) => {
     const app = createRouter();
 
     // Apply route-specific middlewares
-    applyRouteMiddlewares(app, options.options, options.path);
+    applyRouteMiddlewares({
+        app,
+        method: options.method,
+        options: options.options,
+        routePath: options.path
+    });
 
     const route = createRoute({
         method: options.method,
@@ -406,7 +438,13 @@ export const createCRUDRoute = (options: CreateOpenApiRouteInterface) => {
     const app = createRouter();
 
     // Apply route-specific middlewares
-    applyRouteMiddlewares(app, options.options, options.path, options.requestBodyRequired);
+    applyRouteMiddlewares({
+        app,
+        method: options.method,
+        options: options.options,
+        routePath: options.path,
+        requestBodyRequired: options.requestBodyRequired
+    });
 
     const route = createRoute({
         method: options.method,
@@ -529,7 +567,12 @@ export const createListRoute = (
     const app = createRouter();
 
     // Apply route-specific middlewares
-    applyRouteMiddlewares(app, options.options, options.path);
+    applyRouteMiddlewares({
+        app,
+        method: options.method,
+        options: options.options,
+        routePath: options.path
+    });
 
     // Auto-merge pagination with custom query params
     const finalQuery = {
