@@ -22,8 +22,10 @@ export const DestinationSearchHttpSchema = BaseHttpSearchSchema.extend({
     // Basic filters with HTTP coercion
     isFeatured: createBooleanQueryParam('Filter featured destinations'),
 
-    // Location filters with HTTP coercion
-    country: z.string().length(2).optional(),
+    // Location filters with HTTP coercion.
+    // No `country` filter on purpose (HOS-1921): stored `location.country` is a name
+    // ("Argentina") while the old param demanded ISO-2, so no value could ever match.
+    // Re-add only together with a consumer AND an agreed representation.
     state: z.string().min(1).max(100).optional(),
     city: z.string().min(1).max(100).optional(),
 
@@ -129,7 +131,6 @@ export const httpToDomainDestinationSearch = (
 
     // Destination-specific filters that exist in both HTTP and domain schemas
     isFeatured: httpParams.isFeatured,
-    country: httpParams.country,
     state: httpParams.state,
     city: httpParams.city,
     latitude: httpParams.latitude,

@@ -174,21 +174,13 @@ describe('GET /destinations (Enhanced List)', () => {
             expect(data.data.pagination.total).toBe(0);
         });
 
-        it('filters by country (HOS-1899)', async () => {
+        it('rejects the removed country filter (HOS-1921)', async () => {
+            // `country` was dropped: it demanded ISO-2 but stored values are names.
+            // The list route rejects unknown query params, so it is a 400, not a silent no-op.
             const response = await app.request(`${baseUrl}?country=AR`, {
                 headers: { 'user-agent': 'vitest', Accept: 'application/json' }
             });
-            expect(response.status).toBe(200);
-            const data = await response.json();
-            expect(DestinationListResponseSchema.safeParse(data).success).toBe(true);
-            expect(data.data.items).toHaveLength(3);
-            expect(data.data.pagination.total).toBe(3);
-
-            const other = await app.request(`${baseUrl}?country=ZZ`, {
-                headers: { 'user-agent': 'vitest', Accept: 'application/json' }
-            });
-            expect(other.status).toBe(200);
-            expect((await other.json()).data.items).toHaveLength(0);
+            expect(response.status).toBe(400);
         });
 
         it('supports the isFeatured filter and sort params', async () => {
