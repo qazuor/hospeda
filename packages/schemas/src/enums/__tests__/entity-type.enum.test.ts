@@ -63,11 +63,11 @@ describe('EntityTypeEnum', () => {
             expect(EntityTypeEnum.EXPERIENCE).toBe('EXPERIENCE');
         });
 
-        it('TEST:1813:7 AC:1:15 should include VENUE with the persisted GASTRONOMY value', () => {
+        it('TEST:1819:3 AC:1:3 should include VENUE with the persisted GASTRONOMY value', () => {
             expect(EntityTypeEnum.VENUE).toBe('GASTRONOMY');
         });
 
-        it('TEST:1813:7 AC:1:15 exposes the complete renamed key set', () => {
+        it('TEST:1819:3 AC:1:3 exposes the complete renamed key set', () => {
             expect(Object.keys(EntityTypeEnum)).toEqual([
                 'ACCOMMODATION',
                 'DESTINATION',

@@ -19,7 +19,7 @@ import {
 } from '../../src/catalog/vertical-activation-event.js';
 import { VerticalEnum } from '../../src/enums/vertical.enum.js';
 
-describe('TEST:V1:2 — every catalog key declares its four attributes', () => {
+describe('TEST:1819:3 AC:1:3 — TEST:V1:2 — every catalog key declares its four attributes', () => {
     it('declares scope, aggregation, enforcement and class from the closed lists', () => {
         for (const definition of CATALOG_KEY_DEFINITIONS) {
             expect(KEY_SCOPES).toContain(definition.scope);
@@ -116,7 +116,7 @@ describe('vertical activation events (DEC-TRIAL-006)', () => {
     it('maps the listing verticals to listing_published, tourist to the Empezar button, partner to none', () => {
         expect(VERTICAL_ACTIVATION_EVENT_BY_VERTICAL).toEqual({
             accommodation: 'listing_published',
-            gastronomy: 'listing_published',
+            venue: 'listing_published',
             experience: 'listing_published',
             tourist: 'start_button_pressed',
             partner: null
@@ -148,8 +148,8 @@ const EXPECTED_METERED_KEYS = [
     'max_ai_accommodation_import_per_month',
     'max_ai_chat_consumer_per_month',
     'max_ai_chat_experience_per_month',
-    'max_ai_chat_gastronomy_per_month',
     'max_ai_chat_per_month',
+    'max_ai_chat_venue_per_month',
     'max_ai_search_per_month',
     'max_ai_support_per_month',
     'max_ai_text_improve_per_month',

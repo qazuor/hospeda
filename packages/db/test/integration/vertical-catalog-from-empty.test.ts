@@ -26,7 +26,7 @@ async function rejectedBy(sqlText: string): Promise<{ code?: string; constraint?
     }
 }
 
-describe('TEST:V1:1 — vertical table after db:migrate from empty', () => {
+describe('TEST:1819:1 AC:1:3 — TEST:V1:1 — vertical table after db:migrate from empty', () => {
     it('has one row per VerticalEnum value, with the activation event of DEC-TRIAL-006', async () => {
         const { rows } = await getTestPool().query<{ id: string; activation_event: string | null }>(
             'SELECT id, activation_event FROM vertical ORDER BY id'
@@ -46,7 +46,7 @@ describe('TEST:V1:1 — vertical table after db:migrate from empty', () => {
 
         expect(byId).toEqual({
             accommodation: 'listing_published',
-            gastronomy: 'listing_published',
+            venue: 'listing_published',
             experience: 'listing_published',
             tourist: 'start_button_pressed',
             partner: null
