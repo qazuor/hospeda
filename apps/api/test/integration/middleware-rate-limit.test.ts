@@ -8,18 +8,23 @@
  * ceiling, so the 429 path through the whole stack is exercised for real.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.hoisted(() => {
     process.env.HOSPEDA_TESTING_RATE_LIMIT = 'true';
     process.env.API_RATE_LIMIT_PUBLIC_MAX_REQUESTS = '5';
     process.env.API_RATE_LIMIT_PUBLIC_WINDOW_MS = '60000';
+    // Low on purpose: if the tiers ever shared one bucket, the public burst below
+    // (LIMIT + 1 requests) would exhaust this ceiling and the admin request would 429.
+    process.env.API_RATE_LIMIT_ADMIN_MAX_REQUESTS = '3';
+    process.env.API_RATE_LIMIT_ADMIN_WINDOW_MS = '60000';
 });
 
 import { initApp } from '../../src/app';
 import { clearCache } from '../../src/middlewares/cache';
 import { getMetrics, resetMetrics } from '../../src/middlewares/metrics';
 import { clearRateLimitStore } from '../../src/middlewares/rate-limit';
+import { validateApiEnv } from '../../src/utils/env';
 
 const LIMIT = 5;
 /** A public-tier path no route owns: answers 404 until the limiter steps in. */
@@ -31,6 +36,12 @@ const headersFor = (userAgent: string): Record<string, string> => ({
 });
 
 describe('Rate Limiting Cross-Middleware Integration', () => {
+    beforeAll(() => {
+        // The vars above were set before any import; re-reading and validating the env
+        // here makes the dependency explicit instead of leaning on import timing.
+        validateApiEnv();
+    });
+
     beforeEach(async () => {
         await clearRateLimitStore();
         clearCache();
@@ -84,6 +95,19 @@ describe('Rate Limiting Cross-Middleware Integration', () => {
         });
 
         expect(admin.status).toBe(401);
+    });
+
+    it('should enforce the admin ceiling on its own bucket', async () => {
+        const app = initApp();
+        const statuses: number[] = [];
+        for (let i = 0; i < 4; i++) {
+            const res = await app.request('/api/v1/admin/accommodations', {
+                headers: headersFor(`rate-limit-admin-${i}`)
+            });
+            statuses.push(res.status);
+        }
+
+        expect(statuses).toEqual([401, 401, 401, 429]);
     });
 
     it('should count in the metrics exactly the requests the limiter let through', async () => {
