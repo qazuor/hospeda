@@ -3,8 +3,8 @@
  * `billing.plan.<slug>.{name,description}` and falls back SILENTLY to the
  * catalog's own `name`/`description` when the key is missing
  * (`apps/web/src/lib/billing/plan-name.ts`, `apps/web/src/lib/billing-i18n.ts`).
- * A slug renamed in the catalog but not in the locale (HOS-1819: `gastronomy-pro`
- * → `venue-pro`) therefore raises no error anywhere: `check:i18n-keys` only sees
+ * A slug renamed in the catalog but not in the locale (HOS-1819 renamed the three
+ * venue plan slugs) therefore raises no error anywhere: `check:i18n-keys` only sees
  * static keys, and the page renders the catalog title instead of the copy.
  *
  * This guard pins the two sets together: every sold plan (no role) has copy in
