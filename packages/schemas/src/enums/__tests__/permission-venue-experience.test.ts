@@ -38,15 +38,15 @@ describe('HOS-1077 per-vertical permissions', () => {
     const VERTICALS = [
         {
             name: 'gastronomy',
-            category: PermissionCategoryEnum.GASTRONOMY,
+            category: PermissionCategoryEnum.VENUE,
             permissions: {
-                editOwn: PermissionEnum.GASTRONOMY_EDIT_OWN,
-                create: PermissionEnum.GASTRONOMY_CREATE,
-                viewAll: PermissionEnum.GASTRONOMY_VIEW_ALL,
-                editAll: PermissionEnum.GASTRONOMY_EDIT_ALL,
-                delete: PermissionEnum.GASTRONOMY_DELETE,
-                moderateReview: PermissionEnum.GASTRONOMY_MODERATE_REVIEW,
-                moderationChange: PermissionEnum.GASTRONOMY_MODERATION_CHANGE
+                editOwn: PermissionEnum.VENUE_EDIT_OWN,
+                create: PermissionEnum.VENUE_CREATE,
+                viewAll: PermissionEnum.VENUE_VIEW_ALL,
+                editAll: PermissionEnum.VENUE_EDIT_ALL,
+                delete: PermissionEnum.VENUE_DELETE,
+                moderateReview: PermissionEnum.VENUE_MODERATE_REVIEW,
+                moderationChange: PermissionEnum.VENUE_MODERATION_CHANGE
             }
         },
         {

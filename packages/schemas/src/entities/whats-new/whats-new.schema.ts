@@ -44,7 +44,7 @@ export type WhatsNewEntryI18n = z.infer<typeof WhatsNewEntryI18nSchema>;
  * - **Included** — every role that identifies a real person who can hold an
  *   authenticated session and might reasonably be the intended reader of a
  *   curated announcement: `SUPER_ADMIN`, `ADMIN`, `EDITOR`, `HOST`,
- *   `GASTRONOMY_OWNER`, `EXPERIENCE_OWNER`, `SPONSOR`, `USER`.
+ *   `VENUE_OWNER`, `EXPERIENCE_OWNER`, `SPONSOR`, `USER`.
  * - **`GUEST` excluded** — this is the not-logged-in placeholder role used by
  *   the public website. A guest never reaches `/api/v1/protected/whats-new`
  *   (it requires an authenticated session), so a guest-targeted entry could

@@ -25,8 +25,8 @@ describe('RoleEnum', () => {
         });
 
         // HOS-1077: the per-vertical owner roles.
-        it('should define GASTRONOMY_OWNER and EXPERIENCE_OWNER', () => {
-            expect(RoleEnum.GASTRONOMY_OWNER).toBe('VENUE_OWNER');
+        it('should define VENUE_OWNER and EXPERIENCE_OWNER', () => {
+            expect(RoleEnum.VENUE_OWNER).toBe('VENUE_OWNER');
             expect(RoleEnum.EXPERIENCE_OWNER).toBe('EXPERIENCE_OWNER');
             expect(RoleEnum.PARTNER_OWNER).toBe('PARTNER_OWNER');
         });
@@ -35,7 +35,7 @@ describe('RoleEnum', () => {
             // The whole product point: "owns a restaurant" and "owns an
             // excursion" have to be expressible apart. If any two of these
             // collapse, the split bought nothing.
-            const owners = [RoleEnum.GASTRONOMY_OWNER, RoleEnum.EXPERIENCE_OWNER, RoleEnum.HOST];
+            const owners = [RoleEnum.VENUE_OWNER, RoleEnum.EXPERIENCE_OWNER, RoleEnum.HOST];
             expect(new Set(owners).size).toBe(3);
         });
 

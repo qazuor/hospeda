@@ -226,7 +226,7 @@ export type VenueOwnerUpdateInput = z.infer<typeof VenueOwnerUpdateInputSchema>;
 // ============================================================================
 
 /**
- * Schema for a `GASTRONOMY_OWNER` self-service listing create
+ * Schema for a `VENUE_OWNER` self-service listing create
  * (`POST /api/v1/protected/gastronomies/`, HOS-166 §7.2).
  *
  * Unlike {@link VenueAdminCreateInputSchema} (which trusts the caller for

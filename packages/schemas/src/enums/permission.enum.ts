@@ -61,7 +61,7 @@ export enum PermissionCategoryEnum {
     MEDIA = 'MEDIA',
     MODERATION = 'MODERATION',
     /** Gastronomy listings (HOS-1077). */
-    GASTRONOMY = 'VENUE',
+    VENUE = 'VENUE',
     /** Experience listings (HOS-1077). */
     EXPERIENCE = 'EXPERIENCE',
     HOST_TRADE = 'HOST_TRADE',
@@ -961,13 +961,13 @@ export enum PermissionEnum {
     // add a dual-spelled family to the baseline frozen by
     // `permission-naming-convention.guard.test.ts`.
     //
-    GASTRONOMY_EDIT_OWN = 'venue.editOwn', // Allows a GASTRONOMY_OWNER to edit their own gastronomy listing.
-    GASTRONOMY_CREATE = 'venue.create', // Allows creating a new gastronomy listing.
-    GASTRONOMY_VIEW_ALL = 'venue.viewAll', // Allows viewing all gastronomy listings (including private/draft).
-    GASTRONOMY_EDIT_ALL = 'venue.editAll', // Allows editing any gastronomy listing regardless of ownership.
-    GASTRONOMY_DELETE = 'venue.delete', // Allows soft-deleting any gastronomy listing.
-    GASTRONOMY_MODERATE_REVIEW = 'venue.moderateReview', // Allows moderating reviews written ABOUT a gastronomy listing.
-    GASTRONOMY_MODERATION_CHANGE = 'venue.moderationChange', // Allows changing the moderation state of a gastronomy LISTING.
+    VENUE_EDIT_OWN = 'venue.editOwn', // Allows a VENUE_OWNER to edit their own gastronomy listing.
+    VENUE_CREATE = 'venue.create', // Allows creating a new gastronomy listing.
+    VENUE_VIEW_ALL = 'venue.viewAll', // Allows viewing all gastronomy listings (including private/draft).
+    VENUE_EDIT_ALL = 'venue.editAll', // Allows editing any gastronomy listing regardless of ownership.
+    VENUE_DELETE = 'venue.delete', // Allows soft-deleting any gastronomy listing.
+    VENUE_MODERATE_REVIEW = 'venue.moderateReview', // Allows moderating reviews written ABOUT a gastronomy listing.
+    VENUE_MODERATION_CHANGE = 'venue.moderationChange', // Allows changing the moderation state of a gastronomy LISTING.
 
     EXPERIENCE_EDIT_OWN = 'experience.editOwn', // Allows an EXPERIENCE_OWNER to edit their own experience listing.
     EXPERIENCE_CREATE = 'experience.create', // Allows creating a new experience listing.

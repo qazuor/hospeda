@@ -289,7 +289,7 @@ describe('WhatsNewEntrySchema', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should accept GASTRONOMY_OWNER and EXPERIENCE_OWNER together', () => {
+        it('should accept VENUE_OWNER and EXPERIENCE_OWNER together', () => {
             // Arrange
             const input = { ...VALID_ENTRY, roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'] };
 
