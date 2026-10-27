@@ -238,9 +238,19 @@ export class DestinationReviewService extends BaseCrudService<
     protected async _executeSearch(
         params: DestinationReviewSearchInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<DestinationReview>> {
-        const { page, pageSize, sortBy: _sortBy, sortOrder: _sortOrder, ...filters } = params;
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params and
+        // republishes them on ctx.pagination (SPEC-088); read them from ctx (HOS-1900).
+        const page = ctx.pagination?.page;
+        const pageSize = ctx.pagination?.pageSize;
+        const {
+            page: _page,
+            pageSize: _pageSize,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            ...filters
+        } = params;
         // Force-override lifecycleState=ACTIVE and moderationState=APPROVED:
         // defense-in-depth for public paths (GAP-003 / SPEC-063-gaps T-004,
         // SPEC-166 T-023). PENDING/REJECTED reviews must never surface on public

@@ -185,4 +185,16 @@ describe('PostSponsorshipService.search', () => {
         expect(result.error?.code).toBe('UNAUTHORIZED');
         expect(result.data).toBeUndefined();
     });
+
+    it('forwards page and pageSize from ctx.pagination to the model (HOS-1900)', async () => {
+        // Arrange
+        modelMock.findAll.mockResolvedValue({ items: [], total: 0, page: 2, pageSize: 5 });
+
+        // Act
+        await service.search(actor, { ...validInput, page: 2, pageSize: 5 });
+
+        // Assert
+        const pagination = modelMock.findAll.mock.calls[0]?.[1];
+        expect(pagination).toMatchObject({ page: 2, pageSize: 5 });
+    });
 });
