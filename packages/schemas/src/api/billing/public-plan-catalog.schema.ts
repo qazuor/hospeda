@@ -4,7 +4,7 @@ import { BillingCycleSchema } from '../../catalog/plan-publication.schema.js';
 /** Verticals whose plans can be offered through public pricing. */
 export const PublicPlanCatalogVerticalSchema = z.enum([
     'accommodation',
-    'gastronomy',
+    'venue',
     'experience',
     'tourist'
 ]);

@@ -22,7 +22,7 @@ import { LifecycleStatusEnum } from '../../../src/enums/lifecycle-state.enum.js'
 // ---------------------------------------------------------------------------
 
 const baseCreatePayload = {
-    applicableVerticals: ['accommodation'] as ('accommodation' | 'gastronomy' | 'experience')[],
+    applicableVerticals: ['accommodation'] as ('accommodation' | 'venue' | 'experience')[],
     type: AmenitiesTypeEnum.OUTDOORS,
     priority: 50,
     isActive: true,
@@ -253,9 +253,9 @@ describe('httpToDomainAmenityUpdate', () => {
     it('should map applicableVerticals update to domain update input', () => {
         // Arrange
         const httpData = {
-            applicableVerticals: ['accommodation', 'gastronomy'] as (
+            applicableVerticals: ['accommodation', 'venue'] as (
                 | 'accommodation'
-                | 'gastronomy'
+                | 'venue'
                 | 'experience'
             )[]
         };
@@ -264,7 +264,7 @@ describe('httpToDomainAmenityUpdate', () => {
         const result = httpToDomainAmenityUpdate(httpData);
 
         // Assert
-        expect(result.applicableVerticals).toEqual(['accommodation', 'gastronomy']);
+        expect(result.applicableVerticals).toEqual(['accommodation', 'venue']);
     });
 
     it('should map isActive=true to isBuiltin=false (inverse mapping)', () => {

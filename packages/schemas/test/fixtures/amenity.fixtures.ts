@@ -23,7 +23,7 @@ const createAmenityEntityFields = () => {
         slug: faker.lorem.slug(3),
         description: { es: descEs, en: descEs, pt: descEs },
         applicableVerticals: faker.helpers.arrayElements(
-            ['accommodation', 'gastronomy', 'experience'] as const,
+            ['accommodation', 'venue', 'experience'] as const,
             { min: 1, max: 3 }
         ),
         icon: faker.helpers.maybe(() => faker.lorem.word(), { probability: 0.7 }),
@@ -93,7 +93,7 @@ export const createAmenityEdgeCases = () => [
     {
         ...createMinimalAmenity(),
         slug: 'a'.repeat(100), // maximum 100 chars
-        applicableVerticals: ['accommodation', 'gastronomy'] as const,
+        applicableVerticals: ['accommodation', 'venue'] as const,
         description: { es: 'D'.repeat(500), en: 'D'.repeat(500), pt: 'D'.repeat(500) } // maximum 500 chars
     },
     // All optional fields present

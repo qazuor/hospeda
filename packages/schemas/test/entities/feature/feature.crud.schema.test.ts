@@ -151,9 +151,9 @@ describe('Feature CRUD Schemas', () => {
     describe('FeaturePatchInputSchema', () => {
         it('should validate patch input with applicableVerticals', () => {
             const patchInput = {
-                applicableVerticals: ['accommodation', 'gastronomy'] as (
+                applicableVerticals: ['accommodation', 'venue'] as (
                     | 'accommodation'
-                    | 'gastronomy'
+                    | 'venue'
                     | 'experience'
                 )[]
             };
@@ -179,7 +179,7 @@ describe('Feature CRUD Schemas', () => {
             const patchData = {
                 applicableVerticals: ['accommodation'] as (
                     | 'accommodation'
-                    | 'gastronomy'
+                    | 'venue'
                     | 'experience'
                 )[],
                 id: faker.string.uuid()

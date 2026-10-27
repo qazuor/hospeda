@@ -26,7 +26,7 @@ export const RevalidationEntityTypeEnum = z.enum([
     'destination_review',
     'tag',
     'amenity',
-    'gastronomy',
+    'venue',
     'experience',
     'pointOfInterest',
     'attraction',

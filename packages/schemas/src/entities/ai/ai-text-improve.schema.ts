@@ -60,13 +60,13 @@ export type AiTextImproveFieldType = z.infer<typeof AiTextImproveFieldTypeSchema
  * **Optional, defaulting to `'accommodation'`** — every caller in production
  * today (the web host editor and the admin accommodation/FAQ panels) sends
  * neither this field nor `entityId`, and their behaviour must not change.
- * A future comercio "mejorar con IA" panel sends `'gastronomy'` /
+ * A future comercio "mejorar con IA" panel sends `'venue'` /
  * `'experience'` explicitly once that surface exists.
  *
  * **APPEND-ONLY**: once a value ships to production, members may only be
  * added, mirroring {@link AiTextImproveFieldTypeSchema}.
  */
-export const AiTextImproveEntityTypeSchema = z.enum(['accommodation', 'gastronomy', 'experience']);
+export const AiTextImproveEntityTypeSchema = z.enum(['accommodation', 'venue', 'experience']);
 
 /** Inferred type for {@link AiTextImproveEntityTypeSchema}. */
 export type AiTextImproveEntityType = z.infer<typeof AiTextImproveEntityTypeSchema>;

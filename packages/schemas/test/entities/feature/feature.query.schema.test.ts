@@ -131,7 +131,7 @@ describe('Feature Query Schemas', () => {
                 id: faker.string.uuid(),
                 applicableVerticals: ['accommodation'] as (
                     | 'accommodation'
-                    | 'gastronomy'
+                    | 'venue'
                     | 'experience'
                 )[],
                 slug: faker.lorem.slug(3),
@@ -154,7 +154,7 @@ describe('Feature Query Schemas', () => {
                 id: faker.string.uuid(),
                 applicableVerticals: ['accommodation'] as (
                     | 'accommodation'
-                    | 'gastronomy'
+                    | 'venue'
                     | 'experience'
                 )[],
                 slug: faker.lorem.slug(3),
@@ -184,7 +184,7 @@ describe('Feature Query Schemas', () => {
                         id: faker.string.uuid(),
                         applicableVerticals: ['accommodation'] as (
                             | 'accommodation'
-                            | 'gastronomy'
+                            | 'venue'
                             | 'experience'
                         )[],
                         slug: faker.lorem.slug(3),
@@ -285,7 +285,7 @@ describe('Feature Query Schemas', () => {
                 id: faker.string.uuid(),
                 applicableVerticals: ['accommodation'] as (
                     | 'accommodation'
-                    | 'gastronomy'
+                    | 'venue'
                     | 'experience'
                 )[],
                 slug: faker.lorem.slug(3),
@@ -307,7 +307,7 @@ describe('Feature Query Schemas', () => {
                         id: faker.string.uuid(),
                         applicableVerticals: ['accommodation'] as (
                             | 'accommodation'
-                            | 'gastronomy'
+                            | 'venue'
                             | 'experience'
                         )[],
                         slug: faker.lorem.slug(3),
@@ -362,7 +362,7 @@ describe('Feature Query Schemas', () => {
                 slug: faker.lorem.slug(3),
                 applicableVerticals: ['accommodation'] as (
                     | 'accommodation'
-                    | 'gastronomy'
+                    | 'venue'
                     | 'experience'
                 )[],
                 description: { es: descEs, en: descEs, pt: descEs },

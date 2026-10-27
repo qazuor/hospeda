@@ -19,7 +19,7 @@ import { FeatureSchema } from '../../../src/entities/feature/feature.schema.js';
 const baseAmenity = () => ({
     id: '550e8400-e29b-41d4-a716-446655440000',
     type: 'CONNECTIVITY',
-    applicableVerticals: ['accommodation'] as ('accommodation' | 'gastronomy' | 'experience')[],
+    applicableVerticals: ['accommodation'] as ('accommodation' | 'venue' | 'experience')[],
     lifecycleState: 'ACTIVE',
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -31,7 +31,7 @@ const baseAmenity = () => ({
 const baseFeature = () => ({
     id: '550e8400-e29b-41d4-a716-446655440000',
     slug: 'base-feature',
-    applicableVerticals: ['accommodation'] as ('accommodation' | 'gastronomy' | 'experience')[],
+    applicableVerticals: ['accommodation'] as ('accommodation' | 'venue' | 'experience')[],
     lifecycleState: 'ACTIVE',
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -116,11 +116,7 @@ describe('AmenitySchema — applicableVerticals (SPEC-266)', () => {
     it('should ACCEPT a single valid vertical', () => {
         const result = AmenitySchema.safeParse({
             ...baseAmenity(),
-            applicableVerticals: ['accommodation'] as (
-                | 'accommodation'
-                | 'gastronomy'
-                | 'experience'
-            )[]
+            applicableVerticals: ['accommodation'] as ('accommodation' | 'venue' | 'experience')[]
         });
         expect(result.success).toBe(true);
         if (result.success) {
@@ -131,9 +127,9 @@ describe('AmenitySchema — applicableVerticals (SPEC-266)', () => {
     it('should ACCEPT all three valid verticals', () => {
         const result = AmenitySchema.safeParse({
             ...baseAmenity(),
-            applicableVerticals: ['accommodation', 'gastronomy', 'experience'] as (
+            applicableVerticals: ['accommodation', 'venue', 'experience'] as (
                 | 'accommodation'
-                | 'gastronomy'
+                | 'venue'
                 | 'experience'
             )[]
         });
@@ -143,7 +139,7 @@ describe('AmenitySchema — applicableVerticals (SPEC-266)', () => {
     it('should ACCEPT gastronomy vertical', () => {
         const result = AmenitySchema.safeParse({
             ...baseAmenity(),
-            applicableVerticals: ['gastronomy'] as ('accommodation' | 'gastronomy' | 'experience')[]
+            applicableVerticals: ['venue'] as ('accommodation' | 'venue' | 'experience')[]
         });
         expect(result.success).toBe(true);
     });
@@ -151,7 +147,7 @@ describe('AmenitySchema — applicableVerticals (SPEC-266)', () => {
     it('should ACCEPT experience vertical', () => {
         const result = AmenitySchema.safeParse({
             ...baseAmenity(),
-            applicableVerticals: ['experience'] as ('accommodation' | 'gastronomy' | 'experience')[]
+            applicableVerticals: ['experience'] as ('accommodation' | 'venue' | 'experience')[]
         });
         expect(result.success).toBe(true);
     });
@@ -159,7 +155,7 @@ describe('AmenitySchema — applicableVerticals (SPEC-266)', () => {
     it('should REJECT empty applicableVerticals array (min 1)', () => {
         const result = AmenitySchema.safeParse({
             ...baseAmenity(),
-            applicableVerticals: [] as ('accommodation' | 'gastronomy' | 'experience')[]
+            applicableVerticals: [] as ('accommodation' | 'venue' | 'experience')[]
         });
         expect(result.success).toBe(false);
     });
@@ -218,9 +214,9 @@ describe('FeatureSchema — applicableVerticals (SPEC-266)', () => {
     it('should ACCEPT valid vertical array', () => {
         const result = FeatureSchema.safeParse({
             ...baseFeature(),
-            applicableVerticals: ['accommodation', 'gastronomy'] as (
+            applicableVerticals: ['accommodation', 'venue'] as (
                 | 'accommodation'
-                | 'gastronomy'
+                | 'venue'
                 | 'experience'
             )[]
         });
@@ -230,7 +226,7 @@ describe('FeatureSchema — applicableVerticals (SPEC-266)', () => {
     it('should REJECT empty applicableVerticals array', () => {
         const result = FeatureSchema.safeParse({
             ...baseFeature(),
-            applicableVerticals: [] as ('accommodation' | 'gastronomy' | 'experience')[]
+            applicableVerticals: [] as ('accommodation' | 'venue' | 'experience')[]
         });
         expect(result.success).toBe(false);
     });

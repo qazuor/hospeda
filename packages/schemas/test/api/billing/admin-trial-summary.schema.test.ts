@@ -5,7 +5,7 @@ import {
 } from '../../../src/api/billing/admin-trial-summary.schema.js';
 
 describe('TEST:V8a:7 (panel, fila 4) admin trial summary schema', () => {
-    it.each(['accommodation', 'gastronomy', 'experience'])('accepts %s', (vertical) => {
+    it.each(['accommodation', 'venue', 'experience'])('accepts %s', (vertical) => {
         expect(AdminTrialSummaryQuerySchema.safeParse({ vertical }).success).toBe(true);
     });
     it.each(['tourist', 'partner', 'unknown'])('rejects %s', (vertical) => {
