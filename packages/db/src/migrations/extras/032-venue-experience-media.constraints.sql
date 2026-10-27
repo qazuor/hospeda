@@ -1,5 +1,5 @@
 -- =============================================================================
--- 032-gastronomy-experience-media.constraints.sql (carril 2, idempotent)
+-- 032-venue-experience-media.constraints.sql (carril 2, idempotent)
 -- DB-level invariants for venue_media and experience_media (HOS-372).
 --
 -- Drizzle cannot emit a partial unique index nor a cross-column CHECK, so they
