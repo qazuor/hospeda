@@ -458,7 +458,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
                 body: JSON.stringify({
                     fieldType: 'description',
                     fieldValue: 'Empanadas caseras, todos los dias.',
-                    entityType: 'gastronomy',
+                    entityType: 'venue',
                     entityId: '11111111-1111-4111-a111-111111111111'
                 })
             });
