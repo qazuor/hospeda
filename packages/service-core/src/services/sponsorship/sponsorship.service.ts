@@ -2,6 +2,7 @@ import { SponsorshipLevelModel, SponsorshipModel } from '@repo/db';
 import type { Sponsorship, SponsorshipCreateInput, SponsorshipSearchInput } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
+    PermissionEnum,
     ServiceErrorCode,
     SponsorshipAdminSearchSchema,
     SponsorshipCreateInputSchema,
@@ -12,6 +13,7 @@ import { toSlug } from '@repo/utils';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceConfig, ServiceContext } from '../../types';
 import { ServiceError } from '../../types';
+import { hasPermission } from '../../utils';
 import {
     checkCanAdminList,
     checkCanCount,
@@ -26,6 +28,25 @@ import {
     checkCanUpdateVisibility,
     checkCanView
 } from './sponsorship.permissions';
+
+/**
+ * Narrows search/count filters to what the actor may see (HOS-1912).
+ *
+ * Without `SPONSORSHIP_VIEW_ANY` (HOST and SPONSOR only hold `_VIEW_OWN`) the
+ * `sponsorUserId` filter is forced to the actor, overriding any caller-supplied
+ * value, so `?sponsorUserId=<other>` cannot read another sponsor's rows.
+ */
+function scopeSponsorshipFilters({
+    filters,
+    actor
+}: {
+    readonly filters: Record<string, unknown>;
+    readonly actor: Actor;
+}): void {
+    if (!hasPermission(actor, PermissionEnum.SPONSORSHIP_VIEW_ANY)) {
+        filters.sponsorUserId = actor.id;
+    }
+}
 
 /**
  * Service for managing sponsorships.
@@ -238,17 +259,19 @@ export class SponsorshipService extends BaseCrudService<
      * Executes the search for sponsorships.
      *
      * AC-005-01 security hardening: public/protected list endpoints force
-     * `lifecycleState = ACTIVE` regardless of caller-supplied value.
+     * `lifecycleState = ACTIVE` regardless of caller-supplied value, and (HOS-1912)
+     * actors without `SPONSORSHIP_VIEW_ANY` only see their own sponsorships.
      * Admin list uses the separate `adminList()` pipeline so it is unaffected.
      */
     protected async _executeSearch(
         params: SponsorshipSearchInput,
-        _actor: Actor,
+        actor: Actor,
         _ctx: ServiceContext
     ) {
         const { page = 1, pageSize = 20, ...filterParams } = params;
         // Force-override: never trust caller-supplied lifecycleState on public path.
         (filterParams as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
+        scopeSponsorshipFilters({ filters: filterParams, actor });
         return this.model.findAll(filterParams, { page, pageSize });
     }
 
@@ -260,11 +283,12 @@ export class SponsorshipService extends BaseCrudService<
      */
     protected async _executeCount(
         params: SponsorshipSearchInput,
-        _actor: Actor,
+        actor: Actor,
         _ctx: ServiceContext
     ) {
         const { page: _page, pageSize: _pageSize, ...filterParams } = params;
         (filterParams as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
+        scopeSponsorshipFilters({ filters: filterParams, actor });
         const count = await this.model.count(filterParams);
         return { count };
     }

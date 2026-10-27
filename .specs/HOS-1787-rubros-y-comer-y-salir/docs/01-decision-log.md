@@ -1104,3 +1104,54 @@ prefijo `.specs/` entero.
 nueva que mergea a staging rompe el guard (pasó con `.specs/HOS-1878-billing-analytics-events/spec.md` al mergear staging
 en HOS-1813) y obliga a editar el guard por algo que no es código.
 **Reemplaza**: la enumeración de specs en «Fuera del escaneo» de `06-guards.md` y del sub-spec 1.
+
+## DEC-FAC-087 · En la etapa A las constantes de tabla Drizzle conservan su nombre
+**Fecha**: 2026-10-26 · **Decidió**: orquestador.
+**Qué**: en la hoja `1.A2` (HOS-1814) NO se renombran:
+- las constantes de tabla de Drizzle (`gastronomies`, `gastronomyMedia`, `gastronomyEvents`, …) y sus objetos de `relations`;
+- las claves de relación (`gastronomy: one(…)`) y los `relationName`;
+- las claves del objeto schema que lee `db.query.<x>`;
+- los strings de `getTableName`/`entityName`;
+- los nombres de índices y uniques.
+
+Sí se renombran:
+- las clases de modelo;
+- los tipos TS derivados (`Insert*`/`Select*`);
+- los enums TS que no son `pgEnum`;
+- las carpetas y archivos de `packages/db`. drizzle-kit lee `./src/schemas` de forma recursiva, así que moverlos no cambia los snapshots.
+
+Todo lo que se conserva se renombra en la etapa B, junto con la migración física.
+
+**Por qué**: el sub-spec deja en la etapa A «los identificadores que tocan base o contratos todavía apuntando a lo viejo»
+(`1-renombrado.md:48-50`). Renombrar la constante, además, tenía dos efectos:
+- dejaba ciegos a cuatro guards que comparan el identificador JS: `check-purged-closed-list`, `listing-clock-scan`, `check-listing-old-columns` y `check-vertical-immutable`;
+- cambiaba claves de runtime: `db.query[tableName]` en `base.model.ts`.
+
+## DEC-FAC-088 · G-FAC-T1 sigue los archivos movidos con `renamedFrom`
+**Fecha**: 2026-10-26 · **Decidió**: orquestador.
+**Qué**: el inventario de G-FAC-T1 gana un campo `renamedFrom: { "<ruta nueva>": "<ruta vieja>" }`.
+
+Reglas:
+- Un archivo ausente de la base es válido sólo si su ruta vieja SÍ está en la base. Su conteo se compara contra el de esa ruta vieja.
+- Da rojo:
+  - una ruta vieja ausente de la base;
+  - una ruta nueva ya presente en la base;
+  - un conteo mayor;
+  - dos rutas nuevas que declaran la misma vieja.
+
+`--write` calcula los pares uniendo dos fuentes:
+- `git diff -M --diff-filter=R <base>...HEAD`;
+- un par derivado por nombre: la regla inversa `venue`→`gastronomy` aplicada segmento por segmento, válida sólo si la ruta derivada está en la base y ya no existe en el árbol.
+
+Si las dos fuentes no coinciden, el guard da rojo.
+
+**Por qué**: el guard daba rojo con cualquier archivo movido (una ruta nueva era «absent from base»), y la etapa A mueve
+161 archivos sólo en `1.A2`. `git diff -M` solo no alcanza: un archivo muy editado (`venueMenuItem.model.ts`) no supera
+el umbral de similitud.
+
+## DEC-FAC-089 · `gastronomy-hours.ts` y `GastronomyVenueEvents*` pasan de `1.A2` a `1.A3`
+**Fecha**: 2026-10-26 · **Decidió**: orquestador.
+**Qué**: el issue de `1.A2` (HOS-1814) los nombraba. Viven en `apps/web`, así que van en `1.A3` (HOS-1815), la hoja de web.
+`applyGastronomyVenueEventsGate` (api) se renombró en `1.A2` a `applyVenueEventsGate`.
+**Por qué**: la partición de la etapa A es por paquete con todos sus consumidores. Esos dos archivos no tienen consumidores
+fuera de web.
