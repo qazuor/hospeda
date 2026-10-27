@@ -18,7 +18,7 @@ describe('publishListing (TEST:1729:1)', () => {
 
     it.each([
         'accommodation',
-        'gastronomy',
+        'venue',
         'experience'
     ] as const)('dispatches %s to its publish method', async (vertical) => {
         await publishListing({ vertical, id: 'listing-1' });

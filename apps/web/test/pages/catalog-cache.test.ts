@@ -163,7 +163,7 @@ const CATALOG_PAGES: readonly CatalogPage[] = [
 const W2_4_PAGES = [
     {
         path: 'gastronomia/index.astro',
-        tag: 'CACHE_TAG_COLLECTIONS.gastronomy',
+        tag: 'CACHE_TAG_COLLECTIONS.venue',
         kind: 'collection'
     },
     {
@@ -171,7 +171,7 @@ const W2_4_PAGES = [
         tag: 'CACHE_TAG_COLLECTIONS.experience',
         kind: 'collection'
     },
-    { path: 'gastronomia/[slug].astro', tag: 'gastronomy', kind: 'entity' },
+    { path: 'gastronomia/[slug].astro', tag: 'venue', kind: 'entity' },
     { path: 'experiencias/[slug].astro', tag: 'experience', kind: 'entity' },
     { path: 'destinos/atraccion/[slug]/index.astro', tag: 'attraction', kind: 'entity' },
     { path: 'destinos/lugar/[slug]/index.astro', tag: 'pointOfInterest', kind: 'entity' }

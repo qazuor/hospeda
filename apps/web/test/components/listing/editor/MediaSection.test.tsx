@@ -519,7 +519,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
     // ── Gallery cap enforcement ────────────────────────────────────────
 
     describe('gallery cap enforcement', () => {
-        const GALLERY_CAP = getGalleryCap('gastronomy');
+        const GALLERY_CAP = getGalleryCap('venue');
 
         it('hides the add (+) button when the gallery is at the cap', async () => {
             const fullGallery = Array.from({ length: GALLERY_CAP }, (_, i) => ({
@@ -554,7 +554,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
     // starts, and uploads run sequentially.
 
     describe('multi-file gallery upload (HOS-832)', () => {
-        const GALLERY_CAP = getGalleryCap('gastronomy');
+        const GALLERY_CAP = getGalleryCap('venue');
 
         it('declares `multiple` on the gallery input when more than one slot remains', async () => {
             render(<MediaSection {...defaultProps} />);

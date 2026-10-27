@@ -314,7 +314,7 @@ export const OWNER_AI_ROWS: readonly RowConfig[] = [
 // because they grant entirely different keys: `EDIT_VENUE_INFO` is not
 // `EDIT_ACCOMMODATION_INFO`, and a row asking for the accommodation key would
 // render every gastronomy or experience tier as "not included". They are also kept apart from
-// EACH OTHER — `gastronomy` and `experience` are separate product domains and
+// EACH OTHER — `venue` and `experience` are separate product domains and
 // no surface may group them under a shared "Comercio" (HOS-941 R-3).
 //
 // Every cell names a real key off `plans.config.ts`, so a tier the owner

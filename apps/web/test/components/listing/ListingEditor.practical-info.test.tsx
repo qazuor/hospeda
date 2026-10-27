@@ -193,7 +193,7 @@ describe('ListingEditor — practical details', () => {
         it('renders nothing of the kind for a gastronomy listing', () => {
             // None of these keys is on `VenueOwnerUpdateInputSchema`, so a
             // control here would offer an edit the API strips while answering 200.
-            const { container } = renderEditor('gastronomy');
+            const { container } = renderEditor('venue');
 
             expect(container.querySelector('#editor-practicalInfo')).toBeNull();
             expect(screen.queryByLabelText('Qué llevar')).toBeNull();

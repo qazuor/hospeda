@@ -66,7 +66,7 @@ beforeEach(() => {
 
 describe('ListingActions publish — TEST:1729:5 and TEST:1729:7', () => {
     it.each([
-        'gastronomy',
+        'venue',
         'experience'
     ] as const)('publishes a complete %s draft through its vertical endpoint and announces the trial', async (vertical) => {
         render(
@@ -81,7 +81,11 @@ describe('ListingActions publish — TEST:1729:5 and TEST:1729:7', () => {
             screen.getByText('Al publicar arranca tu prueba gratis de 30 días. Sin tarjeta.')
         ).toBeInTheDocument();
         expect(
-            screen.getByText(`listing.owner.publish.confirmTitle.${vertical}`)
+            screen.getByText(
+                vertical === 'venue'
+                    ? 'listing.owner.publish.confirmTitle.gastronomy'
+                    : 'listing.owner.publish.confirmTitle.experience'
+            )
         ).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'Sí, publicar' }));
         expect(publishMock).toHaveBeenCalledWith({ vertical, id: `listing-${vertical}` });
@@ -91,7 +95,7 @@ describe('ListingActions publish — TEST:1729:5 and TEST:1729:7', () => {
     it('defaults a missing publish affordance to unknown and never shows a publish button', () => {
         render(
             <ListingActions
-                listing={listing('gastronomy')}
+                listing={listing('venue')}
                 locale="es"
             />
         );
@@ -109,7 +113,7 @@ describe('ListingActions publish — TEST:1729:5 and TEST:1729:7', () => {
     ] as const)('does not offer publish for a %s', (_label, override) => {
         const { container } = render(
             <ListingActions
-                listing={listing('gastronomy', override)}
+                listing={listing('venue', override)}
                 locale="es"
                 publishAffordance={PUBLISH}
             />

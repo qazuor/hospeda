@@ -174,7 +174,7 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
 };
 
 const SCHEMA_BY_VERTICAL = {
-    gastronomy: VenueOwnerUpdateInputSchema,
+    venue: VenueOwnerUpdateInputSchema,
     experience: ExperienceOwnerUpdateInputSchema
 } as const;
 
@@ -284,7 +284,7 @@ describe('listing editor — derived field ids (HOS-385 AC-5)', () => {
         // One section, not all eight: eight mounted forms would each render a
         // "Guardar" and the query below would be ambiguous. `summary` lives on
         // basic info, so that is the page whose round trip is asserted.
-        renderSection('gastronomy', 'basicInfo');
+        renderSection('venue', 'basicInfo');
 
         // `summary` has a 10-character minimum. It is not the first field on
         // the page, which is the point: the helper picks the first INVALID

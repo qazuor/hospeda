@@ -50,7 +50,7 @@ const ROUTE_FILES = readdirSync(ROUTES_DIR).filter((file) => file.endsWith('.ast
  */
 const ALL_SECTIONS = [
     ...new Map(
-        (['gastronomy', 'experience'] as const)
+        (['venue', 'experience'] as const)
             .flatMap((vertical) => buildListingEditorSections({ vertical }))
             .map((section) => [section.slug, section] as const)
     ).values()

@@ -183,7 +183,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             // A restaurant's address is its address; `meetingPoint` is not on
             // `VenueOwnerUpdateInputSchema`, so a control here would offer
             // an edit the API silently strips while answering 200.
-            const { container } = renderEditor('gastronomy');
+            const { container } = renderEditor('venue');
 
             expect(container.querySelector('#editor-meetingPoint')).toBeNull();
             expect(screen.queryByLabelText('Punto de encuentro')).toBeNull();
