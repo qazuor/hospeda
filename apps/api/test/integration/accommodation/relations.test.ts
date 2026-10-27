@@ -65,6 +65,38 @@ describe('Accommodations API - Relations Support', () => {
         expect(body.data.items.map((item: { id: string }) => item.id)).toEqual([seeded.id]);
     });
 
+    it('serves every seeded row exactly once across consecutive pages', async () => {
+        const second = await seedPublicAccommodation({
+            ownerId: seeded.ownerId,
+            destinationId: seeded.destinationId
+        });
+        const third = await seedPublicAccommodation({
+            ownerId: seeded.ownerId,
+            destinationId: seeded.destinationId
+        });
+        const seenIds: string[] = [];
+
+        for (const page of [1, 2, 3]) {
+            const res = await app.request(`${base}?page=${page}&pageSize=1`, { headers });
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data.pagination).toMatchObject({
+                page,
+                pageSize: 1,
+                total: 3,
+                totalPages: 3
+            });
+            expect(body.data.items).toHaveLength(1);
+            seenIds.push(body.data.items[0].id);
+        }
+
+        expect([...seenIds].sort()).toEqual([seeded.id, second.id, third.id].sort());
+
+        const beyond = await app.request(`${base}?page=4&pageSize=1`, { headers });
+        expect(beyond.status).toBe(200);
+        expect((await beyond.json()).data.items).toEqual([]);
+    });
+
     it('keeps the destination key a string on every listed item', async () => {
         const res = await app.request(base, { headers });
 
