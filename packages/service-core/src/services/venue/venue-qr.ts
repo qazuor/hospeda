@@ -34,7 +34,7 @@ export const VENUE_MENU_QR_PURPOSE = QrCodePurposeEnum.MENU;
 const QR_CODE_LABEL_MAX_LENGTH = 200;
 
 /**
- * Matches the public menu page's path, `/{lang}/gastronomia/{slug}/carta/`,
+ * Matches the public menu page's path, `/{lang}/comer-y-salir/{slug}/carta/`,
  * capturing the language segment. Used only to READ BACK the language a
  * stored target was minted with — the venue's slug is not captured, because
  * the whole point of a repoint is to write a NEW one over it.
@@ -49,7 +49,7 @@ const VENUE_MENU_PATH_PATTERN = /^\/([a-z]{2})\/gastronomia\/[^/]+\/carta\/?$/;
  *   tolerated.
  * @param input.lang - The locale segment of the public menu page.
  * @param input.slug - The venue's CURRENT slug.
- * @returns The absolute `/{lang}/gastronomia/{slug}/carta/` URL.
+ * @returns The absolute `/{lang}/comer-y-salir/{slug}/carta/` URL.
  */
 export function buildVenueMenuQrTargetUrl(input: {
     readonly siteUrl: string;
@@ -59,7 +59,7 @@ export function buildVenueMenuQrTargetUrl(input: {
     const base = input.siteUrl.replace(/\/$/, '');
     const lang = encodeURIComponent(input.lang);
     const slug = encodeURIComponent(input.slug);
-    return `${base}/${lang}/gastronomia/${slug}/carta/`;
+    return `${base}/${lang}/comer-y-salir/${slug}/carta/`;
 }
 
 /**

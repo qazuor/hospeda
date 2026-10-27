@@ -555,7 +555,7 @@ export async function getVenueMedia(
  * 4. In a TRANSACTION: clear the previous featured row (`is_featured = false`),
  *    then set the target row `is_featured = true`. Clear-then-set order is
  *    mandatory — setting the new one first would briefly violate the partial
- *    unique index on (gastronomy_id) WHERE is_featured.
+ *    unique index on (venue_id) WHERE is_featured.
  *
  * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
@@ -610,7 +610,7 @@ export async function setFeaturedVenueMedia(
 
         // Transaction: clear-then-set to avoid briefly having two featured rows,
         // which would violate the partial unique index on
-        // (gastronomy_id) WHERE is_featured = true AND deleted_at IS NULL.
+        // (venue_id) WHERE is_featured = true AND deleted_at IS NULL.
         const doSetFeatured = async (tx: DrizzleClient): Promise<void> => {
             const existing = await mediaModel.findFeatured({
                 gastronomyId: validated.gastronomyId,
@@ -806,7 +806,7 @@ export async function updateVenueMedia(
  * unverifiable — nothing obliges the caller to send the follow-up promotion —
  * so a caller setting it on every upload would have no cap at all. Here the row
  * is created featured inside a transaction and
- * `uq_gastronomy_media_single_featured` permits exactly one, so quota-exempt
+ * `uq_venue_media_single_featured` permits exactly one, so quota-exempt
  * rows cannot accumulate. The previous cover is SOFT-DELETED in the same
  * transaction, so one row enters the featured slot, one leaves the table, and
  * the visible gallery is untouched — the swap is quota-neutral by construction
