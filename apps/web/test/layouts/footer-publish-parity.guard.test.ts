@@ -44,7 +44,7 @@ import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths'
  * it must be spelled out rather than derived from anything the fix owns.
  */
 const PLANS_PATH_BY_ID: Readonly<Record<string, string>> = {
-    gastronomy: 'planes/gastronomia',
+    venue: 'planes/gastronomia',
     experience: 'planes/experiencias'
 };
 

@@ -70,7 +70,7 @@ const PRECHECK_COPY: Readonly<
         noun: 'propiedad',
         nounPlural: 'propiedades'
     },
-    venue: { ns: 'publish.precheck.gastronomy', noun: 'ficha', nounPlural: 'fichas' },
+    venue: { ns: 'publish.precheck.venue', noun: 'ficha', nounPlural: 'fichas' },
     experience: {
         ns: 'publish.precheck.experience',
         noun: 'experiencia',

@@ -136,14 +136,14 @@ describe('carta.astro — cache headers mirror the listing', () => {
     });
 
     it('builds entity cache tags scoped to this gastronomy entity', () => {
-        expect(cartaSrc).toContain("entity: 'gastronomy'");
+        expect(cartaSrc).toContain("entity: 'venue'");
         expect(cartaSrc).toContain('buildEntityCacheTags');
     });
 
     it('does NOT purge by the collection-wide list tag as the primary tag (detail page, not a listing)', () => {
-        // Same reasoning as the listing: CACHE_TAG_COLLECTIONS.gastronomy is only
+        // Same reasoning as the listing: CACHE_TAG_COLLECTIONS.venue is only
         // the fallback when no entity tag resolves, never the primary tag.
-        expect(cartaSrc).toContain('CACHE_TAG_COLLECTIONS.gastronomy');
+        expect(cartaSrc).toContain('CACHE_TAG_COLLECTIONS.venue');
         expect(cartaSrc).toContain("cacheClass: 'detail'");
     });
 });

@@ -131,7 +131,7 @@ describe('ListingCreateForm', () => {
 
             await waitFor(() => {
                 expect(window.location.href).toContain(
-                    '/mi-cuenta/comercio/gastronomy/listing-1/editar'
+                    '/mi-cuenta/comercio/venue/listing-1/editar'
                 );
             });
         });

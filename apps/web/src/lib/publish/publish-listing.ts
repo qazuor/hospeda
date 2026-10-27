@@ -37,7 +37,7 @@ const PRICING_AUDIENCE_BY_VERTICAL: Readonly<
 /** Editor path builder for each listing vertical. */
 const EDITOR_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, (id: string) => string>> = {
     accommodation: (id) => `mi-cuenta/propiedades/${id}/editar`,
-    venue: (id) => `mi-cuenta/comercio/gastronomy/${id}/editar`,
+    venue: (id) => `mi-cuenta/comercio/venue/${id}/editar`,
     experience: (id) => `mi-cuenta/comercio/experience/${id}/editar`
 };
 

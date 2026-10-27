@@ -151,9 +151,9 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 manageHref: 'mi-cuenta/host-dashboard'
             },
             {
-                id: 'gastronomy',
-                i18nKey: 'account.doors.publish.options.gastronomy.title',
-                descriptionI18nKey: 'account.doors.publish.options.gastronomy.description',
+                id: 'venue',
+                i18nKey: 'account.doors.publish.options.venue.title',
+                descriptionI18nKey: 'account.doors.publish.options.venue.description',
                 icon: ForkKnifeIcon,
                 // HOS-1156: this option leads to PUBLISHING, and for a while it
                 // did not. HOS-1032 repointed it at `/planes/gastronomia/` — a
@@ -164,7 +164,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 // `manageHref` below stays `mi-cuenta/comercio`: this href is
                 // where you go to publish, that one is where you go once you do.
                 href: PUBLISH_PAGE_PATH_BY_VERTICAL.venue,
-                ctaI18nKey: 'account.doors.publish.options.gastronomy.cta',
+                ctaI18nKey: 'account.doors.publish.options.venue.cta',
                 acquiredPermission: PermissionEnum.GASTRONOMY_EDIT_OWN,
                 manageHref: 'mi-cuenta/comercio'
             },

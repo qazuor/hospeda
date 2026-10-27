@@ -35,7 +35,7 @@
         "plansCta": "See plans",
         "pricingCta": "See pricing"
     },
-    "gastronomy": {
+    "venue": {
         "meta": {
             "title": "Publish your food and drink venue",
             "description": "List your restaurant, bar, grill or food truck on Hospeda and reach the travellers looking for somewhere to eat in the Litoral region."
@@ -120,7 +120,7 @@
         }
     },
     "precheck": {
-        "gastronomy": {
+        "venue": {
             "resumeOrCreate": {
                 "title": "You already have a listing in progress",
                 "body": "You have an unpublished gastronomy listing. You can pick it up where you left off or start a new one from scratch.",

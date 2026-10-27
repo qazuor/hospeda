@@ -35,7 +35,7 @@
         "plansCta": "Ver planos",
         "pricingCta": "Ver preços"
     },
-    "gastronomy": {
+    "venue": {
         "meta": {
             "title": "Publique seu estabelecimento gastronômico",
             "description": "Cadastre a ficha do seu restaurante, bar, churrascaria ou food truck na Hospeda e alcance os viajantes que procuram onde comer no litoral."
@@ -120,7 +120,7 @@
         }
     },
     "precheck": {
-        "gastronomy": {
+        "venue": {
             "resumeOrCreate": {
                 "title": "Você já tem uma ficha começada",
                 "body": "Você tem uma ficha de gastronomia sem publicar. Pode retomá-la de onde parou ou começar uma nova do zero.",

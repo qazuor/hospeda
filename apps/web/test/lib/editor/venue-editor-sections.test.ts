@@ -122,7 +122,7 @@ describe('buildGastronomyEditorRegistry: paths', () => {
                 registry: buildVenueEditorRegistry(),
                 entityId: 'abc'
             })
-        ).toBe('/es/mi-cuenta/comercio/gastronomy/abc/editar/');
+        ).toBe('/es/mi-cuenta/comercio/venue/abc/editar/');
     });
 
     it('should point the breadcrumb index at the owner listing page', () => {
