@@ -85,7 +85,7 @@ describe('NotificationService — vertical copy reaches the real send (HOS-1283)
             ...basePayload,
             planName: 'Plan Comercio',
             trialEndDate: '2026-09-26T00:00:00.000Z',
-            upgradeUrl: 'https://hospeda.com.ar/es/planes/gastronomia/precios/',
+            upgradeUrl: 'https://hospeda.com.ar/es/planes/comer-y-salir/precios/',
             productDomain: 'venue',
             idempotencyKey: 'trial_ending_1d-sub-1'
         };
