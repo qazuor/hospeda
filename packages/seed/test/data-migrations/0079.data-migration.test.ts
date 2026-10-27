@@ -183,7 +183,7 @@ describe('0079-hos-1077 vertical permissions — exported lists', () => {
         for (const permissions of [GASTRONOMY_OWNER_PERMISSIONS, EXPERIENCE_OWNER_PERMISSIONS]) {
             const verticalOnes = permissions.filter(
                 (permission) =>
-                    permission.startsWith('gastronomy.') || permission.startsWith('experience.')
+                    permission.startsWith('venue.') || permission.startsWith('experience.')
             );
             expect(verticalOnes.length).toBeGreaterThan(0);
             for (const permission of verticalOnes) {
