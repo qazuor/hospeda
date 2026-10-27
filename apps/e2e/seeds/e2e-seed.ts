@@ -84,12 +84,12 @@ const { describeError, runSeed } = await import('@repo/seed');
 
 /** Give each seeded listing owner a live fixture trial in that listing's vertical. */
 async function seedListingOwnerTrials(pool: Pool): Promise<void> {
-    const { accommodations, experiences, gastronomies, getDb } = await import('@repo/db');
+    const { accommodations, experiences, venues, getDb } = await import('@repo/db');
     const { VerticalEnum } = await import('@repo/schemas');
     const db = getDb();
     const listings = [
         { vertical: VerticalEnum.ACCOMMODATION, table: accommodations },
-        { vertical: VerticalEnum.VENUE, table: gastronomies },
+        { vertical: VerticalEnum.VENUE, table: venues },
         { vertical: VerticalEnum.EXPERIENCE, table: experiences }
     ] as const;
 
