@@ -90,7 +90,7 @@ describe('where the printed code lands (HOS-982)', () => {
                 locale: 'es',
                 siteUrl: SITE
             })
-        ).toBe('https://hospeda.com.ar/es/gastronomia/a%2Fb/');
+        ).toBe('https://hospeda.com.ar/es/comer-y-salir/a%2Fb/');
     });
 });
 
@@ -145,7 +145,7 @@ describe('the sheet copy (HOS-982)', () => {
 
     it('carries the ficha URL as the destination, for the route to mint the code with', () => {
         expect(build('es').url).toBe(
-            'https://hospeda.com.ar/es/gastronomia/la-parrilla-del-puerto/'
+            'https://hospeda.com.ar/es/comer-y-salir/la-parrilla-del-puerto/'
         );
     });
 });
