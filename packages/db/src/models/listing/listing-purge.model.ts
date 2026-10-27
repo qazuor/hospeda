@@ -27,19 +27,19 @@ export interface PurgeListingContentResult {
 
 const LISTING_TABLES: Record<ListingVertical, string> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'gastronomies',
     experience: 'experiences'
 };
 
 const MEDIA_TABLES: Record<ListingVertical, string> = {
     accommodation: 'accommodation_media',
-    gastronomy: 'gastronomy_media',
+    venue: 'gastronomy_media',
     experience: 'experience_media'
 };
 
 const MEDIA_FKS: Record<ListingVertical, string> = {
     accommodation: 'accommodation_id',
-    gastronomy: 'gastronomy_id',
+    venue: 'gastronomy_id',
     experience: 'experience_id'
 };
 
@@ -57,7 +57,7 @@ const CONTENT_TABLES: Record<ListingVertical, readonly { table: string; fk: stri
         { table: 'accommodation_occupancy', fk: 'accommodation_id' },
         { table: 'accommodation_ia_data', fk: 'accommodation_id' }
     ],
-    gastronomy: [
+    venue: [
         { table: 'gastronomy_faqs', fk: 'gastronomy_id' },
         { table: 'r_gastronomy_amenity', fk: 'gastronomy_id' },
         { table: 'r_gastronomy_feature', fk: 'gastronomy_id' },
@@ -85,7 +85,7 @@ const BLANK_CONTENT: Record<ListingVertical, SQL> = {
         name_i18n = NULL, summary_i18n = NULL, description_i18n = NULL, rich_description_i18n = NULL,
         translation_meta = NULL, contact_info = NULL, social_networks = NULL, price = NULL,
         location = NULL, videos = NULL, seo = NULL, extra_info = NULL`,
-    gastronomy: sql`summary = '', description = '', rich_description = NULL,
+    venue: sql`summary = '', description = '', rich_description = NULL,
         name_i18n = NULL, summary_i18n = NULL, description_i18n = NULL, rich_description_i18n = NULL,
         menu_url = NULL, menu_file_url = NULL, menu_file_public_id = NULL,
         menu_file_kind = NULL, contact_info = NULL, social_networks = NULL, opening_hours = NULL,
@@ -101,7 +101,7 @@ const BLANK_CONTENT: Record<ListingVertical, SQL> = {
 
 const ENTITY_TYPES: Record<ListingVertical, EntityTypeEnum> = {
     accommodation: EntityTypeEnum.ACCOMMODATION,
-    gastronomy: EntityTypeEnum.VENUE,
+    venue: EntityTypeEnum.VENUE,
     experience: EntityTypeEnum.EXPERIENCE
 };
 
@@ -121,7 +121,7 @@ const MARK_CALENDAR: Record<
             RETURNING id, provider`);
         return result.rows.map((row) => ({ id: String(row.id), provider: String(row.provider) }));
     },
-    gastronomy: async () => [],
+    venue: async () => [],
     experience: async () => []
 };
 
@@ -135,7 +135,7 @@ const CARRY_REMOTE_ASSETS: Record<
     (args: { readonly tx: DrizzleClient; readonly listingId: string }) => Promise<void>
 > = {
     accommodation: async () => {},
-    gastronomy: async ({ tx, listingId }) => {
+    venue: async ({ tx, listingId }) => {
         await tx.execute(sql`
             INSERT INTO gastronomy_media (gastronomy_id, url, public_id, is_featured, sort_order)
             SELECT id, COALESCE(menu_file_url, ''), menu_file_public_id, false, 0
@@ -164,7 +164,7 @@ const CLOSE_PRICE_ALERTS: Record<
             RETURNING id, user_id`);
         return result.rows.map((row) => ({ id: String(row.id), user_id: String(row.user_id) }));
     },
-    gastronomy: async () => [],
+    venue: async () => [],
     experience: async () => []
 };
 

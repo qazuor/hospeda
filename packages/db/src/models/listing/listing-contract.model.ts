@@ -20,7 +20,7 @@ export interface ListingContractRow {
 /** The listing table of each vertical (same map as the publication model). */
 const LISTING_TABLES: Readonly<Record<ListingVertical, string>> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'gastronomies',
     experience: 'experiences'
 };
 
