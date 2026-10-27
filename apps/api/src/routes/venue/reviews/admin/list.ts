@@ -33,7 +33,7 @@ export const adminListVenueReviewsRoute = createAdminListRoute({
     description:
         'Returns a paginated list of all gastronomy reviews with full admin details, including pending and rejected reviews.',
     tags: ['Gastronomy Reviews', 'Admin'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_MODERATE_REVIEW]],
+    anyOfPermissions: [[PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestQuery: {
         status: z.nativeEnum(ModerationStatusEnum).optional()
     },

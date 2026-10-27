@@ -55,14 +55,14 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
         const gastronomyId = params.id as string;
 
         const listing = await venueService.getById(actor, gastronomyId);
-        const hasEditAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_ALL);
+        const hasEditAll = actor.permissions?.includes(PermissionEnum.VENUE_EDIT_ALL);
 
         // 404, not 403 — a 403 would confirm the id exists (error contract).
         if (
             listing.error ||
             !listing.data ||
             (!hasEditAll && listing.data.ownerId !== actor.id) ||
-            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_OWN))
+            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.VENUE_EDIT_OWN))
         ) {
             return createErrorResponse(
                 { code: 'NOT_FOUND', message: 'Gastronomy listing not found' },

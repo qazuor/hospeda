@@ -73,11 +73,11 @@ describe('Admin GastronomyReview List — moderation status filter (SPEC-259 reg
             PermissionEnum.ACCESS_PANEL_ADMIN,
             PermissionEnum.ACCESS_API_ADMIN,
             PermissionEnum.MANAGE_CONTENT,
-            PermissionEnum.GASTRONOMY_VIEW_ALL,
-            PermissionEnum.GASTRONOMY_CREATE,
-            PermissionEnum.GASTRONOMY_EDIT_ALL,
-            PermissionEnum.GASTRONOMY_DELETE,
-            PermissionEnum.GASTRONOMY_MODERATE_REVIEW
+            PermissionEnum.VENUE_VIEW_ALL,
+            PermissionEnum.VENUE_CREATE,
+            PermissionEnum.VENUE_EDIT_ALL,
+            PermissionEnum.VENUE_DELETE,
+            PermissionEnum.VENUE_MODERATE_REVIEW
         ]
     };
 

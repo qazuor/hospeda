@@ -55,7 +55,7 @@ export const protectedGetVenueByIdRoute = createProtectedRoute({
         // (`'Gastronomy not found'`) differed from the service's
         // `'gastronomy not found'` by one capital letter, which was enough to tell
         // a caller that the id they were holding is real.
-        const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
+        const hasViewAll = actor.permissions?.includes(PermissionEnum.VENUE_VIEW_ALL);
         if (!hasViewAll) {
             const access = resolveResourceStep({
                 actorId: actor.id,

@@ -126,7 +126,7 @@ const staffHeaders = {
     ...UA,
     'x-mock-actor-id': NON_OWNER_ID,
     'x-mock-actor-role': 'ADMIN',
-    'x-mock-actor-permissions': JSON.stringify([PermissionEnum.GASTRONOMY_VIEW_ALL])
+    'x-mock-actor-permissions': JSON.stringify([PermissionEnum.VENUE_VIEW_ALL])
 };
 
 // ---------------------------------------------------------------------------

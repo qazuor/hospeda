@@ -4,12 +4,12 @@ import {
     emailOutbox,
     eq,
     experiences,
-    gastronomies,
     getDb,
     inArray,
     plans,
     planVersions,
-    trials
+    trials,
+    venues
 } from '@repo/db';
 import { PublicationStatusEnum, TrialStatusEnum, VerticalEnum } from '@repo/schemas';
 import { computeTrialEmailPseudonym } from '@repo/service-core';
@@ -85,7 +85,7 @@ async function seedFive(): Promise<Seeded[]> {
             kind === VerticalEnum.ACCOMMODATION
                 ? accommodations
                 : kind === VerticalEnum.VENUE
-                  ? gastronomies
+                  ? venues
                   : experiences;
         await getDb().update(table).set({ inactiveSince: CUTOVER }).where(eq(table.id, listingId));
         seeded.push({ userId: owner.id, email: owner.email, listingId, vertical: kind });

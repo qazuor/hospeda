@@ -117,7 +117,7 @@ const PLURAL_TO_SINGULAR: Readonly<Record<string, ProtectedMediaEntityType>> = {
     destinations: 'destination',
     events: 'event',
     posts: 'post',
-    gastronomies: 'venue',
+    venues: 'venue',
     experiences: 'experience'
 };
 

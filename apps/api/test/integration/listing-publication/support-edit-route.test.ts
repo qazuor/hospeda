@@ -41,9 +41,9 @@ const perms: Readonly<
         viewAll: PermissionEnum.ACCOMMODATION_VIEW_ALL
     },
     [VerticalEnum.VENUE]: {
-        create: PermissionEnum.GASTRONOMY_CREATE,
-        editAny: PermissionEnum.GASTRONOMY_EDIT_ALL,
-        viewAll: PermissionEnum.GASTRONOMY_VIEW_ALL
+        create: PermissionEnum.VENUE_CREATE,
+        editAny: PermissionEnum.VENUE_EDIT_ALL,
+        viewAll: PermissionEnum.VENUE_VIEW_ALL
     },
     [VerticalEnum.EXPERIENCE]: {
         create: PermissionEnum.EXPERIENCE_CREATE,

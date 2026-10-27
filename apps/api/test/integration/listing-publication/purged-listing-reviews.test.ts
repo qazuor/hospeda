@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { accommodationReviews, experienceReviews, gastronomyReviews, getDb, sql } from '@repo/db';
+import { accommodationReviews, experienceReviews, getDb, sql, venueReviews } from '@repo/db';
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { purgeInactiveListing } from '../../../../../packages/verticals/src/publication/purge-inactive-listing';
@@ -150,7 +150,7 @@ describe.each(verticals)('TEST:V9b:3 AC:V9b:3 reseñas de terceros — %s', (ver
             reviewId = review.id;
         } else if (vertical === VerticalEnum.VENUE) {
             const [review] = await getDb()
-                .insert(gastronomyReviews)
+                .insert(venueReviews)
                 .values({
                     gastronomyId: listingId,
                     userId: reviewer.id,

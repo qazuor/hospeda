@@ -43,9 +43,9 @@ const perms: Readonly<
     Record<Vertical, { editOwn: PermissionEnum; editAll: PermissionEnum; viewAll: PermissionEnum }>
 > = {
     [VerticalEnum.VENUE]: {
-        editOwn: PermissionEnum.GASTRONOMY_EDIT_OWN,
-        editAll: PermissionEnum.GASTRONOMY_EDIT_ALL,
-        viewAll: PermissionEnum.GASTRONOMY_VIEW_ALL
+        editOwn: PermissionEnum.VENUE_EDIT_OWN,
+        editAll: PermissionEnum.VENUE_EDIT_ALL,
+        viewAll: PermissionEnum.VENUE_VIEW_ALL
     },
     [VerticalEnum.EXPERIENCE]: {
         editOwn: PermissionEnum.EXPERIENCE_EDIT_OWN,

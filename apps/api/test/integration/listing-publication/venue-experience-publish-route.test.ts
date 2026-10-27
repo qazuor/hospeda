@@ -87,7 +87,7 @@ describe.each(verticals)('PB1 route — %s (TEST:V6:2/3)', (vertical) => {
         const { listingId } = await listing(vertical, PublicationStatusEnum.DRAFT);
         const viewPermission =
             vertical === VerticalEnum.VENUE
-                ? PermissionEnum.GASTRONOMY_VIEW_ALL
+                ? PermissionEnum.VENUE_VIEW_ALL
                 : PermissionEnum.EXPERIENCE_VIEW_ALL;
         const answer = await readResponse(
             await publish(

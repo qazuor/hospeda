@@ -75,7 +75,7 @@ export async function handleGetVenueQrCode(
 
     const entity = result.data;
 
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.VENUE_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }

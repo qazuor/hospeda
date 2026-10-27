@@ -41,7 +41,7 @@ export const adminModerateVenueReviewRoute = createAdminRoute({
         'moderatedAt, and optionally moderationReason. Triggers rating recompute on the listing. ' +
         'Requires GASTRONOMY_MODERATE_REVIEW.',
     tags: ['Gastronomy Reviews', 'Admin'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_MODERATE_REVIEW]],
+    anyOfPermissions: [[PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

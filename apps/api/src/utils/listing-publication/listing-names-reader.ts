@@ -8,7 +8,7 @@
  * @module utils/listing-publication/listing-names-reader
  */
 
-import { accommodations, experiences, gastronomies, getDb } from '@repo/db';
+import { accommodations, experiences, getDb, venues } from '@repo/db';
 import type { ListingNamesReader, ListingNoticeVertical } from '@repo/notifications';
 import { inArray } from 'drizzle-orm';
 
@@ -25,9 +25,9 @@ const READ_NAMES: Readonly<
             .where(inArray(accommodations.id, ids)),
     venue: (ids) =>
         getDb()
-            .select({ id: gastronomies.id, name: gastronomies.name })
-            .from(gastronomies)
-            .where(inArray(gastronomies.id, ids)),
+            .select({ id: venues.id, name: venues.name })
+            .from(venues)
+            .where(inArray(venues.id, ids)),
     experience: (ids) =>
         getDb()
             .select({ id: experiences.id, name: experiences.name })

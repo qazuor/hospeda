@@ -34,14 +34,12 @@ export const adminCreateVenueRoute = createAdminRoute({
     // another owner (`ownerId` ≠ actor) is action 15 (ACC:15, H12): the listing
     // access chain demands LISTING_FOREIGN_CONTENT_EDIT and runs steps 5 to 7 on
     // that owner, so holding `GASTRONOMY_CREATE` alone never creates for somebody else.
-    anyOfPermissions: [
-        [PermissionEnum.GASTRONOMY_CREATE, PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT]
-    ],
+    anyOfPermissions: [[PermissionEnum.VENUE_CREATE, PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT]],
     listingAccess: {
         vertical: VerticalEnum.VENUE,
         operation: 'CREATE',
         createSubjectFromBody: 'ownerId',
-        ownCreatePermission: PermissionEnum.GASTRONOMY_CREATE
+        ownCreatePermission: PermissionEnum.VENUE_CREATE
     },
     requestBody: VenueAdminCreateInputSchema,
     responseSchema: VenueAdminSchema,

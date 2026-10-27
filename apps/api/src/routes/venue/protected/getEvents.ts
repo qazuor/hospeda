@@ -57,7 +57,7 @@ async function requireOwnedVenue(ctx: Context, gastronomyId: string): Promise<vo
         throw new ServiceError(result.error.code, result.error.message);
     }
 
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.VENUE_VIEW_ALL);
     if (!result.data || (!hasViewAll && result.data.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }

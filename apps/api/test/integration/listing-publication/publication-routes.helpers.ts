@@ -24,8 +24,6 @@ import {
     eq,
     experienceMedia,
     experiences,
-    gastronomies,
-    gastronomyMedia,
     getDb,
     inArray,
     max,
@@ -35,7 +33,9 @@ import {
     planVersions,
     trials,
     users,
-    VenueModel
+    VenueModel,
+    venueMedia,
+    venues
 } from '@repo/db';
 import {
     type Accommodation,
@@ -470,7 +470,7 @@ export async function createVerticalListing(args: {
             getDb()
         );
         if (args.complete !== false) {
-            await getDb().insert(gastronomyMedia).values({
+            await getDb().insert(venueMedia).values({
                 gastronomyId: listing.id,
                 url: 'https://example.test/matrix.jpg',
                 moderationState: 'APPROVED',
@@ -505,9 +505,9 @@ export async function readVerticalStatus(
 ) {
     if (vertical === VerticalEnum.VENUE) {
         const [row] = await getDb()
-            .select({ status: gastronomies.publicationStatus })
-            .from(gastronomies)
-            .where(eq(gastronomies.id, id));
+            .select({ status: venues.publicationStatus })
+            .from(venues)
+            .where(eq(venues.id, id));
         return row?.status;
     }
     const [row] = await getDb()

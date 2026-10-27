@@ -1203,11 +1203,11 @@ export function createDbMock() {
             icon: 'icon',
             displayWeight: 'display_weight'
         },
-        rGastronomyAmenity: {
+        rVenueAmenity: {
             gastronomyId: 'venue_id',
             amenityId: 'amenity_id'
         },
-        rGastronomyFeature: {
+        rVenueFeature: {
             gastronomyId: 'venue_id',
             featureId: 'feature_id',
             hostReWriteName: 'host_rewrite_name',

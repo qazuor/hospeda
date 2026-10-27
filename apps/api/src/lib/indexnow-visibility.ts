@@ -26,10 +26,10 @@ import {
     eq,
     events,
     experiences,
-    gastronomies,
     getDb,
     isNull,
-    posts
+    posts,
+    venues
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { LifecycleStatusEnum, PublicationStatusEnum, VisibilityEnum } from '@repo/schemas';
@@ -136,13 +136,13 @@ const VISIBILITY_LOOKUPS: Readonly<Record<string, VisibilityLookup>> = {
     gastronomy: async (slug) =>
         (
             await getDb()
-                .select({ slug: gastronomies.slug })
-                .from(gastronomies)
+                .select({ slug: venues.slug })
+                .from(venues)
                 .where(
                     and(
-                        eq(gastronomies.slug, slug),
-                        eq(gastronomies.publicationStatus, PUBLISHED),
-                        isNull(gastronomies.deletedAt)
+                        eq(venues.slug, slug),
+                        eq(venues.publicationStatus, PUBLISHED),
+                        isNull(venues.deletedAt)
                     )
                 )
                 .limit(1)

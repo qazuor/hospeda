@@ -26,7 +26,7 @@ export const adminGetVenueByIdRoute = createAdminRoute({
     description:
         'Retrieves full gastronomy listing information including admin fields. Requires GASTRONOMY_VIEW_ALL.',
     tags: ['Gastronomy'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_VIEW_ALL]],
+    anyOfPermissions: [[PermissionEnum.VENUE_VIEW_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

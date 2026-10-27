@@ -227,7 +227,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
             const withPermission = await probe({
                 actorId: OWNER_ID,
                 emailVerified: false,
-                permissions: [PermissionEnum.GASTRONOMY_VIEW_ALL],
+                permissions: [PermissionEnum.VENUE_VIEW_ALL],
                 path
             });
             expect(withPermission).toEqual(without);
@@ -253,7 +253,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
             const result = await probe({
                 actorId: OWNER_ID,
                 emailVerified: true,
-                permissions: [PermissionEnum.GASTRONOMY_VIEW_ALL],
+                permissions: [PermissionEnum.VENUE_VIEW_ALL],
                 path
             });
             expect(result).not.toEqual(without);
@@ -271,13 +271,13 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
             const unverified = await probe({
                 actorId: OWNER_ID,
                 emailVerified: false,
-                permissions: [PermissionEnum.GASTRONOMY_VIEW_ALL],
+                permissions: [PermissionEnum.VENUE_VIEW_ALL],
                 path
             });
             const verified = await probe({
                 actorId: OWNER_ID,
                 emailVerified: true,
-                permissions: [PermissionEnum.GASTRONOMY_VIEW_ALL],
+                permissions: [PermissionEnum.VENUE_VIEW_ALL],
                 path
             });
             expect(unverified).toEqual(verified);
@@ -386,7 +386,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
                     PermissionEnum.USER_READ_ALL,
                     PermissionEnum.ACCOMMODATION_UPDATE_ANY,
                     PermissionEnum.ACCOMMODATION_VIEW_ALL,
-                    PermissionEnum.GASTRONOMY_VIEW_ALL,
+                    PermissionEnum.VENUE_VIEW_ALL,
                     PermissionEnum.EXPERIENCE_VIEW_ALL,
                     PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT,
                     PermissionEnum.LISTING_PURGE_ON_REQUEST

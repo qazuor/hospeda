@@ -31,10 +31,7 @@ export const adminUpdateVenueReviewRoute = createAdminRoute({
     description:
         'Updates a gastronomy review. Requires GASTRONOMY_EDIT_ALL AND GASTRONOMY_MODERATE_REVIEW.',
     tags: ['Gastronomy Reviews', 'Admin'],
-    anyOfPermissions: [
-        [PermissionEnum.GASTRONOMY_EDIT_ALL],
-        [PermissionEnum.GASTRONOMY_MODERATE_REVIEW]
-    ],
+    anyOfPermissions: [[PermissionEnum.VENUE_EDIT_ALL], [PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
