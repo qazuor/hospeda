@@ -25,7 +25,7 @@ interface TrialSummaryCopy {
     readonly endedTitle: string;
     readonly endedConverted: string;
     readonly endedExpired: string;
-    readonly vertical: Record<'accommodation' | 'gastronomy' | 'experience', string>;
+    readonly vertical: Record<'accommodation' | 'venue' | 'experience', string>;
     readonly total_one: string;
     readonly total_other: string;
     readonly origins: Record<string, string>;
@@ -73,7 +73,7 @@ describe('TrialSummary.astro — row 4, the accumulated trial days', () => {
             expect(Object.keys(copy.vertical).sort()).toEqual([
                 'accommodation',
                 'experience',
-                'gastronomy'
+                'venue'
             ]);
         }
         expect(copies[1].endedTitle).toBe('Your free {{vertical}} trial has ended');

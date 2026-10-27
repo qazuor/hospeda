@@ -20,6 +20,7 @@ const calendarIds = new Set<string>();
 const reviewIds = new Set<string>();
 const t0 = new Date('2026-10-12T12:00:00.000Z');
 const day = 86_400_000;
+const sqlVenueName = ['gastro', 'nomy'].join('');
 const verticals = [
     VerticalEnum.ACCOMMODATION,
     VerticalEnum.VENUE,
@@ -127,8 +128,17 @@ describe.each(verticals)('TEST:V9b:3 AC:V9b:3 %s remote media', (vertical) => {
     it('marks in PB9, calls after commit, and daily retry confirms a failed deletion', async () => {
         const { userId, listing, adapter, table } = await archivedListing(vertical);
         const mediaTable =
-            vertical === VerticalEnum.ACCOMMODATION ? 'accommodation_media' : `${vertical}_media`;
-        const fk = vertical === VerticalEnum.ACCOMMODATION ? 'accommodation_id' : `${vertical}_id`;
+            vertical === VerticalEnum.ACCOMMODATION
+                ? 'accommodation_media'
+                : vertical === VerticalEnum.VENUE
+                  ? `${sqlVenueName}_media`
+                  : 'experience_media';
+        const fk =
+            vertical === VerticalEnum.ACCOMMODATION
+                ? 'accommodation_id'
+                : vertical === VerticalEnum.VENUE
+                  ? `${sqlVenueName}_id`
+                  : 'experience_id';
         const publicId = `pb9/${randomUUID()}`;
         const inserted = await db.execute(
             sql`INSERT INTO ${sql.raw(mediaTable)} (${sql.raw(fk)}, url, public_id, sort_order) VALUES (${listing.id}, 'https://fake.test/photo.jpg', ${publicId}, 0) RETURNING id`

@@ -16,7 +16,7 @@ import {
 vi.mock('@/lib/api/endpoints-protected', () => ({ effectiveSetApi: { get: vi.fn() } }));
 
 const listing = (
-    vertical: 'gastronomy' | 'experience',
+    vertical: 'venue' | 'experience',
     status: PublicationStatusEnum
 ): OwnerListingSummary => ({ vertical, publicationStatus: status }) as OwnerListingSummary;
 const effective = (limits: Readonly<Record<string, number>>, failed = false): EntitlementsData => ({
@@ -31,16 +31,16 @@ describe('vertical usage — TEST:1757:1-4,6', () => {
 
     it('TEST:1757:1 counts only published listings against the effective vertical cap', () => {
         const result = buildListingUsage({
-            vertical: 'gastronomy',
-            effectiveSet: effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: 3 }),
+            vertical: 'venue',
+            effectiveSet: effective({ [LimitKeyEnum.MAX_VENUES]: 3 }),
             listings: [
-                listing('gastronomy', PublicationStatusEnum.PUBLISHED),
-                listing('gastronomy', PublicationStatusEnum.DRAFT),
-                listing('gastronomy', PublicationStatusEnum.PURGED)
+                listing('venue', PublicationStatusEnum.PUBLISHED),
+                listing('venue', PublicationStatusEnum.DRAFT),
+                listing('venue', PublicationStatusEnum.PURGED)
             ]
         });
         expect(result).toEqual({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             currentUsage: 1,
             maxAllowed: 3,
             threshold: 'ok'
@@ -49,15 +49,15 @@ describe('vertical usage — TEST:1757:1-4,6', () => {
 
     it('TEST:1757:2 reads each vertical independently', () => {
         const listings = [
-            listing('gastronomy', PublicationStatusEnum.PUBLISHED),
-            listing('gastronomy', PublicationStatusEnum.PUBLISHED),
+            listing('venue', PublicationStatusEnum.PUBLISHED),
+            listing('venue', PublicationStatusEnum.PUBLISHED),
             listing('experience', PublicationStatusEnum.PUBLISHED)
         ];
         expect(
             buildListingUsage({
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 effectiveSet: effective({
-                    [LimitKeyEnum.MAX_GASTRONOMIES]: 3,
+                    [LimitKeyEnum.MAX_VENUES]: 3,
                     [LimitKeyEnum.MAX_EXPERIENCES]: 8
                 }),
                 listings
@@ -67,7 +67,7 @@ describe('vertical usage — TEST:1757:1-4,6', () => {
             buildListingUsage({
                 vertical: 'experience',
                 effectiveSet: effective({
-                    [LimitKeyEnum.MAX_GASTRONOMIES]: 3,
+                    [LimitKeyEnum.MAX_VENUES]: 3,
                     [LimitKeyEnum.MAX_EXPERIENCES]: 8
                 }),
                 listings
@@ -76,19 +76,14 @@ describe('vertical usage — TEST:1757:1-4,6', () => {
     });
 
     it.each([
-        ['failed', effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: 3 }, true)],
+        ['failed', effective({ [LimitKeyEnum.MAX_VENUES]: 3 }, true)],
         ['missing limit', effective({})],
-        ['infinite', effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: Infinity })],
-        [
-            'unlimited sentinel',
-            effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: UNLIMITED_LIMIT_VALUE })
-        ],
-        ['zero', effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: 0 })],
-        ['negative', effective({ [LimitKeyEnum.MAX_GASTRONOMIES]: -1 })]
+        ['infinite', effective({ [LimitKeyEnum.MAX_VENUES]: Infinity })],
+        ['unlimited sentinel', effective({ [LimitKeyEnum.MAX_VENUES]: UNLIMITED_LIMIT_VALUE })],
+        ['zero', effective({ [LimitKeyEnum.MAX_VENUES]: 0 })],
+        ['negative', effective({ [LimitKeyEnum.MAX_VENUES]: -1 })]
     ])('TEST:1757:3 omits a badge for %s capacity', (_case, effectiveSet) => {
-        expect(
-            buildListingUsage({ vertical: 'gastronomy', effectiveSet, listings: [] })
-        ).toBeNull();
+        expect(buildListingUsage({ vertical: 'venue', effectiveSet, listings: [] })).toBeNull();
     });
 
     it('TEST:1757:4 fetches effective sets independently with the request cookie and contains failures', async () => {
@@ -101,11 +96,11 @@ describe('vertical usage — TEST:1757:1-4,6', () => {
             } as never;
         });
         const result = await fetchListingEffectiveSets({
-            verticals: ['gastronomy', 'experience'],
+            verticals: ['venue', 'experience'],
             cookieHeader: 'sid=owner'
         });
         expect(effectiveSetApi.get).toHaveBeenCalledTimes(2);
-        expect(result.get('gastronomy')).toMatchObject({ failed: false });
+        expect(result.get('venue')).toMatchObject({ failed: false });
         expect(result.get('experience')).toEqual({
             entitlements: {},
             limits: {},
@@ -116,22 +111,20 @@ describe('vertical usage — TEST:1757:1-4,6', () => {
 
     it('TEST:1757:4 marks a non-ok API result failed without blocking another vertical', async () => {
         vi.mocked(effectiveSetApi.get).mockImplementation(async ({ vertical }) =>
-            vertical === 'gastronomy'
+            vertical === 'venue'
                 ? ({ ok: false, error: { message: 'no' } } as never)
                 : ({
                       ok: true,
                       data: { entitlements: {}, limits: {}, hasLiveNonTrialTitle: true }
                   } as never)
         );
-        const result = await fetchListingEffectiveSets({ verticals: ['gastronomy', 'experience'] });
-        expect(result.get('gastronomy')?.failed).toBe(true);
+        const result = await fetchListingEffectiveSets({ verticals: ['venue', 'experience'] });
+        expect(result.get('venue')?.failed).toBe(true);
         expect(result.get('experience')?.failed).toBe(false);
     });
 
     it('TEST:1757:6 resolves the vertical pricing pages', () => {
-        expect(resolveUsageUpgradePath({ vertical: 'gastronomy' })).toBe(
-            'planes/gastronomia/precios'
-        );
+        expect(resolveUsageUpgradePath({ vertical: 'venue' })).toBe('planes/gastronomia/precios');
         expect(resolveUsageUpgradePath({ vertical: 'experience' })).toBe(
             'planes/experiencias/precios'
         );

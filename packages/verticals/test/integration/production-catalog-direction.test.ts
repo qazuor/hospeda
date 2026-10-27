@@ -35,7 +35,7 @@ describe('TEST:V2:6 — direction from real catalog loaded by the complete migra
                     planCatalogModel.findCurrentPlanVersion({ planId, tx: db })
             };
             const subject = createPlanCatalogInverse({ reader });
-            for (const vertical of ['accommodation', 'gastronomy', 'experience'] as const) {
+            for (const vertical of ['accommodation', 'venue', 'experience'] as const) {
                 const tiers = PRODUCTION_PLAN_CATALOG.filter(
                     (plan) => plan.vertical === vertical && plan.version.sellable
                 ).sort((a, b) => a.version.rank - b.version.rank);

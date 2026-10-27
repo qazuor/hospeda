@@ -76,15 +76,15 @@ export const protectedPutVenueMenuRoute = createProtectedRoute({
     path: '/{id}/menu',
     summary: 'Replace the structured menu of a gastronomy listing',
     description:
-        'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above; a document carrying a per-dish photo additionally requires menu_item_photos (premium), and a document carrying a nameI18n/descriptionI18n translation additionally requires multilingual_gastronomy_menu (premium).',
+        'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_venue_menu entitlement granted by the professional gastronomy plan and above; a document carrying a per-dish photo additionally requires menu_item_photos (premium), and a document carrying a nameI18n/descriptionI18n translation additionally requires multilingual_venue_menu (premium).',
     listingAccess: {
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
         capabilities: ({ body }) => [
-            'manage_gastronomy_menu',
+            'manage_venue_menu',
             ...(menuPayloadCarriesItemPhoto(body) ? ['menu_item_photos'] : []),
-            ...(menuPayloadCarriesTranslations(body) ? ['multilingual_gastronomy_menu'] : [])
+            ...(menuPayloadCarriesTranslations(body) ? ['multilingual_venue_menu'] : [])
         ]
     },
     tags: ['Gastronomy', 'Gastronomy Menu'],

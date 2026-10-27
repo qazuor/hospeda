@@ -105,7 +105,7 @@ if (!hasMenuContent) {
 // the listing excludes it — a detail page (this one included) is not a
 // listing, and the collection tag would evict every other venue's page too.
 const venueCacheTags = buildEntityCacheTags({
-    entity: 'gastronomy',
+    entity: 'venue',
     slug,
     id: String(raw.id || '')
 });
@@ -119,7 +119,7 @@ applyCacheHeaders({
     tags:
         primaryVenueTag !== undefined
             ? [primaryVenueTag, ...extraVenueTags]
-            : [CACHE_TAG_COLLECTIONS.gastronomy]
+            : [CACHE_TAG_COLLECTIONS.venue]
 });
 
 // --- SEO ---

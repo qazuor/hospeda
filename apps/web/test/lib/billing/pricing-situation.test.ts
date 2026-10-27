@@ -158,7 +158,7 @@ describe('TEST:1621:5 pricing card CTA situation resolver', () => {
 });
 
 describe('TEST:1758:2 pricing card trial offer', () => {
-    const verticals = ['accommodation', 'gastronomy', 'experience', 'tourist'] as const;
+    const verticals = ['accommodation', 'venue', 'experience', 'tourist'] as const;
 
     it.each(verticals)('keeps the generic offer for an unread %s situation', (vertical) => {
         expect(resolvePlanCardTrialOffer({ vertical, result: null })).toBe(true);

@@ -177,7 +177,7 @@ describe('publishApi.precheck path per vertical (HOS-1156 T-016)', () => {
 
     it.each([
         ['accommodation', '/api/v1/protected/publish/precheck/accommodation'],
-        ['gastronomy', '/api/v1/protected/publish/precheck/gastronomy'],
+        ['venue', '/api/v1/protected/publish/precheck/venue'],
         ['experience', '/api/v1/protected/publish/precheck/experience']
     ] as const)('builds the %s path', async (vertical, expectedPath) => {
         await publishApi.precheck({ vertical });
@@ -188,7 +188,7 @@ describe('publishApi.precheck path per vertical (HOS-1156 T-016)', () => {
     it('forwards the SSR cookie header so the session resolves', async () => {
         // Without this the endpoint sees an anonymous caller and the page would
         // fail open to create_direct for a signed-in owner at their cap.
-        await publishApi.precheck({ vertical: 'gastronomy', cookieHeader: 'session=abc' });
+        await publishApi.precheck({ vertical: 'venue', cookieHeader: 'session=abc' });
 
         expect(getProtected).toHaveBeenCalledWith(
             expect.objectContaining({ cookieHeader: 'session=abc' })

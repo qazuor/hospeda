@@ -37,7 +37,7 @@ async function makeListing(args: {
             { ...base, type: 'CABIN' } as Partial<Accommodation>,
             args.tx
         );
-    if (args.vertical === 'gastronomy')
+    if (args.vertical === 'venue')
         return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, args.tx);
     return new ExperienceModel().create(
         { ...base, type: 'EXCURSION' } as Partial<Experience>,
@@ -47,7 +47,7 @@ async function makeListing(args: {
 
 describe.each([
     'accommodation',
-    'gastronomy',
+    'venue',
     'experience'
 ] as const)('listing publication model: %s', (vertical) => {
     it('locks, reads, counts, changes conditionally, stamps paired clock and audits', async () => {
@@ -139,7 +139,7 @@ describe.each([
             ).toEqual(stamped);
             const table = {
                 accommodation: 'accommodations',
-                gastronomy: 'gastronomies',
+                venue: 'gastronomies',
                 experience: 'experiences'
             }[vertical];
             const rows = await tx.execute(

@@ -83,7 +83,7 @@ const EXPERIENCE_ROW = {
 describe('the brochure cannot outrun the public ficha (HOS-1058)', () => {
     const CASES = [
         {
-            label: 'gastronomy',
+            label: 'venue',
             source: VenueBrochureSourceSchema,
             publicSchema: VenuePublicSchema
         },
@@ -149,7 +149,7 @@ describe('the QR target (HOS-1058)', () => {
     it('builds the gastronomy ficha URL the web app actually serves', () => {
         expect(
             buildPublicListingUrl({
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 slug: 'la-parrilla-del-puerto',
                 locale: 'es',
                 siteUrl: 'https://hospeda.com.ar'
@@ -171,7 +171,7 @@ describe('the QR target (HOS-1058)', () => {
     it('tolerates a trailing slash on the configured site URL', () => {
         expect(
             buildPublicListingUrl({
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 slug: 'x',
                 locale: 'pt',
                 siteUrl: 'https://hospeda.com.ar/'

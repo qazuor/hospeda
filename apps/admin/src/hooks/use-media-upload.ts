@@ -34,7 +34,7 @@ export type UploadEntityType = Extract<
     | 'destination'
     | 'event'
     | 'post'
-    | 'gastronomy'
+    | 'venue'
     | 'experience'
     | 'postSponsor'
     | 'eventOrganizer'

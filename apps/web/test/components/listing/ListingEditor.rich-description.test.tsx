@@ -72,7 +72,7 @@ const DESTINATION_1 = '11111111-1111-4111-8111-111111111111';
 function renderEditor(richDescription: string | undefined) {
     return render(
         <ListingEditor
-            vertical="gastronomy"
+            vertical="venue"
             sectionId="basicInfo"
             listingId="abc"
             locale="es"

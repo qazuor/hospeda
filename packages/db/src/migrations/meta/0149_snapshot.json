@@ -15726,7 +15726,7 @@
       "checkConstraints": {
         "fix_request_entity_type_check": {
           "name": "fix_request_entity_type_check",
-          "value": "\"fix_request\".\"entity_type\" IN ('accommodation', 'gastronomy', 'experience')"
+          "value": "\"fix_request\".\"entity_type\" IN ('accommodation', 'venue', 'experience')"
         },
         "fix_request_closed_by_requires_closed_at_check": {
           "name": "fix_request_closed_by_requires_closed_at_check",
@@ -27607,7 +27607,7 @@
         },
         "ck_addon_product_compatible_verticals": {
           "name": "ck_addon_product_compatible_verticals",
-          "value": "cardinality(\"addon_product\".\"compatible_verticals\") >= 1 AND \"addon_product\".\"compatible_verticals\" <@ ARRAY['accommodation', 'gastronomy', 'experience', 'tourist', 'partner']::varchar[]"
+          "value": "cardinality(\"addon_product\".\"compatible_verticals\") >= 1 AND \"addon_product\".\"compatible_verticals\" <@ ARRAY['accommodation', 'venue', 'experience', 'tourist', 'partner']::varchar[]"
         }
       },
       "isRLSEnabled": false
@@ -29109,7 +29109,7 @@
         },
         "ck_promo_code_verticals": {
           "name": "ck_promo_code_verticals",
-          "value": "\"promo_code\".\"all_verticals\" = (\"promo_code\".\"verticals\" IS NULL) AND (\"promo_code\".\"verticals\" IS NULL OR (cardinality(\"promo_code\".\"verticals\") >= 1 AND \"promo_code\".\"verticals\" <@ ARRAY['accommodation', 'gastronomy', 'experience', 'tourist', 'partner']::varchar[]))"
+          "value": "\"promo_code\".\"all_verticals\" = (\"promo_code\".\"verticals\" IS NULL) AND (\"promo_code\".\"verticals\" IS NULL OR (cardinality(\"promo_code\".\"verticals\") >= 1 AND \"promo_code\".\"verticals\" <@ ARRAY['accommodation', 'venue', 'experience', 'tourist', 'partner']::varchar[]))"
         },
         "ck_promo_code_total_quota": {
           "name": "ck_promo_code_total_quota",
@@ -30051,7 +30051,7 @@
       "checkConstraints": {
         "ck_vertical_id": {
           "name": "ck_vertical_id",
-          "value": "\"vertical\".\"id\" IN ('accommodation', 'gastronomy', 'experience', 'tourist', 'partner')"
+          "value": "\"vertical\".\"id\" IN ('accommodation', 'venue', 'experience', 'tourist', 'partner')"
         },
         "ck_vertical_activation_event": {
           "name": "ck_vertical_activation_event",

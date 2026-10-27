@@ -17,10 +17,10 @@ const now = new Date('2026-10-17T12:00:00.000Z');
 const DAY = 86_400_000;
 const tables: Readonly<Record<ListingVertical, string>> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'gastronomies',
     experience: 'experiences'
 };
-const verticals: readonly ListingVertical[] = ['accommodation', 'gastronomy', 'experience'];
+const verticals: readonly ListingVertical[] = ['accommodation', 'venue', 'experience'];
 
 async function makeListing(
     tx: DrizzleClient,
@@ -43,7 +43,7 @@ async function makeListing(
             { ...base, type: 'CABIN' } as Partial<Accommodation>,
             tx
         );
-    if (vertical === 'gastronomy')
+    if (vertical === 'venue')
         return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
     return new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx);
 }

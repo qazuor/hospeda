@@ -7,7 +7,7 @@
  *  2. Valid vertical value → route accepts the request (no validation error).
  *  3. Invalid vertical value → 400 (Zod enum rejection).
  *
- * Full DB-level filtering assertions (that only gastronomy-applicable features
+ * Full DB-level filtering assertions (that only venue-applicable features
  * are returned) require a seeded test database and belong in an e2e suite.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -43,8 +43,8 @@ describe('GET /api/v1/public/features — ?applicableVertical filter (SPEC-266 T
         expect(res.status).not.toBe(404);
     });
 
-    it('(2) ?applicableVertical=gastronomy — accepted, not a validation error', async () => {
-        const res = await app.request(`${BASE}?applicableVertical=gastronomy`, {
+    it('(2) ?applicableVertical=venue — accepted, not a validation error', async () => {
+        const res = await app.request(`${BASE}?applicableVertical=venue`, {
             method: 'GET',
             headers: { 'user-agent': 'vitest', accept: 'application/json' }
         });
@@ -59,6 +59,14 @@ describe('GET /api/v1/public/features — ?applicableVertical filter (SPEC-266 T
         });
         expect(res.status).not.toBe(400);
         expect(res.status).not.toBe(404);
+    });
+
+    it('(3) ?applicableVertical=gastronomy — rejected after the vertical rename', async () => {
+        const res = await app.request(`${BASE}?applicableVertical=gastronomy`, {
+            method: 'GET',
+            headers: { 'user-agent': 'vitest', accept: 'application/json' }
+        });
+        expect(res.status).toBe(400);
     });
 
     it('(3) ?applicableVertical=invalid — rejected by Zod enum with 400', async () => {

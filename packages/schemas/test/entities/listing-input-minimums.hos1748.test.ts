@@ -115,7 +115,7 @@ describe('TEST:1748:2 input and publish minimums are untouched', () => {
     });
 
     it.each([
-        'gastronomy',
+        'venue',
         'experience'
     ] as const)('resolveListingCompleteness flags a blank summary and description for %s', (entityType) => {
         // Arrange / Act

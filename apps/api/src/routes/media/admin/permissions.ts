@@ -18,7 +18,7 @@ export type MediaEntityType =
     | 'destination'
     | 'event'
     | 'post'
-    | 'gastronomy'
+    | 'venue'
     | 'experience'
     | 'postSponsor'
     | 'eventOrganizer';
@@ -35,7 +35,7 @@ const ENTITY_UPDATE_PERMISSIONS: Record<MediaEntityType, readonly PermissionEnum
     destination: [PermissionEnum.DESTINATION_UPDATE],
     event: [PermissionEnum.EVENT_UPDATE],
     post: [PermissionEnum.POST_UPDATE],
-    gastronomy: [PermissionEnum.GASTRONOMY_EDIT_OWN, PermissionEnum.GASTRONOMY_EDIT_ALL],
+    venue: [PermissionEnum.GASTRONOMY_EDIT_OWN, PermissionEnum.GASTRONOMY_EDIT_ALL],
     experience: [PermissionEnum.EXPERIENCE_EDIT_OWN, PermissionEnum.EXPERIENCE_EDIT_ALL],
     postSponsor: [PermissionEnum.POST_SPONSOR_UPDATE],
     eventOrganizer: [PermissionEnum.EVENT_ORGANIZER_UPDATE]
@@ -47,7 +47,7 @@ const ENTITY_UPDATE_PERMISSIONS: Record<MediaEntityType, readonly PermissionEnum
  */
 const OWN_ANY_ENTITIES: ReadonlySet<MediaEntityType> = new Set([
     'accommodation',
-    'gastronomy',
+    'venue',
     'experience'
 ]);
 
@@ -119,7 +119,7 @@ export const validateEntityMediaPermission = ({
         case 'accommodation':
             anyPermission = PermissionEnum.ACCOMMODATION_UPDATE_ANY;
             break;
-        case 'gastronomy':
+        case 'venue':
             anyPermission = PermissionEnum.GASTRONOMY_EDIT_ALL;
             break;
         case 'experience':

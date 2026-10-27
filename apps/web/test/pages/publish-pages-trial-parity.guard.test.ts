@@ -70,7 +70,7 @@ const PUBLISH_PAGES: ReadonlyArray<{
     {
         route: '/{lang}/publicar/gastronomia/',
         file: 'publicar/gastronomia/index.astro',
-        vertical: 'gastronomy',
+        vertical: 'venue',
         trialCalloutWiring: null
     },
     {

@@ -92,7 +92,7 @@ export const VenueSchema = z.object({
 
     /**
      * Billing-derived featuring (HOS-1286): true while a
-     * `visibility-boost-gastronomy-*` addon purchase grants an active
+     * `visibility-boost-venue-*` addon purchase grants an active
      * FEATURED_LISTING entitlement for THIS listing.
      *
      * The ONLY featuring source since HOS-1419 dropped the admin-curated

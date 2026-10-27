@@ -19,7 +19,7 @@
  *
  * Same stance `VenueMenu.astro` takes: `venueEvents` arrives PRE-FILTERED
  * by the API (`gastronomy/public/events-projection.ts`) — withheld entirely
- * when the owner's CURRENT plan does not grant `manage_gastronomy_events`, and
+ * when the owner's CURRENT plan does not grant `manage_venue_events`, and
  * with `isActive: false` entries already dropped. This component has no gate
  * of its own to apply and does not re-derive either filter.
  *
@@ -54,7 +54,7 @@ const { t } = createTranslations(locale);
 
 if (venueEvents.length === 0) {
     // Nothing to render — either the venue has no agenda, or the API already
-    // withheld it for a plan that does not carry `manage_gastronomy_events`.
+    // withheld it for a plan that does not carry `manage_venue_events`.
     return;
 }
 

@@ -62,7 +62,7 @@ async function insertGalleryPhoto(tx: DrizzleClient, listingId: string) {
 async function readMarkedPages(tx: DrizzleClient) {
     const items: { vertical: string; mediaId: string; publicId: string | null; markedAt: Date }[] =
         [];
-    let after: { vertical: 'accommodation' | 'gastronomy' | 'experience'; mediaId: string } | null =
+    let after: { vertical: 'accommodation' | 'venue' | 'experience'; mediaId: string } | null =
         null;
     do {
         const page = await listingPurgeModel.listMarkedMedia({ tx, after, limit: 2 });
@@ -103,7 +103,7 @@ describe('TEST:1702:1 AC:1702:1 AC:1702:4 gastronomy purge keeps a marked media 
 
             const result = await listingPurgeModel.purgeListingContent({
                 tx,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 listingId: listing.id,
                 at
             });
@@ -188,7 +188,7 @@ describe('TEST:1702:1 AC:1702:1 AC:1702:4 gastronomy purge keeps a marked media 
             expect(
                 await listingPurgeModel.deleteMarkedMedia({
                     tx,
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     mediaId: String(menuMedia.id)
                 })
             ).toBe(true);
@@ -240,7 +240,7 @@ describe('TEST:1702:1 AC:1702:1 AC:1702:4 gastronomy purge keeps a marked media 
 
             const result = await listingPurgeModel.purgeListingContent({
                 tx,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 listingId: listing.id,
                 at
             });

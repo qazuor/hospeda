@@ -99,9 +99,9 @@ describe('listing access orchestration', () => {
             await resolveListingAccess({
                 ...common,
                 operation: 'READ_OWN_COMMERCIAL',
-                step6Key: 'publish_gastronomy'
+                step6Key: 'publish_venue'
             })
-        ).toEqual({ allowed: false, reason: 'NO_CAPABILITY', key: 'publish_gastronomy' });
+        ).toEqual({ allowed: false, reason: 'NO_CAPABILITY', key: 'publish_venue' });
         expect(port.coverage).not.toHaveBeenCalled();
         expect(port.effectiveSet).toHaveBeenCalledOnce();
     });

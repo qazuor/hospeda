@@ -50,7 +50,7 @@
  *
  * ## The 403 is a real state, not an error
  *
- * The structured carta is a `gastronomy-pro` capability, and the page this
+ * The structured carta is a `venue-pro` capability, and the page this
  * mounts on carries no entitlement information — the same situation
  * `BrochureDownloadButton` is in. So the fields render for every owner and the
  * API decides; a refusal is shown as the upsell sentence it is, never as

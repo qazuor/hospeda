@@ -173,7 +173,7 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
         // a listing holds exactly one attachment. A carta holds as many photos
         // as it has dishes, so a fixed id would make every upload destroy the
         // previous dish's picture.
-        const folder = buildEntityFolder('gastronomy', gastronomyId);
+        const folder = buildEntityFolder('venue', gastronomyId);
 
         let uploaded: Awaited<ReturnType<typeof provider.upload>>;
         try {

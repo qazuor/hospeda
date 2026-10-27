@@ -439,7 +439,7 @@ export const amenitiesApi = {
          * its checkbox group. Added in HOS-318 — without it the editor page had
          * to bypass this wrapper with a raw `fetch`, which apps/web forbids.
          */
-        applicableVertical?: 'accommodation' | 'gastronomy' | 'experience';
+        applicableVertical?: 'accommodation' | 'venue' | 'experience';
         /**
          * HOS-103: opt in to the short-TTL SSR cache. Pass
          * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites. HOS-299 added
@@ -466,7 +466,7 @@ export const featuresApi = {
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
         /** SPEC-266: scope the catalog to one vertical. See `amenitiesApi.list`. */
-        applicableVertical?: 'accommodation' | 'gastronomy' | 'experience';
+        applicableVertical?: 'accommodation' | 'venue' | 'experience';
         /**
          * HOS-103: opt in to the short-TTL SSR cache. Pass
          * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites. HOS-299 added

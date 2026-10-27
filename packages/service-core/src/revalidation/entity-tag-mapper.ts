@@ -163,7 +163,7 @@ export function getAffectedCacheTags(event: EntityChangeData): readonly string[]
             break;
         }
 
-        case 'gastronomy':
+        case 'venue':
         case 'experience': {
             // Both are gastronomy and experience listings with the same shape: a detail page and
             // a listing page of their own, optionally tied to one destination.

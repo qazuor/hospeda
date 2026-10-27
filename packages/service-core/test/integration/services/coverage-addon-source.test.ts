@@ -232,7 +232,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 const { productId } = await seedCoverageAddonProduct(tx, {
                     addonId: addon.addonId,
                     versionId,
-                    compatibleVerticals: ['accommodation', 'gastronomy']
+                    compatibleVerticals: ['accommodation', 'venue']
                 });
                 const listingId = crypto.randomUUID();
                 await seedCoverageAddonInstance(tx, {

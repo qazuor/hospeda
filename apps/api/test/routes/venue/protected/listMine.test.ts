@@ -5,7 +5,7 @@
  * - Route registration (the literal "mine" segment is not swallowed by /{id})
  * - 401 when unauthenticated
  * - Authenticated owner: listOwn is called with the session actor and the
- *   result is mapped to owner-listing summaries (vertical = 'gastronomy',
+ *   result is mapped to owner-listing summaries (vertical = 'venue',
  *   isPublic and hasPublicPage derived from publicationStatus)
  */
 import { ProductDomainEnum, PublicationStatusEnum } from '@repo/schemas';

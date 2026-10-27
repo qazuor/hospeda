@@ -76,34 +76,34 @@ const FAKE_DESTINATION_ID = '11111111-1111-4111-8111-111111111111';
 const FAKE_OWNER_ID = '22222222-2222-4222-8222-222222222222';
 
 /**
- * Every write schema a REQUEST BODY can reach, per gastronomy or experience vertical.
+ * Every write schema a REQUEST BODY can reach, per venue or experience vertical.
  *
  * Both verticals are listed for all four tiers on purpose. The bug this file
- * guards was present in exactly one of the eight (gastronomy's generic update)
+ * guards was present in exactly one of the eight (venue's generic update)
  * while the other seven were already correct — so a table that checked "the
  * vertical" rather than each schema would have passed.
  */
 const WRITE_SCHEMAS: ReadonlyArray<{
-    vertical: 'gastronomy' | 'experience';
+    vertical: 'venue' | 'experience';
     name: string;
     schema: Parseable;
     /** A body this exact schema accepts — see {@link DEFAULT_PLAUSIBLE_BODY}. */
     plausibleBody: Record<string, unknown>;
 }> = [
     {
-        vertical: 'gastronomy',
+        vertical: 'venue',
         name: 'GastronomyOwnerCreateInputSchema',
         schema: VenueOwnerCreateInputSchema as unknown as Parseable,
         plausibleBody: { ...DEFAULT_PLAUSIBLE_BODY, type: 'RESTAURANT' }
     },
     {
-        vertical: 'gastronomy',
+        vertical: 'venue',
         name: 'GastronomyOwnerUpdateInputSchema',
         schema: VenueOwnerUpdateInputSchema as unknown as Parseable,
         plausibleBody: DEFAULT_PLAUSIBLE_BODY
     },
     {
-        vertical: 'gastronomy',
+        vertical: 'venue',
         name: 'GastronomyAdminCreateInputSchema',
         schema: VenueAdminCreateInputSchema as unknown as Parseable,
         plausibleBody: {
@@ -114,7 +114,7 @@ const WRITE_SCHEMAS: ReadonlyArray<{
         }
     },
     {
-        vertical: 'gastronomy',
+        vertical: 'venue',
         name: 'GastronomyUpdateInputSchema',
         schema: VenueUpdateInputSchema as unknown as Parseable,
         plausibleBody: DEFAULT_PLAUSIBLE_BODY

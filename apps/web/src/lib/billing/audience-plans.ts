@@ -57,7 +57,6 @@
  * `./price-on-request-audiences.ts` and {@link resolveAudienceStartingPrices}.
  */
 
-import type { PublicPlanCatalogVertical } from '@repo/schemas';
 import type { PricingAudience } from '../billing-i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '../pricing-plans';
 import { AUDIENCE_PLAN_VERTICALS } from './audience-plan-verticals';
@@ -174,18 +173,7 @@ export async function fetchAudiencePlans({
     const vertical = AUDIENCE_PLAN_VERTICALS[audience];
     const result = await fetchPublicPlans({ vertical });
 
-    // `selectAudiencePlans` uses one slot per vertical; the other slots are empty.
-    const empty: FetchPlansResult = { ok: true, plans: [] };
-    const byVertical: Record<PublicPlanCatalogVertical, FetchPlansResult> = {
-        accommodation: empty,
-        tourist: empty,
-        gastronomy: empty,
-        experience: empty
-    };
-    byVertical[vertical] = result;
-    const selected = selectAudiencePlans(byVertical)[audience];
-
-    return selected
+    return (result.ok ? result.plans : [])
         .filter((plan) => plan.isActive)
         .slice()
         .sort((a, b) => a.sortOrder - b.sortOrder);

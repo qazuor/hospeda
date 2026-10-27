@@ -53,11 +53,11 @@ describe('AC:B7:30 — the arrears suspension notice content (pure part)', () =>
 
     it('card with nothing to lose but the subscription', () => {
         // Arrange / Act
-        const content = buildArrearsSuspensionNoticeContent(facts({ vertical: 'gastronomy' }));
+        const content = buildArrearsSuspensionNoticeContent(facts({ vertical: 'venue' }));
 
         // Assert
         expect(content).toEqual({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             paymentMethod: 'CARD',
             touristVipLost: false,
             oneTimeAddons: [],

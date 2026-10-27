@@ -5,7 +5,7 @@ import { resolveListingPublishAffordances } from '../../../src/lib/listing/listi
 import type { OwnerListingSummaryWithState } from '../../../src/lib/listing/owner-listings';
 
 const listing = (
-    vertical: 'gastronomy' | 'experience',
+    vertical: 'venue' | 'experience',
     publicationStatus = PublicationStatusEnum.DRAFT
 ) =>
     ({
@@ -22,23 +22,21 @@ const destination = (value: 'PUBLISH' | 'CHECKOUT' | 'NO_PLANS_AVAILABLE') => ({
 describe('resolveListingPublishAffordances — TEST:1729:6', () => {
     it('resolves each listed draft vertical from its own destination read', async () => {
         const subscribeDestination = vi.fn(({ vertical }: { vertical: string }) =>
-            Promise.resolve(
-                vertical === 'gastronomy' ? destination('PUBLISH') : destination('CHECKOUT')
-            )
+            Promise.resolve(vertical === 'venue' ? destination('PUBLISH') : destination('CHECKOUT'))
         );
         const result = await resolveListingPublishAffordances({
-            listings: [listing('gastronomy'), listing('experience')],
+            listings: [listing('venue'), listing('experience')],
             cookieHeader: 'session=x',
             api: { subscribeDestination } as never
         });
         expect(subscribeDestination).toHaveBeenCalledTimes(2);
-        expect(result.get('gastronomy')).toMatchObject({ kind: 'publish', trialDays: 30 });
+        expect(result.get('venue')).toMatchObject({ kind: 'publish', trialDays: 30 });
         expect(result.get('experience')).toMatchObject({ kind: 'checkout', canPublish: false });
     });
 
     it('uses unknown for rejected results, thrown reads, and missing cookie', async () => {
         const failed = await resolveListingPublishAffordances({
-            listings: [listing('gastronomy')],
+            listings: [listing('venue')],
             cookieHeader: 'session=x',
             api: {
                 subscribeDestination: vi
@@ -47,17 +45,17 @@ describe('resolveListingPublishAffordances — TEST:1729:6', () => {
             } as never
         });
         const thrown = await resolveListingPublishAffordances({
-            listings: [listing('gastronomy')],
+            listings: [listing('venue')],
             cookieHeader: 'session=x',
             api: { subscribeDestination: vi.fn().mockRejectedValue(new Error('offline')) } as never
         });
         const noCookieApi = vi.fn();
         const noCookie = await resolveListingPublishAffordances({
-            listings: [listing('gastronomy')],
+            listings: [listing('venue')],
             api: { subscribeDestination: noCookieApi } as never
         });
         for (const result of [failed, thrown, noCookie])
-            expect(result.get('gastronomy')).toMatchObject({ kind: 'unknown' });
+            expect(result.get('venue')).toMatchObject({ kind: 'unknown' });
         expect(noCookieApi).not.toHaveBeenCalled();
     });
 

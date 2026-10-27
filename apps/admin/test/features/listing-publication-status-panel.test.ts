@@ -87,7 +87,7 @@ describe('the status filter of the accommodation lists', () => {
 describe('the state column of the three listing lists', () => {
     for (const [vertical, columns] of [
         ['accommodation', createAccommodationsColumns(t)],
-        ['gastronomy', createVenueColumns(t)],
+        ['venue', createVenueColumns(t)],
         ['experience', createExperienceColumns(t)]
     ] as const) {
         it(`${vertical}: ONE read-only publicationStatus badge with the six states`, () => {

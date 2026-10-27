@@ -261,7 +261,7 @@ function buildListing(overrides: Record<string, unknown> = {}): ListingDetail {
  * wrong section would pass vacuously with an empty body.
  */
 function renderEditor(
-    vertical: 'gastronomy' | 'experience',
+    vertical: 'venue' | 'experience',
     initialData: ListingDetail = buildListing(),
     sectionId: ListingEditorFormSectionId = 'basicInfo'
 ) {
@@ -334,7 +334,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
 
     describe('gastronomy price fields clear to null', () => {
         it('sends priceRange as an explicit null when the tier is cleared', async () => {
-            renderEditor('gastronomy', buildListing({ priceRange: 'MID' }), 'price');
+            renderEditor('venue', buildListing({ priceRange: 'MID' }), 'price');
 
             const select = screen.getByLabelText('Rango de precios');
             expect(select).toHaveValue('MID');
@@ -348,7 +348,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends menuUrl as an explicit null when the link is cleared', async () => {
-            renderEditor('gastronomy', buildListing({ menuUrl: 'https://old.test/menu' }), 'price');
+            renderEditor('venue', buildListing({ menuUrl: 'https://old.test/menu' }), 'price');
 
             const input = screen.getByLabelText('Enlace al menú');
             expect(input).toHaveValue('https://old.test/menu');
@@ -361,7 +361,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends menuUrl as the new value when set', async () => {
-            renderEditor('gastronomy', buildListing(), 'price');
+            renderEditor('venue', buildListing(), 'price');
 
             fireEvent.change(screen.getByLabelText('Enlace al menú'), {
                 target: { value: 'https://menu.test/carta' }
@@ -375,7 +375,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
 
     describe('published slug refresh opt-in (HOS-784 stage 2)', () => {
         it('does not send refreshSlugFromName by default when a published listing is renamed', async () => {
-            renderEditor('gastronomy', buildListing({ publicationStatus: 'PUBLISHED' }));
+            renderEditor('venue', buildListing({ publicationStatus: 'PUBLISHED' }));
 
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'La Parrilla Nueva' }
@@ -388,7 +388,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends refreshSlugFromName when the owner opts in on a published rename', async () => {
-            renderEditor('gastronomy', buildListing({ publicationStatus: 'PUBLISHED' }));
+            renderEditor('venue', buildListing({ publicationStatus: 'PUBLISHED' }));
 
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'La Parrilla Nueva' }
@@ -498,7 +498,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
     describe('grouped JSONB blocks travel whole, not per-leaf', () => {
         it('re-sends the untouched contact member when only one contact field changes', async () => {
             renderEditor(
-                'gastronomy',
+                'venue',
                 buildListing({
                     contactInfo: {
                         mobilePhone: '+5491100000000',
@@ -534,7 +534,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             // `undefined`) made an emptied field silently un-saveable — the
             // request succeeded and the stale value stayed on the row.
             renderEditor(
-                'gastronomy',
+                'venue',
                 buildListing({
                     contactInfo: {
                         mobilePhone: '+5491100000000',
@@ -561,7 +561,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
 
         it('re-sends the untouched social members when only one social URL changes', async () => {
             renderEditor(
-                'gastronomy',
+                'venue',
                 buildListing({
                     socialNetworks: {
                         facebook: 'https://facebook.com/old',
@@ -591,7 +591,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
 
         it('sends an explicit null for a social URL the owner cleared (HOS-1262)', async () => {
             renderEditor(
-                'gastronomy',
+                'venue',
                 buildListing({
                     socialNetworks: {
                         facebook: 'https://facebook.com/old',
@@ -614,7 +614,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends all four i18n fields together when EVERY one of them was actually edited', async () => {
-            renderEditor('gastronomy', buildListing(), 'translations');
+            renderEditor('venue', buildListing(), 'translations');
 
             fireEvent.click(screen.getByTestId('i18n-trigger'));
             fireEvent.click(saveButton());
@@ -633,11 +633,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         // must be entirely ABSENT from the payload when only `summaryI18n`
         // changed — not merely unchanged in value, but not sent.
         it('does not send an untouched i18n field when only a sibling field changed (HOS-902)', async () => {
-            renderEditor(
-                'gastronomy',
-                buildListing({ name: 'La Parrilla Original' }),
-                'translations'
-            );
+            renderEditor('venue', buildListing({ name: 'La Parrilla Original' }), 'translations');
 
             fireEvent.click(screen.getByTestId('i18n-summary-en-trigger'));
             fireEvent.click(saveButton());
@@ -688,11 +684,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         // see `apps/web/src/lib/api/transforms.ts`) would freeze on that text
         // forever, impossible to fix by renaming the plain `name` field again.
         it('does not leak the ES display fallback into nameI18n.es when only nameI18n.en changed (HOS-902)', async () => {
-            renderEditor(
-                'gastronomy',
-                buildListing({ name: 'La Parrilla Original' }),
-                'translations'
-            );
+            renderEditor('venue', buildListing({ name: 'La Parrilla Original' }), 'translations');
 
             fireEvent.click(screen.getByTestId('i18n-name-en-trigger'));
             fireEvent.click(saveButton());
@@ -722,7 +714,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
     describe('media never travels in the PATCH body (HOS-372)', () => {
         it('omits media even when the listing was loaded with photos', async () => {
             renderEditor(
-                'gastronomy',
+                'venue',
                 buildListing({
                     summary: 'Resumen original con largo suficiente.',
                     media: {
@@ -751,7 +743,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
 
         it('never fires the client-side Cloudinary delete', async () => {
             renderEditor(
-                'gastronomy',
+                'venue',
                 buildListing({ media: { gallery: [galleryImage] } }),
                 'basicInfo'
             );
@@ -768,7 +760,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
 
     describe('identity and catalog fields', () => {
         it('sends only type when the category changes', async () => {
-            renderEditor('gastronomy');
+            renderEditor('venue');
 
             const select = screen.getByLabelText('Categoría');
             const type = firstRealOption(select);
@@ -780,7 +772,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends only summary when the summary changes', async () => {
-            renderEditor('gastronomy');
+            renderEditor('venue');
 
             fireEvent.change(screen.getByLabelText('Resumen'), {
                 target: { value: 'Un resumen suficientemente largo para validar.' }
@@ -794,7 +786,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
 
     describe('baseline diffing (HOS-258 PR 1 behaviour change)', () => {
         it('drops a field that was edited and then reverted by hand', async () => {
-            const { container } = renderEditor('gastronomy');
+            const { container } = renderEditor('venue');
 
             const input = screen.getByLabelText('Nombre del comercio');
             fireEvent.change(input, { target: { value: 'Otro nombre' } });
@@ -811,7 +803,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends only the still-changed field when another was reverted', async () => {
-            renderEditor('gastronomy');
+            renderEditor('venue');
 
             const nameInput = screen.getByLabelText('Nombre del comercio');
             fireEvent.change(nameInput, { target: { value: 'Otro nombre' } });
@@ -826,7 +818,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('lets the owner undo a just-saved field without reloading (HOS-190 F6)', async () => {
-            renderEditor('gastronomy');
+            renderEditor('venue');
 
             const input = screen.getByLabelText('Nombre del comercio');
             fireEvent.change(input, { target: { value: 'La Nueva Parrilla' } });
@@ -850,7 +842,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
 
     describe('submit gating', () => {
         it('does not PATCH at all when nothing changed', async () => {
-            const { container } = renderEditor('gastronomy');
+            const { container } = renderEditor('venue');
 
             const form = container.querySelector('form');
             expect(form).not.toBeNull();
@@ -863,7 +855,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('carries every dirty field of the section in a single PATCH', async () => {
-            renderEditor('gastronomy');
+            renderEditor('venue');
 
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'La Nueva Parrilla' }
@@ -894,7 +886,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             // `editor/listing-section-payload.test.ts` unit-tests the function
             // and statically guards that the editor still routes the payload
             // through it.
-            renderEditor('gastronomy', buildListing({ priceRange: 'MID' }), 'price');
+            renderEditor('venue', buildListing({ priceRange: 'MID' }), 'price');
 
             expect(screen.queryByLabelText('Nombre del comercio')).toBeNull();
             expect(screen.queryByLabelText('Resumen')).toBeNull();

@@ -37,7 +37,7 @@ export interface TrialSeriesEmailProps {
     /**
      * The trial's billing vertical (HOS-1283) — the raw
      * `billing_subscriptions.product_domain` string, e.g. `'accommodation'` /
-     * `'gastronomy'` / `'experience'`, or `null`/`undefined` on a pre-domain
+     * `'venue'` / `'experience'`, or `null`/`undefined` on a pre-domain
      * row. Every template that names a listing, its photos, or what shows up
      * in a search resolves this via `resolveTrialSeriesCopy`
      * (`../../utils/product-domain-copy.js`) instead of hardcoding

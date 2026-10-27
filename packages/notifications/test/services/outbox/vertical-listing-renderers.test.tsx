@@ -65,7 +65,7 @@ describe('vertical listing notice renderers (HOS-1492, AC:V8a:5 and AC:V8a:6)', 
 
     it('TEST:V8a:7 row 31: the purge confirmation says it was deleted, what, and that it does not come back', async () => {
         const { subject, html } = await render('verticals.listing-purged', {
-            vertical: 'gastronomy',
+            vertical: 'venue',
             listingId: OTHER_ID,
             bySupport: false
         });
@@ -120,7 +120,7 @@ describe('vertical listing notice renderers (HOS-1492, AC:V8a:5 and AC:V8a:6)', 
 
     it('TEST:V8a:7 row 30: the fix request says the reason, the suggested date, that it stays visible, and where to report it', async () => {
         const { subject, html } = await render('verticals.listing-fix-requested', {
-            vertical: 'gastronomy',
+            vertical: 'venue',
             listingId: OTHER_ID,
             reason: 'Falta el horario del domingo',
             suggestedDate: '2026-10-20',
@@ -376,7 +376,7 @@ describe('TEST:1675:1 AC:1675:1 AC:1675:3 the support content-edit notice (row 2
             row: row({
                 template: 'verticals.listing-content-edited-by-support',
                 payload: {
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     listingId: LISTING_ID,
                     listingName: 'Parrilla',
                     editedAt: '2026-10-20T12:00:00.000Z',

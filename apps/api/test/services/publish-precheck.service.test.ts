@@ -37,7 +37,7 @@ vi.mock('../../src/utils/listing-publication/ports', () => ({
 
 import { resolvePublishPrecheck } from '../../src/services/publish-precheck.service';
 
-type Vertical = 'accommodation' | 'gastronomy' | 'experience';
+type Vertical = 'accommodation' | 'venue' | 'experience';
 
 const ACTOR = { id: 'owner-1', roles: [], permissions: [] } as never;
 
@@ -76,7 +76,7 @@ beforeEach(() => {
     vi.clearAllMocks();
 });
 
-const VERTICALS: readonly Vertical[] = ['accommodation', 'gastronomy', 'experience'];
+const VERTICALS: readonly Vertical[] = ['accommodation', 'venue', 'experience'];
 
 describe.each(VERTICALS)('publish precheck decision matrix — %s', (vertical) => {
     it('no drafts -> create_direct', async () => {
@@ -124,7 +124,7 @@ describe('fail-open (AC-12, D-5)', () => {
         const result = await resolvePublishPrecheck({
             ctx: makeCtx(),
             actor: ACTOR,
-            vertical: 'gastronomy'
+            vertical: 'venue'
         });
 
         expect(result.decision).toBe('create_direct');
@@ -137,7 +137,7 @@ describe('fail-open (AC-12, D-5)', () => {
         const result = await resolvePublishPrecheck({
             ctx: makeCtx(),
             actor: ACTOR,
-            vertical: 'gastronomy'
+            vertical: 'venue'
         });
 
         expect(result.decision).toBe('create_direct');

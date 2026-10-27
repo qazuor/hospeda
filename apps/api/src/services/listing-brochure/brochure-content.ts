@@ -41,7 +41,7 @@ import { ModerationStatusEnum } from '@repo/schemas';
 import type { ExperienceBrochureSource, VenueBrochureSource } from './brochure-source.js';
 
 /** The two gastronomy and experience verticals a brochure can be built for. */
-export type BrochureVertical = 'gastronomy' | 'experience';
+export type BrochureVertical = 'venue' | 'experience';
 
 /** One titled block of the printed page. */
 export interface BrochureSection {
@@ -108,13 +108,13 @@ const DAYS: readonly { readonly key: string; readonly label: string }[] = [
  * a 404, which is why the route test asserts the built URL literally.
  */
 const PUBLIC_PATH_SEGMENT: Readonly<Record<BrochureVertical, string>> = {
-    gastronomy: 'gastronomia',
+    venue: 'gastronomia',
     experience: 'experiencias'
 };
 
 /** i18n namespace each vertical's detail copy lives in. */
 const DETAIL_NS: Readonly<Record<BrochureVertical, string>> = {
-    gastronomy: 'gastronomy.detail',
+    venue: 'gastronomy.detail',
     experience: 'experience.detail'
 };
 
@@ -323,7 +323,7 @@ export function buildVenueBrochureContent(input: {
     siteUrl: string;
 }): BrochureContent {
     const { listing, locale } = input;
-    const ns = DETAIL_NS.gastronomy;
+    const ns = DETAIL_NS.venue;
 
     const title = i18nText({ value: listing.nameI18n, locale }) || listing.name;
     const typeLabel = t({ locale, key: `gastronomy.types.${listing.type}` });
@@ -379,7 +379,7 @@ export function buildVenueBrochureContent(input: {
         price: priceRange || null,
         sections,
         url: buildPublicListingUrl({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             slug: listing.slug,
             locale,
             siteUrl: input.siteUrl

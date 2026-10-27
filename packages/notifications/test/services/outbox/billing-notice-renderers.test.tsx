@@ -47,7 +47,7 @@ describe('TEST:1675:1 AC:1675:1 AC:1675:3 the signup-declined, grace-started and
     it('renders grace end on the market day', async () => {
         const { subject, html } = await render('billing.grace-started', {
             subscriptionId,
-            vertical: 'gastronomy',
+            vertical: 'venue',
             graceEndsAt: '2026-10-20T02:00:00.000Z'
         });
         expect(subject).toBe(GRACE_STARTED_SUBJECT);

@@ -25,7 +25,7 @@ function renderSection(overrides: Partial<React.ComponentProps<typeof PriceSecti
     render(
         <PriceSection
             locale="es"
-            vertical="gastronomy"
+            vertical="venue"
             data={buildEditData()}
             errors={{}}
             onFieldChange={onFieldChange}
@@ -212,7 +212,7 @@ describe('PriceSection', () => {
         const { unmount } = render(
             <PriceSection
                 locale="es"
-                vertical="gastronomy"
+                vertical="venue"
                 data={buildEditData()}
                 errors={{}}
                 onFieldChange={vi.fn()}

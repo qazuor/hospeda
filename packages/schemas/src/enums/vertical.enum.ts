@@ -7,7 +7,7 @@
  * it is left untouched until its own retirement.
  *
  * - accommodation: lodging listings.
- * - gastronomy: gastronomy listings.
+ * - venue: venue listings.
  * - experience: experience listings.
  * - tourist: the consumer side. Owns no listings.
  * - partner: the partner directory.
@@ -17,7 +17,7 @@
  */
 export enum VerticalEnum {
     ACCOMMODATION = 'accommodation',
-    VENUE = 'gastronomy',
+    VENUE = 'venue',
     EXPERIENCE = 'experience',
     TOURIST = 'tourist',
     PARTNER = 'partner'

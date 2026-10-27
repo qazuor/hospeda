@@ -84,7 +84,7 @@ export type ListingEditorSection =
  * failing spec as "the editor is broken", not "the path was wrong".
  *
  * @param params.webUrl - Base URL of the web app under test
- * @param params.vertical - `gastronomy` or `experience`
+ * @param params.vertical - `venue` or `experience`
  * @param params.listingId - UUID of the listing being edited
  * @param params.section - Which section page to open
  * @param params.locale - UI locale segment (default `es`)
@@ -97,7 +97,7 @@ export function listingEditorUrl({
     locale = 'es'
 }: {
     readonly webUrl: string;
-    readonly vertical: 'gastronomy' | 'experience';
+    readonly vertical: 'venue' | 'experience';
     readonly listingId: string;
     readonly section: ListingEditorSection;
     readonly locale?: string;

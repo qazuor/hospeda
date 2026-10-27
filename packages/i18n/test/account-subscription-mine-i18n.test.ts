@@ -7,7 +7,7 @@ import portugueseAccount from '../src/locales/pt/account.json';
 const locales = [spanishAccount, englishAccount, portugueseAccount];
 const verticals = [
     'accommodation',
-    'gastronomy',
+    'venue',
     'experience',
     'tourist',
     'partner',

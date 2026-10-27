@@ -89,7 +89,7 @@ const venue = toVenueDetailPageProps({ item: raw, locale });
 // detail page is not a listing, and the collection tag would make every
 // gastronomy write evict every other one's page.
 const venueCacheTags = buildEntityCacheTags({
-    entity: 'gastronomy',
+    entity: 'venue',
     slug,
     id: String(raw.id || '')
 });
@@ -105,7 +105,7 @@ applyCacheHeaders({
     tags:
         primaryVenueTag !== undefined
             ? [primaryVenueTag, ...extraVenueTags]
-            : [CACHE_TAG_COLLECTIONS.gastronomy]
+            : [CACHE_TAG_COLLECTIONS.venue]
 });
 
 // --- Parallel secondary fetches ---

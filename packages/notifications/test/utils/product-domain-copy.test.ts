@@ -16,7 +16,7 @@ import {
 
 describe('resolveTrialSeriesCopy (HOS-1283)', () => {
     it('resolves gastronomy copy', () => {
-        const copy = resolveTrialSeriesCopy('gastronomy');
+        const copy = resolveTrialSeriesCopy('venue');
         expect(copy.possessive).toBe('tu local');
         expect(copy.searchIntent).toBe('dónde comer');
     });
@@ -40,7 +40,7 @@ describe('resolveTrialSeriesCopy (HOS-1283)', () => {
         // Guards against a resolver that "branches" but returns the same
         // object for every case — every field must actually change.
         const accommodation = resolveTrialSeriesCopy('accommodation');
-        const gastronomy = resolveTrialSeriesCopy('gastronomy');
+        const gastronomy = resolveTrialSeriesCopy('venue');
         const experience = resolveTrialSeriesCopy('experience');
 
         for (const key of Object.keys(accommodation) as (keyof typeof accommodation)[]) {
@@ -54,7 +54,7 @@ describe('resolveRenewalReminderFooter (HOS-1283)', () => {
     it('has a distinct sentence per business vertical', () => {
         const sentences = [
             resolveRenewalReminderFooter('accommodation'),
-            resolveRenewalReminderFooter('gastronomy'),
+            resolveRenewalReminderFooter('venue'),
             resolveRenewalReminderFooter('experience'),
             resolveRenewalReminderFooter('tourist'),
             resolveRenewalReminderFooter('partner')

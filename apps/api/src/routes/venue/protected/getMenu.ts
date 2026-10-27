@@ -7,7 +7,7 @@
  *
  * ## Why this read carries NO entitlement gate
  *
- * `MANAGE_GASTRONOMY_MENU` gates BUILDING a structured carta, not looking at
+ * `MANAGE_VENUE_MENU` gates BUILDING a structured carta, not looking at
  * one. Two ordinary situations make the difference matter:
  *
  *  - A `-basico` owner opens the editor. They must see the menu section, the

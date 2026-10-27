@@ -96,7 +96,7 @@ const BASE_DATA = {
     richDescription: 'old text'
 } as unknown as ListingDetail;
 
-type Vertical = 'gastronomy' | 'experience';
+type Vertical = 'venue' | 'experience';
 
 /**
  * Renders EVERY form section of the editor at once (HOS-1080).
@@ -126,19 +126,17 @@ function renderEditor(vertical: Vertical) {
     const sectionIds = Object.keys(LISTING_SECTION_PAYLOAD_KEYS) as ListingEditorFormSectionId[];
 
     return render(
-        <>
-            {sectionIds.map((sectionId) => (
-                <ListingEditor
-                    key={sectionId}
-                    vertical={vertical}
-                    sectionId={sectionId}
-                    listingId="abc"
-                    locale="es"
-                    initialData={BASE_DATA}
-                    destinations={[{ id: DESTINATION_ID, name: 'Concepción del Uruguay' }]}
-                />
-            ))}
-        </>
+        sectionIds.map((sectionId) => (
+            <ListingEditor
+                key={sectionId}
+                vertical={vertical}
+                sectionId={sectionId}
+                listingId="abc"
+                locale="es"
+                initialData={BASE_DATA}
+                destinations={[{ id: DESTINATION_ID, name: 'Concepción del Uruguay' }]}
+            />
+        ))
     );
 }
 
@@ -176,7 +174,7 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
 };
 
 const SCHEMA_BY_VERTICAL = {
-    gastronomy: VenueOwnerUpdateInputSchema,
+    venue: VenueOwnerUpdateInputSchema,
     experience: ExperienceOwnerUpdateInputSchema
 } as const;
 
@@ -226,7 +224,7 @@ describe('listing editor — derived field ids (HOS-385 AC-5)', () => {
         vi.clearAllMocks();
     });
 
-    for (const vertical of ['gastronomy', 'experience'] as const) {
+    for (const vertical of ['venue', 'experience'] as const) {
         describe(vertical, () => {
             const focusable = focusableKeysFor(vertical);
 
@@ -286,7 +284,7 @@ describe('listing editor — derived field ids (HOS-385 AC-5)', () => {
         // One section, not all eight: eight mounted forms would each render a
         // "Guardar" and the query below would be ambiguous. `summary` lives on
         // basic info, so that is the page whose round trip is asserted.
-        renderSection('gastronomy', 'basicInfo');
+        renderSection('venue', 'basicInfo');
 
         // `summary` has a 10-character minimum. It is not the first field on
         // the page, which is the point: the helper picks the first INVALID

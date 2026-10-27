@@ -22,7 +22,7 @@ describe('TEST:B13a:21b AC:B13a:5 and AC:1735:8 the signup notice contract', () 
             {
                 plan: { name: 'Plan test', amount: 1500000, currency: 'ARS', cycle: 'annual' },
                 pendingAttempt: null,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 touristVip: { status: 'CANCELLED_ON_RETURN' },
                 trial: { status: 'NOT_RUNNING' }
             }

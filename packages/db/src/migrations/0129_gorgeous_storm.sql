@@ -15,7 +15,7 @@ CREATE TABLE "catalog_key" (
 CREATE TABLE "vertical" (
 	"id" varchar(32) PRIMARY KEY NOT NULL,
 	"activation_event" varchar(64),
-	CONSTRAINT "ck_vertical_id" CHECK ("vertical"."id" IN ('accommodation', 'gastronomy', 'experience', 'tourist', 'partner')),
+	CONSTRAINT "ck_vertical_id" CHECK ("vertical"."id" IN ('accommodation', 'venue', 'experience', 'tourist', 'partner')),
 	CONSTRAINT "ck_vertical_activation_event" CHECK ("vertical"."activation_event" IS NULL OR "vertical"."activation_event" IN ('listing_published', 'start_button_pressed'))
 );
 
@@ -24,7 +24,7 @@ CREATE TABLE "vertical" (
 -- Order is deterministic: verticals in enum order; keys entitlements first then limits, each sorted by key.
 INSERT INTO "vertical" ("id", "activation_event") VALUES
 	('accommodation', 'listing_published'),
-	('gastronomy', 'listing_published'),
+	('venue', 'listing_published'),
 	('experience', 'listing_published'),
 	('tourist', 'start_button_pressed'),
 	('partner', NULL);
@@ -54,27 +54,27 @@ INSERT INTO "catalog_key" ("key", "kind", "scope", "aggregation_strategy", "enfo
 	('download_listing_pdf', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('edit_accommodation_info', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('edit_experience_info', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
-	('edit_gastronomy_info', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
+	('edit_venue_info', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('exclusive_deals', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('featured_listing', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('has_verification_badge', 'entitlement', 'global', 'MAX', 'NONE', 'COMMERCIAL'),
 	('issue_experience_certificate', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('manage_experience_directions', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('manage_experience_private_galleries', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
-	('manage_gastronomy_daily_special', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
-	('manage_gastronomy_events', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
-	('manage_gastronomy_menu', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
+	('manage_venue_daily_special', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
+	('manage_venue_events', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
+	('manage_venue_menu', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('menu_item_photos', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('menu_qr_scan_metrics', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('multi_property_management', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
-	('multilingual_gastronomy_menu', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
+	('multilingual_venue_menu', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('partner_carousel_presence', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('partner_public_page', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('price_alerts', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('priority_support', 'entitlement', 'global', 'MAX', 'NONE', 'COMMERCIAL'),
 	('publish_accommodations', 'entitlement', 'vertical', 'MAX', 'UNPUBLISH', 'COMMERCIAL'),
 	('publish_experience', 'entitlement', 'vertical', 'MAX', 'UNPUBLISH', 'COMMERCIAL'),
-	('publish_gastronomy', 'entitlement', 'vertical', 'MAX', 'UNPUBLISH', 'COMMERCIAL'),
+	('publish_venue', 'entitlement', 'vertical', 'MAX', 'UNPUBLISH', 'COMMERCIAL'),
 	('read_reviews', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('recover_own_listing', 'entitlement', 'vertical', 'MAX', 'NONE', 'BASE'),
 	('respond_reviews', 'entitlement', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
@@ -94,8 +94,8 @@ INSERT INTO "catalog_key" ("key", "kind", "scope", "aggregation_strategy", "enfo
 	('max_ai_accommodation_import_per_month', 'limit', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'),
 	('max_ai_chat_consumer_per_month', 'limit', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'),
 	('max_ai_chat_experience_per_month', 'limit', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'),
-	('max_ai_chat_gastronomy_per_month', 'limit', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'),
 	('max_ai_chat_per_month', 'limit', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'),
+	('max_ai_chat_venue_per_month', 'limit', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'),
 	('max_ai_search_per_month', 'limit', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'),
 	('max_ai_support_per_month', 'limit', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'),
 	('max_ai_text_improve_per_month', 'limit', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'),
@@ -104,8 +104,8 @@ INSERT INTO "catalog_key" ("key", "kind", "scope", "aggregation_strategy", "enfo
 	('max_compare_items', 'limit', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'),
 	('max_experiences', 'limit', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'),
 	('max_favorites', 'limit', 'vertical', 'SUM', 'ARCHIVE', 'COMMERCIAL'),
-	('max_gastronomies', 'limit', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'),
 	('max_photos_per_accommodation', 'limit', 'vertical', 'SUM', 'ARCHIVE', 'COMMERCIAL'),
 	('max_properties', 'limit', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'),
 	('max_search_history_entries', 'limit', 'vertical', 'MAX', 'ARCHIVE', 'COMMERCIAL'),
-	('max_staff_accounts', 'limit', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL');
+	('max_staff_accounts', 'limit', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'),
+	('max_venues', 'limit', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL');

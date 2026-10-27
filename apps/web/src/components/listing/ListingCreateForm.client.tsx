@@ -126,7 +126,7 @@ export function ListingCreateForm({
 }: ListingCreateFormProps): JSX.Element {
     const { t } = createTranslations(locale);
 
-    const schema = vertical === 'gastronomy' ? VENUE_FORM_SCHEMA : EXPERIENCE_FORM_SCHEMA;
+    const schema = vertical === 'venue' ? VENUE_FORM_SCHEMA : EXPERIENCE_FORM_SCHEMA;
     const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
         schema,
         t
@@ -144,7 +144,7 @@ export function ListingCreateForm({
     const [isPriceOnRequest, setIsPriceOnRequest] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const typeOptions = vertical === 'gastronomy' ? VENUE_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
+    const typeOptions = vertical === 'venue' ? VENUE_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
 
     // HOS-820: "comercio" is the name of the internal module gastronomy and
     // experience share — not a word an excursion, a boat trip or a tour guide
@@ -154,15 +154,15 @@ export function ListingCreateForm({
     // of scope: the account sidebar's "Mi comercio", which is one shared entry
     // across both verticals and needs a neutral term rather than a branch.
     const nameLabel =
-        vertical === 'gastronomy'
+        vertical === 'venue'
             ? t('listing.owner.create.fields.name.gastronomy', 'Nombre del comercio')
             : t('listing.owner.create.fields.name.experience', 'Nombre de la experiencia');
     const submitLabel =
-        vertical === 'gastronomy'
+        vertical === 'venue'
             ? t('listing.owner.create.submit.gastronomy', 'Crear comercio')
             : t('listing.owner.create.submit.experience', 'Crear experiencia');
     const createErrorMessage =
-        vertical === 'gastronomy'
+        vertical === 'venue'
             ? t(
                   'listing.owner.create.error.gastronomy',
                   'No pudimos crear el comercio. Probá de nuevo.'
@@ -212,9 +212,9 @@ export function ListingCreateForm({
         // server-side (see the module doc), but TS cannot see that equivalence
         // across the two distinct zod object types.
         const created = await createOwnerListing(
-            vertical === 'gastronomy'
+            vertical === 'venue'
                 ? {
-                      vertical: 'gastronomy',
+                      vertical: 'venue',
                       // TYPE-WORKAROUND: narrow form-subset → full owner-create input (see above).
                       data: parsed.data as unknown as VenueOwnerCreateInput
                   }

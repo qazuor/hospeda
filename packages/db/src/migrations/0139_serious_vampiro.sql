@@ -92,7 +92,7 @@ CREATE TABLE "promo_code" (
 	CONSTRAINT "uq_promo_code_code" UNIQUE("code"),
 	CONSTRAINT "ck_promo_code_discount_kind" CHECK ("promo_code"."discount_kind" IN ('PERCENTAGE', 'FIXED')),
 	CONSTRAINT "ck_promo_code_value" CHECK ("promo_code"."value" > 0 AND ("promo_code"."discount_kind" <> 'PERCENTAGE' OR "promo_code"."value" <= 100)),
-	CONSTRAINT "ck_promo_code_verticals" CHECK ("promo_code"."all_verticals" = ("promo_code"."verticals" IS NULL) AND ("promo_code"."verticals" IS NULL OR (cardinality("promo_code"."verticals") >= 1 AND "promo_code"."verticals" <@ ARRAY['accommodation', 'gastronomy', 'experience', 'tourist', 'partner']::varchar[]))),
+	CONSTRAINT "ck_promo_code_verticals" CHECK ("promo_code"."all_verticals" = ("promo_code"."verticals" IS NULL) AND ("promo_code"."verticals" IS NULL OR (cardinality("promo_code"."verticals") >= 1 AND "promo_code"."verticals" <@ ARRAY['accommodation', 'venue', 'experience', 'tourist', 'partner']::varchar[]))),
 	CONSTRAINT "ck_promo_code_total_quota" CHECK ("promo_code"."total_quota" > 0),
 	CONSTRAINT "ck_promo_code_window" CHECK ("promo_code"."valid_until" > "promo_code"."valid_from"),
 	CONSTRAINT "ck_promo_code_duration_kind" CHECK ("promo_code"."duration_kind" IN ('FIRST_CHARGE', 'N_CHARGES', 'FOREVER')),
@@ -164,7 +164,7 @@ CREATE TABLE "addon_product" (
 	CONSTRAINT "ck_addon_product_currency" CHECK ("addon_product"."currency" = 'ARS'),
 	CONSTRAINT "ck_addon_product_charge_kind" CHECK ("addon_product"."charge_kind" IN ('UNA_VEZ', 'PERIODICO')),
 	CONSTRAINT "ck_addon_product_cycle" CHECK (("addon_product"."charge_kind" = 'PERIODICO') = ("addon_product"."cycle" IS NOT NULL) AND ("addon_product"."cycle" IS NULL OR "addon_product"."cycle" IN ('monthly', 'quarterly', 'semiannual', 'annual'))),
-	CONSTRAINT "ck_addon_product_compatible_verticals" CHECK (cardinality("addon_product"."compatible_verticals") >= 1 AND "addon_product"."compatible_verticals" <@ ARRAY['accommodation', 'gastronomy', 'experience', 'tourist', 'partner']::varchar[])
+	CONSTRAINT "ck_addon_product_compatible_verticals" CHECK (cardinality("addon_product"."compatible_verticals") >= 1 AND "addon_product"."compatible_verticals" <@ ARRAY['accommodation', 'venue', 'experience', 'tourist', 'partner']::varchar[])
 );
 --> statement-breakpoint
 CREATE TABLE "manual_payment" (

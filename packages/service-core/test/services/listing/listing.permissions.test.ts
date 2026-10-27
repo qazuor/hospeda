@@ -110,12 +110,12 @@ describe('checkCanCreateListing', () => {
 describe('checkCanEditAll', () => {
     it('should allow actor with GASTRONOMY_EDIT_ALL', () => {
         expect(() =>
-            checkCanEditAll(makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]), {}, 'gastronomy')
+            checkCanEditAll(makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]), {}, 'venue')
         ).not.toThrow();
     });
 
     it('should forbid actor without GASTRONOMY_EDIT_ALL', () => {
-        expectForbidden(() => checkCanEditAll(makeActor([]), {}, 'gastronomy'));
+        expectForbidden(() => checkCanEditAll(makeActor([]), {}, 'venue'));
     });
 });
 
@@ -132,7 +132,7 @@ describe('checkCanEditOwn', () => {
             checkCanEditOwn(
                 makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]),
                 nonOwnedEntity,
-                'gastronomy'
+                'venue'
             )
         ).not.toThrow();
     });
@@ -142,7 +142,7 @@ describe('checkCanEditOwn', () => {
             checkCanEditOwn(
                 makeActor([PermissionEnum.GASTRONOMY_EDIT_OWN], 'actor-1'),
                 entity,
-                'gastronomy'
+                'venue'
             )
         ).not.toThrow();
     });
@@ -152,13 +152,13 @@ describe('checkCanEditOwn', () => {
             checkCanEditOwn(
                 makeActor([PermissionEnum.GASTRONOMY_EDIT_OWN], 'other-actor'),
                 entity,
-                'gastronomy'
+                'venue'
             )
         );
     });
 
     it('should forbid actor with no permissions', () => {
-        expectForbidden(() => checkCanEditOwn(makeActor([]), entity, 'gastronomy'));
+        expectForbidden(() => checkCanEditOwn(makeActor([]), entity, 'venue'));
     });
 });
 
@@ -169,12 +169,12 @@ describe('checkCanEditOwn', () => {
 describe('checkCanDeleteListing', () => {
     it('should allow actor with GASTRONOMY_DELETE', () => {
         expect(() =>
-            checkCanDeleteListing(makeActor([PermissionEnum.GASTRONOMY_DELETE]), {}, 'gastronomy')
+            checkCanDeleteListing(makeActor([PermissionEnum.GASTRONOMY_DELETE]), {}, 'venue')
         ).not.toThrow();
     });
 
     it('should forbid actor without GASTRONOMY_DELETE', () => {
-        expectForbidden(() => checkCanDeleteListing(makeActor([]), {}, 'gastronomy'));
+        expectForbidden(() => checkCanDeleteListing(makeActor([]), {}, 'venue'));
     });
 });
 
@@ -185,12 +185,12 @@ describe('checkCanDeleteListing', () => {
 describe('checkCanViewAll', () => {
     it('should allow actor with GASTRONOMY_VIEW_ALL', () => {
         expect(() =>
-            checkCanViewAll(makeActor([PermissionEnum.GASTRONOMY_VIEW_ALL]), 'gastronomy')
+            checkCanViewAll(makeActor([PermissionEnum.GASTRONOMY_VIEW_ALL]), 'venue')
         ).not.toThrow();
     });
 
     it('should forbid actor without GASTRONOMY_VIEW_ALL', () => {
-        expectForbidden(() => checkCanViewAll(makeActor([]), 'gastronomy'));
+        expectForbidden(() => checkCanViewAll(makeActor([]), 'venue'));
     });
 });
 
@@ -201,18 +201,18 @@ describe('checkCanViewAll', () => {
 describe('checkCanAdminListListings', () => {
     it('should allow actor with GASTRONOMY_VIEW_ALL', () => {
         expect(() =>
-            checkCanAdminListListings(makeActor([PermissionEnum.GASTRONOMY_VIEW_ALL]), 'gastronomy')
+            checkCanAdminListListings(makeActor([PermissionEnum.GASTRONOMY_VIEW_ALL]), 'venue')
         ).not.toThrow();
     });
 
     it('should allow actor holding only the vertical viewAll (HOS-1077)', () => {
         expect(() =>
-            checkCanAdminListListings(makeActor([PermissionEnum.GASTRONOMY_VIEW_ALL]), 'gastronomy')
+            checkCanAdminListListings(makeActor([PermissionEnum.GASTRONOMY_VIEW_ALL]), 'venue')
         ).not.toThrow();
     });
 
     it('should forbid actor with neither permission', () => {
-        expectForbidden(() => checkCanAdminListListings(makeActor([]), 'gastronomy'));
+        expectForbidden(() => checkCanAdminListListings(makeActor([]), 'venue'));
     });
 });
 
@@ -223,15 +223,12 @@ describe('checkCanAdminListListings', () => {
 describe('checkCanModerateReview', () => {
     it('should allow actor with GASTRONOMY_MODERATE_REVIEW', () => {
         expect(() =>
-            checkCanModerateReview(
-                makeActor([PermissionEnum.GASTRONOMY_MODERATE_REVIEW]),
-                'gastronomy'
-            )
+            checkCanModerateReview(makeActor([PermissionEnum.GASTRONOMY_MODERATE_REVIEW]), 'venue')
         ).not.toThrow();
     });
 
     it('should forbid actor without GASTRONOMY_MODERATE_REVIEW', () => {
-        expectForbidden(() => checkCanModerateReview(makeActor([]), 'gastronomy'));
+        expectForbidden(() => checkCanModerateReview(makeActor([]), 'venue'));
     });
 });
 
@@ -253,7 +250,7 @@ describe('HOS-1077 per-vertical permission split', () => {
 
         it('rejects EXPERIENCE_EDIT_ALL on a gastronomy check', () => {
             expectForbidden(() =>
-                checkCanEditAll(makeActor([PermissionEnum.EXPERIENCE_EDIT_ALL]), {}, 'gastronomy')
+                checkCanEditAll(makeActor([PermissionEnum.EXPERIENCE_EDIT_ALL]), {}, 'venue')
             );
         });
 
@@ -271,7 +268,7 @@ describe('HOS-1077 per-vertical permission split', () => {
     describe("the vertical's own permission passes", () => {
         it('accepts GASTRONOMY_EDIT_ALL on a gastronomy check', () => {
             expect(() =>
-                checkCanEditAll(makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]), {}, 'gastronomy')
+                checkCanEditAll(makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]), {}, 'venue')
             ).not.toThrow();
         });
 
@@ -286,7 +283,7 @@ describe('HOS-1077 per-vertical permission split', () => {
                 checkCanEditOwn(
                     makeActor([PermissionEnum.GASTRONOMY_EDIT_OWN]),
                     ownedEntity,
-                    'gastronomy'
+                    'venue'
                 )
             ).not.toThrow();
         });
@@ -301,7 +298,7 @@ describe('HOS-1077 per-vertical permission split', () => {
 
         it('EXPERIENCE_EDIT_ALL is refused on a gastronomy check', () => {
             expectForbidden(() =>
-                checkCanEditAll(makeActor([PermissionEnum.EXPERIENCE_EDIT_ALL]), {}, 'gastronomy')
+                checkCanEditAll(makeActor([PermissionEnum.EXPERIENCE_EDIT_ALL]), {}, 'venue')
             );
         });
 
@@ -337,11 +334,7 @@ describe('HOS-1077 per-vertical permission split', () => {
     describe('delete is scoped to its vertical', () => {
         it('rejects EXPERIENCE_DELETE on a gastronomy check', () => {
             expectForbidden(() =>
-                checkCanDeleteListing(
-                    makeActor([PermissionEnum.EXPERIENCE_DELETE]),
-                    {},
-                    'gastronomy'
-                )
+                checkCanDeleteListing(makeActor([PermissionEnum.EXPERIENCE_DELETE]), {}, 'venue')
             );
         });
     });
@@ -366,7 +359,7 @@ describe('checkCanEditOwnOrAll and action 15 (explicit authorization only)', () 
         });
 
     it.each([
-        'gastronomy',
+        'venue',
         'experience'
     ] as const)('refuses the action 15 permission alone on a foreign %s listing', (vertical) => {
         expectForbidden(() =>
@@ -375,7 +368,7 @@ describe('checkCanEditOwnOrAll and action 15 (explicit authorization only)', () 
     });
 
     it.each([
-        'gastronomy',
+        'venue',
         'experience'
     ] as const)('lets action 15 edit a foreign %s listing inside a scope bound to its owner', async (vertical) => {
         await inScope('owner-1', () => {
@@ -395,7 +388,7 @@ describe('checkCanEditOwnOrAll and action 15 (explicit authorization only)', () 
                 checkCanEditOwnOrAll(
                     roleless([FOREIGN], 'admin-1'),
                     { ownerId: 'owner-1' },
-                    'gastronomy'
+                    'venue'
                 )
             );
         });
@@ -407,7 +400,7 @@ describe('checkCanEditOwnOrAll and action 15 (explicit authorization only)', () 
                 checkCanEditOwnOrAll(
                     roleless([FOREIGN], 'owner-1'),
                     { ownerId: 'owner-1' },
-                    'gastronomy'
+                    'venue'
                 )
             );
         });

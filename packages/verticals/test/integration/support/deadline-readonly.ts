@@ -21,7 +21,7 @@ export interface DeadlineSourcesSnapshot {
 
 const LISTING_TABLES: Readonly<Record<DeadlineListingRef['vertical'], string>> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'gastronomies',
     experience: 'experiences'
 };
 

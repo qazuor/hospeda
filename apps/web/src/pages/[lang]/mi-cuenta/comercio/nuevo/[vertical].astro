@@ -15,7 +15,7 @@
  *
  * ## An unknown vertical still 404s
  *
- * The old page answered 404 for anything that was not `gastronomy` or
+ * The old page answered 404 for anything that was not `venue` or
  * `experience`, and so does this. Redirecting an unknown segment to a publish
  * page would turn a typo into a 301 and advertise a URL that never existed.
  *
@@ -31,7 +31,7 @@ export const prerender = false;
 const locale = Astro.locals.locale;
 
 const verticalParam = Astro.params.vertical;
-if (verticalParam !== 'gastronomy' && verticalParam !== 'experience') {
+if (verticalParam !== 'venue' && verticalParam !== 'experience') {
     return new Response(null, { status: 404 });
 }
 

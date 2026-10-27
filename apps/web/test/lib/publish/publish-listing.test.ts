@@ -18,7 +18,7 @@ describe('publishListing (TEST:1729:1)', () => {
 
     it.each([
         'accommodation',
-        'gastronomy',
+        'venue',
         'experience'
     ] as const)('dispatches %s to its publish method', async (vertical) => {
         await publishListing({ vertical, id: 'listing-1' });
@@ -35,17 +35,15 @@ describe('publishListing (TEST:1729:1)', () => {
         expect(resolvePublishPricingPath({ vertical: 'accommodation' })).toBe(
             'planes/anfitriones/precios'
         );
-        expect(resolvePublishPricingPath({ vertical: 'gastronomy' })).toBe(
-            'planes/gastronomia/precios'
-        );
+        expect(resolvePublishPricingPath({ vertical: 'venue' })).toBe('planes/gastronomia/precios');
         expect(resolvePublishPricingPath({ vertical: 'experience' })).toBe(
             'planes/experiencias/precios'
         );
         expect(resolvePublishEditorPath({ vertical: 'accommodation', id: 'a-1' })).toBe(
             'mi-cuenta/propiedades/a-1/editar'
         );
-        expect(resolvePublishEditorPath({ vertical: 'gastronomy', id: 'g-1' })).toBe(
-            'mi-cuenta/comercio/gastronomy/g-1/editar'
+        expect(resolvePublishEditorPath({ vertical: 'venue', id: 'g-1' })).toBe(
+            'mi-cuenta/comercio/venue/g-1/editar'
         );
         expect(resolvePublishEditorPath({ vertical: 'experience', id: 'e-1' })).toBe(
             'mi-cuenta/comercio/experience/e-1/editar'

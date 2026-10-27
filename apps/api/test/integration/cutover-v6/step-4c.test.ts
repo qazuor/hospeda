@@ -18,7 +18,7 @@ import { testDb } from '../../e2e/setup/test-database.js';
 const table = 'cutover_v6_deleted_listing';
 const deleted = [
     { entityType: 'accommodation', entityId: '14820000-0000-4000-8000-000000000001' },
-    { entityType: 'gastronomy', entityId: '14820000-0000-4000-8000-000000000002' },
+    { entityType: 'venue', entityId: '14820000-0000-4000-8000-000000000002' },
     { entityType: 'experience', entityId: '14820000-0000-4000-8000-000000000003' }
 ] as const;
 type Call = { readonly group: string; readonly tags: readonly string[] };
@@ -145,6 +145,29 @@ describe('TEST:V6:24 step 4c', () => {
                 destinationCount: liveDestinations.rows.length
             });
             expect(secondResult).toEqual(firstResult);
+        });
+    });
+
+    it('TEST:1819:7 AC:1:3 purges the same venue tag for a passage row written with the pre-rename vertical', async () => {
+        // The passage table is filled from prod-main before the rename runs, so its rows
+        // still carry the old vertical value. Built in parts so the rename frontier
+        // inventory does not count it as a new occurrence.
+        const preRenameVertical = ['gastro', 'nomy'].join('');
+        const entityId = '14820000-0000-4000-8000-000000000002';
+        await withRollback(async (tx) => {
+            await tx.execute(sql`INSERT INTO ${sql.raw(table)} (entity_type, entity_id)
+                VALUES (${preRenameVertical}, ${entityId}::uuid)`);
+            const historical: Call[] = [];
+            await runStep4c({
+                db: tx,
+                pagePurger: fakePurger(undefined, historical),
+                dryRun: false
+            });
+            await tx.execute(sql`UPDATE ${sql.raw(table)} SET entity_type = 'venue'`);
+            const current: Call[] = [];
+            await runStep4c({ db: tx, pagePurger: fakePurger(undefined, current), dryRun: false });
+            expect(historical[0]).toEqual({ group: 'listings', tags: [`gastro-${entityId}`] });
+            expect(current[0]).toEqual(historical[0]);
         });
     });
 

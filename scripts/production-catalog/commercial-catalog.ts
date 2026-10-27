@@ -40,7 +40,7 @@ export type CatalogBillingCycle = 'monthly' | 'annual';
 /** The prices of one sellable plan, in ARS minor units (centavos). */
 export interface PlanPriceDefinition {
     /** Vertical of the priced plan (with `slug`, the plan's natural key). */
-    readonly vertical: 'accommodation' | 'gastronomy' | 'experience' | 'tourist' | 'partner';
+    readonly vertical: 'accommodation' | 'venue' | 'experience' | 'tourist' | 'partner';
     /** Slug of the priced plan. */
     readonly slug: string;
     /** Amount per cycle, in centavos. */
@@ -67,11 +67,11 @@ export const PRODUCTION_PLAN_PRICES: readonly PlanPriceDefinition[] = [
     priced({ vertical: 'accommodation', slug: 'owner-basico', monthly: 18_000, annual: 180_000 }),
     priced({ vertical: 'accommodation', slug: 'owner-pro', monthly: 35_000, annual: 350_000 }),
     priced({ vertical: 'accommodation', slug: 'owner-premium', monthly: 65_000, annual: 650_000 }),
-    priced({ vertical: 'gastronomy', slug: 'gastronomy-basico', monthly: 30_000, annual: 300_000 }),
-    priced({ vertical: 'gastronomy', slug: 'gastronomy-pro', monthly: 65_000, annual: 650_000 }),
+    priced({ vertical: 'venue', slug: 'venue-basico', monthly: 30_000, annual: 300_000 }),
+    priced({ vertical: 'venue', slug: 'venue-pro', monthly: 65_000, annual: 650_000 }),
     priced({
-        vertical: 'gastronomy',
-        slug: 'gastronomy-premium',
+        vertical: 'venue',
+        slug: 'venue-premium',
         monthly: 80_000,
         annual: 800_000
     }),
@@ -109,7 +109,7 @@ export interface AddonCatalogDefinition {
         readonly price: number;
         readonly chargeKind: 'UNA_VEZ' | 'PERIODICO';
         readonly cycle: 'monthly' | null;
-        readonly compatibleVerticals: readonly ('accommodation' | 'gastronomy' | 'experience')[];
+        readonly compatibleVerticals: readonly ('accommodation' | 'venue' | 'experience')[];
     };
 }
 
@@ -121,7 +121,7 @@ const limitPack = (input: {
     readonly key: string;
     readonly value: number;
     readonly monthlyPesos: number;
-    readonly vertical: 'accommodation' | 'gastronomy' | 'experience';
+    readonly vertical: 'accommodation' | 'venue' | 'experience';
 }): AddonCatalogDefinition => ({
     slug: input.slug,
     name: input.name,
@@ -148,7 +148,7 @@ const visibilityBoost = (input: {
     readonly noun: string;
     readonly days: 7 | 30;
     readonly pesos: number;
-    readonly vertical: 'accommodation' | 'gastronomy' | 'experience';
+    readonly vertical: 'accommodation' | 'venue' | 'experience';
 }): AddonCatalogDefinition => ({
     slug: input.slug,
     name: input.name,
@@ -189,13 +189,13 @@ export const PRODUCTION_ADDON_CATALOG: readonly AddonCatalogDefinition[] = [
         vertical: 'accommodation'
     }),
     limitPack({
-        slug: 'extra-gastronomies-1',
-        name: 'Extra Gastronomy Listing (+1)',
+        slug: 'extra-venues-1',
+        name: 'Extra Comer y salir Listing (+1)',
         description: 'Adds 1 additional gastronomy listing to your plan. Renews monthly.',
-        key: 'max_gastronomies',
+        key: 'max_venues',
         value: 1,
         monthlyPesos: 15_000,
-        vertical: 'gastronomy'
+        vertical: 'venue'
     }),
     limitPack({
         slug: 'extra-experiences-1',
@@ -223,20 +223,20 @@ export const PRODUCTION_ADDON_CATALOG: readonly AddonCatalogDefinition[] = [
         vertical: 'accommodation'
     }),
     visibilityBoost({
-        slug: 'visibility-boost-gastronomy-7d',
-        name: 'Visibility Boost — Restaurant (7 days)',
+        slug: 'visibility-boost-venue-7d',
+        name: 'Visibility Boost — Comer y salir (7 days)',
         noun: 'restaurant',
         days: 7,
         pesos: 5_000,
-        vertical: 'gastronomy'
+        vertical: 'venue'
     }),
     visibilityBoost({
-        slug: 'visibility-boost-gastronomy-30d',
-        name: 'Visibility Boost — Restaurant (30 days)',
+        slug: 'visibility-boost-venue-30d',
+        name: 'Visibility Boost — Comer y salir (30 days)',
         noun: 'restaurant',
         days: 30,
         pesos: 15_000,
-        vertical: 'gastronomy'
+        vertical: 'venue'
     }),
     visibilityBoost({
         slug: 'visibility-boost-experience-7d',

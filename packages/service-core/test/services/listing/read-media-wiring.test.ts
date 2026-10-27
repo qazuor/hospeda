@@ -87,7 +87,7 @@ type ComposedMedia = {
 
 describe.each([
     {
-        vertical: 'gastronomy',
+        vertical: 'venue',
         fk: 'gastronomyId' as const,
         finder: 'findByVenues' as const,
         build: (media: Record<string, unknown>) =>

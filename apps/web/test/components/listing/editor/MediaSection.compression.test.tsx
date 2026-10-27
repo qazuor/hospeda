@@ -86,7 +86,7 @@ const CAP_BYTES = mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB);
 
 const defaultProps: MediaSectionProps = {
     locale: 'es',
-    vertical: 'gastronomy',
+    vertical: 'venue',
     listingId: LISTING_ID
 };
 

@@ -4,7 +4,7 @@ import { fetchAudienceOffers, formatStartingPriceArs } from '@/lib/billing/audie
 
 vi.mock('@/lib/env', () => ({ getApiUrl: vi.fn(() => 'http://api.test') }));
 
-const VERTICALS = ['accommodation', 'tourist', 'gastronomy', 'experience'] as const;
+const VERTICALS = ['accommodation', 'tourist', 'venue', 'experience'] as const;
 type Vertical = (typeof VERTICALS)[number];
 
 function plan(slug: string, trialDays: number, amount: number) {
@@ -38,7 +38,7 @@ function stubCatalogs(options: { readonly failedVertical?: Vertical } = {}): voi
         const records: Record<Vertical, ReturnType<typeof plan>> = {
             accommodation: plan('host', 14, 1800000),
             tourist: plan('tourist', 45, 150000),
-            gastronomy: plan('gastronomy', 7, 1000000),
+            venue: plan('venue', 7, 1000000),
             experience: plan('experience', 3, 1200000)
         };
         return {
@@ -69,7 +69,7 @@ describe('fetchAudienceOffers', () => {
     });
 
     it('keeps other audiences when one vertical fails', async () => {
-        stubCatalogs({ failedVertical: 'gastronomy' });
+        stubCatalogs({ failedVertical: 'venue' });
         const { startingPrices } = await fetchAudienceOffers();
         expect(startingPrices.gastronomy).toBeNull();
         expect(startingPrices.experience).toEqual({ kind: 'from', monthlyPriceArs: 1200000 });

@@ -146,7 +146,7 @@ function buildSubscriptionUrl(input: {
  * @example
  * ```ts
  * const slot = await resolvePublishPageSlot({
- *   locale, vertical: 'gastronomy', isAuthenticated: Boolean(Astro.locals.user),
+ *   locale, vertical: 'venue', isAuthenticated: Boolean(Astro.locals.user),
  *   cookieHeader: Astro.request.headers.get('cookie'),
  *   pathname: Astro.url.pathname,
  *   wantsCreate: Astro.url.searchParams.get('create') === '1'

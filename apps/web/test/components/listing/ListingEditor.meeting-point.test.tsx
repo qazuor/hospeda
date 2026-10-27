@@ -136,7 +136,7 @@ function buildListing(overrides: Record<string, unknown> = {}): ListingDetail {
 }
 
 function renderEditor(
-    vertical: 'gastronomy' | 'experience',
+    vertical: 'venue' | 'experience',
     initialData: ListingDetail = buildListing()
 ) {
     return render(
@@ -183,7 +183,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             // A restaurant's address is its address; `meetingPoint` is not on
             // `VenueOwnerUpdateInputSchema`, so a control here would offer
             // an edit the API silently strips while answering 200.
-            const { container } = renderEditor('gastronomy');
+            const { container } = renderEditor('venue');
 
             expect(container.querySelector('#editor-meetingPoint')).toBeNull();
             expect(screen.queryByLabelText('Punto de encuentro')).toBeNull();
@@ -200,7 +200,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
                 vertical: 'experience'
             }).map((section) => section.id);
             const venueIds = buildListingEditorSections({
-                vertical: 'gastronomy'
+                vertical: 'venue'
             }).map((section) => section.id);
 
             expect(experienceIds).toContain('meetingPoint');
@@ -332,7 +332,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             // asserts the second half, from the page a restaurant DOES have.
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"

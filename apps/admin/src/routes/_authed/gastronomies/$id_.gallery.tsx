@@ -50,7 +50,7 @@ function VenueGalleryPage() {
 
                 <div className="rounded-lg border bg-card p-6">
                     <ListingGalleryManager
-                        vertical="gastronomy"
+                        vertical="venue"
                         entityId={id}
                         entityName={venue?.name}
                         isEntityLoading={isVenueLoading}

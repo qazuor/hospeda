@@ -36,7 +36,7 @@ import type { Locale } from '@repo/i18n';
 import { trans } from '@repo/i18n';
 
 /** The three verticals that can print a QR sheet (owner decision, HOS-982). */
-export type ListingQrSheetVertical = 'accommodation' | 'gastronomy' | 'experience';
+export type ListingQrSheetVertical = 'accommodation' | 'venue' | 'experience';
 
 /** Everything the renderer needs. No entity types leak past this boundary. */
 export interface ListingQrSheetContent {
@@ -126,7 +126,7 @@ export const MINTED_TARGET_LOCALE: Locale = 'es';
  */
 const PUBLIC_PATH_SEGMENT: Readonly<Record<ListingQrSheetVertical, string>> = {
     accommodation: 'alojamientos',
-    gastronomy: 'gastronomia',
+    venue: 'gastronomia',
     experience: 'experiencias'
 };
 

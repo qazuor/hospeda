@@ -197,7 +197,7 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
             client:visible
             locale={locale}
             listings={listings
-                .filter((listing) => listing.vertical === 'gastronomy' && !isPurged(listing))
+                .filter((listing) => listing.vertical === 'venue' && !isPurged(listing))
                 .map((listing) => ({ id: listing.id, name: listing.name }))}
         />
     </div>

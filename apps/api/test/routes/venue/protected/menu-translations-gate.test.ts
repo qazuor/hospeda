@@ -2,7 +2,7 @@
  * Unit tests for the write-side carta translations gate (HOS-1043).
  *
  * `menuPayloadCarriesTranslations` is what decides whether `PUT .../menu` needs
- * `MULTILINGUAL_GASTRONOMY_MENU` on top of the `MANAGE_GASTRONOMY_MENU` the
+ * `MULTILINGUAL_VENUE_MENU` on top of the `MANAGE_VENUE_MENU` the
  * route already requires. Tested directly rather than through the route, for
  * the same reason `menuPayloadCarriesItemPhoto`'s own test file gives: the
  * point of the function is the shape of the BODY.

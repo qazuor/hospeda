@@ -96,7 +96,7 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
         // (HOS-690 AC-24), rather than trusting it by inference from the
         // MAX_ACCOMMODATIONS case above.
         const details = {
-            limitKey: 'max_gastronomies',
+            limitKey: 'max_venues',
             currentCount: 1,
             maxAllowed: 1,
             usagePercent: 100
@@ -129,7 +129,7 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
             error: { code: string; details?: { limitKey?: string } };
         };
         expect(body.error.code).toBe(ServiceErrorCode.LIMIT_REACHED);
-        expect(body.error.details?.limitKey).toBe('max_gastronomies');
+        expect(body.error.details?.limitKey).toBe('max_venues');
     });
 
     it('ENTITLEMENT_REQUIRED: details reaches the client with HOSPEDA_API_DEBUG_ERRORS off', async () => {

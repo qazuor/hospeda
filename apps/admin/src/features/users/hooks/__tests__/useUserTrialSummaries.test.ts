@@ -61,7 +61,7 @@ describe('useUserTrialSummaries', () => {
 
     it('keeps a failed vertical independent from the others', async () => {
         mockedFetch.mockImplementation(async ({ path }) => {
-            if (path.endsWith('vertical=gastronomy')) throw new Error('failed');
+            if (path.endsWith('vertical=venue')) throw new Error('failed');
             return { data: { data: response }, status: 200 };
         });
         const { result } = renderHook(() => useUserTrialSummaries({ userId, enabled: true }), {

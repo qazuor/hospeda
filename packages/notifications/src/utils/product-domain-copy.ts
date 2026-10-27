@@ -8,7 +8,7 @@
  * rather than the `ProductDomainEnum` member, and switches on the literal
  * values instead of importing the enum.
  *
- * `resolveTrialSeriesCopy` only branches on `'gastronomy'` and `'experience'`
+ * `resolveTrialSeriesCopy` only branches on `'venue'` and `'experience'`
  * beyond the accommodation default: those are the only two verticals whose
  * subscriptions can currently reach the trial series at all, alongside
  * accommodation itself — `createTrialSubscription` (`apps/api`) has exactly
@@ -102,7 +102,7 @@ const EXPERIENCE_TRIAL_COPY: TrialSeriesVerticalCopy = {
 export function resolveTrialSeriesCopy(
     productDomain: string | null | undefined
 ): TrialSeriesVerticalCopy {
-    if (productDomain === 'gastronomy') return GASTRONOMY_TRIAL_COPY;
+    if (productDomain === 'venue') return GASTRONOMY_TRIAL_COPY;
     if (productDomain === 'experience') return EXPERIENCE_TRIAL_COPY;
     return ACCOMMODATION_TRIAL_COPY;
 }
@@ -119,7 +119,7 @@ export function resolveTrialSeriesCopy(
  */
 export function resolveRenewalReminderFooter(productDomain: string | null | undefined): string {
     switch (productDomain) {
-        case 'gastronomy':
+        case 'venue':
             return 'Gracias por confiar en Hospeda para hacer crecer tu local gastronómico.';
         case 'experience':
             return 'Gracias por confiar en Hospeda para hacer crecer tu experiencia turística.';
@@ -133,11 +133,11 @@ export function resolveRenewalReminderFooter(productDomain: string | null | unde
 }
 
 /** Etiquetas en español para verticales en un correo consolidado. */
-type TrialCampaignVertical = 'accommodation' | 'gastronomy' | 'experience' | 'tourist';
+type TrialCampaignVertical = 'accommodation' | 'venue' | 'experience' | 'tourist';
 
 export const TRIAL_VERTICAL_LABELS: Readonly<Record<TrialCampaignVertical, string>> = {
     accommodation: 'Alojamiento',
-    gastronomy: 'Gastronomía',
+    venue: 'Gastronomía',
     experience: 'Experiencias',
     tourist: 'Turismo'
 };

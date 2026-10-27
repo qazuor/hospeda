@@ -110,7 +110,7 @@ const LISTING_ID = '00000000-0000-4000-8000-0000000000aa';
 
 const defaultProps: MediaSectionProps = {
     locale: 'es',
-    vertical: 'gastronomy',
+    vertical: 'venue',
     listingId: LISTING_ID
 };
 
@@ -260,7 +260,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             render(<MediaSection {...defaultProps} />);
             await waitFor(() => {
                 expect(mockListMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID
                 });
             });
@@ -303,7 +303,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(mockAddMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     body: expect.objectContaining({
                         url: NEW_ROW.url,
@@ -355,7 +355,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(mockRemoveMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     mediaId: GALLERY_ROW_1.id
                 });
@@ -394,7 +394,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
     // ── Setting a new featured image ───────────────────────────────────
 
     describe('setting a new featured image', () => {
-        it('calls upload → addMedia → setFeaturedMedia immediately and updates the featured slot', async () => {
+        it('TEST:1819:6 AC:1:3 sends venue as the upload entity type', async () => {
             mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1]));
             stubFetchUploadOk();
             mockAddMedia.mockReturnValue(makeAddOk({ ...NEW_ROW, isFeatured: false }));
@@ -410,9 +410,13 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             const file = new File(['img'], 'portada.jpg', { type: 'image/jpeg' });
             fireEvent.change(featured, { target: { files: [file] } });
 
+            await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+            const request = global.fetch.mock.calls[0]?.[1];
+            expect((request?.body as FormData).get('entityType')).toBe('venue');
+
             await waitFor(() => {
                 expect(mockAddMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     body: expect.objectContaining({ url: NEW_ROW.url })
                 });
@@ -420,7 +424,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(mockSetFeaturedMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     mediaId: NEW_ROW.id
                 });
@@ -502,7 +506,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(mockRemoveMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     mediaId: FEATURED_ROW.id
                 });
@@ -519,7 +523,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
     // ── Gallery cap enforcement ────────────────────────────────────────
 
     describe('gallery cap enforcement', () => {
-        const GALLERY_CAP = getGalleryCap('gastronomy');
+        const GALLERY_CAP = getGalleryCap('venue');
 
         it('hides the add (+) button when the gallery is at the cap', async () => {
             const fullGallery = Array.from({ length: GALLERY_CAP }, (_, i) => ({
@@ -554,7 +558,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
     // starts, and uploads run sequentially.
 
     describe('multi-file gallery upload (HOS-832)', () => {
-        const GALLERY_CAP = getGalleryCap('gastronomy');
+        const GALLERY_CAP = getGalleryCap('venue');
 
         it('declares `multiple` on the gallery input when more than one slot remains', async () => {
             render(<MediaSection {...defaultProps} />);

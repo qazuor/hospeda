@@ -394,7 +394,7 @@ describe('buildSubscribeToPublishCopy — row 21', () => {
     it('TEST:V8a:5 row 21: subscribe to publish, still unpublished, a subscription in the vertical', () => {
         // Act
         const copy = buildSubscribeToPublishCopy({ t: es.t, vertical: 'accommodation' });
-        const venue = buildSubscribeToPublishCopy({ t: es.t, vertical: 'gastronomy' });
+        const venue = buildSubscribeToPublishCopy({ t: es.t, vertical: 'venue' });
 
         // Assert
         expect(copy).toEqual({

@@ -15,7 +15,7 @@ import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory'
 
 const input = {
     slug: 'test-feature',
-    applicableVerticals: ['accommodation'] as ('gastronomy' | 'experience' | 'accommodation')[],
+    applicableVerticals: ['accommodation'] as ('venue' | 'experience' | 'accommodation')[],
     icon: '⭐',
     description: {
         es: 'A test feature desc ok',
@@ -99,11 +99,7 @@ describe('FeatureService.create', () => {
         });
         const minimalInput = {
             slug: 'minimal-feature',
-            applicableVerticals: ['accommodation'] as (
-                | 'gastronomy'
-                | 'experience'
-                | 'accommodation'
-            )[],
+            applicableVerticals: ['accommodation'] as ('venue' | 'experience' | 'accommodation')[],
             isFeatured: false
         };
         const result = await service.create(actor, minimalInput);

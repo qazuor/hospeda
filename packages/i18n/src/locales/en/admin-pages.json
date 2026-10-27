@@ -830,7 +830,7 @@
                 "error": "We couldn't read this vertical's trial.",
                 "vertical": {
                     "accommodation": "Accommodation",
-                    "gastronomy": "Gastronomy",
+                    "venue": "Gastronomy",
                     "experience": "Experiences"
                 },
                 "status": {

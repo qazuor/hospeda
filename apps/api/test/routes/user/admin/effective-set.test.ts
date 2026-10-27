@@ -67,13 +67,13 @@ describe('TEST:B13a:23 AC:B13a:23 admin effective set route', () => {
     it('asks the port for the requested vertical', async () => {
         effectiveSet.mockImplementation(async ({ vertical }) =>
             vertical === VerticalEnum.VENUE
-                ? snapshot(VerticalEnum.VENUE, [{ key: 'manage_gastronomy_menu', value: 1 }])
+                ? snapshot(VerticalEnum.VENUE, [{ key: 'manage_venue_menu', value: 1 }])
                 : snapshot(VerticalEnum.ACCOMMODATION, [{ key: 'respond_reviews', value: 1 }])
         );
         const accommodation = await app.request(`${base}?vertical=accommodation`, {
             headers: headers()
         });
-        const venue = await app.request(`${base}?vertical=gastronomy`, { headers: headers() });
+        const venue = await app.request(`${base}?vertical=venue`, { headers: headers() });
         expect(((await accommodation.json()) as { data: unknown }).data).not.toStrictEqual(
             ((await venue.json()) as { data: unknown }).data
         );

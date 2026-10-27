@@ -27,8 +27,8 @@ export const OwnerListingSummarySchema = z.object({
     /** Listing UUID (primary key of the gastronomy/experience row). */
     id: z.string().uuid({ message: 'zodError.listing.ownerListing.id.invalid' }),
 
-    /** Which gastronomy or experience vertical this listing belongs to ('gastronomy' | 'experience'). */
-    vertical: z.enum(['gastronomy', 'experience']),
+    /** Which gastronomy or experience vertical this listing belongs to ('venue' | 'experience'). */
+    vertical: z.enum(['venue', 'experience']),
 
     /** Display name of the listing (read-only for owners). */
     name: z.string(),

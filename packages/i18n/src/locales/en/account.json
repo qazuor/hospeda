@@ -164,15 +164,15 @@
                     "description": "List your accommodation on Hospeda and reach thousands of travelers looking to stay in the region.",
                     "cta": "List your accommodation"
                 },
-                "gastronomy": {
-                    "title": "Dining",
-                    "description": "Add your food business to Hospeda — restaurant, grill, bakery, café or food truck. Leave your details, we approve your request, and from your account you complete and publish your own listing.",
-                    "cta": "List your food business"
-                },
                 "experience": {
                     "title": "Experiences",
                     "description": "Do you offer tours, activities, or experiences for travelers? Leave your details, we approve your request, and from your account you complete and publish your own listing.",
                     "cta": "List your experience"
+                },
+                "venue": {
+                    "title": "Dining",
+                    "description": "Add your food business to Hospeda — restaurant, grill, bakery, café or food truck. Leave your details, we approve your request, and from your account you complete and publish your own listing.",
+                    "cta": "List your food business"
                 }
             }
         },
@@ -448,8 +448,8 @@
             "endedExpired": "Your trial ended on {{end}}.",
             "vertical": {
                 "accommodation": "accommodation",
-                "gastronomy": "gastronomy",
-                "experience": "experiences"
+                "experience": "experiences",
+                "venue": "gastronomy"
             },
             "total_one": "{{count}} trial day in total",
             "total_other": "{{count}} trial days in total",
@@ -483,11 +483,11 @@
             "grace": "We could not charge your installment. If you change the card you pay with on Mercado Pago, the charge is retried right away; we cannot promise it will go through. If it does not go through before {{date}}, your subscription is suspended and you will have to subscribe again.",
             "vertical": {
                 "accommodation": "Accommodation",
-                "gastronomy": "Gastronomy",
                 "experience": "Experiences",
                 "tourist": "Tourist",
                 "partner": "Partners",
-                "unknown": "Hospeda"
+                "unknown": "Hospeda",
+                "venue": "Gastronomy"
             },
             "price": "{{amount}} {{cycle}}",
             "nextCharge": "Next charge: {{date}}, for {{amount}}."
@@ -804,9 +804,9 @@
             "domainSwitcher": {
                 "label": "Choose which subscription to view",
                 "accommodation": "Accommodation",
-                "gastronomy": "Gastronomy",
                 "experience": "Experiences",
-                "tourist": "Traveler"
+                "tourist": "Traveler",
+                "gastronomy": "Gastronomy"
             }
         },
         "whatsNew": {

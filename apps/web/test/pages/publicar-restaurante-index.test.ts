@@ -56,7 +56,8 @@ describe('publicar-restaurante/index.astro', () => {
         // One does now, and it carries the argument AND the form, so it is a
         // superset of what the sales page offers an arriving visitor. The URL's
         // own name said *publicar*; it finally leads there (HOS-1156 D-6).
-        expect(src).toContain('PUBLISH_PAGE_PATH_BY_VERTICAL.gastronomy');
+        expect(src).toContain('PUBLISH_PAGE_PATH_BY_VERTICAL.venue');
+        expect(src).toContain('path: PUBLISH_PAGE_PATH_BY_VERTICAL.venue');
         expect(src).not.toContain("path: 'planes/gastronomia'");
     });
 });

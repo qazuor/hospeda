@@ -55,7 +55,7 @@ function buildListing(
 ): OwnerListingSummaryWithState {
     return {
         id: 'listing-1',
-        vertical: 'gastronomy',
+        vertical: 'venue',
         name: 'La Parrilla',
         slug: 'la-parrilla',
         type: 'RESTAURANT',

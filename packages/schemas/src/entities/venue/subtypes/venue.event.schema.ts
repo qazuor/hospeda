@@ -45,7 +45,7 @@ import { z } from 'zod';
 /**
  * How many entries one venue's agenda may hold.
  *
- * A ceiling, not a product tier: the tier decision (`gastronomy-pro` and above
+ * A ceiling, not a product tier: the tier decision (`venue-pro` and above
  * may keep an agenda at all) is an ENTITLEMENT, checked at the route. This
  * number exists so a single PUT cannot be used to write an unbounded number of
  * rows in one transaction — the same reason `GASTRONOMY_MENU_MAX_SECTIONS`

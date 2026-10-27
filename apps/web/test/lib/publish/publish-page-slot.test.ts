@@ -80,7 +80,7 @@ describe('resolvePublishPageSlot — the signed-out state (D-1, AC-5)', () => {
     it('carries a returnUrl back to THIS page, not to the account dashboard (AC-19)', async () => {
         const slot = await resolvePublishPageSlot({
             ...BASE,
-            vertical: 'gastronomy',
+            vertical: 'venue',
             isAuthenticated: false,
             cookieHeader: null,
             pathname: '/es/publicar/gastronomia/'
@@ -171,14 +171,14 @@ describe('resolvePublishPageSlot — every URL is per-vertical', () => {
         expect(slot.createUrl).toBe('/es/publicar/?create=1');
     });
 
-    for (const vertical of ['gastronomy', 'experience'] as const) {
+    for (const vertical of ['venue', 'experience'] as const) {
         it(`points a ${vertical} panel at listings, the ${vertical} editor and its own billing domain`, async () => {
             precheck.mockResolvedValue(ok('resume_or_create', { drafts: [draft] }));
 
             const slot = await resolvePublishPageSlot({
                 ...BASE,
                 vertical,
-                pathname: `/es/publicar/${vertical === 'gastronomy' ? 'gastronomia' : 'experiencias'}/`
+                pathname: `/es/publicar/${vertical === 'venue' ? 'gastronomia' : 'experiencias'}/`
             });
 
             expect(slot.accountListingsUrl).toBe('/es/mi-cuenta/comercio/');

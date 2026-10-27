@@ -99,12 +99,12 @@ describe('TEST:V5:5 GUARD:G2 (c)', () => {
         expect(
             findImmutableVerticalWrites({
                 file,
-                source: '// db.update(accommodations).set({ vertical: "gastronomy" });\n'
+                source: '// db.update(accommodations).set({ vertical: "venue" });\n'
             })
         ).toEqual([]);
         const root = makeTree({
             'apps/api/src/routes/accommodation/patch.test.ts':
-                'db.update(accommodations).set({ vertical: "gastronomy" });\n'
+                'db.update(accommodations).set({ vertical: "venue" });\n'
         });
         expect(run({ root, minScannedFiles: 1 }).output).toContain('expected at least 1');
     });

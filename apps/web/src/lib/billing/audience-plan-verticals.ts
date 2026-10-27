@@ -6,6 +6,6 @@ export const AUDIENCE_PLAN_VERTICALS: Readonly<Record<AudienceCardId, PublicPlan
     {
         host: 'accommodation',
         tourist: 'tourist',
-        gastronomy: 'gastronomy',
+        gastronomy: 'venue',
         experience: 'experience'
     };

@@ -189,7 +189,7 @@ describe('RevalidateEntityRequestSchema', () => {
             // posts exactly this body. While these two were missing from the
             // enum the request failed validation, which is what made the button
             // unaddable in the first place.
-            for (const entityType of ['gastronomy', 'experience'] as const) {
+            for (const entityType of ['venue', 'experience'] as const) {
                 const result = RevalidateEntityRequestSchema.safeParse({
                     entityType,
                     entityId: 'abc-123'

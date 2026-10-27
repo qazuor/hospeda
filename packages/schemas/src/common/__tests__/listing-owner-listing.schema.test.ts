@@ -10,7 +10,7 @@ import {
 
 const gastronomyRow = {
     id: '11111111-1111-4111-8111-111111111111',
-    vertical: 'gastronomy',
+    vertical: 'venue',
     name: 'La Parrilla',
     slug: 'la-parrilla',
     type: 'restaurant',

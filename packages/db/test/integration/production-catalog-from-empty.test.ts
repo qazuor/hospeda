@@ -64,7 +64,7 @@ afterAll(async () => {
     await admin.end();
 });
 
-describe('TEST:V2:11 — 0144 writes the exact production catalog from zero', () => {
+describe('TEST:1819:1 AC:1:3 — TEST:V2:11 — 0144 writes the exact production catalog from zero', () => {
     it('matches every generated row and has one current version per plan and one role plan per vertical', async () => {
         for (const load of buildPlanCatalogLoads()) {
             const columns = load.columns.map((column) => `"${column}"`).join(', ');

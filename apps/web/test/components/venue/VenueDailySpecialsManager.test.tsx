@@ -18,7 +18,7 @@
  *    today and nothing is left behind tomorrow. A default of "today onwards
  *    forever" would reintroduce the rotting field the feature exists to remove.
  * 4. **A 403 is an upsell, not an error.** The menú del día is a
- *    `gastronomy-pro` capability and this page carries no entitlement
+ *    `venue-pro` capability and this page carries no entitlement
  *    information, so the API is what decides.
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';

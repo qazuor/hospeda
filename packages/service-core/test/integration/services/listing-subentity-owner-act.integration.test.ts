@@ -83,7 +83,7 @@ import {
 
 const dbAvailable = isServiceTestDbAvailable();
 
-type Vertical = 'accommodation' | 'gastronomy' | 'experience';
+type Vertical = 'accommodation' | 'venue' | 'experience';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -209,7 +209,7 @@ function buildVerticalOps(
         };
     }
 
-    if (vertical === 'gastronomy') {
+    if (vertical === 'venue') {
         const model = new VenueModel();
         return {
             addFaq: () =>
@@ -367,7 +367,7 @@ async function insertSeedFaq(
     };
     if (vertical === 'accommodation') {
         await tx.insert(accommodationFaqs).values({ ...row, accommodationId: listingId });
-    } else if (vertical === 'gastronomy') {
+    } else if (vertical === 'venue') {
         await tx.insert(gastronomyFaqs).values({ ...row, gastronomyId: listingId });
     } else {
         await tx.insert(experienceFaqs).values({ ...row, experienceId: listingId });
@@ -392,7 +392,7 @@ async function insertSeedMedia(
     };
     if (vertical === 'accommodation') {
         await tx.insert(accommodationMedia).values({ ...row, accommodationId: listingId });
-    } else if (vertical === 'gastronomy') {
+    } else if (vertical === 'venue') {
         await tx.insert(gastronomyMedia).values({ ...row, gastronomyId: listingId });
     } else {
         await tx.insert(experienceMedia).values({ ...row, experienceId: listingId });
@@ -413,7 +413,7 @@ async function runVerticalCycle(vertical: Vertical): Promise<void> {
             const seeded = await seedAccommodation(tx);
             ownerId = seeded.userId;
             listingId = seeded.accommodationId;
-        } else if (vertical === 'gastronomy') {
+        } else if (vertical === 'venue') {
             const seeded = await seedVenue(tx);
             ownerId = seeded.ownerId;
             listingId = seeded.gastronomyId;
@@ -549,7 +549,7 @@ describe('HOS-1642 V9a — owner FAQ/media writes land in domain_event (integrat
 
     it.skipIf(!dbAvailable)(
         'TEST:V9a:6 — gastronomy: each FAQ and media add/update/reorder/remove writes exactly one name-only event',
-        () => runVerticalCycle('gastronomy')
+        () => runVerticalCycle('venue')
     );
 
     it.skipIf(!dbAvailable)(
@@ -660,7 +660,7 @@ describe('HOS-1642 V9a — owner FAQ/media writes land in domain_event (integrat
                         if (result.error) throw result.error;
 
                         const inside = await domainEventModel.findByEntity({
-                            entityType: 'gastronomy',
+                            entityType: 'venue',
                             entityId: gastronomyId,
                             tx: savepoint as unknown as ServiceContext['tx']
                         });
@@ -674,7 +674,7 @@ describe('HOS-1642 V9a — owner FAQ/media writes land in domain_event (integrat
                 expect(failed, 'the savepoint rolled back').toBe(true);
 
                 const after = await domainEventModel.findByEntity({
-                    entityType: 'gastronomy',
+                    entityType: 'venue',
                     entityId: gastronomyId,
                     tx
                 });

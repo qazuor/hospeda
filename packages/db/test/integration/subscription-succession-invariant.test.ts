@@ -376,7 +376,7 @@ describe('TEST:B3:8 — the database refuses what invariant 8 forbids and accept
             const userId = await seedUser(client);
             const otherUserId = await seedUser(client);
             const plan = await seedPlan(client, 'accommodation');
-            const venuePlan = await seedPlan(client, 'gastronomy');
+            const venuePlan = await seedPlan(client, 'venue');
             await insertSubscription(client, {
                 userId,
                 vertical: 'accommodation',
@@ -407,7 +407,7 @@ describe('TEST:B3:8 — the database refuses what invariant 8 forbids and accept
             // Another vertical of the same user keeps its own origin.
             const venue = await insertSubscription(client, {
                 userId,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 planVersionId: venuePlan.planVersionId,
                 billingOptionId: venuePlan.billingOptionId,
                 status: 'ACTIVE'

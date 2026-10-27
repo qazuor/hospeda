@@ -6,8 +6,8 @@
  *
  * THE COPY HAS DIVERGED FROM THE ARTIFACT, BY OWNER REQUEST (2026-09-05). The artifact is no longer the source of truth for the
  * prose — this file is. The reason is the ladder: the artifact sold one plan that bought "una ficha publicada", with a second
- * venue at "el mismo valor". HOS-975 priced three tiers (`gastronomy-basico` $30.000 / `-pro` $65.000 / `-premium` $80.000,
- * `packages/billing/src/config/plans.config.ts`) with caps 1 / 3 / 5, and `extra-gastronomies-1` is $15.000/month — half a
+ * venue at "el mismo valor". HOS-975 priced three tiers (`venue-basico` $30.000 / `-pro` $65.000 / `-premium` $80.000,
+ * `packages/billing/src/config/plans.config.ts`) with caps 1 / 3 / 5, and `extra-venues-1` is $15.000/month — half a
  * Básico, not the same value, and not a route to three venues. Three sentences were false at once: the single listing, the
  * same-value extra, and "tres escalones según cuánto quieras mostrar" (the primary axis is HOW MANY VENUES). All three are
  * gone, and so are the per-feature "va en el escalón Premium" asides: a feature's tier is stated in the tier table and nowhere
@@ -67,7 +67,7 @@
  * mirror — "fixing" this back to one team-owned row reintroduces a bug that has now been fixed twice.
  *
  * WHY THE PRICES ARE PRINTED *AND* LINKED. HOS-1134 removed a hardcoded "quince mil pesos" that had been half the real
- * `gastronomy-basico` price for two releases. The lesson is not "never print a number" — a presentation with no price is not a
+ * `venue-basico` price for two releases. The lesson is not "never print a number" — a presentation with no price is not a
  * presentation — it is that the number must travel with the live grid beside it. So the tier table carries the figures AND
  * every price mention links to `/{lang}/planes/gastronomia/precios/`, which reads the catalogue at request time from the public
  * plans endpoint (`domain=gastronomy`). That link is what survives a reprice. It is NOT `/publicar-restaurante/` (301s to the

@@ -168,7 +168,7 @@ describe('TEST:B13a:16 — the B13a surfaces read on a database built from empty
     });
 
     it('(d) public pricing catalogs parse for all supported verticals without a session', async () => {
-        for (const vertical of ['accommodation', 'gastronomy', 'experience', 'tourist'] as const) {
+        for (const vertical of ['accommodation', 'venue', 'experience', 'tourist'] as const) {
             const response = await app.request(`/api/v1/public/plan-catalog?vertical=${vertical}`, {
                 headers: { 'user-agent': 'vitest' }
             });

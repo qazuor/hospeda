@@ -243,7 +243,7 @@ function effectiveKeys(userId: string, vertical: VerticalEnum): string[] {
     if (userId === IDS.ownerPremium) return ['create_promotions'];
     if (userId === IDS.touristVip) return ['price_alerts', 'can_contact_whatsapp_display'];
     if (userId === IDS.gastroPro) {
-        return ['manage_gastronomy_menu', 'menu_item_photos', 'multilingual_gastronomy_menu'];
+        return ['manage_venue_menu', 'menu_item_photos', 'multilingual_venue_menu'];
     }
     if (vertical === VerticalEnum.TOURIST && userId === IDS.touristFloor) return [];
     return [];

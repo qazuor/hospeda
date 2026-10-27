@@ -218,7 +218,7 @@ describe('createListingListConfig — extraListConfig overrides', () => {
 // ---------------------------------------------------------------------------
 
 it('selects only the requested vertical permissions for shared sections', () => {
-    const venue = createListingOperationalSection('gastronomy');
+    const venue = createListingOperationalSection('venue');
     const experience = createListingOperationalSection('experience');
     expect(venue.permissions?.edit).toEqual([
         PermissionEnum.GASTRONOMY_EDIT_OWN,
@@ -234,7 +234,7 @@ it('selects only the requested vertical permissions for shared sections', () => 
 });
 
 describe('createListingIdentitySection', () => {
-    const section = createListingIdentitySection('gastronomy');
+    const section = createListingIdentitySection('venue');
 
     it('AC-4: returns a ConsolidatedSectionConfig with id "listing-identity"', () => {
         expect(section.id).toBe('listing-identity');
@@ -308,7 +308,7 @@ describe('createListingIdentitySection', () => {
 // ---------------------------------------------------------------------------
 
 describe('createListingOperationalSection', () => {
-    const section = createListingOperationalSection('gastronomy');
+    const section = createListingOperationalSection('venue');
 
     it('AC-5: returns a ConsolidatedSectionConfig with id "listing-operational"', () => {
         expect(section.id).toBe('listing-operational');

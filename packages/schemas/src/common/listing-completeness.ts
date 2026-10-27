@@ -95,15 +95,15 @@ export interface ListingCompletenessListing {
     readonly media?: Pick<Media, 'featuredImage'> | null;
     /** Contact channels. Required: at least one phone OR email field set. */
     readonly contactInfo?: ContactInfo | null;
-    /** Weekly opening hours. Gastronomy-only requirement. */
+    /** Weekly opening hours. Venue-only requirement. */
     readonly openingHours?: OpeningHours | null;
-    /** Price-range tier. Gastronomy-only requirement. */
+    /** Price-range tier. Venue-only requirement. */
     readonly priceRange?: string | null;
     /**
      * Starting price in integer centavos. Experience-only requirement (see
      * {@link resolveListingCompleteness}'s experience-specific block): must be
      * a positive integer unless {@link isPriceOnRequest} is `true`. Mirrors
-     * gastronomy's `priceRange` requirement — a listing with no real price
+     * venue's `priceRange` requirement — a listing with no real price
      * information is not viable to publish.
      */
     readonly priceFrom?: number | null;
@@ -117,7 +117,7 @@ export interface ListingCompletenessListing {
 
 /** Input to {@link resolveListingCompleteness}. */
 export interface ResolveListingCompletenessInput {
-    /** Which gastronomy or experience vertical the listing belongs to. Drives per-vertical rules. */
+    /** Which venue or experience vertical the listing belongs to. Drives per-vertical rules. */
     readonly entityType: VenueOrExperience;
     /** The listing snapshot to evaluate. See {@link ListingCompletenessListing}. */
     readonly listing: ListingCompletenessListing;
@@ -179,8 +179,8 @@ type ReachableContactChannel =
  *   too but is deliberately NOT accepted here: it was never accepted before
  *   and a site is not a channel that reaches a person.
  *
- * - `gastronomy` — keeps the original six. Applying the experience rule here
- *   would make EVERY gastronomy listing unpublishable, because
+ * - `venue` — keeps the original six. Applying the experience rule here
+ *   would make EVERY venue listing unpublishable, because
  *   `GastronomyPublicSchema` publishes no `contactInfo` at all: its hole is
  *   wider than a mis-calibrated gate and is tracked separately (HOS-924
  *   "Relacionado"). Narrowing this row is the follow-up to exposing contact
@@ -251,7 +251,7 @@ function hasAtLeastOneOpeningShift(openingHours: OpeningHours | null | undefined
  *
  * Per-vertical additions:
  *
- * - `gastronomy` — additionally requires `openingHours` (≥ 1 day with ≥ 1
+ * - `venue` — additionally requires `openingHours` (≥ 1 day with ≥ 1
  *   shift) and `priceRange`.
  * - `experience` — additionally requires real price information: `priceFrom`
  *   must be a positive integer unless `isPriceOnRequest` is `true` (HOS-166
@@ -270,7 +270,7 @@ function hasAtLeastOneOpeningShift(openingHours: OpeningHours | null | undefined
  * @example
  * ```ts
  * const { complete, missing } = resolveListingCompleteness({
- *   entityType: 'gastronomy',
+ *   entityType: 'venue',
  *   listing: gastronomyRow,
  * });
  * if (!complete) {

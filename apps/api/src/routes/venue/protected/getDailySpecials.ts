@@ -5,7 +5,7 @@
  *
  * ## Why this read carries NO entitlement gate
  *
- * `MANAGE_GASTRONOMY_DAILY_SPECIAL` gates PUBLISHING a menú del día, not
+ * `MANAGE_VENUE_DAILY_SPECIAL` gates PUBLISHING a menú del día, not
  * looking at one — the same split `getMenu.ts` makes, for the same two ordinary
  * situations: a `-basico` owner opening the editor must see the panel (with the
  * save refused, not the page blank), and an owner whose subscription lapsed

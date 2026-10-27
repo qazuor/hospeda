@@ -113,7 +113,7 @@ async function recordTagListingOwnerAct(input: {
         entityType === EntityTypeEnum.ACCOMMODATION
             ? 'accommodation'
             : entityType === EntityTypeEnum.VENUE
-              ? 'gastronomy'
+              ? 'venue'
               : 'experience';
     await recordListingSubEntityEdit({
         entityType: listingType,

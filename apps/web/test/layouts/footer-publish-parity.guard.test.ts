@@ -44,7 +44,7 @@ import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths'
  * it must be spelled out rather than derived from anything the fix owns.
  */
 const PLANS_PATH_BY_ID: Readonly<Record<string, string>> = {
-    gastronomy: 'planes/gastronomia',
+    venue: 'planes/gastronomia',
     experience: 'planes/experiencias'
 };
 
@@ -68,7 +68,7 @@ function readForYouBlock(src: string): string {
 const forYouBlock = readForYouBlock(footerSrc);
 
 /** The two gastronomy and experience verticals — see the docstring for why `accommodation` is out. */
-const OWNER_VERTICAL_OPTION_IDS: ReadonlyArray<string> = ['gastronomy', 'experience'];
+const OWNER_VERTICAL_OPTION_IDS: ReadonlyArray<string> = ['venue', 'experience'];
 
 describe('HOS-826 — footer "Para vos" offers every gastronomy or experience vertical', () => {
     it('the header chooser still exposes the options this guard reads', () => {
@@ -99,7 +99,7 @@ describe('HOS-826 — footer "Para vos" offers every gastronomy or experience ve
 
             // And that the map the footer reads still resolves to the same page
             // the header sends people to, in case the two ever stop sharing it.
-            expect(PUBLISH_PAGE_PATH_BY_VERTICAL[id as 'gastronomy' | 'experience']).toBe(href);
+            expect(PUBLISH_PAGE_PATH_BY_VERTICAL[id as 'venue' | 'experience']).toBe(href);
         });
     }
 

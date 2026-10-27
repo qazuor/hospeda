@@ -36,7 +36,7 @@ export const PLAN_PUBLICATION_REJECTIONS = {
  */
 export const TRIAL_OVERRIDE_LIMIT_KEY_BY_VERTICAL = {
     accommodation: 'max_accommodations',
-    gastronomy: 'max_gastronomies',
+    venue: 'max_venues',
     experience: 'max_experiences'
 } as const;
 

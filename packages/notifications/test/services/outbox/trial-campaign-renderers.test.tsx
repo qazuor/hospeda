@@ -32,7 +32,7 @@ function campaignRow(
             offsetDays,
             targetDate,
             recipientName: 'Ana',
-            verticals: ['accommodation', 'gastronomy', 'experience']
+            verticals: ['accommodation', 'venue', 'experience']
         }
     });
 }

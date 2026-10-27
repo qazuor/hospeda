@@ -69,7 +69,7 @@ export type AiProviderId = z.infer<typeof AiProviderIdSchema>;
  * is a host AND a restaurateur would otherwise spend their accommodation chat
  * budget on gastronomy traffic, which is precisely the cross-domain leak
  * SPEC-239 isolates against. One feature per vertical is what makes
- * `MAX_AI_CHAT_GASTRONOMY_PER_MONTH` count only gastronomy chats.
+ * `MAX_AI_CHAT_VENUE_PER_MONTH` count only gastronomy chats.
  *
  * Splitting by ENTITLEMENT instead was rejected: `ai_chat` is one capability
  * that different subscriptions grant, and duplicating it per vertical would put

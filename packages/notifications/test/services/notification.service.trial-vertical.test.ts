@@ -86,7 +86,7 @@ describe('NotificationService — vertical copy reaches the real send (HOS-1283)
             planName: 'Plan Comercio',
             trialEndDate: '2026-09-26T00:00:00.000Z',
             upgradeUrl: 'https://hospeda.com.ar/es/planes/gastronomia/precios/',
-            productDomain: 'gastronomy',
+            productDomain: 'venue',
             idempotencyKey: 'trial_ending_1d-sub-1'
         };
 

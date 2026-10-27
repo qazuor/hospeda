@@ -63,7 +63,7 @@ export function createEntityResolver(): EntityResolver {
                         return await resolveEventById({ entityId });
                     case 'post':
                         return await resolvePostById({ entityId });
-                    case 'gastronomy':
+                    case 'venue':
                     case 'experience':
                         return await resolveVenueOrExperienceById({ entityType, entityId });
                     case 'accommodation_review':
@@ -189,7 +189,7 @@ async function resolveEventById(params: {
  * @returns The change data for the listing, or `null` when no such row exists.
  */
 async function resolveVenueOrExperienceById(params: {
-    readonly entityType: 'gastronomy' | 'experience';
+    readonly entityType: 'venue' | 'experience';
     readonly entityId: string;
 }): Promise<EntityChangeData | null> {
     // HOS-1079: an exhaustive switch, not a binary ternary — `entityType` is
@@ -198,7 +198,7 @@ async function resolveVenueOrExperienceById(params: {
     // reachable path today.
     let table: typeof gastronomies | typeof experiences;
     switch (params.entityType) {
-        case 'gastronomy':
+        case 'venue':
             table = gastronomies;
             break;
         case 'experience':

@@ -22,7 +22,7 @@ const PLAN_ID = '00000000-0000-0000-0000-000000000001';
 /** All keys that appear in these tests, with their catalog class. */
 const ALL_TEST_KEYS = [
     'max_accommodations',
-    'max_gastronomies',
+    'max_venues',
     'max_experiences',
     'max_favorites',
     'save_favorites'
@@ -85,12 +85,12 @@ describe('TEST:V2:10 (a) trial accepts its vertical listing-count limit', () => 
         expect(() => validatePublication({ context: ctx })).not.toThrow();
     });
 
-    it('gastronomy trial: max_gastronomies passes', () => {
+    it('gastronomy trial: max_venues passes', () => {
         const ctx = contextOf({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             role: 'trial',
             entitlements: [],
-            limits: [{ key: 'max_gastronomies', value: 3 }]
+            limits: [{ key: 'max_venues', value: 3 }]
         });
 
         expect(() => validatePublication({ context: ctx })).not.toThrow();
@@ -109,12 +109,12 @@ describe('TEST:V2:10 (a) trial accepts its vertical listing-count limit', () => 
 });
 
 describe('TEST:V2:10 (a) trial rejects a limit outside the override list', () => {
-    it('accommodation trial: max_gastronomies (OTHER vertical) is rejected', () => {
+    it('accommodation trial: max_venues (OTHER vertical) is rejected', () => {
         const ctx = contextOf({
             vertical: 'accommodation',
             role: 'trial',
             entitlements: [],
-            limits: [{ key: 'max_gastronomies', value: 5 }]
+            limits: [{ key: 'max_venues', value: 5 }]
         });
 
         expect(() => validatePublication({ context: ctx })).toThrow(

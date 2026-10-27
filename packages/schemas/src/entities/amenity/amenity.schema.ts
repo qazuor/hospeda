@@ -11,7 +11,7 @@ import { AmenitiesTypeEnumSchema } from '../../enums/amenity-type.schema.js';
  * Verticals that an amenity or feature can be applicable to.
  * Drives catalog-by-vertical filtering (SPEC-266).
  */
-export const APPLICABLE_VERTICALS = ['accommodation', 'gastronomy', 'experience'] as const;
+export const APPLICABLE_VERTICALS = ['accommodation', 'venue', 'experience'] as const;
 export type ApplicableVertical = (typeof APPLICABLE_VERTICALS)[number];
 
 /** Zod schema for a single applicable vertical. */

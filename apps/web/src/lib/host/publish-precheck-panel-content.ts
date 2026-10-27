@@ -26,7 +26,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 /**
  * The verticals reachable from the header's "Publicar" menu.
  */
-export type PublishVertical = 'accommodation' | 'gastronomy' | 'experience';
+export type PublishVertical = 'accommodation' | 'venue' | 'experience';
 
 /**
  * Per-vertical copy: which i18n namespace holds this vertical's draft-panel
@@ -70,7 +70,7 @@ const PRECHECK_COPY: Readonly<
         noun: 'propiedad',
         nounPlural: 'propiedades'
     },
-    gastronomy: { ns: 'publish.precheck.gastronomy', noun: 'ficha', nounPlural: 'fichas' },
+    venue: { ns: 'publish.precheck.venue', noun: 'ficha', nounPlural: 'fichas' },
     experience: {
         ns: 'publish.precheck.experience',
         noun: 'experiencia',
@@ -81,7 +81,7 @@ const PRECHECK_COPY: Readonly<
 /** Retained locale key segments from the former publish-limit map. */
 const LIMIT_KEY_BY_PUBLISH_VERTICAL: Readonly<Record<PublishVertical, string>> = {
     accommodation: 'max_accommodations',
-    gastronomy: 'max_gastronomies',
+    venue: 'max_venues',
     experience: 'max_experiences'
 };
 

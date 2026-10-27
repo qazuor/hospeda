@@ -243,7 +243,7 @@ describe('fix_request, spec pedido_de_arreglo (TEST:V6:17)', () => {
             const adminId = user.rows[0]?.id;
             const listingId = '00000000-0000-4000-8000-000000000001';
             const open = `INSERT INTO fix_request (entity_type, entity_id, reason, opened_by_id)
-                          VALUES ('gastronomy', $1, 'Fix the photos', $2) RETURNING id`;
+                          VALUES ('venue', $1, 'Fix the photos', $2) RETURNING id`;
             const first = await client.query<{ id: string }>(open, [listingId, adminId]);
 
             // Act + Assert: a second OPEN request on the same listing is rejected.

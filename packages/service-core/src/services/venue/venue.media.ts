@@ -171,7 +171,7 @@ export async function addVenueMedia(
                 },
                 { tx }
             );
-            const galleryCap = getGalleryCap('gastronomy');
+            const galleryCap = getGalleryCap('venue');
             if (galleryCount >= galleryCap) {
                 return {
                     error: {
@@ -194,7 +194,7 @@ export async function addVenueMedia(
             // Post-write, inside the tx; the field name only, never the
             // photo's URL or alt text (DEC-DATA-005).
             await recordListingSubEntityEdit({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
                 actor,
                 field: 'media',
@@ -204,7 +204,7 @@ export async function addVenueMedia(
             // change has to purge it. Shares one implementation with the service's
             // create/update path — see `listing-revalidation.ts`.
             await scheduleListingMediaRevalidation({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: venue
             });
 
@@ -312,7 +312,7 @@ export async function removeVenueMedia(
 
             // Post-write, inside the tx; field name only (HOS-1642, AC:V9a:6).
             await recordListingSubEntityEdit({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
                 actor,
                 field: 'media',
@@ -329,7 +329,7 @@ export async function removeVenueMedia(
         // HOS-389 §4: the gallery IS the public page's content, so a photo
         // change has to purge it. Shares one implementation with the service's
         // create/update path — see `listing-revalidation.ts`.
-        await scheduleListingMediaRevalidation({ entityType: 'gastronomy', listing: venue });
+        await scheduleListingMediaRevalidation({ entityType: 'venue', listing: venue });
 
         return { data: { success: true } };
     } catch (err) {
@@ -445,7 +445,7 @@ export async function reorderVenueMedia(
             // Post-write, inside the tx: one event for the whole reorder,
             // field name only (HOS-1642, AC:V9a:6).
             await recordListingSubEntityEdit({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
                 actor,
                 field: 'media',
@@ -468,7 +468,7 @@ export async function reorderVenueMedia(
             .filter((r): r is NonNullable<typeof r> => r !== null);
 
         // HOS-389 §4 — see `addVenueMedia` for the rationale.
-        await scheduleListingMediaRevalidation({ entityType: 'gastronomy', listing: venue });
+        await scheduleListingMediaRevalidation({ entityType: 'venue', listing: venue });
 
         return { data: { media: reordered } };
     } catch (err) {
@@ -622,7 +622,7 @@ export async function setFeaturedVenueMedia(
             await mediaModel.update({ id: validated.mediaId }, { isFeatured: true }, tx);
             // Post-write, inside the tx; field name only (HOS-1642, AC:V9a:6).
             await recordListingSubEntityEdit({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
                 actor,
                 field: 'media',
@@ -645,7 +645,7 @@ export async function setFeaturedVenueMedia(
             );
         }
         // HOS-389 §4 — see `addVenueMedia` for the rationale.
-        await scheduleListingMediaRevalidation({ entityType: 'gastronomy', listing: venue });
+        await scheduleListingMediaRevalidation({ entityType: 'venue', listing: venue });
 
         return { data: { media: updated } };
     } catch (err) {
@@ -755,7 +755,7 @@ export async function updateVenueMedia(
             // Post-write, inside the tx; field name only — a corrected caption
             // is content, so no value is ever stored (DEC-DATA-005).
             await recordListingSubEntityEdit({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
                 actor,
                 field: 'media',
@@ -763,7 +763,7 @@ export async function updateVenueMedia(
             });
 
             await scheduleListingMediaRevalidation({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: venue
             });
 
@@ -870,7 +870,7 @@ export async function addVenueFeaturedMedia(
             });
             // Post-write, inside the tx; field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
                 actor,
                 field: 'media',
@@ -885,7 +885,7 @@ export async function addVenueFeaturedMedia(
 
         // HOS-389 §4 — see `addVenueMedia` for the rationale. Loudest case: the
         // cover is what every listing card and social preview renders.
-        await scheduleListingMediaRevalidation({ entityType: 'gastronomy', listing: venue });
+        await scheduleListingMediaRevalidation({ entityType: 'venue', listing: venue });
 
         return { data: { media, previousFeatured } };
     } catch (err) {

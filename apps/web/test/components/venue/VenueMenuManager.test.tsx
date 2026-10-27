@@ -15,7 +15,7 @@
  *    "some call happened" — the exact distinction the FAQ manager's H-89
  *    regression anchor documents.
  * 3. **A 403 is an upsell, not an error.** The structured carta is a
- *    `gastronomy-pro` capability and this page carries no entitlement
+ *    `venue-pro` capability and this page carries no entitlement
  *    information, so the API is what decides. Showing "something went wrong"
  *    for a plan refusal turns an upsell into a bug report.
  */

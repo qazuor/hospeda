@@ -22,11 +22,11 @@ import { gastronomyMenuItems } from './venue_menu_item.dbschema.ts';
  * Additive nullable `I18nText` columns, retrofitted exactly as HOS-117
  * retrofitted `gastronomy_faqs.question_i18n`/`answer_i18n`: the legacy
  * `name`/`description` columns stay the `es` fallback source and the only
- * value ever written by an owner without the `multilingual_gastronomy_menu`
+ * value ever written by an owner without the `multilingual_venue_menu`
  * entitlement. Gated on WRITE (`PUT .../menu` refuses a document carrying
  * translations unless the plan grants the key) and on the PUBLIC read (the
  * public detail route withholds them live, the same mechanism
- * `MANAGE_GASTRONOMY_MENU` and `MENU_ITEM_PHOTOS` use) — never on the owner's
+ * `MANAGE_VENUE_MENU` and `MENU_ITEM_PHOTOS` use) — never on the owner's
  * own protected read, which sees everything it typed regardless of plan.
  *
  * ## What this table deliberately does NOT carry

@@ -224,7 +224,7 @@ describe('vertical-aware copy (HOS-1283)', () => {
     // the ACTUAL RENDERED MARKUP, not on the template source — a `toMatch`
     // over the whole file would pass with the bug still in place, since the
     // accommodation string is still right there in the source as the default.
-    const gastronomyProps: TrialSeriesEmailProps = { ...props, productDomain: 'gastronomy' };
+    const gastronomyProps: TrialSeriesEmailProps = { ...props, productDomain: 'venue' };
     const experienceProps: TrialSeriesEmailProps = { ...props, productDomain: 'experience' };
 
     it('trial-ending-10d: swaps the listing noun and the tip bullets', () => {

@@ -192,7 +192,7 @@ describe('ListingQrSheet (HOS-982)', () => {
     describe('the code, before anything is downloaded', () => {
         it.each([
             ['accommodation', 'accommodations'],
-            ['gastronomy', 'gastronomies'],
+            ['venue', 'gastronomies'],
             ['experience', 'experiences']
         ] as const)('asks the %s route for it, with the session', async (vertical, segment) => {
             const fetchMock = stubFetch();
@@ -266,7 +266,7 @@ describe('ListingQrSheet (HOS-982)', () => {
     describe('the download request', () => {
         it.each([
             ['accommodation', 'accommodations'],
-            ['gastronomy', 'gastronomies'],
+            ['venue', 'gastronomies'],
             ['experience', 'experiences']
         ] as const)('asks the %s route with the session cookie', async (vertical, segment) => {
             const fetchMock = stubFetch();

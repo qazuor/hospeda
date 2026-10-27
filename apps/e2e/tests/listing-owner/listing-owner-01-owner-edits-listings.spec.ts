@@ -230,7 +230,7 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings â
         await page.goto(
             listingEditorUrl({
                 webUrl: WEB_URL,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 listingId: gastronomyId,
                 section: 'precio'
             }),

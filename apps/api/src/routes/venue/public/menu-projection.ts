@@ -56,7 +56,7 @@ function projectTranslations<T extends { nameI18n?: unknown; descriptionI18n?: u
  *    `menu_item_photos`.
  *  - `nameI18n`/`descriptionI18n` (HOS-1043) go, on BOTH the section and its
  *    dishes, only when the owner's plan does not grant
- *    `multilingual_gastronomy_menu`.
+ *    `multilingual_venue_menu`.
  *
  * @param sections - The carta as read from the database.
  * @param keepPhoto - Whether to keep `photoUrl`/`photoAlt`.
@@ -92,7 +92,7 @@ function projectSections(
  * the public payload.
  *
  * The two gates are INDEPENDENT and nest in one direction only. A `-pro` owner
- * grants `manage_gastronomy_menu` but not `menu_item_photos`: their carta is
+ * grants `manage_venue_menu` but not `menu_item_photos`: their carta is
  * published, each dish without its picture. The inverse cannot happen, because
  * the only plan granting the photo key also grants the carta key — but the
  * check does not rely on that, and a carta withheld takes its photos with it
@@ -106,12 +106,12 @@ function projectSections(
  * @param input.menuSections - The structured carta's sections, as read (may be
  *   non-empty even when `ownerGrantsMenuManagement` is `false` — a downgraded
  *   owner's previously-typed carta is not deleted).
- * @param input.ownerGrantsMenuManagement - The live `manage_gastronomy_menu`
+ * @param input.ownerGrantsMenuManagement - The live `manage_venue_menu`
  *   check result.
  * @param input.ownerGrantsMenuItemPhotos - The live `menu_item_photos` check
  *   result (HOS-1045).
  * @param input.ownerGrantsMenuTranslations - The live
- *   `multilingual_gastronomy_menu` check result (HOS-1043).
+ *   `multilingual_venue_menu` check result (HOS-1043).
  * @returns The fields to spread into the public response. `menuSections` is
  *   `undefined` (not `[]`) when empty, matching the "not loaded" vs "empty"
  *   convention `amenities`/`features` already use on this schema.

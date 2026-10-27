@@ -7,7 +7,7 @@ const LISTING = '2f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11';
 const OWNER = '77777777-7777-4777-8777-777777777777';
 const REQUEST = '99999999-9999-4999-8999-999999999999';
 const payload = {
-    vertical: 'gastronomy',
+    vertical: 'venue',
     listingId: LISTING,
     ownerId: OWNER,
     fixRequestId: REQUEST,

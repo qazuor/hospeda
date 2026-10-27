@@ -9,7 +9,7 @@
  * `*.module.css`. It adds one state ListingViewsWidget does not need —
  * `locked` — because unlike `VIEW_BASIC_STATS` (the gastronomy/experience floor every
  * tier gets), `menu_qr_scan_metrics` is a premium-only entitlement
- * (`gastronomy-premium`), so a basic/pro venue's request answers `403`. That
+ * (`venue-premium`), so a basic/pro venue's request answers `403`. That
  * refusal is a REAL state, never rendered as a generic error: the copy names
  * the plan gate, mirroring `BrochureDownloadButton.client.tsx` /
  * `ExperienceCertificatePanel.client.tsx`'s own `locked` branch.

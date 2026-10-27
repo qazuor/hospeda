@@ -41,7 +41,7 @@ import {
  * Passing it is what makes `gastronomy.*` permissions pass here while the
  * other vertical's do not.
  */
-const VERTICAL: VenueOrExperience = 'gastronomy';
+const VERTICAL: VenueOrExperience = 'venue';
 
 // Re-export generic helpers under gastronomy-scoped names so callers inside
 // the gastronomy directory can import from one place.

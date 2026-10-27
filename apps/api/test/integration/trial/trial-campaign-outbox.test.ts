@@ -235,7 +235,7 @@ describe('TEST:V4:22 (parte 1: escritura) - trial campaigns are outbox rows writ
         ).toEqual([1, 5, 15, 30, 60]);
         for (const row of recovery) {
             expect(row.status).toBe('pending');
-            expect(row.payload.verticals).toEqual(['accommodation', 'gastronomy']);
+            expect(row.payload.verticals).toEqual(['accommodation', 'venue']);
             expect(row.sendAfter?.toISOString()).toBe(expectedSendAfter(row.payload.targetDate));
             expect(
                 row.dedupKey.endsWith(

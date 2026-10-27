@@ -49,7 +49,7 @@ function readStripped(relativePath: string): string {
 const PAGES = [
     {
         name: 'gastronomia',
-        vertical: 'gastronomy',
+        vertical: 'venue',
         otherVertical: 'experience',
         file: '../../src/pages/[lang]/publicar/gastronomia/index.astro',
         plansPath: 'planes/gastronomia'
@@ -57,7 +57,7 @@ const PAGES = [
     {
         name: 'experiencias',
         vertical: 'experience',
-        otherVertical: 'gastronomy',
+        otherVertical: 'venue',
         file: '../../src/pages/[lang]/publicar/experiencias/index.astro',
         plansPath: 'planes/experiencias'
     }

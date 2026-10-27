@@ -127,7 +127,7 @@ const cases = [
         method: 'POST',
         path: '/{id}/faqs',
         body: faqCreate,
-        key: 'edit_gastronomy_info',
+        key: 'edit_venue_info',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -136,7 +136,7 @@ const cases = [
         method: 'DELETE',
         path: '/{id}/faqs/{faqId}',
         body: undefined,
-        key: 'edit_gastronomy_info',
+        key: 'edit_venue_info',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -145,7 +145,7 @@ const cases = [
         method: 'PUT',
         path: '/{id}/faqs/{faqId}',
         body: faqUpdate,
-        key: 'edit_gastronomy_info',
+        key: 'edit_venue_info',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -154,7 +154,7 @@ const cases = [
         method: 'PUT',
         path: '/{id}/faqs/reorder',
         body: faqReorder,
-        key: 'edit_gastronomy_info',
+        key: 'edit_venue_info',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -163,7 +163,7 @@ const cases = [
         method: 'POST',
         path: '/{id}/media',
         body: mediaAdd,
-        key: 'edit_gastronomy_info',
+        key: 'edit_venue_info',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -172,7 +172,7 @@ const cases = [
         method: 'POST',
         path: '/{id}/media/featured',
         body: mediaAdd,
-        key: 'edit_gastronomy_info',
+        key: 'edit_venue_info',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -181,7 +181,7 @@ const cases = [
         method: 'DELETE',
         path: '/{id}/media/{mediaId}',
         body: undefined,
-        key: 'edit_gastronomy_info',
+        key: 'edit_venue_info',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -190,7 +190,7 @@ const cases = [
         method: 'PATCH',
         path: '/{id}/media/reorder',
         body: mediaReorder,
-        key: 'edit_gastronomy_info',
+        key: 'edit_venue_info',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -199,7 +199,7 @@ const cases = [
         method: 'PUT',
         path: '/{id}/media/{mediaId}/featured',
         body: undefined,
-        key: 'edit_gastronomy_info',
+        key: 'edit_venue_info',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -208,7 +208,7 @@ const cases = [
         method: 'PATCH',
         path: '/{id}/media/{mediaId}',
         body: mediaUpdate,
-        key: 'edit_gastronomy_info',
+        key: 'edit_venue_info',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -217,7 +217,7 @@ const cases = [
         method: 'PATCH',
         path: '/{id}',
         body: patchBody,
-        key: 'edit_gastronomy_info',
+        key: 'edit_venue_info',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -226,7 +226,7 @@ const cases = [
         method: 'POST',
         path: '/{id}/menu-file',
         body: undefined,
-        key: 'manage_gastronomy_menu',
+        key: 'manage_venue_menu',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -235,7 +235,7 @@ const cases = [
         method: 'DELETE',
         path: '/{id}/menu-file',
         body: undefined,
-        key: 'manage_gastronomy_menu',
+        key: 'manage_venue_menu',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -244,7 +244,7 @@ const cases = [
         method: 'PUT',
         path: '/{id}/menu',
         body: menuPlain,
-        key: 'manage_gastronomy_menu',
+        key: 'manage_venue_menu',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -262,7 +262,7 @@ const cases = [
         method: 'PUT',
         path: '/{id}/daily-specials',
         body: specials,
-        key: 'manage_gastronomy_daily_special',
+        key: 'manage_venue_daily_special',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -271,7 +271,7 @@ const cases = [
         method: 'PUT',
         path: '/{id}/events',
         body: events,
-        key: 'manage_gastronomy_events',
+        key: 'manage_venue_events',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -502,13 +502,13 @@ describe('TEST:V5:31 gastronomy and experience content gates', () => {
         expect(mocks.service).not.toHaveBeenCalled();
         mocks.effectiveSet.mockClear();
         const full = [
-            'edit_gastronomy_info',
+            'edit_venue_info',
             'edit_experience_info',
-            'manage_gastronomy_menu',
-            'manage_gastronomy_daily_special',
-            'manage_gastronomy_events',
+            'manage_venue_menu',
+            'manage_venue_daily_special',
+            'manage_venue_events',
             'menu_item_photos',
-            'multilingual_gastronomy_menu',
+            'multilingual_venue_menu',
             'manage_experience_directions',
             'issue_experience_certificate',
             'download_listing_pdf'
@@ -552,7 +552,7 @@ describe('TEST:V5:31 gastronomy and experience content gates', () => {
     it('requires dish-photo and translation keys only when the validated menu carries them', async () => {
         const row = cases.find((item) => item.file === 'gastronomy/putMenu');
         if (!row) throw new Error('Menu route missing');
-        configureSet(OWNER_A, ['edit_gastronomy_info', 'manage_gastronomy_menu']);
+        configureSet(OWNER_A, ['edit_venue_info', 'manage_venue_menu']);
         const photo = {
             sections: [
                 {
@@ -574,7 +574,7 @@ describe('TEST:V5:31 gastronomy and experience content gates', () => {
             (await (await request(row, OWNER_A, LISTING, translated)).json()).error
         ).toMatchObject({
             code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
-            details: { entitlementKey: 'multilingual_gastronomy_menu' }
+            details: { entitlementKey: 'multilingual_venue_menu' }
         });
         const plain = await request(row);
         expect((await plain.json()).error?.code).not.toBe(ServiceErrorCode.ENTITLEMENT_REQUIRED);

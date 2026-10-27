@@ -112,7 +112,7 @@ describe('TEST:V3:7 — GUARD:G-R2-B', () => {
         const source = resolutionFiles()['grant-ratchet.ts'] as string;
         const mutated = source.replace(
             'args.billing.coverage({ userId: args.userId, vertical: args.vertical });',
-            "args.billing.coverage({ userId: args.userId, vertical: 'gastronomy' });"
+            "args.billing.coverage({ userId: args.userId, vertical: 'venue' });"
         );
         expect(mutated).not.toBe(source);
         const result = run({ root: makeTree({ overrides: { 'grant-ratchet.ts': mutated } }) });

@@ -9,7 +9,7 @@ describe('publishApi.publish (TEST:1729:1)', () => {
 
     it.each([
         ['accommodation', 'accommodations'],
-        ['gastronomy', 'gastronomies'],
+        ['venue', 'gastronomies'],
         ['experience', 'experiences']
     ] as const)('posts %s to its exact publish path without a body', async (vertical, plural) => {
         await publishApi.publish({ vertical, id: 'listing-1' });

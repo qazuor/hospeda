@@ -32,7 +32,7 @@ const ALL_KEYS = [
     'ai_search',
     'ai_chat',
     'ai_accommodation_import',
-    'manage_gastronomy_menu',
+    'manage_venue_menu',
     'manage_experience_directions'
 ];
 
@@ -43,7 +43,7 @@ function effectiveSetFor(userId: string, vertical: VerticalEnum) {
         max_ai_translate_per_month: 200,
         max_ai_search_per_month: 10,
         max_ai_chat_per_month: 50,
-        max_ai_chat_gastronomy_per_month: 0,
+        max_ai_chat_venue_per_month: 0,
         max_ai_chat_experience_per_month: 0,
         max_ai_chat_consumer_per_month: userId === OWNER_WITH_KEY ? 200 : 10,
         max_ai_accommodation_import_per_month: 10
@@ -184,7 +184,7 @@ describe('TEST:V5:32 AI gates', () => {
             'chat gastronomy owner',
             'chat_gastronomy',
             'ai_chat',
-            'max_ai_chat_gastronomy_per_month',
+            'max_ai_chat_venue_per_month',
             VerticalEnum.VENUE
         ],
         [
@@ -235,7 +235,7 @@ describe('TEST:V5:32 AI gates', () => {
                 vertical: VerticalEnum.VENUE,
                 feature: 'chat_gastronomy',
                 entitlementKey: 'ai_chat',
-                limitKey: 'max_ai_chat_gastronomy_per_month',
+                limitKey: 'max_ai_chat_venue_per_month',
                 entitlementMessage: 'gastronomy.aiChat.unavailable'
             })
         ).rejects.toMatchObject({

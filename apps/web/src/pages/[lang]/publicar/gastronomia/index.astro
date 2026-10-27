@@ -40,7 +40,7 @@ import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
 
-const VERTICAL = 'gastronomy' as const;
+const VERTICAL = 'venue' as const;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -79,23 +79,23 @@ const destinationsLoadFailed = destinationsResult !== null && !destinationsResul
 
 const steps = [
     {
-        title: t('publish.gastronomy.steps.step1.title', 'Cargá los datos básicos'),
+        title: t('publish.venue.steps.step1.title', 'Cargá los datos básicos'),
         desc: t(
-            'publish.gastronomy.steps.step1.desc',
+            'publish.venue.steps.step1.desc',
             'Nombre, tipo de local y destino. Con eso creamos tu ficha en el momento.'
         )
     },
     {
-        title: t('publish.gastronomy.steps.step2.title', 'Completá tu ficha'),
+        title: t('publish.venue.steps.step2.title', 'Completá tu ficha'),
         desc: t(
-            'publish.gastronomy.steps.step2.desc',
+            'publish.venue.steps.step2.desc',
             'Sumá fotos, menú, horarios y formas de contacto desde el panel, a tu ritmo.'
         )
     },
     {
-        title: t('publish.gastronomy.steps.step3.title', 'Salís publicado'),
+        title: t('publish.venue.steps.step3.title', 'Salís publicado'),
         desc: t(
-            'publish.gastronomy.steps.step3.desc',
+            'publish.venue.steps.step3.desc',
             'Tu local aparece en el catálogo de gastronomía y los comensales de la zona te encuentran.'
         )
     }
@@ -104,25 +104,25 @@ const steps = [
 const benefits = [
     {
         Icon: EyeIcon,
-        title: t('publish.gastronomy.benefits.item1.title', 'Te ven los que ya están acá'),
+        title: t('publish.venue.benefits.item1.title', 'Te ven los que ya están acá'),
         desc: t(
-            'publish.gastronomy.benefits.item1.desc',
+            'publish.venue.benefits.item1.desc',
             'Miles de viajeros buscan cada mes dónde comer en Concepción del Uruguay y el litoral entrerriano.'
         )
     },
     {
         Icon: SettingsIcon,
-        title: t('publish.gastronomy.benefits.item2.title', 'La ficha es tuya'),
+        title: t('publish.venue.benefits.item2.title', 'La ficha es tuya'),
         desc: t(
-            'publish.gastronomy.benefits.item2.desc',
+            'publish.venue.benefits.item2.desc',
             'Cambiás el menú, las fotos y los horarios cuando quieras, sin pedirle permiso a nadie.'
         )
     },
     {
         Icon: ReceiptIcon,
-        title: t('publish.gastronomy.benefits.item3.title', 'Sin comisión por consulta'),
+        title: t('publish.venue.benefits.item3.title', 'Sin comisión por consulta'),
         desc: t(
-            'publish.gastronomy.benefits.item3.desc',
+            'publish.venue.benefits.item3.desc',
             'Pagás tu plan y listo. Ninguna reserva ni consulta te suma un cargo aparte.'
         )
     }
@@ -131,17 +131,17 @@ const benefits = [
 
 <MarketingLayout
     locale={locale}
-    title={t('publish.gastronomy.meta.title', 'Publicá tu local gastronómico')}
+    title={t('publish.venue.meta.title', 'Publicá tu local gastronómico')}
     description={t(
-        'publish.gastronomy.meta.description',
+        'publish.venue.meta.description',
         'Cargá la ficha de tu restaurante, bar, parrilla o food truck en Hospeda y llegá a los viajeros que buscan dónde comer en el litoral.'
     )}
 >
     <PublishHero
-        tagline={t('publish.gastronomy.hero.tagline', 'Para locales gastronómicos')}
-        title={t('publish.gastronomy.hero.title', 'Publicá tu local y que te encuentren')}
+        tagline={t('publish.venue.hero.tagline', 'Para locales gastronómicos')}
+        title={t('publish.venue.hero.title', 'Publicá tu local y que te encuentren')}
         body={t(
-            'publish.gastronomy.hero.body',
+            'publish.venue.hero.body',
             'Empezá acá con lo básico: cómo se llama tu local, qué tipo es y en qué destino está. Las fotos, el menú y los horarios los cargás después, desde tu panel.'
         )}
         Icon={ForkKnifeIcon}
@@ -163,7 +163,7 @@ const benefits = [
         stepsTitle={t('publish.steps.title', '¿Cómo funciona?')}
         steps={steps}
         benefitsTagline={t('publish.benefits.tagline', '¿Por qué Hospeda?')}
-        benefitsTitle={t('publish.gastronomy.benefits.title', 'Lo que te llevás')}
+        benefitsTitle={t('publish.venue.benefits.title', 'Lo que te llevás')}
         benefits={benefits}
     />
 

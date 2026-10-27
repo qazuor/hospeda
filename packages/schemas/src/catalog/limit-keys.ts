@@ -11,7 +11,7 @@ import { type KeyRow, toDefinitions } from './key-row.js';
  */
 const ROWS: readonly KeyRow[] = [
     ['max_accommodations', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'],
-    ['max_gastronomies', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'],
+    ['max_venues', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'],
     ['max_experiences', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'],
     ['max_properties', 'vertical', 'SUM', 'UNPUBLISH', 'COMMERCIAL'],
     ['max_photos_per_accommodation', 'vertical', 'SUM', 'ARCHIVE', 'COMMERCIAL'],
@@ -26,7 +26,7 @@ const ROWS: readonly KeyRow[] = [
     ['max_ai_text_improve_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
     ['max_ai_chat_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
     ['max_ai_chat_consumer_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
-    ['max_ai_chat_gastronomy_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
+    ['max_ai_chat_venue_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
     ['max_ai_chat_experience_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
     ['max_ai_search_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
     ['max_ai_support_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],

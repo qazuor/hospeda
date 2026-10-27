@@ -59,7 +59,7 @@ export interface ListingEditorStatusInput {
     /**
      * The vertical, which decides which fields the completeness check requires.
      *
-     * Taken as the ROUTE's vocabulary (`'gastronomy' | 'experience'`) and mapped
+     * Taken as the ROUTE's vocabulary (`'venue' | 'experience'`) and mapped
      * to `ProductDomainEnum` here. The two spell the same two strings, but
      * only one of them is what the route param actually is, and a cast at every
      * call site is how a third spelling eventually appears.
@@ -145,9 +145,7 @@ function resolveBlockingStatuses({
 }): Record<string, EditorSectionStatus> {
     const { missing } = resolveListingCompleteness({
         entityType:
-            input.vertical === 'gastronomy'
-                ? ProductDomainEnum.VENUE
-                : ProductDomainEnum.EXPERIENCE,
+            input.vertical === 'venue' ? ProductDomainEnum.VENUE : ProductDomainEnum.EXPERIENCE,
         listing: input.listing
     });
     if (missing.length === 0) return {};

@@ -12,11 +12,11 @@ import { closeTestPool, testData, withTestTransaction } from '../helpers.ts';
 
 afterAll(async () => closeTestPool());
 
-type Vertical = 'accommodation' | 'gastronomy' | 'experience';
+type Vertical = 'accommodation' | 'venue' | 'experience';
 
 const TABLES: Record<Vertical, string> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'gastronomies',
     experience: 'experiences'
 };
 
@@ -29,7 +29,7 @@ const CREATE: Record<
 > = {
     accommodation: ({ tx, base }) =>
         new AccommodationModel().create({ ...base, type: 'CABIN' } as Partial<Accommodation>, tx),
-    gastronomy: ({ tx, base }) =>
+    venue: ({ tx, base }) =>
         new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx),
     experience: ({ tx, base }) =>
         new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx)
@@ -93,7 +93,7 @@ describe('TEST:V8a:12 the account closure locked reads (model)', () => {
             });
             const archived = await createListing({
                 ...common,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 status: 'ARCHIVED'
             });
             const moderated = await createListing({
@@ -104,7 +104,7 @@ describe('TEST:V8a:12 the account closure locked reads (model)', () => {
             await createListing({ ...common, vertical: 'accommodation', status: 'PURGED' });
             await createListing({
                 ...common,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 status: 'PUBLISHED',
                 deleted: true
             });
@@ -124,7 +124,7 @@ describe('TEST:V8a:12 the account closure locked reads (model)', () => {
             // Assert
             expect(listings).toEqual([
                 { vertical: 'accommodation', id: draft },
-                { vertical: 'gastronomy', id: archived },
+                { vertical: 'venue', id: archived },
                 { vertical: 'experience', id: moderated }
             ]);
         });

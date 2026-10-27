@@ -800,7 +800,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
 // ---------------------------------------------------------------------------
 
 describe('addGastronomyMedia — gallery cap (HOS-389 §2)', () => {
-    const CAP = getGalleryCap('gastronomy');
+    const CAP = getGalleryCap('venue');
 
     const input: VenueMediaAddInput = {
         gastronomyId: GASTRONOMY_ID,
@@ -874,7 +874,7 @@ describe('addGastronomyMedia — gallery cap (HOS-389 §2)', () => {
         // The whole point of the fix is that this path and the upload routes
         // consult ONE value; a test asserting 30 would keep passing while the
         // service drifted onto its own number.
-        expect(CAP).toBe(getGalleryCap('gastronomy'));
+        expect(CAP).toBe(getGalleryCap('venue'));
         expect(CAP).toBeGreaterThan(0);
     });
 });
@@ -916,7 +916,7 @@ describe('gastronomy media — public-page revalidation (HOS-389 §4)', () => {
         const [payload] = mockScheduleRevalidation.mock.calls[0] as [Record<string, unknown>];
         // Field by field: `objectContaining` is blind to a key whose value is
         // undefined, which is exactly how a broken payload passes.
-        expect(payload.entityType).toBe('gastronomy');
+        expect(payload.entityType).toBe('venue');
         expect(payload.id).toBe(GASTRONOMY_ID);
         expect(payload.slug).toBe('la-parrilla');
     });

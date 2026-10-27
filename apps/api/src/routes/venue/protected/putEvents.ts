@@ -6,7 +6,7 @@
  * ## What it answers, and in what order
  *
  * 1. **Authentication** — `createCRUDRoute` over the protected router.
- * 2. **Listing access** — the write requires manage_gastronomy_events
+ * 2. **Listing access** — the write requires manage_venue_events
  *    for the listing owner.
  * 3. **Ownership** — inside `replaceVenueEvents`, via the same
  *    `GASTRONOMY_EDIT_OWN` / `GASTRONOMY_EDIT_ALL` gate the sibling writes use.
@@ -77,12 +77,12 @@ export const protectedPutVenueEventsRoute = createProtectedRoute({
     path: '/{id}/events',
     summary: 'Replace the venue events agenda of a gastronomy listing',
     description:
-        'Replaces the listing’s own events with the submitted document. Each entry is either dated (recurrence "once" with a date) or weekly (recurrence "weekly" with a weekday 0-6, Sunday-based); the two are mutually exclusive and the payload is rejected if an entry declares neither or both. An empty events array takes the agenda down. Owner-only, and requires the manage_gastronomy_events entitlement granted by the professional gastronomy plan and above.',
+        'Replaces the listing’s own events with the submitted document. Each entry is either dated (recurrence "once" with a date) or weekly (recurrence "weekly" with a weekday 0-6, Sunday-based); the two are mutually exclusive and the payload is rejected if an entry declares neither or both. An empty events array takes the agenda down. Owner-only, and requires the manage_venue_events entitlement granted by the professional gastronomy plan and above.',
     listingAccess: {
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
-        capabilities: ['manage_gastronomy_events']
+        capabilities: ['manage_venue_events']
     },
     tags: ['Gastronomy', 'Gastronomy Events'],
     protectedTag: false,

@@ -66,7 +66,7 @@ import type { ApiResult, PaginatedResponse } from './types';
  * feature module — mirrors how other entity-scoped unions in this file are
  * hand-declared rather than imported (see `CalendarProviderToken` above).
  */
-export type ListingMediaVertical = 'gastronomy' | 'experience';
+export type ListingMediaVertical = 'venue' | 'experience';
 
 const BASE = '/api/v1/public';
 const PROTECTED = '/api/v1/protected';
@@ -2361,11 +2361,11 @@ export const hostAnalyticsApi = {
 // --- Listing Analytics (Protected — HOS-734) ---
 
 /** The two gastronomy/experience verticals — matches `VenueOrExperience` in `@repo/billing`. */
-type ListingAnalyticsVertical = 'gastronomy' | 'experience';
+type ListingAnalyticsVertical = 'venue' | 'experience';
 
 /** Path segment each vertical mounts its protected routes under. */
 const LISTING_VERTICAL_PATH: Readonly<Record<ListingAnalyticsVertical, string>> = {
-    gastronomy: 'gastronomies',
+    venue: 'gastronomies',
     experience: 'experiences'
 };
 
@@ -2377,7 +2377,7 @@ const LISTING_VERTICAL_PATH: Readonly<Record<ListingAnalyticsVertical, string>> 
  *
  * Gastronomy's menu QR and its scan analytics (HOS-1044) are no longer out of
  * scope: `getMenuQr` and `getMenuQrScans` below, gated by the
- * `menu_qr_scan_metrics` entitlement (granted by `gastronomy-premium` only).
+ * `menu_qr_scan_metrics` entitlement (granted by `venue-premium` only).
  * Still out of scope, per vertical, and still without an endpoint or
  * entitlement key: gastronomy's most-viewed dishes, and experience's origin
  * destinations.
@@ -2874,7 +2874,7 @@ export const hostOnboardingApi = {
  * so a change to the API contract surfaces as a typecheck failure at the call
  * sites rather than silently reshaping a rendered page.
  */
-export type PublishVerticalSlug = 'accommodation' | 'gastronomy' | 'experience';
+export type PublishVerticalSlug = 'accommodation' | 'venue' | 'experience';
 export type SubscribeDestinationResponse = z.infer<typeof SubscribeDestinationResponseSchema>;
 
 /**
@@ -2918,7 +2918,7 @@ export const publishApi = {
      *
      * @example
      * ```ts
-     * const result = await publishApi.precheck({ vertical: 'gastronomy', cookieHeader });
+     * const result = await publishApi.precheck({ vertical: 'venue', cookieHeader });
      * if (result.ok) console.log(result.data.decision);
      * ```
      */
@@ -3056,7 +3056,7 @@ export const publishApi = {
      *
      * @example
      * ```ts
-     * const result = await publishApi.purge({ vertical: 'gastronomy', id });
+     * const result = await publishApi.purge({ vertical: 'venue', id });
      * if (result.ok) window.location.reload();
      * ```
      */
@@ -3101,7 +3101,7 @@ export const publishApi = {
 /** Protected API plural per listing vertical (HOS-1493, row 26 read). */
 const LISTING_VERTICAL_PLURAL: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'gastronomies',
     experience: 'experiences'
 };
 
@@ -5054,7 +5054,7 @@ export const priceAlertsApi = {
  * Maps a gastronomy/experience verticals to its URL path segment.
  */
 function listingMediaPathSegment(vertical: ListingMediaVertical): 'gastronomies' | 'experiences' {
-    return vertical === 'gastronomy' ? 'gastronomies' : 'experiences';
+    return vertical === 'venue' ? 'gastronomies' : 'experiences';
 }
 
 /**
@@ -5099,10 +5099,10 @@ export interface ListingMediaRow {
  *
  * @example
  * ```ts
- * const list = await listingMediaApi.listMedia({ vertical: 'gastronomy', id: 'listing-uuid' });
- * const added = await listingMediaApi.addMedia({ vertical: 'gastronomy', id: 'listing-uuid', body: { url, publicId } });
- * await listingMediaApi.setFeaturedMedia({ vertical: 'gastronomy', id: 'listing-uuid', mediaId: added.data.media.id });
- * await listingMediaApi.removeMedia({ vertical: 'gastronomy', id: 'listing-uuid', mediaId: added.data.media.id });
+ * const list = await listingMediaApi.listMedia({ vertical: 'venue', id: 'listing-uuid' });
+ * const added = await listingMediaApi.addMedia({ vertical: 'venue', id: 'listing-uuid', body: { url, publicId } });
+ * await listingMediaApi.setFeaturedMedia({ vertical: 'venue', id: 'listing-uuid', mediaId: added.data.media.id });
+ * await listingMediaApi.removeMedia({ vertical: 'venue', id: 'listing-uuid', mediaId: added.data.media.id });
  * ```
  */
 export const listingMediaApi = {

@@ -100,7 +100,7 @@ export function toNotifiableEntity(event: EntityChangeData): NotifiableEntity | 
         case 'destination':
         case 'event':
         case 'post':
-        case 'gastronomy':
+        case 'venue':
         case 'experience':
             return event.slug ? { entityType: event.entityType, slug: event.slug } : undefined;
         case 'accommodation_review':

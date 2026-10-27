@@ -20,7 +20,7 @@ const TABLES: Record<
         listing: accommodations,
         reviewListingId: accommodationReviews.accommodationId
     },
-    gastronomy: {
+    venue: {
         listing: gastronomies,
         reviewListingId: gastronomyReviews.gastronomyId
     },

@@ -119,7 +119,7 @@ test.describe('TEST:V8a:7 (panel, fila 4) admin user trial summary @p1 @admin', 
         });
         const card = page.getByTestId('user-trial-summary');
         await expect(card).toBeVisible({ timeout: 30_000 });
-        for (const vertical of ['accommodation', 'gastronomy', 'experience']) {
+        for (const vertical of ['accommodation', 'venue', 'experience']) {
             await expect(page.getByTestId(`user-trial-summary-${vertical}`)).toContainText(
                 'Sin prueba gratis en esta vertical.'
             );

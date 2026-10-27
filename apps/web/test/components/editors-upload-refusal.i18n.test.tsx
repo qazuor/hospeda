@@ -116,7 +116,7 @@ describe('HOS-1218 — editor upload refusals are localized', () => {
             <>
                 <MediaSection
                     locale="es"
-                    vertical="gastronomy"
+                    vertical="venue"
                     listingId="00000000-0000-4000-8000-0000000000bb"
                 />
                 <ToastViewport />

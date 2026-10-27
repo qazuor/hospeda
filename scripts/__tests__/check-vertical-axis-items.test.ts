@@ -1,7 +1,7 @@
 /**
  * @fileoverview
  * TEST:V1:8 (AC:V1:5): GUARD:G1 is green over the branch and red on purpose:
- * (1) `x === 'gastronomy' ? A : B` added to shared code; (2) a vertical named
+ * (1) `x === 'venue' ? A : B` added to shared code; (2) a vertical named
  * without its Axis-2 item (no activation-event entry). And
  * `check-no-binary-vertical-ternary.sh`, which G1 retires, is gone from the
  * repository, `package.json` and `ci.yml`.
@@ -41,7 +41,7 @@ function makeTree({ files }: { readonly files: Readonly<Record<string, string>> 
 
 const SWITCH = `export function segment(v: string) {
     switch (v) {
-        case 'gastronomy':
+        case 'venue':
             return 'gastronomies';
         case 'experience':
             return 'experiences';
@@ -78,23 +78,20 @@ describe('TEST:V1:8 — GUARD:G1', () => {
         it.each([
             [
                 'packages/shared/src/x.ts',
-                "export const f = (v: string) => (v === 'gastronomy' ? 1 : 2);\n"
+                "export const f = (v: string) => (v === 'venue' ? 1 : 2);\n"
             ],
-            [
-                'apps/api/src/x.ts',
-                "export const f = (v: string) => (v === 'gastronomy' ? 1 : 2);\n"
-            ],
+            ['apps/api/src/x.ts', "export const f = (v: string) => (v === 'venue' ? 1 : 2);\n"],
             [
                 'packages/shared/src/x.ts',
                 "export const f = (v: string) => (v !== 'experience' ? 1 : 2);\n"
             ],
             [
                 'packages/shared/src/x.ts',
-                'export const f = (v: string) => ("gastronomy" === v ? 1 : 2);\n'
+                'export const f = (v: string) => ("venue" === v ? 1 : 2);\n'
             ],
             [
                 'packages/shared/src/x.ts',
-                "export const f = (v: string) =>\n    v === 'gastronomy'\n        ? 'gastronomies'\n        : 'experiences';\n"
+                "export const f = (v: string) =>\n    v === 'venue'\n        ? 'gastronomies'\n        : 'experiences';\n"
             ]
         ])('%s: %s', (file, source) => {
             const result = guardOver({ overrides: { [file]: source } });
@@ -109,7 +106,7 @@ describe('TEST:V1:8 — GUARD:G1', () => {
             const result = guardOver({
                 overrides: {
                     'packages/shared/src/x.ts':
-                        "export const f = (v: string) => (v === 'gastronomy' ? 1 : 2);\n"
+                        "export const f = (v: string) => (v === 'venue' ? 1 : 2);\n"
                 }
             });
 
@@ -122,7 +119,7 @@ describe('TEST:V1:8 — GUARD:G1', () => {
         it('reports the line of the comparison', () => {
             const violations = findBinaryVerticalTernaries({
                 file: 'x.ts',
-                source: "const a = 1;\n\nexport const f = (v: string) => (v === 'gastronomy' ? 1 : 2);\n"
+                source: "const a = 1;\n\nexport const f = (v: string) => (v === 'venue' ? 1 : 2);\n"
             });
 
             expect(violations.map((v) => v.line)).toEqual([3]);
@@ -134,32 +131,32 @@ describe('TEST:V1:8 — GUARD:G1', () => {
             [
                 'a test file',
                 'packages/shared/src/x.test.ts',
-                "const f = (v: string) => (v === 'gastronomy' ? 1 : 2);\n"
+                "const f = (v: string) => (v === 'venue' ? 1 : 2);\n"
             ],
             [
                 'a comment',
                 'packages/shared/src/x.ts',
-                "// v === 'gastronomy' ? A : B was HOS-1079\nexport const y = 1;\n"
+                "// v === 'venue' ? A : B was HOS-1079\nexport const y = 1;\n"
             ],
             [
                 'optional chaining',
                 'packages/shared/src/x.ts',
-                "export const f = (v: string, o?: { a: 1 }) => v === 'gastronomy' && o?.a;\n"
+                "export const f = (v: string, o?: { a: 1 }) => v === 'venue' && o?.a;\n"
             ],
             [
                 'nullish coalescing',
                 'packages/shared/src/x.ts',
-                "export const f = (v: string, o?: number) => (v === 'gastronomy') ?? o;\n"
+                "export const f = (v: string, o?: number) => (v === 'venue') ?? o;\n"
             ],
             [
                 'an if/return chain',
                 'packages/shared/src/x.ts',
-                "export function f(v: string) {\n    if (v === 'gastronomy') { return 1; }\n    return 2;\n}\n"
+                "export function f(v: string) {\n    if (v === 'venue') { return 1; }\n    return 2;\n}\n"
             ],
             [
                 'code outside apps/api/src and packages/*/src',
                 'apps/web/src/x.ts',
-                "export const f = (v: string) => (v === 'gastronomy' ? 1 : 2);\n"
+                "export const f = (v: string) => (v === 'venue' ? 1 : 2);\n"
             ]
         ])('%s', (_label, file, source) => {
             expect(guardOver({ overrides: { [file]: source } }).exitCode).toBe(0);

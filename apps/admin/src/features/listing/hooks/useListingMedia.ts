@@ -2,7 +2,7 @@
  * useListingMedia — TanStack Query hooks for granular gallery CRUD on the
  * relational `gastronomy_media` / `experience_media` tables (HOS-372 → HOS-382).
  *
- * Vertical-agnostic: every hook takes a `vertical` argument (`'gastronomy'` or
+ * Vertical-agnostic: every hook takes a `vertical` argument (`'venue'` or
  * `'experience'`) and resolves the correct admin endpoint from it. This
  * mirrors `useFaqs`'s `(entityType, parentId)` shape — the same two listing
  * verticals already share that hook — rather than duplicating one hook file
@@ -45,7 +45,7 @@ import { createEntityQueryKeys } from '@/lib/query-keys/factory';
 // ---------------------------------------------------------------------------
 
 /** Listing verticals whose gallery is managed via the relational media tables. */
-export type ListingMediaVertical = 'gastronomy' | 'experience';
+export type ListingMediaVertical = 'venue' | 'experience';
 
 /**
  * A single gallery photo row, from either listing vertical.
@@ -85,7 +85,7 @@ export const listingMediaQueryKeys = {
 
 /** Maps the singular vertical name to its plural admin route segment. */
 const VERTICAL_ROUTE_SEGMENT: Record<ListingMediaVertical, string> = {
-    gastronomy: 'gastronomies',
+    venue: 'gastronomies',
     experience: 'experiences'
 };
 
@@ -134,7 +134,7 @@ function invalidateAfterMediaMutation(
  * is what `ListingGalleryManager` always uses (archive management is out of
  * scope for the admin panel's gallery tab — see module docs above).
  *
- * @param vertical - `'gastronomy'` or `'experience'`.
+ * @param vertical - `'venue'` or `'experience'`.
  * @param entityId - UUID of the gastronomy/experience listing.
  */
 export function useListingMediaList(vertical: ListingMediaVertical, entityId: string) {
@@ -167,7 +167,7 @@ export function useListingMediaList(vertical: ListingMediaVertical, entityId: st
  * On success the list query is invalidated so the UI refetches the updated
  * gallery from the server.
  *
- * @param vertical - `'gastronomy'` or `'experience'`.
+ * @param vertical - `'venue'` or `'experience'`.
  * @param entityId - UUID of the gastronomy/experience listing.
  */
 export function useListingMediaAdd(vertical: ListingMediaVertical, entityId: string) {
@@ -216,7 +216,7 @@ export function useListingMediaAdd(vertical: ListingMediaVertical, entityId: str
  * This hook invalidates and refetches rather than branching on it, but the id is
  * returned so an optimistic caller can drop that row.
  *
- * @param vertical - `'gastronomy'` or `'experience'`.
+ * @param vertical - `'venue'` or `'experience'`.
  * @param entityId - UUID of the listing.
  */
 export function useListingMediaAddFeatured(vertical: ListingMediaVertical, entityId: string) {
@@ -259,7 +259,7 @@ export function useListingMediaAddFeatured(vertical: ListingMediaVertical, entit
  * After removal the remaining visible rows are resequenced server-side.
  * On success the list query is invalidated.
  *
- * @param vertical - `'gastronomy'` or `'experience'`.
+ * @param vertical - `'venue'` or `'experience'`.
  * @param entityId - UUID of the gastronomy/experience listing.
  */
 export function useListingMediaRemove(vertical: ListingMediaVertical, entityId: string) {
@@ -291,7 +291,7 @@ export function useListingMediaRemove(vertical: ListingMediaVertical, entityId: 
  * succeeds the list query is invalidated so the UI sees the updated
  * `isFeatured` flags without any manual state juggling.
  *
- * @param vertical - `'gastronomy'` or `'experience'`.
+ * @param vertical - `'venue'` or `'experience'`.
  * @param entityId - UUID of the gastronomy/experience listing.
  */
 export function useListingMediaSetFeatured(vertical: ListingMediaVertical, entityId: string) {

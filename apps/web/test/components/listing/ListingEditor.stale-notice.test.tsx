@@ -123,7 +123,7 @@ const baseData = {
 function renderEditor() {
     return render(
         <ListingEditor
-            vertical="gastronomy"
+            vertical="venue"
             sectionId="basicInfo"
             listingId="abc"
             locale="es"

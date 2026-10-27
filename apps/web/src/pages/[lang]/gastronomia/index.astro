@@ -59,7 +59,7 @@ applyCacheHeaders({
 	// private.
 	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
 	cacheClass: 'catalog',
-	tags: [CACHE_TAG_COLLECTIONS.gastronomy]
+	tags: [CACHE_TAG_COLLECTIONS.venue]
 });
 
 const url = Astro.url;
@@ -84,7 +84,7 @@ const minRating = url.searchParams.get('minRating')
  *
  * Aptos are not columns. «Sin TACC», «vegano», «vegetariano», «sin lactosa» and
  * «sin frutos secos» are rows of the shared `features` catalog scoped to the
- * `gastronomy` vertical, so filtering by apto is filtering by feature — and the
+ * `venue` vertical, so filtering by apto is filtering by feature — and the
  * day a sixth apto appears it is one more catalog row, not a migration.
  *
  * Forwarded to the API as the raw comma-separated string, exactly as
@@ -113,7 +113,7 @@ const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
 
 // --- Fetch destinations (CITY), the gastronomy feature catalog, and the listings ---
-// The catalog read is scoped with `applicableVertical: 'gastronomy'` so the
+// The catalog read is scoped with `applicableVertical: 'venue'` so the
 // sidebar only ever offers aptos and other gastronomy characteristics — the
 // shared `features` table also holds ~80 accommodation and experience rows that
 // would be meaningless on a restaurant. Its TTL is the fixed-catalog one: the
@@ -122,7 +122,7 @@ const [destinationsResult, featuresResult, result] = await Promise.all([
     destinationsApi.list({ destinationType: 'CITY', pageSize: 100 }),
     featuresApi.list({
         pageSize: 100,
-        applicableVertical: 'gastronomy',
+        applicableVertical: 'venue',
         sortBy: 'displayWeight',
         sortOrder: 'desc',
         cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS

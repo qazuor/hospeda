@@ -85,7 +85,7 @@ export type EntityChangeData =
       }
     | {
           /** Gastronomy listing changed (HOS-369 W2-4) */
-          readonly entityType: 'gastronomy';
+          readonly entityType: 'venue';
           /** Slug of the changed listing — addresses its detail page */
           readonly slug?: string;
           /** Stable UUID of the changed listing */

@@ -64,7 +64,7 @@ export const GastronomyEventRecurrencePgEnum = pgEnum('gastronomy_event_recurren
  *   birthdays, corporate dinners, weddings. That is the venue offering itself for
  *   hire and is free on every tier.
  * - This table is neither. It is owner-authored, tier-gated
- *   (`manage_gastronomy_events`, `gastronomy-pro` and up) content on a listing
+ *   (`manage_venue_events`, `venue-pro` and up) content on a listing
  *   the owner already controls.
  *
  * ## Why the two recurrence shapes share ONE table

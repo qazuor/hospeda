@@ -100,12 +100,12 @@ export async function handleGetVenueQrCode(
         entityId: entity.id,
         purpose: QrCodePurposeEnum.LISTING,
         targetUrl: buildListingQrTargetUrl({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             slug: entity.slug,
             siteUrl: env.HOSPEDA_SITE_URL
         }),
         label: buildListingQrCodeLabel({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             name: entity.name,
             slug: entity.slug
         }),

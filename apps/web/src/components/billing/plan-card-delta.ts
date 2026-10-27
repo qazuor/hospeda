@@ -68,7 +68,7 @@ export const LIMIT_DISPLAY_ORDER: readonly string[] = [
     LimitKeyEnum.MAX_ACTIVE_PROMOTIONS,
     LimitKeyEnum.MAX_PROPERTIES,
     LimitKeyEnum.MAX_STAFF_ACCOUNTS,
-    LimitKeyEnum.MAX_GASTRONOMIES,
+    LimitKeyEnum.MAX_VENUES,
     LimitKeyEnum.MAX_EXPERIENCES,
     LimitKeyEnum.MAX_FAVORITES,
     LimitKeyEnum.MAX_COLLECTIONS,

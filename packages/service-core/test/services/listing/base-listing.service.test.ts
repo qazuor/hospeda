@@ -211,8 +211,8 @@ class TestListingService extends BaseListingService<
     protected get _entityFkColumn() {
         return 'testListingId';
     }
-    protected get _revalidationEntityType(): 'gastronomy' {
-        return 'gastronomy';
+    protected get _revalidationEntityType(): 'venue' {
+        return 'venue';
     }
     protected get _amenityModel(): ListingCatalogModel {
         return this._amenityModel_instance;

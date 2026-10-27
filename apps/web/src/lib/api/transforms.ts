@@ -2823,7 +2823,7 @@ function mapListingFeatures(raw: unknown): readonly DetailFeature[] {
  * or `null`, defensively.
  *
  * `null` covers both "never translated" and "withheld server-side for a plan
- * that does not grant `multilingual_gastronomy_menu`" (HOS-1043) — the same
+ * that does not grant `multilingual_venue_menu`" (HOS-1043) — the same
  * single-value collapse {@link VenueMenuItem.photoUrl}'s own doc
  * describes for the photo gate, and for the same reason: the API decides, the
  * renderer draws what it is given.
@@ -2991,7 +2991,7 @@ export function toVenueDetailPageProps({
         menuUrl: item.menuUrl == null ? null : String(item.menuUrl),
         // HOS-895 PR2: both already withheld server-side (null / absent) for a
         // listing whose owner does not currently hold
-        // `manage_gastronomy_menu` — see VenuePublicSchema's field docs.
+        // `manage_venue_menu` — see VenuePublicSchema's field docs.
         menuFileUrl: item.menuFileUrl == null ? null : String(item.menuFileUrl),
         menuFileKind:
             item.menuFileKind === 'image' || item.menuFileKind === 'pdf' ? item.menuFileKind : null,

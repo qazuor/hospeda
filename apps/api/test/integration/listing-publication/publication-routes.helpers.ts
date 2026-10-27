@@ -64,19 +64,19 @@ const ACCOMMODATION = VerticalEnum.ACCOMMODATION;
 
 const LIMIT_KEY_BY_VERTICAL = {
     accommodation: 'max_accommodations',
-    gastronomy: 'max_gastronomies',
+    venue: 'max_venues',
     experience: 'max_experiences'
 } as const;
 
 const PUBLISH_KEY_BY_VERTICAL = {
     accommodation: 'publish_accommodations',
-    gastronomy: 'publish_gastronomy',
+    venue: 'publish_venue',
     experience: 'publish_experience'
 } as const;
 
 const EDIT_KEY_BY_VERTICAL = {
     accommodation: 'edit_accommodation_info',
-    gastronomy: 'edit_gastronomy_info',
+    venue: 'edit_venue_info',
     experience: 'edit_experience_info'
 } as const;
 

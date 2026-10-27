@@ -203,7 +203,7 @@ describe('TEST:B13a:21a AC:B13a:5 and AC:1735:8 the checkout reads the trial of 
                 cycle: 'monthly'
             },
             pendingAttempt: null,
-            vertical: 'gastronomy',
+            vertical: 'venue',
             touristVip: { status: 'NOT_AFFECTED' },
             trial: { status: 'NOT_RUNNING' }
         });

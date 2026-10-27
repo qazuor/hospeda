@@ -67,7 +67,7 @@ import type { VenueOrExperience } from './owner-listings';
  * HOS-1156 in the first place.
  *
  * @param params.locale - Locale prefix.
- * @param params.vertical - `gastronomy` or `experience`.
+ * @param params.vertical - `venue` or `experience`.
  * @returns e.g. `/es/publicar/experiencias/`.
  */
 export function buildListingCreateUrl({
@@ -89,7 +89,7 @@ export function buildListingCreateUrl({
  * rationale.
  *
  * @param params.locale - Locale prefix.
- * @param params.vertical - `gastronomy` or `experience`.
+ * @param params.vertical - `venue` or `experience`.
  * @returns e.g. `/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fexperiencias%2F`.
  */
 export function buildListingStartUrl({

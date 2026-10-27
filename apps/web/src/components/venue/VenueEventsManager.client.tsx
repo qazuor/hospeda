@@ -13,8 +13,8 @@
  *
  * ## The 403 is a real state, not an error
  *
- * Keeping an agenda is a `gastronomy-pro` capability
- * (`MANAGE_GASTRONOMY_EVENTS`), and the page this mounts on carries no
+ * Keeping an agenda is a `venue-pro` capability
+ * (`MANAGE_VENUE_EVENTS`), and the page this mounts on carries no
  * entitlement information — the same situation `VenueMenuManager` is in
  * for the structured carta. So the form renders for every owner and the API
  * decides; a refusal is shown as the upsell sentence it is, never as

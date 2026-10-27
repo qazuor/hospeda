@@ -129,7 +129,7 @@ const resolveDeleteEntityService = (
             return new EventService({ logger: apiLogger });
         case 'post':
             return new PostService({ logger: apiLogger });
-        case 'gastronomy':
+        case 'venue':
             return new VenueService({ logger: apiLogger });
         case 'experience':
             return new ExperienceService({ logger: apiLogger });
@@ -152,19 +152,19 @@ const resolveDeleteEntityService = (
 const parseEntityFromPublicId = (
     publicId: string
 ): { entityType: MediaEntityType; entityId: string } | null => {
-    const match = publicId.match(
-        /^hospeda\/[^/]+\/(accommodations|destinations|events|posts|postSponsors|eventOrganizers)\/([^/]+)(\/|$)/
-    );
-    if (!match) return null;
-
     const pluralToSingular: Record<string, MediaEntityType> = {
         accommodations: 'accommodation',
         destinations: 'destination',
         events: 'event',
         posts: 'post',
+        gastronomies: 'venue',
         postSponsors: 'postSponsor',
         eventOrganizers: 'eventOrganizer'
     };
+
+    const entityPlurals = Object.keys(pluralToSingular).join('|');
+    const match = publicId.match(new RegExp(`^hospeda/[^/]+/(${entityPlurals})/([^/]+)(/|$)`));
+    if (!match) return null;
 
     const plural = match[1];
     const entityId = match[2];

@@ -59,11 +59,7 @@ describe('TEST:V8a:7 (panel, fila 4) admin trial summary route', () => {
             vertical: 'experience'
         });
     });
-    it.each([
-        'accommodation',
-        'gastronomy',
-        'experience'
-    ])('accepts vertical %s', async (vertical) => {
+    it.each(['accommodation', 'venue', 'experience'])('accepts vertical %s', async (vertical) => {
         expect(
             (await app.request(`${base}?vertical=${vertical}`, { headers: headers() })).status
         ).toBe(200);
