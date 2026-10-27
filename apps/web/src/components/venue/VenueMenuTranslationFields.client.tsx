@@ -21,7 +21,7 @@
 import type { JSX } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import styles from './GastronomyMenuManager.module.css';
+import styles from './VenueMenuManager.module.css';
 
 /** What one translation field patch carries. */
 export interface MenuTranslationPatch {
@@ -56,7 +56,7 @@ export interface MenuTranslationFieldsProps {
  * @param props - See {@link MenuTranslationFieldsProps}.
  * @returns The translation fields block.
  */
-export function GastronomyMenuTranslationFields({
+export function VenueMenuTranslationFields({
     nameEn,
     namePt,
     descriptionEn,

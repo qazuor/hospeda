@@ -37,11 +37,11 @@ import { VENUE_EVENTS_MAX_ENTRIES } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api/client';
-import type { EventDraft } from '@/lib/gastronomy/venue-event-draft';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { GastronomyVenueEventEntryCard } from './GastronomyVenueEventEntryCard.client';
-import styles from './GastronomyVenueEventsManager.module.css';
+import type { EventDraft } from '@/lib/venue/venue-event-draft';
+import { VenueEventEntryCard } from './VenueEventEntryCard.client';
+import styles from './VenueEventsManager.module.css';
 
 /** One agenda entry, as the API returns it. */
 interface VenueEventRow {
@@ -60,7 +60,7 @@ interface EventsEnvelope {
     readonly events: readonly VenueEventRow[];
 }
 
-export interface GastronomyVenueEventsManagerProps {
+export interface VenueEventsManagerProps {
     /** UUID of the gastronomy listing. */
     readonly listingId: string;
     /** Active UI locale. */
@@ -103,11 +103,11 @@ function movedBy<T>(list: readonly T[], index: number, delta: number): T[] {
     return next;
 }
 
-export function GastronomyVenueEventsManager({
+export function VenueEventsManager({
     listingId,
     locale,
     weekdayLabels
-}: GastronomyVenueEventsManagerProps): JSX.Element {
+}: VenueEventsManagerProps): JSX.Element {
     const { t, tPlural } = createTranslations(locale);
 
     const [entries, setEntries] = useState<EventDraft[]>([]);
@@ -274,7 +274,7 @@ export function GastronomyVenueEventsManager({
             </p>
 
             {entries.map((entry, index) => (
-                <GastronomyVenueEventEntryCard
+                <VenueEventEntryCard
                     // Index-keyed on purpose: a draft row has no id, and the
                     // whole list is re-submitted as a document.
                     // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design

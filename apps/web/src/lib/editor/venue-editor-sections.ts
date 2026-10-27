@@ -43,7 +43,7 @@ import {
  * carries — both land just before `preguntas`, in declaration order (`carta`
  * then `eventos`).
  */
-const GASTRONOMY_ONLY_SECTIONS: readonly EditorSection[] = [
+const VENUE_ONLY_SECTIONS: readonly EditorSection[] = [
     {
         id: 'menu',
         slug: 'carta',
@@ -82,13 +82,13 @@ const GASTRONOMY_ONLY_SECTIONS: readonly EditorSection[] = [
  *
  * @returns The gastronomy sections.
  */
-export function buildGastronomyEditorSections(): readonly EditorSection[] {
+export function buildVenueEditorSections(): readonly EditorSection[] {
     const faqsIndex = LISTING_SHARED_EDITOR_SECTIONS.findIndex((section) => section.id === 'faqs');
     return faqsIndex === -1
-        ? [...LISTING_SHARED_EDITOR_SECTIONS, ...GASTRONOMY_ONLY_SECTIONS]
+        ? [...LISTING_SHARED_EDITOR_SECTIONS, ...VENUE_ONLY_SECTIONS]
         : [
               ...LISTING_SHARED_EDITOR_SECTIONS.slice(0, faqsIndex),
-              ...GASTRONOMY_ONLY_SECTIONS,
+              ...VENUE_ONLY_SECTIONS,
               ...LISTING_SHARED_EDITOR_SECTIONS.slice(faqsIndex)
           ];
 }
@@ -98,9 +98,9 @@ export function buildGastronomyEditorSections(): readonly EditorSection[] {
  *
  * @returns The registry the shared nav / hub / breadcrumb machinery reads.
  */
-export function buildGastronomyEditorRegistry(): EditorRegistry {
+export function buildVenueEditorRegistry(): EditorRegistry {
     return createListingEditorRegistry({
         vertical: 'gastronomy',
-        sections: buildGastronomyEditorSections()
+        sections: buildVenueEditorSections()
     });
 }

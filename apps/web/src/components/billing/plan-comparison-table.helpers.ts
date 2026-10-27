@@ -8,9 +8,9 @@
 
 import {
     EXPERIENCE_GROUPS,
-    GASTRONOMY_GROUPS,
     OWNER_GROUPS,
-    TOURIST_GROUPS
+    TOURIST_GROUPS,
+    VENUE_GROUPS
 } from '@/components/billing/plan-comparison-rows';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { filterPlansByCategory } from '@/lib/billing/fetch-plans';
@@ -22,7 +22,7 @@ export type ComparisonAudience = Exclude<PricingAudience, 'partner'>;
 const GROUPS_BY_AUDIENCE = {
     owner: OWNER_GROUPS,
     tourist: TOURIST_GROUPS,
-    gastronomy: GASTRONOMY_GROUPS,
+    gastronomy: VENUE_GROUPS,
     experience: EXPERIENCE_GROUPS
 } as const;
 

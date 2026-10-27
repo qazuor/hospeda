@@ -20,9 +20,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    GastronomyMenuQrWidget,
-    type GastronomyMenuQrWidgetListing
-} from '../../../src/components/gastronomy/GastronomyMenuQrWidget.client';
+    VenueMenuQrWidget,
+    type VenueMenuQrWidgetListing
+} from '../../../src/components/venue/VenueMenuQrWidget.client';
 
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
@@ -37,7 +37,7 @@ vi.mock('../../../src/lib/i18n', () => ({
     })
 }));
 
-vi.mock('../../../src/components/gastronomy/GastronomyMenuQrWidget.module.css', () => ({
+vi.mock('../../../src/components/venue/VenueMenuQrWidget.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
@@ -58,7 +58,7 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     }
 }));
 
-const LISTING: GastronomyMenuQrWidgetListing = { id: 'gastro-1', name: 'La Parrilla del Puerto' };
+const LISTING: VenueMenuQrWidgetListing = { id: 'gastro-1', name: 'La Parrilla del Puerto' };
 
 const READY_QR = {
     ok: true as const,
@@ -93,7 +93,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
 
     it('renders nothing when the owner has zero gastronomy listings', () => {
         const { container } = render(
-            <GastronomyMenuQrWidget
+            <VenueMenuQrWidget
                 locale="es"
                 listings={[]}
             />
@@ -107,7 +107,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
         mockGetMenuQrScans.mockResolvedValue(READY_STATS);
 
         render(
-            <GastronomyMenuQrWidget
+            <VenueMenuQrWidget
                 locale="es"
                 listings={[LISTING]}
             />
@@ -133,7 +133,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
         mockGetMenuQrScans.mockResolvedValue(READY_STATS);
 
         render(
-            <GastronomyMenuQrWidget
+            <VenueMenuQrWidget
                 locale="es"
                 listings={[LISTING]}
             />
@@ -153,7 +153,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
         mockGetMenuQrScans.mockResolvedValue(READY_STATS);
 
         render(
-            <GastronomyMenuQrWidget
+            <VenueMenuQrWidget
                 locale="es"
                 listings={[LISTING]}
             />
@@ -174,7 +174,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
         });
 
         render(
-            <GastronomyMenuQrWidget
+            <VenueMenuQrWidget
                 locale="es"
                 listings={[LISTING]}
             />
@@ -191,7 +191,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
         });
 
         render(
-            <GastronomyMenuQrWidget
+            <VenueMenuQrWidget
                 locale="es"
                 listings={[LISTING]}
             />
@@ -206,7 +206,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
         mockGetMenuQrScans.mockResolvedValue(READY_STATS);
 
         render(
-            <GastronomyMenuQrWidget
+            <VenueMenuQrWidget
                 locale="es"
                 listings={[LISTING]}
             />

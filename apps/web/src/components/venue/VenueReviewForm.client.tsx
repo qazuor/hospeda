@@ -25,7 +25,7 @@ import { translateApiError } from '@/lib/api-errors';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import styles from './GastronomyReviewForm.module.css';
+import styles from './VenueReviewForm.module.css';
 
 const TITLE_MAX = 120;
 const TITLE_MIN = 3;
@@ -33,7 +33,7 @@ const CONTENT_MAX = 2000;
 const CONTENT_MIN = 10;
 const STAR_POSITIONS = [1, 2, 3, 4, 5] as const;
 
-interface GastronomyReviewFormProps {
+interface VenueReviewFormProps {
     /** UUID of the gastronomy listing being reviewed. */
     readonly gastronomyId: string;
     /** Listing name, shown as the dialog subtitle. */
@@ -54,15 +54,15 @@ function joinApi(apiUrl: string, path: string): string {
  * GastronomyReviewForm — authenticated review submission for a gastronomy
  * listing.
  *
- * @param props - Component props (see {@link GastronomyReviewFormProps}).
+ * @param props - Component props (see {@link VenueReviewFormProps}).
  */
-export function GastronomyReviewForm({
+export function VenueReviewForm({
     gastronomyId,
     gastronomyName,
     locale,
     apiUrl,
     signInHref
-}: GastronomyReviewFormProps) {
+}: VenueReviewFormProps) {
     const { t } = createTranslations(locale);
 
     // Session resolved client-side (HOS-369 WB0-4). Until it resolves the card

@@ -19,25 +19,25 @@ import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
 import RestaurantJsonLd from '@/components/seo/RestaurantJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
-import GastronomyDetailHeader from '@/components/gastronomy/GastronomyDetailHeader.astro';
-import GastronomyDescription from '@/components/gastronomy/GastronomyDescription.astro';
-import GastronomyDailySpecials from '@/components/gastronomy/GastronomyDailySpecials.astro';
-import GastronomyMenu from '@/components/gastronomy/GastronomyMenu.astro';
-import GastronomyVenueEvents from '@/components/gastronomy/GastronomyVenueEvents.astro';
-import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
-import GastronomyContactBlock from '@/components/gastronomy/GastronomyContactBlock.astro';
+import VenueDetailHeader from '@/components/venue/VenueDetailHeader.astro';
+import VenueDescription from '@/components/venue/VenueDescription.astro';
+import VenueDailySpecials from '@/components/venue/VenueDailySpecials.astro';
+import VenueMenu from '@/components/venue/VenueMenu.astro';
+import VenueEvents from '@/components/venue/VenueEvents.astro';
+import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
+import VenueContactBlock from '@/components/venue/VenueContactBlock.astro';
 // Reused, not duplicated (HOS-1072): gastronomy reads the SAME `amenities` /
 // `features` catalog as accommodations, so it shares the i18n namespace
 // (`accommodations.amenityNames.<slug>`) these two grids already resolve. A
 // gastronomy/experience copy would fork that contract for no gain.
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
-import GastronomyEventsCta from '@/components/gastronomy/GastronomyEventsCta.astro';
-import { GastronomyReviewForm } from '@/components/gastronomy/GastronomyReviewForm.client';
+import VenueEventsCta from '@/components/venue/VenueEventsCta.astro';
+import { VenueReviewForm } from '@/components/venue/VenueReviewForm.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
-import { gastronomyApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
-import { toGastronomyDetailPageProps } from '@/lib/api/transforms';
+import { venueApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
+import { toVenueDetailPageProps } from '@/lib/api/transforms';
 import { getApiUrl } from '@/lib/env';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
@@ -46,8 +46,8 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { buildUrl } from '@/lib/urls';
 import { renderPlain } from '@/lib/render-plain';
-import type { GastronomyReviewPublicItem } from '@/lib/api/endpoints';
-import type { DetailFaq, GastronomyOpeningHoursEntry } from '@/data/types';
+import type { VenueReviewPublicItem } from '@/lib/api/endpoints';
+import type { DetailFaq, VenueOpeningHoursEntry } from '@/data/types';
 
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -60,7 +60,7 @@ const { slug } = Astro.params;
 if (!slug) return new Response(null, { status: 404 });
 
 // --- Fetch main record ---
-const result = await gastronomyApi.getBySlug({ slug });
+const result = await venueApi.getBySlug({ slug });
 
 if (!result.ok) {
     // Propagate 410 Gone for soft-deleted entities so crawlers/LLM fetchers
@@ -76,7 +76,7 @@ const raw = result.data as unknown as Record<string, unknown>;
 // same 404 as an unknown slug, which `!result.ok` above already returns. The
 // public payload carries no publication field to re-check.
 
-const gastronomy = toGastronomyDetailPageProps({ item: raw, locale });
+const gastronomy = toVenueDetailPageProps({ item: raw, locale });
 
 // --- Edge cacheability (HOS-369 W2-4) ---
 // After the guard above — the 404/410 for missing, soft-deleted or
@@ -88,30 +88,30 @@ const gastronomy = toGastronomyDetailPageProps({ item: raw, locale });
 // Addressed by its OWN two tags and deliberately NOT by `list-gastronomy`: a
 // detail page is not a listing, and the collection tag would make every
 // gastronomy write evict every other one's page.
-const gastronomyCacheTags = buildEntityCacheTags({
+const venueCacheTags = buildEntityCacheTags({
     entity: 'gastronomy',
     slug,
     id: String(raw.id || '')
 });
-const [primaryGastronomyTag, ...extraGastronomyTags] = gastronomyCacheTags;
+const [primaryVenueTag, ...extraVenueTags] = venueCacheTags;
 
 applyCacheHeaders({
     locals: Astro.locals,
     headers: Astro.response.headers,
     // No usable entity tag means nothing could purge this page, and an
     // unpurgeable cached page is worse than an uncached one.
-    cacheable: primaryGastronomyTag !== undefined,
+    cacheable: primaryVenueTag !== undefined,
     cacheClass: 'detail',
     tags:
-        primaryGastronomyTag !== undefined
-            ? [primaryGastronomyTag, ...extraGastronomyTags]
+        primaryVenueTag !== undefined
+            ? [primaryVenueTag, ...extraVenueTags]
             : [CACHE_TAG_COLLECTIONS.gastronomy]
 });
 
 // --- Parallel secondary fetches ---
 const [reviewsSettled, faqsSettled] = await Promise.allSettled([
-    gastronomyApi.getReviews({ id: gastronomy.id, page: 1, pageSize: 5 }),
-    gastronomyApi.getFaqs({ id: gastronomy.id })
+    venueApi.getReviews({ id: gastronomy.id, page: 1, pageSize: 5 }),
+    venueApi.getFaqs({ id: gastronomy.id })
 ]);
 
 const reviewsResult =
@@ -119,7 +119,7 @@ const reviewsResult =
 const faqsResult =
     faqsSettled.status === 'fulfilled' ? faqsSettled.value : null;
 
-const reviews: readonly GastronomyReviewPublicItem[] =
+const reviews: readonly VenueReviewPublicItem[] =
     reviewsResult?.ok ? reviewsResult.data.items : [];
 const totalReviews: number =
     reviewsResult?.ok ? reviewsResult.data.pagination.total : gastronomy.reviewsCount;
@@ -189,7 +189,7 @@ const descriptionText = renderPlain({ raw: gastronomy.description });
 // the write side.
 //
 // The CTA has no external `href` of its own — it is an in-page anchor to
-// `GastronomyContactBlock` (see `GastronomyEventsCta.astro`'s header for why:
+// `VenueContactBlock` (see `VenueEventsCta.astro`'s header for why:
 // gastronomy has no single public contact channel to pick, especially since
 // HOS-1076 found `socialNetworks.whatsapp` never carried real data and
 // removed it — HOS-1088 tracks the open question of a real phone/WhatsApp
@@ -197,7 +197,7 @@ const descriptionText = renderPlain({ raw: gastronomy.description });
 // href-sanitization guard (HOS-592/F-02): there is nothing external to
 // sanitize.
 //
-// `hasGastronomyContact` mirrors the exact condition `GastronomyContactBlock`
+// `hasVenueContact` mirrors the exact condition `VenueContactBlock`
 // uses to decide whether it renders anything at all (`hasSocial || menuHref`)
 // — duplicated rather than imported so this file never has to trust that the
 // component's internal gate stayed in sync silently; if that condition ever
@@ -206,14 +206,14 @@ const descriptionText = renderPlain({ raw: gastronomy.description });
 // (same principle as HOS-363/HOS-924: never promise a channel that isn't
 // there).
 const acceptsEventsAmenity = gastronomy.amenities.find((amenity) => amenity.name === 'private_events');
-const hasGastronomyContact =
+const hasVenueContact =
     Boolean(resolveSafeExternalUrl(gastronomy.menuUrl)) ||
     (gastronomy.socialNetworks
         ? Object.values(gastronomy.socialNetworks).some((value) =>
               Boolean(resolveSafeExternalUrl(value))
           )
         : false);
-const showEventsCta = Boolean(acceptsEventsAmenity) && hasGastronomyContact;
+const showEventsCta = Boolean(acceptsEventsAmenity) && hasVenueContact;
 // Excluded from the generic grid ONLY when the dedicated CTA renders in its
 // place — otherwise both would say "accepts events" two centimeters apart.
 const amenitiesForGrid = showEventsCta
@@ -294,7 +294,7 @@ const breadcrumbItems = [
 
     <!-- Header (rendered inside the wave band, like destinos/alojamientos) -->
     <Fragment slot="page-header">
-        <GastronomyDetailHeader
+        <VenueDetailHeader
             gastronomy={gastronomy}
             locale={locale}
             bookmarkCount={bookmarkCount}
@@ -315,7 +315,7 @@ const breadcrumbItems = [
         )}
 
         <!-- Description -->
-        <GastronomyDescription
+        <VenueDescription
             summary={gastronomy.summary}
             descriptionText={descriptionText}
             richDescription={gastronomy.richDescription}
@@ -326,15 +326,15 @@ const breadcrumbItems = [
              twenty minutes is actually asking. Arrives already filtered to the
              current day (in the AR market timezone) AND already
              entitlement-gated by the API; renders nothing when empty. -->
-        <GastronomyDailySpecials
+        <VenueDailySpecials
             dailySpecials={gastronomy.dailySpecials}
             locale={locale}
         />
 
         <!-- Menu (HOS-895 PR2): structured carta and/or the uploaded photo/PDF.
              Both arrive pre-filtered by the API's live entitlement check —
-             see GastronomyMenu.astro's frontmatter for the hierarchy. -->
-        <GastronomyMenu
+             see VenueMenu.astro's frontmatter for the hierarchy. -->
+        <VenueMenu
             menuSections={gastronomy.menuSections}
             fileUrl={gastronomy.menuFileUrl}
             fileKind={gastronomy.menuFileKind}
@@ -344,16 +344,16 @@ const breadcrumbItems = [
         <!-- Opening Hours (only when configured) -->
         {gastronomy.openingHours && Object.keys(gastronomy.openingHours).length > 0 && (
             <OpeningHoursSection
-                openingHours={gastronomy.openingHours as Record<string, GastronomyOpeningHoursEntry>}
+                openingHours={gastronomy.openingHours as Record<string, VenueOpeningHoursEntry>}
                 locale={locale}
             />
         )}
 
         <!-- Venue's own agenda (HOS-1042): live music, happy hour, the Tuesday
              deal. NOT the same as the "accepts events" CTA below — see
-             GastronomyVenueEvents.astro's frontmatter. Pre-filtered by the API
+             VenueEvents.astro's frontmatter. Pre-filtered by the API
              the same way menuSections is, so no gate is needed here. -->
-        <GastronomyVenueEvents
+        <VenueEvents
             venueEvents={gastronomy.venueEvents}
             locale={locale}
         />
@@ -368,13 +368,13 @@ const breadcrumbItems = [
         <AmenitiesGrid amenities={amenitiesForGrid} lang={locale} />
 
         <!-- "Accepts events" CTA (HOS-1055) — a toggle, not an entitlement.
-             Anchors into GastronomyContactBlock below; no external href of
-             its own (see GastronomyEventsCta.astro's header). -->
-        {showEventsCta && <GastronomyEventsCta locale={locale} />}
+             Anchors into VenueContactBlock below; no external href of
+             its own (see VenueEventsCta.astro's header). -->
+        {showEventsCta && <VenueEventsCta locale={locale} />}
 
         <!-- Contact block (menu URL + social networks) -->
         {(gastronomy.menuUrl || gastronomy.socialNetworks) && (
-            <GastronomyContactBlock
+            <VenueContactBlock
                 menuUrl={gastronomy.menuUrl}
                 socialNetworks={gastronomy.socialNetworks}
                 locale={locale}
@@ -423,7 +423,7 @@ const breadcrumbItems = [
 
         <!-- Leave a review (authenticated visitors submit; anonymous see a sign-in CTA) -->
         <section class="gastro-detail__review-form">
-            <GastronomyReviewForm
+            <VenueReviewForm
                 client:visible
                 gastronomyId={gastronomy.id}
                 gastronomyName={gastronomy.name}

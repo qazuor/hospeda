@@ -48,7 +48,7 @@ import { apiClient } from '@/lib/api/client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
-import styles from './GastronomyDailySpecialsManager.module.css';
+import styles from './VenueDailySpecialsManager.module.css';
 
 /** One special, as held in form state. Ids are not carried — see the payload schema. */
 interface DailySpecialDraft {
@@ -73,7 +73,7 @@ interface DailySpecialsEnvelope {
     }>;
 }
 
-export interface GastronomyDailySpecialsManagerProps {
+export interface VenueDailySpecialsManagerProps {
     /** UUID of the gastronomy listing. */
     readonly listingId: string;
     /** Active UI locale. */
@@ -120,10 +120,10 @@ function movedBy<T>(list: readonly T[], index: number, delta: number): T[] {
     return next;
 }
 
-export function GastronomyDailySpecialsManager({
+export function VenueDailySpecialsManager({
     listingId,
     locale
-}: GastronomyDailySpecialsManagerProps): JSX.Element {
+}: VenueDailySpecialsManagerProps): JSX.Element {
     const { t } = createTranslations(locale);
 
     const [specials, setSpecials] = useState<DailySpecialDraft[]>([]);

@@ -199,7 +199,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             const experienceIds = buildListingEditorSections({
                 vertical: 'experience'
             }).map((section) => section.id);
-            const gastronomyIds = buildListingEditorSections({
+            const venueIds = buildListingEditorSections({
                 vertical: 'gastronomy'
             }).map((section) => section.id);
 
@@ -209,7 +209,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             expect(experienceIds.indexOf('meetingPoint')).toBe(
                 experienceIds.indexOf('basicInfo') + 1
             );
-            expect(gastronomyIds).not.toContain('meetingPoint');
+            expect(venueIds).not.toContain('meetingPoint');
         });
     });
 

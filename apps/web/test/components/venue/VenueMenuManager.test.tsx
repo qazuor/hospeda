@@ -23,9 +23,9 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GastronomyMenuManager } from '../../../src/components/gastronomy/GastronomyMenuManager.client';
+import { VenueMenuManager } from '../../../src/components/venue/VenueMenuManager.client';
 
-vi.mock('../../../src/components/gastronomy/GastronomyMenuManager.module.css', () => ({
+vi.mock('../../../src/components/venue/VenueMenuManager.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
@@ -119,7 +119,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         mockGet.mockResolvedValue(LOADED_MENU as never);
 
         render(
-            <GastronomyMenuManager
+            <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -142,7 +142,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         mockPut.mockResolvedValue({ ok: true, data: LOADED_MENU.data } as never);
 
         render(
-            <GastronomyMenuManager
+            <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -209,7 +209,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         } as never);
 
         render(
-            <GastronomyMenuManager
+            <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -242,7 +242,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         } as never);
 
         render(
-            <GastronomyMenuManager
+            <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -266,7 +266,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         } as never);
 
         render(
-            <GastronomyMenuManager
+            <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -300,7 +300,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         mockPut.mockResolvedValue({ ok: true, data: LOADED_MENU_WITH_PHOTO.data } as never);
 
         render(
-            <GastronomyMenuManager
+            <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -361,7 +361,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         } as never);
 
         render(
-            <GastronomyMenuManager
+            <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -392,7 +392,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         } as never);
 
         render(
-            <GastronomyMenuManager
+            <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -420,7 +420,7 @@ describe('upload control (HOS-1763)', () => {
 
     it('renders an i18n upload button and no native browser text (TEST:1763:1a)', async () => {
         const { container } = render(
-            <GastronomyMenuManager
+            <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -437,7 +437,7 @@ describe('upload control (HOS-1763)', () => {
 
     it('shows the chosen file name, and a placeholder before choosing (TEST:1763:1b)', async () => {
         const { container } = render(
-            <GastronomyMenuManager
+            <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -460,10 +460,7 @@ describe('upload control (HOS-1763)', () => {
 
     it('hides the input without taking it out of the accessibility tree (TEST:1763:1c)', () => {
         const css = readFileSync(
-            resolve(
-                __dirname,
-                '../../../src/components/gastronomy/GastronomyMenuManager.module.css'
-            ),
+            resolve(__dirname, '../../../src/components/venue/VenueMenuManager.module.css'),
             'utf8'
         );
         const selector = '.uploadLabel input[type="file"]';
@@ -479,7 +476,7 @@ describe('upload control (HOS-1763)', () => {
 
     it('clears the file input so the same file can be chosen again (TEST:1763:1d)', async () => {
         const { container } = render(
-            <GastronomyMenuManager
+            <VenueMenuManager
                 listingId={LISTING_ID}
                 locale="es"
             />

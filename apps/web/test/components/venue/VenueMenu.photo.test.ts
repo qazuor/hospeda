@@ -23,7 +23,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(
-    resolve(__dirname, '../../../src/components/gastronomy/GastronomyMenu.astro'),
+    resolve(__dirname, '../../../src/components/venue/VenueMenu.astro'),
     'utf8'
 );
 

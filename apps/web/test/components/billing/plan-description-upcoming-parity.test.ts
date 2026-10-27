@@ -17,9 +17,9 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
     EXPERIENCE_GROUPS,
-    GASTRONOMY_GROUPS,
     OWNER_GROUPS,
-    TOURIST_GROUPS
+    TOURIST_GROUPS,
+    VENUE_GROUPS
 } from '../../../src/components/billing/plan-comparison-rows';
 
 const LOCALES_DIR = resolve(__dirname, '../../../../../packages/i18n/src/locales');
@@ -44,7 +44,7 @@ const billing = Object.fromEntries(
 /** Every row id the comparison tables mark `upcoming`, across all audiences. */
 const UPCOMING_ROW_IDS = [
     ...new Set(
-        [...TOURIST_GROUPS, ...OWNER_GROUPS, ...GASTRONOMY_GROUPS, ...EXPERIENCE_GROUPS]
+        [...TOURIST_GROUPS, ...OWNER_GROUPS, ...VENUE_GROUPS, ...EXPERIENCE_GROUPS]
             .flatMap((group) => group.rows)
             .filter((row) => row.status === 'upcoming')
             .map((row) => row.id)

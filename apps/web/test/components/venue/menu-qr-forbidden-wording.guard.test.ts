@@ -22,7 +22,7 @@ import { describe, expect, it } from 'vitest';
 
 const WIDGET_SOURCE_PATH = path.resolve(
     __dirname,
-    '../../../src/components/gastronomy/GastronomyMenuQrWidget.client.tsx'
+    '../../../src/components/venue/VenueMenuQrWidget.client.tsx'
 );
 
 const I18N_LOCALES_DIR = path.resolve(__dirname, '../../../../../packages/i18n/src/locales');

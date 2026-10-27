@@ -8,7 +8,7 @@
  * request for this slug to the hub — the same mechanism that refuses
  * `punto-de-encuentro` to a restaurant, pointing the other way.
  *
- * `GastronomyDailySpecialsManager` owns its own endpoints — `GET`/`PUT
+ * `VenueDailySpecialsManager` owns its own endpoints — `GET`/`PUT
  * .../daily-specials` — so this page mounts it directly, with no form and no
  * save button, exactly as `carta.astro` mounts the carta manager and
  * `preguntas.astro` mounts the FAQ manager. Nothing here reaches the listing
@@ -25,7 +25,7 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
-import { GastronomyDailySpecialsManager } from '@/components/gastronomy/GastronomyDailySpecialsManager.client';
+import { VenueDailySpecialsManager } from '@/components/venue/VenueDailySpecialsManager.client';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
@@ -52,7 +52,7 @@ const { t } = createTranslations(locale);
 	currentSectionSlug="menu-del-dia"
 	title={t('listing.owner.editor.sectionNav.dailySpecials', 'Menú del día')}
 >
-	<GastronomyDailySpecialsManager
+	<VenueDailySpecialsManager
 		client:load
 		listingId={listingId}
 		locale={locale}

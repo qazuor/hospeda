@@ -15,11 +15,11 @@
  */
 
 import type { JSX } from 'react';
-import { type EventDraft, WEEKDAY_I18N_KEYS } from '@/lib/gastronomy/venue-event-draft';
 import type { TranslationFn } from '@/lib/i18n';
-import styles from './GastronomyVenueEventsManager.module.css';
+import { type EventDraft, WEEKDAY_I18N_KEYS } from '@/lib/venue/venue-event-draft';
+import styles from './VenueEventsManager.module.css';
 
-export interface GastronomyVenueEventEntryCardProps {
+export interface VenueEventEntryCardProps {
     readonly entry: EventDraft;
     readonly index: number;
     readonly t: TranslationFn;
@@ -49,7 +49,7 @@ export interface GastronomyVenueEventEntryCardProps {
     readonly onSetRecurrence: (index: number, recurrence: 'once' | 'weekly') => void;
 }
 
-export function GastronomyVenueEventEntryCard({
+export function VenueEventEntryCard({
     entry,
     index,
     t,
@@ -58,7 +58,7 @@ export function GastronomyVenueEventEntryCard({
     onMove,
     onRemove,
     onSetRecurrence
-}: GastronomyVenueEventEntryCardProps): JSX.Element {
+}: VenueEventEntryCardProps): JSX.Element {
     return (
         <fieldset className={styles.card}>
             <legend className={styles.srOnly}>

@@ -14,15 +14,15 @@ import { describe, expect, it } from 'vitest';
 import { buildEditorHubUrl, findEditorSectionBySlug } from '@/lib/editor/editor-registry';
 import { buildExperienceEditorSections } from '@/lib/editor/experience-editor-sections';
 import {
-    buildGastronomyEditorRegistry,
-    buildGastronomyEditorSections
-} from '@/lib/editor/gastronomy-editor-sections';
-import {
     LISTING_EDITOR_GROUP_LABEL_KEYS,
     LISTING_EDITOR_SECTION_GROUPS
 } from '@/lib/editor/listing-editor-sections';
+import {
+    buildVenueEditorRegistry,
+    buildVenueEditorSections
+} from '@/lib/editor/venue-editor-sections';
 
-const gastronomy = buildGastronomyEditorSections();
+const gastronomy = buildVenueEditorSections();
 const experience = buildExperienceEditorSections();
 
 describe('buildGastronomyEditorSections: the vertical split', () => {
@@ -35,7 +35,7 @@ describe('buildGastronomyEditorSections: the vertical split', () => {
     });
 
     it('should make the experience-only slugs unresolvable on a gastronomy registry', () => {
-        const registry = buildGastronomyEditorRegistry();
+        const registry = buildVenueEditorRegistry();
 
         expect(findEditorSectionBySlug({ registry, slug: 'punto-de-encuentro' })).toBeUndefined();
         expect(findEditorSectionBySlug({ registry, slug: 'datos-practicos' })).toBeUndefined();
@@ -67,7 +67,7 @@ describe('buildGastronomyEditorSections: the vertical split', () => {
     });
 
     it('should resolve the menú-del-día slug on a gastronomy registry', () => {
-        const registry = buildGastronomyEditorRegistry();
+        const registry = buildVenueEditorRegistry();
 
         expect(findEditorSectionBySlug({ registry, slug: 'menu-del-dia' })?.id).toBe(
             'dailySpecials'
@@ -119,13 +119,13 @@ describe('buildGastronomyEditorRegistry: paths', () => {
         expect(
             buildEditorHubUrl({
                 locale: 'es',
-                registry: buildGastronomyEditorRegistry(),
+                registry: buildVenueEditorRegistry(),
                 entityId: 'abc'
             })
         ).toBe('/es/mi-cuenta/comercio/gastronomy/abc/editar/');
     });
 
     it('should point the breadcrumb index at the owner listing page', () => {
-        expect(buildGastronomyEditorRegistry().indexPath).toBe('mi-cuenta/comercio');
+        expect(buildVenueEditorRegistry().indexPath).toBe('mi-cuenta/comercio');
     });
 });

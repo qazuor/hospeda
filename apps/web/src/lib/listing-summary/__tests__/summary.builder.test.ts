@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { buildExperienceListingSummary, buildGastronomyListingSummary } from '../index';
+import { buildExperienceListingSummary, buildVenueListingSummary } from '../index';
 import {
     DEFAULT_EXPERIENCE_TYPES,
     DEFAULT_GASTRONOMY_TYPES,
@@ -20,7 +20,7 @@ const DESTINATIONS: SummaryCatalogs['destinations'] = [
 describe('buildGastronomyListingSummary', () => {
     describe('no filters', () => {
         it('should render the generic subject with no-filters phrase', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: {},
                 counts: { shown: 9, total: 18 }
@@ -31,7 +31,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should append the gendered sort phrase after the no-filters phrase', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: {},
                 counts: { shown: 9, total: 18 },
@@ -43,7 +43,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should use the singular subject when total is 1', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: {},
                 counts: { shown: 1, total: 1 }
@@ -54,7 +54,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should render in English', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'en',
                 filters: {},
                 counts: { shown: 9, total: 18 }
@@ -65,7 +65,7 @@ describe('buildGastronomyListingSummary', () => {
 
     describe('type filter', () => {
         it('should flow the type into the subject', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: { type: 'RESTAURANT' },
                 counts: { shown: 5, total: 12 },
@@ -75,7 +75,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should not show "sin filtros activos" once destination is also active', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: { type: 'BAR', destinationId: 'colon-id' },
                 counts: { shown: 3, total: 3 },
@@ -85,7 +85,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should fall back to the raw key when type is not in the catalog', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: { type: 'UNKNOWN' },
                 counts: { shown: 1, total: 1 }
@@ -96,7 +96,7 @@ describe('buildGastronomyListingSummary', () => {
 
     describe('destination filter', () => {
         it('should render a single destination', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: { destinationId: 'concordia-id' },
                 counts: { shown: 4, total: 10 },
@@ -108,7 +108,7 @@ describe('buildGastronomyListingSummary', () => {
 
     describe('text filter', () => {
         it('should join with a space when destination is NOT active', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: { text: 'pizza' },
                 counts: { shown: 2, total: 20 }
@@ -119,7 +119,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should join with a comma when destination IS active', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: { destinationId: 'colon-id', text: 'pizza' },
                 counts: { shown: 2, total: 10 },
@@ -131,7 +131,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should strip surrounding % wildcards', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: { text: '%pizza%' },
                 counts: { shown: 2, total: 20 }
@@ -143,7 +143,7 @@ describe('buildGastronomyListingSummary', () => {
 
     describe('price range filter (gastronomy only)', () => {
         it('should render the price-range label', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: { priceRange: 'BUDGET' },
                 counts: { shown: 6, total: 30 },
@@ -155,7 +155,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should render in English', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'en',
                 filters: { priceRange: 'PREMIUM' },
                 counts: { shown: 6, total: 30 },
@@ -167,7 +167,7 @@ describe('buildGastronomyListingSummary', () => {
 
     describe('minRating filter', () => {
         it('should render an integer rating without decimals', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: { minRating: 4 },
                 counts: { shown: 8, total: 30 }
@@ -176,7 +176,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should render a decimal rating with a comma in es', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: { minRating: 4.5 },
                 counts: { shown: 8, total: 30 }
@@ -185,7 +185,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should render a decimal rating with a dot in en', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'en',
                 filters: { minRating: 4.5 },
                 counts: { shown: 8, total: 30 }
@@ -196,7 +196,7 @@ describe('buildGastronomyListingSummary', () => {
 
     describe('featured filter', () => {
         it('should render the masculine "solo destacados" phrase', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: { isFeatured: true },
                 counts: { shown: 7, total: 18 }
@@ -207,7 +207,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should not be active when isFeatured is falsy', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: { isFeatured: undefined },
                 counts: { shown: 18, total: 18 }
@@ -218,7 +218,7 @@ describe('buildGastronomyListingSummary', () => {
 
     describe('sort', () => {
         it('should render the ratingDesc phrase (gender-invariant fragment)', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: {},
                 counts: { shown: 10, total: 10 },
@@ -228,7 +228,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should render the newest phrase', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: {},
                 counts: { shown: 10, total: 10 },
@@ -238,7 +238,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should render the nameAsc phrase', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: {},
                 counts: { shown: 10, total: 10 },
@@ -248,7 +248,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should not render a sort phrase for an unknown key', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: {},
                 counts: { shown: 10, total: 10 },
@@ -258,7 +258,7 @@ describe('buildGastronomyListingSummary', () => {
         });
 
         it('should not render a sort phrase when sort is omitted', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: {},
                 counts: { shown: 10, total: 10 }
@@ -269,7 +269,7 @@ describe('buildGastronomyListingSummary', () => {
 
     describe('zero results', () => {
         it('should render the "no results found" sentence', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: { type: 'BAR' },
                 counts: { shown: 0, total: 0 },
@@ -281,7 +281,7 @@ describe('buildGastronomyListingSummary', () => {
 
     describe('full integration example', () => {
         it('should combine type + destination + text + priceRange + minRating + featured + sort', () => {
-            const result = buildGastronomyListingSummary({
+            const result = buildVenueListingSummary({
                 locale: 'es',
                 filters: {
                     type: 'RESTAURANT',
@@ -447,7 +447,7 @@ describe('buildExperienceListingSummary', () => {
 
 describe('buildGastronomyListingSummary (pt)', () => {
     it('should render the plural subject with no filters', () => {
-        const result = buildGastronomyListingSummary({
+        const result = buildVenueListingSummary({
             locale: 'pt',
             filters: {},
             counts: { shown: 9, total: 18 }
@@ -458,7 +458,7 @@ describe('buildGastronomyListingSummary (pt)', () => {
     });
 
     it('should use the singular subject when total is 1', () => {
-        const result = buildGastronomyListingSummary({
+        const result = buildVenueListingSummary({
             locale: 'pt',
             filters: {},
             counts: { shown: 1, total: 1 }
@@ -467,7 +467,7 @@ describe('buildGastronomyListingSummary (pt)', () => {
     });
 
     it('should append the masculine featured-first sort phrase', () => {
-        const result = buildGastronomyListingSummary({
+        const result = buildVenueListingSummary({
             locale: 'pt',
             filters: {},
             counts: { shown: 9, total: 18 },
@@ -483,7 +483,7 @@ describe('buildGastronomyListingSummary (pt)', () => {
         ['newest', 'ordenados por mais recentes'],
         ['nameAsc', 'ordenados por nome, de A a Z']
     ])('should render the %s sort phrase', (sortKey, expected) => {
-        const result = buildGastronomyListingSummary({
+        const result = buildVenueListingSummary({
             locale: 'pt',
             filters: {},
             counts: { shown: 2, total: 2 },
@@ -495,7 +495,7 @@ describe('buildGastronomyListingSummary (pt)', () => {
     });
 
     it('should render type, destination and price range', () => {
-        const result = buildGastronomyListingSummary({
+        const result = buildVenueListingSummary({
             locale: 'pt',
             filters: { type: 'PARRILLA', destinationId: 'colon-id', priceRange: 'BUDGET' },
             counts: { shown: 1, total: 1 },
@@ -511,7 +511,7 @@ describe('buildGastronomyListingSummary (pt)', () => {
     });
 
     it('should render the full filter combination with the pt decimal comma', () => {
-        const result = buildGastronomyListingSummary({
+        const result = buildVenueListingSummary({
             locale: 'pt',
             filters: {
                 type: 'RESTAURANT',
@@ -535,7 +535,7 @@ describe('buildGastronomyListingSummary (pt)', () => {
     });
 
     it('should render the zero-results sentence', () => {
-        const result = buildGastronomyListingSummary({
+        const result = buildVenueListingSummary({
             locale: 'pt',
             filters: { text: 'xyz' },
             counts: { shown: 0, total: 0 }

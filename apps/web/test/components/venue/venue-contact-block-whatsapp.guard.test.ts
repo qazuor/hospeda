@@ -27,10 +27,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const CONTACT_BLOCK_PATH = join(
-    __dirname,
-    '../../../src/components/gastronomy/GastronomyContactBlock.astro'
-);
+const CONTACT_BLOCK_PATH = join(__dirname, '../../../src/components/venue/VenueContactBlock.astro');
 const DATA_TYPES_PATH = join(__dirname, '../../../src/data/types.ts');
 const TRANSFORMS_PATH = join(__dirname, '../../../src/lib/api/transforms.ts');
 

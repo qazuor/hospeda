@@ -3,7 +3,7 @@
  * @file gastronomia/[slug]/carta.astro
  * @description Dedicated public page for one venue's menu (HOS-1044 §6.1,
  * G-1). A stable URL fit to be the destination of a printed QR — reuses
- * `GastronomyMenu.astro` verbatim (never reimplemented, per the spec's own
+ * `VenueMenu.astro` verbatim (never reimplemented, per the spec's own
  * warning), with the venue's name, its opening hours when the listing
  * already has them at hand, and a link back to the full listing.
  *
@@ -18,7 +18,7 @@
  * ## Public, no entitlement gate
  *
  * The menu is already public inside the listing (`[slug].astro` →
- * `GastronomyMenu.astro`); this is a second presentation of the SAME
+ * `VenueMenu.astro`); this is a second presentation of the SAME
  * content, not a new thing to sell. What HOS-1044 gates is the QR and its
  * scan metric — minted and read by a separate, gated owner endpoint this
  * file has nothing to do with. Never mint or read anything QR-related here
@@ -32,7 +32,7 @@
  *   `!result.ok` → 404, which covers a non-`PUBLISHED` venue since HOS-1641,
  *   soft-deleted → 410);
  * - the venue has no menu content at all — neither a structured carta nor an
- *   uploaded file. Mirrors `GastronomyMenu.astro`'s own render gate
+ *   uploaded file. Mirrors `VenueMenu.astro`'s own render gate
  *   (`hasStructuredMenu || hasFile`) so the two can never disagree about
  *   whether there is a menu (AC-1).
  *
@@ -51,14 +51,14 @@
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import GastronomyMenu from '@/components/gastronomy/GastronomyMenu.astro';
-import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
-import { gastronomyApi } from '@/lib/api/endpoints';
-import { toGastronomyDetailPageProps } from '@/lib/api/transforms';
+import VenueMenu from '@/components/venue/VenueMenu.astro';
+import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
+import { venueApi } from '@/lib/api/endpoints';
+import { toVenueDetailPageProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import type { GastronomyOpeningHoursEntry } from '@/data/types';
+import type { VenueOpeningHoursEntry } from '@/data/types';
 
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -72,7 +72,7 @@ const { slug } = Astro.params;
 if (!slug) return new Response(null, { status: 404 });
 
 // --- Fetch main record (same rules as the listing, [slug].astro) ---
-const result = await gastronomyApi.getBySlug({ slug });
+const result = await venueApi.getBySlug({ slug });
 
 if (!result.ok) {
     // Propagate 410 Gone for soft-deleted entities; any other failure 404s.
@@ -85,11 +85,11 @@ const raw = result.data as unknown as Record<string, unknown>;
 // None here: the public read answers only a PUBLISHED venue, so a
 // non-published one already 404s through `!result.ok` above.
 
-const gastronomy = toGastronomyDetailPageProps({ item: raw, locale });
+const gastronomy = toVenueDetailPageProps({ item: raw, locale });
 
 // --- The 404 that makes this a valid QR destination (AC-1) ---
 // A carta page with nothing to show is not "empty content" — it is a broken
-// printed sticker. Mirrors GastronomyMenu.astro's own render gate exactly so
+// printed sticker. Mirrors VenueMenu.astro's own render gate exactly so
 // the two can never disagree about whether there is a menu to show.
 const hasMenuContent =
     (gastronomy.menuSections?.length ?? 0) > 0 ||
@@ -104,21 +104,21 @@ if (!hasMenuContent) {
 // BOTH pages together. `list-gastronomy` stays excluded for the same reason
 // the listing excludes it — a detail page (this one included) is not a
 // listing, and the collection tag would evict every other venue's page too.
-const gastronomyCacheTags = buildEntityCacheTags({
+const venueCacheTags = buildEntityCacheTags({
     entity: 'gastronomy',
     slug,
     id: String(raw.id || '')
 });
-const [primaryGastronomyTag, ...extraGastronomyTags] = gastronomyCacheTags;
+const [primaryVenueTag, ...extraVenueTags] = venueCacheTags;
 
 applyCacheHeaders({
     locals: Astro.locals,
     headers: Astro.response.headers,
-    cacheable: primaryGastronomyTag !== undefined,
+    cacheable: primaryVenueTag !== undefined,
     cacheClass: 'detail',
     tags:
-        primaryGastronomyTag !== undefined
-            ? [primaryGastronomyTag, ...extraGastronomyTags]
+        primaryVenueTag !== undefined
+            ? [primaryVenueTag, ...extraVenueTags]
             : [CACHE_TAG_COLLECTIONS.gastronomy]
 });
 
@@ -164,7 +164,7 @@ const hasOpeningHours =
     <div class="carta">
         <div class="carta__back-row">
             {/* data-astro-reload: full page load back to the listing so
-            GastronomyMenu's own inline language-switcher script (and any
+            VenueMenu's own inline language-switcher script (and any
             other island on the listing) re-runs cleanly — same fix as
             alojamientos/[slug]/fotos.astro's back link, same reason: the
             ClientRouter head swap does not re-execute component scripts. */}
@@ -175,12 +175,12 @@ const hasOpeningHours =
 
         {hasOpeningHours && (
             <OpeningHoursSection
-                openingHours={gastronomy.openingHours as Record<string, GastronomyOpeningHoursEntry>}
+                openingHours={gastronomy.openingHours as Record<string, VenueOpeningHoursEntry>}
                 locale={locale}
             />
         )}
 
-        <GastronomyMenu
+        <VenueMenu
             menuSections={gastronomy.menuSections}
             fileUrl={gastronomy.menuFileUrl}
             fileKind={gastronomy.menuFileKind}

@@ -26,10 +26,10 @@
  */
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { GastronomyVenueEventEntryCard } from '../../../src/components/gastronomy/GastronomyVenueEventEntryCard.client';
-import type { EventDraft } from '../../../src/lib/gastronomy/venue-event-draft';
+import { VenueEventEntryCard } from '../../../src/components/venue/VenueEventEntryCard.client';
+import type { EventDraft } from '../../../src/lib/venue/venue-event-draft';
 
-vi.mock('../../../src/components/gastronomy/GastronomyVenueEventsManager.module.css', () => ({
+vi.mock('../../../src/components/venue/VenueEventsManager.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
@@ -66,7 +66,7 @@ const WEEKLY_ENTRY: EventDraft = {
  */
 function renderCard(weekdayLabels: readonly string[]) {
     render(
-        <GastronomyVenueEventEntryCard
+        <VenueEventEntryCard
             entry={WEEKLY_ENTRY}
             index={0}
             t={t}

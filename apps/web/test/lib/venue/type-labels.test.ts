@@ -10,25 +10,20 @@
 
 import { VenueTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import {
-    buildGastronomyTypeLabelKey,
-    resolveGastronomyTypeLabel
-} from '../../../src/lib/gastronomy/type-labels';
 import { createTranslations, type SupportedLocale } from '../../../src/lib/i18n';
+import { buildVenueTypeLabelKey, resolveVenueTypeLabel } from '../../../src/lib/venue/type-labels';
 
 const LOCALES: readonly SupportedLocale[] = ['es', 'en', 'pt'];
-const GASTRONOMY_TYPES = Object.values(VenueTypeEnum);
+const VENUE_TYPES = Object.values(VenueTypeEnum);
 
 describe('buildGastronomyTypeLabelKey', () => {
     it('points at the public gastronomy namespace', () => {
-        expect(buildGastronomyTypeLabelKey({ type: 'RESTAURANT' })).toBe(
-            'gastronomy.types.RESTAURANT'
-        );
+        expect(buildVenueTypeLabelKey({ type: 'RESTAURANT' })).toBe('gastronomy.types.RESTAURANT');
     });
 
     it('never rebuilds the retired editor-private namespace', () => {
-        for (const type of GASTRONOMY_TYPES) {
-            expect(buildGastronomyTypeLabelKey({ type })).not.toContain('typeOption');
+        for (const type of VENUE_TYPES) {
+            expect(buildVenueTypeLabelKey({ type })).not.toContain('typeOption');
         }
     });
 });
@@ -37,8 +32,8 @@ describe('resolveGastronomyTypeLabel: the form reads what the listing prints', (
     it.each(LOCALES)('resolves every enum member to a real translated label in %s', (locale) => {
         const { t } = createTranslations(locale);
 
-        for (const type of GASTRONOMY_TYPES) {
-            const label = resolveGastronomyTypeLabel({ t, type });
+        for (const type of VENUE_TYPES) {
+            const label = resolveVenueTypeLabel({ t, type });
 
             // A missing key degrades to the raw enum value, so asserting the
             // label differs from it makes this a CONTENT check.
@@ -51,6 +46,6 @@ describe('resolveGastronomyTypeLabel: the form reads what the listing prints', (
     it('degrades to the raw enum value for a type with no translation', () => {
         const { t } = createTranslations('es');
 
-        expect(resolveGastronomyTypeLabel({ t, type: 'NOT_A_REAL_TYPE' })).toBe('NOT_A_REAL_TYPE');
+        expect(resolveVenueTypeLabel({ t, type: 'NOT_A_REAL_TYPE' })).toBe('NOT_A_REAL_TYPE');
     });
 });

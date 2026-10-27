@@ -8,7 +8,7 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GastronomyReviewForm } from '@/components/gastronomy/GastronomyReviewForm.client';
+import { VenueReviewForm } from '@/components/venue/VenueReviewForm.client';
 import { buildAuthSnapshot } from '../../helpers/auth-session';
 
 // ---------------------------------------------------------------------------
@@ -30,7 +30,7 @@ vi.mock('@/lib/cn', () => ({
     cn: (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ')
 }));
 
-vi.mock('@/components/gastronomy/GastronomyReviewForm.module.css', () => ({
+vi.mock('@/components/venue/VenueReviewForm.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
 
@@ -57,7 +57,7 @@ const DEFAULT_PROPS = {
     signInHref: '/es/auth/signin'
 };
 
-type FormProps = Parameters<typeof GastronomyReviewForm>[0];
+type FormProps = Parameters<typeof VenueReviewForm>[0];
 
 /**
  * Render the card for a signed-in visitor by default. `isAuthenticated` is no
@@ -69,7 +69,7 @@ function renderForm({
 }: Partial<FormProps> & { readonly isAuthenticated?: boolean } = {}) {
     mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated }));
     return render(
-        <GastronomyReviewForm
+        <VenueReviewForm
             {...DEFAULT_PROPS}
             {...overrides}
         />
@@ -201,7 +201,7 @@ describe('GastronomyReviewForm — client-side session resolution (HOS-369 WB0-4
         // Cached anonymous HTML served to a reader who has a session.
         // There is no prop left that could disagree with that session.
         mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
-        render(<GastronomyReviewForm {...DEFAULT_PROPS} />);
+        render(<VenueReviewForm {...DEFAULT_PROPS} />);
 
         expect(screen.getByRole('button', { name: /dejar reseña/i })).toBeInTheDocument();
         expect(

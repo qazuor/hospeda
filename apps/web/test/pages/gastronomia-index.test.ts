@@ -23,8 +23,8 @@ describe('gastronomia/index.astro', () => {
 
     describe('API calls', () => {
         it('imports and calls gastronomyApi.list for the listing', () => {
-            expect(src).toContain('gastronomyApi');
-            expect(src).toContain('gastronomyApi.list');
+            expect(src).toContain('venueApi');
+            expect(src).toContain('venueApi.list');
         });
 
         it('passes page and pageSize to gastronomyApi.list', () => {
@@ -64,7 +64,7 @@ describe('gastronomia/index.astro', () => {
 
     describe('transform', () => {
         it('transforms list items via toGastronomyCardProps before rendering', () => {
-            expect(src).toContain('toGastronomyCardProps');
+            expect(src).toContain('toVenueCardProps');
         });
     });
 
@@ -76,7 +76,7 @@ describe('gastronomia/index.astro', () => {
         });
 
         it('renders GastronomyCard for each card', () => {
-            expect(src).toContain('GastronomyCard');
+            expect(src).toContain('VenueCard');
         });
 
         it('passes eager prop for first 3 cards', () => {
@@ -88,8 +88,8 @@ describe('gastronomia/index.astro', () => {
         });
 
         it('splits filtered-empty vs empty-catalog states', () => {
-            expect(src).toContain('hasActiveGastronomyListingFilters');
-            expect(src).toContain('const hasActiveFilters = hasActiveGastronomyListingFilters({');
+            expect(src).toContain('hasActiveVenueListingFilters');
+            expect(src).toContain('const hasActiveFilters = hasActiveVenueListingFilters({');
             expect(src).toContain('{!hasError && cards.length === 0 && hasActiveFilters && (');
             expect(src).toContain('{!hasError && cards.length === 0 && !hasActiveFilters && (');
             expect(src).toContain('gastronomy.listing.emptyCatalog');

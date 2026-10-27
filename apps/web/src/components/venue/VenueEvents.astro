@@ -1,13 +1,13 @@
 ---
 /**
- * @file GastronomyVenueEvents.astro
+ * @file VenueEvents.astro
  * @description Renders a gastronomy listing's OWN agenda on the public detail
  * page (HOS-1042) — live music night, happy hour, dinner show, the Tuesday
  * deal. Things that happen AT the venue, on a schedule the venue sets.
  *
- * ## Not the same thing as `GastronomyEventsCta`
+ * ## Not the same thing as `VenueEventsCta`
  *
- * `GastronomyEventsCta.astro` (HOS-1055) means the OPPOSITE: "we host YOUR
+ * `VenueEventsCta.astro` (HOS-1055) means the OPPOSITE: "we host YOUR
  * birthday/wedding/corporate event", a toggle plus a contact button, no
  * schedule at all. This component is the venue's OWN recurring or one-off
  * agenda — a diner reads it to know WHEN to show up, not to ask the venue to
@@ -17,7 +17,7 @@
  *
  * ## Purely presentational, trusts pre-filtered props
  *
- * Same stance `GastronomyMenu.astro` takes: `venueEvents` arrives PRE-FILTERED
+ * Same stance `VenueMenu.astro` takes: `venueEvents` arrives PRE-FILTERED
  * by the API (`gastronomy/public/events-projection.ts`) — withheld entirely
  * when the owner's CURRENT plan does not grant `manage_gastronomy_events`, and
  * with `isActive: false` entries already dropped. This component has no gate
@@ -39,13 +39,13 @@
  * a repo incident this file is written to not repeat.
  */
 
-import type { GastronomyVenueEvent } from '@/data/types';
+import type { VenueEvent } from '@/data/types';
 import { formatDate } from '@/lib/format-utils';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
 interface Props {
-    readonly venueEvents?: readonly GastronomyVenueEvent[];
+    readonly venueEvents?: readonly VenueEvent[];
     readonly locale: SupportedLocale;
 }
 
@@ -76,7 +76,7 @@ const WEEKDAY_I18N_KEYS = [
  * @param event - The agenda entry.
  * @returns A human-readable "when" fragment, in the active locale.
  */
-function resolveWhen(event: GastronomyVenueEvent): string {
+function resolveWhen(event: VenueEvent): string {
     if (event.recurrence === 'weekly' && event.weekday !== null) {
         const dayKey = WEEKDAY_I18N_KEYS[event.weekday] ?? 'monday';
         const weekdayLabel = t(`gastronomy.detail.openingHours.${dayKey}`, dayKey);
@@ -106,7 +106,7 @@ function resolveWhen(event: GastronomyVenueEvent): string {
  * @param event - The agenda entry.
  * @returns The full "cuándo" line rendered under the entry title.
  */
-function resolveSchedule(event: GastronomyVenueEvent): string {
+function resolveSchedule(event: VenueEvent): string {
     const when = resolveWhen(event);
     if (event.endTime) {
         return t('gastronomy.detail.venueEvents.range', '{{when}}, {{start}} a {{end}}', {

@@ -54,7 +54,7 @@ export type {
 } from './summary.types';
 
 /** Fixed entity config for gastronomy listings — masculine noun, supports `priceRange`. */
-const GASTRONOMY_ENTITY: ListingEntityConfig = {
+const VENUE_ENTITY: ListingEntityConfig = {
     gender: 'masculine',
     subjectSingular: {
         es: 'establecimiento gastronómico',
@@ -78,10 +78,8 @@ const EXPERIENCE_ENTITY: ListingEntityConfig = {
 };
 
 /** Build the gastronomy listing summary sentence. See the module doc for an example. */
-export function buildGastronomyListingSummary(
-    input: Omit<BuildListingSummaryInput, 'entity'>
-): string {
-    return buildListingSummary({ ...input, entity: GASTRONOMY_ENTITY });
+export function buildVenueListingSummary(input: Omit<BuildListingSummaryInput, 'entity'>): string {
+    return buildListingSummary({ ...input, entity: VENUE_ENTITY });
 }
 
 /** Build the experience listing summary sentence. See the module doc for an example. */

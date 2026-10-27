@@ -26,16 +26,16 @@ import type {
     ExperienceContactInfo,
     ExperienceDetailData,
     ExperienceSocialNetworks,
-    GastronomyCardData,
-    GastronomyDailySpecial,
-    GastronomyDetailData,
-    GastronomyMenuSection,
-    GastronomyOpeningHoursEntry,
-    GastronomySocialNetworks,
-    GastronomyVenueEvent,
     PartnerData,
     PartnerDetailData,
-    ReviewCardData
+    ReviewCardData,
+    VenueCardData,
+    VenueDailySpecial,
+    VenueDetailData,
+    VenueEvent,
+    VenueMenuSection,
+    VenueOpeningHoursEntry,
+    VenueSocialNetworks
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
 import { webLogger } from '../logger';
@@ -68,9 +68,9 @@ export type {
     EventLocation,
     ExperienceCardData,
     ExperienceDetailData,
-    GastronomyCardData,
-    GastronomyDetailData,
-    ReviewCardData
+    ReviewCardData,
+    VenueCardData,
+    VenueDetailData
 } from '@/data/types';
 
 /**
@@ -2629,12 +2629,12 @@ const OPENING_HOURS_DAY_KEY: Readonly<Record<string, string>> = {
  *
  * Returns `null` when absent or in an unexpected shape.
  */
-function normalizeOpeningHours(raw: unknown): Record<string, GastronomyOpeningHoursEntry> | null {
+function normalizeOpeningHours(raw: unknown): Record<string, VenueOpeningHoursEntry> | null {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     const days = (raw as Record<string, unknown>).days;
     if (!days || typeof days !== 'object' || Array.isArray(days)) return null;
 
-    const result: Record<string, GastronomyOpeningHoursEntry> = {};
+    const result: Record<string, VenueOpeningHoursEntry> = {};
     for (const [abbr, value] of Object.entries(days as Record<string, unknown>)) {
         const dayKey = OPENING_HOURS_DAY_KEY[abbr];
         if (!dayKey || !value || typeof value !== 'object' || Array.isArray(value)) continue;
@@ -2664,7 +2664,7 @@ function normalizeOpeningHours(raw: unknown): Record<string, GastronomyOpeningHo
  * Gastronomy's `socialNetworks` shape (`SocialNetworkSchema`) has never had a
  * `whatsapp` field, so this key must never be forwarded to the render layer.
  */
-function normalizeSocialNetworks(raw: unknown): GastronomySocialNetworks | null {
+function normalizeSocialNetworks(raw: unknown): VenueSocialNetworks | null {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     const obj = raw as Record<string, unknown>;
     return {
@@ -2688,13 +2688,13 @@ function normalizeSocialNetworks(raw: unknown): GastronomySocialNetworks | null 
  * @param locale - Active locale for i18n field resolution
  * @returns Typed GastronomyCardData for the card component
  */
-export function toGastronomyCardProps({
+export function toVenueCardProps({
     item,
     locale = 'es'
 }: {
     readonly item: Record<string, unknown>;
     readonly locale?: string;
-}): GastronomyCardData {
+}): VenueCardData {
     const { featuredImage } = processEntityImages({
         item,
         entity: 'gastronomy',
@@ -2861,7 +2861,7 @@ function coerceI18nTextLike(raw: unknown): I18nTextLike | null {
  * @param raw - The payload's `menuSections` value, of unknown shape.
  * @returns Renderer-ready sections; empty when absent or malformed.
  */
-function mapGastronomyMenuSections(raw: unknown): readonly GastronomyMenuSection[] {
+function mapVenueMenuSections(raw: unknown): readonly VenueMenuSection[] {
     if (!Array.isArray(raw)) return [];
     return (raw as Array<Record<string, unknown>>)
         .map((section) => ({
@@ -2911,7 +2911,7 @@ function mapGastronomyMenuSections(raw: unknown): readonly GastronomyMenuSection
  * @param raw - The payload's `dailySpecials` value, of unknown shape.
  * @returns Renderer-ready specials; empty when absent or malformed.
  */
-function mapGastronomyDailySpecials(raw: unknown): readonly GastronomyDailySpecial[] {
+function mapVenueDailySpecials(raw: unknown): readonly VenueDailySpecial[] {
     if (!Array.isArray(raw)) return [];
     return (raw as Array<Record<string, unknown>>)
         .map((special) => ({
@@ -2941,7 +2941,7 @@ function mapGastronomyDailySpecials(raw: unknown): readonly GastronomyDailySpeci
  * @param raw - The payload's `venueEvents` value, of unknown shape.
  * @returns Renderer-ready agenda entries; empty when absent or malformed.
  */
-function mapGastronomyVenueEvents(raw: unknown): readonly GastronomyVenueEvent[] {
+function mapVenueEvents(raw: unknown): readonly VenueEvent[] {
     if (!Array.isArray(raw)) return [];
     return (raw as Array<Record<string, unknown>>)
         .map((event) => ({
@@ -2967,19 +2967,19 @@ function mapGastronomyVenueEvents(raw: unknown): readonly GastronomyVenueEvent[]
  * @param locale - Active locale for i18n field resolution
  * @returns Typed GastronomyDetailData for the detail page components
  */
-export function toGastronomyDetailPageProps({
+export function toVenueDetailPageProps({
     item,
     locale = 'es'
 }: {
     readonly item: Record<string, unknown>;
     readonly locale?: string;
-}): GastronomyDetailData {
-    const cardProps = toGastronomyCardProps({ item, locale });
+}): VenueDetailData {
+    const cardProps = toVenueCardProps({ item, locale });
 
     const seoObj = item.seo as Record<string, unknown> | undefined;
     const ownerObj = item.owner as Record<string, unknown> | undefined;
 
-    const faqs: GastronomyDetailData['faqs'] = mapDetailFaqs(item.faqs, locale);
+    const faqs: VenueDetailData['faqs'] = mapDetailFaqs(item.faqs, locale);
 
     return {
         ...cardProps,
@@ -2995,12 +2995,12 @@ export function toGastronomyDetailPageProps({
         menuFileUrl: item.menuFileUrl == null ? null : String(item.menuFileUrl),
         menuFileKind:
             item.menuFileKind === 'image' || item.menuFileKind === 'pdf' ? item.menuFileKind : null,
-        menuSections: mapGastronomyMenuSections(item.menuSections),
+        menuSections: mapVenueMenuSections(item.menuSections),
         // HOS-1041: already filtered to TODAY and already entitlement-gated by
         // the API — see GastronomyPublicSchema's field docs. Nothing here
         // re-applies either.
-        dailySpecials: mapGastronomyDailySpecials(item.dailySpecials),
-        venueEvents: mapGastronomyVenueEvents(item.venueEvents),
+        dailySpecials: mapVenueDailySpecials(item.dailySpecials),
+        venueEvents: mapVenueEvents(item.venueEvents),
         socialNetworks: normalizeSocialNetworks(item.socialNetworks),
         seo: seoObj
             ? {

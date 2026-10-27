@@ -48,58 +48,56 @@ function withoutComments(source: string): string {
 const read = (relativePath: string): string =>
     withoutComments(readFileSync(resolve(__dirname, '../../src', relativePath), 'utf8'));
 
-const GASTRONOMY_PAGE = read('pages/[lang]/gastronomia/[slug].astro');
-const EVENTS_CTA = read('components/gastronomy/GastronomyEventsCta.astro');
-const CONTACT_BLOCK = read('components/gastronomy/GastronomyContactBlock.astro');
+const VENUE_PAGE = read('pages/[lang]/gastronomia/[slug].astro');
+const EVENTS_CTA = read('components/venue/VenueEventsCta.astro');
+const CONTACT_BLOCK = read('components/venue/VenueContactBlock.astro');
 
 describe('gastronomia/[slug].astro — accepts-events CTA (HOS-1055)', () => {
     it('imports the dedicated CTA component', () => {
-        expect(GASTRONOMY_PAGE).toContain(
-            "import GastronomyEventsCta from '@/components/gastronomy/GastronomyEventsCta.astro'"
+        expect(VENUE_PAGE).toContain(
+            "import VenueEventsCta from '@/components/venue/VenueEventsCta.astro'"
         );
     });
 
     it('never reads socialNetworks.whatsapp (HOS-1076: the field is gone, it never carried real data) or contactInfo', () => {
-        expect(GASTRONOMY_PAGE).not.toContain('.whatsapp');
+        expect(VENUE_PAGE).not.toContain('.whatsapp');
         // `contactInfo` is not part of GastronomyPublicSchema (see
         // GastronomyContactBlock's header) — reaching for it would repeat the
         // HOS-363/HOS-924 bug.
-        expect(GASTRONOMY_PAGE).not.toContain('gastronomy.contactInfo');
+        expect(VENUE_PAGE).not.toContain('gastronomy.contactInfo');
     });
 
     it('requires BOTH the private_events amenity and an actual contact channel before showing the CTA', () => {
-        expect(GASTRONOMY_PAGE).toContain(
+        expect(VENUE_PAGE).toContain(
             "gastronomy.amenities.find((amenity) => amenity.name === 'private_events')"
         );
         // Mirrors GastronomyContactBlock's own render gate, duplicated on
         // purpose rather than imported (see the frontmatter comment) — a CTA
         // anchored to an empty contact block would be worse than no CTA.
-        expect(GASTRONOMY_PAGE).toContain('resolveSafeExternalUrl(gastronomy.menuUrl)');
-        expect(GASTRONOMY_PAGE).toContain(
-            'const showEventsCta = Boolean(acceptsEventsAmenity) && hasGastronomyContact;'
+        expect(VENUE_PAGE).toContain('resolveSafeExternalUrl(gastronomy.menuUrl)');
+        expect(VENUE_PAGE).toContain(
+            'const showEventsCta = Boolean(acceptsEventsAmenity) && hasVenueContact;'
         );
     });
 
     it('excludes the private_events chip from the generic grid ONLY when the CTA renders in its place', () => {
-        expect(GASTRONOMY_PAGE).toContain('const amenitiesForGrid = showEventsCta');
-        expect(GASTRONOMY_PAGE).toContain(
+        expect(VENUE_PAGE).toContain('const amenitiesForGrid = showEventsCta');
+        expect(VENUE_PAGE).toContain(
             "gastronomy.amenities.filter((amenity) => amenity.name !== 'private_events')"
         );
         // The else branch is the un-filtered listing amenities — the chip
         // survives when there is no contact channel to show a CTA with instead.
-        expect(GASTRONOMY_PAGE).toContain(': gastronomy.amenities;');
+        expect(VENUE_PAGE).toContain(': gastronomy.amenities;');
     });
 
     it('mounts the CTA guarded by showEventsCta, with no href passed in', () => {
-        expect(GASTRONOMY_PAGE).toContain(
-            '{showEventsCta && <GastronomyEventsCta locale={locale} />}'
-        );
+        expect(VENUE_PAGE).toContain('{showEventsCta && <VenueEventsCta locale={locale} />}');
     });
 
     it('mounts the CTA after the amenity grids and before the contact block it anchors into', () => {
-        const amenitiesIdx = GASTRONOMY_PAGE.indexOf('<AmenitiesGrid');
-        const ctaIdx = GASTRONOMY_PAGE.indexOf('<GastronomyEventsCta');
-        const contactIdx = GASTRONOMY_PAGE.indexOf('<GastronomyContactBlock');
+        const amenitiesIdx = VENUE_PAGE.indexOf('<AmenitiesGrid');
+        const ctaIdx = VENUE_PAGE.indexOf('<VenueEventsCta');
+        const contactIdx = VENUE_PAGE.indexOf('<VenueContactBlock');
 
         expect(amenitiesIdx).toBeGreaterThan(-1);
         expect(ctaIdx).toBeGreaterThan(amenitiesIdx);

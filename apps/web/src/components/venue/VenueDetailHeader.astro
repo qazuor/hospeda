@@ -1,6 +1,6 @@
 ---
 /**
- * @file GastronomyDetailHeader.astro
+ * @file VenueDetailHeader.astro
  * @description Detail page header for a gastronomy listing (SPEC-239 T-054).
  * Shows name, type badge, price-range badge, average rating, and a featured star.
  * The FavoriteButton island lives in a right-side column (mirrors EventDetailHeader).
@@ -26,13 +26,13 @@
 
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { StarIcon, LocationIcon } from '@repo/icons';
-import type { GastronomyDetailData } from '@/data/types';
+import type { VenueDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 
 interface Props {
-    readonly gastronomy: GastronomyDetailData;
+    readonly gastronomy: VenueDetailData;
     readonly locale: SupportedLocale;
     /** Whether the current user is authenticated (forwarded to FavoriteButton). */
     /** SSR-resolved initial favorite state for the current user. */

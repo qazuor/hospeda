@@ -28,19 +28,19 @@ describe('gastronomia/[slug].astro', () => {
 
     describe('API calls', () => {
         it('fetches the listing via gastronomyApi.getBySlug', () => {
-            expect(src).toContain('gastronomyApi.getBySlug');
+            expect(src).toContain('venueApi.getBySlug');
         });
 
         it('uses Promise.allSettled for parallel reviews + faqs fetch', () => {
             expect(src).toContain('Promise.allSettled');
-            expect(src).toContain('gastronomyApi.getReviews');
-            expect(src).toContain('gastronomyApi.getFaqs');
+            expect(src).toContain('venueApi.getReviews');
+            expect(src).toContain('venueApi.getFaqs');
         });
     });
 
     describe('transform', () => {
         it('transforms raw API response via toGastronomyDetailPageProps', () => {
-            expect(src).toContain('toGastronomyDetailPageProps');
+            expect(src).toContain('toVenueDetailPageProps');
         });
     });
 
@@ -70,11 +70,11 @@ describe('gastronomia/[slug].astro', () => {
 
     describe('detail blocks', () => {
         it('renders GastronomyDetailHeader', () => {
-            expect(src).toContain('GastronomyDetailHeader');
+            expect(src).toContain('VenueDetailHeader');
         });
 
         it('renders GastronomyDescription', () => {
-            expect(src).toContain('GastronomyDescription');
+            expect(src).toContain('VenueDescription');
         });
 
         it('renders OpeningHoursSection when openingHours is present', () => {
@@ -83,7 +83,7 @@ describe('gastronomia/[slug].astro', () => {
         });
 
         it('renders GastronomyContactBlock for menu + social', () => {
-            expect(src).toContain('GastronomyContactBlock');
+            expect(src).toContain('VenueContactBlock');
         });
 
         it('reuses FaqAccordion from accommodation components', () => {

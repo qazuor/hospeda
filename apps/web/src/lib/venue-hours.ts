@@ -11,7 +11,7 @@
  * unit-testable without time-zone tricks.
  */
 
-import type { GastronomyOpeningHoursEntry } from '@/data/types';
+import type { VenueOpeningHoursEntry } from '@/data/types';
 
 /** Map from `Date.prototype.getDay()` (0 = Sunday) to the API day key. */
 const DAY_INDEX_TO_KEY: readonly string[] = [
@@ -111,7 +111,7 @@ export function parseTimeToMinutes(timeStr: string | undefined): number | null {
  * @returns `true` (open), `false` (closed), or `null` (data absent → no badge).
  */
 export function computeOpenNowStatus(
-    openingHours: Record<string, GastronomyOpeningHoursEntry>,
+    openingHours: Record<string, VenueOpeningHoursEntry>,
     now: Date = new Date()
 ): boolean | null {
     const dayKey = getDayKey(now);

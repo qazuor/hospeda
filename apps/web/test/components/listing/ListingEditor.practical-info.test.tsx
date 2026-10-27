@@ -206,7 +206,7 @@ describe('ListingEditor — practical details', () => {
             const experienceIds = buildListingEditorSections({
                 vertical: 'experience'
             }).map((section) => section.id);
-            const gastronomyIds = buildListingEditorSections({
+            const venueIds = buildListingEditorSections({
                 vertical: 'gastronomy'
             }).map((section) => section.id);
 
@@ -214,7 +214,7 @@ describe('ListingEditor — practical details', () => {
             expect(experienceIds.indexOf('practicalInfo')).toBe(
                 experienceIds.indexOf('meetingPoint') + 1
             );
-            expect(gastronomyIds).not.toContain('practicalInfo');
+            expect(venueIds).not.toContain('practicalInfo');
         });
     });
 

@@ -2,8 +2,8 @@
 /**
  * @file gastronomia/index.astro
  * @description Gastronomy listing page (SPEC-239 T-053).
- * SSR-fetches gastronomyApi.list with filters from the query string and renders
- * a grid of GastronomyCard components with FilterSidebar, Pagination, EmptyState,
+ * SSR-fetches venueApi.list with filters from the query string and renders
+ * a grid of VenueCard components with FilterSidebar, Pagination, EmptyState,
  * and ErrorBanner following the same pattern as alojamientos/index.astro.
  *
  * @route /{lang}/gastronomia/
@@ -14,7 +14,7 @@ import ListingLayout from '@/layouts/ListingLayout.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
-import GastronomyCard from '@/components/gastronomy/GastronomyCard.astro';
+import VenueCard from '@/components/venue/VenueCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
@@ -22,16 +22,16 @@ import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client'
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
 import FilterChips from '@/components/shared/ui/FilterChips.astro';
 import {
-    buildGastronomyListingSummary,
-    DEFAULT_GASTRONOMY_TYPES,
+    buildVenueListingSummary,
+    DEFAULT_VENUE_TYPES,
     DEFAULT_PRICE_RANGES
 } from '@/lib/listing-summary';
-import { gastronomyApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
-import { toGastronomyCardProps } from '@/lib/api/transforms';
-import { getGastronomyTypeIcon } from '@/lib/gastronomy-type-icons';
+import { venueApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
+import { toVenueCardProps } from '@/lib/api/transforms';
+import { getVenueTypeIcon } from '@/lib/venue-type-icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { hasActiveGastronomyListingFilters } from '@/lib/listing-empty-state-filters';
+import { hasActiveVenueListingFilters } from '@/lib/listing-empty-state-filters';
 import { buildUrl } from '@/lib/urls';
 import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 
@@ -127,7 +127,7 @@ const [destinationsResult, featuresResult, result] = await Promise.all([
         sortOrder: 'desc',
         cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS
     }),
-    gastronomyApi.list({
+    venueApi.list({
         page,
         pageSize,
         q,
@@ -153,7 +153,7 @@ const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 // --- Transform to card props ---
 
 const baseCards = items.map((item) =>
-    toGastronomyCardProps({ item: item as unknown as Record<string, unknown>, locale })
+    toVenueCardProps({ item: item as unknown as Record<string, unknown>, locale })
 );
 
 // --- SSR bulk-check favorites for authenticated users ---
@@ -163,7 +163,7 @@ const baseCards = items.map((item) =>
 // for the whole grid (`store/favorites-store`).
 const cards = baseCards;
 
-const hasActiveFilters = hasActiveGastronomyListingFilters({
+const hasActiveFilters = hasActiveVenueListingFilters({
 	q,
 	destinationId,
 	type,
@@ -174,7 +174,7 @@ const hasActiveFilters = hasActiveGastronomyListingFilters({
 });
 
 // --- Gastronomy types for filter (from the confirmed enum) ---
-const GASTRONOMY_TYPES = [
+const VENUE_TYPES = [
     'RESTAURANT',
     'BAR',
     'CAFE',
@@ -211,7 +211,7 @@ const filterGroups: FilterGroup[] = [
         id: 'type',
         label: t('gastronomy.listing.type'),
         type: 'checkbox',
-        options: GASTRONOMY_TYPES.map((value) => ({
+        options: VENUE_TYPES.map((value) => ({
             value,
             label: t(`gastronomy.types.${value}`, value)
         }))
@@ -293,7 +293,7 @@ const destinationCatalog = destinations.map((d) => ({
     key: d.id,
     label: { es: d.name, en: d.name, pt: d.name } as const
 }));
-const filterSummary = buildGastronomyListingSummary({
+const filterSummary = buildVenueListingSummary({
     locale,
     filters: {
         text: q,
@@ -307,7 +307,7 @@ const filterSummary = buildGastronomyListingSummary({
     sort: { sortKey },
     catalogs: {
         destinations: destinationCatalog,
-        types: DEFAULT_GASTRONOMY_TYPES,
+        types: DEFAULT_VENUE_TYPES,
         priceRanges: DEFAULT_PRICE_RANGES
     }
 });
@@ -322,7 +322,7 @@ const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
  * active type is highlighted; clicking it clears the filter (toggle) — same
  * single-select model as the eventos category chips.
  */
-const typeChips = GASTRONOMY_TYPES.map((value) => {
+const typeChips = VENUE_TYPES.map((value) => {
     const isActive = type === value;
     return {
         label: t(`gastronomy.types.${value}`, value),
@@ -334,7 +334,7 @@ const typeChips = GASTRONOMY_TYPES.map((value) => {
             isActive
         }),
         active: isActive,
-        icon: getGastronomyTypeIcon({ type: value })
+        icon: getVenueTypeIcon({ type: value })
     };
 });
 
@@ -432,7 +432,7 @@ const itemListEntries = cards.map((card) => ({
         <div class="gastro-grid">
             {cards.map((card, i) => (
                 <div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-                    <GastronomyCard
+                    <VenueCard
                         data={card}
                         locale={locale}
                         eager={i < 3}

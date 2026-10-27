@@ -8,14 +8,14 @@ import { describe, expect, it } from 'vitest';
 import {
     hasActiveAccommodationEmptyStateFilters,
     hasActiveExperienceListingFilters,
-    hasActiveGastronomyListingFilters,
+    hasActiveVenueListingFilters,
     normalizeActiveDestinationAttractionIds
 } from '@/lib/listing-empty-state-filters';
 
 describe('hasActiveGastronomyListingFilters', () => {
     it('returns false for the bare listing', () => {
         expect(
-            hasActiveGastronomyListingFilters({
+            hasActiveVenueListingFilters({
                 q: undefined,
                 destinationId: undefined,
                 type: undefined,
@@ -41,7 +41,7 @@ describe('hasActiveGastronomyListingFilters', () => {
         { features: 'id-a,id-b' }
     ])('returns true when a real gastronomy filter is active: %o', (filters) => {
         expect(
-            hasActiveGastronomyListingFilters({
+            hasActiveVenueListingFilters({
                 q: undefined,
                 destinationId: undefined,
                 type: undefined,
@@ -63,7 +63,7 @@ describe('hasActiveGastronomyListingFilters', () => {
         // made — reporting it as an active filter would blame them for an
         // empty catalog.
         expect(
-            hasActiveGastronomyListingFilters({
+            hasActiveVenueListingFilters({
                 q: undefined,
                 destinationId: undefined,
                 type: undefined,

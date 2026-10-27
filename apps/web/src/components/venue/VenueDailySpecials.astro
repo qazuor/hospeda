@@ -1,6 +1,6 @@
 ---
 /**
- * @file GastronomyDailySpecials.astro
+ * @file VenueDailySpecials.astro
  * @description Renders a gastronomy listing's menú del día on the public detail
  * page (HOS-1041).
  *
@@ -31,16 +31,16 @@
  * withheld, live, when the owner's CURRENT plan does not grant
  * `manage_gastronomy_daily_special`. This component has no gate of its own —
  * an owner without the entitlement simply never has non-empty props, exactly as
- * `GastronomyMenu.astro` describes for the carta.
+ * `VenueMenu.astro` describes for the carta.
  */
 
-import type { GastronomyDailySpecial } from '@/data/types';
+import type { VenueDailySpecial } from '@/data/types';
 import { formatPrice } from '@/lib/format-utils';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
 interface Props {
-    readonly dailySpecials?: readonly GastronomyDailySpecial[];
+    readonly dailySpecials?: readonly VenueDailySpecial[];
     readonly locale: SupportedLocale;
 }
 

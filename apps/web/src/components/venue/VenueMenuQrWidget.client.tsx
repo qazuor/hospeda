@@ -40,18 +40,18 @@ import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations, type TranslationFn } from '@/lib/i18n';
 import { buildSvgDataUrl, renderSvgToPngBlob } from '@/lib/qr/qr-png';
-import styles from './GastronomyMenuQrWidget.module.css';
+import styles from './VenueMenuQrWidget.module.css';
 
 /** The one gastronomy listing shape this widget needs. */
-export interface GastronomyMenuQrWidgetListing {
+export interface VenueMenuQrWidgetListing {
     readonly id: string;
     readonly name: string;
 }
 
-export interface GastronomyMenuQrWidgetProps {
+export interface VenueMenuQrWidgetProps {
     readonly locale: SupportedLocale;
     /** The owner's gastronomy listings only — the menu QR is gastronomy-specific. */
-    readonly listings: readonly GastronomyMenuQrWidgetListing[];
+    readonly listings: readonly VenueMenuQrWidgetListing[];
 }
 
 /** The QR itself, as `listingAnalyticsApi.getMenuQr` returns it. */
@@ -269,10 +269,10 @@ function QrBlock({
  * <GastronomyMenuQrWidget client:visible locale={locale} listings={gastronomyListings} />
  * ```
  */
-export function GastronomyMenuQrWidget({
+export function VenueMenuQrWidget({
     locale,
     listings
-}: GastronomyMenuQrWidgetProps): JSX.Element | null {
+}: VenueMenuQrWidgetProps): JSX.Element | null {
     const { t } = createTranslations(locale);
     const [windowParam, setWindowParam] = useState<'7d' | '30d'>('30d');
     const [states, setStates] = useState<ReadonlyMap<string, ListingQrState>>(new Map());

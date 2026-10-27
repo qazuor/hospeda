@@ -13,10 +13,10 @@ import {
     buildExperienceEditorRegistry,
     buildExperienceEditorSections
 } from '@/lib/editor/experience-editor-sections';
-import { buildGastronomyEditorSections } from '@/lib/editor/gastronomy-editor-sections';
 import { buildListingEditorRegistry } from '@/lib/editor/listing-editor-registry';
+import { buildVenueEditorSections } from '@/lib/editor/venue-editor-sections';
 
-const gastronomy = buildGastronomyEditorSections();
+const gastronomy = buildVenueEditorSections();
 const experience = buildExperienceEditorSections();
 
 describe('buildExperienceEditorSections: the vertical split', () => {

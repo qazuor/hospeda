@@ -65,13 +65,11 @@ describe('carta.astro — 404 guards', () => {
 // ---------------------------------------------------------------------------
 describe('carta.astro — reuses GastronomyMenu.astro verbatim', () => {
     it('imports GastronomyMenu from the shared component', () => {
-        expect(cartaSrc).toContain(
-            "import GastronomyMenu from '@/components/gastronomy/GastronomyMenu.astro'"
-        );
+        expect(cartaSrc).toContain("import VenueMenu from '@/components/venue/VenueMenu.astro'");
     });
 
     it('mounts GastronomyMenu with the same props the listing forwards to it', () => {
-        expect(cartaSrc).toContain('<GastronomyMenu');
+        expect(cartaSrc).toContain('<VenueMenu');
         expect(cartaSrc).toContain('menuSections={gastronomy.menuSections}');
         expect(cartaSrc).toContain('fileUrl={gastronomy.menuFileUrl}');
         expect(cartaSrc).toContain('fileKind={gastronomy.menuFileKind}');

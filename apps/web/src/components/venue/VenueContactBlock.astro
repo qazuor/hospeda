@@ -1,6 +1,6 @@
 ---
 /**
- * @file GastronomyContactBlock.astro
+ * @file VenueContactBlock.astro
  * @description Social networks + menu URL block for a gastronomy listing
  * (SPEC-239 T-054).
  *
@@ -8,22 +8,22 @@
  * fields (contactInfo is not part of the public schema). Only `socialNetworks`
  * and `menuUrl` are available publicly and rendered here. Gastronomy has no
  * public phone/WhatsApp channel of any kind — `whatsapp` was removed from
- * `GastronomySocialNetworks` (HOS-1076) because it was never real. See
+ * `VenueSocialNetworks` (HOS-1076) because it was never real. See
  * HOS-1088 for the open decision on whether gastronomy ever gets one.
  *
  * The root `<section>` below carries a stable `id` (HOS-1055): the "accepts
  * events" CTA on the detail page is an in-page anchor to THIS block rather
  * than a link of its own, precisely because there is no single channel here
- * to pick — see `GastronomyEventsCta.astro`'s header.
+ * to pick — see `VenueEventsCta.astro`'s header.
  */
 
-import type { GastronomySocialNetworks } from '@/data/types';
+import type { VenueSocialNetworks } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 
 interface Props {
-    readonly socialNetworks: GastronomySocialNetworks | null;
+    readonly socialNetworks: VenueSocialNetworks | null;
     readonly menuUrl?: string | null;
     readonly locale: SupportedLocale;
 }
@@ -48,12 +48,12 @@ if (!hasSocial && !menuHref) {
 }
 
 interface SocialLink {
-    readonly key: keyof GastronomySocialNetworks;
+    readonly key: keyof VenueSocialNetworks;
     readonly label: string;
     readonly icon: string;
 }
 
-// HOS-1076: `whatsapp` was removed from `GastronomySocialNetworks` and MUST
+// HOS-1076: `whatsapp` was removed from `VenueSocialNetworks` and MUST
 // NOT be re-added here. It never existed in `SocialNetworkSchema` (the
 // `socialNetworks` JSONB column's shape), so this render path — unlike
 // accommodation's WhatsApp channel — would have published a number with no

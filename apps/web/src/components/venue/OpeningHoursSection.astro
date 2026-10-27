@@ -15,12 +15,12 @@
 
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import type { GastronomyOpeningHoursEntry } from '@/data/types';
-import { getTodayIndex, ORDERED_DAY_KEYS } from '@/lib/gastronomy-hours';
+import type { VenueOpeningHoursEntry } from '@/data/types';
+import { getTodayIndex, ORDERED_DAY_KEYS } from '@/lib/venue-hours';
 
 interface Props {
     /** Opening hours map keyed by lower-cased English day names. */
-    readonly openingHours: Record<string, GastronomyOpeningHoursEntry>;
+    readonly openingHours: Record<string, VenueOpeningHoursEntry>;
     readonly locale: SupportedLocale;
 }
 
@@ -68,7 +68,7 @@ const sectionTitle = t('gastronomy.detail.openingHours.title', 'Horarios de aten
  * Build row data for each day in Mon→Sun order.
  */
 const rows = ORDERED_DAY_KEYS.map((dayKey) => {
-    const entry: GastronomyOpeningHoursEntry | undefined = openingHours[dayKey];
+    const entry: VenueOpeningHoursEntry | undefined = openingHours[dayKey];
     const isToday = DAY_KEY_TO_GETDAY[dayKey] === todayDayIndex;
     const label = DAY_LABELS[dayKey] ?? dayKey;
 

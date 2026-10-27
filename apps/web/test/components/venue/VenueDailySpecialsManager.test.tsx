@@ -23,9 +23,9 @@
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GastronomyDailySpecialsManager } from '../../../src/components/gastronomy/GastronomyDailySpecialsManager.client';
+import { VenueDailySpecialsManager } from '../../../src/components/venue/VenueDailySpecialsManager.client';
 
-vi.mock('../../../src/components/gastronomy/GastronomyDailySpecialsManager.module.css', () => ({
+vi.mock('../../../src/components/venue/VenueDailySpecialsManager.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
@@ -82,7 +82,7 @@ describe('GastronomyDailySpecialsManager', () => {
 
         // Act
         render(
-            <GastronomyDailySpecialsManager
+            <VenueDailySpecialsManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -106,7 +106,7 @@ describe('GastronomyDailySpecialsManager', () => {
         mockGet.mockResolvedValue(LOADED);
         mockPut.mockResolvedValue(LOADED);
         render(
-            <GastronomyDailySpecialsManager
+            <VenueDailySpecialsManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -139,7 +139,7 @@ describe('GastronomyDailySpecialsManager', () => {
         mockGet.mockResolvedValue({ ok: true as const, data: { specials: [] } });
         mockPut.mockResolvedValue({ ok: true as const, data: { specials: [] } });
         render(
-            <GastronomyDailySpecialsManager
+            <VenueDailySpecialsManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -163,7 +163,7 @@ describe('GastronomyDailySpecialsManager', () => {
         mockGet.mockResolvedValue(LOADED);
         mockPut.mockResolvedValue(LOADED);
         render(
-            <GastronomyDailySpecialsManager
+            <VenueDailySpecialsManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -188,7 +188,7 @@ describe('GastronomyDailySpecialsManager', () => {
             error: { status: 403, message: 'forbidden' }
         });
         render(
-            <GastronomyDailySpecialsManager
+            <VenueDailySpecialsManager
                 listingId={LISTING_ID}
                 locale="es"
             />
@@ -216,7 +216,7 @@ describe('GastronomyDailySpecialsManager', () => {
             error: { status: 500, message: 'boom' }
         });
         render(
-            <GastronomyDailySpecialsManager
+            <VenueDailySpecialsManager
                 listingId={LISTING_ID}
                 locale="es"
             />

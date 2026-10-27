@@ -79,8 +79,8 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
-import styles from './GastronomyMenuManager.module.css';
-import { GastronomyMenuTranslationFields } from './GastronomyMenuTranslationFields.client';
+import styles from './VenueMenuManager.module.css';
+import { VenueMenuTranslationFields } from './VenueMenuTranslationFields.client';
 
 /** What the API returns for the uploaded photo/PDF. */
 interface MenuFile {
@@ -155,7 +155,7 @@ interface MenuEnvelope {
     readonly file: MenuFile | null;
 }
 
-export interface GastronomyMenuManagerProps {
+export interface VenueMenuManagerProps {
     /** UUID of the gastronomy listing. */
     readonly listingId: string;
     /** Active UI locale. */
@@ -240,10 +240,7 @@ function movedBy<T>(list: readonly T[], index: number, delta: number): T[] {
     return next;
 }
 
-export function GastronomyMenuManager({
-    listingId,
-    locale
-}: GastronomyMenuManagerProps): JSX.Element {
+export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): JSX.Element {
     const { t } = createTranslations(locale);
 
     const [sections, setSections] = useState<MenuSectionDraft[]>([]);
@@ -880,7 +877,7 @@ export function GastronomyMenuManager({
                          * mapping above), so there is nothing for
                          * `hasDescription` to translate here.
                          */}
-                        <GastronomyMenuTranslationFields
+                        <VenueMenuTranslationFields
                             nameEn={section.nameEn}
                             namePt={section.namePt}
                             descriptionEn={section.descriptionEn}
@@ -935,7 +932,7 @@ export function GastronomyMenuManager({
                                         });
                                     }}
                                 />
-                                <GastronomyMenuTranslationFields
+                                <VenueMenuTranslationFields
                                     nameEn={item.nameEn}
                                     namePt={item.namePt}
                                     descriptionEn={item.descriptionEn}

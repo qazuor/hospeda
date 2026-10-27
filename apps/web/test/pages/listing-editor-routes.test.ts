@@ -64,16 +64,16 @@ const SECTION_COMPONENTS: Readonly<Record<string, string>> = {
     // its own carta on mount, so a stray re-import onto another route would put
     // a `GET .../menu` on a page that does not show one — the weight the split
     // was meant to remove, re-added with nothing failing.
-    GastronomyMenuManager: 'carta.astro',
+    VenueMenuManager: 'carta.astro',
     // HOS-1041. Same property as the carta manager above, so the same reason to
     // pin it: the panel fetches its own specials on mount, and a stray
     // re-import onto another route would put a `GET .../daily-specials` on a
     // page that shows none.
-    GastronomyDailySpecialsManager: 'menu-del-dia.astro',
+    VenueDailySpecialsManager: 'menu-del-dia.astro',
     // HOS-1042 — the mirror of `GastronomyMenuManager` above, for the venue's
     // own agenda: it fetches `.../events` on mount, so a stray re-import onto
     // another route puts that request on a page that never shows the agenda.
-    GastronomyVenueEventsManager: 'eventos.astro',
+    VenueEventsManager: 'eventos.astro',
     EditorHub: 'index.astro'
 };
 

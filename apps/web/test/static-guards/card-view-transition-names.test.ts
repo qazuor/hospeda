@@ -53,7 +53,7 @@ const WEB_SRC = path.resolve(__dirname, '../../src');
 /** The components that carried a name before HOS-369 removed them. */
 const FORMERLY_NAMED = [
     'components/experience/ExperienceCard.astro',
-    'components/gastronomy/GastronomyCard.astro',
+    'components/venue/VenueCard.astro',
     'components/shared/cards/AccommodationCard.astro',
     'components/shared/cards/DestinationCard.astro'
 ];

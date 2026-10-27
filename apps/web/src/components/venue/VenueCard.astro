@@ -1,6 +1,6 @@
 ---
 /**
- * @file GastronomyCard.astro
+ * @file VenueCard.astro
  * @description Card component for a gastronomy listing (SPEC-239 T-053).
  * Mirrors the AccommodationCard pattern: featured image, type + priceRange badges,
  * rating stars + review count, destination name, and an optional "open now" badge
@@ -16,11 +16,11 @@ import { isCloudinaryDeliveryUrl } from '@/lib/media';
 import { buildUrl } from '@/lib/urls';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import type { GastronomyCardData, GastronomyOpeningHoursEntry } from '@/data/types';
-import { computeOpenNowStatus } from '@/lib/gastronomy-hours';
+import type { VenueCardData, VenueOpeningHoursEntry } from '@/data/types';
+import { computeOpenNowStatus } from '@/lib/venue-hours';
 
 interface Props {
-    readonly data: GastronomyCardData;
+    readonly data: VenueCardData;
     readonly locale: SupportedLocale;
     /**
      * When true the card image renders with `loading="eager"` and
@@ -53,7 +53,7 @@ const isNew = data.createdAt
 
 /** Open-now status derived from openingHours (null → badge omitted). */
 const openNowStatus: boolean | null = data.openingHours
-    ? computeOpenNowStatus(data.openingHours as Record<string, GastronomyOpeningHoursEntry>)
+    ? computeOpenNowStatus(data.openingHours as Record<string, VenueOpeningHoursEntry>)
     : null;
 
 const featuredLabel = t('gastronomy.card.featured', 'Destacado');

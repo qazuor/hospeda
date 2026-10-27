@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(
-    resolve(__dirname, '../../../src/components/gastronomy/GastronomyCard.astro'),
+    resolve(__dirname, '../../../src/components/venue/VenueCard.astro'),
     'utf8'
 );
 
@@ -83,7 +83,7 @@ describe('GastronomyCard.astro', () => {
     describe('open-now badge', () => {
         it('imports computeOpenNowStatus from the hours helper', () => {
             expect(src).toContain('computeOpenNowStatus');
-            expect(src).toContain('gastronomy-hours');
+            expect(src).toContain('venue-hours');
         });
 
         it('only renders the badge when openNowStatus is non-null', () => {

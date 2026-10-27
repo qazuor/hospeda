@@ -11,9 +11,9 @@ import {
     toDestinationCardProps,
     toEventCardProps,
     toEventDetailProps,
-    toGastronomyDetailPageProps,
     toPartnerData,
     toTestimonialCardProps,
+    toVenueDetailPageProps,
     transformFavoritesBreakdown,
     transformOwnerPromotion,
     transformOwnerPromotionList,
@@ -1377,7 +1377,7 @@ describe('toAccommodationDetailPageProps — contactInfo + socialNetworks (H-118
 
 describe('toGastronomyDetailPageProps — socialNetworks.whatsapp dead field (HOS-1076)', () => {
     it('never surfaces socialNetworks.whatsapp even if present on the raw payload', () => {
-        const result = toGastronomyDetailPageProps({
+        const result = toVenueDetailPageProps({
             item: {
                 slug: 'la-parrilla',
                 name: 'La Parrilla',

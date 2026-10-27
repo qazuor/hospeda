@@ -601,11 +601,11 @@ describe('FilterSidebar — categories group URL-init round-trip (HOS-96 T-014/T
 
         const musicBtn = screen.getAllByRole('button', { name: 'Música' })[0];
         const cultureBtn = screen.getAllByRole('button', { name: 'Cultura' })[0];
-        const gastronomyBtn = screen.getAllByRole('button', { name: 'Gastronomía' })[0];
+        const venueBtn = screen.getAllByRole('button', { name: 'Gastronomía' })[0];
 
         expect(musicBtn).toHaveAttribute('aria-pressed', 'true');
         expect(cultureBtn).toHaveAttribute('aria-pressed', 'true');
-        expect(gastronomyBtn).toHaveAttribute('aria-pressed', 'false');
+        expect(venueBtn).toHaveAttribute('aria-pressed', 'false');
     });
 
     it('a single checked value round-trips too (not just 2+)', () => {

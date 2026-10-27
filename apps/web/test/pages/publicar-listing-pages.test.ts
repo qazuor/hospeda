@@ -136,11 +136,11 @@ for (const page of PAGES) {
 
 describe('the two gastronomy/experience publish pages share the mould, not the words (§1)', () => {
     const [gastronomy, experiences] = PAGES;
-    const gastronomySrc = readStripped(gastronomy.file);
+    const venueSrc = readStripped(gastronomy.file);
     const experiencesSrc = readStripped(experiences.file);
 
     it('names no i18n key of the other vertical', () => {
-        expect(gastronomySrc).not.toContain('publish.experience.');
+        expect(venueSrc).not.toContain('publish.experience.');
         expect(experiencesSrc).not.toContain('publish.gastronomy.');
     });
 
@@ -150,6 +150,6 @@ describe('the two gastronomy/experience publish pages share the mould, not the w
         // looking correct in es.
         const heroFallback = (src: string) =>
             src.slice(src.indexOf('<PublishHero'), src.indexOf('Icon={'));
-        expect(heroFallback(gastronomySrc)).not.toBe(heroFallback(experiencesSrc));
+        expect(heroFallback(venueSrc)).not.toBe(heroFallback(experiencesSrc));
     });
 });

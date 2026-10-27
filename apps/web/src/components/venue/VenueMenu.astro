@@ -1,6 +1,6 @@
 ---
 /**
- * @file GastronomyMenu.astro
+ * @file VenueMenu.astro
  * @description Renders a gastronomy listing's menu on the public detail page
  * (HOS-895 PR2).
  *
@@ -8,7 +8,7 @@
  *
  * A venue may set THREE independent things: a structured carta (sections and
  * dishes), an uploaded photo/PDF, and an external link (rendered separately by
- * `GastronomyContactBlock.astro`, unaffected by this component). None is
+ * `VenueContactBlock.astro`, unaffected by this component). None is
  * required and none excludes the others — PR1's own schema doc says so
  * explicitly ("All three may be set at once and none is required").
  *
@@ -21,7 +21,7 @@
  * would silently drop content the owner chose to publish. The external link
  * stays the last resort by construction: it is the only shape that predates
  * HOS-895 and the only one still free on every tier (see the entitlement
- * gate note below), and `GastronomyContactBlock` already renders it as a
+ * gate note below), and `VenueContactBlock` already renders it as a
  * plain CTA regardless of what this component shows.
  *
  * ## The gate
@@ -32,7 +32,7 @@
  * `manage_gastronomy_menu` (HOS-895 PR2, owner decision 2026-09-02). This
  * component has no gate of its own to apply — an owner without the
  * entitlement simply never has non-empty props to render, the same way
- * `GastronomyContactBlock` cannot tell a "no menuUrl" venue from a redacted
+ * `VenueContactBlock` cannot tell a "no menuUrl" venue from a redacted
  * one.
  *
  * A PDF and an image are NOT rendered the same way: `fileKind` decides
@@ -52,7 +52,7 @@
  * says "decorative", and a photo of the dish being described is not.
  */
 
-import type { GastronomyMenuItem, GastronomyMenuSection } from '@/data/types';
+import type { VenueMenuItem, VenueMenuSection } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveI18nText } from '@/lib/resolve-i18n-text';
@@ -60,7 +60,7 @@ import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { formatPrice } from '@/lib/format-utils';
 
 interface Props {
-    readonly menuSections?: readonly GastronomyMenuSection[];
+    readonly menuSections?: readonly VenueMenuSection[];
     readonly fileUrl?: string | null;
     readonly fileKind?: 'image' | 'pdf' | null;
     readonly locale: SupportedLocale;
@@ -97,7 +97,7 @@ const hasTranslations = menuSections.some(
 
 /** One locale's text for a translatable field, falling back to the legacy `es` source. */
 function localeText(
-    i18n: GastronomyMenuSection['nameI18n'],
+    i18n: VenueMenuSection['nameI18n'],
     legacy: string,
     lang: SupportedLocale
 ): string {
@@ -105,7 +105,7 @@ function localeText(
 }
 
 /** The three `data-name-*` attributes a name element carries for the switcher. */
-function nameLangAttrs(i18n: GastronomyMenuItem['nameI18n'], legacy: string) {
+function nameLangAttrs(i18n: VenueMenuItem['nameI18n'], legacy: string) {
     return {
         'data-name-es': i18n?.es || legacy,
         'data-name-en': i18n?.en || legacy,
@@ -114,7 +114,7 @@ function nameLangAttrs(i18n: GastronomyMenuItem['nameI18n'], legacy: string) {
 }
 
 /** The three `data-desc-*` attributes a description element carries for the switcher. */
-function descLangAttrs(i18n: GastronomyMenuItem['descriptionI18n'], legacy: string) {
+function descLangAttrs(i18n: VenueMenuItem['descriptionI18n'], legacy: string) {
     return {
         'data-desc-es': i18n?.es || legacy,
         'data-desc-en': i18n?.en || legacy,
@@ -133,14 +133,14 @@ const safeFileUrl = resolveSafeExternalUrl(fileUrl);
 const hasFile = Boolean(safeFileUrl && fileKind);
 
 if (!hasStructuredMenu && !hasFile) {
-    // Nothing to render — GastronomyContactBlock's external link (if any) is
+    // Nothing to render — VenueContactBlock's external link (if any) is
     // this listing's only menu content.
     return;
 }
 
 // Nested under `menuCarta`, NOT `menu` — `gastronomy.detail.menu` is already a
 // leaf string ("Ver menú", the external-link CTA label in
-// GastronomyContactBlock.astro), and a JSON key cannot be both a string and
+// VenueContactBlock.astro), and a JSON key cannot be both a string and
 // an object subtree.
 const title = t('gastronomy.detail.menuCarta.title', 'Carta');
 const attachmentImageTitle = t('gastronomy.detail.menuCarta.attachmentImage', 'Carta en imagen');

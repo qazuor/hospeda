@@ -49,7 +49,7 @@ const TYPE_LABEL_KEY_PREFIX = 'gastronomy.types';
  * // => 'gastronomy.types.RESTAURANT'
  * ```
  */
-export function buildGastronomyTypeLabelKey({ type }: { readonly type: string }): string {
+export function buildVenueTypeLabelKey({ type }: { readonly type: string }): string {
     return `${TYPE_LABEL_KEY_PREFIX}.${type}`;
 }
 
@@ -69,12 +69,12 @@ export function buildGastronomyTypeLabelKey({ type }: { readonly type: string })
  * // => 'Restaurante'  (identical to what the listing page prints)
  * ```
  */
-export function resolveGastronomyTypeLabel({
+export function resolveVenueTypeLabel({
     t,
     type
 }: {
     readonly t: Translate;
     readonly type: string;
 }): string {
-    return t(buildGastronomyTypeLabelKey({ type }), type);
+    return t(buildVenueTypeLabelKey({ type }), type);
 }

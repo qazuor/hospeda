@@ -41,7 +41,7 @@ vi.mock('@/lib/cn', () => ({
     cn: (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ')
 }));
 
-vi.mock('@/components/gastronomy/GastronomyReviewForm.module.css', () => ({
+vi.mock('@/components/venue/VenueReviewForm.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
 
@@ -55,7 +55,7 @@ vi.mock('@/lib/auth-cache', () => ({
 }));
 
 // Imported after the mocks so the module graph picks them up.
-import { GastronomyReviewForm } from '@/components/gastronomy/GastronomyReviewForm.client';
+import { VenueReviewForm } from '@/components/venue/VenueReviewForm.client';
 
 const PAGE_URL = 'http://localhost:3000/es/gastronomia/la-parrilla-de-juan/';
 
@@ -144,7 +144,7 @@ describe('GastronomyReviewForm — back button closes the dialog (HOS-334)', () 
 
     it('closes the dialog on back instead of navigating off the page, keeping typed content', async () => {
         const user = userEvent.setup();
-        render(<GastronomyReviewForm {...DEFAULT_PROPS} />);
+        render(<VenueReviewForm {...DEFAULT_PROPS} />);
 
         await user.click(screen.getByRole('button', { name: /dejar reseña/i }));
         const dialog = await screen.findByRole('dialog');

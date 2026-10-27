@@ -9,7 +9,7 @@
  * concepts (brewery, ice-cream shop, takeaway/rotisserie, food truck), so
  * those types use the closest sensible glyph from the existing catalog
  * rather than an invented icon name — see the inline notes on
- * {@link GASTRONOMY_TYPE_ICONS} for the reasoning per type.
+ * {@link VENUE_TYPE_ICONS} for the reasoning per type.
  *
  * Unlike `accommodation-type-icons.ts` (a thin re-export of a cross-app
  * `@repo/icons/domain` module), this mapping lives locally in `apps/web`
@@ -32,7 +32,7 @@ import {
 import { VenueTypeEnum } from '@repo/schemas';
 import type { ComponentType } from 'react';
 
-interface GastronomyTypeParams {
+interface VenueTypeParams {
     /** Gastronomy type from the API (case-insensitive, e.g. `"RESTAURANT"`). */
     readonly type: string;
 }
@@ -54,7 +54,7 @@ interface GastronomyTypeParams {
  * - `FOOD_TRUCK` uses `MotorhomeParkingIcon` (a van glyph) — the closest
  *   vehicle icon available; there is no dedicated truck icon.
  */
-export const GASTRONOMY_TYPE_ICONS: Readonly<Record<VenueTypeEnum, ComponentType<IconProps>>> = {
+export const VENUE_TYPE_ICONS: Readonly<Record<VenueTypeEnum, ComponentType<IconProps>>> = {
     [VenueTypeEnum.RESTAURANT]: RestaurantIcon,
     [VenueTypeEnum.BAR]: BarServiceIcon,
     [VenueTypeEnum.CAFE]: CoffeeIcon,
@@ -70,13 +70,13 @@ export const GASTRONOMY_TYPE_ICONS: Readonly<Record<VenueTypeEnum, ComponentType
  * Fallback icon for gastronomy type values not present in the canonical map
  * (e.g. a future enum value the UI hasn't been updated for yet).
  */
-export const GASTRONOMY_TYPE_FALLBACK_ICON: ComponentType<IconProps> = ForkKnifeIcon;
+export const VENUE_TYPE_FALLBACK_ICON: ComponentType<IconProps> = ForkKnifeIcon;
 
 /**
  * Resolve the representative icon component for a given gastronomy type.
  *
  * @param params.type - Gastronomy type slug. Comparison is case-insensitive.
- * @returns The matching icon component, or {@link GASTRONOMY_TYPE_FALLBACK_ICON}.
+ * @returns The matching icon component, or {@link VENUE_TYPE_FALLBACK_ICON}.
  *
  * @example
  * ```ts
@@ -85,7 +85,7 @@ export const GASTRONOMY_TYPE_FALLBACK_ICON: ComponentType<IconProps> = ForkKnife
  * getGastronomyTypeIcon({ type: 'unknown' });     // GASTRONOMY_TYPE_FALLBACK_ICON
  * ```
  */
-export function getGastronomyTypeIcon({ type }: GastronomyTypeParams): ComponentType<IconProps> {
+export function getVenueTypeIcon({ type }: VenueTypeParams): ComponentType<IconProps> {
     const normalized = type.toUpperCase() as VenueTypeEnum;
-    return GASTRONOMY_TYPE_ICONS[normalized] ?? GASTRONOMY_TYPE_FALLBACK_ICON;
+    return VENUE_TYPE_ICONS[normalized] ?? VENUE_TYPE_FALLBACK_ICON;
 }
