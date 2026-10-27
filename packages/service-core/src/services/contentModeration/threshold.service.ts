@@ -182,8 +182,15 @@ export class ContentModerationThresholdService extends BaseCrudService<
         >;
     }
 
-    protected async _executeSearch(params: ContentModerationThresholdAdminSearch) {
-        const { page = 1, pageSize = 10 } = params;
+    protected async _executeSearch(
+        _params: ContentModerationThresholdAdminSearch,
+        _actor: Actor,
+        ctx: ServiceContext
+    ) {
+        // BaseCrudRead.search strips page/pageSize from params and republishes them
+        // on ctx.pagination (SPEC-088); read them from ctx (HOS-1900).
+        const page = ctx.pagination?.page ?? 1;
+        const pageSize = ctx.pagination?.pageSize ?? 10;
         const result = await this.model.findAll({}, { page, pageSize }, undefined, undefined);
         return result;
     }

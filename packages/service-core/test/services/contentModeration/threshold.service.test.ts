@@ -161,4 +161,33 @@ describe('ContentModerationThresholdService', () => {
             expect(model.update).not.toHaveBeenCalled();
         });
     });
+
+    describe('search pagination (HOS-1900)', () => {
+        it('forwards page and pageSize from ctx.pagination to the model', async () => {
+            // Arrange
+            const actor = createActor({
+                roles: [RoleEnum.ADMIN],
+                permissions: [PermissionEnum.MODERATION_THRESHOLD_VIEW]
+            });
+            const model = buildModel();
+            model.findAll.mockResolvedValue({ items: [], total: 0 });
+            const service = new ContentModerationThresholdService(
+                { logger: undefined },
+                model as never
+            );
+
+            // Act
+            const result = await service.search(actor, {
+                page: 2,
+                pageSize: 5,
+                sort: 'createdAt:desc',
+                status: 'all',
+                includeDeleted: false
+            });
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(model.findAll.mock.calls[0]?.[1]).toEqual({ page: 2, pageSize: 5 });
+        });
+    });
 });
