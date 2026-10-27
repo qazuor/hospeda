@@ -49,7 +49,7 @@ const read = (relative: string): string => readFileSync(resolve(PAGES, relative)
 const readLib = (relative: string): string => readFileSync(resolve(LIB, relative), 'utf8');
 
 const experiencePricing = read('planes/experiencias/precios/index.astro');
-const gastronomyPricing = read('planes/gastronomia/precios/index.astro');
+const venuePricing = read('planes/gastronomia/precios/index.astro');
 const signup = read('auth/signup.astro');
 const signin = read('auth/signin.astro');
 
@@ -59,7 +59,7 @@ const LANDINGS: ReadonlyArray<{
     readonly vertical: string;
 }> = [
     { label: 'planes/experiencias/precios', src: experiencePricing, vertical: 'experience' },
-    { label: 'planes/gastronomia/precios', src: gastronomyPricing, vertical: 'gastronomy' }
+    { label: 'planes/gastronomia/precios', src: venuePricing, vertical: 'gastronomy' }
 ];
 
 describe('HOS-810 — gastronomy/experience landing CTA wiring', () => {

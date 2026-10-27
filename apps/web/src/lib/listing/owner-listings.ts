@@ -25,9 +25,9 @@ import { PublicationStatusEnum, resolveListingCompleteness } from '@repo/schemas
 import { apiClient } from '../api/client';
 import type { ApiResult } from '../api/types';
 
-const GASTRONOMY_MINE_PATH = '/api/v1/protected/gastronomies/mine';
+const VENUE_MINE_PATH = '/api/v1/protected/gastronomies/mine';
 const EXPERIENCE_MINE_PATH = '/api/v1/protected/experiences/mine';
-const GASTRONOMY_PATH = '/api/v1/protected/gastronomies';
+const VENUE_PATH = '/api/v1/protected/gastronomies';
 const EXPERIENCE_PATH = '/api/v1/protected/experiences';
 
 /** Owner-tier detail of a single listing, one of the two verticals. */
@@ -52,14 +52,14 @@ export async function fetchOwnerListings({
 }: {
     cookieHeader?: string;
 }): Promise<readonly OwnerListingSummary[]> {
-    const [gastronomy, experience] = await Promise.all([
-        apiClient.getProtected<ListResponse>({ path: GASTRONOMY_MINE_PATH, cookieHeader }),
+    const [venue, experience] = await Promise.all([
+        apiClient.getProtected<ListResponse>({ path: VENUE_MINE_PATH, cookieHeader }),
         apiClient.getProtected<ListResponse>({ path: EXPERIENCE_MINE_PATH, cookieHeader })
     ]);
 
     const listings: OwnerListingSummary[] = [];
-    if (gastronomy.ok) {
-        listings.push(...gastronomy.data.listings);
+    if (venue.ok) {
+        listings.push(...venue.data.listings);
     }
     if (experience.ok) {
         listings.push(...experience.data.listings);
@@ -87,8 +87,7 @@ export async function fetchOwnerListingDetail({
     id: string;
     cookieHeader?: string;
 }): Promise<ListingDetail | null> {
-    const path =
-        vertical === 'gastronomy' ? `${GASTRONOMY_PATH}/${id}` : `${EXPERIENCE_PATH}/${id}`;
+    const path = vertical === 'gastronomy' ? `${VENUE_PATH}/${id}` : `${EXPERIENCE_PATH}/${id}`;
 
     const result = await apiClient.getProtected<ListingDetail | null>({
         path,
@@ -199,7 +198,7 @@ export function createOwnerListing(
     params: CreateOwnerListingPayload
 ): Promise<ApiResult<ListingDetail>> {
     return apiClient.postProtected<ListingDetail>({
-        path: params.vertical === 'gastronomy' ? GASTRONOMY_PATH : EXPERIENCE_PATH,
+        path: params.vertical === 'gastronomy' ? VENUE_PATH : EXPERIENCE_PATH,
         body: params.data
     });
 }

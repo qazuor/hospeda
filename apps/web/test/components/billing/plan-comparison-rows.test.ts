@@ -23,9 +23,6 @@ import {
     EXPERIENCE_GROUPS,
     EXPERIENCE_LISTING_ROWS,
     EXPERIENCE_SERVICE_ROWS,
-    GASTRONOMY_GROUPS,
-    GASTRONOMY_LISTING_ROWS,
-    GASTRONOMY_MENU_ROWS,
     OWNER_AI_ROWS,
     OWNER_AS_TOURIST_ROWS,
     OWNER_GROUPS,
@@ -34,7 +31,10 @@ import {
     resolveRowCells,
     TOURIST_AI_ROWS,
     TOURIST_EXPERIENCE_ROWS,
-    TOURIST_GROUPS
+    TOURIST_GROUPS,
+    VENUE_GROUPS,
+    VENUE_LISTING_ROWS,
+    VENUE_MENU_ROWS
 } from '@/components/billing/plan-comparison-rows';
 
 // ---------------------------------------------------------------------------
@@ -103,13 +103,13 @@ const ALL_ROWS = [
     ...OWNER_ROWS,
     ...OWNER_AI_ROWS,
     ...OWNER_AS_TOURIST_ROWS,
-    ...GASTRONOMY_LISTING_ROWS,
-    ...GASTRONOMY_MENU_ROWS,
+    ...VENUE_LISTING_ROWS,
+    ...VENUE_MENU_ROWS,
     ...EXPERIENCE_LISTING_ROWS,
     ...EXPERIENCE_SERVICE_ROWS,
     ...TOURIST_GROUPS.flatMap((group) => group.rows),
     ...OWNER_GROUPS.flatMap((group) => group.rows),
-    ...GASTRONOMY_GROUPS.flatMap((group) => group.rows),
+    ...VENUE_GROUPS.flatMap((group) => group.rows),
     ...EXPERIENCE_GROUPS.flatMap((group) => group.rows)
 ];
 
@@ -357,7 +357,7 @@ describe('catalog row guards', () => {
 const ALL_RENDERED_ROWS = [
     ...OWNER_GROUPS,
     ...TOURIST_GROUPS,
-    ...GASTRONOMY_GROUPS,
+    ...VENUE_GROUPS,
     ...EXPERIENCE_GROUPS
 ].flatMap((group) => group.rows);
 

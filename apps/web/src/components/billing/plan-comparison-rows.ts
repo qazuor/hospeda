@@ -323,7 +323,7 @@ export const OWNER_AI_ROWS: readonly RowConfig[] = [
 // tourist tables honest.
 
 /** What a gastronomy tier lets its owner publish and maintain. */
-export const GASTRONOMY_LISTING_ROWS: readonly RowConfig[] = [
+export const VENUE_LISTING_ROWS: readonly RowConfig[] = [
     {
         id: 'maxGastronomies',
         labelKey: 'billing.comparison.row.maxGastronomies',
@@ -351,7 +351,7 @@ export const GASTRONOMY_LISTING_ROWS: readonly RowConfig[] = [
 ];
 
 /** The carta, and everything that hangs off it. The gastronomy differentiator. */
-export const GASTRONOMY_MENU_ROWS: readonly RowConfig[] = [
+export const VENUE_MENU_ROWS: readonly RowConfig[] = [
     {
         id: 'gastronomyMenu',
         labelKey: 'billing.comparison.row.gastronomyMenu',
@@ -465,9 +465,9 @@ function listingExtrasRows({
     ];
 }
 
-export const GASTRONOMY_GROUPS: readonly GroupConfig[] = [
-    { id: 'gastronomyListing', rows: GASTRONOMY_LISTING_ROWS },
-    { id: 'gastronomyMenu', rows: GASTRONOMY_MENU_ROWS },
+export const VENUE_GROUPS: readonly GroupConfig[] = [
+    { id: 'gastronomyListing', rows: VENUE_LISTING_ROWS },
+    { id: 'gastronomyMenu', rows: VENUE_MENU_ROWS },
     {
         id: 'listingExtras',
         rows: listingExtrasRows({ aiChatLimitKey: LimitKeyEnum.MAX_AI_CHAT_GASTRONOMY_PER_MONTH })

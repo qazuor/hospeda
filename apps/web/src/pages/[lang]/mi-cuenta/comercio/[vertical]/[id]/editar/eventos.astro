@@ -10,9 +10,9 @@
  * the hub — the same mechanism that refuses `punto-de-encuentro` to a
  * restaurant, pointing the other way.
  *
- * `GastronomyVenueEventsManager` owns its own endpoints — `GET`/`PUT
+ * `VenueEventsManager` owns its own endpoints — `GET`/`PUT
  * .../events` — so this page mounts it directly, with no form and no save
- * button, exactly as `carta.astro` mounts `GastronomyMenuManager`. Nothing here
+ * button, exactly as `carta.astro` mounts `VenueMenuManager`. Nothing here
  * reaches the listing PATCH or its dirty tracking.
  *
  * ## Why the agenda is NOT preloaded server-side
@@ -26,9 +26,9 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
-import { GastronomyVenueEventsManager } from '@/components/gastronomy/GastronomyVenueEventsManager.client';
+import { VenueEventsManager } from '@/components/venue/VenueEventsManager.client';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
-import { WEEKDAY_I18N_KEYS } from '@/lib/gastronomy/venue-event-draft';
+import { WEEKDAY_I18N_KEYS } from '@/lib/venue/venue-event-draft';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 
@@ -69,7 +69,7 @@ const weekdayLabels = WEEKDAY_I18N_KEYS.map((dayKey) =>
 	currentSectionSlug="eventos"
 	title={t('listing.owner.editor.sectionNav.venueEvents', 'Eventos')}
 >
-	<GastronomyVenueEventsManager
+	<VenueEventsManager
 		client:load
 		listingId={listingId}
 		locale={locale}

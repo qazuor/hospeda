@@ -61,7 +61,7 @@ const BAND_HEADERS = [
     'components/destination/DestinationDetailHeader.astro',
     'components/event/EventDetailHeader.astro',
     'components/experience/ExperienceHero.astro',
-    'components/gastronomy/GastronomyDetailHeader.astro',
+    'components/venue/VenueDetailHeader.astro',
     'components/post/PostDetailHeader.astro',
     'components/shared/layout/ListingPageHeader.astro'
 ] as const;

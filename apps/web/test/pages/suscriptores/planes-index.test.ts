@@ -769,7 +769,7 @@ describe('plan index — the trial line stands out, the price gains a step (3 an
 describe('the gastronomy card does not narrow the vertical to restaurants', () => {
     const LOCALES = ['es', 'en', 'pt'] as const;
 
-    const gastronomyCard = (locale: string): Record<string, string> => {
+    const venueCard = (locale: string): Record<string, string> => {
         const file = resolve(
             __dirname,
             `../../../../../packages/i18n/src/locales/${locale}/pricing.json`
@@ -791,13 +791,13 @@ describe('the gastronomy card does not narrow the vertical to restaurants', () =
         // cafés, heladerías, food trucks and casas de comida. A choripán cart
         // reading "restaurante" concludes, correctly, that this is not for it —
         // and the title is the one string that decides whether it reads on.
-        expect(gastronomyCard(locale).title?.toLowerCase()).not.toMatch(/restaurante|restaurant/);
+        expect(venueCard(locale).title?.toLowerCase()).not.toMatch(/restaurante|restaurant/);
     });
 
     it.each(LOCALES)('%s still names the vertical in the title', (locale) => {
         // Not merely "absence of restaurant": the title has to say what it is,
         // or the card stops being a door at all.
-        expect(gastronomyCard(locale).title).toMatch(/local gastron[oóô]mico|food business/i);
+        expect(venueCard(locale).title).toMatch(/local gastron[oóô]mico|food business/i);
     });
 
     it.each(LOCALES)('%s widens the audience line past three venue types', (locale) => {
@@ -805,7 +805,7 @@ describe('the gastronomy card does not narrow the vertical to restaurants', () =
         // which reads as an exhaustive list rather than as examples. Keeping
         // "restaurante" AMONG several examples is fine — being the only door is
         // what was not.
-        const audience = gastronomyCard(locale).audience ?? '';
+        const audience = venueCard(locale).audience ?? '';
 
         expect(audience).toMatch(/food truck/i);
         expect(audience).toMatch(/local gastron[oóô]mico|food business/i);

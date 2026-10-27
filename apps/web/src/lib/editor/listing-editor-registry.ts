@@ -3,7 +3,7 @@
  * @description Picks the editor registry for a gastronomy or experience listing
  * by its vertical (HOS-1080).
  *
- * The per-vertical registries live in `gastronomy-editor-sections.ts` and
+ * The per-vertical registries live in `venue-editor-sections.ts` and
  * `experience-editor-sections.ts`; callers that already hold the vertical as a
  * route param (`'gastronomy' | 'experience'`) use these two functions instead
  * of branching themselves.
@@ -15,9 +15,9 @@ import {
     buildExperienceEditorSections
 } from '@/lib/editor/experience-editor-sections';
 import {
-    buildGastronomyEditorRegistry,
-    buildGastronomyEditorSections
-} from '@/lib/editor/gastronomy-editor-sections';
+    buildVenueEditorRegistry,
+    buildVenueEditorSections
+} from '@/lib/editor/venue-editor-sections';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 
 /**
@@ -31,9 +31,7 @@ export function buildListingEditorSections({
 }: {
     readonly vertical: VenueOrExperience;
 }): readonly EditorSection[] {
-    return vertical === 'experience'
-        ? buildExperienceEditorSections()
-        : buildGastronomyEditorSections();
+    return vertical === 'experience' ? buildExperienceEditorSections() : buildVenueEditorSections();
 }
 
 /**
@@ -47,7 +45,5 @@ export function buildListingEditorRegistry({
 }: {
     readonly vertical: VenueOrExperience;
 }): EditorRegistry {
-    return vertical === 'experience'
-        ? buildExperienceEditorRegistry()
-        : buildGastronomyEditorRegistry();
+    return vertical === 'experience' ? buildExperienceEditorRegistry() : buildVenueEditorRegistry();
 }

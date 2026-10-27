@@ -5,7 +5,7 @@
  *
  * ## Why the names were removed
  *
- * Four card components (`AccommodationCard`, `DestinationCard`, `GastronomyCard`,
+ * Four card components (`AccommodationCard`, `DestinationCard`, `VenueCard`,
  * `ExperienceCard`) carried `transition:name={`<kind>-${slug}`}` on their image
  * — seven declarations in all, since three of them render two image variants —
  * for a list → detail shared-element morph. **That morph could never happen**: a
@@ -53,7 +53,7 @@ const WEB_SRC = path.resolve(__dirname, '../../src');
 /** The components that carried a name before HOS-369 removed them. */
 const FORMERLY_NAMED = [
     'components/experience/ExperienceCard.astro',
-    'components/gastronomy/GastronomyCard.astro',
+    'components/venue/VenueCard.astro',
     'components/shared/cards/AccommodationCard.astro',
     'components/shared/cards/DestinationCard.astro'
 ];

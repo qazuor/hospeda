@@ -31,9 +31,9 @@
  *     owner fixed those three numbers in a comment on it on 2026-09-05. Note 50 also implies raising the per-entity ceiling.
  *  4. ALL OF THE CONTACT — the whole "Cómo te van a contactar" section, the "Teléfono, WhatsApp, email, redes" bullet in "Qué
  *     más podés mostrar", the venue-events CTA sentence, step 02's requirement list, and the masthead lede's "te llama
- *     directo". The biggest gap: a gastronomy listing publishes NO channel today. `GastronomyPublicSchema` omits `contactInfo`
+ *     directo". The biggest gap: a gastronomy listing publishes NO channel today. `VenuePublicSchema` omits `contactInfo`
  *     (`packages/schemas/src/entities/venue/venue.access.schema.ts`) and `socialNetworks.whatsapp` was removed
- *     outright — four files plus a guard test (`test/components/gastronomy/gastronomy-contact-block-whatsapp.guard.test.ts`)
+ *     outright — four files plus a guard test (`test/components/venue/venue-contact-block-whatsapp.guard.test.ts`)
  *     say it must not return through that field. HOS-1088 is where the owner decided (2026-09-05) that gastronomy DOES get
  *     contact, the way accommodation has it.
  *  5. AI TRANSLATION TO ENGLISH AND PORTUGUESE — the "en el idioma del que la lee" panel of "La carta, en serio" and the
@@ -58,7 +58,7 @@
  *
  * THE REST OF THAT TABLE IS VERIFIED PERMISSIONS, NOT PROSE — DO NOT "RESTORE" THE OLD ROW. Until 2026-09-05 the table ended
  * with one row handing "Nombre del local, tipo y ciudad" to the team ("Escribinos y lo cambiamos"). It was wrong in all three
- * fields: `GastronomyOwnerUpdateInputSchema` includes `name`, `type` and `destinationId` — carrying the comment "Previously
+ * fields: `VenueOwnerUpdateInputSchema` includes `name`, `type` and `destinationId` — carrying the comment "Previously
  * owner-editable (SPEC-253 §3)" — and the gastronomy/experience editor renders `name` editable with an opt-in slug-refresh checkbox beside
  * it (`BasicInfoSection.client.tsx`; the form flag is `refreshSlugFromName`, which reaches the schema and
  * `base-listing.service.ts`, gated by `shouldOfferSlugRefresh`). So the owner changes all three alone. It is now three rows: those fields as the owner's,

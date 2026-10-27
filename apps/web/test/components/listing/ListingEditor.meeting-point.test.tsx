@@ -8,7 +8,7 @@
  * three things a wiring mistake breaks silently:
  *
  *  - the section renders for `experience` and NOT for `gastronomy` (the field
- *    is absent from `GastronomyOwnerUpdateInputSchema`, so a control drawn
+ *    is absent from `VenueOwnerUpdateInputSchema`, so a control drawn
  *    there would offer an edit every save strips, and answer 200 doing it);
  *  - a persisted value seeds the form (an editor that opens blank re-saves
  *    blank, quietly deleting a meeting point the owner never touched);
@@ -181,7 +181,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
 
         it('renders nothing of the kind for a gastronomy listing', () => {
             // A restaurant's address is its address; `meetingPoint` is not on
-            // `GastronomyOwnerUpdateInputSchema`, so a control here would offer
+            // `VenueOwnerUpdateInputSchema`, so a control here would offer
             // an edit the API silently strips while answering 200.
             const { container } = renderEditor('gastronomy');
 
@@ -199,7 +199,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             const experienceIds = buildListingEditorSections({
                 vertical: 'experience'
             }).map((section) => section.id);
-            const gastronomyIds = buildListingEditorSections({
+            const venueIds = buildListingEditorSections({
                 vertical: 'gastronomy'
             }).map((section) => section.id);
 
@@ -209,7 +209,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             expect(experienceIds.indexOf('meetingPoint')).toBe(
                 experienceIds.indexOf('basicInfo') + 1
             );
-            expect(gastronomyIds).not.toContain('meetingPoint');
+            expect(venueIds).not.toContain('meetingPoint');
         });
     });
 

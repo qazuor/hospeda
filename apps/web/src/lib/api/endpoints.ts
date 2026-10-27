@@ -1556,10 +1556,10 @@ export const authApi = {
 
 /**
  * Review item shape returned by GET /gastronomies/:id/reviews.
- * The full shape is defined server-side (GastronomyReviewPublicSchema pick);
+ * The full shape is defined server-side (VenueReviewPublicSchema pick);
  * the web client only needs the fields actually rendered in the review list.
  */
-export interface GastronomyReviewPublicItem {
+export interface VenueReviewPublicItem {
     readonly id: string;
     readonly title?: string | null;
     readonly content?: string | null;
@@ -1577,7 +1577,7 @@ export interface GastronomyReviewPublicItem {
 }
 
 /** Public gastronomy API endpoints (SPEC-239 T-042..T-044). */
-export const gastronomyApi = {
+export const venueApi = {
     /**
      * List gastronomy listings with pagination, search, sorting, and filters.
      *
@@ -1632,7 +1632,7 @@ export const gastronomyApi = {
         readonly id: string;
         readonly page?: number;
         readonly pageSize?: number;
-    }): Promise<ApiResult<PaginatedResponse<GastronomyReviewPublicItem>>> {
+    }): Promise<ApiResult<PaginatedResponse<VenueReviewPublicItem>>> {
         return apiClient.getList({
             path: `${BASE}/gastronomies/${id}/reviews`,
             params: { page, pageSize }

@@ -14,7 +14,7 @@
  *
  * Native HTML form + `useZodForm` (no TanStack Form, per web conventions).
  * Field-level validation runs against a `.pick()` SUBSET of the real
- * `GastronomyOwnerCreateInputSchema` / `ExperienceOwnerCreateInputSchema`
+ * `VenueOwnerCreateInputSchema` / `ExperienceOwnerCreateInputSchema`
  * (imported from `@repo/schemas`, never hand-rolled) — the exact schema the
  * create endpoint itself validates against, so there is only one set of
  * rules, just scoped to the fields this form actually collects.
@@ -52,13 +52,13 @@ import type { DestinationOption } from '@/components/listing/destination-option'
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { resolveExperienceTypeLabel } from '@/lib/experience/type-labels';
 import { useZodForm } from '@/lib/forms/use-zod-form';
-import { resolveGastronomyTypeLabel } from '@/lib/gastronomy/type-labels';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 import { createOwnerListing } from '@/lib/listing/owner-listings';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
 import { buildUrl } from '@/lib/urls';
+import { resolveVenueTypeLabel } from '@/lib/venue/type-labels';
 import styles from './ListingCreateForm.module.css';
 
 export interface ListingCreateFormProps {
@@ -80,12 +80,12 @@ export interface ListingCreateFormProps {
     readonly destinationsLoadFailed?: boolean;
 }
 
-const GASTRONOMY_TYPE_OPTIONS = Object.values(VenueTypeEnum);
+const VENUE_TYPE_OPTIONS = Object.values(VenueTypeEnum);
 const EXPERIENCE_TYPE_OPTIONS = Object.values(ExperienceTypeEnum);
 const PRICE_UNIT_OPTIONS = Object.values(ExperiencePriceUnitEnum);
 
 /** Fields this form collects for gastronomy — a subset of the real create schema. */
-const GASTRONOMY_FORM_SCHEMA = VenueOwnerCreateInputSchema.pick({
+const VENUE_FORM_SCHEMA = VenueOwnerCreateInputSchema.pick({
     name: true,
     type: true,
     summary: true,
@@ -126,7 +126,7 @@ export function ListingCreateForm({
 }: ListingCreateFormProps): JSX.Element {
     const { t } = createTranslations(locale);
 
-    const schema = vertical === 'gastronomy' ? GASTRONOMY_FORM_SCHEMA : EXPERIENCE_FORM_SCHEMA;
+    const schema = vertical === 'gastronomy' ? VENUE_FORM_SCHEMA : EXPERIENCE_FORM_SCHEMA;
     const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
         schema,
         t
@@ -144,8 +144,7 @@ export function ListingCreateForm({
     const [isPriceOnRequest, setIsPriceOnRequest] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const typeOptions =
-        vertical === 'gastronomy' ? GASTRONOMY_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
+    const typeOptions = vertical === 'gastronomy' ? VENUE_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
 
     // HOS-820: "comercio" is the name of the internal module gastronomy and
     // experience share — not a word an excursion, a boat trip or a tour guide
@@ -291,7 +290,7 @@ export function ListingCreateForm({
                         >
                             {vertical === 'experience'
                                 ? resolveExperienceTypeLabel({ t, type: opt })
-                                : resolveGastronomyTypeLabel({ t, type: opt })}
+                                : resolveVenueTypeLabel({ t, type: opt })}
                         </option>
                     ))}
                 </select>

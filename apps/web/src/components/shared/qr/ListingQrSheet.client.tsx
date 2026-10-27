@@ -47,7 +47,7 @@
  *
  * What the CSP DOES allow is `img-src … data:`, so `GET …/{id}/qr` returns the
  * markup and it is inlined as a `data:image/svg+xml` image — the same shape
- * `ProviderQrPanel` and `GastronomyMenuQrWidget` already use, and rendered through
+ * `ProviderQrPanel` and `VenueMenuQrWidget` already use, and rendered through
  * `<img>` rather than injected into the DOM because a browser disables scripting
  * inside an SVG loaded as an image.
  *
@@ -213,7 +213,7 @@ export function ListingQrSheet({
      *
      * It is NOT revoked when the save starts: revoking before the browser has
      * begun writing aborts the download in Safari (the same fix already carried by
-     * `BrochureDownloadButton` and `GastronomyMenuQrWidget`). It is released when a
+     * `BrochureDownloadButton` and `VenueMenuQrWidget`). It is released when a
      * later download replaces it — that save finished long ago — and on unmount.
      */
     const objectUrlRef = useRef<string | null>(null);

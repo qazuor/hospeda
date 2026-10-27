@@ -48,9 +48,9 @@ describe('PlanComparisonTable.astro — single source of truth (HOS-329)', () =>
         ].sort();
         expect(groups).toEqual([
             'EXPERIENCE_GROUPS',
-            'GASTRONOMY_GROUPS',
             'OWNER_GROUPS',
-            'TOURIST_GROUPS'
+            'TOURIST_GROUPS',
+            'VENUE_GROUPS'
         ]);
     });
 

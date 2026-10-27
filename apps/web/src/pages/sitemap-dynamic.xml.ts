@@ -290,7 +290,7 @@ export const GET: APIRoute = async () => {
         destinations,
         events,
         posts,
-        gastronomy,
+        venue,
         experiences,
         attractions,
         pointsOfInterest,
@@ -319,7 +319,7 @@ export const GET: APIRoute = async () => {
     const resolvedDestinations = destinations.status === 'fulfilled' ? destinations.value : [];
     const resolvedEvents = events.status === 'fulfilled' ? events.value : [];
     const resolvedPosts = posts.status === 'fulfilled' ? posts.value : [];
-    const resolvedGastronomy = gastronomy.status === 'fulfilled' ? gastronomy.value : [];
+    const resolvedVenue = venue.status === 'fulfilled' ? venue.value : [];
     const resolvedExperiences = experiences.status === 'fulfilled' ? experiences.value : [];
     const resolvedAttractions = attractions.status === 'fulfilled' ? attractions.value : [];
     const resolvedPointsOfInterest =
@@ -414,7 +414,7 @@ export const GET: APIRoute = async () => {
     // Gastronomy: /gastronomia/{slug}/
     entries.push(
         ...buildEntriesForEntity({
-            items: resolvedGastronomy,
+            items: resolvedVenue,
             siteUrl,
             pathFn: ENTITY_PUBLIC_PATHS.gastronomy,
             changefreq: 'weekly',
