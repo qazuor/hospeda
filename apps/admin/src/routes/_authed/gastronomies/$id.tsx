@@ -238,7 +238,7 @@ function VenueViewPage() {
                 <div className="flex justify-end gap-2">
                     {/* HOS-1493 action 23: purge at the owner's request, with reason. */}
                     <ListingPurgeOnRequestCard
-                        vertical="gastronomy"
+                        vertical="venue"
                         entityId={id}
                         entityName={venue?.name ?? id}
                         onPurged={() => navigate({ to: '/gastronomies' })}
@@ -249,7 +249,7 @@ function VenueViewPage() {
                 {/* HOS-686 AC-26 + HOS-1684: the listing's publication state and its
                     moderation by action, with reason (`POST /:id/moderate`). */}
                 <ListingModerationCard
-                    vertical="gastronomy"
+                    vertical="venue"
                     entityId={id}
                     entityName={venue?.name ?? id}
                     publicationStatus={venue?.publicationStatus}

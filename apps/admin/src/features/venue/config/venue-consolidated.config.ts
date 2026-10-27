@@ -155,9 +155,9 @@ export const createVenueConsolidatedConfig = (
     t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedEntityConfig => ({
     sections: [
-        createListingIdentitySection('gastronomy'),
+        createListingIdentitySection('venue'),
         createVenueSpecificSection(),
-        createListingOperationalSection('gastronomy')
+        createListingOperationalSection('venue')
     ],
     metadata: {
         title: t('admin-entities.entities.gastronomy.singular'),

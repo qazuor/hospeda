@@ -15,7 +15,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 
 /** The three listing verticals the purge route exists for. */
-export type PurgeListingVertical = 'accommodation' | 'gastronomy' | 'experience';
+export type PurgeListingVertical = 'accommodation' | 'venue' | 'experience';
 
 /**
  * Admin API plural per vertical. Also the root of each vertical's query cache
@@ -23,7 +23,7 @@ export type PurgeListingVertical = 'accommodation' | 'gastronomy' | 'experience'
  */
 export const PURGE_LISTING_PLURAL: Readonly<Record<PurgeListingVertical, string>> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'gastronomies',
     experience: 'experiences'
 };
 

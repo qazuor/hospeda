@@ -44,7 +44,7 @@ afterEach(() => {
 describe('usePurgeListingOnRequestMutation — action 23 posts to its vertical purge route', () => {
     it.each([
         ['accommodation', '/api/v1/admin/accommodations'],
-        ['gastronomy', '/api/v1/admin/gastronomies'],
+        ['venue', '/api/v1/admin/gastronomies'],
         ['experience', '/api/v1/admin/experiences']
     ] as const satisfies readonly (readonly [
         PurgeListingVertical,
@@ -90,7 +90,7 @@ describe('usePurgeListingOnRequestMutation — action 23 posts to its vertical p
 
         // Act
         await result.current.mutateAsync({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             id: LISTING_ID,
             reason: 'pedido del dueño'
         });

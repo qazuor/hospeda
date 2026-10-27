@@ -75,7 +75,7 @@ const LISTING_NAME = 'Cabaña del Río Colón';
 function renderCard(onPurged = vi.fn()) {
     render(
         React.createElement(ListingPurgeOnRequestCard, {
-            vertical: 'gastronomy',
+            vertical: 'venue',
             entityId: LISTING_ID,
             entityName: LISTING_NAME,
             publicationStatus: PublicationStatusEnum.PUBLISHED,
@@ -102,7 +102,7 @@ describe('ListingPurgeOnRequestCard — gated by the action 23 permission', () =
     it('TEST:1760:4 does not show purge for PURGED', () => {
         permissions.mockReturnValue([PermissionEnum.LISTING_PURGE_ON_REQUEST]);
         const CardWithState = ListingPurgeOnRequestCard as React.ComponentType<{
-            vertical: 'gastronomy';
+            vertical: 'venue';
             entityId: string;
             entityName: string;
             publicationStatus: PublicationStatusEnum;
@@ -110,7 +110,7 @@ describe('ListingPurgeOnRequestCard — gated by the action 23 permission', () =
         }>;
         render(
             <CardWithState
-                vertical="gastronomy"
+                vertical="venue"
                 entityId={LISTING_ID}
                 entityName={LISTING_NAME}
                 publicationStatus={PublicationStatusEnum.PURGED}
@@ -122,7 +122,7 @@ describe('ListingPurgeOnRequestCard — gated by the action 23 permission', () =
     it('does not show purge while publication state is unknown', () => {
         permissions.mockReturnValue([PermissionEnum.LISTING_PURGE_ON_REQUEST]);
         const CardWithState = ListingPurgeOnRequestCard as React.ComponentType<{
-            vertical: 'gastronomy';
+            vertical: 'venue';
             entityId: string;
             entityName: string;
             publicationStatus?: PublicationStatusEnum;
@@ -130,7 +130,7 @@ describe('ListingPurgeOnRequestCard — gated by the action 23 permission', () =
         }>;
         render(
             <CardWithState
-                vertical="gastronomy"
+                vertical="venue"
                 entityId={LISTING_ID}
                 entityName={LISTING_NAME}
                 onPurged={vi.fn()}
@@ -201,7 +201,7 @@ describe('ListingPurgeOnRequestCard — the confirmation says what happens (AC:V
         // Assert
         await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
         expect(mutateAsync).toHaveBeenCalledWith({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             id: LISTING_ID,
             reason: 'Juan lo pidió por correo'
         });

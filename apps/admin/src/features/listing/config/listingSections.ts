@@ -54,7 +54,7 @@ import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/
 // ---------------------------------------------------------------------------
 
 function permissionsForVertical(vertical: VenueOrExperience) {
-    return vertical === 'gastronomy'
+    return vertical === 'venue'
         ? {
               view: PermissionEnum.GASTRONOMY_VIEW_ALL,
               editAll: PermissionEnum.GASTRONOMY_EDIT_ALL,
@@ -90,7 +90,7 @@ function permissionsForVertical(vertical: VenueOrExperience) {
  * @returns A `ConsolidatedSectionConfig` for the listing identity section.
  */
 export function createListingIdentitySection(
-    vertical: 'gastronomy' | 'experience'
+    vertical: 'venue' | 'experience'
 ): ConsolidatedSectionConfig {
     const permissions = permissionsForVertical(vertical);
     return {
@@ -313,7 +313,7 @@ export function createListingIdentitySection(
  * @returns A `ConsolidatedSectionConfig` for the listing operational section.
  */
 export function createListingOperationalSection(
-    vertical: 'gastronomy' | 'experience'
+    vertical: 'venue' | 'experience'
 ): ConsolidatedSectionConfig {
     const permissions = permissionsForVertical(vertical);
     return {

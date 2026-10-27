@@ -88,7 +88,7 @@ vi.mock('@/hooks/use-media-upload', () => ({
 
 // @repo/schemas mock — provide ENTITY_GALLERY_CAPS + ModerationStatusEnum
 vi.mock('@repo/schemas', () => ({
-    ENTITY_GALLERY_CAPS: { gastronomy: 30, experience: 30 },
+    ENTITY_GALLERY_CAPS: { venue: 30, experience: 30 },
     ModerationStatusEnum: { APPROVED: 'APPROVED', PENDING: 'PENDING', REJECTED: 'REJECTED' }
 }));
 
@@ -137,7 +137,7 @@ function makeGalleryRow(id: string, sortOrder = 1) {
 function renderGalleryManager() {
     return render(
         <ListingGalleryManager
-            vertical="gastronomy"
+            vertical="venue"
             entityId="ent-1"
         />
     );
@@ -217,7 +217,7 @@ describe('ListingGalleryManager — add gallery photo', () => {
         await waitFor(() => {
             expect(mockUploadEntityImageMutateAsync).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    entityType: 'gastronomy',
+                    entityType: 'venue',
                     entityId: 'ent-1',
                     role: 'gallery'
                 })
@@ -330,7 +330,7 @@ describe('ListingGalleryManager — alt derived from entity name', () => {
         mockListData.data = [];
         render(
             <ListingGalleryManager
-                vertical="gastronomy"
+                vertical="venue"
                 entityId="ent-1"
                 entityName="Parrilla El Fogón"
             />
@@ -445,7 +445,7 @@ describe('ListingGalleryManager — set portada (upload → add → setFeatured)
         mockListData.data = [];
         render(
             <ListingGalleryManager
-                vertical="gastronomy"
+                vertical="venue"
                 entityId="ent-1"
                 entityName="Parrilla El Fogón"
             />
@@ -508,7 +508,7 @@ describe('ListingGalleryManager — gated on entity-detail loading too (race reg
 
         render(
             <ListingGalleryManager
-                vertical="gastronomy"
+                vertical="venue"
                 entityId="ent-1"
                 isEntityLoading={true}
             />
@@ -529,7 +529,7 @@ describe('ListingGalleryManager — gated on entity-detail loading too (race reg
 
         render(
             <ListingGalleryManager
-                vertical="gastronomy"
+                vertical="venue"
                 entityId="ent-1"
                 entityName="Parrilla El Fogón"
                 isEntityLoading={false}
