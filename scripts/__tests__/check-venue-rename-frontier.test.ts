@@ -347,3 +347,15 @@ describe('TEST:1814:3 AC:1:16 T1 compares the committed inventory with staging',
         }
     );
 });
+
+describe('TEST:1816:1 AC:1:18 T1 inventory remains below the HOS-1816 ceiling', () => {
+    it('TEST:1816:1 AC:1:18 checks the committed inventory file and occurrence totals', () => {
+        const inventory = JSON.parse(
+            readFileSync(resolve(ROOT, 'scripts/guards/venue-rename-frontier.json'), 'utf8')
+        ) as { files: Record<string, number> };
+        const counts = Object.values(inventory.files);
+
+        expect(counts.length).toBeLessThan(1678);
+        expect(counts.reduce((sum, count) => sum + count, 0)).toBeLessThan(11767);
+    });
+});
