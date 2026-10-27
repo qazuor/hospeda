@@ -4,7 +4,7 @@
  * Validates that the role gate and ownership gate on the gastronomy and experience self-service
  * area reject actors who must not reach those pages:
  *
- *   1. TOURIST BLOCKED — a plain USER (holding no GASTRONOMY_OWNER hat) is
+ *   1. TOURIST BLOCKED — a plain USER (holding no VENUE_OWNER hat) is
  *      redirected away from /es/mi-cuenta/comercio/ to /es/mi-cuenta/ (the
  *      generic account dashboard). The gate lives in:
  *        apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro
@@ -13,7 +13,7 @@
  *      a predicate over the role SET, so a gastronomy or experience owner who is ALSO a host
  *      keeps access.)
  *
- *   2. CROSS-OWNER BLOCKED — a logged-in GASTRONOMY_OWNER (Julieta) navigating
+ *   2. CROSS-OWNER BLOCKED — a logged-in VENUE_OWNER (Julieta) navigating
  *      to another owner's (Rodrigo's) gastronomy editor is redirected back to
  *      /es/mi-cuenta/comercio/ (her own listing index). The gate lives in:
  *        apps/web/src/lib/editor/resolve-listing-editor-page.ts (the shared front door)
@@ -21,7 +21,7 @@
  *
  * Actors:
  *   - e2e-tourist@local.test          (role USER, seeded by gastronomies.seed.ts Step 2b)
- *   - gastro-owner-julieta@local.test (role GASTRONOMY_OWNER, seeded by gastronomies.seed.ts)
+ *   - gastro-owner-julieta@local.test (role VENUE_OWNER, seeded by gastronomies.seed.ts)
  *
  * Cross-owner listing used:
  *   - "La Cervecería del Río" (gastronomy, owner: Rodrigo)
@@ -34,7 +34,7 @@
  * Preconditions:
  *   - e2e:seed has run (`pnpm --filter hospeda-e2e e2e:seed`).
  *   - e2e-tourist@local.test exists with role USER and profileCompleted=true.
- *   - gastro-owner-julieta@local.test exists with role GASTRONOMY_OWNER.
+ *   - gastro-owner-julieta@local.test exists with role VENUE_OWNER.
  *   - Rodrigo's gastronomy "La Cervecería del Río" (id above) is seeded and ACTIVE.
  *   - Web and API servers are running (playwright.config webServer).
  *
@@ -62,7 +62,7 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 // ---------------------------------------------------------------------------
 
 /**
- * Plain tourist (role USER). Has no GASTRONOMY_OWNER role.
+ * Plain tourist (role USER). Has no VENUE_OWNER role.
  * Seeded by packages/seed/src/example/gastronomies.seed.ts Step 2b
  * as part of the example seed (runs via `e2e:seed`).
  */
@@ -72,7 +72,7 @@ const TOURIST = {
 } as const;
 
 /**
- * Gastronomy or experience owner — Julieta Ferreyra (role GASTRONOMY_OWNER).
+ * Gastronomy or experience owner — Julieta Ferreyra (role VENUE_OWNER).
  * She owns "La Parrilla del Puerto" and "Café del Palacio" (gastronomies)
  * plus three experiences. She does NOT own Rodrigo's listings.
  */
@@ -148,7 +148,7 @@ test.describe('LISTING-OWNER-02: access-control negative paths @p0 @listing-owne
             waitUntil: 'domcontentloaded'
         });
 
-        // The role gate in index.astro redirects non-GASTRONOMY_OWNER users to
+        // The role gate in index.astro redirects non-VENUE_OWNER users to
         // /[lang]/mi-cuenta/ (the generic account dashboard).
         // Assert the final URL is in /mi-cuenta/ but NOT in /mi-cuenta/comercio/.
         await expect(page).toHaveURL(`${WEB_URL}/es/mi-cuenta/`);
@@ -160,7 +160,7 @@ test.describe('LISTING-OWNER-02: access-control negative paths @p0 @listing-owne
         page,
         context
     }) => {
-        // ── Sign in as Julieta (GASTRONOMY_OWNER) ───────────────────────────
+        // ── Sign in as Julieta (VENUE_OWNER) ───────────────────────────
         const sessionCookie = await signInExistingUser(
             { email: JULIETA.email, password: JULIETA.password },
             { apiBaseUrl: API_URL, webBaseUrl: WEB_URL }
@@ -168,7 +168,7 @@ test.describe('LISTING-OWNER-02: access-control negative paths @p0 @listing-owne
         await authenticateContext(context, sessionCookie);
 
         // ── Attempt to open Rodrigo's gastronomy editor ───────────────────
-        // Julieta's role IS GASTRONOMY_OWNER so the role gate passes.
+        // Julieta's role IS VENUE_OWNER so the role gate passes.
         // The ownership gate in `resolveListingEditorPage` checks
         // detail.ownerId === user.id, for the hub and every section alike
         // (HOS-1080 moved it out of the single page into the shared resolver).
