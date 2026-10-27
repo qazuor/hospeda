@@ -3,7 +3,7 @@
  * Configures test environment and global mocks for icon components
  */
 
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 // biome-ignore lint/correctness/noUnusedImports: React import required for JSX transform in test environment
 import React from 'react';
