@@ -100,7 +100,7 @@ const LOADED_MENU_WITH_PHOTO = {
                         priceCents: 250_000,
                         isAvailable: true,
                         photoUrl: PHOTO_URL,
-                        photoPublicId: 'hospeda/dev/gastronomies/x/empanadas',
+                        photoPublicId: 'hospeda/dev/venues/x/empanadas',
                         photoAlt: 'Empanadas recién horneadas'
                     }
                 ]
@@ -130,7 +130,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         });
 
         expect(mockGet).toHaveBeenCalledWith({
-            path: `/api/v1/protected/gastronomies/${LISTING_ID}/menu`
+            path: `/api/v1/protected/venues/${LISTING_ID}/menu`
         });
         expect(screen.getByDisplayValue('Empanadas')).toBeInTheDocument();
         // The owner sees PESOS; the state and the wire carry centavos.
@@ -162,7 +162,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         // and wrote pesos would satisfy any assertion weaker than this one, and
         // would multiply every stored price by 100 on the next save.
         expect(mockPut).toHaveBeenCalledWith({
-            path: `/api/v1/protected/gastronomies/${LISTING_ID}/menu`,
+            path: `/api/v1/protected/venues/${LISTING_ID}/menu`,
             body: {
                 sections: [
                     {
@@ -321,7 +321,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         // `photoPublicId` is precisely the failure that would leave a billed
         // Cloudinary asset with nothing able to destroy it.
         expect(mockPut).toHaveBeenCalledWith({
-            path: `/api/v1/protected/gastronomies/${LISTING_ID}/menu`,
+            path: `/api/v1/protected/venues/${LISTING_ID}/menu`,
             body: {
                 sections: [
                     {
@@ -336,7 +336,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
                                 priceCents: 250_000,
                                 isAvailable: true,
                                 photoUrl: PHOTO_URL,
-                                photoPublicId: 'hospeda/dev/gastronomies/x/empanadas',
+                                photoPublicId: 'hospeda/dev/venues/x/empanadas',
                                 photoAlt: 'Empanadas recién horneadas',
                                 nameI18n: null,
                                 descriptionI18n: null

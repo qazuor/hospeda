@@ -144,7 +144,7 @@ function patchPathFor({
     listingId: string;
 }): string {
     return vertical === 'venue'
-        ? `/api/v1/protected/gastronomies/${listingId}`
+        ? `/api/v1/protected/venues/${listingId}`
         : `/api/v1/protected/experiences/${listingId}`;
 }
 
@@ -492,7 +492,7 @@ export function ListingEditor({
 
     // Field-level validation is delegated to the shared `useZodForm` primitive
     // (HOS-190 slice 3) against the REAL per-vertical owner-update schema — the
-    // exact schema `PATCH /api/v1/protected/{gastronomies|experiences}/:id`
+    // exact schema `PATCH /api/v1/protected/{venues|experiences}/:id`
     // validates the request body against (`apps/api/src/routes/.../protected/patch.ts`).
     // Validating the full dirty-field payload against it (instead of the two ad
     // hoc summary/priceFrom checks this editor had) closes contact

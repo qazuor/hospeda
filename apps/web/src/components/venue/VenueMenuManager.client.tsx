@@ -269,7 +269,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
      */
     const [isTranslationLocked, setIsTranslationLocked] = useState(false);
 
-    const basePath = `/api/v1/protected/gastronomies/${listingId}/menu`;
+    const basePath = `/api/v1/protected/venues/${listingId}/menu`;
 
     // ── Load ────────────────────────────────────────────────────────────────
     // The panel reads its own state rather than receiving it from the SSR page:

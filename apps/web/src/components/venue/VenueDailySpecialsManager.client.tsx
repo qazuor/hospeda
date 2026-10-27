@@ -131,7 +131,7 @@ export function VenueDailySpecialsManager({
     const [message, setMessage] = useState<string | null>(null);
     const [isLocked, setIsLocked] = useState(false);
 
-    const basePath = `/api/v1/protected/gastronomies/${listingId}/daily-specials`;
+    const basePath = `/api/v1/protected/venues/${listingId}/daily-specials`;
 
     // Read once per mount rather than per render: `localToday()` reads the
     // clock, and calling it inside the map would make the rendered labels

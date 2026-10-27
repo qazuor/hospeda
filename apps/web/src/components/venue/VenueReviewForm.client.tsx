@@ -11,7 +11,7 @@
  * PENDING moderation, so the success state shows a "pending approval" notice
  * rather than implying the review is already live.
  *
- * The actual POST goes to `/api/v1/protected/gastronomies/:id/reviews` with
+ * The actual POST goes to `/api/v1/protected/venues/:id/reviews` with
  * `credentials: 'include'` so the Better Auth session cookie is sent.
  *
  * Hydration: caller MUST use `client:visible`.
@@ -134,7 +134,7 @@ export function VenueReviewForm({
 
             try {
                 const response = await fetch(
-                    joinApi(apiUrl, `/api/v1/protected/gastronomies/${gastronomyId}/reviews`),
+                    joinApi(apiUrl, `/api/v1/protected/venues/${gastronomyId}/reviews`),
                     {
                         method: 'POST',
                         credentials: 'include',

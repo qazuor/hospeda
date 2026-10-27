@@ -1555,7 +1555,7 @@ export const authApi = {
 // --- Gastronomy (SPEC-239) ---
 
 /**
- * Review item shape returned by GET /gastronomies/:id/reviews.
+ * Review item shape returned by GET /venues/:id/reviews.
  * The full shape is defined server-side (VenueReviewPublicSchema pick);
  * the web client only needs the fields actually rendered in the review list.
  */
@@ -1581,7 +1581,7 @@ export const venueApi = {
     /**
      * List gastronomy listings with pagination, search, sorting, and filters.
      *
-     * GET /api/v1/public/gastronomies
+     * GET /api/v1/public/venues
      */
     list(params?: {
         readonly page?: number;
@@ -1607,22 +1607,22 @@ export const venueApi = {
         readonly includeAmenities?: boolean;
         readonly includeFeatures?: boolean;
     }): Promise<ApiResult<PaginatedResponse<VenuePublic>>> {
-        return apiClient.getList({ path: `${BASE}/gastronomies`, params });
+        return apiClient.getList({ path: `${BASE}/venues`, params });
     },
 
     /**
      * Get a single gastronomy listing by its URL slug.
      *
-     * GET /api/v1/public/gastronomies/slug/:slug
+     * GET /api/v1/public/venues/slug/:slug
      */
     getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<VenuePublic>> {
-        return apiClient.get({ path: `${BASE}/gastronomies/slug/${slug}` });
+        return apiClient.get({ path: `${BASE}/venues/slug/${slug}` });
     },
 
     /**
      * Get paginated reviews for a gastronomy listing (with user info).
      *
-     * GET /api/v1/public/gastronomies/:id/reviews
+     * GET /api/v1/public/venues/:id/reviews
      */
     getReviews({
         id,
@@ -1634,7 +1634,7 @@ export const venueApi = {
         readonly pageSize?: number;
     }): Promise<ApiResult<PaginatedResponse<VenueReviewPublicItem>>> {
         return apiClient.getList({
-            path: `${BASE}/gastronomies/${id}/reviews`,
+            path: `${BASE}/venues/${id}/reviews`,
             params: { page, pageSize }
         });
     },
@@ -1642,10 +1642,10 @@ export const venueApi = {
     /**
      * Get the FAQ list for a gastronomy listing.
      *
-     * GET /api/v1/public/gastronomies/:id/faqs
+     * GET /api/v1/public/venues/:id/faqs
      */
     getFaqs({ id }: { readonly id: string }): Promise<ApiResult<ReadonlyArray<unknown>>> {
-        return apiClient.get({ path: `${BASE}/gastronomies/${id}/faqs` });
+        return apiClient.get({ path: `${BASE}/venues/${id}/faqs` });
     }
 };
 

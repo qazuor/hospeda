@@ -34,7 +34,7 @@ import styles from './ListingActions.module.css';
 
 /** API path segment per vertical (mirrors the protected route mounts). */
 const API_SEGMENT_BY_VERTICAL = {
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 } as const;
 

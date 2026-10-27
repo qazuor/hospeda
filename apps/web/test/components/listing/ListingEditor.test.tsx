@@ -285,7 +285,7 @@ describe('ListingEditor', () => {
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
-            path: '/api/v1/protected/gastronomies/abc',
+            path: '/api/v1/protected/venues/abc',
             body: { richDescription: 'new text' }
         });
         // Success is surfaced as a toast now, not an inline role=status banner.
@@ -397,7 +397,7 @@ describe('ListingEditor', () => {
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
-            path: '/api/v1/protected/gastronomies/abc',
+            path: '/api/v1/protected/venues/abc',
             body: { priceRange: 'MID' }
         });
     });
@@ -422,7 +422,7 @@ describe('ListingEditor', () => {
         // `website` is not part of this owner surface (SPEC-253 AC-4) and is
         // therefore absent rather than nulled.
         expect(mockPatch).toHaveBeenCalledWith({
-            path: '/api/v1/protected/gastronomies/abc',
+            path: '/api/v1/protected/venues/abc',
             body: {
                 contactInfo: {
                     mobilePhone: '+54 9 11 1234 5678',
@@ -505,7 +505,7 @@ describe('ListingEditor', () => {
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
-            path: '/api/v1/protected/gastronomies/abc',
+            path: '/api/v1/protected/venues/abc',
             body: {
                 // An empty member travels as `null`, not `undefined`: the column
                 // is merged by the API (HOS-1262), so an omitted key would
@@ -768,7 +768,7 @@ describe('ListingEditor', () => {
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             expect(mockPatch).toHaveBeenCalledWith({
-                path: '/api/v1/protected/gastronomies/abc',
+                path: '/api/v1/protected/venues/abc',
                 body: { name: 'La Nueva Parrilla' }
             });
         });
@@ -793,7 +793,7 @@ describe('ListingEditor', () => {
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             expect(mockPatch).toHaveBeenCalledWith({
-                path: '/api/v1/protected/gastronomies/abc',
+                path: '/api/v1/protected/venues/abc',
                 body: { destinationId: DESTINATION_2 }
             });
         });
@@ -818,7 +818,7 @@ describe('ListingEditor', () => {
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             expect(mockPatch).toHaveBeenCalledWith({
-                path: '/api/v1/protected/gastronomies/abc',
+                path: '/api/v1/protected/venues/abc',
                 body: {
                     description: 'Una descripción completamente nueva y suficientemente larga.'
                 }

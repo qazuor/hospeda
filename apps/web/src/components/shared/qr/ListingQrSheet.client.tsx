@@ -77,7 +77,7 @@ import styles from './ListingQrSheet.module.css';
  */
 const API_SEGMENT_BY_VERTICAL = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 } as const;
 

@@ -146,7 +146,7 @@ const DETAIL_ROUTE_SPECS: ReadonlyArray<DetailRouteSpec> = [
     },
     {
         name: 'Gastronomy Detail',
-        apiPath: '/api/v1/public/gastronomies?page=1&pageSize=1',
+        apiPath: '/api/v1/public/venues?page=1&pageSize=1',
         toUrl: (item) => buildEntityUrl({ basePath: 'gastronomia', slug: item.slug })
     },
     {

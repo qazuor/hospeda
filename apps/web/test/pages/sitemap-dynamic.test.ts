@@ -289,11 +289,11 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-        // gastronomies: 1 item
+        // venues: 1 item
         fetchMock.mockImplementationOnce(() =>
             Promise.resolve(makeApiResponse([{ slug: 'la-parrilla-del-puerto' }]))
         );
-        // gastronomies page 2 empty
+        // venues page 2 empty
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
         // experiences empty
         fetchMock.mockResolvedValue(makeEmptyApiResponse());
@@ -311,7 +311,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
     it('emits experience entries with /experiencias/ path for all 3 locales', async () => {
         const fetchMock = vi.fn();
 
-        // accommodations, destinations, events, posts, gastronomies — all empty
+        // accommodations, destinations, events, posts, venues — all empty
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));

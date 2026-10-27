@@ -25,9 +25,9 @@ import { PublicationStatusEnum, resolveListingCompleteness } from '@repo/schemas
 import { apiClient } from '../api/client';
 import type { ApiResult } from '../api/types';
 
-const VENUE_MINE_PATH = '/api/v1/protected/gastronomies/mine';
+const VENUE_MINE_PATH = '/api/v1/protected/venues/mine';
 const EXPERIENCE_MINE_PATH = '/api/v1/protected/experiences/mine';
-const VENUE_PATH = '/api/v1/protected/gastronomies';
+const VENUE_PATH = '/api/v1/protected/venues';
 const EXPERIENCE_PATH = '/api/v1/protected/experiences';
 
 /** Owner-tier detail of a single listing, one of the two verticals. */
@@ -181,7 +181,7 @@ export type CreateOwnerListingPayload =
 /**
  * Creates a new listing owned by the caller (HOS-166 §7.2).
  *
- * `POST /api/v1/protected/gastronomies` or `POST /api/v1/protected/experiences`
+ * `POST /api/v1/protected/venues` or `POST /api/v1/protected/experiences`
  * depending on the vertical (the accommodation pattern: `POST /`). The
  * server forces `ownerId = actor.id`, the listing is born
  * `publicationStatus: DRAFT` (HOS-1641), and derives `slug` from `name` — none of those are
