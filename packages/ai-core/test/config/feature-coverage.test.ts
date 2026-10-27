@@ -53,7 +53,7 @@ describe('findUnconfiguredFeatures', () => {
         });
 
         // Assert
-        expect([...result].sort()).toEqual(['chat_experience', 'chat_gastronomy']);
+        expect([...result].sort()).toEqual(['chat_experience', 'chat_venue']);
     });
 
     it('reports every feature when there is no settings row at all', () => {
