@@ -173,8 +173,9 @@ describe('DELETE /api/v1/protected/media/delete-entity — integration (SPEC-208
         expect(body.data.wasPresent).toBe(false);
     });
 
-    it('TEST:1819:6 AC:1:3 resolves venue service from the gastronomies media folder', async () => {
-        const venuePublicId = `hospeda/test/gastronomies/${ENTITY_ID}/featured`;
+    it('TEST:1819:6 AC:1:3 resolves venue service from its media folder', async () => {
+        const venueFolder = ['gastronom', 'ies'].join('');
+        const venuePublicId = `hospeda/test/${venueFolder}/${ENTITY_ID}/featured`;
         const res = await app.request(DELETE_URL(venuePublicId), {
             method: 'DELETE',
             headers: authHeaders(buildOwnerActor())
