@@ -394,7 +394,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
     // ── Setting a new featured image ───────────────────────────────────
 
     describe('setting a new featured image', () => {
-        it('calls upload → addMedia → setFeaturedMedia immediately and updates the featured slot', async () => {
+        it('TEST:1819:6 AC:1:3 sends venue as the upload entity type', async () => {
             mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1]));
             stubFetchUploadOk();
             mockAddMedia.mockReturnValue(makeAddOk({ ...NEW_ROW, isFeatured: false }));
@@ -409,6 +409,10 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             const { featured } = fileInputs();
             const file = new File(['img'], 'portada.jpg', { type: 'image/jpeg' });
             fireEvent.change(featured, { target: { files: [file] } });
+
+            await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+            const request = global.fetch.mock.calls[0]?.[1];
+            expect((request?.body as FormData).get('entityType')).toBe('venue');
 
             await waitFor(() => {
                 expect(mockAddMedia).toHaveBeenCalledWith({
