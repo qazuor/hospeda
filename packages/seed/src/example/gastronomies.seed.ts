@@ -85,7 +85,7 @@ const SALT_ROUNDS = 12;
 const DEV_PW = 'Password123!';
 
 /**
- * Spec of a GASTRONOMY_OWNER user to seed.
+ * Spec of a VENUE_OWNER user to seed.
  */
 interface ListingOwnerSpec {
     readonly seedId: string;
@@ -99,7 +99,7 @@ interface ListingOwnerSpec {
 /**
  * E2E tourist user seeded alongside the listing-owner block.
  *
- * Role: USER — intentionally NOT GASTRONOMY_OWNER and NOT staff, so the
+ * Role: USER — intentionally NOT VENUE_OWNER and NOT staff, so the
  * listing-area nav gate in `/mi-cuenta/comercio/index.astro` redirects
  * this user to `/mi-cuenta/`.  Used by SPEC-252 listing-02 test case 1.
  *
@@ -108,7 +108,7 @@ interface ListingOwnerSpec {
  * before the listing-owner role gate runs — an incomplete profile would redirect
  * to `/mi-cuenta/completar-perfil/` instead, breaking the test assertion.
  *
- * Password: Password123! (same shared dev constant as GASTRONOMY_OWNER accounts).
+ * Password: Password123! (same shared dev constant as VENUE_OWNER accounts).
  * Email: e2e-tourist@local.test (clearly E2E-scoped, never used on staging/prod).
  */
 const E2E_TOURIST = {
@@ -120,7 +120,7 @@ const E2E_TOURIST = {
 } as const;
 
 /**
- * Dev GASTRONOMY_OWNER users for gastronomy listings.
+ * Dev VENUE_OWNER users for gastronomy listings.
  * Three owners covering 6 listings (2 each):
  * - Julieta: listings 001 (la-parrilla-del-puerto, CdU) + 002 (cafe-del-palacio, Colón)
  * - Rodrigo: listings 003 (cerveceria-del-rio, Gualeguaychú) + 004 (heladeria-luna, Concordia)
@@ -256,7 +256,7 @@ async function seedGastronomyMediaRows({
 }
 
 /**
- * Seeds the three GASTRONOMY_OWNER users, the gastronomy listings (via Drizzle
+ * Seeds the three VENUE_OWNER users, the gastronomy listings (via Drizzle
  * insert), gastronomy FAQs, and gastronomy reviews.
  *
  * ### Ordering constraint
@@ -317,7 +317,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
     let successCount = 0;
     let errorCount = 0;
 
-    // ── Step 1: Seed GASTRONOMY_OWNER users ───────────────────────────────────
+    // ── Step 1: Seed VENUE_OWNER users ───────────────────────────────────
     const passwordHash = await hash(DEV_PW, SALT_ROUNDS);
 
     for (const owner of LISTING_OWNERS) {
@@ -486,7 +486,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
 
             // HOS-296: the tourist fixture's single `USER` hat, as a row.
             // `listing-02` case 1 asserts that this account is REDIRECTED away
-            // from `/mi-cuenta/comercio/`, so the absence of GASTRONOMY_OWNER is
+            // from `/mi-cuenta/comercio/`, so the absence of VENUE_OWNER is
             // as load-bearing as the presence of USER.
             const grantedTourist = await grantRole({
                 userId: insertedTouristRow.id,

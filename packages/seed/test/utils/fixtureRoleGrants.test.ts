@@ -33,7 +33,7 @@ describe('resolveFixtureRole', () => {
             RoleEnum.HOST
         );
         expect(resolveFixtureRole({ item: { role: 'VENUE_OWNER' }, source: 'f.json' })).toBe(
-            RoleEnum.GASTRONOMY_OWNER
+            RoleEnum.VENUE_OWNER
         );
     });
 

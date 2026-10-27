@@ -63,7 +63,7 @@ describe('TEST_USERS matrix', () => {
     describe('gastronomy-owner@local.test (HOS-694)', () => {
         const user = findUser('gastronomy-owner@local.test');
         it('holds only the gastronomy owner role', () => {
-            expect(user.role).toBe(RoleEnum.GASTRONOMY_OWNER);
+            expect(user.role).toBe(RoleEnum.VENUE_OWNER);
             expect(user.extraRoles ?? []).not.toContain(RETIRED_OWNER_ROLE);
         });
     });
@@ -83,8 +83,8 @@ describe('TEST_USERS matrix', () => {
             expect(user.role).toBe(RoleEnum.HOST);
         });
 
-        it('should declare GASTRONOMY_OWNER as an extra role (HOS-1417 retired the shared owner role)', () => {
-            expect(user.extraRoles).toContain(RoleEnum.GASTRONOMY_OWNER);
+        it('should declare VENUE_OWNER as an extra role (HOS-1417 retired the shared owner role)', () => {
+            expect(user.extraRoles).toContain(RoleEnum.VENUE_OWNER);
         });
     });
 

@@ -99,7 +99,7 @@ export const TEST_USERS: readonly TestUserSpec[] = [
     {
         email: 'gastronomy-owner@local.test',
         displayName: 'Comercio Gastronomía',
-        role: RoleEnum.GASTRONOMY_OWNER
+        role: RoleEnum.VENUE_OWNER
     },
     {
         email: 'experience-owner@local.test',
@@ -110,14 +110,14 @@ export const TEST_USERS: readonly TestUserSpec[] = [
     // retains the role after being granted a listing-owner role; AC-12 asserts
     // the header's three-option publish control renders for an account already
     // holding either role. HOS-30's accommodation fixture still applies
-    // (triggered by `role === HOST`); GASTRONOMY_OWNER is granted directly,
+    // (triggered by `role === HOST`); VENUE_OWNER is granted directly,
     // with no backing listing, since role possession alone is what the nav
     // gate and the header control read (HOS-1417 retired the shared owner role).
     {
         email: 'host-gastronomy@local.test',
         displayName: 'Host y Comercio',
         role: RoleEnum.HOST,
-        extraRoles: [RoleEnum.GASTRONOMY_OWNER]
+        extraRoles: [RoleEnum.VENUE_OWNER]
     },
     // Complex / CLIENT_MANAGER tier
     {
@@ -171,7 +171,7 @@ function splitDisplayName(displayName: string): { firstName: string; lastName: s
  *
  * `extraRoles` (HOS-694) lets a single fixture declare more than one
  * non-USER hat at once — used by `host-gastronomy@local.test` (HOST +
- * GASTRONOMY_OWNER) to exercise HOS-296's multi-role invariant end-to-end
+ * VENUE_OWNER) to exercise HOS-296's multi-role invariant end-to-end
  * without needing a second `role` field on `TestUserSpec`.
  *
  * Grants run BEFORE revokes for the same reason.
