@@ -57,7 +57,7 @@ type EnrichableEntityType =
     | 'EVENT'
     | 'POST'
     | 'EXPERIENCE'
-    | 'GASTRONOMY';
+    | 'VENUE';
 
 const ENRICHABLE_TYPES: readonly EnrichableEntityType[] = [
     'ACCOMMODATION',
@@ -65,7 +65,7 @@ const ENRICHABLE_TYPES: readonly EnrichableEntityType[] = [
     'EVENT',
     'POST',
     'EXPERIENCE',
-    'GASTRONOMY'
+    'VENUE'
 ] as const;
 
 /**
@@ -122,7 +122,7 @@ export async function enrichBookmarksWithEntityInfo(
     const eventIds = idsByType.get('EVENT') ?? [];
     const postIds = idsByType.get('POST') ?? [];
     const experienceIds = idsByType.get('EXPERIENCE') ?? [];
-    const gastronomyIds = idsByType.get('GASTRONOMY') ?? [];
+    const venueIds = idsByType.get('VENUE') ?? [];
 
     // Run all per-type queries in parallel — they are independent.
     // SPEC-204: accommodation rows no longer select `media` (JSONB blob).
@@ -210,7 +210,7 @@ export async function enrichBookmarksWithEntityInfo(
                   tx
               })
             : Promise.resolve(new Map()),
-        gastronomyIds.length > 0
+        venueIds.length > 0
             ? db
                   .select({
                       id: venues.id,
@@ -218,11 +218,11 @@ export async function enrichBookmarksWithEntityInfo(
                       slug: venues.slug
                   })
                   .from(venues)
-                  .where(inArray(venues.id, gastronomyIds))
+                  .where(inArray(venues.id, venueIds))
             : Promise.resolve([]),
-        gastronomyIds.length > 0
+        venueIds.length > 0
             ? venueMediaModel.findByVenues({
-                  gastronomyIds,
+                  gastronomyIds: venueIds,
                   state: 'visible',
                   tx
               })
