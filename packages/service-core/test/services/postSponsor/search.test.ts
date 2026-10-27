@@ -228,4 +228,18 @@ describe('PostSponsorService.search', () => {
             sortOrder: 'asc'
         });
     });
+
+    it('applies a deterministic default sort when none is requested (HOS-1900)', async () => {
+        // Arrange
+        modelMock.findAll.mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 10 });
+
+        // Act
+        await service.search(actor, { page: 1, pageSize: 10 });
+
+        // Assert
+        expect(modelMock.findAll.mock.calls[0]?.[1]).toMatchObject({
+            sortBy: 'createdAt',
+            sortOrder: 'desc'
+        });
+    });
 });

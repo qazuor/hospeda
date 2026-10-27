@@ -102,4 +102,16 @@ describe('EventOrganizerService.search', () => {
         const [, pagination] = asMock(model.findAll).mock.calls[0] ?? [];
         expect(pagination).toMatchObject({ sortBy: 'createdAt', sortOrder: 'asc' });
     });
+
+    it('applies a deterministic default sort when none is requested (HOS-1900)', async () => {
+        // Arrange
+        asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
+
+        // Act
+        await service.search(actor, { page: 1, pageSize: 10 });
+
+        // Assert
+        const [, pagination] = asMock(model.findAll).mock.calls[0] ?? [];
+        expect(pagination).toMatchObject({ sortBy: 'name', sortOrder: 'asc' });
+    });
 });

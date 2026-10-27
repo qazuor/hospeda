@@ -111,10 +111,14 @@ export class PostSponsorService extends BaseCrudService<
     ): Promise<PaginatedListOutput<PostSponsor>> {
         // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params and
         // republishes them on ctx.pagination (SPEC-088); read them from ctx (HOS-1900).
-        const page = ctx.pagination?.page ?? 1;
-        const pageSize = ctx.pagination?.pageSize ?? 20;
-        const sortBy = ctx.pagination?.sortBy;
-        const sortOrder = ctx.pagination?.sortOrder;
+        const page = ctx.pagination?.page;
+        const pageSize = ctx.pagination?.pageSize;
+        // Deterministic default: without an ORDER BY, LIMIT/OFFSET paging is
+        // non-deterministic in Postgres. BaseModel.findAll accepts a single sort key only,
+        // so ties on `createdAt` are not broken by a secondary key.
+        // The schema always defaults sortOrder, so it is only honored with an explicit sortBy.
+        const sortBy = ctx.pagination?.sortBy ?? 'createdAt';
+        const sortOrder = ctx.pagination?.sortBy ? ctx.pagination.sortOrder : 'desc';
         const { name, type, q } = params;
         const where: Record<string, unknown> = {};
 

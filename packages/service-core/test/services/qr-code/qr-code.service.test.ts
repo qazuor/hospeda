@@ -739,4 +739,18 @@ describe('QrCodeService', () => {
             });
         });
     });
+
+    it('applies a deterministic default sort when none is requested', async () => {
+        // Arrange
+        (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
+
+        // Act
+        await service.search(actor, { page: 1, pageSize: 10 });
+
+        // Assert
+        expect((modelMock.findAll as Mock).mock.calls[0]?.[1]).toMatchObject({
+            sortBy: 'createdAt',
+            sortOrder: 'desc'
+        });
+    });
 });
