@@ -46,7 +46,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
  * than reaching `parsePublishVertical` and throwing a 500. The union is the same
  * one `PublishVertical` declares; this is its HTTP boundary.
  */
-const PublishVerticalParamSchema = z.enum(['accommodation', 'gastronomy', 'experience']);
+const PublishVerticalParamSchema = z.enum(['accommodation', 'venue', 'experience']);
 
 /** One DRAFT listing, as the panel's picker renders it. */
 const PublishPrecheckDraftSchema = z.object({

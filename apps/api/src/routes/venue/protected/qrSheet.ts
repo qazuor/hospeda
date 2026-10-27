@@ -102,7 +102,7 @@ export async function handleGetVenueQrSheet(
     const content = buildListingQrSheetContent({
         listingName: entity.name,
         slug: entity.slug,
-        vertical: 'gastronomy',
+        vertical: 'venue',
         locale: resolveReturnUrlLocale(ctx),
         siteUrl: env.HOSPEDA_SITE_URL
     });
@@ -118,7 +118,7 @@ export async function handleGetVenueQrSheet(
         // creation-only field, so two spellings would mean this one is never
         // the one written. See `services/listing-qr-sheet/listing-qr-code.ts`.
         label: buildListingQrCodeLabel({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             name: entity.name,
             slug: entity.slug
         }),

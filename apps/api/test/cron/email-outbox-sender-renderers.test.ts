@@ -52,7 +52,7 @@ describe('TEST:V4:22 the production outbox sender renders the trial campaign mai
                 offsetDays: 2,
                 targetDate: '2026-10-10',
                 recipientName: 'Ana',
-                verticals: ['accommodation', 'gastronomy', 'experience']
+                verticals: ['accommodation', 'venue', 'experience']
             }
         },
         {
@@ -142,7 +142,7 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
             template: 'billing.signup-incomplete',
             payload: {
                 subscriptionId,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 paymentMethod: 'CARD',
                 windowEndsAt: null,
                 closedCourtesyMonths: 2
@@ -294,7 +294,7 @@ describe('TEST:1623:4 AC:B13a:17 paid-after-cancellation renders through the pro
         const result = await buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' })({
             row: row('billing.paid-after-cancellation', {
                 subscriptionId: 'private-paid-subscription',
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 serviceEndsAt: '2026-10-20T02:00:00.000Z',
                 recurringAddonsCut: true
             })
@@ -348,7 +348,7 @@ describe('TEST:V8a:6 / TEST:V8a:7 the production outbox sender renders the listi
         },
         {
             template: LISTING_MODERATED_TEMPLATE,
-            payload: { vertical: 'gastronomy', listingId, reason: 'Fotos', fixRequestOpen: false },
+            payload: { vertical: 'venue', listingId, reason: 'Fotos', fixRequestOpen: false },
             expected: ['Motivo: Fotos', 'levante la moderación', 'destaques recurrentes']
         },
         {
@@ -408,7 +408,7 @@ describe('TEST:V6:36 the production outbox sender renders the on-archive notice'
     it('renders verticals.listing-archived through the production sender', async () => {
         const result = await render({
             row: row(LISTING_ARCHIVED_TEMPLATE, {
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 listingId,
                 transition: 'PB4',
                 deletionAnnouncedAt: '2027-01-08T02:00:00.000Z',
@@ -431,7 +431,7 @@ describe('TEST:V9b:10 the production outbox sender renders retention notices', (
         {
             template: 'verticals.listing-retention-before-archive',
             payload: {
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 listingId,
                 transition: 'PB5',
                 archiveAt: '2027-01-12T02:00:00.000Z'
@@ -442,7 +442,7 @@ describe('TEST:V9b:10 the production outbox sender renders retention notices', (
         {
             template: 'verticals.listing-retention-before-deletion',
             payload: {
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 listingId,
                 deletionAt: '2027-01-12T02:00:00.000Z'
             },

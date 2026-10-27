@@ -131,7 +131,7 @@ describe('trial campaign outbox adapter', () => {
         expect(h.withdraw).toHaveBeenCalledWith(
             expect.objectContaining({
                 templates: Object.values(TRIAL_CAMPAIGN_TEMPLATES.RECOVERY),
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 reason: 'trial-converted'
             })
         );

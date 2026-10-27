@@ -50,12 +50,12 @@ import { apiLogger } from '../utils/logger';
  * down with the legacy billing system (HOS-1416). The definitions are local now
  * — same values, same guard, no billing semantics attached.
  */
-export type PublishVertical = 'accommodation' | 'gastronomy' | 'experience';
+export type PublishVertical = 'accommodation' | 'venue' | 'experience';
 
 export const isVenueOrExperienceVertical = (
     vertical: PublishVertical
 ): vertical is Exclude<PublishVertical, 'accommodation'> =>
-    vertical === 'gastronomy' || vertical === 'experience';
+    vertical === 'venue' || vertical === 'experience';
 
 /**
  * The three services are built on FIRST USE, never at module load.
@@ -117,7 +117,7 @@ function serviceFor(vertical: PublishVertical) {
     switch (vertical) {
         case 'accommodation':
             return getAccommodationService();
-        case 'gastronomy':
+        case 'venue':
             return getVenueService();
         case 'experience':
             return getExperienceService();

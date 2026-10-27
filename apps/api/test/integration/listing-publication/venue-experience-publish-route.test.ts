@@ -188,7 +188,7 @@ describe.each(verticals)('PB1 route — %s (TEST:V6:2/3)', (vertical) => {
         expect(answer.status).toBe(403);
         expect(answer.body.error?.code).toBe('LIMIT_REACHED');
         expect(answer.body.error?.details?.limitKey).toBe(
-            vertical === 'gastronomy' ? 'max_venues' : 'max_experiences'
+            vertical === 'venue' ? 'max_venues' : 'max_experiences'
         );
     });
 

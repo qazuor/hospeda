@@ -60,7 +60,7 @@ const SHEET_ROUTES: readonly {
         path: join(ROUTES, 'accommodation/protected/qrSheet.ts')
     },
     {
-        vertical: 'gastronomy',
+        vertical: 'venue',
         surface: 'sheet',
         path: join(ROUTES, 'venue/protected/qrSheet.ts')
     },
@@ -75,7 +75,7 @@ const SHEET_ROUTES: readonly {
         path: join(ROUTES, 'accommodation/protected/qrCode.ts')
     },
     {
-        vertical: 'gastronomy',
+        vertical: 'venue',
         surface: 'image',
         path: join(ROUTES, 'venue/protected/qrCode.ts')
     },

@@ -106,7 +106,7 @@ export async function loadListingMedia(input: LoadListingMediaInput): Promise<Me
         >
     >;
     switch (entityType) {
-        case 'gastronomy':
+        case 'venue':
             grouped = await venueMediaModel.findByVenues({
                 gastronomyIds: [entityId],
                 tx

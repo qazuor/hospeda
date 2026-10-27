@@ -119,7 +119,7 @@ describe('TEST:1702:3 AC:1702:2 a failed remote deletion of the menu file and di
         expect(warningCalls).toHaveLength(1);
         expect(warningCalls[0]?.[0]).toEqual({
             listingId: fixture.listingId,
-            vertical: 'gastronomy',
+            vertical: 'venue',
             warnings: ['REMOTE_DELETION_FAILED', 'REMOTE_DELETION_FAILED']
         });
 
@@ -131,7 +131,7 @@ describe('TEST:1702:3 AC:1702:2 a failed remote deletion of the menu file and di
                 .sort((a, b) => a.id.localeCompare(b.id))
         ).toEqual(
             rows.rows
-                .map(({ id }) => ({ kind: 'media', id: String(id), vertical: 'gastronomy' }))
+                .map(({ id }) => ({ kind: 'media', id: String(id), vertical: 'venue' }))
                 .sort((a, b) => a.id.localeCompare(b.id))
         );
         expect(failed.failures.every(({ error }) => error instanceof Error)).toBe(true);

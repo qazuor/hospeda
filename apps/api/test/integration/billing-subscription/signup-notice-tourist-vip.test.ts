@@ -43,7 +43,7 @@ async function createUser() {
 }
 
 async function createOption(
-    vertical: 'tourist' | 'accommodation' | 'gastronomy' | 'experience',
+    vertical: 'tourist' | 'accommodation' | 'venue' | 'experience',
     inheritsTouristVip: boolean
 ) {
     const [plan] = await getDb()

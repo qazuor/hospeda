@@ -34,7 +34,7 @@ const SITE = 'https://hospeda.com.ar';
 const SLUG = 'la-parrilla-del-puerto';
 const NAME = 'La Parrilla del Puerto';
 
-const VERTICALS: readonly ListingQrSheetVertical[] = ['accommodation', 'gastronomy', 'experience'];
+const VERTICALS: readonly ListingQrSheetVertical[] = ['accommodation', 'venue', 'experience'];
 
 describe('the destination a listing code is minted with', () => {
     it.each(VERTICALS)('is the same for the panel and the sheet — %s', (vertical) => {
@@ -77,7 +77,7 @@ describe('the destination a listing code is minted with', () => {
         expect(
             buildListingQrTargetUrl({ vertical: 'accommodation', slug: SLUG, siteUrl: SITE })
         ).toBe(`${SITE}/es/alojamientos/${SLUG}/`);
-        expect(buildListingQrTargetUrl({ vertical: 'gastronomy', slug: SLUG, siteUrl: SITE })).toBe(
+        expect(buildListingQrTargetUrl({ vertical: 'venue', slug: SLUG, siteUrl: SITE })).toBe(
             `${SITE}/es/gastronomia/${SLUG}/`
         );
         expect(buildListingQrTargetUrl({ vertical: 'experience', slug: SLUG, siteUrl: SITE })).toBe(
@@ -92,7 +92,7 @@ describe('the label a listing code is minted with', () => {
         // only a photograph of a printed sheet. Either half alone fails a real
         // lookup: two listings may share a trading name, and nobody remembers a
         // slug.
-        const label = buildListingQrCodeLabel({ vertical: 'gastronomy', name: NAME, slug: SLUG });
+        const label = buildListingQrCodeLabel({ vertical: 'venue', name: NAME, slug: SLUG });
 
         expect(label).toContain(NAME);
         expect(label).toContain(SLUG);
