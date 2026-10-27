@@ -20,7 +20,7 @@
         },
         {
             "file": "packages/db/src/models/listing/listing-retention.model.ts",
-            "sha256": "23483c8d047e0a2d7423221637882e42836beef741fe506f278c606ddf139731"
+            "sha256": "7880d556a02ce17ed33121b5daa47aff2efc1e32849b67e5263c9ac8483c793c"
         },
         {
             "file": "apps/api/src/cron/jobs/listing-inactivity-archive.job.ts",

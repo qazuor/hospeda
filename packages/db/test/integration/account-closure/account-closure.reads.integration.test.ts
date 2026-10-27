@@ -16,7 +16,7 @@ type Vertical = 'accommodation' | 'venue' | 'experience';
 
 const TABLES: Record<Vertical, string> = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 

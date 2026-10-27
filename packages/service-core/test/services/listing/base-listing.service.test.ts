@@ -810,7 +810,7 @@ describe('BaseListingService — _executeAdminSearch owner-scoping', () => {
     it('does NOT force ownerId when actor holds the VIEW_ALL permission', async () => {
         const { svc, model } = makeService();
 
-        const adminActor = makeActor([PermissionEnum.GASTRONOMY_VIEW_ALL], OWNER_ID);
+        const adminActor = makeActor([PermissionEnum.VENUE_VIEW_ALL], OWNER_ID);
         await svc._executeAdminSearch({
             where: {},
             entityFilters: { ownerId: 'another-user-id' },
@@ -830,13 +830,13 @@ describe('BaseListingService — _executeAdminSearch owner-scoping', () => {
         // Until a dedicated per-vertical VIEW_OWN enum value exists, override the
         // owner-scoped permission to a distinct value so the scoping predicate
         // (!hasViewAll && hasViewOwn) actually engages and can be asserted.
-        // SPEC-253 D2=b: using GASTRONOMY_EDIT_OWN (per-section perms removed).
+        // SPEC-253 D2=b: using VENUE_EDIT_OWN (per-section perms removed).
         Object.defineProperty(svc, '_viewOwnPermission', {
-            get: () => PermissionEnum.GASTRONOMY_EDIT_OWN,
+            get: () => PermissionEnum.VENUE_EDIT_OWN,
             configurable: true
         });
 
-        const ownerActor = makeActor([PermissionEnum.GASTRONOMY_EDIT_OWN], OWNER_ID);
+        const ownerActor = makeActor([PermissionEnum.VENUE_EDIT_OWN], OWNER_ID);
         await svc._executeAdminSearch({
             where: {},
             entityFilters: {},
@@ -881,7 +881,7 @@ describe('BaseListingService — _projectPublicEntity (default no-op)', () => {
         const { svc, model } = makeService();
         model.findAll.mockResolvedValue({ items: [], total: 0 });
 
-        const actor = makeActor([PermissionEnum.GASTRONOMY_VIEW_ALL]);
+        const actor = makeActor([PermissionEnum.VENUE_VIEW_ALL]);
         const result = await svc._executeAdminSearch({
             where: {},
             entityFilters: {},

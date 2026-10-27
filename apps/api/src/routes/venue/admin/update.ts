@@ -22,7 +22,7 @@ const venueService = new VenueService({ logger: apiLogger });
  * PUT /api/v1/admin/gastronomies/:id
  * Update gastronomy listing — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL permission. The service layer (`_canUpdate`)
+ * Requires VENUE_EDIT_ALL permission. The service layer (`_canUpdate`)
  * enforces the same gate, providing defense in depth.
  */
 export const adminUpdateVenueRoute = createAdminRoute({
@@ -30,7 +30,7 @@ export const adminUpdateVenueRoute = createAdminRoute({
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}',
     summary: 'Update gastronomy listing (admin)',
-    description: 'Updates a gastronomy listing. Requires GASTRONOMY_EDIT_ALL permission.',
+    description: 'Updates a gastronomy listing. Requires VENUE_EDIT_ALL permission.',
     tags: ['Gastronomy'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

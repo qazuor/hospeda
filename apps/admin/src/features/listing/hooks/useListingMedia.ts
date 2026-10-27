@@ -1,6 +1,6 @@
 /**
  * useListingMedia — TanStack Query hooks for granular gallery CRUD on the
- * relational `gastronomy_media` / `experience_media` tables (HOS-372 → HOS-382).
+ * relational `venue_media` / `experience_media` tables (HOS-372 → HOS-382).
  *
  * Vertical-agnostic: every hook takes a `vertical` argument (`'venue'` or
  * `'experience'`) and resolves the correct admin endpoint from it. This
@@ -19,7 +19,7 @@
  * via the shared query key factories (HOS-389 §3). Reorder is intentionally omitted, mirroring the accommodation
  * gallery precedent (SPEC-204 locked decision: no drag/reorder in the admin
  * gallery UI). Archive/restore are also omitted — unlike `accommodation_media`,
- * the admin API exposes no archive/restore routes for `gastronomy_media` /
+ * the admin API exposes no archive/restore routes for `venue_media` /
  * `experience_media` (see `apps/api/src/routes/gastronomy/admin/` and
  * `apps/api/src/routes/experience/admin/` — only get/add/remove/setFeatured/
  * reorder exist, and reorder is deliberately unused here too).

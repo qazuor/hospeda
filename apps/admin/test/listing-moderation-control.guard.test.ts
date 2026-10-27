@@ -67,7 +67,7 @@ const HOOK_PATH = '../src/features/listing/hooks/useModerateListingMutation.ts';
 
 const RETIRED_PERMISSIONS = [
     'ACCOMMODATION_MODERATION_CHANGE',
-    'GASTRONOMY_MODERATION_CHANGE',
+    'VENUE_MODERATION_CHANGE',
     'EXPERIENCE_MODERATION_CHANGE'
 ] as const;
 

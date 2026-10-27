@@ -64,9 +64,9 @@ const staffActor: Actor = {
     id: STAFF_ID,
     roles: [RoleEnum.ADMIN],
     permissions: [
-        PermissionEnum.GASTRONOMY_EDIT_ALL,
-        PermissionEnum.GASTRONOMY_MODERATE_REVIEW,
-        PermissionEnum.GASTRONOMY_VIEW_ALL
+        PermissionEnum.VENUE_EDIT_ALL,
+        PermissionEnum.VENUE_MODERATE_REVIEW,
+        PermissionEnum.VENUE_VIEW_ALL
     ]
 };
 
@@ -153,7 +153,7 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('GastronomyReviewService.moderateReview', () => {
-    it('should return FORBIDDEN when actor lacks GASTRONOMY_MODERATE_REVIEW', async () => {
+    it('should return FORBIDDEN when actor lacks VENUE_MODERATE_REVIEW', async () => {
         const service = makeService();
         const result = await service.moderateReview(
             { id: REVIEW_ID, decision: ModerationStatusEnum.APPROVED },
@@ -219,7 +219,7 @@ describe('GastronomyReviewService.moderateReview', () => {
 // ---------------------------------------------------------------------------
 
 describe('GastronomyReviewService.getPendingCount', () => {
-    it('should return FORBIDDEN when actor lacks GASTRONOMY_MODERATE_REVIEW', async () => {
+    it('should return FORBIDDEN when actor lacks VENUE_MODERATE_REVIEW', async () => {
         const service = makeService();
         const result = await service.getPendingCount(reviewerActor);
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -397,12 +397,12 @@ describe('GastronomyReviewService permission hooks', () => {
         expect(() => (service as AnyService)._canCreate(reviewerActor, {})).not.toThrow();
     });
 
-    it('_canUpdate should throw FORBIDDEN without GASTRONOMY_EDIT_ALL', () => {
+    it('_canUpdate should throw FORBIDDEN without VENUE_EDIT_ALL', () => {
         const service = makeService();
         expect(() => (service as AnyService)._canUpdate(reviewerActor, {})).toThrow();
     });
 
-    it('_canUpdate should allow staff with GASTRONOMY_EDIT_ALL', () => {
+    it('_canUpdate should allow staff with VENUE_EDIT_ALL', () => {
         const service = makeService();
         expect(() => (service as AnyService)._canUpdate(staffActor, {})).not.toThrow();
     });
@@ -413,25 +413,25 @@ describe('GastronomyReviewService permission hooks', () => {
         expect(() => (service as AnyService)._canSoftDelete(reviewerActor, review)).not.toThrow();
     });
 
-    it('_canSoftDelete should allow staff with GASTRONOMY_EDIT_ALL', () => {
+    it('_canSoftDelete should allow staff with VENUE_EDIT_ALL', () => {
         const review = makeReview();
         const service = makeService(review);
         expect(() => (service as AnyService)._canSoftDelete(staffActor, review)).not.toThrow();
     });
 
-    it('_canSoftDelete should throw FORBIDDEN for non-author without GASTRONOMY_EDIT_ALL', () => {
+    it('_canSoftDelete should throw FORBIDDEN for non-author without VENUE_EDIT_ALL', () => {
         const review = makeReview();
         const service = makeService(review);
         const stranger: Actor = { id: OTHER_USER, roles: [RoleEnum.USER], permissions: [] };
         expect(() => (service as AnyService)._canSoftDelete(stranger, review)).toThrow();
     });
 
-    it('_canHardDelete should throw FORBIDDEN without GASTRONOMY_EDIT_ALL', () => {
+    it('_canHardDelete should throw FORBIDDEN without VENUE_EDIT_ALL', () => {
         const service = makeService();
         expect(() => (service as AnyService)._canHardDelete(reviewerActor, {})).toThrow();
     });
 
-    it('_canRestore should throw FORBIDDEN without GASTRONOMY_EDIT_ALL', () => {
+    it('_canRestore should throw FORBIDDEN without VENUE_EDIT_ALL', () => {
         const service = makeService();
         expect(() => (service as AnyService)._canRestore(reviewerActor, {})).toThrow();
     });

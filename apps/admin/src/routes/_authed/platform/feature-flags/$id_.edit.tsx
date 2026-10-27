@@ -26,7 +26,7 @@ const OVERRIDE_ROLES = [
     RoleEnum.CLIENT_MANAGER,
     RoleEnum.EDITOR,
     RoleEnum.HOST,
-    RoleEnum.GASTRONOMY_OWNER,
+    RoleEnum.VENUE_OWNER,
     RoleEnum.EXPERIENCE_OWNER,
     RoleEnum.SPONSOR,
     RoleEnum.USER

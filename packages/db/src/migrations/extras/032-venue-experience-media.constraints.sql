@@ -1,6 +1,6 @@
 -- =============================================================================
--- 032-gastronomy-experience-media.constraints.sql (carril 2, idempotent)
--- DB-level invariants for gastronomy_media and experience_media (HOS-372).
+-- 032-venue-experience-media.constraints.sql (carril 2, idempotent)
+-- DB-level invariants for venue_media and experience_media (HOS-372).
 --
 -- Drizzle cannot emit a partial unique index nor a cross-column CHECK, so they
 -- live in extras/ and are re-applied by `pnpm db:apply-extras` after every
@@ -18,7 +18,7 @@
 --   2. A featured photo can never be archived
 --      -> CHECK NOT (is_featured AND state = 'archived').
 --
--- Note on invariant 2 for gastronomy and experience: no flow of either archives
+-- Note on invariant 2 for venue and experience: no flow of either archives
 -- photos today (their plans carry `limits: []`, so there is no downgrade-over-limit
 -- remediation like the accommodation one). The CHECK is still declared so the
 -- three verticals share one shape and an archive flow added later cannot
@@ -31,53 +31,53 @@
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------
--- gastronomy_media — Invariant 1: at most one featured photo per listing
+-- venue_media — Invariant 1: at most one featured photo per listing
 -- ---------------------------------------------------------------------------
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.tables
     WHERE table_schema = 'public'
-      AND table_name   = 'gastronomy_media'
+      AND table_name   = 'venue_media'
   ) THEN
-    RAISE NOTICE 'Table gastronomy_media does not exist, skipping uq_gastronomy_media_single_featured.';
+    RAISE NOTICE 'Table venue_media does not exist, skipping uq_venue_media_single_featured.';
     RETURN;
   END IF;
 
   -- Drop first so we can recreate with the updated predicate (idempotent).
-  DROP INDEX IF EXISTS uq_gastronomy_media_single_featured;
-  CREATE UNIQUE INDEX uq_gastronomy_media_single_featured
-    ON gastronomy_media (gastronomy_id)
+  DROP INDEX IF EXISTS uq_venue_media_single_featured;
+  CREATE UNIQUE INDEX uq_venue_media_single_featured
+    ON venue_media (venue_id)
     WHERE is_featured = true AND deleted_at IS NULL;
-  RAISE NOTICE 'uq_gastronomy_media_single_featured: ensured.';
+  RAISE NOTICE 'uq_venue_media_single_featured: ensured.';
 END;
 $$;
 
 -- ---------------------------------------------------------------------------
--- gastronomy_media — Invariant 2: a featured photo cannot be archived
+-- venue_media — Invariant 2: a featured photo cannot be archived
 -- ---------------------------------------------------------------------------
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.tables
     WHERE table_schema = 'public'
-      AND table_name   = 'gastronomy_media'
+      AND table_name   = 'venue_media'
   ) THEN
-    RAISE NOTICE 'Table gastronomy_media does not exist, skipping chk_gastronomy_media_featured_not_archived.';
+    RAISE NOTICE 'Table venue_media does not exist, skipping chk_venue_media_featured_not_archived.';
     RETURN;
   END IF;
 
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint
-    WHERE conname  = 'chk_gastronomy_media_featured_not_archived'
-      AND conrelid = 'gastronomy_media'::regclass
+    WHERE conname  = 'chk_venue_media_featured_not_archived'
+      AND conrelid = 'venue_media'::regclass
   ) THEN
-    ALTER TABLE gastronomy_media
-      ADD CONSTRAINT chk_gastronomy_media_featured_not_archived
+    ALTER TABLE venue_media
+      ADD CONSTRAINT chk_venue_media_featured_not_archived
       CHECK (NOT (is_featured AND state = 'archived'));
-    RAISE NOTICE 'chk_gastronomy_media_featured_not_archived: added.';
+    RAISE NOTICE 'chk_venue_media_featured_not_archived: added.';
   ELSE
-    RAISE NOTICE 'chk_gastronomy_media_featured_not_archived: already exists, skipping.';
+    RAISE NOTICE 'chk_venue_media_featured_not_archived: already exists, skipping.';
   END IF;
 END;
 $$;

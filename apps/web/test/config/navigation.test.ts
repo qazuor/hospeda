@@ -39,12 +39,12 @@ describe('ACCOUNT_NAV_GROUPS (config shape)', () => {
         expect(turista?.requiredPermission).toBeUndefined();
     });
 
-    it('gates anfitrion behind ACCOMMODATION_CREATE and comercio behind GASTRONOMY_EDIT_OWN', () => {
+    it('gates anfitrion behind ACCOMMODATION_CREATE and comercio behind VENUE_EDIT_OWN', () => {
         const anfitrion = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'anfitrion');
         const comercio = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'comercio');
         expect(anfitrion?.requiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
         expect(comercio?.requiredPermissions).toEqual([
-            PermissionEnum.GASTRONOMY_EDIT_OWN,
+            PermissionEnum.VENUE_EDIT_OWN,
             PermissionEnum.EXPERIENCE_EDIT_OWN
         ]);
     });
@@ -100,13 +100,13 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         ]);
     });
 
-    it('gates listing-door options behind ACCOMMODATION_CREATE and GASTRONOMY_EDIT_OWN (OQ-3: signal = permissions)', () => {
+    it('gates listing-door options behind ACCOMMODATION_CREATE and VENUE_EDIT_OWN (OQ-3: signal = permissions)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
         const venue = listing?.options.find((option) => option.id === 'venue');
         const experience = listing?.options.find((option) => option.id === 'experience');
         expect(accommodation?.acquiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
-        expect(venue?.acquiredPermission).toBe(PermissionEnum.GASTRONOMY_EDIT_OWN);
+        expect(venue?.acquiredPermission).toBe(PermissionEnum.VENUE_EDIT_OWN);
         expect(experience?.acquiredPermission).toBe(PermissionEnum.EXPERIENCE_EDIT_OWN);
     });
 
@@ -154,7 +154,7 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         expect(venue?.manageHref).toBe('mi-cuenta/comercio');
         expect(experience?.manageHref).toBe('mi-cuenta/comercio');
         expect(accommodation?.acquiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
-        expect(venue?.acquiredPermission).toBe(PermissionEnum.GASTRONOMY_EDIT_OWN);
+        expect(venue?.acquiredPermission).toBe(PermissionEnum.VENUE_EDIT_OWN);
         expect(experience?.acquiredPermission).toBe(PermissionEnum.EXPERIENCE_EDIT_OWN);
     });
 
@@ -358,10 +358,10 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
         ]);
     });
 
-    it('adds comercio (with its "comercio-listings" item) when the user has GASTRONOMY_EDIT_OWN', () => {
+    it('adds comercio (with its "comercio-listings" item) when the user has VENUE_EDIT_OWN', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
-            visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.GASTRONOMY_EDIT_OWN])
+            visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.VENUE_EDIT_OWN])
         });
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista', 'comercio']);
         const comercio = findGroup(groups, 'comercio');
@@ -382,7 +382,7 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
             visibility: (node) =>
                 isVisibleByPermissions(node, [
                     PermissionEnum.ACCOMMODATION_CREATE,
-                    PermissionEnum.GASTRONOMY_EDIT_OWN
+                    PermissionEnum.VENUE_EDIT_OWN
                 ])
         });
         expect(groups.map((group) => group.id)).toEqual([
@@ -399,7 +399,7 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
             visibility: (node) =>
                 isVisibleByPermissions(node, [
                     PermissionEnum.ACCOMMODATION_CREATE,
-                    PermissionEnum.GASTRONOMY_EDIT_OWN
+                    PermissionEnum.VENUE_EDIT_OWN
                 ])
         });
         const allIds = groups.flatMap((group) => group.items.map((item) => item.id));
@@ -443,10 +443,10 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
         expect(anfitrion?.items.some((item) => item.id === 'properties')).toBe(true);
     });
 
-    it('adds comercio (with its "comercio-listings" item) for a GASTRONOMY_OWNER role', () => {
+    it('adds comercio (with its "comercio-listings" item) for a VENUE_OWNER role', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
-            visibility: (node) => isVisibleByRoles(node, [RoleEnum.GASTRONOMY_OWNER])
+            visibility: (node) => isVisibleByRoles(node, [RoleEnum.VENUE_OWNER])
         });
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista', 'comercio']);
         const comercio = findGroup(groups, 'comercio');

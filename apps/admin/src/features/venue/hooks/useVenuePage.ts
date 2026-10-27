@@ -53,10 +53,10 @@ export const useVenuePage = (entityId: string) => {
             // HOS-1077 dual-read: these arrays are evaluated with `.some(...)`,
             // so naming both families IS the dual-read — no new mechanism.
             // Release 2 drops the LISTING_* entries.
-            view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
-            edit: [PermissionEnum.GASTRONOMY_EDIT_ALL],
-            create: [PermissionEnum.GASTRONOMY_CREATE],
-            delete: [PermissionEnum.GASTRONOMY_DELETE]
+            view: [PermissionEnum.VENUE_VIEW_ALL],
+            edit: [PermissionEnum.VENUE_EDIT_ALL],
+            create: [PermissionEnum.VENUE_CREATE],
+            delete: [PermissionEnum.VENUE_DELETE]
         }),
         []
     );

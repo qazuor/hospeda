@@ -10,7 +10,7 @@
  * ## Two operations, not six
  *
  * The same choice `gastronomy.menu.ts` makes, for the same reason and with the
- * same contrast against `gastronomy_media`: an agenda entry is text, so nothing
+ * same contrast against `venue_media`: an agenda entry is text, so nothing
  * exists outside the database and nothing can be orphaned by a save that never
  * happens. What it has instead is that it is edited as a WHOLE — reordering two
  * events while deleting a third and renaming a fourth is ONE thought, and as
@@ -28,8 +28,8 @@
  *
  * ## Permissions vs. entitlements
  *
- * This module answers PERMISSION only — `GASTRONOMY_EDIT_OWN` on your own
- * listing, `GASTRONOMY_EDIT_ALL` for staff, via the same
+ * This module answers PERMISSION only — `VENUE_EDIT_OWN` on your own
+ * listing, `VENUE_EDIT_ALL` for staff, via the same
  * {@link checkVenueCanEditFaqs} gate every sibling helper uses. Whether the
  * caller's PLAN includes an agenda is an entitlement
  * (`MANAGE_VENUE_EVENTS`) and is checked at the route, before this is
@@ -184,7 +184,7 @@ export async function getVenueEvents(
 /**
  * Replaces a listing's agenda with the submitted document.
  *
- * Permission: `GASTRONOMY_EDIT_OWN` (listing owner) or `GASTRONOMY_EDIT_ALL`
+ * Permission: `VENUE_EDIT_OWN` (listing owner) or `VENUE_EDIT_ALL`
  * (staff). The `MANAGE_VENUE_EVENTS` entitlement is the route's gate, not
  * this one's.
  *

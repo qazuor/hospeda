@@ -1,7 +1,7 @@
 /**
  * Guard: every surface that enumerates AI features must cover the whole enum.
  *
- * HOS-400 widened `AiFeatureSchema` with `chat_gastronomy` and `chat_experience`
+ * HOS-400 widened `AiFeatureSchema` with `chat_venue` and `chat_experience`
  * and updated `AiFeatureId` and `FEATURE_LABELS` — but not the settings page's
  * own lists. Nothing failed: the enum is the type, and the lists were typed as
  * `AiFeatureId[]`, which a SHORT list satisfies perfectly. Types cannot express
@@ -41,7 +41,7 @@ describe('AI settings feature coverage', () => {
         });
 
         it('includes the two per-vertical chats HOS-400 added', () => {
-            expect(ALL_FEATURES).toContain('chat_gastronomy');
+            expect(ALL_FEATURES).toContain('chat_venue');
             expect(ALL_FEATURES).toContain('chat_experience');
         });
 
@@ -63,7 +63,7 @@ describe('AI settings feature coverage', () => {
 
         it('gives each feature its own object, so editing one cannot mutate another', () => {
             const first = DEFAULT_SETTINGS.features.chat;
-            const second = DEFAULT_SETTINGS.features.chat_gastronomy;
+            const second = DEFAULT_SETTINGS.features.chat_venue;
 
             expect(first).not.toBe(second);
         });
@@ -125,7 +125,7 @@ describe('AI settings feature coverage', () => {
 
             const result = toFormValues(partial);
 
-            expect(result.features.chat_gastronomy?.enabled).toBe(false);
+            expect(result.features.chat_venue?.enabled).toBe(false);
         });
 
         it('falls back to the full defaults when there is no blob at all', () => {

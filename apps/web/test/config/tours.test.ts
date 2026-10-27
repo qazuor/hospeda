@@ -31,12 +31,12 @@ describe('web tours config', () => {
         });
 
         it('returns tours in WEB_TOURS declared (priority) order for a multi-hat user (HOS-788)', () => {
-            // A HOST who is also a GASTRONOMY_OWNER matches both audiences.
+            // A HOST who is also a VENUE_OWNER matches both audiences.
             // The order must not depend on the order roles were passed in.
-            const forward = getWelcomeToursForRoles({ roles: ['HOST', 'GASTRONOMY_OWNER'] }).map(
+            const forward = getWelcomeToursForRoles({ roles: ['HOST', 'VENUE_OWNER'] }).map(
                 (t) => t.id
             );
-            const reversed = getWelcomeToursForRoles({ roles: ['GASTRONOMY_OWNER', 'HOST'] }).map(
+            const reversed = getWelcomeToursForRoles({ roles: ['VENUE_OWNER', 'HOST'] }).map(
                 (t) => t.id
             );
             expect(forward).toEqual(['web.host.welcome', 'web.gastronomy.welcome']);
@@ -46,7 +46,7 @@ describe('web tours config', () => {
         it.each([
             ['USER', 'web.tourist.welcome'],
             ['HOST', 'web.host.welcome'],
-            ['GASTRONOMY_OWNER', 'web.gastronomy.welcome'],
+            ['VENUE_OWNER', 'web.gastronomy.welcome'],
             ['EXPERIENCE_OWNER', 'web.experience.welcome'],
             ['EDITOR', 'web.editor.welcome'],
             ['SPONSOR', 'web.sponsor.welcome']
@@ -97,7 +97,7 @@ describe('web tours config', () => {
             // (TourController) re-derives the next one once the first is
             // marked seen, chaining them instead of flattening both into a
             // single run.
-            const roles = ['USER', 'HOST', 'GASTRONOMY_OWNER'];
+            const roles = ['USER', 'HOST', 'VENUE_OWNER'];
 
             const first = getNextPendingWelcomeTour({ roles, hasSeen: NEVER_SEEN });
             expect(first?.id).toBe('web.tourist.welcome');

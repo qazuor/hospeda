@@ -27,19 +27,19 @@ export interface PurgeListingContentResult {
 
 const LISTING_TABLES: Record<ListingVertical, string> = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 
 const MEDIA_TABLES: Record<ListingVertical, string> = {
     accommodation: 'accommodation_media',
-    venue: 'gastronomy_media',
+    venue: 'venue_media',
     experience: 'experience_media'
 };
 
 const MEDIA_FKS: Record<ListingVertical, string> = {
     accommodation: 'accommodation_id',
-    venue: 'gastronomy_id',
+    venue: 'venue_id',
     experience: 'experience_id'
 };
 
@@ -58,16 +58,16 @@ const CONTENT_TABLES: Record<ListingVertical, readonly { table: string; fk: stri
         { table: 'accommodation_ia_data', fk: 'accommodation_id' }
     ],
     venue: [
-        { table: 'gastronomy_faqs', fk: 'gastronomy_id' },
-        { table: 'r_gastronomy_amenity', fk: 'gastronomy_id' },
-        { table: 'r_gastronomy_feature', fk: 'gastronomy_id' },
+        { table: 'venue_faqs', fk: 'venue_id' },
+        { table: 'r_venue_amenity', fk: 'venue_id' },
+        { table: 'r_venue_feature', fk: 'venue_id' },
         { table: 'r_entity_tag', fk: 'entity_id' },
         { table: 'qr_codes', fk: 'entity_id' },
         { table: 'entity_view_monthly_rollups', fk: 'entity_id' },
-        { table: 'gastronomy_menu_items', fk: 'gastronomy_id' },
-        { table: 'gastronomy_menu_sections', fk: 'gastronomy_id' },
-        { table: 'gastronomy_daily_specials', fk: 'gastronomy_id' },
-        { table: 'gastronomy_events', fk: 'gastronomy_id' }
+        { table: 'venue_menu_items', fk: 'venue_id' },
+        { table: 'venue_menu_sections', fk: 'venue_id' },
+        { table: 'venue_daily_specials', fk: 'venue_id' },
+        { table: 'venue_events', fk: 'venue_id' }
     ],
     experience: [
         { table: 'experience_faqs', fk: 'experience_id' },
@@ -126,7 +126,7 @@ const MARK_CALENDAR: Record<
 };
 
 /**
- * Carries each uploaded menu file and dish photo into gastronomy_media before the purge
+ * Carries each uploaded menu file and dish photo into venue_media before the purge
  * transaction deletes the rows that named them. The existing mark and post-commit deletion
  * path then handles them like gallery photos, with the daily retry covering any failure.
  */
@@ -137,15 +137,15 @@ const CARRY_REMOTE_ASSETS: Record<
     accommodation: async () => {},
     venue: async ({ tx, listingId }) => {
         await tx.execute(sql`
-            INSERT INTO gastronomy_media (gastronomy_id, url, public_id, is_featured, sort_order)
+            INSERT INTO venue_media (venue_id, url, public_id, is_featured, sort_order)
             SELECT id, COALESCE(menu_file_url, ''), menu_file_public_id, false, 0
-            FROM gastronomies
+            FROM venues
             WHERE id = ${listingId} AND menu_file_public_id IS NOT NULL`);
         await tx.execute(sql`
-            INSERT INTO gastronomy_media (gastronomy_id, url, public_id, is_featured, sort_order)
-            SELECT gastronomy_id, COALESCE(photo_url, ''), photo_public_id, false, 0
-            FROM gastronomy_menu_items
-            WHERE gastronomy_id = ${listingId} AND photo_public_id IS NOT NULL`);
+            INSERT INTO venue_media (venue_id, url, public_id, is_featured, sort_order)
+            SELECT venue_id, COALESCE(photo_url, ''), photo_public_id, false, 0
+            FROM venue_menu_items
+            WHERE venue_id = ${listingId} AND photo_public_id IS NOT NULL`);
     },
     experience: async () => {}
 };

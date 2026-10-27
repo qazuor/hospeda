@@ -1,7 +1,7 @@
 import type { VenueDailySpecial } from '@repo/schemas';
 import { and, asc, eq, gte, lte } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomyDailySpecials } from '../../schemas/venue/venue_daily_special.dbschema.ts';
+import { venueDailySpecials } from '../../schemas/venue/venue_daily_special.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
@@ -34,11 +34,11 @@ interface FindValidOnInput {
  * matching the read.
  */
 export class VenueDailySpecialModel extends BaseModelImpl<VenueDailySpecial> {
-    protected table = gastronomyDailySpecials;
-    public entityName = 'gastronomyDailySpecials';
+    protected table = venueDailySpecials;
+    public entityName = 'venueDailySpecials';
 
     protected getTableName(): string {
-        return 'gastronomyDailySpecials';
+        return 'venueDailySpecials';
     }
 
     /**
@@ -85,15 +85,15 @@ export class VenueDailySpecialModel extends BaseModelImpl<VenueDailySpecial> {
         try {
             const items = await db
                 .select()
-                .from(gastronomyDailySpecials)
+                .from(venueDailySpecials)
                 .where(
                     and(
-                        eq(gastronomyDailySpecials.gastronomyId, gastronomyId),
-                        lte(gastronomyDailySpecials.validFrom, today),
-                        gte(gastronomyDailySpecials.validUntil, today)
+                        eq(venueDailySpecials.gastronomyId, gastronomyId),
+                        lte(venueDailySpecials.validFrom, today),
+                        gte(venueDailySpecials.validUntil, today)
                     )
                 )
-                .orderBy(asc(gastronomyDailySpecials.displayOrder));
+                .orderBy(asc(venueDailySpecials.displayOrder));
 
             const result = items as VenueDailySpecial[];
             try {

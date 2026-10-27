@@ -90,7 +90,7 @@ const PRICE_RANGE_OPTIONS = [
  * Built on top of the shared listing layer via `createListingListConfig`.
  *
  * Endpoint: `GET /api/v1/admin/gastronomies`
- * Permissions gate: GASTRONOMY_VIEW_ALL
+ * Permissions gate: VENUE_VIEW_ALL
  */
 export const venueListConfig = createListingListConfig<VenueListItem>({
     entityName: 'gastronomies',
@@ -132,4 +132,4 @@ const { component, route } = createEntityListPage(venueListConfig);
 export { component as VenuesPageComponent, route as VenuesRoute };
 
 /** Required permission to view the gastronomy list. */
-export const VENUE_VIEW_PERMISSION = PermissionEnum.GASTRONOMY_VIEW_ALL;
+export const VENUE_VIEW_PERMISSION = PermissionEnum.VENUE_VIEW_ALL;

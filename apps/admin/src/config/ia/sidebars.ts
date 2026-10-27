@@ -188,7 +188,7 @@ const catalogoSidebar: SidebarInput = {
             label: { es: 'Gastronomía', en: 'Gastronomy', pt: 'Gastronomia' },
             icon: 'OffersIcon',
             defaultOpen: false,
-            permissions: ['GASTRONOMY_VIEW_ALL', 'GASTRONOMY_CREATE'],
+            permissions: ['VENUE_VIEW_ALL', 'VENUE_CREATE'],
             items: [
                 {
                     type: 'link',
@@ -196,7 +196,7 @@ const catalogoSidebar: SidebarInput = {
                     label: { es: 'Listado', en: 'List', pt: 'Lista' },
                     icon: 'ListIcon',
                     route: '/gastronomies',
-                    permissions: ['GASTRONOMY_VIEW_ALL']
+                    permissions: ['VENUE_VIEW_ALL']
                 },
                 {
                     type: 'link',
@@ -208,7 +208,7 @@ const catalogoSidebar: SidebarInput = {
                     },
                     icon: 'AddIcon',
                     route: '/gastronomies/new',
-                    permissions: ['GASTRONOMY_CREATE']
+                    permissions: ['VENUE_CREATE']
                 }
             ]
         },

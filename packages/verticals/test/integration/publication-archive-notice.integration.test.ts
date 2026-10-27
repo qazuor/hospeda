@@ -21,7 +21,7 @@ const overdueDraft = new Date('2026-05-01T00:00:00Z');
 type Vertical = VerticalEnum.ACCOMMODATION | VerticalEnum.VENUE | VerticalEnum.EXPERIENCE;
 const tables = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 } as const;
 const afterCommit = {

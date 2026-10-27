@@ -79,7 +79,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         });
     });
 
-    it('counts gastronomy photos from gastronomy_media, not from the JSONB blob', async () => {
+    it('counts gastronomy photos from venue_media, not from the JSONB blob', async () => {
         const count = await resolveVisibleGalleryCount({
             entityType: 'venue',
             entityId: ENTITY_ID,

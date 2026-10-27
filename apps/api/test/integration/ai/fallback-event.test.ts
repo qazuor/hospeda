@@ -188,7 +188,7 @@ async function seedAiSettingsWithFallback(actorId: string): Promise<void> {
         providers: { stub: { enabled: true } },
         features: {
             chat: featureConfig,
-            chat_gastronomy: featureConfig,
+            chat_venue: featureConfig,
             chat_experience: featureConfig,
             text_improve: featureConfig,
             search: featureConfig,

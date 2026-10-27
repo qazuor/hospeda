@@ -10,7 +10,7 @@
  * consumers of the gate could read it straight off a `model.findById()` result.
  *
  * HOS-372 **dropped that column**. Photos now live only in the relational
- * `gastronomy_media` / `experience_media` tables, and `media` is recomposed at
+ * `venue_media` / `experience_media` tables, and `media` is recomposed at
  * read time — but that composition is a side effect of `VenueService` /
  * `ExperienceService`'s `_afterGetByField` / `_afterList` / `_afterSearch`
  * hooks. Code that reads the raw `@repo/db` model directly therefore gets a row

@@ -29,7 +29,7 @@ const plural = {
 } as const;
 const table = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 } as const;
 function path(vertical: (typeof verticals)[number], id: string) {

@@ -50,7 +50,7 @@
  * where the columns are already gone: there is nothing left to backfill there,
  * so the migration reports zero and exits.
  */
-import { experienceMedia, gastronomyMedia, inArray, sql } from '@repo/db';
+import { experienceMedia, inArray, sql, venueMedia } from '@repo/db';
 import {
     buildExperienceMediaRows,
     buildGastronomyMediaRows
@@ -137,11 +137,11 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
             ? []
             : (
                   await db
-                      .select({ gastronomyId: gastronomyMedia.gastronomyId })
-                      .from(gastronomyMedia)
+                      .select({ gastronomyId: venueMedia.gastronomyId })
+                      .from(venueMedia)
                       .where(
                           inArray(
-                              gastronomyMedia.gastronomyId,
+                              venueMedia.gastronomyId,
                               gastronomyCandidates.map((row) => row.id)
                           )
                       )
@@ -155,9 +155,9 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         const rows = buildGastronomyMediaRows({
             gastronomyId: listing.id,
             media: listing.media
-        }) as (typeof gastronomyMedia.$inferInsert)[];
+        }) as (typeof venueMedia.$inferInsert)[];
         if (rows.length === 0) continue;
-        await db.insert(gastronomyMedia).values(rows);
+        await db.insert(venueMedia).values(rows);
         gastronomyListings += 1;
         gastronomyPhotos += rows.length;
     }

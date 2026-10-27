@@ -254,7 +254,7 @@ function buildCtx(db: SeedMigrationCtx['db']): SeedMigrationCtx {
 describe('0095 — up()', () => {
     it('writes one update per changed row, and walks both tables', async () => {
         const probe = buildFakeDb({
-            gastronomies: [
+            venues: [
                 { id: 'g-1', opening_hours: buildOpeningHours({ tue: UNDECIDED_DAY }) },
                 { id: 'g-2', opening_hours: buildOpeningHours() }
             ],
@@ -285,7 +285,7 @@ describe('0095 — up()', () => {
 
     it('writes nothing at all when every listing is already valid', async () => {
         const probe = buildFakeDb({
-            gastronomies: [{ id: 'g-1', opening_hours: buildOpeningHours({ sun: CLOSED_DAY }) }],
+            venues: [{ id: 'g-1', opening_hours: buildOpeningHours({ sun: CLOSED_DAY }) }],
             experiences: []
         });
 

@@ -17,7 +17,7 @@ const venueService = new VenueService({ logger: apiLogger });
  * DELETE /api/v1/admin/gastronomies/:id/faqs/:faqId
  * Remove FAQ from gastronomy listing — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL permission. The service helper
+ * Requires VENUE_EDIT_ALL permission. The service helper
  * `removeVenueFaq` enforces the same gate via `checkVenueCanEditFaqs`.
  */
 export const adminRemoveVenueFaqRoute = createAdminRoute({
@@ -25,7 +25,7 @@ export const adminRemoveVenueFaqRoute = createAdminRoute({
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from gastronomy listing (admin)',
-    description: 'Removes a FAQ from a gastronomy listing. Requires GASTRONOMY_EDIT_ALL.',
+    description: 'Removes a FAQ from a gastronomy listing. Requires VENUE_EDIT_ALL.',
     tags: ['Gastronomy', 'FAQs'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),

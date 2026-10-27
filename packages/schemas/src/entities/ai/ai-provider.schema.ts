@@ -78,7 +78,7 @@ export type AiProviderId = z.infer<typeof AiProviderIdSchema>;
 export const AiFeatureSchema = z.enum([
     'text_improve',
     'chat',
-    'chat_gastronomy',
+    'chat_venue',
     'chat_experience',
     'search',
     'support',

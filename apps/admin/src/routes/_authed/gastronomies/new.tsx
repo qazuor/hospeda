@@ -4,7 +4,7 @@
  * Uses `EntityCreatePageBase` with the gastronomy consolidated config.
  * Supports an optional owner assignment via OwnerSelect (existing users only —
  * new-owner provisioning is out of scope for this task).
- * Gate-protected by GASTRONOMY_CREATE.
+ * Gate-protected by VENUE_CREATE.
  */
 
 import { PermissionEnum, VenueAdminCreateInputSchema } from '@repo/schemas';
@@ -61,7 +61,7 @@ function VenueCreatePage() {
     };
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.GASTRONOMY_CREATE]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.VENUE_CREATE]}>
             <EntityCreatePageBase
                 config={createConfig}
                 zodSchema={VenueAdminCreateInputSchema}

@@ -106,6 +106,6 @@
             "packages/db/src/billing/schemas.ts",
             "packages/db/src/migrations/extras"
         ],
-        "schemaSentinelTables": ["gastronomies", "experiences"]
+        "schemaSentinelTables": ["venues", "experiences"]
     }
 }

@@ -6,5 +6,5 @@ UPDATE accommodations SET seo = seo - 'keywords' WHERE seo ? 'keywords';
 UPDATE destinations  SET seo = seo - 'keywords' WHERE seo ? 'keywords';
 UPDATE events        SET seo = seo - 'keywords' WHERE seo ? 'keywords';
 UPDATE posts         SET seo = seo - 'keywords' WHERE seo ? 'keywords';
-UPDATE gastronomies  SET seo = seo - 'keywords' WHERE seo ? 'keywords';
+UPDATE venues  SET seo = seo - 'keywords' WHERE seo ? 'keywords';
 UPDATE experiences   SET seo = seo - 'keywords' WHERE seo ? 'keywords';

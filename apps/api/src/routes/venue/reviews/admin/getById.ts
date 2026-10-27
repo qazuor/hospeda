@@ -16,16 +16,16 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
  * GET /api/v1/admin/gastronomies/reviews/:id
  * Get gastronomy review by ID — Admin endpoint.
  *
- * Requires GASTRONOMY_MODERATE_REVIEW permission.
+ * Requires VENUE_MODERATE_REVIEW permission.
  */
 export const adminGetVenueReviewByIdRoute = createAdminRoute({
     method: 'get',
     path: '/{id}',
     summary: 'Get gastronomy review by ID (admin)',
     description:
-        'Retrieves full gastronomy review information including moderation fields. Requires GASTRONOMY_MODERATE_REVIEW.',
+        'Retrieves full gastronomy review information including moderation fields. Requires VENUE_MODERATE_REVIEW.',
     tags: ['Gastronomy Reviews', 'Admin'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_MODERATE_REVIEW]],
+    anyOfPermissions: [[PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

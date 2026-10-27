@@ -68,7 +68,7 @@ export const ListingIdentityFields = {
 
     /**
      * Rich-text (markdown) variant of the description.
-     * Optional; only available when the owning GASTRONOMY_OWNER or EXPERIENCE_OWNER has the
+     * Optional; only available when the owning VENUE_OWNER or EXPERIENCE_OWNER has the
      * `CAN_USE_RICH_DESCRIPTION` entitlement. Nullable because existing rows
      * pre-feature will be NULL.
      */

@@ -180,7 +180,7 @@ app.route('/', protectedRemoveVenueFaqRoute);
 // POST /{gastronomyId}/reviews — Tourist creates a review.
 app.route('/', protectedCreateVenueReviewRoute);
 
-// Media management (HOS-372) — gated on GASTRONOMY_EDIT_OWN/GASTRONOMY_EDIT_ALL
+// Media management (HOS-372) — gated on VENUE_EDIT_OWN/VENUE_EDIT_ALL
 // inside the service layer via checkVenueCanEditMedia.
 
 // PATCH /{id}/media/reorder — Must be before /{id}/media/{mediaId} (DELETE).

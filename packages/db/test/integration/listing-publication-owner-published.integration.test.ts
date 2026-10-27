@@ -54,7 +54,7 @@ async function record(args: {
 }) {
     const table = {
         accommodation: 'accommodations',
-        venue: 'gastronomies',
+        venue: 'venues',
         experience: 'experiences'
     }[args.vertical];
     const listing = await args.tx.execute(sql<{ readonly ownerId: string }>`

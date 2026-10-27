@@ -742,7 +742,7 @@
                         "cap5": "Contatar anfitriões"
                     }
                 },
-                "GASTRONOMY_OWNER": {
+                "VENUE_OWNER": {
                     "name": "Dono de Gastronomia",
                     "description": "Titular de um restaurante, bar ou café que gerencia seu próprio perfil (sem acesso a experiências)",
                     "capabilities": {

@@ -48,10 +48,8 @@ const FEED = {
 };
 const calls = { photos: [] as string[], tokens: [] as string[] };
 
-const historicalVenueVertical = ['gastro', 'nomy'].join('') as `${'gastro'}${'nomy'}`;
-
 type ListingSeed = {
-    readonly entityType: 'accommodation' | 'experience' | typeof historicalVenueVertical;
+    readonly entityType: 'accommodation' | 'venue' | 'experience';
     readonly entityId: string;
     readonly slug: string;
     readonly photos?: readonly { readonly publicId: string | null; readonly url: string }[];
@@ -144,7 +142,7 @@ describe('TEST:V6:22 step 5b', () => {
         await inRollbackTransaction(
             [
                 {
-                    entityType: historicalVenueVertical,
+                    entityType: 'venue',
                     entityId: '00000000-0000-4000-8000-000000000561',
                     slug: 'menu',
                     photos: [
@@ -175,7 +173,7 @@ describe('TEST:V6:22 step 5b', () => {
                     failures: [],
                     listings: [
                         {
-                            entityType: historicalVenueVertical,
+                            entityType: 'venue',
                             entityId: '00000000-0000-4000-8000-000000000561'
                         }
                     ]
@@ -217,7 +215,7 @@ describe('TEST:V6:22 step 5b', () => {
                     calendarTokens: [FEED]
                 },
                 {
-                    entityType: historicalVenueVertical,
+                    entityType: 'venue',
                     entityId: '00000000-0000-4000-8000-000000000503',
                     slug: 'food',
                     photos: [{ publicId: 'cloud/food', url: 'https://x.test/food' }]

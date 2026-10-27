@@ -28,7 +28,7 @@
  * (HOS-372) — the update schemas silently strip a `media` key, so every
  * photo uploaded through those fields was orphaned in Cloudinary with no DB
  * row ever created. Photos are now managed exclusively via the relational
- * `gastronomy_media` / `experience_media` tables through the dedicated
+ * `venue_media` / `experience_media` tables through the dedicated
  * Gallery tab (`ListingGalleryManager`, mirroring accommodations'
  * `GalleryManager`). `videos` is unaffected — it is its own top-level
  * column, not nested under `media`.
@@ -56,10 +56,10 @@ import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/
 function permissionsForVertical(vertical: VenueOrExperience) {
     return vertical === 'venue'
         ? {
-              view: PermissionEnum.GASTRONOMY_VIEW_ALL,
-              editAll: PermissionEnum.GASTRONOMY_EDIT_ALL,
-              editOwn: PermissionEnum.GASTRONOMY_EDIT_OWN,
-              moderateReview: PermissionEnum.GASTRONOMY_MODERATE_REVIEW
+              view: PermissionEnum.VENUE_VIEW_ALL,
+              editAll: PermissionEnum.VENUE_EDIT_ALL,
+              editOwn: PermissionEnum.VENUE_EDIT_OWN,
+              moderateReview: PermissionEnum.VENUE_MODERATE_REVIEW
           }
         : {
               view: PermissionEnum.EXPERIENCE_VIEW_ALL,

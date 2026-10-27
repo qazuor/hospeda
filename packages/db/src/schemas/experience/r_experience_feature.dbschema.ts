@@ -6,7 +6,7 @@ import { experiences } from './experiences.dbschema.ts';
 /**
  * Junction table: experience <-> feature (many-to-many, SPEC-240).
  *
- * Mirrors r_gastronomy_feature with composite PK on (experienceId, featureId).
+ * Mirrors r_venue_feature with composite PK on (experienceId, featureId).
  * Both FKs cascade on delete so rows are cleaned up automatically.
  * References the existing shared `features` catalog (same as accommodations and gastronomy).
  * Includes hostReWriteName and comments just like the gastronomy and accommodation variants.

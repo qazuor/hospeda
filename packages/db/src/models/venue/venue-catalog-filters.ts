@@ -47,16 +47,16 @@
  * The junction columns are emitted as raw quoted identifiers rather than as
  * Drizzle column references. Inside a subquery Drizzle would alias a referenced
  * column against the OUTER query's table, producing
- * `WHERE "gastronomies"."feature_id" = ...` — nonsense that fails at runtime.
+ * `WHERE "venues"."feature_id" = ...` — nonsense that fails at runtime.
  * The table reference (`${rGastronomyFeature}`) and the outer correlation
  * (`${gastronomies.id}`) resolve correctly and stay template args. Same
  * workaround, same reason, as the accommodation clauses.
  */
 
 import { type SQL, sql } from 'drizzle-orm';
-import { rGastronomyAmenity } from '../../schemas/venue/r_venue_amenity.dbschema.ts';
-import { rGastronomyFeature } from '../../schemas/venue/r_venue_feature.dbschema.ts';
-import { gastronomies } from '../../schemas/venue/venue.dbschema.ts';
+import { rVenueAmenity } from '../../schemas/venue/r_venue_amenity.dbschema.ts';
+import { rVenueFeature } from '../../schemas/venue/r_venue_feature.dbschema.ts';
+import { venues } from '../../schemas/venue/venue.dbschema.ts';
 
 /**
  * Build a WHERE clause restricting gastronomy listings to those linked to ALL
@@ -76,12 +76,12 @@ export function buildVenueFeatureIntersectionClause(featureIds: readonly string[
         featureIds.map((id) => sql`${id}`),
         sql`, `
     );
-    return sql<unknown>`${gastronomies.id} IN (
-        SELECT "r_gastronomy_feature"."gastronomy_id"
-        FROM ${rGastronomyFeature}
-        WHERE "r_gastronomy_feature"."feature_id" IN (${idList})
-        GROUP BY "r_gastronomy_feature"."gastronomy_id"
-        HAVING COUNT(DISTINCT "r_gastronomy_feature"."feature_id") = ${n}
+    return sql<unknown>`${venues.id} IN (
+        SELECT "r_venue_feature"."venue_id"
+        FROM ${rVenueFeature}
+        WHERE "r_venue_feature"."feature_id" IN (${idList})
+        GROUP BY "r_venue_feature"."venue_id"
+        HAVING COUNT(DISTINCT "r_venue_feature"."feature_id") = ${n}
     )`;
 }
 
@@ -103,12 +103,12 @@ export function buildVenueAmenityIntersectionClause(amenityIds: readonly string[
         amenityIds.map((id) => sql`${id}`),
         sql`, `
     );
-    return sql<unknown>`${gastronomies.id} IN (
-        SELECT "r_gastronomy_amenity"."gastronomy_id"
-        FROM ${rGastronomyAmenity}
-        WHERE "r_gastronomy_amenity"."amenity_id" IN (${idList})
-        GROUP BY "r_gastronomy_amenity"."gastronomy_id"
-        HAVING COUNT(DISTINCT "r_gastronomy_amenity"."amenity_id") = ${n}
+    return sql<unknown>`${venues.id} IN (
+        SELECT "r_venue_amenity"."venue_id"
+        FROM ${rVenueAmenity}
+        WHERE "r_venue_amenity"."amenity_id" IN (${idList})
+        GROUP BY "r_venue_amenity"."venue_id"
+        HAVING COUNT(DISTINCT "r_venue_amenity"."amenity_id") = ${n}
     )`;
 }
 

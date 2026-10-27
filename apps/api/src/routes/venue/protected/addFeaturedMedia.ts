@@ -19,7 +19,7 @@
  * unverifiable: nothing obliges a client to send the promotion it promises, so
  * a caller setting it on every upload would have no cap at all. Here the
  * service creates the row already featured, in one transaction, and
- * `uq_gastronomy_media_single_featured` permits exactly one per listing.
+ * `uq_venue_media_single_featured` permits exactly one per listing.
  *
  * No cap needs waiving, because none is spent: the replaced cover is DELETED
  * (soft-deleted) in the same transaction, so one row enters the featured slot
@@ -30,7 +30,7 @@
  * the deletion is reversible at the row level, but callers must not present the
  * old cover as still available.
  *
- * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) — enforced inside `addVenueFeaturedMedia` via `checkVenueCanEditMedia`.
+ * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff) — enforced inside `addVenueFeaturedMedia` via `checkVenueCanEditMedia`.
  */
 
 import {
@@ -67,7 +67,7 @@ export const protectedAddVenueFeaturedMediaRoute = createProtectedRoute({
         '— soft-deleted, so it disappears from the listing while its stored file ' +
         'is kept. Unlike POST /:id/media this does not ' +
         'consume a gallery slot, because the cover is not a gallery item ' +
-        '(HOS-791). Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
+        '(HOS-791). Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
     protectedTag: false,

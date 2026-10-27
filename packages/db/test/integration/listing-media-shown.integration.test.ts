@@ -18,8 +18,8 @@ const MARKED_AT = new Date('2026-10-12T12:00:00.000Z');
 
 async function insertMedia(args: {
     readonly tx: DrizzleClient;
-    readonly table: 'accommodation_media' | 'gastronomy_media' | 'experience_media';
-    readonly fk: 'accommodation_id' | 'gastronomy_id' | 'experience_id';
+    readonly table: 'accommodation_media' | 'venue_media' | 'experience_media';
+    readonly fk: 'accommodation_id' | 'venue_id' | 'experience_id';
     readonly listingId: string;
     readonly sortOrder: number;
     readonly isFeatured: boolean;
@@ -42,8 +42,8 @@ async function insertMedia(args: {
  */
 async function seedListingMedia(args: {
     readonly tx: DrizzleClient;
-    readonly table: 'accommodation_media' | 'gastronomy_media' | 'experience_media';
-    readonly fk: 'accommodation_id' | 'gastronomy_id' | 'experience_id';
+    readonly table: 'accommodation_media' | 'venue_media' | 'experience_media';
+    readonly fk: 'accommodation_id' | 'venue_id' | 'experience_id';
     readonly listingId: string;
 }) {
     const shownId = await insertMedia({ ...args, sortOrder: 0, isFeatured: false, markedAt: null });
@@ -90,8 +90,8 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
             });
             const gas = await seedListingMedia({
                 tx,
-                table: 'gastronomy_media',
-                fk: 'gastronomy_id',
+                table: 'venue_media',
+                fk: 'venue_id',
                 listingId: venue.id
             });
             const exp = await seedListingMedia({

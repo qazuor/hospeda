@@ -46,7 +46,7 @@ import {
     resolveFeatureConfig,
     resolveSystemPrompt
 } from '@repo/ai-core';
-import { accommodations, experiences, gastronomies, getDb } from '@repo/db';
+import { accommodations, experiences, getDb, venues } from '@repo/db';
 import {
     AI_CHAT_MAX_MESSAGES,
     type AiChatMessage,
@@ -255,7 +255,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         // so the compiler owns the exhaustiveness.
         const LISTING_TABLE_BY_ENTITY_TYPE = {
             accommodation: accommodations,
-            gastronomy: gastronomies,
+            gastronomy: venues,
             experience: experiences
         } as const;
         const listingTable = LISTING_TABLE_BY_ENTITY_TYPE[entityType];

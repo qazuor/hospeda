@@ -14,7 +14,7 @@
  *   values.  Since HOS-296 an account holds a SET of hats, so "is the actor
  *   role X" is not even a well-formed question here.
  * - These helpers are called by VenueService permission hooks only.
- * - Owner-scoped update gate uses `GASTRONOMY_EDIT_OWN` (single permission,
+ * - Owner-scoped update gate uses `VENUE_EDIT_OWN` (single permission,
  *   SPEC-253 D2=b).
  */
 
@@ -61,11 +61,11 @@ export function checkVenueCanCreate(actor: Actor, data: unknown): void {
 
 /**
  * Checks if the actor may perform a full (admin) update on any gastronomy listing.
- * Delegates to {@link checkCanEditAll} (`GASTRONOMY_EDIT_ALL`).
+ * Delegates to {@link checkCanEditAll} (`VENUE_EDIT_ALL`).
  *
  * @param actor - The actor performing the action.
  * @param entity - The gastronomy entity being updated.
- * @throws {ServiceError} FORBIDDEN when the actor lacks `GASTRONOMY_EDIT_ALL`.
+ * @throws {ServiceError} FORBIDDEN when the actor lacks `VENUE_EDIT_ALL`.
  */
 export function checkVenueCanEditAll(actor: Actor, entity: unknown): void {
     checkCanEditAll(actor, entity, VERTICAL);
@@ -75,7 +75,7 @@ export function checkVenueCanEditAll(actor: Actor, entity: unknown): void {
  * Checks if the actor may update a gastronomy listing through the base update
  * pipeline (the service `_canUpdate` gate).
  *
- * Delegates to {@link checkCanEditOwnOrAll}: accepts staff (`GASTRONOMY_EDIT_ALL`)
+ * Delegates to {@link checkCanEditOwnOrAll}: accepts staff (`VENUE_EDIT_ALL`)
  * OR the listing owner holding at least one operational `editOwn` permission.
  * Owner edits still flow through `updateOwn`, which enforces per-section gating
  * and an operational-only payload.
@@ -92,8 +92,8 @@ export function checkVenueCanEditOwnOrAll(actor: Actor, entity: { ownerId?: stri
  * Checks if the actor may perform an owner-scoped update on their own gastronomy
  * listing.
  *
- * Delegates to {@link checkCanEditOwn} which accepts either `GASTRONOMY_EDIT_ALL`
- * (staff bypass) or `GASTRONOMY_EDIT_OWN` when the actor is the listing owner
+ * Delegates to {@link checkCanEditOwn} which accepts either `VENUE_EDIT_ALL`
+ * (staff bypass) or `VENUE_EDIT_OWN` when the actor is the listing owner
  * (SPEC-253 D2=b: section param is accepted for call-site compatibility but ignored).
  *
  * @param actor - The actor performing the action.
@@ -106,11 +106,11 @@ export function checkVenueCanEditOwn(actor: Actor, entity: { ownerId?: string | 
 
 /**
  * Checks if the actor may soft-delete a gastronomy listing.
- * Delegates to {@link checkCanDeleteListing} (`GASTRONOMY_DELETE`).
+ * Delegates to {@link checkCanDeleteListing} (`VENUE_DELETE`).
  *
  * @param actor - The actor performing the action.
  * @param entity - The entity being deleted (unused; accepted for signature parity).
- * @throws {ServiceError} FORBIDDEN when the actor lacks `GASTRONOMY_DELETE`.
+ * @throws {ServiceError} FORBIDDEN when the actor lacks `VENUE_DELETE`.
  */
 export function checkVenueCanDelete(actor: Actor, entity: unknown): void {
     checkCanDeleteListing(actor, entity, VERTICAL);
@@ -118,10 +118,10 @@ export function checkVenueCanDelete(actor: Actor, entity: unknown): void {
 
 /**
  * Checks if the actor may view all gastronomy listings (including private/draft).
- * Delegates to {@link checkCanViewAll} (`GASTRONOMY_VIEW_ALL`).
+ * Delegates to {@link checkCanViewAll} (`VENUE_VIEW_ALL`).
  *
  * @param actor - The actor performing the action.
- * @throws {ServiceError} FORBIDDEN when the actor lacks `GASTRONOMY_VIEW_ALL`.
+ * @throws {ServiceError} FORBIDDEN when the actor lacks `VENUE_VIEW_ALL`.
  */
 export function checkVenueCanViewAll(actor: Actor): void {
     checkCanViewAll(actor, VERTICAL);
@@ -143,10 +143,10 @@ export function checkVenueCanAdminList(actor: Actor): void {
 
 /**
  * Checks if the actor may moderate a gastronomy review.
- * Delegates to {@link checkCanModerateReview} (`GASTRONOMY_MODERATE_REVIEW`).
+ * Delegates to {@link checkCanModerateReview} (`VENUE_MODERATE_REVIEW`).
  *
  * @param actor - The actor performing the action.
- * @throws {ServiceError} FORBIDDEN when the actor lacks `GASTRONOMY_MODERATE_REVIEW`.
+ * @throws {ServiceError} FORBIDDEN when the actor lacks `VENUE_MODERATE_REVIEW`.
  */
 export function checkVenueCanModerateReview(actor: Actor): void {
     checkCanModerateReview(actor, VERTICAL);
@@ -155,7 +155,7 @@ export function checkVenueCanModerateReview(actor: Actor): void {
 /**
  * Checks if the actor may create or edit FAQs on a gastronomy listing they own.
  *
- * Accepts either `GASTRONOMY_EDIT_ALL` (staff) or `GASTRONOMY_EDIT_OWN` when the
+ * Accepts either `VENUE_EDIT_ALL` (staff) or `VENUE_EDIT_OWN` when the
  * actor is the listing owner (SPEC-253 D2=b: replaces the per-section FAQ permission).
  *
  * @param actor - The actor performing the action.
@@ -170,7 +170,7 @@ export function checkVenueCanEditFaqs(actor: Actor, entity: { ownerId?: string |
  * Checks if the actor may add/remove/reorder/feature photos on a gastronomy
  * listing's gallery (HOS-372).
  *
- * Accepts either `GASTRONOMY_EDIT_ALL` (staff) or `GASTRONOMY_EDIT_OWN` when the
+ * Accepts either `VENUE_EDIT_ALL` (staff) or `VENUE_EDIT_OWN` when the
  * actor is the listing owner — identical gate to
  * {@link checkVenueCanEditFaqs}, kept as a separate named wrapper for
  * call-site clarity (media vs FAQ operations). Action 15 (ACC:15, HOS-1493)
@@ -224,12 +224,12 @@ export function checkVenueCanView(_actor: Actor): void {
 
 /**
  * Checks if the actor may perform a hard-delete on a gastronomy listing.
- * Requires `GASTRONOMY_DELETE` (no separate hard-delete permission exists yet;
+ * Requires `VENUE_DELETE` (no separate hard-delete permission exists yet;
  * follows the same pattern as listing delete gate).
  *
  * @param actor - The actor performing the action.
  * @param _entity - The entity being hard-deleted (unused; accepted for signature parity).
- * @throws {ServiceError} FORBIDDEN when the actor lacks `GASTRONOMY_DELETE`.
+ * @throws {ServiceError} FORBIDDEN when the actor lacks `VENUE_DELETE`.
  */
 export function checkVenueCanHardDelete(actor: Actor, _entity: unknown): void {
     if (!hasListingPermission(actor, 'delete', VERTICAL)) {
@@ -242,11 +242,11 @@ export function checkVenueCanHardDelete(actor: Actor, _entity: unknown): void {
 
 /**
  * Checks if the actor may restore a soft-deleted gastronomy listing.
- * Requires `GASTRONOMY_EDIT_ALL` (mirrors listing restore gate).
+ * Requires `VENUE_EDIT_ALL` (mirrors listing restore gate).
  *
  * @param actor - The actor performing the action.
  * @param _entity - The entity being restored (unused; accepted for signature parity).
- * @throws {ServiceError} FORBIDDEN when the actor lacks `GASTRONOMY_EDIT_ALL`.
+ * @throws {ServiceError} FORBIDDEN when the actor lacks `VENUE_EDIT_ALL`.
  */
 export function checkVenueCanRestore(actor: Actor, _entity: unknown): void {
     checkCanEditAll(actor, _entity, VERTICAL);

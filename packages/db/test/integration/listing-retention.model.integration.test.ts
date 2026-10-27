@@ -54,7 +54,7 @@ describe.each([
             const listing = await createListing(tx, vertical, owner.id, destination.id);
             const table = {
                 accommodation: 'accommodations',
-                venue: 'gastronomies',
+                venue: 'venues',
                 experience: 'experiences'
             }[vertical];
             const stored = await listingRetentionModel.readRetentionListing({
@@ -101,7 +101,7 @@ describe.each([
             const now = new Date('2026-10-11T12:00:00Z');
             const table = {
                 accommodation: 'accommodations',
-                venue: 'gastronomies',
+                venue: 'venues',
                 experience: 'experiences'
             }[vertical];
             await tx.execute(
@@ -193,7 +193,7 @@ describe.each([
             const listing = await createListing(tx, vertical, owner.id, destination.id);
             const table = {
                 accommodation: 'accommodations',
-                venue: 'gastronomies',
+                venue: 'venues',
                 experience: 'experiences'
             }[vertical];
             await tx.execute(

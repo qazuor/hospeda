@@ -12,8 +12,8 @@ import { VenueReviewModel } from '../../src/models/venue/venueReview.model';
  *
  * `findAllWithRelations` / `findOneWithRelations` read `db.query[getTableName()]`,
  * and Drizzle keys `db.query` by the schema object's export names. A snake_case
- * value (e.g. `gastronomy_reviews`) is absent from that object, so the relation
- * query threw `Invalid table configuration for: gastronomy_reviews` and every
+ * value (e.g. `venue_reviews`) is absent from that object, so the relation
+ * query threw `Invalid table configuration for: venue_reviews` and every
  * public `GET /gastronomies/:id/reviews` request returned HTTP 500 in production.
  *
  * Mocked unit/service tests never exercise the real `db.query` object, so they
@@ -28,7 +28,7 @@ describe('Review model getTableName() (BETA-150 regression)', () => {
         {
             name: 'VenueReviewModel',
             model: new VenueReviewModel(),
-            expected: 'gastronomyReviews'
+            expected: 'venueReviews'
         },
         {
             name: 'ExperienceReviewModel',

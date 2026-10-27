@@ -345,7 +345,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-22-double-click-save-no-longer-errors',
         publishedAt: '2026-10-01T08:45:21Z',
         highlight: false,
-        roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER', 'EDITOR'],
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER', 'EDITOR'],
         title: {
             es: 'Guardar dos veces seguidas ya no te da un error',
             en: 'Saving twice in a row no longer gives you an error',
@@ -562,7 +562,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-menu-as-photo-or-pdf',
         publishedAt: '2026-09-23T03:25:19Z',
         highlight: true,
-        roles: ['GASTRONOMY_OWNER'],
+        roles: ['VENUE_OWNER'],
         title: {
             es: 'Subí tu carta como foto o PDF, no sólo como enlace',
             en: 'Upload your menu as a photo or PDF, not just a link',
@@ -662,7 +662,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-editor-back-button-consistency',
         publishedAt: '2026-09-22T21:25:19Z',
         highlight: false,
-        roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
             es: 'Todos los editores tienen el mismo «Volver»',
             en: 'Every editor has the same “Back”',
@@ -746,7 +746,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-shared-report-view-is-clean',
         publishedAt: '2026-09-22T16:25:19Z',
         highlight: false,
-        roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
             es: 'El informe que compartís se ve limpio',
             en: 'The report you share looks clean',
@@ -780,7 +780,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-menu-in-three-languages',
         publishedAt: '2026-09-22T14:25:19Z',
         highlight: true,
-        roles: ['GASTRONOMY_OWNER'],
+        roles: ['VENUE_OWNER'],
         title: {
             es: 'Tu carta, en español, inglés y portugués',
             en: 'Your menu in Spanish, English and Portuguese',
@@ -797,7 +797,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-photo-per-dish',
         publishedAt: '2026-09-22T13:25:19Z',
         highlight: false,
-        roles: ['GASTRONOMY_OWNER'],
+        roles: ['VENUE_OWNER'],
         title: {
             es: 'Una foto por plato en tu carta',
             en: 'A photo per dish on your menu',
@@ -814,7 +814,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-dietary-options-filter',
         publishedAt: '2026-09-22T12:25:19Z',
         highlight: true,
-        roles: ['USER', 'GASTRONOMY_OWNER'],
+        roles: ['USER', 'VENUE_OWNER'],
         title: {
             es: 'Filtrá restaurantes por opciones sin gluten, veganas o sin lactosa',
             en: 'Filter restaurants by gluten-free, vegan or lactose-free options',
@@ -831,7 +831,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-multi-vertical-subscription-card',
         publishedAt: '2026-09-22T11:25:19Z',
         highlight: false,
-        roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
             es: 'Si tenés varias suscripciones, las ves todas',
             en: 'If you have several subscriptions, you see them all',
@@ -865,7 +865,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-cuisine-type-catalog',
         publishedAt: '2026-09-22T09:25:19Z',
         highlight: false,
-        roles: ['GASTRONOMY_OWNER'],
+        roles: ['VENUE_OWNER'],
         title: {
             es: 'El tipo de local y el tipo de cocina son dos cosas distintas',
             en: 'Venue type and cuisine type are two different things',
@@ -882,7 +882,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-listing-editor-by-sections',
         publishedAt: '2026-09-22T08:25:19Z',
         highlight: true,
-        roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
             es: 'El editor de tu comercio ahora va por secciones',
             en: 'Your business editor now works section by section',
@@ -899,7 +899,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-addon-raises-listing-quota',
         publishedAt: '2026-09-22T07:25:19Z',
         highlight: false,
-        roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
             es: 'Comprar un complemento te sube el cupo al instante',
             en: 'Buying an add-on raises your quota instantly',
@@ -933,7 +933,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-ai-writing-helpers',
         publishedAt: '2026-09-22T05:25:19Z',
         highlight: false,
-        roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER', 'EDITOR'],
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER', 'EDITOR'],
         title: {
             es: 'Ayuda con IA para escribir y traducir tus textos',
             en: 'AI help to write and translate your copy',
@@ -966,7 +966,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-05-gastronomy-experience-publish-free-trial',
         publishedAt: '2026-09-07T12:00:00Z',
         highlight: true,
-        roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
             es: 'Publicá tu comercio gratis con la prueba de 30 días',
             en: 'Publish your business for free with the 30-day trial',
@@ -1014,7 +1014,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-03-gastronomy-daily-menu',
         publishedAt: '2026-09-07T03:00:00Z',
         highlight: false,
-        roles: ['GASTRONOMY_OWNER'],
+        roles: ['VENUE_OWNER'],
         title: {
             es: 'Publicá el menú del día en tu página',
             en: "Publish today's specials on your page",

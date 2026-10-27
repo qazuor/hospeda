@@ -306,7 +306,7 @@ export const NotificationRecipientSidePgEnum = pgEnum(
     enumToTuple(NotificationRecipientSideEnum)
 );
 
-export const GastronomyTypePgEnum = pgEnum('gastronomy_type_enum', enumToTuple(VenueTypeEnum));
+export const VenueTypePgEnum = pgEnum('venue_type_enum', enumToTuple(VenueTypeEnum));
 
 export const PriceRangePgEnum = pgEnum('price_range_enum', enumToTuple(PriceRangeEnum));
 

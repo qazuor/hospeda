@@ -139,7 +139,7 @@ describe.each([
             ).toEqual(stamped);
             const table = {
                 accommodation: 'accommodations',
-                venue: 'gastronomies',
+                venue: 'venues',
                 experience: 'experiences'
             }[vertical];
             const rows = await tx.execute(

@@ -20,15 +20,15 @@ import {
     uuid
 } from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
-import { GastronomyTypePgEnum, PriceRangePgEnum } from '../enums.dbschema.ts';
+import { PriceRangePgEnum, VenueTypePgEnum } from '../enums.dbschema.ts';
 import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { users } from '../user/user.dbschema.ts';
-import { rGastronomyAmenity } from './r_venue_amenity.dbschema.ts';
-import { rGastronomyFeature } from './r_venue_feature.dbschema.ts';
-import { gastronomyEvents } from './venue_event.dbschema.ts';
-import { gastronomyFaqs } from './venue_faq.dbschema.ts';
-import { gastronomyMenuSections } from './venue_menu_section.dbschema.ts';
-import { gastronomyReviews } from './venue_review.dbschema.ts';
+import { rVenueAmenity } from './r_venue_amenity.dbschema.ts';
+import { rVenueFeature } from './r_venue_feature.dbschema.ts';
+import { venueEvents } from './venue_event.dbschema.ts';
+import { venueFaqs } from './venue_faq.dbschema.ts';
+import { venueMenuSections } from './venue_menu_section.dbschema.ts';
+import { venueReviews } from './venue_review.dbschema.ts';
 
 /**
  * What kind of file a venue uploaded as its menu (HOS-895).
@@ -43,10 +43,7 @@ import { gastronomyReviews } from './venue_review.dbschema.ts';
  * decision taken from the tail of a Cloudinary URL is a decision that breaks
  * the first time a delivery transformation is appended to it.
  */
-export const GastronomyMenuFileKindPgEnum = pgEnum('gastronomy_menu_file_kind_enum', [
-    'image',
-    'pdf'
-]);
+export const VenueMenuFileKindPgEnum = pgEnum('venue_menu_file_kind_enum', ['image', 'pdf']);
 
 /**
  * Gastronomy table — listings for food and beverage venues (SPEC-239).
@@ -57,8 +54,8 @@ export const GastronomyMenuFileKindPgEnum = pgEnum('gastronomy_menu_file_kind_en
  * - Same jsonb contact/social/media/seo/adminInfo pattern
  * - Additional columns specific to gastronomy: type, priceRange, menuUrl, openingHours
  */
-export const gastronomies = pgTable(
-    'gastronomies',
+export const venues = pgTable(
+    'venues',
     {
         id: uuid('id').primaryKey().defaultRandom(),
         slug: text('slug').notNull().unique(),
@@ -72,7 +69,7 @@ export const gastronomies = pgTable(
         descriptionI18n: jsonb('description_i18n').$type<I18nText>(),
         richDescriptionI18n: jsonb('rich_description_i18n').$type<I18nText>(),
         /** Gastronomy sub-category (RESTAURANT, BAR, CAFE, PARRILLA, etc.). */
-        type: GastronomyTypePgEnum('type').notNull(),
+        type: VenueTypePgEnum('type').notNull(),
         /** Price-range tier for the venue (BUDGET/MID/HIGH/PREMIUM). Nullable until owner sets it. */
         priceRange: PriceRangePgEnum('price_range'),
         /**
@@ -81,7 +78,7 @@ export const gastronomies = pgTable(
          *
          * Since HOS-895 this is ONE of three ways a venue can show its menu,
          * not the only one. The other two are the structured carta
-         * (`gastronomy_menu_sections` + `gastronomy_menu_items`) and the
+         * (`venue_menu_sections` + `venue_menu_items`) and the
          * uploaded file below. All three may be set at once and none is
          * mandatory: an owner who does not want to type forty dishes must
          * still be able to publish.
@@ -95,7 +92,7 @@ export const gastronomies = pgTable(
          * than diffed into the editor's PATCH body: an owner who uploads and
          * then walks away without saving used to leave the asset billing in
          * Cloudinary with nothing pointing at it — the orphan HOS-372 built
-         * `gastronomy_media` to stop.
+         * `venue_media` to stop.
          */
         menuFileUrl: text('menu_file_url'),
         /**
@@ -106,7 +103,7 @@ export const gastronomies = pgTable(
          */
         menuFilePublicId: text('menu_file_public_id'),
         /** Whether {@link menuFileUrl} is an image or a PDF. */
-        menuFileKind: GastronomyMenuFileKindPgEnum('menu_file_kind'),
+        menuFileKind: VenueMenuFileKindPgEnum('menu_file_kind'),
         // Jsonb grouped columns (matching accommodation pattern)
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
@@ -115,13 +112,13 @@ export const gastronomies = pgTable(
         /**
          * Embedded videos for the listing (HOS-372).
          *
-         * Deliberately its OWN column rather than rows in `gastronomy_media`: a video is
+         * Deliberately its OWN column rather than rows in `venue_media`: a video is
          * an external YouTube/Vimeo URL pasted into a form, not an uploaded asset. It
          * cannot be orphaned in Cloudinary and has no per-operation persistence problem,
          * so a relational row would only add dead columns (`public_id`, `is_featured`,
          * file moderation) without solving anything.
          *
-         * Photos live in `gastronomy_media`; the `media` column above is being retired.
+         * Photos live in `venue_media`; the `media` column above is being retired.
          */
         videos: jsonb('videos').$type<Video[]>(),
         seo: jsonb('seo').$type<Seo>(),
@@ -193,64 +190,62 @@ export const gastronomies = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        gastronomies_destinationId_idx: index('gastronomies_destinationId_idx').on(
-            table.destinationId
-        ),
+        gastronomies_destinationId_idx: index('venues_destinationId_idx').on(table.destinationId),
         // HOS-1641 (V6.9b): public and per-destination reads filter on
         // `publication_status = 'PUBLISHED'`; these replace the visibility indexes.
-        gastronomies_publicationStatus_idx: index('gastronomies_publicationStatus_idx').on(
+        gastronomies_publicationStatus_idx: index('venues_publicationStatus_idx').on(
             table.publicationStatus
         ),
         gastronomies_destinationId_publicationStatus_idx: index(
-            'gastronomies_destinationId_publicationStatus_idx'
+            'venues_destinationId_publicationStatus_idx'
         ).on(table.destinationId, table.publicationStatus),
         // HOS-1286: index for featuredByEntitlement, mirroring the accommodations
         // one — the only featuring source since HOS-1419 dropped `is_featured`.
-        gastronomies_featuredByEntitlement_idx: index('gastronomies_featuredByEntitlement_idx').on(
+        gastronomies_featuredByEntitlement_idx: index('venues_featuredByEntitlement_idx').on(
             table.featuredByEntitlement
         ),
-        gastronomies_type_idx: index('gastronomies_type_idx').on(table.type),
-        gastronomies_ownerId_idx: index('gastronomies_ownerId_idx').on(table.ownerId),
-        gastronomies_deletedAt_idx: index('gastronomies_deletedAt_idx').on(table.deletedAt),
+        gastronomies_type_idx: index('venues_type_idx').on(table.type),
+        gastronomies_ownerId_idx: index('venues_ownerId_idx').on(table.ownerId),
+        gastronomies_deletedAt_idx: index('venues_deletedAt_idx').on(table.deletedAt),
         // Composite indexes (same pattern as accommodations)
-        gastronomies_ownerId_deletedAt_idx: index('gastronomies_ownerId_deletedAt_idx').on(
+        gastronomies_ownerId_deletedAt_idx: index('venues_ownerId_deletedAt_idx').on(
             table.ownerId,
             table.deletedAt
         )
     })
 );
 
-export const gastronomiesRelations = relations(gastronomies, ({ one, many }) => ({
+export const venuesRelations = relations(venues, ({ one, many }) => ({
     owner: one(users, {
-        fields: [gastronomies.ownerId],
+        fields: [venues.ownerId],
         references: [users.id]
     }),
     createdBy: one(users, {
-        fields: [gastronomies.createdById],
+        fields: [venues.createdById],
         references: [users.id]
     }),
     updatedBy: one(users, {
-        fields: [gastronomies.updatedById],
+        fields: [venues.updatedById],
         references: [users.id]
     }),
     deletedBy: one(users, {
-        fields: [gastronomies.deletedById],
+        fields: [venues.deletedById],
         references: [users.id]
     }),
     destination: one(destinations, {
-        fields: [gastronomies.destinationId],
+        fields: [venues.destinationId],
         references: [destinations.id]
     }),
-    amenities: many(rGastronomyAmenity, { relationName: 'gastronomyToAmenity' }),
-    features: many(rGastronomyFeature, { relationName: 'gastronomyToFeature' }),
-    reviews: many(gastronomyReviews),
-    faqs: many(gastronomyFaqs),
-    menuSections: many(gastronomyMenuSections),
+    amenities: many(rVenueAmenity, { relationName: 'venueToAmenity' }),
+    features: many(rVenueFeature, { relationName: 'venueToFeature' }),
+    reviews: many(venueReviews),
+    faqs: many(venueFaqs),
+    menuSections: many(venueMenuSections),
     /** The venue's own agenda — HOS-1042. */
-    venueEvents: many(gastronomyEvents)
+    venueEvents: many(venueEvents)
 }));
 
 /** Type-inferred insert type for gastronomy rows. */
-export type InsertVenue = typeof gastronomies.$inferInsert;
+export type InsertVenue = typeof venues.$inferInsert;
 /** Type-inferred select type for gastronomy rows. */
-export type SelectVenue = typeof gastronomies.$inferSelect;
+export type SelectVenue = typeof venues.$inferSelect;

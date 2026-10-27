@@ -125,7 +125,7 @@ export const VenueSchema = z.object({
     ...BaseAuditFields,
 
     /**
-     * FAQs belonging to this entity, loaded from the dedicated `gastronomy_faqs`
+     * FAQs belonging to this entity, loaded from the dedicated `venue_faqs`
      * table and embedded in the detail payload.
      *
      * Built from `GastronomyFaqSchema` with its identity fields made OPTIONAL, which is

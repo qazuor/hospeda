@@ -5,12 +5,12 @@ import {
     type DrizzleClient,
     destinations,
     experiences,
-    gastronomies,
     planCatalogModel,
     plans,
     planVersionEntitlements,
     planVersions,
-    users
+    users,
+    venues
 } from '@repo/db';
 import {
     FLOOR_PLAN_ROLE,
@@ -128,7 +128,7 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
             }
 
             const [venue] = await db
-                .insert(gastronomies)
+                .insert(venues)
                 .values({
                     slug: randomUUID(),
                     name: 'Archived venue',
@@ -141,7 +141,7 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
                     inactiveSince: new Date(),
                     deadlinesVersion: 1
                 })
-                .returning({ id: gastronomies.id });
+                .returning({ id: venues.id });
             const [experience] = await db
                 .insert(experiences)
                 .values({
@@ -224,11 +224,11 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
 
             const [archived] = await db
                 .select({
-                    ownerId: gastronomies.ownerId,
-                    publicationStatus: gastronomies.publicationStatus
+                    ownerId: venues.ownerId,
+                    publicationStatus: venues.publicationStatus
                 })
-                .from(gastronomies)
-                .where(eq(gastronomies.id, venue.id))
+                .from(venues)
+                .where(eq(venues.id, venue.id))
                 .limit(1);
             const [otherArchived] = await db
                 .select({

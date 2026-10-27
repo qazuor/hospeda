@@ -58,7 +58,7 @@ async function makeListing(
     else {
         if (vertical === VerticalEnum.VENUE)
             await getDb().execute(
-                sql`UPDATE gastronomies SET inactive_since = ${new Date(MATRIX_NOW.getTime() - 120 * 86_400_000)} WHERE id = ${id}`
+                sql`UPDATE venues SET inactive_since = ${new Date(MATRIX_NOW.getTime() - 120 * 86_400_000)} WHERE id = ${id}`
             );
         else
             await getDb().execute(

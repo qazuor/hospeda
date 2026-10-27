@@ -100,7 +100,7 @@ beforeAll(async () => {
          JOIN pg_namespace n ON n.oid = c.relnamespace
          JOIN pg_class target ON target.oid = k.confrelid
          WHERE k.contype = 'f' AND n.nspname = 'public'
-           AND target.relname IN ('accommodations', 'gastronomies', 'experiences')
+           AND target.relname IN ('accommodations', 'venues', 'experiences')
          ORDER BY c.relname`
     );
     byFk = fk.rows.map((row) => row.table_name);

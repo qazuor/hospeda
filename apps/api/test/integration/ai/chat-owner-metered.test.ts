@@ -214,7 +214,7 @@ vi.mock('@repo/db', async (importOriginal) => {
     return {
         ...actual,
         accommodations: accommodationSchema.accommodations,
-        gastronomies: venueSchema.gastronomies,
+        venues: venueSchema.venues,
         experiences: experienceSchema.experiences,
         getDb: vi.fn(() => buildChain())
     };

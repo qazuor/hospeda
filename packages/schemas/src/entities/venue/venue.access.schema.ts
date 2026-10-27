@@ -172,7 +172,7 @@ export const VenuePublicSchema = VenueSchema.pick({
     features: z.array(ListingFeaturePublicSchema).optional(),
     /**
      * The structured carta's sections and dishes (HOS-895 PR2), joined from
-     * `gastronomy_menu_sections` / `gastronomy_menu_items`.
+     * `venue_menu_sections` / `venue_menu_items`.
      *
      * Populated by the public `getBySlug` route only — same reason `amenities`
      * / `features` are `.optional()` rather than defaulted: a payload that
@@ -191,7 +191,7 @@ export const VenuePublicSchema = VenueSchema.pick({
      */
     menuSections: z.array(VenueMenuSectionPublicSchema).optional(),
     /**
-     * The menú del día (HOS-1041), joined from `gastronomy_daily_specials`.
+     * The menú del día (HOS-1041), joined from `venue_daily_specials`.
      *
      * Populated by the public `getBySlug` route only, and — unlike every other
      * joined array on this schema — **already filtered by the validity window**
@@ -206,7 +206,7 @@ export const VenuePublicSchema = VenueSchema.pick({
      */
     dailySpecials: z.array(VenueDailySpecialPublicSchema).optional(),
     /**
-     * The venue's own agenda (HOS-1042), read from `gastronomy_events`.
+     * The venue's own agenda (HOS-1042), read from `venue_events`.
      *
      * `.optional()` on exactly the terms `menuSections` is, and withheld on
      * exactly the terms it is: absent when the payload never ran the read,

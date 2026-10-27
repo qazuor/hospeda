@@ -110,13 +110,13 @@ import {
     eventOrganizers,
     events,
     experienceReviews,
-    gastronomyReviews,
     inArray,
     ownerPromotions,
     posts,
     rEntityTag,
     userBookmarks,
-    users
+    users,
+    venueReviews
 } from '@repo/db';
 import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import { logger } from '../utils/logger.js';
@@ -318,8 +318,8 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     });
     const gastronomyReviewsDeleted = await deleteWhereIn({
         db,
-        table: gastronomyReviews,
-        column: gastronomyReviews.userId,
+        table: venueReviews,
+        column: venueReviews.userId,
         ids: fakeUserIds
     });
     const experienceReviewsDeleted = await deleteWhereIn({

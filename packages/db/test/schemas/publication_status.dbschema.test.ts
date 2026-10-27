@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { accommodations } from '../../src/schemas/accommodation/accommodation.dbschema.ts';
 import { experiences } from '../../src/schemas/experience/experiences.dbschema.ts';
 import { PublicationStatusPgEnum } from '../../src/schemas/listing/publication_status.dbschema.ts';
-import { gastronomies } from '../../src/schemas/venue/venue.dbschema.ts';
+import { venues } from '../../src/schemas/venue/venue.dbschema.ts';
 
 describe('PublicationStatusPgEnum (TEST:V6:17)', () => {
     it('has SQL enum name publication_status_enum', () => {
@@ -38,7 +38,7 @@ describe('PublicationStatusPgEnum (TEST:V6:17)', () => {
 
 describe.each([
     ['accommodations', accommodations],
-    ['gastronomies', gastronomies],
+    ['venues', venues],
     ['experiences', experiences]
 ] as const)('listing table %s (TEST:V6:17)', (_name, table) => {
     it('declares the publication-model columns with V6.9 nullability', () => {

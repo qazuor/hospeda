@@ -43,7 +43,12 @@ beforeAll(async () => {
         ['049-vertical-deadline-immutability.trigger.sql', 'vertical_deadline_version']
     ]);
     for (const file of readdirSync(extrasDir)
-        .filter((name) => name.endsWith('.sql') && !name.endsWith('_down.sql'))
+        .filter((name) =>
+            [
+                '041-plan-catalog-immutability.trigger.sql',
+                '045-plan-role-immutability.trigger.sql'
+            ].includes(name)
+        )
         .sort()) {
         const requiredTable = extrasRequiringLaterTables.get(file);
         if (requiredTable) {

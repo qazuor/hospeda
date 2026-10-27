@@ -49,7 +49,7 @@ describe('TEST:V6:18 AC:V6:32 no file reads the six old listing columns', () => 
         });
 
         it('(b) drizzle: a listing table column fails outside listing paths', () => {
-            expect(scan('apps/api/src/lib/indexnow.ts', 'eq(gastronomies.visibility, x)')).toEqual([
+            expect(scan('apps/api/src/lib/indexnow.ts', 'eq(venues.visibility, x)')).toEqual([
                 {
                     file: 'apps/api/src/lib/indexnow.ts',
                     line: 1,

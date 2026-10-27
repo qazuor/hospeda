@@ -53,9 +53,9 @@ describe('TEST:1692:7 the staff bypass set covers every permission read on a clo
             'ACCOMMODATION_VIEW_ALL',
             'BILLING_VIEW_OWN',
             'EXPERIENCE_VIEW_ALL',
-            'GASTRONOMY_VIEW_ALL',
             'LISTING_FOREIGN_CONTENT_EDIT',
-            'USER_READ_ALL'
+            'USER_READ_ALL',
+            'VENUE_VIEW_ALL'
         ]);
     });
 

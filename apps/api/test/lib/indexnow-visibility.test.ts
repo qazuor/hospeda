@@ -49,7 +49,7 @@ const TABLE_OF: Readonly<Record<(typeof NOTIFIABLE_ENTITY_TYPES)[number], string
     destination: 'destinations',
     event: 'events',
     post: 'posts',
-    gastronomy: 'gastronomies',
+    gastronomy: 'venues',
     experience: 'experiences'
 };
 

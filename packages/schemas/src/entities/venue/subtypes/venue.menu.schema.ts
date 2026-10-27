@@ -14,7 +14,7 @@
  *
  * | Shape | Where it lives | For whom |
  * |---|---|---|
- * | Structured carta | `gastronomy_menu_sections` + `gastronomy_menu_items` | the venue willing to type its dishes |
+ * | Structured carta | `venue_menu_sections` + `venue_menu_items` | the venue willing to type its dishes |
  * | Uploaded photo / PDF | `gastronomies.menu_file_url` + `menu_file_kind` | the venue that has the menu as an image |
  * | External link | `gastronomies.menu_url` (pre-existing) | the venue that already publishes one |
  *
@@ -25,7 +25,7 @@
  *
  * `nameI18n`/`descriptionI18n` on both the section and the item retrofit
  * `{es,en,pt}` translations exactly as HOS-117 retrofitted
- * `gastronomy_faqs.question_i18n`/`answer_i18n`: additive, nullish, and the
+ * `venue_faqs.question_i18n`/`answer_i18n`: additive, nullish, and the
  * legacy `name`/`description` columns stay the `es` fallback source — carried
  * on the STORED schema so a legacy row (no translations) parses unchanged.
  *
@@ -231,7 +231,7 @@ export const VenueMenuSectionSchema = z.object({
      * The dishes, already ordered by `displayOrder`.
      *
      * `.default([])` because this schema doubles as the row type the model is
-     * parameterised by, and a `gastronomy_menu_sections` ROW has no `items`
+     * parameterised by, and a `venue_menu_sections` ROW has no `items`
      * column — the array is assembled by `getVenueMenu`.
      */
     items: z.array(VenueMenuItemSchema).default([]),
@@ -395,7 +395,7 @@ export type VenueMenuSectionInput = z.input<typeof VenueMenuSectionInputSchema>;
  *
  * ## Why replace-the-document rather than per-row endpoints
  *
- * `gastronomy_media` deliberately went the other way — a route per photo
+ * `venue_media` deliberately went the other way — a route per photo
  * operation — and the reason it gives is specific: an uploaded photo is a
  * Cloudinary asset that is BILLED from the moment it lands, so an owner who
  * uploads and leaves without saving has already cost money. That argument does

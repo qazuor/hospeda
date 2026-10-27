@@ -27,8 +27,8 @@ import {
     getDb,
     rExperienceAmenity,
     rExperienceFeature,
-    rGastronomyAmenity,
-    rGastronomyFeature
+    rVenueAmenity,
+    rVenueFeature
 } from '@repo/db';
 import type { ListingAmenityPublic, ListingFeaturePublic } from '@repo/schemas';
 
@@ -53,14 +53,14 @@ export async function fetchVenueAmenities(
     const db = getDb();
     const rows = await db
         .select({
-            amenityId: rGastronomyAmenity.amenityId,
+            amenityId: rVenueAmenity.amenityId,
             slug: amenities.slug,
             icon: amenities.icon,
             displayWeight: amenities.displayWeight
         })
-        .from(rGastronomyAmenity)
-        .innerJoin(amenities, eq(rGastronomyAmenity.amenityId, amenities.id))
-        .where(eq(rGastronomyAmenity.gastronomyId, gastronomyId))
+        .from(rVenueAmenity)
+        .innerJoin(amenities, eq(rVenueAmenity.amenityId, amenities.id))
+        .where(eq(rVenueAmenity.gastronomyId, gastronomyId))
         .orderBy(desc(amenities.displayWeight), asc(amenities.slug));
 
     return rows.map((row) => ({
@@ -82,16 +82,16 @@ export async function fetchVenueFeatures(
     const db = getDb();
     const rows = await db
         .select({
-            featureId: rGastronomyFeature.featureId,
+            featureId: rVenueFeature.featureId,
             slug: features.slug,
             icon: features.icon,
             displayWeight: features.displayWeight,
-            hostReWriteName: rGastronomyFeature.hostReWriteName,
-            comments: rGastronomyFeature.comments
+            hostReWriteName: rVenueFeature.hostReWriteName,
+            comments: rVenueFeature.comments
         })
-        .from(rGastronomyFeature)
-        .innerJoin(features, eq(rGastronomyFeature.featureId, features.id))
-        .where(eq(rGastronomyFeature.gastronomyId, gastronomyId))
+        .from(rVenueFeature)
+        .innerJoin(features, eq(rVenueFeature.featureId, features.id))
+        .where(eq(rVenueFeature.gastronomyId, gastronomyId))
         .orderBy(desc(features.displayWeight), asc(features.slug));
 
     return rows.map((row) => ({

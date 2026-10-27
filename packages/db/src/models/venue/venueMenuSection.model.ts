@@ -1,6 +1,6 @@
 import type { VenueMenuSection } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomyMenuSections } from '../../schemas/venue/venue_menu_section.dbschema.ts';
+import { venueMenuSections } from '../../schemas/venue/venue_menu_section.dbschema.ts';
 
 /**
  * VenueMenuSectionModel — DB access for the course headings of a venue's
@@ -15,11 +15,11 @@ import { gastronomyMenuSections } from '../../schemas/venue/venue_menu_section.d
  * tombstoned section would only ever be dead weight the read has to filter.
  */
 export class VenueMenuSectionModel extends BaseModelImpl<VenueMenuSection> {
-    protected table = gastronomyMenuSections;
-    public entityName = 'gastronomyMenuSections';
+    protected table = venueMenuSections;
+    public entityName = 'venueMenuSections';
 
     protected getTableName(): string {
-        return 'gastronomyMenuSections';
+        return 'venueMenuSections';
     }
 }
 

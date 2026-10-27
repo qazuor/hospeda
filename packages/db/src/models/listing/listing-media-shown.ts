@@ -3,7 +3,7 @@ import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
 /**
  * The two columns every listing media table (`accommodation_media`,
- * `gastronomy_media`, `experience_media`) carries that decide whether a row may
+ * `venue_media`, `experience_media`) carries that decide whether a row may
  * be shown at all.
  */
 export interface ListingMediaShownColumns {

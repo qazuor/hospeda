@@ -105,7 +105,7 @@ class GenericMockModel {
 }
 
 /**
- * Column map for the `gastronomies` table (SPEC-239), keyed by the camelCase Drizzle
+ * Column map for the `venues` table (SPEC-239), keyed by the camelCase Drizzle
  * property names → snake_case DB column names. Mirrors the `@repo/db/schemas` mock shape.
  *
  * `BaseCrudRead.adminList` validates the requested (or default) sort field against the
@@ -149,7 +149,7 @@ class VenueMockModel extends GenericMockModel {
         return VENUE_TABLE_COLUMNS;
     }
     override getTableName() {
-        return 'gastronomies';
+        return 'venues';
     }
 }
 
@@ -1203,12 +1203,12 @@ export function createDbMock() {
             icon: 'icon',
             displayWeight: 'display_weight'
         },
-        rGastronomyAmenity: {
-            gastronomyId: 'gastronomy_id',
+        rVenueAmenity: {
+            gastronomyId: 'venue_id',
             amenityId: 'amenity_id'
         },
-        rGastronomyFeature: {
-            gastronomyId: 'gastronomy_id',
+        rVenueFeature: {
+            gastronomyId: 'venue_id',
             featureId: 'feature_id',
             hostReWriteName: 'host_rewrite_name',
             comments: 'comments'

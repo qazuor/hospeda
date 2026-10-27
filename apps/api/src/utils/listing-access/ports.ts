@@ -4,10 +4,10 @@ import {
     and,
     eq,
     experiences,
-    gastronomies,
     getDb,
     isNull,
-    planCatalogModel
+    planCatalogModel,
+    venues
 } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
 import type { CoverageNoticeRegistry } from '@repo/service-core';
@@ -103,8 +103,8 @@ export function getListingAccessPorts(): ListingAccessPorts {
             case VerticalEnum.VENUE:
                 [entity] = await db
                     .select()
-                    .from(gastronomies)
-                    .where(and(eq(gastronomies.id, listingId), isNull(gastronomies.deletedAt)))
+                    .from(venues)
+                    .where(and(eq(venues.id, listingId), isNull(venues.deletedAt)))
                     .limit(1);
                 break;
             case VerticalEnum.EXPERIENCE:

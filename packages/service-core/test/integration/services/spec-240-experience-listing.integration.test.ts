@@ -25,7 +25,7 @@
  *
  * Gastronomy's suite carries a T-8b regression test asserting that a review
  * submitted WITHOUT the granular `rating` breakdown still succeeds, because
- * migration 0023 dropped the `NOT NULL` constraint on `gastronomy_reviews.rating`
+ * migration 0023 dropped the `NOT NULL` constraint on `venue_reviews.rating`
  * for exactly that reason. `experience_reviews.rating` never received the
  * equivalent migration — it is still `jsonb NOT NULL` with no default (created
  * in migration 0019, never altered since). `ExperienceReviewCreateInputSchema`

@@ -101,7 +101,7 @@ const headersFor = (input: {
     'content-type': 'application/json',
     'user-agent': 'vitest',
     'x-mock-actor-id': input.actorId,
-    'x-mock-actor-role': RoleEnum.GASTRONOMY_OWNER,
+    'x-mock-actor-role': RoleEnum.VENUE_OWNER,
     'x-mock-actor-permissions': JSON.stringify(input.permissions)
 });
 
@@ -128,7 +128,7 @@ describe('TEST:U1:15 — owner write on a vertical listing without a plan', () =
             method: 'PATCH',
             headers: headersFor({
                 actorId: OWNER_ID,
-                permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
+                permissions: [PermissionEnum.VENUE_EDIT_OWN]
             }),
             body: JSON.stringify({ priceRange: 'HIGH' })
         });
@@ -155,7 +155,7 @@ describe('TEST:U1:15 — owner write on a vertical listing without a plan', () =
             method: 'PATCH',
             headers: headersFor({
                 actorId: STRANGER_ID,
-                permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
+                permissions: [PermissionEnum.VENUE_EDIT_OWN]
             }),
             body: JSON.stringify({ priceRange: 'HIGH' })
         });

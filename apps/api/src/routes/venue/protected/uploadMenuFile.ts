@@ -7,7 +7,7 @@
  * ## Why the row is written HERE, in the upload request
  *
  * This is the one part of HOS-895 that is a real uploaded asset, so it inherits
- * `gastronomy_media`'s rule rather than the carta's. HOS-372's finding: the
+ * `venue_media`'s rule rather than the carta's. HOS-372's finding: the
  * file used to land in Cloudinary immediately while the DB association waited
  * for the form's Save, so an owner who uploaded and walked away left the asset
  * billing with nothing pointing at it. The upload and the
@@ -160,13 +160,13 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const gastronomyId = params.id as string;
         const listing = await venueService.getById(actor, gastronomyId);
-        const hasEditAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_ALL);
+        const hasEditAll = actor.permissions?.includes(PermissionEnum.VENUE_EDIT_ALL);
 
         if (
             listing.error ||
             !listing.data ||
             (!hasEditAll && listing.data.ownerId !== actor.id) ||
-            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_OWN))
+            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.VENUE_EDIT_OWN))
         ) {
             return createErrorResponse(
                 { code: 'NOT_FOUND', message: 'Gastronomy listing not found' },

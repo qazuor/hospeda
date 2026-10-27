@@ -97,7 +97,7 @@ export const COMPARISON_ROW_ICONS: Record<string, ComponentType<IconProps> | und
     editGastronomyInfo: EditIcon,
     gastronomyMenu: FileTextIcon,
     gastronomyDailySpecial: CalendarIcon,
-    gastronomyEvents: MegaphoneIcon,
+    venueEvents: MegaphoneIcon,
     menuItemPhotos: ImageIcon,
     multilingualMenu: GlobeIcon,
     menuQrScanMetrics: QrCodeIcon,

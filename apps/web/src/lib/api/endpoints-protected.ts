@@ -5058,7 +5058,7 @@ function listingMediaPathSegment(vertical: ListingMediaVertical): 'gastronomies'
 }
 
 /**
- * Row shape returned by the gastronomy_media / experience_media relational
+ * Row shape returned by the venue_media / experience_media relational
  * endpoints. Field-for-field identical between both verticals (they share
  * `BaseListingMediaSchema`) — one client, parameterized by `vertical`, reads
  * cleanly instead of two near-identical objects.

@@ -19,9 +19,9 @@ import {
     EventModel,
     eq,
     experiences,
-    gastronomies,
     getDb,
-    PostModel
+    PostModel,
+    venues
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { EntityChangeData, EntityResolver } from '@repo/service-core';
@@ -196,10 +196,10 @@ async function resolveVenueOrExperienceById(params: {
     // already narrowed to exactly these two literals by the caller's own
     // `switch` above, so the `default` throw is defense-in-depth, not a
     // reachable path today.
-    let table: typeof gastronomies | typeof experiences;
+    let table: typeof venues | typeof experiences;
     switch (params.entityType) {
         case 'venue':
-            table = gastronomies;
+            table = venues;
             break;
         case 'experience':
             table = experiences;

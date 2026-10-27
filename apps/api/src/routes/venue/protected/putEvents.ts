@@ -9,7 +9,7 @@
  * 2. **Listing access** — the write requires manage_venue_events
  *    for the listing owner.
  * 3. **Ownership** — inside `replaceVenueEvents`, via the same
- *    `GASTRONOMY_EDIT_OWN` / `GASTRONOMY_EDIT_ALL` gate the sibling writes use.
+ *    `VENUE_EDIT_OWN` / `VENUE_EDIT_ALL` gate the sibling writes use.
  *
  *
  * ## Whole document, one transaction
@@ -18,7 +18,7 @@
  * submission meaning "take it down" — a venue that stopped doing live music
  * needs a way to say so. See
  * `packages/service-core/src/services/venue/venue.events.ts` for why
- * the agenda is written whole where `gastronomy_media` is written per row.
+ * the agenda is written whole where `venue_media` is written per row.
  *
  * @module routes/venue/protected/putEvents
  */

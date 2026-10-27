@@ -27,7 +27,7 @@ const venueService = new VenueService({ logger: apiLogger });
  * Reorder FAQs for a gastronomy listing — Admin endpoint.
  *
  * Validates that all supplied faqId values belong to the given listing before
- * applying displayOrder updates. Requires GASTRONOMY_EDIT_ALL permission.
+ * applying displayOrder updates. Requires VENUE_EDIT_ALL permission.
  */
 export const adminReorderVenueFaqsRoute = createAdminRoute({
     method: 'patch',
@@ -35,7 +35,7 @@ export const adminReorderVenueFaqsRoute = createAdminRoute({
     path: '/{id}/faqs/reorder',
     summary: 'Reorder FAQs for a gastronomy listing (admin)',
     description:
-        'Sets displayOrder for a set of FAQs belonging to a gastronomy listing. All faqId values must belong to the given listing. Requires GASTRONOMY_EDIT_ALL.',
+        'Sets displayOrder for a set of FAQs belonging to a gastronomy listing. All faqId values must belong to the given listing. Requires VENUE_EDIT_ALL.',
     tags: ['Gastronomy', 'FAQs'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

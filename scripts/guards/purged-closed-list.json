@@ -32,64 +32,64 @@
         "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
     },
     {
-        "table": "gastronomy_media",
-        "specTable": "gastronomy_media",
+        "table": "venue_media",
+        "specTable": "venue_media",
         "hangsBy": "fk",
         "owner": "listing owner",
         "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
         "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
     },
     {
-        "table": "gastronomy_faqs",
-        "specTable": "gastronomy_faqs",
+        "table": "venue_faqs",
+        "specTable": "venue_faqs",
         "hangsBy": "fk",
         "owner": "listing owner",
         "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
         "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
     },
     {
-        "table": "r_gastronomy_amenity",
-        "specTable": "r_gastronomy_amenity",
+        "table": "r_venue_amenity",
+        "specTable": "r_venue_amenity",
         "hangsBy": "fk",
         "owner": "listing owner",
         "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
         "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
     },
     {
-        "table": "r_gastronomy_feature",
-        "specTable": "r_gastronomy_feature",
+        "table": "r_venue_feature",
+        "specTable": "r_venue_feature",
         "hangsBy": "fk",
         "owner": "listing owner",
         "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
         "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
     },
     {
-        "table": "gastronomy_menu_sections",
-        "specTable": "gastronomy_menu_sections",
+        "table": "venue_menu_sections",
+        "specTable": "venue_menu_sections",
         "hangsBy": "fk",
         "owner": "listing owner",
         "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
         "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
     },
     {
-        "table": "gastronomy_menu_items",
-        "specTable": "gastronomy_menu_items",
+        "table": "venue_menu_items",
+        "specTable": "venue_menu_items",
         "hangsBy": "fk",
         "owner": "listing owner",
         "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
         "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
     },
     {
-        "table": "gastronomy_daily_specials",
-        "specTable": "gastronomy_daily_specials",
+        "table": "venue_daily_specials",
+        "specTable": "venue_daily_specials",
         "hangsBy": "fk",
         "owner": "listing owner",
         "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
         "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
     },
     {
-        "table": "gastronomy_events",
-        "specTable": "gastronomy_events",
+        "table": "venue_events",
+        "specTable": "venue_events",
         "hangsBy": "fk",
         "owner": "listing owner",
         "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
@@ -152,8 +152,8 @@
         "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:798"
     },
     {
-        "table": "gastronomy_reviews",
-        "specTable": "gastronomy_reviews",
+        "table": "venue_reviews",
+        "specTable": "venue_reviews",
         "hangsBy": "fk",
         "owner": "the third party who wrote it",
         "inPurged": "kept, not shown",

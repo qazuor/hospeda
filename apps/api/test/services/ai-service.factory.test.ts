@@ -559,7 +559,7 @@ describe('incomplete ai_settings feature configuration (HOS-1220)', () => {
     it('should log an ERROR naming the features nobody configured', async () => {
         // Arrange — the exact shape of the outage: the two features HOS-400
         // added, absent from a blob that configures the other seven.
-        mockFindUnconfiguredFeatures.mockReturnValue(['chat_gastronomy', 'chat_experience']);
+        mockFindUnconfiguredFeatures.mockReturnValue(['chat_venue', 'chat_experience']);
 
         // Act
         await createConfiguredAiService();
@@ -570,13 +570,13 @@ describe('incomplete ai_settings feature configuration (HOS-1220)', () => {
         expect(errorCalls.length).toBeGreaterThan(0);
 
         const serialised = JSON.stringify(errorCalls);
-        expect(serialised).toContain('chat_gastronomy');
+        expect(serialised).toContain('chat_venue');
         expect(serialised).toContain('chat_experience');
     });
 
     it('should NOT throw — an unconfigured feature must not break service construction', async () => {
         // Arrange — failing here would recreate the very outage this fixes.
-        mockFindUnconfiguredFeatures.mockReturnValue(['chat_gastronomy']);
+        mockFindUnconfiguredFeatures.mockReturnValue(['chat_venue']);
 
         // Act + Assert
         await expect(createConfiguredAiService()).resolves.toBeDefined();

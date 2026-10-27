@@ -46,7 +46,7 @@ describe('TrackableEntityTypeSchema', () => {
         });
 
         // HOS-734: gastronomy/experience basic view stats.
-        it('should accept GASTRONOMY', () => {
+        it('should accept VENUE', () => {
             const result = TrackableEntityTypeSchema.safeParse(EntityTypeEnum.VENUE);
             expect(result.success).toBe(true);
         });
@@ -151,9 +151,9 @@ describe('EntityViewCaptureInputSchema', () => {
         });
 
         // HOS-734: gastronomy/experience basic view stats.
-        it('should accept GASTRONOMY + valid uuid', () => {
+        it('should accept VENUE + valid uuid', () => {
             const result = EntityViewCaptureInputSchema.safeParse({
-                entityType: 'GASTRONOMY',
+                entityType: 'VENUE',
                 entityId: VALID_UUID
             });
             expect(result.success).toBe(true);

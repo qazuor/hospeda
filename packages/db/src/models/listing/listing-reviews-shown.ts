@@ -5,8 +5,8 @@ import { accommodations } from '../../schemas/accommodation/accommodation.dbsche
 import { accommodationReviews } from '../../schemas/accommodation/accommodation_review.dbschema.ts';
 import { experienceReviews } from '../../schemas/experience/experience_review.dbschema.ts';
 import { experiences } from '../../schemas/experience/experiences.dbschema.ts';
-import { gastronomies } from '../../schemas/venue/venue.dbschema.ts';
-import { gastronomyReviews } from '../../schemas/venue/venue_review.dbschema.ts';
+import { venues } from '../../schemas/venue/venue.dbschema.ts';
+import { venueReviews } from '../../schemas/venue/venue_review.dbschema.ts';
 import type { ListingVertical } from './listing-publication.model.ts';
 
 const TABLES: Record<
@@ -21,8 +21,8 @@ const TABLES: Record<
         reviewListingId: accommodationReviews.accommodationId
     },
     venue: {
-        listing: gastronomies,
-        reviewListingId: gastronomyReviews.gastronomyId
+        listing: venues,
+        reviewListingId: venueReviews.gastronomyId
     },
     experience: {
         listing: experiences,

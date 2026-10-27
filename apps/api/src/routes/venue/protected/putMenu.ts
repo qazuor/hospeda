@@ -9,14 +9,14 @@
  * 2. **Listing access** — the owner needs menu management, plus photo or
  *    translation capability when the payload carries those fields.
  * 3. **Ownership** — inside `replaceVenueMenu`, via the same
- *    `GASTRONOMY_EDIT_OWN` / `GASTRONOMY_EDIT_ALL` gate the sibling writes use.
+ *    `VENUE_EDIT_OWN` / `VENUE_EDIT_ALL` gate the sibling writes use.
  *
  *
  * ## Whole document, one transaction
  *
  * The body is the ENTIRE carta, and an empty `sections` array is a legitimate
  * submission meaning "delete it". See `packages/service-core/src/services/venue/venue.menu.ts`
- * for why the carta is written whole where `gastronomy_media` is written per row.
+ * for why the carta is written whole where `venue_media` is written per row.
  *
  * @module routes/venue/protected/putMenu
  */

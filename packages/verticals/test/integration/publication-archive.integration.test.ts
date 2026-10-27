@@ -22,7 +22,7 @@ const verticals = [
 ] as const;
 const tables = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 } as const;
 const afterCommit = {

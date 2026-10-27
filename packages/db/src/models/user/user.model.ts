@@ -350,10 +350,10 @@ export class UserModel extends BaseModelImpl<User> {
 
         const venuesCountSq = sql<number>`(
             SELECT count(*)::int
-            FROM "gastronomies" AS g
+            FROM "venues" AS g
             WHERE g."owner_id" = ${outerUserId}
               AND g."deleted_at" IS NULL
-        )`.as('gastronomies_count');
+        )`.as('venues_count');
 
         const experiencesCountSq = sql<number>`(
             SELECT count(*)::int

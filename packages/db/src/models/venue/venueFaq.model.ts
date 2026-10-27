@@ -1,6 +1,6 @@
 import type { VenueFaq } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomyFaqs } from '../../schemas/venue/venue_faq.dbschema.ts';
+import { venueFaqs } from '../../schemas/venue/venue_faq.dbschema.ts';
 
 /**
  * VenueFaqModel — DB access for gastronomy FAQ entries (SPEC-239).
@@ -9,11 +9,11 @@ import { gastronomyFaqs } from '../../schemas/venue/venue_faq.dbschema.ts';
  * at the caller level (e.g. via db.query.gastronomyFaqs.findMany with orderBy).
  */
 export class VenueFaqModel extends BaseModelImpl<VenueFaq> {
-    protected table = gastronomyFaqs;
-    public entityName = 'gastronomyFaqs';
+    protected table = venueFaqs;
+    public entityName = 'venueFaqs';
 
     protected getTableName(): string {
-        return 'gastronomyFaqs';
+        return 'venueFaqs';
     }
 }
 

@@ -8,7 +8,7 @@
  * owner operational update → review moderation → rating recompute against a REAL ephemeral
  * PostgreSQL database.
  *
- * The former T-2 case (lead → admin-provisioned GASTRONOMY_OWNER via the
+ * The former T-2 case (lead → admin-provisioned VENUE_OWNER via the
  * dedicated owner-provisioning service) was removed by HOS-693 §6.2 along
  * with that service itself — owners now grant themselves the role by
  * creating their own listing (HOS-687).
@@ -18,7 +18,7 @@
  * Mocked unit tests cannot detect:
  * - Drizzle relations misconfigured in gastronomy schemas.
  * - Rating recompute queries that only touch approved reviews.
- *  * - The UNIQUE constraint on `gastronomy_reviews(userId, gastronomyId)`.
+ *  * - The UNIQUE constraint on `venue_reviews(userId, gastronomyId)`.
  *
  * ## Harness
  *
@@ -61,18 +61,18 @@ const dbAvailable = isServiceTestDbAvailable();
 // ---------------------------------------------------------------------------
 
 /**
- * Creates a GASTRONOMY_OWNER actor with operational edit permissions.
+ * Creates a VENUE_OWNER actor with operational edit permissions.
  * The `id` must match the seeded user to satisfy ownership checks.
  *
  * @param userId - The UUID of the owner user row in the DB.
- * @returns Actor with GASTRONOMY_OWNER role and relevant permissions.
+ * @returns Actor with VENUE_OWNER role and relevant permissions.
  */
 function createListingOwnerActor(userId: string): Actor {
     return {
         id: userId,
-        roles: [RoleEnum.GASTRONOMY_OWNER],
-        // SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN replaces 10 per-section perms
-        permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
+        roles: [RoleEnum.VENUE_OWNER],
+        // SPEC-253 D2=b: single VENUE_EDIT_OWN replaces 10 per-section perms
+        permissions: [PermissionEnum.VENUE_EDIT_OWN]
     };
 }
 
@@ -476,7 +476,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
     // showed "no pending reviews" because the list route 400'd on `?status=`.
     // The dedicated service method must filter by `moderationState` (NOT the
     // base adminList `status`/lifecycleState semantics) and require the
-    // GASTRONOMY_MODERATE_REVIEW permission.
+    // VENUE_MODERATE_REVIEW permission.
     // -----------------------------------------------------------------------
 
     it.skipIf(!dbAvailable)(

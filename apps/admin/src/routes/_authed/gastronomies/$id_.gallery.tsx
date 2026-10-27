@@ -2,7 +2,7 @@
  * Gastronomy Gallery Tab Route (HOS-382)
  *
  * Relational-gallery counterpart of `accommodations/$id_.gallery.tsx`, for the
- * gastronomy listing vertical. The `gastronomy_media` table (HOS-372) is the
+ * gastronomy listing vertical. The `venue_media` table (HOS-372) is the
  * source of truth for gastronomy listing photos; the old `media.featuredImage`
  * / `media.gallery` fields are removed from the edit form (see
  * `listingSections.ts`).

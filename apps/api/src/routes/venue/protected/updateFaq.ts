@@ -2,7 +2,7 @@
  * PUT /api/v1/protected/gastronomies/:id/faqs/:faqId
  * Update an existing FAQ on a gastronomy listing (T-044)
  *
- * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).
+ * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).
  * The FAQ must belong to the specified gastronomy (enforced inside updateVenueFaq).
  */
 

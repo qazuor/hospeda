@@ -38,7 +38,7 @@
  *    content, and an owner must never be able to clear the rejection on their
  *    own listing.
  *
- * 2. **New-role `role_permission`** — `GASTRONOMY_OWNER` and `EXPERIENCE_OWNER`
+ * 2. **New-role `role_permission`** — `VENUE_OWNER` and `EXPERIENCE_OWNER`
  *    are brand-new enum values, so a live database holds ZERO rows for them.
  *    Their full permission sets are inserted here, declared as literals rather
  *    than read from `ROLE_PERMISSIONS`: a migration that derived its effect from
@@ -72,7 +72,7 @@
  * deleted, nothing is narrowed, and re-running it is a no-op, so the production
  * destructive-migration gate does not apply.
  */
-import { experiences, gastronomies, isNull, rolePermission, userRole } from '@repo/db';
+import { experiences, isNull, rolePermission, userRole, venues } from '@repo/db';
 import { PermissionEnum, RoleEnum, RoleGrantReason } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
@@ -90,12 +90,12 @@ export const meta = {
  * compare its own copy to the seed and stay green while THIS constant drifted.
  */
 export const STAFF_PERMISSIONS: readonly PermissionEnum[] = [
-    PermissionEnum.GASTRONOMY_CREATE,
-    PermissionEnum.GASTRONOMY_VIEW_ALL,
-    PermissionEnum.GASTRONOMY_EDIT_ALL,
-    PermissionEnum.GASTRONOMY_DELETE,
-    PermissionEnum.GASTRONOMY_MODERATE_REVIEW,
-    PermissionEnum.GASTRONOMY_MODERATION_CHANGE,
+    PermissionEnum.VENUE_CREATE,
+    PermissionEnum.VENUE_VIEW_ALL,
+    PermissionEnum.VENUE_EDIT_ALL,
+    PermissionEnum.VENUE_DELETE,
+    PermissionEnum.VENUE_MODERATE_REVIEW,
+    PermissionEnum.VENUE_MODERATION_CHANGE,
     PermissionEnum.EXPERIENCE_CREATE,
     PermissionEnum.EXPERIENCE_VIEW_ALL,
     PermissionEnum.EXPERIENCE_EDIT_ALL,
@@ -142,10 +142,10 @@ const OWNER_SHARED_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.USER_UPDATE_SELF
 ];
 
-/** The full permission set for `GASTRONOMY_OWNER`, in seed order. */
+/** The full permission set for `VENUE_OWNER`, in seed order. */
 export const GASTRONOMY_OWNER_PERMISSIONS: readonly PermissionEnum[] = [
-    PermissionEnum.GASTRONOMY_EDIT_OWN,
-    PermissionEnum.GASTRONOMY_CREATE,
+    PermissionEnum.VENUE_EDIT_OWN,
+    PermissionEnum.VENUE_CREATE,
     ...OWNER_SHARED_PERMISSIONS
 ];
 
@@ -160,7 +160,7 @@ export const EXPERIENCE_OWNER_PERMISSIONS: readonly PermissionEnum[] = [
 export const GRANTS: Array<{ role: RoleEnum; permission: PermissionEnum }> = [
     ...STAFF_ROLES.flatMap((role) => STAFF_PERMISSIONS.map((permission) => ({ role, permission }))),
     ...GASTRONOMY_OWNER_PERMISSIONS.map((permission) => ({
-        role: RoleEnum.GASTRONOMY_OWNER,
+        role: RoleEnum.VENUE_OWNER,
         permission
     })),
     ...EXPERIENCE_OWNER_PERMISSIONS.map((permission) => ({
@@ -176,7 +176,7 @@ export const GRANTS: Array<{ role: RoleEnum; permission: PermissionEnum }> = [
  * and nothing else.
  */
 const VERTICAL_OWNER_SOURCES = [
-    { role: RoleEnum.GASTRONOMY_OWNER, table: gastronomies },
+    { role: RoleEnum.VENUE_OWNER, table: venues },
     { role: RoleEnum.EXPERIENCE_OWNER, table: experiences }
 ] as const;
 

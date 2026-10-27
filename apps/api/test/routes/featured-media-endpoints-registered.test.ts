@@ -67,7 +67,7 @@ const HEADERS = {
     // which is not 404, so the whole file passes while proving nothing.
     'x-mock-actor-permissions': JSON.stringify([
         'accommodation.update.any',
-        'gastronomy.editAll',
+        'venue.editAll',
         'experience.editAll',
         'access.panelAdmin'
     ])

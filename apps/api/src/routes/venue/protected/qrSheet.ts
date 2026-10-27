@@ -9,7 +9,7 @@
  * the full reasoning for the order of the checks, for why there is NO
  * entitlement gate, for why the code is minted once and reused, and for why the
  * minted destination ignores the downloader's language. The staff bypass is
- * the vertical's inspection permission, `GASTRONOMY_VIEW_ALL`, as
+ * the vertical's inspection permission, `VENUE_VIEW_ALL`, as
  * `ACCOMMODATION_VIEW_ALL` is in the twin.
  *
  * ## The publicity check is the publication state, as in accommodation
@@ -80,7 +80,7 @@ export async function handleGetVenueQrSheet(
 
     const entity = result.data;
 
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.VENUE_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }

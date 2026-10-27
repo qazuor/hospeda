@@ -742,7 +742,7 @@
                         "cap5": "Contactar anfitriones"
                     }
                 },
-                "GASTRONOMY_OWNER": {
+                "VENUE_OWNER": {
                     "name": "Dueño de Gastronomía",
                     "description": "Titular de un restaurante, bar o café que gestiona su propia ficha (sin acceso a experiencias)",
                     "capabilities": {

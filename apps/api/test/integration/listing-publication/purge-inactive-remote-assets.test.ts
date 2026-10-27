@@ -50,7 +50,7 @@ describe('TEST:1702:4 AC:1702:1 PB9 deletes the menu file and dish photos after 
         );
         fixtures.push(fixture);
         await getDb().execute(
-            sql`UPDATE gastronomies SET publication_status = 'ARCHIVED', inactive_since = ${new Date(now.getTime() - 200 * day)}, deadlines_version = 1, deletion_announced_at = ${new Date(now.getTime() - day)} WHERE id = ${fixture.listingId}::uuid`
+            sql`UPDATE venues SET publication_status = 'ARCHIVED', inactive_since = ${new Date(now.getTime() - 200 * day)}, deadlines_version = 1, deletion_announced_at = ${new Date(now.getTime() - day)} WHERE id = ${fixture.listingId}::uuid`
         );
         for (const publicId of fixture.publicIds) storage.stored.add(publicId);
         const result = await purgeInactiveListing({
@@ -76,10 +76,10 @@ describe('TEST:1702:4 AC:1702:1 PB9 deletes the menu file and dish photos after 
             storage.deleteCalls.filter((id) => id.startsWith(`${fixture.listingId}:`)).sort()
         ).toEqual([...fixture.publicIds].sort());
         const media = await getDb().execute(
-            sql`SELECT id FROM gastronomy_media WHERE gastronomy_id = ${fixture.listingId}::uuid`
+            sql`SELECT id FROM venue_media WHERE venue_id = ${fixture.listingId}::uuid`
         );
         const listing = await getDb().execute(
-            sql`SELECT publication_status FROM gastronomies WHERE id = ${fixture.listingId}::uuid`
+            sql`SELECT publication_status FROM venues WHERE id = ${fixture.listingId}::uuid`
         );
         expect(media.rows).toEqual([]);
         expect(listing.rows).toEqual([{ publication_status: 'PURGED' }]);

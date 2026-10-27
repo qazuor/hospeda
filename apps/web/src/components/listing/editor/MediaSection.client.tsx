@@ -2,7 +2,7 @@
  * @file MediaSection.client.tsx
  * @description Featured image + photo gallery section of the listing owner
  * editor (SPEC-249 T-015c, extracted in HOS-258), migrated to per-operation
- * persistence against the relational `gastronomy_media` / `experience_media`
+ * persistence against the relational `venue_media` / `experience_media`
  * endpoints (HOS-372).
  *
  * Self-contained, NOT controlled by the orchestrator. Mirrors the accommodation

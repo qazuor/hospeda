@@ -1,7 +1,7 @@
 /**
  * gastronomy.media-read.ts
  *
- * Async read-side glue that loads `gastronomy_media` rows and attaches the
+ * Async read-side glue that loads `venue_media` rows and attaches the
  * composed `Media` shape onto gastronomy entities (HOS-372).
  *
  * Mirrors `accommodation.media-read.ts` field-for-field, delegating the pure
@@ -54,7 +54,7 @@ function withComposedVenueMedia<T extends Venue>(entity: T, rows: readonly Venue
  * composed `Media` shape. No-op for `null` (single-read miss).
  *
  * @param input.entity     - The gastronomy listing (or `null`).
- * @param input.mediaModel - The `gastronomy_media` model.
+ * @param input.mediaModel - The `venue_media` model.
  * @param input.tx         - Optional active transaction client.
  */
 export async function attachComposedVenueMedia<T extends Venue>(input: {
@@ -73,7 +73,7 @@ export async function attachComposedVenueMedia<T extends Venue>(input: {
  * and attaches the composed `Media` shape to each. No-op for an empty list.
  *
  * @param input.items      - The gastronomy listing array.
- * @param input.mediaModel - The `gastronomy_media` model.
+ * @param input.mediaModel - The `venue_media` model.
  * @param input.tx         - Optional active transaction client.
  */
 export async function attachComposedVenueMediaList<T extends Venue>(input: {

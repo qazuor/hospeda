@@ -261,7 +261,7 @@ class TestListingService extends BaseListingService<
 const makeActor = (): Actor => ({
     id: OWNER_ID,
     roles: [RoleEnum.ADMIN],
-    permissions: [PermissionEnum.GASTRONOMY_EDIT_ALL]
+    permissions: [PermissionEnum.VENUE_EDIT_ALL]
 });
 
 function makeService() {
@@ -426,7 +426,7 @@ describe('BaseListingService.create — junction transaction boundary (HOS-808)'
 
     it("joins the caller's transaction instead of opening a second boundary", async () => {
         // This is the `createForOwner` path: it already owns a transaction that
-        // also carries the GASTRONOMY_OWNER role grant, and re-wrapping would split
+        // also carries the VENUE_OWNER role grant, and re-wrapping would split
         // that unit of work in two (withServiceTransaction never nests).
         const { svc, amenityJunction } = makeService();
 

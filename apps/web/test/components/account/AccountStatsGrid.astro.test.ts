@@ -10,7 +10,7 @@
  * ## The bug this closes
  *
  * `AccountStatsGrid.astro` used to branch `isHost ? (...) : (...)` — exactly
- * two states. A gastronomy/experience-only owner (`GASTRONOMY_OWNER`/`EXPERIENCE_OWNER`, no
+ * two states. A gastronomy/experience-only owner (`VENUE_OWNER`/`EXPERIENCE_OWNER`, no
  * `HOST` role) is neither, so `isHost` resolved `false` and they fell into the
  * tourist `else` branch: Favoritos, Reseñas — neither describes a merchant
  * account, and both link to pages a gastronomy/experience-only owner has never used.

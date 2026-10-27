@@ -346,7 +346,7 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
                     PermissionEnum.ACCESS_PANEL_ADMIN,
                     PermissionEnum.ACCESS_API_ADMIN,
                     PermissionEnum.MEDIA_UPLOAD,
-                    PermissionEnum.GASTRONOMY_EDIT_ALL
+                    PermissionEnum.VENUE_EDIT_ALL
                 ]
             });
 

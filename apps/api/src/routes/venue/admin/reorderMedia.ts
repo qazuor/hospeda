@@ -32,7 +32,7 @@ const venueService = new VenueService({ logger: apiLogger });
  * PATCH /api/v1/admin/gastronomies/:id/media/reorder
  * Reorder gastronomy listing gallery photos — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL permission. The service helper
+ * Requires VENUE_EDIT_ALL permission. The service helper
  * `reorderVenueMedia` enforces the same gate via `checkVenueCanEditMedia`.
  */
 export const adminReorderVenueMediaRoute = createAdminRoute({
@@ -43,7 +43,7 @@ export const adminReorderVenueMediaRoute = createAdminRoute({
     description:
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +
-        'exactly. Requires GASTRONOMY_EDIT_ALL.',
+        'exactly. Requires VENUE_EDIT_ALL.',
     tags: ['Gastronomy', 'Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

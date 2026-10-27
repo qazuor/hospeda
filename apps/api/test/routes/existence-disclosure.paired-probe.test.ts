@@ -135,7 +135,7 @@ function expectIndistinguishable(foreign: Probe, invented: Probe): void {
     // nor the id that was asked about.
     expect(error?.message).toEqual(expect.any(String));
     expect(error?.message).not.toMatch(
-        /permission|USER_READ_ALL|GASTRONOMY_VIEW_ALL|EXPERIENCE_VIEW_ALL/i
+        /permission|USER_READ_ALL|VENUE_VIEW_ALL|EXPERIENCE_VIEW_ALL/i
     );
     expect(error?.message).not.toContain(FOREIGN_ID);
     expect(error?.message).not.toContain(INVENTED_ID);

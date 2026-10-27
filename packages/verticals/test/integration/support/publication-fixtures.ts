@@ -95,7 +95,7 @@ export function createPublicationFixtureTracker(db: DrizzleClient) {
                     sql`UPDATE accommodations SET deleted_at = now() WHERE id IN (${listingIdList})`
                 );
                 await db.execute(
-                    sql`UPDATE gastronomies SET deleted_at = now() WHERE id IN (${listingIdList})`
+                    sql`UPDATE venues SET deleted_at = now() WHERE id IN (${listingIdList})`
                 );
                 await db.execute(
                     sql`UPDATE experiences SET deleted_at = now() WHERE id IN (${listingIdList})`

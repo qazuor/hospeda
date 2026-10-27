@@ -22,13 +22,7 @@
  * @module apps/api/services/ai-context/venue-ai-context
  */
 
-import {
-    gastronomies,
-    gastronomyFaqs,
-    gastronomyMenuItems,
-    gastronomyMenuSections,
-    getDb
-} from '@repo/db';
+import { getDb, venueFaqs, venueMenuItems, venueMenuSections, venues } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { and, asc, eq, isNull } from 'drizzle-orm';
@@ -269,19 +263,19 @@ export async function assembleVenueContext(
 
     const rows = await db
         .select({
-            id: gastronomies.id,
-            name: gastronomies.name,
-            summary: gastronomies.summary,
-            description: gastronomies.description,
-            type: gastronomies.type,
-            priceRange: gastronomies.priceRange,
-            menuUrl: gastronomies.menuUrl,
-            openingHours: gastronomies.openingHours,
-            averageRating: gastronomies.averageRating,
-            reviewsCount: gastronomies.reviewsCount
+            id: venues.id,
+            name: venues.name,
+            summary: venues.summary,
+            description: venues.description,
+            type: venues.type,
+            priceRange: venues.priceRange,
+            menuUrl: venues.menuUrl,
+            openingHours: venues.openingHours,
+            averageRating: venues.averageRating,
+            reviewsCount: venues.reviewsCount
         })
-        .from(gastronomies)
-        .where(and(eq(gastronomies.id, entityId), isNull(gastronomies.deletedAt)))
+        .from(venues)
+        .where(and(eq(venues.id, entityId), isNull(venues.deletedAt)))
         .limit(1);
 
     const venue = rows[0];
@@ -322,17 +316,17 @@ async function safeLoadFaqs(gastronomyId: string): Promise<VenueContextFaq[]> {
     try {
         const db = getDb();
         const rows = await db
-            .select({ question: gastronomyFaqs.question, answer: gastronomyFaqs.answer })
-            .from(gastronomyFaqs)
+            .select({ question: venueFaqs.question, answer: venueFaqs.answer })
+            .from(venueFaqs)
             .where(
                 and(
-                    eq(gastronomyFaqs.gastronomyId, gastronomyId),
-                    isNull(gastronomyFaqs.deletedAt),
-                    eq(gastronomyFaqs.lifecycleState, 'ACTIVE'),
-                    eq(gastronomyFaqs.isUsableByAi, true)
+                    eq(venueFaqs.gastronomyId, gastronomyId),
+                    isNull(venueFaqs.deletedAt),
+                    eq(venueFaqs.lifecycleState, 'ACTIVE'),
+                    eq(venueFaqs.isUsableByAi, true)
                 )
             )
-            .orderBy(asc(gastronomyFaqs.displayOrder))
+            .orderBy(asc(venueFaqs.displayOrder))
             .limit(VENUE_CONTEXT_FAQ_MAX);
         return rows;
     } catch (error) {
@@ -355,22 +349,16 @@ async function safeLoadMenuItems(gastronomyId: string): Promise<VenueContextMenu
         const db = getDb();
         const rows = await db
             .select({
-                sectionName: gastronomyMenuSections.name,
-                name: gastronomyMenuItems.name,
-                description: gastronomyMenuItems.description,
-                priceCents: gastronomyMenuItems.priceCents,
-                isAvailable: gastronomyMenuItems.isAvailable
+                sectionName: venueMenuSections.name,
+                name: venueMenuItems.name,
+                description: venueMenuItems.description,
+                priceCents: venueMenuItems.priceCents,
+                isAvailable: venueMenuItems.isAvailable
             })
-            .from(gastronomyMenuItems)
-            .leftJoin(
-                gastronomyMenuSections,
-                eq(gastronomyMenuItems.sectionId, gastronomyMenuSections.id)
-            )
-            .where(eq(gastronomyMenuItems.gastronomyId, gastronomyId))
-            .orderBy(
-                asc(gastronomyMenuSections.displayOrder),
-                asc(gastronomyMenuItems.displayOrder)
-            )
+            .from(venueMenuItems)
+            .leftJoin(venueMenuSections, eq(venueMenuItems.sectionId, venueMenuSections.id))
+            .where(eq(venueMenuItems.gastronomyId, gastronomyId))
+            .orderBy(asc(venueMenuSections.displayOrder), asc(venueMenuItems.displayOrder))
             .limit(VENUE_CONTEXT_MENU_ITEM_MAX);
         return rows;
     } catch (error) {

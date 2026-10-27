@@ -243,7 +243,7 @@ describe('seedAiSettings (SPEC-211 T-002)', () => {
         it('should NOT attempt a write it knows the write schema would reject', async () => {
             // Arrange
             mockReadAiSettings.mockResolvedValue(makeExistingBlob());
-            mockFindUnconfiguredFeatures.mockReturnValue(['chat_gastronomy', 'chat_experience']);
+            mockFindUnconfiguredFeatures.mockReturnValue(['chat_venue', 'chat_experience']);
 
             // Act
             await seedAiSettings();
@@ -255,14 +255,14 @@ describe('seedAiSettings (SPEC-211 T-002)', () => {
         it('should say which features are missing, so the gap is not silent', async () => {
             // Arrange
             mockReadAiSettings.mockResolvedValue(makeExistingBlob());
-            mockFindUnconfiguredFeatures.mockReturnValue(['chat_gastronomy']);
+            mockFindUnconfiguredFeatures.mockReturnValue(['chat_venue']);
 
             // Act
             await seedAiSettings();
 
             // Assert — skipping quietly is how a gap survives a deploy.
             const logged = JSON.stringify(vi.mocked(logger.info).mock.calls);
-            expect(logged).toContain('chat_gastronomy');
+            expect(logged).toContain('chat_venue');
         });
 
         it('should still write when every feature IS configured', async () => {

@@ -12,15 +12,15 @@
  * ## Permission model
  *
  * All five operations (add / remove / reorder / setFeatured / get) are gated on
- * `checkVenueCanEditMedia`: `GASTRONOMY_EDIT_OWN` (listing owner) or
- * `GASTRONOMY_EDIT_ALL` (staff). There is no separate public read path for media —
+ * `checkVenueCanEditMedia`: `VENUE_EDIT_OWN` (listing owner) or
+ * `VENUE_EDIT_ALL` (staff). There is no separate public read path for media —
  * public consumers read the composed `media` field on the listing itself (via
  * `gastronomy.media-read.ts`), not this management surface.
  *
  * ## No dual-write
  *
  * These helpers NEVER read or write the legacy `gastronomy.media` JSONB column.
- * All photo state lives exclusively in `gastronomy_media` rows.
+ * All photo state lives exclusively in `venue_media` rows.
  *
  * @module gastronomy.media
  */
@@ -90,7 +90,7 @@ async function requireVenue(model: VenueModel, gastronomyId: string, tx?: Servic
  *
  * This is a URL-receiver method: the upload to Cloudinary has already happened
  * via `POST /api/v1/admin/media/upload`. This function registers the
- * already-uploaded URL as a new `gastronomy_media` row.
+ * already-uploaded URL as a new `venue_media` row.
  *
  * `sortOrder` is computed as max(visible sortOrder) + 1 (append to end). When
  * no visible rows exist yet, starts at 0.
@@ -555,7 +555,7 @@ export async function getVenueMedia(
  * 4. In a TRANSACTION: clear the previous featured row (`is_featured = false`),
  *    then set the target row `is_featured = true`. Clear-then-set order is
  *    mandatory — setting the new one first would briefly violate the partial
- *    unique index on (gastronomy_id) WHERE is_featured.
+ *    unique index on (venue_id) WHERE is_featured.
  *
  * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
@@ -610,7 +610,7 @@ export async function setFeaturedVenueMedia(
 
         // Transaction: clear-then-set to avoid briefly having two featured rows,
         // which would violate the partial unique index on
-        // (gastronomy_id) WHERE is_featured = true AND deleted_at IS NULL.
+        // (venue_id) WHERE is_featured = true AND deleted_at IS NULL.
         const doSetFeatured = async (tx: DrizzleClient): Promise<void> => {
             const existing = await mediaModel.findFeatured({
                 gastronomyId: validated.gastronomyId,
@@ -684,7 +684,7 @@ export async function setFeaturedVenueMedia(
  *
  * The PARENT gastronomy listing is NOT: `checkVenueCanEditMedia` throws FORBIDDEN
  * on a gastronomy listing the actor may not edit and NOT_FOUND on one that does not
- * exist, so an ownership-scoped actor (`GASTRONOMY_EDIT_OWN` without `GASTRONOMY_EDIT_ALL`)
+ * exist, so an ownership-scoped actor (`VENUE_EDIT_OWN` without `VENUE_EDIT_ALL`)
  * can tell a stranger's gastronomy listing from an invented one. Every sibling media
  * helper shares that same gate, so closing the gap in `update` alone would leave it at
  * 404 while `remove` stays at 403 on the same parent — a follow-up covers all of them
@@ -806,7 +806,7 @@ export async function updateVenueMedia(
  * unverifiable — nothing obliges the caller to send the follow-up promotion —
  * so a caller setting it on every upload would have no cap at all. Here the row
  * is created featured inside a transaction and
- * `uq_gastronomy_media_single_featured` permits exactly one, so quota-exempt
+ * `uq_venue_media_single_featured` permits exactly one, so quota-exempt
  * rows cannot accumulate. The previous cover is SOFT-DELETED in the same
  * transaction, so one row enters the featured slot, one leaves the table, and
  * the visible gallery is untouched — the swap is quota-neutral by construction

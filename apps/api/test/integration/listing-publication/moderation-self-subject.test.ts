@@ -23,7 +23,7 @@ const verticals = [
 ] as const;
 const table = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 } as const;
 const segment = {

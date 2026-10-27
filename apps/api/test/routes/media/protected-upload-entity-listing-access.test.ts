@@ -99,7 +99,7 @@ const owner = createMockUserActor({
     id: OWNER_ID,
     permissions: [
         PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-        PermissionEnum.GASTRONOMY_EDIT_OWN,
+        PermissionEnum.VENUE_EDIT_OWN,
         PermissionEnum.EXPERIENCE_EDIT_OWN
     ]
 });

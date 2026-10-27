@@ -26,7 +26,7 @@
  *
  * HOS-296: the SSR evaluator takes the actor's whole role SET, not a scalar.
  * A node is visible when ANY held role grants the permission — that is what
- * makes a user who is both HOST and GASTRONOMY_OWNER or EXPERIENCE_OWNER see both nav groups
+ * makes a user who is both HOST and VENUE_OWNER or EXPERIENCE_OWNER see both nav groups
  * (AC-1).
  */
 
@@ -50,7 +50,7 @@ export interface GatedNavNode {
  * Derived from `apps/web/src/lib/account-roles.ts`:
  * - `ACCOMMODATION_CREATE` ← `ROLES_WITH_ACCOMMODATIONS_NAV`
  *   (HOST, ADMIN, SUPER_ADMIN).
- * - `GASTRONOMY_EDIT_OWN` and `EXPERIENCE_EDIT_OWN` together mirror
+ * - `VENUE_EDIT_OWN` and `EXPERIENCE_EDIT_OWN` together mirror
  *   `ROLES_WITH_LISTING_NAV`.
  *
  * These sets APPROXIMATE the seed, so an entry that names a role the seed does
@@ -91,8 +91,8 @@ export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<Rol
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
     ]),
-    [PermissionEnum.GASTRONOMY_EDIT_OWN]: new Set<RoleEnum>([
-        RoleEnum.GASTRONOMY_OWNER,
+    [PermissionEnum.VENUE_EDIT_OWN]: new Set<RoleEnum>([
+        RoleEnum.VENUE_OWNER,
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
     ]),
@@ -160,7 +160,7 @@ export function isVisibleByPermissions(
  * HOS-296: the second argument is the actor's whole role SET. Visibility is a
  * union — a node is visible as soon as ONE held role grants the permission, so
  * accumulating hats can only ever ADD nav, never remove it. A user holding
- * both `HOST` and `GASTRONOMY_OWNER or EXPERIENCE_OWNER` therefore sees both groups (AC-1).
+ * both `HOST` and `VENUE_OWNER or EXPERIENCE_OWNER` therefore sees both groups (AC-1).
  *
  * @param node - A `NavGroup` or `NavItem` (or any object shaped like one).
  * @param roles - Every role the user holds, from `Astro.locals.user.roles`.
@@ -228,10 +228,7 @@ export function hasListingNavAccess({
 }): boolean {
     return isVisibleByRoles(
         {
-            requiredPermissions: [
-                PermissionEnum.GASTRONOMY_EDIT_OWN,
-                PermissionEnum.EXPERIENCE_EDIT_OWN
-            ]
+            requiredPermissions: [PermissionEnum.VENUE_EDIT_OWN, PermissionEnum.EXPERIENCE_EDIT_OWN]
         },
         roles
     );

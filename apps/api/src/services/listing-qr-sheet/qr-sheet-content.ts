@@ -126,7 +126,7 @@ export const MINTED_TARGET_LOCALE: Locale = 'es';
  */
 const PUBLIC_PATH_SEGMENT: Readonly<Record<ListingQrSheetVertical, string>> = {
     accommodation: 'alojamientos',
-    venue: 'gastronomia',
+    venue: 'comer-y-salir',
     experience: 'experiencias'
 };
 

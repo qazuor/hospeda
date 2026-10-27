@@ -742,7 +742,7 @@
                         "cap5": "Contact hosts"
                     }
                 },
-                "GASTRONOMY_OWNER": {
+                "VENUE_OWNER": {
                     "name": "Gastronomy Owner",
                     "description": "Owner of a restaurant, bar or café who manages their own listing (no access to experiences)",
                     "capabilities": {

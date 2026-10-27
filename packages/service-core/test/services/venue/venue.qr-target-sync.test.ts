@@ -177,7 +177,7 @@ function buildService(input: {
 const admin: Actor = {
     id: 'admin-uuid-1',
     roles: [RoleEnum.ADMIN],
-    permissions: [PermissionEnum.GASTRONOMY_EDIT_ALL]
+    permissions: [PermissionEnum.VENUE_EDIT_ALL]
 };
 
 describe('GastronomyService — menu QR target sync on slug change (HOS-1044 AC-5)', () => {

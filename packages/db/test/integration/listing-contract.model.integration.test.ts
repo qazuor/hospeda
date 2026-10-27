@@ -23,7 +23,7 @@ afterAll(async () => closeTestPool());
 
 const TABLE: Readonly<Record<ListingVertical, string>> = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 
@@ -71,6 +71,23 @@ async function arrangeOwner(tx: DrizzleClient) {
 }
 
 describe('TEST:V6:34 AC:V6:26 listingContractModel.findListingsById', () => {
+    it('resolves VenueModel relations through the renamed table registration', async () => {
+        await withTestTransaction(async (tx) => {
+            const { ownerId, destinationId } = await arrangeOwner(tx);
+            const { id } = await createListing({
+                tx,
+                vertical: 'venue',
+                ownerId,
+                destinationId,
+                status: PublicationStatusEnum.DRAFT
+            });
+
+            const result = await new VenueModel().findOneWithRelations({ id }, { owner: true }, tx);
+
+            expect(result?.id).toBe(id);
+        });
+    });
+
     it('returns the vertical, owner and status of a listing of each vertical', async () => {
         await withTestTransaction(async (tx) => {
             const { ownerId, destinationId } = await arrangeOwner(tx);
@@ -113,7 +130,7 @@ describe('TEST:V6:34 AC:V6:26 listingContractModel.findListingsById', () => {
                 destinationId,
                 status: PublicationStatusEnum.PUBLISHED
             });
-            await tx.execute(sql`UPDATE gastronomies SET deleted_at = now() WHERE id = ${id}`);
+            await tx.execute(sql`UPDATE venues SET deleted_at = now() WHERE id = ${id}`);
             const rows = await listingContractModel.findListingsById({ listingId: id, tx });
             expect(rows).toEqual([]);
         });

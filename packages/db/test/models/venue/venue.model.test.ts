@@ -50,7 +50,7 @@ describe('VenueModel.findIdsByOwnerId', () => {
         expect(result).toEqual(['gastro-1', 'gastro-2']);
         expect(select).toHaveBeenCalledWith({ id: expect.anything() });
         expect(logQuery).toHaveBeenCalledWith(
-            'gastronomies',
+            'venues',
             'findIdsByOwnerId',
             { ownerId: 'owner-1' },
             { count: 2 }
