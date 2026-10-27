@@ -59,8 +59,8 @@ export type TreeScan = FileScan & {
     readonly retentionStoppedKeys: readonly string[];
 };
 
-const LISTING_TABLES = new Set(['accommodations', 'venues', 'experiences']);
-const LISTING_TABLE_RE = /\b(?:accommodations|venues|experiences)\b/;
+const LISTING_TABLES = new Set(['accommodations', 'gastronomies', 'venues', 'experiences']);
+const LISTING_TABLE_RE = /\b(?:accommodations|gastronomies|venues|experiences)\b/;
 const CODE = /\.ts$/;
 const DECLARATION = /\.d\.ts$/;
 const TEST = /(?:\.(?:test|spec)\.[cm]?[jt]sx?$)|(?:^|\/)(?:test|tests|__tests__|e2e)\//;
@@ -217,7 +217,8 @@ function sqlWrites(text: string): TextHit[] {
             hits.push({ index: m.index, column: m[1] as ClockColumn, kind: 'write' });
         }
     }
-    const insert = /INSERT\s+INTO\s+(accommodations|venues|experiences)\s*\(([^)]*)\)/gi;
+    const insert =
+        /INSERT\s+INTO\s+(accommodations|gastronomies|venues|experiences)\s*\(([^)]*)\)/gi;
     for (let m = insert.exec(text); m; m = insert.exec(text)) {
         const listStart = m.index + m[0].indexOf('(') + 1;
         const cols = /\b(inactive_since|deadlines_version)\b/g;
@@ -257,9 +258,10 @@ function scanMigration(file: string, source: string): FileScan {
     const sites: ClockSite[] = [];
     let offset = 0;
     for (const statement of source.split(';')) {
-        const update = /\bUPDATE\s+(?:accommodations|venues|experiences)\b[^;]*?\bSET\b/i.exec(
-            statement
-        );
+        const update =
+            /\bUPDATE\s+(?:accommodations|gastronomies|venues|experiences)\b[^;]*?\bSET\b/i.exec(
+                statement
+            );
         if (update) {
             const setStart = update.index + update[0].length;
             const writes = sqlWrites(statement.slice(setStart)).filter((w) => w.kind === 'write');
