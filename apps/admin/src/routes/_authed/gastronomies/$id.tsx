@@ -14,27 +14,27 @@ import { useState } from 'react';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { FaqManager } from '@/components/faqs/FaqManager';
-import { gastronomyTabs, PageTabs } from '@/components/layout/PageTabs';
+import { PageTabs, venueTabs } from '@/components/layout/PageTabs';
 import { OwnerSelect } from '@/components/selects/OwnerSelect';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
-import {
-    useAssignGastronomyOwnerMutation,
-    useGastronomyPage,
-    useGastronomyPendingReviewsQuery,
-    useModerateGastronomyReviewMutation
-} from '@/features/gastronomy';
 import { ListingModerationCard } from '@/features/listing/components/ListingModerationCard';
 import { ListingPurgeOnRequestCard } from '@/features/listing/components/ListingPurgeOnRequestCard';
 import { canEditListing } from '@/features/listing/config/listing-moderation-actions';
+import {
+    useAssignVenueOwnerMutation,
+    useModerateVenueReviewMutation,
+    useVenuePage,
+    useVenuePendingReviewsQuery
+} from '@/features/venue';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 /** Route configuration for the gastronomy view page. */
 export const Route = createFileRoute('/_authed/gastronomies/$id')({
-    component: GastronomyViewPage,
-    loader: async ({ params }) => ({ gastronomyId: params.id }),
+    component: VenueViewPage,
+    loader: async ({ params }) => ({ venueId: params.id }),
     errorComponent: createErrorComponent('Gastronomy'),
     pendingComponent: createPendingComponent()
 });
@@ -64,17 +64,13 @@ interface PendingReview {
  *
  * @param gastronomyId - UUID of the parent gastronomy entity
  */
-function GastronomyReviewsPanel({
-    gastronomyId: _gastronomyId
-}: {
-    readonly gastronomyId: string;
-}) {
+function VenueReviewsPanel({ venueId: _venueId }: { readonly venueId: string }) {
     const { t } = useTranslations();
-    const { data: reviewsData, isLoading } = useGastronomyPendingReviewsQuery({
+    const { data: reviewsData, isLoading } = useVenuePendingReviewsQuery({
         page: 1,
         pageSize: 20
     });
-    const moderateMutation = useModerateGastronomyReviewMutation();
+    const moderateMutation = useModerateVenueReviewMutation();
 
     const reviews = (reviewsData?.items ?? []) as PendingReview[];
 
@@ -159,22 +155,22 @@ function GastronomyReviewsPanel({
  * @param gastronomyId - UUID of the gastronomy entity
  * @param currentOwnerId - Currently assigned owner UUID (if any)
  */
-function GastronomyAssignOwner({
-    gastronomyId,
+function VenueAssignOwner({
+    venueId,
     currentOwnerId
 }: {
-    readonly gastronomyId: string;
+    readonly venueId: string;
     readonly currentOwnerId?: string | null;
 }) {
     const { t } = useTranslations();
     const [selectedOwnerId, setSelectedOwnerId] = useState<string | undefined>(
         currentOwnerId ?? undefined
     );
-    const assignMutation = useAssignGastronomyOwnerMutation();
+    const assignMutation = useAssignVenueOwnerMutation();
 
     const handleAssign = () => {
         if (!selectedOwnerId) return;
-        assignMutation.mutate({ id: gastronomyId, ownerId: selectedOwnerId });
+        assignMutation.mutate({ id: venueId, ownerId: selectedOwnerId });
     };
 
     return (
@@ -214,13 +210,13 @@ function GastronomyAssignOwner({
  * Displays fields read-only, FAQs sub-tab, reviews moderation sub-tab,
  * assign-owner panel, and delete action.
  */
-function GastronomyViewPage() {
+function VenueViewPage() {
     const { id } = Route.useParams();
     const navigate = useNavigate();
     const { t } = useTranslations();
-    const entityData = useGastronomyPage(id);
+    const entityData = useVenuePage(id);
 
-    const gastronomy = entityData.entity as
+    const venue = entityData.entity as
         | {
               name?: string;
               ownerId?: string | null;
@@ -231,7 +227,7 @@ function GastronomyViewPage() {
     return (
         <div className="space-y-4">
             <PageTabs
-                tabs={gastronomyTabs}
+                tabs={venueTabs}
                 basePath={`/gastronomies/${id}`}
             />
 
@@ -244,9 +240,9 @@ function GastronomyViewPage() {
                     <ListingPurgeOnRequestCard
                         vertical="gastronomy"
                         entityId={id}
-                        entityName={gastronomy?.name ?? id}
+                        entityName={venue?.name ?? id}
                         onPurged={() => navigate({ to: '/gastronomies' })}
-                        publicationStatus={gastronomy?.publicationStatus}
+                        publicationStatus={venue?.publicationStatus}
                     />
                 </div>
 
@@ -255,13 +251,13 @@ function GastronomyViewPage() {
                 <ListingModerationCard
                     vertical="gastronomy"
                     entityId={id}
-                    entityName={gastronomy?.name ?? id}
-                    publicationStatus={gastronomy?.publicationStatus}
+                    entityName={venue?.name ?? id}
+                    publicationStatus={venue?.publicationStatus}
                 />
 
-                <GastronomyAssignOwner
-                    gastronomyId={id}
-                    currentOwnerId={gastronomy?.ownerId}
+                <VenueAssignOwner
+                    venueId={id}
+                    currentOwnerId={venue?.ownerId}
                 />
             </div>
 
@@ -273,7 +269,7 @@ function GastronomyViewPage() {
                     ...entityData,
                     canEdit:
                         entityData.canEdit &&
-                        canEditListing({ publicationStatus: gastronomy?.publicationStatus })
+                        canEditListing({ publicationStatus: venue?.publicationStatus })
                 }}
             >
                 <Tabs defaultValue="general">
@@ -319,7 +315,7 @@ function GastronomyViewPage() {
                         value="reviews"
                         className="mt-4"
                     >
-                        <GastronomyReviewsPanel gastronomyId={id} />
+                        <VenueReviewsPanel venueId={id} />
                     </TabsContent>
                 </Tabs>
             </EntityPageBase>

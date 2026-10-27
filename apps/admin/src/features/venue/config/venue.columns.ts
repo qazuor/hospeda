@@ -13,7 +13,7 @@ import { createElement, Fragment } from 'react';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { getPublicationStatusBadgeOptions } from '@/features/listing/config/publication-status-options';
-import type { GastronomyListItem } from './gastronomy.config';
+import type { VenueListItem } from './venue.config';
 
 // ---------------------------------------------------------------------------
 // Badge label maps
@@ -64,9 +64,7 @@ const PRICE_RANGE_BADGE_OPTIONS = Object.values(PriceRangeEnum).map((value) => (
  * @param t - Translation function from `useTranslations()`
  * @returns Read-only array of column configurations
  */
-export const createGastronomyColumns = (
-    t: ColumnTFunction
-): readonly ColumnConfig<GastronomyListItem>[] => [
+export const createVenueColumns = (t: ColumnTFunction): readonly ColumnConfig<VenueListItem>[] => [
     {
         id: 'name',
         header: t('admin-entities.columns.name'),
@@ -74,7 +72,7 @@ export const createGastronomyColumns = (
         enableSorting: true,
         columnType: ColumnType.ENTITY,
         entityOptions: {
-            entityType: EntityType.GASTRONOMY,
+            entityType: EntityType.VENUE,
             color: BadgeColor.ORANGE
         },
         linkHandler: (row) =>
@@ -95,7 +93,7 @@ export const createGastronomyColumns = (
     },
     {
         id: 'priceRange',
-        header: t('admin-entities.gastronomy.columns.priceRange'),
+        header: t('admin-entities.venue.columns.priceRange'),
         accessorKey: 'priceRange',
         enableSorting: true,
         columnType: ColumnType.BADGE,

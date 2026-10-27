@@ -23,17 +23,17 @@ import { Button } from '@/components/ui-wrapped/Button';
 // Types
 // ---------------------------------------------------------------------------
 
-type GastronomyFormValues = z.infer<typeof VenueCreateHttpSchema>;
+type VenueFormValues = z.infer<typeof VenueCreateHttpSchema>;
 
-/** Props accepted by {@link GastronomyForm}. */
-export interface GastronomyFormProps {
+/** Props accepted by {@link VenueForm}. */
+export interface VenueFormProps {
     /**
      * Initial field values.  Pass the existing entity when editing;
      * omit (or pass `undefined`) when creating.
      */
-    readonly defaultValues?: Partial<GastronomyFormValues>;
+    readonly defaultValues?: Partial<VenueFormValues>;
     /** Called with the validated form values when the user submits. */
-    readonly onSubmit: (values: GastronomyFormValues) => Promise<void> | void;
+    readonly onSubmit: (values: VenueFormValues) => Promise<void> | void;
     /** Called when the user clicks Cancel. */
     readonly onCancel?: () => void;
     /** Whether the form is in a pending/saving state. */
@@ -46,7 +46,7 @@ export interface GastronomyFormProps {
 // Option lists
 // ---------------------------------------------------------------------------
 
-const GASTRONOMY_TYPE_OPTIONS: ReadonlyArray<{ value: VenueTypeEnum; label: string }> = [
+const VENUE_TYPE_OPTIONS: ReadonlyArray<{ value: VenueTypeEnum; label: string }> = [
     { value: VenueTypeEnum.RESTAURANT, label: 'Restaurante' },
     { value: VenueTypeEnum.BAR, label: 'Bar' },
     { value: VenueTypeEnum.CAFE, label: 'Café' },
@@ -103,24 +103,24 @@ function FieldWrapper({ label, htmlFor, required, error, children }: FieldWrappe
  * Validates at submit via `GastronomyCreateHttpSchema.safeParse`.
  * Field-level errors are surfaced after a failed submit attempt.
  *
- * @param props - {@link GastronomyFormProps}
+ * @param props - {@link VenueFormProps}
  */
-export function GastronomyForm({
+export function VenueForm({
     defaultValues,
     onSubmit,
     onCancel,
     isPending = false,
     submitLabel = 'Guardar'
-}: GastronomyFormProps) {
+}: VenueFormProps) {
     const [globalError, setGlobalError] = React.useState<string | null>(null);
 
-    const form = useForm<GastronomyFormValues>({
+    const form = useForm<VenueFormValues>({
         defaultValues: {
             name: '',
             type: VenueTypeEnum.RESTAURANT,
             destinationId: '',
             ...defaultValues
-        } as GastronomyFormValues,
+        } as VenueFormValues,
         onSubmit: async ({ value }) => {
             setGlobalError(null);
             const result = VenueCreateHttpSchema.safeParse(value);
@@ -292,7 +292,7 @@ export function GastronomyForm({
                                         aria-required="true"
                                     >
                                         <option value="">Seleccioná el tipo…</option>
-                                        {GASTRONOMY_TYPE_OPTIONS.map((opt) => (
+                                        {VENUE_TYPE_OPTIONS.map((opt) => (
                                             <option
                                                 key={opt.value}
                                                 value={opt.value}

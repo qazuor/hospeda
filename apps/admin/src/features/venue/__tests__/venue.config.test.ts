@@ -15,32 +15,32 @@
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
-    GASTRONOMY_VIEW_PERMISSION,
-    GastronomiesPageComponent,
-    GastronomiesRoute,
-    gastronomyListConfig
-} from '../config/gastronomy.config';
+    VENUE_VIEW_PERMISSION,
+    VenuesPageComponent,
+    VenuesRoute,
+    venueListConfig
+} from '../config/venue.config';
 
 describe('gastronomyListConfig', () => {
     it('should point to the correct admin API endpoint', () => {
-        expect(gastronomyListConfig.apiEndpoint).toBe('/api/v1/admin/gastronomies');
+        expect(venueListConfig.apiEndpoint).toBe('/api/v1/admin/gastronomies');
     });
 
     it('should have basePath /gastronomies', () => {
-        expect(gastronomyListConfig.basePath).toBe('/gastronomies');
+        expect(venueListConfig.basePath).toBe('/gastronomies');
     });
 
     it('should have entityKey gastronomy', () => {
-        expect(gastronomyListConfig.entityKey).toBe('gastronomy');
+        expect(venueListConfig.entityKey).toBe('gastronomy');
     });
 
     it('should have a createColumns function', () => {
-        expect(typeof gastronomyListConfig.createColumns).toBe('function');
+        expect(typeof venueListConfig.createColumns).toBe('function');
     });
 
     it('should have a type filter in filterBarConfig.filters', () => {
         // extraFilters are merged into filterBarConfig.filters by createListingListConfig
-        const filters = gastronomyListConfig.filterBarConfig?.filters ?? [];
+        const filters = venueListConfig.filterBarConfig?.filters ?? [];
         const typeFilter = filters.find((f) => f.paramKey === 'type');
         expect(typeFilter).toBeDefined();
         // Narrow to SelectFilterConfig to access .options (discriminated union)
@@ -49,7 +49,7 @@ describe('gastronomyListConfig', () => {
     });
 
     it('should have a priceRange filter in filterBarConfig.filters', () => {
-        const filters = gastronomyListConfig.filterBarConfig?.filters ?? [];
+        const filters = venueListConfig.filterBarConfig?.filters ?? [];
         const priceFilter = filters.find((f) => f.paramKey === 'priceRange');
         expect(priceFilter).toBeDefined();
         // Narrow to SelectFilterConfig to access .options (discriminated union)
@@ -60,22 +60,22 @@ describe('gastronomyListConfig', () => {
 
 describe('GastronomiesRoute', () => {
     it('should be defined', () => {
-        expect(GastronomiesRoute).toBeDefined();
+        expect(VenuesRoute).toBeDefined();
     });
 
     it('should have options', () => {
-        expect(GastronomiesRoute).toBeTruthy();
+        expect(VenuesRoute).toBeTruthy();
     });
 });
 
 describe('GastronomiesPageComponent', () => {
     it('should be a function (React component)', () => {
-        expect(typeof GastronomiesPageComponent).toBe('function');
+        expect(typeof VenuesPageComponent).toBe('function');
     });
 });
 
 describe('GASTRONOMY_VIEW_PERMISSION', () => {
     it('should be GASTRONOMY_VIEW_ALL', () => {
-        expect(GASTRONOMY_VIEW_PERMISSION).toBe(PermissionEnum.GASTRONOMY_VIEW_ALL);
+        expect(VENUE_VIEW_PERMISSION).toBe(PermissionEnum.GASTRONOMY_VIEW_ALL);
     });
 });

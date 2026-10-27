@@ -54,7 +54,7 @@ vi.mock('@/components/ui-wrapped', () => ({
 // `useLocation`/`Link` (the router mock below only provides `createFileRoute`).
 vi.mock('@/components/layout/PageTabs', () => ({
     PageTabs: () => <div data-testid="page-tabs" />,
-    gastronomyTabs: []
+    venueTabs: []
 }));
 // The revalidate button is real UI with its own hooks (react-query, toast,
 // permissions). This file is about field handlers, so it is stubbed here
@@ -62,8 +62,8 @@ vi.mock('@/components/layout/PageTabs', () => ({
 vi.mock('@/components/RevalidateEntityButton', () => ({
     RevalidateEntityButton: () => <div data-testid="revalidate-entity-button" />
 }));
-vi.mock('@/features/gastronomy', () => ({
-    useGastronomyPage: () => ({ entity: null, isLoading: false, error: null, permissions: {} })
+vi.mock('@/features/venue', () => ({
+    useVenuePage: () => ({ entity: null, isLoading: false, error: null, permissions: {} })
 }));
 vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({ t: (key: string) => key })

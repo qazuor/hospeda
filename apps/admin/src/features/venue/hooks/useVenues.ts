@@ -1,22 +1,22 @@
 /**
  * @file useGastronomies.ts
  * TanStack Query hooks for gastronomy CRUD operations — thin wrappers that
- * re-export the factory-generated hooks from `useGastronomyQuery.ts` under the
+ * re-export the factory-generated hooks from `useVenueQuery.ts` under the
  * canonical names expected by the task manifest.
  *
  * IMPORTANT: Do NOT duplicate business logic here.  All real implementation
  * lives in `createListingEntityHooks` → `gastronomyHooks` in
- * `useGastronomyQuery.ts`.  This file simply re-exports so that callers that
- * import from `useGastronomies` get a stable public surface.
+ * `useVenueQuery.ts`.  This file simply re-exports so that callers that
+ * import from `useVenues` get a stable public surface.
  */
 
-export { useGastronomyPage } from './useGastronomyPage';
+export { useVenuePage } from './useVenuePage';
 export {
-    gastronomyHooks,
-    useAssignGastronomyOwnerMutation,
-    useCreateGastronomyMutation,
-    useGastronomyPendingReviewsQuery,
-    useGastronomyQuery,
-    useModerateGastronomyReviewMutation,
-    useUpdateGastronomyMutation
-} from './useGastronomyQuery';
+    useAssignVenueOwnerMutation,
+    useCreateVenueMutation,
+    useModerateVenueReviewMutation,
+    useUpdateVenueMutation,
+    useVenuePendingReviewsQuery,
+    useVenueQuery,
+    venueHooks
+} from './useVenueQuery';

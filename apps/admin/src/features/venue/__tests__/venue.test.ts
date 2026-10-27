@@ -21,9 +21,9 @@ import {
 import { describe, expect, it } from 'vitest';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { EntityType } from '@/components/table/DataTable';
-import { createGastronomyColumns } from '@/features/gastronomy/config/gastronomy.columns';
-import { gastronomyListConfig } from '@/features/gastronomy/config/gastronomy.config';
-import { createGastronomyConsolidatedConfig } from '@/features/gastronomy/config/gastronomy-consolidated.config';
+import { createVenueColumns } from '@/features/venue/config/venue.columns';
+import { venueListConfig } from '@/features/venue/config/venue.config';
+import { createVenueConsolidatedConfig } from '@/features/venue/config/venue-consolidated.config';
 
 /** Minimal translation stub — returns the key as-is. */
 const t = (key: string): string => key;
@@ -33,7 +33,7 @@ const t = (key: string): string => key;
 // ---------------------------------------------------------------------------
 
 describe('createGastronomyColumns', () => {
-    const columns = createGastronomyColumns(t);
+    const columns = createVenueColumns(t);
 
     it('returns all required column IDs', () => {
         const ids = columns.map((c) => c.id);
@@ -68,7 +68,7 @@ describe('createGastronomyColumns', () => {
 
     it('name column uses GASTRONOMY entity type', () => {
         const nameCol = columns.find((c) => c.id === 'name');
-        expect(nameCol?.entityOptions?.entityType).toBe(EntityType.GASTRONOMY);
+        expect(nameCol?.entityOptions?.entityType).toBe(EntityType.VENUE);
     });
 
     it('type column has badge options for all 9 GastronomyTypeEnum values', () => {
@@ -98,25 +98,23 @@ describe('createGastronomyColumns', () => {
 
 describe('gastronomyListConfig', () => {
     it('points to the correct API endpoint', () => {
-        expect(gastronomyListConfig.apiEndpoint).toBe('/api/v1/admin/gastronomies');
+        expect(venueListConfig.apiEndpoint).toBe('/api/v1/admin/gastronomies');
     });
 
     it('uses the GASTRONOMY entity type', () => {
-        expect(gastronomyListConfig.entityType).toBe(EntityType.GASTRONOMY);
+        expect(venueListConfig.entityType).toBe(EntityType.VENUE);
     });
 
     it('basePath is /gastronomies (top-level, not under /platform)', () => {
-        expect(gastronomyListConfig.basePath).toBe('/gastronomies');
+        expect(venueListConfig.basePath).toBe('/gastronomies');
     });
 
     it('createButtonPath leads to /gastronomies/new', () => {
-        expect(gastronomyListConfig.layoutConfig?.createButtonPath).toBe('/gastronomies/new');
+        expect(venueListConfig.layoutConfig?.createButtonPath).toBe('/gastronomies/new');
     });
 
     it('always includes the four shared listing filter params', () => {
-        const paramKeys = (gastronomyListConfig.filterBarConfig?.filters ?? []).map(
-            (f) => f.paramKey
-        );
+        const paramKeys = (venueListConfig.filterBarConfig?.filters ?? []).map((f) => f.paramKey);
         expect(paramKeys).toContain('destinationId');
         expect(paramKeys).not.toContain('isFeatured');
         expect(paramKeys).toContain('ownerId');
@@ -124,21 +122,17 @@ describe('gastronomyListConfig', () => {
     });
 
     it('includes gastronomy-specific filter: type', () => {
-        const paramKeys = (gastronomyListConfig.filterBarConfig?.filters ?? []).map(
-            (f) => f.paramKey
-        );
+        const paramKeys = (venueListConfig.filterBarConfig?.filters ?? []).map((f) => f.paramKey);
         expect(paramKeys).toContain('type');
     });
 
     it('includes gastronomy-specific filter: priceRange', () => {
-        const paramKeys = (gastronomyListConfig.filterBarConfig?.filters ?? []).map(
-            (f) => f.paramKey
-        );
+        const paramKeys = (venueListConfig.filterBarConfig?.filters ?? []).map((f) => f.paramKey);
         expect(paramKeys).toContain('priceRange');
     });
 
     it('shared filters appear before gastronomy-specific filters (lower order)', () => {
-        const filters = gastronomyListConfig.filterBarConfig?.filters ?? [];
+        const filters = venueListConfig.filterBarConfig?.filters ?? [];
         const destinationIdx = filters.findIndex((f) => f.paramKey === 'destinationId');
         const typeIdx = filters.findIndex((f) => f.paramKey === 'type');
         const priceRangeIdx = filters.findIndex((f) => f.paramKey === 'priceRange');
@@ -147,7 +141,7 @@ describe('gastronomyListConfig', () => {
     });
 
     it('type filter options cover all GastronomyTypeEnum values', () => {
-        const typeFilter = (gastronomyListConfig.filterBarConfig?.filters ?? []).find(
+        const typeFilter = (venueListConfig.filterBarConfig?.filters ?? []).find(
             (f) => f.paramKey === 'type'
         );
         // Narrow to SelectFilterConfig to access .options (discriminated union)
@@ -160,7 +154,7 @@ describe('gastronomyListConfig', () => {
     });
 
     it('priceRange filter options cover all PriceRangeEnum values', () => {
-        const priceFilter = (gastronomyListConfig.filterBarConfig?.filters ?? []).find(
+        const priceFilter = (venueListConfig.filterBarConfig?.filters ?? []).find(
             (f) => f.paramKey === 'priceRange'
         );
         // Narrow to SelectFilterConfig to access .options (discriminated union)
@@ -178,7 +172,7 @@ describe('gastronomyListConfig', () => {
 // ---------------------------------------------------------------------------
 
 describe('createGastronomyConsolidatedConfig', () => {
-    const config = createGastronomyConsolidatedConfig(t);
+    const config = createVenueConsolidatedConfig(t);
 
     it('has exactly 3 sections in the correct order', () => {
         expect(config.sections).toHaveLength(3);

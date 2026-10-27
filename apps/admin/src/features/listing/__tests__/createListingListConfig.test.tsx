@@ -218,9 +218,9 @@ describe('createListingListConfig — extraListConfig overrides', () => {
 // ---------------------------------------------------------------------------
 
 it('selects only the requested vertical permissions for shared sections', () => {
-    const gastronomy = createListingOperationalSection('gastronomy');
+    const venue = createListingOperationalSection('gastronomy');
     const experience = createListingOperationalSection('experience');
-    expect(gastronomy.permissions?.edit).toEqual([
+    expect(venue.permissions?.edit).toEqual([
         PermissionEnum.GASTRONOMY_EDIT_OWN,
         PermissionEnum.GASTRONOMY_EDIT_ALL
     ]);

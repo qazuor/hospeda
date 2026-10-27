@@ -7,43 +7,43 @@
  * gastronomy entity.
  *
  * DO NOT export internal file paths from this barrel — consumers must import
- * from `@/features/gastronomy`, not from sub-paths.
+ * from `@/features/venue`, not from sub-paths.
  */
 
-export type { GastronomyCardProps } from './components/GastronomyCard';
+export type { VenueCardProps } from './components/VenueCard';
 // UI components
-export { GastronomyCard } from './components/GastronomyCard';
-export type { GastronomyFormProps } from './components/GastronomyForm';
-export { GastronomyForm } from './components/GastronomyForm';
-export type { GastronomyQualityScoreProps } from './components/GastronomyQualityScore';
-export { GastronomyQualityScore } from './components/GastronomyQualityScore';
+export { VenueCard } from './components/VenueCard';
+export type { VenueFormProps } from './components/VenueForm';
+export { VenueForm } from './components/VenueForm';
+export type { VenueQualityScoreProps } from './components/VenueQualityScore';
+export { VenueQualityScore } from './components/VenueQualityScore';
+// Quality score signals
+export { createVenueSignals } from './config/score-signals';
 // Column factory
-export { createGastronomyColumns } from './config/gastronomy.columns';
-export type { GastronomyListItem } from './config/gastronomy.config';
+export { createVenueColumns } from './config/venue.columns';
+export type { VenueListItem } from './config/venue.config';
 // List config + entity-list page (route + component)
 export {
-    GASTRONOMY_VIEW_PERMISSION,
-    GastronomiesPageComponent,
-    GastronomiesRoute,
-    gastronomyListConfig
-} from './config/gastronomy.config';
+    VENUE_VIEW_PERMISSION,
+    VenuesPageComponent,
+    VenuesRoute,
+    venueListConfig
+} from './config/venue.config';
 // Consolidated form config
-export { createGastronomyConsolidatedConfig } from './config/gastronomy-consolidated.config';
-// Quality score signals
-export { createGastronomySignals } from './config/score-signals';
-// Canonical hooks re-export (T-059 manifest)
-export {
-    useCreateGastronomyMutation as useGastronomyCreate,
-    useUpdateGastronomyMutation as useGastronomyUpdate
-} from './hooks/useGastronomies';
-export { useGastronomyPage } from './hooks/useGastronomyPage';
+export { createVenueConsolidatedConfig } from './config/venue-consolidated.config';
+export { useVenuePage } from './hooks/useVenuePage';
 // Hooks
 export {
-    gastronomyHooks,
-    useAssignGastronomyOwnerMutation,
-    useCreateGastronomyMutation,
-    useGastronomyPendingReviewsQuery,
-    useGastronomyQuery,
-    useModerateGastronomyReviewMutation,
-    useUpdateGastronomyMutation
-} from './hooks/useGastronomyQuery';
+    useAssignVenueOwnerMutation,
+    useCreateVenueMutation,
+    useModerateVenueReviewMutation,
+    useUpdateVenueMutation,
+    useVenuePendingReviewsQuery,
+    useVenueQuery,
+    venueHooks
+} from './hooks/useVenueQuery';
+// Canonical hooks re-export (T-059 manifest)
+export {
+    useCreateVenueMutation as useVenueCreate,
+    useUpdateVenueMutation as useVenueUpdate
+} from './hooks/useVenues';

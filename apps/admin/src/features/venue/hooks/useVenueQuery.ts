@@ -25,7 +25,7 @@ import { createListingEntityHooks } from '@/features/listing';
  * const { useGetById, useCreate, useUpdate } = gastronomyHooks;
  * ```
  */
-export const gastronomyHooks = createListingEntityHooks<VenueAdmin>({
+export const venueHooks = createListingEntityHooks<VenueAdmin>({
     entityName: 'gastronomies',
     apiEndpoint: '/api/v1/admin/gastronomies'
 });
@@ -41,15 +41,15 @@ export const gastronomyHooks = createListingEntityHooks<VenueAdmin>({
  * @param options - Optional query options
  * @returns TanStack Query result with `GastronomyAdmin` data
  */
-export const useGastronomyQuery = (id: string, options?: { enabled?: boolean }) =>
-    gastronomyHooks.useDetail(id, options);
+export const useVenueQuery = (id: string, options?: { enabled?: boolean }) =>
+    venueHooks.useDetail(id, options);
 
 /**
  * Mutation hook to create a new gastronomy listing.
  *
  * @returns TanStack Query `UseMutationResult`
  */
-export const useCreateGastronomyMutation = () => gastronomyHooks.useCreate();
+export const useCreateVenueMutation = () => venueHooks.useCreate();
 
 /**
  * Mutation hook to update (PATCH) an existing gastronomy listing.
@@ -60,22 +60,21 @@ export const useCreateGastronomyMutation = () => gastronomyHooks.useCreate();
  *
  * @returns TanStack Query `UseMutationResult`
  */
-export const useUpdateGastronomyMutation = () => gastronomyHooks.useUpdate();
+export const useUpdateVenueMutation = () => venueHooks.useUpdate();
 
 /**
  * Mutation hook to reassign the owner of a gastronomy listing.
  *
  * @returns TanStack Query `UseMutationResult`
  */
-export const useAssignGastronomyOwnerMutation = () => gastronomyHooks.useAssignOwnerMutation();
+export const useAssignVenueOwnerMutation = () => venueHooks.useAssignOwnerMutation();
 
 /**
  * Mutation hook to moderate a review on a gastronomy listing.
  *
  * @returns TanStack Query `UseMutationResult`
  */
-export const useModerateGastronomyReviewMutation = () =>
-    gastronomyHooks.useModerateReviewMutation();
+export const useModerateVenueReviewMutation = () => venueHooks.useModerateReviewMutation();
 
 /**
  * Query hook to fetch reviews pending moderation for gastronomy listings.
@@ -83,6 +82,6 @@ export const useModerateGastronomyReviewMutation = () =>
  * @param params - Optional pagination and filter params
  * @returns TanStack Query `UseQueryResult`
  */
-export const useGastronomyPendingReviewsQuery = (
-    params?: Parameters<typeof gastronomyHooks.usePendingReviewsQuery>[0]
-) => gastronomyHooks.usePendingReviewsQuery(params);
+export const useVenuePendingReviewsQuery = (
+    params?: Parameters<typeof venueHooks.usePendingReviewsQuery>[0]
+) => venueHooks.usePendingReviewsQuery(params);

@@ -7,13 +7,10 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import {
-    GastronomiesPageComponent,
-    GastronomiesRoute
-} from '@/features/gastronomy/config/gastronomy.config';
+import { VenuesPageComponent, VenuesRoute } from '@/features/venue/config/venue.config';
 
 // TanStack Router requirement: bare reference prevents unused-import removal by bundler
 createFileRoute;
 
-export const Route = GastronomiesRoute;
-export { GastronomiesPageComponent as default };
+export const Route = VenuesRoute;
+export { VenuesPageComponent as default };
