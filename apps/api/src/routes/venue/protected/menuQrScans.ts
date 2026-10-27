@@ -2,7 +2,7 @@
  * The owner's menu QR scan aggregate (HOS-1044 §6.4).
  *
  * ```
- * GET /api/v1/protected/gastronomies/{id}/menu-qr/scans
+ * GET /api/v1/protected/venues/{id}/menu-qr/scans
  * ```
  *
  * The same ownership and menu_qr_scan_metrics gate as `menuQr.ts` applies.
@@ -95,7 +95,7 @@ export async function handleGetVenueMenuQrScans(
 }
 
 /**
- * GET /api/v1/protected/gastronomies/:id/menu-qr/scans
+ * GET /api/v1/protected/venues/:id/menu-qr/scans
  *
  * Owner-only scan aggregate requiring menu_qr_scan_metrics on the listing owner.
  */

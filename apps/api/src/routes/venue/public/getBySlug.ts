@@ -29,7 +29,7 @@ import { applyVenueMenuManagementGate } from '../../venue/public/menu-projection
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/public/gastronomies/slug/:slug
+ * GET /api/v1/public/venues/slug/:slug
  * Get gastronomy listing by slug — Public endpoint.
  *
  * Delegates to VenueService.getBySlug (inherited from BaseCrudService

@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/protected/gastronomies/:id/media
+ * POST /api/v1/protected/venues/:id/media
  * Add a photo to a gastronomy listing gallery (HOS-372).
  *
  * This is a URL-receiver endpoint: the caller has already uploaded the file to

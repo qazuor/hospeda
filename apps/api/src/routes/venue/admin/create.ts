@@ -19,7 +19,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * POST /api/v1/admin/gastronomies
+ * POST /api/v1/admin/venues
  * Create gastronomy listing — Admin endpoint.
  *
  * Requires VENUE_CREATE permission.

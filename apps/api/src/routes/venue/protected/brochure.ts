@@ -2,7 +2,7 @@
  * The owner's printable PDF ficha of a gastronomy listing (HOS-1058).
  *
  * ```
- * GET /api/v1/protected/gastronomies/{id}/brochure
+ * GET /api/v1/protected/venues/{id}/brochure
  * ```
  *
  * ## What it answers, and in what order
@@ -127,7 +127,7 @@ export async function handleGetVenueBrochure(
 }
 
 /**
- * GET /api/v1/protected/gastronomies/:id/brochure
+ * GET /api/v1/protected/venues/:id/brochure
  *
  * Premium, in both verticals (owner decision, 2026-09-01). The grant lives on
  * each vertical's premium plan row rather than in

@@ -18,7 +18,7 @@ import { createAdminRoute } from '../../../../utils/route-factory';
 const venueReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
- * PUT /api/v1/admin/gastronomies/reviews/:id
+ * PUT /api/v1/admin/venues/reviews/:id
  * Update gastronomy review — Admin endpoint.
  *
  * Requires both VENUE_EDIT_ALL and VENUE_MODERATE_REVIEW — reviews are

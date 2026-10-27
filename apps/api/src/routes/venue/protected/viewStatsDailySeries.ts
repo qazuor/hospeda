@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/protected/gastronomies/mine/views/daily-series
+ * GET /api/v1/protected/venues/mine/views/daily-series
  *
  * Gap-filled daily view-count series for every gastronomy listing owned by
  * the authenticated owner, over a rolling window (7d or 30d) — HOS-734.

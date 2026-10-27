@@ -12,7 +12,7 @@ import { createAdminListRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/admin/gastronomies
+ * GET /api/v1/admin/venues
  * List gastronomy listings — Admin endpoint.
  *
  * Permission model: the entity-specific permission (VENUE_VIEW_ALL) is

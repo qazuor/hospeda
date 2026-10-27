@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/protected/gastronomies/:id/faqs
+ * POST /api/v1/protected/venues/:id/faqs
  * Add a new FAQ to a gastronomy listing (T-044)
  *
  * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).

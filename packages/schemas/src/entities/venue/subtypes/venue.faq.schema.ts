@@ -41,7 +41,7 @@ export type VenueFaq = z.infer<typeof VenueFaqSchema>;
  * Field set: id, gastronomyId, question, answer, category, displayOrder.
  * Deliberately EXCLUDES audit fields (createdAt, updatedAt, createdById, updatedById,
  * deletedAt, deletedById), lifecycleState, and all internal metadata.
- * Used as the responseSchema for GET /api/v1/public/gastronomies/:gastronomyId/faqs.
+ * Used as the responseSchema for GET /api/v1/public/venues/:gastronomyId/faqs.
  */
 export const VenueFaqPublicSchema = BaseFaqPublicSchema.extend({
     /** FAQ entity ID (UUID). */

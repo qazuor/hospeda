@@ -13,7 +13,7 @@ import { createAdminRoute } from '../../../../utils/route-factory';
 const venueReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
- * GET /api/v1/admin/gastronomies/reviews/:id
+ * GET /api/v1/admin/venues/reviews/:id
  * Get gastronomy review by ID — Admin endpoint.
  *
  * Requires VENUE_MODERATE_REVIEW permission.

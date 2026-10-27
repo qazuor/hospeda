@@ -12,7 +12,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * POST /api/v1/admin/gastronomies/batch
+ * POST /api/v1/admin/venues/batch
  * Get multiple gastronomy listings by IDs — Admin endpoint.
  *
  * Used by admin relation-selector components that need to resolve multiple

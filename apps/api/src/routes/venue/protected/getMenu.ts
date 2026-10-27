@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/protected/gastronomies/:id/menu
+ * GET /api/v1/protected/venues/:id/menu
  *
  * The owner's view of the venue's carta (HOS-895) — the structured sections and
  * dishes, plus whichever of the two fallbacks are set (the uploaded photo/PDF

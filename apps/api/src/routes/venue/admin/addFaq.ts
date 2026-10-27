@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/admin/gastronomies/:id/faqs
+ * POST /api/v1/admin/venues/:id/faqs
  * Add a new FAQ to a gastronomy listing — Admin endpoint.
  */
 import {
@@ -20,7 +20,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * POST /api/v1/admin/gastronomies/:id/faqs
+ * POST /api/v1/admin/venues/:id/faqs
  * Add FAQ to gastronomy listing — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service helper

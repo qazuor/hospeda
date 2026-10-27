@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/admin/gastronomies/:id/assign-owner
+ * POST /api/v1/admin/venues/:id/assign-owner
  * Set or replace the VENUE_OWNER of a gastronomy listing — Admin endpoint.
  *
  * Uses the dedicated `VenueService.assignOwner()` action. The generic
@@ -23,7 +23,7 @@ const AssignOwnerBodySchema = z.object({
 });
 
 /**
- * POST /api/v1/admin/gastronomies/:id/assign-owner
+ * POST /api/v1/admin/venues/:id/assign-owner
  * Assign owner to gastronomy listing — Admin endpoint.
  *
  * Delegates to `VenueService.assignOwner(actor, id, ownerId)`.

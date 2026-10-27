@@ -1,5 +1,5 @@
 /**
- * PATCH /api/v1/admin/gastronomies/:id/media/reorder
+ * PATCH /api/v1/admin/venues/:id/media/reorder
  * Reorder photos in a gastronomy listing gallery — Admin endpoint (HOS-372).
  *
  * The caller supplies the full ordered list of visible media UUIDs. The service
@@ -29,7 +29,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * PATCH /api/v1/admin/gastronomies/:id/media/reorder
+ * PATCH /api/v1/admin/venues/:id/media/reorder
  * Reorder gastronomy listing gallery photos — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service helper

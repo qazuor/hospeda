@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/admin/gastronomies/:id/media/featured
+ * POST /api/v1/admin/venues/:id/media/featured
  * Register an already-uploaded URL as the gastronomy listing's COVER — Admin endpoint
  * (HOS-803).
  *

@@ -34,7 +34,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * PATCH /api/v1/protected/gastronomies/:id
+ * PATCH /api/v1/protected/venues/:id
  * Owner operational update — Protected endpoint.
  *
  * Only operational sections are accepted (openingHours, contactInfo,

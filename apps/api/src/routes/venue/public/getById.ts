@@ -16,7 +16,7 @@ import { createPublicRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/public/gastronomies/:id
+ * GET /api/v1/public/venues/:id
  * Get gastronomy listing by ID — Public endpoint.
  *
  * Returns null (404) when the listing does not exist or is not publicly visible.

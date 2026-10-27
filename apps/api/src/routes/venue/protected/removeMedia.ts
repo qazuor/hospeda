@@ -1,5 +1,5 @@
 /**
- * DELETE /api/v1/protected/gastronomies/:id/media/:mediaId
+ * DELETE /api/v1/protected/venues/:id/media/:mediaId
  * Remove (soft-delete) a photo from a gastronomy listing gallery (HOS-372).
  *
  * Soft-deletes the `venue_media` row identified by `mediaId` and

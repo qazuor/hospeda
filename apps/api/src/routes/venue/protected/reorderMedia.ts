@@ -1,5 +1,5 @@
 /**
- * PATCH /api/v1/protected/gastronomies/:id/media/reorder
+ * PATCH /api/v1/protected/venues/:id/media/reorder
  * Reorder photos in a gastronomy listing gallery (HOS-372).
  *
  * The caller supplies the full ordered list of visible media UUIDs. The service

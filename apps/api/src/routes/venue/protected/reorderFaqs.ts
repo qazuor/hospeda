@@ -1,5 +1,5 @@
 /**
- * PUT /api/v1/protected/gastronomies/:id/faqs/reorder
+ * PUT /api/v1/protected/venues/:id/faqs/reorder
  * Reorder FAQs on a gastronomy listing (T-044 / SPEC-177 pattern)
  *
  * The caller supplies an explicit { faqId, displayOrder }[] array.

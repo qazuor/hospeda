@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/admin/gastronomies/options
+ * GET /api/v1/admin/venues/options
  * Lightweight relation-selector lookup endpoint (mirrors accommodation pattern).
  *
  * MUST be registered BEFORE the /{id} route so Hono does not resolve "options"
@@ -21,7 +21,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/admin/gastronomies/options
+ * GET /api/v1/admin/venues/options
  * Minimal `{ id, label, slug, type, destination }` lookup for admin relation selectors.
  *
  * Gated by admin-panel access only (no `requiredPermissions`).

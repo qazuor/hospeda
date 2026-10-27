@@ -19,7 +19,7 @@ import { createAdminRoute } from '../../../../utils/route-factory';
 const venueReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
- * POST /api/v1/admin/gastronomies/reviews/:id/moderate
+ * POST /api/v1/admin/venues/reviews/:id/moderate
  *
  * Applies a moderation decision (`APPROVED` | `REJECTED`) to a single
  * gastronomy review. Sets `moderationState`, `moderatedById`, `moderatedAt`,

@@ -17,7 +17,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/protected/gastronomies/:id
+ * GET /api/v1/protected/venues/:id
  * Get gastronomy listing by ID — Protected endpoint (owner view only).
  *
  * The resource step admits only the owner, or an actor

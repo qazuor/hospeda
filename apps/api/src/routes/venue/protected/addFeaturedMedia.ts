@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/protected/gastronomies/:id/media/featured
+ * POST /api/v1/protected/venues/:id/media/featured
  * Register an already-uploaded URL as the gastronomy listing's COVER (HOS-803).
  *
  * ## Why this exists next to `POST /:id/media`

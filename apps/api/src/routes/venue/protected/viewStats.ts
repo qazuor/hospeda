@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/protected/gastronomies/mine/views
+ * GET /api/v1/protected/venues/mine/views
  *
  * Basic view-count statistics for the authenticated owner's own gastronomy
  * listings, over a rolling window (7d or 30d) — HOS-734.

@@ -2,7 +2,7 @@
  * The owner's printable QR sheet for a gastronomy listing (HOS-982).
  *
  * ```
- * GET /api/v1/protected/gastronomies/{id}/qr-sheet
+ * GET /api/v1/protected/venues/{id}/qr-sheet
  * ```
  *
  * The accommodation twin (`routes/accommodation/protected/qrSheet.ts`) carries
@@ -129,7 +129,7 @@ export async function handleGetVenueQrSheet(
 }
 
 /**
- * GET /api/v1/protected/gastronomies/:id/qr-sheet
+ * GET /api/v1/protected/venues/:id/qr-sheet
  *
  * No entitlement gate — owner decision, see the accommodation twin.
  */

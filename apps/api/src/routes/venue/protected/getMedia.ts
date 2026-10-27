@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/protected/gastronomies/:id/media
+ * GET /api/v1/protected/venues/:id/media
  * List photos in a gastronomy listing gallery (HOS-372).
  *
  * Returns all non-deleted media rows for the given listing, ordered by

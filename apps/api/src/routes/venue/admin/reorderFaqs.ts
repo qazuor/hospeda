@@ -1,5 +1,5 @@
 /**
- * PATCH /api/v1/admin/gastronomies/:id/faqs/reorder
+ * PATCH /api/v1/admin/venues/:id/faqs/reorder
  * Reorder FAQs for a gastronomy listing — Admin endpoint.
  *
  * MUST be registered BEFORE /{id}/faqs/{faqId} to prevent "reorder" from
@@ -23,7 +23,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * PATCH /api/v1/admin/gastronomies/:id/faqs/reorder
+ * PATCH /api/v1/admin/venues/:id/faqs/reorder
  * Reorder FAQs for a gastronomy listing — Admin endpoint.
  *
  * Validates that all supplied faqId values belong to the given listing before

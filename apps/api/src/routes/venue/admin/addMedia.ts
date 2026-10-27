@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/admin/gastronomies/:id/media
+ * POST /api/v1/admin/venues/:id/media
  * Add a photo to a gastronomy listing gallery — Admin endpoint (HOS-372).
  *
  * This is a URL-receiver endpoint: the caller has already uploaded the file to
@@ -24,7 +24,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * POST /api/v1/admin/gastronomies/:id/media
+ * POST /api/v1/admin/venues/:id/media
  * Add photo to gastronomy listing gallery — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service helper
