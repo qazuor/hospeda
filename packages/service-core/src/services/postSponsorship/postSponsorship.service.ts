@@ -200,17 +200,13 @@ export class PostSponsorshipService extends BaseCrudService<
     protected async _executeSearch(
         params: PostSponsorshipSearchInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<{ items: PostSponsorship[]; total: number }> {
-        const {
-            sponsorId,
-            postId,
-            fromDate,
-            toDate,
-            isHighlighted,
-            page = 1,
-            pageSize = 10
-        } = params;
+        const { sponsorId, postId, fromDate, toDate, isHighlighted } = params;
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params and
+        // republishes them on ctx.pagination (SPEC-088); read them from ctx (HOS-1900).
+        const page = ctx.pagination?.page;
+        const pageSize = ctx.pagination?.pageSize;
         const where: Record<string, unknown> = {};
         if (sponsorId) where.sponsorId = sponsorId;
         if (postId) where.postId = postId;

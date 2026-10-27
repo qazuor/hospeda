@@ -337,7 +337,6 @@ Configure route behavior with `options` parameter.
     requests: number;
     windowMs: number;
   };
-  cacheTTL?: number;              // Cache duration (seconds)
   middlewares?: Middleware[];     // Additional middleware
 }
 ```
@@ -361,21 +360,11 @@ options: {
 }
 ```
 
-### Example: Response Caching
-
-```typescript
-options: {
-  cacheTTL: 300,    // Cache for 5 minutes
-  skipAuth: true
-}
-```
-
 ### Example: Multiple Options
 
 ```typescript
 options: {
   skipAuth: true,
-  cacheTTL: 600,
   customRateLimit: {
     requests: 100,
     windowMs: 60000

@@ -148,7 +148,6 @@ options: {
     requests: 5,
     windowMs: 60000
   },
-  cacheTTL: 300,                              // Cache for 5 minutes
   middlewares: [customMiddleware]             // Additional middleware
 }
 ```
@@ -523,7 +522,7 @@ Route files are in `routes/destination/public/`. The `by-path` route is register
 
 ## Performance Considerations
 
-- Use `cacheTTL` for static/slow-changing data
+- Response caching is global (cache middleware TTL) plus Cloudflare's edge cache rule; there is no per-route TTL option
 - Implement pagination for list endpoints (always)
 - Use database connection pooling (automatic with Drizzle)
 - Monitor metrics at `/metrics` endpoint

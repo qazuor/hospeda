@@ -3,7 +3,7 @@
  *
  * The event twin of `post/protected/getById.ts`. See that file for why this
  * exists instead of reusing the public route: the public one is cached
- * (`cacheTTL`), so serving an actor-shaped response through it would cache one
+ * (in-process and at the edge), so serving an actor-shaped response through it would cache one
  * author's unpublished draft and hand it to the next caller.
  *
  * @module routes/event/protected/getById

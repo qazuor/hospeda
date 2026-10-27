@@ -60,7 +60,6 @@ export const protectedGetUserByIdRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

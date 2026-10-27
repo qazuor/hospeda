@@ -37,7 +37,6 @@ export const adminGetPostSeoRoute = createAdminRoute({
         return result.data?.seo ?? null;
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

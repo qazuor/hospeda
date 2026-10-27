@@ -33,5 +33,5 @@ export const adminGetCommentByIdRoute = createAdminRoute({
         }
         return result.data ? mapAuthorName(result.data as AdminCommentRow) : null;
     },
-    options: { cacheTTL: 60, customRateLimit: { requests: 100, windowMs: 60_000 } }
+    options: { customRateLimit: { requests: 100, windowMs: 60_000 } }
 });

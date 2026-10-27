@@ -19,7 +19,6 @@ export const liveRoutes = createSimpleRoute({
     options: {
         skipAuth: true,
         skipValidation: true,
-        cacheTTL: 5,
         customRateLimit: { requests: 1000, windowMs: 60000 }
     }
 });

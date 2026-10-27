@@ -19,7 +19,6 @@ export const readyRoutes = createSimpleRoute({
     options: {
         skipAuth: true, // Public endpoint
         skipValidation: true, // No input validation needed
-        cacheTTL: 10, // Cache for 10 seconds
         customRateLimit: { requests: 1000, windowMs: 60000 } // Higher limit for health checks
     }
 });

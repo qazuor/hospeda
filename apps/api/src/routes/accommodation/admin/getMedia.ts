@@ -71,7 +71,6 @@ export const adminGetMediaRoute = createAdminRoute({
         return { media: result.data?.media ?? [] };
     },
     options: {
-        cacheTTL: 30,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

@@ -52,6 +52,25 @@ describe('BaseService: hardDelete', () => {
         );
     });
 
+    it('hard deletes an entity that is already soft-deleted (trash then purge, HOS-1903)', async () => {
+        asMock(modelMock.findById).mockResolvedValue({ ...mockEntity, deletedAt: new Date() });
+        asMock(modelMock.hardDelete).mockResolvedValue(1);
+        const result = await service.hardDelete(mockAdminActor, MOCK_ENTITY_ID);
+        expect(result.error).toBeUndefined();
+        expect(result.data?.count).toBe(1);
+        expect(asMock(modelMock.hardDelete)).toHaveBeenCalledWith(
+            { id: MOCK_ENTITY_ID },
+            undefined
+        );
+    });
+
+    it('answers NOT_FOUND instead of a success when no row was deleted (HOS-1903)', async () => {
+        asMock(modelMock.hardDelete).mockResolvedValue(0);
+        const result = await service.hardDelete(mockAdminActor, MOCK_ENTITY_ID);
+        expect(result.data).toBeUndefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+    });
+
     it('should return a "not found" error if the entity does not exist', async () => {
         asMock(modelMock.findById).mockResolvedValue(null);
         const result = await service.hardDelete(mockAdminActor, MOCK_ENTITY_ID);
@@ -99,6 +118,7 @@ describe('BaseService: hardDelete', () => {
 
     it('should handle errors from the _afterHardDelete hook', async () => {
         const hookError = new Error('Error in afterHardDelete hook');
+        asMock(modelMock.hardDelete).mockResolvedValue(1);
         vi.spyOn(
             service as unknown as { _afterHardDelete: () => void },
             '_afterHardDelete'

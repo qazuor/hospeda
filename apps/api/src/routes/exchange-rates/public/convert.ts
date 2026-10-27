@@ -112,7 +112,6 @@ export const publicConvertExchangeRateRoute = createPublicRoute({
         };
     },
     options: {
-        cacheTTL: 60, // Cache for 1 minute (rates change frequently)
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

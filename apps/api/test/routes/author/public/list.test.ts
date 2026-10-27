@@ -37,7 +37,7 @@ describe('GET /api/v1/public/authors', () => {
         app = initApp();
     });
 
-    // This route sets `cacheTTL: 300`, and the in-memory cache middleware is a
+    // This route is served through the in-memory cache middleware, a
     // module-level singleton shared across every test in this file (and
     // technically the whole worker). Without clearing it, a request made by
     // an earlier test populates the cache under `/api/v1/public/authors`, and

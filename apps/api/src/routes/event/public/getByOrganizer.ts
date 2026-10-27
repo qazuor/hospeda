@@ -55,7 +55,5 @@ export const publicGetEventsByOrganizerRoute = createPublicListRoute({
             pagination: getPaginationResponse(result.data?.total ?? 0, { page, pageSize })
         } as never;
     },
-    options: {
-        cacheTTL: 60
-    }
+    options: {}
 });

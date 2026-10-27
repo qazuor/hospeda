@@ -77,7 +77,5 @@ export const publicGetExternalReputationRoute = createPublicRoute({
 
         return result.data;
     },
-    options: {
-        cacheTTL: 300
-    }
+    options: {}
 });

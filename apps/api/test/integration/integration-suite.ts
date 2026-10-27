@@ -30,17 +30,6 @@ export interface ApiIntegrationExclusion {
     readonly reason: string;
 }
 
-const MISC =
-    'HOS-1891: never ran in CI; fails for a file-specific reason (health, app, auth actor, reviews permissions, missing vertical seed). Needs its own diagnosis.';
-
-const byReason = ({
-    reason,
-    files
-}: {
-    readonly reason: string;
-    readonly files: readonly string[];
-}): readonly ApiIntegrationExclusion[] => files.map((file) => ({ file, reason }));
-
 /**
  * Files kept out of the API integration suite. Shrink this list; do not grow
  * it: the coverage guard freezes its length and requires an issue id in every
@@ -50,20 +39,7 @@ export const API_INTEGRATION_EXCLUSIONS: readonly ApiIntegrationExclusion[] = [
     {
         file: 'test/integration/ai/vault-roundtrip.test.ts',
         reason: 'HOS-247: non-deterministically flaky: the credential-create route fires syncAiProviderModels after responding, racing testDb.clean(). Comes back once the create flow is deterministic under test.'
-    },
-    ...byReason({
-        reason: MISC,
-        files: [
-            'test/integration/amenity/vertical-filter.content.test.ts',
-            'test/integration/app.test.ts',
-            'test/integration/auth/auth.test.ts',
-            'test/integration/auth/signup-as-host.test.ts',
-            'test/integration/conversation-guest-idor.integration.test.ts',
-            'test/integration/feature/vertical-filter.content.test.ts',
-            'test/integration/health/health.test.ts',
-            'test/integration/reviews/permission-boundaries.test.ts'
-        ]
-    })
+    }
 ];
 
 /**

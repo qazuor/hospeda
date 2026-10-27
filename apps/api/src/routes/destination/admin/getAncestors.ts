@@ -39,7 +39,6 @@ export const adminGetDestinationAncestorsRoute = createAdminRoute({
         return result.data;
     },
     options: {
-        cacheTTL: 60, // Shorter than public (60s vs 600s) since admin needs fresher data
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

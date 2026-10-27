@@ -36,5 +36,5 @@ export const adminGetAmenityByIdRoute = createAdminRoute({
 
         return result.data;
     },
-    options: { cacheTTL: 60, customRateLimit: { requests: 100, windowMs: 60000 } }
+    options: { customRateLimit: { requests: 100, windowMs: 60000 } }
 });
