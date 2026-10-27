@@ -578,11 +578,7 @@ options: {
 
 ### Response Caching
 
-```typescript
-options: {
-  cacheTTL: 300 // 5 minutes
-}
-```
+Response caching is not configured per route: the in-process TTL is global (cache middleware config) and edge caching is decided by Cloudflare's cache rule. The only per-route public `Cache-Control` is the post-tag list (`routes/tag/post-tag/public/list.ts`); other manual headers are `no-store`.
 
 ---
 
