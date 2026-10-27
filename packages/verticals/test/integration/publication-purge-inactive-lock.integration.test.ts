@@ -53,7 +53,7 @@ const verticals: readonly PublicationVertical[] = [
 ];
 const tableByVertical: Record<PublicationVertical, string> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 

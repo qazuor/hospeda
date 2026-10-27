@@ -35,7 +35,7 @@ const now = new Date('2026-10-10T12:00:00.000Z');
 const noCoverage = { value: false };
 const limits = { value: 2 };
 const tableOf = (vertical: TestVertical) =>
-    vertical === VerticalEnum.VENUE ? 'gastronomies' : `${vertical}s`;
+    vertical === VerticalEnum.VENUE ? 'venues' : `${vertical}s`;
 
 afterEach(async () => {
     for (const ownerId of ownersWithOutbox)

@@ -25,7 +25,7 @@ const verticals: readonly Vertical[] = [
 ];
 const tables: Readonly<Record<Vertical, string>> = {
     accommodation: 'accommodations',
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 const afterCommit = {

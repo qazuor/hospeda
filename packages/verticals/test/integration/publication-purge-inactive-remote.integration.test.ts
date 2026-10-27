@@ -20,7 +20,6 @@ const calendarIds = new Set<string>();
 const reviewIds = new Set<string>();
 const t0 = new Date('2026-10-12T12:00:00.000Z');
 const day = 86_400_000;
-const sqlVenueName = ['gastro', 'nomy'].join('');
 const verticals = [
     VerticalEnum.ACCOMMODATION,
     VerticalEnum.VENUE,
@@ -49,7 +48,7 @@ async function archivedListing(vertical: (typeof verticals)[number]) {
         destinationId,
         status: Status.ARCHIVED
     });
-    const table = vertical === VerticalEnum.VENUE ? 'gastronomies' : `${vertical}s`;
+    const table = vertical === VerticalEnum.VENUE ? 'venues' : `${vertical}s`;
     await db.execute(
         sql`UPDATE ${sql.raw(table)} SET inactive_since = ${new Date(t0.getTime() - 300 * day)}, deadlines_version = 1, deletion_announced_at = ${new Date(t0.getTime() - day)} WHERE id = ${listing.id}`
     );
@@ -131,13 +130,13 @@ describe.each(verticals)('TEST:V9b:3 AC:V9b:3 %s remote media', (vertical) => {
             vertical === VerticalEnum.ACCOMMODATION
                 ? 'accommodation_media'
                 : vertical === VerticalEnum.VENUE
-                  ? `${sqlVenueName}_media`
+                  ? 'venue_media'
                   : 'experience_media';
         const fk =
             vertical === VerticalEnum.ACCOMMODATION
                 ? 'accommodation_id'
                 : vertical === VerticalEnum.VENUE
-                  ? `${sqlVenueName}_id`
+                  ? 'venue_id'
                   : 'experience_id';
         const publicId = `pb9/${randomUUID()}`;
         const inserted = await db.execute(
