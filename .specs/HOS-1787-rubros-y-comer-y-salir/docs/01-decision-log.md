@@ -1155,3 +1155,14 @@ el umbral de similitud.
 `applyGastronomyVenueEventsGate` (api) se renombró en `1.A2` a `applyVenueEventsGate`.
 **Por qué**: la partición de la etapa A es por paquete con todos sus consumidores. Esos dos archivos no tienen consumidores
 fuera de web.
+
+## DEC-FAC-090 · `1.A5` se absorbe en `1.B5` y las hojas de la etapa A corren en paralelo
+**Fecha**: 2026-10-26 · **Decidió**: owner.
+**Qué**:
+- HOS-1817 (`1.A5`, el namespace i18n `gastronomy` → `venue`) se cancela. Su `AC:1:19` pasa a HOS-1823 (`1.B5`), que ya reescribe los textos visibles.
+- `1.A3` (web) y `1.A4` (admin) corren en paralelo.
+- `1.B0` deja de depender de `1.A5`. El corte de la umbrella `epic/HOS-1801-renombrado-fisico` espera sólo a que mergeen `1.A3` y `1.A4`.
+
+**Por qué**: el owner pidió acortar el camino a la promoción. El namespace i18n se toca dos veces si va en `1.A5` y otra vez en `1.B5`; en una sola hoja se toca una vez.
+
+**Consecuencia**: cada hoja que mueve archivos deja entradas `renamedFrom` (DEC-FAC-088). Esas entradas dan rojo en cuanto el rename llega a la base. Por eso, después de mergear cada hoja, el inventario se regenera contra la base nueva (#3851, #3852).
