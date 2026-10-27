@@ -51,7 +51,7 @@ but neither the audit doc nor the coverage guard test tracked them.
 | Event | `src/pages/[lang]/eventos/[slug].astro` | `EventJsonLd` | `BreadcrumbJsonLd` |
 | Destination | `src/pages/[lang]/destinos/[...path].astro` | `PlaceJsonLd` | `BreadcrumbJsonLd`, `FAQPageJsonLd` (conditional) |
 | Post | `src/pages/[lang]/publicaciones/[slug].astro` | `ArticleJsonLd` | `BreadcrumbJsonLd` |
-| Gastronomy | `src/pages/[lang]/gastronomia/[slug].astro` | `RestaurantJsonLd` | `BreadcrumbJsonLd` |
+| Gastronomy | `src/pages/[lang]/comer-y-salir/[slug].astro` | `RestaurantJsonLd` | `BreadcrumbJsonLd` |
 | Experience | `src/pages/[lang]/experiencias/[slug].astro` | `TouristAttractionJsonLd` | `BreadcrumbJsonLd` |
 
 ## Required-field audit per @type
@@ -141,7 +141,7 @@ Reference: schema.org/Restaurant. Google Rich Results (`Restaurant`
 extends `LocalBusiness`) recommends `name`, `image`, `address`,
 `servesCuisine`, `priceRange`, `aggregateRating` (conditional).
 
-Page: `src/pages/[lang]/gastronomia/[slug].astro`.
+Page: `src/pages/[lang]/comer-y-salir/[slug].astro`.
 Component: `src/components/seo/RestaurantJsonLd.astro`.
 
 | Field | Source | Status |

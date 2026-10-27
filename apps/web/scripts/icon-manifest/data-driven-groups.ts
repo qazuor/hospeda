@@ -177,7 +177,7 @@ const DATA_DRIVEN_GROUPS: ReadonlyArray<DataDrivenGroup> = [
         file: 'apps/web/src/lib/venue-type-icons.ts',
         constNames: ['VENUE_TYPE_ICONS', 'VENUE_TYPE_FALLBACK_ICON'],
         weights: ['regular'],
-        sourceHint: 'apps/web/src/pages/[lang]/gastronomia/index.astro -> FilterChips'
+        sourceHint: 'apps/web/src/pages/[lang]/comer-y-salir/index.astro -> FilterChips'
     },
     {
         id: 'EXPERIENCE_TYPE_ICONS (getExperienceTypeIcon)',
