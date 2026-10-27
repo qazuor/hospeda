@@ -1684,25 +1684,5 @@
         "scripts/zod-keys-inventory.json": 67,
         "specs-prioritization.csv": 3
     },
-    "renamedFrom": {
-        "apps/admin/src/features/venue/__tests__/score-signals.test.ts": "apps/admin/src/features/gastronom\u0079/__tests__/score-signals.test.ts",
-        "apps/admin/src/features/venue/__tests__/useVenueQuery.test.ts": "apps/admin/src/features/gastronom\u0079/__tests__/useGastronom\u0079Query.test.ts",
-        "apps/admin/src/features/venue/__tests__/venue-consolidated.config.test.ts": "apps/admin/src/features/gastronom\u0079/__tests__/gastronom\u0079-consolidated.config.test.ts",
-        "apps/admin/src/features/venue/__tests__/venue.columns.test.ts": "apps/admin/src/features/gastronom\u0079/__tests__/gastronom\u0079.columns.test.ts",
-        "apps/admin/src/features/venue/__tests__/venue.config.test.ts": "apps/admin/src/features/gastronom\u0079/__tests__/gastronom\u0079.config.test.ts",
-        "apps/admin/src/features/venue/__tests__/venue.test.ts": "apps/admin/src/features/gastronom\u0079/__tests__/gastronom\u0079.test.ts",
-        "apps/admin/src/features/venue/__tests__/VenueCard.test.tsx": "apps/admin/src/features/gastronom\u0079/__tests__/Gastronom\u0079Card.test.tsx",
-        "apps/admin/src/features/venue/__tests__/VenueForm.test.tsx": "apps/admin/src/features/gastronom\u0079/__tests__/Gastronom\u0079Form.test.tsx",
-        "apps/admin/src/features/venue/components/VenueCard.tsx": "apps/admin/src/features/gastronom\u0079/components/Gastronom\u0079Card.tsx",
-        "apps/admin/src/features/venue/components/VenueForm.tsx": "apps/admin/src/features/gastronom\u0079/components/Gastronom\u0079Form.tsx",
-        "apps/admin/src/features/venue/components/VenueQualityScore.tsx": "apps/admin/src/features/gastronom\u0079/components/Gastronom\u0079QualityScore.tsx",
-        "apps/admin/src/features/venue/config/score-signals.ts": "apps/admin/src/features/gastronom\u0079/config/score-signals.ts",
-        "apps/admin/src/features/venue/config/venue-consolidated.config.ts": "apps/admin/src/features/gastronom\u0079/config/gastronom\u0079-consolidated.config.ts",
-        "apps/admin/src/features/venue/config/venue.columns.ts": "apps/admin/src/features/gastronom\u0079/config/gastronom\u0079.columns.ts",
-        "apps/admin/src/features/venue/config/venue.config.ts": "apps/admin/src/features/gastronom\u0079/config/gastronom\u0079.config.ts",
-        "apps/admin/src/features/venue/hooks/useVenuePage.ts": "apps/admin/src/features/gastronom\u0079/hooks/useGastronom\u0079Page.ts",
-        "apps/admin/src/features/venue/hooks/useVenueQuery.ts": "apps/admin/src/features/gastronom\u0079/hooks/useGastronom\u0079Query.ts",
-        "apps/admin/src/features/venue/hooks/useVenues.ts": "apps/admin/src/features/gastronom\u0079/hooks/useGastronom\u0069es.ts",
-        "apps/admin/src/features/venue/index.ts": "apps/admin/src/features/gastronom\u0079/index.ts"
-    }
+    "renamedFrom": {}
 }
