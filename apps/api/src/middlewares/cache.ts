@@ -19,6 +19,12 @@ interface CacheEntry {
     readonly status: number;
     readonly headers: Record<string, string>;
     readonly expires: number;
+    /**
+     * `true` when the stored body is a JSON object carrying `metadata.requestId`
+     * (HOS-1915). Computed once on the MISS so a HIT only parses bodies that
+     * actually need re-stamping.
+     */
+    readonly hasRequestIdMetadata: boolean;
 }
 
 /**
@@ -36,6 +42,13 @@ interface CacheEntry {
  * `x-cache` is here for a different reason: it is set fresh on both paths, so
  * caching it would make a hit claim to be a miss.
  *
+ * HOS-1915: `x-request-id` belongs here too. The id is minted by
+ * `hono/request-id` for every request, so replaying the stored one made N
+ * distinct requests report the id of whichever one wrote the entry. On a hit
+ * the header set by that middleware earlier in the chain stays in place. The
+ * matching `metadata.requestId` inside the body is re-stamped separately
+ * (see `restampRequestId`).
+ *
  * Keep this list to headers that are genuinely per-request. Anything that
  * describes the body (`content-type`, `etag`, `cache-control`, …) MUST keep
  * being cached — dropping those would break content negotiation and
@@ -43,6 +56,7 @@ interface CacheEntry {
  */
 const PER_REQUEST_HEADERS: ReadonlySet<string> = new Set([
     'x-cache',
+    'x-request-id',
     'ratelimit-limit',
     'ratelimit-remaining',
     'ratelimit-reset',
@@ -64,6 +78,62 @@ const PER_REQUEST_HEADERS: ReadonlySet<string> = new Set([
  */
 function isPerRequestHeader(name: string): boolean {
     return PER_REQUEST_HEADERS.has(name.toLowerCase());
+}
+
+/**
+ * Whether a response body is a JSON object whose `metadata.requestId` is a
+ * string, i.e. the envelope shape built by the response formatter.
+ *
+ * @param params.body - Raw response body text.
+ * @param params.contentType - Value of the `content-type` header, if any.
+ * @returns `true` when the body needs its request id re-stamped on a hit.
+ */
+function bodyHasRequestIdMetadata({
+    body,
+    contentType
+}: {
+    readonly body: string;
+    readonly contentType: string | undefined;
+}): boolean {
+    if (!contentType?.toLowerCase().includes('json')) return false;
+    try {
+        const parsed: unknown = JSON.parse(body);
+        if (typeof parsed !== 'object' || parsed === null) return false;
+        const metadata = (parsed as { metadata?: unknown }).metadata;
+        return (
+            typeof metadata === 'object' &&
+            metadata !== null &&
+            typeof (metadata as { requestId?: unknown }).requestId === 'string'
+        );
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Replaces `metadata.requestId` in a cached JSON body with the current
+ * request's id (HOS-1915). Only called for entries flagged
+ * `hasRequestIdMetadata`; any parse problem returns the body untouched.
+ * `timestamp` is intentionally left as stored: it dates the cached payload.
+ *
+ * @param params.body - Cached body text.
+ * @param params.requestId - Id of the request being served.
+ * @returns The body with the current request id.
+ */
+function restampRequestId({
+    body,
+    requestId
+}: {
+    readonly body: string;
+    readonly requestId: string;
+}): string {
+    try {
+        const parsed = JSON.parse(body) as { metadata: { requestId: string } };
+        parsed.metadata.requestId = requestId;
+        return JSON.stringify(parsed);
+    } catch {
+        return body;
+    }
 }
 
 /** Maximum number of entries in the cache before eviction */
@@ -215,6 +285,17 @@ export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
             for (const [name, value] of Object.entries(cached.headers)) {
                 c.header(name, value);
             }
+            const currentRequestId = c.get('requestId');
+            if (cached.hasRequestIdMetadata && currentRequestId) {
+                const body = restampRequestId({
+                    body: cached.body,
+                    requestId: currentRequestId
+                });
+                // The stored content-length describes the original body; the
+                // re-stamped one can differ when the id length differs.
+                c.header('Content-Length', String(new TextEncoder().encode(body).length));
+                return c.body(body, cached.status as 200);
+            }
             return c.body(cached.body, cached.status as 200);
         }
 
@@ -244,7 +325,11 @@ export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
                     body: responseBody,
                     status,
                     headers,
-                    expires: Date.now() + ttlMs
+                    expires: Date.now() + ttlMs,
+                    hasRequestIdMetadata: bodyHasRequestIdMetadata({
+                        body: responseBody,
+                        contentType: c.res.headers.get('content-type') ?? undefined
+                    })
                 }
             });
         } catch {
