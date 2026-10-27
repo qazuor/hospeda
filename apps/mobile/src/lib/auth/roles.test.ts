@@ -50,7 +50,7 @@ describe('hasHostRole', () => {
 
     it('returns true when a host role is held alongside non-host roles', () => {
         // The multi-hat case HOS-296 exists for: USER + GASTRONOMY_OWNER + HOST.
-        expect(hasHostRole(['USER', 'GASTRONOMY_OWNER', 'HOST'])).toBe(true);
+        expect(hasHostRole(['USER', 'VENUE_OWNER', 'HOST'])).toBe(true);
     });
 
     it('returns false for USER alone', () => {
@@ -70,7 +70,7 @@ describe('hasHostRole', () => {
     });
 
     it('returns false for GASTRONOMY_OWNER', () => {
-        expect(hasHostRole(['GASTRONOMY_OWNER'])).toBe(false);
+        expect(hasHostRole(['VENUE_OWNER'])).toBe(false);
     });
 
     it('returns false for GUEST', () => {
@@ -168,7 +168,7 @@ describe('resolveAuthGroup — HOS-296 AC-9 (a host must not land in (tourist))'
     it('returns (host) for a multi-hat host (HOST + GASTRONOMY_OWNER)', () => {
         // OQ-2 is deferred: dual-hat navigation does not exist, and the
         // 1-of-3 mapping resolves a multi-hat user to (host).
-        expect(resolveAuthGroup(input({ roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'] })).group).toBe(
+        expect(resolveAuthGroup(input({ roles: ['USER', 'HOST', 'VENUE_OWNER'] })).group).toBe(
             '(host)'
         );
     });
@@ -219,9 +219,7 @@ describe('resolveAuthGroup — authenticated non-host', () => {
     });
 
     it('returns (tourist) for GASTRONOMY_OWNER without a host role', () => {
-        expect(resolveAuthGroup(input({ roles: ['USER', 'GASTRONOMY_OWNER'] })).group).toBe(
-            '(tourist)'
-        );
+        expect(resolveAuthGroup(input({ roles: ['USER', 'VENUE_OWNER'] })).group).toBe('(tourist)');
     });
 
     it('returns (tourist) for an unknown/future role (never leaves a user without a shell)', () => {

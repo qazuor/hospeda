@@ -86,7 +86,7 @@ const HOST_ROLES: ReadonlySet<string> = new Set<string>([
  * @example
  * ```ts
  * hasHostRole(['USER', 'HOST'])            // true
- * hasHostRole(['USER', 'GASTRONOMY_OWNER'])  // false
+ * hasHostRole(['USER', 'VENUE_OWNER'])  // false
  * hasHostRole([])                          // false
  * hasHostRole(undefined)                   // false
  * ```
