@@ -319,18 +319,17 @@ export class EventLocationService extends BaseCrudService<
     protected async _executeSearch(
         params: EventLocationSearchInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<EventLocation>> {
         try {
-            const {
-                page = 1,
-                pageSize = 20,
-                sortBy,
-                sortOrder,
-                q,
-                destinationId,
-                ...otherFilters
-            } = params;
+            // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
+            // and republishes them on ctx.pagination (SPEC-088). Read them from ctx so
+            // the caller-provided pagination is honored (HOS-1900, HOS-1904).
+            const page = ctx.pagination?.page ?? 1;
+            const pageSize = ctx.pagination?.pageSize ?? 20;
+            const sortBy = ctx.pagination?.sortBy;
+            const sortOrder = ctx.pagination?.sortOrder;
+            const { q, destinationId, ...otherFilters } = params;
             const where: Record<string, unknown> = { ...otherFilters };
             if (destinationId) where.destinationId = destinationId;
 
