@@ -86,7 +86,7 @@ export interface WriteAiSettingsInput {
  * This used to parse through `AiSettingsValueSchema`, the WRITE-side schema,
  * whose `features` is a FULL record over `AiFeatureSchema`. That made every
  * widening of the enum a silent data migration: HOS-400 added
- * `chat_gastronomy` and `chat_experience`, the live rows in staging and
+ * `chat_venue` and `chat_experience`, the live rows in staging and
  * production carried neither, and this parse threw for every AI call — a
  * feature nobody had configured yet took down the seven that were, including
  * the visitor-facing chat.

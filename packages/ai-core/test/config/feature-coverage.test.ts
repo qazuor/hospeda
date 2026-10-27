@@ -44,7 +44,7 @@ describe('findUnconfiguredFeatures', () => {
         // Arrange — the shape every live environment held before HOS-1220.
         const settings = buildCompleteSettings();
         const features = { ...settings.features } as Record<string, unknown>;
-        delete features.chat_gastronomy;
+        delete features.chat_venue;
         delete features.chat_experience;
 
         // Act
