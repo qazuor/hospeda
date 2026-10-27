@@ -41,7 +41,7 @@ export const CACHE_TAG_ENTITY_PREFIXES = {
     destination: 'dest',
     event: 'event',
     post: 'post',
-    gastronomy: 'gastro',
+    venue: 'gastro',
     experience: 'exp',
     attraction: 'attr',
     pointOfInterest: 'poi',
@@ -86,7 +86,7 @@ export const CACHE_TAG_COLLECTIONS = {
     destination: 'list-dest',
     event: 'list-event',
     post: 'list-post',
-    gastronomy: 'list-gastro',
+    venue: 'list-gastro',
     experience: 'list-exp'
 } as const satisfies Partial<Record<CacheTagEntity, string>>;
 
