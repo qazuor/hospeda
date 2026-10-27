@@ -126,7 +126,7 @@ const CASES = [
         label: 'gastronomy',
         service: VenueService,
         staffPermission: PermissionEnum.VENUE_VIEW_ALL,
-        segment: 'gastronomia',
+        segment: 'comer-y-salir',
         importRoute: async () => {
             const mod = await import('../../src/routes/venue/protected/qrCode.js');
             return mod.protectedGetVenueQrCodeRoute;
