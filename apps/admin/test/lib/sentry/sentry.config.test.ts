@@ -109,4 +109,82 @@ describe('admin sentry.config', () => {
             expect.objectContaining({ maskAllText: true, blockAllMedia: true })
         );
     });
+
+    describe('v11 privacy (HOS-1892)', () => {
+        it('passes the pinned dataCollection policy and beforeSend to Sentry.init', async () => {
+            const { initSentry, SENTRY_DATA_COLLECTION, applyBeforeSend } = await import(
+                '../../../src/lib/sentry/sentry.config'
+            );
+
+            initSentry();
+
+            const options = sentryInitMock.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(options.dataCollection).toBe(SENTRY_DATA_COLLECTION);
+            expect(options.beforeSend).toBe(applyBeforeSend);
+        });
+
+        it('does not use the removed sendDefaultPii or profilesSampleRate options', async () => {
+            const { initSentry } = await import('../../../src/lib/sentry/sentry.config');
+
+            initSentry();
+
+            const options = sentryInitMock.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(options).not.toHaveProperty('sendDefaultPii');
+            expect(options).not.toHaveProperty('profilesSampleRate');
+        });
+
+        it('collects no cookies, bodies, user info or query params', async () => {
+            const { SENTRY_DATA_COLLECTION } = await import(
+                '../../../src/lib/sentry/sentry.config'
+            );
+
+            expect(SENTRY_DATA_COLLECTION.cookies).toBe(false);
+            expect(SENTRY_DATA_COLLECTION.userInfo).toBe(false);
+            expect(SENTRY_DATA_COLLECTION.httpBodies).toEqual([]);
+            expect(SENTRY_DATA_COLLECTION.urlQueryParams).toEqual({ allow: [] });
+        });
+
+        it('denies auth and cookie headers in both directions', async () => {
+            const { SENTRY_DATA_COLLECTION } = await import(
+                '../../../src/lib/sentry/sentry.config'
+            );
+            const headers = SENTRY_DATA_COLLECTION.httpHeaders as {
+                request: { deny: string[] };
+                response: { deny: string[] };
+            };
+
+            for (const name of ['authorization', 'cookie', 'token', 'api-key']) {
+                expect(headers.request.deny).toContain(name);
+                expect(headers.response.deny).toContain(name);
+            }
+            expect(headers.response.deny).toContain('set-cookie');
+        });
+
+        it('strips query_string, url query and fragment in beforeSend', async () => {
+            const { applyBeforeSend } = await import('../../../src/lib/sentry/sentry.config');
+            const event = {
+                request: {
+                    url: 'https://admin.example.com/cb?code=abc&state=xyz#frag',
+                    query_string: 'code=abc&state=xyz'
+                }
+            } as unknown as Parameters<typeof applyBeforeSend>[0];
+
+            const result = applyBeforeSend(event);
+
+            expect(result.request).toEqual({ url: 'https://admin.example.com/cb' });
+        });
+
+        it('removes sensitive headers in beforeSend', async () => {
+            const { applyBeforeSend } = await import('../../../src/lib/sentry/sentry.config');
+            const event = {
+                request: {
+                    headers: { Authorization: 'x', Cookie: 'y', 'X-Auth-Token': 'z', Accept: '*/*' }
+                }
+            } as unknown as Parameters<typeof applyBeforeSend>[0];
+
+            const result = applyBeforeSend(event);
+
+            expect(result.request?.headers).toEqual({ Accept: '*/*' });
+        });
+    });
 });
