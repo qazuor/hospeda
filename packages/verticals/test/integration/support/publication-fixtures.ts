@@ -56,7 +56,7 @@ export async function seedPublicationListing(args: {
             { ...base, type: 'CABIN' } as Partial<Accommodation>,
             args.db
         );
-    if (args.vertical === 'gastronomy')
+    if (args.vertical === 'venue')
         return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, args.db);
     return new ExperienceModel().create(
         { ...base, type: 'EXCURSION' } as Partial<Experience>,
