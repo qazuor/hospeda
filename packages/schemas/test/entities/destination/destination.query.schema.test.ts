@@ -35,20 +35,19 @@ describe('Destination Query Schemas', () => {
         it('should validate filter input with basic filters', () => {
             const input = {
                 isFeatured: true,
-                country: 'US',
+                state: 'ON',
                 minRating: 4.0
             };
             expect(() => DestinationFilterInputSchema.parse(input)).not.toThrow();
             const result = DestinationFilterInputSchema.parse(input);
             expect(result.isFeatured).toBe(true);
-            expect(result.country).toBe('US');
+            expect(result.state).toBe('ON');
             expect(result.minRating).toBe(4.0);
         });
 
         it('should validate complex filter input', () => {
             const input = {
                 isFeatured: false,
-                country: 'CA',
                 state: 'ON',
                 city: 'Toronto',
                 latitude: 43.6532,
@@ -63,7 +62,6 @@ describe('Destination Query Schemas', () => {
 
         it('should reject invalid filter values', () => {
             const input = {
-                country: 'USA', // Should be 2 characters
                 latitude: 91, // Should be between -90 and 90
                 longitude: -181, // Should be between -180 and 180
                 radius: -1, // Should be positive
@@ -82,7 +80,7 @@ describe('Destination Query Schemas', () => {
                 sortOrder: 'asc' as const,
                 q: 'beautiful beach',
                 isFeatured: true,
-                country: 'US',
+                state: 'ON',
                 minRating: 4.0
             };
             expect(() => DestinationSearchSchema.parse(input)).not.toThrow();
@@ -93,8 +91,14 @@ describe('Destination Query Schemas', () => {
             // sortOrder doesn't have default values in BaseSearchSchema
             expect(result.q).toBe('beautiful beach');
             expect(result.isFeatured).toBe(true);
-            expect(result.country).toBe('US');
+            expect(result.state).toBe('ON');
             expect(result.minRating).toBe(4.0);
+        });
+
+        it('should not expose a country filter (HOS-1921)', () => {
+            expect(DestinationSearchSchema.shape).not.toHaveProperty('country');
+            expect(DestinationFilterInputSchema.shape).not.toHaveProperty('country');
+            expect(DestinationSearchSchema.parse({ country: 'AR' })).not.toHaveProperty('country');
         });
 
         it('should apply default pagination values', () => {
