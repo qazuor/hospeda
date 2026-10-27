@@ -303,8 +303,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
         );
     }
 
-    const files: string[] =
-        ((exampleManifest as Record<string, unknown>).gastronomies as string[]) ?? [];
+    const files: string[] = ((exampleManifest as Record<string, unknown>).venues as string[]) ?? [];
 
     if (files.length === 0) {
         logger.warn(`${STATUS_ICONS.Warning} No gastronomy files declared in manifest — skipping.`);
@@ -519,10 +518,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
     }
 
     // ── Step 3: Load and insert gastronomy listing JSON files ────────────────
-    const items = (await loadJsonFiles(
-        'src/data/gastronomy',
-        files
-    )) as unknown as GastronomySeedData[];
+    const items = (await loadJsonFiles('src/data/venue', files)) as unknown as GastronomySeedData[];
 
     for (const [index, item] of items.entries()) {
         context.currentFile = files[index] ?? '';
@@ -647,12 +643,12 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
 
     // ── Step 5: Seed FAQs ────────────────────────────────────────────────────
     const faqFiles: string[] =
-        ((exampleManifest as Record<string, unknown>).gastronomyFaqs as string[]) ?? [];
+        ((exampleManifest as Record<string, unknown>).venueFaqs as string[]) ?? [];
     let faqSuccessCount = 0;
 
     for (const faqFile of faqFiles) {
         try {
-            const [faqFileData] = (await loadJsonFiles('src/data/gastronomy/faqs', [
+            const [faqFileData] = (await loadJsonFiles('src/data/venue/faqs', [
                 faqFile
             ])) as unknown as [GastronomyFaqFile];
 
@@ -706,12 +702,12 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
 
     // ── Step 6: Seed Reviews ─────────────────────────────────────────────────
     const reviewFiles: string[] =
-        ((exampleManifest as Record<string, unknown>).gastronomyReviews as string[]) ?? [];
+        ((exampleManifest as Record<string, unknown>).venueReviews as string[]) ?? [];
     let reviewSuccessCount = 0;
 
     for (const reviewFile of reviewFiles) {
         try {
-            const [reviewFileData] = (await loadJsonFiles('src/data/gastronomy/reviews', [
+            const [reviewFileData] = (await loadJsonFiles('src/data/venue/reviews', [
                 reviewFile
             ])) as unknown as [GastronomyReviewFile];
 

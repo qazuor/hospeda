@@ -100,7 +100,14 @@
     "seo": {
         "metaTitle": "La Cervecería del Río - Gualeguaychú",
         "metaDescription": "Cervecería artesanal con producción propia y tapas gourmet en Gualeguaychú. Más de 12 estilos de cerveza con vista al río.",
-        "keywords": ["cerveceria", "artesanal", "gualeguaychu", "tapas", "beer", "entre rios"]
+        "keywords": [
+            "cerveceria",
+            "artesanal",
+            "gualeguaychu",
+            "tapas",
+            "beer",
+            "entre rios"
+        ]
     },
     "reviewsCount": 0,
     "averageRating": 0

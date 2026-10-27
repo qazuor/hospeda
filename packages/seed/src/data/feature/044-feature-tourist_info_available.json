@@ -7,7 +7,7 @@
         "en": "Servicio de información completa sobre atracciones locales, actividades y servicios turísticos de la zona",
         "pt": "Servicio de información completa sobre atracciones locales, actividades y servicios turísticos de la zona"
     },
-    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "icon": "TouristInfoIcon",
     "isBuiltin": true,
     "isFeatured": false,

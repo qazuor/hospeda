@@ -7,7 +7,7 @@
         "en": "Espacio libre de humo de tabaco en todas las áreas",
         "pt": "Espacio libre de humo de tabaco en todas las áreas"
     },
-    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "type": "SERVICES",
     "icon": "SmokeDetectorIcon",
     "isBuiltin": false,

@@ -122,7 +122,13 @@
     "seo": {
         "metaTitle": "La Parrilla del Puerto - Concepción del Uruguay",
         "metaDescription": "La mejor parrilla de Concepción del Uruguay. Carnes premium, provoleta legendaria y vistas al río. Abierto todos los días.",
-        "keywords": ["parrilla", "asado", "concepcion del uruguay", "carnes", "restaurante"]
+        "keywords": [
+            "parrilla",
+            "asado",
+            "concepcion del uruguay",
+            "carnes",
+            "restaurante"
+        ]
     },
     "reviewsCount": 3,
     "averageRating": 4.6

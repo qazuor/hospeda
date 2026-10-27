@@ -7,7 +7,7 @@
         "en": "Mediterranean cuisine: dishes from Mediterranean culinary traditions",
         "pt": "Cozinha mediterrânea: pratos das tradições culinárias do Mediterrâneo"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "RestaurantIcon",
     "isBuiltin": false,
     "isFeatured": true,

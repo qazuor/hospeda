@@ -7,7 +7,7 @@
         "en": "Espacio al aire libre especialmente designado y ventilado para huéspedes fumadores",
         "pt": "Espacio al aire libre especialmente designado y ventilado para huéspedes fumadores"
     },
-    "applicableVerticals": ["accommodation", "gastronomy"],
+    "applicableVerticals": ["accommodation", "venue"],
     "icon": "SmokingAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,

@@ -7,7 +7,7 @@
         "en": "Servicio de bar con bebidas alcohólicas y no alcohólicas",
         "pt": "Servicio de bar con bebidas alcohólicas y no alcohólicas"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "type": "SERVICES",
     "icon": "BarServiceIcon",
     "isBuiltin": false,

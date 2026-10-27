@@ -7,7 +7,7 @@
         "en": "Espacio pet friendly",
         "pt": "Espacio pet friendly"
     },
-    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "type": "GENERAL_APPLIANCES",
     "icon": "PetAllowedIcon",
     "isBuiltin": false,

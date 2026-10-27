@@ -7,7 +7,7 @@
         "en": "Opciones vegetarianas en el menú para quienes no consumen carne",
         "pt": "Opciones vegetarianas en el menú para quienes no consumen carne"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "OrganicGardenIcon",
     "isBuiltin": false,
     "isFeatured": true,

@@ -7,7 +7,7 @@
         "en": "Peruvian cuisine: ceviche and traditional Peruvian dishes",
         "pt": "Cozinha peruana: ceviches e pratos da tradição peruana"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "RestaurantIcon",
     "isBuiltin": false,
     "isFeatured": true,

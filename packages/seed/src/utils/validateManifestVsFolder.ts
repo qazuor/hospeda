@@ -42,9 +42,9 @@ const ENTITY_FOLDER_MAP: Record<string, string> = {
     exchangeRates: 'exchangeRate',
     exchangeRateConfig: 'exchangeRateConfig',
     hostTrades: 'hostTrade',
-    gastronomies: 'gastronomy',
-    gastronomyFaqs: 'gastronomy/faqs',
-    gastronomyReviews: 'gastronomy/reviews',
+    venues: 'venue',
+    venueFaqs: 'venue/faqs',
+    venueReviews: 'venue/reviews',
     pointsOfInterest: 'pointOfInterest',
     pointOfInterestCatalog: 'pointOfInterest',
     poiCategories: 'poiCategory'

@@ -7,7 +7,7 @@
         "en": "Ingredientes y productos orgánicos certificados en la cocina",
         "pt": "Ingredientes y productos orgánicos certificados en la cocina"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "OwnProductionIcon",
     "isBuiltin": false,
     "isFeatured": false,

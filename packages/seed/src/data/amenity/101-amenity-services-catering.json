@@ -7,7 +7,7 @@
         "en": "Servicio de catering para eventos y reuniones",
         "pt": "Servicio de catering para eventos y reuniones"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "type": "SERVICES",
     "icon": "FullBoardIcon",
     "isBuiltin": false,
