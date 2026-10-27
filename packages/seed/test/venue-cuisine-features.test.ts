@@ -1,5 +1,5 @@
 /**
- * HOS-1073 — a gastronomy listing's cuisine style («cocina italiana»,
+ * HOS-1073 — a venue listing's cuisine style («cocina italiana»,
  * «cocina de río», ...) is catalog rows, and this guard keeps them that way.
  *
  * ## Why a guard and not five assertions in a service test
@@ -8,7 +8,7 @@
  * `CAFE`, ... a closed 9-value enum) — it never said what a place cooks. The
  * measured decision (mirroring HOS-1054's aptos, same epic) is that cuisine
  * style has no column, no enum and no entitlement key: it is eight rows of
- * `src/data/feature/` scoped to the `gastronomy` vertical, whose SLUG is also
+ * `src/data/feature/` scoped to the `venue` vertical, whose SLUG is also
  * their i18n key. Nothing in the type system connects those three facts, so a
  * rename of one slug, a dropped `applicableVerticals`, a missing manifest
  * entry or an untranslated locale all fail the same silent way: the cuisine
@@ -73,7 +73,7 @@ const readFeatureNames = (locale: string): Record<string, string> => {
     return raw.featureNames ?? {};
 };
 
-describe('gastronomy cuisine styles are catalog rows (HOS-1073)', () => {
+describe('venue cuisine styles are catalog rows (HOS-1073)', () => {
     it.each(CUISINE_FIXTURES)('$slug: the fixture file declares that exact slug', ({
         slug,
         file
@@ -81,10 +81,10 @@ describe('gastronomy cuisine styles are catalog rows (HOS-1073)', () => {
         expect(readFixture(file).slug).toBe(slug);
     });
 
-    it.each(CUISINE_FIXTURES)('$slug: is scoped to the gastronomy vertical', ({ file }) => {
+    it.each(CUISINE_FIXTURES)('$slug: is scoped to the venue vertical', ({ file }) => {
         // Without this the cuisine style would be offered on accommodations
         // and experiences too, where it means nothing.
-        expect(readFixture(file).applicableVerticals).toContain('gastronomy');
+        expect(readFixture(file).applicableVerticals).toContain('venue');
     });
 
     it.each(CUISINE_FIXTURES)('$slug: is ACTIVE, so the owner can actually tick it', ({ file }) => {

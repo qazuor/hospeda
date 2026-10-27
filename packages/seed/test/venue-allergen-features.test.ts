@@ -1,12 +1,12 @@
 /**
- * HOS-1054 — the aptos of a gastronomy carta are catalog rows, and this guard
+ * HOS-1054 — the aptos of a venue carta are catalog rows, and this guard
  * keeps them that way.
  *
  * ## Why a guard and not five assertions in a service test
  *
  * The aptos («sin TACC», «vegano», «vegetariano», «sin lactosa», «sin frutos
  * secos») have no column, no enum and no entitlement key. They are five rows of
- * `src/data/feature/` scoped to the `gastronomy` vertical, whose SLUG is also
+ * `src/data/feature/` scoped to the `venue` vertical, whose SLUG is also
  * their i18n key. Nothing in the type system connects those three facts, so a
  * rename of one slug, a dropped `applicableVerticals`, a missing manifest entry
  * or an untranslated locale all fail the same silent way: the apto simply stops
@@ -66,15 +66,15 @@ const readFeatureNames = (locale: string): Record<string, string> => {
     return raw.featureNames ?? {};
 };
 
-describe('gastronomy aptos are catalog rows (HOS-1054)', () => {
+describe('venue aptos are catalog rows (HOS-1054)', () => {
     it.each(APTO_FIXTURES)('$slug: the fixture file declares that exact slug', ({ slug, file }) => {
         expect(readFixture(file).slug).toBe(slug);
     });
 
-    it.each(APTO_FIXTURES)('$slug: is scoped to the gastronomy vertical', ({ file }) => {
+    it.each(APTO_FIXTURES)('$slug: is scoped to the venue vertical', ({ file }) => {
         // Without this the apto would be offered on accommodations and
         // experiences too, where "sin TACC" means nothing.
-        expect(readFixture(file).applicableVerticals).toContain('gastronomy');
+        expect(readFixture(file).applicableVerticals).toContain('venue');
     });
 
     it.each(APTO_FIXTURES)('$slug: is ACTIVE, so the owner can actually tick it', ({ file }) => {

@@ -121,7 +121,7 @@ describe('TEST:V6:18 AC:V6:32 no file reads the six old listing columns', () => 
     });
 
     describe('(ii) seed JSON fixtures', () => {
-        const fixture = 'packages/seed/src/data/gastronomy/001-parrilla.json';
+        const fixture = 'packages/seed/src/data/venue/001-venue.json';
 
         it('a moderationState nested in media is the photo and does not fail', () => {
             const content = JSON.stringify(
