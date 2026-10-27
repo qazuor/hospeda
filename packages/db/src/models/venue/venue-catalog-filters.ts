@@ -54,9 +54,9 @@
  */
 
 import { type SQL, sql } from 'drizzle-orm';
-import { rGastronomyAmenity } from '../../schemas/venue/r_venue_amenity.dbschema.ts';
-import { rGastronomyFeature } from '../../schemas/venue/r_venue_feature.dbschema.ts';
-import { gastronomies } from '../../schemas/venue/venue.dbschema.ts';
+import { rVenueAmenity } from '../../schemas/venue/r_venue_amenity.dbschema.ts';
+import { rVenueFeature } from '../../schemas/venue/r_venue_feature.dbschema.ts';
+import { venues } from '../../schemas/venue/venue.dbschema.ts';
 
 /**
  * Build a WHERE clause restricting gastronomy listings to those linked to ALL
@@ -76,9 +76,9 @@ export function buildVenueFeatureIntersectionClause(featureIds: readonly string[
         featureIds.map((id) => sql`${id}`),
         sql`, `
     );
-    return sql<unknown>`${gastronomies.id} IN (
+    return sql<unknown>`${venues.id} IN (
         SELECT "r_venue_feature"."venue_id"
-        FROM ${rGastronomyFeature}
+        FROM ${rVenueFeature}
         WHERE "r_venue_feature"."feature_id" IN (${idList})
         GROUP BY "r_venue_feature"."venue_id"
         HAVING COUNT(DISTINCT "r_venue_feature"."feature_id") = ${n}
@@ -103,9 +103,9 @@ export function buildVenueAmenityIntersectionClause(amenityIds: readonly string[
         amenityIds.map((id) => sql`${id}`),
         sql`, `
     );
-    return sql<unknown>`${gastronomies.id} IN (
+    return sql<unknown>`${venues.id} IN (
         SELECT "r_venue_amenity"."venue_id"
-        FROM ${rGastronomyAmenity}
+        FROM ${rVenueAmenity}
         WHERE "r_venue_amenity"."amenity_id" IN (${idList})
         GROUP BY "r_venue_amenity"."venue_id"
         HAVING COUNT(DISTINCT "r_venue_amenity"."amenity_id") = ${n}

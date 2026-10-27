@@ -12,7 +12,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { LifecycleStatusPgEnum, ModerationStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
-import { gastronomies } from './venue.dbschema.ts';
+import { venues } from './venue.dbschema.ts';
 
 /**
  * Gastronomy review table (SPEC-239).
@@ -25,13 +25,13 @@ import { gastronomies } from './venue.dbschema.ts';
  * - Full moderation audit (moderatedById / moderatedAt / moderationReason)
  * - UNIQUE(userId, gastronomyId) — one review per user per listing
  */
-export const gastronomyReviews = pgTable(
+export const venueReviews = pgTable(
     'venue_reviews',
     {
         id: uuid('id').primaryKey().defaultRandom(),
         gastronomyId: uuid('venue_id')
             .notNull()
-            .references(() => gastronomies.id, { onDelete: 'cascade' }),
+            .references(() => venues.id, { onDelete: 'cascade' }),
         userId: uuid('user_id')
             .notNull()
             .references(() => users.id, { onDelete: 'set null' }),
@@ -98,23 +98,23 @@ export const gastronomyReviews = pgTable(
     })
 );
 
-export const gastronomyReviewsRelations = relations(gastronomyReviews, ({ one }) => ({
-    gastronomy: one(gastronomies, {
-        fields: [gastronomyReviews.gastronomyId],
-        references: [gastronomies.id]
+export const venueReviewsRelations = relations(venueReviews, ({ one }) => ({
+    venue: one(venues, {
+        fields: [venueReviews.gastronomyId],
+        references: [venues.id]
     }),
     user: one(users, {
-        fields: [gastronomyReviews.userId],
+        fields: [venueReviews.userId],
         references: [users.id]
     }),
     moderatedBy: one(users, {
-        fields: [gastronomyReviews.moderatedById],
+        fields: [venueReviews.moderatedById],
         references: [users.id],
-        relationName: 'gastronomyReviewModerator'
+        relationName: 'venueReviewModerator'
     })
 }));
 
 /** Type-inferred insert type for venue_reviews rows. */
-export type InsertVenueReview = typeof gastronomyReviews.$inferInsert;
+export type InsertVenueReview = typeof venueReviews.$inferInsert;
 /** Type-inferred select type for venue_reviews rows. */
-export type SelectVenueReview = typeof gastronomyReviews.$inferSelect;
+export type SelectVenueReview = typeof venueReviews.$inferSelect;

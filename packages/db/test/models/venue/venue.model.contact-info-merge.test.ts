@@ -51,7 +51,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as clientModule from '../../../src/client';
 import { setDb } from '../../../src/client';
 import { VenueModel } from '../../../src/models/venue/venue.model';
-import { gastronomies } from '../../../src/schemas/venue/venue.dbschema';
+import { venues } from '../../../src/schemas/venue/venue.dbschema';
 import type { DrizzleClient } from '../../../src/types';
 import { buildMergeSetClause } from '../../../src/utils/jsonb-merge';
 
@@ -232,7 +232,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
         ).mergeableJsonbColumns;
 
         // Act
-        const result = buildMergeSetClause({ contactInfo: PHONE_PATCH }, gastronomies, mergeable);
+        const result = buildMergeSetClause({ contactInfo: PHONE_PATCH }, venues, mergeable);
 
         // Assert — the patch travels verbatim; any sibling field already
         // stored under a key absent from it is left to `||` to preserve.
@@ -265,7 +265,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
             new VenueModel() as unknown as { mergeableJsonbColumns: readonly string[] }
         ).mergeableJsonbColumns;
 
-        const result = buildMergeSetClause({ contactInfo: PHONE_PATCH }, gastronomies, mergeable);
+        const result = buildMergeSetClause({ contactInfo: PHONE_PATCH }, venues, mergeable);
 
         expect(sqlShape(result.contactInfo)).toStrictEqual([
             'COALESCE(',
@@ -283,7 +283,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
 
         const result = buildMergeSetClause(
             { contactInfo: { mobilePhone: null } },
-            gastronomies,
+            venues,
             mergeable
         );
 

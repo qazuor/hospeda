@@ -28,7 +28,7 @@ describe('Review model getTableName() (BETA-150 regression)', () => {
         {
             name: 'VenueReviewModel',
             model: new VenueReviewModel(),
-            expected: 'gastronomyReviews'
+            expected: 'venueReviews'
         },
         {
             name: 'ExperienceReviewModel',

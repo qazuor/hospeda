@@ -2,8 +2,8 @@ import type { I18nText } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
-import { gastronomies } from './venue.dbschema.ts';
-import { gastronomyMenuItems } from './venue_menu_item.dbschema.ts';
+import { venues } from './venue.dbschema.ts';
+import { venueMenuItems } from './venue_menu_item.dbschema.ts';
 
 /**
  * `venue_menu_sections` — the course headings of a venue's real menu (HOS-895).
@@ -40,7 +40,7 @@ import { gastronomyMenuItems } from './venue_menu_item.dbschema.ts';
  *
  * @see packages/db/src/schemas/venue/venue_menu_item.dbschema.ts
  */
-export const gastronomyMenuSections = pgTable(
+export const venueMenuSections = pgTable(
     'venue_menu_sections',
     {
         id: uuid('id').primaryKey().defaultRandom(),
@@ -51,7 +51,7 @@ export const gastronomyMenuSections = pgTable(
          */
         gastronomyId: uuid('venue_id')
             .notNull()
-            .references(() => gastronomies.id, { onDelete: 'cascade' }),
+            .references(() => venues.id, { onDelete: 'cascade' }),
         /** Heading of the course, e.g. "Entradas", "Principales", "Postres". */
         name: text('name').notNull(),
         /** Optional blurb under the heading. Nullable — most sections have none. */
@@ -93,18 +93,15 @@ export const gastronomyMenuSections = pgTable(
     })
 );
 
-export const gastronomyMenuSectionsRelations = relations(
-    gastronomyMenuSections,
-    ({ one, many }) => ({
-        gastronomy: one(gastronomies, {
-            fields: [gastronomyMenuSections.gastronomyId],
-            references: [gastronomies.id]
-        }),
-        items: many(gastronomyMenuItems)
-    })
-);
+export const venueMenuSectionsRelations = relations(venueMenuSections, ({ one, many }) => ({
+    venue: one(venues, {
+        fields: [venueMenuSections.gastronomyId],
+        references: [venues.id]
+    }),
+    items: many(venueMenuItems)
+}));
 
 /** Type-inferred insert type for venue_menu_sections rows. */
-export type InsertVenueMenuSection = typeof gastronomyMenuSections.$inferInsert;
+export type InsertVenueMenuSection = typeof venueMenuSections.$inferInsert;
 /** Type-inferred select type for venue_menu_sections rows. */
-export type SelectVenueMenuSection = typeof gastronomyMenuSections.$inferSelect;
+export type SelectVenueMenuSection = typeof venueMenuSections.$inferSelect;

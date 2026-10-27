@@ -1,7 +1,7 @@
 import { relations } from 'drizzle-orm';
 import { date, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
-import { gastronomies } from './venue.dbschema.ts';
+import { venues } from './venue.dbschema.ts';
 
 /**
  * `venue_daily_specials` — the menú del día (HOS-1041).
@@ -54,14 +54,14 @@ import { gastronomies } from './venue.dbschema.ts';
  *
  * The FK CASCADEs, so a deleted listing takes its specials with it.
  */
-export const gastronomyDailySpecials = pgTable(
+export const venueDailySpecials = pgTable(
     'venue_daily_specials',
     {
         id: uuid('id').primaryKey().defaultRandom(),
         /** FK to the owning listing. CASCADE — a listing deletes its specials. */
         gastronomyId: uuid('venue_id')
             .notNull()
-            .references(() => gastronomies.id, { onDelete: 'cascade' }),
+            .references(() => venues.id, { onDelete: 'cascade' }),
         /** The dish, as the venue announces it. e.g. "Milanesa a la napolitana con puré". */
         title: text('title').notNull(),
         /** Optional detail — what comes with it, how it is served. */
@@ -114,14 +114,14 @@ export const gastronomyDailySpecials = pgTable(
     })
 );
 
-export const gastronomyDailySpecialsRelations = relations(gastronomyDailySpecials, ({ one }) => ({
-    gastronomy: one(gastronomies, {
-        fields: [gastronomyDailySpecials.gastronomyId],
-        references: [gastronomies.id]
+export const venueDailySpecialsRelations = relations(venueDailySpecials, ({ one }) => ({
+    venue: one(venues, {
+        fields: [venueDailySpecials.gastronomyId],
+        references: [venues.id]
     })
 }));
 
 /** Type-inferred insert type for venue_daily_specials rows. */
-export type InsertVenueDailySpecial = typeof gastronomyDailySpecials.$inferInsert;
+export type InsertVenueDailySpecial = typeof venueDailySpecials.$inferInsert;
 /** Type-inferred select type for venue_daily_specials rows. */
-export type SelectVenueDailySpecial = typeof gastronomyDailySpecials.$inferSelect;
+export type SelectVenueDailySpecial = typeof venueDailySpecials.$inferSelect;

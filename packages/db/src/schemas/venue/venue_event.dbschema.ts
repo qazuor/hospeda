@@ -12,7 +12,7 @@ import {
     uuid
 } from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
-import { gastronomies } from './venue.dbschema.ts';
+import { venues } from './venue.dbschema.ts';
 
 /**
  * How a venue event repeats (HOS-1042).
@@ -38,14 +38,11 @@ import { gastronomies } from './venue.dbschema.ts';
  * general recurrence engine.
  *
  * A pg enum rather than free text, on the same grounds
- * {@link GastronomyMenuFileKindPgEnum} states: the renderer switches on this
+ * {@link VenueMenuFileKindPgEnum} states: the renderer switches on this
  * value, and a switch over an unconstrained column is a switch with a silent
  * default.
  */
-export const GastronomyEventRecurrencePgEnum = pgEnum('venue_event_recurrence_enum', [
-    'once',
-    'weekly'
-]);
+export const VenueEventRecurrencePgEnum = pgEnum('venue_event_recurrence_enum', ['once', 'weekly']);
 
 /**
  * `venue_events` — the venue's OWN agenda (HOS-1042).
@@ -97,7 +94,7 @@ export const GastronomyEventRecurrencePgEnum = pgEnum('venue_event_recurrence_en
  *
  * @see packages/schemas/src/entities/venue/subtypes/venue.event.schema.ts
  */
-export const gastronomyEvents = pgTable(
+export const venueEvents = pgTable(
     'venue_events',
     {
         id: uuid('id').primaryKey().defaultRandom(),
@@ -108,13 +105,13 @@ export const gastronomyEvents = pgTable(
          */
         gastronomyId: uuid('venue_id')
             .notNull()
-            .references(() => gastronomies.id, { onDelete: 'cascade' }),
+            .references(() => venues.id, { onDelete: 'cascade' }),
         /** What the event is called, e.g. "Noche de música en vivo". */
         title: text('title').notNull(),
         /** Optional blurb. Nullable — a happy hour rarely needs a paragraph. */
         description: text('description'),
-        /** Whether this entry repeats. See {@link GastronomyEventRecurrencePgEnum}. */
-        recurrence: GastronomyEventRecurrencePgEnum('recurrence').notNull(),
+        /** Whether this entry repeats. See {@link VenueEventRecurrencePgEnum}. */
+        recurrence: VenueEventRecurrencePgEnum('recurrence').notNull(),
         /**
          * The calendar day, for a `once` event. `NULL` for a `weekly` one.
          *
@@ -178,14 +175,14 @@ export const gastronomyEvents = pgTable(
     })
 );
 
-export const gastronomyEventsRelations = relations(gastronomyEvents, ({ one }) => ({
-    gastronomy: one(gastronomies, {
-        fields: [gastronomyEvents.gastronomyId],
-        references: [gastronomies.id]
+export const venueEventsRelations = relations(venueEvents, ({ one }) => ({
+    venue: one(venues, {
+        fields: [venueEvents.gastronomyId],
+        references: [venues.id]
     })
 }));
 
 /** Type-inferred insert type for venue_events rows. */
-export type InsertVenueEvent = typeof gastronomyEvents.$inferInsert;
+export type InsertVenueEvent = typeof venueEvents.$inferInsert;
 /** Type-inferred select type for venue_events rows. */
-export type SelectVenueEvent = typeof gastronomyEvents.$inferSelect;
+export type SelectVenueEvent = typeof venueEvents.$inferSelect;

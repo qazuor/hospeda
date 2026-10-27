@@ -17,8 +17,8 @@ import { destinations } from '../../src/schemas/destination/destination.dbschema
 import { experienceReviews } from '../../src/schemas/experience/experience_review.dbschema.ts';
 import { experiences } from '../../src/schemas/experience/experiences.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
-import { gastronomies } from '../../src/schemas/venue/venue.dbschema.ts';
-import { gastronomyReviews } from '../../src/schemas/venue/venue_review.dbschema.ts';
+import { venues } from '../../src/schemas/venue/venue.dbschema.ts';
+import { venueReviews } from '../../src/schemas/venue/venue_review.dbschema.ts';
 import { closeTestPool, testData, withTestTransaction } from './helpers.ts';
 
 afterAll(async () => closeTestPool());
@@ -83,9 +83,9 @@ describe('TEST:1686:1 AC:1686:1 AC:1686:4 listingReviewsShownCondition', () => {
                 },
                 {
                     vertical: VerticalEnum.VENUE,
-                    table: gastronomies,
-                    reviewTable: gastronomyReviews,
-                    fk: gastronomyReviews.gastronomyId,
+                    table: venues,
+                    reviewTable: venueReviews,
+                    fk: venueReviews.gastronomyId,
                     listing: venue,
                     rating: { food: 5, service: 5, ambiance: 5, value: 5 }
                 },

@@ -11,8 +11,8 @@ import {
     uuid
 } from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
-import { gastronomies } from './venue.dbschema.ts';
-import { gastronomyMenuSections } from './venue_menu_section.dbschema.ts';
+import { venues } from './venue.dbschema.ts';
+import { venueMenuSections } from './venue_menu_section.dbschema.ts';
 
 /**
  * `venue_menu_items` — one dish or drink on a venue's real menu (HOS-895).
@@ -63,18 +63,18 @@ import { gastronomyMenuSections } from './venue_menu_section.dbschema.ts';
  *
  * Both FKs CASCADE, so a deleted section takes its dishes with it.
  */
-export const gastronomyMenuItems = pgTable(
+export const venueMenuItems = pgTable(
     'venue_menu_items',
     {
         id: uuid('id').primaryKey().defaultRandom(),
         /** FK to the owning section. CASCADE — a section deletes its dishes. */
         sectionId: uuid('section_id')
             .notNull()
-            .references(() => gastronomyMenuSections.id, { onDelete: 'cascade' }),
+            .references(() => venueMenuSections.id, { onDelete: 'cascade' }),
         /** Denormalized FK to the listing. See the file docblock for why. */
         gastronomyId: uuid('venue_id')
             .notNull()
-            .references(() => gastronomies.id, { onDelete: 'cascade' }),
+            .references(() => venues.id, { onDelete: 'cascade' }),
         /** Name of the dish or drink. */
         name: text('name').notNull(),
         /** Optional description — ingredients, preparation, portion. */
@@ -155,18 +155,18 @@ export const gastronomyMenuItems = pgTable(
     })
 );
 
-export const gastronomyMenuItemsRelations = relations(gastronomyMenuItems, ({ one }) => ({
-    section: one(gastronomyMenuSections, {
-        fields: [gastronomyMenuItems.sectionId],
-        references: [gastronomyMenuSections.id]
+export const venueMenuItemsRelations = relations(venueMenuItems, ({ one }) => ({
+    section: one(venueMenuSections, {
+        fields: [venueMenuItems.sectionId],
+        references: [venueMenuSections.id]
     }),
-    gastronomy: one(gastronomies, {
-        fields: [gastronomyMenuItems.gastronomyId],
-        references: [gastronomies.id]
+    venue: one(venues, {
+        fields: [venueMenuItems.gastronomyId],
+        references: [venues.id]
     })
 }));
 
 /** Type-inferred insert type for venue_menu_items rows. */
-export type InsertVenueMenuItem = typeof gastronomyMenuItems.$inferInsert;
+export type InsertVenueMenuItem = typeof venueMenuItems.$inferInsert;
 /** Type-inferred select type for venue_menu_items rows. */
-export type SelectVenueMenuItem = typeof gastronomyMenuItems.$inferSelect;
+export type SelectVenueMenuItem = typeof venueMenuItems.$inferSelect;

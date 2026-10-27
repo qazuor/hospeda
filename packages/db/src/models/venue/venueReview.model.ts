@@ -1,6 +1,6 @@
 import type { VenueReview } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomyReviews } from '../../schemas/venue/venue_review.dbschema.ts';
+import { venueReviews } from '../../schemas/venue/venue_review.dbschema.ts';
 
 /**
  * VenueReviewModel — DB access for gastronomy reviews (SPEC-239).
@@ -9,10 +9,10 @@ import { gastronomyReviews } from '../../schemas/venue/venue_review.dbschema.ts'
  * service layer grows — same pattern as AccommodationReviewModel.findAllWithUser.
  */
 export class VenueReviewModel extends BaseModelImpl<VenueReview> {
-    protected table = gastronomyReviews;
-    public entityName = 'gastronomyReviews';
+    protected table = venueReviews;
+    public entityName = 'venueReviews';
 
-    protected override readonly validRelationKeys = ['gastronomy', 'user'] as const;
+    protected override readonly validRelationKeys = ['venue', 'user'] as const;
 
     /**
      * Returns the Drizzle query key for this model.
@@ -23,7 +23,7 @@ export class VenueReviewModel extends BaseModelImpl<VenueReview> {
      * "Invalid table configuration for: venue_reviews").
      */
     protected getTableName(): string {
-        return 'gastronomyReviews';
+        return 'venueReviews';
     }
 }
 

@@ -1,7 +1,7 @@
 import type { VenueMedia } from '@repo/schemas';
 import { and, asc, count, eq, inArray } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomyMedia } from '../../schemas/venue/venue_media.dbschema.ts';
+import { venueMedia } from '../../schemas/venue/venue_media.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
@@ -82,19 +82,19 @@ interface FindByVenuesInput {
  *   this model mirrors field-for-field and finder-for-finder.
  */
 export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
-    protected table = gastronomyMedia;
-    public entityName = 'gastronomyMedia';
+    protected table = venueMedia;
+    public entityName = 'venueMedia';
 
     /** Drizzle relational query key — must match the table export name. */
     protected getTableName(): string {
-        return 'gastronomyMedia';
+        return 'venueMedia';
     }
 
     /**
      * Returns the registered relation keys so `findOneWithRelations` /
      * `findAllWithRelations` can warn on unknown keys.
      */
-    protected override readonly validRelationKeys = ['gastronomy'] as const;
+    protected override readonly validRelationKeys = ['venue'] as const;
 
     // -------------------------------------------------------------------------
     // Gastronomy-media-specific finders
@@ -128,14 +128,14 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
 
         try {
             const conditions = [
-                eq(gastronomyMedia.gastronomyId, gastronomyId),
-                ...listingMediaShownConditions({ table: gastronomyMedia })
+                eq(venueMedia.gastronomyId, gastronomyId),
+                ...listingMediaShownConditions({ table: venueMedia })
             ];
             if (state !== undefined) {
-                conditions.push(eq(gastronomyMedia.state, state));
+                conditions.push(eq(venueMedia.state, state));
             }
             if (isFeatured !== undefined) {
-                conditions.push(eq(gastronomyMedia.isFeatured, isFeatured));
+                conditions.push(eq(venueMedia.isFeatured, isFeatured));
             }
 
             const whereClause = and(...conditions);
@@ -144,12 +144,12 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
             const [items, countResult] = await Promise.all([
                 db
                     .select()
-                    .from(gastronomyMedia)
+                    .from(venueMedia)
                     .where(whereClause)
-                    .orderBy(asc(gastronomyMedia.sortOrder))
+                    .orderBy(asc(venueMedia.sortOrder))
                     .limit(pageSize)
                     .offset(offset),
-                db.select({ count: count() }).from(gastronomyMedia).where(whereClause)
+                db.select({ count: count() }).from(venueMedia).where(whereClause)
             ]);
 
             const result = {
@@ -190,12 +190,12 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
         try {
             const result = await db
                 .select()
-                .from(gastronomyMedia)
+                .from(venueMedia)
                 .where(
                     and(
-                        eq(gastronomyMedia.gastronomyId, gastronomyId),
-                        eq(gastronomyMedia.isFeatured, true),
-                        ...listingMediaShownConditions({ table: gastronomyMedia })
+                        eq(venueMedia.gastronomyId, gastronomyId),
+                        eq(venueMedia.isFeatured, true),
+                        ...listingMediaShownConditions({ table: venueMedia })
                     )
                 )
                 .limit(1);
@@ -245,11 +245,11 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
 
         try {
             const conditions = [
-                inArray(gastronomyMedia.gastronomyId, [...gastronomyIds]),
-                ...listingMediaShownConditions({ table: gastronomyMedia })
+                inArray(venueMedia.gastronomyId, [...gastronomyIds]),
+                ...listingMediaShownConditions({ table: venueMedia })
             ];
             if (state !== undefined) {
-                conditions.push(eq(gastronomyMedia.state, state));
+                conditions.push(eq(venueMedia.state, state));
             }
 
             // Secondary sort by `id` guarantees a deterministic order even when two
@@ -257,9 +257,9 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
             // by design, but keeps the composed gallery order stable regardless).
             const rows = (await db
                 .select()
-                .from(gastronomyMedia)
+                .from(venueMedia)
                 .where(and(...conditions))
-                .orderBy(asc(gastronomyMedia.sortOrder), asc(gastronomyMedia.id))) as VenueMedia[];
+                .orderBy(asc(venueMedia.sortOrder), asc(venueMedia.id))) as VenueMedia[];
 
             for (const row of rows) {
                 const list = grouped.get(row.gastronomyId);
@@ -271,7 +271,7 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
             }
             try {
                 logQuery(this.entityName, 'findByGastronomies', logContext, {
-                    gastronomies: grouped.size,
+                    venues: grouped.size,
                     rows: rows.length
                 });
             } catch {}
