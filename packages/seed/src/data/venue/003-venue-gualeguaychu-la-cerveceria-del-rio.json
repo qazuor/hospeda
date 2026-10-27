@@ -1,6 +1,6 @@
 {
-    "id": "003-gastronomy-gualeguaychu-la-cerveceria-del-rio",
-    "ownerId": "042-user-gastronomy-owner-rodrigo",
+    "id": "003-venue-gualeguaychu-la-cerveceria-del-rio",
+    "ownerId": "042-user-venue-owner-rodrigo",
     "destinationId": "005-destination-gualeguaychu",
     "slug": "la-cerveceria-del-rio",
     "name": "La Cervecería del Río",
@@ -100,14 +100,7 @@
     "seo": {
         "metaTitle": "La Cervecería del Río - Gualeguaychú",
         "metaDescription": "Cervecería artesanal con producción propia y tapas gourmet en Gualeguaychú. Más de 12 estilos de cerveza con vista al río.",
-        "keywords": [
-            "cerveceria",
-            "artesanal",
-            "gualeguaychu",
-            "tapas",
-            "beer",
-            "entre rios"
-        ]
+        "keywords": ["cerveceria", "artesanal", "gualeguaychu", "tapas", "beer", "entre rios"]
     },
     "reviewsCount": 0,
     "averageRating": 0

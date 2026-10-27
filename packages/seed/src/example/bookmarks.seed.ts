@@ -58,8 +58,8 @@ const preProcessBookmark = async (item: unknown, context: SeedContext) => {
             realEntityId = context.idMapper.getMappedUserId(seedEntityId);
             break;
         case EntityTypeEnum.VENUE:
-            // Gastronomies register their mapping under the 'gastronomies' namespace.
-            realEntityId = context.idMapper.getRealId('gastronomies', seedEntityId);
+            // Gastronomies register their mapping under the 'venues' namespace.
+            realEntityId = context.idMapper.getRealId('venues', seedEntityId);
             break;
         case EntityTypeEnum.EXPERIENCE:
             // Experiences are not yet registered in the idMapper; a fixture using
@@ -126,7 +126,7 @@ const getBookmarkInfo = (item: unknown, context: SeedContext) => {
         EVENT: 'events',
         POST: 'posts',
         USER: 'users',
-        GASTRONOMY: 'gastronomies',
+        VENUE: 'venues',
         EXPERIENCE: 'experiences'
     } as const;
 

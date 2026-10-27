@@ -29,7 +29,7 @@ import { seedTags } from './tags.seed.js';
 import { seedUserBookmarkCollections } from './userBookmarkCollections.seed.js';
 import { seedUsers } from './users.seed.js';
 import { seedUserTags } from './userTags.seed.js';
-import { seedGastronomies } from './venues.seed.js';
+import { seedVenues } from './venues.seed.js';
 
 /**
  * Executes all example seeds in the correct order.
@@ -101,7 +101,7 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         await seedHostTrades(context);
         context.actor = oldContextActor;
         // SPEC-239 — gastronomy listings
-        await seedGastronomies(context);
+        await seedVenues(context);
         // SPEC-240 T-014 — experience listing seed data
         await seedExperiences(context);
         context.actor = oldContextActor;

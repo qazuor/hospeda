@@ -15,7 +15,7 @@ import { hash } from 'bcryptjs';
 import exampleManifest from '../manifest-example.json';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
 import { STATUS_ICONS } from '../utils/icons.js';
-import { buildGastronomyMediaRows } from '../utils/listing-media-builder.js';
+import { buildVenueMediaRows } from '../utils/listing-media-builder.js';
 import { loadJsonFiles } from '../utils/loadJsonFile.js';
 import { logger } from '../utils/logger.js';
 import type { FixtureMediaBlock } from '../utils/media-rows-builder.js';
@@ -33,8 +33,8 @@ import { summaryTracker } from '../utils/summaryTracker.js';
  * @param seedId - Raw gastronomy fixture's top-level `id` field
  * @returns Stable UUIDv5 derived from the fixture's seed-key
  */
-export const getGastronomyFixtureId = (seedId: string): string =>
-    deterministicFixtureId({ seedKey: `gastronomy:${seedId}` });
+export const getVenueFixtureId = (seedId: string): string =>
+    deterministicFixtureId({ seedKey: `venue:${seedId}` });
 
 /**
  * Derives the deterministic UUIDv5 id for a single FAQ belonging to an
@@ -46,12 +46,9 @@ export const getGastronomyFixtureId = (seedId: string): string =>
  * @param input - RO-RO input with the parent gastronomy's seed-key and this FAQ's index
  * @returns Stable UUIDv5 derived from the FAQ's composite seed-key
  */
-export const getGastronomyFaqFixtureId = (input: {
-    gastronomySeedId: string;
-    index: number;
-}): string =>
+export const getVenueFaqFixtureId = (input: { venueSeedId: string; index: number }): string =>
     deterministicFixtureId({
-        seedKey: `gastronomyFaq:${input.gastronomySeedId}:${input.index}`
+        seedKey: `venueFaq:${input.venueSeedId}:${input.index}`
     });
 
 /**
@@ -65,12 +62,12 @@ export const getGastronomyFaqFixtureId = (input: {
  * @param input - RO-RO input with the parent gastronomy's seed-key and the reviewer's seed id
  * @returns Stable UUIDv5 derived from the review's composite seed-key
  */
-export const getGastronomyReviewFixtureId = (input: {
-    gastronomySeedId: string;
+export const getVenueReviewFixtureId = (input: {
+    venueSeedId: string;
     reviewerSeedId: string;
 }): string =>
     deterministicFixtureId({
-        seedKey: `gastronomyReview:${input.gastronomySeedId}:${input.reviewerSeedId}`
+        seedKey: `venueReview:${input.venueSeedId}:${input.reviewerSeedId}`
     });
 
 /**
@@ -128,7 +125,7 @@ const E2E_TOURIST = {
  */
 const LISTING_OWNERS: readonly ListingOwnerSpec[] = [
     {
-        seedId: '041-user-gastronomy-owner-julieta',
+        seedId: '041-user-venue-owner-julieta',
         email: 'gastro-owner-julieta@local.test',
         displayName: 'Julieta Ferreyra',
         firstName: 'Julieta',
@@ -136,7 +133,7 @@ const LISTING_OWNERS: readonly ListingOwnerSpec[] = [
         slug: 'julieta-ferreyra-gastro'
     },
     {
-        seedId: '042-user-gastronomy-owner-rodrigo',
+        seedId: '042-user-venue-owner-rodrigo',
         email: 'gastro-owner-rodrigo@local.test',
         displayName: 'Rodrigo Casas',
         firstName: 'Rodrigo',
@@ -144,7 +141,7 @@ const LISTING_OWNERS: readonly ListingOwnerSpec[] = [
         slug: 'rodrigo-casas-gastro'
     },
     {
-        seedId: '043-user-gastronomy-owner-valentina',
+        seedId: '043-user-venue-owner-valentina',
         email: 'gastro-owner-valentina@local.test',
         displayName: 'Valentina Ríos',
         firstName: 'Valentina',
@@ -183,10 +180,10 @@ interface GastronomySeedData {
 
 /**
  * Wrapper shape of a gastronomy FAQ seed JSON file.
- * `$gastronomyId` references the listing seed id; `faqs` is the array of entries.
+ * `$venueId` references the listing seed id; `faqs` is the array of entries.
  */
 interface GastronomyFaqFile {
-    readonly $gastronomyId: string;
+    readonly $venueId: string;
     readonly faqs: ReadonlyArray<{
         readonly question: string;
         readonly answer: string;
@@ -197,10 +194,10 @@ interface GastronomyFaqFile {
 
 /**
  * Wrapper shape of a gastronomy review seed JSON file.
- * `$gastronomyId` references the listing seed id; `reviews` is the array of entries.
+ * `$venueId` references the listing seed id; `reviews` is the array of entries.
  */
 interface GastronomyReviewFile {
-    readonly $gastronomyId: string;
+    readonly $venueId: string;
     readonly reviews: ReadonlyArray<{
         readonly userId: string;
         readonly title?: string | null;
@@ -249,7 +246,7 @@ async function seedGastronomyMediaRows({
         return;
     }
 
-    const rows = buildGastronomyMediaRows({ gastronomyId, media });
+    const rows = buildVenueMediaRows({ gastronomyId, media });
     for (const row of rows) {
         await mediaModel.create(row);
     }
@@ -278,8 +275,8 @@ async function seedGastronomyMediaRows({
  *
  * ### Deterministic ids (HOS-25 T-026)
  * Gastronomy listings, FAQs, and reviews are all inserted with an explicit
- * UUIDv5 id derived from a stable seed-key (see `getGastronomyFixtureId` /
- * `getGastronomyFaqFixtureId` / `getGastronomyReviewFixtureId` above), instead
+ * UUIDv5 id derived from a stable seed-key (see `getVenueFixtureId` /
+ * `getVenueFaqFixtureId` / `getVenueReviewFixtureId` above), instead
  * of the column's `defaultRandom()`. This was already a model-direct Drizzle
  * insert (never went through `VenueService`/`GastronomyFaqService`/
  * `VenueReviewService`), so no service lifecycle hook is newly bypassed —
@@ -293,7 +290,7 @@ async function seedGastronomyMediaRows({
  *
  * @param context - Seed context providing the idMapper and actor
  */
-export async function seedGastronomies(context: SeedContext): Promise<void> {
+export async function seedVenues(context: SeedContext): Promise<void> {
     const entityName = 'Gastronomies';
     context.currentEntity = entityName;
 
@@ -540,13 +537,13 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             // inserted explicitly (bypassing the column's `defaultRandom()`) so
             // versioned data-migrations can target a specific gastronomy listing
             // by a fixed id.
-            const gastronomyId = getGastronomyFixtureId(item.id);
+            const venueId = getVenueFixtureId(item.id);
             const now = new Date();
 
             const [inserted] = await db
                 .insert(venues)
                 .values({
-                    id: gastronomyId,
+                    id: venueId,
                     slug: item.slug,
                     name: item.name,
                     summary: item.summary,
@@ -605,7 +602,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
 
             if (realId) {
                 // Register in idMapper so downstream (reviews, FAQs) can resolve
-                context.idMapper.setMapping('gastronomies', item.id, realId, item.name);
+                context.idMapper.setMapping('venues', item.id, realId, item.name);
 
                 // ── Step 3b: relational media rows (HOS-372) ───────────────────
                 // Mirrors the accommodation seed: a direct model insert rather
@@ -652,14 +649,11 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                 faqFile
             ])) as unknown as [GastronomyFaqFile];
 
-            const realGastronomyId = context.idMapper.getRealId(
-                'gastronomies',
-                faqFileData.$gastronomyId
-            );
+            const realVenueId = context.idMapper.getRealId('venues', faqFileData.$venueId);
 
-            if (!realGastronomyId) {
+            if (!realVenueId) {
                 logger.warn(
-                    `  ${STATUS_ICONS.Warning} FAQ file "${faqFile}": could not resolve gastronomy "${faqFileData.$gastronomyId}" — skipping`
+                    `  ${STATUS_ICONS.Warning} FAQ file "${faqFile}": could not resolve gastronomy "${faqFileData.$venueId}" — skipping`
                 );
                 continue;
             }
@@ -674,11 +668,11 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                         // `getAccommodationFaqFixtureId`. Also makes
                         // `onConflictDoNothing()` below meaningfully idempotent
                         // (previously the DB-random default id never collided).
-                        id: getGastronomyFaqFixtureId({
-                            gastronomySeedId: faqFileData.$gastronomyId,
+                        id: getVenueFaqFixtureId({
+                            venueSeedId: faqFileData.$venueId,
                             index: faqIndex
                         }),
-                        gastronomyId: realGastronomyId,
+                        gastronomyId: realVenueId,
                         question: faq.question,
                         answer: faq.answer,
                         category: faq.category ?? null,
@@ -711,14 +705,11 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                 reviewFile
             ])) as unknown as [GastronomyReviewFile];
 
-            const realGastronomyId = context.idMapper.getRealId(
-                'gastronomies',
-                reviewFileData.$gastronomyId
-            );
+            const realVenueId = context.idMapper.getRealId('venues', reviewFileData.$venueId);
 
-            if (!realGastronomyId) {
+            if (!realVenueId) {
                 logger.warn(
-                    `  ${STATUS_ICONS.Warning} Review file "${reviewFile}": could not resolve gastronomy "${reviewFileData.$gastronomyId}" — skipping`
+                    `  ${STATUS_ICONS.Warning} Review file "${reviewFile}": could not resolve gastronomy "${reviewFileData.$venueId}" — skipping`
                 );
                 continue;
             }
@@ -742,11 +733,11 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                         // table's UNIQUE constraint, so it doubles as a
                         // content-stable composite key (unaffected by array
                         // reordering, unlike an index-based key).
-                        id: getGastronomyReviewFixtureId({
-                            gastronomySeedId: reviewFileData.$gastronomyId,
+                        id: getVenueReviewFixtureId({
+                            venueSeedId: reviewFileData.$venueId,
                             reviewerSeedId: review.userId
                         }),
-                        gastronomyId: realGastronomyId,
+                        gastronomyId: realVenueId,
                         userId: realUserId,
                         title: review.title ?? null,
                         content: review.content ?? null,

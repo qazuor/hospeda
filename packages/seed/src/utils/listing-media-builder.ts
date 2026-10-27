@@ -21,7 +21,7 @@ import { buildMediaRows } from './media-rows-builder.js';
  * @param input.media - The `media` block from the gastronomy JSON fixture.
  * @returns Ordered rows for `GastronomyMediaModel.create()`.
  */
-export function buildGastronomyMediaRows({
+export function buildVenueMediaRows({
     gastronomyId,
     media
 }: {

@@ -51,10 +51,7 @@
  * so the migration reports zero and exits.
  */
 import { experienceMedia, inArray, sql, venueMedia } from '@repo/db';
-import {
-    buildExperienceMediaRows,
-    buildGastronomyMediaRows
-} from '../utils/listing-media-builder.js';
+import { buildExperienceMediaRows, buildVenueMediaRows } from '../utils/listing-media-builder.js';
 import type { FixtureMediaBlock } from '../utils/media-rows-builder.js';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
@@ -67,7 +64,7 @@ export const meta = {
     // it against an already-dropped source instead of moving zero rows and
     // closing itself in the ledger.
     requiresColumns: [
-        { table: 'gastronomies', column: 'media' },
+        { table: 'venues', column: 'media' },
         { table: 'experiences', column: 'media' }
     ]
 } as const satisfies SeedMigrationModule['meta'];
@@ -104,7 +101,7 @@ function toPhotoBlock(value: unknown): FixtureMediaBlock | null {
  */
 async function readPhotoCandidates(
     db: SeedMigrationCtx['db'],
-    table: 'gastronomies' | 'experiences'
+    table: 'venues' | 'experiences'
 ): Promise<PhotoCandidate[]> {
     const columnExists = await db.execute(
         sql`SELECT 1 FROM information_schema.columns
@@ -128,7 +125,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     const { db } = ctx;
 
     // ── Gastronomy ──────────────────────────────────────────────────────────
-    const gastronomyCandidates = await readPhotoCandidates(db, 'gastronomies');
+    const gastronomyCandidates = await readPhotoCandidates(db, 'venues');
 
     // One query for the whole set rather than one per listing: any id that
     // already owns a media row has been migrated and must be left alone.
@@ -152,7 +149,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     let gastronomyPhotos = 0;
     for (const listing of gastronomyCandidates) {
         if (gastronomyMigrated.has(listing.id)) continue;
-        const rows = buildGastronomyMediaRows({
+        const rows = buildVenueMediaRows({
             gastronomyId: listing.id,
             media: listing.media
         }) as (typeof venueMedia.$inferInsert)[];

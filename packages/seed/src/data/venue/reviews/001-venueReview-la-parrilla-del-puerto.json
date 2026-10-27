@@ -43,5 +43,5 @@
             "moderationState": "APPROVED"
         }
     ],
-    "$gastronomyId": "001-gastronomy-uruguay-la-parrilla-del-puerto"
+    "$venueId": "001-venue-uruguay-la-parrilla-del-puerto"
 }

@@ -1,6 +1,6 @@
 {
-    "id": "005-gastronomy-federacion-restaurant-termas",
-    "ownerId": "043-user-gastronomy-owner-valentina",
+    "id": "005-venue-federacion-restaurant-termas",
+    "ownerId": "043-user-venue-owner-valentina",
     "destinationId": "004-destination-federacion",
     "slug": "restaurant-termas-federacion",
     "name": "Restaurant Termas",

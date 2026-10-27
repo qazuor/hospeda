@@ -12,7 +12,7 @@ import { ModerationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     buildExperienceMediaRows,
-    buildGastronomyMediaRows
+    buildVenueMediaRows
 } from '../src/utils/listing-media-builder.js';
 import type { FixtureMediaBlock } from '../src/utils/media-rows-builder.js';
 
@@ -27,9 +27,9 @@ const MEDIA: FixtureMediaBlock = {
     ]
 };
 
-describe('buildGastronomyMediaRows', () => {
+describe('buildVenueMediaRows', () => {
     it('should stamp the gastronomy foreign key on every row', () => {
-        const rows = buildGastronomyMediaRows({ gastronomyId: GASTRONOMY_ID, media: MEDIA });
+        const rows = buildVenueMediaRows({ gastronomyId: GASTRONOMY_ID, media: MEDIA });
 
         expect(rows).toHaveLength(3);
         for (const row of rows) {
@@ -38,7 +38,7 @@ describe('buildGastronomyMediaRows', () => {
     });
 
     it('should place the featured image first with a dense 0-based sortOrder', () => {
-        const rows = buildGastronomyMediaRows({ gastronomyId: GASTRONOMY_ID, media: MEDIA });
+        const rows = buildVenueMediaRows({ gastronomyId: GASTRONOMY_ID, media: MEDIA });
 
         expect(rows.map((row) => row.sortOrder)).toEqual([0, 1, 2]);
         expect(rows.map((row) => row.isFeatured)).toEqual([true, false, false]);
@@ -48,13 +48,13 @@ describe('buildGastronomyMediaRows', () => {
     it('should mark exactly one row featured, satisfying the unique index', () => {
         // A second featured row would violate the partial unique index on
         // (gastronomy_id) WHERE is_featured — the insert would fail at runtime.
-        const rows = buildGastronomyMediaRows({ gastronomyId: GASTRONOMY_ID, media: MEDIA });
+        const rows = buildVenueMediaRows({ gastronomyId: GASTRONOMY_ID, media: MEDIA });
 
         expect(rows.filter((row) => row.isFeatured)).toHaveLength(1);
     });
 
     it('should start the gallery at sortOrder 0 when there is no featured image', () => {
-        const rows = buildGastronomyMediaRows({
+        const rows = buildVenueMediaRows({
             gastronomyId: GASTRONOMY_ID,
             media: { gallery: MEDIA.gallery }
         });
@@ -64,7 +64,7 @@ describe('buildGastronomyMediaRows', () => {
     });
 
     it('should default moderation to APPROVED and keep rows visible and unarchived', () => {
-        const rows = buildGastronomyMediaRows({ gastronomyId: GASTRONOMY_ID, media: MEDIA });
+        const rows = buildVenueMediaRows({ gastronomyId: GASTRONOMY_ID, media: MEDIA });
 
         for (const row of rows) {
             expect(row.moderationState).toBe(ModerationStatusEnum.APPROVED);
@@ -75,7 +75,7 @@ describe('buildGastronomyMediaRows', () => {
 
     it('should honour an explicit moderation state instead of forcing APPROVED', () => {
         // Fixtures that exercise the rejected-moderation branch rely on this.
-        const rows = buildGastronomyMediaRows({
+        const rows = buildVenueMediaRows({
             gastronomyId: GASTRONOMY_ID,
             media: {
                 featuredImage: { url: 'https://cdn.example.com/f.jpg' },
@@ -88,7 +88,7 @@ describe('buildGastronomyMediaRows', () => {
     });
 
     it('should skip gallery entries with no url without leaving a sortOrder gap', () => {
-        const rows = buildGastronomyMediaRows({
+        const rows = buildVenueMediaRows({
             gastronomyId: GASTRONOMY_ID,
             media: {
                 gallery: [
@@ -106,7 +106,7 @@ describe('buildGastronomyMediaRows', () => {
     });
 
     it('should return no rows for an empty media block', () => {
-        expect(buildGastronomyMediaRows({ gastronomyId: GASTRONOMY_ID, media: {} })).toEqual([]);
+        expect(buildVenueMediaRows({ gastronomyId: GASTRONOMY_ID, media: {} })).toEqual([]);
     });
 });
 
@@ -124,7 +124,7 @@ describe('buildExperienceMediaRows', () => {
         // The two verticals' tables are identical apart from the FK, so their
         // rows must be identical too — a divergence here means the shared
         // builder was bypassed for one of them.
-        const gastronomyRows = buildGastronomyMediaRows({
+        const gastronomyRows = buildVenueMediaRows({
             gastronomyId: GASTRONOMY_ID,
             media: MEDIA
         });
