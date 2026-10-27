@@ -370,7 +370,7 @@ export const ENTITY_FOLDER_MAP = {
     },
     venue: ({ environment, entityId }) => {
         if (!entityId) throw new Error('ENTITY_FOLDER_MAP.venue requires entityId');
-        return `hospeda/${environment}/gastronomies/${entityId}`;
+        return `hospeda/${environment}/venues/${entityId}`;
     },
     experience: ({ environment, entityId }) => {
         if (!entityId) throw new Error('ENTITY_FOLDER_MAP.experience requires entityId');

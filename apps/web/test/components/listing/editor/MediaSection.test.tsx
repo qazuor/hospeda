@@ -121,7 +121,7 @@ const defaultProps: MediaSectionProps = {
 const FEATURED_ROW = {
     id: 'media-uuid-featured',
     url: 'https://cdn.example.com/featured.jpg',
-    publicId: 'hospeda/gastronomies/abc/gallery/img-featured',
+    publicId: 'hospeda/venues/abc/gallery/img-featured',
     isFeatured: true,
     sortOrder: 0,
     state: 'visible' as const,
@@ -131,7 +131,7 @@ const FEATURED_ROW = {
 const GALLERY_ROW_1 = {
     id: 'media-uuid-g1',
     url: 'https://cdn.example.com/gallery1.jpg',
-    publicId: 'hospeda/gastronomies/abc/gallery/img-g1',
+    publicId: 'hospeda/venues/abc/gallery/img-g1',
     isFeatured: false,
     sortOrder: 1,
     state: 'visible' as const,
@@ -141,7 +141,7 @@ const GALLERY_ROW_1 = {
 const GALLERY_ROW_2 = {
     id: 'media-uuid-g2',
     url: 'https://cdn.example.com/gallery2.jpg',
-    publicId: 'hospeda/gastronomies/abc/gallery/img-g2',
+    publicId: 'hospeda/venues/abc/gallery/img-g2',
     isFeatured: false,
     sortOrder: 2,
     state: 'visible' as const,
@@ -151,7 +151,7 @@ const GALLERY_ROW_2 = {
 const NEW_ROW = {
     id: 'media-uuid-new',
     url: 'https://cdn.example.com/new.jpg',
-    publicId: 'hospeda/gastronomies/abc/gallery/img-new',
+    publicId: 'hospeda/venues/abc/gallery/img-new',
     isFeatured: false,
     sortOrder: 3,
     state: 'visible' as const,

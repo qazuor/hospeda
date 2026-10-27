@@ -1070,7 +1070,7 @@ describe('Gastronomy and experience media entity types', () => {
 
     it('resolves storage folders for gastronomy and experience', () => {
         expect(ENTITY_FOLDER_MAP.venue({ environment: 'test', entityId: 'g1' })).toBe(
-            'hospeda/test/gastronomies/g1'
+            'hospeda/test/venues/g1'
         );
         expect(ENTITY_FOLDER_MAP.experience({ environment: 'test', entityId: 'e1' })).toBe(
             'hospeda/test/experiences/e1'

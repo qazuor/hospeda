@@ -363,7 +363,7 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
                 ADMIN_ENTITY_ID
             );
             const arg = mockUpload.mock.calls[0]?.[0] as { folder: string; publicId: string };
-            expect(arg.folder).toBe(`hospeda/test/gastronomies/${ADMIN_ENTITY_ID}`);
+            expect(arg.folder).toBe(`hospeda/test/venues/${ADMIN_ENTITY_ID}`);
             expect(arg.publicId).toBe('featured');
         });
 
