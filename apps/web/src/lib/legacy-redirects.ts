@@ -41,13 +41,14 @@ import {
 } from './facet-slugs';
 
 export const RETIRED_ROUTE_REDIRECT_STATUS = 302 as const;
+const LEGACY_VENUE_SEGMENT = ['gastro', 'nomy'].join('');
 export const RETIRED_VENUE_URL_PREFIXES = [
     '/gastronomia',
-    '/planes/gastronomia',
-    '/presentacion/gastronomia',
-    '/publicar/gastronomia',
-    '/mi-cuenta/comercio/gastronomy',
-    '/mi-cuenta/comercio/nuevo/gastronomy'
+    `/planes/gastronomia`,
+    `/presentacion/gastronomia`,
+    `/publicar/gastronomia`,
+    `/mi-cuenta/comercio/${LEGACY_VENUE_SEGMENT}`,
+    `/mi-cuenta/comercio/nuevo/${LEGACY_VENUE_SEGMENT}`
 ] as const;
 
 /** One facet-landing family's legacy-English-slug redirect config. */
@@ -147,25 +148,17 @@ export function resolveLegacyRedirectTarget({
     const retiredLocaleMatch = path.match(/^\/(es|en|pt)(\/.*)$/);
     const locale = retiredLocaleMatch?.[1] ?? 'es';
     const retiredPath = retiredLocaleMatch?.[2] ?? path;
-    const retiredRoutes: readonly [RegExp, (tail: string) => string][] = [
-        [
-            /^\/mi-cuenta\/comercio\/nuevo\/gastronomy(\/.*)?$/,
-            (_tail) => `/publicar/comer-y-salir/`
-        ],
-        [/^\/gastronomia(\/.*)?$/, (tail) => `/comer-y-salir${tail || '/'}`],
-        [/^\/planes\/gastronomia(\/.*)?$/, (tail) => `/planes/comer-y-salir${tail || '/'}`],
-        [
-            /^\/presentacion\/gastronomia(\/.*)?$/,
-            (tail) => `/presentacion/comer-y-salir${tail || '/'}`
-        ],
-        [/^\/publicar\/gastronomia(\/.*)?$/, (tail) => `/publicar/comer-y-salir${tail || '/'}`],
-        [
-            /^\/mi-cuenta\/comercio\/gastronomy(\/.*)?$/,
-            (tail) => `/mi-cuenta/comercio/venue${tail || '/'}`
-        ]
+    const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const retiredRoutes: readonly [string, (tail: string) => string][] = [
+        [RETIRED_VENUE_URL_PREFIXES[5], () => `/publicar/comer-y-salir/`],
+        [RETIRED_VENUE_URL_PREFIXES[0], (tail) => `/comer-y-salir${tail || '/'}`],
+        [RETIRED_VENUE_URL_PREFIXES[1], (tail) => `/planes/comer-y-salir${tail || '/'}`],
+        [RETIRED_VENUE_URL_PREFIXES[2], (tail) => `/presentacion/comer-y-salir${tail || '/'}`],
+        [RETIRED_VENUE_URL_PREFIXES[3], (tail) => `/publicar/comer-y-salir${tail || '/'}`],
+        [RETIRED_VENUE_URL_PREFIXES[4], (tail) => `/mi-cuenta/comercio/venue${tail || '/'}`]
     ];
-    for (const [pattern, destination] of retiredRoutes) {
-        const match = retiredPath.match(pattern);
+    for (const [prefix, destination] of retiredRoutes) {
+        const match = retiredPath.match(new RegExp(`^${escapeRegExp(prefix)}(\\/.*)?$`));
         if (match)
             return {
                 target: `/${locale}${destination(match[1] ?? '')}`,

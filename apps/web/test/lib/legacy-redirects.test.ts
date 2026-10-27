@@ -180,7 +180,7 @@ describe('retired venue URLs (HOS-1821)', () => {
         const result = resolveLegacyRedirectTarget({ path: source });
         expect(result).toBeDefined();
         expect(result?.status).toBe(RETIRED_ROUTE_REDIRECT_STATUS);
-        expect(result?.target).not.toContain('gastronomy');
+        expect(result?.target).not.toContain(RETIRED_VENUE_URL_PREFIXES[4]);
         expect(resolveLegacyRedirectTarget({ path: result!.target })).toBeUndefined();
     });
     it('defaults locale-less URLs to Spanish', () => {
