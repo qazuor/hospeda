@@ -23,7 +23,7 @@ const READ_NAMES: Readonly<
             .select({ id: accommodations.id, name: accommodations.name })
             .from(accommodations)
             .where(inArray(accommodations.id, ids)),
-    gastronomy: (ids) =>
+    venue: (ids) =>
         getDb()
             .select({ id: gastronomies.id, name: gastronomies.name })
             .from(gastronomies)

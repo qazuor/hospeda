@@ -149,7 +149,7 @@ export const protectedAiTextImproveRoute = createProtectedStreamingRoute({
         const entityType = body.entityType ?? 'accommodation';
         const VERTICAL_BY_ENTITY_TYPE = {
             accommodation: VerticalEnum.ACCOMMODATION,
-            gastronomy: VerticalEnum.VENUE,
+            venue: VerticalEnum.VENUE,
             experience: VerticalEnum.EXPERIENCE
         } as const;
         const vertical = VERTICAL_BY_ENTITY_TYPE[entityType];

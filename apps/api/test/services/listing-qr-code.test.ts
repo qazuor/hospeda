@@ -96,7 +96,7 @@ describe('the label a listing code is minted with', () => {
 
         expect(label).toContain(NAME);
         expect(label).toContain(SLUG);
-        expect(label).toContain(LISTING_QR_LABEL_DESCRIPTION.gastronomy);
+        expect(label).toContain(LISTING_QR_LABEL_DESCRIPTION.venue);
     });
 
     it('describes each vertical distinguishably', () => {
@@ -108,7 +108,7 @@ describe('the label a listing code is minted with', () => {
         // next to rows minted before it, in the same admin search.
         expect(LISTING_QR_LABEL_DESCRIPTION).toStrictEqual({
             accommodation: 'Accommodation listing QR',
-            gastronomy: 'Gastronomy listing QR',
+            venue: 'Gastronomy listing QR',
             experience: 'Experience listing QR'
         });
     });

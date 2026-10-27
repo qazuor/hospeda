@@ -26,14 +26,7 @@ const ImportStockBodySchema = z.object({
     downloadLocation: z.string().url().optional(),
     photographer: z.string().min(1),
     photographerUrl: z.string().url(),
-    entityType: z.enum([
-        'accommodation',
-        'destination',
-        'event',
-        'post',
-        'gastronomy',
-        'experience'
-    ]),
+    entityType: z.enum(['accommodation', 'destination', 'event', 'post', 'venue', 'experience']),
     entityId: z.string().uuid(),
     role: z.enum(['featured', 'gallery'])
 });

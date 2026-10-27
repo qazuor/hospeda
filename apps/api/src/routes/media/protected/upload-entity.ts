@@ -132,7 +132,7 @@ const resolveEntityService = (
             return new EventService({ logger: apiLogger });
         case 'post':
             return new PostService({ logger: apiLogger });
-        case 'gastronomy':
+        case 'venue':
             return new VenueService({ logger: apiLogger });
         case 'experience':
             return new ExperienceService({ logger: apiLogger });
@@ -171,7 +171,7 @@ const UPLOAD_LISTING_ACCESS = {
             limit: async () => ({ key: 'max_photos_per_accommodation', requested: 1 })
         }
     },
-    gastronomy: {
+    venue: {
         listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' }
     },
     experience: {
@@ -196,7 +196,7 @@ const resolveUploadListingAccess = ({
         | 'destination'
         | 'event'
         | 'post'
-        | 'gastronomy'
+        | 'venue'
         | 'experience';
     readonly role: 'featured' | 'gallery';
 }): ListingAccessConfig | null => {
@@ -205,8 +205,8 @@ const resolveUploadListingAccess = ({
             return role === 'gallery'
                 ? UPLOAD_LISTING_ACCESS.accommodationGallery.listingAccess
                 : UPLOAD_LISTING_ACCESS.accommodationFeatured.listingAccess;
-        case 'gastronomy':
-            return UPLOAD_LISTING_ACCESS.gastronomy.listingAccess;
+        case 'venue':
+            return UPLOAD_LISTING_ACCESS.venue.listingAccess;
         case 'experience':
             return UPLOAD_LISTING_ACCESS.experience.listingAccess;
         case 'destination':

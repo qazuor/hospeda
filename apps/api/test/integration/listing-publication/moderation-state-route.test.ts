@@ -24,12 +24,12 @@ const verticals = [
 ] as const;
 const plural = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'gastronomies',
     experience: 'experiences'
 } as const;
 const table = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'gastronomies',
     experience: 'experiences'
 } as const;
 function path(vertical: (typeof verticals)[number], id: string) {

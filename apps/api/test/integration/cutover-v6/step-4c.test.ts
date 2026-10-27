@@ -18,7 +18,7 @@ import { testDb } from '../../e2e/setup/test-database.js';
 const table = 'cutover_v6_deleted_listing';
 const deleted = [
     { entityType: 'accommodation', entityId: '14820000-0000-4000-8000-000000000001' },
-    { entityType: 'gastronomy', entityId: '14820000-0000-4000-8000-000000000002' },
+    { entityType: 'venue', entityId: '14820000-0000-4000-8000-000000000002' },
     { entityType: 'experience', entityId: '14820000-0000-4000-8000-000000000003' }
 ] as const;
 type Call = { readonly group: string; readonly tags: readonly string[] };

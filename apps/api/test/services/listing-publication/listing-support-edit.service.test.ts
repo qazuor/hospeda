@@ -63,7 +63,7 @@ describe('TEST:V8a:8 row 26 lists the support edits of a listing', () => {
 
         // Assert
         expect(mocks.findByEntity).toHaveBeenCalledWith({
-            entityType: 'gastronomy',
+            entityType: 'venue',
             entityId: LISTING
         });
         expect(result).toEqual({

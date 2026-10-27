@@ -224,7 +224,7 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
         // `resourceType: 'auto'` because the same route stores both kinds and
         // the default (`'image'`) would make Cloudinary try to rasterise the
         // PDF.
-        const folder = buildEntityFolder('gastronomy', gastronomyId);
+        const folder = buildEntityFolder('venue', gastronomyId);
 
         let uploaded: Awaited<ReturnType<typeof provider.upload>>;
         try {

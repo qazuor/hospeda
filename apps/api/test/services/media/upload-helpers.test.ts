@@ -110,7 +110,7 @@ describe('upload-helpers', () => {
         // alone would still pass if BOTH spellings somehow appeared, and the
         // negative one is what actually pins the defect.
         it('should pluralize gastronomy as "gastronomies", never "gastronomys"', () => {
-            const folder = buildEntityFolder('gastronomy', 'gastro-345');
+            const folder = buildEntityFolder('venue', 'gastro-345');
 
             expect(folder).toMatch(/^hospeda\/[^/]+\/gastronomies\/gastro-345$/);
             expect(folder).not.toContain('gastronomys');
@@ -132,7 +132,7 @@ describe('upload-helpers', () => {
                 'destination',
                 'event',
                 'post',
-                'gastronomy',
+                'venue',
                 'experience'
             ] as const;
 

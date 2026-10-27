@@ -71,10 +71,15 @@ export async function runStep4c({ db, pagePurger, dryRun }: RunStep4cInput): Pro
     const destinations = rowsOf<{ id: string; slug: string }>(destinationResult);
 
     const listingTags = sortedUnique(
-        listings.flatMap(({ entityType, entityId }) => entityTags({ entityType, id: entityId }))
+        listings.flatMap(({ entityType, entityId }) =>
+            entityTags({
+                entityType: entityType === 'gastronomy' ? 'venue' : entityType,
+                id: entityId
+            })
+        )
     );
     const collectionTags = sortedUnique(
-        (['accommodation', 'gastronomy', 'experience'] as const)
+        (['accommodation', 'venue', 'experience'] as const)
             .flatMap((entityType) => getAffectedCacheTags({ entityType }))
             .filter((tag) => tag.startsWith('list-') || tag === 'home')
     );
@@ -116,13 +121,13 @@ export async function runStep4c({ db, pagePurger, dryRun }: RunStep4cInput): Pro
 /** A change on an entity whose cache tags carry the entity's own slug or id. */
 type SlugTaggedChange = Extract<
     EntityChangeData,
-    { entityType: 'destination' | 'accommodation' | 'gastronomy' | 'experience' }
+    { entityType: 'destination' | 'accommodation' | 'venue' | 'experience' }
 >;
 
 /** Entity types whose cache tags carry the entity's own slug or id. */
 const SLUG_TAGGED_ENTITY_TYPES: ReadonlySet<EntityChangeData['entityType']> = new Set<
     SlugTaggedChange['entityType']
->(['destination', 'accommodation', 'gastronomy', 'experience']);
+>(['destination', 'accommodation', 'venue', 'experience']);
 
 function isSlugTagged(event: EntityChangeData): event is SlugTaggedChange {
     return SLUG_TAGGED_ENTITY_TYPES.has(event.entityType);
