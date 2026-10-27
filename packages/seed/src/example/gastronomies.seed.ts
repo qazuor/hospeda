@@ -1,13 +1,13 @@
 import {
     accounts,
     eq,
-    gastronomies,
-    gastronomyFaqs,
-    gastronomyReviews,
     getDb,
     sql,
     users,
-    VenueMediaModel
+    VenueMediaModel,
+    venueFaqs,
+    venueReviews,
+    venues
 } from '@repo/db';
 import { LifecycleStatusEnum, RoleEnum, RoleGrantReason, VisibilityEnum } from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
@@ -344,7 +344,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             // Heal: re-grant the hats. Idempotent, and required for databases
             // seeded before HOS-296 whose owners have no `user_role` rows yet.
             // Retain the per-vertical owner role for existing seeded accounts.
-            for (const role of [RoleEnum.USER, RoleEnum.GASTRONOMY_OWNER]) {
+            for (const role of [RoleEnum.USER, RoleEnum.VENUE_OWNER]) {
                 const healed = await grantRole({
                     userId: realUserId,
                     role,
@@ -388,7 +388,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             // does not cover it.
             //
             // Grant USER from signup and the gastronomy owner role for the listing.
-            for (const role of [RoleEnum.USER, RoleEnum.GASTRONOMY_OWNER]) {
+            for (const role of [RoleEnum.USER, RoleEnum.VENUE_OWNER]) {
                 const granted = await grantRole({
                     userId: realUserId,
                     role,
@@ -548,7 +548,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             const now = new Date();
 
             const [inserted] = await db
-                .insert(gastronomies)
+                .insert(venues)
                 .values({
                     id: gastronomyId,
                     slug: item.slug,
@@ -562,34 +562,34 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                     summaryI18n: { es: '', en: '', pt: '' },
                     descriptionI18n: { es: '', en: '', pt: '' },
                     richDescriptionI18n: { es: '', en: '', pt: '' },
-                    type: item.type as (typeof gastronomies.$inferInsert)['type'],
+                    type: item.type as (typeof venues.$inferInsert)['type'],
                     priceRange: (item.priceRange ??
-                        null) as (typeof gastronomies.$inferInsert)['priceRange'],
+                        null) as (typeof venues.$inferInsert)['priceRange'],
                     menuUrl: item.menuUrl ?? null,
                     ownerId: realOwnerId,
                     destinationId: realDestinationId,
                     publicationStatus:
-                        item.publicationStatus as (typeof gastronomies.$inferInsert)['publicationStatus'],
+                        item.publicationStatus as (typeof venues.$inferInsert)['publicationStatus'],
                     inactiveSince: now,
                     deadlinesVersion: 1,
                     contactInfo: (item.contactInfo ??
-                        null) as (typeof gastronomies.$inferInsert)['contactInfo'],
+                        null) as (typeof venues.$inferInsert)['contactInfo'],
                     socialNetworks: (item.socialNetworks ??
-                        null) as (typeof gastronomies.$inferInsert)['socialNetworks'],
+                        null) as (typeof venues.$inferInsert)['socialNetworks'],
                     openingHours: (item.openingHours ??
-                        null) as (typeof gastronomies.$inferInsert)['openingHours'],
+                        null) as (typeof venues.$inferInsert)['openingHours'],
                     // HOS-372: photos are NOT written here anymore. They go to
                     // `gastronomy_media` after the insert (see step 3b below);
                     // the `media` JSONB column is on its way out and every read
                     // path already composes from the table.
-                    seo: (item.seo ?? null) as (typeof gastronomies.$inferInsert)['seo'],
+                    seo: (item.seo ?? null) as (typeof venues.$inferInsert)['seo'],
                     reviewsCount: item.reviewsCount,
                     averageRating: item.averageRating,
                     createdById: context.actor.id,
                     updatedById: context.actor.id
                 })
                 .onConflictDoNothing()
-                .returning({ id: gastronomies.id });
+                .returning({ id: venues.id });
 
             let realId = inserted?.id;
             if (!realId) {
@@ -600,9 +600,9 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                 // deterministic ids would still carry its original
                 // randomly-assigned id.
                 const existingRows = await db
-                    .select({ id: gastronomies.id })
-                    .from(gastronomies)
-                    .where(eq(gastronomies.slug, item.slug))
+                    .select({ id: venues.id })
+                    .from(venues)
+                    .where(eq(venues.slug, item.slug))
                     .limit(1);
                 realId = existingRows[0]?.id;
             }
@@ -670,7 +670,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
 
             for (const [faqIndex, faq] of faqFileData.faqs.entries()) {
                 await db
-                    .insert(gastronomyFaqs)
+                    .insert(venueFaqs)
                     .values({
                         // HOS-25 T-026: stable UUIDv5 keyed off the parent
                         // gastronomy's seed-key + this FAQ's array position
@@ -738,7 +738,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
 
                 // onConflictDoNothing protects the UNIQUE(userId, gastronomyId) index
                 await db
-                    .insert(gastronomyReviews)
+                    .insert(venueReviews)
                     .values({
                         // HOS-25 T-026: stable UUIDv5 keyed off the parent
                         // gastronomy's seed-key + the reviewer's own seed id —
@@ -754,12 +754,12 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                         userId: realUserId,
                         title: review.title ?? null,
                         content: review.content ?? null,
-                        rating: review.rating as (typeof gastronomyReviews.$inferInsert)['rating'],
+                        rating: review.rating as (typeof venueReviews.$inferInsert)['rating'],
                         averageRating: review.averageRating,
                         overallRating: review.overallRating,
                         lifecycleState: 'ACTIVE',
                         moderationState:
-                            review.moderationState as (typeof gastronomyReviews.$inferInsert)['moderationState'],
+                            review.moderationState as (typeof venueReviews.$inferInsert)['moderationState'],
                         createdById: context.actor.id,
                         updatedById: context.actor.id
                     })

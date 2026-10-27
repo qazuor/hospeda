@@ -70,11 +70,11 @@ import {
     type DrizzleClient,
     destinations,
     eq,
-    gastronomies,
     initializeDb,
     PostModel,
     posts,
-    resetDb
+    resetDb,
+    venues
 } from '@repo/db';
 import { users } from '@repo/db/schemas';
 import { type DestinationType, PublicationStatusEnum } from '@repo/schemas';
@@ -726,20 +726,20 @@ describe('HOS-25 T-022 — end-to-end reseed-determinism against a real database
 
                     // ── First seed — direct db.insert(), exactly like gastronomies.seed.ts ──
                     const [inserted1] = await tx
-                        .insert(gastronomies)
+                        .insert(venues)
                         .values({
                             id: expectedId,
                             ...baseValues
-                        } as typeof gastronomies.$inferInsert)
-                        .returning({ id: gastronomies.id });
+                        } as typeof venues.$inferInsert)
+                        .returning({ id: venues.id });
                     expect(inserted1?.id).toBe(expectedId);
 
                     // ── Real DELETE ──────────────────────────────────────────────
-                    await tx.delete(gastronomies).where(eq(gastronomies.id, expectedId));
+                    await tx.delete(venues).where(eq(venues.id, expectedId));
                     const gone = await tx
-                        .select({ id: gastronomies.id })
-                        .from(gastronomies)
-                        .where(eq(gastronomies.id, expectedId));
+                        .select({ id: venues.id })
+                        .from(venues)
+                        .where(eq(venues.id, expectedId));
                     expect(gone).toHaveLength(0);
 
                     // ── Reseed: same seed id, same raw-insert mechanism ─────────
@@ -747,12 +747,12 @@ describe('HOS-25 T-022 — end-to-end reseed-determinism against a real database
                     expect(reseededId).toBe(expectedId);
 
                     const [inserted2] = await tx
-                        .insert(gastronomies)
+                        .insert(venues)
                         .values({
                             id: reseededId,
                             ...baseValues
-                        } as typeof gastronomies.$inferInsert)
-                        .returning({ id: gastronomies.id, slug: gastronomies.slug });
+                        } as typeof venues.$inferInsert)
+                        .returning({ id: venues.id, slug: venues.slug });
                     expect(inserted2?.id).toBe(expectedId);
                     expect(inserted2?.slug).toBe(baseValues.slug);
                 });
