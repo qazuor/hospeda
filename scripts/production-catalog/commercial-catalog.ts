@@ -191,7 +191,7 @@ export const PRODUCTION_ADDON_CATALOG: readonly AddonCatalogDefinition[] = [
     limitPack({
         slug: 'extra-venues-1',
         name: 'Extra Comer y salir Listing (+1)',
-        description: 'Adds 1 additional venue listing to your plan. Renews monthly.',
+        description: 'Adds 1 additional gastronomy listing to your plan. Renews monthly.',
         key: 'max_venues',
         value: 1,
         monthlyPesos: 15_000,
@@ -225,7 +225,7 @@ export const PRODUCTION_ADDON_CATALOG: readonly AddonCatalogDefinition[] = [
     visibilityBoost({
         slug: 'visibility-boost-venue-7d',
         name: 'Visibility Boost — Comer y salir (7 days)',
-        noun: 'venue listing',
+        noun: 'restaurant',
         days: 7,
         pesos: 5_000,
         vertical: 'venue'
@@ -233,7 +233,7 @@ export const PRODUCTION_ADDON_CATALOG: readonly AddonCatalogDefinition[] = [
     visibilityBoost({
         slug: 'visibility-boost-venue-30d',
         name: 'Visibility Boost — Comer y salir (30 days)',
-        noun: 'venue listing',
+        noun: 'restaurant',
         days: 30,
         pesos: 15_000,
         vertical: 'venue'
