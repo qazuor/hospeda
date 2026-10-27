@@ -300,7 +300,7 @@
                 "secondaryCta": "Ver mis propiedades"
             }
         },
-        "max_gastronomies": {
+        "max_venues": {
             "title": "Llegaste al límite de gastronomías",
             "message_one": "Ya tenés {{currentCount}} de {{maxAllowed}} gastronomía en tu plan. Actualizalo para publicar más.",
             "message_other": "Ya tenés {{currentCount}} de {{maxAllowed}} gastronomías en tu plan. Actualizalo para publicar más.",
@@ -365,7 +365,7 @@
         "max_ai_chat_consumer_per_month": {
             "title": "Llegaste al límite de consultas al asistente de IA"
         },
-        "max_ai_chat_gastronomy_per_month": {
+        "max_ai_chat_venue_per_month": {
             "title": "Llegaste al límite de consultas al chat de IA de tu gastronomía"
         },
         "max_ai_chat_experience_per_month": {
@@ -483,15 +483,15 @@
             "name": "VIP",
             "description": "Soporte VIP, promociones exclusivas y contacto directo por WhatsApp con los alojamientos."
         },
-        "gastronomy-basico": {
+        "venue-basico": {
             "name": "Básico",
             "description": "Publicá tu local con sus fotos, horarios y contacto. Lo necesario para que te encuentren."
         },
-        "gastronomy-pro": {
+        "venue-pro": {
             "name": "Profesional",
             "description": "Sumá la carta cargada en Hospeda, el menú del día y los eventos del local."
         },
-        "gastronomy-premium": {
+        "venue-premium": {
             "name": "Premium",
             "description": "Todo lo anterior con fotos por plato, carta en varios idiomas, ficha en PDF y chat con IA."
         },
@@ -519,16 +519,16 @@
     "entitlement": {
         "publish_accommodations": "Publicar alojamientos",
         "edit_accommodation_info": "Editar información del alojamiento",
-        "edit_gastronomy_info": "Editar información del comercio gastronómico",
-        "publish_gastronomy": "Publicar comercios gastronómicos",
+        "edit_venue_info": "Editar información del comercio gastronómico",
+        "publish_venue": "Publicar comercios gastronómicos",
         "edit_experience_info": "Editar información de la experiencia",
         "publish_experience": "Publicar experiencias",
         "download_listing_pdf": "Ficha en PDF para imprimir",
         "issue_experience_certificate": "Certificados de experiencia",
-        "manage_gastronomy_menu": "Carta con secciones y platos",
+        "manage_venue_menu": "Carta con secciones y platos",
         "menu_item_photos": "Foto por plato en la carta",
         "manage_experience_directions": "Mapa del punto de encuentro y cómo llegar",
-        "manage_gastronomy_daily_special": "Plato del día con vigencia propia",
+        "manage_venue_daily_special": "Plato del día con vigencia propia",
         "view_basic_stats": "Estadísticas básicas",
         "view_advanced_stats": "Estadísticas avanzadas",
         "respond_reviews": "Responder reseñas",
@@ -566,8 +566,8 @@
         "ai_support": "Asistente de soporte con IA",
         "ai_translate": "Traducción de contenido con IA",
         "ai_accommodation_import": "Importación de alojamientos con IA",
-        "manage_gastronomy_events": "Eventos del local, con fecha o semanales",
-        "multilingual_gastronomy_menu": "Carta en varios idiomas",
+        "manage_venue_events": "Eventos del local, con fecha o semanales",
+        "multilingual_venue_menu": "Carta en varios idiomas",
         "menu_qr_scan_metrics": "QR de la carta con panel de escaneos",
         "manage_experience_private_galleries": "Galerías privadas para tus clientes",
         "partner_public_page": "Página propia dentro de Hospeda",
@@ -707,7 +707,7 @@
         },
         "limitLabel": {
             "max_accommodations": "Alojamientos publicados",
-            "max_gastronomies": "Gastronomías publicadas",
+            "max_venues": "Gastronomías publicadas",
             "max_experiences": "Experiencias publicadas",
             "max_photos_per_accommodation": "Fotos por alojamiento",
             "max_active_promotions": "Promociones activas",
@@ -719,7 +719,7 @@
             "max_ai_text_improve_per_month": "Mejoras de texto con IA por mes",
             "max_ai_chat_per_month": "Consultas con IA por mes",
             "max_ai_chat_consumer_per_month": "Consultas al asistente de IA por mes",
-            "max_ai_chat_gastronomy_per_month": "Consultas al chat de IA (gastronomía) por mes",
+            "max_ai_chat_venue_per_month": "Consultas al chat de IA (gastronomía) por mes",
             "max_ai_chat_experience_per_month": "Consultas al chat de IA (experiencias) por mes",
             "max_ai_search_per_month": "Búsquedas con IA por mes",
             "max_ai_support_per_month": "Consultas al soporte con IA por mes",
@@ -742,7 +742,7 @@
         "max_ai_text_improve_per_month": "Cuántas veces por mes podés pedirle a la IA que mejore tus textos. La cuota se renueva al empezar cada mes.",
         "max_ai_chat_per_month": "Cuántas consultas por mes puede responder la IA sobre tus alojamientos. Al agotarla, vuelve a estar disponible el mes siguiente.",
         "max_ai_chat_consumer_per_month": "Cuántas consultas podés hacerle por mes al asistente de IA. Al agotarla, la cuota se renueva el mes siguiente.",
-        "max_ai_chat_gastronomy_per_month": "Cuántas consultas por mes puede responder la IA sobre tu local gastronómico. Al agotarla, vuelve a estar disponible el mes siguiente.",
+        "max_ai_chat_venue_per_month": "Cuántas consultas por mes puede responder la IA sobre tu local gastronómico. Al agotarla, vuelve a estar disponible el mes siguiente.",
         "max_ai_chat_experience_per_month": "Cuántas consultas por mes puede responder la IA sobre tu experiencia. Al agotarla, vuelve a estar disponible el mes siguiente.",
         "max_ai_search_per_month": "Cuántas búsquedas con IA podés hacer por mes. Al agotarla, seguís usando la búsqueda tradicional hasta el mes siguiente.",
         "max_ai_support_per_month": "Cuántas consultas por mes podés hacerle al asistente de soporte con IA. La cuota se renueva al empezar cada mes.",
@@ -750,7 +750,7 @@
         "max_ai_accommodation_import_per_month": "Cuántos alojamientos podés importar por mes desde otra plataforma con ayuda de la IA. La cuota se renueva al empezar cada mes.",
         "max_search_history_entries": "Cuántas búsquedas anteriores se guardan en tu historial. Al superar el tope se borran las más viejas.",
         "max_collections": "Cuántas listas de favoritos podés tener creadas. Al llegar al tope tenés que borrar una para crear otra.",
-        "max_gastronomies": "Cuántos locales gastronómicos podés tener publicados al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otro.",
+        "max_venues": "Cuántos locales gastronómicos podés tener publicados al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otro.",
         "max_experiences": "Cuántas experiencias podés tener publicadas al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otra.",
         "max_active_private_galleries": "Cuántas galerías privadas podés tener vivas al mismo tiempo. Cada galería caduca sola al cumplirse su plazo y se borra, así que los lugares se liberan a medida que vencen."
     }
