@@ -1018,7 +1018,6 @@
         "packages/i18n/src/locales/pt/review.json": 2,
         "packages/i18n/src/locales/pt/social.json": 1,
         "packages/i18n/src/locales/pt/validation.json": 4,
-        "packages/i18n/test/account-subscription-mine-i18n.test.ts": 1,
         "packages/i18n/test/listing-landing-promise.guard.test.ts": 13,
         "packages/i18n/test/listing-notices-i18n.test.ts": 1,
         "packages/i18n/test/listing-owner-publish-i18n.test.ts": 4,
