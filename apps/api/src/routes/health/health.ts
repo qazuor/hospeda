@@ -2,7 +2,7 @@
  * Main health check route
  * Returns the health status of the API
  */
-import { HealthResponseSchema } from '@repo/schemas';
+import { HealthDataSchema } from '@repo/schemas';
 import { createSimpleRoute } from '../../utils/route-factory';
 
 export const healthRoutes = createSimpleRoute({
@@ -11,7 +11,7 @@ export const healthRoutes = createSimpleRoute({
     summary: 'Health check',
     description: 'Returns the health status of the API',
     tags: ['Health'],
-    responseSchema: HealthResponseSchema,
+    responseSchema: HealthDataSchema,
     handler: () => ({
         status: 'healthy' as const,
         timestamp: new Date().toISOString(),
