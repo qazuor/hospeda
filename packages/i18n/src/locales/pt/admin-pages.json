@@ -830,7 +830,7 @@
                 "error": "Não foi possível ler o teste desta vertical.",
                 "vertical": {
                     "accommodation": "Acomodações",
-                    "gastronomy": "Gastronomia",
+                    "venue": "Gastronomia",
                     "experience": "Experiências"
                 },
                 "status": {
