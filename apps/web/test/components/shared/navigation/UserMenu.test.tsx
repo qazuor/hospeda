@@ -640,7 +640,7 @@ describe('UserMenu — PostHog identify/reset', () => {
                 // HOS-296: an ARRAY person property, sorted for stability.
                 // A multi-hat user reports every hat AND both segment
                 // booleans — under the old scalar only one could be true.
-                roles: ['VENUE_OWNER', 'HOST', 'USER'],
+                roles: ['HOST', 'USER', 'VENUE_OWNER'],
                 user_type: 'owner',
                 is_host: true,
                 is_gastronomy_owner: true,
