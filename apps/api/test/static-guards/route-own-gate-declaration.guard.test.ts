@@ -38,6 +38,12 @@ import {
     type RouteGateDescriptor,
     readRouteGateDescriptor
 } from '../../src/middlewares/route-gate-descriptor';
+import { adminListVenuesRoute } from '../../src/routes/venue/admin/list';
+import { adminVenueOptionsRoute } from '../../src/routes/venue/admin/options';
+import { protectedGetVenueDailySpecialsRoute } from '../../src/routes/venue/protected/getDailySpecials';
+import { protectedGetVenueEventsRoute } from '../../src/routes/venue/protected/getEvents';
+import { protectedGetVenueMediaRoute } from '../../src/routes/venue/protected/getMedia';
+import { protectedGetVenueMenuRoute } from '../../src/routes/venue/protected/getMenu';
 import { validateApiEnv } from '../../src/utils/env';
 
 /** Hono's `RouterRoute` shape as exposed on `app.routes`. */
@@ -124,10 +130,6 @@ const NO_OWN_GATE_ALLOWLIST: Readonly<Record<string, string>> = {
     // handler/service decides with the actor (a guest gets the service's
     // answer, not the factory's 401). Service checks not re-verified here.
     'GET /api/v1/protected/accommodations/:id/media': 'raw createCRUDRoute; no route gate',
-    'GET /api/v1/protected/gastronomies/:id/menu': 'raw createCRUDRoute; no route gate',
-    'GET /api/v1/protected/gastronomies/:id/daily-specials': 'raw createCRUDRoute; no route gate',
-    'GET /api/v1/protected/gastronomies/:id/events': 'raw createCRUDRoute; no route gate',
-    'GET /api/v1/protected/gastronomies/:id/media': 'raw createCRUDRoute; no route gate',
     'GET /api/v1/protected/experiences/:id/media': 'raw createCRUDRoute; no route gate',
     'PATCH /api/v1/protected/events/:id/media/reorder': 'raw createCRUDRoute; no route gate',
     'GET /api/v1/protected/events/:id/media': 'raw createCRUDRoute; no route gate',
@@ -161,8 +163,6 @@ const BASELINE_ONLY_ADMIN_ALLOWLIST: readonly string[] = [
     'GET /api/v1/admin/accommodations/:id',
     'GET /api/v1/admin/accommodations/:id/faqs',
     'GET /api/v1/admin/accommodations/:id/media',
-    'GET /api/v1/admin/gastronomies',
-    'GET /api/v1/admin/gastronomies/options',
     'GET /api/v1/admin/experiences',
     'GET /api/v1/admin/experiences/options',
     'GET /api/v1/admin/destinations/options',
@@ -183,6 +183,29 @@ const BASELINE_ONLY_ADMIN_ALLOWLIST: readonly string[] = [
     'GET /api/v1/admin/event-organizers/options',
     'GET /api/v1/admin/moderation/reviews/pending-count',
     'GET /api/v1/admin/revalidation/health'
+];
+
+/** A route-factory sub-app: exposes the routes it registered. */
+interface RouteSubApp {
+    readonly routes: readonly MountedRoute[];
+}
+
+/**
+ * Venue-vertical exceptions, named by the exported route object rather than by
+ * URL: the mount segment still carries the retired vertical word, which the
+ * venue-rename frontier guard does not let new files spell. The keys are
+ * resolved against the mounted app, so a rename of the segment cannot leave
+ * these entries pointing at nothing.
+ */
+const VENUE_NO_OWN_GATE_ROUTES: readonly RouteSubApp[] = [
+    protectedGetVenueMenuRoute,
+    protectedGetVenueDailySpecialsRoute,
+    protectedGetVenueEventsRoute,
+    protectedGetVenueMediaRoute
+];
+const VENUE_BASELINE_ONLY_ADMIN_ROUTES: readonly RouteSubApp[] = [
+    adminListVenuesRoute,
+    adminVenueOptionsRoute
 ];
 
 /**
@@ -206,7 +229,10 @@ type MatchResult = readonly [readonly (readonly [readonly [unknown, MountedRoute
 /**
  * Builds, for every mounted endpoint, the gates that run before its handler.
  */
-const collectEndpointGates = (): readonly EndpointGates[] => {
+const collectEndpointGates = (): {
+    readonly endpoints: readonly EndpointGates[];
+    readonly mountedKeysOf: (subApp: RouteSubApp) => readonly string[];
+} => {
     validateApiEnv();
     const app = initApp();
     const routes = app.routes as unknown as readonly MountedRoute[];
@@ -236,7 +262,15 @@ const collectEndpointGates = (): readonly EndpointGates[] => {
     const isRouterLevel = (route: MountedRoute): boolean =>
         route.path.includes('*') || (methodsByPath.get(route.path)?.size ?? 0) <= 1;
 
-    return [...lastIndexByKey.keys()].map((key) => {
+    /** Every `(method, path)` the app serves through `subApp`'s handler. */
+    const mountedKeysOf = (subApp: RouteSubApp): readonly string[] => {
+        const handler = subApp.routes.filter((route) => route.method !== 'ALL').at(-1)?.handler;
+        return [...terminals]
+            .filter((route) => handler !== undefined && unwrapHandler(route.handler) === handler)
+            .map((route) => `${route.method} ${route.path}`);
+    };
+
+    const endpoints = [...lastIndexByKey.keys()].map((key) => {
         const [method = '', path = ''] = key.split(' ');
         const concrete = path
             .replace(/:[A-Za-z0-9_]+(\{[^}]*\})?/g, SAMPLE_PARAM)
@@ -263,6 +297,8 @@ const collectEndpointGates = (): readonly EndpointGates[] => {
 
         return { key, method, path, own, routerLevel, foreign, servedBy };
     });
+
+    return { endpoints, mountedKeysOf };
 };
 
 const declaresPermission = (gate: RouteGateDescriptor): boolean =>
@@ -275,9 +311,28 @@ const isScoped = (path: string): boolean =>
 
 describe('HOS-1908 static guard — every route declares its own gate', () => {
     let endpoints: readonly EndpointGates[] = [];
+    let noOwnGateKeys: readonly string[] = [];
+    let baselineOnlyKeys: readonly string[] = [];
 
     beforeAll(() => {
-        endpoints = collectEndpointGates();
+        const collected = collectEndpointGates();
+        endpoints = collected.endpoints;
+        const resolve = (subApps: readonly RouteSubApp[]): readonly string[] =>
+            subApps.flatMap((subApp) => {
+                const keys = collected.mountedKeysOf(subApp);
+                // A route object that resolves to nothing would silently drop
+                // its exception; fail loudly instead.
+                if (keys.length === 0) throw new Error('allowlisted route is not mounted');
+                return keys;
+            });
+        noOwnGateKeys = [
+            ...Object.keys(NO_OWN_GATE_ALLOWLIST),
+            ...resolve(VENUE_NO_OWN_GATE_ROUTES)
+        ];
+        baselineOnlyKeys = [
+            ...BASELINE_ONLY_ADMIN_ALLOWLIST,
+            ...resolve(VENUE_BASELINE_ONLY_ADMIN_ROUTES)
+        ];
     });
 
     it('reads real gates from the mounted app (not vacuous)', () => {
@@ -319,12 +374,12 @@ describe('HOS-1908 static guard — every route declares its own gate', () => {
             .filter((e) => ![...e.own, ...e.routerLevel].some((gate) => gate.level !== 'public'))
             .map((e) => e.key)
             .sort();
-        expect(offenders).toEqual(Object.keys(NO_OWN_GATE_ALLOWLIST).sort());
+        expect(offenders).toEqual([...noOwnGateKeys].sort());
     });
 
     it('every admin route with a gate is admin-tier and declares a permission', () => {
         const adminEndpoints = endpoints.filter(
-            (e) => e.path.startsWith('/api/v1/admin/') && !(e.key in NO_OWN_GATE_ALLOWLIST)
+            (e) => e.path.startsWith('/api/v1/admin/') && !noOwnGateKeys.includes(e.key)
         );
 
         const notAdminTier = adminEndpoints
@@ -341,6 +396,6 @@ describe('HOS-1908 static guard — every route declares its own gate', () => {
             )
             .map((e) => e.key)
             .sort();
-        expect(baselineOnly).toEqual([...BASELINE_ONLY_ADMIN_ALLOWLIST].sort());
+        expect(baselineOnly).toEqual([...baselineOnlyKeys].sort());
     });
 });
