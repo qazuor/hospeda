@@ -138,7 +138,7 @@ export const gastronomies = pgTable(
         /**
          * Denormalized billing-state flag (HOS-1286) — mirror of
          * `accommodations.featured_by_entitlement`. True while a
-         * `visibility-boost-gastronomy-*` addon purchase grants an active
+         * `visibility-boost-venue-*` addon purchase grants an active
          * FEATURED_LISTING entitlement for THIS listing. Written only by the
          * billing sync primitives, never by admin curation. Since HOS-1419
          * dropped the admin-curated `is_featured` column it is the ONLY featuring
