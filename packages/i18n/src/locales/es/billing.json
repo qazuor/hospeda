@@ -272,11 +272,11 @@
             "retry": "Intentar de nuevo",
             "vertical": {
                 "accommodation": "alojamiento",
-                "gastronomy": "gastronomía",
                 "experience": "experiencias",
                 "tourist": "Turista VIP",
                 "partner": "aliados",
-                "unknown": "Hospeda"
+                "unknown": "Hospeda",
+                "venue": "gastronomía"
             }
         }
     },

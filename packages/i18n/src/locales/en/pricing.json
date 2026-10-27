@@ -13,9 +13,9 @@
         "default": {
             "owner": "anyone listing their place on Hospeda",
             "tourist": "anyone travelling around the Litoral who wants more out of the platform",
-            "gastronomy": "owners of a food business who want to be found",
             "experience": "people who run outings and activities for visitors",
-            "partner": "institutions and businesses looking to partner with Hospeda"
+            "partner": "institutions and businesses looking to partner with Hospeda",
+            "venue": "owners of a food business who want to be found"
         },
         "plan": {
             "owner-basico": "someone renting out a single property who is just getting started",

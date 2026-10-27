@@ -13,9 +13,9 @@
         "default": {
             "owner": "quien publica su alojamiento en Hospeda",
             "tourist": "quien viaja por el litoral y quiere aprovechar mejor la plataforma",
-            "gastronomy": "quien tiene un local gastronómico y quiere que lo encuentren",
             "experience": "quien organiza salidas y actividades para visitantes",
-            "partner": "instituciones y comercios que quieren asociarse con Hospeda"
+            "partner": "instituciones y comercios que quieren asociarse con Hospeda",
+            "venue": "quien tiene un local gastronómico y quiere que lo encuentren"
         },
         "plan": {
             "owner-basico": "quien alquila una sola propiedad y recién empieza a publicarla",
