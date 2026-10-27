@@ -26,7 +26,7 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
 /** The three listing tables (SQL and Drizzle export names coincide). */
-export const LISTING_TABLES = ['accommodations', 'gastronomies', 'experiences'] as const;
+export const LISTING_TABLES = ['accommodations', 'venues', 'experiences'] as const;
 
 /** Fewer schema files than this means the walk looked at the wrong tree. */
 export const MIN_SCANNED_FILES = 100;

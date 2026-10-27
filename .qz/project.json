@@ -62,7 +62,7 @@
             "packages/db/src/billing/schemas.ts",
             "packages/db/src/migrations"
         ],
-        "schemaSentinelTables": ["gastronomies", "experiences"],
+        "schemaSentinelTables": ["venues", "experiences"],
         "templateFingerprintPaths": [
             "packages/db/src/schemas",
             "packages/db/src/billing/schemas.ts",

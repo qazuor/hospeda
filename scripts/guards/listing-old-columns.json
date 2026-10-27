@@ -3,22 +3,22 @@
     "subEntityFilePatterns": [
         {
             "pattern": "review",
-            "table": "accommodation_reviews, gastronomy_reviews, experience_reviews (moderation_state, lifecycle_state)",
+            "table": "accommodation_reviews, venue_reviews, experience_reviews (moderation_state, lifecycle_state)",
             "reason": "Review files: the review keeps its own moderation_state and lifecycle_state (R6)."
         },
         {
             "pattern": "faq",
-            "table": "accommodation_faqs, gastronomy_faqs, experience_faqs (lifecycle_state)",
+            "table": "accommodation_faqs, venue_faqs, experience_faqs (lifecycle_state)",
             "reason": "FAQ files: the FAQ keeps its own lifecycle_state (R6)."
         },
         {
             "pattern": "media",
-            "table": "accommodation_media, gastronomy_media, experience_media (moderation_state)",
+            "table": "accommodation_media, venue_media, experience_media (moderation_state)",
             "reason": "Media files: each photo/video keeps its own moderation_state (R6)."
         },
         {
             "pattern": "gallery",
-            "table": "accommodation_media, gastronomy_media, experience_media (moderation_state of a gallery photo)",
+            "table": "accommodation_media, venue_media, experience_media (moderation_state of a gallery photo)",
             "reason": "Gallery files: each gallery photo keeps its own moderation_state (R6)."
         },
         {
@@ -102,14 +102,14 @@
             "file": "apps/api/src/routes/venue/reviews/admin/list.ts",
             "name": "moderationState",
             "count": 2,
-            "table": "gastronomy_reviews",
+            "table": "venue_reviews",
             "reason": "The admin review list filters reviews by their own moderationState."
         },
         {
             "file": "apps/api/src/routes/venue/reviews/admin/moderate.ts",
             "name": "moderationState",
             "count": 1,
-            "table": "gastronomy_reviews",
+            "table": "venue_reviews",
             "reason": "Route description of review moderation."
         },
         {

@@ -185,7 +185,7 @@ describe('the real catalog', () => {
             (entry) => entry.id === '2026-09-05-gastronomy-experience-publish-free-trial'
         );
         expect(known).toBeDefined();
-        expect(known?.roles).toEqual(['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER']);
+        expect(known?.roles).toEqual(['VENUE_OWNER', 'EXPERIENCE_OWNER']);
         expect(known?.titleEs).toContain('Publicá tu comercio');
     });
 
