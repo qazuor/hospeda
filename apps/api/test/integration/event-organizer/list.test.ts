@@ -61,16 +61,7 @@ describe('GET /event-organizers (list)', () => {
         expect(body.data.pagination).toHaveProperty('pageSize');
     });
 
-    // HOS-1900: EventOrganizerService ignores page/pageSize (reads them from params, not ctx.pagination).
-    it('currently ignores the pageSize query parameter and returns every row (HOS-1900)', async () => {
-        const res = await app.request(`${base}?pageSize=2`, { headers });
-        expect(res.status).toBe(200);
-        const body = await res.json();
-        expect(body.data.items).toHaveLength(seededCount);
-    });
-
-    // Drop `.fails` (and the test above) once HOS-1900 is fixed.
-    it.fails('respects pageSize query parameter (HOS-1900)', async () => {
+    it('respects pageSize query parameter (HOS-1900)', async () => {
         const res = await app.request(`${base}?pageSize=2`, { headers });
         expect(res.status).toBe(200);
         const body = await res.json();
