@@ -8,7 +8,7 @@
  */
 
 import { anonymizeEmail } from '@repo/utils';
-import type { ErrorEvent, EventHint } from '@sentry/node';
+import type { ErrorEvent, EventHint, NodeOptions } from '@sentry/node';
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import type { Context } from 'hono';
@@ -110,6 +110,57 @@ export function applyBeforeSend(event: ErrorEvent, _hint?: EventHint): ErrorEven
 }
 
 /**
+ * Profiler lifecycle: start/stop automatically with sampled traces, which is
+ * the closest v11 equivalent of the v10 per-transaction `profilesSampleRate`.
+ */
+export const PROFILE_LIFECYCLE = 'trace' as const;
+
+/**
+ * Header names/fragments never sent to Sentry (matched as substrings, case-insensitive).
+ * Extends the v10 default scrub list with explicit credential headers.
+ */
+const DENIED_HEADER_FRAGMENTS: string[] = [
+    'authorization',
+    'cookie',
+    'token',
+    'api-key',
+    'apikey',
+    'csrf',
+    'forwarded',
+    '-ip',
+    'remote-',
+    'via',
+    '-user'
+];
+
+/**
+ * Explicit Sentry v11 `dataCollection` policy for the API.
+ *
+ * v11 defaults collect cookies, request/response bodies, user info, DB query
+ * data, queue args and GenAI payloads. The API sends NONE of those: no cookies,
+ * no auth headers, no HTTP bodies, no automatic user info (user is set manually
+ * via `setUserFromContext` with an anonymized email).
+ *
+ * Exported so tests pin it.
+ */
+export const SENTRY_DATA_COLLECTION: NonNullable<NodeOptions['dataCollection']> = {
+    userInfo: false,
+    cookies: false,
+    httpHeaders: {
+        request: { deny: DENIED_HEADER_FRAGMENTS },
+        response: { deny: [...DENIED_HEADER_FRAGMENTS, 'set-cookie'] }
+    },
+    httpBodies: [],
+    urlQueryParams: { deny: DENIED_HEADER_FRAGMENTS },
+    graphQL: { document: false, variables: false },
+    genAI: { inputs: false, outputs: false },
+    mcp: { inputs: false, outputs: false },
+    databaseQueryData: false,
+    queues: false,
+    frameContextLines: 7
+};
+
+/**
  * Sentry configuration options
  */
 interface SentryConfig {
@@ -121,8 +172,13 @@ interface SentryConfig {
     enableTracing?: boolean;
     /** Sample rate for traces (0.0 - 1.0) */
     tracesSampleRate?: number;
-    /** Sample rate for profiling (0.0 - 1.0) */
-    profilesSampleRate?: number;
+    /**
+     * Profiling session sample rate (0.0 - 1.0).
+     *
+     * Sentry v11 replaced the per-transaction `profilesSampleRate` with a
+     * once-per-process `profileSessionSampleRate`. See {@link PROFILE_LIFECYCLE}.
+     */
+    profileSessionSampleRate?: number;
     /** Enable debug mode */
     debug?: boolean;
     /** Project name for grouping (e.g., "hospeda", "clientex") */
@@ -171,7 +227,7 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
         // Sentry separates events in the dashboard.
         environment: env.HOSPEDA_SENTRY_ENVIRONMENT || env.NODE_ENV,
         tracesSampleRate: isDev ? 0.0 : 0.1,
-        profilesSampleRate: isDev ? 0.0 : 0.1,
+        profileSessionSampleRate: isDev ? 0.0 : 0.1,
         project: env.HOSPEDA_SENTRY_PROJECT || 'hospeda'
     };
 
@@ -186,7 +242,17 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
 
             // Performance monitoring
             tracesSampleRate: finalConfig.tracesSampleRate,
-            profilesSampleRate: finalConfig.profilesSampleRate,
+            // Profiling (v11): `profilesSampleRate` no longer exists. The session
+            // rate is rolled once per process at init; with the 'trace' lifecycle
+            // a sampled session profiles every sampled root span. Expected share of
+            // requests profiled = 0.1 (session) x 0.1 (traces) = 1%, identical to
+            // the v10 per-transaction 0.1 x 0.1. Granularity is per process.
+            profileSessionSampleRate: finalConfig.profileSessionSampleRate,
+            profileLifecycle: PROFILE_LIFECYCLE,
+
+            // v11 `dataCollection` defaults are permissive (cookies, bodies, user
+            // info, DB query data...). Pin the restrictive v10 posture explicitly.
+            dataCollection: SENTRY_DATA_COLLECTION,
 
             // Project identification tags for multi-project filtering
             initialScope: {
@@ -197,11 +263,7 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
             },
 
             // Integrations - skip profiling in development (cheap & noisy locally).
-            // Cast needed: @sentry/profiling-node pins @sentry/core@10.38, @sentry/node uses 10.40.
-            ...(isDev
-                ? {}
-                : // biome-ignore lint/suspicious/noExplicitAny: Sentry version mismatch between profiling-node and node packages
-                  { integrations: [nodeProfilingIntegration()] as any }),
+            ...(isDev ? {} : { integrations: [nodeProfilingIntegration()] }),
 
             // Before send hook — delegate to the pure `applyBeforeSend` function
             // so the filter logic is unit-testable independently of Sentry.init().
