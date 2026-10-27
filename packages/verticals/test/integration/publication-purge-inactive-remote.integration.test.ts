@@ -127,8 +127,17 @@ describe.each(verticals)('TEST:V9b:3 AC:V9b:3 %s remote media', (vertical) => {
     it('marks in PB9, calls after commit, and daily retry confirms a failed deletion', async () => {
         const { userId, listing, adapter, table } = await archivedListing(vertical);
         const mediaTable =
-            vertical === VerticalEnum.ACCOMMODATION ? 'accommodation_media' : `${vertical}_media`;
-        const fk = vertical === VerticalEnum.ACCOMMODATION ? 'accommodation_id' : `${vertical}_id`;
+            vertical === VerticalEnum.ACCOMMODATION
+                ? 'accommodation_media'
+                : vertical === VerticalEnum.VENUE
+                  ? 'gastronomy_media'
+                  : 'experience_media';
+        const fk =
+            vertical === VerticalEnum.ACCOMMODATION
+                ? 'accommodation_id'
+                : vertical === VerticalEnum.VENUE
+                  ? 'gastronomy_id'
+                  : 'experience_id';
         const publicId = `pb9/${randomUUID()}`;
         const inserted = await db.execute(
             sql`INSERT INTO ${sql.raw(mediaTable)} (${sql.raw(fk)}, url, public_id, sort_order) VALUES (${listing.id}, 'https://fake.test/photo.jpg', ${publicId}, 0) RETURNING id`

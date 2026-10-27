@@ -64,6 +64,9 @@ describe.each([
             vertical === VerticalEnum.ACCOMMODATION
                 ? VerticalEnum.VENUE
                 : VerticalEnum.ACCOMMODATION;
+        const sqlVertical = vertical === VerticalEnum.VENUE ? 'gastronomy' : vertical;
+        const otherSqlVertical =
+            otherVertical === VerticalEnum.VENUE ? 'gastronomy' : otherVertical;
         const amenityId = randomUUID();
         const amenityRelation =
             vertical === VerticalEnum.ACCOMMODATION
@@ -88,13 +91,13 @@ describe.each([
             status: Status.PUBLISHED
         });
         await db.execute(
-            sql`INSERT INTO ${sql.raw(amenityRelation)} (${sql.raw(`${vertical}_id`)}, amenity_id) VALUES (${archived.id}, ${amenityId})`
+            sql`INSERT INTO ${sql.raw(amenityRelation)} (${sql.raw(`${sqlVertical}_id`)}, amenity_id) VALUES (${archived.id}, ${amenityId})`
         );
         await db.execute(
-            sql`INSERT INTO ${sql.raw(otherAmenityRelation)} (${sql.raw(`${otherVertical}_id`)}, amenity_id) VALUES (${other.id}, ${amenityId})`
+            sql`INSERT INTO ${sql.raw(otherAmenityRelation)} (${sql.raw(`${otherSqlVertical}_id`)}, amenity_id) VALUES (${other.id}, ${amenityId})`
         );
         const otherAmenityBefore = await db.execute(
-            sql`SELECT * FROM ${sql.raw(otherAmenityRelation)} WHERE ${sql.raw(`${otherVertical}_id`)} = ${other.id}`
+            sql`SELECT * FROM ${sql.raw(otherAmenityRelation)} WHERE ${sql.raw(`${otherSqlVertical}_id`)} = ${other.id}`
         );
         const listingTable = vertical === VerticalEnum.VENUE ? 'gastronomies' : `${vertical}s`;
         await db.execute(
@@ -276,14 +279,14 @@ describe.each([
         expect(
             (
                 await db.execute(
-                    sql`SELECT * FROM ${sql.raw(amenityRelation)} WHERE ${sql.raw(`${vertical}_id`)} = ${archived.id}`
+                    sql`SELECT * FROM ${sql.raw(amenityRelation)} WHERE ${sql.raw(`${sqlVertical}_id`)} = ${archived.id}`
                 )
             ).rows
         ).toEqual([]);
         expect(
             (
                 await db.execute(
-                    sql`SELECT * FROM ${sql.raw(otherAmenityRelation)} WHERE ${sql.raw(`${otherVertical}_id`)} = ${other.id}`
+                    sql`SELECT * FROM ${sql.raw(otherAmenityRelation)} WHERE ${sql.raw(`${otherSqlVertical}_id`)} = ${other.id}`
                 )
             ).rows
         ).toEqual(otherAmenityBefore.rows);
