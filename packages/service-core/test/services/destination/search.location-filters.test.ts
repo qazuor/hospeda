@@ -46,8 +46,8 @@ describe('destination location filters (HOS-1899)', () => {
             const [condition] = buildDestinationLocationConditions({ city: ' CDU ' });
             const { sql, params } = render(condition);
 
-            expect(sql).toContain(`lower("destinations"."location"->>$1) = $2`);
-            expect(params).toEqual(['city', 'cdu']);
+            expect(sql).toContain(`lower("destinations"."location"->>$1) = lower($2)`);
+            expect(params).toEqual(['city', 'CDU']);
         });
 
         it('emits one condition per filter, in country, state, city order', () => {
@@ -77,8 +77,8 @@ describe('destination location filters (HOS-1899)', () => {
             expect(where).not.toHaveProperty('city');
             expect(where).not.toHaveProperty('country');
             expect(additional?.map((c) => render(c).params)).toEqual([
-                ['country', 'ar'],
-                ['city', 'cdu']
+                ['country', 'AR'],
+                ['city', 'CDU']
             ]);
         });
 
@@ -101,6 +101,64 @@ describe('destination location filters (HOS-1899)', () => {
         });
     });
 
+    describe('search with ancestorId (in-memory branch)', () => {
+        const at = (id: string, city: string, isFeatured: boolean) => ({
+            id,
+            name: id,
+            isFeatured,
+            location: { city, state: 'ER', country: 'AR' }
+        });
+
+        beforeEach(() => {
+            model.findDescendants = vi
+                .fn()
+                .mockResolvedValue([
+                    at('a', 'Colón', true),
+                    at('b', 'Concordia', false),
+                    at('c', 'colón', false)
+                ]);
+        });
+
+        it('filters descendants by city, trimmed and case-insensitive, with a matching total', async () => {
+            const result = await service.search(actor, {
+                ancestorId: '00000000-0000-4000-8000-000000000001',
+                city: ' COLÓN ',
+                page: 1,
+                pageSize: 10
+            });
+
+            expect(result.data?.items.map((d) => d.id)).toEqual(['a', 'c']);
+            expect(result.data?.total).toBe(2);
+        });
+
+        it('is accent-sensitive', async () => {
+            const result = await service.search(actor, {
+                ancestorId: '00000000-0000-4000-8000-000000000001',
+                city: 'colon',
+                page: 1,
+                pageSize: 10
+            });
+
+            expect(result.data?.items).toHaveLength(0);
+            expect(result.data?.total).toBe(0);
+        });
+
+        it.each([
+            [true, ['a']],
+            [false, ['b', 'c']]
+        ])('filters descendants by isFeatured=%s', async (isFeatured, ids) => {
+            const result = await service.search(actor, {
+                ancestorId: '00000000-0000-4000-8000-000000000001',
+                isFeatured,
+                page: 1,
+                pageSize: 10
+            });
+
+            expect(result.data?.items.map((d) => d.id)).toEqual(ids);
+            expect(result.data?.total).toBe(ids.length);
+        });
+    });
+
     describe('count', () => {
         it('hands the SAME location conditions to model.count so totals agree', async () => {
             await service.count(actor, { city: 'CDU', country: 'AR', page: 1, pageSize: 10 });
@@ -111,8 +169,8 @@ describe('destination location filters (HOS-1899)', () => {
             ];
             expect(where).toEqual({});
             expect(options?.additionalConditions?.map((c) => render(c).params)).toEqual([
-                ['country', 'ar'],
-                ['city', 'cdu']
+                ['country', 'AR'],
+                ['city', 'CDU']
             ]);
         });
     });
@@ -127,7 +185,7 @@ describe('destination location filters (HOS-1899)', () => {
                 SQL[] | undefined
             ];
             expect(where).not.toHaveProperty('state');
-            expect(additional?.map((c) => render(c).params)).toEqual([['state', 'er']]);
+            expect(additional?.map((c) => render(c).params)).toEqual([['state', 'ER']]);
         });
     });
 });

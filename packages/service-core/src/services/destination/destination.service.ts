@@ -88,7 +88,10 @@ import {
     computeHierarchyPathIds,
     isValidParentChildRelation
 } from './destination.hierarchy.helpers';
-import { buildDestinationLocationConditions } from './destination.location-filters';
+import {
+    buildDestinationLocationConditions,
+    matchesDestinationLocation
+} from './destination.location-filters';
 import {
     normalizeCreateInput,
     normalizeListInput,
@@ -447,6 +450,17 @@ export class DestinationService extends BaseCrudService<
             }
             if (level !== undefined) {
                 filtered = filtered.filter((d) => d.level === level);
+            }
+            if (isFeatured !== undefined) {
+                filtered = filtered.filter((d) => d.isFeatured === isFeatured);
+            }
+            if (locationConditions.length > 0) {
+                filtered = filtered.filter((d) =>
+                    matchesDestinationLocation({
+                        location: d.location,
+                        filters: { country, state, city }
+                    })
+                );
             }
             if (trimmedQ && trimmedQ.length > 0) {
                 const needle = trimmedQ.toLowerCase();

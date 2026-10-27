@@ -24,6 +24,9 @@ const LOCATION_KEYS = ['country', 'state', 'city'] as const;
  * identically so totals and items agree.
  *
  * The comparison is case-insensitive and trims the input; blank values add no condition.
+ * Both sides are lowercased by Postgres (`lower(...) = lower(...)`) so they cannot diverge
+ * the way JS and Postgres lowercasing do under some collations. Matching is
+ * ACCENT-SENSITIVE: `?city=colon` does not match "Colón".
  *
  * @param filters - The location filters from the validated search input.
  * @returns One SQL condition per non-blank filter (empty when none apply).
@@ -35,7 +38,31 @@ export function buildDestinationLocationConditions(
     for (const key of LOCATION_KEYS) {
         const value = filters[key]?.trim();
         if (!value) continue;
-        conditions.push(sql`lower(${destinations.location}->>${key}) = ${value.toLowerCase()}`);
+        conditions.push(sql`lower(${destinations.location}->>${key}) = lower(${value})`);
     }
     return conditions;
+}
+
+/**
+ * In-memory twin of {@link buildDestinationLocationConditions}, for code paths that
+ * filter an already-loaded list (the `ancestorId` branch of destination search).
+ * Same semantics: trimmed, case-insensitive, accent-sensitive, blank values ignored.
+ *
+ * @param input - The destination `location` JSON and the filters to apply.
+ * @returns `true` when every non-blank filter equals its `location` key.
+ */
+export function matchesDestinationLocation({
+    location,
+    filters
+}: {
+    readonly location: unknown;
+    readonly filters: DestinationLocationFilters;
+}): boolean {
+    const record = (location ?? {}) as Record<string, unknown>;
+    return LOCATION_KEYS.every((key) => {
+        const wanted = filters[key]?.trim();
+        if (!wanted) return true;
+        const actual = record[key];
+        return typeof actual === 'string' && actual.toLowerCase() === wanted.toLowerCase();
+    });
 }
