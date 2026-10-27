@@ -80,7 +80,6 @@ export const hostMarketComparisonRoute = createProtectedRoute({
         return { comparisons: result.data ?? [] };
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }
 });

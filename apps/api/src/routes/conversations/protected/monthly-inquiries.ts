@@ -81,7 +81,6 @@ export const hostConversationMonthlyInquiriesRoute = createProtectedRoute({
         return { months: result.data ?? [] };
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }
 });

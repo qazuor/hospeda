@@ -97,7 +97,7 @@ test.describe('ACC-04: owner PB12 delete + Cloudinary cleanup contract @p0 @acco
         expect(dbRows[0]?.deleted_at, 'PURGED is not a soft delete').toBeNull();
 
         // ── Public detail hidden after delete ─────────────────────────────
-        // The public endpoint has a 300s cache (cacheTTL). Immediately after
+        // The public endpoint has a 300s cache. Immediately after
         // the purge, the cached response may still return the old data.
         // The DB invariant above (PURGED) is the authoritative check.
         // This API check is best-effort: if the cache has expired or cache is
@@ -116,7 +116,7 @@ test.describe('ACC-04: owner PB12 delete + Cloudinary cleanup contract @p0 @acco
                 test.info().annotations.push({
                     type: 'note',
                     description:
-                        'Public endpoint returned cached data after the purge (cacheTTL=300s). ' +
+                        'Public endpoint returned cached data after the purge (300s cache). ' +
                         'DB invariant (PURGED) is the authoritative assertion.'
                 });
             }

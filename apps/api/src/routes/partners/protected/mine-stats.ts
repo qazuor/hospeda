@@ -24,7 +24,7 @@
  *   would confirm a partner exists; a 404 would make an ordinary state (owning
  *   no partner) look like a broken page.
  *
- * Actor-dependent, therefore NOT cacheable. No `cacheTTL`, and it may never move
+ * Actor-dependent, therefore NOT cacheable. It must stay uncached, and it may never move
  * to a public route.
  *
  * ## What this route does NOT do

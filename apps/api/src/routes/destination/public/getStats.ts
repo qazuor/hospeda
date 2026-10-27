@@ -36,7 +36,6 @@ export const publicGetDestinationStatsRoute = createPublicRoute({
         return result.data?.stats;
     },
     options: {
-        cacheTTL: 600, // Cache for 10 minutes
         customRateLimit: { requests: 50, windowMs: 60000 }
     }
 });

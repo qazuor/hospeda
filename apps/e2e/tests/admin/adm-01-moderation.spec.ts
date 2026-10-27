@@ -85,7 +85,7 @@ test.describe('ADM-01: super-admin moderates accommodation @p1 @admin @cross-app
         expect(dbRows[0]?.publication_status).toBe(PublicationStatusEnum.MODERATED);
 
         // ── Public surface: the row is no longer reachable ────────────────
-        // The public endpoint has cacheTTL=300s. Immediately after a status
+        // The public endpoint has a 300s cache. Immediately after a status
         // change, the cached response may still return the old (PUBLISHED) data.
         // The DB invariant above is the authoritative check. The API check here
         // is best-effort only.
@@ -100,7 +100,7 @@ test.describe('ADM-01: super-admin moderates accommodation @p1 @admin @cross-app
                 test.info().annotations.push({
                     type: 'note',
                     description:
-                        'Public endpoint returned cached data after status change (cacheTTL=300s). ' +
+                        'Public endpoint returned cached data after status change (300s cache). ' +
                         'DB invariant (publication_status=MODERATED) is the authoritative assertion.'
                 });
             }

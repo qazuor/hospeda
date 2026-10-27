@@ -13,7 +13,5 @@ export const publicGetAllFlagsRoute = createPublicRoute({
     tags: ['Feature Flags'],
     responseSchema: FeatureFlagPublicResponseSchema,
     handler: async () => featureFlagService.getAllFlags(),
-    options: {
-        cacheTTL: 60
-    }
+    options: {}
 });

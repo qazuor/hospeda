@@ -73,7 +73,6 @@ export const adminHostTradeReviewsPendingCountRoute = createAdminRoute({
         return { count: reviews + replies, byType: { reviews, replies } };
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }
 });

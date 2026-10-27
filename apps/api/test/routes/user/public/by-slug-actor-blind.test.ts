@@ -7,7 +7,7 @@
  * `/api/v1/public/users` is in **`PRIVATE_CACHE_ENDPOINTS`**, not
  * `PUBLIC_CACHE_ENDPOINTS` (`apps/api/src/middlewares/cache.constants.ts`) — so
  * it never reaches the shared CDN. It IS stored in the API's own in-memory
- * cache, since the route declares `cacheTTL: 300`, under the key
+ * cache, under the key
  * `private:${path}${suffix}:${authorization ?? 'anonymous'}`
  * (`generateCacheKey`, `apps/api/src/middlewares/cache.ts`).
  *

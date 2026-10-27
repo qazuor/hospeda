@@ -51,7 +51,6 @@ export const publicGetAnnouncementsRoute = createPublicRoute({
     },
     options: {
         skipAuth: true,
-        cacheTTL: 300, // 5 minutes
         customRateLimit: { requests: 100, windowMs: 60000 } // 100 req/min
     }
 });

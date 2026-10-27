@@ -75,7 +75,6 @@ export const userStatsRoute = createProtectedRoute({
         };
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

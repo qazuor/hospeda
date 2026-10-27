@@ -36,7 +36,5 @@ export const publicGetPostsByRelatedDestinationRoute = createPublicListRoute({
             pagination: getPaginationResponse(0, { page, pageSize })
         };
     },
-    options: {
-        cacheTTL: 300
-    }
+    options: {}
 });

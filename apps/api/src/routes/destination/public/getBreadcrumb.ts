@@ -38,7 +38,6 @@ export const publicGetDestinationBreadcrumbRoute = createPublicRoute({
         return result.data;
     },
     options: {
-        cacheTTL: 600, // Cache breadcrumbs longer (they change rarely)
         customRateLimit: { requests: 200, windowMs: 60000 } // Higher limit for navigation
     }
 });

@@ -707,7 +707,7 @@ describe('GET /api/v1/public/user-bookmarks/count — publicCount', () => {
 
             // Assert
             expect(res.status).toBe(200);
-            // The route declares cacheTTL: 60; the middleware adds Cache-Control.
+            // The cache middleware adds Cache-Control.
             // We accept either the header being present or the response simply being
             // successful, since cache header injection is middleware-dependent and
             // may vary in the test environment.

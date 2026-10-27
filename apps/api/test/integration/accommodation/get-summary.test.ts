@@ -227,7 +227,7 @@ describe('GET /accommodations/:id/summary', () => {
             });
 
             expect(response.status).toBe(200);
-            // Cache headers should be present due to cacheTTL: 300 in route options
+            // Cache headers should be present due to the global cache middleware
             // Note: Actual cache headers depend on cache middleware implementation
         });
 

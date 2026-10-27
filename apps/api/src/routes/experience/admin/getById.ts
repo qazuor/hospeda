@@ -42,7 +42,6 @@ export const adminGetExperienceByIdRoute = createAdminRoute({
         return result.data ?? null;
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

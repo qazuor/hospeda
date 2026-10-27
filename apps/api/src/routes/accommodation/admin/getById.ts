@@ -154,7 +154,6 @@ export const adminGetAccommodationByIdRoute = createAdminRoute({
         };
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });
