@@ -70,7 +70,7 @@ const OWNER_HEADERS = {
     ...USER_AGENT,
     'x-mock-actor-id': 'owner-1',
     'x-mock-actor-role': 'OWNER_BASICO',
-    'x-mock-actor-permissions': JSON.stringify(['gastronomy.editOwn'])
+    'x-mock-actor-permissions': JSON.stringify(['venue.editOwn'])
 };
 
 const buildMediaRow = (id: string, sortOrder: number) => ({

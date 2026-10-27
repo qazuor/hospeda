@@ -192,7 +192,7 @@ const CASES: readonly RouteCase[] = [
         mock: mockUpdateVenue,
         removeMock: mockRemoveVenue,
         permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN],
-        role: 'GASTRONOMY_OWNER'
+        role: 'VENUE_OWNER'
     },
     {
         name: 'admin gastronomy',

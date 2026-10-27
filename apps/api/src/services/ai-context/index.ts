@@ -69,6 +69,6 @@ export const CHAT_CONTEXT_ASSEMBLERS: ChatContextAssemblerMap = {
  */
 export const CHAT_FEATURE_BY_ENTITY_TYPE: Readonly<Record<AiChatEntityType, AiFeature>> = {
     accommodation: 'chat',
-    gastronomy: 'chat_gastronomy',
+    gastronomy: 'chat_venue',
     experience: 'chat_experience'
 };

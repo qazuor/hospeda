@@ -93,7 +93,7 @@ const ADMIN_HEADERS = {
     'x-mock-actor-role': 'ADMIN',
     'x-mock-actor-permissions': JSON.stringify([
         'access.panelAdmin',
-        'gastronomy.editAll',
+        'venue.editAll',
         'listing.foreignContent.edit'
     ])
 };

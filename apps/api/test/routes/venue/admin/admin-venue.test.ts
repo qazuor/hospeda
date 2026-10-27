@@ -39,8 +39,8 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         'x-mock-actor-role': 'ADMIN',
         'x-mock-actor-permissions': JSON.stringify([
             'access.panelAdmin',
-            'gastronomy.create',
-            'gastronomy.viewAll'
+            'venue.create',
+            'venue.viewAll'
         ])
     };
 
@@ -49,7 +49,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         ...USER_AGENT,
         'x-mock-actor-id': MOCK_USER_ID,
         'x-mock-actor-role': 'ADMIN',
-        'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'gastronomy.viewAll'])
+        'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'venue.viewAll'])
     };
 
     /** Actor with GASTRONOMY_MODERATE_REVIEW + admin-panel access */
@@ -57,10 +57,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         ...USER_AGENT,
         'x-mock-actor-id': MOCK_USER_ID,
         'x-mock-actor-role': 'ADMIN',
-        'x-mock-actor-permissions': JSON.stringify([
-            'access.panelAdmin',
-            'gastronomy.moderateReview'
-        ])
+        'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'venue.moderateReview'])
     };
 
     /** Actor with GASTRONOMY_EDIT_ALL + admin-panel access */
@@ -68,7 +65,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         ...USER_AGENT,
         'x-mock-actor-id': MOCK_USER_ID,
         'x-mock-actor-role': 'ADMIN',
-        'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'gastronomy.editAll'])
+        'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'venue.editAll'])
     };
 
     /** Actor with admin-panel access but NO gastronomy or experience permissions */

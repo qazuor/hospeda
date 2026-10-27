@@ -93,7 +93,7 @@ describe('TEST:V5:6 published foreign gastronomy writes', () => {
             'user-agent': 'vitest',
             'x-mock-actor-id': '11111111-1111-4111-8111-111111111111',
             'x-mock-actor-role': 'USER',
-            'x-mock-actor-permissions': JSON.stringify(['gastronomy.editOwn'])
+            'x-mock-actor-permissions': JSON.stringify(['venue.editOwn'])
         };
         for (const [method, suffix, body] of [
             ['PATCH', '', { name: 'Changed' }],

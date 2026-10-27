@@ -117,7 +117,7 @@ const nonOwnerHeaders = {
 const ownerHeaders = {
     ...UA,
     'x-mock-actor-id': OWNER_ID,
-    'x-mock-actor-role': 'GASTRONOMY_OWNER',
+    'x-mock-actor-role': 'VENUE_OWNER',
     'x-mock-actor-permissions': JSON.stringify([])
 };
 

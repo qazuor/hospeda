@@ -182,7 +182,7 @@ describe('TEST:V5:32 AI gates', () => {
         ],
         [
             'chat gastronomy owner',
-            'chat_gastronomy',
+            'chat_venue',
             'ai_chat',
             'max_ai_chat_venue_per_month',
             VerticalEnum.VENUE
@@ -202,7 +202,7 @@ describe('TEST:V5:32 AI gates', () => {
             VerticalEnum.ACCOMMODATION
         ]
     ] as const)('%s meters and rejects an exhausted quota', async (_route, feature, entitlementKey, limitKey, vertical) => {
-        const max = feature === 'chat_gastronomy' || feature === 'chat_experience' ? 0 : 10;
+        const max = feature === 'chat_venue' || feature === 'chat_experience' ? 0 : 10;
         state.monthlyCount = max;
         state.effectiveSet.mockImplementation(async ({ userId, vertical: effectiveVertical }) => {
             const set = effectiveSetFor(userId, effectiveVertical);
@@ -233,7 +233,7 @@ describe('TEST:V5:32 AI gates', () => {
             enforceAiQuota({
                 userId: OWNER_WITHOUT_KEY,
                 vertical: VerticalEnum.VENUE,
-                feature: 'chat_gastronomy',
+                feature: 'chat_venue',
                 entitlementKey: 'ai_chat',
                 limitKey: 'max_ai_chat_venue_per_month',
                 entitlementMessage: 'gastronomy.aiChat.unavailable'

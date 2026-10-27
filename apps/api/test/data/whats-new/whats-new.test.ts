@@ -197,7 +197,7 @@ describe('whats-new data file', () => {
                 'EDITOR',
                 'ADMIN',
                 'SUPER_ADMIN',
-                'GASTRONOMY_OWNER',
+                'VENUE_OWNER',
                 'EXPERIENCE_OWNER',
                 'SPONSOR',
                 'USER'
@@ -226,7 +226,7 @@ describe('whats-new data file', () => {
         it('delivers the GASTRONOMY_OWNER/EXPERIENCE_OWNER entry to both owners, not to a HOST', () => {
             const venueEntries = filterEntriesByRole({
                 entries: whatsNewEntries,
-                roles: ['GASTRONOMY_OWNER']
+                roles: ['VENUE_OWNER']
             });
             const experienceEntries = filterEntriesByRole({
                 entries: whatsNewEntries,
