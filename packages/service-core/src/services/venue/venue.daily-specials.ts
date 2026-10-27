@@ -35,7 +35,7 @@
  * listing, `GASTRONOMY_EDIT_ALL` for staff, via the same
  * {@link checkVenueCanEditFaqs} gate the carta and FAQ helpers use.
  * Whether the caller's PLAN includes the menú del día is an entitlement
- * (`MANAGE_GASTRONOMY_DAILY_SPECIAL`), checked at the route before this is
+ * (`MANAGE_VENUE_DAILY_SPECIAL`), checked at the route before this is
  * reached — the same split `gastronomy.menu.ts` makes.
  *
  * @module gastronomy.daily-specials
@@ -161,7 +161,7 @@ export async function getVenueDailySpecials(
  * Replaces a listing's menú del día with the submitted document.
  *
  * Permission: `GASTRONOMY_EDIT_OWN` (listing owner) or `GASTRONOMY_EDIT_ALL`
- * (staff). The `MANAGE_GASTRONOMY_DAILY_SPECIAL` entitlement is the route's
+ * (staff). The `MANAGE_VENUE_DAILY_SPECIAL` entitlement is the route's
  * gate, not this one's.
  *
  * An EMPTY `specials` array is a legitimate submission and takes the menú del

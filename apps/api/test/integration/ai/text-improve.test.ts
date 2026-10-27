@@ -439,8 +439,8 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
     // belonged to a gastronomy listing and would let the request through on
     // that accommodation grant. `entityType` now lets
     // `aiTextImproveEntitlementRouter` swap in the gastronomy vertical's own
-    // entitlements (currently just `EDIT_GASTRONOMY_INFO` /
-    // `PUBLISH_GASTRONOMY` — HOS-1074's floor, no `AI_TEXT_IMPROVE` yet), so
+    // entitlements (currently just `EDIT_VENUE_INFO` /
+    // `PUBLISH_VENUE` — HOS-1074's floor, no `AI_TEXT_IMPROVE` yet), so
     // the SAME actor state that passes for their accommodation is correctly
     // refused for their comercio.
     // =========================================================================

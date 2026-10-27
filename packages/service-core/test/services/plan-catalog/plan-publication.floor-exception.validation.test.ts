@@ -23,7 +23,7 @@ const PLAN_ID = '00000000-0000-0000-0000-000000000001';
 /** All keys that appear in these tests, with their catalog class. */
 const ALL_TEST_KEYS = [
     'max_accommodations',
-    'max_gastronomies',
+    'max_venues',
     'max_experiences',
     'save_favorites',
     'write_reviews',

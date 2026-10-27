@@ -102,11 +102,11 @@ app.route('/', protectedGetVenueQrCodeRoute);
 app.route('/', protectedGetVenueMenuRoute);
 
 // PUT /{id}/menu — replace the structured carta. Gated on
-// MANAGE_GASTRONOMY_MENU (gastronomy-pro and above).
+// MANAGE_VENUE_MENU (venue-pro and above).
 app.route('/', protectedPutVenueMenuRoute);
 
 // POST /{id}/menu-file — upload the photo/PDF alternative. Gated on
-// MANAGE_GASTRONOMY_MENU, same as PUT /{id}/menu (HOS-895 PR2 — owner
+// MANAGE_VENUE_MENU, same as PUT /{id}/menu (HOS-895 PR2 — owner
 // decision reversed PR1's ungated shipment).
 app.route('/', protectedUploadVenueMenuFileRoute);
 
@@ -114,7 +114,7 @@ app.route('/', protectedUploadVenueMenuFileRoute);
 app.route('/', protectedDeleteVenueMenuFileRoute);
 
 // POST /{id}/menu-item-photo — upload ONE dish photo (HOS-1045). Gated on
-// MENU_ITEM_PHOTOS (gastronomy-premium), a strictly narrower gate than the
+// MENU_ITEM_PHOTOS (venue-premium), a strictly narrower gate than the
 // carta's: writing a carta is `-pro`, putting a picture on a dish of it is the
 // tier above. Returns the asset; the association is written by PUT /{id}/menu,
 // because a dish's id does not survive that write.
@@ -122,7 +122,7 @@ app.route('/', protectedUploadVenueMenuItemPhotoRoute);
 
 // GET /{id}/menu-qr — the venue's printable menu QR (HOS-1044), minted (or
 // reused) on this call only — never on the public /carta/ page. Gated on
-// MENU_QR_SCAN_METRICS (gastronomy-premium). Registered before /{id} for the
+// MENU_QR_SCAN_METRICS (venue-premium). Registered before /{id} for the
 // same DEFENSIVE reason as the entries above.
 app.route('/', protectedGetVenueMenuQrRoute);
 
@@ -142,7 +142,7 @@ app.route('/', protectedGetVenueMenuQrScansRoute);
 app.route('/', protectedGetVenueDailySpecialsRoute);
 
 // PUT /{id}/daily-specials — replace them. Gated on
-// MANAGE_GASTRONOMY_DAILY_SPECIAL (gastronomy-pro and above).
+// MANAGE_VENUE_DAILY_SPECIAL (venue-pro and above).
 app.route('/', protectedPutVenueDailySpecialsRoute);
 // Venue events (HOS-1042) — the venue's own agenda. Registered before /{id}
 // for the same DEFENSIVE reason as every static-segment entry above.
@@ -151,8 +151,8 @@ app.route('/', protectedPutVenueDailySpecialsRoute);
 // plan no longer grants it still owns the rows, and only writing is paid.
 app.route('/', protectedGetVenueEventsRoute);
 
-// PUT /{id}/events — replace the agenda. Gated on MANAGE_GASTRONOMY_EVENTS
-// (gastronomy-pro and above).
+// PUT /{id}/events — replace the agenda. Gated on MANAGE_VENUE_EVENTS
+// (venue-pro and above).
 app.route('/', protectedPutVenueEventsRoute);
 
 // GET /{id} — Owner view (protected projection).

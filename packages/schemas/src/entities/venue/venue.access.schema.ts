@@ -60,7 +60,7 @@ export const VenuePublicSchema = VenueSchema.pick({
     // ungated). The COLUMN stays picked here — it is still owner-writable data
     // — but the public `getBySlug` route nulls both fields out live, before
     // this schema is reached, when the owner's CURRENT plan does not grant
-    // `MANAGE_GASTRONOMY_MENU` (see `resolveOwnerGrantsGastronomyMenuManagement`
+    // `MANAGE_VENUE_MENU` (see `resolveOwnerGrantsGastronomyMenuManagement`
     // in `@repo/service-core`). Schema presence is safe for the same reason
     // `richDescription`'s entitlement-by-omission gate is: the service strips
     // it server-side before `stripWithSchema`, so a not-entitled owner's row
@@ -179,12 +179,12 @@ export const VenuePublicSchema = VenueSchema.pick({
      * never ran the join must say "not loaded", not "this venue has none".
      *
      * Empty (not omitted) when the owner's current plan does not grant
-     * `MANAGE_GASTRONOMY_MENU` — a downgraded owner's previously-typed carta is
+     * `MANAGE_VENUE_MENU` — a downgraded owner's previously-typed carta is
      * withheld the same way `menuFileUrl` is (see the field's comment above),
      * even though the ROWS are not deleted.
      *
      * Each section/item's `nameI18n`/`descriptionI18n` (HOS-1043) are withheld
-     * INDEPENDENTLY, on the narrower `MULTILINGUAL_GASTRONOMY_MENU` key —
+     * INDEPENDENTLY, on the narrower `MULTILINGUAL_VENUE_MENU` key —
      * `null` on both when the plan does not grant it, the same live-read
      * mechanism `photoUrl` uses for `MENU_ITEM_PHOTOS`. See
      * `venue.menu.schema.ts` for the full mechanism.
@@ -201,7 +201,7 @@ export const VenuePublicSchema = VenueSchema.pick({
      * indistinguishable from one that was never written.
      *
      * Empty (not omitted) when the owner's current plan does not grant
-     * `MANAGE_GASTRONOMY_DAILY_SPECIAL` — withheld live, exactly like
+     * `MANAGE_VENUE_DAILY_SPECIAL` — withheld live, exactly like
      * `menuSections`, without the rows being deleted.
      */
     dailySpecials: z.array(VenueDailySpecialPublicSchema).optional(),
@@ -211,7 +211,7 @@ export const VenuePublicSchema = VenueSchema.pick({
      * `.optional()` on exactly the terms `menuSections` is, and withheld on
      * exactly the terms it is: absent when the payload never ran the read,
      * absent when the owner's CURRENT plan does not grant
-     * `MANAGE_GASTRONOMY_EVENTS`. A downgraded owner's already-typed agenda
+     * `MANAGE_VENUE_EVENTS`. A downgraded owner's already-typed agenda
      * stays in the database and stops being published — the rows are not
      * deleted (see `resolveOwnerGastronomyPlanEntitlements` in
      * `@repo/service-core`).

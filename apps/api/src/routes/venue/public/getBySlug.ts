@@ -118,11 +118,11 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
             userId: venue.ownerId,
             vertical: VerticalEnum.VENUE,
             keys: [
-                'manage_gastronomy_menu',
+                'manage_venue_menu',
                 'menu_item_photos',
-                'multilingual_gastronomy_menu',
-                'manage_gastronomy_events',
-                'manage_gastronomy_daily_special'
+                'multilingual_venue_menu',
+                'manage_venue_events',
+                'manage_venue_daily_special'
             ]
         });
 
@@ -138,19 +138,19 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
         const menuGate = applyVenueMenuManagementGate({
             gastronomy: venue,
             menuSections: menuResult.error ? [] : menuResult.data.sections,
-            ownerGrantsMenuManagement: ownerGrants.manage_gastronomy_menu ?? false,
+            ownerGrantsMenuManagement: ownerGrants.manage_venue_menu ?? false,
             ownerGrantsMenuItemPhotos: ownerGrants.menu_item_photos ?? false,
-            ownerGrantsMenuTranslations: ownerGrants.multilingual_gastronomy_menu ?? false
+            ownerGrantsMenuTranslations: ownerGrants.multilingual_venue_menu ?? false
         });
 
         const eventsGate = applyVenueEventsGate({
             events: eventsResult.error ? [] : eventsResult.data.events,
-            ownerGrantsVenueEvents: ownerGrants.manage_gastronomy_events ?? false
+            ownerGrantsVenueEvents: ownerGrants.manage_venue_events ?? false
         });
 
         const dailySpecialsGate = applyVenueDailySpecialsGate({
             dailySpecials: dailySpecialsResult.error ? [] : dailySpecialsResult.data.specials,
-            ownerGrantsDailySpecial: ownerGrants.manage_gastronomy_daily_special ?? false
+            ownerGrantsDailySpecial: ownerGrants.manage_venue_daily_special ?? false
         });
 
         return {

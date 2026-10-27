@@ -113,7 +113,7 @@ export interface VenueContextMenuItem {
  * @param venue - The gastronomy row.
  * @param faqs - The venue's FAQs. Capped at {@link VENUE_CONTEXT_FAQ_MAX}.
  * @param menuItems - The carta rows loaded for the listing.
- * @param includeMenu - Whether the owner has `manage_gastronomy_menu`.
+ * @param includeMenu - Whether the owner has `manage_venue_menu`.
  * @returns The Markdown block to prepend to the system message.
  */
 export function buildVenueMarkdownContext(

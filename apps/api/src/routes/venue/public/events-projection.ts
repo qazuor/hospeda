@@ -8,7 +8,7 @@
  * ## Two filters, not one, and they refuse for different reasons
  *
  * 1. **The entitlement.** The owner's CURRENT gastronomy plan must grant
- *    `MANAGE_GASTRONOMY_EVENTS`. Rows written while a `-pro` subscription was
+ *    `MANAGE_VENUE_EVENTS`. Rows written while a `-pro` subscription was
  *    live are NOT deleted when it lapses (see
  *    `resolveOwnerGastronomyPlanEntitlements` in `@repo/service-core`) — they
  *    simply stop being published, which is what stops a lapsed venue from
@@ -34,7 +34,7 @@ export interface VenueEventsGateResult {
 
 /**
  * Withholds the venue agenda when the owner's CURRENT gastronomy plan does not
- * grant `manage_gastronomy_events`, and drops the entries the owner switched
+ * grant `manage_venue_events`, and drops the entries the owner switched
  * off.
  *
  * @param input.events - The agenda as read, in display order. May be non-empty

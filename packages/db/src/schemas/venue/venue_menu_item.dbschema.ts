@@ -82,7 +82,7 @@ export const gastronomyMenuItems = pgTable(
         /**
          * Localized name (HOS-1043). Additive/nullable: `name` remains the `es`
          * fallback source and the only value an owner without the
-         * `multilingual_gastronomy_menu` entitlement can ever write. See
+         * `multilingual_venue_menu` entitlement can ever write. See
          * `venue_menu_section.dbschema.ts` for the full mechanism.
          */
         nameI18n: jsonb('name_i18n').$type<I18nText>(),

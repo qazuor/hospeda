@@ -3,7 +3,7 @@
  *
  * ## Why this is not a `requireEntitlement` middleware
  *
- * `PUT .../menu` is ALREADY gated, on `manage_gastronomy_menu`, and that gate
+ * `PUT .../menu` is ALREADY gated, on `manage_venue_menu`, and that gate
  * must stay exactly where it is: a `-pro` owner is entitled to write a carta.
  * What they are not entitled to is a PHOTO on a dish of it — which is a
  * property of the BODY, not of the route. A second `requireEntitlement` on the

@@ -149,7 +149,7 @@ function configure(args: {
                 inheritsTouristVip: false,
                 entries: [
                     { key: 'edit_accommodation_info', value: 1, strategy: 'MAX' },
-                    { key: 'edit_gastronomy_info', value: 1, strategy: 'MAX' },
+                    { key: 'edit_venue_info', value: 1, strategy: 'MAX' },
                     { key: 'edit_experience_info', value: 1, strategy: 'MAX' },
                     { key: 'max_photos_per_accommodation', value: maxPhotos, strategy: 'SUM' }
                 ]

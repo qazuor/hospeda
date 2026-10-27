@@ -41,7 +41,7 @@ import { z } from 'zod';
  * describing its permanent menu and belongs in
  * `GastronomyMenuReplacePayloadSchema`.
  *
- * A ceiling, not a product tier. The tier decision (`gastronomy-pro` and above)
+ * A ceiling, not a product tier. The tier decision (`venue-pro` and above)
  * is an ENTITLEMENT, checked at the route — the same split the carta makes.
  */
 export const VENUE_DAILY_SPECIALS_MAX = 10;

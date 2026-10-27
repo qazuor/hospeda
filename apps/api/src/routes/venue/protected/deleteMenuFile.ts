@@ -15,7 +15,7 @@
  * single orphaned asset, which is recoverable; leaving a withdrawn menu on the
  * public page is not.
  *
- * Menu file deletion requires manage_gastronomy_menu on the listing owner.
+ * Menu file deletion requires manage_venue_menu on the listing owner.
  *
  * @module routes/venue/protected/deleteMenuFile
  */
@@ -40,11 +40,11 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
-        capabilities: ['manage_gastronomy_menu']
+        capabilities: ['manage_venue_menu']
     },
     summary: 'Remove the uploaded menu photo or PDF',
     description:
-        'Clears the listing’s uploaded menu file and deletes the stored asset. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above. The structured menu and the external link are untouched.',
+        'Clears the listing’s uploaded menu file and deletes the stored asset. Owner-only, and requires the manage_venue_menu entitlement granted by the professional gastronomy plan and above. The structured menu and the external link are untouched.',
     tags: ['Gastronomy', 'Gastronomy Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

@@ -39,7 +39,7 @@ const db = drizzle({ client: pool }) as unknown as DrizzleClient;
 const VERTICAL = VerticalEnum.ACCOMMODATION;
 const OTHER_VERTICAL = VerticalEnum.VENUE;
 const MAX_PHOTOS = 'max_photos_per_accommodation';
-const MAX_VENUES = 'max_gastronomies';
+const MAX_VENUES = 'max_venues';
 const SINCE = new Date('2026-01-01T00:00:00.000Z');
 
 afterAll(async () => {

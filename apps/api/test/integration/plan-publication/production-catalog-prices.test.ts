@@ -23,9 +23,9 @@ const EXPECTED_PRICES: Readonly<
         'owner-premium': [6_500_000, 65_000_000]
     },
     gastronomy: {
-        'gastronomy-basico': [3_000_000, 30_000_000],
-        'gastronomy-pro': [6_500_000, 65_000_000],
-        'gastronomy-premium': [8_000_000, 80_000_000]
+        'venue-basico': [3_000_000, 30_000_000],
+        'venue-pro': [6_500_000, 65_000_000],
+        'venue-premium': [8_000_000, 80_000_000]
     },
     experience: {
         'experience-basico': [1_500_000, 15_000_000],

@@ -109,13 +109,13 @@ const VERTICAL_BY_ENTITY_TYPE = {
 
 const OWNER_CAPABILITY_KEYS_BY_ENTITY_TYPE = {
     accommodation: [],
-    gastronomy: ['manage_gastronomy_menu'],
+    gastronomy: ['manage_venue_menu'],
     experience: ['manage_experience_directions']
 } as const;
 
 const OWNER_CHAT_LIMIT_BY_ENTITY_TYPE = {
     accommodation: 'max_ai_chat_per_month',
-    gastronomy: 'max_ai_chat_gastronomy_per_month',
+    gastronomy: 'max_ai_chat_venue_per_month',
     experience: 'max_ai_chat_experience_per_month'
 } as const;
 
@@ -330,7 +330,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             resolvedPrompt,
             locale,
             ownerCapabilities: {
-                manageVenueMenu: ownerCapabilities.manage_gastronomy_menu === true,
+                manageVenueMenu: ownerCapabilities.manage_venue_menu === true,
                 manageExperienceDirections: ownerCapabilities.manage_experience_directions === true
             }
         });

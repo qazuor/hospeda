@@ -30,7 +30,7 @@
  * `validateFile`; only the PDF branch is new, and it is deliberately small:
  * a size cap plus a magic-byte check.
  *
- * Menu file uploads require manage_gastronomy_menu on the listing owner.
+ * Menu file uploads require manage_venue_menu on the listing owner.
  *
  * @module routes/venue/protected/uploadMenuFile
  */
@@ -119,11 +119,11 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
-        capabilities: ['manage_gastronomy_menu']
+        capabilities: ['manage_venue_menu']
     },
     summary: 'Upload a photo or PDF of the menu',
     description:
-        'Uploads a photo or a PDF of the venue’s printed menu and stores it on the listing in the same request. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above.',
+        'Uploads a photo or a PDF of the venue’s printed menu and stores it on the listing in the same request. Owner-only, and requires the manage_venue_menu entitlement granted by the professional gastronomy plan and above.',
     tags: ['Gastronomy', 'Gastronomy Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

@@ -40,7 +40,7 @@
  * listing, `GASTRONOMY_EDIT_ALL` for staff, via the same
  * {@link checkVenueCanEditFaqs} gate the sibling helpers use. Whether the
  * caller's PLAN includes a structured carta is an entitlement
- * (`MANAGE_GASTRONOMY_MENU`) and is checked at the route, before this is
+ * (`MANAGE_VENUE_MENU`) and is checked at the route, before this is
  * reached — the same split `brochure.ts` makes.
  *
  * @module gastronomy.menu
@@ -205,7 +205,7 @@ export async function getVenueMenu(
  * Replaces a listing's structured carta with the submitted document.
  *
  * Permission: `GASTRONOMY_EDIT_OWN` (listing owner) or `GASTRONOMY_EDIT_ALL`
- * (staff). The `MANAGE_GASTRONOMY_MENU` entitlement is the route's gate, not
+ * (staff). The `MANAGE_VENUE_MENU` entitlement is the route's gate, not
  * this one's.
  *
  * An EMPTY `sections` array is a legitimate submission and deletes the carta:

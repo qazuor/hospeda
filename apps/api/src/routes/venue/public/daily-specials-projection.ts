@@ -16,7 +16,7 @@ export interface VenueDailySpecialsGateResult {
 
 /**
  * Withholds the menú del día when the owner's CURRENT gastronomy plan does not
- * grant `manage_gastronomy_daily_special`.
+ * grant `manage_venue_daily_special`.
  *
  * The rows are not deleted (see `resolveOwnerGrantsGastronomyDailySpecial` in
  * `@repo/service-core`), only kept out of the public payload — so a lapsed

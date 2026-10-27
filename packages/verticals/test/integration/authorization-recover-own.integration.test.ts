@@ -285,7 +285,7 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
             ).toEqual({
                 allowed: false,
                 reason: 'NO_CAPABILITY',
-                key: 'publish_gastronomy'
+                key: 'publish_venue'
             });
             expect(coverageSpy.mock.calls.length).toBeGreaterThan(beforeDraft);
 

@@ -146,7 +146,7 @@ export const experiences = pgTable(
          * are `manage_experience_directions` — `experience-pro` and above
          * (owner decision, 2026-09-01). The rows are never deleted on a
          * downgrade: the public route withholds them live, exactly as
-         * `manage_gastronomy_menu` withholds a downgraded venue's carta.
+         * `manage_venue_menu` withholds a downgraded venue's carta.
          */
         meetingPointDirections: text('meeting_point_directions').array().notNull().default([]),
         /**

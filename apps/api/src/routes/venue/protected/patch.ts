@@ -14,7 +14,7 @@
  *   so any forged keys for those are silently stripped by Zod.
  * - VenueService.updateOwn() enforces ownership (non-owner → NOT_FOUND) and
  *   per-section GASTRONOMY_/EXPERIENCE_EDIT_OWN permission checks.
- * Owner updates require the effective edit_gastronomy_info capability.
+ * Owner updates require the effective edit_venue_info capability.
  */
 
 import {

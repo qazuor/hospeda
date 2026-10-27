@@ -30,7 +30,7 @@
  * on the STORED schema so a legacy row (no translations) parses unchanged.
  *
  * Unlike the FAQ pair, this one is a PAID capability
- * (`EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU`, gastronomy-premium only):
+ * (`EntitlementKey.MULTILINGUAL_VENUE_MENU`, venue-premium only):
  * the route refuses a submitted document that carries any translation unless
  * the owner's plan grants the key (see `menu-translations-gate.ts`), and the
  * public read withholds already-typed translations from a downgraded owner's
@@ -50,7 +50,7 @@ import { mediaAssetUrl } from '../../../common/media.schema.js';
 /**
  * How many sections one carta may hold.
  *
- * A ceiling, not a product tier: the tier decision (`gastronomy-pro` and above
+ * A ceiling, not a product tier: the tier decision (`venue-pro` and above
  * may edit a structured carta at all) is an ENTITLEMENT, checked at the route.
  * This number exists so a single PUT cannot be used to write an unbounded
  * number of rows in one transaction.
@@ -279,7 +279,7 @@ export const VenueMenuItemInputSchema = z.object({
     /**
      * Localized name (HOS-1043), or `null`/omitted to leave the dish untranslated.
      * Whether the caller's PLAN allows submitting one at all is an ENTITLEMENT
-     * (`MULTILINGUAL_GASTRONOMY_MENU`) checked at the route
+     * (`MULTILINGUAL_VENUE_MENU`) checked at the route
      * (`menuPayloadCarriesTranslations`), the same permission/entitlement split
      * `photoUrl` above documents.
      */

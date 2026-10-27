@@ -116,7 +116,7 @@ describe('GET /{id}/menu-qr/scans — effective capability granted', () => {
         expect(mockFindLiveCodeForEntity).toHaveBeenCalled();
     });
 
-    it('answers 200 for a gastronomy-premium owner (plan grants menu_qr_scan_metrics)', async () => {
+    it('answers 200 for a venue-premium owner (plan grants menu_qr_scan_metrics)', async () => {
         const app = buildApp();
 
         const res = await app.request(`/${VENUE_ID}/menu-qr/scans`);
