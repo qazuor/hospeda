@@ -37,7 +37,7 @@ describe('retired shared role and permissions', () => {
 describe('HOS-1077 per-vertical permissions', () => {
     const VERTICALS = [
         {
-            name: 'gastronomy',
+            name: 'venue',
             category: PermissionCategoryEnum.VENUE,
             permissions: {
                 editOwn: PermissionEnum.VENUE_EDIT_OWN,
