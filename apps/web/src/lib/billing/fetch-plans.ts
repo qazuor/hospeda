@@ -39,7 +39,7 @@ export type FetchPlansResult =
 const CATEGORY_BY_VERTICAL: Record<PublicPlanCatalogVertical, BillingPlanCategory> = {
     accommodation: 'owner',
     tourist: 'tourist',
-    gastronomy: 'owner',
+    venue: 'owner',
     experience: 'owner'
 };
 

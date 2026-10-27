@@ -286,7 +286,7 @@ export function resolveSignupRejection({ error }: { readonly error?: unknown }):
 /** Translation key for each API vertical, exhaustively mapped. */
 export const SIGNUP_VERTICAL_LABEL_KEY: Record<VerticalEnum, string> = {
     accommodation: 'billing.checkout.signup.vertical.accommodation',
-    gastronomy: 'billing.checkout.signup.vertical.gastronomy',
+    venue: 'billing.checkout.signup.vertical.gastronomy',
     experience: 'billing.checkout.signup.vertical.experience',
     tourist: 'billing.checkout.signup.vertical.tourist',
     partner: 'billing.checkout.signup.vertical.partner'

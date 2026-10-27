@@ -33,7 +33,7 @@ import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
  */
 export const PUBLISH_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: 'publicar',
-    gastronomy: 'publicar/gastronomia',
+    venue: 'publicar/gastronomia',
     experience: 'publicar/experiencias'
 } as const;
 
@@ -47,7 +47,7 @@ export const PUBLISH_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug,
  */
 export const ACCOUNT_LISTINGS_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: 'mi-cuenta/propiedades',
-    gastronomy: 'mi-cuenta/comercio',
+    venue: 'mi-cuenta/comercio',
     experience: 'mi-cuenta/comercio'
 } as const;
 
@@ -58,7 +58,7 @@ export const ACCOUNT_LISTINGS_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalS
  */
 export const PLANS_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: 'planes/anfitriones',
-    gastronomy: 'planes/gastronomia',
+    venue: 'planes/gastronomia',
     experience: 'planes/experiencias'
 } as const;
 
@@ -71,6 +71,6 @@ export const PLANS_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, s
  */
 export const PRICING_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: `${PLANS_PAGE_PATH_BY_VERTICAL.accommodation}/precios`,
-    gastronomy: `${PLANS_PAGE_PATH_BY_VERTICAL.gastronomy}/precios`,
+    venue: `${PLANS_PAGE_PATH_BY_VERTICAL.venue}/precios`,
     experience: `${PLANS_PAGE_PATH_BY_VERTICAL.experience}/precios`
 } as const;

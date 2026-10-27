@@ -73,7 +73,7 @@ describe('TrialSummary.astro — row 4, the accumulated trial days', () => {
             expect(Object.keys(copy.vertical).sort()).toEqual([
                 'accommodation',
                 'experience',
-                'gastronomy'
+                'venue'
             ]);
         }
         expect(copies[1].endedTitle).toBe('Your free {{vertical}} trial has ended');
