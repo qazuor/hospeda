@@ -381,6 +381,114 @@ describe('TEST:1820:2 AC:1:4 — extras are idempotent after the rename', () => 
     });
 });
 
+describe('TEST:1820:6 AC:1:4 — rename legacy extras already present at cutover', () => {
+    it('TEST:1820:6 AC:1:4 renames every legacy venue update trigger and media invariant exactly once', async () => {
+        const migration = readFileSync(
+            join(REPO_ROOT, 'packages/db/src/migrations/0180_venue_rename.sql'),
+            'utf8'
+        );
+        const oldPrefix = ['trg_set_updated_at_', 'gastro', 'nomy_'].join('');
+        const oldMediaIndex = ['uq_', OLD_VERTICAL, '_media_single_featured'].join('');
+        const oldMediaConstraint = ['chk_', OLD_VERTICAL, '_media_featured_not_archived'].join('');
+        const oldRootTrigger = ['trg_set_updated_at_', 'gastro', 'nom', 'ies'].join('');
+        const newRootTrigger = 'trg_set_updated_at_venues';
+        const newPrefix = 'trg_set_updated_at_venue_';
+        const currentTriggers = await getTestPool().query<{ tgname: string }>(
+            `SELECT tgname FROM pg_trigger
+             WHERE NOT tgisinternal AND (tgname = $1 OR tgname LIKE $2) ORDER BY tgname`,
+            [newRootTrigger, `${newPrefix}%`]
+        );
+        const newTriggerNames = currentTriggers.rows.map((row) => row.tgname);
+        const oldTriggerNames = newTriggerNames.map((name) =>
+            name === newRootTrigger ? oldRootTrigger : name.replace(newPrefix, oldPrefix)
+        );
+        const statements = migration
+            .split('--> statement-breakpoint')
+            .filter((statement) =>
+                [oldPrefix, oldRootTrigger, oldMediaIndex, oldMediaConstraint].some((name) =>
+                    statement.includes(name)
+                )
+            );
+        const client = await getTestPool().connect();
+        try {
+            await client.query('BEGIN');
+            for (const name of newTriggerNames) {
+                const oldName =
+                    name === newRootTrigger ? oldRootTrigger : name.replace(newPrefix, oldPrefix);
+                const tableName =
+                    name === newRootTrigger ? 'venues' : name.replace('trg_set_updated_at_', '');
+                await client.query(`ALTER TRIGGER ${name} ON ${tableName} RENAME TO ${oldName}`);
+            }
+            await client.query(
+                `ALTER INDEX uq_venue_media_single_featured RENAME TO ${oldMediaIndex}`
+            );
+            await client.query(
+                `ALTER TABLE venue_media RENAME CONSTRAINT chk_venue_media_featured_not_archived TO ${oldMediaConstraint}`
+            );
+            for (const statement of statements) {
+                if (statement.trim()) await client.query(statement.trim());
+            }
+            const newTriggers = await client.query<{ tgname: string }>(
+                `SELECT tgname FROM pg_trigger
+                 WHERE NOT tgisinternal AND (tgname = $1 OR tgname LIKE $2) ORDER BY tgname`,
+                [newRootTrigger, `${newPrefix}%`]
+            );
+            const oldTriggers = await client.query<{ tgname: string }>(
+                `SELECT tgname FROM pg_trigger WHERE tgname = ANY($1::text[]) ORDER BY tgname`,
+                [oldTriggerNames]
+            );
+            const newIndexes = await client.query<{ indexname: string }>(
+                `SELECT indexname FROM pg_indexes
+                 WHERE indexname = 'uq_venue_media_single_featured' ORDER BY indexname`
+            );
+            const oldIndexes = await client.query<{ indexname: string }>(
+                `SELECT indexname FROM pg_indexes WHERE indexname = $1 ORDER BY indexname`,
+                [oldMediaIndex]
+            );
+            const newConstraints = await client.query<{ conname: string }>(
+                `SELECT conname FROM pg_constraint
+                 WHERE conname = 'chk_venue_media_featured_not_archived' ORDER BY conname`
+            );
+            const oldConstraints = await client.query<{ conname: string }>(
+                `SELECT conname FROM pg_constraint WHERE conname = $1 ORDER BY conname`,
+                [oldMediaConstraint]
+            );
+            expect(newTriggers.rows).toEqual(newTriggerNames.map((tgname) => ({ tgname })));
+            expect(oldTriggers.rows).toEqual([]);
+            expect(newIndexes.rows).toEqual([{ indexname: 'uq_venue_media_single_featured' }]);
+            expect(oldIndexes.rows).toEqual([]);
+            expect(newConstraints.rows).toEqual([
+                { conname: 'chk_venue_media_featured_not_archived' }
+            ]);
+            expect(oldConstraints.rows).toEqual([]);
+
+            const extrasDir = join(REPO_ROOT, 'packages/db/src/migrations/extras');
+            for (const file of [
+                '002-set-updated-at.trigger.sql',
+                '032-venue-experience-media.constraints.sql'
+            ]) {
+                await client.query(readFileSync(join(extrasDir, file), 'utf8'));
+            }
+            const triggersAfterExtras = await client.query<{ tgname: string }>(
+                `SELECT tgname FROM pg_trigger
+                 WHERE NOT tgisinternal AND (tgname = $1 OR tgname LIKE $2) ORDER BY tgname`,
+                [newRootTrigger, `${newPrefix}%`]
+            );
+            const indexesAfterExtras = await client.query<{ indexname: string }>(
+                `SELECT indexname FROM pg_indexes
+                 WHERE indexname = 'uq_venue_media_single_featured' ORDER BY indexname`
+            );
+            expect(triggersAfterExtras.rows).toEqual(newTriggerNames.map((tgname) => ({ tgname })));
+            expect(indexesAfterExtras.rows).toEqual([
+                { indexname: 'uq_venue_media_single_featured' }
+            ]);
+        } finally {
+            await client.query('ROLLBACK');
+            client.release();
+        }
+    });
+});
+
 describe('TEST:1820:3 AC:1:4 — reset guard is the first migration statement', () => {
     it('TEST:1820:3 AC:1:4 passes on the migrated empty base and raises the reset instruction for an old vertical row', async () => {
         const { readFileSync } = await import('node:fs');
