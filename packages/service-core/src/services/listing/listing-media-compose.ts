@@ -2,7 +2,7 @@
  * listing-media-compose.ts
  *
  * Pure read-composition helper that rebuilds the `Media` shape from relational
- * listing media rows (`gastronomy_media`, `experience_media` — HOS-372).
+ * listing media rows (`venue_media`, `experience_media` — HOS-372).
  *
  * Shared between `VenueService` and `ExperienceService` — the row shape
  * (`state`, `isFeatured`, `sortOrder`, and the image fields) is identical for

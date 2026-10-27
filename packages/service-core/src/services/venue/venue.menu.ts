@@ -7,7 +7,7 @@
  *
  * The FAQ and media helpers next door expose one function per row operation
  * (add / update / remove / reorder). The carta deliberately does not, and the
- * reason is the one `gastronomy_media` states for going the OTHER way: a photo
+ * reason is the one `venue_media` states for going the OTHER way: a photo
  * is a Cloudinary asset that is BILLED from the moment it lands, so every photo
  * operation has to persist on its own or an abandoned form costs money.
  *
@@ -146,7 +146,7 @@ export async function getVenueMenu(
         );
 
         // One read for EVERY dish of the listing, then grouped in memory —
-        // rather than one read per section. This is why `gastronomy_id` is
+        // rather than one read per section. This is why `venue_id` is
         // denormalized onto the item table: without it this would be a query
         // per course, which is the classic N+1 on a page that renders the whole
         // menu at once.
@@ -255,7 +255,7 @@ export async function replaceVenueMenu(
         // the owner never described, and it is exactly what per-row endpoints
         // would allow. Enlists in the caller's transaction when there is one.
         const runInTx = async (tx: ServiceContext['tx']): Promise<void> => {
-            // CASCADE on `gastronomy_menu_items.section_id` takes the dishes
+            // CASCADE on `venue_menu_items.section_id` takes the dishes
             // with the sections, so the items are not deleted explicitly. That
             // is a property of the SCHEMA, not of this call order.
             await sectionModel.hardDelete({ gastronomyId }, tx);

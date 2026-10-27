@@ -10,7 +10,7 @@
  * ## Two operations, not six
  *
  * The same choice `gastronomy.menu.ts` makes, for the same reason and with the
- * same contrast against `gastronomy_media`: an agenda entry is text, so nothing
+ * same contrast against `venue_media`: an agenda entry is text, so nothing
  * exists outside the database and nothing can be orphaned by a save that never
  * happens. What it has instead is that it is edited as a WHOLE — reordering two
  * events while deleting a third and renaming a fourth is ONE thought, and as

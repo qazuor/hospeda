@@ -20,7 +20,7 @@
  * ## No dual-write
  *
  * These helpers NEVER read or write the legacy `gastronomy.media` JSONB column.
- * All photo state lives exclusively in `gastronomy_media` rows.
+ * All photo state lives exclusively in `venue_media` rows.
  *
  * @module gastronomy.media
  */
@@ -90,7 +90,7 @@ async function requireVenue(model: VenueModel, gastronomyId: string, tx?: Servic
  *
  * This is a URL-receiver method: the upload to Cloudinary has already happened
  * via `POST /api/v1/admin/media/upload`. This function registers the
- * already-uploaded URL as a new `gastronomy_media` row.
+ * already-uploaded URL as a new `venue_media` row.
  *
  * `sortOrder` is computed as max(visible sortOrder) + 1 (append to end). When
  * no visible rows exist yet, starts at 0.

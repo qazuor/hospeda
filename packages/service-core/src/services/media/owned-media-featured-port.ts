@@ -3,7 +3,7 @@
  * @description The single adapter that binds any per-entity media table to the
  * shared born-featured primitive (HOS-803).
  *
- * The five media tables — `accommodation_media`, `gastronomy_media`,
+ * The five media tables — `accommodation_media`, `venue_media`,
  * `experience_media`, `post_media`, `event_media` — are the same shape under
  * different names. Each has `is_featured`, `state`, `sort_order`, `deleted_at`
  * and exactly one owning foreign key, and each is reached through a model with

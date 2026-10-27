@@ -254,7 +254,7 @@ export class VenueService extends BaseListingService<
     // Media composition (HOS-372)
     // -----------------------------------------------------------------------
     //
-    // Photos live in the relational `gastronomy_media` table, not in a JSONB
+    // Photos live in the relational `venue_media` table, not in a JSONB
     // blob, so every read path has to rebuild the `media` shape consumers
     // expect. These three hooks are the standard chokepoints
     // (getById/getBySlug/adminGetById go through `_afterGetByField`; `list()`
