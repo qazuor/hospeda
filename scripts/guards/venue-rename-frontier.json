@@ -1061,7 +1061,7 @@
         "packages/schemas/src/common/faq.schema.ts": 3,
         "packages/schemas/src/common/index.ts": 1,
         "packages/schemas/src/common/listing-catalog.schema.ts": 2,
-        "packages/schemas/src/common/listing-completeness.ts": 15,
+        "packages/schemas/src/common/listing-completeness.ts": 7,
         "packages/schemas/src/common/listing-identity.schema.ts": 2,
         "packages/schemas/src/common/listing-media.schema.ts": 9,
         "packages/schemas/src/common/listing-owner-listing.schema.ts": 4,
