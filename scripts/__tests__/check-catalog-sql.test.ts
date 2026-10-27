@@ -157,7 +157,7 @@ describe('TEST:V1:5 — GUARD:G18', () => {
                 buildVerticalLoad({
                     activationByVertical: {
                         accommodation: 'listing_published',
-                        gastronomy: 'listing_published',
+                        venue: 'listing_published',
                         experience: 'listing_published',
                         tourist: 'start_button_pressed',
                         partner: 'listing_published'

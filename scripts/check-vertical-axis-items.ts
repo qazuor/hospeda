@@ -19,7 +19,7 @@
  *
  * (b) No production code under {@link DISPATCH_SCAN_ROOTS} compares a value with
  *     the literal of a vertical in {@link DISPATCH_LITERALS} and feeds that
- *     comparison straight into a ternary: `x === 'gastronomy' ? A : B`, either
+ *     comparison straight into a ternary: `x === 'venue' ? A : B`, either
  *     operand order, `===`/`!==`/`==`/`!=`, with up to 200 characters and no
  *     `;`, `{` or `}` between the comparison and the `?` (multi-line shapes
  *     included; `?.` and `??` are not ternaries). That shape silently answers
@@ -33,13 +33,13 @@
  *   payment methods, own pricing), (a) checks ONE: the activation event, the
  *   only item declared in code today. The others are checked by the pieces
  *   that build them.
- * - (b) is one syntactic shape. An `if (x === 'gastronomy') return A; return B;`
+ * - (b) is one syntactic shape. An `if (x === 'venue') return A; return B;`
  *   chain, a lookup with a default, or a ternary on a variable that already
  *   holds the comparison is invisible to it.
  * - (b) does NOT cover `apps/web` or `apps/admin` (owner decision, 2026-10-07,
  *   option A), and does not anchor on the `accommodation`, `tourist` or
  *   `partner` literals. Why: a syntactic check cannot tell a TOTAL ternary over
- *   an operand typed `'gastronomy' | 'experience'` (two values, both handled)
+ *   an operand typed `'venue' | 'experience'` (two values, both handled)
  *   from the broken HOS-1079 one over a wider type. Measured on the epic
  *   (969a6e2cca), those widenings flag 21 files, nearly all of the total kind
  *   or a comparison that is not a vertical dispatch.
@@ -69,7 +69,7 @@ import { VerticalEnum } from '../packages/schemas/src/enums/vertical.enum.js';
 export const DISPATCH_SCAN_ROOTS = [/^apps\/api\/src\//, /^packages\/[^/]+\/src\//] as const;
 
 /** The vertical literals predicate (b) anchors on. */
-export const DISPATCH_LITERALS = ['gastronomy', 'experience'] as const;
+export const DISPATCH_LITERALS = ['venue', 'experience'] as const;
 
 /** Fewer scanned files than this means the scan is broken, not that the tree is clean. */
 export const MIN_SCANNED_FILES = 500;
@@ -93,7 +93,7 @@ export const RULE_MESSAGES = {
         'catalog. Declare the event (or null for "no trial") for every vertical.',
     'G1(b)':
         `G1(b): shared code feeds a comparison with a vertical literal (${DISPATCH_LITERALS.join(', ')}) ` +
-        "straight into a ternary (`x === 'gastronomy' ? A : B`). It answers B for EVERY other vertical " +
+        "straight into a ternary (`x === 'venue' ? A : B`). It answers B for EVERY other vertical " +
         '(HOS-1079). Replace it with an exhaustive `switch` whose `default` throws, or a Record keyed by vertical. ' +
         'Scope: apps/api/src and packages/*/src only; apps/web and apps/admin are NOT covered, because a ' +
         'syntactic check cannot tell a total ternary over a two-value type from a broken one.'
