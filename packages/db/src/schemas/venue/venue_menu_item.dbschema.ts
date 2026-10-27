@@ -15,7 +15,7 @@ import { gastronomies } from './venue.dbschema.ts';
 import { gastronomyMenuSections } from './venue_menu_section.dbschema.ts';
 
 /**
- * `gastronomy_menu_items` — one dish or drink on a venue's real menu (HOS-895).
+ * `venue_menu_items` — one dish or drink on a venue's real menu (HOS-895).
  *
  * ## Why the row exists rather than a JSONB array element
  *
@@ -29,7 +29,7 @@ import { gastronomyMenuSections } from './venue_menu_section.dbschema.ts';
  * ## The photo is COLUMNS here, not a row in a link table (HOS-1045)
  *
  * The obvious shape for "a dish has a photo" is a link table keyed by
- * `gastronomy_menu_items.id`. It does not work, and the reason is one file
+ * `venue_menu_items.id`. It does not work, and the reason is one file
  * over: `replaceVenueMenu` writes the carta as a WHOLE DOCUMENT — it
  * hard-deletes the listing's sections and reinserts them, so `CASCADE` takes
  * every item row with them and a NEW id is minted on every save. A link table
@@ -43,14 +43,14 @@ import { gastronomyMenuSections } from './venue_menu_section.dbschema.ts';
  * binding is as tight as it gets — same row, one transaction.
  *
  * ONE photo per dish, not a gallery. The venue's gallery already exists
- * (`gastronomy_media`) and a carta rendering N photos per dish is a different
+ * (`venue_media`) and a carta rendering N photos per dish is a different
  * product. Nothing here caps how many DISHES may carry one: the capability is
  * gated by the `menu_item_photos` entitlement (gastronomy premium) and by NO
  * numeric limit key — owner decision, HOS-1045, and a deliberate one, since
  * the limit engine resolves an unknown key as *unlimited* in five layers
  * without raising, so a cap that is not wired end to end is worse than none.
  *
- * ## `gastronomy_id` is denormalized ON PURPOSE
+ * ## `venue_id` is denormalized ON PURPOSE
  *
  * The item's parent is its section, and the section's parent is the listing —
  * so the listing id is reachable by a join. It is stored here anyway because
@@ -120,7 +120,7 @@ export const gastronomyMenuItems = pgTable(
         photoUrl: text('photo_url'),
         /**
          * Cloudinary `public_id` of that asset, so a later cleanup can DESTROY
-         * it rather than merely forget it — the distinction `gastronomy_media`
+         * it rather than merely forget it — the distinction `venue_media`
          * and `gastronomies.menu_file_public_id` both make, and the reason
          * HOS-372 exists at all: a forgotten asset keeps billing.
          *
@@ -166,7 +166,7 @@ export const gastronomyMenuItemsRelations = relations(gastronomyMenuItems, ({ on
     })
 }));
 
-/** Type-inferred insert type for gastronomy_menu_items rows. */
+/** Type-inferred insert type for venue_menu_items rows. */
 export type InsertVenueMenuItem = typeof gastronomyMenuItems.$inferInsert;
-/** Type-inferred select type for gastronomy_menu_items rows. */
+/** Type-inferred select type for venue_menu_items rows. */
 export type SelectVenueMenuItem = typeof gastronomyMenuItems.$inferSelect;

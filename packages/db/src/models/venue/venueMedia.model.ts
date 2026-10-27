@@ -65,7 +65,7 @@ interface FindByVenuesInput {
 /**
  * Model for gastronomy listing media (gallery photos).
  *
- * Provides the canonical query surface for reading the `gastronomy_media` table.
+ * Provides the canonical query surface for reading the `venue_media` table.
  * All write operations (create, update, soft-delete, restore) are inherited from
  * `BaseModelImpl` — do not re-implement them here.
  *

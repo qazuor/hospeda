@@ -35,7 +35,7 @@ export type HostTradeReviewRatingBreakdown = {
  * usage is a precondition, not an anchor).
  *
  * Unlike the other four review tables in the repo (`accommodation_reviews`,
- * `destination_reviews`, `gastronomy_reviews`, `experience_reviews`), this
+ * `destination_reviews`, `venue_reviews`, `experience_reviews`), this
  * table defaults to `moderationState = 'APPROVED'` for a stronger reason
  * than any of them: the reviewer isn't merely "semi-verified" by a prior
  * conversation, they have a usage the provider itself confirmed.

@@ -31,7 +31,7 @@ interface VenueModelSearchInput {
  */
 export class VenueModel extends BaseModelImpl<Venue> {
     protected table = gastronomies;
-    public entityName = 'gastronomies';
+    public entityName = 'venues';
 
     /** Creates a gastronomy with its initial publication clock. */
     override async create(data: Partial<Venue>, tx?: DrizzleClient): Promise<Venue> {

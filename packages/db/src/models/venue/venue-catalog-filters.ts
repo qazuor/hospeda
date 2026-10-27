@@ -47,7 +47,7 @@
  * The junction columns are emitted as raw quoted identifiers rather than as
  * Drizzle column references. Inside a subquery Drizzle would alias a referenced
  * column against the OUTER query's table, producing
- * `WHERE "gastronomies"."feature_id" = ...` — nonsense that fails at runtime.
+ * `WHERE "venues"."feature_id" = ...` — nonsense that fails at runtime.
  * The table reference (`${rGastronomyFeature}`) and the outer correlation
  * (`${gastronomies.id}`) resolve correctly and stay template args. Same
  * workaround, same reason, as the accommodation clauses.

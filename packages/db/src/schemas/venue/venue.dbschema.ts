@@ -78,7 +78,7 @@ export const gastronomies = pgTable(
          *
          * Since HOS-895 this is ONE of three ways a venue can show its menu,
          * not the only one. The other two are the structured carta
-         * (`gastronomy_menu_sections` + `gastronomy_menu_items`) and the
+         * (`venue_menu_sections` + `venue_menu_items`) and the
          * uploaded file below. All three may be set at once and none is
          * mandatory: an owner who does not want to type forty dishes must
          * still be able to publish.
@@ -92,7 +92,7 @@ export const gastronomies = pgTable(
          * than diffed into the editor's PATCH body: an owner who uploads and
          * then walks away without saving used to leave the asset billing in
          * Cloudinary with nothing pointing at it — the orphan HOS-372 built
-         * `gastronomy_media` to stop.
+         * `venue_media` to stop.
          */
         menuFileUrl: text('menu_file_url'),
         /**
@@ -112,13 +112,13 @@ export const gastronomies = pgTable(
         /**
          * Embedded videos for the listing (HOS-372).
          *
-         * Deliberately its OWN column rather than rows in `gastronomy_media`: a video is
+         * Deliberately its OWN column rather than rows in `venue_media`: a video is
          * an external YouTube/Vimeo URL pasted into a form, not an uploaded asset. It
          * cannot be orphaned in Cloudinary and has no per-operation persistence problem,
          * so a relational row would only add dead columns (`public_id`, `is_featured`,
          * file moderation) without solving anything.
          *
-         * Photos live in `gastronomy_media`; the `media` column above is being retired.
+         * Photos live in `venue_media`; the `media` column above is being retired.
          */
         videos: jsonb('videos').$type<Video[]>(),
         seo: jsonb('seo').$type<Seo>(),

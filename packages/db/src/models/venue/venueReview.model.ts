@@ -20,7 +20,7 @@ export class VenueReviewModel extends BaseModelImpl<VenueReview> {
      * NOT the SQL table name. Used by findAllWithRelations via db.query[tableName]
      * (BETA-150: returning the snake_case SQL name made every public
      * GET /gastronomies/:id/reviews request 500 with
-     * "Invalid table configuration for: gastronomy_reviews").
+     * "Invalid table configuration for: venue_reviews").
      */
     protected getTableName(): string {
         return 'gastronomyReviews';

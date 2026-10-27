@@ -47,7 +47,7 @@ export const rGastronomyFeatureRelations = relations(rGastronomyFeature, ({ one 
     })
 }));
 
-/** Type-inferred insert type for r_gastronomy_feature rows. */
+/** Type-inferred insert type for r_venue_feature rows. */
 export type InsertRVenueFeature = typeof rGastronomyFeature.$inferInsert;
-/** Type-inferred select type for r_gastronomy_feature rows. */
+/** Type-inferred select type for r_venue_feature rows. */
 export type SelectRVenueFeature = typeof rGastronomyFeature.$inferSelect;

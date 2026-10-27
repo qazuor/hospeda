@@ -4,7 +4,7 @@ import { users } from '../user/user.dbschema.ts';
 import { gastronomies } from './venue.dbschema.ts';
 
 /**
- * `gastronomy_daily_specials` — the menú del día (HOS-1041).
+ * `venue_daily_specials` — the menú del día (HOS-1041).
  *
  * One dish the venue is offering right now — the plato del día, the sugerencia
  * del chef — carrying **its own validity window** so it stops being shown
@@ -25,7 +25,7 @@ import { gastronomies } from './venue.dbschema.ts';
  * to pull and parse the whole document to discover that none of it applies
  * today. Two `date` columns and a composite index answer the same question
  * without touching the row. It is the same reasoning
- * `gastronomy_menu_sections` gives for the carta, applied to a read that is
+ * `venue_menu_sections` gives for the carta, applied to a read that is
  * additionally CONDITIONAL rather than merely joined.
  *
  * ## Why `date` and not `timestamptz`
@@ -44,7 +44,7 @@ import { gastronomies } from './venue.dbschema.ts';
  *
  * ## What it deliberately does NOT carry
  *
- * - **No i18n columns.** Same position `gastronomy_menu_sections` takes: a
+ * - **No i18n columns.** Same position `venue_menu_sections` takes: a
  *   multi-language menu is HOS-1043's retrofit, and columns nothing reads today
  *   would be two columns of dead weight.
  * - **No `is_available` flag.** The carta has one because a seasonal dish is
@@ -69,7 +69,7 @@ export const gastronomyDailySpecials = pgTable(
         /**
          * Price in CENTAVOS, per the platform's money rule (integer, never
          * `numeric`/float). Nullable, and the nullability is the feature — the
-         * same one `gastronomy_menu_items.price_cents` states: a special
+         * same one `venue_menu_items.price_cents` states: a special
          * announced as "consultar" is ordinary, and a zero would publish a free
          * dish.
          */
@@ -103,7 +103,7 @@ export const gastronomyDailySpecials = pgTable(
          * The read the public listing performs verbatim: the specials of ONE
          * listing whose window contains today, in order.
          *
-         * Composite and in this column order on purpose — `gastronomy_id`
+         * Composite and in this column order on purpose — `venue_id`
          * equality first, then the two range bounds — so the conditional read
          * that runs on every page view is served by the index instead of by a
          * scan of the listing's specials.
@@ -121,7 +121,7 @@ export const gastronomyDailySpecialsRelations = relations(gastronomyDailySpecial
     })
 }));
 
-/** Type-inferred insert type for gastronomy_daily_specials rows. */
+/** Type-inferred insert type for venue_daily_specials rows. */
 export type InsertVenueDailySpecial = typeof gastronomyDailySpecials.$inferInsert;
-/** Type-inferred select type for gastronomy_daily_specials rows. */
+/** Type-inferred select type for venue_daily_specials rows. */
 export type SelectVenueDailySpecial = typeof gastronomyDailySpecials.$inferSelect;

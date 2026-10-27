@@ -17,7 +17,7 @@ import { experiences } from './experiences.dbschema.ts';
 /**
  * Experience review table (SPEC-240).
  *
- * Mirrors gastronomy_reviews exactly:
+ * Mirrors venue_reviews exactly:
  * - FK experienceId CASCADE (if the listing is deleted, reviews go with it)
  * - FK userId SET NULL (review stays when reviewer is deleted)
  * - Granular rating breakdown via jsonb (service/value/guide/overall)

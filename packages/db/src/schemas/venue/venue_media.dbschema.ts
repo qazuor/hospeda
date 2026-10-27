@@ -32,7 +32,7 @@ import { gastronomies } from './venue.dbschema.ts';
 export const GastronomyMediaStatePgEnum = pgEnum('venue_media_state_enum', ['visible', 'archived']);
 
 /**
- * `gastronomy_media` — relational table for gastronomy listing gallery photos.
+ * `venue_media` — relational table for gastronomy listing gallery photos.
  *
  * Replaces the JSONB `gastronomies.media.gallery` / `media.featuredImage` sub-fields
  * with a proper per-row structure. Videos live in the dedicated `gastronomies.videos`
@@ -151,7 +151,7 @@ export const gastronomyMedia = pgTable(
 );
 
 /**
- * Drizzle relations for `gastronomy_media`.
+ * Drizzle relations for `venue_media`.
  *
  * Each media row belongs to exactly one gastronomy listing.
  */

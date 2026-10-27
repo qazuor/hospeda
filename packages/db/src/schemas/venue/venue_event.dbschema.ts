@@ -48,7 +48,7 @@ export const GastronomyEventRecurrencePgEnum = pgEnum('venue_event_recurrence_en
 ]);
 
 /**
- * `gastronomy_events` — the venue's OWN agenda (HOS-1042).
+ * `venue_events` — the venue's OWN agenda (HOS-1042).
  *
  * Live music night, happy hour, dinner show, the Tuesday deal: things that
  * happen AT the venue and that a diner may show up for.
@@ -83,7 +83,7 @@ export const GastronomyEventRecurrencePgEnum = pgEnum('venue_event_recurrence_en
  *
  * ## What this table deliberately does NOT carry
  *
- * - **No i18n columns.** Same position `gastronomy_menu_sections` takes: a
+ * - **No i18n columns.** Same position `venue_menu_sections` takes: a
  *   multi-language agenda is a retrofit when someone asks for one, not two
  *   columns nothing reads today.
  * - **No moderation state.** The parent listing carries one; a finer-grained
@@ -91,7 +91,7 @@ export const GastronomyEventRecurrencePgEnum = pgEnum('venue_event_recurrence_en
  * - **No price, no capacity, no ticketing.** An agenda entry announces that
  *   something happens. Selling a seat for it is a different product.
  *
- * Structure otherwise mirrors `gastronomy_menu_sections`: FK CASCADE,
+ * Structure otherwise mirrors `venue_menu_sections`: FK CASCADE,
  * `display_order` assigned by the whole-document writer, and the full audit
  * block.
  *
@@ -104,7 +104,7 @@ export const gastronomyEvents = pgTable(
         /**
          * FK to the owning listing. ON DELETE CASCADE so the database removes
          * the agenda when the listing is hard-deleted — the same choice
-         * `gastronomy_menu_sections` and `gastronomy_media` make.
+         * `venue_menu_sections` and `venue_media` make.
          */
         gastronomyId: uuid('venue_id')
             .notNull()
@@ -185,7 +185,7 @@ export const gastronomyEventsRelations = relations(gastronomyEvents, ({ one }) =
     })
 }));
 
-/** Type-inferred insert type for gastronomy_events rows. */
+/** Type-inferred insert type for venue_events rows. */
 export type InsertVenueEvent = typeof gastronomyEvents.$inferInsert;
-/** Type-inferred select type for gastronomy_events rows. */
+/** Type-inferred select type for venue_events rows. */
 export type SelectVenueEvent = typeof gastronomyEvents.$inferSelect;

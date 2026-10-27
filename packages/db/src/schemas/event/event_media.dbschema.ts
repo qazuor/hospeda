@@ -24,7 +24,7 @@ import { events } from './event.dbschema.ts';
  * remediation does, SPEC-167, and posts have no plan). Carried anyway so post,
  * event, gastronomy, experience and accommodation media share ONE table shape — and therefore
  * one sync/compose implementation. Own enum type per table, matching how
- * `gastronomy_media` and `experience_media` each declare theirs (HOS-372).
+ * `venue_media` and `experience_media` each declare theirs (HOS-372).
  */
 export const EventMediaStatePgEnum = pgEnum('event_media_state_enum', ['visible', 'archived']);
 
@@ -33,7 +33,7 @@ export const EventMediaStatePgEnum = pgEnum('event_media_state_enum', ['visible'
  *
  * Replaces the JSONB `events.media.gallery` / `media.featuredImage` sub-fields
  * with a per-row structure, exactly as `accommodation_media` (SPEC-204) and
- * `gastronomy_media` / `experience_media` (HOS-372) already do. **Videos remain
+ * `venue_media` / `experience_media` (HOS-372) already do. **Videos remain
  * in the `events.media` JSONB column** (SPEC-204 D1) — they carry no per-row
  * state and no gallery ordering.
  *

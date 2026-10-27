@@ -6,7 +6,7 @@ import { gastronomies } from './venue.dbschema.ts';
 import { gastronomyMenuItems } from './venue_menu_item.dbschema.ts';
 
 /**
- * `gastronomy_menu_sections` — the course headings of a venue's real menu (HOS-895).
+ * `venue_menu_sections` — the course headings of a venue's real menu (HOS-895).
  *
  * ## Why a table and not JSONB
  *
@@ -20,7 +20,7 @@ import { gastronomyMenuItems } from './venue_menu_item.dbschema.ts';
  * ## `name_i18n` / `description_i18n` (HOS-1043)
  *
  * Additive nullable `I18nText` columns, retrofitted exactly as HOS-117
- * retrofitted `gastronomy_faqs.question_i18n`/`answer_i18n`: the legacy
+ * retrofitted `venue_faqs.question_i18n`/`answer_i18n`: the legacy
  * `name`/`description` columns stay the `es` fallback source and the only
  * value ever written by an owner without the `multilingual_venue_menu`
  * entitlement. Gated on WRITE (`PUT .../menu` refuses a document carrying
@@ -35,7 +35,7 @@ import { gastronomyMenuItems } from './venue_menu_item.dbschema.ts';
  *   that already carries its own `moderation_state`; a second, finer-grained
  *   moderation surface is not part of this issue.
  *
- * Structure mirrors `gastronomy_faqs`: FK CASCADE, `display_order` with the
+ * Structure mirrors `venue_faqs`: FK CASCADE, `display_order` with the
  * NULLS-LAST read convention, and the full audit block.
  *
  * @see packages/db/src/schemas/venue/venue_menu_item.dbschema.ts
@@ -47,7 +47,7 @@ export const gastronomyMenuSections = pgTable(
         /**
          * FK to the owning listing. ON DELETE CASCADE so the database — not a
          * check someone has to remember to write — removes the menu when the
-         * listing is hard-deleted. Same choice `gastronomy_media` makes.
+         * listing is hard-deleted. Same choice `venue_media` makes.
          */
         gastronomyId: uuid('venue_id')
             .notNull()
@@ -104,7 +104,7 @@ export const gastronomyMenuSectionsRelations = relations(
     })
 );
 
-/** Type-inferred insert type for gastronomy_menu_sections rows. */
+/** Type-inferred insert type for venue_menu_sections rows. */
 export type InsertVenueMenuSection = typeof gastronomyMenuSections.$inferInsert;
-/** Type-inferred select type for gastronomy_menu_sections rows. */
+/** Type-inferred select type for venue_menu_sections rows. */
 export type SelectVenueMenuSection = typeof gastronomyMenuSections.$inferSelect;
