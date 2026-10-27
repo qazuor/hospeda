@@ -170,15 +170,15 @@ describe('TEST:1819:4 AC:1:3 — no old gastronomy identifiers remain after migr
         const { rows } = await getTestPool().query<{ count: string }>(`
             SELECT count(*)::text AS count
             FROM (
-                SELECT id AS value FROM vertical WHERE id ILIKE '%gastronom%'
-                UNION ALL SELECT id FROM plan WHERE id::text ILIKE '%gastronom%'
-                UNION ALL SELECT slug FROM plan WHERE slug ILIKE '%gastronom%'
-                UNION ALL SELECT key FROM catalog_key WHERE key ILIKE '%gastronom%'
+                SELECT id::text AS value FROM vertical WHERE id::text ILIKE '%gastronom%'
+                UNION ALL SELECT id::text FROM plan WHERE id::text ILIKE '%gastronom%'
+                UNION ALL SELECT slug::text FROM plan WHERE slug ILIKE '%gastronom%'
+                UNION ALL SELECT key::text FROM catalog_key WHERE key ILIKE '%gastronom%'
                 UNION ALL SELECT id::text FROM addon WHERE id::text ILIKE '%gastronom%'
-                UNION ALL SELECT slug FROM addon WHERE slug ILIKE '%gastronom%'
+                UNION ALL SELECT slug::text FROM addon WHERE slug ILIKE '%gastronom%'
                 UNION ALL SELECT id::text FROM addon_version WHERE id::text ILIKE '%gastronom%'
-                UNION ALL SELECT key FROM addon_version_entitlement WHERE key ILIKE '%gastronom%'
-                UNION ALL SELECT key FROM addon_version_limit WHERE key ILIKE '%gastronom%'
+                UNION ALL SELECT key::text FROM addon_version_entitlement WHERE key ILIKE '%gastronom%'
+                UNION ALL SELECT key::text FROM addon_version_limit WHERE key ILIKE '%gastronom%'
                 UNION ALL SELECT id::text FROM addon_product WHERE id::text ILIKE '%gastronom%'
             ) AS born_catalog
         `);
