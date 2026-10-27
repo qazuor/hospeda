@@ -189,7 +189,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         await page.goto(
             listingEditorUrl({
                 webUrl: WEB_URL,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 listingId: gastronomyId,
                 section: 'datos'
             }),
@@ -259,7 +259,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         await page.goto(
             listingEditorUrl({
                 webUrl: WEB_URL,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 listingId: gastronomyId,
                 section: 'traducciones'
             }),
@@ -303,7 +303,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         await page.goto(
             listingEditorUrl({
                 webUrl: WEB_URL,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 listingId: gastronomyId,
                 section: 'traducciones'
             }),

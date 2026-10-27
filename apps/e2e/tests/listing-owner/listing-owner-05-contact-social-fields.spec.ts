@@ -143,7 +143,7 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
         await page.goto(
             listingEditorUrl({
                 webUrl: WEB_URL,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 listingId: gastronomyId,
                 section: 'contacto'
             }),
@@ -194,7 +194,7 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
         await page.goto(
             listingEditorUrl({
                 webUrl: WEB_URL,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 listingId: gastronomyId,
                 section: 'contacto'
             }),
@@ -228,7 +228,7 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
         await page.goto(
             listingEditorUrl({
                 webUrl: WEB_URL,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 listingId: gastronomyId,
                 section: 'contacto'
             }),
