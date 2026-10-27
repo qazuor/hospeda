@@ -114,7 +114,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
     test.beforeAll(async () => {
         // Resolve listing IDs from slug.
         const gastroRows = await execSQL<{ id: string; type: string }>(
-            'SELECT id, type FROM gastronomies WHERE slug = $1 LIMIT 1',
+            'SELECT id, type FROM venues WHERE slug = $1 LIMIT 1',
             [GASTRONOMY_SLUG]
         );
         const gastroRow = gastroRows[0];
@@ -137,7 +137,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
 
         // Read the current nameI18n es value so we can restore it.
         const nameI18nRows = await execSQL<{ name_i18n: Record<string, string> | null }>(
-            'SELECT name_i18n FROM gastronomies WHERE slug = $1 LIMIT 1',
+            'SELECT name_i18n FROM venues WHERE slug = $1 LIMIT 1',
             [GASTRONOMY_SLUG]
         );
         const nameI18nVal = nameI18nRows[0]?.name_i18n;
@@ -147,7 +147,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
     test.afterAll(async () => {
         // Restore gastronomy type to the seeded value.
         if (originalGastronomyType) {
-            await execSQL('UPDATE gastronomies SET type = $1 WHERE slug = $2', [
+            await execSQL('UPDATE venues SET type = $1 WHERE slug = $2', [
                 originalGastronomyType,
                 GASTRONOMY_SLUG
             ]);
@@ -161,7 +161,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         }
         // Restore gastronomy nameI18n.es to the original value (NULL or string).
         await execSQL(
-            "UPDATE gastronomies SET name_i18n = jsonb_set(COALESCE(name_i18n, '{}'::jsonb), '{es}', $1::jsonb) WHERE slug = $2",
+            "UPDATE venues SET name_i18n = jsonb_set(COALESCE(name_i18n, '{}'::jsonb), '{es}', $1::jsonb) WHERE slug = $2",
             [JSON.stringify(originalGastronomyNameI18nEs ?? null), GASTRONOMY_SLUG]
         );
     });
@@ -219,7 +219,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         // toast, which is what now reports a form that never went dirty.
         const saved = await saveListingEditor({
             page,
-            pathPattern: /\/protected\/gastronomies\//
+            pathPattern: /\/protected\/venues\//
         });
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
 
@@ -292,7 +292,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
 
         const saved = await saveListingEditor({
             page,
-            pathPattern: /\/protected\/gastronomies\//
+            pathPattern: /\/protected\/venues\//
         });
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
 

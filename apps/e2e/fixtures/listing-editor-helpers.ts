@@ -229,7 +229,7 @@ export function listingSaveButton({ page }: { readonly page: Page }): Locator {
  * form was not dirty" but that the app actively said so.
  *
  * @param params.page - The Playwright page sitting on the editor route
- * @param params.pathPattern - Matches the expected PATCH URL (e.g. `/\/protected\/gastronomies\//`)
+ * @param params.pathPattern - Matches the expected PATCH URL (e.g. `/\/protected\/venues\//`)
  * @param params.timeout - Milliseconds to wait for the PATCH (default 15s)
  */
 export async function saveListingEditor({

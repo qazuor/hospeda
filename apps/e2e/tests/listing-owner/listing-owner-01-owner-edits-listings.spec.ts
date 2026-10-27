@@ -3,14 +3,14 @@
  * (gastronomy + experience) and changes are visible on the public ficha.
  *
  * Actors: gastro-owner-julieta@local.test (role VENUE_OWNER, seeded by
- *   @repo/seed example pipeline: gastronomies.seed + experiences.seed).
+ *   @repo/seed example pipeline: venues.seed + experiences.seed).
  * Tags: @p0 @listing-owner
  *
  * Preconditions:
  *   - e2e:seed has run (`pnpm --filter hospeda-e2e e2e:seed`).
  *   - Julieta's account (gastro-owner-julieta@local.test / Password123!)
  *     exists with role VENUE_OWNER and profileCompleted=true.
- *   - She owns PUBLIC/ACTIVE gastronomies:
+ *   - She owns PUBLIC/ACTIVE venues:
  *       - la-parrilla-del-puerto (slug)
  *       - cafe-del-palacio       (slug)
  *   - She owns PUBLIC/ACTIVE experiences (same listingOwnerId):
@@ -116,7 +116,7 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings �
     test.afterEach(async () => {
         // Restore the gastronomy menuUrl to the seeded value.
         if (originalMenuUrl !== undefined) {
-            await execSQL('UPDATE gastronomies SET menu_url = $1 WHERE slug = $2', [
+            await execSQL('UPDATE venues SET menu_url = $1 WHERE slug = $2', [
                 originalMenuUrl,
                 GASTRONOMY_SLUG
             ]);
@@ -139,7 +139,7 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings �
         // ── Precondition: snapshot original seeded values ──────────────────────
 
         const gastronomyRows = await execSQL<{ id: string; menu_url: string | null }>(
-            'SELECT id, menu_url FROM gastronomies WHERE slug = $1 LIMIT 1',
+            'SELECT id, menu_url FROM venues WHERE slug = $1 LIMIT 1',
             [GASTRONOMY_SLUG]
         );
         const gastronomyId = gastronomyRows[0]?.id;
@@ -272,7 +272,7 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings �
         // free, before the editor moved onto the shared ActionBar.
         const gastroSaved = await saveListingEditor({
             page,
-            pathPattern: /\/protected\/gastronomies\//
+            pathPattern: /\/protected\/venues\//
         });
         expect(gastroSaved.ok()).toBe(true);
 
