@@ -35,12 +35,12 @@ import {
     eq,
     experienceFaqs,
     experienceMedia,
-    gastronomyFaqs,
-    gastronomyMedia,
     inArray,
     type SelectDomainEvent,
     users,
-    VenueModel
+    VenueModel,
+    venueFaqs,
+    venueMedia
 } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -116,10 +116,10 @@ const ALL_CONTENT_STRINGS = [
 function ownerActor(userId: string): Actor {
     return {
         id: userId,
-        roles: [RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER, RoleEnum.EXPERIENCE_OWNER],
+        roles: [RoleEnum.HOST, RoleEnum.VENUE_OWNER, RoleEnum.EXPERIENCE_OWNER],
         permissions: [
             PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-            PermissionEnum.GASTRONOMY_EDIT_OWN,
+            PermissionEnum.VENUE_EDIT_OWN,
             PermissionEnum.EXPERIENCE_EDIT_OWN
         ]
     };
@@ -368,7 +368,7 @@ async function insertSeedFaq(
     if (vertical === 'accommodation') {
         await tx.insert(accommodationFaqs).values({ ...row, accommodationId: listingId });
     } else if (vertical === 'venue') {
-        await tx.insert(gastronomyFaqs).values({ ...row, gastronomyId: listingId });
+        await tx.insert(venueFaqs).values({ ...row, gastronomyId: listingId });
     } else {
         await tx.insert(experienceFaqs).values({ ...row, experienceId: listingId });
     }
@@ -393,7 +393,7 @@ async function insertSeedMedia(
     if (vertical === 'accommodation') {
         await tx.insert(accommodationMedia).values({ ...row, accommodationId: listingId });
     } else if (vertical === 'venue') {
-        await tx.insert(gastronomyMedia).values({ ...row, gastronomyId: listingId });
+        await tx.insert(venueMedia).values({ ...row, gastronomyId: listingId });
     } else {
         await tx.insert(experienceMedia).values({ ...row, experienceId: listingId });
     }

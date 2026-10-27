@@ -261,7 +261,7 @@ class TestListingService extends BaseListingService<
 const makeActor = (): Actor => ({
     id: OWNER_ID,
     roles: [RoleEnum.ADMIN],
-    permissions: [PermissionEnum.GASTRONOMY_EDIT_ALL]
+    permissions: [PermissionEnum.VENUE_EDIT_ALL]
 });
 
 function makeService() {

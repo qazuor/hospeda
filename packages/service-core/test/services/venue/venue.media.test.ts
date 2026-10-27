@@ -104,8 +104,8 @@ function makeMediaRow(overrides: Partial<VenueMedia> = {}): VenueMedia {
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.GASTRONOMY_OWNER],
-    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
+    roles: [RoleEnum.VENUE_OWNER],
+    permissions: [PermissionEnum.VENUE_EDIT_OWN]
 };
 
 const touristActor: Actor = {

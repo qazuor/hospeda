@@ -17,8 +17,6 @@ import {
     events,
     experienceReviews,
     experiences,
-    gastronomies,
-    gastronomyReviews,
     ownerPromotions,
     postSponsors,
     postSponsorships,
@@ -31,7 +29,9 @@ import {
     sponsorships,
     tags,
     userBookmarks,
-    users
+    users,
+    venueReviews,
+    venues
 } from '@repo/db';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -827,7 +827,7 @@ export async function seedVenue(
         lifecycleState: 'ACTIVE'
     } as typeof destinations.$inferInsert);
 
-    await tx.insert(gastronomies).values({
+    await tx.insert(venues).values({
         id: gastronomyId,
         slug: `seed-gastronomy-${uid}`,
         name: 'La Parrilla de Prueba',
@@ -839,7 +839,7 @@ export async function seedVenue(
         publicationStatus: overrides.publicationStatus ?? PublicationStatusEnum.DRAFT,
         inactiveSince: overrides.inactiveSince ?? new Date(),
         deadlinesVersion: overrides.deadlinesVersion ?? 1
-    } as typeof gastronomies.$inferInsert);
+    } as typeof venues.$inferInsert);
 
     return { ownerId, destinationId, gastronomyId };
 }
@@ -866,7 +866,7 @@ export async function seedVenueReview(
 ): Promise<{ readonly reviewId: string }> {
     const reviewId = options.reviewId ?? crypto.randomUUID();
 
-    await tx.insert(gastronomyReviews).values({
+    await tx.insert(venueReviews).values({
         id: reviewId,
         gastronomyId: options.gastronomyId,
         userId: options.userId,
@@ -875,7 +875,7 @@ export async function seedVenueReview(
         overallRating: options.overallRating ?? 4,
         lifecycleState: 'ACTIVE',
         moderationState: options.moderationState ?? 'PENDING'
-    } as typeof gastronomyReviews.$inferInsert);
+    } as typeof venueReviews.$inferInsert);
 
     return { reviewId };
 }

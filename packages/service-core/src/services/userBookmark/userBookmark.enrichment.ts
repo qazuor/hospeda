@@ -22,10 +22,10 @@ import {
     events,
     experienceMediaModel,
     experiences,
-    gastronomies,
     getDb,
     posts,
-    venueMediaModel
+    venueMediaModel,
+    venues
 } from '@repo/db';
 import type { EntityTypeEnum, UserBookmark } from '@repo/schemas';
 import { inArray } from 'drizzle-orm';
@@ -213,12 +213,12 @@ export async function enrichBookmarksWithEntityInfo(
         gastronomyIds.length > 0
             ? db
                   .select({
-                      id: gastronomies.id,
-                      name: gastronomies.name,
-                      slug: gastronomies.slug
+                      id: venues.id,
+                      name: venues.name,
+                      slug: venues.slug
                   })
-                  .from(gastronomies)
-                  .where(inArray(gastronomies.id, gastronomyIds))
+                  .from(venues)
+                  .where(inArray(venues.id, gastronomyIds))
             : Promise.resolve([]),
         gastronomyIds.length > 0
             ? venueMediaModel.findByVenues({

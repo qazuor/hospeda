@@ -6,7 +6,6 @@ import {
     desc,
     eq,
     experiences,
-    gastronomies,
     getDb,
     inArray,
     isNull,
@@ -14,6 +13,7 @@ import {
     planVersions,
     trials,
     users,
+    venues,
     verticalDeadlineVersions
 } from '@repo/db';
 import type { Vertical } from '@repo/schemas';
@@ -96,16 +96,16 @@ export async function writeCutoverTrials({
             ),
         db
             .select({
-                listingId: gastronomies.id,
-                userId: gastronomies.ownerId,
-                startedAt: gastronomies.inactiveSince
+                listingId: venues.id,
+                userId: venues.ownerId,
+                startedAt: venues.inactiveSince
             })
-            .from(gastronomies)
+            .from(venues)
             .where(
                 and(
-                    eq(gastronomies.publicationStatus, 'PUBLISHED'),
-                    isNull(gastronomies.deletedAt),
-                    ownerIds ? inArray(gastronomies.ownerId, [...ownerIds]) : undefined
+                    eq(venues.publicationStatus, 'PUBLISHED'),
+                    isNull(venues.deletedAt),
+                    ownerIds ? inArray(venues.ownerId, [...ownerIds]) : undefined
                 )
             ),
         db

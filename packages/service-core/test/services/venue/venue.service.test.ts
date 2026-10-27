@@ -72,27 +72,27 @@ function makeVenueEntity(overrides: Partial<Record<string, unknown>> = {}): Venu
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.GASTRONOMY_OWNER],
+    roles: [RoleEnum.VENUE_OWNER],
     // SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN replaces 10 per-section perms
-    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
+    permissions: [PermissionEnum.VENUE_EDIT_OWN]
 };
 
 const staffActor: Actor = {
     id: 'staff-uuid-1',
     roles: [RoleEnum.ADMIN],
     permissions: [
-        PermissionEnum.GASTRONOMY_CREATE,
-        PermissionEnum.GASTRONOMY_EDIT_ALL,
-        PermissionEnum.GASTRONOMY_DELETE,
-        PermissionEnum.GASTRONOMY_VIEW_ALL
+        PermissionEnum.VENUE_CREATE,
+        PermissionEnum.VENUE_EDIT_ALL,
+        PermissionEnum.VENUE_DELETE,
+        PermissionEnum.VENUE_VIEW_ALL
     ]
 };
 
 const otherUserActor: Actor = {
     id: OTHER_USER,
-    roles: [RoleEnum.GASTRONOMY_OWNER],
+    roles: [RoleEnum.VENUE_OWNER],
     // SPEC-253 D2=b: GASTRONOMY_EDIT_OWN gives owner rights but entity.ownerId != OTHER_USER
-    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
+    permissions: [PermissionEnum.VENUE_EDIT_OWN]
 };
 
 // ---------------------------------------------------------------------------
@@ -101,7 +101,7 @@ const otherUserActor: Actor = {
 
 function makeVenueModel(entity: Venue | null = null) {
     return {
-        entityName: 'gastronomy',
+        entityName: 'venue',
         findById: vi.fn().mockResolvedValue(entity),
         findByIds: vi.fn().mockResolvedValue(entity ? [entity] : []),
         findOne: vi.fn().mockResolvedValue(entity),
@@ -237,7 +237,7 @@ describe('GastronomyService.updateOwn', () => {
         // Actor is the owner but has NO permissions (not GASTRONOMY_EDIT_OWN, not GASTRONOMY_EDIT_ALL)
         const actorNoPerm: Actor = {
             id: OWNER_ID,
-            roles: [RoleEnum.GASTRONOMY_OWNER],
+            roles: [RoleEnum.VENUE_OWNER],
             permissions: []
         };
         const result = await service.updateOwn(
