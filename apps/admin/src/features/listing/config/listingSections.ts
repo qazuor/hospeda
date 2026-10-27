@@ -28,7 +28,7 @@
  * (HOS-372) — the update schemas silently strip a `media` key, so every
  * photo uploaded through those fields was orphaned in Cloudinary with no DB
  * row ever created. Photos are now managed exclusively via the relational
- * `gastronomy_media` / `experience_media` tables through the dedicated
+ * `venue_media` / `experience_media` tables through the dedicated
  * Gallery tab (`ListingGalleryManager`, mirroring accommodations'
  * `GalleryManager`). `videos` is unaffected — it is its own top-level
  * column, not nested under `media`.
