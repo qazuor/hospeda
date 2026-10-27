@@ -346,4 +346,18 @@ describe('TEST:1814:3 AC:1:16 T1 compares the committed inventory with staging',
             expect(counts.reduce((sum, count) => sum + count, 0)).toBeLessThan(15365);
         }
     );
+
+    it.skipIf(stagingInventory === null)(
+        'TEST:1815:1 AC:1:17 checks the lower committed inventory against staging (requires origin/staging)',
+        () => {
+            const result = run({ root: ROOT, baseInventory: stagingInventory });
+            expect(result.exitCode, result.output).toBe(0);
+            const inventory = JSON.parse(
+                readFileSync(resolve(ROOT, 'scripts/guards/venue-rename-frontier.json'), 'utf8')
+            ) as { files: Record<string, number> };
+            const counts = Object.values(inventory.files);
+            expect(counts.length).toBeLessThan(1678);
+            expect(counts.reduce((sum, count) => sum + count, 0)).toBeLessThan(11767);
+        }
+    );
 });
