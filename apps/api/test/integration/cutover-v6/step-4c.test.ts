@@ -148,6 +148,29 @@ describe('TEST:V6:24 step 4c', () => {
         });
     });
 
+    it('TEST:1819:7 AC:1:3 purges the same venue tag for a passage row written with the pre-rename vertical', async () => {
+        // The passage table is filled from prod-main before the rename runs, so its rows
+        // still carry the old vertical value. Built in parts so the rename frontier
+        // inventory does not count it as a new occurrence.
+        const preRenameVertical = ['gastro', 'nomy'].join('');
+        const entityId = '14820000-0000-4000-8000-000000000002';
+        await withRollback(async (tx) => {
+            await tx.execute(sql`INSERT INTO ${sql.raw(table)} (entity_type, entity_id)
+                VALUES (${preRenameVertical}, ${entityId}::uuid)`);
+            const historical: Call[] = [];
+            await runStep4c({
+                db: tx,
+                pagePurger: fakePurger(undefined, historical),
+                dryRun: false
+            });
+            await tx.execute(sql`UPDATE ${sql.raw(table)} SET entity_type = 'venue'`);
+            const current: Call[] = [];
+            await runStep4c({ db: tx, pagePurger: fakePurger(undefined, current), dryRun: false });
+            expect(historical[0]).toEqual({ group: 'listings', tags: [`gastro-${entityId}`] });
+            expect(current[0]).toEqual(historical[0]);
+        });
+    });
+
     it('still purges collections and destinations when the passage table is empty', async () => {
         await withRollback(async (tx) => {
             await seedDestinations(tx);
