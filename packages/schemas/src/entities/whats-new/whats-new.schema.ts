@@ -65,7 +65,7 @@ export const WhatsNewAudienceRoleSchema = z.enum([
     'EDITOR',
     'ADMIN',
     'SUPER_ADMIN',
-    'GASTRONOMY_OWNER',
+    'VENUE_OWNER',
     'EXPERIENCE_OWNER',
     'SPONSOR',
     'USER'

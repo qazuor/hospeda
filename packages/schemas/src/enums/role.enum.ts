@@ -28,7 +28,7 @@ export enum RoleEnum {
      * table, an account that owns a restaurant AND an excursion simply holds two
      * rows — there is no conflict to resolve between the two.
      */
-    GASTRONOMY_OWNER = 'GASTRONOMY_OWNER',
+    GASTRONOMY_OWNER = 'VENUE_OWNER',
     /**
      * Owner of one or more experience listings (HOS-1077).
      *
