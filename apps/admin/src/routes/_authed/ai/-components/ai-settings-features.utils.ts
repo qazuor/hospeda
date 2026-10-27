@@ -20,7 +20,7 @@
  *   upstream of `createConfiguredAiService`, so EVERY AI feature answers 400.
  *   Two unconfigured keys took down the seven that were configured.
  *
- * HOS-400 widened the enum with `chat_gastronomy` and `chat_experience` and
+ * HOS-400 widened the enum with `chat_venue` and `chat_experience` and
  * updated `AiFeatureId` and `FEATURE_LABELS`, but not the lists here — so the
  * operator could neither see nor configure the two features whose absence was
  * breaking everything. The guard test exists so the next enum member cannot
