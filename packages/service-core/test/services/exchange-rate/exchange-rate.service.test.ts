@@ -248,6 +248,32 @@ describe('ExchangeRateService', () => {
             expect(result.error).toBeUndefined();
         });
 
+        it('should fail with NOT_FOUND when the hard delete removes no row (HOS-1903)', async () => {
+            const manualRate: ExchangeRate = {
+                id: '550e8400-e29b-41d4-a716-446655440000',
+                fromCurrency: PriceCurrencyEnum.USD,
+                toCurrency: PriceCurrencyEnum.ARS,
+                rate: 1600,
+                inverseRate: 0.000625,
+                rateType: ExchangeRateTypeEnum.STANDARD,
+                source: ExchangeRateSourceEnum.MANUAL,
+                isManualOverride: true,
+                fetchedAt: new Date(),
+                expiresAt: null,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+
+            vi.spyOn(mockModel, 'findById').mockResolvedValue(manualRate);
+            vi.spyOn(mockModel, 'hardDelete').mockResolvedValue(0);
+
+            const result = await service.removeManualOverride(mockActor, {
+                id: '550e8400-e29b-41d4-a716-446655440000'
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+
         it('should reject removing non-manual rates', async () => {
             const nonManualRate: ExchangeRate = {
                 id: '550e8400-e29b-41d4-a716-446655440000',
