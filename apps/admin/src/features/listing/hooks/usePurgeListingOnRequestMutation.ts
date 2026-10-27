@@ -28,7 +28,7 @@ export const PURGE_LISTING_PLURAL: Readonly<Record<PurgeListingVertical, string>
 };
 
 /** Query roots match each entity hook's configured `entityName`. */
-const PURGE_LISTING_ENTITY_NAME: Readonly<Record<PurgeListingVertical, string>> = {
+export const PURGE_LISTING_ENTITY_NAME: Readonly<Record<PurgeListingVertical, string>> = {
     accommodation: 'accommodations',
     venue: 'gastronomies',
     experience: 'experiences'
