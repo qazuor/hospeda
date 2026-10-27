@@ -7,7 +7,7 @@ import { row } from './outbox-batch.harness.js';
 const renderers = createBillingGraceReminderRenderers({ siteUrl: 'https://hospeda.test' });
 const base = {
     subscriptionId: 'private-id',
-    vertical: 'gastronomy',
+    vertical: 'venue',
     graceEndsAt: '2026-10-20T02:00:00.000Z',
     daysBefore: 3,
     deadlinesVersion: 1

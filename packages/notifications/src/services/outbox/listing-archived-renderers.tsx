@@ -7,7 +7,7 @@ import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 
 /** Outbox template key of the on-archive listing notice (`@repo/verticals` enqueues it). */
 const LISTING_ARCHIVED = 'verticals.listing-archived';
-const LISTING_VERTICALS: readonly string[] = ['accommodation', 'gastronomy', 'experience'];
+const LISTING_VERTICALS: readonly string[] = ['accommodation', 'venue', 'experience'];
 const TRANSITIONS: readonly string[] = ['PB4', 'PB5'];
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 

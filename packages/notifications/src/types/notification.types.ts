@@ -382,7 +382,7 @@ export interface SubscriptionEventPayload extends BaseNotificationPayload {
     /**
      * The subscription's billing vertical (HOS-1283) — the raw
      * `billing_subscriptions.product_domain` string (`'accommodation'`,
-     * `'gastronomy'`, `'experience'`, `'tourist'`, `'partner'`, or `null` on a
+     * `'venue'`, `'experience'`, `'tourist'`, `'partner'`, or `null` on a
      * pre-domain row), never the `@repo/schemas` enum: this package does not
      * depend on `@repo/schemas` (see {@link PartnerMentionEntryPayload}'s doc).
      * Only `RENEWAL_REMINDER` reads it today, to pick the right footer noun in

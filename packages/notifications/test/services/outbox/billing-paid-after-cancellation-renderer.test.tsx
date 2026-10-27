@@ -8,7 +8,7 @@ const renderer = createBillingSignupRenderers({ siteUrl: 'https://hospeda.test' 
 ]!;
 const payload = {
     subscriptionId: 'private-subscription',
-    vertical: 'gastronomy',
+    vertical: 'venue',
     serviceEndsAt: '2026-10-20T02:00:00.000Z',
     recurringAddonsCut: true
 };

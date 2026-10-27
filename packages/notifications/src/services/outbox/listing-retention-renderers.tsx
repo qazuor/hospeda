@@ -10,7 +10,7 @@ import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 
 const BEFORE_ARCHIVE = 'verticals.listing-retention-before-archive';
 const BEFORE_DELETION = 'verticals.listing-retention-before-deletion';
-const LISTING_VERTICALS: readonly string[] = ['accommodation', 'gastronomy', 'experience'];
+const LISTING_VERTICALS: readonly string[] = ['accommodation', 'venue', 'experience'];
 const TRANSITIONS: readonly string[] = ['PB4', 'PB5'];
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
