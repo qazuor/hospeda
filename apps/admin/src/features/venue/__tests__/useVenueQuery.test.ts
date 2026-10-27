@@ -1,15 +1,15 @@
 // @vitest-environment jsdom
 /**
- * @file useGastronomyQuery.test.ts
+ * @file useVenueQuery.test.ts
  * Unit tests for gastronomy CRUD hooks (SPEC-239 T-059).
  *
  * Tests cover:
- *  - useGastronomyQuery — detail fetch + enabled flag
- *  - useCreateGastronomyMutation — POST + return value
- *  - useUpdateGastronomyMutation — PUT/PATCH + return value
- *  - useAssignGastronomyOwnerMutation — assign-owner POST + method
- *  - useModerateGastronomyReviewMutation — review moderation POST
- *  - useGastronomyPendingReviewsQuery — pending reviews list
+ *  - useVenueQuery — detail fetch + enabled flag
+ *  - useCreateVenueMutation — POST + return value
+ *  - useUpdateVenueMutation — PUT/PATCH + return value
+ *  - useAssignVenueOwnerMutation — assign-owner POST + method
+ *  - useModerateVenueReviewMutation — review moderation POST
+ *  - useVenuePendingReviewsQuery — pending reviews list
  *
  * Pattern: assert on the return value of `mutateAsync` (not `result.current.isSuccess`),
  * since React state updates are async and may not settle immediately after the call.

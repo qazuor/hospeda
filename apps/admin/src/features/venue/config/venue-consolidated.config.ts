@@ -1,10 +1,10 @@
 /**
- * @file gastronomy-consolidated.config.ts
+ * @file venue-consolidated.config.ts
  * Consolidated section configuration for the gastronomy entity.
  *
  * Assembles the shared listing sections (identity + operational) and injects
  * a gastronomy-specific section in between that covers:
- *   - type (GastronomyTypeEnum SELECT)
+ *   - type (VenueTypeEnum SELECT)
  *   - priceRange (PriceRangeEnum SELECT, optional)
  *   - menuUrl (TEXT, optional — URL field)
  *

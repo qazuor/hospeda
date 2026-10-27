@@ -1,5 +1,5 @@
 /**
- * @file GastronomyCard.tsx
+ * @file VenueCard.tsx
  * List card for a gastronomy listing (SPEC-239 T-059).
  *
  * Displays: name, type badge, owner display name, publication status,

@@ -1,5 +1,5 @@
 /**
- * @file gastronomy.columns.ts
+ * @file venue.columns.ts
  * Column factory for the gastronomy admin list page.
  *
  * Mirrors the host-trades columns pattern.  Each column receives a translation
@@ -19,7 +19,7 @@ import type { VenueListItem } from './venue.config';
 // Badge label maps
 // ---------------------------------------------------------------------------
 
-/** Spanish labels for each GastronomyTypeEnum value. */
+/** Spanish labels for each VenueTypeEnum value. */
 const TYPE_LABELS: Record<VenueTypeEnum, string> = {
     [VenueTypeEnum.RESTAURANT]: 'Restaurante',
     [VenueTypeEnum.BAR]: 'Bar',

@@ -35,7 +35,7 @@ function VenueCreatePage() {
     const { t } = useTranslations();
 
     // TYPE-WORKAROUND: EntityCreatePageBase expects a generic mutation shape;
-    // useCreateGastronomyMutation returns a strongly-typed variant that is
+    // useCreateVenueMutation returns a strongly-typed variant that is
     // structurally compatible at runtime (brand-only mismatch, safe at the call site).
     const createMutation = useCreateVenueMutation() as unknown as {
         mutateAsync: (values: Record<string, unknown>) => Promise<unknown>;

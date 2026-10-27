@@ -8,7 +8,7 @@ import * as mod from '../../../../src/routes/_authed/gastronomies/$id_.edit';
  * This file used to assert that the gastronomy edit page wired
  * `media.featuredImage` / `media.gallery` field handlers to Cloudinary
  * uploads. That wiring was the bug: `media` is not a writable key on
- * `GastronomyUpdateInputSchema` (the `media` JSONB column was dropped —
+ * `VenueUpdateInputSchema` (the `media` JSONB column was dropped —
  * HOS-372), so the schema silently stripped it on every PATCH. Every photo
  * uploaded through those fields reached Cloudinary but never got a DB row —
  * a permanently-billed orphan. Photos are now managed exclusively via the

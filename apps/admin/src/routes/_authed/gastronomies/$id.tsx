@@ -3,7 +3,7 @@
  *  - General fields via EntityViewContent (flat mode)
  *  - FAQs sub-tab (FaqManager, gastronomies entity type)
  *  - Reviews moderation sub-tab (pending reviews + approve/reject actions)
- *  - Assign-owner action (OwnerSelect + useAssignGastronomyOwnerMutation)
+ *  - Assign-owner action (OwnerSelect + useAssignVenueOwnerMutation)
  *  - Purge action at the owner's request (action 23, ListingPurgeOnRequestCard);
  *    the panel has no other listing delete or restore (HOS-1477, AC:V6:25)
  */
@@ -46,7 +46,7 @@ export const Route = createFileRoute('/_authed/gastronomies/$id')({
 /**
  * Minimal review shape returned by the pending-reviews endpoint.
  *
- * Field names mirror the `GastronomyReviewSchema` response: `overallRating`
+ * Field names mirror the `VenueReviewSchema` response: `overallRating`
  * is the scalar star rating, `rating` is the optional per-dimension breakdown
  * object (food/service/ambiance/value) — NOT a scalar, so it must never be
  * rendered directly — `reviewerName` and `title`/`content` carry the text.

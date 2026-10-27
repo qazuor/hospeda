@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
- * @file GastronomyForm.test.tsx
- * Unit tests for `GastronomyForm` (SPEC-239 T-059).
+ * @file VenueForm.test.tsx
+ * Unit tests for `VenueForm` (SPEC-239 T-059).
  *
  * Covers:
  *  - Renders all required fields

@@ -1,5 +1,5 @@
 /**
- * @file GastronomyForm.tsx
+ * @file VenueForm.tsx
  * Standalone React form component for gastronomy create / edit (SPEC-239 T-059).
  *
  * Uses TanStack Form with Zod validation at submit boundary.
@@ -100,7 +100,7 @@ function FieldWrapper({ label, htmlFor, required, error, children }: FieldWrappe
 /**
  * Gastronomy create / edit form.
  *
- * Validates at submit via `GastronomyCreateHttpSchema.safeParse`.
+ * Validates at submit via `VenueCreateHttpSchema.safeParse`.
  * Field-level errors are surfaced after a failed submit attempt.
  *
  * @param props - {@link VenueFormProps}

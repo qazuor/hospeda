@@ -2,8 +2,8 @@
  * Gastronomy list page — admin directory of food and beverage listings.
  *
  * Uses the generic `createEntityListPage` system via the gastronomy feature config.
- * The route and component are generated from `GastronomiesRoute` /
- * `GastronomiesPageComponent` in the `gastronomy` feature config.
+ * The route and component are generated from `VenuesRoute` /
+ * `VenuesPageComponent` in the `gastronomy` feature config.
  */
 
 import { createFileRoute } from '@tanstack/react-router';

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
- * @file GastronomyCard.test.tsx
- * Unit tests for `GastronomyCard` (SPEC-239 T-059).
+ * @file VenueCard.test.tsx
+ * Unit tests for `VenueCard` (SPEC-239 T-059).
  *
  * Covers:
  *  - Renders the gastronomy name

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * @file gastronomy.columns.test.ts
+ * @file venue.columns.test.ts
  * Unit tests for the gastronomy column factory (SPEC-239 T-059).
  *
  * Covers:
@@ -11,7 +11,7 @@
  *  - `priceRange` column uses BADGE renderer
  *  - `createdAt` column uses TIME_AGO type
  *  - `actions` column includes a widget renderer
- *  - Badge options for type include all GastronomyTypeEnum values
+ *  - Badge options for type include all VenueTypeEnum values
  *  - Badge options for priceRange include all PriceRangeEnum values
  */
 

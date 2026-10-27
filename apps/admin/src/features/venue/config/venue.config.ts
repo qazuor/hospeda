@@ -1,5 +1,5 @@
 /**
- * @file gastronomy.config.ts
+ * @file venue.config.ts
  * Entity list configuration for the gastronomy admin list page.
  *
  * Uses `createListingListConfig` from the generic listing layer so that the

@@ -1,5 +1,5 @@
 /**
- * @file useGastronomyPage.ts
+ * @file useVenuePage.ts
  * Page-orchestrator hook for the gastronomy view and edit pages.
  *
  * Centralises data loading, mode switching, and navigation so route components

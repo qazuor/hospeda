@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 /**
- * @file gastronomy-consolidated.config.test.ts
+ * @file venue-consolidated.config.test.ts
  * Unit tests for the gastronomy consolidated entity config (SPEC-239 T-059).
  *
  * Covers:
- *  - createGastronomyConsolidatedConfig returns at least 3 sections
+ *  - createVenueConsolidatedConfig returns at least 3 sections
  *  - Includes a gastronomy-specific section with the type, priceRange, menuUrl fields
  *  - listing-identity section is present
  *  - listing-operational section is present

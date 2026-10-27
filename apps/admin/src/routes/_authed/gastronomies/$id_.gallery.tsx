@@ -8,7 +8,7 @@
  * `listingSections.ts`).
  *
  * Mirrors the pattern of `$id_.seo.tsx` (the only other gastronomy sub-tab
- * route today): `SidebarPageLayout` + `PageTabs` with `gastronomyTabs`, rather
+ * route today): `SidebarPageLayout` + `PageTabs` with `venueTabs`, rather
  * than accommodation's dedicated `AccommodationSubTabLayout` wrapper — that
  * component is accommodation-specific and gastronomy/experience routes don't
  * use it.
@@ -27,7 +27,7 @@ export const Route = createFileRoute('/_authed/gastronomies/$id_/gallery')({
 function VenueGalleryPage() {
     const { id } = Route.useParams();
     // Reuses the shared detail query cache key (also hit by the view/edit
-    // routes via useGastronomyPage) so navigating between tabs after visiting
+    // routes via useVenuePage) so navigating between tabs after visiting
     // one of those doesn't trigger a second network fetch — only the alt-text
     // derivation below needs `name`, so no dedicated lightweight query exists.
     //

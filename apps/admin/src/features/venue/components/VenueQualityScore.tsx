@@ -1,5 +1,5 @@
 /**
- * @file GastronomyQualityScore.tsx
+ * @file VenueQualityScore.tsx
  * Quality-score widget for gastronomy listings (SPEC-239 T-059).
  *
  * Mirrors `EventQualityScore` — subscribes to the TanStack Form store via

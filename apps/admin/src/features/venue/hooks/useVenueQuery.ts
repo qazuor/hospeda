@@ -1,5 +1,5 @@
 /**
- * @file useGastronomyQuery.ts
+ * @file useVenueQuery.ts
  * TanStack Query hooks for gastronomy CRUD operations.
  *
  * These hooks are produced by `createListingEntityHooks` — they cover all
@@ -22,7 +22,7 @@ import { createListingEntityHooks } from '@/features/listing';
  *
  * @example
  * ```ts
- * const { useGetById, useCreate, useUpdate } = gastronomyHooks;
+ * const { useGetById, useCreate, useUpdate } = venueHooks;
  * ```
  */
 export const venueHooks = createListingEntityHooks<VenueAdmin>({
@@ -39,7 +39,7 @@ export const venueHooks = createListingEntityHooks<VenueAdmin>({
  *
  * @param id - UUID of the gastronomy entity
  * @param options - Optional query options
- * @returns TanStack Query result with `GastronomyAdmin` data
+ * @returns TanStack Query result with `VenueAdmin` data
  */
 export const useVenueQuery = (id: string, options?: { enabled?: boolean }) =>
     venueHooks.useDetail(id, options);

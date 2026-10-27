@@ -1,15 +1,15 @@
 // @vitest-environment jsdom
 /**
- * @file gastronomy.config.test.ts
+ * @file venue.config.test.ts
  * Unit tests for the gastronomy entity list config (SPEC-239 T-059).
  *
  * Covers:
- *  - gastronomyListConfig has correct apiEndpoint, basePath, entityKey
- *  - createGastronomyColumns factory is wired in
+ *  - venueListConfig has correct apiEndpoint, basePath, entityKey
+ *  - createVenueColumns factory is wired in
  *  - extraFilters include type and priceRange filter
- *  - GastronomiesRoute is a valid route object
- *  - GastronomiesPageComponent is a function
- *  - GASTRONOMY_VIEW_PERMISSION is the GASTRONOMY_VIEW_ALL permission
+ *  - VenuesRoute is a valid route object
+ *  - VenuesPageComponent is a function
+ *  - VENUE_VIEW_PERMISSION is the GASTRONOMY_VIEW_ALL permission
  */
 
 import { PermissionEnum } from '@repo/schemas';

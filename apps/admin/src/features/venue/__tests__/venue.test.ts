@@ -4,10 +4,10 @@
  * Verifies:
  * - Column factory produces the expected columns with correct IDs, types, and
  *   badge options covering all enum values.
- * - `gastronomyListConfig` (built on `createListingListConfig`) points to the
+ * - `venueListConfig` (built on `createListingListConfig`) points to the
  *   correct endpoint, includes shared listing filters, and appends
  *   gastronomy-specific filters (type, priceRange) AFTER the shared ones.
- * - `createGastronomyConsolidatedConfig` assembles exactly 3 sections in the
+ * - `createVenueConsolidatedConfig` assembles exactly 3 sections in the
  *   correct order with the expected field IDs and FieldTypeEnum values.
  * - Schema validation passes/fails as expected for create and update payloads.
  */

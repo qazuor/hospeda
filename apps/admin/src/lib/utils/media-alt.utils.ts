@@ -14,7 +14,7 @@
 
 /**
  * Upper bound shared by every listing-media `alt` schema
- * (`GastronomyMediaAddPayloadSchema`, `ExperienceMediaAddPayloadSchema`,
+ * (`VenueMediaAddPayloadSchema`, `ExperienceMediaAddPayloadSchema`,
  * `AccommodationMediaAddPayloadSchema` — see `packages/schemas`). Kept as a
  * named constant here so the truncation below stays obviously in sync with
  * the Zod `.max(200)` constraint it exists to satisfy.
