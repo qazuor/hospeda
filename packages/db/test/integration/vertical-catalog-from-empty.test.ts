@@ -165,6 +165,22 @@ describe('load-bearing catalog_key rows are pinned independently of the code cat
     });
 });
 
+describe('TEST:1819:1 AC:1:3 — the migration CHECK admits the venue domain', () => {
+    it('pins the fix request CHECK to the final domain value', async () => {
+        const retiredName = ['gastro', 'nomy'].join('');
+        const { rows } = await getTestPool().query<{ conname: string }>(
+            `SELECT conname
+             FROM pg_constraint
+             WHERE conname = $1
+               AND pg_get_constraintdef(oid) LIKE '%venue%'
+               AND pg_get_constraintdef(oid) NOT LIKE $2`,
+            ['fix_request_entity_type_check', `%${retiredName}%`]
+        );
+
+        expect(rows).toEqual([{ conname: 'fix_request_entity_type_check' }]);
+    });
+});
+
 describe('TEST:1819:4 AC:1:3 — the born catalog has no retired vertical identifiers', () => {
     it('has no retired name in vertical, plans, catalog keys or addons', async () => {
         const retiredName = ['gastro', 'nomy'].join('');
