@@ -91,7 +91,7 @@ export type ListingPermissionSlot =
 const VERTICAL_PERMISSIONS: Readonly<
     Record<VenueOrExperience, Readonly<Record<ListingPermissionSlot, PermissionEnum>>>
 > = {
-    gastronomy: {
+    venue: {
         editOwn: PermissionEnum.GASTRONOMY_EDIT_OWN,
         create: PermissionEnum.GASTRONOMY_CREATE,
         viewAll: PermissionEnum.GASTRONOMY_VIEW_ALL,
@@ -118,7 +118,7 @@ const VERTICAL_PERMISSIONS: Readonly<
  * Each listing grants only its vertical's owner role.
  */
 export const VERTICAL_OWNER_ROLES: Readonly<Record<VenueOrExperience, RoleEnum>> = {
-    gastronomy: RoleEnum.GASTRONOMY_OWNER,
+    venue: RoleEnum.GASTRONOMY_OWNER,
     experience: RoleEnum.EXPERIENCE_OWNER
 };
 
