@@ -165,7 +165,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
         version: 1,
         // HOS-788: each welcome tour is gated by its own vertical owner role.
         // A gastronomy owner does not acquire the experience tour.
-        roles: ['GASTRONOMY_OWNER'],
+        roles: ['VENUE_OWNER'],
         trigger: 'auto-first-visit',
         steps: [
             {

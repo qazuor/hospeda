@@ -253,7 +253,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // `experience.editOwn` above. Not an i18n key.
     // HOS-1264 — gastronomy half of `experience.aiChat` above.
     'gastronomy.aiChat',
-    'gastronomy.editOwn',
+    'venue.editOwn',
     // HOS-822 — gastronomy half of the shared listing-type source above.
     'gastronomy.types',
     'home.featuredDestinations',

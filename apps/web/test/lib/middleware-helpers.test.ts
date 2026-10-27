@@ -1302,7 +1302,7 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
                     name: 'Multi Hat',
                     email: 'multi@test',
                     image: 'https://img.test/a.png',
-                    roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
+                    roles: ['USER', 'HOST', 'VENUE_OWNER'],
                     permissions: ['post.create', 'post.update.own']
                 },
                 isAuthenticated: true
@@ -1313,7 +1313,7 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
             id: 'u1',
             name: 'Multi Hat',
             email: 'multi@test',
-            roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
+            roles: ['USER', 'HOST', 'VENUE_OWNER'],
             permissions: ['post.create', 'post.update.own'],
             image: 'https://img.test/a.png',
             mustChangePassword: false,
@@ -1477,7 +1477,7 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
                 actor: {
                     id: 'u1',
                     email: 'u@test',
-                    roles: ['GASTRONOMY_OWNER'],
+                    roles: ['VENUE_OWNER'],
                     mustChangePassword: true
                 },
                 isAuthenticated: true

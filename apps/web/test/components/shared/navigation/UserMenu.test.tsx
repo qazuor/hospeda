@@ -220,8 +220,8 @@ describe('UserMenu — permission-gated items', () => {
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
-                permissions: ['gastronomy.editOwn'],
-                roles: ['USER', 'GASTRONOMY_OWNER'],
+                permissions: ['venue.editOwn'],
+                roles: ['USER', 'VENUE_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -241,8 +241,8 @@ describe('UserMenu — permission-gated items', () => {
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
-                permissions: ['accommodation.create', 'gastronomy.editOwn'],
-                roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
+                permissions: ['accommodation.create', 'venue.editOwn'],
+                roles: ['USER', 'HOST', 'VENUE_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -625,8 +625,8 @@ describe('UserMenu — PostHog identify/reset', () => {
                 data: {
                     actor: {
                         id: 'user-1',
-                        roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
-                        permissions: ['accommodation.create', 'gastronomy.editOwn']
+                        roles: ['USER', 'HOST', 'VENUE_OWNER'],
+                        permissions: ['accommodation.create', 'venue.editOwn']
                     },
                     isAuthenticated: true
                 }
@@ -640,7 +640,7 @@ describe('UserMenu — PostHog identify/reset', () => {
                 // HOS-296: an ARRAY person property, sorted for stability.
                 // A multi-hat user reports every hat AND both segment
                 // booleans — under the old scalar only one could be true.
-                roles: ['GASTRONOMY_OWNER', 'HOST', 'USER'],
+                roles: ['VENUE_OWNER', 'HOST', 'USER'],
                 user_type: 'owner',
                 is_host: true,
                 is_gastronomy_owner: true,

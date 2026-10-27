@@ -85,7 +85,7 @@ const TOURIST_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.tourist;
  * - ADMIN / SUPER_ADMIN: platform staff (can reach every area).
  */
 export const ROLES_WITH_LISTING_NAV = new Set<string>([
-    'GASTRONOMY_OWNER',
+    'VENUE_OWNER',
     'EXPERIENCE_OWNER',
     'ADMIN',
     'SUPER_ADMIN'
@@ -120,7 +120,7 @@ function resolveListingPricingAudience({
         return null;
     }
     const roleSet = new Set(roles);
-    if (roleSet.has('GASTRONOMY_OWNER')) {
+    if (roleSet.has('VENUE_OWNER')) {
         return 'gastronomy';
     }
     if (roleSet.has('EXPERIENCE_OWNER')) {

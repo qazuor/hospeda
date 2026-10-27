@@ -89,7 +89,7 @@ describe('AC-1 — a HOST who is also a GASTRONOMY_OWNER gets BOTH nav groups', 
 describe('ROLES_WITH_LISTING_NAV', () => {
     it('is distinct from the accommodations nav set (HOST is not a gastronomy/experience role)', () => {
         expect(ROLES_WITH_LISTING_NAV.has('HOST')).toBe(false);
-        expect(ROLES_WITH_ACCOMMODATIONS_NAV.has('GASTRONOMY_OWNER')).toBe(false);
+        expect(ROLES_WITH_ACCOMMODATIONS_NAV.has('VENUE_OWNER')).toBe(false);
     });
 });
 
@@ -262,15 +262,15 @@ describe('HOS-1077 vertical owner roles and the listing nav', () => {
     });
 
     it('ROLES_WITH_LISTING_NAV names both new roles alongside the legacy one', () => {
-        expect(ROLES_WITH_LISTING_NAV.has('GASTRONOMY_OWNER')).toBe(true);
+        expect(ROLES_WITH_LISTING_NAV.has('VENUE_OWNER')).toBe(true);
         expect(ROLES_WITH_LISTING_NAV.has('EXPERIENCE_OWNER')).toBe(true);
         // Expand, not contract: the legacy role must still be in the set, or
         // every existing gastronomy/experience owner loses the area on deploy.
-        expect(ROLES_WITH_LISTING_NAV.has('GASTRONOMY_OWNER')).toBe(true);
+        expect(ROLES_WITH_LISTING_NAV.has('VENUE_OWNER')).toBe(true);
     });
 
     it('ROLES_WITH_ACCOMMODATIONS_NAV gained neither', () => {
-        expect(ROLES_WITH_ACCOMMODATIONS_NAV.has('GASTRONOMY_OWNER')).toBe(false);
+        expect(ROLES_WITH_ACCOMMODATIONS_NAV.has('VENUE_OWNER')).toBe(false);
         expect(ROLES_WITH_ACCOMMODATIONS_NAV.has('EXPERIENCE_OWNER')).toBe(false);
     });
 

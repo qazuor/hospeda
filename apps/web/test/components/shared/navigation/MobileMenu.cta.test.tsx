@@ -205,7 +205,7 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
     it('renders the submenu for an existing GASTRONOMY_OWNER (HOS-691 AC-12)', () => {
         renderMenu({
             initialUser: { id: 'u1', name: 'Listing Owner', email: 'owner@example.com' },
-            initialRoles: ['USER', 'GASTRONOMY_OWNER']
+            initialRoles: ['USER', 'VENUE_OWNER']
         });
         openMenu();
         openPublishSubmenu();
@@ -216,7 +216,7 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
     it('renders the submenu for a user who is BOTH HOST and GASTRONOMY_OWNER', () => {
         renderMenu({
             initialUser: { id: 'u1', name: 'Host Merchant', email: 'both@example.com' },
-            initialRoles: ['USER', 'GASTRONOMY_OWNER', 'HOST']
+            initialRoles: ['USER', 'VENUE_OWNER', 'HOST']
         });
         openMenu();
         openPublishSubmenu();
