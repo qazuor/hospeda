@@ -2660,7 +2660,7 @@ function normalizeOpeningHours(raw: unknown): Record<string, VenueOpeningHoursEn
  * Returns `null` when absent or empty.
  *
  * NOTE (HOS-1076): `whatsapp` is deliberately NOT read here, even though a raw
- * payload could carry one (belt and braces — see `GastronomySocialNetworks`).
+ * payload could carry one (belt and braces — see `VenueSocialNetworks`).
  * Gastronomy's `socialNetworks` shape (`SocialNetworkSchema`) has never had a
  * `whatsapp` field, so this key must never be forwarded to the render layer.
  */
@@ -2678,15 +2678,15 @@ function normalizeSocialNetworks(raw: unknown): VenueSocialNetworks | null {
 }
 
 /**
- * Transforms a raw API gastronomy item to GastronomyCardData props.
+ * Transforms a raw API gastronomy item to VenueCardData props.
  *
- * Maps the `GastronomyPublic` fields from the public list/detail API response
- * to the clean `GastronomyCardData` interface consumed by card components.
+ * Maps the `VenuePublic` fields from the public list/detail API response
+ * to the clean `VenueCardData` interface consumed by card components.
  * Components MUST NOT read raw API data directly.
  *
  * @param item - Raw gastronomy object from the API
  * @param locale - Active locale for i18n field resolution
- * @returns Typed GastronomyCardData for the card component
+ * @returns Typed VenueCardData for the card component
  */
 export function toVenueCardProps({
     item,
@@ -2824,7 +2824,7 @@ function mapListingFeatures(raw: unknown): readonly DetailFeature[] {
  *
  * `null` covers both "never translated" and "withheld server-side for a plan
  * that does not grant `multilingual_gastronomy_menu`" (HOS-1043) — the same
- * single-value collapse {@link GastronomyMenuItem.photoUrl}'s own doc
+ * single-value collapse {@link VenueMenuItem.photoUrl}'s own doc
  * describes for the photo gate, and for the same reason: the API decides, the
  * renderer draws what it is given.
  *
@@ -2846,7 +2846,7 @@ function coerceI18nTextLike(raw: unknown): I18nTextLike | null {
 /**
  * Maps the raw `menuSections` array a gastronomy detail payload carries
  * (HOS-895 PR2, per-dish photos added by HOS-1045, translations added by
- * HOS-1043) into the shape `GastronomyMenu.astro` renders.
+ * HOS-1043) into the shape `VenueMenu.astro` renders.
  *
  * Withheld entirely (not `undefined` vs `[]` distinguished further) when the
  * API's live entitlement check returns nothing — the same treatment the
@@ -2898,7 +2898,7 @@ function mapVenueMenuSections(raw: unknown): readonly VenueMenuSection[] {
 /**
  * Maps the payload's `dailySpecials` into renderer-ready specials (HOS-1041).
  *
- * Defensive in the same way `mapGastronomyMenuSections` is: every field is
+ * Defensive in the same way `mapVenueMenuSections` is: every field is
  * coerced, and an untitled row is dropped rather than rendered as a blank line
  * on the public page.
  *
@@ -2930,11 +2930,11 @@ function mapVenueDailySpecials(raw: unknown): readonly VenueDailySpecial[] {
 
 /**
  * Maps the raw `venueEvents` array a gastronomy detail payload carries
- * (HOS-1042) into the shape `GastronomyVenueEvents.astro` renders.
+ * (HOS-1042) into the shape `VenueEvents.astro` renders.
  *
  * Withheld entirely (not `undefined` vs `[]` distinguished further) when the
  * API's live entitlement check returns nothing, or drops an entry with no
- * `title` — the same treatment `mapGastronomyMenuSections` gives a malformed
+ * `title` — the same treatment `mapVenueMenuSections` gives a malformed
  * row. `date`/`weekday` are passed through as-is (already mutually exclusive
  * per `recurrence` on the server), never re-derived here.
  *
@@ -2958,14 +2958,14 @@ function mapVenueEvents(raw: unknown): readonly VenueEvent[] {
 }
 
 /**
- * Transforms a raw API gastronomy item to GastronomyDetailData props.
+ * Transforms a raw API gastronomy item to VenueDetailData props.
  *
- * Used on the gastronomy detail page where the full `GastronomyPublic` shape
+ * Used on the gastronomy detail page where the full `VenuePublic` shape
  * (including FAQs, social networks, SEO, and owner data) is available.
  *
  * @param item - Raw gastronomy object from the detail API endpoint
  * @param locale - Active locale for i18n field resolution
- * @returns Typed GastronomyDetailData for the detail page components
+ * @returns Typed VenueDetailData for the detail page components
  */
 export function toVenueDetailPageProps({
     item,
@@ -2991,13 +2991,13 @@ export function toVenueDetailPageProps({
         menuUrl: item.menuUrl == null ? null : String(item.menuUrl),
         // HOS-895 PR2: both already withheld server-side (null / absent) for a
         // listing whose owner does not currently hold
-        // `manage_gastronomy_menu` — see GastronomyPublicSchema's field docs.
+        // `manage_gastronomy_menu` — see VenuePublicSchema's field docs.
         menuFileUrl: item.menuFileUrl == null ? null : String(item.menuFileUrl),
         menuFileKind:
             item.menuFileKind === 'image' || item.menuFileKind === 'pdf' ? item.menuFileKind : null,
         menuSections: mapVenueMenuSections(item.menuSections),
         // HOS-1041: already filtered to TODAY and already entitlement-gated by
-        // the API — see GastronomyPublicSchema's field docs. Nothing here
+        // the API — see VenuePublicSchema's field docs. Nothing here
         // re-applies either.
         dailySpecials: mapVenueDailySpecials(item.dailySpecials),
         venueEvents: mapVenueEvents(item.venueEvents),

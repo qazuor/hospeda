@@ -278,7 +278,7 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings �
 
         // ── Step 3 assertion: public gastronomy ficha reflects new menuUrl ─────
 
-        // GastronomyContactBlock.astro renders menuUrl as an anchor with class
+        // VenueContactBlock.astro renders menuUrl as an anchor with class
         // gastro-contact__menu-btn. The page is SSR on-demand (prerender=false) so
         // a fresh navigation serves the current DB value.
         await page.goto(`${WEB_URL}/es/gastronomia/${GASTRONOMY_SLUG}/`, {

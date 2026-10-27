@@ -70,7 +70,7 @@ const SECTION_COMPONENTS: Readonly<Record<string, string>> = {
     // re-import onto another route would put a `GET .../daily-specials` on a
     // page that shows none.
     VenueDailySpecialsManager: 'menu-del-dia.astro',
-    // HOS-1042 — the mirror of `GastronomyMenuManager` above, for the venue's
+    // HOS-1042 — the mirror of `VenueMenuManager` above, for the venue's
     // own agenda: it fetches `.../events` on mount, so a stray re-import onto
     // another route puts that request on a page that never shows the agenda.
     VenueEventsManager: 'eventos.astro',

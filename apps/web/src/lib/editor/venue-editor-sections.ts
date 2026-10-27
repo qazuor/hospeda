@@ -1,5 +1,5 @@
 /**
- * @file gastronomy-editor-sections.ts
+ * @file venue-editor-sections.ts
  * @description Section registry for the gastronomy editor, the counterpart of
  * `accommodation-editor-sections.ts` (HOS-1080).
  *
@@ -37,8 +37,8 @@ import {
  * panels are new (HOS-895, HOS-1042), so no owner has an existing expectation
  * to preserve.
  *
- * This array now holds two entries. `buildGastronomyEditorSections` below
- * splices the whole block in via spread (`...GASTRONOMY_ONLY_SECTIONS`), so
+ * This array now holds two entries. `buildVenueEditorSections` below
+ * splices the whole block in via spread (`...VENUE_ONLY_SECTIONS`), so
  * that keeps working unchanged regardless of how many entries this array
  * carries — both land just before `preguntas`, in declaration order (`carta`
  * then `eventos`).

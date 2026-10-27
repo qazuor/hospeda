@@ -5,7 +5,7 @@
  *
  * ## Why the names were removed
  *
- * Four card components (`AccommodationCard`, `DestinationCard`, `GastronomyCard`,
+ * Four card components (`AccommodationCard`, `DestinationCard`, `VenueCard`,
  * `ExperienceCard`) carried `transition:name={`<kind>-${slug}`}` on their image
  * — seven declarations in all, since three of them render two image variants —
  * for a list → detail shared-element morph. **That morph could never happen**: a

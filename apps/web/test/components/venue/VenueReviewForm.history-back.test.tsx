@@ -1,5 +1,5 @@
 /**
- * @file GastronomyReviewForm.history-back.test.tsx
+ * @file VenueReviewForm.history-back.test.tsx
  * @description Regression tests for HOS-334: with the review dialog open on
  * the gastronomy detail page, the system back button must close the dialog
  * instead of navigating away from the page — and the text the visitor
@@ -23,7 +23,7 @@ import { buildAuthSnapshot } from '../../helpers/auth-session';
 import { __setNavigateImpl } from '../../stubs/astro-transitions-client';
 
 // ---------------------------------------------------------------------------
-// Module mocks — same shape as GastronomyReviewForm.test.tsx
+// Module mocks — same shape as VenueReviewForm.test.tsx
 // ---------------------------------------------------------------------------
 
 vi.mock('@/lib/i18n', () => ({

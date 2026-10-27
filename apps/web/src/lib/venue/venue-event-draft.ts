@@ -11,7 +11,7 @@
 
 /**
  * One agenda entry, as held in form state. Ids are not carried — see
- * `GastronomyEventInputSchema`'s doc for why: the whole list is re-submitted
+ * `VenueEventInputSchema`'s doc for why: the whole list is re-submitted
  * as a document, so a client-supplied id would be one the server has to
  * either trust or ignore.
  */
@@ -30,9 +30,9 @@ export interface EventDraft {
 
 /**
  * `Date#getDay()` order: `0` = Sunday … `6` = Saturday, matching
- * `GastronomyEventWeekdaySchema`. The labels themselves are NOT duplicated
+ * `VenueEventWeekdaySchema`. The labels themselves are NOT duplicated
  * here — both consumers reuse `gastronomy.detail.openingHours.<day>`, the
- * same keys the public opening-hours section and `GastronomyVenueEvents.astro`
+ * same keys the public opening-hours section and `VenueEvents.astro`
  * already read.
  */
 export const WEEKDAY_I18N_KEYS = [

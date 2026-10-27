@@ -1,7 +1,7 @@
 /**
- * @file gastronomy-type-icons.test.ts
+ * @file venue-type-icons.test.ts
  * @description Unit tests for the gastronomy-type → icon resolver. Verifies
- * that every value of `GastronomyTypeEnum` maps to a defined icon component
+ * that every value of `VenueTypeEnum` maps to a defined icon component
  * and that unknown values fall back to the generic fallback icon (HOS-97).
  */
 

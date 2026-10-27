@@ -61,7 +61,7 @@ describe('carta.astro — 404 guards', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 3. REUSES GastronomyMenu.astro — never reimplements the carta render (NG)
+// 3. REUSES VenueMenu.astro — never reimplements the carta render (NG)
 // ---------------------------------------------------------------------------
 describe('carta.astro — reuses GastronomyMenu.astro verbatim', () => {
     it('imports GastronomyMenu from the shared component', () => {
@@ -77,7 +77,7 @@ describe('carta.astro — reuses GastronomyMenu.astro verbatim', () => {
 
     it('does NOT re-declare menu section/item markup of its own', () => {
         // The carta section markup (`.gastro-menu__section`, dish list, etc.)
-        // belongs to GastronomyMenu.astro alone — this page must not fork it.
+        // belongs to VenueMenu.astro alone — this page must not fork it.
         expect(cartaSrc).not.toContain('gastro-menu__section');
         expect(cartaSrc).not.toContain('gastro-menu__item');
     });

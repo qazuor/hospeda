@@ -124,7 +124,7 @@ function descLangAttrs(i18n: VenueMenuItem['descriptionI18n'], legacy: string) {
 
 const LANGUAGE_LABELS: Record<SupportedLocale, string> = { es: 'ES', en: 'EN', pt: 'PT' };
 // `fileKind` is required by the schema whenever `fileUrl` is set (the API
-// never reports "half an attachment" — see GastronomyMenuFileSchema's doc),
+// never reports "half an attachment" — see VenueMenuFileSchema's doc),
 // but the safe-URL check still runs before anything is rendered.
 // `resolveSafeExternalUrl` already tolerates `null`/`undefined`, so this is a
 // direct binding the outbound-href-sanitization guard can prove — a ternary

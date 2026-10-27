@@ -1,4 +1,4 @@
-/* GastronomyVenueEventsManager.module.css — HOS-1042 */
+/* VenueEventsManager.module.css — HOS-1042 */
 
 .panel {
     display: flex;
@@ -39,7 +39,7 @@
  * Rows wrap rather than scroll: a title, a recurrence choice, a weekday/date,
  * two times and an active toggle do not fit one narrow phone line, and a
  * horizontally scrolling form row hides controls the owner has to reach —
- * same rule `GastronomyMenuManager`'s `.itemRow` follows.
+ * same rule `VenueMenuManager`'s `.itemRow` follows.
  */
 .row {
     display: flex;
@@ -102,7 +102,7 @@
     color: var(--core-foreground);
 }
 
-/* Same button recipe `GastronomyMenuManager`'s Save button uses. */
+/* Same button recipe `VenueMenuManager`'s Save button uses. */
 .primaryButton {
     align-self: flex-start;
     background-color: var(--brand-accent);

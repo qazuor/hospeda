@@ -1,9 +1,9 @@
 /**
- * @file GastronomyVenueEventsManager.client.tsx
+ * @file VenueEventsManager.client.tsx
  * @description The owner's venue-agenda editor for a gastronomy listing
  * (HOS-1042) — live music night, happy hour, dinner show, the Tuesday deal.
  *
- * Structurally the twin of `GastronomyMenuManager`, simplified: a FLAT list of
+ * Structurally the twin of `VenueMenuManager`, simplified: a FLAT list of
  * entries, not sections-with-items, because an agenda has no course grouping.
  * Same persistence shape too — this panel owns its own endpoints
  * (`GET`/`PUT .../events`) and saves by an explicit button, in ONE `PUT` of
@@ -15,7 +15,7 @@
  *
  * Keeping an agenda is a `gastronomy-pro` capability
  * (`MANAGE_GASTRONOMY_EVENTS`), and the page this mounts on carries no
- * entitlement information — the same situation `GastronomyMenuManager` is in
+ * entitlement information — the same situation `VenueMenuManager` is in
  * for the structured carta. So the form renders for every owner and the API
  * decides; a refusal is shown as the upsell sentence it is, never as
  * "something went wrong". `GET .../events` is NOT gated — an owner whose plan
@@ -24,7 +24,7 @@
  *
  * ## Recurrence is two shapes, never both at once
  *
- * Mirrors `GastronomyEventInputSchema`'s refinement server-side: a `once`
+ * Mirrors `VenueEventInputSchema`'s refinement server-side: a `once`
  * entry carries `date` and no `weekday`; a `weekly` entry carries `weekday`
  * and no `date`. The single most likely bug here is submitting both (or
  * neither) after the owner flips the recurrence radio — `setRecurrence`
@@ -68,7 +68,7 @@ export interface VenueEventsManagerProps {
     /**
      * The seven weekday names, already localised, `0` = Sunday … `6` = Saturday.
      *
-     * Threaded straight through to `GastronomyVenueEventEntryCard` — see that
+     * Threaded straight through to `VenueEventEntryCard` — see that
      * prop's doc for why these are resolved on the Astro page instead of looked
      * up inside the island.
      */
@@ -119,7 +119,7 @@ export function VenueEventsManager({
 
     // ── Load ────────────────────────────────────────────────────────────────
     // The panel reads its own state rather than receiving it from the SSR
-    // page, for the same reason `GastronomyMenuManager` does: the agenda is not
+    // page, for the same reason `VenueMenuManager` does: the agenda is not
     // part of the listing payload the editor is built from.
     useEffect(() => {
         let cancelled = false;
@@ -193,7 +193,7 @@ export function VenueEventsManager({
         setMessage(null);
 
         // An entry without a title, or without a start time, is DROPPED
-        // rather than rejected — the same treatment `GastronomyMenuManager`
+        // rather than rejected — the same treatment `VenueMenuManager`
         // gives a nameless dish: an abandoned "add entry" click should not
         // fail the whole save.
         //
@@ -235,7 +235,7 @@ export function VenueEventsManager({
 
         // A refusal here is the plan speaking, not a failure. `status` is the
         // only thing that separates "your plan does not include this" from a
-        // genuine error — same rule `GastronomyMenuManager`'s save follows.
+        // genuine error — same rule `VenueMenuManager`'s save follows.
         if (result.error.status === 403) {
             setIsLocked(true);
             setMessage(

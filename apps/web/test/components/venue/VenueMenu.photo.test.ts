@@ -1,5 +1,5 @@
 /**
- * @file GastronomyMenu.photo.test.ts
+ * @file VenueMenu.photo.test.ts
  * @description Source-read guards for the per-dish photo on the public carta
  * (HOS-1045).
  *
@@ -33,7 +33,7 @@ describe('GastronomyMenu.astro — the per-dish photo (HOS-1045)', () => {
         // our own upload route today, but the column is readable by anything
         // that can write a row, and `z.string().url()` — which several sibling
         // schemas still use — accepts `javascript:`. The write half lives on
-        // `GastronomyMenuItemInputSchema`.
+        // `VenueMenuItemInputSchema`.
         // Asserted on the `src=` BINDING, not merely on the call appearing
         // somewhere in the file: the call is also made in the render condition,
         // so a looser assertion would stay green with the `src` bound to the

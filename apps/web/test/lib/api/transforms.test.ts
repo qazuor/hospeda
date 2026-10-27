@@ -1363,13 +1363,13 @@ describe('toAccommodationDetailPageProps — contactInfo + socialNetworks (H-118
 });
 
 // ---------------------------------------------------------------------------
-// toGastronomyDetailPageProps — socialNetworks.whatsapp dead field (HOS-1076)
+// toVenueDetailPageProps — socialNetworks.whatsapp dead field (HOS-1076)
 // ---------------------------------------------------------------------------
 //
-// `GastronomySocialNetworks` (the web-side type) used to declare a `whatsapp`
+// `VenueSocialNetworks` (the web-side type) used to declare a `whatsapp`
 // key that has never existed in `SocialNetworkSchema` (the shape backing the
 // `socialNetworks` JSONB column). Nothing writes it today, but the render
-// path (`GastronomyContactBlock.astro`) rendered it with zero entitlement
+// path (`VenueContactBlock.astro`) rendered it with zero entitlement
 // gate — unlike accommodation's `CAN_CONTACT_WHATSAPP_DISPLAY` channel. This
 // regression test reproduces the leak at the transform layer: before the
 // fix, `normalizeSocialNetworks` copied `whatsapp` straight from the raw API

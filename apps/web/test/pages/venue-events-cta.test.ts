@@ -1,5 +1,5 @@
 /**
- * @file gastronomy-events-cta.test.ts
+ * @file venue-events-cta.test.ts
  * @description Source-read tests for the "accepts events" CTA (HOS-1055).
  *
  * Same pattern and same caveat as its HOS-1072 sibling
@@ -13,12 +13,12 @@
  * A first version of this CTA linked to `socialNetworks.whatsapp`. HOS-1076
  * (merged the same week) found that field never carried real data — it was
  * never part of `SocialNetworkSchema` — and removed it from
- * `GastronomySocialNetworks` entirely: gastronomy has no public phone/WhatsApp
+ * `VenueSocialNetworks` entirely: gastronomy has no public phone/WhatsApp
  * channel by design (HOS-1088 tracks the open question). What remains is a
  * handful of owner-optional social links plus a menu URL, and picking "the
  * first one that resolves" would sometimes point an "accepts events" CTA at a
  * restaurant's YouTube channel. So the CTA is an in-page anchor
- * (`#gastro-contact`) to `GastronomyContactBlock` instead: no channel to pick,
+ * (`#gastro-contact`) to `VenueContactBlock` instead: no channel to pick,
  * and no outbound href for the HOS-592/F-02 sanitization guard to apply to.
  */
 import { readFileSync } from 'node:fs';
@@ -61,8 +61,8 @@ describe('gastronomia/[slug].astro — accepts-events CTA (HOS-1055)', () => {
 
     it('never reads socialNetworks.whatsapp (HOS-1076: the field is gone, it never carried real data) or contactInfo', () => {
         expect(VENUE_PAGE).not.toContain('.whatsapp');
-        // `contactInfo` is not part of GastronomyPublicSchema (see
-        // GastronomyContactBlock's header) — reaching for it would repeat the
+        // `contactInfo` is not part of VenuePublicSchema (see
+        // VenueContactBlock's header) — reaching for it would repeat the
         // HOS-363/HOS-924 bug.
         expect(VENUE_PAGE).not.toContain('venue.contactInfo');
     });
@@ -71,7 +71,7 @@ describe('gastronomia/[slug].astro — accepts-events CTA (HOS-1055)', () => {
         expect(VENUE_PAGE).toContain(
             "venue.amenities.find((amenity) => amenity.name === 'private_events')"
         );
-        // Mirrors GastronomyContactBlock's own render gate, duplicated on
+        // Mirrors VenueContactBlock's own render gate, duplicated on
         // purpose rather than imported (see the frontmatter comment) — a CTA
         // anchored to an empty contact block would be worse than no CTA.
         expect(VENUE_PAGE).toContain('resolveSafeExternalUrl(venue.menuUrl)');

@@ -1,5 +1,5 @@
 /**
- * @file GastronomyMenuQrWidget.test.tsx
+ * @file VenueMenuQrWidget.test.tsx
  * @description RTL tests for the gastronomy menu QR + scan analytics owner
  * panel (HOS-1044 §6.6).
  *

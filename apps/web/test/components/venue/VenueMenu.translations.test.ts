@@ -1,9 +1,9 @@
 /**
- * @file GastronomyMenu.translations.test.ts
+ * @file VenueMenu.translations.test.ts
  * @description Source-read guards for the carta's language switcher on the
  * public detail page (HOS-1043).
  *
- * Same source-read strategy as `GastronomyMenu.photo.test.ts` and for the
+ * Same source-read strategy as `VenueMenu.photo.test.ts` and for the
  * same reason: Biome does not lint `.astro`, and this component needs a
  * listing payload, a locale and a translation table to mount.
  */

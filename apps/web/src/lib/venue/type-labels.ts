@@ -1,8 +1,8 @@
 /**
- * @file gastronomy/type-labels.ts
+ * @file venue/type-labels.ts
  * @description Single source for the gastronomy listing-type label (HOS-822).
  *
- * The owner form and the public listing page name the SAME `GastronomyTypeEnum`
+ * The owner form and the public listing page name the SAME `VenueTypeEnum`
  * value, and until this module they read it from two different i18n blocks: the
  * public pages read `gastronomy.types.<TYPE>` and the owner form read a private
  * duplicate of it under `listing.owner.editor.typeOption`. Two hand-maintained
@@ -13,7 +13,7 @@
  * owner picking a category always sees the exact words the public page will
  * print.
  *
- * @module lib/gastronomy/type-labels
+ * @module lib/venue/type-labels
  */
 
 /**
@@ -45,7 +45,7 @@ const TYPE_LABEL_KEY_PREFIX = 'gastronomy.types';
  *
  * @example
  * ```ts
- * buildGastronomyTypeLabelKey({ type: 'RESTAURANT' });
+ * buildVenueTypeLabelKey({ type: 'RESTAURANT' });
  * // => 'gastronomy.types.RESTAURANT'
  * ```
  */
@@ -65,7 +65,7 @@ export function buildVenueTypeLabelKey({ type }: { readonly type: string }): str
  *
  * @example
  * ```ts
- * resolveGastronomyTypeLabel({ t, type: 'RESTAURANT' });
+ * resolveVenueTypeLabel({ t, type: 'RESTAURANT' });
  * // => 'Restaurante'  (identical to what the listing page prints)
  * ```
  */

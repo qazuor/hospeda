@@ -1,13 +1,13 @@
 /**
- * @file gastronomy-contact-block-whatsapp.guard.test.ts
+ * @file venue-contact-block-whatsapp.guard.test.ts
  * @description Static guard against re-introducing `socialNetworks.whatsapp`
  * on the gastronomy public detail path (HOS-1076).
  *
  * `whatsapp` never existed in `SocialNetworkSchema` (the shape backing the
  * `socialNetworks` JSONB column — `packages/schemas/src/common/social.schema.ts`),
  * so nothing writes it today. But three files used to treat it as a real
- * field: the web-side `GastronomySocialNetworks` type declared it, the API
- * transform copied it off the raw payload, and `GastronomyContactBlock.astro`
+ * field: the web-side `VenueSocialNetworks` type declared it, the API
+ * transform copied it off the raw payload, and `VenueContactBlock.astro`
  * rendered it with NO entitlement gate — unlike accommodation's
  * `CAN_CONTACT_WHATSAPP_DISPLAY` channel. Any of the three re-appearing would
  * re-open the render path.
@@ -19,7 +19,7 @@
  * WhatsApp link. The check is anchored on that array literal specifically
  * (not a whole-file text match) because the file's own explanatory comments
  * legitimately mention "whatsapp" when documenting why it was removed.
- * The transform half (`toGastronomyDetailPageProps` in transforms.test.ts)
+ * The transform half (`toVenueDetailPageProps` in transforms.test.ts)
  * covers the actual runtime behavior of the data that would feed that render.
  */
 

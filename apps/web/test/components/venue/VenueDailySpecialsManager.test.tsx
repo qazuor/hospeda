@@ -1,5 +1,5 @@
 /**
- * @file GastronomyDailySpecialsManager.test.tsx
+ * @file VenueDailySpecialsManager.test.tsx
  * @description The gastronomy menú del día panel (HOS-1041).
  *
  * Four things are asserted, and each is a decision that would otherwise stay

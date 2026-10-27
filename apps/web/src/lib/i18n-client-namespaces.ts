@@ -236,7 +236,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'experience.reviews',
     // HOS-822 — the gastronomy/experience owner form and the public listing page now name
     // the SAME listing-type key (`experience.type.*` / `gastronomy.types.*`,
-    // via `resolveGastronomyTypeLabel` / `resolveExperienceTypeLabel`). The form is a client island, so both
+    // via `resolveVenueTypeLabel` / `resolveExperienceTypeLabel`). The form is a client island, so both
     // prefixes have to ship: they replace `listing.owner.editor.typeOption.*`,
     // the editor-private duplicate that was reachable here under
     // `listing.owner` and has been deleted.

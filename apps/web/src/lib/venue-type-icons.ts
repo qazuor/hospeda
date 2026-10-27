@@ -1,7 +1,7 @@
 /**
- * @file gastronomy-type-icons.ts
+ * @file venue-type-icons.ts
  * @description Canonical gastronomy-type → icon mapping for `apps/web`
- * (HOS-97). Maps every `GastronomyTypeEnum` value to a representative
+ * (HOS-97). Maps every `VenueTypeEnum` value to a representative
  * `@repo/icons` component so the gastronomy quick-filter chip row and any
  * future gastronomy UI surface render a consistent icon per type.
  *
@@ -38,7 +38,7 @@ interface VenueTypeParams {
 }
 
 /**
- * Canonical gastronomy-type → icon map. Keys are every `GastronomyTypeEnum`
+ * Canonical gastronomy-type → icon map. Keys are every `VenueTypeEnum`
  * value (the `Record` type enforces exhaustiveness at compile time).
  *
  * Notes on the less obvious picks:
@@ -80,9 +80,9 @@ export const VENUE_TYPE_FALLBACK_ICON: ComponentType<IconProps> = ForkKnifeIcon;
  *
  * @example
  * ```ts
- * getGastronomyTypeIcon({ type: 'RESTAURANT' }); // RestaurantIcon
- * getGastronomyTypeIcon({ type: 'restaurant' }); // RestaurantIcon (case-insensitive)
- * getGastronomyTypeIcon({ type: 'unknown' });     // GASTRONOMY_TYPE_FALLBACK_ICON
+ * getVenueTypeIcon({ type: 'RESTAURANT' }); // RestaurantIcon
+ * getVenueTypeIcon({ type: 'restaurant' }); // RestaurantIcon (case-insensitive)
+ * getVenueTypeIcon({ type: 'unknown' });     // VENUE_TYPE_FALLBACK_ICON
  * ```
  */
 export function getVenueTypeIcon({ type }: VenueTypeParams): ComponentType<IconProps> {

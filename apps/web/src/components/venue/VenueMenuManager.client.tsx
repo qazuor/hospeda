@@ -1,5 +1,5 @@
 /**
- * @file GastronomyMenuManager.client.tsx
+ * @file VenueMenuManager.client.tsx
  * @description The owner's carta editor for a gastronomy listing (HOS-895).
  *
  * ## Three ways to show a menu, side by side
@@ -542,7 +542,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
         // things, so the payload decides which upsell to show rather than the
         // response body: every refusal carries `ENTITLEMENT_REQUIRED`, and
         // reading the key out of the message would be parsing prose. Checked
-        // in the SAME order `handlePutGastronomyMenu` checks them server-side
+        // in the SAME order `handlePutVenueMenu` checks them server-side
         // (photo gate, then translations gate, then the carta gate itself),
         // so a document carrying both an unentitled photo and an unentitled
         // translation is attributed to the photo on both sides.
@@ -676,9 +676,9 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
      *
      * `menu_file_url` is written by the upload route from what Cloudinary
      * returns — but that is not the ONLY way into the column. Measured against
-     * the real schemas: `GastronomyOwnerCreateInputSchema`,
-     * `GastronomyAdminCreateInputSchema` and `GastronomyUpdateInputSchema` are
-     * all built with `.omit(...)` over `GastronomySchema`, so every field that
+     * the real schemas: `VenueOwnerCreateInputSchema`,
+     * `VenueAdminCreateInputSchema` and `VenueUpdateInputSchema` are
+     * all built with `.omit(...)` over `VenueSchema`, so every field that
      * schema carries is accepted from the request body unless it is named in
      * the omit list. All three took `menuFileUrl: 'javascript:alert(1)'` and
      * kept it verbatim, because `z.string().url()` does not restrict the

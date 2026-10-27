@@ -14,7 +14,7 @@
  *
  * Native HTML form + `useZodForm` (no TanStack Form, per web conventions).
  * Field-level validation runs against a `.pick()` SUBSET of the real
- * `GastronomyOwnerCreateInputSchema` / `ExperienceOwnerCreateInputSchema`
+ * `VenueOwnerCreateInputSchema` / `ExperienceOwnerCreateInputSchema`
  * (imported from `@repo/schemas`, never hand-rolled) — the exact schema the
  * create endpoint itself validates against, so there is only one set of
  * rules, just scoped to the fields this form actually collects.

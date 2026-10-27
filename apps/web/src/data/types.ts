@@ -1001,7 +1001,7 @@ export interface VenueOpeningHoursEntry {
 
 /**
  * Social networks map for a gastronomy listing.
- * Mirrors the `socialNetworks` field from the `GastronomyPublicSchema`.
+ * Mirrors the `socialNetworks` field from the `VenuePublicSchema`.
  *
  * NOTE (HOS-1076): `whatsapp` was removed from this shape. It was never part
  * of `SocialNetworkSchema` (the WRITE/READ shape backing the `socialNetworks`
@@ -1023,15 +1023,15 @@ export interface VenueSocialNetworks {
 }
 
 /**
- * Props for the GastronomyCard component (SPEC-239).
+ * Props for the VenueCard component (SPEC-239).
  *
- * Produced by `toGastronomyCardProps()` in `transforms.ts` and consumed by
+ * Produced by `toVenueCardProps()` in `transforms.ts` and consumed by
  * the gastronomy card component. Used on the listing page and any featured
  * gastronomy sections.
  *
  * @example
  * ```ts
- * const card: GastronomyCardData = {
+ * const card: VenueCardData = {
  *   id: 'abc-123',
  *   slug: 'la-parrilla-de-juan',
  *   name: 'La Parrilla de Juan',
@@ -1104,7 +1104,7 @@ export interface VenueCardData {
 
 /**
  * One dish or drink on a gastronomy listing's structured carta (HOS-895 PR2).
- * Mirrors `GastronomyMenuItemPublic` (`@repo/schemas`) with only the fields
+ * Mirrors `VenueMenuItemPublic` (`@repo/schemas`) with only the fields
  * the public detail page renders.
  */
 export interface VenueMenuItem {
@@ -1142,7 +1142,7 @@ export interface VenueMenuItem {
 
 /**
  * One course heading with its dishes (HOS-895 PR2). Mirrors
- * `GastronomyMenuSectionPublic` (`@repo/schemas`).
+ * `VenueMenuSectionPublic` (`@repo/schemas`).
  */
 export interface VenueMenuSection {
     readonly id: string;
@@ -1157,7 +1157,7 @@ export interface VenueMenuSection {
 
 /**
  * One dish on a gastronomy listing's menú del día (HOS-1041). Mirrors
- * `GastronomyDailySpecialPublic` (`@repo/schemas`) with only the fields the
+ * `VenueDailySpecialPublic` (`@repo/schemas`) with only the fields the
  * public detail page renders.
  *
  * Deliberately carries NO `validFrom`/`validUntil`. Everything that reaches
@@ -1176,7 +1176,7 @@ export interface VenueDailySpecial {
 
 /**
  * One entry on a venue's own agenda (HOS-1042) — live music night, happy
- * hour, the Tuesday deal. Mirrors `GastronomyEventPublic` (`@repo/schemas`)
+ * hour, the Tuesday deal. Mirrors `VenueEventPublic` (`@repo/schemas`)
  * with only the fields the public detail page renders.
  *
  * `date` and `weekday` are mutually exclusive per `recurrence`, exactly as the
@@ -1200,9 +1200,9 @@ export interface VenueEvent {
 
 /**
  * Typed data shape for the gastronomy detail page (SPEC-239).
- * Produced by `toGastronomyDetailPageProps()` in `transforms.ts`.
+ * Produced by `toVenueDetailPageProps()` in `transforms.ts`.
  *
- * Extends `GastronomyCardData` with fields only needed for the full detail view.
+ * Extends `VenueCardData` with fields only needed for the full detail view.
  */
 export interface VenueDetailData extends VenueCardData {
     /** Full plain-text description of the establishment. */
@@ -1285,7 +1285,7 @@ export type ExperienceOpeningHoursEntry = VenueOpeningHoursEntry;
 
 /**
  * Social networks map for an experience listing.
- * Mirrors GastronomySocialNetworks — same fields from the shared listing core.
+ * Mirrors VenueSocialNetworks — same fields from the shared listing core.
  */
 export interface ExperienceSocialNetworks {
     readonly facebook?: string | null;

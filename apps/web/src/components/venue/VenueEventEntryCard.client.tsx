@@ -1,6 +1,6 @@
 /**
- * @file GastronomyVenueEventEntryCard.client.tsx
- * @description One row of `GastronomyVenueEventsManager` — a single agenda
+ * @file VenueEventEntryCard.client.tsx
+ * @description One row of `VenueEventsManager` — a single agenda
  * entry's fields (HOS-1042).
  *
  * Split out of the manager to keep that file under the repo's 500-line cap.

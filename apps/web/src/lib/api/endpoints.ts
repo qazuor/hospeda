@@ -1556,7 +1556,7 @@ export const authApi = {
 
 /**
  * Review item shape returned by GET /gastronomies/:id/reviews.
- * The full shape is defined server-side (GastronomyReviewPublicSchema pick);
+ * The full shape is defined server-side (VenueReviewPublicSchema pick);
  * the web client only needs the fields actually rendered in the review list.
  */
 export interface VenueReviewPublicItem {

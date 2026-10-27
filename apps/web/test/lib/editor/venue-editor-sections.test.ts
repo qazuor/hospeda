@@ -1,5 +1,5 @@
 /**
- * @file gastronomy-editor-sections.test.ts
+ * @file venue-editor-sections.test.ts
  * @description Guards the gastronomy editor's section registry (HOS-1080,
  * HOS-895, HOS-1041, HOS-1042).
  *

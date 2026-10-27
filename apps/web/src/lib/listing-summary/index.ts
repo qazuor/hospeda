@@ -6,7 +6,7 @@
  * and experience listing pages — which previously fell back to the generic
  * "N resultados encontrados" line.
  *
- * `buildGastronomyListingSummary` and `buildExperienceListingSummary` are
+ * `buildVenueListingSummary` and `buildExperienceListingSummary` are
  * thin wrappers around the shared {@link buildListingSummary} that
  * supply each entity's fixed subject noun / gender / `hasPriceRange` config
  * (see `summary.types.ts` for why a single parametrized builder is used
@@ -14,16 +14,16 @@
  *
  * @example
  * ```ts
- * import { buildGastronomyListingSummary, DEFAULT_GASTRONOMY_TYPES } from '@/lib/listing-summary';
+ * import { buildVenueListingSummary, DEFAULT_VENUE_TYPES } from '@/lib/listing-summary';
  *
- * const summary = buildGastronomyListingSummary({
+ * const summary = buildVenueListingSummary({
  *     locale: 'es',
  *     filters: { type: 'RESTAURANT', destinationId: 'colon-id', isFeatured: true },
  *     counts: { shown: 3, total: 4 },
  *     sort: { sortKey: 'featured' },
  *     catalogs: {
  *         destinations: [{ key: 'colon-id', label: { es: 'Colón', en: 'Colón', pt: 'Colón' } }],
- *         types: DEFAULT_GASTRONOMY_TYPES
+ *         types: DEFAULT_VENUE_TYPES
  *     }
  * });
  * // => 'Mostrando 3 de 4 establecimientos gastronómicos de restaurante en Colón, solo destacados, ordenados con los destacados primero.'

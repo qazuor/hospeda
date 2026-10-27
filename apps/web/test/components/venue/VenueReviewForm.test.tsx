@@ -1,6 +1,6 @@
 /**
- * @file GastronomyReviewForm.test.tsx
- * @description Unit tests for GastronomyReviewForm.client.tsx (HOS-190 slice 3,
+ * @file VenueReviewForm.test.tsx
+ * @description Unit tests for VenueReviewForm.client.tsx (HOS-190 slice 3,
  * form 11). Focused on the client-side title/content min-length gate added to
  * mirror DestinationReviewSidebarCard.client.tsx's pattern — the API does not
  * return per-field errors in production, so this validation is the only gate.

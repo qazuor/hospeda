@@ -1,5 +1,5 @@
 /**
- * @file GastronomyDailySpecialsManager.client.tsx
+ * @file VenueDailySpecialsManager.client.tsx
  * @description The owner's menú del día editor for a gastronomy listing
  * (HOS-1041).
  *
@@ -27,7 +27,7 @@
  *
  * The menú del día is a `gastronomy-pro` capability, and the page this mounts
  * on carries no entitlement information — the same situation
- * `GastronomyMenuManager` and `BrochureDownloadButton` are in. So the fields
+ * `VenueMenuManager` and `BrochureDownloadButton` are in. So the fields
  * render for every owner and the API decides; a refusal is shown as the upsell
  * sentence it is, never as "something went wrong".
  *

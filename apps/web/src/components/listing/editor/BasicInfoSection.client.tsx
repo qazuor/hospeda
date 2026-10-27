@@ -292,7 +292,7 @@ export function BasicInfoSection({
 
             {/* HOS-371: TipTap instead of the bare textarea this field used to
                 be. `richDescription` is already rendered as Markdown on the
-                public pages (`GastronomyDescription.astro` / `ExperienceInfo.astro`
+                public pages (`VenueDescription.astro` / `ExperienceInfo.astro`
                 both run it through `renderContent`), and RichTextEditor persists
                 Markdown — so the stored shape is unchanged, the owner just stops
                 having to hand-write it.

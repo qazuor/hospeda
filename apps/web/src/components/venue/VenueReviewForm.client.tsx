@@ -1,5 +1,5 @@
 /**
- * @file GastronomyReviewForm.client.tsx
+ * @file VenueReviewForm.client.tsx
  * @description Review-submission island for the gastronomy detail page
  * (SPEC-239 / SPEC-259 smoke follow-up). Lets an authenticated visitor open a
  * native <dialog> with a compact review form.
@@ -51,7 +51,7 @@ function joinApi(apiUrl: string, path: string): string {
 }
 
 /**
- * GastronomyReviewForm — authenticated review submission for a gastronomy
+ * VenueReviewForm — authenticated review submission for a gastronomy
  * listing.
  *
  * @param props - Component props (see {@link VenueReviewFormProps}).

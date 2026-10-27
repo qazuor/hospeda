@@ -3,7 +3,7 @@
  * @description Picks the editor registry for a gastronomy or experience listing
  * by its vertical (HOS-1080).
  *
- * The per-vertical registries live in `gastronomy-editor-sections.ts` and
+ * The per-vertical registries live in `venue-editor-sections.ts` and
  * `experience-editor-sections.ts`; callers that already hold the vertical as a
  * route param (`'gastronomy' | 'experience'`) use these two functions instead
  * of branching themselves.

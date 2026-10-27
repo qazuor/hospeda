@@ -2,7 +2,7 @@
  * @file OpeningHoursSection.test.ts
  * @description Unit tests for the opening-hours pipeline (SPEC-239 T-054, Bug B8):
  * the pure helpers in `venue-hours.ts`, the `normalizeOpeningHours`
- * transform (via the exported `toGastronomyCardProps`), and source-read
+ * transform (via the exported `toVenueCardProps`), and source-read
  * assertions for `OpeningHoursSection.astro`.
  *
  * The Astro component cannot be rendered in Vitest so we:
@@ -302,7 +302,7 @@ describe('computeOpenNowStatus', () => {
 });
 
 // ---------------------------------------------------------------------------
-// normalizeOpeningHours (exercised via the exported toGastronomyCardProps)
+// normalizeOpeningHours (exercised via the exported toVenueCardProps)
 // ---------------------------------------------------------------------------
 
 describe('normalizeOpeningHours (via toGastronomyCardProps)', () => {

@@ -1,5 +1,5 @@
 /**
- * @file GastronomyMenuQrWidget.client.tsx
+ * @file VenueMenuQrWidget.client.tsx
  * @description Owner panel for the gastronomy menu QR and its scan analytics
  * (HOS-1044 §6.6), rendered in `mi-cuenta/comercio/` next to
  * `ListingViewsWidget`.
@@ -32,7 +32,7 @@
  * breakdown's values still sum to `total`), and this panel renders that
  * bucket with a proper label, not the raw string.
  *
- * @module components/gastronomy/GastronomyMenuQrWidget
+ * @module components/venue/VenueMenuQrWidget
  */
 
 import { type JSX, useEffect, useState } from 'react';
@@ -261,12 +261,12 @@ function QrBlock({
 }
 
 /**
- * GastronomyMenuQrWidget — per-listing menu QR + scan analytics for
+ * VenueMenuQrWidget — per-listing menu QR + scan analytics for
  * gastronomy owners, gated by the `menu_qr_scan_metrics` entitlement.
  *
  * @example
  * ```astro
- * <GastronomyMenuQrWidget client:visible locale={locale} listings={gastronomyListings} />
+ * <VenueMenuQrWidget client:visible locale={locale} listings={gastronomyListings} />
  * ```
  */
 export function VenueMenuQrWidget({

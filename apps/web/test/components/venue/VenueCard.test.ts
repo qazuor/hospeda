@@ -1,6 +1,6 @@
 /**
- * @file GastronomyCard.test.ts
- * @description Source-read tests for GastronomyCard.astro (SPEC-239 T-053).
+ * @file VenueCard.test.ts
+ * @description Source-read tests for VenueCard.astro (SPEC-239 T-053).
  * Astro components cannot be rendered in Vitest; we read the source and assert
  * on its structural content — the documented web app approach for .astro coverage.
  */

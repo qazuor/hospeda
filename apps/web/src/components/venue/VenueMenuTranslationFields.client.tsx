@@ -1,7 +1,7 @@
 /**
- * @file GastronomyMenuTranslationFields.client.tsx
+ * @file VenueMenuTranslationFields.client.tsx
  * @description The EN/PT translation fields for one carta section or dish
- * (HOS-1043), extracted out of `GastronomyMenuManager.client.tsx` to keep that
+ * (HOS-1043), extracted out of `VenueMenuManager.client.tsx` to keep that
  * file's growth in check.
  *
  * Native `<details>`/`<summary>` for the collapse, not a `useState` toggle: a
@@ -11,11 +11,11 @@
  *
  * The ES leg of each translated field is never edited here — it is the
  * section/item's own `name`/`description` input, already rendered by the
- * parent. Only `en`/`pt` are collected; `GastronomyMenuManager`'s
+ * parent. Only `en`/`pt` are collected; `VenueMenuManager`'s
  * `buildI18nField` decides at save time whether the pair is complete enough
  * to submit.
  *
- * @module components/gastronomy/GastronomyMenuTranslationFields
+ * @module components/venue/VenueMenuTranslationFields
  */
 
 import type { JSX } from 'react';

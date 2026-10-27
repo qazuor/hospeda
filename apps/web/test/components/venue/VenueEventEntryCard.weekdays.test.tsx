@@ -1,5 +1,5 @@
 /**
- * @file GastronomyVenueEventEntryCard.weekdays.test.tsx
+ * @file VenueEventEntryCard.weekdays.test.tsx
  * @description The weekday picker renders TRANSLATED day names after
  * hydration, not raw i18n key text (HOS-1042).
  *

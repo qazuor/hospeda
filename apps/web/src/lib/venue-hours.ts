@@ -1,11 +1,11 @@
 /**
- * @file gastronomy-hours.ts
+ * @file venue-hours.ts
  * @description Helpers for computing "open now" status and today's opening-hours
  * entry from a gastronomy listing's `openingHours` map (SPEC-239 T-053 / T-054).
  *
  * The `openingHours` field on the public API response is a `Record<string, …>`
  * keyed by lower-cased English day names: `monday`, `tuesday`, … `sunday`.
- * This matches the `GastronomyOpeningHoursEntry` interface in `@/data/types`.
+ * This matches the `VenueOpeningHoursEntry` interface in `@/data/types`.
  *
  * All functions are pure and accept an injected `now` date so they are trivially
  * unit-testable without time-zone tricks.
