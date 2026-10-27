@@ -64,9 +64,24 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         eventMediaModel.count.mockResolvedValue(2);
     });
 
+    it('TEST:1819:6 AC:1:3 resolves venue gallery count through venue media', async () => {
+        const count = await resolveVisibleGalleryCount({
+            entityType: 'venue',
+            entityId: ENTITY_ID,
+            entity: entityWithJsonbGallery
+        });
+
+        expect(count).toBe(5);
+        expect(venueMediaModel.findByVenue).toHaveBeenCalledWith({
+            gastronomyId: ENTITY_ID,
+            state: 'visible',
+            isFeatured: false
+        });
+    });
+
     it('counts gastronomy photos from gastronomy_media, not from the JSONB blob', async () => {
         const count = await resolveVisibleGalleryCount({
-            entityType: 'gastronomy',
+            entityType: 'venue',
             entityId: ENTITY_ID,
             entity: entityWithJsonbGallery
         });
@@ -114,7 +129,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
     // HOS-791 ------------------------------------------------------------
     it.each([
         ['accommodation', () => accommodationMediaModel.findByAccommodation],
-        ['gastronomy', () => venueMediaModel.findByVenue],
+        ['venue', () => venueMediaModel.findByVenue],
         ['experience', () => experienceMediaModel.findByExperience]
     ])('excludes the featured image from the %s count (HOS-791)', async (entityType, getMock) => {
         // The featured image is not a gallery item. Counting it charged the
@@ -135,7 +150,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         // An archived photo occupies no gallery slot; counting it would cap an
         // owner below their real allowance.
         await resolveVisibleGalleryCount({
-            entityType: 'gastronomy',
+            entityType: 'venue',
             entityId: ENTITY_ID,
             entity: {}
         });

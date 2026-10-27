@@ -28,7 +28,8 @@ import {
     AccommodationService,
     DestinationService,
     EventService,
-    PostService
+    PostService,
+    VenueService
 } from '@repo/service-core';
 
 import { initApp } from '../../../src/app';
@@ -64,10 +65,39 @@ describe('Admin media delete — wasPresent (SPEC-078-GAPS T-030 / GAP-078-154)'
         vi.spyOn(DestinationService.prototype, 'getById').mockImplementation(stub);
         vi.spyOn(EventService.prototype, 'getById').mockImplementation(stub);
         vi.spyOn(PostService.prototype, 'getById').mockImplementation(stub);
+        vi.spyOn(VenueService.prototype, 'getById').mockImplementation(stub);
     });
 
     beforeEach(() => {
         mockDelete.mockReset();
+    });
+
+    it('TEST:1819:6 AC:1:3 resolves venue permissions and service for admin delete', async () => {
+        mockDelete.mockResolvedValueOnce({ wasPresent: true });
+        const venuePublicId = `hospeda/test/gastronomies/${ADMIN_ENTITY_ID}/featured`;
+        const actor = createMockAdminActor({
+            id: '00000000-0000-4000-8000-000000000099',
+            permissions: [
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                PermissionEnum.ACCESS_API_ADMIN,
+                PermissionEnum.MEDIA_DELETE,
+                PermissionEnum.GASTRONOMY_EDIT_ALL
+            ]
+        });
+
+        const res = await app.request(
+            `/api/v1/admin/media?publicId=${encodeURIComponent(venuePublicId)}`,
+            { method: 'DELETE', ...createAuthenticatedRequest(actor) }
+        );
+
+        expect(res.status).toBe(200);
+        expect(VenueService.prototype.getById).toHaveBeenCalledWith(
+            expect.anything(),
+            ADMIN_ENTITY_ID
+        );
+        expect(mockDelete).toHaveBeenCalledWith({ publicId: venuePublicId });
+        const payload = (await res.json()) as { success: boolean };
+        expect(payload.success).toBe(true);
     });
 
     it('returns wasPresent: true when the provider reports the asset was deleted', async () => {

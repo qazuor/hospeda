@@ -328,20 +328,20 @@ describe('DELETE /api/v1/admin/media — security hardening (T-005)', () => {
 
 describe('validateEntityMediaPermission — gastronomy and experience verticals', () => {
     for (const entityType of [
-        'gastronomy',
+        'venue',
         'experience'
     ] as const satisfies readonly MediaEntityType[]) {
         describe(entityType, () => {
             const editAll =
-                entityType === 'gastronomy'
+                entityType === 'venue'
                     ? PermissionEnum.GASTRONOMY_EDIT_ALL
                     : PermissionEnum.EXPERIENCE_EDIT_ALL;
             const editOwn =
-                entityType === 'gastronomy'
+                entityType === 'venue'
                     ? PermissionEnum.GASTRONOMY_EDIT_OWN
                     : PermissionEnum.EXPERIENCE_EDIT_OWN;
 
-            it('allows actor with vertical EDIT_ALL regardless of ownership', () => {
+            it('TEST:1819:6 AC:1:3 allows venue media permissions', () => {
                 const actor = makeActor([editAll]);
                 const result = validateEntityMediaPermission({
                     actor,
@@ -374,7 +374,7 @@ describe('validateEntityMediaPermission — gastronomy and experience verticals'
 
             it("rejects the other vertical's EDIT_ALL permission", () => {
                 const otherEditAll =
-                    entityType === 'gastronomy'
+                    entityType === 'venue'
                         ? PermissionEnum.EXPERIENCE_EDIT_ALL
                         : PermissionEnum.GASTRONOMY_EDIT_ALL;
                 expect(

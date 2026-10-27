@@ -44,7 +44,8 @@ import {
     AccommodationService,
     DestinationService,
     EventService,
-    PostService
+    PostService,
+    VenueService
 } from '@repo/service-core';
 
 import { initApp } from '../../../src/app';
@@ -125,6 +126,10 @@ describe('DELETE /api/v1/protected/media/delete-entity — integration (SPEC-208
             data: ownerEntity,
             error: null
         } as never);
+        vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({
+            data: ownerEntity,
+            error: null
+        } as never);
     });
 
     afterAll(() => {
@@ -166,6 +171,18 @@ describe('DELETE /api/v1/protected/media/delete-entity — integration (SPEC-208
         expect(res.status).toBe(200);
         const body = (await res.json()) as { data: { wasPresent: boolean } };
         expect(body.data.wasPresent).toBe(false);
+    });
+
+    it('TEST:1819:6 AC:1:3 resolves venue service from the gastronomies media folder', async () => {
+        const venuePublicId = `hospeda/test/gastronomies/${ENTITY_ID}/featured`;
+        const res = await app.request(DELETE_URL(venuePublicId), {
+            method: 'DELETE',
+            headers: authHeaders(buildOwnerActor())
+        });
+
+        expect(res.status).toBe(200);
+        expect(VenueService.prototype.getById).toHaveBeenCalledWith(expect.anything(), ENTITY_ID);
+        expect(mockDelete).toHaveBeenCalledWith({ publicId: venuePublicId });
     });
 
     // ── CRITICAL AUTHZ: foreign publicId ─────────────────────────────────────

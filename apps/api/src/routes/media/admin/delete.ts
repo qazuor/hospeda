@@ -129,7 +129,7 @@ const resolveDeleteEntityService = (
             return new EventService({ logger: apiLogger });
         case 'post':
             return new PostService({ logger: apiLogger });
-        case 'gastronomy':
+        case 'venue':
             return new VenueService({ logger: apiLogger });
         case 'experience':
             return new ExperienceService({ logger: apiLogger });
@@ -153,7 +153,7 @@ const parseEntityFromPublicId = (
     publicId: string
 ): { entityType: MediaEntityType; entityId: string } | null => {
     const match = publicId.match(
-        /^hospeda\/[^/]+\/(accommodations|destinations|events|posts|postSponsors|eventOrganizers)\/([^/]+)(\/|$)/
+        /^hospeda\/[^/]+\/(accommodations|destinations|events|posts|gastronomies|postSponsors|eventOrganizers)\/([^/]+)(\/|$)/
     );
     if (!match) return null;
 
@@ -162,6 +162,7 @@ const parseEntityFromPublicId = (
         destinations: 'destination',
         events: 'event',
         posts: 'post',
+        gastronomies: 'venue',
         postSponsors: 'postSponsor',
         eventOrganizers: 'eventOrganizer'
     };

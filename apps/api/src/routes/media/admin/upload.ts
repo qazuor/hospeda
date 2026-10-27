@@ -119,7 +119,7 @@ const resolveEntityService = (
             return new EventService({ logger: apiLogger });
         case 'post':
             return new PostService({ logger: apiLogger });
-        case 'gastronomy':
+        case 'venue':
             return new VenueService({ logger: apiLogger });
         case 'experience':
             return new ExperienceService({ logger: apiLogger });
