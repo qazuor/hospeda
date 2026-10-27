@@ -19,7 +19,6 @@
  *
  * Known gaps pinned below (each `it.fails` states the intended behaviour, and a
  * "currently ..." sibling pins today's so a crash or a fix both turn red):
- * - HOS-1912: the list is not scoped to the caller.
  * - HOS-1913: a foreign sponsorship answers 403.
  * - HOS-1916: the seeded SPONSOR cannot create, update, delete or read analytics
  *   of its own sponsorships, and the list ignores the page.
@@ -355,23 +354,12 @@ describe('Sponsor User E2E Flow', () => {
             expect(res.status).toBe(403);
         });
 
-        // HOS-1912: SponsorshipService._executeSearch only forces lifecycleState, so any holder
-        // of SPONSORSHIP_VIEW_OWN lists every sponsor's sponsorships. The seeded HOST holds it
-        // too (rolePermissions.seed.ts), so a host reads the whole sponsor base.
-        it.fails('should list nothing but their own sponsorships to a sponsor', async () => {
+        // Regression for HOS-1912: the list is scoped to the caller without SPONSORSHIP_VIEW_ANY.
+        it('should list nothing but their own sponsorships to a sponsor', async () => {
             const res = await app.request(BASE, { headers: sponsorHeaders() });
 
             expect(res.status).toBe(200);
             expect(idsOf({ body: await res.json() })).toEqual([mine.id]);
-        });
-
-        it("currently lists every sponsor's sponsorships to a seeded SPONSOR (HOS-1912)", async () => {
-            const res = await app.request(BASE, { headers: sponsorHeaders() });
-
-            expect(res.status).toBe(200);
-            expect([...idsOf({ body: await res.json() })].sort()).toEqual(
-                [mine.id, theirs.id].sort()
-            );
         });
 
         describe('a seeded HOST (holds SPONSORSHIP_VIEW_OWN, owns no sponsorship)', () => {
@@ -388,38 +376,20 @@ describe('Sponsor User E2E Flow', () => {
                 );
             });
 
-            it.fails('should list none of the sponsorships to a host', async () => {
+            it('should list none of the sponsorships to a host', async () => {
                 const res = await app.request(BASE, { headers: hostHeaders });
 
                 expect(res.status).toBe(200);
                 expect(idsOf({ body: await res.json() })).toEqual([]);
             });
 
-            it("currently lists every sponsor's sponsorships to a seeded HOST (HOS-1912)", async () => {
-                const res = await app.request(BASE, { headers: hostHeaders });
-
-                expect(res.status).toBe(200);
-                expect([...idsOf({ body: await res.json() })].sort()).toEqual(
-                    [mine.id, theirs.id].sort()
-                );
-            });
-
-            it.fails('should ignore a foreign ?sponsorUserId for a host', async () => {
+            it('should ignore a foreign ?sponsorUserId for a host', async () => {
                 const res = await app.request(`${BASE}?sponsorUserId=${otherSponsorId}`, {
                     headers: hostHeaders
                 });
 
                 expect(res.status).toBe(200);
                 expect(idsOf({ body: await res.json() })).toEqual([]);
-            });
-
-            it('currently serves the foreign sponsor rows asked for with ?sponsorUserId (HOS-1912)', async () => {
-                const res = await app.request(`${BASE}?sponsorUserId=${otherSponsorId}`, {
-                    headers: hostHeaders
-                });
-
-                expect(res.status).toBe(200);
-                expect(idsOf({ body: await res.json() })).toEqual([theirs.id]);
             });
         });
 
@@ -507,7 +477,7 @@ describe('Sponsor User E2E Flow', () => {
 
         describe('second page', () => {
             beforeEach(async () => {
-                // 3 rows in total with the two seeded in the outer beforeEach is 4 sponsorships.
+                // The sponsor owns 3 rows (its seeded one plus these two); the list is scoped to the caller (HOS-1912).
                 await seedSponsorship({ sponsorUserId: sponsorId, level });
                 await seedSponsorship({ sponsorUserId: sponsorId, level });
             });
@@ -531,7 +501,7 @@ describe('Sponsor User E2E Flow', () => {
                 expect(secondBody.data.pagination).toMatchObject({
                     page: 2,
                     pageSize: 1,
-                    total: 4
+                    total: 3
                 });
             });
 
@@ -543,7 +513,7 @@ describe('Sponsor User E2E Flow', () => {
                 expect(second.status).toBe(200);
                 const body = await second.json();
                 expect(body.data.pagination).toMatchObject({ page: 2, pageSize: 1 });
-                expect(body.data.items).toHaveLength(4);
+                expect(body.data.items).toHaveLength(3);
             });
         });
 
