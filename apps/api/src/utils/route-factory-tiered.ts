@@ -20,6 +20,7 @@ import {
 } from '../middlewares/authorization';
 import { enforceListingAccess } from '../middlewares/listing-access';
 import { ownershipMiddleware } from '../middlewares/ownership';
+import { describeListingAccessOnGate } from '../middlewares/route-gate-descriptor';
 import type { ListingAccessConfig, OwnershipConfig } from '../types/authorization';
 import { assertConcretePublicSchema } from './response-helpers';
 import type { CreateOpenApiRouteInterface } from './route-factory';
@@ -178,7 +179,14 @@ export const createProtectedRoute = (options: ProtectedRouteOptions) => {
 
     // Build middleware chain
     const middlewares: MiddlewareHandler[] = [
-        protectedAuthMiddleware(requiredPermissions, anyOfPermissions, emailUnverifiedOperation),
+        describeListingAccessOnGate({
+            gate: protectedAuthMiddleware(
+                requiredPermissions,
+                anyOfPermissions,
+                emailUnverifiedOperation
+            ),
+            listingAccess
+        }),
         ...(routeOptions.options?.middlewares || [])
     ];
 
@@ -295,7 +303,10 @@ export const createAdminRoute = (options: AdminRouteOptions) => {
             ...routeOptions.options,
             skipAuth: false,
             middlewares: [
-                adminAuthMiddleware(requiredPermissions, anyOfPermissions),
+                describeListingAccessOnGate({
+                    gate: adminAuthMiddleware(requiredPermissions, anyOfPermissions),
+                    listingAccess
+                }),
                 ...(routeOptions.options?.middlewares || [])
             ]
         }
