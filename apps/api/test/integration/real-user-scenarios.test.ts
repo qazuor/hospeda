@@ -63,7 +63,8 @@ describe('Real User Scenarios End-to-End', () => {
             }),
             'user-agent': userAgent
         });
-        plainUserHeaders = buildMockActorHeaders({ actorId: admin.id, permissions: [] });
+        const regular = await createMockActorUser({ label: 'real-user-regular' });
+        plainUserHeaders = buildMockActorHeaders({ actorId: regular.id, permissions: [] });
     });
 
     afterEach(async () => {
