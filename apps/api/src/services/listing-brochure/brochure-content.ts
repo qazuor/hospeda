@@ -323,7 +323,7 @@ export function buildVenueBrochureContent(input: {
     siteUrl: string;
 }): BrochureContent {
     const { listing, locale } = input;
-    const ns = DETAIL_NS.gastronomy;
+    const ns = DETAIL_NS.venue;
 
     const title = i18nText({ value: listing.nameI18n, locale }) || listing.name;
     const typeLabel = t({ locale, key: `gastronomy.types.${listing.type}` });
