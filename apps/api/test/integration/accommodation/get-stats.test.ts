@@ -89,6 +89,17 @@ describe('GET /accommodations/:id/stats', () => {
             expect(data).toHaveProperty('success', false);
             expect(data.error).toHaveProperty('code', 'NOT_FOUND');
         });
+
+        it('should answer 404 NOT_FOUND (not 500) on /summary for non-existent accommodation', async () => {
+            const response = await app.request(`${baseUrl}/${nonExistentUuid}/summary`, {
+                headers
+            });
+
+            expect(response.status).toBe(404);
+            const data = await response.json();
+            expect(data).toHaveProperty('success', false);
+            expect(data.error).toHaveProperty('code', 'NOT_FOUND');
+        });
     });
 
     describe('Validation Errors (400)', () => {
