@@ -1343,6 +1343,26 @@ export class DestinationService extends BaseCrudService<
     // ========================================================================
 
     /**
+     * Asserts that a destination exists (and is not soft-deleted) before a
+     * hierarchy read, so an unknown id answers NOT_FOUND instead of an empty
+     * list (HOS-1906). Same existence check `getBreadcrumb` uses.
+     * @param params - Destination id and optional transaction
+     * @throws {ServiceError} NOT_FOUND when no live destination has that id
+     */
+    private async _assertDestinationExists(params: {
+        readonly destinationId: string;
+        readonly tx?: ServiceContext['tx'];
+    }): Promise<void> {
+        const destination = await this.model.findOne({ id: params.destinationId }, params.tx);
+        if (!destination) {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_FOUND,
+                `Destination not found: ${params.destinationId}`
+            );
+        }
+    }
+
+    /**
      * Gets direct children of a destination.
      * @param actor - The actor performing the action
      * @param params - Input containing destinationId
@@ -1359,6 +1379,10 @@ export class DestinationService extends BaseCrudService<
             schema: GetDestinationChildrenInputSchema,
             ctx,
             execute: async (validData, _actor, resolvedCtx) => {
+                await this._assertDestinationExists({
+                    destinationId: validData.destinationId,
+                    tx: resolvedCtx.tx
+                });
                 const children = await this.model.findChildren(
                     validData.destinationId,
                     resolvedCtx.tx
@@ -1385,6 +1409,10 @@ export class DestinationService extends BaseCrudService<
             schema: GetDestinationDescendantsInputSchema,
             ctx,
             execute: async (validData, _actor, resolvedCtx) => {
+                await this._assertDestinationExists({
+                    destinationId: validData.destinationId,
+                    tx: resolvedCtx.tx
+                });
                 const descendants = await this.model.findDescendants(
                     validData.destinationId,
                     {
@@ -1415,6 +1443,10 @@ export class DestinationService extends BaseCrudService<
             schema: GetDestinationAncestorsInputSchema,
             ctx,
             execute: async (validData, _actor, resolvedCtx) => {
+                await this._assertDestinationExists({
+                    destinationId: validData.destinationId,
+                    tx: resolvedCtx.tx
+                });
                 const ancestors = await this.model.findAncestors(
                     validData.destinationId,
                     resolvedCtx.tx
