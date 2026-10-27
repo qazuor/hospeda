@@ -43,7 +43,7 @@ const OWNER_ID = '00000000-0000-4000-a000-000000000002';
 /** The account the cap exists for: a listing owner, no staff permission. */
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.GASTRONOMY_OWNER],
+    roles: [RoleEnum.VENUE_OWNER],
     permissions: []
 };
 

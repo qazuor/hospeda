@@ -88,15 +88,15 @@ function makeFaq(overrides: Partial<VenueFaq> = {}): VenueFaq {
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.GASTRONOMY_OWNER],
-    // SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN replaces the per-section FAQ permission
-    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
+    roles: [RoleEnum.VENUE_OWNER],
+    // SPEC-253 D2=b: single VENUE_EDIT_OWN replaces the per-section FAQ permission
+    permissions: [PermissionEnum.VENUE_EDIT_OWN]
 };
 
 const _staffActor: Actor = {
     id: 'staff-id',
     roles: [RoleEnum.ADMIN],
-    permissions: [PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.GASTRONOMY_VIEW_ALL]
+    permissions: [PermissionEnum.VENUE_EDIT_ALL, PermissionEnum.VENUE_VIEW_ALL]
 };
 
 const touristActor: Actor = {
@@ -182,7 +182,7 @@ describe('addGastronomyFaq', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should return FORBIDDEN when actor lacks GASTRONOMY_EDIT_OWN', async () => {
+    it('should return FORBIDDEN when actor lacks VENUE_EDIT_OWN', async () => {
         // Arrange
         const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         const input: VenueFaqAddInput = {

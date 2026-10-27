@@ -92,13 +92,13 @@ const VERTICAL_PERMISSIONS: Readonly<
     Record<VenueOrExperience, Readonly<Record<ListingPermissionSlot, PermissionEnum>>>
 > = {
     venue: {
-        editOwn: PermissionEnum.GASTRONOMY_EDIT_OWN,
-        create: PermissionEnum.GASTRONOMY_CREATE,
-        viewAll: PermissionEnum.GASTRONOMY_VIEW_ALL,
-        editAll: PermissionEnum.GASTRONOMY_EDIT_ALL,
-        delete: PermissionEnum.GASTRONOMY_DELETE,
-        moderateReview: PermissionEnum.GASTRONOMY_MODERATE_REVIEW,
-        moderationChange: PermissionEnum.GASTRONOMY_MODERATION_CHANGE
+        editOwn: PermissionEnum.VENUE_EDIT_OWN,
+        create: PermissionEnum.VENUE_CREATE,
+        viewAll: PermissionEnum.VENUE_VIEW_ALL,
+        editAll: PermissionEnum.VENUE_EDIT_ALL,
+        delete: PermissionEnum.VENUE_DELETE,
+        moderateReview: PermissionEnum.VENUE_MODERATE_REVIEW,
+        moderationChange: PermissionEnum.VENUE_MODERATION_CHANGE
     },
     experience: {
         editOwn: PermissionEnum.EXPERIENCE_EDIT_OWN,
@@ -118,7 +118,7 @@ const VERTICAL_PERMISSIONS: Readonly<
  * Each listing grants only its vertical's owner role.
  */
 export const VERTICAL_OWNER_ROLES: Readonly<Record<VenueOrExperience, RoleEnum>> = {
-    venue: RoleEnum.GASTRONOMY_OWNER,
+    venue: RoleEnum.VENUE_OWNER,
     experience: RoleEnum.EXPERIENCE_OWNER
 };
 

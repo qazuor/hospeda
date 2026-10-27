@@ -21,7 +21,7 @@
  * 3. **Owner update gate** — `updateOwn()` validates with
  *    `GastronomyOwnerUpdateInputSchema` (operational sections only), enforces
  *    ownership (`NOT_FOUND` for non-owners), and gates on a single
- *    `GASTRONOMY_EDIT_OWN` permission (SPEC-253 D2=b; per-section perms removed).
+ *    `VENUE_EDIT_OWN` permission (SPEC-253 D2=b; per-section perms removed).
  * 4. **Public projections** — `_projectPublicEntity` strips `adminInfo` and
  *    `ownerId` from public-tier responses.
  *
@@ -338,12 +338,12 @@ export class VenueService extends BaseListingService<
         // were PUBLISHED (indexable) surface as GONE (410) so crawlers/LLM fetchers
         // deindex the URL fast; deleted content that was never public
         // returns NOT_FOUND (404, uniform) to preserve the anti-enumeration
-        // contract (SPEC-092 T-087). Staff with GASTRONOMY_VIEW_ALL still see it
+        // contract (SPEC-092 T-087). Staff with VENUE_VIEW_ALL still see it
         // for management (HOS-117 T-022).
         if (
             entity.deletedAt !== null &&
             entity.deletedAt !== undefined &&
-            !hasPermission(actor, PermissionEnum.GASTRONOMY_VIEW_ALL)
+            !hasPermission(actor, PermissionEnum.VENUE_VIEW_ALL)
         ) {
             if (entity.publicationStatus === PublicationStatusEnum.PUBLISHED) {
                 throw new ServiceError(ServiceErrorCode.GONE, 'Gastronomy is gone');
@@ -351,7 +351,7 @@ export class VenueService extends BaseListingService<
             throw entityNotFoundError({ entityName: VENUE_ENTITY_NAME });
         }
 
-        if (hasPermission(actor, PermissionEnum.GASTRONOMY_VIEW_ALL)) return;
+        if (hasPermission(actor, PermissionEnum.VENUE_VIEW_ALL)) return;
         assertListingReadable({ actor, entity, entityName: VENUE_ENTITY_NAME });
     }
 
@@ -573,9 +573,9 @@ export class VenueService extends BaseListingService<
      *    from the schema — any forged keys in the HTTP body are silently stripped.
      * 2. **Ownership check**: a non-owner receives `NOT_FOUND` to prevent
      *    existence leakage (same pattern as SPEC-169 for accommodations).
-     *    Staff holding `GASTRONOMY_EDIT_ALL` bypass the ownership check.
-     * 3. **Single permission check** (SPEC-253 D2=b): gated on `GASTRONOMY_EDIT_OWN`
-     *    (owner) OR `GASTRONOMY_EDIT_ALL` (staff). The former per-section permissions
+     *    Staff holding `VENUE_EDIT_ALL` bypass the ownership check.
+     * 3. **Single permission check** (SPEC-253 D2=b): gated on `VENUE_EDIT_OWN`
+     *    (owner) OR `VENUE_EDIT_ALL` (staff). The former per-section permissions
      *    are removed — a single check replaces all 9 conditional gates.
      * 4. **Delegation**: passes through to `this.update()` so that junction sync
      *    (`_beforeUpdate` / `_afterUpdate`) fires for amenity/feature changes.
@@ -621,7 +621,7 @@ export class VenueService extends BaseListingService<
 
             // 3. Ownership gate — non-owners receive NOT_FOUND (existence leak prevention).
             const isOwner = entity.ownerId === actor.id;
-            const hasEditAll = hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL);
+            const hasEditAll = hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL);
             if (!isOwner && !hasEditAll) {
                 return {
                     error: {
@@ -631,7 +631,7 @@ export class VenueService extends BaseListingService<
                 };
             }
 
-            // 4. Single permission check (SPEC-253 D2=b): GASTRONOMY_EDIT_OWN covers all
+            // 4. Single permission check (SPEC-253 D2=b): VENUE_EDIT_OWN covers all
             //    owner-accessible sections. Staff with EDIT_ALL bypass this gate.
             if (!hasEditAll) {
                 checkVenueCanEditOwn(actor, entity);
@@ -642,9 +642,9 @@ export class VenueService extends BaseListingService<
             //    so casting is safe here.  Base update signature: update(actor, id, data, ctx?).
             //
             //    Base update() runs _canUpdate, which is owner-aware
-            //    (checkVenueCanEditOwnOrAll: GASTRONOMY_EDIT_ALL OR owner +
-            //    GASTRONOMY_EDIT_OWN). updateOwn() already enforced ownership and the
-            //    single GASTRONOMY_EDIT_OWN gate above, and the payload was validated
+            //    (checkVenueCanEditOwnOrAll: VENUE_EDIT_ALL OR owner +
+            //    VENUE_EDIT_OWN). updateOwn() already enforced ownership and the
+            //    single VENUE_EDIT_OWN gate above, and the payload was validated
             //    against the owner schema (operational fields only), so the actor
             //    passes the base gate without any privilege elevation.
             return this.update(

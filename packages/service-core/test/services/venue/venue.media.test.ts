@@ -166,7 +166,7 @@ describe('addGastronomyMedia', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should return FORBIDDEN when actor lacks GASTRONOMY_EDIT_OWN', async () => {
+    it('should return FORBIDDEN when actor lacks VENUE_EDIT_OWN', async () => {
         const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         const input: VenueMediaAddInput = {
             gastronomyId: GASTRONOMY_ID,

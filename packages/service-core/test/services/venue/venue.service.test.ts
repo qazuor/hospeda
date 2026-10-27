@@ -73,7 +73,7 @@ function makeVenueEntity(overrides: Partial<Record<string, unknown>> = {}): Venu
 const ownerActor: Actor = {
     id: OWNER_ID,
     roles: [RoleEnum.VENUE_OWNER],
-    // SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN replaces 10 per-section perms
+    // SPEC-253 D2=b: single VENUE_EDIT_OWN replaces 10 per-section perms
     permissions: [PermissionEnum.VENUE_EDIT_OWN]
 };
 
@@ -91,7 +91,7 @@ const staffActor: Actor = {
 const otherUserActor: Actor = {
     id: OTHER_USER,
     roles: [RoleEnum.VENUE_OWNER],
-    // SPEC-253 D2=b: GASTRONOMY_EDIT_OWN gives owner rights but entity.ownerId != OTHER_USER
+    // SPEC-253 D2=b: VENUE_EDIT_OWN gives owner rights but entity.ownerId != OTHER_USER
     permissions: [PermissionEnum.VENUE_EDIT_OWN]
 };
 
@@ -205,7 +205,7 @@ describe('GastronomyService.updateOwn', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should allow staff with GASTRONOMY_EDIT_ALL to update any listing', async () => {
+    it('should allow staff with VENUE_EDIT_ALL to update any listing', async () => {
         const entity = makeVenueEntity();
         const service = makeService(entity);
         const result = await service.updateOwn(
@@ -216,11 +216,11 @@ describe('GastronomyService.updateOwn', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should allow an owner with GASTRONOMY_EDIT_OWN to update operational fields (US-5)', async () => {
-        // SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN gate replaces per-section gating.
-        // The owner holds GASTRONOMY_EDIT_OWN and owns the listing. updateOwn enforces
+    it('should allow an owner with VENUE_EDIT_OWN to update operational fields (US-5)', async () => {
+        // SPEC-253 D2=b: single VENUE_EDIT_OWN gate replaces per-section gating.
+        // The owner holds VENUE_EDIT_OWN and owns the listing. updateOwn enforces
         // the single gate, then the base update()'s _canUpdate (checkCanEditOwnOrAll)
-        // accepts the owner — no GASTRONOMY_EDIT_ALL is required. Core US-5 behavior.
+        // accepts the owner — no VENUE_EDIT_ALL is required. Core US-5 behavior.
         const entity = makeVenueEntity();
         const service = makeService(entity);
         const result = await service.updateOwn(
@@ -231,10 +231,10 @@ describe('GastronomyService.updateOwn', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should return FORBIDDEN when owner lacks GASTRONOMY_EDIT_OWN (single gate)', async () => {
+    it('should return FORBIDDEN when owner lacks VENUE_EDIT_OWN (single gate)', async () => {
         const entity = makeVenueEntity();
         const service = makeService(entity);
-        // Actor is the owner but has NO permissions (not GASTRONOMY_EDIT_OWN, not GASTRONOMY_EDIT_ALL)
+        // Actor is the owner but has NO permissions (not VENUE_EDIT_OWN, not VENUE_EDIT_ALL)
         const actorNoPerm: Actor = {
             id: OWNER_ID,
             roles: [RoleEnum.VENUE_OWNER],
@@ -542,9 +542,9 @@ describe('GastronomyService._projectPublicEntity', () => {
 // ---------------------------------------------------------------------------
 
 describe('GastronomyService._canView', () => {
-    it('should throw GONE for a deleted PUBLIC entity when actor lacks GASTRONOMY_VIEW_ALL', () => {
+    it('should throw GONE for a deleted PUBLIC entity when actor lacks VENUE_VIEW_ALL', () => {
         // The deleted-at gate fires first (before the owner check), so both owner
-        // and non-owner actors without GASTRONOMY_VIEW_ALL receive GONE (410,
+        // and non-owner actors without VENUE_VIEW_ALL receive GONE (410,
         // deindex) instead of NOT_FOUND (404, never existed) — but only because
         // this listing was PUBLIC (indexable) before deletion.
         const entity = makeVenueEntity({
@@ -576,7 +576,7 @@ describe('GastronomyService._canView', () => {
         );
     });
 
-    it('should allow staff with GASTRONOMY_VIEW_ALL to view deleted entities', () => {
+    it('should allow staff with VENUE_VIEW_ALL to view deleted entities', () => {
         const entity = makeVenueEntity({
             publicationStatus: PublicationStatusEnum.PUBLISHED,
             deletedAt: new Date()
@@ -644,7 +644,7 @@ describe('GastronomyService.assignOwner', () => {
         expect(result.data?.ownerId).toBe(OTHER_USER);
     });
 
-    it('returns FORBIDDEN when the actor lacks GASTRONOMY_EDIT_ALL', async () => {
+    it('returns FORBIDDEN when the actor lacks VENUE_EDIT_ALL', async () => {
         const service = makeService(makeVenueEntity());
         const model = (service as AnyService).model;
 

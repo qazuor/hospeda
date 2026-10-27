@@ -100,14 +100,14 @@ function makeVenue(overrides: Record<string, unknown> = {}) {
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.GASTRONOMY_OWNER],
-    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
+    roles: [RoleEnum.VENUE_OWNER],
+    permissions: [PermissionEnum.VENUE_EDIT_OWN]
 };
 
 const strangerActor: Actor = {
     id: 'stranger-id',
     roles: [RoleEnum.USER],
-    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
+    permissions: [PermissionEnum.VENUE_EDIT_OWN]
 };
 
 function makeVenueModel(entity: Record<string, unknown> | null = null) {

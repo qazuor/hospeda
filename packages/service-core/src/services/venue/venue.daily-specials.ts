@@ -31,8 +31,8 @@
  *
  * ## Permissions vs. entitlements
  *
- * This module answers PERMISSION only — `GASTRONOMY_EDIT_OWN` on your own
- * listing, `GASTRONOMY_EDIT_ALL` for staff, via the same
+ * This module answers PERMISSION only — `VENUE_EDIT_OWN` on your own
+ * listing, `VENUE_EDIT_ALL` for staff, via the same
  * {@link checkVenueCanEditFaqs} gate the carta and FAQ helpers use.
  * Whether the caller's PLAN includes the menú del día is an entitlement
  * (`MANAGE_VENUE_DAILY_SPECIAL`), checked at the route before this is
@@ -160,7 +160,7 @@ export async function getVenueDailySpecials(
 /**
  * Replaces a listing's menú del día with the submitted document.
  *
- * Permission: `GASTRONOMY_EDIT_OWN` (listing owner) or `GASTRONOMY_EDIT_ALL`
+ * Permission: `VENUE_EDIT_OWN` (listing owner) or `VENUE_EDIT_ALL`
  * (staff). The `MANAGE_VENUE_DAILY_SPECIAL` entitlement is the route's
  * gate, not this one's.
  *
