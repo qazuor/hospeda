@@ -40,6 +40,16 @@ import {
     POST_CATEGORY_LEGACY_ENGLISH_SLUGS
 } from './facet-slugs';
 
+export const RETIRED_ROUTE_REDIRECT_STATUS = 302 as const;
+export const RETIRED_VENUE_URL_PREFIXES = [
+    '/gastronomia',
+    '/planes/gastronomia',
+    '/presentacion/gastronomia',
+    '/publicar/gastronomia',
+    '/mi-cuenta/comercio/gastronomy',
+    '/mi-cuenta/comercio/nuevo/gastronomy'
+] as const;
+
 /** One facet-landing family's legacy-English-slug redirect config. */
 interface LegacyFacetSlugRoute {
     /** The path segment between the locale and the slug, e.g. `/alojamientos/tipo/`. */
@@ -106,7 +116,7 @@ export interface LegacyRedirectTarget {
     /** The fully-resolved destination path, WITHOUT the query string — the caller appends it. */
     readonly target: string;
     /** `308` preserves the request method (used only by the messages alias); every other alias is a plain `301`. */
-    readonly status: 301 | 308;
+    readonly status: 301 | 302 | 308;
 }
 
 /**
@@ -134,6 +144,32 @@ export function resolveLegacyRedirectTarget({
 }: {
     readonly path: string;
 }): LegacyRedirectTarget | undefined {
+    const retiredLocaleMatch = path.match(/^\/(es|en|pt)(\/.*)$/);
+    const locale = retiredLocaleMatch?.[1] ?? 'es';
+    const retiredPath = retiredLocaleMatch?.[2] ?? path;
+    const retiredRoutes: readonly [RegExp, (tail: string) => string][] = [
+        [/^\/mi-cuenta\/comercio\/nuevo\/gastronomy(\/.*)?$/, (tail) => `/publicar/comer-y-salir/`],
+        [/^\/gastronomia(\/.*)?$/, (tail) => `/comer-y-salir${tail || '/'}`],
+        [/^\/planes\/gastronomia(\/.*)?$/, (tail) => `/planes/comer-y-salir${tail || '/'}`],
+        [
+            /^\/presentacion\/gastronomia(\/.*)?$/,
+            (tail) => `/presentacion/comer-y-salir${tail || '/'}`
+        ],
+        [/^\/publicar\/gastronomia(\/.*)?$/, (tail) => `/publicar/comer-y-salir${tail || '/'}`],
+        [
+            /^\/mi-cuenta\/comercio\/gastronomy(\/.*)?$/,
+            (tail) => `/mi-cuenta/comercio/venue${tail || '/'}`
+        ]
+    ];
+    for (const [pattern, destination] of retiredRoutes) {
+        const match = retiredPath.match(pattern);
+        if (match)
+            return {
+                target: `/${locale}${destination(match[1] ?? '')}`,
+                status: RETIRED_ROUTE_REDIRECT_STATUS
+            };
+    }
+
     const legacyMessagesMatch = path.match(/^\/(es|en|pt)\/mi-cuenta\/messages(\/.*)?$/);
     if (legacyMessagesMatch) {
         const localeSegment = legacyMessagesMatch[1];
