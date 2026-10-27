@@ -84,6 +84,20 @@ export function applyBeforeSend(event: ErrorEvent, _hint?: EventHint): ErrorEven
         event.extra = safeExtra;
     }
 
+    // Defense in depth: never ship a query string, whatever collected it.
+    if (event.request) {
+        if ('query_string' in event.request) {
+            const { query_string: _queryString, ...safeRequest } = event.request;
+            event.request = safeRequest;
+        }
+        if (typeof event.request.url === 'string') {
+            const queryStart = event.request.url.search(/[?#]/);
+            if (queryStart !== -1) {
+                event.request.url = event.request.url.slice(0, queryStart);
+            }
+        }
+    }
+
     // Remove sensitive data from breadcrumbs.
     if (event.breadcrumbs) {
         event.breadcrumbs = event.breadcrumbs.map((breadcrumb) => {
@@ -151,7 +165,9 @@ export const SENTRY_DATA_COLLECTION: NonNullable<NodeOptions['dataCollection']> 
         response: { deny: [...DENIED_HEADER_FRAGMENTS, 'set-cookie'] }
     },
     httpBodies: [],
-    urlQueryParams: { deny: DENIED_HEADER_FRAGMENTS },
+    // Empty allowlist: NO query param is collected. OAuth / magic-link /
+    // MercadoPago callbacks carry code, state, token, signature, otp, etc.
+    urlQueryParams: { allow: [] },
     graphQL: { document: false, variables: false },
     genAI: { inputs: false, outputs: false },
     mcp: { inputs: false, outputs: false },

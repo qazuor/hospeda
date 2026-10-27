@@ -201,6 +201,25 @@ describe('Sentry Configuration', () => {
                 expect(headers.response.deny).toContain('set-cookie');
             });
 
+            it('should collect no URL query params at all', () => {
+                expect(SentryModule.SENTRY_DATA_COLLECTION.urlQueryParams).toEqual({ allow: [] });
+            });
+
+            it('should strip query_string and the url query part in beforeSend', () => {
+                const event = {
+                    type: undefined,
+                    request: {
+                        url: 'https://api.example.com/cb?code=abc&state=xyz#frag',
+                        query_string: 'code=abc&state=xyz&token=t'
+                    }
+                } as unknown as ErrorEvent;
+
+                const result = applyBeforeSend(event);
+
+                expect(result?.request).toEqual({ url: 'https://api.example.com/cb' });
+                expect(result?.request).not.toHaveProperty('query_string');
+            });
+
             it('should keep the beforeSend scrubber wired', () => {
                 envRecord().NODE_ENV = 'production';
 
