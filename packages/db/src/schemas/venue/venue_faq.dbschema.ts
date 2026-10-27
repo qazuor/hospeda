@@ -25,10 +25,10 @@ import { gastronomies } from './venue.dbschema.ts';
  * - Full audit columns
  */
 export const gastronomyFaqs = pgTable(
-    'gastronomy_faqs',
+    'venue_faqs',
     {
         id: uuid('id').primaryKey().defaultRandom(),
-        gastronomyId: uuid('gastronomy_id')
+        gastronomyId: uuid('venue_id')
             .notNull()
             .references(() => gastronomies.id, { onDelete: 'cascade' }),
         question: text('question').notNull(),
@@ -60,10 +60,8 @@ export const gastronomyFaqs = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        gastronomyFaqs_gastronomyId_idx: index('gastronomyFaqs_gastronomyId_idx').on(
-            table.gastronomyId
-        ),
-        gastronomyFaqs_category_idx: index('gastronomyFaqs_category_idx').on(table.category)
+        gastronomyFaqs_gastronomyId_idx: index('venueFaqs_venueId_idx').on(table.gastronomyId),
+        gastronomyFaqs_category_idx: index('venueFaqs_category_idx').on(table.category)
     })
 );
 

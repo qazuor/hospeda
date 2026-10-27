@@ -42,7 +42,7 @@ import { gastronomies } from './venue.dbschema.ts';
  * value, and a switch over an unconstrained column is a switch with a silent
  * default.
  */
-export const GastronomyEventRecurrencePgEnum = pgEnum('gastronomy_event_recurrence_enum', [
+export const GastronomyEventRecurrencePgEnum = pgEnum('venue_event_recurrence_enum', [
     'once',
     'weekly'
 ]);
@@ -98,7 +98,7 @@ export const GastronomyEventRecurrencePgEnum = pgEnum('gastronomy_event_recurren
  * @see packages/schemas/src/entities/venue/subtypes/venue.event.schema.ts
  */
 export const gastronomyEvents = pgTable(
-    'gastronomy_events',
+    'venue_events',
     {
         id: uuid('id').primaryKey().defaultRandom(),
         /**
@@ -106,7 +106,7 @@ export const gastronomyEvents = pgTable(
          * the agenda when the listing is hard-deleted — the same choice
          * `gastronomy_menu_sections` and `gastronomy_media` make.
          */
-        gastronomyId: uuid('gastronomy_id')
+        gastronomyId: uuid('venue_id')
             .notNull()
             .references(() => gastronomies.id, { onDelete: 'cascade' }),
         /** What the event is called, e.g. "Noche de música en vivo". */
@@ -166,16 +166,14 @@ export const gastronomyEvents = pgTable(
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        gastronomyEvents_gastronomyId_idx: index('gastronomyEvents_gastronomyId_idx').on(
-            table.gastronomyId
-        ),
+        gastronomyEvents_gastronomyId_idx: index('venueEvents_venueId_idx').on(table.gastronomyId),
         /**
          * The read the public listing performs verbatim: every entry of ONE
          * listing, in order. Composite so the order-by is served by the index
          * rather than by a sort of the event rows.
          */
         gastronomyEvents_gastronomyId_displayOrder_idx: index(
-            'gastronomyEvents_gastronomyId_displayOrder_idx'
+            'venueEvents_venueId_displayOrder_idx'
         ).on(table.gastronomyId, table.displayOrder)
     })
 );

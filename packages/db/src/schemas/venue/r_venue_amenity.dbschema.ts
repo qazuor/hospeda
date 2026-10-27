@@ -11,9 +11,9 @@ import { gastronomies } from './venue.dbschema.ts';
  * References the existing shared `amenities` catalog (same as accommodations).
  */
 export const rGastronomyAmenity = pgTable(
-    'r_gastronomy_amenity',
+    'r_venue_amenity',
     {
-        gastronomyId: uuid('gastronomy_id')
+        gastronomyId: uuid('venue_id')
             .notNull()
             .references(() => gastronomies.id, { onDelete: 'cascade' }),
         amenityId: uuid('amenity_id')
@@ -22,11 +22,11 @@ export const rGastronomyAmenity = pgTable(
     },
     (table) => ({
         pk: primaryKey({ columns: [table.gastronomyId, table.amenityId] }),
-        gastronomyId_amenityId_idx: index('r_gastronomy_amenity_gastronomyId_amenityId_idx').on(
+        gastronomyId_amenityId_idx: index('r_venue_amenity_venueId_amenityId_idx').on(
             table.gastronomyId,
             table.amenityId
         ),
-        amenityId_idx: index('r_gastronomy_amenity_amenityId_idx').on(table.amenityId)
+        amenityId_idx: index('r_venue_amenity_amenityId_idx').on(table.amenityId)
     })
 );
 

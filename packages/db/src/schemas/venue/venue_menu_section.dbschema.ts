@@ -41,7 +41,7 @@ import { gastronomyMenuItems } from './venue_menu_item.dbschema.ts';
  * @see packages/db/src/schemas/venue/venue_menu_item.dbschema.ts
  */
 export const gastronomyMenuSections = pgTable(
-    'gastronomy_menu_sections',
+    'venue_menu_sections',
     {
         id: uuid('id').primaryKey().defaultRandom(),
         /**
@@ -49,7 +49,7 @@ export const gastronomyMenuSections = pgTable(
          * check someone has to remember to write — removes the menu when the
          * listing is hard-deleted. Same choice `gastronomy_media` makes.
          */
-        gastronomyId: uuid('gastronomy_id')
+        gastronomyId: uuid('venue_id')
             .notNull()
             .references(() => gastronomies.id, { onDelete: 'cascade' }),
         /** Heading of the course, e.g. "Entradas", "Principales", "Postres". */
@@ -79,16 +79,16 @@ export const gastronomyMenuSections = pgTable(
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        gastronomyMenuSections_gastronomyId_idx: index(
-            'gastronomyMenuSections_gastronomyId_idx'
-        ).on(table.gastronomyId),
+        gastronomyMenuSections_gastronomyId_idx: index('venueMenuSections_venueId_idx').on(
+            table.gastronomyId
+        ),
         /**
          * The read the public listing performs verbatim: every section of ONE
          * listing, in order. Composite so the order-by is served by the index
          * rather than by a sort of the section rows.
          */
         gastronomyMenuSections_gastronomyId_displayOrder_idx: index(
-            'gastronomyMenuSections_gastronomyId_displayOrder_idx'
+            'venueMenuSections_venueId_displayOrder_idx'
         ).on(table.gastronomyId, table.displayOrder)
     })
 );

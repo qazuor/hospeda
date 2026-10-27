@@ -26,10 +26,10 @@ import { gastronomies } from './venue.dbschema.ts';
  * - UNIQUE(userId, gastronomyId) — one review per user per listing
  */
 export const gastronomyReviews = pgTable(
-    'gastronomy_reviews',
+    'venue_reviews',
     {
         id: uuid('id').primaryKey().defaultRandom(),
-        gastronomyId: uuid('gastronomy_id')
+        gastronomyId: uuid('venue_id')
             .notNull()
             .references(() => gastronomies.id, { onDelete: 'cascade' }),
         userId: uuid('user_id')
@@ -77,21 +77,22 @@ export const gastronomyReviews = pgTable(
         moderationReason: text('moderation_reason')
     },
     (table) => ({
-        gastronomy_reviews_gastronomyId_idx: index('gastronomy_reviews_gastronomyId_idx').on(
+        gastronomy_reviews_gastronomyId_idx: index('venue_reviews_venueId_idx').on(
             table.gastronomyId
         ),
-        gastronomy_reviews_userId_idx: index('gastronomy_reviews_userId_idx').on(table.userId),
-        gastronomy_reviews_user_gastronomy_uniq: uniqueIndex(
-            'gastronomy_reviews_user_gastronomy_uniq'
-        ).on(table.userId, table.gastronomyId),
-        gastronomy_reviews_lifecycleState_idx: index('gastronomy_reviews_lifecycleState_idx').on(
+        gastronomy_reviews_userId_idx: index('venue_reviews_userId_idx').on(table.userId),
+        gastronomy_reviews_user_gastronomy_uniq: uniqueIndex('venue_reviews_user_venue_uniq').on(
+            table.userId,
+            table.gastronomyId
+        ),
+        gastronomy_reviews_lifecycleState_idx: index('venue_reviews_lifecycleState_idx').on(
             table.lifecycleState
         ),
         // Composite: most common query is listByVenue filtered by lifecycle
         gastronomy_reviews_gastronomyId_lifecycleState_idx: index(
-            'gastronomy_reviews_gastronomyId_lifecycleState_idx'
+            'venue_reviews_venueId_lifecycleState_idx'
         ).on(table.gastronomyId, table.lifecycleState),
-        gastronomy_reviews_moderationState_idx: index('gastronomy_reviews_moderationState_idx').on(
+        gastronomy_reviews_moderationState_idx: index('venue_reviews_moderationState_idx').on(
             table.moderationState
         )
     })

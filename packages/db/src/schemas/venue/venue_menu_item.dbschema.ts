@@ -64,7 +64,7 @@ import { gastronomyMenuSections } from './venue_menu_section.dbschema.ts';
  * Both FKs CASCADE, so a deleted section takes its dishes with it.
  */
 export const gastronomyMenuItems = pgTable(
-    'gastronomy_menu_items',
+    'venue_menu_items',
     {
         id: uuid('id').primaryKey().defaultRandom(),
         /** FK to the owning section. CASCADE — a section deletes its dishes. */
@@ -72,7 +72,7 @@ export const gastronomyMenuItems = pgTable(
             .notNull()
             .references(() => gastronomyMenuSections.id, { onDelete: 'cascade' }),
         /** Denormalized FK to the listing. See the file docblock for why. */
-        gastronomyId: uuid('gastronomy_id')
+        gastronomyId: uuid('venue_id')
             .notNull()
             .references(() => gastronomies.id, { onDelete: 'cascade' }),
         /** Name of the dish or drink. */
@@ -142,15 +142,15 @@ export const gastronomyMenuItems = pgTable(
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        gastronomyMenuItems_sectionId_idx: index('gastronomyMenuItems_sectionId_idx').on(
+        gastronomyMenuItems_sectionId_idx: index('venueMenuItems_sectionId_idx').on(
             table.sectionId
         ),
-        gastronomyMenuItems_gastronomyId_idx: index('gastronomyMenuItems_gastronomyId_idx').on(
+        gastronomyMenuItems_gastronomyId_idx: index('venueMenuItems_venueId_idx').on(
             table.gastronomyId
         ),
         /** The public read: every dish of one section, in order. */
         gastronomyMenuItems_sectionId_displayOrder_idx: index(
-            'gastronomyMenuItems_sectionId_displayOrder_idx'
+            'venueMenuItems_sectionId_displayOrder_idx'
         ).on(table.sectionId, table.displayOrder)
     })
 );

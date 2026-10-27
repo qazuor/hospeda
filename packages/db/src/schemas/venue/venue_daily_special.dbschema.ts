@@ -55,11 +55,11 @@ import { gastronomies } from './venue.dbschema.ts';
  * The FK CASCADEs, so a deleted listing takes its specials with it.
  */
 export const gastronomyDailySpecials = pgTable(
-    'gastronomy_daily_specials',
+    'venue_daily_specials',
     {
         id: uuid('id').primaryKey().defaultRandom(),
         /** FK to the owning listing. CASCADE — a listing deletes its specials. */
-        gastronomyId: uuid('gastronomy_id')
+        gastronomyId: uuid('venue_id')
             .notNull()
             .references(() => gastronomies.id, { onDelete: 'cascade' }),
         /** The dish, as the venue announces it. e.g. "Milanesa a la napolitana con puré". */
@@ -96,9 +96,9 @@ export const gastronomyDailySpecials = pgTable(
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        gastronomyDailySpecials_gastronomyId_idx: index(
-            'gastronomyDailySpecials_gastronomyId_idx'
-        ).on(table.gastronomyId),
+        gastronomyDailySpecials_gastronomyId_idx: index('venueDailySpecials_venueId_idx').on(
+            table.gastronomyId
+        ),
         /**
          * The read the public listing performs verbatim: the specials of ONE
          * listing whose window contains today, in order.
@@ -109,7 +109,7 @@ export const gastronomyDailySpecials = pgTable(
          * scan of the listing's specials.
          */
         gastronomyDailySpecials_gastronomyId_validity_idx: index(
-            'gastronomyDailySpecials_gastronomyId_validity_idx'
+            'venueDailySpecials_venueId_validity_idx'
         ).on(table.gastronomyId, table.validFrom, table.validUntil)
     })
 );

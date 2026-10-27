@@ -12,9 +12,9 @@ import { gastronomies } from './venue.dbschema.ts';
  * Includes hostReWriteName and comments just like the accommodation variant.
  */
 export const rGastronomyFeature = pgTable(
-    'r_gastronomy_feature',
+    'r_venue_feature',
     {
-        gastronomyId: uuid('gastronomy_id')
+        gastronomyId: uuid('venue_id')
             .notNull()
             .references(() => gastronomies.id, { onDelete: 'cascade' }),
         featureId: uuid('feature_id')
@@ -27,11 +27,11 @@ export const rGastronomyFeature = pgTable(
     },
     (table) => ({
         pk: primaryKey({ columns: [table.gastronomyId, table.featureId] }),
-        gastronomyId_featureId_idx: index('r_gastronomy_feature_gastronomyId_featureId_idx').on(
+        gastronomyId_featureId_idx: index('r_venue_feature_venueId_featureId_idx').on(
             table.gastronomyId,
             table.featureId
         ),
-        featureId_idx: index('r_gastronomy_feature_featureId_idx').on(table.featureId)
+        featureId_idx: index('r_venue_feature_featureId_idx').on(table.featureId)
     })
 );
 

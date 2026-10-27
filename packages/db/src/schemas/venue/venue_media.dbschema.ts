@@ -29,10 +29,7 @@ import { gastronomies } from './venue.dbschema.ts';
  * therefore share one composition/service implementation instead of diverging
  * (HOS-372 owner decision, 2026-08-02).
  */
-export const GastronomyMediaStatePgEnum = pgEnum('gastronomy_media_state_enum', [
-    'visible',
-    'archived'
-]);
+export const GastronomyMediaStatePgEnum = pgEnum('venue_media_state_enum', ['visible', 'archived']);
 
 /**
  * `gastronomy_media` — relational table for gastronomy listing gallery photos.
@@ -53,7 +50,7 @@ export const GastronomyMediaStatePgEnum = pgEnum('gastronomy_media_state_enum', 
  * @see packages/schemas/src/common/media.schema.ts for the `ImageSchema` this mirrors
  */
 export const gastronomyMedia = pgTable(
-    'gastronomy_media',
+    'venue_media',
     {
         id: uuid('id').primaryKey().defaultRandom(),
         /**
@@ -61,7 +58,7 @@ export const gastronomyMedia = pgTable(
          * removed by the DATABASE when the listing is hard-deleted — integrity guaranteed
          * by the schema rather than by a check someone has to remember to write.
          */
-        gastronomyId: uuid('gastronomy_id')
+        gastronomyId: uuid('venue_id')
             .notNull()
             .references(() => gastronomies.id, { onDelete: 'cascade' }),
         /**
@@ -139,21 +136,17 @@ export const gastronomyMedia = pgTable(
     },
     (table) => ({
         /** Index for fetching all media belonging to one listing (the dominant query). */
-        gastronomyMedia_gastronomyId_idx: index('gastronomyMedia_gastronomyId_idx').on(
-            table.gastronomyId
-        ),
+        gastronomyMedia_gastronomyId_idx: index('venueMedia_venueId_idx').on(table.gastronomyId),
         /** Index to filter quickly by state (visible vs archived gallery reads). */
-        gastronomyMedia_state_idx: index('gastronomyMedia_state_idx').on(table.state),
+        gastronomyMedia_state_idx: index('venueMedia_state_idx').on(table.state),
         /** Index to quickly locate the featured photo for a given listing. */
-        gastronomyMedia_isFeatured_idx: index('gastronomyMedia_isFeatured_idx').on(
-            table.isFeatured
-        ),
+        gastronomyMedia_isFeatured_idx: index('venueMedia_isFeatured_idx').on(table.isFeatured),
         /** Composite index for the canonical gallery-read query: listing + state + order. */
         gastronomyMedia_gastronomyId_state_sortOrder_idx: index(
-            'gastronomyMedia_gastronomyId_state_sortOrder_idx'
+            'venueMedia_venueId_state_sortOrder_idx'
         ).on(table.gastronomyId, table.state, table.sortOrder),
         /** Soft-delete filter index. */
-        gastronomyMedia_deletedAt_idx: index('gastronomyMedia_deletedAt_idx').on(table.deletedAt)
+        gastronomyMedia_deletedAt_idx: index('venueMedia_deletedAt_idx').on(table.deletedAt)
     })
 );
 
