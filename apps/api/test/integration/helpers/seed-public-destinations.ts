@@ -14,13 +14,16 @@ export interface SeedPublicDestinationsResult {
  *
  * @param input - Seeding options.
  * @param input.count - How many destinations to insert. Zero inserts nothing.
+ * @param input.city - Optional `location.city` stamped on every inserted row.
  * @returns The inserted destinations.
  * @throws {RangeError} When `count` is negative or not an integer.
  */
 export async function seedPublicDestinations({
-    count
+    count,
+    city
 }: {
     readonly count: number;
+    readonly city?: string;
 }): Promise<SeedPublicDestinationsResult> {
     if (!Number.isInteger(count) || count < 0) {
         throw new RangeError(`seedPublicDestinations: invalid count ${count}`);
@@ -43,6 +46,7 @@ export async function seedPublicDestinations({
                 location: {
                     country: 'AR',
                     state: 'ER',
+                    ...(city ? { city } : {}),
                     coordinates: { lat: '-32.48', long: '-58.23' }
                 }
             }))
