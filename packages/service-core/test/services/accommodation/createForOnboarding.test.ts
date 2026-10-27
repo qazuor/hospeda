@@ -240,7 +240,7 @@ describe('AccommodationService.createForOnboarding', () => {
         });
 
         it.each([
-            ['GASTRONOMY_OWNER', RoleEnum.GASTRONOMY_OWNER],
+            ['VENUE_OWNER', RoleEnum.GASTRONOMY_OWNER],
             ['SPONSOR', RoleEnum.SPONSOR],
             ['EDITOR', RoleEnum.EDITOR]
         ])('grants HOST to a %s actor — the removed `role === USER` guard used to skip them', async (label) => {
