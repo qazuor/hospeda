@@ -36,8 +36,8 @@ import type { BuildListingSummaryInput, ListingEntityConfig } from './summary.ty
 export { buildListingSummary } from './summary.builder';
 export {
     DEFAULT_EXPERIENCE_TYPES,
-    DEFAULT_GASTRONOMY_TYPES,
-    DEFAULT_PRICE_RANGES
+    DEFAULT_PRICE_RANGES,
+    DEFAULT_VENUE_TYPES
 } from './summary.catalogs';
 export type {
     BuildListingSummaryInput,

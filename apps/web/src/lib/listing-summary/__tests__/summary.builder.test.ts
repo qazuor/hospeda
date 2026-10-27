@@ -7,8 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { buildExperienceListingSummary, buildVenueListingSummary } from '../index';
 import {
     DEFAULT_EXPERIENCE_TYPES,
-    DEFAULT_GASTRONOMY_TYPES,
-    DEFAULT_PRICE_RANGES
+    DEFAULT_PRICE_RANGES,
+    DEFAULT_VENUE_TYPES
 } from '../summary.catalogs';
 import type { SummaryCatalogs } from '../summary.types';
 
@@ -69,7 +69,7 @@ describe('buildGastronomyListingSummary', () => {
                 locale: 'es',
                 filters: { type: 'RESTAURANT' },
                 counts: { shown: 5, total: 12 },
-                catalogs: { types: DEFAULT_GASTRONOMY_TYPES }
+                catalogs: { types: DEFAULT_VENUE_TYPES }
             });
             expect(result).toBe('Mostrando 5 de 12 establecimientos gastronómicos de restaurante.');
         });
@@ -79,7 +79,7 @@ describe('buildGastronomyListingSummary', () => {
                 locale: 'es',
                 filters: { type: 'BAR', destinationId: 'colon-id' },
                 counts: { shown: 3, total: 3 },
-                catalogs: { types: DEFAULT_GASTRONOMY_TYPES, destinations: DESTINATIONS }
+                catalogs: { types: DEFAULT_VENUE_TYPES, destinations: DESTINATIONS }
             });
             expect(result).toBe('Mostrando 3 de 3 establecimientos gastronómicos de bar en Colón.');
         });
@@ -273,7 +273,7 @@ describe('buildGastronomyListingSummary', () => {
                 locale: 'es',
                 filters: { type: 'BAR' },
                 counts: { shown: 0, total: 0 },
-                catalogs: { types: DEFAULT_GASTRONOMY_TYPES }
+                catalogs: { types: DEFAULT_VENUE_TYPES }
             });
             expect(result).toBe('No se encontraron establecimientos gastronómicos de bar.');
         });
@@ -294,7 +294,7 @@ describe('buildGastronomyListingSummary', () => {
                 counts: { shown: 2, total: 5 },
                 sort: { sortKey: 'ratingDesc' },
                 catalogs: {
-                    types: DEFAULT_GASTRONOMY_TYPES,
+                    types: DEFAULT_VENUE_TYPES,
                     destinations: DESTINATIONS,
                     priceRanges: DEFAULT_PRICE_RANGES
                 }
@@ -500,7 +500,7 @@ describe('buildGastronomyListingSummary (pt)', () => {
             filters: { type: 'PARRILLA', destinationId: 'colon-id', priceRange: 'BUDGET' },
             counts: { shown: 1, total: 1 },
             catalogs: {
-                types: DEFAULT_GASTRONOMY_TYPES,
+                types: DEFAULT_VENUE_TYPES,
                 destinations: DESTINATIONS,
                 priceRanges: DEFAULT_PRICE_RANGES
             }
@@ -524,7 +524,7 @@ describe('buildGastronomyListingSummary (pt)', () => {
             counts: { shown: 2, total: 5 },
             sort: { sortKey: 'ratingDesc' },
             catalogs: {
-                types: DEFAULT_GASTRONOMY_TYPES,
+                types: DEFAULT_VENUE_TYPES,
                 destinations: DESTINATIONS,
                 priceRanges: DEFAULT_PRICE_RANGES
             }
