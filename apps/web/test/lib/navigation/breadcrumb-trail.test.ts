@@ -127,7 +127,7 @@ describe('buildBreadcrumbTrail', () => {
             const { entries } = buildBreadcrumbTrail({ items, locale: 'es', homeLabel: 'Inicio' });
 
             // Assert
-            expect(entries[1]?.href).toBe('/es/gastronomia/');
+            expect(entries[1]?.href).toBe('/es/comer-y-salir/');
         });
     });
 

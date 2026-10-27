@@ -229,7 +229,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         // raw enum value 'BAR' (since there may be no translation key in the
         // local seed's i18n catalog). We match by the DB value or any text that
         // appears — using toContainText on the badge element covers both cases.
-        await page.goto(`${WEB_URL}/es/gastronomia/${GASTRONOMY_SLUG}/`, {
+        await page.goto(`${WEB_URL}/es/comer-y-salir/${GASTRONOMY_SLUG}/`, {
             waitUntil: 'domcontentloaded'
         });
         const typeBadge = page.locator('.gastro-detail-header__type-badge');

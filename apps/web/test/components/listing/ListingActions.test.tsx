@@ -91,7 +91,7 @@ describe('ListingActions', () => {
             expect(screen.getByText('Publicado')).toBeInTheDocument();
             expect(screen.getByText('Ver ficha pública')).toHaveAttribute(
                 'href',
-                '/es/gastronomia/la-parrilla/'
+                '/es/comer-y-salir/la-parrilla/'
             );
         });
 

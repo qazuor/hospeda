@@ -57,7 +57,7 @@ vi.mock('@/lib/auth-cache', () => ({
 // Imported after the mocks so the module graph picks them up.
 import { VenueReviewForm } from '@/components/venue/VenueReviewForm.client';
 
-const PAGE_URL = 'http://localhost:3000/es/gastronomia/la-parrilla-de-juan/';
+const PAGE_URL = 'http://localhost:3000/es/comer-y-salir/la-parrilla-de-juan/';
 
 /**
  * Minimal stand-in for the router's `navigate()` on its hash fast path.
@@ -165,7 +165,7 @@ describe('GastronomyReviewForm — back button closes the dialog (HOS-334)', () 
         // …and the page itself was never left: the CTA that opened it is still
         // mounted, and the URL is back on the plain page (no swap, no navigation).
         expect(screen.getByRole('button', { name: /dejar reseña/i })).toBeInTheDocument();
-        expect(window.location.pathname).toBe('/es/gastronomia/la-parrilla-de-juan/');
+        expect(window.location.pathname).toBe('/es/comer-y-salir/la-parrilla-de-juan/');
         expect(window.location.hash).toBe('');
     });
 });

@@ -35,7 +35,9 @@ describe('publishListing (TEST:1729:1)', () => {
         expect(resolvePublishPricingPath({ vertical: 'accommodation' })).toBe(
             'planes/anfitriones/precios'
         );
-        expect(resolvePublishPricingPath({ vertical: 'venue' })).toBe('planes/gastronomia/precios');
+        expect(resolvePublishPricingPath({ vertical: 'venue' })).toBe(
+            'planes/comer-y-salir/precios'
+        );
         expect(resolvePublishPricingPath({ vertical: 'experience' })).toBe(
             'planes/experiencias/precios'
         );

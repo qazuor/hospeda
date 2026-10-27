@@ -1,11 +1,11 @@
 ---
 /**
- * @file planes/gastronomia/index.astro
+ * @file planes/comer-y-salir/index.astro
  * @description Sales page for the gastronomy vertical — level 2 of the three
  * that HOS-941 D-7 defines: "why is this worth it", answered without leaving
  * the page, and one click to "what does it cost".
  *
- * @route     /[lang]/planes/gastronomia/
+ * @route     /[lang]/planes/comer-y-salir/
  * @rendering SSR (no prerender); edge-cacheable via the `pricing` cache class,
  *   tagged `CACHE_TAG_PRICING`. The middleware is fail-closed and rejects a
  *   public `Cache-Control` without a declared class and tag (HOS-941 R-5).
@@ -14,7 +14,7 @@
  *
  * Supersedes `/publicar-restaurante/`, which 301s here since HOS-1032. That
  * could not happen earlier: the old page still carried the price block inline,
- * and the price only moved DOWN to `/planes/gastronomia/precios/` when H7 built
+ * and the price only moved DOWN to `/planes/comer-y-salir/precios/` when H7 built
  * it, so retiring the URL first would have left the vertical with no price at
  * all. Both halves landed together.
  * The split is not tidiness: a visitor who has already decided to publish
@@ -27,7 +27,7 @@
  * D-9. HOS-986 is open precisely because "Publicá tu restaurante" reads as
  * excluding food trucks, rotiserías and parrillas — all of which this vertical
  * sells to. Repeating that word in a URL bakes the exclusion into the most
- * expensive thing to change later. No collision with the public `/gastronomia/`
+ * expensive thing to change later. No collision with the public `/comer-y-salir/`
  * listing section: this one is nested under `/planes/`.
  */
 

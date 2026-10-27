@@ -411,7 +411,7 @@ export const GET: APIRoute = async () => {
         })
     );
 
-    // Gastronomy: /gastronomia/{slug}/
+    // Gastronomy: /comer-y-salir/{slug}/
     entries.push(
         ...buildEntriesForEntity({
             items: resolvedVenue,

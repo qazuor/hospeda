@@ -56,7 +56,7 @@ describe('buildListingCreateUrl', () => {
             '/es/publicar/experiencias/'
         );
         expect(buildListingCreateUrl({ locale: 'es', vertical: 'venue' })).toBe(
-            '/es/publicar/gastronomia/'
+            '/es/publicar/comer-y-salir/'
         );
     });
 

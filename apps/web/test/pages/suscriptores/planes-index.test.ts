@@ -818,7 +818,7 @@ describe('the gastronomy card does not narrow the vertical to restaurants', () =
         // HOS-1032 revisited that call — `publicar-restaurante/index.astro`'s
         // own docblock records why: the page shipped 2026-08-21 (PR #2920) and
         // had accumulated almost no ranking to move, so retiring the URL in
-        // favour of `/planes/gastronomia/` (which does not carry "restaurante"
+        // favour of `/planes/comer-y-salir/` (which does not carry "restaurante"
         // either, for the same widened-audience reason as the card copy) was
         // judged the cheapest this rename would ever be. The old URL now 301s
         // there instead of staying a page of its own.
@@ -827,11 +827,11 @@ describe('the gastronomy card does not narrow the vertical to restaurants', () =
             'utf8'
         );
 
-        expect(audiencePlans).toContain("gastronomy: 'planes/gastronomia'");
+        expect(audiencePlans).toContain("gastronomy: 'planes/comer-y-salir'");
         expect(STATIC_SITEMAP_PAGES.map((page) => page.path)).not.toContain(
             '/publicar-restaurante/'
         );
-        expect(STATIC_SITEMAP_PAGES.map((page) => page.path)).toContain('/planes/gastronomia/');
+        expect(STATIC_SITEMAP_PAGES.map((page) => page.path)).toContain('/planes/comer-y-salir/');
         expect(NON_SITEMAP_STATIC_PAGES['/publicar-restaurante/']).toBe('transactional');
     });
 });

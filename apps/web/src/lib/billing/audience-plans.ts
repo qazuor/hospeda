@@ -110,7 +110,7 @@ export const AUDIENCE_CARD_ORDER: readonly AudienceCardId[] = [
 export const AUDIENCE_CARD_PATHS: Readonly<Record<AudienceCardId, string>> = {
     host: PRICING_PAGE_PATH_BY_AUDIENCE.owner,
     tourist: PRICING_PAGE_PATH_BY_AUDIENCE.tourist,
-    gastronomy: 'planes/gastronomia',
+    gastronomy: 'planes/comer-y-salir',
     experience: 'planes/experiencias'
 } as const;
 

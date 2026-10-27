@@ -10,7 +10,7 @@
  * - The listing is not PUBLISHED: the public read answers it like an unknown
  *   slug (HOS-1641), so this is the same `!result.ok` case.
  *
- * @route /{lang}/gastronomia/{slug}/
+ * @route /{lang}/comer-y-salir/{slug}/
  * @rendering SSR (on-demand)
  */
 
@@ -249,7 +249,7 @@ const breadcrumbItems = [
     { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
     {
         name: t('gastronomy.listing.title', 'Gastronomía'),
-        url: `${siteOrigin}/${locale}/gastronomia/`
+        url: `${siteOrigin}/${locale}/comer-y-salir/`
     },
     { name: venue.name, url: `${siteOrigin}${Astro.url.pathname}` }
 ];

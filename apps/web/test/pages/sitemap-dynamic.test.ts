@@ -281,7 +281,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).toContain('https://hospeda.test/pt/publicaciones/turismo-litoral/');
     });
 
-    it('emits gastronomy entries with /gastronomia/ path for all 3 locales', async () => {
+    it('emits gastronomy entries with /comer-y-salir/ path for all 3 locales', async () => {
         const fetchMock = vi.fn();
 
         // accommodations, destinations, events, posts — all empty
@@ -303,9 +303,9 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         const response = await GET({});
         const body = await response.text();
 
-        expect(body).toContain('https://hospeda.test/es/gastronomia/la-parrilla-del-puerto/');
-        expect(body).toContain('https://hospeda.test/en/gastronomia/la-parrilla-del-puerto/');
-        expect(body).toContain('https://hospeda.test/pt/gastronomia/la-parrilla-del-puerto/');
+        expect(body).toContain('https://hospeda.test/es/comer-y-salir/la-parrilla-del-puerto/');
+        expect(body).toContain('https://hospeda.test/en/comer-y-salir/la-parrilla-del-puerto/');
+        expect(body).toContain('https://hospeda.test/pt/comer-y-salir/la-parrilla-del-puerto/');
     });
 
     it('emits experience entries with /experiencias/ path for all 3 locales', async () => {
@@ -347,7 +347,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         const body = await response.text();
 
         // Entity listing pages belong here: their content is the entity set.
-        expect(body).toContain('<loc>https://hospeda.test/es/gastronomia/</loc>');
+        expect(body).toContain('<loc>https://hospeda.test/es/comer-y-salir/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/experiencias/</loc>');
         expect(body).toContain('<priority>0.7</priority>');
         // Home belongs to /sitemap-static.xml (priority 1.0). Emitting it here
@@ -488,7 +488,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).not.toContain('<loc>https://hospeda.test/es/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/alojamientos/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/destinos/</loc>');
-        expect(body).toContain('<loc>https://hospeda.test/es/gastronomia/</loc>');
+        expect(body).toContain('<loc>https://hospeda.test/es/comer-y-salir/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/experiencias/</loc>');
         // No API-backed entity detail entries
         expect(body).not.toContain('/alojamientos/hotel');

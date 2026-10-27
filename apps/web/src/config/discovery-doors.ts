@@ -156,7 +156,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 descriptionI18nKey: 'account.doors.publish.options.venue.description',
                 icon: ForkKnifeIcon,
                 // HOS-1156: this option leads to PUBLISHING, and for a while it
-                // did not. HOS-1032 repointed it at `/planes/gastronomia/` — a
+                // did not. HOS-1032 repointed it at `/planes/comer-y-salir/` — a
                 // SALES page — because the URL it used to name had become a 301
                 // to that page, and the repoint was mechanically correct. The
                 // result was a "Publicar" button that sold to you instead.

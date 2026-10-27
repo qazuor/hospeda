@@ -68,7 +68,7 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // and carry their own copy, so all three belong here — they are the pages a
     // restaurant owner searching "publicar mi restaurante" should land on, and
     // until now that search had nowhere to land at all inside this namespace.
-    { path: '/publicar/gastronomia/', changefreq: 'monthly', priority: 0.8 },
+    { path: '/publicar/comer-y-salir/', changefreq: 'monthly', priority: 0.8 },
     { path: '/publicar/experiencias/', changefreq: 'monthly', priority: 0.8 },
     // HOS-985: level 2 of the three-level structure (HOS-941 D-7) — the sales
     // page for a vertical, with its prices one level below at
@@ -76,7 +76,7 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // because HOS-986 is open over "restaurante" reading as excluding food
     // trucks, rotiserías and parrillas, and a URL is the most expensive place
     // to carry that word.
-    { path: '/planes/gastronomia/', changefreq: 'monthly', priority: 0.7 },
+    { path: '/planes/comer-y-salir/', changefreq: 'monthly', priority: 0.7 },
     // HOS-985: the experience vertical's own level-2 sales page, alongside
     // gastronomy's above.
     { path: '/planes/experiencias/', changefreq: 'monthly', priority: 0.7 },
@@ -101,7 +101,7 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // that stopped — which is also why no redirect points at them.
     { path: '/planes/anfitriones/precios/', changefreq: 'weekly', priority: 0.8 },
     { path: '/planes/turistas/precios/', changefreq: 'monthly', priority: 0.8 },
-    { path: '/planes/gastronomia/precios/', changefreq: 'monthly', priority: 0.7 },
+    { path: '/planes/comer-y-salir/precios/', changefreq: 'monthly', priority: 0.7 },
     { path: '/planes/experiencias/precios/', changefreq: 'monthly', priority: 0.7 },
 
     // Partner / collaborator acquisition.
@@ -167,7 +167,7 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     '/alojamientos/': 'in-dynamic-sitemap',
     '/destinos/': 'in-dynamic-sitemap',
     '/eventos/': 'in-dynamic-sitemap',
-    '/gastronomia/': 'in-dynamic-sitemap',
+    '/comer-y-salir/': 'in-dynamic-sitemap',
     '/experiencias/': 'in-dynamic-sitemap',
     '/publicaciones/': 'in-dynamic-sitemap',
 

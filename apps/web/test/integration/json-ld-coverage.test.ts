@@ -99,7 +99,7 @@ const ABOUT_PAGES: ReadonlyArray<{ name: string; file: string }> = [
 const PRICING_PAGES: ReadonlyArray<{ name: string; file: string }> = [
     { name: 'tourist pricing', file: 'planes/turistas/precios/index.astro' },
     { name: 'owner pricing', file: 'planes/anfitriones/precios/index.astro' },
-    { name: 'gastronomy pricing', file: 'planes/gastronomia/precios/index.astro' },
+    { name: 'gastronomy pricing', file: 'planes/comer-y-salir/precios/index.astro' },
     { name: 'experience pricing', file: 'planes/experiencias/precios/index.astro' }
 ];
 

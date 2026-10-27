@@ -25,7 +25,7 @@ const SRC_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../src');
 const PRICING_PAGES = {
     owner: 'pages/[lang]/planes/anfitriones/precios/index.astro',
     tourist: 'pages/[lang]/planes/turistas/precios/index.astro',
-    gastronomy: 'pages/[lang]/planes/gastronomia/precios/index.astro',
+    gastronomy: 'pages/[lang]/planes/comer-y-salir/precios/index.astro',
     experience: 'pages/[lang]/planes/experiencias/precios/index.astro'
 } as const;
 

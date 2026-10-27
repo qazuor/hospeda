@@ -251,7 +251,7 @@ describe('HOS-369 WB0-6 — cacheable pages are session-blind', () => {
             '[lang]/eventos/index.astro',
             '[lang]/eventos/[slug].astro',
             '[lang]/experiencias/index.astro',
-            '[lang]/gastronomia/index.astro',
+            '[lang]/comer-y-salir/index.astro',
             '[lang]/publicaciones/index.astro',
             '[lang]/publicaciones/[slug].astro'
         ];

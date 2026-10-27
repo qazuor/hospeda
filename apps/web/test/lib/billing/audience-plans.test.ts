@@ -179,7 +179,7 @@ describe('audience card model', () => {
         expect(AUDIENCE_CARD_PATHS).toEqual({
             host: 'planes/anfitriones/precios',
             tourist: 'planes/turistas/precios',
-            gastronomy: 'planes/gastronomia',
+            gastronomy: 'planes/comer-y-salir',
             experience: 'planes/experiencias'
         });
     });

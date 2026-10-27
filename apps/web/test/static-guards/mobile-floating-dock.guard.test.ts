@@ -38,7 +38,7 @@ const FIXED_POSITION_FILES: Readonly<Record<string, FixedPositionCategory>> = Ob
     'pages/[lang]/experiencias/[slug].astro': 'comment',
     'pages/[lang]/alojamientos/[slug].astro': 'comment',
     'pages/[lang]/alojamientos/mapa.astro': 'top',
-    'pages/[lang]/gastronomia/[slug].astro': 'comment',
+    'pages/[lang]/comer-y-salir/[slug].astro': 'comment',
     'components/post/ReadingProgressBar.module.css': 'top',
     'components/maps/MapCardsSidebar.module.css': 'overlay',
     'components/accommodation/AiChatWidget.tsx': 'comment',

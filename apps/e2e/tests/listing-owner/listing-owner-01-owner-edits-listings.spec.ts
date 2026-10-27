@@ -25,7 +25,7 @@
  *     and no listing owned by another VENUE_OWNER (rodrigo, valentina).
  *  3. She opens the gastronomy editor for "la-parrilla-del-puerto",
  *     changes the menuUrl field, saves; the new value is reflected on the
- *     public gastronomy ficha (/.../gastronomia/la-parrilla-del-puerto/).
+ *     public gastronomy ficha (/.../comer-y-salir/la-parrilla-del-puerto/).
  *  4. She opens the experience editor for "excursion-rio-uruguay-concepcion",
  *     edits the richDescription field, saves; the updated text is reflected
  *     on the public experience ficha (/.../experiencias/excursion-...).
@@ -281,7 +281,7 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings â
         // VenueContactBlock.astro renders menuUrl as an anchor with class
         // gastro-contact__menu-btn. The page is SSR on-demand (prerender=false) so
         // a fresh navigation serves the current DB value.
-        await page.goto(`${WEB_URL}/es/gastronomia/${GASTRONOMY_SLUG}/`, {
+        await page.goto(`${WEB_URL}/es/comer-y-salir/${GASTRONOMY_SLUG}/`, {
             waitUntil: 'domcontentloaded'
         });
         const menuLink = page.locator('a.gastro-contact__menu-btn');

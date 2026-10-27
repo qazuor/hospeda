@@ -48,7 +48,7 @@ function withoutComments(source: string): string {
 const read = (relativePath: string): string =>
     withoutComments(readFileSync(resolve(__dirname, '../../src', relativePath), 'utf8'));
 
-const VENUE_PAGE = read('pages/[lang]/gastronomia/[slug].astro');
+const VENUE_PAGE = read('pages/[lang]/comer-y-salir/[slug].astro');
 const EVENTS_CTA = read('components/venue/VenueEventsCta.astro');
 const CONTACT_BLOCK = read('components/venue/VenueContactBlock.astro');
 

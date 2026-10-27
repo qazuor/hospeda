@@ -172,7 +172,7 @@ describe('anti-drift: the sitemap consumes this map', () => {
      * otherwise fail silently.
      *
      * It covered only the first four segments until now, which is why the
-     * sitemap kept its own inline copies of `/gastronomia/` and
+     * sitemap kept its own inline copies of `/comer-y-salir/` and
      * `/experiencias/` unnoticed. A guard proves exactly what its list says.
      */
     it.each([

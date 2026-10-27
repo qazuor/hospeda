@@ -83,7 +83,7 @@ export interface ResolvePublishPageSlotParams {
     readonly isAuthenticated: boolean;
     /** Raw `Cookie` header of the SSR request, forwarded to the precheck. */
     readonly cookieHeader: string | null;
-    /** This page's own path, e.g. `/es/publicar/gastronomia/`. */
+    /** This page's own path, e.g. `/es/publicar/comer-y-salir/`. */
     readonly pathname: string;
     /**
      * Whether the request carries `?create=1` — the panel's "crear uno nuevo"

@@ -42,7 +42,7 @@ import type { SupportedLocale } from './i18n';
 export const PRICING_PAGE_PATH_BY_AUDIENCE = {
     owner: 'planes/anfitriones/precios',
     tourist: 'planes/turistas/precios',
-    gastronomy: 'planes/gastronomia/precios',
+    gastronomy: 'planes/comer-y-salir/precios',
     experience: 'planes/experiencias/precios'
 } as const satisfies Readonly<Record<'owner' | 'tourist' | 'gastronomy' | 'experience', string>>;
 

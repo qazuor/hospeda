@@ -83,7 +83,7 @@ describe('resolvePublishPageSlot — the signed-out state (D-1, AC-5)', () => {
             vertical: 'venue',
             isAuthenticated: false,
             cookieHeader: null,
-            pathname: '/es/publicar/gastronomia/'
+            pathname: '/es/publicar/comer-y-salir/'
         });
 
         expect(slot.signupUrl).toBe('/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fgastronomia%2F');

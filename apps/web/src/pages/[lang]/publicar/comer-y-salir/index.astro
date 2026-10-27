@@ -1,12 +1,12 @@
 ---
 /**
- * @file publicar/gastronomia/index.astro
+ * @file publicar/comer-y-salir/index.astro
  * @description The gastronomy publish page (HOS-1156 T-020) — funnel and create
  * form on one URL.
  *
  * ## What this replaces
  *
- * The header's "Publicar → Gastronomía" pointed at `/planes/gastronomia/`, a
+ * The header's "Publicar → Gastronomía" pointed at `/planes/comer-y-salir/`, a
  * SALES page, and the only way to reach a form was three clicks deep under
  * `/mi-cuenta/comercio/nuevo/gastronomy/`. That form also lived inside
  * `AccountLayout`, behind an in-page login redirect — so the "Publicar" button
@@ -16,7 +16,7 @@
  * This page carries the argument AND the form, in `MarketingLayout` (D-2), and a
  * signed-out visitor reads all of it (D-1).
  *
- * @route     /{lang}/publicar/gastronomia/
+ * @route     /{lang}/publicar/comer-y-salir/
  * @rendering SSR (prerender = false — reads the session to resolve the form
  *            slot; consequently absent from every cacheable-route list, AC-8).
  */

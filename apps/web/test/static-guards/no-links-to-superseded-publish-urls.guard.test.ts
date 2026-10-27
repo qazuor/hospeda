@@ -44,7 +44,7 @@ const SRC_DIR = resolve(__dirname, '../../src');
 const SUPERSEDED_PATHS: ReadonlyArray<{ readonly path: string; readonly replacement: string }> = [
     { path: 'publicar/nueva', replacement: 'publicar' },
     { path: 'mi-cuenta/comercio/nuevo', replacement: 'publicar/{vertical page}' },
-    { path: 'publicar-restaurante', replacement: 'publicar/gastronomia' },
+    { path: 'publicar-restaurante', replacement: 'publicar/comer-y-salir' },
     { path: 'publicar-experiencia', replacement: 'publicar/experiencias' }
 ];
 

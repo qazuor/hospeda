@@ -9,7 +9,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(
-    resolve(__dirname, '../../src/pages/[lang]/gastronomia/index.astro'),
+    resolve(__dirname, '../../src/pages/[lang]/comer-y-salir/index.astro'),
     'utf8'
 );
 
