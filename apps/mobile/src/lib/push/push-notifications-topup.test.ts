@@ -77,6 +77,10 @@ vi.mock('../api/client', () => ({
 // eslint-disable-next-line import/order
 import './push-notifications';
 
+// vitest 5 clears mock history before every test (`clearMocks` defaults to true),
+// so the module-load call must be snapshotted here, at module scope.
+const setNotificationHandlerCallsAtLoad = [...mockSetNotificationHandler.mock.calls];
+
 // ---------------------------------------------------------------------------
 // handleNotification callback
 // ---------------------------------------------------------------------------
@@ -88,11 +92,11 @@ describe('push-notifications — foreground notification handler', () => {
     });
 
     it('calls setNotificationHandler exactly once at module load time', () => {
-        expect(mockSetNotificationHandler).toHaveBeenCalledOnce();
+        expect(setNotificationHandlerCallsAtLoad).toHaveLength(1);
     });
 
     it('passes a handler object with a handleNotification async function', () => {
-        const [handlerArg] = mockSetNotificationHandler.mock.calls[0] as [
+        const [handlerArg] = setNotificationHandlerCallsAtLoad[0] as [
             { handleNotification: () => Promise<unknown> }
         ];
         expect(typeof handlerArg).toBe('object');
@@ -110,7 +114,7 @@ describe('push-notifications — foreground notification handler', () => {
             shouldPlaySound: boolean;
             shouldSetBadge: boolean;
         }>) => {
-            const [handlerArg] = mockSetNotificationHandler.mock.calls[0] as [
+            const [handlerArg] = setNotificationHandlerCallsAtLoad[0] as [
                 {
                     handleNotification: () => Promise<{
                         shouldShowBanner: boolean;
