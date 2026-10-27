@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/astro';
+import { SENTRY_DATA_COLLECTION, scrubSentryEvent } from './src/lib/observability/sentry-privacy';
 
 const dsn = import.meta.env.PUBLIC_SENTRY_DSN;
 // Prefer PUBLIC_SENTRY_ENVIRONMENT over MODE so staging and prod (both
@@ -23,18 +24,10 @@ if (dsn) {
 
         tracesSampleRate: import.meta.env.PUBLIC_SENTRY_TRACES_SAMPLE_RATE ?? 0.1,
 
-        beforeSend(event) {
-            if (event.request?.headers) {
-                const {
-                    authorization: _auth,
-                    cookie: _cookie,
-                    'x-auth-token': _token,
-                    ...cleanHeaders
-                } = event.request.headers;
-                event.request.headers = cleanHeaders;
-            }
-            return event;
-        },
+        // v11 `dataCollection` defaults are permissive; pin the restrictive posture.
+        dataCollection: SENTRY_DATA_COLLECTION,
+
+        beforeSend: scrubSentryEvent,
 
         beforeBreadcrumb(breadcrumb) {
             if (breadcrumb.category === 'console' && breadcrumb.level === 'debug') {
