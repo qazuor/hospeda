@@ -73,7 +73,7 @@ describe('TEST:B13a:23 AC:B13a:23 admin effective set route', () => {
         const accommodation = await app.request(`${base}?vertical=accommodation`, {
             headers: headers()
         });
-        const venue = await app.request(`${base}?vertical=gastronomy`, { headers: headers() });
+        const venue = await app.request(`${base}?vertical=venue`, { headers: headers() });
         expect(((await accommodation.json()) as { data: unknown }).data).not.toStrictEqual(
             ((await venue.json()) as { data: unknown }).data
         );

@@ -43,8 +43,8 @@ describe('GET /api/v1/public/amenities — ?applicableVertical filter (SPEC-266 
         expect(res.status).not.toBe(404);
     });
 
-    it('(2) ?applicableVertical=gastronomy — accepted, not a validation error', async () => {
-        const res = await app.request(`${BASE}?applicableVertical=gastronomy`, {
+    it('(2) ?applicableVertical=venue — accepted, not a validation error', async () => {
+        const res = await app.request(`${BASE}?applicableVertical=venue`, {
             method: 'GET',
             headers: { 'user-agent': 'vitest', accept: 'application/json' }
         });
@@ -59,6 +59,14 @@ describe('GET /api/v1/public/amenities — ?applicableVertical filter (SPEC-266 
         });
         expect(res.status).not.toBe(400);
         expect(res.status).not.toBe(404);
+    });
+
+    it('(3) ?applicableVertical=gastronomy — rejected after the vertical rename', async () => {
+        const res = await app.request(`${BASE}?applicableVertical=gastronomy`, {
+            method: 'GET',
+            headers: { 'user-agent': 'vitest', accept: 'application/json' }
+        });
+        expect(res.status).toBe(400);
     });
 
     it('(3) ?applicableVertical=invalid — rejected by Zod enum with 400', async () => {
