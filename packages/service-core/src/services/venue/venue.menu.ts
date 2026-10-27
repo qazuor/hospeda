@@ -330,7 +330,7 @@ export async function replaceVenueMenu(
             }
             // AC:V9a:7 — the owner act commits with the whole carta.
             await recordListingSubEntityEdit({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: venue,
                 actor,
                 field: 'menu',

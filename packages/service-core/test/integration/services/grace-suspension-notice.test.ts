@@ -223,14 +223,14 @@ async function seedInheritingVenueTitle(userId: string) {
     const db = getServiceTestDb();
     const [plan] = await db
         .insert(plans)
-        .values({ vertical: 'gastronomy', slug: `b7-vip-${crypto.randomUUID()}`, name: 'Gastro' })
+        .values({ vertical: 'venue', slug: `b7-vip-${crypto.randomUUID()}`, name: 'Gastro' })
         .returning();
     if (!plan) throw new Error('gastronomy plan missing');
     const [version] = await db
         .insert(planVersions)
         .values({
             planId: plan.id,
-            vertical: 'gastronomy',
+            vertical: 'venue',
             rank: Math.floor(Math.random() * 1_000_000_000),
             sellable: true,
             current: true,
@@ -247,7 +247,7 @@ async function seedInheritingVenueTitle(userId: string) {
     if (!option) throw new Error('gastronomy option missing');
     await db.insert(subscriptions).values({
         userId,
-        vertical: 'gastronomy',
+        vertical: 'venue',
         planVersionId: version.id,
         billingOptionId: option.id,
         paymentMethod: 'CARD',
@@ -368,7 +368,7 @@ describe('TEST:B7:18 — the suspension notice names what is lost (AC:B7:30)', (
                 ownerId: s.userId,
                 name: 'Otra vertical',
                 endsAt: new Date(now.getTime() + 5 * DAY_MS),
-                compatibleVerticals: ['gastronomy']
+                compatibleVerticals: ['venue']
             });
             await seedAddon({
                 ownerId: s.userId,

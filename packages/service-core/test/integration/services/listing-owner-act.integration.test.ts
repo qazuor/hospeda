@@ -129,7 +129,7 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                 expect(edited.error).toBeUndefined();
 
                 const events = await domainEventModel.findByEntity({
-                    entityType: 'gastronomy',
+                    entityType: 'venue',
                     entityId: listingId,
                     tx
                 });
@@ -143,7 +143,7 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                     expectMinimumFields({
                         event,
                         eventType: event.eventType,
-                        entityType: 'gastronomy',
+                        entityType: 'venue',
                         entityId: listingId,
                         ownerId
                     });
@@ -318,7 +318,7 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                 expect(failed).toBe(true);
 
                 const events = await domainEventModel.findByEntity({
-                    entityType: 'gastronomy',
+                    entityType: 'venue',
                     entityId: gastronomyId,
                     tx
                 });
@@ -393,7 +393,7 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                 }
 
                 const events = await domainEventModel.findByEntity({
-                    entityType: 'gastronomy',
+                    entityType: 'venue',
                     entityId: gastronomyId,
                     tx
                 });

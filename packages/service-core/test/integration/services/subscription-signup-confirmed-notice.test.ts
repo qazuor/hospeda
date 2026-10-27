@@ -47,7 +47,7 @@ beforeAll(async () => {
 
 async function startPending(
     provider: PaymentProvider,
-    input: { readonly userId?: string; readonly vertical?: 'accommodation' | 'gastronomy' } = {}
+    input: { readonly userId?: string; readonly vertical?: 'accommodation' | 'venue' } = {}
 ) {
     const db = getServiceTestDb();
     let userId = input.userId;
@@ -247,7 +247,7 @@ describe('TEST:B3:34 (soporte) signup-confirmed outbox notice', () => {
         const first = await startPending(provider);
         const second = await startPending(provider, {
             userId: first.userId,
-            vertical: 'gastronomy'
+            vertical: 'venue'
         });
         await provider.approve({ authorizationId: first.started.authorizationId });
         await provider.approve({ authorizationId: second.started.authorizationId });
@@ -267,9 +267,6 @@ describe('TEST:B3:34 (soporte) signup-confirmed outbox notice', () => {
         expect(rows.map((row) => row.payload.subscriptionId).sort()).toEqual(
             [first.started.subscriptionId, second.started.subscriptionId].sort()
         );
-        expect(rows.map((row) => row.payload.vertical).sort()).toEqual([
-            'accommodation',
-            'gastronomy'
-        ]);
+        expect(rows.map((row) => row.payload.vertical).sort()).toEqual(['accommodation', 'venue']);
     });
 });

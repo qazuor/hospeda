@@ -477,7 +477,7 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                 expect(refusedCode).toBe('FORBIDDEN');
                 expect(edited.error).toBeUndefined();
                 const events = await domainEventModel.findByEntity({
-                    entityType: 'gastronomy',
+                    entityType: 'venue',
                     entityId: gastronomyId,
                     tx
                 });

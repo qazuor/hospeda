@@ -203,8 +203,8 @@ export class VenueService extends BaseListingService<
      * `@repo/cache-tags` vocabulary exactly — a mismatch purges nothing while
      * still reporting success.
      */
-    protected override get _revalidationEntityType(): 'gastronomy' {
-        return 'gastronomy';
+    protected override get _revalidationEntityType(): 'venue' {
+        return 'venue';
     }
 
     /** Gastronomy-amenity junction model (satisfies {@link ListingJunctionModel}). */

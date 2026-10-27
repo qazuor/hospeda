@@ -241,7 +241,7 @@ export async function replaceVenueDailySpecials(
             }
             // AC:V9a:7 — the owner act commits with the whole specials document.
             await recordListingSubEntityEdit({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: venue,
                 actor,
                 field: 'dailySpecials',

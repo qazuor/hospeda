@@ -291,7 +291,7 @@ describe('recordListingSupportEdit', () => {
         const tx = fakeTx([{ email: 'duena@example.com' }]);
         const input = {
             eventType: 'listing.created' as const,
-            entityType: 'gastronomy' as const,
+            entityType: 'venue' as const,
             listing: { id: LISTING_ID, ownerId: OWNER_ID },
             actor: admin15,
             changes: [{ field: 'name' }]
@@ -399,7 +399,7 @@ describe('ACC:15 scope never opens a non-content operation (coordinator, corrida
                 new AccommodationService({ logger } as never, model as never)
         ],
         [
-            'gastronomy',
+            'venue',
             (model: ReturnType<typeof ownedListingModel>) =>
                 Object.assign(new VenueService({ logger } as never), { model })
         ]

@@ -41,7 +41,7 @@ import { resolveServiceCorrelationId } from '../../utils/correlation';
 import { recordListingSupportEdit } from './listing-support-edit';
 
 /** Kind of listing an owner act is about: the vertical IS the table. */
-export type ListingOwnerActEntityType = 'accommodation' | 'gastronomy' | 'experience';
+export type ListingOwnerActEntityType = 'accommodation' | 'venue' | 'experience';
 
 /** The owner acts this register writes. */
 export type ListingOwnerActEventType = 'listing.created' | 'listing.edited';

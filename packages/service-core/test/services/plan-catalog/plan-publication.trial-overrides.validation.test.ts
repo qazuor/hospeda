@@ -87,7 +87,7 @@ describe('TEST:V2:10 (a) trial accepts its vertical listing-count limit', () => 
 
     it('gastronomy trial: max_venues passes', () => {
         const ctx = contextOf({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             role: 'trial',
             entitlements: [],
             limits: [{ key: 'max_venues', value: 3 }]

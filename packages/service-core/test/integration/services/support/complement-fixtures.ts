@@ -83,7 +83,7 @@ export async function seedCommittedComplement(input: {
                   status: input.principalStatus
               });
         const other = input.otherStatus
-            ? await seedPrincipal(tx, { userId, vertical: 'gastronomy', status: input.otherStatus })
+            ? await seedPrincipal(tx, { userId, vertical: 'venue', status: input.otherStatus })
             : null;
         const addons = [];
         for (const [index, scopeType] of scopeTypes.entries()) {
@@ -109,7 +109,7 @@ export async function seedCommittedComplement(input: {
             const addon = await seedOrphanInstance(tx, {
                 ownerId: userId,
                 scopeType,
-                compatibleVerticals: ['accommodation', 'gastronomy'],
+                compatibleVerticals: ['accommodation', 'venue'],
                 status: 'ACTIVE',
                 targetId,
                 complementSubscriptionId: complement.subscriptionId

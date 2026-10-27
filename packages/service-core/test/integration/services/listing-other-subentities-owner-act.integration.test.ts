@@ -30,7 +30,7 @@ function owner(id: string): Actor {
 }
 
 async function expectActs(input: {
-    readonly entityType: 'accommodation' | 'gastronomy' | 'experience';
+    readonly entityType: 'accommodation' | 'venue' | 'experience';
     readonly entityId: string;
     readonly ownerId: string;
     readonly fields: readonly string[];
@@ -119,7 +119,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
             );
             expect(agenda.error).toBeUndefined();
             await expectActs({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 entityId: gastronomyId,
                 ownerId,
                 fields: ['menu', 'dailySpecials', 'events'],
@@ -157,20 +157,20 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
 
     it.each([
         'accommodation',
-        'gastronomy',
+        'venue',
         'experience'
     ] as const)('TEST:V9a:7 — assigning and removing a tag on %s write owner acts', async (vertical) => {
         await withServiceTestTransaction(async (tx) => {
             const seeded =
                 vertical === 'accommodation'
                     ? await seedAccommodation(tx)
-                    : vertical === 'gastronomy'
+                    : vertical === 'venue'
                       ? await seedVenue(tx)
                       : await seedExperience(tx);
             const entityId =
                 vertical === 'accommodation'
                     ? (seeded as Awaited<ReturnType<typeof seedAccommodation>>).accommodationId
-                    : vertical === 'gastronomy'
+                    : vertical === 'venue'
                       ? (seeded as Awaited<ReturnType<typeof seedVenue>>).gastronomyId
                       : (seeded as Awaited<ReturnType<typeof seedExperience>>).experienceId;
             const ownerId = 'userId' in seeded ? seeded.userId : seeded.ownerId;
@@ -190,7 +190,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
                 entityType:
                     vertical === 'accommodation'
                         ? EntityTypeEnum.ACCOMMODATION
-                        : vertical === 'gastronomy'
+                        : vertical === 'venue'
                           ? EntityTypeEnum.VENUE
                           : EntityTypeEnum.EXPERIENCE
             };

@@ -179,7 +179,7 @@ describe('recordListingOwnerAct', () => {
     it('writes nothing for a foreign actor outside an action 15 scope', async () => {
         const result = await recordListingOwnerAct({
             eventType: 'listing.edited',
-            entityType: 'gastronomy',
+            entityType: 'venue',
             listing: { id: LISTING_ID, ownerId: OWNER_ID },
             actor: actor(OTHER_ID),
             changes: []
@@ -195,7 +195,7 @@ describe('recordListingOwnerAct', () => {
         const result = await inOwnerScope(() =>
             recordListingOwnerAct({
                 eventType: 'listing.edited',
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: { id: LISTING_ID, ownerId: OWNER_ID },
                 actor: admin15,
                 ctx: { tx },
@@ -268,7 +268,7 @@ describe('recordListingSubEntityEdit', () => {
         ALL_FIELDS
     )('carries the field name "%s" and nothing else in changes', async (field) => {
         const result = await recordListingSubEntityEdit({
-            entityType: 'gastronomy' satisfies ListingOwnerActEntityType,
+            entityType: 'venue' satisfies ListingOwnerActEntityType,
             listing: { id: LISTING_ID, ownerId: OWNER_ID },
             actor: actor(OWNER_ID),
             field

@@ -134,7 +134,7 @@ export async function addVenueFaq(
             // Post-write, inside the tx; the field name only, never the
             // question/answer text (DEC-DATA-005).
             await recordListingSubEntityEdit({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
                 actor,
                 field: 'faqs',
@@ -217,7 +217,7 @@ export async function updateVenueFaq(
 
             // Post-write, inside the tx; field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
                 actor,
                 field: 'faqs',
@@ -292,7 +292,7 @@ export async function removeVenueFaq(
             await faqModel.softDelete({ id: validated.faqId }, actor.id, tx);
             // Post-write, inside the tx; field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
                 actor,
                 field: 'faqs',
@@ -460,7 +460,7 @@ export async function reorderVenueFaqs(
             // One event for the whole reorder, post-write, inside the tx;
             // field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: { id: venue.id, ownerId: venue.ownerId, name: venue.name },
                 actor,
                 field: 'faqs',

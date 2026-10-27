@@ -181,7 +181,7 @@ describe('getAffectedCacheTags', () => {
 
     describe('gastronomy and experience (HOS-369 W2-4)', () => {
         it.each([
-            'gastronomy',
+            'venue',
             'experience'
         ] as const)('yields entity tags, its own collection, and the parent destination for %s', (entityType) => {
             const tags = getAffectedCacheTags({
@@ -191,15 +191,15 @@ describe('getAffectedCacheTags', () => {
                 destinationSlug: 'colon'
             });
 
-            const prefix = entityType === 'gastronomy' ? 'gastro' : 'exp';
+            const prefix = entityType === 'venue' ? 'gastro' : 'exp';
             expect(tags).toContain(`${prefix}-la-parrilla`);
             expect(tags).toContain(`${prefix}-uuid-1`);
-            expect(tags).toContain(entityType === 'gastronomy' ? 'list-gastro' : 'list-exp');
+            expect(tags).toContain(entityType === 'venue' ? 'list-gastro' : 'list-exp');
             expect(tags).toContain('dest-colon');
         });
 
         it.each([
-            'gastronomy',
+            'venue',
             'experience'
         ] as const)('does NOT purge the home page for %s', (entityType) => {
             // Unlike accommodations, events and posts, the home surfaces no
@@ -211,12 +211,12 @@ describe('getAffectedCacheTags', () => {
 
         it('does not cross the gastronomy and experience collections', () => {
             // A gastronomy write must not evict the experiences listing.
-            const tags = getAffectedCacheTags({ entityType: 'gastronomy', slug: 'x' });
+            const tags = getAffectedCacheTags({ entityType: 'venue', slug: 'x' });
             expect(tags).not.toContain('list-exp');
         });
 
         it('degrades to the collection tag when no identifying key is present', () => {
-            const tags = getAffectedCacheTags({ entityType: 'gastronomy' });
+            const tags = getAffectedCacheTags({ entityType: 'venue' });
             expect(tags).toEqual(['list-gastro']);
         });
     });

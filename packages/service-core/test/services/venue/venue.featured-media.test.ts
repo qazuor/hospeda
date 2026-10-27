@@ -70,7 +70,7 @@ const PREVIOUS_ID = '00000000-0000-4000-a000-000000000002';
 const OWNER_ID = '00000000-0000-4000-a000-000000000003';
 
 /** 30 for the gastronomy and experience verticals — the cap this wiring must actually pass on. */
-const ENTITY_CAP = getGalleryCap('gastronomy');
+const ENTITY_CAP = getGalleryCap('venue');
 
 const PAYLOAD = { url: 'https://cdn.example.com/new-cover.jpg' };
 

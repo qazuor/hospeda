@@ -683,11 +683,11 @@ describe.skipIf(!isServiceTestDbAvailable())(
         });
         it.each([
             ['VERTICAL_SUBSCRIPTION', ORPHAN_VERTICAL, true],
-            ['VERTICAL_SUBSCRIPTION', 'gastronomy', false],
+            ['VERTICAL_SUBSCRIPTION', 'venue', false],
             ['LISTING', ORPHAN_VERTICAL, true],
-            ['LISTING', 'gastronomy', false],
+            ['LISTING', 'venue', false],
             ['USER', ORPHAN_VERTICAL, true],
-            ['GLOBAL', 'gastronomy', false]
+            ['GLOBAL', 'venue', false]
         ] as const)('h — TEST:B9a:4 scope %s with compatible/target vertical %s converts=%s', async (scope, targetVertical, converts) =>
             withServiceTestTransaction(async (tx) => {
                 const { userId } = await seedOrphanOwner(tx);
@@ -750,8 +750,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 );
             }));
         it.each([
-            [ORPHAN_VERTICAL, 'gastronomy'],
-            ['gastronomy', ORPHAN_VERTICAL]
+            [ORPHAN_VERTICAL, 'venue'],
+            ['venue', ORPHAN_VERTICAL]
         ] as const)('i — TEST:B9a:4 USER addon chooses the first compatible anchor from %s,%s', async (first, second) =>
             withServiceTestTransaction(async (tx) => {
                 const { userId } = await seedOrphanOwner(tx);
@@ -769,7 +769,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 const { instanceId } = await seedOrphanInstance(tx, {
                     ownerId: userId,
                     scopeType: 'USER',
-                    compatibleVerticals: [ORPHAN_VERTICAL, 'gastronomy'],
+                    compatibleVerticals: [ORPHAN_VERTICAL, 'venue'],
                     status: 'ACTIVE',
                     complementSubscriptionId: subscriptionId
                 });

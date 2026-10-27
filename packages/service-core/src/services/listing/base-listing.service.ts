@@ -209,9 +209,9 @@ export abstract class BaseListingService<
      * success, it just evicts nothing. Making each subclass state it means the
      * compiler checks it against the union instead of a string coincidence.
      *
-     * @example `'gastronomy'` for the gastronomy service.
+     * @example `'venue'` for the gastronomy service.
      */
-    protected abstract get _revalidationEntityType(): 'gastronomy' | 'experience';
+    protected abstract get _revalidationEntityType(): 'venue' | 'experience';
 
     /**
      * Amenity junction table model (injectable for testing).

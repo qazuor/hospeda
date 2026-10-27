@@ -48,7 +48,7 @@ beforeAll(async () => {
         .onConflictDoNothing();
 });
 
-async function seedChoice(userId: string, vertical: 'accommodation' | 'gastronomy') {
+async function seedChoice(userId: string, vertical: 'accommodation' | 'venue') {
     const planId = (
         await getServiceTestPool().query<{ id: string }>(
             'INSERT INTO plan (vertical, slug, name) VALUES ($1, $2, $3) RETURNING id',
@@ -113,7 +113,7 @@ async function runScenario(expireFirst: boolean) {
     const venue = await startSubscription(
         {
             userId: user.id,
-            billingOptionId: (await seedChoice(user.id, 'gastronomy')).billingOptionId,
+            billingOptionId: (await seedChoice(user.id, 'venue')).billingOptionId,
             returnUrl: 'https://example.test'
         },
         ports
@@ -202,7 +202,7 @@ async function runScenario(expireFirst: boolean) {
     });
     expect(gastronomyRow).toMatchObject({
         userId: user.id,
-        vertical: 'gastronomy',
+        vertical: 'venue',
         status: 'ACTIVE'
     });
     const venueNotices = (await getServiceTestDb().select().from(emailOutbox)).filter(

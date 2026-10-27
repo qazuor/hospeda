@@ -173,7 +173,7 @@ describe('HOS-1500 V9a — owner-act register starts at the cut (integration)', 
                     inactiveSince: CUT_INSTANT,
                     deadlinesVersion: 1
                 });
-                const entityType = 'gastronomy';
+                const entityType = 'venue';
 
                 expect(
                     await domainEventModel.findByEntity({ entityType, entityId: gastronomyId, tx })

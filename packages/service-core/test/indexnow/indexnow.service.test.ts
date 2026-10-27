@@ -42,7 +42,7 @@ describe('toNotifiableEntity', () => {
         ['destination', { entityType: 'destination', slug: 'colon' }, 'destination'],
         ['event', { entityType: 'event', slug: 'fiesta' }, 'event'],
         ['post', { entityType: 'post', slug: 'guia' }, 'post'],
-        ['gastronomy', { entityType: 'gastronomy', slug: 'parrilla-x' }, 'gastronomy'],
+        ['venue', { entityType: 'venue', slug: 'parrilla-x' }, 'venue'],
         ['experience', { entityType: 'experience', slug: 'kayak-x' }, 'experience']
     ])('maps a %s to itself', (_label, event, expectedType) => {
         expect(toNotifiableEntity(event as EntityChangeData)?.entityType).toBe(expectedType);
@@ -97,7 +97,7 @@ describe('toNotifiableEntity', () => {
         'destination',
         'event',
         'post',
-        'gastronomy',
+        'venue',
         'experience'
     ])('drops a slugless %s event', (entityType) => {
         expect(toNotifiableEntity({ entityType, id: 'uuid' } as EntityChangeData)).toBeUndefined();
