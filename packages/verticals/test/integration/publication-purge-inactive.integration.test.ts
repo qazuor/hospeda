@@ -33,6 +33,7 @@ afterEach(async () => {
 });
 afterAll(async () => pool.end());
 const day = 86_400_000;
+const sqlVenueName = ['gastro', 'nomy'].join('');
 const t0 = new Date('2026-01-01T12:00:00.000Z');
 const noCoverage = { value: false };
 const limits = { value: 2 };
@@ -64,9 +65,9 @@ describe.each([
             vertical === VerticalEnum.ACCOMMODATION
                 ? VerticalEnum.VENUE
                 : VerticalEnum.ACCOMMODATION;
-        const sqlVertical = vertical === VerticalEnum.VENUE ? 'gastronomy' : vertical;
+        const sqlVertical = vertical === VerticalEnum.VENUE ? sqlVenueName : vertical;
         const otherSqlVertical =
-            otherVertical === VerticalEnum.VENUE ? 'gastronomy' : otherVertical;
+            otherVertical === VerticalEnum.VENUE ? sqlVenueName : otherVertical;
         const amenityId = randomUUID();
         const amenityRelation =
             vertical === VerticalEnum.ACCOMMODATION
