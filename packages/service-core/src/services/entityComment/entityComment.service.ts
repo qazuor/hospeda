@@ -587,7 +587,10 @@ export class EntityCommentService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext
     ): Promise<PaginatedListOutput<EntityComment>> {
-        const { page, pageSize } = params;
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params and
+        // republishes them on ctx.pagination (SPEC-088); read them from ctx (HOS-1900).
+        const page = ctx.pagination?.page;
+        const pageSize = ctx.pagination?.pageSize;
         return this.model.findAll(
             this._buildAdminWhere(params),
             { page, pageSize },
