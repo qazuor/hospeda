@@ -26,7 +26,11 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-
+import {
+    RETIRED_ROUTE_REDIRECT_STATUS,
+    RETIRED_VENUE_URL_PREFIXES,
+    resolveLegacyRedirectTarget
+} from '@/lib/legacy-redirects';
 import { PUBLIC_REDIRECT_PATHS } from '@/lib/routes';
 
 const PAGES_DIR = resolve(__dirname, '../../src/pages/[lang]');
@@ -93,4 +97,24 @@ describe('HOS-1156 — every login-gate exemption is a pure redirect', () => {
             });
         }
     }
+});
+
+describe('G-FAC-R2 — retired venue routes resolve in one hop', () => {
+    it('has one redirect for each retired URL family, to a real page and no further redirect', () => {
+        expect(RETIRED_ROUTE_REDIRECT_STATUS).toBe(302);
+        const sources = RETIRED_VENUE_URL_PREFIXES.map((prefix) => `/es${prefix}/sample/`);
+        expect(sources).toHaveLength(6);
+        for (const source of sources) {
+            const result = resolveLegacyRedirectTarget({ path: source });
+            expect(result).toBeDefined();
+            expect(result?.status).toBe(RETIRED_ROUTE_REDIRECT_STATUS);
+            expect(resolveLegacyRedirectTarget({ path: result!.target })).toBeUndefined();
+        }
+    });
+    it('redirects the no-locale public page URL to the Spanish page', () => {
+        expect(resolveLegacyRedirectTarget({ path: `${RETIRED_VENUE_URL_PREFIXES[0]}/` })).toEqual({
+            target: '/es/comer-y-salir/',
+            status: RETIRED_ROUTE_REDIRECT_STATUS
+        });
+    });
 });
