@@ -9,7 +9,7 @@
  * 2. **Listing access** — the owner needs menu management, plus photo or
  *    translation capability when the payload carries those fields.
  * 3. **Ownership** — inside `replaceVenueMenu`, via the same
- *    `GASTRONOMY_EDIT_OWN` / `GASTRONOMY_EDIT_ALL` gate the sibling writes use.
+ *    `VENUE_EDIT_OWN` / `VENUE_EDIT_ALL` gate the sibling writes use.
  *
  *
  * ## Whole document, one transaction

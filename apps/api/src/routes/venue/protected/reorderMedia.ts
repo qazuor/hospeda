@@ -7,7 +7,7 @@
  * extras, no missing entries, no duplicates) and then applies the new
  * `sortOrder` positions in a single transaction.
  *
- * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
+ * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff) —
  * enforced inside `reorderVenueMedia` via `checkVenueCanEditMedia`.
  *
  * NOTE: `index.ts` registers this before /{id}/media/{mediaId} by convention.
@@ -46,7 +46,7 @@ export const protectedReorderVenueMediaRoute = createProtectedRoute({
     description:
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +
-        'exactly. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
+        'exactly. Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
     protectedTag: false,

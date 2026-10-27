@@ -22,18 +22,18 @@ const venueService = new VenueService({ logger: apiLogger });
  * POST /api/v1/admin/gastronomies
  * Create gastronomy listing — Admin endpoint.
  *
- * Requires GASTRONOMY_CREATE permission.
+ * Requires VENUE_CREATE permission.
  */
 export const adminCreateVenueRoute = createAdminRoute({
     method: 'post',
     path: '/',
     summary: 'Create gastronomy listing',
-    description: 'Creates a new gastronomy listing. Requires GASTRONOMY_CREATE permission.',
+    description: 'Creates a new gastronomy listing. Requires VENUE_CREATE permission.',
     tags: ['Gastronomy'],
-    // Own create: `GASTRONOMY_CREATE` (re-checked by the listing-access middleware). Create on behalf of
+    // Own create: `VENUE_CREATE` (re-checked by the listing-access middleware). Create on behalf of
     // another owner (`ownerId` ≠ actor) is action 15 (ACC:15, H12): the listing
     // access chain demands LISTING_FOREIGN_CONTENT_EDIT and runs steps 5 to 7 on
-    // that owner, so holding `GASTRONOMY_CREATE` alone never creates for somebody else.
+    // that owner, so holding `VENUE_CREATE` alone never creates for somebody else.
     anyOfPermissions: [[PermissionEnum.VENUE_CREATE, PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT]],
     listingAccess: {
         vertical: VerticalEnum.VENUE,

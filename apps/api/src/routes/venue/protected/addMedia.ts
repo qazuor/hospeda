@@ -6,7 +6,7 @@
  * Cloudinary via `POST /api/v1/admin/media/upload`. This endpoint registers the
  * returned URL + metadata as a new `venue_media` row.
  *
- * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
+ * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff) —
  * enforced inside `addVenueMedia` via `checkVenueCanEditMedia`.
  */
 
@@ -39,7 +39,7 @@ export const protectedAddVenueMediaRoute = createProtectedRoute({
     summary: 'Add photo to gastronomy listing gallery',
     description:
         'Registers an already-uploaded URL as a new venue_media row. ' +
-        'Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
+        'Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
     protectedTag: false,

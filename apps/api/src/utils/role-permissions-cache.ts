@@ -144,7 +144,7 @@ async function getPermissionsForSingleRole(role: RoleEnum): Promise<SingleRolePe
  *
  * @example
  * ```ts
- * const perms = await getPermissionsForRoles({ roles: [RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER] });
+ * const perms = await getPermissionsForRoles({ roles: [RoleEnum.HOST, RoleEnum.VENUE_OWNER] });
  * ```
  */
 export async function getPermissionsForRoles(params: {

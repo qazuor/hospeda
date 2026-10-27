@@ -334,11 +334,11 @@ describe('validateEntityMediaPermission — gastronomy and experience verticals'
         describe(entityType, () => {
             const editAll =
                 entityType === 'venue'
-                    ? PermissionEnum.GASTRONOMY_EDIT_ALL
+                    ? PermissionEnum.VENUE_EDIT_ALL
                     : PermissionEnum.EXPERIENCE_EDIT_ALL;
             const editOwn =
                 entityType === 'venue'
-                    ? PermissionEnum.GASTRONOMY_EDIT_OWN
+                    ? PermissionEnum.VENUE_EDIT_OWN
                     : PermissionEnum.EXPERIENCE_EDIT_OWN;
 
             it('TEST:1819:6 AC:1:3 allows venue media permissions', () => {
@@ -376,7 +376,7 @@ describe('validateEntityMediaPermission — gastronomy and experience verticals'
                 const otherEditAll =
                     entityType === 'venue'
                         ? PermissionEnum.EXPERIENCE_EDIT_ALL
-                        : PermissionEnum.GASTRONOMY_EDIT_ALL;
+                        : PermissionEnum.VENUE_EDIT_ALL;
                 expect(
                     validateEntityMediaPermission({
                         actor: makeActor([otherEditAll]),

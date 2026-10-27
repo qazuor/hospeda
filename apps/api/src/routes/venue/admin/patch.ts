@@ -23,7 +23,7 @@ const venueService = new VenueService({ logger: apiLogger });
  * Partial update gastronomy listing — Admin endpoint.
  *
  * Uses the same `GastronomyUpdateInputSchema` (all fields partial) as the PUT
- * endpoint. Requires GASTRONOMY_EDIT_ALL permission.
+ * endpoint. Requires VENUE_EDIT_ALL permission.
  */
 export const adminPatchVenueRoute = createAdminRoute({
     method: 'patch',
@@ -31,7 +31,7 @@ export const adminPatchVenueRoute = createAdminRoute({
     path: '/{id}',
     summary: 'Partial update gastronomy listing (admin)',
     description:
-        'Updates specific fields of a gastronomy listing. Requires GASTRONOMY_EDIT_ALL permission.',
+        'Updates specific fields of a gastronomy listing. Requires VENUE_EDIT_ALL permission.',
     tags: ['Gastronomy'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

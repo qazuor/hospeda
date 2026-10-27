@@ -86,7 +86,7 @@ function resolveAnalyticsUserType(
     }
     if (
         roles.includes(RoleEnum.HOST) ||
-        roles.includes(RoleEnum.GASTRONOMY_OWNER) ||
+        roles.includes(RoleEnum.VENUE_OWNER) ||
         roles.includes(RoleEnum.EXPERIENCE_OWNER)
     ) {
         return 'owner';

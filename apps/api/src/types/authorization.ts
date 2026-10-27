@@ -88,13 +88,13 @@ export interface AuthorizationConfig {
      *
      * ```ts
      * // "gastronomy.editAll OR experience.editAll" for a shared operation
-     * anyOfPermissions: [[GASTRONOMY_EDIT_ALL, EXPERIENCE_EDIT_ALL]]
+     * anyOfPermissions: [[VENUE_EDIT_ALL, EXPERIENCE_EDIT_ALL]]
      *
      * // "(gastronomy.editAll OR experience.editAll) AND
      * //  (gastronomy.moderateReview OR experience.moderateReview)"
      * anyOfPermissions: [
-     *     [GASTRONOMY_EDIT_ALL, EXPERIENCE_EDIT_ALL],
-     *     [GASTRONOMY_MODERATE_REVIEW, EXPERIENCE_MODERATE_REVIEW]
+     *     [VENUE_EDIT_ALL, EXPERIENCE_EDIT_ALL],
+     *     [VENUE_MODERATE_REVIEW, EXPERIENCE_MODERATE_REVIEW]
      * ]
      * ```
      *

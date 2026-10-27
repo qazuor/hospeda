@@ -223,7 +223,7 @@ describe('whats-new data file', () => {
             expect(hostEntries.map((entry) => entry.id)).not.toContain(aiChatEntry?.id);
         });
 
-        it('delivers the GASTRONOMY_OWNER/EXPERIENCE_OWNER entry to both owners, not to a HOST', () => {
+        it('delivers the VENUE_OWNER/EXPERIENCE_OWNER entry to both owners, not to a HOST', () => {
             const venueEntries = filterEntriesByRole({
                 entries: whatsNewEntries,
                 roles: ['VENUE_OWNER']

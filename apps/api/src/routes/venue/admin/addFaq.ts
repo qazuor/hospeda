@@ -23,7 +23,7 @@ const venueService = new VenueService({ logger: apiLogger });
  * POST /api/v1/admin/gastronomies/:id/faqs
  * Add FAQ to gastronomy listing — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL permission. The service helper
+ * Requires VENUE_EDIT_ALL permission. The service helper
  * `addVenueFaq` enforces the same gate via `checkVenueCanEditFaqs`.
  */
 export const adminAddVenueFaqRoute = createAdminRoute({
@@ -32,7 +32,7 @@ export const adminAddVenueFaqRoute = createAdminRoute({
     path: '/{id}/faqs',
     summary: 'Add FAQ to gastronomy listing (admin)',
     description:
-        'Adds a new frequently asked question to a gastronomy listing. Requires GASTRONOMY_EDIT_ALL.',
+        'Adds a new frequently asked question to a gastronomy listing. Requires VENUE_EDIT_ALL.',
     tags: ['Gastronomy', 'FAQs'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

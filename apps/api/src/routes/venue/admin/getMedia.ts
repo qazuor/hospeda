@@ -20,7 +20,7 @@ const venueService = new VenueService({ logger: apiLogger });
  * GET /api/v1/admin/gastronomies/:id/media
  * List gastronomy listing gallery photos — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL permission (mirrors the internal
+ * Requires VENUE_EDIT_ALL permission (mirrors the internal
  * `checkVenueCanEditMedia` gate — media management has no separate
  * broader view-only permission). The service helper `getVenueMedia`
  * enforces the same gate.
@@ -31,7 +31,7 @@ export const adminGetVenueMediaRoute = createAdminRoute({
     summary: 'List gastronomy listing gallery photos (admin)',
     description:
         'Retrieves all media rows for a gastronomy listing, ordered by sortOrder ASC. ' +
-        'Supports an optional `state` query filter (default: visible). Requires GASTRONOMY_EDIT_ALL.',
+        'Supports an optional `state` query filter (default: visible). Requires VENUE_EDIT_ALL.',
     tags: ['Gastronomy', 'Media'],
     anyOfPermissions: [[PermissionEnum.VENUE_EDIT_ALL]],
     requestParams: {

@@ -1,7 +1,7 @@
 /**
  * Protected gastronomy get-by-ID endpoint (T-043)
  * Returns a gastronomy listing with owner-tier projection for the authenticated
- * owner. Non-owners without the GASTRONOMY_VIEW_ALL bypass permission receive
+ * owner. Non-owners without the VENUE_VIEW_ALL bypass permission receive
  * NOT_FOUND so that owner-private fields (contactInfo, ownerId,
  * lifecycleState, richDescription, audit dates) are never leaked.
  */
@@ -21,7 +21,7 @@ const venueService = new VenueService({ logger: apiLogger });
  * Get gastronomy listing by ID — Protected endpoint (owner view only).
  *
  * The resource step admits only the owner, or an actor
- * holding GASTRONOMY_VIEW_ALL (staff / admin) may retrieve this endpoint.
+ * holding VENUE_VIEW_ALL (staff / admin) may retrieve this endpoint.
  * Non-owners receive NOT_FOUND to prevent leaking owner-private fields exposed
  * by GastronomyProtectedSchema (contactInfo, lifecycleState, audit dates).
  * The write path (updateOwn) retains its own ownership gate and is unaffected.
@@ -31,7 +31,7 @@ export const protectedGetVenueByIdRoute = createProtectedRoute({
     path: '/{id}',
     summary: 'Get gastronomy listing by ID (protected)',
     description:
-        'Returns a gastronomy listing with owner-tier fields. Only the owner or staff with GASTRONOMY_VIEW_ALL may access this endpoint.',
+        'Returns a gastronomy listing with owner-tier fields. Only the owner or staff with VENUE_VIEW_ALL may access this endpoint.',
     tags: ['Gastronomy'],
     emailUnverifiedOperation: 'READ_OWN',
     requestParams: {
@@ -48,7 +48,7 @@ export const protectedGetVenueByIdRoute = createProtectedRoute({
 
         const entity = result.data;
 
-        // Ownership gate: only the owner or a staff actor with GASTRONOMY_VIEW_ALL
+        // Ownership gate: only the owner or a staff actor with VENUE_VIEW_ALL
         // may read owner-private fields through the protected tier.
         // HOS-600: composed by the shared helper so this branch is byte-identical
         // to the missing-row 404 the service raises above. The literal it replaces

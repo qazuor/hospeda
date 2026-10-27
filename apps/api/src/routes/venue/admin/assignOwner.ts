@@ -1,6 +1,6 @@
 /**
  * POST /api/v1/admin/gastronomies/:id/assign-owner
- * Set or replace the GASTRONOMY_OWNER of a gastronomy listing — Admin endpoint.
+ * Set or replace the VENUE_OWNER of a gastronomy listing — Admin endpoint.
  *
  * Uses the dedicated `VenueService.assignOwner()` action. The generic
  * `update()` path intentionally omits `ownerId` (ownership is immutable there),
@@ -27,14 +27,14 @@ const AssignOwnerBodySchema = z.object({
  * Assign owner to gastronomy listing — Admin endpoint.
  *
  * Delegates to `VenueService.assignOwner(actor, id, ownerId)`.
- * Requires GASTRONOMY_EDIT_ALL permission.
+ * Requires VENUE_EDIT_ALL permission.
  */
 export const adminAssignVenueOwnerRoute = createAdminRoute({
     method: 'post',
     path: '/{id}/assign-owner',
     summary: 'Assign owner to gastronomy listing (admin)',
     description:
-        'Sets or replaces the owner of a gastronomy listing. Requires GASTRONOMY_EDIT_ALL permission.',
+        'Sets or replaces the owner of a gastronomy listing. Requires VENUE_EDIT_ALL permission.',
     tags: ['Gastronomy'],
     anyOfPermissions: [[PermissionEnum.VENUE_EDIT_ALL]],
     requestParams: {

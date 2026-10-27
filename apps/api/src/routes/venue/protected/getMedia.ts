@@ -6,7 +6,7 @@
  * `sortOrder ASC`. Supports an optional `state` query filter (defaults to
  * `'visible'`).
  *
- * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
+ * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff) —
  * enforced inside `getVenueMedia` via `checkVenueCanEditMedia`. There
  * is no separate public read path for media management.
  */
@@ -33,7 +33,7 @@ export const protectedGetVenueMediaRoute = createCRUDRoute({
     description:
         'Retrieves all media rows for a gastronomy listing, ordered by sortOrder ASC. ' +
         'Supports an optional `state` query filter (default: visible). ' +
-        'Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
+        'Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',
     tags: ['Gastronomy', 'Gastronomy Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

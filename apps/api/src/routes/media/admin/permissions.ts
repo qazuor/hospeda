@@ -35,7 +35,7 @@ const ENTITY_UPDATE_PERMISSIONS: Record<MediaEntityType, readonly PermissionEnum
     destination: [PermissionEnum.DESTINATION_UPDATE],
     event: [PermissionEnum.EVENT_UPDATE],
     post: [PermissionEnum.POST_UPDATE],
-    venue: [PermissionEnum.GASTRONOMY_EDIT_OWN, PermissionEnum.GASTRONOMY_EDIT_ALL],
+    venue: [PermissionEnum.VENUE_EDIT_OWN, PermissionEnum.VENUE_EDIT_ALL],
     experience: [PermissionEnum.EXPERIENCE_EDIT_OWN, PermissionEnum.EXPERIENCE_EDIT_ALL],
     postSponsor: [PermissionEnum.POST_SPONSOR_UPDATE],
     eventOrganizer: [PermissionEnum.EVENT_ORGANIZER_UPDATE]
@@ -120,7 +120,7 @@ export const validateEntityMediaPermission = ({
             anyPermission = PermissionEnum.ACCOMMODATION_UPDATE_ANY;
             break;
         case 'venue':
-            anyPermission = PermissionEnum.GASTRONOMY_EDIT_ALL;
+            anyPermission = PermissionEnum.VENUE_EDIT_ALL;
             break;
         case 'experience':
             anyPermission = PermissionEnum.EXPERIENCE_EDIT_ALL;

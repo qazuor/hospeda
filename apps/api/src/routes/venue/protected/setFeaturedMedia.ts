@@ -13,7 +13,7 @@
  *
  * No request body — gastronomyId and mediaId come from URL params.
  *
- * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
+ * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff) —
  * enforced inside `setFeaturedVenueMedia` via `checkVenueCanEditMedia`.
  *
  * NOTE: `index.ts` registers this before /{id}/media/{mediaId} by convention.
@@ -46,7 +46,7 @@ export const protectedSetFeaturedVenueMediaRoute = createProtectedRoute({
     description:
         'Promotes the target media row to is_featured=true and demotes the previous ' +
         'featured row (if any). Archived photos cannot be featured — restore the ' +
-        'photo to visible first. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff). ' +
+        'photo to visible first. Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff). ' +
         'No request body — ids come from URL params.',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],

@@ -17,7 +17,7 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
  * List all gastronomy reviews — Admin endpoint.
  *
  * Returns all reviews including PENDING and REJECTED (not filtered to APPROVED
- * like the public list). Requires GASTRONOMY_MODERATE_REVIEW permission.
+ * like the public list). Requires VENUE_MODERATE_REVIEW permission.
  *
  * The moderation UI sends `status` as the *moderation* state (e.g. PENDING).
  * It is declared in `requestQuery` so the admin-list factory (a) whitelists it

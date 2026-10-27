@@ -9,7 +9,7 @@
  * 2. **Listing access** — the write requires manage_venue_events
  *    for the listing owner.
  * 3. **Ownership** — inside `replaceVenueEvents`, via the same
- *    `GASTRONOMY_EDIT_OWN` / `GASTRONOMY_EDIT_ALL` gate the sibling writes use.
+ *    `VENUE_EDIT_OWN` / `VENUE_EDIT_ALL` gate the sibling writes use.
  *
  *
  * ## Whole document, one transaction

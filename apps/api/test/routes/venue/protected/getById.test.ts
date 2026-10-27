@@ -9,7 +9,7 @@
  * Covers (read-IDOR regression, SPEC-239):
  * - Non-owner authenticated actor receives NOT_FOUND (404 in HTTP terms)
  * - Owner receives the listing (200)
- * - Staff actor holding GASTRONOMY_VIEW_ALL receives the listing (200 bypass)
+ * - Staff actor holding VENUE_VIEW_ALL receives the listing (200 bypass)
  * - Unauthenticated requests receive 401
  */
 import { PermissionEnum } from '@repo/schemas';
@@ -121,7 +121,7 @@ const ownerHeaders = {
     'x-mock-actor-permissions': JSON.stringify([])
 };
 
-/** Staff actor with GASTRONOMY_VIEW_ALL bypass (not the owner). */
+/** Staff actor with VENUE_VIEW_ALL bypass (not the owner). */
 const staffHeaders = {
     ...UA,
     'x-mock-actor-id': NON_OWNER_ID,
@@ -182,8 +182,8 @@ describe('GET /api/v1/protected/gastronomies/:id — ownership IDOR regression',
         expect(body.data.ownerId).toBe(OWNER_ID);
     });
 
-    it('returns 200 for a staff actor holding GASTRONOMY_VIEW_ALL (bypass gate)', async () => {
-        // Staff with GASTRONOMY_VIEW_ALL must be able to inspect any listing even
+    it('returns 200 for a staff actor holding VENUE_VIEW_ALL (bypass gate)', async () => {
+        // Staff with VENUE_VIEW_ALL must be able to inspect any listing even
         // when they are not the owner — admin / support workflows depend on this.
         const res = await app.request(`${BASE}/${LISTING_ID}`, {
             method: 'GET',

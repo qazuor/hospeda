@@ -3,7 +3,7 @@
  *
  * Approves or rejects a single gastronomy review. Delegates the state
  * transition to `VenueReviewService.moderateReview()`, which gates the
- * action on {@link PermissionEnum.GASTRONOMY_MODERATE_REVIEW}.
+ * action on {@link PermissionEnum.VENUE_MODERATE_REVIEW}.
  *
  * @module routes/venue/reviews/admin/moderate
  * @see SPEC-239 T-046
@@ -29,7 +29,7 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
  * Returns the updated review.
  *
  * @throws 400 if `decision` is not `APPROVED` or `REJECTED`.
- * @throws 403 if the actor lacks GASTRONOMY_MODERATE_REVIEW.
+ * @throws 403 if the actor lacks VENUE_MODERATE_REVIEW.
  * @throws 404 if the review does not exist.
  */
 export const adminModerateVenueReviewRoute = createAdminRoute({
@@ -39,7 +39,7 @@ export const adminModerateVenueReviewRoute = createAdminRoute({
     description:
         'Approves or rejects a gastronomy review. Sets moderationState, moderatedById, ' +
         'moderatedAt, and optionally moderationReason. Triggers rating recompute on the listing. ' +
-        'Requires GASTRONOMY_MODERATE_REVIEW.',
+        'Requires VENUE_MODERATE_REVIEW.',
     tags: ['Gastronomy Reviews', 'Admin'],
     anyOfPermissions: [[PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestParams: {

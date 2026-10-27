@@ -26,7 +26,7 @@
  * the deletion is reversible at the row level, but callers must not present the
  * old cover as still available.
  *
- * Requires GASTRONOMY_EDIT_ALL. The service helper `addVenueFeaturedMedia` enforces the
+ * Requires VENUE_EDIT_ALL. The service helper `addVenueFeaturedMedia` enforces the
  * same gate via `checkVenueCanEditMedia`.
  */
 import {
@@ -64,7 +64,7 @@ export const adminAddVenueFeaturedMediaRoute = createAdminRoute({
         '— soft-deleted, so it disappears from the listing while its stored file ' +
         'is kept. Unlike POST /:id/media this does not ' +
         'consume a gallery slot, because the cover is not a gallery item ' +
-        '(HOS-791). Requires GASTRONOMY_EDIT_ALL.',
+        '(HOS-791). Requires VENUE_EDIT_ALL.',
     tags: ['Gastronomy', 'Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

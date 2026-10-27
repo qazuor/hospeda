@@ -2,9 +2,9 @@
  * Tests for admin gastronomy routes (SPEC-239 T-045 / T-046).
  *
  * Verifies:
- *  - POST   /api/v1/admin/gastronomies         requires GASTRONOMY_CREATE (403 without)
- *  - GET    /api/v1/admin/gastronomies         requires GASTRONOMY_VIEW_ALL (401/403 without)
- *  - POST   /api/v1/admin/gastronomies/reviews/:id/moderate requires GASTRONOMY_MODERATE_REVIEW
+ *  - POST   /api/v1/admin/gastronomies         requires VENUE_CREATE (403 without)
+ *  - GET    /api/v1/admin/gastronomies         requires VENUE_VIEW_ALL (401/403 without)
+ *  - POST   /api/v1/admin/gastronomies/reviews/:id/moderate requires VENUE_MODERATE_REVIEW
  *  - POST   /api/v1/admin/gastronomies/:id/assign-owner sets ownerId via update
  *
  * Pattern: boot the full Hono app with `initApp()` and send real HTTP requests
@@ -32,7 +32,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
     // before the auth/permission gate runs.
     const USER_AGENT = { 'user-agent': 'vitest' };
 
-    /** Actor with GASTRONOMY_CREATE + admin-panel access */
+    /** Actor with VENUE_CREATE + admin-panel access */
     const headersWithCreate = {
         ...USER_AGENT,
         'x-mock-actor-id': MOCK_USER_ID,
@@ -44,7 +44,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         ])
     };
 
-    /** Actor with GASTRONOMY_VIEW_ALL + admin-panel access */
+    /** Actor with VENUE_VIEW_ALL + admin-panel access */
     const headersWithViewAll = {
         ...USER_AGENT,
         'x-mock-actor-id': MOCK_USER_ID,
@@ -52,7 +52,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'venue.viewAll'])
     };
 
-    /** Actor with GASTRONOMY_MODERATE_REVIEW + admin-panel access */
+    /** Actor with VENUE_MODERATE_REVIEW + admin-panel access */
     const headersWithModerate = {
         ...USER_AGENT,
         'x-mock-actor-id': MOCK_USER_ID,
@@ -60,7 +60,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'venue.moderateReview'])
     };
 
-    /** Actor with GASTRONOMY_EDIT_ALL + admin-panel access */
+    /** Actor with VENUE_EDIT_ALL + admin-panel access */
     const headersWithEditAll = {
         ...USER_AGENT,
         'x-mock-actor-id': MOCK_USER_ID,
@@ -99,7 +99,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
             expect([400, 401, 403]).toContain(res.status);
         });
 
-        it('passes the gate with GASTRONOMY_VIEW_ALL (not 403/404)', async () => {
+        it('passes the gate with VENUE_VIEW_ALL (not 403/404)', async () => {
             const res = await app.request('/api/v1/admin/gastronomies', {
                 method: 'GET',
                 headers: headersWithViewAll
@@ -114,7 +114,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
     // T-045: Create (POST /)
     // ──────────────────────────────────────────────────────────────────────────
 
-    describe('POST /api/v1/admin/gastronomies — create requires GASTRONOMY_CREATE', () => {
+    describe('POST /api/v1/admin/gastronomies — create requires VENUE_CREATE', () => {
         const validBody = JSON.stringify({
             name: 'La Parrilla Test',
             type: 'PARRILLA',
@@ -131,7 +131,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
             expect([400, 401, 403]).toContain(res.status);
         });
 
-        it('returns 403 when actor lacks GASTRONOMY_CREATE', async () => {
+        it('returns 403 when actor lacks VENUE_CREATE', async () => {
             const res = await app.request('/api/v1/admin/gastronomies', {
                 method: 'POST',
                 headers: { ...headersNoPerms, 'Content-Type': 'application/json' },
@@ -140,7 +140,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
             expect(res.status).toBe(403);
         });
 
-        it('passes the gate with GASTRONOMY_CREATE (not 401/403)', async () => {
+        it('passes the gate with VENUE_CREATE (not 401/403)', async () => {
             const res = await app.request('/api/v1/admin/gastronomies', {
                 method: 'POST',
                 headers: { ...headersWithCreate, 'Content-Type': 'application/json' },
@@ -156,7 +156,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
     // T-046: Moderate review (POST /reviews/:id/moderate)
     // ──────────────────────────────────────────────────────────────────────────
 
-    describe('POST /api/v1/admin/gastronomies/reviews/:id/moderate — requires GASTRONOMY_MODERATE_REVIEW', () => {
+    describe('POST /api/v1/admin/gastronomies/reviews/:id/moderate — requires VENUE_MODERATE_REVIEW', () => {
         const moderatePath = `/api/v1/admin/gastronomies/reviews/${MOCK_REVIEW_ID}/moderate`;
         const validBody = JSON.stringify({ decision: 'APPROVED' });
 
@@ -169,7 +169,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
             expect([400, 401, 403]).toContain(res.status);
         });
 
-        it('returns 403 when actor lacks GASTRONOMY_MODERATE_REVIEW', async () => {
+        it('returns 403 when actor lacks VENUE_MODERATE_REVIEW', async () => {
             const res = await app.request(moderatePath, {
                 method: 'POST',
                 headers: { ...headersNoPerms, 'Content-Type': 'application/json' },
@@ -178,7 +178,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
             expect(res.status).toBe(403);
         });
 
-        it('passes the gate with GASTRONOMY_MODERATE_REVIEW (not 401/403)', async () => {
+        it('passes the gate with VENUE_MODERATE_REVIEW (not 401/403)', async () => {
             const res = await app.request(moderatePath, {
                 method: 'POST',
                 headers: { ...headersWithModerate, 'Content-Type': 'application/json' },
@@ -207,7 +207,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
             expect([400, 401, 403]).toContain(res.status);
         });
 
-        it('returns 403 when actor lacks GASTRONOMY_EDIT_ALL', async () => {
+        it('returns 403 when actor lacks VENUE_EDIT_ALL', async () => {
             const res = await app.request(assignOwnerPath, {
                 method: 'POST',
                 headers: { ...headersNoPerms, 'Content-Type': 'application/json' },
@@ -216,7 +216,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
             expect(res.status).toBe(403);
         });
 
-        it('passes the gate with GASTRONOMY_EDIT_ALL (not 401/403)', async () => {
+        it('passes the gate with VENUE_EDIT_ALL (not 401/403)', async () => {
             const res = await app.request(assignOwnerPath, {
                 method: 'POST',
                 headers: { ...headersWithEditAll, 'Content-Type': 'application/json' },
