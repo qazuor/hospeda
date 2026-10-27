@@ -1,5 +1,5 @@
 /**
- * @file gastronomy.columns.ts
+ * @file venue.columns.ts
  * Column factory for the gastronomy admin list page.
  *
  * Mirrors the host-trades columns pattern.  Each column receives a translation
@@ -13,13 +13,13 @@ import { createElement, Fragment } from 'react';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
 import { getPublicationStatusBadgeOptions } from '@/features/listing/config/publication-status-options';
-import type { GastronomyListItem } from './gastronomy.config';
+import type { VenueListItem } from './venue.config';
 
 // ---------------------------------------------------------------------------
 // Badge label maps
 // ---------------------------------------------------------------------------
 
-/** Spanish labels for each GastronomyTypeEnum value. */
+/** Spanish labels for each VenueTypeEnum value. */
 const TYPE_LABELS: Record<VenueTypeEnum, string> = {
     [VenueTypeEnum.RESTAURANT]: 'Restaurante',
     [VenueTypeEnum.BAR]: 'Bar',
@@ -64,9 +64,7 @@ const PRICE_RANGE_BADGE_OPTIONS = Object.values(PriceRangeEnum).map((value) => (
  * @param t - Translation function from `useTranslations()`
  * @returns Read-only array of column configurations
  */
-export const createGastronomyColumns = (
-    t: ColumnTFunction
-): readonly ColumnConfig<GastronomyListItem>[] => [
+export const createVenueColumns = (t: ColumnTFunction): readonly ColumnConfig<VenueListItem>[] => [
     {
         id: 'name',
         header: t('admin-entities.columns.name'),
@@ -74,7 +72,7 @@ export const createGastronomyColumns = (
         enableSorting: true,
         columnType: ColumnType.ENTITY,
         entityOptions: {
-            entityType: EntityType.GASTRONOMY,
+            entityType: EntityType.VENUE,
             color: BadgeColor.ORANGE
         },
         linkHandler: (row) =>

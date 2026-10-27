@@ -55,7 +55,7 @@ function readPath(source: Record<string, unknown>, path: string): unknown {
  *
  * @returns Read-only array of `SignalConfig` for use with `computeScore`.
  */
-export function createGastronomySignals(): readonly SignalConfig<Record<string, unknown>>[] {
+export function createVenueSignals(): readonly SignalConfig<Record<string, unknown>>[] {
     return [
         // ----------------------------------------------------------------
         // Featured image

@@ -1,5 +1,5 @@
 /**
- * @file GastronomyCard.tsx
+ * @file VenueCard.tsx
  * List card for a gastronomy listing (SPEC-239 T-059).
  *
  * Displays: name, type badge, owner display name, publication status,
@@ -12,7 +12,7 @@ import { Link } from '@tanstack/react-router';
 import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
-import type { GastronomyListItem } from '../config/gastronomy.config';
+import type { VenueListItem } from '../config/venue.config';
 
 // ---------------------------------------------------------------------------
 // Label helpers
@@ -41,10 +41,10 @@ const PRICE_LABELS: Record<PriceRangeEnum, string> = {
 // Component
 // ---------------------------------------------------------------------------
 
-/** Props accepted by {@link GastronomyCard}. */
-export interface GastronomyCardProps {
+/** Props accepted by {@link VenueCard}. */
+export interface VenueCardProps {
     /** Gastronomy list item data. */
-    readonly gastronomy: GastronomyListItem;
+    readonly venue: VenueListItem;
     /** Called when the card is clicked (optional supplement to the link). */
     readonly onSelect?: (id: string) => void;
 }
@@ -55,20 +55,18 @@ export interface GastronomyCardProps {
  * Renders inside a grid layout on the list page.  Navigates to the view route
  * on click via `<Link>`.
  */
-export const GastronomyCard = React.memo(function GastronomyCardComponent({
-    gastronomy,
+export const VenueCard = React.memo(function VenueCardComponent({
+    venue,
     onSelect
-}: GastronomyCardProps) {
-    const typeLabel = gastronomy.type
-        ? (TYPE_LABELS[gastronomy.type as VenueTypeEnum] ?? gastronomy.type)
+}: VenueCardProps) {
+    const typeLabel = venue.type ? (TYPE_LABELS[venue.type as VenueTypeEnum] ?? venue.type) : null;
+
+    const priceLabel = venue.priceRange
+        ? (PRICE_LABELS[venue.priceRange as PriceRangeEnum] ?? venue.priceRange)
         : null;
 
-    const priceLabel = gastronomy.priceRange
-        ? (PRICE_LABELS[gastronomy.priceRange as PriceRangeEnum] ?? gastronomy.priceRange)
-        : null;
-
-    const formattedDate = gastronomy.createdAt
-        ? new Date(gastronomy.createdAt).toLocaleDateString('es-AR', {
+    const formattedDate = venue.createdAt
+        ? new Date(venue.createdAt).toLocaleDateString('es-AR', {
               day: '2-digit',
               month: 'short',
               year: 'numeric'
@@ -76,16 +74,16 @@ export const GastronomyCard = React.memo(function GastronomyCardComponent({
         : null;
 
     const handleClick = React.useCallback(() => {
-        onSelect?.(gastronomy.id);
-    }, [gastronomy.id, onSelect]);
+        onSelect?.(venue.id);
+    }, [venue.id, onSelect]);
 
     return (
         <Link
             to="/gastronomies/$id"
-            params={{ id: gastronomy.id }}
+            params={{ id: venue.id }}
             onClick={handleClick}
             className="block h-full rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label={`Ver gastronomía: ${gastronomy.name}`}
+            aria-label={`Ver gastronomía: ${venue.name}`}
         >
             <Card
                 hoverable
@@ -94,8 +92,8 @@ export const GastronomyCard = React.memo(function GastronomyCardComponent({
             >
                 <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
-                        <CardTitle className="line-clamp-2 text-base">{gastronomy.name}</CardTitle>
-                        {gastronomy.featuredByEntitlement && (
+                        <CardTitle className="line-clamp-2 text-base">{venue.name}</CardTitle>
+                        {venue.featuredByEntitlement && (
                             <Badge
                                 variant="secondary"
                                 className="shrink-0 text-xs"
@@ -128,18 +126,18 @@ export const GastronomyCard = React.memo(function GastronomyCardComponent({
 
                 <CardContent className="space-y-2 pt-0 text-muted-foreground text-sm">
                     {/* Publication state (HOS-1641) */}
-                    {gastronomy.publicationStatus && (
+                    {venue.publicationStatus && (
                         <div className="flex items-center gap-1">
                             <span className="font-medium text-foreground">Estado:</span>
-                            <span>{gastronomy.publicationStatus}</span>
+                            <span>{venue.publicationStatus}</span>
                         </div>
                     )}
 
                     {/* Owner */}
-                    {gastronomy.ownerId && (
+                    {venue.ownerId && (
                         <div className="flex items-center gap-1">
                             <span className="font-medium text-foreground">Propietario:</span>
-                            <span className="truncate">{gastronomy.ownerId}</span>
+                            <span className="truncate">{venue.ownerId}</span>
                         </div>
                     )}
 
@@ -156,4 +154,4 @@ export const GastronomyCard = React.memo(function GastronomyCardComponent({
     );
 });
 
-GastronomyCard.displayName = 'GastronomyCard';
+VenueCard.displayName = 'VenueCard';

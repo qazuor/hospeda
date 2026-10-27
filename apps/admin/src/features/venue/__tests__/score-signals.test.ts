@@ -20,7 +20,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ScoreResult } from '@/components/quality-score';
 import { computeScore } from '@/components/quality-score';
-import { createGastronomySignals } from '../config/score-signals';
+import { createVenueSignals } from '../config/score-signals';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -76,24 +76,24 @@ function completeEntity(): Record<string, unknown> {
 
 describe('createGastronomySignals — weights', () => {
     it('should have non-premium weights that sum to 100', () => {
-        const signals = createGastronomySignals();
+        const signals = createVenueSignals();
         const total = signals.filter((s) => s.weight > 0).reduce((sum, s) => sum + s.weight, 0);
         expect(total).toBe(100);
     });
 
     it('should produce 9 signals', () => {
-        expect(createGastronomySignals().length).toBe(9);
+        expect(createVenueSignals().length).toBe(9);
     });
 });
 
 describe('computeScore with gastronomy signals', () => {
     it('should return 100 for a fully complete entity', () => {
-        const result = computeScore(createGastronomySignals(), completeEntity());
+        const result = computeScore(createVenueSignals(), completeEntity());
         expect(result.score).toBe(100);
     });
 
     it('should return 0 for an empty entity', () => {
-        const result = computeScore(createGastronomySignals(), {});
+        const result = computeScore(createVenueSignals(), {});
         expect(result.score).toBe(0);
     });
 });
@@ -104,14 +104,14 @@ describe('featured-image signal', () => {
             ...completeEntity(),
             media: { featuredImage: { url: 'https://example.com/img.jpg' } }
         };
-        const result = computeScore(createGastronomySignals(), entity);
+        const result = computeScore(createVenueSignals(), entity);
         const sig = findSignal(result, 'featured-image');
         expect(sig?.status).toBe('done');
     });
 
     it('should be pending when featuredImage is absent', () => {
         const entity = { ...completeEntity(), media: {} };
-        const result = computeScore(createGastronomySignals(), entity);
+        const result = computeScore(createVenueSignals(), entity);
         const sig = findSignal(result, 'featured-image');
         expect(sig?.status).toBe('pending');
     });
@@ -119,7 +119,7 @@ describe('featured-image signal', () => {
 
 describe('gallery-photos signal', () => {
     it('should be done with ≥3 gallery photos', () => {
-        const result = computeScore(createGastronomySignals(), completeEntity());
+        const result = computeScore(createVenueSignals(), completeEntity());
         const sig = findSignal(result, 'gallery-photos');
         expect(sig?.status).toBe('done');
     });
@@ -129,7 +129,7 @@ describe('gallery-photos signal', () => {
             ...completeEntity(),
             media: { ...((completeEntity().media as Record<string, unknown>) ?? {}), gallery: [] }
         };
-        const result = computeScore(createGastronomySignals(), entity);
+        const result = computeScore(createVenueSignals(), entity);
         const sig = findSignal(result, 'gallery-photos');
         expect(sig?.status).toBe('pending');
         expect(sig?.progress).toBe(0);
@@ -143,7 +143,7 @@ describe('gallery-photos signal', () => {
                 gallery: [{ url: 'https://example.com/g1.jpg', alt: 'Interior' }]
             }
         };
-        const result = computeScore(createGastronomySignals(), entity);
+        const result = computeScore(createVenueSignals(), entity);
         const sig = findSignal(result, 'gallery-photos');
         expect(sig?.status).toBe('pending');
         expect(sig?.progress).toBeCloseTo(1 / 3);
@@ -152,21 +152,21 @@ describe('gallery-photos signal', () => {
 
 describe('description signal', () => {
     it('should be done when description length ≥150 chars', () => {
-        const result = computeScore(createGastronomySignals(), completeEntity());
+        const result = computeScore(createVenueSignals(), completeEntity());
         const sig = findSignal(result, 'description');
         expect(sig?.status).toBe('done');
     });
 
     it('should be pending when description is absent', () => {
         const entity = { ...completeEntity(), description: '' };
-        const result = computeScore(createGastronomySignals(), entity);
+        const result = computeScore(createVenueSignals(), entity);
         const sig = findSignal(result, 'description');
         expect(sig?.status).toBe('pending');
     });
 
     it('should show partial progress for short description', () => {
         const entity = { ...completeEntity(), description: 'Corto.' };
-        const result = computeScore(createGastronomySignals(), entity);
+        const result = computeScore(createVenueSignals(), entity);
         const sig = findSignal(result, 'description');
         expect(sig?.status).toBe('pending');
         expect(sig?.progress).toBeLessThan(1);
@@ -175,14 +175,14 @@ describe('description signal', () => {
 
 describe('summary signal', () => {
     it('should be done when summary is set', () => {
-        const result = computeScore(createGastronomySignals(), completeEntity());
+        const result = computeScore(createVenueSignals(), completeEntity());
         const sig = findSignal(result, 'summary');
         expect(sig?.status).toBe('done');
     });
 
     it('should be pending when summary is absent', () => {
         const entity = { ...completeEntity(), summary: undefined };
-        const result = computeScore(createGastronomySignals(), entity);
+        const result = computeScore(createVenueSignals(), entity);
         const sig = findSignal(result, 'summary');
         expect(sig?.status).toBe('pending');
     });
@@ -190,7 +190,7 @@ describe('summary signal', () => {
 
 describe('contact signal', () => {
     it('should be done when email is set', () => {
-        const result = computeScore(createGastronomySignals(), completeEntity());
+        const result = computeScore(createVenueSignals(), completeEntity());
         const sig = findSignal(result, 'contact');
         expect(sig?.status).toBe('done');
     });
@@ -200,14 +200,14 @@ describe('contact signal', () => {
             ...completeEntity(),
             contactInfo: { mobilePhone: '+5493442000000' }
         };
-        const result = computeScore(createGastronomySignals(), entity);
+        const result = computeScore(createVenueSignals(), entity);
         const sig = findSignal(result, 'contact');
         expect(sig?.status).toBe('done');
     });
 
     it('should be pending when no contact channel is set', () => {
         const entity = { ...completeEntity(), contactInfo: {} };
-        const result = computeScore(createGastronomySignals(), entity);
+        const result = computeScore(createVenueSignals(), entity);
         const sig = findSignal(result, 'contact');
         expect(sig?.status).toBe('pending');
     });
@@ -215,14 +215,14 @@ describe('contact signal', () => {
 
 describe('cuisine signal', () => {
     it('should be done when type is set', () => {
-        const result = computeScore(createGastronomySignals(), completeEntity());
+        const result = computeScore(createVenueSignals(), completeEntity());
         const sig = findSignal(result, 'cuisine');
         expect(sig?.status).toBe('done');
     });
 
     it('should be pending when type is absent', () => {
         const entity = { ...completeEntity(), type: undefined };
-        const result = computeScore(createGastronomySignals(), entity);
+        const result = computeScore(createVenueSignals(), entity);
         const sig = findSignal(result, 'cuisine');
         expect(sig?.status).toBe('pending');
     });
@@ -230,21 +230,21 @@ describe('cuisine signal', () => {
 
 describe('operatingHours signal', () => {
     it('should be done when at least one day has hours', () => {
-        const result = computeScore(createGastronomySignals(), completeEntity());
+        const result = computeScore(createVenueSignals(), completeEntity());
         const sig = findSignal(result, 'operatingHours');
         expect(sig?.status).toBe('done');
     });
 
     it('should be pending when openingHours is absent', () => {
         const entity = { ...completeEntity(), openingHours: undefined };
-        const result = computeScore(createGastronomySignals(), entity);
+        const result = computeScore(createVenueSignals(), entity);
         const sig = findSignal(result, 'operatingHours');
         expect(sig?.status).toBe('pending');
     });
 
     it('should be pending when openingHours is an empty object', () => {
         const entity = { ...completeEntity(), openingHours: {} };
-        const result = computeScore(createGastronomySignals(), entity);
+        const result = computeScore(createVenueSignals(), entity);
         const sig = findSignal(result, 'operatingHours');
         expect(sig?.status).toBe('pending');
     });
@@ -252,14 +252,14 @@ describe('operatingHours signal', () => {
 
 describe('capacity signal (priceRange proxy)', () => {
     it('should be done when priceRange is set', () => {
-        const result = computeScore(createGastronomySignals(), completeEntity());
+        const result = computeScore(createVenueSignals(), completeEntity());
         const sig = findSignal(result, 'capacity');
         expect(sig?.status).toBe('done');
     });
 
     it('should be pending when priceRange is absent', () => {
         const entity = { ...completeEntity(), priceRange: undefined };
-        const result = computeScore(createGastronomySignals(), entity);
+        const result = computeScore(createVenueSignals(), entity);
         const sig = findSignal(result, 'capacity');
         expect(sig?.status).toBe('pending');
     });

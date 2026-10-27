@@ -49,7 +49,7 @@ const ROUTES = [
     {
         vertical: 'gastronomy',
         path: '../src/routes/_authed/gastronomies/$id.tsx',
-        blockStatus: 'publicationStatus={gastronomy?.publicationStatus}',
+        blockStatus: 'publicationStatus={venue?.publicationStatus}',
         fileStatus: null
     },
     {

@@ -498,7 +498,7 @@ describe('ListingGalleryManager — gated on entity-detail loading too (race reg
     it('keeps the loading skeleton (no upload controls) while isEntityLoading is true, even though the media query already settled', () => {
         // Reproduces the race: the media list resolves fast (few rows), while
         // the parallel entity-detail query (source of `entityName`, e.g.
-        // useGastronomyQuery/useExperienceQuery) is still in flight. If the
+        // useVenueQuery/useExperienceQuery) is still in flight. If the
         // gallery UI gated on the media query alone, the upload controls
         // would render here with `entityName` undefined — and since there is
         // no update-media endpoint, an upload started in this window would

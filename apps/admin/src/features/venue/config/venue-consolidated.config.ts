@@ -1,10 +1,10 @@
 /**
- * @file gastronomy-consolidated.config.ts
+ * @file venue-consolidated.config.ts
  * Consolidated section configuration for the gastronomy entity.
  *
  * Assembles the shared listing sections (identity + operational) and injects
  * a gastronomy-specific section in between that covers:
- *   - type (GastronomyTypeEnum SELECT)
+ *   - type (VenueTypeEnum SELECT)
  *   - priceRange (PriceRangeEnum SELECT, optional)
  *   - menuUrl (TEXT, optional — URL field)
  *
@@ -26,7 +26,7 @@ import { createListingIdentitySection, createListingOperationalSection } from '@
 // ---------------------------------------------------------------------------
 
 /** SELECT options for the gastronomy type field. */
-const GASTRONOMY_TYPE_OPTIONS = [
+const VENUE_TYPE_OPTIONS = [
     { value: VenueTypeEnum.RESTAURANT, label: 'Restaurante' },
     { value: VenueTypeEnum.BAR, label: 'Bar' },
     { value: VenueTypeEnum.CAFE, label: 'Café' },
@@ -61,7 +61,7 @@ const PRICE_RANGE_OPTIONS = [
  *
  * @returns A `ConsolidatedSectionConfig` for gastronomy-specific fields.
  */
-function createGastronomySpecificSection(): ConsolidatedSectionConfig {
+function createVenueSpecificSection(): ConsolidatedSectionConfig {
     return {
         id: 'gastronomy-specific',
         title: 'Detalles de Gastronomía',
@@ -87,7 +87,7 @@ function createGastronomySpecificSection(): ConsolidatedSectionConfig {
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
-                    options: GASTRONOMY_TYPE_OPTIONS as unknown as {
+                    options: VENUE_TYPE_OPTIONS as unknown as {
                         value: string;
                         label: string;
                     }[]
@@ -151,12 +151,12 @@ function createGastronomySpecificSection(): ConsolidatedSectionConfig {
  * @param t - Translation function from `useTranslations()`
  * @returns Consolidated entity configuration for the gastronomy entity.
  */
-export const createGastronomyConsolidatedConfig = (
+export const createVenueConsolidatedConfig = (
     t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedEntityConfig => ({
     sections: [
         createListingIdentitySection('gastronomy'),
-        createGastronomySpecificSection(),
+        createVenueSpecificSection(),
         createListingOperationalSection('gastronomy')
     ],
     metadata: {

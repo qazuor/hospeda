@@ -100,15 +100,15 @@ export type PendingReviewsQueryParams = {
  * @example
  * ```ts
  * // In the gastronomy feature (SPEC-240):
- * const gastronomyHooks = createListingEntityHooks<GastronomyEntity>({
+ * const venueHooks = createListingEntityHooks<VenueAdmin>({
  *   entityName: 'gastronomy',
  *   apiEndpoint: '/api/v1/admin/gastronomy',
  * });
  *
  * // In a component:
- * const assignOwner = gastronomyHooks.useAssignOwnerMutation();
- * const moderateReview = gastronomyHooks.useModerateReviewMutation();
- * const { data: pendingReviews } = gastronomyHooks.usePendingReviewsQuery({ page: 1 });
+ * const assignOwner = venueHooks.useAssignOwnerMutation();
+ * const moderateReview = venueHooks.useModerateReviewMutation();
+ * const { data: pendingReviews } = venueHooks.usePendingReviewsQuery({ page: 1 });
  * ```
  */
 export function createListingEntityHooks<TData extends { id: string }>(
