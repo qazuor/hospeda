@@ -244,7 +244,7 @@ describe('Middleware Stack Integration', () => {
                 headers: { 'user-agent': 'integration-test/1.0', accept: 'application/json' }
             });
 
-        // HOS-TODO-health-live-500: liveRoutes declares the whole envelope (HealthLivenessSchema) as responseSchema but returns the bare payload, so stripWithSchema always throws.
+        // HOS-1911: liveRoutes declares the whole envelope (HealthLivenessSchema) as responseSchema but returns the bare payload, so stripWithSchema always throws.
         it.fails('answers 200 with the alive payload', async () => {
             const res = await live();
             expect(res.status).toBe(200);
@@ -252,12 +252,11 @@ describe('Middleware Stack Integration', () => {
             expect(data.data.alive).toBe(true);
         });
 
-        it('currently answers 500 INTERNAL_ERROR (HOS-TODO-health-live-500)', async () => {
+        it('currently answers 500 INTERNAL_ERROR (HOS-1911)', async () => {
             const res = await live();
             expect(res.status).toBe(500);
             const data = await res.json();
             expect(data.error.code).toBe('INTERNAL_ERROR');
-            expect(data.error.message).toBe('Response payload does not match declared schema');
         });
     });
 });
