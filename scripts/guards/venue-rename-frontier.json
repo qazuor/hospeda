@@ -140,7 +140,7 @@
         "apps/api/src/routes/media/admin/delete.ts": 1,
         "apps/api/src/routes/media/admin/permissions.ts": 1,
         "apps/api/src/routes/media/gallery-count.ts": 2,
-        "apps/api/src/routes/media/protected/delete-entity.ts": 1,
+        "apps/api/src/routes/media/protected/delete-entity.ts": 2,
         "apps/api/src/routes/media/protected/upload-entity.ts": 3,
         "apps/api/src/routes/publish/protected/precheck.ts": 1,
         "apps/api/src/routes/venue/admin/addFaq.ts": 8,
