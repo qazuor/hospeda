@@ -594,7 +594,7 @@
         "apps/web/test/components/account/editor/ContentMediaSection.test.tsx": 1,
         "apps/web/test/components/account/UserFavoritesList.test.tsx": 1,
         "apps/web/test/components/account/UserReviewsList.test.tsx": 1,
-        "apps/web/test/components/analytics/EntityViewTracker.test.tsx": 8,
+        "apps/web/test/components/analytics/EntityViewTracker.test.tsx": 6,
         "apps/web/test/components/billing/plan-comparison-rows.test.ts": 4,
         "apps/web/test/components/billing/PlanComparisonTable.test.ts": 1,
         "apps/web/test/components/billing/pricing-card-catalogue.guard.test.ts": 1,
