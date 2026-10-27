@@ -1213,4 +1213,78 @@ describe('AccommodationModel — amenity/feature filter (REQ-096-01)', () => {
             expect(collectSqlLeaves(where)).toContain(' <= ');
         });
     });
+
+    // =========================================================================
+    // isFeatured — HOS-1898: the filter was accepted by the schema and the
+    // service forwarded it, but the three model queries never read it.
+    // =========================================================================
+
+    describe('isFeatured filter (HOS-1898)', () => {
+        /** The bound value compared against `featured_by_entitlement`, or undefined. */
+        function featuredParam(clause: unknown): unknown {
+            const { sql: text, params } = renderWhere(clause);
+            const match = /"featured_by_entitlement" = \$(\d+)/.exec(text);
+            return match ? params[Number(match[1]) - 1] : undefined;
+        }
+
+        async function captureRelationsWhere(isFeatured: boolean | undefined): Promise<unknown> {
+            let args: unknown;
+            const { db } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            db.query.accommodations.findMany = vi.fn().mockImplementation((a: unknown) => {
+                args = a;
+                return Promise.resolve([]);
+            });
+            getDb.mockReturnValue(db as unknown as ReturnType<typeof dbUtils.getDb>);
+            await model.searchWithRelations({ isFeatured });
+            return (args as { where?: unknown }).where;
+        }
+
+        async function captureSearchFeatured(isFeatured: boolean | undefined): Promise<unknown> {
+            let where: unknown;
+            const { db } = makeSearchMock({
+                captureWhere: (clause) => {
+                    where = clause;
+                }
+            });
+            getDb.mockReturnValue(db as unknown as ReturnType<typeof dbUtils.getDb>);
+            await model.search({ isFeatured });
+            return where;
+        }
+
+        async function captureCountFeatured(isFeatured: boolean | undefined): Promise<unknown> {
+            let where: unknown;
+            const { db } = makeCountMock({
+                captureWhere: (clause) => {
+                    where = clause;
+                }
+            });
+            getDb.mockReturnValue(db as unknown as ReturnType<typeof dbUtils.getDb>);
+            await model.countByFilters({ isFeatured });
+            return where;
+        }
+
+        it.each([true, false])('searchWithRelations() filters on isFeatured=%s', async (value) => {
+            expect(featuredParam(await captureRelationsWhere(value))).toBe(value);
+        });
+
+        it.each([true, false])('search() filters on isFeatured=%s', async (value) => {
+            expect(featuredParam(await captureSearchFeatured(value))).toBe(value);
+        });
+
+        it.each([true, false])('countByFilters() filters on isFeatured=%s', async (value) => {
+            expect(featuredParam(await captureCountFeatured(value))).toBe(value);
+        });
+
+        it('adds no featured predicate when isFeatured is omitted', async () => {
+            expect(renderWhere(await captureRelationsWhere(undefined)).sql).not.toContain(
+                'featured_by_entitlement'
+            );
+            expect(renderWhere(await captureSearchFeatured(undefined)).sql).not.toContain(
+                'featured_by_entitlement'
+            );
+            expect(renderWhere(await captureCountFeatured(undefined)).sql).not.toContain(
+                'featured_by_entitlement'
+            );
+        });
+    });
 });

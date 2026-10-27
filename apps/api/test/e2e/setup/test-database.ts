@@ -298,11 +298,45 @@ export class TestDatabaseManager {
             );
 
             if (quoted.length > 0) {
-                await this.db.execute(sql.raw(`TRUNCATE TABLE ${quoted.join(', ')} CASCADE`));
+                await this.truncateRetryingDeadlocks({
+                    statement: `TRUNCATE TABLE ${quoted.join(', ')} CASCADE`
+                });
             }
         } finally {
             // Re-enable foreign key checks
             await this.db.execute(sql`SET session_replication_role = 'origin'`);
+        }
+    }
+
+    /**
+     * Run the big TRUNCATE, retrying when Postgres picks it as a deadlock victim.
+     *
+     * HOS-1920: handlers may leave fire-and-forget reads running after the response
+     * (e.g. the SPEC-289 search-history hook in `routes/accommodation/public/list.ts`).
+     * Such a read holds AccessShareLock on some tables and wants more, while the
+     * TRUNCATE holds AccessExclusiveLock on others and wants the rest, so Postgres
+     * raises `40P01` and aborts the TRUNCATE. The background work is short and
+     * finishes on its own, and TRUNCATE is idempotent, so retrying is safe. Only
+     * `40P01` is retried; any other error is rethrown at once.
+     */
+    private async truncateRetryingDeadlocks({
+        statement
+    }: {
+        readonly statement: string;
+    }): Promise<void> {
+        if (!this.db) throw new Error('Database not initialized');
+        const maxAttempts = 5;
+        for (let attempt = 1; ; attempt++) {
+            try {
+                await this.db.execute(sql.raw(statement));
+                return;
+            } catch (error) {
+                const code =
+                    (error as { code?: string }).code ??
+                    (error as { cause?: { code?: string } }).cause?.code;
+                if (code !== '40P01' || attempt >= maxAttempts) throw error;
+                await new Promise((resolve) => setTimeout(resolve, 100 * attempt));
+            }
         }
     }
 

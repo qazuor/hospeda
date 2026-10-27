@@ -42,7 +42,6 @@ export const PUBLIC_CACHE_ENDPOINTS = [
 export const PRIVATE_CACHE_ENDPOINTS = [
     '/api/v1/public/users',
     '/api/v1/public/conversations',
-    '/api/v1/public/plans',
     '/api/v1/public/user-bookmarks'
 ] as const;
 

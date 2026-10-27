@@ -462,21 +462,24 @@ describe('GET /accommodations (Enhanced List)', () => {
             }
         });
 
-        // HOS-1898: the public list ignores ?isFeatured=, so rows of the wrong kind come back.
-        it('currently ignores ?isFeatured= and returns the non-featured rows (HOS-1898)', async () => {
-            const response = await app.request(`${baseUrl}?isFeatured=true`, {
-                headers: { 'user-agent': 'vitest', Accept: 'application/json' }
-            });
-            expect(response.status).toBe(200);
-            const data = await response.json();
-            expect(data.data.items).toHaveLength(3);
-            for (const item of data.data.items) {
-                expect(item.isFeatured).toBe(false);
-            }
+        it('narrows the list and its total on ?isFeatured= (HOS-1898)', async () => {
+            const headers = { 'user-agent': 'vitest', Accept: 'application/json' };
+
+            // None of the 3 seeded accommodations is featured.
+            const featured = await app.request(`${baseUrl}?isFeatured=true`, { headers });
+            expect(featured.status).toBe(200);
+            const featuredBody = await featured.json();
+            expect(featuredBody.data.items).toHaveLength(0);
+            expect(featuredBody.data.pagination.total).toBe(0);
+
+            const plain = await app.request(`${baseUrl}?isFeatured=false`, { headers });
+            expect(plain.status).toBe(200);
+            const plainBody = await plain.json();
+            expect(plainBody.data.items).toHaveLength(3);
+            expect(plainBody.data.pagination.total).toBe(3);
         });
 
-        // Drop `.fails` (and the test above) once the filter is wired (HOS-1898).
-        it.fails('should handle boolean filters (HOS-1898)', async () => {
+        it('should handle boolean filters', async () => {
             const booleanTests = [
                 { isFeatured: 'true' },
                 { isFeatured: 'false' },

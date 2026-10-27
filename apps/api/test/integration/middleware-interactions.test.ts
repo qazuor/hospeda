@@ -101,8 +101,8 @@ describe('Middleware Interactions Integration', () => {
             expect((await second.json()).data.ready).toBe(true);
         });
 
-        // HOS-1915: PER_REQUEST_HEADERS in cache.ts omits x-request-id, so a cache HIT replays the first request's id (header and body metadata).
-        it.fails('should give a cached response its own request id', async () => {
+        // HOS-1915: a cache HIT must carry the current request's id (header and body metadata).
+        it('should give a cached response its own request id', async () => {
             const app = initApp();
             const request = () =>
                 app.request(READY, {
@@ -114,20 +114,8 @@ describe('Middleware Interactions Integration', () => {
 
             expect(second.headers.get('x-cache')).toBe('HIT');
             expect(second.headers.get('x-request-id')).not.toBe(first.headers.get('x-request-id'));
-        });
-
-        it('currently replays the first request id on a cache HIT (HOS-1915)', async () => {
-            const app = initApp();
-            const request = () =>
-                app.request(READY, {
-                    headers: { 'user-agent': 'cache-hit-test/1.0', accept: 'application/json' }
-                });
-
-            const first = await request();
-            const second = await request();
-
-            expect(second.headers.get('x-cache')).toBe('HIT');
-            expect(second.headers.get('x-request-id')).toBe(first.headers.get('x-request-id'));
+            const body = await second.json();
+            expect(body.metadata.requestId).toBe(second.headers.get('x-request-id'));
         });
 
         it('should give uncached requests unique request ids', async () => {

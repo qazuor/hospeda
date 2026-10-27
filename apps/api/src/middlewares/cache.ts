@@ -3,7 +3,9 @@
  * Replaces the Web Standards Cache API (which is unavailable in Node.js)
  * with a simple Map-based cache that supports TTL expiration and LRU eviction.
  */
-import type { MiddlewareHandler } from 'hono';
+import { DEFAULT_AUTH_COOKIE_PREFIX, STAGING_AUTH_COOKIE_PREFIX } from '@repo/config';
+import type { Context, MiddlewareHandler } from 'hono';
+import { getCookie } from 'hono/cookie';
 import type { AppBindings } from '../types';
 import { getCacheConfig } from '../utils/env';
 import { apiLogger } from '../utils/logger';
@@ -19,6 +21,12 @@ interface CacheEntry {
     readonly status: number;
     readonly headers: Record<string, string>;
     readonly expires: number;
+    /**
+     * The `metadata.requestId` the stored body was written with, or `null` when
+     * the body is not a JSON object carrying one (HOS-1915). Computed once on
+     * the MISS so a HIT never parses the body.
+     */
+    readonly storedRequestId: string | null;
 }
 
 /**
@@ -36,6 +44,13 @@ interface CacheEntry {
  * `x-cache` is here for a different reason: it is set fresh on both paths, so
  * caching it would make a hit claim to be a miss.
  *
+ * HOS-1915: `x-request-id` belongs here too. The id is minted by
+ * `hono/request-id` for every request, so replaying the stored one made N
+ * distinct requests report the id of whichever one wrote the entry. On a hit
+ * the header set by that middleware earlier in the chain stays in place. The
+ * matching `metadata.requestId` inside the body is re-stamped separately
+ * (see `restampRequestId`).
+ *
  * Keep this list to headers that are genuinely per-request. Anything that
  * describes the body (`content-type`, `etag`, `cache-control`, …) MUST keep
  * being cached — dropping those would break content negotiation and
@@ -43,6 +58,7 @@ interface CacheEntry {
  */
 const PER_REQUEST_HEADERS: ReadonlySet<string> = new Set([
     'x-cache',
+    'x-request-id',
     'ratelimit-limit',
     'ratelimit-remaining',
     'ratelimit-reset',
@@ -64,6 +80,80 @@ const PER_REQUEST_HEADERS: ReadonlySet<string> = new Set([
  */
 function isPerRequestHeader(name: string): boolean {
     return PER_REQUEST_HEADERS.has(name.toLowerCase());
+}
+
+/**
+ * Extracts `metadata.requestId` from a response body when it is a JSON object
+ * whose `metadata.requestId` is a string, i.e. the envelope shape built by the
+ * response formatter. Parses once, on the MISS only.
+ *
+ * @param params.body - Raw response body text.
+ * @param params.contentType - Value of the `content-type` header, if any.
+ * @returns The stored request id, or `null` when the body has none.
+ */
+function extractStoredRequestId({
+    body,
+    contentType
+}: {
+    readonly body: string;
+    readonly contentType: string | undefined;
+}): string | null {
+    if (!contentType?.toLowerCase().includes('json')) return null;
+    try {
+        const parsed: unknown = JSON.parse(body);
+        if (typeof parsed !== 'object' || parsed === null) return null;
+        const metadata = (parsed as { metadata?: unknown }).metadata;
+        if (typeof metadata !== 'object' || metadata === null) return null;
+        const id = (metadata as { requestId?: unknown }).requestId;
+        return typeof id === 'string' && id.length > 0 ? id : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Swaps the stored request id for the current one in a cached JSON body
+ * (HOS-1915) with a string splice, so a HIT stays O(n) with no parse.
+ *
+ * Request ids are unique per request, so the stored id string only appears in
+ * the `metadata.requestId` field; the LAST occurrence is used because the
+ * envelope serialises `metadata` after `data`, which also protects against a
+ * data field that happens to contain the same literal text. If the pattern is
+ * not found (e.g. a non-compact serialisation) the body is served unchanged.
+ * `timestamp` is intentionally left as stored: it dates the cached payload.
+ *
+ * @param params.body - Cached body text.
+ * @param params.storedRequestId - Id the body was cached with.
+ * @param params.requestId - Id of the request being served.
+ * @returns The body carrying the current request id.
+ */
+function restampRequestId({
+    body,
+    storedRequestId,
+    requestId
+}: {
+    readonly body: string;
+    readonly storedRequestId: string;
+    readonly requestId: string;
+}): string {
+    const needle = `"requestId":${JSON.stringify(storedRequestId)}`;
+    const index = body.lastIndexOf(needle);
+    if (index === -1) return body;
+    return (
+        body.slice(0, index) +
+        `"requestId":${JSON.stringify(requestId)}` +
+        body.slice(index + needle.length)
+    );
+}
+
+/**
+ * Whether a stored header map carries a content-length (case-insensitive).
+ *
+ * @param params.headers - Headers stored with the cache entry.
+ * @returns `true` when a content-length header was stored.
+ */
+function hasContentLength({ headers }: { readonly headers: Record<string, string> }): boolean {
+    return Object.keys(headers).some((name) => name.toLowerCase() === 'content-length');
 }
 
 /** Maximum number of entries in the cache before eviction */
@@ -119,6 +209,69 @@ export function getCacheSize(): number {
 const CACHEABLE_STATUS_CODES: ReadonlySet<number> = new Set([200, 404]);
 
 /**
+ * Cookie-name prefixes Better Auth writes for every Hospeda deployment
+ * (HOS-1923). Better Auth names its cookies `<prefix>.<cookie>` —
+ * `session_token`, the `session_data` cookie cache, `dont_remember` — and adds
+ * `__Secure-` when `useSecureCookies` is on (`NODE_ENV=production`).
+ *
+ * Both deployment prefixes are listed, not only the one this process resolves:
+ * staging and production share the apex cookie domain, so a request can carry
+ * either. Bypassing on the other environment's cookie only costs a cache hit,
+ * while missing this environment's would serve a session-bound body to
+ * strangers. Resolved from `@repo/config`, the same source `lib/auth.ts` uses.
+ */
+const AUTH_COOKIE_NAME_PREFIXES: readonly string[] = [
+    DEFAULT_AUTH_COOKIE_PREFIX,
+    STAGING_AUTH_COOKIE_PREFIX
+].flatMap((prefix) => [`${prefix}.`, `__Secure-${prefix}.`]);
+
+/**
+ * Test-only headers that make the harness build an actor
+ * (`test/helpers/mockAuthMiddleware.ts`, `middlewares/actor.ts`). Both readers
+ * require `x-mock-actor-id`, so its presence alone is the superset.
+ */
+const MOCK_ACTOR_ID_HEADER = 'x-mock-actor-id';
+
+/**
+ * Whether a request carries anything the auth chain could turn into a
+ * non-guest actor, in which case the response cache must neither read nor
+ * write for it (HOS-1923).
+ *
+ * The cache runs BEFORE `authMiddleware`/`actorMiddleware` and keys public
+ * endpoints without any actor component, so a handler that branches on the
+ * actor (draft posts for an author, a user profile for its owner) would have
+ * its authenticated answer replayed to anonymous callers for the whole TTL —
+ * and an anonymous 404 replayed to the owner.
+ *
+ * Credentials recognised:
+ * - an `Authorization` header (any scheme; the mock auth also reads it);
+ * - any Better Auth cookie of a Hospeda deployment, matched by parsed cookie
+ *   NAME (never a substring of the raw header), see
+ *   {@link AUTH_COOKIE_NAME_PREFIXES};
+ * - under `NODE_ENV=test` only, the mock-actor header the test harness honours.
+ *
+ * Unrelated cookies (`hospeda_vid`, analytics) do not count: an anonymous
+ * visitor always carries them and must keep being served from cache.
+ *
+ * @param params.c - Hono context of the request.
+ * @returns `true` when the request must bypass the cache.
+ */
+function requestCarriesCredentials({ c }: { readonly c: Context<AppBindings> }): boolean {
+    if (c.req.header('Authorization') !== undefined) return true;
+
+    // NODE_ENV is a system variable, read directly like `lazyMockAuthMiddleware`
+    // in `utils/create-app.ts` decides whether the mock headers are honoured.
+    if (process.env.NODE_ENV === 'test' && c.req.header(MOCK_ACTOR_ID_HEADER) !== undefined) {
+        return true;
+    }
+
+    if (c.req.header('Cookie') === undefined) return false;
+    return Object.keys(getCookie(c)).some((name) =>
+        AUTH_COOKIE_NAME_PREFIXES.some((prefix) => name.startsWith(prefix))
+    );
+}
+
+/**
  * Determines the cache key for a request based on endpoint classification.
  * Returns null if the request should not be cached.
  */
@@ -161,7 +314,8 @@ function generateCacheKey({
  * Creates cache middleware with environment-based configuration.
  * Uses an in-memory Map with TTL expiration and LRU-style eviction.
  * Only caches GET requests with cacheable status codes (200, 404).
- * Adds X-Cache header (HIT or MISS) to all responses passing through.
+ * Adds an X-Cache header to every response of a classified endpoint: HIT or
+ * MISS, or BYPASS when the request carries credentials (HOS-1923).
  */
 export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
     const cacheConfig = getCacheConfig();
@@ -208,12 +362,39 @@ export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
             return;
         }
 
+        // HOS-1923: a request with credentials is answered for ITS actor, but
+        // the key above has no actor in it. Never read nor store such a request.
+        if (requestCarriesCredentials({ c })) {
+            await next();
+            c.header('X-Cache', 'BYPASS');
+            return;
+        }
+
         // Check for cached response
         const cached = getCached({ key });
         if (cached) {
             c.header('X-Cache', 'HIT');
             for (const [name, value] of Object.entries(cached.headers)) {
                 c.header(name, value);
+            }
+            const currentRequestId = c.get('requestId');
+            // The empty-id branch is unreachable in the real app: requestId()
+            // is the first middleware in create-app.ts, so the id always exists.
+            if (cached.storedRequestId !== null && currentRequestId) {
+                const body = restampRequestId({
+                    body: cached.body,
+                    storedRequestId: cached.storedRequestId,
+                    requestId: currentRequestId
+                });
+                // The stored content-length describes the original body; the
+                // re-stamped one can differ when the id length differs. Only
+                // rewrite it when the entry carried one: adding a length the
+                // MISS never had makes hono/compress skip bodies under its
+                // threshold, so a HIT would lose the gzip the MISS got.
+                if (hasContentLength({ headers: cached.headers })) {
+                    c.header('Content-Length', String(new TextEncoder().encode(body).length));
+                }
+                return c.body(body, cached.status as 200);
             }
             return c.body(cached.body, cached.status as 200);
         }
@@ -244,7 +425,11 @@ export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
                     body: responseBody,
                     status,
                     headers,
-                    expires: Date.now() + ttlMs
+                    expires: Date.now() + ttlMs,
+                    storedRequestId: extractStoredRequestId({
+                        body: responseBody,
+                        contentType: c.res.headers.get('content-type') ?? undefined
+                    })
                 }
             });
         } catch {
