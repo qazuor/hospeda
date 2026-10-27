@@ -522,7 +522,7 @@
         "apps/web/src/components/shared/navigation/PublishMenu.client.tsx": 2,
         "apps/web/src/components/shared/navigation/UserMenu.client.tsx": 6,
         "apps/web/src/components/shared/qr/ListingQrSheet.client.tsx": 4,
-        "apps/web/src/components/venue/OpeningHoursSection.astro": 13,
+        "apps/web/src/components/venue/OpeningHoursSection.astro": 12,
         "apps/web/src/components/venue/VenueCard.astro": 11,
         "apps/web/src/components/venue/VenueContactBlock.astro": 5,
         "apps/web/src/components/venue/VenueDailySpecials.astro": 5,
