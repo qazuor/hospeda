@@ -118,13 +118,13 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
         expect(
             resolveDoorOptionState({
                 option: venue,
-                visibility: (node) => isVisibleByRoles(node, [RoleEnum.GASTRONOMY_OWNER])
+                visibility: (node) => isVisibleByRoles(node, [RoleEnum.VENUE_OWNER])
             })
         ).toBe('acquired');
         expect(
             resolveDoorOptionState({
                 option: experience,
-                visibility: (node) => isVisibleByRoles(node, [RoleEnum.GASTRONOMY_OWNER])
+                visibility: (node) => isVisibleByRoles(node, [RoleEnum.VENUE_OWNER])
             })
         ).toBe('unacquired');
         expect(

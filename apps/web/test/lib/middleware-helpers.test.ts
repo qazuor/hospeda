@@ -1114,7 +1114,7 @@ describe('buildChangePasswordRedirect', () => {
  * protected route that is NOT the change-password route itself (avoiding a
  * redirect loop). These assertions verify that the gastronomy/experience self-service area
  * (`/[lang]/mi-cuenta/comercio/...`) falls inside that gated set — so a freshly
- * provisioned GASTRONOMY_OWNER is forced through `cambiar-contrasena` before
+ * provisioned VENUE_OWNER is forced through `cambiar-contrasena` before
  * reaching it. The gate mechanism itself is reused from SPEC-239 (verify-only).
  */
 describe('SPEC-249 — listing area force-password gating (T-020 / T-023)', () => {

@@ -70,14 +70,14 @@ const TOURIST_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.tourist;
  * Gastronomy and experience listings (gastronomy, experiences) are a separate domain from
  * accommodation hosting, so this set is intentionally distinct from
  * `ROLES_WITH_ACCOMMODATIONS_NAV` — a plain accommodation HOST does NOT
- * get the listing area, and a plain GASTRONOMY_OWNER or EXPERIENCE_OWNER does NOT get the host
+ * get the listing area, and a plain VENUE_OWNER or EXPERIENCE_OWNER does NOT get the host
  * nav. Since HOS-296 an account can hold both hats at once and then gets
  * BOTH areas (AC-1).
  *
  * Mirrored by the two vertical EDIT_OWN entries in `PERMISSION_ROLE_MAP`.
  *
  * Roles:
- * - GASTRONOMY_OWNER / EXPERIENCE_OWNER: the per-vertical replacements
+ * - VENUE_OWNER / EXPERIENCE_OWNER: the per-vertical replacements
  *   (HOS-1077). Both reach the same `/mi-cuenta/comercio` area; which listings
  *   they can actually edit is decided per listing by the API, not by this set.
  *   Listing them here is what stops an account holding ONLY a vertical role
@@ -101,7 +101,7 @@ export const ROLES_WITH_LISTING_NAV = new Set<string>([
  * on the owner plans page, same precedence HOS-296 established for
  * host-vs-tourist.
  *
- * `GASTRONOMY_OWNER` wins over `EXPERIENCE_OWNER` when an account somehow
+ * `VENUE_OWNER` wins over `EXPERIENCE_OWNER` when an account somehow
  * holds both with no host role — an arbitrary but deterministic tie-break,
  * documented rather than silent, since a single pricing-page redirect cannot
  * name two verticals at once.
@@ -145,7 +145,7 @@ function resolveListingPricingAudience({
  * the owner page, because holding the host hat is the stronger signal about
  * which catalog they can actually buy from. HOS-1293 extends the same
  * precedence one level: host beats gastronomy/experience beats tourist — before this fix a
- * gastronomy/experience-only owner (`GASTRONOMY_OWNER`/`EXPERIENCE_OWNER`, no `HOST` role)
+ * gastronomy/experience-only owner (`VENUE_OWNER`/`EXPERIENCE_OWNER`, no `HOST` role)
  * fell all the way through to the tourist page from `/mi-cuenta/addons/` and
  * the bare `/suscriptores/checkout/` root, because this function recognized
  * only the host-vs-everyone-else split.

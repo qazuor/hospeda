@@ -96,7 +96,7 @@ describe('AccountLayout — discovery-door lifecycle by role (HOS-131 §6.3)', (
             null,
             RoleEnum.USER,
             RoleEnum.HOST,
-            RoleEnum.GASTRONOMY_OWNER,
+            RoleEnum.VENUE_OWNER,
             RoleEnum.ADMIN
         ]) {
             const doors = visibleDoorsForRole(role);

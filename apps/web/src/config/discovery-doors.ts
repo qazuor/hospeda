@@ -165,7 +165,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 // where you go to publish, that one is where you go once you do.
                 href: PUBLISH_PAGE_PATH_BY_VERTICAL.venue,
                 ctaI18nKey: 'account.doors.publish.options.venue.cta',
-                acquiredPermission: PermissionEnum.GASTRONOMY_EDIT_OWN,
+                acquiredPermission: PermissionEnum.VENUE_EDIT_OWN,
                 manageHref: 'mi-cuenta/comercio'
             },
             {

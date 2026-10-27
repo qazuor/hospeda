@@ -31,7 +31,7 @@ describe('web tours config', () => {
         });
 
         it('returns tours in WEB_TOURS declared (priority) order for a multi-hat user (HOS-788)', () => {
-            // A HOST who is also a GASTRONOMY_OWNER matches both audiences.
+            // A HOST who is also a VENUE_OWNER matches both audiences.
             // The order must not depend on the order roles were passed in.
             const forward = getWelcomeToursForRoles({ roles: ['HOST', 'VENUE_OWNER'] }).map(
                 (t) => t.id

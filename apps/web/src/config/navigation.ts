@@ -289,10 +289,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
     {
         id: 'comercio',
         i18nKey: 'account.nav.groupListings',
-        requiredPermissions: [
-            PermissionEnum.GASTRONOMY_EDIT_OWN,
-            PermissionEnum.EXPERIENCE_EDIT_OWN
-        ],
+        requiredPermissions: [PermissionEnum.VENUE_EDIT_OWN, PermissionEnum.EXPERIENCE_EDIT_OWN],
         suppressHeaderWhenSingle: true,
         items: [
             {
