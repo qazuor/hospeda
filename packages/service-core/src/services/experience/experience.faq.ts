@@ -211,7 +211,7 @@ export async function updateExperienceFaq(
 
             const faqModel = new ExperienceFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
-            if (!faq || faq.experienceId !== validated.experienceId) {
+            if (!faq || faq.experienceId !== validated.experienceId || faq.deletedAt) {
                 throw new ServiceError(
                     ServiceErrorCode.NOT_FOUND,
                     'FAQ not found for this experience listing'
@@ -294,7 +294,7 @@ export async function removeExperienceFaq(
 
             const faqModel = new ExperienceFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
-            if (!faq || faq.experienceId !== validated.experienceId) {
+            if (!faq || faq.experienceId !== validated.experienceId || faq.deletedAt) {
                 throw new ServiceError(
                     ServiceErrorCode.NOT_FOUND,
                     'FAQ not found for this experience listing'

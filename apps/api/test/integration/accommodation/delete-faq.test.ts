@@ -158,19 +158,7 @@ describe('DELETE /protected/accommodations/:id/faqs/:faqId', () => {
         expect((await readFaq(faqId))?.deletedAt).toBeNull();
     });
 
-    // HOS-1907: removeFaq loads the FAQ with BaseModel.findById, which does not filter
-    // deleted rows (accommodation.service.ts:2858), so an already deleted FAQ is found
-    // and soft-deleted again.
-    it('currently answers 200 when an already soft-deleted FAQ is deleted again (HOS-1907)', async () => {
-        const faqId = seeded.faqIds[0] ?? '';
-        const first = await deleteFaq({ id: seeded.id, faqId, actorId: seeded.ownerId });
-        expect(first.status).toBe(200);
-        const second = await deleteFaq({ id: seeded.id, faqId, actorId: seeded.ownerId });
-        expect(second.status).toBe(200);
-    });
-
-    // Drop `.fails` (and the test above) once HOS-1907 is fixed.
-    it.fails('answers 404 and keeps deletedAt when a soft-deleted FAQ is deleted again (HOS-1907)', async () => {
+    it('answers 404 and keeps deletedAt when a soft-deleted FAQ is deleted again (HOS-1907)', async () => {
         const faqId = seeded.faqIds[0] ?? '';
         const first = await deleteFaq({ id: seeded.id, faqId, actorId: seeded.ownerId });
         expect(first.status).toBe(200);

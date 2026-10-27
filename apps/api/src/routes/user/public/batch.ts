@@ -62,7 +62,6 @@ export const publicUserBatchRoute = createPublicRoute({
         return users;
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 50, windowMs: 60000 }
     }
 });

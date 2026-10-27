@@ -205,16 +205,42 @@ function buildGuestHeaders(actorId: string): Record<string, string> {
     return req.headers;
 }
 
-/** Minimal conversation row belonging to the given userId. */
+/**
+ * Conversation row belonging to the given userId, complete enough to satisfy
+ * `ProtectedThreadResponseSchema` (the route validates its response body).
+ */
 function makeConversation(userId: string) {
+    const now = new Date();
     return {
         id: CONVERSATION_ID,
         userId,
         accommodationId: ACCOMMODATION_ID,
+        anonymousName: null,
+        anonymousEmail: null,
+        anonymousEmailVerified: false,
+        anonymousPhone: null,
         status: 'OPEN',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null
+        blockReason: null,
+        locale: 'es',
+        archivedByGuest: false,
+        archivedByOwner: false,
+        lastReadAtByGuest: null,
+        lastReadAtByOwner: null,
+        firstGuestMessageAt: null,
+        firstOwnerReplyAt: null,
+        lastActivityAt: null,
+        lastGuestMessageAt: null,
+        lastOwnerMessageAt: null,
+        closedAt: null,
+        blockedAt: null,
+        guestMessageCount: 0,
+        ownerMessageCount: 0,
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: null,
+        createdById: null,
+        updatedById: null,
+        deletedById: null
     };
 }
 

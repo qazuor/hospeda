@@ -242,7 +242,6 @@ export const publicGetAccommodationBySlugRoute = createPublicRoute({
         };
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

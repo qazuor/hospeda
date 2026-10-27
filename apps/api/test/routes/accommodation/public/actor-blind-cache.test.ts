@@ -246,8 +246,25 @@ describe('HOS-353 — the six cached public accommodation handlers resolve as a 
 
     it('getSummary: hands a guest actor to the service, for a VIP/staff caller', async () => {
         // The heaviest disclosure of the six: this payload names `ownerId` and
-        // `slug`.
-        mockGetById.mockResolvedValue({ data: null, error: null });
+        // `slug`. The lookup must find a listing: since HOS-1902 a missing one
+        // throws NOT_FOUND, and this test pins the actor, not the status.
+        mockGetById.mockResolvedValue({
+            data: {
+                id: ACC_ID,
+                slug: 'cabana-del-rio',
+                name: 'Cabaña',
+                summary: 'Una cabaña',
+                type: 'CABIN',
+                reviewsCount: 0,
+                averageRating: 0,
+                featuredByEntitlement: false,
+                createdAt: new Date('2026-01-01T00:00:00Z'),
+                updatedAt: new Date('2026-01-01T00:00:00Z'),
+                ownerId: '22222222-2222-4222-8222-222222222222',
+                destinationId: '33333333-3333-4333-8333-333333333333'
+            },
+            error: null
+        });
 
         const app = await buildApp(
             '../../../../src/routes/accommodation/public/getSummary',

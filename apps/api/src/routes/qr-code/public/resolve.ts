@@ -215,7 +215,7 @@ export const publicResolveQrCodeRoute = createPublicRoute({
     },
     options: {
         /**
-         * No `cacheTTL`. The response both counts a scan and carries an
+         * Not cached. The response both counts a scan and carries an
          * operator-editable target; a cached answer would lose the count and
          * keep sending scanners to a URL that has already been changed.
          *

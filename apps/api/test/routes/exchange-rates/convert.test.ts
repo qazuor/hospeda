@@ -236,7 +236,7 @@ describe('GET /api/v1/public/exchange-rates/convert', () => {
 
             expect([200, 400, 404, 500]).toContain(res.status);
 
-            // The route has cacheTTL: 60 configured
+            // The route is behind the global cache middleware
             const headers = res.headers;
             expect(headers).toBeDefined();
         });

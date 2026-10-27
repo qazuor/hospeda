@@ -65,7 +65,6 @@ export const adminBatchFeaturesRoute = createAdminRoute({
         return features;
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 50, windowMs: 60000 }
     }
 });

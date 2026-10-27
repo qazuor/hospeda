@@ -149,39 +149,32 @@ describe('GET /destinations (Enhanced List)', () => {
     });
 
     describe('Filtering & Sorting', () => {
-        // HOS-1899: ?city= alone answers 500 DATABASE_ERROR.
-        it('currently answers 500 DATABASE_ERROR for ?city= alone (HOS-1899)', async () => {
-            const response = await app.request(`${baseUrl}?city=CDU`, {
-                headers: { 'user-agent': 'vitest', Accept: 'application/json' }
-            });
-            expect(response.status).toBe(500);
-            const data = await response.json();
-            expect(data.error.code).toBe('DATABASE_ERROR');
-        });
+        it('filters by city and reports the same total (HOS-1899)', async () => {
+            await seedPublicDestinations({ count: 2, city: 'CDU' });
 
-        // Drop `.fails` (and the test above) once HOS-1899 is fixed.
-        it.fails('filters by city (HOS-1899)', async () => {
-            const response = await app.request(`${baseUrl}?city=CDU`, {
+            const response = await app.request(`${baseUrl}?city=cdu`, {
                 headers: { 'user-agent': 'vitest', Accept: 'application/json' }
             });
+
             expect(response.status).toBe(200);
             const data = await response.json();
             expect(DestinationListResponseSchema.safeParse(data).success).toBe(true);
-            expect(data.data.items).toHaveLength(3);
+            expect(data.data.items).toHaveLength(2);
+            expect(data.data.pagination.total).toBe(2);
         });
 
-        // HOS-1899: ?country= alone answers 500 DATABASE_ERROR.
-        it('currently answers 500 DATABASE_ERROR for ?country= alone (HOS-1899)', async () => {
-            const response = await app.request(`${baseUrl}?country=AR`, {
+        it('returns an empty page for a city nobody has (HOS-1899)', async () => {
+            const response = await app.request(`${baseUrl}?city=Nowhere`, {
                 headers: { 'user-agent': 'vitest', Accept: 'application/json' }
             });
-            expect(response.status).toBe(500);
+
+            expect(response.status).toBe(200);
             const data = await response.json();
-            expect(data.error.code).toBe('DATABASE_ERROR');
+            expect(data.data.items).toHaveLength(0);
+            expect(data.data.pagination.total).toBe(0);
         });
 
-        // Drop `.fails` (and the test above) once HOS-1899 is fixed.
-        it.fails('filters by country (HOS-1899)', async () => {
+        it('filters by country (HOS-1899)', async () => {
             const response = await app.request(`${baseUrl}?country=AR`, {
                 headers: { 'user-agent': 'vitest', Accept: 'application/json' }
             });
@@ -189,6 +182,13 @@ describe('GET /destinations (Enhanced List)', () => {
             const data = await response.json();
             expect(DestinationListResponseSchema.safeParse(data).success).toBe(true);
             expect(data.data.items).toHaveLength(3);
+            expect(data.data.pagination.total).toBe(3);
+
+            const other = await app.request(`${baseUrl}?country=ZZ`, {
+                headers: { 'user-agent': 'vitest', Accept: 'application/json' }
+            });
+            expect(other.status).toBe(200);
+            expect((await other.json()).data.items).toHaveLength(0);
         });
 
         it('supports the isFeatured filter and sort params', async () => {

@@ -65,7 +65,5 @@ export const publicGetOwnerPromotionByIdRoute = createPublicRoute({
         // Strip admin-only fields before the response leaves the public tier.
         return OwnerPromotionPublicSchema.parse(row);
     },
-    options: {
-        cacheTTL: 300
-    }
+    options: {}
 });

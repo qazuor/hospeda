@@ -78,7 +78,6 @@ export const adminExperienceOptionsRoute = createAdminRoute({
         return { items };
     },
     options: {
-        cacheTTL: 30,
         customRateLimit: { requests: 120, windowMs: 60000 }
     }
 });

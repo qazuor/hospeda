@@ -283,7 +283,7 @@
         "apps/api/test/integration/ai/provider-swap.test.ts": 4,
         "apps/api/test/integration/ai/streaming-sse.test.ts": 1,
         "apps/api/test/integration/ai/text-improve.test.ts": 3,
-        "apps/api/test/integration/amenity/vertical-filter.content.test.ts": 11,
+        "apps/api/test/integration/amenity/vertical-filter.content.test.ts": 9,
         "apps/api/test/integration/billing-permanent-grant/cutover-step-3b.test.ts": 1,
         "apps/api/test/integration/billing-subscription/signup-notice-tourist-vip.test.ts": 1,
         "apps/api/test/integration/billing-subscription/user-stats-plan-summary.test.ts": 2,

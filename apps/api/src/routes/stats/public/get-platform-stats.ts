@@ -100,7 +100,5 @@ export const publicGetPlatformStatsRoute = createPublicRoute({
             recentReviewerAvatars: [...recentReviewerAvatars]
         };
     },
-    options: {
-        cacheTTL: 3600
-    }
+    options: {}
 });

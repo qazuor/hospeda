@@ -144,9 +144,8 @@ app.route('/', createAccommodationRoute);   // Protected
 
 ## ⚡ Performance & Caching
 
-- API responses have built-in caching with TTL options
+- API responses are cached globally (cache middleware TTL; edge caching is Cloudflare's cache rule)
 - Rate limiting per route: `customRateLimit: { requests, windowMs }`
-- Use `cacheTTL` option for static/slow-changing data
 - Database connection pooling handled by Drizzle
 
 Remember: This is a **strongly-typed** codebase. Always leverage the type system and existing patterns rather than creating new approaches.

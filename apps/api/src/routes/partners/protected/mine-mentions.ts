@@ -22,7 +22,7 @@
  * remembering to omit them. This module deliberately does not re-omit anything:
  * a second, hand-maintained mask is how the two drift apart.
  *
- * Actor-dependent, therefore NOT cacheable. No `cacheTTL`, and it may never move
+ * Actor-dependent, therefore NOT cacheable. It must stay uncached, and it may never move
  * to a public route.
  *
  * @module routes/partners/protected/mine-mentions

@@ -29,7 +29,5 @@ export const publicGetPostBySlugRoute = createPublicRoute({
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     },
-    options: {
-        cacheTTL: 300
-    }
+    options: {}
 });

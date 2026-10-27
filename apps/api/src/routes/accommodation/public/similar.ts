@@ -251,7 +251,6 @@ export const publicGetSimilarRoute = createPublicRoute({
         return mappedRows;
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });

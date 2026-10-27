@@ -77,7 +77,6 @@ export const hostAccommodationDailySeriesRoute = createProtectedRoute({
         };
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }
 });

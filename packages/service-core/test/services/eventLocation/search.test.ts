@@ -77,4 +77,50 @@ describe('EventLocationService.search', () => {
         expect(Array.isArray(additionalConditions)).toBe(true);
         expect((additionalConditions as unknown[]).length).toBeGreaterThan(0);
     });
+
+    it('forwards the requested page and pageSize to model.findAll (HOS-1900, HOS-1904)', async () => {
+        // Arrange
+        const entity = new EventLocationFactoryBuilder().build();
+        asMock(model.findAll).mockResolvedValueOnce({ items: [entity], total: 1 });
+
+        // Act
+        const result = await service.search(actor, { page: 2, pageSize: 5 });
+
+        // Assert -- BaseCrudRead.search strips pagination from params, so the
+        // service must read it from ctx.pagination.
+        expectSuccess(result);
+        const [, pagination] = asMock(model.findAll).mock.calls[0] ?? [];
+        expect(pagination).toMatchObject({ page: 2, pageSize: 5 });
+    });
+
+    it('forwards sortBy and sortOrder to model.findAll (HOS-1900, HOS-1904)', async () => {
+        // Arrange
+        const entity = new EventLocationFactoryBuilder().build();
+        asMock(model.findAll).mockResolvedValueOnce({ items: [entity], total: 1 });
+
+        // Act
+        const result = await service.search(actor, {
+            page: 1,
+            pageSize: 10,
+            sortBy: 'createdAt',
+            sortOrder: 'asc'
+        });
+
+        // Assert
+        expectSuccess(result);
+        const [, pagination] = asMock(model.findAll).mock.calls[0] ?? [];
+        expect(pagination).toMatchObject({ sortBy: 'createdAt', sortOrder: 'asc' });
+    });
+
+    it('applies a deterministic default sort when none is requested (HOS-1904)', async () => {
+        // Arrange
+        asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
+
+        // Act
+        await service.search(actor, { page: 1, pageSize: 10 });
+
+        // Assert
+        const [, pagination] = asMock(model.findAll).mock.calls[0] ?? [];
+        expect(pagination).toMatchObject({ sortBy: 'placeName', sortOrder: 'asc' });
+    });
 });

@@ -69,7 +69,6 @@ export const publicListAuthorsRoute = createPublicListRoute({
         };
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });

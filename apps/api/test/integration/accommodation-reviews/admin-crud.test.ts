@@ -307,17 +307,7 @@ describe('Admin AccommodationReview CRUD Routes', () => {
             expect(res.status).toBe(404);
         });
 
-        // HOS-1903: BaseCrudService.hardDelete returns { count: 0 } for a soft-deleted row
-        // (base.crud.write.ts:322), so the route answers success while the row stays.
-        it('currently answers 200 but keeps a soft-deleted review in the table (HOS-1903)', async () => {
-            const id = await seedReview({ deleted: true });
-            const res = await send({ method: 'DELETE', path: `/${id}/hard` });
-            expect(res.status).toBe(200);
-            expect(await readRow(id)).toBeDefined();
-        });
-
-        // Drop `.fails` (and the test above) once HOS-1903 is fixed.
-        it.fails('permanently deletes a review that was soft-deleted first (HOS-1903)', async () => {
+        it('permanently deletes a review that was soft-deleted first (HOS-1903)', async () => {
             const id = await seedReview({ deleted: true });
             const res = await send({ method: 'DELETE', path: `/${id}/hard` });
             expect(res.status).toBe(200);

@@ -47,7 +47,6 @@ export const countUserBookmarksRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        cacheTTL: 30,
         customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });
