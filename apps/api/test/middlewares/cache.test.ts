@@ -470,19 +470,42 @@ describe('cache middleware request id on HIT (HOS-1915)', () => {
         expect((await first.json()).metadata.requestId).toBe('req-A');
     });
 
-    it('keeps content-length consistent with the re-stamped body', async () => {
+    it('recomputes content-length to match the re-stamped body when the entry stored one', async () => {
         const app = createRequestIdApp({
-            respond: (c, id) => c.json({ metadata: { requestId: id }, data: 'x' })
+            respond: (_c, id) => {
+                const body = JSON.stringify({ metadata: { requestId: id }, data: 'x' });
+                return new Response(body, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Content-Length': String(new TextEncoder().encode(body).length)
+                    }
+                });
+            }
         });
 
-        await send({ app, id: 'a' });
+        const first = await send({ app, id: 'a' });
         const second = await send({ app, id: 'a-much-longer-request-id' });
 
+        expect(first.headers.get('content-length')).not.toBeNull();
         expect(second.headers.get('x-cache')).toBe('HIT');
         const text = await second.text();
         expect(second.headers.get('content-length')).toBe(
             String(new TextEncoder().encode(text).length)
         );
+    });
+
+    it('adds no content-length on a HIT when the stored entry had none', async () => {
+        const app = createRequestIdApp({
+            respond: (c, id) => c.json({ metadata: { requestId: id }, data: 'x' })
+        });
+
+        const first = await send({ app, id: 'a' });
+        const second = await send({ app, id: 'a-much-longer-request-id' });
+
+        expect(first.headers.get('content-length')).toBeNull();
+        expect(second.headers.get('x-cache')).toBe('HIT');
+        expect(second.headers.get('content-length')).toBeNull();
+        expect((await second.json()).metadata.requestId).toBe('a-much-longer-request-id');
     });
 
     it('re-stamps a large body and ignores a data field spelling "requestId"', async () => {

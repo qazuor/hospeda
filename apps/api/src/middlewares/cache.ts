@@ -144,6 +144,16 @@ function restampRequestId({
     );
 }
 
+/**
+ * Whether a stored header map carries a content-length (case-insensitive).
+ *
+ * @param params.headers - Headers stored with the cache entry.
+ * @returns `true` when a content-length header was stored.
+ */
+function hasContentLength({ headers }: { readonly headers: Record<string, string> }): boolean {
+    return Object.keys(headers).some((name) => name.toLowerCase() === 'content-length');
+}
+
 /** Maximum number of entries in the cache before eviction */
 const MAX_ENTRIES = 100;
 
@@ -303,8 +313,13 @@ export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
                     requestId: currentRequestId
                 });
                 // The stored content-length describes the original body; the
-                // re-stamped one can differ when the id length differs.
-                c.header('Content-Length', String(new TextEncoder().encode(body).length));
+                // re-stamped one can differ when the id length differs. Only
+                // rewrite it when the entry carried one: adding a length the
+                // MISS never had makes hono/compress skip bodies under its
+                // threshold, so a HIT would lose the gzip the MISS got.
+                if (hasContentLength({ headers: cached.headers })) {
+                    c.header('Content-Length', String(new TextEncoder().encode(body).length));
+                }
                 return c.body(body, cached.status as 200);
             }
             return c.body(cached.body, cached.status as 200);
