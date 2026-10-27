@@ -319,9 +319,14 @@ export class QrCodeService extends BaseCrudService<
     protected async _executeSearch(
         params: QrCodeSearchInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<QrCode>> {
-        const { page = 1, pageSize = 20, sortBy, sortOrder } = params;
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params and
+        // republishes them on ctx.pagination (SPEC-088); read them from ctx (HOS-1900).
+        const page = ctx.pagination?.page ?? 1;
+        const pageSize = ctx.pagination?.pageSize ?? 20;
+        const sortBy = ctx.pagination?.sortBy;
+        const sortOrder = ctx.pagination?.sortOrder;
 
         return this.model.findAll(
             this._buildSearchWhere(params),
