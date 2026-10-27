@@ -2,7 +2,7 @@
  * Tests for deriveAltFromEntityName (HOS-382 accessibility fix).
  *
  * Covers the validation boundary that motivated this helper:
- * `GastronomyMediaAddPayloadSchema.alt` / the accommodation and experience
+ * `VenueMediaAddPayloadSchema.alt` / the accommodation and experience
  * equivalents all enforce `.min(1).max(200)`. A wrong implementation here
  * would either send an invalid `alt` (400 on addMedia — worse than the
  * empty-alt bug being fixed) or silently drop a valid one.

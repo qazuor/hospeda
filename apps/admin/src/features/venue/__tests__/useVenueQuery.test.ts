@@ -1,15 +1,15 @@
 // @vitest-environment jsdom
 /**
- * @file useGastronomyQuery.test.ts
+ * @file useVenueQuery.test.ts
  * Unit tests for gastronomy CRUD hooks (SPEC-239 T-059).
  *
  * Tests cover:
- *  - useGastronomyQuery — detail fetch + enabled flag
- *  - useCreateGastronomyMutation — POST + return value
- *  - useUpdateGastronomyMutation — PUT/PATCH + return value
- *  - useAssignGastronomyOwnerMutation — assign-owner POST + method
- *  - useModerateGastronomyReviewMutation — review moderation POST
- *  - useGastronomyPendingReviewsQuery — pending reviews list
+ *  - useVenueQuery — detail fetch + enabled flag
+ *  - useCreateVenueMutation — POST + return value
+ *  - useUpdateVenueMutation — PUT/PATCH + return value
+ *  - useAssignVenueOwnerMutation — assign-owner POST + method
+ *  - useModerateVenueReviewMutation — review moderation POST
+ *  - useVenuePendingReviewsQuery — pending reviews list
  *
  * Pattern: assert on the return value of `mutateAsync` (not `result.current.isSuccess`),
  * since React state updates are async and may not settle immediately after the call.
@@ -21,13 +21,13 @@ import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetchApi } from '@/lib/api/client';
 import {
-    useAssignGastronomyOwnerMutation,
-    useCreateGastronomyMutation,
-    useGastronomyPendingReviewsQuery,
-    useGastronomyQuery,
-    useModerateGastronomyReviewMutation,
-    useUpdateGastronomyMutation
-} from '../hooks/useGastronomyQuery';
+    useAssignVenueOwnerMutation,
+    useCreateVenueMutation,
+    useModerateVenueReviewMutation,
+    useUpdateVenueMutation,
+    useVenuePendingReviewsQuery,
+    useVenueQuery
+} from '../hooks/useVenueQuery';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -37,10 +37,10 @@ vi.mock('@/lib/api/client', () => ({ fetchApi: vi.fn() }));
 
 const mockedFetchApi = vi.mocked(fetchApi);
 
-const GASTRONOMY_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+const VENUE_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
-const MOCK_GASTRONOMY = {
-    id: GASTRONOMY_ID,
+const MOCK_VENUE = {
+    id: VENUE_ID,
     name: 'El Rancho',
     type: 'RESTAURANT',
     priceRange: 'MID',
@@ -73,19 +73,19 @@ function createWrapper() {
 
 function mockDetailSuccess() {
     mockedFetchApi.mockResolvedValue({
-        data: { success: true, data: MOCK_GASTRONOMY },
+        data: { success: true, data: MOCK_VENUE },
         status: 200
     } as never);
 }
 
-function mockMutationSuccess(data: unknown = MOCK_GASTRONOMY) {
+function mockMutationSuccess(data: unknown = MOCK_VENUE) {
     mockedFetchApi.mockResolvedValue({
         data: { success: true, data },
         status: 200
     } as never);
 }
 
-function mockListSuccess(items: unknown[] = [MOCK_GASTRONOMY]) {
+function mockListSuccess(items: unknown[] = [MOCK_VENUE]) {
     mockedFetchApi.mockResolvedValue({
         data: {
             success: true,
@@ -106,20 +106,20 @@ afterEach(() => {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('useGastronomyQuery', () => {
+describe('useVenueQuery', () => {
     it('should fetch a gastronomy by ID', async () => {
         mockDetailSuccess();
 
-        const { result } = renderHook(() => useGastronomyQuery(GASTRONOMY_ID), {
+        const { result } = renderHook(() => useVenueQuery(VENUE_ID), {
             wrapper: createWrapper()
         });
 
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
-        expect(result.current.data).toMatchObject({ id: GASTRONOMY_ID, name: 'El Rancho' });
+        expect(result.current.data).toMatchObject({ id: VENUE_ID, name: 'El Rancho' });
     });
 
     it('should NOT fetch when id is empty', () => {
-        const { result } = renderHook(() => useGastronomyQuery('', { enabled: false }), {
+        const { result } = renderHook(() => useVenueQuery('', { enabled: false }), {
             wrapper: createWrapper()
         });
 
@@ -128,7 +128,7 @@ describe('useGastronomyQuery', () => {
     });
 
     it('should NOT fetch when enabled is false', () => {
-        const { result } = renderHook(() => useGastronomyQuery(GASTRONOMY_ID, { enabled: false }), {
+        const { result } = renderHook(() => useVenueQuery(VENUE_ID, { enabled: false }), {
             wrapper: createWrapper()
         });
 
@@ -141,7 +141,7 @@ describe('useCreateGastronomyMutation', () => {
     it('should create a gastronomy and resolve with the entity', async () => {
         mockMutationSuccess();
 
-        const { result } = renderHook(() => useCreateGastronomyMutation(), {
+        const { result } = renderHook(() => useCreateVenueMutation(), {
             wrapper: createWrapper()
         });
 
@@ -150,14 +150,14 @@ describe('useCreateGastronomyMutation', () => {
             type: 'RESTAURANT'
         } as never);
 
-        expect(created).toMatchObject({ id: GASTRONOMY_ID, name: 'El Rancho' });
+        expect(created).toMatchObject({ id: VENUE_ID, name: 'El Rancho' });
         expect(mockedFetchApi).toHaveBeenCalledWith(expect.objectContaining({ method: 'POST' }));
     });
 
     it('should throw on API error', async () => {
         mockedFetchApi.mockRejectedValue(new Error('Network error'));
 
-        const { result } = renderHook(() => useCreateGastronomyMutation(), {
+        const { result } = renderHook(() => useCreateVenueMutation(), {
             wrapper: createWrapper()
         });
 
@@ -169,15 +169,15 @@ describe('useCreateGastronomyMutation', () => {
 
 describe('useUpdateGastronomyMutation', () => {
     it('should PUT/PATCH a gastronomy and return the updated entity', async () => {
-        const updated = { ...MOCK_GASTRONOMY, name: 'El Rancho Actualizado' };
+        const updated = { ...MOCK_VENUE, name: 'El Rancho Actualizado' };
         mockMutationSuccess(updated);
 
-        const { result } = renderHook(() => useUpdateGastronomyMutation(), {
+        const { result } = renderHook(() => useUpdateVenueMutation(), {
             wrapper: createWrapper()
         });
 
         const returned = await result.current.mutateAsync({
-            id: GASTRONOMY_ID,
+            id: VENUE_ID,
             data: { name: 'El Rancho Actualizado' }
         } as never);
 
@@ -189,18 +189,18 @@ describe('useAssignGastronomyOwnerMutation', () => {
     it('should POST to assign-owner endpoint', async () => {
         mockMutationSuccess();
 
-        const { result } = renderHook(() => useAssignGastronomyOwnerMutation(), {
+        const { result } = renderHook(() => useAssignVenueOwnerMutation(), {
             wrapper: createWrapper()
         });
 
         const newOwnerId = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
 
         const returned = await result.current.mutateAsync({
-            id: GASTRONOMY_ID,
+            id: VENUE_ID,
             ownerId: newOwnerId
         });
 
-        expect(returned).toMatchObject({ id: GASTRONOMY_ID });
+        expect(returned).toMatchObject({ id: VENUE_ID });
         expect(mockedFetchApi).toHaveBeenCalledWith(expect.objectContaining({ method: 'POST' }));
     });
 });
@@ -209,7 +209,7 @@ describe('useModerateGastronomyReviewMutation', () => {
     it('should POST a review moderation decision', async () => {
         mockedFetchApi.mockResolvedValue({ data: { success: true }, status: 200 } as never);
 
-        const { result } = renderHook(() => useModerateGastronomyReviewMutation(), {
+        const { result } = renderHook(() => useModerateVenueReviewMutation(), {
             wrapper: createWrapper()
         });
 
@@ -229,7 +229,7 @@ describe('useModerateGastronomyReviewMutation', () => {
     it('should POST a rejection decision', async () => {
         mockedFetchApi.mockResolvedValue({ data: { success: true }, status: 200 } as never);
 
-        const { result } = renderHook(() => useModerateGastronomyReviewMutation(), {
+        const { result } = renderHook(() => useModerateVenueReviewMutation(), {
             wrapper: createWrapper()
         });
 
@@ -248,7 +248,7 @@ describe('useGastronomyPendingReviewsQuery', () => {
         mockListSuccess(mockReviews);
 
         const { result } = renderHook(
-            () => useGastronomyPendingReviewsQuery({ page: 1, pageSize: 20 }),
+            () => useVenuePendingReviewsQuery({ page: 1, pageSize: 20 }),
             { wrapper: createWrapper() }
         );
 

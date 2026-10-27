@@ -67,10 +67,10 @@ import {
     destinationTabs,
     eventTabs,
     experienceTabs,
-    gastronomyTabs,
     PageTabs,
     postTabs,
-    userTabs
+    userTabs,
+    venueTabs
 } from '@/components/layout/PageTabs';
 
 describe('PageTabs', () => {
@@ -318,9 +318,9 @@ describe('PageTabs', () => {
         });
 
         it('should export gastronomyTabs', () => {
-            expect(gastronomyTabs).toBeDefined();
-            expect(gastronomyTabs).toHaveLength(3);
-            expect(gastronomyTabs.map((t) => t.id)).toEqual(['overview', 'gallery', 'seo']);
+            expect(venueTabs).toBeDefined();
+            expect(venueTabs).toHaveLength(3);
+            expect(venueTabs.map((t) => t.id)).toEqual(['overview', 'gallery', 'seo']);
         });
 
         it('should export experienceTabs', () => {

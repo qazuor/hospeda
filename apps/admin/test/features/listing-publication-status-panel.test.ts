@@ -16,11 +16,11 @@ import { createAccommodationsColumns } from '../../src/features/accommodations/c
 import { accommodationsConfig } from '../../src/features/accommodations/config/accommodations.config';
 import { meAccommodationsConfig } from '../../src/features/accommodations/config/me-accommodations.config';
 import { createExperienceColumns } from '../../src/features/experience/config/experience.columns';
-import { createGastronomyColumns } from '../../src/features/gastronomy/config/gastronomy.columns';
 import {
     getPublicationStatusBadgeOptions,
     getPublicationStatusFilterOptions
 } from '../../src/features/listing/config/publication-status-options';
+import { createVenueColumns } from '../../src/features/venue/config/venue.columns';
 
 const t = (key: TranslationKey): string => key;
 
@@ -87,7 +87,7 @@ describe('the status filter of the accommodation lists', () => {
 describe('the state column of the three listing lists', () => {
     for (const [vertical, columns] of [
         ['accommodation', createAccommodationsColumns(t)],
-        ['gastronomy', createGastronomyColumns(t)],
+        ['gastronomy', createVenueColumns(t)],
         ['experience', createExperienceColumns(t)]
     ] as const) {
         it(`${vertical}: ONE read-only publicationStatus badge with the six states`, () => {

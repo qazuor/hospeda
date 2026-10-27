@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
- * @file GastronomyCard.test.tsx
- * Unit tests for `GastronomyCard` (SPEC-239 T-059).
+ * @file VenueCard.test.tsx
+ * Unit tests for `VenueCard` (SPEC-239 T-059).
  *
  * Covers:
  *  - Renders the gastronomy name
@@ -19,8 +19,8 @@ import { PriceRangeEnum, PublicationStatusEnum, VenueTypeEnum } from '@repo/sche
 import { fireEvent, render, screen } from '@testing-library/react';
 import * as React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import type { GastronomyListItem } from '@/features/gastronomy/config/gastronomy.config';
-import { GastronomyCard } from '../components/GastronomyCard';
+import type { VenueListItem } from '@/features/venue/config/venue.config';
+import { VenueCard } from '../components/VenueCard';
 
 // ---------------------------------------------------------------------------
 // Mocks / router setup
@@ -48,7 +48,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
 // Fixtures
 // ---------------------------------------------------------------------------
 
-const BASE_GASTRONOMY: GastronomyListItem = {
+const BASE_VENUE: VenueListItem = {
     id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     name: 'La Parrilla del Sur',
     type: VenueTypeEnum.RESTAURANT,
@@ -60,15 +60,15 @@ const BASE_GASTRONOMY: GastronomyListItem = {
     publicationStatus: PublicationStatusEnum.PUBLISHED
 };
 
-function renderCard(overrides?: Partial<GastronomyListItem>, onSelect?: (id: string) => void) {
-    const gastronomy = { ...BASE_GASTRONOMY, ...overrides };
+function renderCard(overrides?: Partial<VenueListItem>, onSelect?: (id: string) => void) {
+    const venue = { ...BASE_VENUE, ...overrides };
     render(
-        <GastronomyCard
-            gastronomy={gastronomy}
+        <VenueCard
+            venue={venue}
             onSelect={onSelect}
         />
     );
-    return gastronomy;
+    return venue;
 }
 
 // ---------------------------------------------------------------------------

@@ -90,7 +90,7 @@ describe('API integration suite coverage (HOS-1891)', () => {
 
     it('the exclusion list does not grow and every entry names an issue', () => {
         // Lower this number as files come back; never raise it.
-        expect(API_INTEGRATION_EXCLUSIONS.length).toBeLessThanOrEqual(18);
+        expect(API_INTEGRATION_EXCLUSIONS.length).toBeLessThanOrEqual(9);
         const untracked = API_INTEGRATION_EXCLUSIONS.filter(
             ({ reason }) => !/\bHOS-\d+\b/.test(reason)
         );

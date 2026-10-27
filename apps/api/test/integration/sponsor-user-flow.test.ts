@@ -1,489 +1,534 @@
 /**
- * E2E Tests for Sponsor User Flow
+ * Sponsor User E2E Flow
  *
- * Tests the complete lifecycle of a sponsor user including:
- * - Sponsor accesses dashboard and sponsorships
- * - Access control and restrictions
- * - Dashboard data validation
- * - Edge cases and error scenarios
+ * A sponsor's journey through the protected sponsorship API, against the real
+ * services and the integration database. Every actor is backed by a real user
+ * row, and the sponsorships and the level they hang from are seeded rows, so a
+ * route that answers an empty 200 for everything cannot pass.
+ *
+ * Actors take their permissions from the production seed's role table
+ * (`helpers/seeded-role-permissions.ts`), never from a hand-written list: a
+ * hand-built "sponsor" with SPONSORSHIP_VIEW/CREATE/UPDATE/DELETE certified a
+ * user the seed never creates (the seeded SPONSOR only holds the `_OWN` grants).
+ * The SUPER_ADMIN actor is capability coverage for the routes: its real seeded
+ * permissions plus the four route-gate permissions that no seeded role holds. It
+ * shows what the routes do once the gates are open, not what any account can do
+ * today.
+ *
+ * Foreign rows should answer 404, never 403 (apps/api/docs/error-contract.md).
+ *
+ * Known gaps pinned below (each `it.fails` states the intended behaviour, and a
+ * "currently ..." sibling pins today's so a crash or a fix both turn red):
+ * - HOS-1913: a foreign sponsorship answers 403.
+ * - HOS-1916: the seeded SPONSOR cannot create, update, delete or read analytics
+ *   of its own sponsorships, and the list ignores the page.
+ * - HOS-1905: a sponsorship with no package makes `GET /:id` answer 500.
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PermissionEnum, RoleEnum, SponsorshipTargetTypeEnum } from '@repo/schemas';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../src/app';
+import { clearCache } from '../../src/middlewares/cache';
 import { validateApiEnv } from '../../src/utils/env';
+import { testDb } from '../e2e/setup/test-database';
+import { buildMockActorHeaders, createMockActorUser } from './helpers/mock-actor';
+import { seedPublicAccommodation } from './helpers/seed-public-accommodation';
+import {
+    type SeededSponsorship,
+    type SeededSponsorshipLevel,
+    seedSponsorship,
+    seedSponsorshipLevel
+} from './helpers/seed-sponsorship';
+import { seededPermissionsFor } from './helpers/seeded-role-permissions';
 
-// Mock @repo/logger
-vi.mock('@repo/logger', () => {
-    const createMockedLogger = () => ({
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-        registerLogMethod: vi.fn().mockReturnThis(),
-        permission: vi.fn()
-    });
+const BASE = '/api/v1/protected/sponsorships';
+const NON_EXISTENT_ID = '99999999-9999-4999-8999-999999999999';
 
-    const mockedLogger = {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-        registerCategory: vi.fn(() => createMockedLogger()),
-        configure: vi.fn(),
-        resetConfig: vi.fn(),
-        createLogger: vi.fn(() => createMockedLogger()),
-        registerLogMethod: vi.fn().mockReturnThis()
-    };
-
-    const LoggerColors = {
-        BLACK: 'BLACK',
-        RED: 'RED',
-        GREEN: 'GREEN',
-        YELLOW: 'YELLOW',
-        BLUE: 'BLUE',
-        MAGENTA: 'MAGENTA',
-        CYAN: 'CYAN',
-        WHITE: 'WHITE',
-        GRAY: 'GRAY',
-        BLACK_BRIGHT: 'BLACK_BRIGHT',
-        RED_BRIGHT: 'RED_BRIGHT',
-        GREEN_BRIGHT: 'GREEN_BRIGHT',
-        YELLOW_BRIGHT: 'YELLOW_BRIGHT',
-        BLUE_BRIGHT: 'BLUE_BRIGHT',
-        MAGENTA_BRIGHT: 'MAGENTA_BRIGHT',
-        CYAN_BRIGHT: 'CYAN_BRIGHT',
-        WHITE_BRIGHT: 'WHITE_BRIGHT'
-    };
-
-    const LogLevel = {
-        LOG: 'LOG',
-        INFO: 'INFO',
-        WARN: 'WARN',
-        ERROR: 'ERROR',
-        DEBUG: 'DEBUG'
-    };
-
-    return {
-        default: mockedLogger,
-        logger: mockedLogger,
-        createLogger: mockedLogger.createLogger,
-        LoggerColors,
-        LogLevel
-    };
-});
-
-/**
- * Mock @repo/service-core - import actual exports and override service classes
- * to return proper ServiceResult objects instead of undefined.
- */
-vi.mock('@repo/service-core', async (importOriginal) => {
-    const actual = await importOriginal<Record<string, unknown>>();
-
-    const listResult = {
-        data: { items: [], total: 0, page: 1, pageSize: 10 },
-        error: null,
-        success: true
-    };
-    const notFoundResult = {
-        data: null,
-        error: { code: 'NOT_FOUND', message: 'Resource not found' },
-        success: false
-    };
-
-    const createMockServiceInstance = () =>
-        new Proxy(
-            {},
-            {
-                get(_target, prop) {
-                    if (prop === 'constructor') return vi.fn();
-                    return vi
-                        .fn()
-                        .mockResolvedValue(
-                            prop === 'list' || prop === 'findAll' ? listResult : notFoundResult
-                        );
-                }
-            }
-        );
-
-    // Override all *Service exports with mock constructors
-    const overrides: Record<string, unknown> = {};
-    for (const key of Object.keys(actual)) {
-        if (key.endsWith('Service') && typeof actual[key] === 'function') {
-            overrides[key] = vi.fn().mockImplementation(() => createMockServiceInstance());
-        }
-    }
-
-    return { ...actual, ...overrides };
-});
+type RowIds = readonly string[];
 
 describe('Sponsor User E2E Flow', () => {
     let app: ReturnType<typeof initApp>;
+    let sponsorId: string;
+    let otherSponsorId: string;
+    let level: SeededSponsorshipLevel;
+    let mine: SeededSponsorship;
+    let theirs: SeededSponsorship;
 
-    // Test actors
-    const sponsorActor = {
-        id: 'sponsor-test-user-001',
-        roles: [RoleEnum.SPONSOR],
-        permissions: [
-            PermissionEnum.SPONSORSHIP_VIEW,
-            PermissionEnum.SPONSORSHIP_CREATE,
-            PermissionEnum.SPONSORSHIP_UPDATE,
-            PermissionEnum.USER_VIEW_PROFILE,
-            PermissionEnum.USER_UPDATE_PROFILE,
-            PermissionEnum.DASHBOARD_BASE_VIEW,
-            PermissionEnum.ACCESS_PANEL_ADMIN,
-            PermissionEnum.ACCESS_API_PUBLIC
-        ]
-    };
+    const headersFor = ({ actorId, role }: { readonly actorId: string; readonly role: RoleEnum }) =>
+        buildMockActorHeaders({ actorId, permissions: seededPermissionsFor({ role }), role });
 
-    const ownerActor = {
-        id: 'owner-test-user-001',
-        roles: [RoleEnum.HOST],
-        permissions: [
-            PermissionEnum.ACCOMMODATION_CREATE,
-            PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-            PermissionEnum.USER_VIEW_PROFILE,
-            PermissionEnum.ACCESS_API_PUBLIC
-        ]
-    };
-
-    const touristActor = {
-        id: 'tourist-test-user-001',
-        roles: [RoleEnum.USER],
-        permissions: [PermissionEnum.USER_VIEW_PROFILE, PermissionEnum.ACCESS_API_PUBLIC]
-    };
-
-    beforeAll(() => {
-        validateApiEnv();
-        process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
-    });
-
-    beforeEach(() => {
-        app = initApp();
-        vi.clearAllMocks();
-    });
-
+    /** The seeded SPONSOR. */
+    const sponsorHeaders = () => headersFor({ actorId: sponsorId, role: RoleEnum.SPONSOR });
     /**
-     * Helper to create mock auth headers for a test actor
+     * Capability coverage: the seeded SUPER_ADMIN's real permissions PLUS the four
+     * route-gate permissions (HOS-1916: no seeded role holds them, SUPER_ADMIN
+     * included), so the routes can be exercised with the gates open.
      */
-    function createMockHeaders(actor: {
-        id: string;
-        roles: readonly string[];
-        permissions: string[];
-    }): Record<string, string> {
-        return {
-            'user-agent': 'vitest-test-agent',
-            'x-mock-actor-id': actor.id,
-            'x-mock-actor-role': actor.roles.join(','),
-            'x-mock-actor-permissions': JSON.stringify(actor.permissions)
-        };
-    }
-
-    describe('1. Sponsor Authentication and Access', () => {
-        it('should allow sponsor to access sponsorships list', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'GET',
-                headers
-            });
-            expect(response.status).toBe(200);
+    const superAdminHeaders = (actorId: string) =>
+        buildMockActorHeaders({
+            actorId,
+            role: RoleEnum.SUPER_ADMIN,
+            permissions: [
+                ...seededPermissionsFor({ role: RoleEnum.SUPER_ADMIN }),
+                PermissionEnum.SPONSORSHIP_VIEW,
+                PermissionEnum.SPONSORSHIP_CREATE,
+                PermissionEnum.SPONSORSHIP_UPDATE,
+                PermissionEnum.SPONSORSHIP_DELETE
+            ]
         });
 
-        it('should return proper response structure from sponsorships list', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'GET',
-                headers
-            });
-            expect(response.status).toBe(200);
-            const data = await response.json();
+    const idsOf = ({ body }: { readonly body: { data: { items: { id: string }[] } } }): RowIds =>
+        body.data.items.map((item) => item.id);
+
+    const createBody = () => ({
+        sponsorUserId: sponsorId,
+        targetType: SponsorshipTargetTypeEnum.EVENT,
+        targetId: NON_EXISTENT_ID,
+        levelId: level.id,
+        startsAt: new Date().toISOString(),
+        endsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        logoUrl: 'https://example.com/logo.png',
+        linkUrl: 'https://example.com'
+    });
+
+    beforeAll(async () => {
+        process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
+        await testDb.setup();
+        await testDb.clean();
+        clearCache();
+        validateApiEnv();
+        app = initApp();
+    });
+
+    beforeEach(async () => {
+        sponsorId = (await createMockActorUser({ label: 'sponsor-flow' })).id;
+        otherSponsorId = (await createMockActorUser({ label: 'sponsor-flow-other' })).id;
+        level = await seedSponsorshipLevel();
+        mine = await seedSponsorship({ sponsorUserId: sponsorId, level });
+        theirs = await seedSponsorship({ sponsorUserId: otherSponsorId, level });
+    });
+
+    afterEach(async () => {
+        await testDb.clean();
+        clearCache();
+    });
+
+    afterAll(async () => {
+        await testDb.teardown();
+    });
+
+    describe('1. The seeded sponsor reads', () => {
+        it('should list sponsorships to a sponsor', async () => {
+            const res = await app.request(BASE, { headers: sponsorHeaders() });
+
+            expect(res.status).toBe(200);
+            const data = await res.json();
             expect(data.success).toBe(true);
-            expect(data.data).toBeDefined();
+            expect(idsOf({ body: data })).toContain(mine.id);
         });
 
-        it('should allow sponsor to view specific sponsorship by UUID', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const sponsorshipId = '00000000-0000-0000-0000-000000000001';
-            const response = await app.request(`/api/v1/sponsorships/${sponsorshipId}`, {
-                method: 'GET',
-                headers
+        it('should let the sponsor view their own sponsorship by UUID', async () => {
+            const res = await app.request(`${BASE}/${mine.id}`, { headers: sponsorHeaders() });
+
+            expect(res.status).toBe(200);
+            expect((await res.json()).data).toMatchObject({
+                id: mine.id,
+                sponsorUserId: sponsorId
             });
-            // 200 (found), 400 (validation), or 404 (not found)
-            expect([200, 400, 404]).toContain(response.status);
         });
 
-        it('should allow sponsor to access billing invoices endpoint', async () => {
-            const headers = createMockHeaders({
-                ...sponsorActor,
-                permissions: [...sponsorActor.permissions, PermissionEnum.INVOICE_VIEW]
+        // HOS-1905: a sponsorship with no package makes the response schema reject the
+        // relation loader's `package: null`, so the read answers 500.
+        it.fails('should view a sponsorship that has no package (HOS-1905)', async () => {
+            const unpackaged = await seedSponsorship({
+                sponsorUserId: sponsorId,
+                level,
+                withPackage: false
             });
-            const response = await app.request('/api/v1/protected/billing/invoices', {
-                method: 'GET',
-                headers
+
+            const res = await app.request(`${BASE}/${unpackaged.id}`, {
+                headers: sponsorHeaders()
             });
-            // 200, 404 (route not found), or 503 (billing not configured)
-            expect([200, 404, 503]).toContain(response.status);
+
+            expect(res.status).toBe(200);
+        });
+
+        it('currently answers 500 for a sponsorship that has no package (HOS-1905)', async () => {
+            const unpackaged = await seedSponsorship({
+                sponsorUserId: sponsorId,
+                level,
+                withPackage: false
+            });
+
+            const res = await app.request(`${BASE}/${unpackaged.id}`, {
+                headers: sponsorHeaders()
+            });
+
+            expect(res.status).toBe(500);
+        });
+
+        it('should answer 404 for the retired billing invoices endpoint', async () => {
+            const res = await app.request('/api/v1/protected/billing/invoices', {
+                headers: sponsorHeaders()
+            });
+
+            expect(res.status).toBe(404);
         });
     });
 
-    describe('2. Sponsorship Management', () => {
-        it('should handle sponsorship creation with valid data', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const newSponsorship = {
-                packageId: '00000000-0000-0000-0000-000000000001',
-                startDate: new Date().toISOString(),
-                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                status: 'active'
-            };
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify(newSponsorship)
+    describe('2. The seeded sponsor writes', () => {
+        // HOS-1916: the seed grants SPONSOR only the `_OWN` sponsorship permissions, but the
+        // create/update/delete/analytics routes gate on SPONSORSHIP_CREATE/UPDATE/DELETE/VIEW,
+        // which no sponsor holds. The seed comment says SPONSOR should "manage own sponsorships".
+        const writes: ReadonlyArray<{
+            readonly name: string;
+            readonly request: () => Response | Promise<Response>;
+            readonly intendedStatus: number;
+        }> = [
+            {
+                name: 'create a sponsorship',
+                intendedStatus: 201,
+                request: () =>
+                    app.request(BASE, {
+                        method: 'POST',
+                        headers: sponsorHeaders(),
+                        body: JSON.stringify(createBody())
+                    })
+            },
+            {
+                name: 'update their own sponsorship',
+                intendedStatus: 200,
+                request: () =>
+                    app.request(`${BASE}/${mine.id}`, {
+                        method: 'PUT',
+                        headers: sponsorHeaders(),
+                        body: JSON.stringify({ linkUrl: 'https://updated.example.com' })
+                    })
+            },
+            {
+                name: 'delete their own sponsorship',
+                intendedStatus: 200,
+                request: () =>
+                    app.request(`${BASE}/${mine.id}`, {
+                        method: 'DELETE',
+                        headers: sponsorHeaders()
+                    })
+            },
+            {
+                name: 'read the analytics of their own sponsorship',
+                intendedStatus: 200,
+                request: () =>
+                    app.request(`${BASE}/${mine.id}/analytics`, { headers: sponsorHeaders() })
+            }
+        ];
+
+        for (const { name, request, intendedStatus } of writes) {
+            it.fails(`should let the sponsor ${name} (HOS-1916)`, async () => {
+                const res = await request();
+
+                expect(res.status).toBe(intendedStatus);
             });
-            // 201 (created), 400 (validation), or 404 (package not found)
-            expect([201, 400, 404]).toContain(response.status);
+
+            it(`currently answers 403 when the sponsor tries to ${name} (HOS-1916)`, async () => {
+                const res = await request();
+
+                expect(res.status).toBe(403);
+            });
+        }
+    });
+
+    describe('3. Capability coverage with every gate open (SUPER_ADMIN)', () => {
+        let adminId: string;
+
+        beforeEach(async () => {
+            adminId = (await createMockActorUser({ label: 'sponsor-flow-super-admin' })).id;
         });
 
-        it('should handle sponsorship update request', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const sponsorshipId = '00000000-0000-0000-0000-000000000001';
-            const response = await app.request(`/api/v1/sponsorships/${sponsorshipId}`, {
+        it('currently answers 403 to the seeded SUPER_ADMIN without the gate permissions (HOS-1916)', async () => {
+            const res = await app.request(BASE, {
+                method: 'POST',
+                headers: headersFor({ actorId: adminId, role: RoleEnum.SUPER_ADMIN }),
+                body: JSON.stringify(createBody())
+            });
+
+            expect(res.status).toBe(403);
+        });
+
+        it('should create a sponsorship with valid data', async () => {
+            const res = await app.request(BASE, {
+                method: 'POST',
+                headers: superAdminHeaders(adminId),
+                body: JSON.stringify(createBody())
+            });
+
+            expect(res.status).toBe(201);
+            expect((await res.json()).data).toMatchObject({
+                sponsorUserId: sponsorId,
+                levelId: level.id,
+                targetType: 'event'
+            });
+        });
+
+        it('should update a sponsorship', async () => {
+            const res = await app.request(`${BASE}/${mine.id}`, {
                 method: 'PUT',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify({ status: 'paused' })
+                headers: superAdminHeaders(adminId),
+                body: JSON.stringify({ linkUrl: 'https://updated.example.com' })
             });
-            // 200, 400, 403, or 404
-            expect([200, 400, 403, 404]).toContain(response.status);
-        });
-    });
 
-    describe('3. Access Control - Sponsor Restrictions', () => {
-        it('should deny sponsor access to admin billing plans route', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/protected/billing/plans', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify({ name: 'Test Plan', price: 1000 })
+            expect(res.status).toBe(200);
+            expect((await res.json()).data).toMatchObject({
+                id: mine.id,
+                linkUrl: 'https://updated.example.com'
             });
-            // 403, 404, or 503
-            expect([403, 404, 503]).toContain(response.status);
         });
 
-        it('should deny sponsor access to modify promo codes', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request(
-                '/api/v1/protected/billing/promo-codes/00000000-0000-0000-0000-000000000001',
-                {
-                    method: 'PUT',
-                    headers: { ...headers, 'content-type': 'application/json' },
-                    body: JSON.stringify({ isActive: false })
-                }
-            );
-            // 403, 404, or 503
-            expect([403, 404, 503]).toContain(response.status);
-        });
-
-        it('should deny sponsor access to global settings', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/protected/billing/settings', {
-                method: 'PUT',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify({ setting: 'value' })
+        it('should return the analytics of a sponsorship', async () => {
+            const res = await app.request(`${BASE}/${mine.id}/analytics`, {
+                headers: superAdminHeaders(adminId)
             });
-            // 403, 404, or 503
-            expect([403, 404, 503]).toContain(response.status);
-        });
 
-        it('should deny sponsor access to create accommodations', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/public/accommodations', {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify({ name: 'Test', description: 'Test', address: '123 Test' })
-            });
-            // 400 (validation), 403 (forbidden), or 404 (route not found)
-            expect([400, 403, 404]).toContain(response.status);
-        });
-
-        it('should allow sponsor to view public accommodations', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/public/accommodations', {
-                method: 'GET',
-                headers
-            });
-            expect(response.status).toBe(200);
-        });
-
-        it('should deny sponsor access to delete sponsorships they do not own', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            try {
-                const response = await app.request(
-                    '/api/v1/sponsorships/00000000-0000-0000-0000-000000000099',
-                    { method: 'DELETE', headers }
-                );
-                // 403, 404, or 405 (method not allowed)
-                expect([403, 404, 405]).toContain(response.status);
-            } catch (error) {
-                // HTTPException thrown by authorization middleware is also valid
-                expect(error).toBeDefined();
-                expect((error as Error).message).toContain('permissions');
-            }
-        });
-    });
-
-    describe('4. Dashboard Data', () => {
-        it('should return correct sponsorships list structure', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'GET',
-                headers
-            });
-            expect(response.status).toBe(200);
-            const data = await response.json();
+            expect(res.status).toBe(200);
+            const data = await res.json();
             expect(data.success).toBe(true);
-            expect(data.data).toBeDefined();
+            expect(data.data).toEqual({ impressions: 0, clicks: 0, couponsUsed: 0 });
         });
 
-        it('should handle empty state when no sponsorships exist', async () => {
-            const headers = createMockHeaders({
-                ...sponsorActor,
-                id: 'sponsor-with-no-sponsorships'
+        it('should soft-delete a sponsorship', async () => {
+            const res = await app.request(`${BASE}/${theirs.id}`, {
+                method: 'DELETE',
+                headers: superAdminHeaders(adminId)
             });
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'GET',
-                headers
-            });
-            expect(response.status).toBe(200);
-            const data = await response.json();
-            expect(data.success).toBe(true);
+
+            expect(res.status).toBe(200);
         });
 
-        it('should support query params for sponsorships list', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/sponsorships?page=1&pageSize=10', {
-                method: 'GET',
-                headers
-            });
-            expect(response.status).toBe(200);
-        });
-
-        it('should handle analytics request for a sponsorship', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const sponsorshipId = '00000000-0000-0000-0000-000000000001';
-            try {
-                const response = await app.request(
-                    `/api/v1/sponsorships/${sponsorshipId}/analytics`,
-                    { method: 'GET', headers }
-                );
-                // 200, 403, or 404
-                expect([200, 400, 403, 404]).toContain(response.status);
-            } catch (error) {
-                // HTTPException from authorization middleware is valid
-                expect(error).toBeDefined();
-            }
-        });
-    });
-
-    describe('5. Edge Cases', () => {
-        it('should deny non-sponsor user access to sponsor routes', async () => {
-            const headers = createMockHeaders(touristActor);
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'GET',
-                headers
-            });
-            // 403 (forbidden) - service layer rejects actors without SPONSORSHIP_VIEW
-            // Could also be 200 if permission check is in service layer (which is mocked)
-            expect([200, 403]).toContain(response.status);
-        });
-
-        it('should deny unauthenticated access to sponsor routes', async () => {
-            try {
-                const response = await app.request('/api/v1/sponsorships', {
-                    method: 'GET',
-                    headers: { 'user-agent': 'vitest-test-agent' }
-                });
-                // 401 or 403
-                expect([401, 403]).toContain(response.status);
-            } catch (error) {
-                // HTTPException from authorization middleware (Authentication required)
-                expect(error).toBeDefined();
-                expect((error as Error).message).toContain('Authentication');
-            }
-        });
-
-        it('should handle invalid sponsorship ID format', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/sponsorships/not-a-uuid', {
-                method: 'GET',
-                headers
-            });
-            // 400 or 404
-            expect([400, 404]).toContain(response.status);
-        });
-
-        it('should return 404 for non-existent sponsorship UUID', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request(
-                '/api/v1/sponsorships/00000000-0000-0000-0000-000000000000',
-                { method: 'GET', headers }
-            );
-            expect(response.status).toBe(404);
-        });
-
-        it('should deny access when sponsor has no permissions', async () => {
-            const headers = createMockHeaders({
-                id: 'deactivated-sponsor-001',
-                roles: [RoleEnum.SPONSOR],
-                permissions: []
-            });
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'GET',
-                headers
-            });
-            // 403 (forbidden from auth middleware) or 200 (if auth doesn't check specific permissions)
-            expect([200, 403]).toContain(response.status);
-        });
-
-        it('should deny owner access to sponsor-only routes if enforced', async () => {
-            const headers = createMockHeaders(ownerActor);
-            const response = await app.request('/api/v1/sponsorships', {
-                method: 'GET',
-                headers
-            });
-            // Permission check may be at route or service level
-            // Route level: 403; Service level (mocked): 200
-            expect([200, 403]).toContain(response.status);
-        });
-
-        it('should validate sponsorship creation payload', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/sponsorships', {
+        it('should validate the sponsorship creation payload', async () => {
+            const res = await app.request(BASE, {
                 method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
+                headers: superAdminHeaders(adminId),
                 body: JSON.stringify({ status: 'active' }) // Missing required fields
             });
-            expect(response.status).toBe(400);
+
+            expect(res.status).toBe(400);
+            expect((await res.json()).error.code).toBe('VALIDATION_ERROR');
         });
 
         it('should handle malformed JSON gracefully', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/sponsorships', {
+            const res = await app.request(BASE, {
                 method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
+                headers: superAdminHeaders(adminId),
                 body: 'invalid json {'
             });
-            expect(response.status).toBe(400);
+
+            expect(res.status).toBe(400);
         });
 
         it('should require content-type for POST requests', async () => {
-            const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/sponsorships', {
+            const { 'content-type': _contentType, ...withoutContentType } =
+                superAdminHeaders(adminId);
+
+            const res = await app.request(BASE, {
                 method: 'POST',
-                headers,
+                headers: withoutContentType,
                 body: JSON.stringify({ packageId: 'pkg-001' })
             });
-            // 400 or 415
-            expect([400, 415]).toContain(response.status);
+
+            expect(res.status).toBe(400);
+            expect((await res.json()).error.code).toBe('INVALID_CONTENT_TYPE');
+        });
+    });
+
+    describe('4. Access control', () => {
+        // HOS-1913: checkCanView throws FORBIDDEN for a row owned by someone else, so the route
+        // answers 403 and confirms the id exists (error-contract.md wants 404).
+        it.fails('should answer 404 when a sponsor reads a sponsorship they do not own', async () => {
+            const res = await app.request(`${BASE}/${theirs.id}`, { headers: sponsorHeaders() });
+
+            expect(res.status).toBe(404);
+        });
+
+        it('currently answers 403 when a sponsor reads a foreign sponsorship (HOS-1913)', async () => {
+            const res = await app.request(`${BASE}/${theirs.id}`, { headers: sponsorHeaders() });
+
+            expect(res.status).toBe(403);
+        });
+
+        // Regression for HOS-1912: the list is scoped to the caller without SPONSORSHIP_VIEW_ANY.
+        it('should list nothing but their own sponsorships to a sponsor', async () => {
+            const res = await app.request(BASE, { headers: sponsorHeaders() });
+
+            expect(res.status).toBe(200);
+            expect(idsOf({ body: await res.json() })).toEqual([mine.id]);
+        });
+
+        describe('a seeded HOST (holds SPONSORSHIP_VIEW_OWN, owns no sponsorship)', () => {
+            let hostHeaders: Record<string, string>;
+
+            beforeEach(async () => {
+                const hostId = (await createMockActorUser({ label: 'sponsor-flow-host' })).id;
+                hostHeaders = headersFor({ actorId: hostId, role: RoleEnum.HOST });
+            });
+
+            it('holds the permission that opens the list', () => {
+                expect(seededPermissionsFor({ role: RoleEnum.HOST })).toContain(
+                    PermissionEnum.SPONSORSHIP_VIEW_OWN
+                );
+            });
+
+            it('should list none of the sponsorships to a host', async () => {
+                const res = await app.request(BASE, { headers: hostHeaders });
+
+                expect(res.status).toBe(200);
+                expect(idsOf({ body: await res.json() })).toEqual([]);
+            });
+
+            it('should ignore a foreign ?sponsorUserId for a host', async () => {
+                const res = await app.request(`${BASE}?sponsorUserId=${otherSponsorId}`, {
+                    headers: hostHeaders
+                });
+
+                expect(res.status).toBe(200);
+                expect(idsOf({ body: await res.json() })).toEqual([]);
+            });
+        });
+
+        it('should answer 403 to a user without sponsorship permissions', async () => {
+            const touristId = (await createMockActorUser({ label: 'sponsor-flow-tourist' })).id;
+
+            const res = await app.request(BASE, {
+                headers: headersFor({ actorId: touristId, role: RoleEnum.USER })
+            });
+
+            expect(res.status).toBe(403);
+        });
+
+        it('should answer 401 to an unauthenticated request', async () => {
+            const res = await app.request(BASE, { headers: { 'user-agent': 'vitest' } });
+
+            expect(res.status).toBe(401);
+        });
+
+        it('should answer 400 to an invalid sponsorship id', async () => {
+            const res = await app.request(`${BASE}/not-a-uuid`, { headers: sponsorHeaders() });
+
+            expect(res.status).toBe(400);
+        });
+
+        it('should answer 404 to a non-existent sponsorship UUID', async () => {
+            const res = await app.request(`${BASE}/${NON_EXISTENT_ID}`, {
+                headers: sponsorHeaders()
+            });
+
+            expect(res.status).toBe(404);
+        });
+
+        it.each([
+            { method: 'POST', path: '/api/v1/protected/billing/plans' },
+            {
+                method: 'PUT',
+                path: '/api/v1/protected/billing/promo-codes/00000000-0000-0000-0000-000000000001'
+            },
+            { method: 'PUT', path: '/api/v1/protected/billing/settings' }
+        ])('should answer 404 to $method $path (retired billing surface)', async ({
+            method,
+            path
+        }) => {
+            const res = await app.request(path, {
+                method,
+                headers: sponsorHeaders(),
+                body: JSON.stringify({ name: 'x' })
+            });
+
+            expect(res.status).toBe(404);
+        });
+
+        it('should not let a sponsor create accommodations through the public tier', async () => {
+            const res = await app.request('/api/v1/public/accommodations', {
+                method: 'POST',
+                headers: sponsorHeaders(),
+                body: JSON.stringify({ name: 'Test', description: 'Test', address: '123 Test' })
+            });
+
+            expect(res.status).toBe(404);
+        });
+
+        it('should allow sponsor to view public accommodations', async () => {
+            const accommodation = await seedPublicAccommodation();
+
+            const res = await app.request('/api/v1/public/accommodations', {
+                headers: sponsorHeaders()
+            });
+
+            expect(res.status).toBe(200);
+            expect(idsOf({ body: await res.json() })).toEqual([accommodation.id]);
+        });
+    });
+
+    describe('5. Dashboard data', () => {
+        it('should echo the requested page and size', async () => {
+            const res = await app.request(`${BASE}?page=1&pageSize=10`, {
+                headers: sponsorHeaders()
+            });
+
+            expect(res.status).toBe(200);
+            expect((await res.json()).data.pagination).toMatchObject({ page: 1, pageSize: 10 });
+        });
+
+        describe('second page', () => {
+            beforeEach(async () => {
+                // The sponsor owns 3 rows (its seeded one plus these two); the list is scoped to the caller (HOS-1912).
+                await seedSponsorship({ sponsorUserId: sponsorId, level });
+                await seedSponsorship({ sponsorUserId: sponsorId, level });
+            });
+
+            // HOS-1916: the list ignores page/pageSize when it reads the model, so page 2
+            // repeats page 1 and the page size is not applied.
+            it.fails('should serve a second page of one row', async () => {
+                const first = await app.request(`${BASE}?page=1&pageSize=1`, {
+                    headers: sponsorHeaders()
+                });
+                const second = await app.request(`${BASE}?page=2&pageSize=1`, {
+                    headers: sponsorHeaders()
+                });
+
+                const firstIds = idsOf({ body: await first.json() });
+                const secondBody = await second.json();
+                const secondIds = idsOf({ body: secondBody });
+                expect(firstIds).toHaveLength(1);
+                expect(secondIds).toHaveLength(1);
+                expect(secondIds[0]).not.toBe(firstIds[0]);
+                expect(secondBody.data.pagination).toMatchObject({
+                    page: 2,
+                    pageSize: 1,
+                    total: 3
+                });
+            });
+
+            it('currently does not apply the page (HOS-1916)', async () => {
+                const second = await app.request(`${BASE}?page=2&pageSize=1`, {
+                    headers: sponsorHeaders()
+                });
+
+                expect(second.status).toBe(200);
+                const body = await second.json();
+                expect(body.data.pagination).toMatchObject({ page: 2, pageSize: 1 });
+                expect(body.data.items).toHaveLength(3);
+            });
+        });
+
+        it('should answer an empty page when there are no sponsorships at all', async () => {
+            await testDb.clean();
+            const lonelyId = (await createMockActorUser({ label: 'sponsor-flow-lonely' })).id;
+
+            const res = await app.request(BASE, {
+                headers: headersFor({ actorId: lonelyId, role: RoleEnum.SPONSOR })
+            });
+
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.data.items).toEqual([]);
+            expect(data.data.pagination).toMatchObject({ total: 0 });
         });
     });
 });

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
- * @file GastronomyForm.test.tsx
- * Unit tests for `GastronomyForm` (SPEC-239 T-059).
+ * @file VenueForm.test.tsx
+ * Unit tests for `VenueForm` (SPEC-239 T-059).
  *
  * Covers:
  *  - Renders all required fields
@@ -20,16 +20,16 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type * as React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { GastronomyForm } from '../components/GastronomyForm';
+import { VenueForm } from '../components/VenueForm';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function renderForm(overrides?: Partial<React.ComponentProps<typeof GastronomyForm>>) {
+function renderForm(overrides?: Partial<React.ComponentProps<typeof VenueForm>>) {
     const defaultOnSubmit = vi.fn();
     render(
-        <GastronomyForm
+        <VenueForm
             onSubmit={defaultOnSubmit}
             {...overrides}
         />

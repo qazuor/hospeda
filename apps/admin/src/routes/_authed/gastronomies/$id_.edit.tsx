@@ -19,17 +19,17 @@ import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { FaqManager } from '@/components/faqs/FaqManager';
-import { gastronomyTabs, PageTabs } from '@/components/layout/PageTabs';
+import { PageTabs, venueTabs } from '@/components/layout/PageTabs';
 import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
-import { useGastronomyPage } from '@/features/gastronomy';
+import { useVenuePage } from '@/features/venue';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 /** Route configuration for the gastronomy edit page. */
 export const Route = createFileRoute('/_authed/gastronomies/$id_/edit')({
-    component: GastronomyEditPage,
-    loader: async ({ params }) => ({ gastronomyId: params.id }),
+    component: VenueEditPage,
+    loader: async ({ params }) => ({ venueId: params.id }),
     errorComponent: createErrorComponent('Gastronomy'),
     pendingComponent: createPendingComponent()
 });
@@ -39,17 +39,17 @@ export const Route = createFileRoute('/_authed/gastronomies/$id_/edit')({
  * Includes the main edit form (flat) and a FAQs sub-tab for managing FAQs
  * alongside editing the entity fields.
  */
-function GastronomyEditPage() {
+function VenueEditPage() {
     const { id } = Route.useParams();
     const { t } = useTranslations();
-    const entityData = useGastronomyPage(id);
+    const entityData = useVenuePage(id);
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.GASTRONOMY_EDIT_ALL]}>
             <div className="space-y-4">
                 <div className="flex items-center justify-between gap-4">
                     <PageTabs
-                        tabs={gastronomyTabs}
+                        tabs={venueTabs}
                         basePath={`/gastronomies/${id}`}
                     />
                     <RevalidateEntityButton

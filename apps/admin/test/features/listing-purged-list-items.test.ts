@@ -9,7 +9,7 @@ import { createEntityApi } from '@/components/entity-list/api/createEntityApi';
 import { accommodationsConfig } from '@/features/accommodations/config/accommodations.config';
 import { meAccommodationsConfig } from '@/features/accommodations/config/me-accommodations.config';
 import { experienceListConfig } from '@/features/experience/config/experience.config';
-import { gastronomyListConfig } from '@/features/gastronomy/config/gastronomy.config';
+import { venueListConfig } from '@/features/venue/config/venue.config';
 import { fetchApi } from '@/lib/api/client';
 import { mockAccommodation } from '../fixtures/accommodation.fixture';
 
@@ -45,7 +45,7 @@ const commonRow = {
     updatedById: null
 };
 
-const gastronomyNormal = {
+const venueNormal = {
     ...commonRow,
     id: UUID_A,
     summary: 'A summary that is long enough',
@@ -102,11 +102,11 @@ const cases = [
     },
     {
         name: 'gastronomyListConfig',
-        schema: gastronomyListConfig.listItemSchema,
+        schema: venueListConfig.listItemSchema,
         endpoint: '/api/v1/admin/gastronomies',
-        normal: gastronomyNormal,
+        normal: venueNormal,
         purged: {
-            ...gastronomyNormal,
+            ...venueNormal,
             ...BLANKED,
             id: UUID_B,
             menuUrl: null,

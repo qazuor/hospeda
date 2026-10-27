@@ -5,7 +5,8 @@
 import {
     LifecycleStatusEnum,
     OwnerPromotionIdSchema,
-    OwnerPromotionPublicSchema
+    OwnerPromotionPublicSchema,
+    ServiceErrorCode
 } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -37,6 +38,13 @@ export const publicGetOwnerPromotionByIdRoute = createPublicRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await ownerPromotionService.getById(actor, params.id as string);
+
+        // HOS-1897: the service denies non-ACTIVE promotions to actors that are not
+        // staff/owner with FORBIDDEN. On the public tier that must be indistinguishable
+        // from an unknown id (404, never 403), or UUIDs of DRAFT promotions can be probed.
+        if (result.error?.code === ServiceErrorCode.FORBIDDEN) {
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Owner promotion not found');
+        }
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

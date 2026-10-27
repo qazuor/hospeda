@@ -1,5 +1,5 @@
 /**
- * @file useGastronomyPage.ts
+ * @file useVenuePage.ts
  * Page-orchestrator hook for the gastronomy view and edit pages.
  *
  * Centralises data loading, mode switching, and navigation so route components
@@ -14,8 +14,8 @@ import type { SectionConfig } from '@/components/entity-form/types/section-confi
 import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
 import { useTranslations } from '@/hooks/use-translations';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
-import { createGastronomyConsolidatedConfig } from '../config/gastronomy-consolidated.config';
-import { useGastronomyQuery, useUpdateGastronomyMutation } from './useGastronomyQuery';
+import { createVenueConsolidatedConfig } from '../config/venue-consolidated.config';
+import { useUpdateVenueMutation, useVenueQuery } from './useVenueQuery';
 
 /**
  * Centralised hook for the gastronomy view/edit pages.
@@ -31,18 +31,18 @@ import { useGastronomyQuery, useUpdateGastronomyMutation } from './useGastronomy
  * @param entityId - UUID of the gastronomy listing being displayed
  * @returns Page state and helpers for view/edit routes
  */
-export const useGastronomyPage = (entityId: string) => {
+export const useVenuePage = (entityId: string) => {
     const navigate = useNavigate();
     const { t } = useTranslations();
 
     const [mode, setMode] = useState<'view' | 'edit'>('view');
     const [activeSection, setActiveSection] = useState<string>();
 
-    const query = useGastronomyQuery(entityId);
-    const updateMutationResult = useUpdateGastronomyMutation();
+    const query = useVenueQuery(entityId);
+    const updateMutationResult = useUpdateVenueMutation();
 
     const entityConfig = useMemo(() => {
-        const consolidatedConfig = createGastronomyConsolidatedConfig(t);
+        const consolidatedConfig = createVenueConsolidatedConfig(t);
         const viewSections = filterSectionsByMode(consolidatedConfig.sections, 'view');
         const editSections = filterSectionsByMode(consolidatedConfig.sections, 'edit');
         return { viewSections, editSections, metadata: consolidatedConfig.metadata };
