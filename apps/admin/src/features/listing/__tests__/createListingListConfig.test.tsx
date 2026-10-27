@@ -221,8 +221,8 @@ it('selects only the requested vertical permissions for shared sections', () => 
     const venue = createListingOperationalSection('venue');
     const experience = createListingOperationalSection('experience');
     expect(venue.permissions?.edit).toEqual([
-        PermissionEnum.GASTRONOMY_EDIT_OWN,
-        PermissionEnum.GASTRONOMY_EDIT_ALL
+        PermissionEnum.VENUE_EDIT_OWN,
+        PermissionEnum.VENUE_EDIT_ALL
     ]);
     expect(experience.permissions?.edit).toEqual([
         PermissionEnum.EXPERIENCE_EDIT_OWN,

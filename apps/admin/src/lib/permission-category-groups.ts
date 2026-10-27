@@ -171,7 +171,7 @@ export const CATEGORY_GROUP: Record<PermissionCategoryEnum, PermissionCategoryGr
     [PermissionCategoryEnum.TOURIST_SERVICE]: 'Services & Listings',
     [PermissionCategoryEnum.PROFESSIONAL_SERVICE]: 'Services & Listings',
     [PermissionCategoryEnum.PROFESSIONAL_SERVICE_ORDER]: 'Services & Listings',
-    [PermissionCategoryEnum.GASTRONOMY]: 'Services & Listings',
+    [PermissionCategoryEnum.VENUE]: 'Services & Listings',
     [PermissionCategoryEnum.EXPERIENCE]: 'Services & Listings',
     [PermissionCategoryEnum.HOST_TRADE]: 'Services & Listings',
     [PermissionCategoryEnum.PARTNER]: 'Services & Listings',

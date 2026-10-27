@@ -69,8 +69,8 @@ function createVenueSpecificSection(): ConsolidatedSectionConfig {
         layout: LayoutTypeEnum.GRID,
         modes: ['view', 'edit', 'create'],
         permissions: {
-            view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
-            edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
+            view: [PermissionEnum.VENUE_VIEW_ALL],
+            edit: [PermissionEnum.VENUE_EDIT_ALL]
         },
         fields: [
             {
@@ -82,8 +82,8 @@ function createVenueSpecificSection(): ConsolidatedSectionConfig {
                 description: 'Categoría gastronómica del comercio',
                 placeholder: 'Seleccioná el tipo…',
                 permissions: {
-                    view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
-                    edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
+                    view: [PermissionEnum.VENUE_VIEW_ALL],
+                    edit: [PermissionEnum.VENUE_EDIT_ALL]
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
@@ -102,8 +102,8 @@ function createVenueSpecificSection(): ConsolidatedSectionConfig {
                 description: 'Nivel de precios del establecimiento',
                 placeholder: 'Seleccioná el rango…',
                 permissions: {
-                    view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
-                    edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
+                    view: [PermissionEnum.VENUE_VIEW_ALL],
+                    edit: [PermissionEnum.VENUE_EDIT_ALL]
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
@@ -122,8 +122,8 @@ function createVenueSpecificSection(): ConsolidatedSectionConfig {
                 description: 'Enlace al menú digital del establecimiento (https://…)',
                 placeholder: 'https://tu-restaurante.com/menu',
                 permissions: {
-                    view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
-                    edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
+                    view: [PermissionEnum.VENUE_VIEW_ALL],
+                    edit: [PermissionEnum.VENUE_EDIT_ALL]
                 },
                 typeConfig: {
                     maxLength: 500

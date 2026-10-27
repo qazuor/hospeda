@@ -2,7 +2,7 @@
  * Gastronomy edit page — allows admins to update an existing gastronomy listing.
  *
  * Uses `EntityPageBase` in edit mode with `EntityEditContent` (flat layout).
- * Gate-protected by GASTRONOMY_EDIT_ALL.
+ * Gate-protected by VENUE_EDIT_ALL.
  *
  * HOS-382: the `media.featuredImage` / `media.gallery` field handlers were
  * removed. Those fields used to buffer uploads into a `media` object on
