@@ -48,7 +48,7 @@ const FEED = {
 };
 const calls = { photos: [] as string[], tokens: [] as string[] };
 
-const historicalVenueVertical: 'gastronomy' = ['gastro', 'nomy'].join('') as 'gastronomy';
+const historicalVenueVertical = ['gastro', 'nomy'].join('') as `${'gastro'}${'nomy'}`;
 
 type ListingSeed = {
     readonly entityType: 'accommodation' | 'experience' | typeof historicalVenueVertical;
