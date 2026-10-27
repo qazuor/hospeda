@@ -319,9 +319,18 @@ export class QrCodeService extends BaseCrudService<
     protected async _executeSearch(
         params: QrCodeSearchInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<QrCode>> {
-        const { page = 1, pageSize = 20, sortBy, sortOrder } = params;
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params and
+        // republishes them on ctx.pagination (SPEC-088); read them from ctx (HOS-1900).
+        const page = ctx.pagination?.page;
+        const pageSize = ctx.pagination?.pageSize;
+        // Deterministic default: without an ORDER BY, LIMIT/OFFSET paging is
+        // non-deterministic in Postgres. BaseModel.findAll accepts a single sort key only,
+        // so ties on `createdAt` are not broken by a secondary key.
+        // The schema always defaults sortOrder, so it is only honored with an explicit sortBy.
+        const sortBy = ctx.pagination?.sortBy ?? 'createdAt';
+        const sortOrder = ctx.pagination?.sortBy ? ctx.pagination.sortOrder : 'desc';
 
         return this.model.findAll(
             this._buildSearchWhere(params),

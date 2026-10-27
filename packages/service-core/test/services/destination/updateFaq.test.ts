@@ -104,6 +104,17 @@ describe('DestinationService.updateFaq', () => {
         expect(faqModelMock.update).not.toHaveBeenCalled();
     });
 
+    it('should return NOT_FOUND if the FAQ is already soft-deleted (HOS-1907)', async () => {
+        (model.findById as Mock).mockResolvedValue(entity);
+        (faqModelMock.findById as Mock).mockResolvedValue({ ...faq, deletedAt: new Date() });
+        vi.spyOn(permissionHelpers, 'checkCanUpdateDestination').mockImplementation(() => {});
+
+        const result = await service.updateFaq(actor, input);
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(faqModelMock.update).not.toHaveBeenCalled();
+    });
+
     it('should return NOT_FOUND if FAQ belongs to a different destination', async () => {
         (model.findById as Mock).mockResolvedValue(entity);
         (faqModelMock.findById as Mock).mockResolvedValue({

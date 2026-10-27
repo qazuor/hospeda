@@ -511,3 +511,17 @@ describe('ExperienceReviewService._recomputeListingRating — rating math (B-1 r
         }
     });
 });
+
+describe('ExperienceReviewService.search pagination (HOS-1900)', () => {
+    it('forwards page and pageSize from ctx.pagination to the model', async () => {
+        // Arrange
+        const service = makeService(null);
+
+        // Act
+        await service.search(reviewerActor, { page: 2, pageSize: 5 });
+
+        // Assert
+        const model = (service as AnyService).model;
+        expect(model.findAll.mock.calls[0]?.[1]).toEqual({ page: 2, pageSize: 5 });
+    });
+});

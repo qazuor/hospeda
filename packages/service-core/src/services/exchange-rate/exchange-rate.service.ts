@@ -350,8 +350,12 @@ export class ExchangeRateService extends BaseCrudService<
                     );
                 }
 
-                // Hard delete the manual override
-                await this.hardDelete(actor, validated.id);
+                // Hard delete the manual override. Propagate its error (HOS-1903): a
+                // delete that removed no row must not be reported as a success.
+                const deleted = await this.hardDelete(actor, validated.id);
+                if (deleted.error) {
+                    throw new ServiceError(deleted.error.code, deleted.error.message);
+                }
             }
         });
     }

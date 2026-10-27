@@ -67,7 +67,6 @@ export const publicListPostCommentsRoute = createPublicListRoute({
         };
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });

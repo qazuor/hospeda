@@ -19,7 +19,7 @@
 import type { DestinationModel } from '@repo/db';
 import { resolveEnvironment } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import { createActor } from '../../factories/actorFactory';
@@ -106,14 +106,14 @@ describe('DestinationService.hardDelete — media cleanup (T-065)', () => {
         expect(deleteSpy).not.toHaveBeenCalled();
     });
 
-    it('does NOT call the provider when the DB reports zero deleted rows', async () => {
+    it('answers NOT_FOUND and skips media cleanup when the DB reports zero deleted rows (HOS-1903)', async () => {
         (model.hardDelete as Mock).mockResolvedValue(0);
         const deleteSpy = vi.spyOn(provider, 'deleteByPrefix');
 
         const result = await service.hardDelete(actor, entity.id);
 
-        expect(result.error).toBeUndefined();
-        expect(result.data?.count).toBe(0);
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(result.data).toBeUndefined();
         expect(deleteSpy).not.toHaveBeenCalled();
     });
 

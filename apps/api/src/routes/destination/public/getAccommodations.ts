@@ -53,7 +53,6 @@ export const publicGetDestinationAccommodationsRoute = createPublicRoute({
         return strippedAccommodations as AccommodationData[];
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

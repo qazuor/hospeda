@@ -117,4 +117,20 @@ describe('DestinationReviewService — search/count force-override lifecycleStat
         >;
         expect(firstArg.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
     });
+
+    it('search(): forwards page and pageSize from ctx.pagination to the model (HOS-1900)', async () => {
+        // Arrange
+        const actor = createActor({
+            id: getMockId('user', 'actor-pagination') as UserIdType,
+            permissions: [PermissionEnum.DESTINATION_REVIEW_CREATE]
+        });
+        (reviewModel.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
+
+        // Act
+        await service.search(actor, { page: 2, pageSize: 5 });
+
+        // Assert
+        const pagination = (reviewModel.findAll as Mock).mock.calls[0]?.[1];
+        expect(pagination).toMatchObject({ page: 2, pageSize: 5 });
+    });
 });

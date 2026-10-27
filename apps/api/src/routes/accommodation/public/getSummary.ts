@@ -1,4 +1,4 @@
-import { AccommodationIdSchema, AccommodationSummarySchema } from '@repo/schemas';
+import { AccommodationIdSchema, AccommodationSummarySchema, ServiceErrorCode } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
@@ -13,7 +13,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * @param _ctx - Hono context. Unused: this handler must not read the request
  *   actor (HOS-353) — the response is stored under an actorless public cache key.
  * @param params - Path parameters containing id
- * @returns Accommodation summary data or null if not found
+ * @returns Accommodation summary data or throws NOT_FOUND
  */
 const getSummaryHandler = async (_ctx: Context, params: Record<string, unknown>) => {
     // Get the ID from the path params
@@ -42,9 +42,8 @@ const getSummaryHandler = async (_ctx: Context, params: Record<string, unknown>)
         throw new ServiceError(result.error.code, result.error.message);
     }
 
-    // Return null if accommodation not found (schema is nullable)
     if (!result.data) {
-        return null;
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Accommodation not found: ${id}`);
     }
 
     // Transform service response to match AccommodationSummarySchema
@@ -88,7 +87,6 @@ export const getSummaryRoute = createCRUDRoute({
     options: {
         skipAuth: true, // Public endpoint
         skipValidation: true, // Skip header validation for public endpoint
-        cacheTTL: 300, // Cache for 5 minutes
         customRateLimit: { requests: 100, windowMs: 60000 } // 100 requests per minute
     }
 });

@@ -199,7 +199,7 @@ export async function updateVenueFaq(
 
             const faqModel = new VenueFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
-            if (!faq || faq.gastronomyId !== validated.gastronomyId) {
+            if (!faq || faq.gastronomyId !== validated.gastronomyId || faq.deletedAt) {
                 throw new ServiceError(
                     ServiceErrorCode.NOT_FOUND,
                     'FAQ not found for this gastronomy listing'
@@ -282,7 +282,7 @@ export async function removeVenueFaq(
 
             const faqModel = new VenueFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
-            if (!faq || faq.gastronomyId !== validated.gastronomyId) {
+            if (!faq || faq.gastronomyId !== validated.gastronomyId || faq.deletedAt) {
                 throw new ServiceError(
                     ServiceErrorCode.NOT_FOUND,
                     'FAQ not found for this gastronomy listing'

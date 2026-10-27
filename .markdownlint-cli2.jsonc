@@ -34,6 +34,7 @@
     },
     // The HOS-1352 program design corpus is reviewed as a whole and kept verbatim
     // (the PDR is immutable). CI does not lint .specs. Owner decision 2026-10-06.
+    // HOS-1787 (the venue rename that gates the HOS-1352 cutover) follows the same rule.
     "ignores": [
         "node_modules/**",
         "**/node_modules/**",
@@ -42,6 +43,7 @@
         ".claude/**",
         ".specs/HOS-1352-*/**",
         ".specs/HOS-1353-*/**",
-        ".specs/HOS-1354-*/**"
+        ".specs/HOS-1354-*/**",
+        ".specs/HOS-1787-*/**"
     ]
 }

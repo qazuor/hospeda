@@ -50,4 +50,16 @@ describe('UserBookmarkService.search', () => {
         });
         expectInternalError(result);
     });
+
+    it('forwards page and pageSize from ctx.pagination to the model (HOS-1900)', async () => {
+        // Arrange
+        asMock(modelMock.findAll).mockResolvedValue({ items: [bookmark], total: 1 });
+
+        // Act
+        await service.search(actor, { page: 2, pageSize: 5, userId: bookmark.userId });
+
+        // Assert
+        const pagination = asMock(modelMock.findAll).mock.calls[0]?.[1];
+        expect(pagination).toMatchObject({ page: 2, pageSize: 5 });
+    });
 });

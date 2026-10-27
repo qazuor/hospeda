@@ -14,6 +14,7 @@ import { DestinationFactoryBuilder } from '../../factories/destinationFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import {
     expectInternalError,
+    expectNotFoundError,
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
@@ -28,7 +29,8 @@ describe('DestinationService.getAncestors', () => {
     let loggerMock: ServiceLogger;
 
     beforeEach(() => {
-        modelMock = createTypedModelMock(DestinationModel, ['findAncestors']);
+        modelMock = createTypedModelMock(DestinationModel, ['findAncestors', 'findOne']);
+        asMock(modelMock.findOne).mockResolvedValue({ id: 'existing-destination' });
         loggerMock = createLoggerMock();
         service = createServiceTestInstance(DestinationService, modelMock, loggerMock);
     });
@@ -98,6 +100,22 @@ describe('DestinationService.getAncestors', () => {
         // Assert
         expectSuccess(result);
         expect(result.data?.ancestors).toHaveLength(0);
+    });
+
+    it('should return NOT_FOUND and skip the hierarchy query for an unknown destination (HOS-1906)', async () => {
+        // Arrange
+        asMock(modelMock.findOne).mockResolvedValue(null);
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
+        const params: GetDestinationAncestorsInput = {
+            destinationId: getMockId('destination', 'missing')
+        };
+
+        // Act
+        const result = await service.getAncestors(actor, params);
+
+        // Assert
+        expectNotFoundError(result);
+        expect(asMock(modelMock.findAncestors)).not.toHaveBeenCalled();
     });
 
     it('should return VALIDATION_ERROR for invalid destinationId', async () => {

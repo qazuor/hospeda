@@ -34,7 +34,5 @@ export const adminGetResolvedThresholdRoute = createAdminRoute({
         const result = await getThresholdForContext({ context });
         return result;
     },
-    options: {
-        cacheTTL: 10
-    }
+    options: {}
 });

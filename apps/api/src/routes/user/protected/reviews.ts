@@ -184,7 +184,6 @@ export const userReviewsRoute = createProtectedRoute({
         };
     },
     options: {
-        cacheTTL: 30,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

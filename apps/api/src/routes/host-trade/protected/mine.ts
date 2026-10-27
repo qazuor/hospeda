@@ -17,7 +17,7 @@
  * listing, which is what makes AC-10 ("a provider cannot read or edit
  * another's") structural rather than a check.
  *
- * Actor-dependent, therefore NOT cacheable. No `cacheTTL`, and neither may be
+ * Actor-dependent, therefore NOT cacheable. It must stay uncached, and neither may be
  * moved to the public tier.
  *
  * @module routes/host-trade/protected/mine

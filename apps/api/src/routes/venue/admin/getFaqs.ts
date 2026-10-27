@@ -48,7 +48,6 @@ export const adminGetVenueFaqsRoute = createAdminRoute({
         return { faqs: result.data?.faqs || [] };
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

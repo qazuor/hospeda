@@ -1,7 +1,6 @@
-import { AccommodationIdSchema, AccommodationStatsSchema } from '@repo/schemas';
-import { AccommodationService } from '@repo/service-core';
+import { AccommodationIdSchema, AccommodationStatsSchema, ServiceErrorCode } from '@repo/schemas';
+import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -13,7 +12,8 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * @param _ctx - Hono context. Unused: this handler must not read the request
  *   actor (HOS-353) — the response is stored under an actorless public cache key.
  * @param params - Path parameters containing id
- * @returns Accommodation statistics data or null if not found
+ * @returns Accommodation statistics data
+ * @throws {ServiceError} NOT_FOUND when the accommodation does not exist or is hidden (HOS-1902)
  */
 const getStatsHandler = async (_ctx: Context, params: Record<string, unknown>) => {
     // Get the ID from the path params
@@ -26,14 +26,18 @@ const getStatsHandler = async (_ctx: Context, params: Record<string, unknown>) =
     // TTL. Privileged reads live on the protected and admin tiers.
 
     // Visibility pre-check, not a name lookup: nothing reads `data` beyond the
-    // null test. `getStats` gates through `_canView` too, so this call is what
-    // turns a hidden listing into `200 null` instead of the HTTPException(500)
-    // the `statsResult.error` branch below would raise.
+    // existence test. `getStats` gates through `_canView` too, so this call is
+    // what turns an unknown or hidden listing into a 404 (same as `/summary`)
+    // instead of the 500 the `statsResult.error` branch below would raise
+    // (HOS-1902).
     const accommodationResult = await accommodationService.getById(createGuestActor(), id);
 
-    if (accommodationResult.error || !accommodationResult.data) {
-        // Return null if accommodation not found (schema is nullable)
-        return null;
+    if (accommodationResult.error) {
+        throw new ServiceError(accommodationResult.error.code, accommodationResult.error.message);
+    }
+
+    if (!accommodationResult.data) {
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Accommodation not found: ${id}`);
     }
 
     // Call the stats service
@@ -42,14 +46,11 @@ const getStatsHandler = async (_ctx: Context, params: Record<string, unknown>) =
     });
 
     if (statsResult.error) {
-        throw new HTTPException(500, {
-            message: statsResult.error.message
-        });
+        throw new ServiceError(statsResult.error.code, statsResult.error.message);
     }
 
-    // Return null if stats not found (schema is nullable)
     if (!statsResult.data) {
-        return null;
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Accommodation not found: ${id}`);
     }
 
     // Schema is flat (AccommodationStatsSchema = { total, totalFeatured, ... }).
@@ -71,12 +72,11 @@ export const getStatsRoute = createCRUDRoute({
     requestParams: {
         id: AccommodationIdSchema
     },
-    responseSchema: AccommodationStatsSchema.nullable(),
+    responseSchema: AccommodationStatsSchema,
     handler: getStatsHandler,
     options: {
         skipAuth: true, // Public endpoint
         skipValidation: true, // Skip header validation for public endpoint
-        cacheTTL: 300, // Cache for 5 minutes
         customRateLimit: { requests: 100, windowMs: 60000 } // 100 requests per minute
     }
 });

@@ -265,7 +265,7 @@ export class UserBookmarkCollectionService extends BaseCrudService<
     protected async _executeSearch(
         params: UserBookmarkCollectionSearchInput,
         actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ) {
         if (
             params.userId !== undefined &&
@@ -278,7 +278,11 @@ export class UserBookmarkCollectionService extends BaseCrudService<
             );
         }
 
-        const { page, pageSize, ...searchFilters } = params;
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params and
+        // republishes them on ctx.pagination (SPEC-088); read them from ctx (HOS-1900).
+        const page = ctx.pagination?.page;
+        const pageSize = ctx.pagination?.pageSize;
+        const { page: _page, pageSize: _pageSize, ...searchFilters } = params;
 
         const { items, total } = await this.model.findAll(
             { ...searchFilters, deletedAt: null },

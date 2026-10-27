@@ -68,7 +68,6 @@ export const adminBatchAmenitiesRoute = createAdminRoute({
         return amenities;
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 50, windowMs: 60000 }
     }
 });

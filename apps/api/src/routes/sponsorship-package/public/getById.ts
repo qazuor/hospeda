@@ -33,7 +33,5 @@ export const sponsorshipPackageGetByIdRoute = createPublicRoute({
 
         return result.data;
     },
-    options: {
-        cacheTTL: 300
-    }
+    options: {}
 });

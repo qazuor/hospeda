@@ -23,7 +23,5 @@ export const publicGetFeatureFlagsMeRoute = createPublicRoute({
 
         return result;
     },
-    options: {
-        cacheTTL: 60
-    }
+    options: {}
 });

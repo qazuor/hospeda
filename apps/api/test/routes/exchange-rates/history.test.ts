@@ -346,7 +346,7 @@ describe('GET /api/v1/admin/exchange-rates/history', () => {
             });
 
             if (res.status === 200) {
-                // Cache-Control header may be set based on cacheTTL option
+                // Cache-Control header may be set by the cache middleware
                 const cacheControl = res.headers.get('cache-control');
                 if (cacheControl) {
                     expect(cacheControl).toBeDefined();
