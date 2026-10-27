@@ -49,7 +49,5 @@ export const publicGetUpcomingEventsRoute = createPublicListRoute({
             pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
         };
     },
-    options: {
-        cacheTTL: 60
-    }
+    options: {}
 });

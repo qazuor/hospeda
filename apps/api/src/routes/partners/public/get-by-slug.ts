@@ -73,7 +73,6 @@ export const publicGetPartnerBySlugRoute = createPublicRoute({
     responseSchema: PartnerPublicSchema,
     handler: getPublicPartnerBySlugHandler,
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });

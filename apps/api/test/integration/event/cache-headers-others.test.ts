@@ -12,14 +12,14 @@ describe('Event - Cache headers on other endpoints', () => {
         app = initApp();
     });
 
-    it('GET /slug/:slug may include Cache-Control when cacheTTL is set', async () => {
+    it('GET /slug/:slug may include Cache-Control (global cache middleware)', async () => {
         const res = await app.request(`${base}/slug/sample-slug`);
         expect([200, 400, 404]).toContain(res.status);
         const cache = res.headers.get('cache-control');
         if (cache) expect(typeof cache).toBe('string');
     });
 
-    it('GET /free may include Cache-Control when cacheTTL is set', async () => {
+    it('GET /free may include Cache-Control (global cache middleware)', async () => {
         const res = await app.request(`${base}/free`);
         expect([200, 400]).toContain(res.status);
         const cache = res.headers.get('cache-control');

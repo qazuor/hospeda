@@ -89,6 +89,10 @@ import {
     isValidParentChildRelation
 } from './destination.hierarchy.helpers';
 import {
+    buildDestinationLocationConditions,
+    matchesDestinationLocation
+} from './destination.location-filters';
+import {
     normalizeCreateInput,
     normalizeListInput,
     normalizeUpdateInput,
@@ -407,13 +411,9 @@ export class DestinationService extends BaseCrudService<
         const sortOrder = _ctx.pagination?.sortOrder;
 
         // Build where clause from the subset of filters that map to real columns.
-        // Note: country/state/city are not direct columns (stored in location jsonb)
-        // but are kept here for backwards compatibility; buildWhereClause will
-        // warn-and-skip them.
+        // country/state/city live in the `location` jsonb column, so they become
+        // additional conditions instead (HOS-1899).
         const where: Record<string, unknown> = {};
-        if (country) where.country = country;
-        if (state) where.state = state;
-        if (city) where.city = city;
         if (isFeatured !== undefined) where.isFeatured = isFeatured;
         if (parentDestinationId) where.parentDestinationId = parentDestinationId;
         if (destinationType) where.destinationType = destinationType;
@@ -431,7 +431,12 @@ export class DestinationService extends BaseCrudService<
             trimmedQ && trimmedQ.length > 0
                 ? buildSearchCondition(trimmedQ, searchColumns, this.model.getTable())
                 : undefined;
-        const additionalConditions = searchCondition ? [searchCondition] : undefined;
+        const locationConditions = buildDestinationLocationConditions({ country, state, city });
+        const allConditions = [
+            ...(searchCondition ? [searchCondition] : []),
+            ...locationConditions
+        ];
+        const additionalConditions = allConditions.length > 0 ? allConditions : undefined;
 
         // Special handling for ancestorId (requires LIKE query on pathIds)
         if (ancestorId) {
@@ -445,6 +450,17 @@ export class DestinationService extends BaseCrudService<
             }
             if (level !== undefined) {
                 filtered = filtered.filter((d) => d.level === level);
+            }
+            if (isFeatured !== undefined) {
+                filtered = filtered.filter((d) => d.isFeatured === isFeatured);
+            }
+            if (locationConditions.length > 0) {
+                filtered = filtered.filter((d) =>
+                    matchesDestinationLocation({
+                        location: d.location,
+                        filters: { country, state, city }
+                    })
+                );
             }
             if (trimmedQ && trimmedQ.length > 0) {
                 const needle = trimmedQ.toLowerCase();
@@ -480,15 +496,19 @@ export class DestinationService extends BaseCrudService<
             this.extractImplementedFilters(params);
 
         const where: Record<string, unknown> = {};
-        if (country) where.country = country;
-        if (state) where.state = state;
-        if (city) where.city = city;
         if (isFeatured !== undefined) where.isFeatured = isFeatured;
         if (parentDestinationId) where.parentDestinationId = parentDestinationId;
         if (destinationType) where.destinationType = destinationType;
         if (level !== undefined) where.level = level;
 
-        const count = await this.model.count(where);
+        // country/state/city live in the `location` jsonb column (HOS-1899).
+        const locationConditions = buildDestinationLocationConditions({ country, state, city });
+        const count = await this.model.count(
+            where,
+            locationConditions.length > 0
+                ? { additionalConditions: [...locationConditions] }
+                : undefined
+        );
         return { count };
     }
 
@@ -545,13 +565,18 @@ export class DestinationService extends BaseCrudService<
         } = params;
         // Build where clause from flat filters
         const where: Record<string, unknown> = { ...otherFilters };
-        if (country) where.country = country;
-        if (state) where.state = state;
-        if (city) where.city = city;
         if (isFeatured !== undefined) where.isFeatured = isFeatured;
 
+        // country/state/city live in the `location` jsonb column (HOS-1899).
+        const locationConditions = buildDestinationLocationConditions({ country, state, city });
+
         // Use the model method that includes attractions
-        const result = await this.model.findAll(where, { page, pageSize }, undefined, ctx?.tx);
+        const result = await this.model.findAll(
+            where,
+            { page, pageSize },
+            locationConditions.length > 0 ? [...locationConditions] : undefined,
+            ctx?.tx
+        );
 
         // Map the result to the expected format
         const mappedItems = result.items.map((destination) => ({
@@ -1343,6 +1368,26 @@ export class DestinationService extends BaseCrudService<
     // ========================================================================
 
     /**
+     * Asserts that a destination exists (and is not soft-deleted) before a
+     * hierarchy read, so an unknown id answers NOT_FOUND instead of an empty
+     * list (HOS-1906). Same existence check `getBreadcrumb` uses.
+     * @param params - Destination id and optional transaction
+     * @throws {ServiceError} NOT_FOUND when no live destination has that id
+     */
+    private async _assertDestinationExists(params: {
+        readonly destinationId: string;
+        readonly tx?: ServiceContext['tx'];
+    }): Promise<void> {
+        const destination = await this.model.findOne({ id: params.destinationId }, params.tx);
+        if (!destination) {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_FOUND,
+                `Destination not found: ${params.destinationId}`
+            );
+        }
+    }
+
+    /**
      * Gets direct children of a destination.
      * @param actor - The actor performing the action
      * @param params - Input containing destinationId
@@ -1359,6 +1404,10 @@ export class DestinationService extends BaseCrudService<
             schema: GetDestinationChildrenInputSchema,
             ctx,
             execute: async (validData, _actor, resolvedCtx) => {
+                await this._assertDestinationExists({
+                    destinationId: validData.destinationId,
+                    tx: resolvedCtx.tx
+                });
                 const children = await this.model.findChildren(
                     validData.destinationId,
                     resolvedCtx.tx
@@ -1385,6 +1434,10 @@ export class DestinationService extends BaseCrudService<
             schema: GetDestinationDescendantsInputSchema,
             ctx,
             execute: async (validData, _actor, resolvedCtx) => {
+                await this._assertDestinationExists({
+                    destinationId: validData.destinationId,
+                    tx: resolvedCtx.tx
+                });
                 const descendants = await this.model.findDescendants(
                     validData.destinationId,
                     {
@@ -1415,6 +1468,10 @@ export class DestinationService extends BaseCrudService<
             schema: GetDestinationAncestorsInputSchema,
             ctx,
             execute: async (validData, _actor, resolvedCtx) => {
+                await this._assertDestinationExists({
+                    destinationId: validData.destinationId,
+                    tx: resolvedCtx.tx
+                });
                 const ancestors = await this.model.findAncestors(
                     validData.destinationId,
                     resolvedCtx.tx

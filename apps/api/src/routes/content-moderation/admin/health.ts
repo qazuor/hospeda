@@ -23,7 +23,6 @@ export const adminContentModerationHealthRoute = createAdminRoute({
     responseSchema: ModerationHealthSchema,
     handler: async () => getModerationEngineHealth(),
     options: {
-        cacheTTL: 30,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }
 });

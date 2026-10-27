@@ -364,9 +364,6 @@ options: {
     windowMs: 60000
   },
 
-  // Cache TTL (seconds)
-  cacheTTL: 300,
-
   // Additional middleware
   middlewares: [customMiddleware]
 }
@@ -697,13 +694,7 @@ Drizzle ORM handles connection pooling automatically.
 
 ### 2. Caching
 
-Routes can specify `cacheTTL` option:
-
-```typescript
-options: {
-  cacheTTL: 300 // 5 minutes
-}
-```
+Response caching is not configured per route: the in-process TTL is global (cache middleware config) and edge caching is decided by Cloudflare's cache rule. The only per-route public `Cache-Control` is the post-tag list (`routes/tag/post-tag/public/list.ts`); other manual headers are `no-store`.
 
 ### 3. Pagination
 

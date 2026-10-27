@@ -56,7 +56,6 @@ export const adminGetDestinationDescendantsRoute = createAdminRoute({
         return result.data;
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

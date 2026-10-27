@@ -39,7 +39,6 @@ export const publicListPoiCategoriesRoute = createPublicRoute({
         return result.data?.categories ?? [];
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });

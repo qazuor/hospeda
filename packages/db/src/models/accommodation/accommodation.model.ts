@@ -640,6 +640,10 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         if (params.publishedOnly) {
             whereClauses.push(eq(accommodations.publicationStatus, 'PUBLISHED'));
         }
+        // HOS-1898: `?isFeatured=` narrows on the single featuring source column.
+        if (params.isFeatured !== undefined) {
+            whereClauses.push(eq(accommodations.featuredByEntitlement, params.isFeatured));
+        }
         if (params.minGuests !== undefined) {
             whereClauses.push(
                 sql`(${accommodations.extraInfo}->>'capacity')::int >= ${params.minGuests}`
@@ -783,6 +787,10 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         // HOS-1641 (V6.9b): public reads see PUBLISHED listings only.
         if (params.publishedOnly) {
             whereClauses.push(eq(accommodations.publicationStatus, 'PUBLISHED'));
+        }
+        // HOS-1898: `?isFeatured=` narrows on the single featuring source column.
+        if (params.isFeatured !== undefined) {
+            whereClauses.push(eq(accommodations.featuredByEntitlement, params.isFeatured));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -959,6 +967,10 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         // HOS-1641 (V6.9b): public reads see PUBLISHED listings only.
         if (params.publishedOnly) {
             whereClauses.push(eq(accommodations.publicationStatus, 'PUBLISHED'));
+        }
+        // HOS-1898: `?isFeatured=` narrows on the single featuring source column.
+        if (params.isFeatured !== undefined) {
+            whereClauses.push(eq(accommodations.featuredByEntitlement, params.isFeatured));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(

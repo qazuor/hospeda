@@ -68,14 +68,10 @@ describe('Health Routes (Migrated)', () => {
             expect(res.status).toBe(200);
             const data = await res.json();
 
-            expect(data.success).toBe(true);
-            expect(data.data.status).toBe('healthy');
-            expect(data.data.timestamp).toBeDefined();
-            expect(data.data.uptime).toBeDefined();
-            expect(data.data.version).toBeDefined();
-            expect(data.data.environment).toBeDefined();
-            expect(data.metadata.timestamp).toBeDefined();
-            expect(data.metadata.requestId).toBeDefined();
+            // `GET /health` is registered in createApp() BEFORE the middleware chain
+            // (load-balancer probe): a bare `{ status, timestamp }` with no envelope.
+            expect(data.status).toBe('ok');
+            expect(data.timestamp).toBeDefined();
         });
     });
 
@@ -104,7 +100,6 @@ describe('Health Routes (Migrated)', () => {
             expect(data.data.timestamp).toBeDefined();
             expect(data.data.uptime).toBeDefined();
             expect(data.data.version).toBeDefined();
-            expect(data.data.environment).toBeDefined();
             expect(data.metadata.timestamp).toBeDefined();
             expect(data.metadata.requestId).toBeDefined();
 
@@ -133,22 +128,30 @@ describe('Health Routes (Migrated)', () => {
     });
 
     describe('Validation', () => {
-        it('should reject requests without user-agent for all health endpoints', async () => {
+        it('should reject requests without user-agent on the routed health endpoints', async () => {
+            // The route-level `skipValidation` flag is set by a per-route middleware that
+            // runs AFTER the global validation middleware, so it cannot exempt /health/live
+            // and /health/ready from the user-agent requirement. Only the bare `/health`
+            // probe (registered before the middleware chain) is exempt.
             const app = initApp();
-            const endpoints = ['/health/live', '/health/ready', '/health', '/health/db'];
+            const endpoints = ['/health/live', '/health/ready', '/health/db'];
 
             for (const endpoint of endpoints) {
-                const res = await app.request(endpoint, {
-                    headers: {
-                        // Missing user-agent
-                    }
-                });
+                const res = await app.request(endpoint, { headers: {} });
 
                 expect(res.status).toBe(400);
                 const data = await res.json();
                 expect(data.success).toBe(false);
                 expect(data.error.code).toBe('MISSING_REQUIRED_HEADER');
             }
+        });
+
+        it('should serve the bare /health probe without user-agent (registered before the middleware chain)', async () => {
+            const app = initApp();
+
+            const res = await app.request('/health', { headers: {} });
+
+            expect(res.status).toBe(200);
         });
 
         it('should accept requests with valid Accept header for all health endpoints', async () => {

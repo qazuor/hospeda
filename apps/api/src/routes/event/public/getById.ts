@@ -30,7 +30,6 @@ export const publicGetEventByIdRoute = createPublicRoute({
         return result.data;
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

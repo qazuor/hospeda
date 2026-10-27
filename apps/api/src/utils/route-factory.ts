@@ -28,8 +28,6 @@ export interface RouteOptions {
     skipValidation?: boolean;
     /** Custom rate limiting for this specific route */
     customRateLimit?: { requests: number; windowMs: number };
-    /** Cache TTL in seconds for this route */
-    cacheTTL?: number;
     /** Additional middlewares to apply to this route */
     middlewares?: MiddlewareHandler[];
     /** Authorization level for the route (public, protected, admin) */

@@ -35,7 +35,6 @@ export const robotsRoute = createSimpleRoute({
     // publicPaths list (routeOptions.skipValidation runs too late for app-mounted
     // routes — see validation.ts, HOS-109 T-011).
     options: {
-        skipAuth: true,
-        cacheTTL: 86_400
+        skipAuth: true
     }
 });

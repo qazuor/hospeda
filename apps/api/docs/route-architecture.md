@@ -98,7 +98,6 @@ options?: {
   skipAuth?: boolean;
   skipValidation?: boolean;
   customRateLimit?: { requests: number; windowMs: number };
-  cacheTTL?: number;                    // seconds
   middlewares?: MiddlewareHandler[];    // prepended before handler
   authorizationLevel?: AuthorizationLevel;
   requiredPermissions?: PermissionEnum[];
@@ -348,8 +347,7 @@ export const publicListEntityRoute = createPublicListRoute({
       items: result.data?.items || [],
       pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
     };
-  },
-  options: { cacheTTL: 300 }
+  }
 });
 ```
 
@@ -529,7 +527,7 @@ are never stored. See the privacy note in `docs/guides/view-tracking-privacy.md`
 | `GET` | `/api/v1/protected/views/posts?window=7d\|30d` | `POST_VIEW_ALL` | `[{ entityId, unique, total }]` for requested post ids |
 | `GET` | `/api/v1/protected/views/events?window=7d\|30d` | `EVENT_VIEW_ALL` | `[{ entityId, unique, total }]` for requested event ids |
 
-All three read routes use `cacheTTL: 60`. Unique-visitor counts are **approximate** (cookieless
+All three read routes are cached by the global cache middleware. Unique-visitor counts are **approximate** (cookieless
 dedup — see privacy note). The `window` query param is required (`7d` or `30d`).
 
 ---

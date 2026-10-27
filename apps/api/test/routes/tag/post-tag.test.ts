@@ -221,7 +221,7 @@ describe('PostTag API routes (SPEC-086 T-024)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // SPEC-103 T-089: prevent cross-test cache pollution. The public
-        // tag list endpoint caches by `${path}?${query}` (cacheTTL: 600);
+        // tag list endpoint caches by `${path}?${query}`;
         // without this clear, the first test request seeds a cache
         // entry that subsequent tests in the same describe block would
         // hit even with different mock setups.

@@ -108,7 +108,6 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
         };
     },
     options: {
-        cacheTTL: 120,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

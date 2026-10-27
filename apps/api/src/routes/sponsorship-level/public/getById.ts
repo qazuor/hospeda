@@ -33,7 +33,5 @@ export const sponsorshipLevelGetByIdRoute = createPublicRoute({
 
         return result.data;
     },
-    options: {
-        cacheTTL: 300
-    }
+    options: {}
 });

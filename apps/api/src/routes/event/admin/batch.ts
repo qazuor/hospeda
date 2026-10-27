@@ -63,7 +63,6 @@ export const adminEventBatchRoute = createAdminRoute({
         return events;
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 50, windowMs: 60000 }
     }
 });

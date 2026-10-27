@@ -30,7 +30,5 @@ export const protectedGetFeatureFlagsMeRoute = createProtectedRoute({
 
         return result;
     },
-    options: {
-        cacheTTL: 60
-    }
+    options: {}
 });

@@ -36,7 +36,7 @@ describe('Authentication Integration Tests', () => {
             expect(data.data.isAuthenticated).toBe(false);
             expect(data.data.userId).toBeNull();
             expect(data.data.actor.id).toBe('00000000-0000-4000-8000-000000000000');
-            expect(data.data.actor.role).toBe('GUEST');
+            expect(data.data.actor.roles).toEqual(['GUEST']);
             expect(data.data.actor.permissions).toContain('access.apiPublic');
         });
 
@@ -54,7 +54,7 @@ describe('Authentication Integration Tests', () => {
             expect(data.data.isAuthenticated).toBe(false);
             expect(data.data.userId).toBeNull();
             expect(data.data.actor.id).toBe('00000000-0000-4000-8000-000000000000');
-            expect(data.data.actor.role).toBe('GUEST');
+            expect(data.data.actor.roles).toEqual(['GUEST']);
         });
 
         it('should return guest actor when expired token is provided', async () => {
@@ -72,7 +72,7 @@ describe('Authentication Integration Tests', () => {
             expect(data.data.isAuthenticated).toBe(false);
             expect(data.data.userId).toBeNull();
             expect(data.data.actor.id).toBe('00000000-0000-4000-8000-000000000000');
-            expect(data.data.actor.role).toBe('GUEST');
+            expect(data.data.actor.roles).toEqual(['GUEST']);
         });
 
         it('should include metadata in response', async () => {
@@ -133,7 +133,7 @@ describe('Authentication Integration Tests', () => {
             expect(response.status).toBe(200);
             expect(data.data.actor).toBeDefined();
             expect(data.data.actor.id).toBeDefined();
-            expect(data.data.actor.role).toBeDefined();
+            expect(data.data.actor.roles).toBeDefined();
             expect(data.data.actor.permissions).toBeDefined();
             expect(Array.isArray(data.data.actor.permissions)).toBe(true);
         });

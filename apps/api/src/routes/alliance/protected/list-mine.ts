@@ -15,7 +15,7 @@
  *   the applicants the page exists for.
  * - Having no applications is the COMMON case, so it answers `[]` — never a
  *   404, never a 403 (AC-5).
- * - Actor-dependent, therefore NOT cacheable (spec §12). No `cacheTTL`, and
+ * - Actor-dependent, therefore NOT cacheable (spec §12). It must stay uncached, and
  *   nothing here may be moved to the public tier.
  * - `adminNote` is deliberately absent from the response: it is the admin's
  *   INTERNAL note on the disposition, not a message to the applicant.

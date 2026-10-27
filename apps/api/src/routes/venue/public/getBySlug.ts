@@ -100,7 +100,7 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
         // "today" would retire the dish of the day in the middle of dinner
         // service.
         //
-        // The route's `cacheTTL` (300s) therefore bounds how long a just-lapsed
+        // The cache TTL (global cache middleware, plus the edge rule) therefore bounds how long a just-lapsed
         // special can survive at the edge. Five minutes past midnight is an
         // acceptable tail for a feature whose alternative was "until the owner
         // remembers"; if it ever stops being acceptable, the fix is the cache
@@ -165,7 +165,6 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
         };
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

@@ -70,7 +70,6 @@ export const protectedVenueViewStatsDailySeriesRoute = createProtectedRoute({
         };
     },
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }
 });
