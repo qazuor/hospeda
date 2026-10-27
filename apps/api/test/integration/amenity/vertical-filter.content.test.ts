@@ -16,6 +16,8 @@
  *  3. The total with gastronomy filter is strictly fewer than the unfiltered total
  *     (confirms the filter actually reduces the result set).
  */
+import { amenities, getDb, inArray } from '@repo/db';
+import { AmenitiesTypeEnum } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
@@ -47,6 +49,29 @@ interface AmenityItem {
     [key: string]: unknown;
 }
 
+/**
+ * The integration DB is migrated but NOT seeded, so this suite seeds the rows
+ * its assertions name (it used to rely on a pre-seeded dev DB). Slugs and
+ * `applicableVerticals` mirror `packages/seed/src/data/amenity/*.json`.
+ */
+/** The vertical the filter assertions exercise. */
+const VERTICAL = 'gastronomy';
+
+const SEED_ROWS: (typeof amenities.$inferInsert)[] = [
+    { slug: 'delivery', type: AmenitiesTypeEnum.SERVICES, applicableVerticals: [VERTICAL] },
+    {
+        slug: 'wifi',
+        type: AmenitiesTypeEnum.CONNECTIVITY,
+        applicableVerticals: ['accommodation', VERTICAL, 'experience']
+    },
+    {
+        slug: 'heating',
+        type: AmenitiesTypeEnum.CLIMATE_CONTROL,
+        applicableVerticals: ['accommodation']
+    },
+    { slug: 'balcony', type: AmenitiesTypeEnum.OUTDOORS, applicableVerticals: ['accommodation'] }
+];
+
 const BASE = '/api/v1/public/amenities';
 
 describe('GET /api/v1/public/amenities — vertical filter content assertions (SPEC-266 T-012)', () => {
@@ -56,14 +81,23 @@ describe('GET /api/v1/public/amenities — vertical filter content assertions (S
         validateApiEnv();
         await initializeDatabase();
         app = initApp();
+        await getDb().insert(amenities).values(SEED_ROWS);
     });
 
     afterAll(async () => {
+        await getDb()
+            .delete(amenities)
+            .where(
+                inArray(
+                    amenities.slug,
+                    SEED_ROWS.map((row) => row.slug)
+                )
+            );
         await closeDatabase();
     });
 
     it('(1) gastronomy filter — includes delivery and wifi', async () => {
-        const res = await app.request(`${BASE}?applicableVertical=gastronomy&pageSize=100`, {
+        const res = await app.request(`${BASE}?applicableVertical=${VERTICAL}&pageSize=100`, {
             method: 'GET',
             headers: { 'user-agent': 'vitest', accept: 'application/json' }
         });
@@ -82,7 +116,7 @@ describe('GET /api/v1/public/amenities — vertical filter content assertions (S
     });
 
     it('(1) gastronomy filter — excludes accommodation-only amenities', async () => {
-        const res = await app.request(`${BASE}?applicableVertical=gastronomy&pageSize=100`, {
+        const res = await app.request(`${BASE}?applicableVertical=${VERTICAL}&pageSize=100`, {
             method: 'GET',
             headers: { 'user-agent': 'vitest', accept: 'application/json' }
         });
@@ -126,7 +160,7 @@ describe('GET /api/v1/public/amenities — vertical filter content assertions (S
                 method: 'GET',
                 headers: { 'user-agent': 'vitest', accept: 'application/json' }
             }),
-            app.request(`${BASE}?applicableVertical=gastronomy&pageSize=1`, {
+            app.request(`${BASE}?applicableVertical=${VERTICAL}&pageSize=1`, {
                 method: 'GET',
                 headers: { 'user-agent': 'vitest', accept: 'application/json' }
             })
