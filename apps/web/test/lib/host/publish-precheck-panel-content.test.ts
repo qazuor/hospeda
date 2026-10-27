@@ -74,7 +74,7 @@ describe('publish precheck panel content during the billing transition', () => {
                 vertical: 'venue',
                 decision: 'resume_or_create'
             }).titleKey
-        ).toBe('publish.precheck.gastronomy.resumeOrCreate.title');
+        ).toBe('publish.precheck.venue.resumeOrCreate.title');
     });
 
     it('uses the right noun in gastronomy fallback copy', () => {

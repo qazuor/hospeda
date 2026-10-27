@@ -43,7 +43,7 @@ describe('publishListing (TEST:1729:1)', () => {
             'mi-cuenta/propiedades/a-1/editar'
         );
         expect(resolvePublishEditorPath({ vertical: 'venue', id: 'g-1' })).toBe(
-            'mi-cuenta/comercio/gastronomy/g-1/editar'
+            'mi-cuenta/comercio/venue/g-1/editar'
         );
         expect(resolvePublishEditorPath({ vertical: 'experience', id: 'e-1' })).toBe(
             'mi-cuenta/comercio/experience/e-1/editar'

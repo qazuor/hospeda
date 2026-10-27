@@ -95,7 +95,7 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         expect(listing?.options.map((option) => option.id)).toEqual([
             'accommodation',
-            'gastronomy',
+            'venue',
             'experience'
         ]);
     });
@@ -103,7 +103,7 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
     it('gates listing-door options behind ACCOMMODATION_CREATE and GASTRONOMY_EDIT_OWN (OQ-3: signal = permissions)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const venue = listing?.options.find((option) => option.id === 'gastronomy');
+        const venue = listing?.options.find((option) => option.id === 'venue');
         const experience = listing?.options.find((option) => option.id === 'experience');
         expect(accommodation?.acquiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
         expect(venue?.acquiredPermission).toBe(PermissionEnum.GASTRONOMY_EDIT_OWN);
@@ -113,7 +113,7 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
     it('links the acquired listing-door options to their management pages', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const venue = listing?.options.find((option) => option.id === 'gastronomy');
+        const venue = listing?.options.find((option) => option.id === 'venue');
         const experience = listing?.options.find((option) => option.id === 'experience');
         expect(accommodation?.manageHref).toBe('mi-cuenta/host-dashboard');
         expect(venue?.manageHref).toBe('mi-cuenta/comercio');
@@ -123,7 +123,7 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
     it('routes every listing-door option at ITS OWN publish page (HOS-1156 AC-1)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const venue = listing?.options.find((option) => option.id === 'gastronomy');
+        const venue = listing?.options.find((option) => option.id === 'venue');
         const experience = listing?.options.find((option) => option.id === 'experience');
 
         // This case used to assert the opposite — that the two gastronomy/experience options
@@ -147,7 +147,7 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         // owner goes once they HAVE a listing, which this spec did not change.
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const venue = listing?.options.find((option) => option.id === 'gastronomy');
+        const venue = listing?.options.find((option) => option.id === 'venue');
         const experience = listing?.options.find((option) => option.id === 'experience');
 
         expect(accommodation?.manageHref).toBe('mi-cuenta/host-dashboard');
