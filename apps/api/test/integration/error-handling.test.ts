@@ -3,8 +3,8 @@
  * Tests that errors are properly handled and propagated through the complete middleware stack
  * without losing information or causing interference between middlewares.
  *
- * `/health/ready` is the happy-path probe (see middleware-stack.test.ts for why
- * `/health/live` is not). Body-parsing cases go through a real protected route
+ * `/health/ready` is the happy-path probe (`/health/live` is covered in
+ * middleware-stack.test.ts). Body-parsing cases go through a real protected route
  * with a real user row behind the mock actor.
  */
 

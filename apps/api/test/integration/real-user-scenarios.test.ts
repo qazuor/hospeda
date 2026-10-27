@@ -7,8 +7,6 @@
  * public accommodation is seeded per test, the catalogs nobody seeded (amenities,
  * events, posts, destinations) are asserted EMPTY rather than "whatever came
  * back", and the admin journeys use a real admin user row behind the mock actor.
- * `/health/ready` is the liveness probe here because `/health/live` answers 500
- * today (pinned in middleware-stack.test.ts).
  */
 
 import { RoleEnum } from '@repo/schemas';

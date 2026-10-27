@@ -4,8 +4,7 @@
  * and that the request flow is processed correctly through all layers.
  *
  * `/health/ready` is the happy-path probe: it is public, cached and answers the
- * standard envelope. `/health/live` is NOT used for that, because it answers
- * 500 today (see the known-failure test at the bottom).
+ * standard envelope.
  */
 
 import { gunzipSync } from 'node:zlib';
@@ -244,19 +243,15 @@ describe('Middleware Stack Integration', () => {
                 headers: { 'user-agent': 'integration-test/1.0', accept: 'application/json' }
             });
 
-        // HOS-1911: liveRoutes declares the whole envelope (HealthLivenessSchema) as responseSchema but returns the bare payload, so stripWithSchema always throws.
-        it.fails('answers 200 with the alive payload', async () => {
+        // Regression for HOS-1911: liveRoutes used to declare the whole envelope as responseSchema.
+        it('answers 200 with the alive payload in the standard envelope', async () => {
             const res = await live();
             expect(res.status).toBe(200);
             const data = await res.json();
+            expect(data.success).toBe(true);
             expect(data.data.alive).toBe(true);
-        });
-
-        it('currently answers 500 INTERNAL_ERROR (HOS-1911)', async () => {
-            const res = await live();
-            expect(res.status).toBe(500);
-            const data = await res.json();
-            expect(data.error.code).toBe('INTERNAL_ERROR');
+            expect(typeof data.data.timestamp).toBe('string');
+            expect(data.metadata).toBeDefined();
         });
     });
 });

@@ -4,8 +4,7 @@
  * harmoniously together without interfering with each other's functionality.
  *
  * `/health/ready` is the happy-path probe (public, cached, standard envelope);
- * `GET /api/v1/admin/accommodations` is the uncached 401 probe. `/health/live`
- * is not used here because it answers 500 today (see middleware-stack.test.ts).
+ * `GET /api/v1/admin/accommodations` is the uncached 401 probe.
  */
 
 import { gunzipSync } from 'node:zlib';
