@@ -365,10 +365,10 @@ export const VenueMediaRestoreInputSchema = z.object({
 export type VenueMediaRestoreInput = z.infer<typeof VenueMediaRestoreInputSchema>;
 
 // ----------------------------------------------------------------------------
-// Update Text Metadata (HOS-1036 — PATCH /gastronomies/:id/media/:mediaId)
+// Update Text Metadata (HOS-1036 — PATCH /venues/:id/media/:mediaId)
 // ----------------------------------------------------------------------------
 
-/** HTTP payload for `PATCH /gastronomies/:id/media/:mediaId`. Alias of the shared listing payload. */
+/** HTTP payload for `PATCH /venues/:id/media/:mediaId`. Alias of the shared listing payload. */
 export const VenueMediaUpdatePayloadSchema = ListingMediaUpdatePayloadSchema;
 /** Inferred type for the update-media HTTP payload. */
 export type VenueMediaUpdatePayload = z.infer<typeof VenueMediaUpdatePayloadSchema>;

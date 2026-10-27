@@ -156,7 +156,7 @@ export type BaseListingMedia = z.infer<typeof BaseListingMediaSchema>;
 // ============================================================================
 
 /**
- * Shared HTTP payload for `PATCH /<gastronomies|experiences>/:id/media/:mediaId`.
+ * Shared HTTP payload for `PATCH /<venues|experiences>/:id/media/:mediaId`.
  *
  * The gastronomy/experience twin of `AccommodationMediaUpdatePayloadSchema` (HOS-388) and of
  * `ContentMediaUpdatePayloadSchema` (`common/content-media.schema.ts`). The
