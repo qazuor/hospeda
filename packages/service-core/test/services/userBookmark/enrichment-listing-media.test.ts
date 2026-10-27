@@ -60,7 +60,7 @@ describe('enrichBookmarksWithEntityInfo — listing thumbnails (HOS-372)', () =>
         vi.clearAllMocks();
     });
 
-    it('should resolve a gastronomy thumbnail from gastronomy_media, not the blob', async () => {
+    it('should resolve a gastronomy thumbnail from venue_media, not the blob', async () => {
         stubSelectChain([
             {
                 id: GASTRONOMY_ID,

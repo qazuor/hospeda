@@ -459,7 +459,7 @@ describe('GastronomyService — apto/catalog filters (HOS-1054)', () => {
 
         const additionalConditions = mockFindAllWithRelations.mock.calls[0][3];
         expect(additionalConditions).toHaveLength(1);
-        expect(sqlOf(additionalConditions[0])).toContain('"r_gastronomy_feature"');
+        expect(sqlOf(additionalConditions[0])).toContain('"r_venue_feature"');
     });
 
     it('never leaks the filter into the scalar where clause', async () => {
@@ -488,7 +488,7 @@ describe('GastronomyService — apto/catalog filters (HOS-1054)', () => {
         const options = mockCount.mock.calls[0][1] as { additionalConditions?: unknown[] };
         expect(options.additionalConditions).toHaveLength(1);
         expect(sqlOf((options.additionalConditions as unknown[])[0])).toContain(
-            '"r_gastronomy_feature"'
+            '"r_venue_feature"'
         );
     });
 
@@ -502,7 +502,7 @@ describe('GastronomyService — apto/catalog filters (HOS-1054)', () => {
 
         const additionalConditions = mockFindAllWithRelations.mock.calls[0][3];
         expect(additionalConditions).toHaveLength(1);
-        expect(sqlOf(additionalConditions[0])).toContain('"r_gastronomy_amenity"');
+        expect(sqlOf(additionalConditions[0])).toContain('"r_venue_amenity"');
     });
 
     it('passes undefined — not an empty array — when no catalog filter is active', async () => {

@@ -18,7 +18,7 @@
  * Mocked unit tests cannot detect:
  * - Drizzle relations misconfigured in gastronomy schemas.
  * - Rating recompute queries that only touch approved reviews.
- *  * - The UNIQUE constraint on `gastronomy_reviews(userId, gastronomyId)`.
+ *  * - The UNIQUE constraint on `venue_reviews(userId, gastronomyId)`.
  *
  * ## Harness
  *
