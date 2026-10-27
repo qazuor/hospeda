@@ -114,7 +114,7 @@ describe('carta.astro — SEO (canonical to listing, noindex, out of sitemap by 
 
     it('builds the canonical path from the LISTING url, not its own route', () => {
         expect(cartaSrc).toContain('canonicalPath={listingUrl}');
-        expect(cartaSrc).toMatch(/const listingPath = `gastronomia\/\$\{gastronomy\.slug\}`/);
+        expect(cartaSrc).toMatch(/const listingPath = `gastronomia\/\$\{venue\.slug\}`/);
         expect(cartaSrc).toContain('buildUrl({ locale, path: listingPath })');
     });
 

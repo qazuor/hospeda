@@ -43,7 +43,7 @@ describe('GastronomyContactBlock — no whatsapp read path (HOS-1076)', () => {
 
     it('GastronomySocialNetworks (data/types.ts) does not declare a whatsapp field', () => {
         const source = readFileSync(DATA_TYPES_PATH, 'utf-8');
-        const match = source.match(/export interface GastronomySocialNetworks \{[^}]*\}/s);
+        const match = source.match(/export interface VenueSocialNetworks \{[^}]*\}/s);
         expect(match).not.toBeNull();
         expect(match?.[0]).not.toMatch(/whatsapp/i);
     });
