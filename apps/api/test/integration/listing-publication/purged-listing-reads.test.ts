@@ -197,7 +197,7 @@ describe.each(verticals)('TEST:1748:6 protected reads — %s', (vertical) => {
 
         // Act
         const res = await get(
-            `/api/v1/protected/${tables[vertical]}/${fx.purgedId}`,
+            `/api/v1/protected/${routeTables[vertical]}/${fx.purgedId}`,
             ownerHeaders(fx.ownerId)
         );
 
@@ -211,7 +211,7 @@ describe.each(verticals)('TEST:1748:6 protected reads — %s', (vertical) => {
 
         // Act
         const res = await get(
-            `/api/v1/protected/${tables[vertical]}/${fx.draftId}`,
+            `/api/v1/protected/${routeTables[vertical]}/${fx.draftId}`,
             ownerHeaders(fx.ownerId)
         );
 
@@ -233,7 +233,7 @@ describe.each(
 
         // Act
         const res = await get(
-            `/api/v1/protected/${tables[vertical]}/${fx.purgedId}`,
+            `/api/v1/protected/${routeTables[vertical]}/${fx.purgedId}`,
             staffHeaders(vertical)
         );
 
