@@ -78,7 +78,7 @@ describe('VenueForm — rendering', () => {
 
     it('should render the menu URL field', () => {
         renderForm();
-        expect(screen.getByPlaceholderText(/https:\/\/tu-restaurante/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/https:\/\/tu-restaurante\.com/i)).toBeInTheDocument();
     });
 
     it('should render the destination ID field', () => {
