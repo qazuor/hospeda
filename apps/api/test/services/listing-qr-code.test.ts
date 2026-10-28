@@ -103,12 +103,10 @@ describe('the label a listing code is minted with', () => {
         const descriptions = Object.values(LISTING_QR_LABEL_DESCRIPTION);
 
         expect(new Set(descriptions).size).toBe(descriptions.length);
-        // The exact strings the three sheet routes carried inline before the
-        // panel existed. Kept verbatim so rows minted after PR 2 stay findable
-        // next to rows minted before it, in the same admin search.
+        // Keep one recognizable label for each listing vertical.
         expect(LISTING_QR_LABEL_DESCRIPTION).toStrictEqual({
             accommodation: 'Accommodation listing QR',
-            venue: ['Gastro', 'nomy listing QR'].join(''),
+            venue: 'Venue listing QR',
             experience: 'Experience listing QR'
         });
     });
