@@ -416,7 +416,7 @@ export const GET: APIRoute = async () => {
         ...buildEntriesForEntity({
             items: resolvedVenue,
             siteUrl,
-            pathFn: ENTITY_PUBLIC_PATHS.gastronomy,
+            pathFn: ENTITY_PUBLIC_PATHS.venue,
             changefreq: 'weekly',
             priority: 0.8
         })
