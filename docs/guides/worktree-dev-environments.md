@@ -175,9 +175,9 @@ way you are still covered for **correctness** even if a refresh is skipped or fa
 data** — without it they stay empty.
 
 **What a fresh worktree contains.** After a refresh + `wt:up`, the worktree DB clones the
-current template (sentinel OK, no heal) with the gastronomy and experience example data seeded: at last
-check 6 gastronomy listings, 5 experience listings, 3 gastronomy and experience owners, plus the dev test
-users. Verify with `psql -d worktree_<slug> -c 'SELECT count(*) FROM gastronomies'` and
+current template (sentinel OK, no heal) with the venue and experience example data seeded: at last
+check 6 venue listings, 5 experience listings, 3 venue and experience owners, plus the dev test
+users. Verify with `psql -d worktree_<slug> -c 'SELECT count(*) FROM gastronomies'` and — legacy-name-allowed: legacy table name in a documented psql command (HOS-1823)
 `… FROM experiences` — both must be `> 0`.
 
 ## Test users

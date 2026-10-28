@@ -298,7 +298,7 @@ Existe y es una entrada aparte del buscador normal.
 
 #### P8 · Gastronomía: listado y ficha · *scroll* · V2 V26 V29
 
-1. Abrí `/es/gastronomia/`
+1. Abrí `/es/gastronomia/` — legacy-name-allowed: historical route in a recorded script (HOS-1823)
 2. **▶**
 3. Scrolleá el listado mostrando 4 o 5 locales
 4. Entrá al local que tengas con la ficha completa

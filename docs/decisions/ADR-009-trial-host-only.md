@@ -13,7 +13,7 @@
 >   Only the `complex-*` tier is still at 14 (`COMPLEX_TRIAL_DAYS`). See
 >   `packages/billing/src/constants/billing.constants.ts`.
 > - **Not HOST-only.** `tourist-vip` carries a 30-day trial (HOS-301 D1) and all
->   six gastronomy-*/ experience-* plans carry one too (HOS-590). See
+>   six gastronomy-*/ experience-* plans carry one too (HOS-590). See — legacy-name-allowed: legacy plan slug in historical ADR (HOS-1823)
 >   `packages/billing/src/config/plans.config.ts`. Partner plans have none.
 > - **Not card-first.** HOS-1012 retired the card-first design entirely: the trial
 >   is Hospeda's own, granted locally at first publish, and MercadoPago is never

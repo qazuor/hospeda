@@ -37,8 +37,8 @@ Run the manual pass on at least these pages:
 | Event detail | first valid `/es/eventos/<slug>/` |
 | Posts list | `/es/publicaciones/` |
 | Post detail | first valid `/es/publicaciones/<slug>/` |
-| Gastronomy list | `/es/gastronomia/` |
-| Gastronomy detail | first valid `/es/gastronomia/<slug>/` |
+| Venue list | `/es/gastronomia/` — legacy-name-allowed: historical route in manual test instructions (HOS-1823) |
+| Venue detail | first valid `/es/gastronomia/<slug>/` — legacy-name-allowed: historical route in manual test instructions (HOS-1823) |
 | Experiences list | `/es/experiencias/` |
 | Experience detail | first valid `/es/experiencias/<slug>/` |
 | Pricing | `/es/suscriptores/planes/` |

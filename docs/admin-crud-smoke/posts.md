@@ -38,7 +38,7 @@
 
 ### D-POSTS.4 🟡 MED — Category combo options shown in English (D-DROPDOWN.1 surface)
 
-- **Symptom:** 18 options of the Categoría combo (Events, Culture, Gastronomy, Nature, Tourism, General, Sport, Carnival, Nightlife, History, Traditions, Wellness, Family, Tips, Art, Beach, Rural, Festivals) all in English.
+- **Symptom:** 18 options of the Categoría combo (Events, Culture, Food, Nature, Tourism, General, Sport, Carnival, Nightlife, History, Traditions, Wellness, Family, Tips, Art, Beach, Rural, Festivals) all in English.
 - **Surface:** `/posts/new` Categoría field.
 - **Suspected root cause:** enum option labels hardcoded; same family as D-DROPDOWN.1 (destinations Visibilidad), D-USERS.3 (users Visibilidad/Estado de Cuenta).
 - **Fix direction:** consolidated i18n sweep across all entity form combos. File together with D-DROPDOWN.1.
