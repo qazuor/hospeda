@@ -471,7 +471,7 @@ describe('UserFavoritesList', () => {
 
         const tablist = await screen.findByRole('tablist');
         const tabs = within(tablist).getAllByRole('tab');
-        // ALL + ACCOMMODATION, DESTINATION, EVENT, POST, GASTRONOMY, EXPERIENCE (F3).
+        // ALL + ACCOMMODATION, DESTINATION, EVENT, POST, VENUE, EXPERIENCE (F3).
         expect(tabs).toHaveLength(7);
     });
 

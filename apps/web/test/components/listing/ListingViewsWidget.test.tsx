@@ -38,7 +38,7 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
 }));
 
 const GASTRO_LISTING: ListingViewsWidgetListing = {
-    id: 'gastro-1',
+    id: 'venue-1',
     vertical: 'venue',
     name: 'La Parrilla del Puerto'
 };
@@ -70,7 +70,7 @@ describe('ListingViewsWidget (HOS-734)', () => {
             if (vertical === 'venue') {
                 return Promise.resolve({
                     ok: true,
-                    data: [{ entityId: 'gastro-1', unique: 12, total: 30 }]
+                    data: [{ entityId: 'venue-1', unique: 12, total: 30 }]
                 });
             }
             return Promise.resolve({
@@ -105,7 +105,7 @@ describe('ListingViewsWidget (HOS-734)', () => {
     it('re-fetches with window=7d when the 7 días toggle is clicked', async () => {
         mockGetViews.mockResolvedValue({
             ok: true,
-            data: [{ entityId: 'gastro-1', unique: 1, total: 2 }]
+            data: [{ entityId: 'venue-1', unique: 1, total: 2 }]
         });
 
         render(

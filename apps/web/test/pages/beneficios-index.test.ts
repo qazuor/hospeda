@@ -59,7 +59,7 @@ describe('beneficios/index.astro — the five audience sections', () => {
         'tourist',
         'owner',
         'experience',
-        'gastronomy',
+        'venue',
         'partner'
     ])('renders the %s section', (variant) => {
         expect(src).toContain(`class="benefits-section benefits-section--${variant}`);

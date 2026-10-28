@@ -23,7 +23,7 @@ const FEATURE_ID = '9c8b7a65-2222-4f1e-9b03-1a2b3c4d5e6f';
 
 /** Minimal public venue payload; only the catalog arrays vary per test. */
 const venuePayload = (overrides: Record<string, unknown> = {}) => ({
-    id: 'gastro-1',
+    id: 'venue-1',
     slug: 'parrilla-el-fogon',
     name: 'Parrilla El Fogón',
     type: 'PARRILLA',

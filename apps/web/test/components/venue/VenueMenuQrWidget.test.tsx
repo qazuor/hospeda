@@ -58,7 +58,7 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     }
 }));
 
-const LISTING: VenueMenuQrWidgetListing = { id: 'gastro-1', name: 'La Parrilla del Puerto' };
+const LISTING: VenueMenuQrWidgetListing = { id: 'venue-1', name: 'La Parrilla del Puerto' };
 
 const READY_QR = {
     ok: true as const,
