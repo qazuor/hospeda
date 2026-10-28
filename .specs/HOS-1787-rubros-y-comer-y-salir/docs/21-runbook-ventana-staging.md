@@ -93,7 +93,8 @@ for app in api web; do
   c=$(docker ps -q --filter label=coolify.resourceName=hospeda-$app-staging)
   test -n "$c" || { echo "sin contenedor de $app"; exit 1; }
   docker inspect "$c" --format '{{range .Config.Env}}{{println .}}{{end}}' \
-    | grep -E '^(HOSPEDA_DEPLOY_ENV|HOSPEDA_CRON_ADAPTER|HOSPEDA_REDIS_URL)='
+    | grep -E '^(HOSPEDA_DEPLOY_ENV|HOSPEDA_CRON_ADAPTER|HOSPEDA_REDIS_URL)=' \
+    | sed -E 's#(://[^:]*:)[^@]*@#\1***@#'   # no imprimir la contraseña de Redis
 done
 ```
 
@@ -242,7 +243,8 @@ plantilla nueva con `hops servers-up` (auto-heal de la base). Avisar en cada ses
    ```
 
    (`-n` es el `SELECT` de la base.) Redis se resuelve por la etiqueta con el UUID de `HOPS_STAGING_REDIS_UUID`;
-   mirar en la salida que el contenedor sea el de staging (regla 10). La autenticación de `redis-cli` y si
+   antes del `INCR`, correr `hops --target=staging find redis --verbose` y confirmar que la etiqueta sea la de
+   staging (regla 10): `exec` con un comando inline no imprime el contenedor resuelto, sólo `--shell` lo hace. La autenticación de `redis-cli` y si
    staging comparte instancia con prod son **[ABIERTO 5]**.
 
 ### V6 · desplegar web y admin; purgar cache y actualizar Cloudflare y PostHog (Mecánica 7)
@@ -303,8 +305,8 @@ plantilla nueva con `hops servers-up` (auto-heal de la base). Avisar en cada ses
    renombrado (recrea un CHECK con la definición de la 0009), así que revertirla no cambia nada en una base
    reseteada.
    - **Título del PR**: un `[HOS-1801]` en el título dispara la automatización de Linear (mueve el issue al
-     abrir y al mergear, sin magic word). Usar `[NOSPEC:revert-venue-rename] revert(…)`, o, si se pone el tag,
-     revisar el estado de HOS-1801 al abrir y al mergear y corregirlo a mano.
+     abrir y al mergear, sin magic word). Va `[HOS-1801] revert(…)`, como pide la convención del repo, y se
+     revisa el estado de HOS-1801 al abrir y al mergear, corrigiéndolo a mano.
    - **Volver a intentar después**: con el revert mergeado, git considera que los commits de la umbrella ya
      están en `staging`; volver a mergear la umbrella no trae nada. El reintento es **revertir el revert** (otro
      PR), más los arreglos.
