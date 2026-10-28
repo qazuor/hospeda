@@ -127,7 +127,7 @@ export class VenueReviewService extends BaseCrudService<
     typeof VenueReviewUpdateInputSchema,
     typeof VenueSearchSchema
 > {
-    static readonly ENTITY_NAME = 'gastronomyReview';
+    static readonly ENTITY_NAME = 'venueReview';
 
     protected readonly entityName = VenueReviewService.ENTITY_NAME;
     protected readonly model: VenueReviewModel;
