@@ -4,7 +4,7 @@
  * Unit tests for the post media read-composition helpers (HOS-390).
  *
  * The interesting behavior here is the DELIBERATE divergence from the
- * accommodation/gastronomy molde: because `posts.media` JSONB is NOT dropped
+ * accommodation/venue molde: because `posts.media` JSONB is NOT dropped
  * (videos still live there), falling back to the entity's own `media` on an
  * empty composition would resurrect photos the author just deleted. These tests
  * pin that down — the relational rows are authoritative for photos, and the only

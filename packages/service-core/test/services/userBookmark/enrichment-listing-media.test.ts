@@ -1,9 +1,9 @@
 /**
  * Regression coverage for listing bookmark thumbnails (HOS-372).
  *
- * `enrichBookmarksWithEntityInfo` used to read a gastronomy's or experience's
+ * `enrichBookmarksWithEntityInfo` used to read a venue's or experience's
  * featured image from the listing row's `media` JSONB blob. Photos now live in
- * the relational `gastronomy_media` / `experience_media` tables, and the seeders
+ * the relational `venue_media` / `experience_media` tables, and the seeders
  * stopped filling that blob — so on a freshly seeded database every listing
  * favourite silently lost its thumbnail while every test stayed green, because
  * nothing asserted on this path at all.

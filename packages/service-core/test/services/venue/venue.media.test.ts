@@ -1,7 +1,7 @@
 /**
- * gastronomy.media.test.ts
+ * venue.media.test.ts
  *
- * Unit tests for gastronomy media helper functions (HOS-372).
+ * Unit tests for venue media helper functions (HOS-372).
  *
  * Coverage:
  *  - addVenueMedia: NOT_FOUND listing, permission gate, sortOrder auto-assign.
@@ -451,7 +451,7 @@ describe('reorderVenueMedia', () => {
     // Regression guard: the duplicate check is an EXTRA guard not present in
     // the accommodation template (a pure set-difference check alone misses a
     // duplicate whose deduplicated set still equals existingIds — see the
-    // JSDoc in gastronomy.media.ts). Verified this test FAILS (does not reject)
+    // JSDoc in venue.media.ts). Verified this test FAILS (does not reject)
     // when the explicit
     //   `if (validated.orderedIds.length !== inputIds.size) { throw ... }`
     // guard is removed from `reorderVenueMedia`, because for the 3-row
@@ -796,7 +796,7 @@ describe('removeVenueMedia — Cloudinary asset deletion', () => {
 });
 
 // ---------------------------------------------------------------------------
-// HOS-389 §2 + §4 — the gastronomy and experience half
+// HOS-389 §2 + §4 — the venue and experience half
 // ---------------------------------------------------------------------------
 
 describe('addVenueMedia — gallery cap (HOS-389 §2)', () => {

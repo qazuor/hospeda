@@ -5,7 +5,7 @@ import { composeListingMedia } from '../../../src/services/listing/listing-media
 
 /**
  * Builds a fully-typed listing-media row (structurally compatible with both
- * `GastronomyMedia` and `ExperienceMedia`) with sensible defaults so each test
+ * `venueMedia` and `ExperienceMedia`) with sensible defaults so each test
  * only spells out the fields it cares about. Mirrors the relational shape
  * (HOS-372): a `visible`, non-featured row at `sortOrder` 0 unless overridden.
  */
@@ -171,7 +171,7 @@ describe('composeListingMedia (HOS-372)', () => {
  * photo had no effect on whether the photo was published.
  *
  * The gate lives HERE, unconditionally, rather than at each read path, because
- * this is the single composition implementation behind post, event, gastronomy
+ * this is the single composition implementation behind post, event, venue
  * and experience payloads. A per-call-site flag would be fail-open: the next
  * read path added would forget it and the photo would ship. Editors are
  * unaffected — media management reads raw rows through the dedicated

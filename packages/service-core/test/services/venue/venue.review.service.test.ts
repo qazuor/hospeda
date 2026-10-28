@@ -1,5 +1,5 @@
 /**
- * gastronomy.review.service.test.ts
+ * venue.review.service.test.ts
  *
  * Unit tests for VenueReviewService (SPEC-239 T-039).
  *
@@ -384,7 +384,7 @@ describe('VenueReviewService._beforeCreate', () => {
 // Permission hooks
 // ---------------------------------------------------------------------------
 
-describe('GastronomyReviewService permission hooks', () => {
+describe('venueReviewService permission hooks', () => {
     it('_canCreate should throw FORBIDDEN for unauthenticated actor', () => {
         const service = makeService();
         expect(() => (service as AnyService)._canCreate(unauthActor, {})).toThrow();
@@ -439,8 +439,8 @@ describe('GastronomyReviewService permission hooks', () => {
 // ENTITY_NAME
 // ---------------------------------------------------------------------------
 
-describe('GastronomyReviewService.ENTITY_NAME', () => {
-    it('should be "gastronomyReview"', () => {
+describe('venueReviewService.ENTITY_NAME', () => {
+    it('should be "venueReview"', () => {
         expect(VenueReviewService.ENTITY_NAME).toBe('venueReview');
     });
 });
@@ -451,7 +451,7 @@ describe('GastronomyReviewService.ENTITY_NAME', () => {
 // users table; findAllWithRelations with { user: true } does).
 // ---------------------------------------------------------------------------
 
-describe('GastronomyReviewService.listByGastronomy — B7b regression (user relation loaded)', () => {
+describe('venueReviewService.listByvenue — B7b regression (user relation loaded)', () => {
     it('requests user: true in the relations argument of findAllWithRelations', async () => {
         const review = makeReview({
             lifecycleState: LifecycleStatusEnum.ACTIVE,

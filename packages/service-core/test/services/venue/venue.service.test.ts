@@ -1,5 +1,5 @@
 /**
- * gastronomy.service.test.ts
+ * venue.service.test.ts
  *
  * Unit tests for VenueService (SPEC-239 T-035 / T-036).
  *
@@ -432,7 +432,7 @@ describe('VenueService search filter forwarding', () => {
 //
 // What they cannot assert: that the SQL returns the right rows. The model is
 // mocked here — no database is involved. Row-level behaviour is the clause's own
-// suite (`packages/db/test/utils/gastronomy-catalog-filters.test.ts`, which
+// suite (`packages/db/test/utils/venue-catalog-filters.test.ts`, which
 // compiles the SQL) plus the staging smoke.
 // ---------------------------------------------------------------------------
 
@@ -465,7 +465,7 @@ describe('VenueService — apto/catalog filters (HOS-1054)', () => {
     it('never leaks the filter into the scalar where clause', async () => {
         // `features` is an array against a junction table; if it slipped into the
         // `where` object the base builder would try to compare a `features` COLUMN
-        // that does not exist on `gastronomies`.
+        // that does not exist on `legacy listing tables`.
         const service = makeService(makeVenueEntity());
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
@@ -591,7 +591,7 @@ describe('VenueService._canView', () => {
 // ---------------------------------------------------------------------------
 
 describe('VenueService.ENTITY_NAME', () => {
-    it('should be "gastronomy"', () => {
+    it('should be "venue"', () => {
         expect(VenueService.ENTITY_NAME).toBe('venue');
     });
 });
@@ -692,7 +692,7 @@ describe('VenueService.listOwn', () => {
 
 // ---------------------------------------------------------------------------
 // Bug B7a regression — _executeSearch loads destination+owner relations
-// Fixes: destinationName always empty on gastronomy card (findAll never joined
+// Fixes: destinationName always empty on venue card (findAll never joined
 // the destination table; findAllWithRelations does).
 // ---------------------------------------------------------------------------
 

@@ -511,7 +511,7 @@ describe('ExperienceService search filter forwarding', () => {
 // Public search/count visibility filter (AC-6.2 / AC-4.3 regression)
 // A hidden (PRIVATE / non-ACTIVE) listing must never surface on the public list.
 // Before this fix the experience public list leaked DRAFT/PRIVATE/no-subscription
-// listings because _executeSearch only filtered deletedAt=null (gastronomy parity).
+// listings because _executeSearch only filtered deletedAt=null (venue parity).
 // ---------------------------------------------------------------------------
 
 describe('ExperienceService public search visibility filter (AC-6.2)', () => {
@@ -614,7 +614,7 @@ describe('ExperienceService._canView', () => {
             deletedAt: new Date()
         });
         const service = makeService(entity);
-        // Owner without EXPERIENCE_VIEW_ALL → GONE (matches gastronomy parity)
+        // Owner without EXPERIENCE_VIEW_ALL → GONE (matches venue parity)
         expect(() => (service as AnyService)._canView(ownerActor, entity)).toThrow(
             expect.objectContaining({ code: ServiceErrorCode.GONE })
         );

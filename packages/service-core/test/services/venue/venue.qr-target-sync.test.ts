@@ -5,11 +5,11 @@
  * Mirrors `host-trade.qr-target-sync.test.ts` structurally — same double
  * shape, same case list — because `VenueService._afterUpdate` copies
  * `HostTradeService._afterUpdate`'s four decisions verbatim (see the spec's
- * §6.3). The one addition here is the locale round-trip: a gastronomy menu
+ * §6.3). The one addition here is the locale round-trip: a venue menu
  * target carries `/{lang}/...`, which `HostTradeService`'s fixed-path target
  * never had to preserve.
  *
- * @module test/services/gastronomy/gastronomy.qr-target-sync
+ * @module test/services/venue/venue.qr-target-sync
  */
 
 import {
@@ -123,7 +123,7 @@ function makeQrDouble(initial: { slug: string; targetUrl: string } | null) {
 }
 
 /**
- * Loosened on purpose, matching `gastronomy.service.test.ts`'s own escape
+ * Loosened on purpose, matching `venue.service.test.ts`'s own escape
  * hatch: the test injects doubles onto PRIVATE fields (`model`,
  * `_destinationModel`) that the public `VenueService` type does not
  * expose.
@@ -166,7 +166,7 @@ function buildService(input: {
     service.model = model;
     // Never publicly visible in this suite's fixtures if destinationId lookup
     // is exercised — stubbed so `_scheduleListingRevalidation` never touches a
-    // real DB (same stub `gastronomy.service.test.ts` uses).
+    // real DB (same stub `venue.service.test.ts` uses).
     service._destinationModel = {
         findById: vi.fn().mockResolvedValue({ slug: 'destino-test' })
     };

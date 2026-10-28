@@ -1,7 +1,7 @@
 /**
- * gastronomy.faq.test.ts
+ * venue.faq.test.ts
  *
- * Unit tests for gastronomy FAQ helper functions (SPEC-239 T-037).
+ * Unit tests for venue FAQ helper functions (SPEC-239 T-037).
  *
  * Coverage:
  *  - addVenueFaq: schema validation, NOT_FOUND listing, permission gate,
@@ -355,7 +355,7 @@ describe('updateVenueFaq', () => {
 // removeVenueFaq
 // ---------------------------------------------------------------------------
 
-describe('removeGastronomyFaq', () => {
+describe('removevenueFaq', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
         // Arrange
         const model = makeVenueModel(null);
@@ -432,7 +432,7 @@ describe('removeGastronomyFaq', () => {
 // listVenueFaqs
 // ---------------------------------------------------------------------------
 
-describe('listGastronomyFaqs', () => {
+describe('listvenueFaqs', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
         // Arrange
         const model = {
@@ -496,7 +496,7 @@ describe('listGastronomyFaqs', () => {
 // reorderVenueFaqs
 // ---------------------------------------------------------------------------
 
-describe('reorderGastronomyFaqs', () => {
+describe('reordervenueFaqs', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
         // Arrange
         const model = makeVenueModel(null);

@@ -6,7 +6,7 @@
  * WHAT THIS FILE IS DEFENDING, AND WHY IT NEEDS BOTH HALVES
  *
  * A listing quota was measured on staging counting THREE listings as zero: an
- * account holding one gastronomy listing on a plan of one created two more, each
+ * account holding one venue listing on a plan of one created two more, each
  * answering 201, with no `X-Usage-Warning` header and no `listing limit
  * reached` line anywhere in the log. Nothing was mis-wired — the gate ran, read
  * a count of `0`, compared `0 < 1`, and correctly allowed the request.

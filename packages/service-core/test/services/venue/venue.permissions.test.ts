@@ -1,7 +1,7 @@
 /**
- * gastronomy.permissions.test.ts
+ * venue.permissions.test.ts
  *
- * Unit tests for gastronomy permission helpers (SPEC-239 T-038).
+ * Unit tests for venue permission helpers (SPEC-239 T-038).
  *
  * All tests use mocked `hasPermission` so they are completely decoupled
  * from the `Actor` shape and the permission registry. No DB is touched.
@@ -64,7 +64,7 @@ describe('checkVenueCanCreate', () => {
         ).not.toThrow();
     });
 
-    // HOS-687 / HOS-589 AC-27 (service predicate, gastronomy vertical).
+    // HOS-687 / HOS-589 AC-27 (service predicate, venue vertical).
     it('allows a signed-in account holding NO listing permission (AC-27)', () => {
         const plainUser: Actor = { id: 'actor-plain', roles: [RoleEnum.USER], permissions: [] };
         expect(() => checkVenueCanCreate(plainUser, {})).not.toThrow();

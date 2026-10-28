@@ -126,7 +126,7 @@ describe('QrCodeService — entity provisioning', () => {
         /**
          * The reason `purpose` is part of the key rather than a label.
          *
-         * A gastronomy listing carries a door code (its listing) and a table
+         * A venue listing carries a door code (its listing) and a table
          * code (its menu) at the same time, and an experience carries its
          * listing code and its certificate code — which resolve to the SAME URL
          * today, so neither the target nor the entity tells them apart. If the

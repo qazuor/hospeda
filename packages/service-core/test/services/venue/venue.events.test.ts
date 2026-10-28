@@ -12,14 +12,14 @@
  * SELECT a::text, b::text FROM t_probe;   ->  18:00:00 | 02:30:00
  * ```
  *
- * `GastronomyEventTimeSchema` rejects seconds on purpose — two spellings of one
+ * `venueEventTimeSchema` rejects seconds on purpose — two spellings of one
  * instant is a field whose equality checks are wrong somewhere downstream — so
  * without the projection every read would fail its OWN response schema, and the
  * owner's editor would be handed a value it could not re-submit. The bug is
  * invisible in any test that never touches Postgres, which is precisely why the
  * measurement above is quoted rather than trusted to memory.
  *
- * @module test/services/gastronomy/gastronomy.events
+ * @module test/services/venue/venue.events
  */
 import { VenueEventPublicSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';

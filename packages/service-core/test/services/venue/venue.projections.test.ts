@@ -1,7 +1,7 @@
 /**
- * gastronomy.projections.test.ts
+ * venue.projections.test.ts
  *
- * Unit tests for gastronomy public-tier projection helpers (SPEC-239 T-038).
+ * Unit tests for venue public-tier projection helpers (SPEC-239 T-038).
  *
  * Tests verify:
  * - `projectVenuePublic` strips `adminInfo` and `ownerId` without mutating the original.

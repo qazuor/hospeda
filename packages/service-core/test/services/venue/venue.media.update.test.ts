@@ -1,8 +1,8 @@
 /**
- * gastronomy.media.update.test.ts
+ * venue.media.update.test.ts
  *
  * Unit tests for `updateVenueMedia` (HOS-1036) — the text-metadata PATCH that
- * closes the gap left by HOS-390: `gastronomy_media` rows had `alt`, `caption`,
+ * closes the gap left by HOS-390: `venue_media` rows had `alt`, `caption`,
  * `description` and `attribution` columns and no endpoint that could write them.
  *
  * What these tests are built to catch, stated as mutations that must turn them
@@ -16,8 +16,8 @@
  *  - the handler spreading the payload wholesale instead of using
  *    `buildMediaTextPatch`, which would write `undefined` over every omitted
  *    column and turn "fix the alt" into "erase the caption";
- *  - the cross-gastronomy ownership check disappearing, which would let a media id
- *    from someone else's gastronomy be edited through your own gastronomy's URL;
+ *  - the cross-venue ownership check disappearing, which would let a media id
+ *    from someone else's venue be edited through your own venue's URL;
  *  - the empty-body guard disappearing, which would answer 200 to a PATCH that
  *    changes nothing.
  *
@@ -89,7 +89,7 @@ function makeMediaRow(overrides: Partial<VenueMedia> = {}): VenueMedia {
     } as VenueMedia;
 }
 
-/** A gastronomy listing owned by `ownerActor`. */
+/** A venue listing owned by `ownerActor`. */
 function makeVenue(overrides: Record<string, unknown> = {}) {
     return {
         id: VENUE_ID,
