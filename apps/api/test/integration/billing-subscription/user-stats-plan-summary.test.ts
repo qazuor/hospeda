@@ -51,7 +51,7 @@ async function seedVenuePrincipal(ownerId: string) {
         .values({
             vertical: VerticalEnum.VENUE,
             slug: `stats-${crypto.randomUUID()}`,
-            name: 'Gastronomy test plan'
+            name: 'Venue test plan'
         })
         .returning({ id: plans.id });
     if (!plan) throw new Error('Expected plan');
@@ -87,7 +87,7 @@ async function seedVenuePrincipal(ownerId: string) {
         .returning({ id: subscriptions.id });
     if (!row) throw new Error('Expected subscription');
     extraRows.push(row.id);
-    return { slug: `stats-${plan.id}`, name: 'Gastronomy test plan' };
+    return { slug: `stats-${plan.id}`, name: 'Venue test plan' };
 }
 
 describe('TEST:1756:1-7 user stats plan summary', () => {

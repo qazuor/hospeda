@@ -236,7 +236,7 @@ describe('TEST:1623:5 AC:B13a:16 signup Tourist VIP notice', () => {
         });
     });
 
-    it('warns for a gastronomy option that inherits Tourist VIP', async () => {
+    it('warns for a venue option that inherits Tourist VIP', async () => {
         const user = await createUser();
         const owner = await createOption('venue', true);
         const vip = await createOption('tourist', false);
