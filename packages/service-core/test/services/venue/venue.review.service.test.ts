@@ -384,7 +384,7 @@ describe('VenueReviewService._beforeCreate', () => {
 // Permission hooks
 // ---------------------------------------------------------------------------
 
-describe('venueReviewService permission hooks', () => {
+describe('VenueReviewService permission hooks', () => {
     it('_canCreate should throw FORBIDDEN for unauthenticated actor', () => {
         const service = makeService();
         expect(() => (service as AnyService)._canCreate(unauthActor, {})).toThrow();
@@ -439,7 +439,7 @@ describe('venueReviewService permission hooks', () => {
 // ENTITY_NAME
 // ---------------------------------------------------------------------------
 
-describe('venueReviewService.ENTITY_NAME', () => {
+describe('VenueReviewService.ENTITY_NAME', () => {
     it('should be "venueReview"', () => {
         expect(VenueReviewService.ENTITY_NAME).toBe('venueReview');
     });
@@ -451,7 +451,7 @@ describe('venueReviewService.ENTITY_NAME', () => {
 // users table; findAllWithRelations with { user: true } does).
 // ---------------------------------------------------------------------------
 
-describe('venueReviewService.listByvenue — B7b regression (user relation loaded)', () => {
+describe('VenueReviewService.listByVenue — B7b regression (user relation loaded)', () => {
     it('requests user: true in the relations argument of findAllWithRelations', async () => {
         const review = makeReview({
             lifecycleState: LifecycleStatusEnum.ACTIVE,

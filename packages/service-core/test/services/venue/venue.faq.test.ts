@@ -355,7 +355,7 @@ describe('updateVenueFaq', () => {
 // removeVenueFaq
 // ---------------------------------------------------------------------------
 
-describe('removevenueFaq', () => {
+describe('removeVenueFaq', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
         // Arrange
         const model = makeVenueModel(null);
