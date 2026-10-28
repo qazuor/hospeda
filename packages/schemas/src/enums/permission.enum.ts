@@ -967,7 +967,7 @@ export enum PermissionEnum {
     VENUE_EDIT_ALL = 'venue.editAll', // Allows editing any venue listing regardless of ownership.
     VENUE_DELETE = 'venue.delete', // Allows soft-deleting any venue listing.
     VENUE_MODERATE_REVIEW = 'venue.moderateReview', // Allows moderating reviews written ABOUT a venue listing.
-    VENUE_MODERATION_CHANGE = 'venue.moderationChange', // Allows changing the moderation state of a gastronomy LISTING.
+    VENUE_MODERATION_CHANGE = 'venue.moderationChange', // Allows changing the moderation state of a venue listing.
 
     EXPERIENCE_EDIT_OWN = 'experience.editOwn', // Allows an EXPERIENCE_OWNER to edit their own experience listing.
     EXPERIENCE_CREATE = 'experience.create', // Allows creating a new experience listing.

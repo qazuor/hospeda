@@ -142,7 +142,7 @@ describe('VenueFaqRemoveInputSchema', () => {
     });
 });
 
-describe('GastronomyFaqListInputSchema', () => {
+describe('VenueFaqListInputSchema', () => {
     it('should validate a valid list input', () => {
         expect(() => VenueFaqListInputSchema.parse({ venueId })).not.toThrow();
     });
@@ -152,7 +152,7 @@ describe('GastronomyFaqListInputSchema', () => {
     });
 });
 
-describe('GastronomyFaqReorderInputSchema', () => {
+describe('VenueFaqReorderInputSchema', () => {
     it('should validate a valid reorder input with {faqId, displayOrder} items', () => {
         const data = {
             venueId,

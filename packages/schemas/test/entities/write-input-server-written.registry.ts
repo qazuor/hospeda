@@ -300,7 +300,7 @@ export const ENTITIES: readonly EntityEntry[] = [
         ]
     },
     {
-        entity: 'gastronomy',
+        entity: 'venue',
         base: VenueSchema as unknown as Shaped,
         writableProbe: 'name',
         neverFromBody: {

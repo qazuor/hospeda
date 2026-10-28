@@ -24,9 +24,9 @@ export const VenueBatchRequestSchema = z.object({
      * Limited to 100 IDs per request for performance.
      */
     ids: z
-        .array(z.string().uuid('Invalid gastronomy ID format'))
-        .min(1, 'At least one gastronomy ID is required')
-        .max(100, 'Maximum 100 gastronomy IDs allowed per request'),
+        .array(z.string().uuid('Invalid venue ID format'))
+        .min(1, 'At least one venue ID is required')
+        .max(100, 'Maximum 100 venue IDs allowed per request'),
 
     /**
      * Optional array of field names to include in the response.
