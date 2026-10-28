@@ -31,7 +31,7 @@ export { assembleVenueContext } from './venue-ai-context.js';
  * of a feature change for no behavioural gain.
  *
  * Owner capabilities are intentionally unused here — an accommodation's context
- * carries no entitlement-gated sections, unlike gastronomy's carta and
+ * carries no entitlement-gated sections, unlike venue's carta and
  * experience's directions.
  */
 const assembleAccommodationChatContext: ChatContextAssembler = async (input) => {

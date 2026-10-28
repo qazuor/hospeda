@@ -52,7 +52,7 @@ type VisibilityLookup = (slug: string) => Promise<boolean>;
  * The repo-wide definition of "the public site serves this", for content
  * entities (destinations, events, posts): active, public, and not soft-deleted.
  *
- * Listings (accommodation, gastronomy, experience) do not carry those two
+ * Listings (accommodation, venue, experience) do not carry those two
  * columns any more (V6.9b, HOS-1641): their only public state is
  * `publicationStatus === PUBLISHED`, the same predicate
  * `AccommodationService._isPubliclyVisible` and `isListingPubliclyVisible` use.

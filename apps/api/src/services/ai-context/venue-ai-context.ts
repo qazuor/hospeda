@@ -1,5 +1,5 @@
 /**
- * AI-chat context assembler for GASTRONOMY listings (HOS-400).
+ * AI-chat context assembler for VENUE listings (HOS-400).
  *
  * The restaurant counterpart of `accommodation-ai-context.ts`. It answers a
  * different set of questions and therefore carries different fields: what the
@@ -12,7 +12,7 @@
  * grant the key, and the service-core readers do not. So this assembler gates
  * them too, from the capability flag the ROUTE resolved for the owner.
  *
- * Today that gate never fires — every gastronomy or experience tier that grants `AI_CHAT` also
+ * Today that gate never fires — every venue or experience tier that grants `AI_CHAT` also
  * grants the carta keys — and it is written anyway, because "today's catalogue
  * happens to bundle them" is not a guarantee. The day the keys are split across
  * tiers differently, an assembler that trusted the coincidence would put paid
@@ -66,7 +66,7 @@ export const VENUE_MENU_ITEM_DESCRIPTION_MAX_CHARS = 160;
 // Row shapes
 // ---------------------------------------------------------------------------
 
-/** The gastronomy columns this assembler reads. */
+/** The venue columns this assembler reads. */
 export interface VenueContextRow {
     readonly id: string;
     readonly name: string;
@@ -100,11 +100,11 @@ export interface VenueContextMenuItem {
 // ---------------------------------------------------------------------------
 
 /**
- * Assembles the Markdown context block from pre-loaded gastronomy data.
+ * Assembles the Markdown context block from pre-loaded venue data.
  *
  * PURE — no I/O. Every owner-authored value goes through the shared fence.
  *
- * @param venue - The gastronomy row.
+ * @param venue - The venue row.
  * @param faqs - The venue's FAQs. Capped at {@link VENUE_CONTEXT_FAQ_MAX}.
  * @param menuItems - The carta rows loaded for the listing.
  * @param includeMenu - Whether the owner has `manage_venue_menu`.

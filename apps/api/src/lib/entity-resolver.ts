@@ -169,18 +169,18 @@ async function resolveEventById(params: {
 }
 
 // ---------------------------------------------------------------------------
-// Gastronomy and experience listing resolvers
+// Venue and experience listing resolvers
 // ---------------------------------------------------------------------------
 
 /**
- * Resolves a single gastronomy or experience listing (gastronomy or experience) by ID.
+ * Resolves a single venue or experience listing (venue or experience) by ID.
  *
  * One function for both verticals because they are the same shape to the cache:
  * a detail page, a listing page, and an optional parent destination whose page
  * surfaces them. The tag mapper already treats them as one arm for exactly that
  * reason, so splitting them here would be two copies of one query.
  *
- * `id` is returned alongside `slug` because the gastronomy and experience cache tags are built
+ * `id` is returned alongside `slug` because the venue and experience cache tags are built
  * from both — the same pair the automatic purge path emits, so a manual
  * revalidation evicts precisely what a photo upload would have.
  *
