@@ -15,6 +15,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import {
     buildSeedArgs,
     collectCloudinaryEnv,
+    dbSeed,
     formatFlagSummary,
     getProdConfirmation,
     parseArgs,
@@ -525,44 +526,68 @@ describe('--baseline-stamp (HOS-1952)', () => {
         }
     });
 
-    it('accepts a plain stamp on staging and prod without refusal', () => {
-        for (const target of ['staging', 'prod']) {
+    it('refuses --no-reset, --no-required and --no-example instead of ignoring them', () => {
+        for (const flag of ['--no-reset', '--no-required', '--no-example']) {
             const result = resolveTargetFlags({
-                parsed: parseArgs(['--baseline-stamp']),
-                target
+                parsed: parseArgs(['--baseline-stamp', flag]),
+                target: 'staging'
             });
-            expect(result.refusal).toBeUndefined();
+            expect(result.refusal).toContain(flag);
+        }
+    });
+
+    it('accepts a plain stamp on staging', () => {
+        const result = resolveTargetFlags({
+            parsed: parseArgs(['--baseline-stamp']),
+            target: 'staging'
+        });
+        expect(result.refusal).toBeUndefined();
+    });
+
+    it('refuses the stamp on prod, even with --yes', () => {
+        for (const argv of [['--baseline-stamp'], ['--baseline-stamp', '--yes']]) {
+            const result = resolveTargetFlags({ parsed: parseArgs(argv), target: 'prod' });
+            expect(result.refusal).toContain('refused on --target=prod');
         }
     });
 });
 
-describe('getProdConfirmation (HOS-1952 prod guard)', () => {
-    it('requires a baseline-stamp confirmation on prod', () => {
-        expect(
-            getProdConfirmation({ parsed: parseArgs(['--baseline-stamp']), target: 'prod' })
-        ).toEqual({ required: true, kind: 'baseline-stamp' });
-    });
+describe('dbSeed wiring for --baseline-stamp on prod (HOS-1952)', () => {
+    const failing = (message: string): never => {
+        throw new Error(message);
+    };
 
-    it('--yes skips the prod stamp confirmation', () => {
-        expect(
-            getProdConfirmation({
-                parsed: parseArgs(['--baseline-stamp', '--yes']),
-                target: 'prod'
+    it('aborts before any side effect on prod, even with --yes', async () => {
+        await expect(
+            dbSeed(['--baseline-stamp', '--yes', '--no-pull'], {
+                getTarget: () => 'prod',
+                fail: failing
             })
-        ).toEqual({ required: false, kind: 'none' });
+        ).rejects.toThrow('refused on --target=prod');
     });
 
-    it('never prompts on staging', () => {
-        expect(
-            getProdConfirmation({ parsed: parseArgs(['--baseline-stamp']), target: 'staging' })
-                .required
-        ).toBe(false);
+    it('does not refuse on staging (it proceeds to the repo-root check)', async () => {
+        process.env.HOPS_REPO_ROOT = '/nonexistent-hops-repo-root-for-test';
+        await expect(
+            dbSeed(['--baseline-stamp', '--yes', '--no-pull'], {
+                getTarget: () => 'staging',
+                fail: failing
+            })
+        ).rejects.toThrow('Repo root');
     });
+});
 
-    it('keeps the wipe and no-reset prod prompts unchanged', () => {
+describe('getProdConfirmation', () => {
+    it('keeps the wipe and no-reset prod prompts and skips them with --yes', () => {
         expect(getProdConfirmation({ parsed: parseArgs([]), target: 'prod' }).kind).toBe('wipe');
         expect(
             getProdConfirmation({ parsed: parseArgs(['--no-reset']), target: 'prod' }).kind
         ).toBe('seed');
+        expect(getProdConfirmation({ parsed: parseArgs(['--yes']), target: 'prod' }).required).toBe(
+            false
+        );
+        expect(getProdConfirmation({ parsed: parseArgs([]), target: 'staging' }).required).toBe(
+            false
+        );
     });
 });
