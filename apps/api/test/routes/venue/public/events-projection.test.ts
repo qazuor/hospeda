@@ -36,7 +36,7 @@ function anEvent(overrides: Partial<VenueEventPublic> = {}): VenueEventPublic {
     };
 }
 
-describe('applyGastronomyVenueEventsGate (HOS-1042)', () => {
+describe('applyVenueVenueEventsGate (HOS-1042)', () => {
     it('publishes the active entries when the plan grants the agenda', () => {
         // Arrange
         const events = [anEvent(), anEvent({ id: '44444444-4444-4444-8444-444444444444' })];

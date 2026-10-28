@@ -1,10 +1,10 @@
 /**
- * Unit tests for the public gastronomy menu-management gate (HOS-895 PR2).
+ * Unit tests for the public venue menu-management gate (HOS-895 PR2).
  *
  * `applyVenueMenuManagementGate` is the ONE place that decides whether
  * `menuFileUrl` / `menuFileKind` / `menuSections` leave the API for an
  * unentitled owner's listing. Tested directly, rather than through the full
- * `getBySlug` route + `GastronomyPublicSchema` validation, because building a
+ * `getBySlug` route + `VenuePublicSchema` validation, because building a
  * schema-valid fixture for the whole listing would exercise Zod, not this
  * withholding rule.
  *
@@ -136,7 +136,7 @@ describe('applyVenueMenuManagementGate', () => {
     });
 
     it('reports menuSections as undefined, never an empty array, when there is nothing to show', () => {
-        // GastronomyPublicSchema's `.optional()` convention: absent means "not
+        // VenuePublicSchema's `.optional()` convention: absent means "not
         // loaded / nothing to show", distinct from an empty array meaning
         // "loaded, and there are none" — the same convention amenities/features
         // already use on this schema.
@@ -193,7 +193,7 @@ describe('applyVenueMenuManagementGate', () => {
     });
 
     it('never publishes photoPublicId, entitled or not', () => {
-        // `GastronomyMenuItemPublicSchema` omits it; this asserts the omission
+        // `VenueMenuItemPublicSchema` omits it; this asserts the omission
         // is TRUE AT RUNTIME, which the type alone cannot say — the sections
         // reaching this gate are raw rows and do carry the column.
         //
