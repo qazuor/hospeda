@@ -61,7 +61,7 @@ export const outOfScan = (path: string) => {
     if (path === 'packages/db/src/migrations/meta/_journal.json') return true;
     const name = path.split('/').at(-1) ?? '';
     const version = name.match(/^(\d{4})/)?.[1] ?? name.match(/^(\d{4})/)?.[1];
-    return version !== undefined && Number(version) <= 180;
+    return version !== undefined && Number(version) <= 181;
 };
 
 /** Measured tracked scan floor: 17,355 eligible paths rounded down to 17,000. */
