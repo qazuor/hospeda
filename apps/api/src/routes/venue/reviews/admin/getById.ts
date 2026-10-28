@@ -24,7 +24,7 @@ export const adminGetVenueReviewByIdRoute = createAdminRoute({
     summary: 'Get venue reviews by ID (admin)',
     description:
         'Retrieves full venue reviews information including moderation fields. Requires VENUE_MODERATE_REVIEW.',
-    tags: ['venue reviews', 'Admin'],
+    tags: ['Gastronomy Reviews', 'Admin'],
     anyOfPermissions: [[PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

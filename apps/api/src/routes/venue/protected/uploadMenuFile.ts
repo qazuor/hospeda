@@ -124,7 +124,7 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
     summary: 'Upload a photo or PDF of the menu',
     description:
         'Uploads a photo or a PDF of the venue’s printed menu and stores it on the listing in the same request. Owner-only, and requires the manage_venue_menu entitlement granted by the professional venue plan and above.',
-    tags: ['Venue', 'venue Menu'],
+    tags: ['Venue', 'Gastronomy Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
