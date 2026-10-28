@@ -43,6 +43,17 @@ function fixture(
 }
 
 describe('G-FAC-R1 retired venue word', () => {
+    it('excludes the guard, its test, and its exemption inventory from the scan', () => {
+        const { result } = fixture({
+            'scripts/check-venue-retired-word.ts': oldWord,
+            'scripts/__tests__/check-venue-retired-word.test.ts': oldWord,
+            'scripts/guards/venue-retired-word.json': oldWord,
+            'packages/service-core/src/venue.ts': 'export const venue = true;'
+        });
+        expect(result.output).toContain('1 archivos');
+        expect(result.violations).toEqual([]);
+    });
+
     it('accepts a clean injected tree', () => {
         const { result } = fixture({
             'packages/service-core/src/venue.ts': 'export const venue = true;'

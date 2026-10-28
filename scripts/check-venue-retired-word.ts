@@ -25,6 +25,11 @@ const UPPER = `${PARTS[0].toUpperCase()}${PARTS[1].toUpperCase()}|${PARTS[0].toU
 const IDENTIFIER = new RegExp(`(?:${LOWER}|${TITLE}|${UPPER})`, 'g');
 const MIGRATIONS = ['0129_', '0132_', '0139_', '0144_', '0176_'];
 const CONFIG = 'scripts/guards/venue-retired-word.json';
+const EXEMPT_FILES = [
+    'scripts/check-venue-retired-word.ts',
+    'scripts/__tests__/check-venue-retired-word.test.ts',
+    CONFIG
+];
 
 type Exemption = {
     readonly files?: Readonly<Record<string, number>>;
@@ -248,7 +253,9 @@ export function run({
     const config = getConfig(root);
     const tracked = injectedFiles ?? gitFiles(root);
     const history = deriveHistory(root, tracked, readFile);
-    const scannedPaths = tracked.filter((file) => !outOfScan(file) && !history.includes(file));
+    const scannedPaths = tracked.filter(
+        (file) => !outOfScan(file) && !history.includes(file) && !EXEMPT_FILES.includes(file)
+    );
     if (!injectedFiles && scannedPaths.length < SCAN_FLOOR)
         return {
             exitCode: 1,
@@ -267,7 +274,7 @@ export function run({
     const exceptionFor = (file: string) =>
         Object.entries(exemptions).find(([, entry]) => entry.files?.[file] !== undefined)?.[0];
     for (const file of tracked) {
-        if (outOfScan(file) || history.includes(file)) continue;
+        if (outOfScan(file) || history.includes(file) || EXEMPT_FILES.includes(file)) continue;
         const content = readFile(file);
         const binary = content.includes('\0');
         const rows = binary ? [] : content.split('\n');
