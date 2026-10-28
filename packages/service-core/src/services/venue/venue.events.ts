@@ -1,5 +1,5 @@
 /**
- * gastronomy.events.ts
+ * venue.events.ts
  *
  * The venue's own agenda — read and whole-document write (HOS-1042).
  *
@@ -9,7 +9,7 @@
  *
  * ## Two operations, not six
  *
- * The same choice `gastronomy.menu.ts` makes, for the same reason and with the
+ * The same choice `venue.menu.ts` makes, for the same reason and with the
  * same contrast against `venue_media`: an agenda entry is text, so nothing
  * exists outside the database and nothing can be orphaned by a save that never
  * happens. What it has instead is that it is edited as a WHOLE — reordering two
@@ -35,7 +35,7 @@
  * (`MANAGE_VENUE_EVENTS`) and is checked at the route, before this is
  * reached.
  *
- * @module gastronomy.events
+ * @module venue.events
  */
 
 import { VenueEventModel, type VenueModel, withTransaction } from '@repo/db';
@@ -57,18 +57,18 @@ import { checkVenueCanEditFaqs } from './venue.permissions';
  *
  * `findAll` paginates, and the agenda is read whole — so an unstated page size
  * would silently truncate a long agenda rather than fail. Sized well above the
- * schema's own ceiling (`GASTRONOMY_EVENTS_MAX_ENTRIES`), so an agenda that
+ * schema's own ceiling (`VENUE_EVENTS_MAX_ENTRIES`), so an agenda that
  * passed validation on the way in can always be read back out.
  */
 const EVENTS_READ_PAGE_SIZE = 500;
 
 /**
- * Loads a gastronomy listing by ID or throws NOT_FOUND.
+ * Loads a venue listing by ID or throws NOT_FOUND.
  *
  * @param model - The VenueModel instance.
  * @param venueId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
- * @returns The gastronomy DB row.
+ * @returns The venue DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
 async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
@@ -90,7 +90,7 @@ const byDisplayOrder = <T extends { displayOrder: number; title: string }>(a: T,
  *
  * **This is not cosmetic.** A `time` column does not return what you put in it:
  * `'18:00'` goes in and `'18:00:00'` comes out — measured against this repo's
- * own Postgres, not assumed. `GastronomyEventTimeSchema` rejects seconds ON
+ * own Postgres, not assumed. `VenueEventTimeSchema` rejects seconds ON
  * PURPOSE (two spellings of one instant is a field whose equality checks are
  * wrong somewhere downstream), so without this every read would fail its own
  * response schema and the editor would round-trip a value it cannot re-submit.
@@ -135,7 +135,7 @@ export function projectEvent<T extends { startTime: string; endTime: string | nu
  * @param model - VenueModel instance.
  * @param data - `{ venueId }`.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyEventsOutput>`.
+ * @returns `ServiceOutput<VenueEventsOutput>`.
  */
 export async function getVenueEvents(
     model: VenueModel,

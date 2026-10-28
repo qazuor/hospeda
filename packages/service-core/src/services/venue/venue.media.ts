@@ -1,11 +1,11 @@
 /**
- * gastronomy.media.ts
+ * venue.media.ts
  *
- * Media (gallery photo) service helpers for gastronomy listings (HOS-372).
+ * Media (gallery photo) service helpers for venue listings (HOS-372).
  *
  * Mirrors the media-management pattern from `AccommodationService.addMedia` /
  * `removeMedia` / `reorderMedia` / `adminGetMedia` / `setFeaturedMedia`, and the
- * standalone-function convention established by `gastronomy.faq.ts` (module-level
+ * standalone-function convention established by `venue.faq.ts` (module-level
  * exported functions taking `(model, actor, data, ctx?)` instead of methods bolted
  * onto `VenueService`).
  *
@@ -15,14 +15,14 @@
  * `checkVenueCanEditMedia`: `VENUE_EDIT_OWN` (listing owner) or
  * `VENUE_EDIT_ALL` (staff). There is no separate public read path for media —
  * public consumers read the composed `media` field on the listing itself (via
- * `gastronomy.media-read.ts`), not this management surface.
+ * `venue.media-read.ts`), not this management surface.
  *
  * ## No dual-write
  *
- * These helpers NEVER read or write the legacy `gastronomy.media` JSONB column.
+ * These helpers NEVER read or write the legacy `venue.media` JSONB column.
  * All photo state lives exclusively in `venue_media` rows.
  *
- * @module gastronomy.media
+ * @module venue.media
  */
 
 import { type DrizzleClient, VenueMediaModel, type VenueModel, withTransaction } from '@repo/db';
@@ -65,12 +65,12 @@ import { checkVenueCanEditMedia } from './venue.permissions';
 // ---------------------------------------------------------------------------
 
 /**
- * Loads a gastronomy listing by ID or throws NOT_FOUND.
+ * Loads a venue listing by ID or throws NOT_FOUND.
  *
  * @param model - The VenueModel instance.
  * @param venueId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
- * @returns The gastronomy DB row.
+ * @returns The venue DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
 async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
@@ -86,7 +86,7 @@ async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceCont
 // ---------------------------------------------------------------------------
 
 /**
- * Adds a photo to a gastronomy listing gallery.
+ * Adds a photo to a venue listing gallery.
  *
  * This is a URL-receiver method: the upload to Cloudinary has already happened
  * via `POST /api/v1/admin/media/upload`. This function registers the
@@ -105,7 +105,7 @@ async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceCont
  * @param actor - The actor performing the action.
  * @param data - Validated add-media input.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyMediaSingleOutput>` containing the created row.
+ * @returns `ServiceOutput<VenueMediaSingleOutput>` containing the created row.
  */
 export async function addVenueMedia(
     model: VenueModel,

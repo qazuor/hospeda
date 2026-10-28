@@ -8,13 +8,13 @@ import { EntityTypeEnum, QrCodePurposeEnum } from '@repo/schemas';
  *
  * Two callers need the same shape and neither can see the other. `apps/api`
  * builds the target URL when it first provisions a venue's menu code
- * (`routes/gastronomy/protected/menuQr.ts`), and {@link VenueService}
+ * (`routes/venue/protected/menuQr.ts`), and {@link VenueService}
  * rebuilds it when the venue renames its slug. Leaving the builder in
  * `apps/api` would have forced the service to spell the path a second time —
  * exactly the drift `HostTradeService`'s equivalent module
  * (`hostTrade/host-trade-qr.ts`) was written to avoid.
  *
- * @module services/gastronomy/gastronomy-qr
+ * @module services/venue/venue-qr
  */
 
 /** The entity type every menu QR is filed under. */
@@ -23,7 +23,7 @@ export const VENUE_MENU_QR_ENTITY_TYPE = EntityTypeEnum.VENUE;
 /**
  * WHICH of a venue's codes this module is about.
  *
- * A gastronomy listing may grow other QR purposes over time (the listing's
+ * A venue listing may grow other QR purposes over time (the listing's
  * own brochure code already exists under `QrCodePurposeEnum.BROCHURE`), so
  * naming this one explicitly is what keeps the lookup key from silently
  * colliding with a future addition.

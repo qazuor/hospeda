@@ -230,12 +230,12 @@ const GetDailySeriesForHostAccommodationsSchema = z.object({
  * Input schema for {@link EntityViewService.getStatsForOwnListings}
  * and {@link EntityViewService.getDailySeriesForOwnListings} (HOS-734).
  *
- * Only `entityType` (GASTRONOMY or EXPERIENCE) and `window` are accepted —
+ * Only `entityType` (VENUE or EXPERIENCE) and `window` are accepted —
  * `actor.id` resolves owned listing IDs internally, mirroring
  * {@link GetStatsForHostAccommodationsSchema}'s anti-peeking design.
  */
 const GetStatsForOwnListingsSchema = z.object({
-    /** Listing vertical to aggregate. Only GASTRONOMY and EXPERIENCE are allowed. */
+    /** Listing vertical to aggregate. Only VENUE and EXPERIENCE are allowed. */
     entityType: z.enum([EntityTypeEnum.VENUE, EntityTypeEnum.EXPERIENCE] as const, {
         message: 'zodError.entityView.listingStats.entityType.invalid'
     }),
@@ -382,17 +382,17 @@ export interface GetDailySeriesForHostAccommodationsInput {
  * The actor's own listing IDs are resolved internally (via
  * `VenueModel`/`ExperienceModel.findIdsByOwnerId`) — no ownerId param is
  * accepted, preventing cross-owner peeking. There is no dedicated
- * `PermissionEnum` for gastronomy/experience "own listing" access (unlike
+ * `PermissionEnum` for venue/experience "own listing" access (unlike
  * accommodation's `ACCOMMODATION_VIEW_OWN`) — ownership scoping alone is the
  * gate here, matching the existing convention of
- * `protectedListMyGastronomyRoute` (`VenueService.listOwn`). The former
+ * `protectedListMyVenueRoute` (`VenueService.listOwn`). The former
  * route-layer plan entitlement gate was removed by HOS-1352 (transitional until
  * V3, HOS-1357), so no entitlement is checked here either.
  */
 export interface GetStatsForOwnListingsInput {
     /** Authenticated actor performing the request. */
     readonly actor: Actor;
-    /** Listing vertical to aggregate: GASTRONOMY or EXPERIENCE. */
+    /** Listing vertical to aggregate: VENUE or EXPERIENCE. */
     readonly entityType: EntityTypeEnum.VENUE | EntityTypeEnum.EXPERIENCE;
     /** Rolling window for the aggregation ('7d' or '30d'). */
     readonly window: EntityViewWindow;
@@ -484,7 +484,7 @@ export class EntityViewService extends BaseService {
     }
 
     /**
-     * Lazily resolves the gastronomy model used for owner ownership lookups
+     * Lazily resolves the venue model used for owner ownership lookups
      * (HOS-734). Instantiated once on first use (or the injected override) —
      * mirrors {@link accommodationModel}.
      */
@@ -511,7 +511,7 @@ export class EntityViewService extends BaseService {
      * Resolves the listing model for a given vertical (HOS-734).
      * Single dispatch point so `getStatsForOwnListings` and
      * `getDailySeriesForOwnListings` share the same lookup instead of
-     * each re-deriving the GASTRONOMY/EXPERIENCE branch.
+     * each re-deriving the VENUE/EXPERIENCE branch.
      */
     private listingModelFor(
         entityType: EntityTypeEnum.VENUE | EntityTypeEnum.EXPERIENCE

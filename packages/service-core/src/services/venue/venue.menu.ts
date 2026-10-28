@@ -1,5 +1,5 @@
 /**
- * gastronomy.menu.ts
+ * venue.menu.ts
  *
  * The venue's carta — read and whole-document write (HOS-895).
  *
@@ -43,7 +43,7 @@
  * (`MANAGE_VENUE_MENU`) and is checked at the route, before this is
  * reached — the same split `brochure.ts` makes.
  *
- * @module gastronomy.menu
+ * @module venue.menu
  */
 
 import {
@@ -76,12 +76,12 @@ import { checkVenueCanEditFaqs } from './venue.permissions';
 const MENU_READ_PAGE_SIZE = 4000;
 
 /**
- * Loads a gastronomy listing by ID or throws NOT_FOUND.
+ * Loads a venue listing by ID or throws NOT_FOUND.
  *
  * @param model - The VenueModel instance.
  * @param venueId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
- * @returns The gastronomy DB row.
+ * @returns The venue DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
 async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
@@ -111,7 +111,7 @@ const byDisplayOrder = <T extends { displayOrder: number; name: string }>(a: T, 
  * @param model - VenueModel instance.
  * @param data - `{ venueId }`.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyMenuOutput>`.
+ * @returns `ServiceOutput<VenueMenuOutput>`.
  */
 export async function getVenueMenu(
     model: VenueModel,

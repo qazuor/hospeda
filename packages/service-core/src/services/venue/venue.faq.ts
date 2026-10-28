@@ -1,7 +1,7 @@
 /**
- * gastronomy.faq.ts
+ * venue.faq.ts
  *
- * FAQ service helpers for gastronomy listings (SPEC-239 T-037).
+ * FAQ service helpers for venue listings (SPEC-239 T-037).
  *
  * Mirrors the FAQ management pattern from `AccommodationService.addFaq` /
  * `removeFaq` / `updateFaq` / `getFaqs` / `reorderFaqs`.
@@ -23,7 +23,7 @@
  * On `addFaq`, `displayOrder` is set to `max(existing displayOrder) + 1`, or 0 if none exist.
  * On `reorderFaqs`, the caller supplies an explicit `{ faqId, displayOrder }[]` array.
  *
- * @module gastronomy.faq
+ * @module venue.faq
  */
 
 import { type DrizzleClient, VenueFaqModel, type VenueModel, withTransaction } from '@repo/db';
@@ -53,12 +53,12 @@ import { checkVenueCanEditFaqEntries, checkVenueCanView } from './venue.permissi
 // ---------------------------------------------------------------------------
 
 /**
- * Loads a gastronomy listing by ID or throws NOT_FOUND.
+ * Loads a venue listing by ID or throws NOT_FOUND.
  *
  * @param model - The VenueModel instance.
  * @param venueId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
- * @returns The gastronomy DB row.
+ * @returns The venue DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
 async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
@@ -74,7 +74,7 @@ async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceCont
 // ---------------------------------------------------------------------------
 
 /**
- * Adds a FAQ entry to a gastronomy listing.
+ * Adds a FAQ entry to a venue listing.
  *
  * Permission: `VENUE_EDIT_OWN` (listing owner) or `VENUE_EDIT_ALL` (staff).
  * `displayOrder` is auto-assigned as `max(existing) + 1` or 0 when no FAQs exist yet.
@@ -83,7 +83,7 @@ async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceCont
  * @param actor - The actor performing the action.
  * @param data - Validated add-FAQ input.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyFaqSingleOutput>` containing the created FAQ.
+ * @returns `ServiceOutput<VenueFaqSingleOutput>` containing the created FAQ.
  */
 export async function addVenueFaq(
     model: VenueModel,

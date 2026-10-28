@@ -1,7 +1,7 @@
 /**
- * gastronomy.review.service.ts
+ * venue.review.service.ts
  *
- * Review service for gastronomy listings (SPEC-239 T-039).
+ * Review service for venue listings (SPEC-239 T-039).
  *
  * ## Behavior
  *
@@ -19,7 +19,7 @@
  * - **Rating recompute**: after create / moderation / delete the listing's
  *   denormalized rating is refreshed. Only APPROVED reviews count.
  *
- * @module gastronomy.review.service
+ * @module venue.review.service
  */
 
 import { type VenueReviewModel, venueModel, venueReviewModel } from '@repo/db';
@@ -94,9 +94,9 @@ function computeEffectiveRating(input: VenueReviewCreateInput): number {
 // ---------------------------------------------------------------------------
 
 /**
- * Service for managing gastronomy reviews.
+ * Service for managing venue reviews.
  *
- * Uses `GastronomyReview` as the entity type (inferred from Zod schema) and
+ * Uses `VenueReview` as the entity type (inferred from Zod schema) and
  * `VenueReviewModel` as the DB model.  Where the Drizzle inferred type
  * diverges from the Zod type (e.g. `isVerified`, `reviewerName` absent from
  * the DB columns), explicit `unknown` casts bridge the gap — this is the same
@@ -154,7 +154,7 @@ export class VenueReviewService extends BaseCrudService<
     }
 
     /**
-     * Gastronomy reviews are searched by `title` and `content`, matching the
+     * Venue reviews are searched by `title` and `content`, matching the
      * convention `AccommodationReviewService` and `DestinationReviewService`
      * already follow.
      *
@@ -378,7 +378,7 @@ export class VenueReviewService extends BaseCrudService<
             undefined,
             ctx?.tx
         );
-        return result as unknown as PaginatedListOutput<VenueReview>; // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+        return result as unknown as PaginatedListOutput<VenueReview>; // TYPE-WORKAROUND: base list result narrowed to the venue review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
     }
 
     /**
@@ -407,7 +407,7 @@ export class VenueReviewService extends BaseCrudService<
     // -----------------------------------------------------------------------
 
     /**
-     * Approves or rejects a gastronomy review (admin moderation action).
+     * Approves or rejects a venue review (admin moderation action).
      *
      * After persisting the decision, the listing's denormalized rating fields
      * (`averageRating`, `reviewsCount`, `rating`) are recomputed from all
@@ -418,7 +418,7 @@ export class VenueReviewService extends BaseCrudService<
      * @param input - Moderation decision input.
      * @param actor - The admin actor performing the moderation.
      * @param ctx - Optional service context for transaction propagation.
-     * @returns `ServiceOutput<GastronomyReview>` wrapping the updated review.
+     * @returns `ServiceOutput<VenueReview>` wrapping the updated review.
      */
     public async moderateReview(
         input: VenueReviewModerateInput,
@@ -471,7 +471,7 @@ export class VenueReviewService extends BaseCrudService<
             // Recompute listing rating after every moderation decision.
             await this._recomputeListingRating(venueId, ctx ?? {});
 
-            return { data: updated as unknown as VenueReview }; // TYPE-WORKAROUND: model row narrowed to the Zod GastronomyReview entity type
+            return { data: updated as unknown as VenueReview }; // TYPE-WORKAROUND: model row narrowed to the Zod VenueReview entity type
         } catch (err) {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message } };
@@ -486,7 +486,7 @@ export class VenueReviewService extends BaseCrudService<
     }
 
     /**
-     * Returns the count of PENDING reviews for the gastronomy entity type.
+     * Returns the count of PENDING reviews for the venue entity type.
      *
      * Permission: `VENUE_MODERATE_REVIEW`.
      *
@@ -574,7 +574,7 @@ export class VenueReviewService extends BaseCrudService<
             }
 
             const result = await this.model.findAll(where, { page, pageSize }, undefined, ctx?.tx);
-            return { data: result as unknown as PaginatedListOutput<VenueReview> }; // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+            return { data: result as unknown as PaginatedListOutput<VenueReview> }; // TYPE-WORKAROUND: base list result narrowed to the venue review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
         } catch (err) {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message } };
@@ -589,11 +589,11 @@ export class VenueReviewService extends BaseCrudService<
     }
 
     /**
-     * Lists all APPROVED + ACTIVE reviews for a specific gastronomy listing.
+     * Lists all APPROVED + ACTIVE reviews for a specific venue listing.
      *
      * Force-filtered — no PENDING / REJECTED reviews are returned.
      *
-     * @param venueId - UUID of the gastronomy listing.
+     * @param venueId - UUID of the venue listing.
      * @param _actor - The actor performing the action (unused; public path).
      * @param ctx - Optional service context for transaction propagation.
      * @returns `ServiceOutput` with the approved review list and total count.
@@ -632,7 +632,7 @@ export class VenueReviewService extends BaseCrudService<
             );
             return {
                 data: {
-                    reviews: result.items as unknown as VenueReview[], // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+                    reviews: result.items as unknown as VenueReview[], // TYPE-WORKAROUND: base list result narrowed to the venue review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
                     total: result.total
                 }
             };
@@ -654,7 +654,7 @@ export class VenueReviewService extends BaseCrudService<
     // -----------------------------------------------------------------------
 
     /**
-     * Recomputes the gastronomy listing's denormalized rating fields from all
+     * Recomputes the venue listing's denormalized rating fields from all
      * APPROVED, non-deleted reviews using `VenueService.recomputeRating`.
      *
      * Called after create, moderation decision, and soft-delete.

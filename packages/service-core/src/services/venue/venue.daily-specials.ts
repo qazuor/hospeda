@@ -1,5 +1,5 @@
 /**
- * gastronomy.daily-specials.ts
+ * venue.daily-specials.ts
  *
  * The menú del día — read and whole-document write (HOS-1041).
  *
@@ -36,9 +36,9 @@
  * {@link checkVenueCanEditFaqs} gate the carta and FAQ helpers use.
  * Whether the caller's PLAN includes the menú del día is an entitlement
  * (`MANAGE_VENUE_DAILY_SPECIAL`), checked at the route before this is
- * reached — the same split `gastronomy.menu.ts` makes.
+ * reached — the same split `venue.menu.ts` makes.
  *
- * @module gastronomy.daily-specials
+ * @module venue.daily-specials
  */
 
 import { VenueDailySpecialModel, type VenueModel, withTransaction } from '@repo/db';
@@ -60,7 +60,7 @@ import { checkVenueCanEditFaqs } from './venue.permissions';
  *
  * `findAll` paginates, so an unstated page size would silently truncate rather
  * than fail. Sized well past the schema's own ceiling
- * (`GASTRONOMY_DAILY_SPECIALS_MAX`) because the owner's read is NOT filtered by
+ * (`VENUE_DAILY_SPECIALS_MAX`) because the owner's read is NOT filtered by
  * the window: it returns every special the listing has ever accumulated, and
  * the payload cap only bounds what one save writes, not what many saves left
  * behind.
@@ -68,12 +68,12 @@ import { checkVenueCanEditFaqs } from './venue.permissions';
 const DAILY_SPECIALS_READ_PAGE_SIZE = 1000;
 
 /**
- * Loads a gastronomy listing by ID or throws NOT_FOUND.
+ * Loads a venue listing by ID or throws NOT_FOUND.
  *
  * @param model - The VenueModel instance.
  * @param venueId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
- * @returns The gastronomy DB row.
+ * @returns The venue DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
 async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
@@ -102,7 +102,7 @@ const byDisplayOrder = <T extends { displayOrder: number; title: string }>(a: T,
  *   resolved in the AR market timezone) for the PUBLIC read; omit it for the
  *   owner's, which must include scheduled and elapsed rows.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyDailySpecialsOutput>`.
+ * @returns `ServiceOutput<VenueDailySpecialsOutput>`.
  */
 export async function getVenueDailySpecials(
     model: VenueModel,
