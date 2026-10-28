@@ -93,7 +93,7 @@
                     "item3": "Compará alojamientos y escribí tus reseñas."
                 }
             },
-            "gastronomy": {
+            "venue": {
                 "title": "Publicar mi local gastronómico",
                 "audience": "Para restaurantes, parrillas, panaderías, food trucks y todo local gastronómico que quiera aparecer en la guía.",
                 "cta": "Ver planes de gastronomía",
@@ -225,7 +225,7 @@
         "seePlans": "Ver planes y precios"
     },
     "consultPrice": "Consultar",
-    "gastronomy": {
+    "venue": {
         "tagline": "Planes y precios",
         "heading": "Precios para gastronomía",
         "subtitle": "Todos los planes publican tu local. Cambia cuánto podés mostrar de él.",

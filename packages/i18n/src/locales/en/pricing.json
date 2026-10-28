@@ -93,7 +93,7 @@
                     "item3": "Compare places to stay and write your own reviews."
                 }
             },
-            "gastronomy": {
+            "venue": {
                 "title": "List my food business",
                 "audience": "For restaurants, grills, bakeries, food trucks and any food business that wants to appear in the guide.",
                 "cta": "See gastronomy plans",
@@ -225,7 +225,7 @@
         "seePlans": "See plans and pricing"
     },
     "consultPrice": "Ask us",
-    "gastronomy": {
+    "venue": {
         "tagline": "Plans and pricing",
         "heading": "Gastronomy pricing",
         "subtitle": "Every plan lists your venue. What changes is how much of it you can show.",
