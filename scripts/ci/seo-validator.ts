@@ -52,7 +52,7 @@ const DEFAULT_TARGETS: ReadonlyArray<PageTarget> = [
     { path: '/es/alojamientos/', expectedJsonLdTypes: ['ItemList', 'CollectionPage'] },
     { path: '/es/destinos/', expectedJsonLdTypes: ['ItemList', 'CollectionPage'] },
     { path: '/es/eventos/', expectedJsonLdTypes: ['ItemList'] },
-    { path: '/es/gastronomia/', expectedJsonLdTypes: ['ItemList', 'CollectionPage'] },
+    { path: '/es/comer-y-salir/', expectedJsonLdTypes: ['ItemList', 'CollectionPage'] },
     { path: '/es/experiencias/', expectedJsonLdTypes: ['ItemList', 'CollectionPage'] },
     { path: '/es/publicaciones/', expectedJsonLdTypes: ['ItemList', 'CollectionPage', 'Blog'] }
 ];
