@@ -15,7 +15,7 @@
  *
  * ## The invariant, and why it cuts both ways
  *
- * `accommodation_faqs`, `gastronomy_faqs` and `experience_faqs` carry
+ * The accommodation, venue and experience FAQ tables carry
  * `is_visible_on_listing` / `is_usable_by_ai` (the last two added by HOS-400,
  * adopting the HOS-393 fragment). `destination_faqs` does not — destinations
  * have no AI chat, so `isUsableByAi` would be inert there. So:
@@ -56,7 +56,7 @@ const ROUTES_DIR = join(__dirname, '../../src/routes');
  * Adding one here without adding the columns re-creates the original bug.
  *
  * `venue` and `experience` joined `accommodation` in HOS-400, which gave
- * `gastronomy_faqs` / `experience_faqs` the same two columns so their AI chat
+ * the venue and experience FAQ tables the same two columns so their AI chat
  * (HOS-400 PR 1) can honour `isUsableByAi`. `destination` deliberately has no
  * AI chat and stays out.
  */
