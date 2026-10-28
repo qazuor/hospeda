@@ -642,7 +642,7 @@ describe('HOS-1642 V9a — owner FAQ/media writes land in domain_event (integrat
 
     // TEST:V9a:6 (atomicity, media) — same savepoint pattern for a media write.
     it.skipIf(!dbAvailable)(
-        'TEST:V9a:6 — gastronomy media add inside a rolled-back savepoint leaves no event',
+        'TEST:V9a:6 — venue media add inside a rolled-back savepoint leaves no event',
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 const { ownerId, venueId } = await seedVenue(tx);
