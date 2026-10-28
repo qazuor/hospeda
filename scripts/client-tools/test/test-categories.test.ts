@@ -132,7 +132,7 @@ describe('readCategories', () => {
         const names = categories.map((category) => category.name);
 
         expect(names).toContain('billing');
-        expect(names).toContain('gastronomy');
+        expect(names).toContain('venue');
         expect(names).toContain('experiences');
         expect(names.some((name) => name.startsWith('$'))).toBe(false);
     });
