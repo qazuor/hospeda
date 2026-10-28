@@ -426,7 +426,7 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
         );
         if (!ownerRows[0]) {
             throw new Error(
-                `[experiences] Owner "${ownerEmail}" not found. seedGastronomies() must run before seedExperiences() — check the seed pipeline order.`
+                `[experiences] Owner "${ownerEmail}" not found. seedVenues() must run before seedExperiences() — check the seed pipeline order.`
             );
         }
         const listingOwnerId = ownerRows[0].id;

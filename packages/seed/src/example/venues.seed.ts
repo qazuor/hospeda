@@ -315,7 +315,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
     const files: string[] = ((exampleManifest as Record<string, unknown>).venues as string[]) ?? [];
 
     if (files.length === 0) {
-        logger.warn(`${STATUS_ICONS.Warning} No gastronomy files declared in manifest — skipping.`);
+        logger.warn(`${STATUS_ICONS.Warning} No venue files declared in manifest — skipping.`);
         return;
     }
 
@@ -665,7 +665,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
 
             if (!realVenueId) {
                 logger.warn(
-                    `  ${STATUS_ICONS.Warning} FAQ file "${faqFile}": could not resolve gastronomy "${faqFileData.$venueId}" — skipping`
+                    `  ${STATUS_ICONS.Warning} FAQ file "${faqFile}": could not resolve venue "${faqFileData.$venueId}" — skipping`
                 );
                 continue;
             }
@@ -721,7 +721,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
 
             if (!realVenueId) {
                 logger.warn(
-                    `  ${STATUS_ICONS.Warning} Review file "${reviewFile}": could not resolve gastronomy "${reviewFileData.$venueId}" — skipping`
+                    `  ${STATUS_ICONS.Warning} Review file "${reviewFile}": could not resolve venue "${reviewFileData.$venueId}" — skipping`
                 );
                 continue;
             }
