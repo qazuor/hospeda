@@ -100,16 +100,22 @@ Session variables: `CUTOVER_MP_ACCESS_TOKEN` (the sandbox token) and
 3. The token's account must carry the `test_user` tag on `GET /users/me`. That is the only
    measured signal of the sandbox: both tokens start with `APP_USR-` and `live_mode` is `true`
    in both (EX-14). A failed read refuses too.
-4. The database must answer `current_database() = 'hospeda_staging'` (the staging name, see
-   `scripts/server-tools/src/lib/target.ts`; production's is `postgres`). Asked to the server,
-   never parsed from the URL.
+4. The database must answer `current_database() = 'hospeda_staging'` and
+   `current_user = 'hospeda_staging_user'` (the staging name and role, see
+   `scripts/server-tools/src/lib/target.ts`; production's are both `postgres`). Asked to the
+   server, never parsed from the URL. A failed query refuses too.
 
 **Sources**, read inside a `READ ONLY` transaction:
 
 - **Anchored**: every `provider_link.provider_id`, cancelled or not (whether it is alive is
-  decided by re-reading it by id, never by `cancelled_seen_at`).
-- **Loose**: every `subscription.declared_payer_email` (the email sent as `payer_email` when the
-  authorization was created), searched with `GET /preapproval/search?payer_email=`. The search
+  decided by re-reading it by id, never by `cancelled_seen_at`), plus the `authorizationId` of
+  every completed `PREAPPROVAL_CREATE` row of `idempotency_key` (earlier attempts a retry
+  replaced, which no longer have a link).
+- **Loose**: the email each subscription sent as `payer_email`,
+  `coalesce(declared_payer_email, users.email)` as in the creations sweep
+  (`creation-sweep.model.ts`); the fallback covers rows from before migration 0177 and
+  successors created with no declared email. Each one is searched with
+  `GET /preapproval/search?payer_email=`. The search
   filters by that field in the sandbox (RC-1), but its listing status is stale (RC-4), so every
   id found is re-read by id. A search whose walked count is not its `total` is a
   `SEARCH_INCOMPLETE` failure. The old `billing_pending_checkouts` and `billing_checkouts` tables
@@ -128,8 +134,11 @@ counted, never written or printed): `foundIds`, `liveIds`, `cancelRequestedIds`,
 with the same no-overwrite rules as the cutover manifest.
 
 Exit 0 clean (`ok` or `dry-run`), 1 any failure (**do not go on to V4**), 2 usage error or guard
-refusal. Not covered: a sandbox preapproval created for an email the staging database never
-stored has no anchor and is not found.
+refusal. Not covered: a sandbox preapproval with no anchored id whose payer email is no longer
+in the database. That is the case of a closed account: the closure pseudonymizes `users.email`
+and clears `declared_payer_email`, so its loose preapprovals are found only if a creation
+attempt recorded their id. A preapproval created for an email the database never stored is not
+found either.
 
 ## What it does
 
