@@ -13,7 +13,7 @@
  * the resolver uses (`label=<key>=<value>` and `expose=<port>`).
  */
 
-import { describe, expect, it } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import {
     type DockerQueryPort,
     formatResolution,
@@ -163,6 +163,81 @@ describe('resolveContainer — cross-target guard (HOS-1950)', () => {
         await expect(resolveContainer({ kind: 'api', target: 'staging', docker })).rejects.toThrow(
             /No running container resolves to kind 'api' for target 'staging'/
         );
+    });
+});
+
+describe('resolveContainer — database kinds never cross targets (HOS-1950)', () => {
+    const DB_ENV_KEYS = [
+        'HOPS_PROD_POSTGRES_UUID',
+        'HOPS_STAGING_POSTGRES_UUID',
+        'HOPS_PROD_REDIS_UUID',
+        'HOPS_STAGING_REDIS_UUID'
+    ] as const;
+    let saved: Record<string, string | undefined> = {};
+
+    beforeEach(() => {
+        saved = {};
+        for (const key of DB_ENV_KEYS) saved[key] = process.env[key];
+        process.env.HOPS_PROD_POSTGRES_UUID = 'prodpguuid';
+        process.env.HOPS_STAGING_POSTGRES_UUID = 'stagingpguuid';
+        process.env.HOPS_PROD_REDIS_UUID = 'prodredisuuid';
+        process.env.HOPS_STAGING_REDIS_UUID = 'stagingredisuuid';
+    });
+
+    afterEach(() => {
+        for (const key of DB_ENV_KEYS) {
+            if (saved[key] === undefined) delete process.env[key];
+            else process.env[key] = saved[key];
+        }
+    });
+
+    const PROD_PG: FakeContainer = {
+        name: 'prodpguuid',
+        image: 'postgres:17-alpine',
+        ports: [5432],
+        labels: coolifyLabels('postgresql-database-prodpguuid', 'prodpguuid')
+    };
+    const STAGING_PG: FakeContainer = {
+        name: 'stagingpguuid',
+        image: 'postgres:17-alpine',
+        ports: [5432],
+        labels: coolifyLabels('postgresql-database-stagingpguuid', 'stagingpguuid')
+    };
+    const PROD_REDIS: FakeContainer = {
+        name: 'prodredisuuid',
+        image: 'redis:7.2',
+        ports: [6379],
+        labels: coolifyLabels('redis-database-prodredisuuid', 'prodredisuuid')
+    };
+
+    it('errors when the staging postgres is stopped and prod postgres runs (image + port fallbacks)', async () => {
+        // Arrange: the only live postgres is prod's; it matches the image
+        // pattern AND the exposed port.
+        const docker = fakeDocker([PROD_PG]);
+
+        // Act
+        const attempt = resolveContainer({ kind: 'postgres', target: 'staging', docker });
+
+        // Assert
+        await expect(attempt).rejects.toThrow(/postgresql-database-stagingpguuid/);
+        await expect(attempt).rejects.toThrow(/belongs to 'postgresql-database-prodpguuid'/);
+    });
+
+    it('errors when the staging redis is stopped and prod redis runs', async () => {
+        const docker = fakeDocker([PROD_REDIS]);
+
+        await expect(
+            resolveContainer({ kind: 'redis', target: 'staging', docker })
+        ).rejects.toThrow(/belongs to 'redis-database-prodredisuuid'/);
+    });
+
+    it('resolves the staging postgres by label when both are running', async () => {
+        const docker = fakeDocker([PROD_PG, STAGING_PG]);
+
+        const resolved = await resolveContainer({ kind: 'postgres', target: 'staging', docker });
+
+        expect(resolved.name).toBe(STAGING_PG.name);
+        expect(resolved.strategy).toBe('label');
     });
 });
 
