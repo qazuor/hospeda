@@ -5,7 +5,7 @@ import {
     ListingRetentionBeforeDeletion
 } from '../../templates/listing/index.js';
 import { formatDate } from '../../templates/utils/index.js';
-import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
+import { formatTrialVerticalInline } from '../../utils/product-domain-copy.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 
 const BEFORE_ARCHIVE = 'verticals.listing-retention-before-archive';
@@ -53,7 +53,7 @@ function parsePayload(row: EmailOutboxRow, kind: 'archive' | 'deletion'): Retent
 }
 
 function verticalName(vertical: string): string {
-    return formatTrialVerticals({ verticals: [vertical] }).toLocaleLowerCase('es-AR');
+    return formatTrialVerticalInline({ vertical });
 }
 
 function marketDate(instant: Date): string {

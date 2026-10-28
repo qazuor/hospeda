@@ -10,6 +10,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    formatTrialVerticalInline,
     resolveRenewalReminderFooter,
     resolveTrialSeriesCopy
 } from '../../src/utils/product-domain-copy.js';
@@ -67,5 +68,13 @@ describe('resolveRenewalReminderFooter (HOS-1283)', () => {
         expect(resolveRenewalReminderFooter(null)).toBe(accommodation);
         expect(resolveRenewalReminderFooter(undefined)).toBe(accommodation);
         expect(resolveRenewalReminderFooter('addon')).toBe(accommodation);
+    });
+});
+
+describe('formatTrialVerticalInline (HOS-1823)', () => {
+    it('keeps the venue proper name capitalised and lowercases the generic labels', () => {
+        expect(formatTrialVerticalInline({ vertical: 'venue' })).toBe('Comer y salir');
+        expect(formatTrialVerticalInline({ vertical: 'accommodation' })).toBe('alojamiento');
+        expect(formatTrialVerticalInline({ vertical: 'experience' })).toBe('experiencias');
     });
 });

@@ -32,7 +32,7 @@ const alliance: AdminLeadReceivedProps = {
 /** The venue funnel collects no phone and often no message. */
 const venueMinimal: AdminLeadReceivedProps = {
     funnelLabel: 'Comercios',
-    programLabel: 'Gastronomía',
+    programLabel: 'Comer y salir',
     contactName: 'María García',
     contactEmail: 'maria@example.com',
     adminUrl: 'https://admin.hospeda.com.ar/platform/venue-leads',

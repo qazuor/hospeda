@@ -156,3 +156,17 @@ export function formatTrialVerticals(input: { readonly verticals: readonly strin
     if (labels.length < 2) return labels[0] ?? '';
     return `${labels.slice(0, -1).join(', ')} y ${labels.at(-1)}`;
 }
+
+/**
+ * Names one vertical in the middle of a sentence ("tu ficha de ...").
+ *
+ * Generic vertical labels are lowercased to read as common nouns, but the venue
+ * vertical is a proper name ("Comer y salir") and keeps its capitals.
+ *
+ * @param input - The vertical's product-domain string.
+ * @returns The label ready to be embedded in a sentence.
+ */
+export function formatTrialVerticalInline(input: { readonly vertical: string }): string {
+    const label = formatTrialVerticals({ verticals: [input.vertical] });
+    return input.vertical === 'venue' ? label : label.toLocaleLowerCase('es-AR');
+}

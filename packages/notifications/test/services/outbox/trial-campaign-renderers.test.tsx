@@ -61,7 +61,7 @@ describe('trial campaign outbox renderers', () => {
             const html = renderToStaticMarkup(result.react);
             expect(result.subject.length).toBeGreaterThan(0);
             expect(html).toContain('Alojamiento');
-            expect(html).toContain('Gastronomía');
+            expect(html).toContain('Comer y salir');
             expect(html).toContain('Experiencias');
         }
     });
