@@ -88,8 +88,8 @@ export const COMPARISON_ROW_ICONS: Record<string, ComponentType<IconProps> | und
     // Same icon as `aiChat` on purpose — distinct audiences, never co-rendered.
     aiChatOwner: ChatIcon,
     aiSupport: BriefcaseIcon,
-    // Gastronomy (HOS-1032). `PlanComparisonTable` guards with `{RowIcon && …}`,
-    // so an unmapped row degrades silently — which is why the two gastronomy/experience
+    // Venue (HOS-1032). `PlanComparisonTable` guards with `{RowIcon && …}`,
+    // so an unmapped row degrades silently — which is why the two venue/experience
     // tables would otherwise have rendered ONE iconed row among fifteen, beside
     // owner and tourist tables where every row has one.
     maxVenues: ForkKnifeIcon,
@@ -107,7 +107,7 @@ export const COMPARISON_ROW_ICONS: Record<string, ComponentType<IconProps> | und
     editExperienceInfo: EditIcon,
     experienceDirections: CompassIcon,
     experienceCertificate: CheckCircleIcon,
-    // Shared by both gastronomy and experience verticals
+    // Shared by both venue and experience verticals
     listingPdf: FileTextIcon,
     // Same icon as `aiChat` / `aiChatOwner`, same reason: distinct audiences.
     aiChatListing: ChatIcon

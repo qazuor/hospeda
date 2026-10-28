@@ -5,7 +5,7 @@
  * extended in HOS-166 PR-C with the create CTA and the per-listing state
  * machine — badge, completeness checklist, and publish+pay CTA).
  * HOS-1757 restores per-vertical published usage badges from effective limits.
- * Lists the authenticated GASTRONOMY_OWNER's own listings across both verticals
+ * Lists the authenticated VENUE_OWNER's own listings across both verticals
  * (venue + experiences) and deep-links each to its operational editor.
  *
  * Auth: middleware protects /mi-cuenta/* (session required). This page adds a
@@ -54,7 +54,7 @@ if (!user) {
 
 // Role gate: only venue/experience owners (and staff) may manage listings.
 // HOS-296: gate through the shared `nav-gating` predicate over the role SET,
-// so a GASTRONOMY_OWNER who is ALSO a HOST keeps venue/experience access (AC-1).
+// so a VENUE_OWNER who is ALSO a HOST keeps venue/experience access (AC-1).
 if (!hasListingNavAccess({ roles: user.roles })) {
     return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
 }
@@ -189,7 +189,7 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
 
     {/* HOS-788: welcome-tour anchor for the venue welcome tour only —
         the menu QR/scan-analytics panel is exclusive to the venue vertical. A
-        GASTRONOMY_OWNER always holds at least one venue listing (the
+        VENUE_OWNER always holds at least one venue listing (the
         role is granted alongside the listing's creation, never before), so
         this is never empty for the audience that tour targets. */}
     <div data-tour="venue-qr">

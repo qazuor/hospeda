@@ -157,7 +157,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // renders `listing.notices.fixRequest.*`, and imports the notices module.
     'listing.notices',
     'listing.owner',
-    // The gastronomy-only editor panels (menu, daily specials, venue events)
+    // The venue-only editor panels (menu, daily specials, venue events)
     // live under their own namespace since the shared `listing` one was split.
     'venue.owner',
     'common.anonymous',
@@ -194,7 +194,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // HOS-957 — the rich-text toolbar's link dialog, which replaced
     // `window.prompt('URL del enlace', …)`. Named by `LinkUrlDialog.client.tsx`
     // through `RichTextEditor.client.tsx`, so it is reachable from all four
-    // editors that mount it (accommodation, gastronomy/experience, event, post).
+    // editors that mount it (accommodation, venue/experience, event, post).
     'common.richText',
     'common.saving',
     'common.untitled',
@@ -234,7 +234,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'experience.aiChat',
     'experience.editOwn',
     'experience.reviews',
-    // HOS-822 — the gastronomy/experience owner form and the public listing page now name
+    // HOS-822 — the venue/experience owner form and the public listing page now name
     // the SAME listing-type key (`experience.type.*` / `venue.types.*`,
     // via `resolveVenueTypeLabel` / `resolveExperienceTypeLabel`). The form is a client island, so both
     // prefixes have to ship: they replace `listing.owner.editor.typeOption.*`,
@@ -249,12 +249,12 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'external-reputation.snippets',
     'external-reputation.status',
     'footer.newsletter',
-    // HOS-1077: gastronomy half of the permission-value pair described at
+    // HOS-1077: venue half of the permission-value pair described at
     // `experience.editOwn` above. Not an i18n key.
-    // HOS-1264 — gastronomy half of `experience.aiChat` above.
+    // HOS-1264 — venue half of `experience.aiChat` above.
     'venue.aiChat',
     'venue.editOwn',
-    // HOS-822 — gastronomy half of the shared listing-type source above.
+    // HOS-822 — venue half of the shared listing-type source above.
     'venue.types',
     'home.featuredDestinations',
     'home.searchBar',

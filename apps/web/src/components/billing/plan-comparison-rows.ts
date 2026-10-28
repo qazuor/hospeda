@@ -307,13 +307,13 @@ export const OWNER_AI_ROWS: readonly RowConfig[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Gastronomy and experience rows (HOS-1032)
+// Venue and experience rows (HOS-1032)
 // ---------------------------------------------------------------------------
 //
 // The two verticals get their own rows rather than reusing the owner ones,
 // because they grant entirely different keys: `EDIT_VENUE_INFO` is not
 // `EDIT_ACCOMMODATION_INFO`, and a row asking for the accommodation key would
-// render every gastronomy or experience tier as "not included". They are also kept apart from
+// render every venue or experience tier as "not included". They are also kept apart from
 // EACH OTHER — `venue` and `experience` are separate product domains and
 // no surface may group them under a shared "Comercio" (HOS-941 R-3).
 //
@@ -322,7 +322,7 @@ export const OWNER_AI_ROWS: readonly RowConfig[] = [
 // is reflected with no edit here — the same property that keeps the owner and
 // tourist tables honest.
 
-/** What a gastronomy tier lets its owner publish and maintain. */
+/** What a venue tier lets its owner publish and maintain. */
 export const VENUE_LISTING_ROWS: readonly RowConfig[] = [
     {
         id: 'maxVenues',
@@ -350,7 +350,7 @@ export const VENUE_LISTING_ROWS: readonly RowConfig[] = [
     }
 ];
 
-/** The carta, and everything that hangs off it. The gastronomy differentiator. */
+/** The carta, and everything that hangs off it. The venue differentiator. */
 export const VENUE_MENU_ROWS: readonly RowConfig[] = [
     {
         id: 'venueMenu',

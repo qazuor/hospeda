@@ -266,7 +266,7 @@ function QrBlock({
  *
  * @example
  * ```astro
- * <VenueMenuQrWidget client:visible locale={locale} listings={gastronomyListings} />
+ * <VenueMenuQrWidget client:visible locale={locale} listings={venueListings} />
  * ```
  */
 export function VenueMenuQrWidget({
@@ -312,7 +312,7 @@ export function VenueMenuQrWidget({
     return (
         <div
             className={styles.widget}
-            data-testid="gastronomy-menu-qr-widget"
+            data-testid="venue-menu-qr-widget"
         >
             <div className={styles.header}>
                 <h2 className={styles.title}>
@@ -350,7 +350,7 @@ export function VenueMenuQrWidget({
                     <div
                         key={listing.id}
                         className={styles.card}
-                        data-testid="gastronomy-menu-qr-card"
+                        data-testid="venue-menu-qr-card"
                     >
                         <h3 className={styles.cardName}>{listing.name}</h3>
 

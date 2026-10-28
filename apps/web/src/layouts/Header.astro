@@ -120,7 +120,7 @@ const adminPanelUrl = getAdminUrl();
  * and a pre-auth dropdown has no per-option "already acquired" state to
  * react to (see `PUBLISH_CTA_OPTIONS`'s JSDoc). The CTA now renders
  * unconditionally for every visitor — guest, tourist, HOST, or
- * GASTRONOMY_OWNER alike (AC-12); this header does not read capabilities.
+ * VENUE_OWNER alike (AC-12); this header does not read capabilities.
  */
 const serverUserRoles = serverUser?.roles ?? [];
 ---

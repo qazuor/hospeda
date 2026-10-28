@@ -135,9 +135,9 @@ const TABS: readonly TabDefinition[] = [
     {
         key: 'VENUE',
         labelKey: 'account.favorites.tabs.venue',
-        panelId: 'tab-panel-gastronomy',
-        tabId: 'tab-gastronomy',
-        pathSegment: 'gastronomia',
+        panelId: 'tab-panel-venue',
+        tabId: 'tab-venue',
+        pathSegment: 'comer-y-salir',
         cardTypeKey: 'account.favorites.tabs.venue'
     },
     {
@@ -156,7 +156,7 @@ const ENTITY_PATH_SEGMENTS: Readonly<Record<FavoritesEntityType, string>> = {
     DESTINATION: 'destinos',
     EVENT: 'eventos',
     EXPERIENCE: 'experiencias',
-    VENUE: 'gastronomia',
+    VENUE: 'comer-y-salir',
     POST: 'publicaciones'
 };
 

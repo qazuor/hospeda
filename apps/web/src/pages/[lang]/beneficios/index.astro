@@ -410,13 +410,13 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 	</section>
 
 	<!-- Venue Benefits -->
-	<section class="benefits-section benefits-section--gastronomy section section--warm">
+	<section class="benefits-section benefits-section--venue section section--warm">
 		<div class="benefits-section__decoratives" aria-hidden="true">
-			<span class="benefits-section__watermark benefits-section__watermark--gastronomy">
+			<span class="benefits-section__watermark benefits-section__watermark--venue">
 				<ForkKnifeIcon size={200} weight="duotone" />
 			</span>
 			<svg
-				class="benefits-section__wave benefits-section__wave--gastronomy"
+				class="benefits-section__wave benefits-section__wave--venue"
 				viewBox="0 0 800 60"
 				preserveAspectRatio="none"
 				aria-hidden="true"
@@ -439,7 +439,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			<p class="benefits-section__tagline" data-reveal="up">{t('benefits.venue.tagline')}</p>
 			<h2 class="benefits-section__title" data-reveal="up">
 				{venueHeading.main && <>{venueHeading.main}{' '}</>}
-				<span class="benefits-section__title-accent benefits-section__title-accent--gastronomy">
+				<span class="benefits-section__title-accent benefits-section__title-accent--venue">
 					{venueHeading.accent}
 					<svg
 						class="benefits-section__title-underline"
@@ -462,7 +462,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 					const Icon = b.Icon;
 					return (
 						<div class="benefits-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-							<span class="benefits-card__icon benefits-card__icon--gastronomy" aria-hidden="true">
+							<span class="benefits-card__icon benefits-card__icon--venue" aria-hidden="true">
 								<Icon size="lg" weight="duotone" />
 							</span>
 							<h3 class="benefits-card__title">{t(b.titleKey)}</h3>
@@ -624,7 +624,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		color: var(--brand-primary);
 	}
 
-	.benefits-card__icon--gastronomy {
+	.benefits-card__icon--venue {
 		background-color: var(--brand-accent-a12);
 		color: var(--brand-accent);
 	}
@@ -702,7 +702,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		color: var(--brand-primary);
 	}
 
-	.benefits-section__title-accent--gastronomy .benefits-section__title-underline {
+	.benefits-section__title-accent--venue .benefits-section__title-underline {
 		color: var(--brand-accent);
 	}
 
@@ -738,7 +738,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		transform: rotate(12deg);
 	}
 
-	.benefits-section__watermark--gastronomy {
+	.benefits-section__watermark--venue {
 		bottom: -35px;
 		left: -45px;
 		color: var(--brand-accent);
@@ -778,7 +778,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		color: var(--brand-primary);
 	}
 
-	.benefits-section__wave--gastronomy {
+	.benefits-section__wave--venue {
 		top: 15%;
 		right: -5%;
 		color: var(--brand-accent);
