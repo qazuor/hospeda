@@ -168,7 +168,7 @@ const LISTING_OWNERS: readonly ListingOwnerSpec[] = [
  * Field `id` is seed-only metadata excluded from the DB insert.
  * Fields `ownerId` and `destinationId` are seed IDs resolved via idMapper.
  */
-interface GastronomySeedData {
+interface VenueSeedData {
     readonly id: string;
     readonly ownerId: string;
     readonly destinationId: string;
@@ -194,7 +194,7 @@ interface GastronomySeedData {
  * Wrapper shape of a gastronomy FAQ seed JSON file.
  * `$venueId` references the listing seed id; `faqs` is the array of entries.
  */
-interface GastronomyFaqFile {
+interface VenueFaqFile {
     readonly $venueId: string;
     readonly faqs: ReadonlyArray<{
         readonly question: string;
@@ -208,7 +208,7 @@ interface GastronomyFaqFile {
  * Wrapper shape of a gastronomy review seed JSON file.
  * `$venueId` references the listing seed id; `reviews` is the array of entries.
  */
-interface GastronomyReviewFile {
+interface VenueReviewFile {
     readonly $venueId: string;
     readonly reviews: ReadonlyArray<{
         readonly userId: string;
@@ -235,7 +235,7 @@ interface GastronomyReviewFile {
  * @param input.media - The fixture's `media` block, if any.
  * @param input.label - Listing name, for logging.
  */
-async function seedGastronomyMediaRows({
+async function seedVenueMediaRows({
     venueId,
     media,
     label
@@ -527,7 +527,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
     }
 
     // ── Step 3: Load and insert gastronomy listing JSON files ────────────────
-    const items = (await loadJsonFiles('src/data/venue', files)) as unknown as GastronomySeedData[];
+    const items = (await loadJsonFiles('src/data/venue', files)) as unknown as VenueSeedData[];
 
     for (const [index, item] of items.entries()) {
         context.currentFile = files[index] ?? '';
@@ -620,7 +620,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
                 // Mirrors the accommodation seed: a direct model insert rather
                 // than the service, so `isFeatured` and `sortOrder` are set
                 // explicitly and no permission gate or N+1 ordering query runs.
-                await seedGastronomyMediaRows({
+                await seedVenueMediaRows({
                     venueId: realId,
                     media: item.media as FixtureMediaBlock | undefined,
                     label: item.name
@@ -659,7 +659,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
         try {
             const [faqFileData] = (await loadJsonFiles('src/data/venue/faqs', [
                 faqFile
-            ])) as unknown as [GastronomyFaqFile];
+            ])) as unknown as [VenueFaqFile];
 
             const realVenueId = context.idMapper.getRealId('venues', faqFileData.$venueId);
 
@@ -715,7 +715,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
         try {
             const [reviewFileData] = (await loadJsonFiles('src/data/venue/reviews', [
                 reviewFile
-            ])) as unknown as [GastronomyReviewFile];
+            ])) as unknown as [VenueReviewFile];
 
             const realVenueId = context.idMapper.getRealId('venues', reviewFileData.$venueId);
 
