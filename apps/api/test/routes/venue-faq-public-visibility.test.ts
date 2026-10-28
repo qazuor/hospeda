@@ -1,5 +1,5 @@
 /**
- * Regression suite for HOS-400 — the public gastronomy FAQs endpoint must not
+ * Regression suite for HOS-400 — the public venue FAQs endpoint must not
  * leak a FAQ marked `isVisibleOnListing: false`.
  *
  * `listVenueFaqs` (the service-core helper this route calls) is SHARED

@@ -109,7 +109,7 @@ describe('GET /api/v1/public/amenities — vertical filter content assertions (S
 
         const slugs = body.data.items.map((i) => i.slug);
 
-        // Gastronomy-only amenity — must be present
+        // Venue-only amenity — must be present
         expect(slugs).toContain('delivery');
         // Shared-core amenity (accommodation + venue + experience) — must be present
         expect(slugs).toContain('wifi');

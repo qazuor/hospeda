@@ -429,7 +429,7 @@ export async function createListing(args: {
     return listing.id;
 }
 
-/** Creates a gastronomy or experience listing for TEST:V6:2/3. */
+/** Creates a venue or experience listing for TEST:V6:2/3. */
 export async function createVerticalListing(args: {
     readonly vertical: typeof VerticalEnum.VENUE | typeof VerticalEnum.EXPERIENCE;
     readonly ownerId: string;

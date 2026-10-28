@@ -2,7 +2,7 @@
  * Regression suite for HOS-400 — the public experience FAQs endpoint must not
  * leak a FAQ marked `isVisibleOnListing: false`.
  *
- * See `gastronomy-faq-public-visibility.test.ts` for why the filter lives in
+ * See `venue-faq-public-visibility.test.ts` for why the filter lives in
  * the ROUTE (`listExperienceFaqs` is shared with the unfiltered admin/owner
  * read) and why this file asserts the route's behaviour directly.
  *

@@ -1,4 +1,4 @@
-/** PB6 over the real HTTP stack for gastronomy and experience. */
+/** PB6 over the real HTTP stack for venue and experience. */
 import { randomUUID } from 'node:crypto';
 import { eq, getDb, trials } from '@repo/db';
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';

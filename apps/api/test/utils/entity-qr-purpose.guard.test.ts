@@ -35,7 +35,7 @@ const CALL = 'resolveEntityQrScanUrl(';
  * An experience appears TWICE on purpose: its brochure and its certificate are
  * two live codes for one subject, landing in different places, and `purpose` is
  * the only thing that tells them apart. Since HOS-982 an experience and a
- * gastronomy each appear a THIRD time, for `LISTING`: the printable sheet is
+ * venue each appear a THIRD time, for `LISTING`: the printable sheet is
  * another live code for the same subject, and the distance between the three is
  * exactly what this guard keeps honest — a brochure is handed to someone, a
  * certificate is issued to someone, and a listing sheet is taped to a door.

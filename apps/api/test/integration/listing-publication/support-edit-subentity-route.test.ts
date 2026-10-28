@@ -1,5 +1,5 @@
 /**
- * TEST:V8a:9 (ACC:15, HOS-1493) through the gastronomy and experience photo and
+ * TEST:V8a:9 (ACC:15, HOS-1493) through the venue and experience photo and
  * FAQ admin routes: an admin with action 15 and the reason header edits a
  * foreign listing's photos and FAQ, which leaves an admin `listing.edited`
  * event carrying the reason and queues the support-edit email to the owner.

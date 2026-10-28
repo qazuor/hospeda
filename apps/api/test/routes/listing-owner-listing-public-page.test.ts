@@ -1,11 +1,11 @@
 /**
- * `hasPublicPage` is the publication state, on both gastronomy and experience verticals
+ * `hasPublicPage` is the publication state, on both venue and experience verticals
  * (HOS-982 PR 2; V6.9b).
  *
  * ---
  * WHY THIS FILE EXISTS RATHER THAN AN ASSERTION IN THE listMine SUITES
  *
- * The mapping assertions belong in `routes/{gastronomy,experience}/protected/
+ * The mapping assertions belong in `routes/{venue,experience}/protected/
  * listMine.test.ts`, and they were written there first. They do not run. Those
  * suites drive the whole app through `initApp()` with mock-actor headers, never
  * reach `listOwn`, and guard every assertion behind an `if (!capturedActor)

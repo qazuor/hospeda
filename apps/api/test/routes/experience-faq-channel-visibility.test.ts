@@ -1,10 +1,10 @@
 /**
  * Regression suite for HOS-400 — experience FAQ channel-visibility flags reach
  * the service, mirroring `accommodation-faq-channel-visibility.test.ts`
- * (H-119 / H-59) and `gastronomy-faq-channel-visibility.test.ts` for the other
+ * (H-119 / H-59) and `venue-faq-channel-visibility.test.ts` for the other
  * vertical HOS-400 adopted the flags into.
  *
- * See `gastronomy-faq-channel-visibility.test.ts` for why this spies on the
+ * See `venue-faq-channel-visibility.test.ts` for why this spies on the
  * service call instead of the HTTP status code.
  *
  * @module test/routes/experience-faq-channel-visibility

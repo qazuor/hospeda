@@ -20,7 +20,7 @@
  * adopting the HOS-393 fragment). `destination_faqs` does not — destinations
  * have no AI chat, so `isUsableByAi` would be inert there. So:
  *
- * - **accommodation / gastronomy / experience** FAQ routes MUST declare the
+ * - **accommodation / venue / experience** FAQ routes MUST declare the
  *   flag-carrying schemas, or the flags are stripped at the HTTP boundary and
  *   the owner's choice is lost while the API reports success. That was
  *   H-119 / H-59, and it is exactly what HOS-400 would have repeated for the
@@ -39,7 +39,7 @@
  *
  * - That the service and model actually persist the flags. That is behaviour,
  *   covered by `accommodation-faq-channel-visibility.test.ts`,
- *   `gastronomy-faq-channel-visibility.test.ts` and
+ *   `venue-faq-channel-visibility.test.ts` and
  *   `experience-faq-channel-visibility.test.ts`.
  * - Reorder / remove / list FAQ routes: they carry no FAQ text payload.
  */
