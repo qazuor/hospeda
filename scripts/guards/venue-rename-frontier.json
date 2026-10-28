@@ -104,7 +104,7 @@
         "apps/api/test/routes/listing-qr-code.test.ts": 1,
         "apps/api/test/routes/listing-qr-sheet.test.ts": 1,
         "apps/api/test/routes/post/public/categories-backward-compat.test.ts": 4,
-        "apps/api/test/routes/post/public/categories-regression.test.ts": 9,
+        "apps/api/test/routes/post/public/categories-regression.test.ts": 5,
         "apps/api/test/routes/user-bookmark/count.test.ts": 1,
         "apps/api/test/routes/user-bookmark/list.test.ts": 1,
         "apps/api/test/routes/venue/protected/menu-qr-scans.test.ts": 1,
