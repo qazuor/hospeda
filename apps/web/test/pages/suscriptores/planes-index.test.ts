@@ -390,7 +390,7 @@ describe('plan index — the trial line is read, never written (R-2)', () => {
     });
 
     it('guards the trial line independently of the price line', () => {
-        // Gastronomy has a price and no trial; partner has NEITHER since
+        // Venue has a price and no trial; partner has NEITHER since
         // HOS-1212, and host has both. Nesting the trial inside the price
         // conditional would couple two lines that vary independently across the
         // five cards; asserted by nesting DEPTH, since the two blocks are
