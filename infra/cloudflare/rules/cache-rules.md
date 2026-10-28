@@ -200,8 +200,8 @@ under a matched prefix that has not opted in returns `BYPASS`, which is the
 mechanism working rather than a gap.
 
 W2-3 left six such pages deliberately uncached — `/destinos/atraccion/`,
-`/destinos/lugar/`, and the four gastronomy/experience pages — because
-`attraction`, `pointOfInterest`, `gastronomy` and `experience` had no tag
+`/destinos/lugar/`, and the four venue/experience pages — because
+`attraction`, `pointOfInterest`, venue and experience had no tag
 vocabulary, no `entity-tag-mapper` case, and their services never called the
 revalidation service at all. **W2-4 built that chain and all six now cache**,
 which is why this wave added the `gastronomia`/`experiencias` prefixes: the
@@ -245,7 +245,7 @@ both partners named in the original HOS-519 report
 (`autoservice-litoral`, `fundacion-entre-rios-sustentable`) were HARD-DELETED
 by the seed data-migration `0059` (purge of test and example listings)
 (`PARTNER_SLUGS`, `0059`, `PARTNER_SLUGS` block, lines 260-262),
-an intentional 2026-08-23 owner decision to clear gastronomy and experience example data before
+an intentional 2026-08-23 owner decision to clear venue and experience example data before
 launch. So this rule currently has **nothing to verify against in production**
 — `curl` against either slug answers 404, not 200, and will keep doing so
 until a real gold partner is onboarded. Verify against **staging** instead
@@ -896,7 +896,7 @@ Purge scoping, each probe 7 s after the purge:
 |---|---|---|---|---|
 | `preview:attr-centro-historico` | **MISS** | `HIT` | `HIT` | `HIT` |
 
-The first table shows the two new gastronomy and experience collections are isolated from each
+The first table shows the two new venue and experience collections are isolated from each
 other and from the detail pages. The second shows a per-entity tag evicts one
 attraction without touching its sibling.
 
@@ -938,7 +938,7 @@ shipped.
 
 **The four W2-4 entity types had no `revalidation_config` row**, so
 `scheduleRevalidation` returned at its config lookup and every purge for
-`pointOfInterest`, `attraction`, `gastronomy` and `experience` was a silent
+`pointOfInterest`, `attraction`, venue and `experience` was a silent
 no-op on staging AND production. Fixed by seed baseline + data-migration `0036`,
 plus a `logger.warn` on that branch and a derived static guard
 (`every-entity-type-has-config.guard.test.ts`) that fails when any `entityType`
@@ -965,7 +965,7 @@ Two notes for anyone re-running this:
 
 #### What is still NOT verified by probing
 
-Two W2-4 surfaces have no staging data to measure: a gastronomy detail page
+Two W2-4 surfaces have no staging data to measure: a venue detail page
 (the listing renders no entries) and — until `0031` opened three of them — a POI
 detail page gated on `hasOwnPage`.
 
