@@ -1323,8 +1323,5 @@
         "scripts/zod-keys-inventory.json": 67,
         "specs-prioritization.csv": 3
     },
-    "renamedFrom": {
-        "packages/seed/src/example/venues.seed.ts": "packages/seed/src/example/gastronom\u0069es.seed.ts",
-        "packages/seed/test/venue-cuisine-features.test.ts": "packages/seed/test/gastronom\u0079-cuisine-features.test.ts"
-    }
+    "renamedFrom": {}
 }
