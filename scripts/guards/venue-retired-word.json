@@ -377,7 +377,19 @@
             "files": {
                 "apps/web/src/lib/legacy-redirects.ts": 7,
                 "apps/web/test/lib/legacy-redirects.test.ts": 3,
-                "apps/web/test/lib/public-redirect-paths.guard.test.ts": 0
+                "apps/web/test/lib/public-redirect-paths.guard.test.ts": 0,
+                "apps/web/src/pages/[lang]/publicar-restaurante/index.astro": 3,
+                "apps/web/src/lib/seo/static-sitemap-pages.ts": 1,
+                "apps/web/test/pages/publicar-restaurante-index.test.ts": 5,
+                "apps/web/test/static-guards/no-links-to-superseded-publish-urls.guard.test.ts": 4,
+                "apps/web/test/static-guards/retired-pricing-urls.guard.test.ts": 1,
+                "apps/web/test/lib/middleware-helpers.test.ts": 3,
+                "apps/web/test/lib/pricing-page-paths.test.ts": 1,
+                "apps/web/test/lib/cacheable-routes-parse-no-session.guard.test.ts": 1,
+                "apps/web/test/pages/listing-landing-cta.guard.test.ts": 2,
+                "apps/web/test/pages/suscriptores/planes-index.test.ts": 4,
+                "apps/web/test/pages/beneficios-index.test.ts": 2,
+                "apps/web/test/lib/billing/audience-plans.test.ts": 2
             },
             "markers": {
                 "packages/service-core/src/services/venue/venue-qr.ts": 1
@@ -390,11 +402,16 @@
             "markers": {
                 "apps/api/src/routes/media/admin/delete.ts": 1,
                 "apps/api/src/routes/media/protected/delete-entity.ts": 2,
-                "docs/analytics/posthog-audit.md": 1
+                "docs/analytics/posthog-audit.md": 1,
+                "docs/decisions/ADR-035-gastronomy-experience-separation.md": 14,
+                "specs-prioritization.csv": 2
+            },
+            "files": {
+                "docs/decisions/ADR-035-gastronomy-experience-separation.md": 31
             }
         }
     },
     "historyCount": 85,
     "historyWordFiles": 14,
-    "ledgerFingerprint": "87448c97bd8531e080c56a61883d916ac1adfa8c585490aeede26e463744b1f8"
+    "ledgerFingerprint": "40d6ee32fd61dfc170cd36f12716e6af115ae539547bd78e19307fa761a2bf45"
 }
