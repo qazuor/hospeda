@@ -72,12 +72,12 @@ const ownerBenefits = [
 ] as const;
 
 /*
- * Experience and gastronomy benefits deliberately point at the
- * `{experience,gastronomy}.landing.*` keys that already back `/publicar-experiencia/` and
+ * Experience and venue benefits deliberately point at the
+ * landing copy namespaces for venue and experience that already back `/publicar-experiencia/` and
  * `/publicar-restaurante/` instead of getting a copy of their own. The claim a
  * vertical makes about itself has one home; a price or policy change edits one
  * string and both the landing and this page follow. Only the section chrome
- * (tagline, CTA label) is local, under `benefits.{experience,gastronomy}.*`.
+ * (tagline, CTA label) is local to the benefits page.
  *
  * Three items each, against five for tourist/owner — the grid is `auto-fit`,
  * so a shorter row lays out on its own without a placeholder.
@@ -409,7 +409,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		</div>
 	</section>
 
-	<!-- Gastronomy Benefits -->
+	<!-- Venue Benefits -->
 	<section class="benefits-section benefits-section--gastronomy section section--warm">
 		<div class="benefits-section__decoratives" aria-hidden="true">
 			<span class="benefits-section__watermark benefits-section__watermark--gastronomy">

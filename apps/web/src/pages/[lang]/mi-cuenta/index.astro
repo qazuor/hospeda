@@ -8,7 +8,7 @@
  * for any SSR edge case where middleware did not run.
  *
  * Quick stats (bookmarks/reviews for tourists, properties/messages for hosts,
- * listings/messages for gastronomy/experience owners — HOS-1293, subscription for all) are
+ * listings/messages for venue/experience owners — HOS-1293, subscription for all) are
  * fetched client-side so that we avoid SSR cookie-forwarding complexity and the
  * page can show a skeleton first.
  *
@@ -57,7 +57,7 @@ const dashboardLabel = t('account.pages.dashboard.dashboardLabel', 'Panel de con
 // whole role SET, via the single shared gating predicate).
 const isHost = hasAccommodationsNavAccess({ roles: user.roles });
 
-// H-151: the same treatment for the gastronomy/experience owner. The dashboard already
+// H-151: the same treatment for the venue/experience owner. The dashboard already
 // adapted between tourist and host; the merchant was the case it had never
 // heard of, so someone whose listing sits in DRAFT saw a page that never
 // mentioned their business — while the sidebar beside it showed "Mi comercio".
@@ -108,7 +108,7 @@ const navItems = [
     ...(isOwner
         ? [
               {
-                  // Same label key and icon as the sidebar's gastronomy/experience entry, so
+                  // Same label key and icon as the sidebar's venue/experience entry, so
                   // the two surfaces cannot drift apart in wording.
                   label: t('listing.owner.nav', 'Mi comercio'),
                   href: buildUrl({ locale, path: 'mi-cuenta/comercio' }),
@@ -534,10 +534,10 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         const base = `${getApiUrl()}/api/v1/protected`;
 
         // Detect view mode from the DOM: host view renders stat-properties;
-        // gastronomy/experience-owner view (HOS-1293) renders stat-listings;
+        // venue/experience-owner view (HOS-1293) renders stat-listings;
         // tourist view renders stat-favorites/stat-reviews. The three are
         // mutually exclusive — see AccountStatsGrid's isHost/isOwner
-        // precedence (host wins over gastronomy/experience wins over tourist).
+        // precedence (host wins over venue/experience wins over tourist).
         const isHostView = document.getElementById('stat-properties') !== null;
         const isListingView = document.getElementById('stat-listings') !== null;
         const isTouristView = !isHostView && !isListingView;
@@ -546,7 +546,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
             // /users/me/stats feeds the subscription widget for ALL views.
             // Reviews are only fetched when the tourist view is active (the
             // stat-reviews element exists), avoiding a needless request for
-            // hosts and gastronomy/experience owners alike.
+            // hosts and venue/experience owners alike.
             const fetchPromises: Array<Promise<Response>> = [
                 fetch(`${base}/users/me/stats`, { credentials: 'include' }),
             ];
@@ -681,9 +681,9 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
             return;
         }
 
-        // ── Gastronomy/experience-owner view: listings counter (HOS-1293) ──────────────────
+        // ── Venue/experience-owner view: listings counter (HOS-1293) ──────────────────
         // Runs independently of the tourist stats, same as the host block above.
-        // Only executes when the gastronomy/experience DOM elements exist. No "messages"
+        // Only executes when the venue/experience DOM elements exist. No "messages"
         // counterpart — see AccountStatsGrid's comment on why this platform has
         // no conversation model for listings to count from.
         if (isListingView) {

@@ -1,7 +1,7 @@
 ---
 /**
  * @file gastronomia/index.astro
- * @description Gastronomy listing page (SPEC-239 T-053).
+ * @description venue listing page (SPEC-239 T-053).
  * SSR-fetches venueApi.list with filters from the query string and renders
  * a grid of VenueCard components with FilterSidebar, Pagination, EmptyState,
  * and ErrorBanner following the same pattern as alojamientos/index.astro.
@@ -42,12 +42,12 @@ const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
 // --- Edge cacheability (HOS-369 W2-4) ---
-// Newly cacheable: until W2-4 built the purge chain, `gastronomy` had no tag
+// Newly cacheable: until W2-4 built the purge chain, venue pages had no cache tag
 // vocabulary, no `entity-tag-mapper` case, and its service never called the
 // revalidation service — so caching this page would have shipped a response
 // nothing could evict.
 //
-// Tagged with the collection: this IS a listing, so every gastronomy write
+// Tagged with the collection: this IS a listing, so every venue write
 // must evict it.
 applyCacheHeaders({
 	locals: Astro.locals,
@@ -112,9 +112,9 @@ const DEFAULT_SORT_KEY = 'featured';
 const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
 
-// --- Fetch destinations (CITY), the gastronomy feature catalog, and the listings ---
+// --- Fetch destinations (CITY), the venue feature catalog, and the listings ---
 // The catalog read is scoped with `applicableVertical: 'venue'` so the
-// sidebar only ever offers aptos and other gastronomy characteristics — the
+// sidebar only ever offers aptos and other venue characteristics — the
 // shared `features` table also holds ~80 accommodation and experience rows that
 // would be meaningless on a restaurant. Its TTL is the fixed-catalog one: the
 // catalog is identical on every render, unlike the listing query itself.
@@ -173,7 +173,7 @@ const hasActiveFilters = hasActiveVenueListingFilters({
 	features: featuresParam,
 });
 
-// --- Gastronomy types for filter (from the confirmed enum) ---
+// --- Venue types for filter (from the confirmed enum) ---
 const VENUE_TYPES = [
     'RESTAURANT',
     'BAR',

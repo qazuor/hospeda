@@ -1,7 +1,7 @@
 ---
 /**
  * @file presentacion/comer-y-salir/index.astro
- * @description Commercial presentation for the gastronomy vertical (HOS-978). It STARTED as a
+ * @description Commercial presentation for the venue vertical (HOS-978). It STARTED as a
  * verbatim migration of the owner-approved artifact "Presentación Gastronomía"; the stylesheet is still the artifact's own.
  *
  * THE COPY HAS DIVERGED FROM THE ARTIFACT, BY OWNER REQUEST (2026-09-05). The artifact is no longer the source of truth for the
@@ -18,7 +18,7 @@
  * closes the gap. Each names WHERE it appears, so a later reader can tell a deliberate promise from a mistake:
  *  1. THE 30-DAY TRIAL — masthead factsheet, steps 03 and 04, the "prueba es una sola" bullet in "Para ser justos",
  *     and the closing paragraph. Listing has no trial: `startListingCheckout` passes a literal `trialDays: 0` and
- *     the first charge lands on day 1. A REGRESSION, not a missing feature — HOS-590 gave gastronomy/experience the trial,
+ *     the first charge lands on day 1. A REGRESSION, not a missing feature — HOS-590 gave venue/experience the trial,
  *     HOS-1012 removed it when it rebuilt the local trial for accommodation only. Tracked as HOS-1184.
  *  2. ANNUAL PRICING — the paragraph above the tier table ("pagás diez meses y tenés doce") and the table's "Por año"
  *     row ($300.000 / $650.000 / $800.000). **MOSTLY SHIPPED by HOS-1285.** The six figures are now the catalogue's own
@@ -31,13 +31,13 @@
  *     owner fixed those three numbers in a comment on it on 2026-09-05. Note 50 also implies raising the per-entity ceiling.
  *  4. ALL OF THE CONTACT — the whole "Cómo te van a contactar" section, the "Teléfono, WhatsApp, email, redes" bullet in "Qué
  *     más podés mostrar", the venue-events CTA sentence, step 02's requirement list, and the masthead lede's "te llama
- *     directo". The biggest gap: a gastronomy listing publishes NO channel today. `VenuePublicSchema` omits `contactInfo`
+ *     directo". The biggest gap: a venue listing publishes NO channel today. `VenuePublicSchema` omits `contactInfo`
  *     (`packages/schemas/src/entities/venue/venue.access.schema.ts`) and `socialNetworks.whatsapp` was removed
  *     outright — four files plus a guard test (`test/components/venue/venue-contact-block-whatsapp.guard.test.ts`)
- *     say it must not return through that field. HOS-1088 is where the owner decided (2026-09-05) that gastronomy DOES get
+ *     say it must not return through that field. HOS-1088 is where the owner decided (2026-09-05) that venue DOES get
  *     contact, the way accommodation has it.
  *  5. AI TRANSLATION TO ENGLISH AND PORTUGUESE — the "en el idioma del que la lee" panel of "La carta, en serio" and the
- *     multi-language line in "Qué más podés mostrar". Gastronomy and experience listings have the FOUR multilang columns but no AI translation
+ *     multi-language line in "Qué más podés mostrar". Venue and experience listings have the FOUR multilang columns but no AI translation
  *     path, so the owner types every locale by hand. HOS-1192. NOTE what the page claims about the
  *     Premium CARTA specifically (owner decision, 2026-09-05): the AI PROPOSES each dish's translation and the owner ACCEPTS OR
  *     CORRECTS it before it goes live — a review step the rest of the listing does not have. That review is the product stance
@@ -59,7 +59,7 @@
  * THE REST OF THAT TABLE IS VERIFIED PERMISSIONS, NOT PROSE — DO NOT "RESTORE" THE OLD ROW. Until 2026-09-05 the table ended
  * with one row handing "Nombre del local, tipo y ciudad" to the team ("Escribinos y lo cambiamos"). It was wrong in all three
  * fields: `VenueOwnerUpdateInputSchema` includes `name`, `type` and `destinationId` — carrying the comment "Previously
- * owner-editable (SPEC-253 §3)" — and the gastronomy/experience editor renders `name` editable with an opt-in slug-refresh checkbox beside
+ * owner-editable (SPEC-253 §3)" — and the venue/experience editor renders `name` editable with an opt-in slug-refresh checkbox beside
  * it (`BasicInfoSection.client.tsx`; the form flag is `refreshSlugFromName`, which reaches the schema and
  * `base-listing.service.ts`, gated by `shouldOfferSlugRefresh`). So the owner changes all three alone. It is now three rows: those fields as the owner's,
  * the listing URL as the owner's (it follows the new name, with the warning that this moves the page for Google and for links
@@ -70,7 +70,7 @@
  * `venue-basico` price for two releases. The lesson is not "never print a number" — a presentation with no price is not a
  * presentation — it is that the number must travel with the live grid beside it. So the tier table carries the figures AND
  * every price mention links to `/{lang}/planes/comer-y-salir/precios/`, which reads the catalogue at request time from the public
- * plans endpoint (`domain=gastronomy`). That link is what survives a reprice. It is NOT `/publicar-restaurante/` (301s to the
+ * plans endpoint for the venue domain. That link is what survives a reprice. It is NOT `/publicar-restaurante/` (301s to the
  * sales page since HOS-690) nor the bare `/planes/comer-y-salir`, which is the sales level, not the grid.
  *
  * WHY IT IS NOT THE PUBLIC LANDING (/planes/comer-y-salir/), NOT TRANSLATED, AND STANDALONE — the four constraints every

@@ -1,13 +1,13 @@
 ---
 /**
  * @file punto-de-encuentro.astro
- * @description Meeting-point section of the gastronomy/experience editor (HOS-1048, routed in
+ * @description Meeting-point section of the venue/experience editor (HOS-1048, routed in
  * HOS-1080).
  *
  * EXPERIENCE ONLY, and the gate is the SHAPE of the schema rather than an
  * entitlement: `meetingPoint` lives on `ExperienceOwnerUpdateInputSchema` and
- * not on the gastronomy one. `buildListingEditorSections` leaves this section
- * out of a gastronomy registry entirely, so the shared resolver's unknown-slug
+ * not on the venue one. `buildListingEditorSections` leaves this section
+ * out of a venue registry entirely, so the shared resolver's unknown-slug
  * branch sends a restaurant here straight back to its hub.
  *
  * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/punto-de-encuentro/
