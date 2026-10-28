@@ -171,8 +171,8 @@ describe('beneficios/index.astro — section chrome lives in benefits.*', () => 
     const CHROME_KEYS = [
         'benefits.experience.tagline',
         'benefits.experience.cta',
-        'benefits.gastronomy.tagline',
-        'benefits.gastronomy.cta',
+        'benefits.venue.tagline',
+        'benefits.venue.cta',
         'benefits.partner.tagline',
         'benefits.partner.title',
         'benefits.partner.cta',
